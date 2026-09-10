@@ -1,0 +1,31 @@
+{
+  "name": "crown-and-clan",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build && node scripts/build-sw.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs",
+    "format": "prettier --write src tests scripts *.ts *.json index.html",
+    "check": "npm test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource/lilita-one": "^5.3.0",
+    "@fontsource/nunito-sans": "^5.3.0",
+    "lucide": "^0.468.0",
+    "phaser": "4.2.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "fake-indexeddb": "^6.2.5",
+    "prettier": "^3.9.6",
+    "sharp": "^0.35.4",
+    "typescript": "^5.9.3",
+    "vite": "8.3.0",
+    "vitest": "^4.0.18"
+  }
+}

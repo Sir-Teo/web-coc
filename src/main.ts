@@ -1,0 +1,137 @@
+import Phaser from 'phaser';
+import './style.css';
+import { GameModel } from './game/model';
+import { VillageScene } from './game/scene';
+import { AudioManager } from './game/audio';
+import { loadSave, saveGame } from './game/save';
+import { acquireVillage, SessionUnavailableError } from './game/session';
+import { HUD } from './ui/hud';
+async function boot() {
+  const releaseSession = await acquireVillage();
+  const saved = await loadSave(),
+    model = new GameModel(saved);
+  const audio = new AudioManager();
+  audio.enabled = model.state.settings.sound;
+  document.documentElement.classList.toggle('reduce-motion', model.state.settings.reducedMotion);
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      audio.unlock();
+      if (model.state.settings.music) audio.music(true);
+    },
+    { once: true },
+  );
+  const scene = new VillageScene(model, audio);
+  const hud = new HUD(model, scene, audio);
+  const game = new Phaser.Game({
+    type: Phaser.WEBGL,
+    parent: 'game',
+    backgroundColor: '#45623d',
+    antialias: true,
+    roundPixels: false,
+    powerPreference: 'high-performance',
+    scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
+    render: { pixelArt: false, antialias: true },
+    input: { activePointers: 3 },
+    scene: [scene],
+    fps: { target: 60, smoothStep: true },
+  });
+  let ownsSession = true;
+  let lastSavedRevision = -1;
+  let saving = false;
+  const persist = async () => {
+    if (!ownsSession || saving || lastSavedRevision === model.revision) return;
+    saving = true;
+    const revision = model.revision;
+    const ok = await saveGame(model.state);
+    hud.setSaveState(ok);
+    if (ok) lastSavedRevision = revision;
+    saving = false;
+  };
+  const economyTimer = setInterval(() => {
+    model.tick(Date.now());
+    void persist();
+  }, 1000);
+  window.addEventListener('pagehide', () => {
+    clearInterval(economyTimer);
+    model.tick(Date.now());
+    // saveGame writes its local backup synchronously before yielding to IndexedDB.
+    void saveGame(model.state);
+    ownsSession = false;
+    releaseSession();
+  });
+  window.addEventListener('pageshow', (event) => {
+    // A restored document must reacquire ownership and reload the latest state.
+    if (event.persisted) window.location.reload();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!ownsSession) return;
+    if (document.hidden) {
+      void saveGame(model.state);
+      audio.music(false);
+    } else {
+      model.tick(Date.now());
+      if (model.state.settings.music) audio.music(true);
+    }
+  });
+  scene.onReady = () => {
+    void saveGame(model.state);
+    if (!saved)
+      setTimeout(
+        () =>
+          hud.toast('Welcome, Chief! Your village and army are ready. Select a building to begin.'),
+        900,
+      );
+  };
+  // Structured browser QA surface; no renderer internals in saved data.
+  const debug = { model, scene, game, hud, audio };
+  if (import.meta.env.DEV)
+    Object.assign(window, {
+      __game: debug,
+      advanceTime: (ms: number) => {
+        for (let t = 0; t < ms; t += 50) model.step(0.05);
+        model.tick(model.clock + ms);
+        model.changed();
+      },
+    });
+  Object.assign(window, {
+    render_game_to_text: () =>
+      JSON.stringify({
+        mode: model.battle ? 'battle' : 'village',
+        resources: { gold: model.state.gold, elixir: model.state.elixir, gems: model.state.gems },
+        army: model.state.army,
+        capacity: model.capacity,
+        buildings: model.buildings.map((b) => ({
+          id: b.id,
+          type: b.kind,
+          x: b.x,
+          y: b.y,
+          hp: Math.round(b.hp),
+          level: b.level,
+          upgrading: !!b.upgradeEnd,
+        })),
+        battle: model.battle
+          ? {
+              time: model.battle.elapsed,
+              destruction: model.battle.destruction,
+              stars: model.battle.stars,
+              remaining: model.battle.remaining,
+              units: model.battle.units.filter((u) => u.hp > 0).length,
+              finished: model.battle.finished,
+            }
+          : null,
+        coordinates: '28×28 isometric grid; x toward lower-right, y toward lower-left',
+      }),
+  });
+  if ('serviceWorker' in navigator && !import.meta.env.DEV)
+    void navigator.serviceWorker.register('/sw.js');
+}
+boot().catch((error) => {
+  console.error(error);
+  const label = document.querySelector('#load-label');
+  if (label)
+    label.textContent =
+      error instanceof SessionUnavailableError
+        ? error.message
+        : 'Your village could not start. Refresh the page to try again.';
+});

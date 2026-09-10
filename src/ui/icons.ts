@@ -1,0 +1,84 @@
+import {
+  createElement,
+  Circle,
+  Trophy,
+  Hammer,
+  ShieldCheck,
+  Map,
+  ScrollText,
+  BookOpen,
+  Settings,
+  Plus,
+  LocateFixed,
+  Minus,
+  Swords,
+  UsersRound,
+  ChevronRight,
+  ShoppingBasket,
+  X,
+  Move,
+  Heart,
+  ArrowBigUp,
+  Flag,
+  MousePointer2,
+  Tent,
+  Users,
+  Clock3,
+  Star,
+  LockKeyhole,
+  ArrowRight,
+  Save,
+  Download,
+  Upload,
+  Coins,
+  Castle,
+  House,
+} from 'lucide';
+const icons = {
+  Circle,
+  Trophy,
+  Hammer,
+  ShieldCheck,
+  Map,
+  ScrollText,
+  BookOpen,
+  Settings,
+  Plus,
+  LocateFixed,
+  Minus,
+  Swords,
+  UsersRound,
+  ChevronRight,
+  ShoppingBasket,
+  X,
+  Move,
+  Heart,
+  ArrowBigUp,
+  Flag,
+  MousePointer2,
+  Tent,
+  Users,
+  Clock3,
+  Star,
+  LockKeyhole,
+  ArrowRight,
+  Save,
+  Download,
+  Upload,
+  Coins,
+  Castle,
+  House,
+};
+export function icon(name: string, size = 22) {
+  const component = icons[name as keyof typeof icons] ?? icons.Circle;
+  const el = createElement(component);
+  el.setAttribute('width', String(size));
+  el.setAttribute('height', String(size));
+  el.setAttribute('stroke-width', '2.4');
+  el.setAttribute('aria-hidden', 'true');
+  return el.outerHTML;
+}
+export const coin = '<span class="resource-icon coin" aria-hidden="true">✦</span>';
+export const elixir = '<span class="resource-icon elixir" aria-hidden="true"></span>';
+export const gem = '<span class="resource-icon gem" aria-hidden="true"></span>';
+export const resource = (k: string) => (k === 'gold' ? coin : k === 'elixir' ? elixir : gem);
