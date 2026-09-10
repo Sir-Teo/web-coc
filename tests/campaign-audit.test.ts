@@ -9,9 +9,21 @@ const approaches = [
   [13, 27],
 ] as const;
 const armies = [
-  { name: 'starter', level: 1, units: { swordsman: 14, archer: 12, giant: 3, wizard: 3 } },
-  { name: 'developed', level: 2, units: { swordsman: 18, archer: 18, giant: 8, wizard: 6 } },
-  { name: 'veteran', level: 3, units: { swordsman: 20, archer: 20, giant: 16, wizard: 10 } },
+  {
+    name: 'starter',
+    level: 1,
+    units: { swordsman: 14, archer: 12, giant: 3, wizard: 3, balloon: 0 },
+  },
+  {
+    name: 'developed',
+    level: 2,
+    units: { swordsman: 18, archer: 18, giant: 8, wizard: 6, balloon: 0 },
+  },
+  {
+    name: 'veteran',
+    level: 3,
+    units: { swordsman: 20, archer: 20, giant: 16, wizard: 10, balloon: 0 },
+  },
 ];
 it('all twelve authored layouts are distinct, in bounds and have no overlapping footprints', () => {
   const signatures = new Set<string>();
@@ -43,6 +55,8 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
         const m = new GameModel();
         m.state.stars.fill(1);
         m.state.army = { ...army.units };
+        // These scenarios measure ground armies, so no spells are carried in.
+        m.state.spells = { rage: 0, heal: 0, lightning: 0 };
         m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, army.level])) as Record<
           TroopKind,
           number

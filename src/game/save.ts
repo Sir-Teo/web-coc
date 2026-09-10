@@ -1,33 +1,61 @@
-import { BUILDINGS, TROOP_KEYS } from './data';
+import { BUILDINGS, SPELL_KEYS, TROOP_KEYS } from './data';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 function finite(v: unknown) {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0;
 }
+const QUEST_IDS = ['gold-rush', 'first-raid', 'wall-breaker', 'valley-explorer'];
+/**
+ * Version 1 villages predate the air layer and spell factory. Their missing
+ * fields are added at their zero values so an existing save opens untouched.
+ */
+export function migrateSave(input: unknown): unknown {
+  if (!input || typeof input !== 'object') return input;
+  const s = input as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
+  if (s.version !== 1) return input;
+  const record = (value: unknown) =>
+    value && typeof value === 'object' ? (value as Record<string, number>) : undefined;
+  const army = record(s.army);
+  if (army && typeof army.balloon !== 'number') army.balloon = 0;
+  const last = record(s.lastArmy);
+  if (last && typeof last.balloon !== 'number') last.balloon = 0;
+  const levels = record(s.troopLevels);
+  if (levels && typeof levels.balloon !== 'number') levels.balloon = 1;
+  s.spells ??= { rage: 0, heal: 0, lightning: 0 };
+  s.spellQueue ??= [];
+  s.version = 2;
+  return s;
+}
 export function validateSave(input: unknown): input is Save {
   if (!input || typeof input !== 'object') return false;
   const s = input as Save;
   if (
-    s.version !== 1 ||
+    s.version !== 2 ||
     typeof s.tutorial !== 'boolean' ||
     !Number.isInteger(s.nextId) ||
     !['gold', 'elixir', 'gems', 'trophies', 'xp', 'lastTick', 'nextId'].every((k) =>
       finite(s[k as keyof Save]),
     ) ||
     !Array.isArray(s.buildings) ||
-    s.buildings.length > 250 ||
+    s.buildings.length > 400 ||
     s.buildings.length === 0 ||
     !s.army ||
+    !s.spells ||
     !s.settings ||
     !s.stats ||
     !Array.isArray(s.queue) ||
     s.queue.length > 300 ||
+    !Array.isArray(s.spellQueue) ||
+    s.spellQueue.length > 50 ||
     !Array.isArray(s.stars) ||
     s.stars.length !== 12
   )
     return false;
   if (
     !TROOP_KEYS.every((k) => Number.isInteger(s.army[k]) && s.army[k] >= 0 && s.army[k] < 10000) ||
+    !SPELL_KEYS.every(
+      (k) => Number.isInteger(s.spells[k]) && s.spells[k] >= 0 && s.spells[k] < 1000,
+    ) ||
     !s.stars.every((v) => Number.isInteger(v) && v >= 0 && v <= 3)
   )
     return false;
@@ -41,10 +69,8 @@ export function validateSave(input: unknown): input is Save {
   if (
     s.claimedQuests !== undefined &&
     (!Array.isArray(s.claimedQuests) ||
-      s.claimedQuests.length > 4 ||
-      s.claimedQuests.some(
-        (q) => !['gold-rush', 'first-raid', 'wall-breaker', 'valley-explorer'].includes(q),
-      ) ||
+      s.claimedQuests.length > QUEST_IDS.length ||
+      s.claimedQuests.some((q) => !QUEST_IDS.includes(q)) ||
       new Set(s.claimedQuests).size !== s.claimedQuests.length)
   )
     return false;
@@ -64,6 +90,16 @@ export function validateSave(input: unknown): input is Save {
   )
     return false;
   if (s.lastArmy !== undefined && !armyRecord(s.lastArmy)) return false;
+  if (
+    s.lastSpells !== undefined &&
+    (!s.lastSpells ||
+      typeof s.lastSpells !== 'object' ||
+      !SPELL_KEYS.every(
+        (k) =>
+          Number.isInteger(s.lastSpells![k]) && s.lastSpells![k] >= 0 && s.lastSpells![k] < 1000,
+      ))
+  )
+    return false;
   if (
     s.research !== undefined &&
     (!s.research ||
@@ -88,21 +124,48 @@ export function validateSave(input: unknown): input is Save {
       b.y + BUILDINGS[b.kind].size > 28 ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
-      b.level > 3 ||
+      b.level > BUILDINGS[b.kind].maxLevel ||
       !finite(b.hp) ||
       !finite(b.maxHp) ||
       !finite(b.stored) ||
       !finite(b.cooldown) ||
-      (b.upgradeEnd !== undefined && !finite(b.upgradeEnd))
+      (b.upgradeEnd !== undefined && !finite(b.upgradeEnd)) ||
+      (b.upgradeStart !== undefined && !finite(b.upgradeStart))
     )
       return false;
     ids.add(b.id);
   }
+  if (
+    s.layouts !== undefined &&
+    (!Array.isArray(s.layouts) ||
+      s.layouts.length > 3 ||
+      s.layouts.some(
+        (l) =>
+          !l ||
+          typeof l.name !== 'string' ||
+          l.name.length > 40 ||
+          !Array.isArray(l.slots) ||
+          l.slots.length > 400 ||
+          l.slots.some(
+            (v) =>
+              !v ||
+              !Number.isInteger(v.id) ||
+              !Number.isInteger(v.x) ||
+              !Number.isInteger(v.y) ||
+              v.x < 0 ||
+              v.y < 0 ||
+              v.x > 27 ||
+              v.y > 27,
+          ),
+      ))
+  )
+    return false;
   return (
     s.buildings.some((b) => b.kind === 'townhall') &&
     s.buildings.some((b) => b.kind === 'builder') &&
     s.nextId > Math.max(...ids) &&
-    s.queue.every((q) => q && TROOP_KEYS.includes(q.kind) && finite(q.end))
+    s.queue.every((q) => q && TROOP_KEYS.includes(q.kind) && finite(q.end)) &&
+    s.spellQueue.every((q) => q && SPELL_KEYS.includes(q.kind) && finite(q.end))
   );
 }
 let db: IDBDatabase | null = null;
@@ -131,6 +194,8 @@ export async function loadSave(): Promise<Save | undefined> {
   } catch {
     /* A valid local backup remains usable. */
   }
+  primary = migrateSave(primary);
+  backup = migrateSave(backup);
   if (validateSave(primary) && validateSave(backup))
     return primary.lastTick > backup.lastTick ? primary : backup;
   if (validateSave(primary)) return primary;

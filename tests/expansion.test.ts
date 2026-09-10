@@ -1,0 +1,314 @@
+import { describe, it, expect } from 'vitest';
+import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
+import {
+  BUILDINGS,
+  SPELLS,
+  TROOPS,
+  LIGHTNING_DAMAGE,
+  upgradeSeconds,
+  gemCost,
+} from '../src/game/data';
+import { migrateSave, validateSave } from '../src/game/save';
+
+/** A battle with a hand-built enemy base, so a single interaction can be isolated. */
+function arena(
+  m: GameModel,
+  buildings: [Parameters<typeof makeBuilding>[1], number, number, number][],
+) {
+  m.startBattle(0);
+  m.battle!.buildings = buildings.map(([kind, x, y, level], i) =>
+    makeBuilding(2000 + i, kind, x, y, level),
+  );
+  m.battle!.auras = [];
+  return m.battle!;
+}
+
+describe('scouting phase', () => {
+  it('holds the battle clock for thirty seconds and starts early on the first deploy', () => {
+    const m = new GameModel();
+    m.startBattle(0);
+    expect(m.battle!.prep).toBe(PREP_SECONDS);
+    expect(m.battle!.started).toBe(false);
+    m.step(1);
+    expect(m.battle!.prep).toBeCloseTo(PREP_SECONDS - 1);
+    expect(m.battle!.elapsed).toBe(0);
+    m.deploy(1, 13);
+    expect(m.battle!.started).toBe(true);
+    expect(m.battle!.prep).toBe(0);
+  });
+  it('starts on its own when the scouting time runs out', () => {
+    const m = new GameModel();
+    m.startBattle(0);
+    for (let i = 0; i < PREP_SECONDS * 2; i++) m.step(1);
+    expect(m.battle!.started).toBe(true);
+    expect(m.battle!.elapsed).toBeGreaterThan(0);
+  });
+  it('reports the same blocked tiles the red boundary is drawn from', () => {
+    const m = new GameModel();
+    m.startBattle(0);
+    const townhall = m.battle!.buildings.find((b) => b.kind === 'townhall')!;
+    expect(m.deployBlocked(townhall.x + 1, townhall.y + 1)).toBe(true);
+    expect(m.deployBlocked(townhall.x - 1, townhall.y)).toBe(true);
+    expect(m.deployBlocked(1, 13)).toBe(false);
+    expect(m.deployBlocked(0.5, 13)).toBe(true);
+  });
+});
+
+/** Deploys on clear ground, then places the unit exactly where the test needs it. */
+function spawn(m: GameModel, kind: Parameters<GameModel['train']>[0], x: number, y: number) {
+  m.activeTroop = kind;
+  expect(m.deploy(1, 1)).toBe(true);
+  const unit = m.battle!.units.at(-1)!;
+  unit.x = x;
+  unit.y = y;
+  return unit;
+}
+
+describe('the air layer', () => {
+  it('a ground-only cannon never touches a balloon', () => {
+    const m = new GameModel();
+    arena(m, [
+      ['cannon', 10, 10, 1],
+      ['townhall', 20, 20, 1],
+    ]);
+    const balloon = spawn(m, 'balloon', 12, 12);
+    for (let i = 0; i < 120; i++) m.step(0.05);
+    expect(balloon.hp).toBe(balloon.maxHp);
+  });
+  it('an air defense never touches a ground troop', () => {
+    const m = new GameModel();
+    arena(m, [
+      ['airdefense', 10, 10, 1],
+      ['townhall', 20, 20, 1],
+    ]);
+    const swordsman = spawn(m, 'swordsman', 12, 12);
+    for (let i = 0; i < 120; i++) m.step(0.05);
+    expect(swordsman.hp).toBe(swordsman.maxHp);
+  });
+  it('an air defense tears into a balloon', () => {
+    const m = new GameModel();
+    arena(m, [
+      ['airdefense', 10, 10, 1],
+      ['townhall', 20, 20, 1],
+    ]);
+    const balloon = spawn(m, 'balloon', 12, 12);
+    for (let i = 0; i < 120; i++) m.step(0.05);
+    expect(balloon.hp).toBeLessThan(balloon.maxHp);
+  });
+  it('a balloon crosses walls without breaking them', () => {
+    const m = new GameModel();
+    const walls: [Parameters<typeof makeBuilding>[1], number, number, number][] = [];
+    for (let y = 6; y <= 18; y++) walls.push(['wall', 12, y, 1]);
+    const battle = arena(m, [['townhall', 16, 11, 1], ...walls]);
+    m.activeTroop = 'balloon';
+    m.deploy(6, 12);
+    for (let i = 0; i < 400; i++) m.step(0.05);
+    const balloon = battle.units[0];
+    expect(balloon.x).toBeGreaterThan(12);
+    expect(battle.buildings.filter((b) => b.kind === 'wall').every((b) => b.hp === b.maxHp)).toBe(
+      true,
+    );
+  });
+  it('a ground troop is stopped by the same wall', () => {
+    const m = new GameModel();
+    const walls: [Parameters<typeof makeBuilding>[1], number, number, number][] = [];
+    for (let y = 6; y <= 18; y++) walls.push(['wall', 12, y, 1]);
+    const battle = arena(m, [['townhall', 16, 11, 1], ...walls]);
+    m.activeTroop = 'swordsman';
+    m.deploy(6, 12);
+    for (let i = 0; i < 120; i++) m.step(0.05);
+    expect(battle.units[0].x).toBeLessThan(12);
+    expect(battle.buildings.some((b) => b.kind === 'wall' && b.hp < b.maxHp)).toBe(true);
+  });
+});
+
+describe('spells', () => {
+  it('brews within the spell factory capacity and refuses beyond it', () => {
+    const m = new GameModel();
+    m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    expect(m.spellCapacity).toBe(2);
+    const elixir = m.state.elixir;
+    m.brew('rage');
+    m.brew('lightning');
+    expect(m.state.spellQueue).toHaveLength(2);
+    expect(m.state.elixir).toBe(elixir - SPELLS.rage.cost - SPELLS.lightning.cost);
+    m.brew('heal');
+    expect(m.state.spellQueue).toHaveLength(2);
+    expect(m.state.elixir).toBe(elixir - SPELLS.rage.cost - SPELLS.lightning.cost);
+    m.tick(m.clock + (SPELLS.rage.time + SPELLS.lightning.time) * 1000 + 1000);
+    expect(m.state.spells.rage).toBe(1);
+    expect(m.state.spells.lightning).toBe(1);
+    expect(validateSave(m.state)).toBe(true);
+  });
+  it('lightning damages every building inside its radius, once', () => {
+    const m = new GameModel();
+    m.state.spells = { rage: 0, heal: 0, lightning: 1 };
+    const battle = arena(m, [
+      ['cannon', 10, 10, 1],
+      ['cannon', 11, 12, 1],
+      ['cannon', 22, 22, 1],
+    ]);
+    battle.spells = { rage: 0, heal: 0, lightning: 1 };
+    m.activeSpell = 'lightning';
+    expect(m.castSpell(11.5, 11.5)).toBe(true);
+    const [near, alsoNear, far] = battle.buildings;
+    expect(near.maxHp - near.hp).toBeCloseTo(LIGHTNING_DAMAGE, 3);
+    expect(alsoNear.maxHp - alsoNear.hp).toBeCloseTo(LIGHTNING_DAMAGE, 3);
+    expect(far.hp).toBe(far.maxHp);
+    expect(battle.spells.lightning).toBe(0);
+    expect(m.state.spells.lightning).toBe(0);
+    expect(m.castSpell(11.5, 11.5)).toBe(false);
+  });
+  it('rage makes troops hit measurably harder', () => {
+    const damageOver = (raged: boolean) => {
+      const m = new GameModel();
+      m.state.spells = { rage: 1, heal: 0, lightning: 0 };
+      const battle = arena(m, [['townhall', 12, 12, 1]]);
+      battle.spells = { rage: 1, heal: 0, lightning: 0 };
+      m.activeTroop = 'swordsman';
+      m.deploy(10, 13);
+      if (raged) {
+        m.activeSpell = 'rage';
+        m.castSpell(10, 13);
+      }
+      for (let i = 0; i < 200; i++) m.step(0.05);
+      return battle.buildings[0].maxHp - battle.buildings[0].hp;
+    };
+    const plain = damageOver(false);
+    const enraged = damageOver(true);
+    expect(plain).toBeGreaterThan(0);
+    expect(enraged).toBeGreaterThan(plain);
+  });
+  it('healing restores wounded troops standing inside it', () => {
+    const m = new GameModel();
+    m.state.spells = { rage: 0, heal: 1, lightning: 0 };
+    const battle = arena(m, [['townhall', 20, 20, 1]]);
+    battle.spells = { rage: 0, heal: 1, lightning: 0 };
+    m.activeTroop = 'swordsman';
+    m.deploy(4, 4);
+    const unit = battle.units[0];
+    unit.hp = 40;
+    m.activeSpell = 'heal';
+    expect(m.castSpell(unit.x, unit.y)).toBe(true);
+    for (let i = 0; i < 20; i++) m.step(0.05);
+    expect(unit.hp).toBeGreaterThan(40);
+    expect(unit.hp).toBeLessThanOrEqual(unit.maxHp);
+  });
+  it('auras expire and stop applying', () => {
+    const m = new GameModel();
+    m.state.spells = { rage: 1, heal: 0, lightning: 0 };
+    const battle = arena(m, [['townhall', 20, 20, 1]]);
+    battle.spells = { rage: 1, heal: 0, lightning: 0 };
+    m.activeTroop = 'swordsman';
+    m.deploy(4, 4);
+    m.activeSpell = 'rage';
+    m.castSpell(4, 4);
+    expect(battle.auras).toHaveLength(1);
+    for (let i = 0; i < SPELLS.rage.duration * 20 + 20; i++) m.step(0.05);
+    expect(battle.auras).toHaveLength(0);
+  });
+});
+
+describe('town hall gating and stretched timers', () => {
+  it('caps every other building one level above the town hall', () => {
+    const m = new GameModel();
+    expect(m.townhallLevel).toBe(2);
+    const cannon = m.state.buildings.find((b) => b.kind === 'cannon' && b.level === 2)!;
+    expect(m.maxLevel('cannon')).toBe(3);
+    m.upgrade(cannon.id);
+    expect(cannon.upgradeEnd).toBeDefined();
+    m.tick(cannon.upgradeEnd! + 1000);
+    expect(cannon.level).toBe(3);
+    m.upgrade(cannon.id);
+    expect(cannon.upgradeEnd).toBeUndefined();
+    const townhall = m.townhall!;
+    townhall.level = 5;
+    expect(m.maxLevel('cannon')).toBe(6);
+  });
+  it('unlocks more of each building as the town hall grows', () => {
+    const m = new GameModel();
+    expect(m.maxCount('mortar')).toBe(1);
+    m.townhall!.level = 6;
+    expect(m.maxCount('mortar')).toBe(3);
+    expect(m.maxCount('airdefense')).toBe(3);
+  });
+  it('scales upgrade timers and prices gems on the Clash curve', () => {
+    expect(upgradeSeconds('cannon', 1)).toBe(BUILDINGS.cannon.build);
+    expect(upgradeSeconds('cannon', 5)).toBeGreaterThan(upgradeSeconds('cannon', 4));
+    expect(upgradeSeconds('townhall', 7)).toBeGreaterThan(3600);
+    expect(gemCost(30)).toBe(1);
+    expect(gemCost(3600)).toBe(20);
+    expect(gemCost(86400)).toBe(260);
+    expect(gemCost(7200)).toBeGreaterThan(gemCost(3600));
+  });
+});
+
+describe('edit mode', () => {
+  it('drags buildings, refuses occupied ground, and undoes and redoes', () => {
+    const m = new GameModel();
+    m.beginEdit();
+    expect(m.editing).toBe(true);
+    const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
+    const from = { x: b.x, y: b.y };
+    expect(m.dragTo(b.id, 2, 2)).toBe(true);
+    expect([b.x, b.y]).toEqual([2, 2]);
+    const townhall = m.townhall!;
+    expect(m.dragTo(b.id, townhall.x, townhall.y)).toBe(false);
+    expect([b.x, b.y]).toEqual([2, 2]);
+    m.undo();
+    expect([b.x, b.y]).toEqual([from.x, from.y]);
+    m.redo();
+    expect([b.x, b.y]).toEqual([2, 2]);
+    expect(validateSave(m.state)).toBe(true);
+  });
+  it('stores and restores three layouts', () => {
+    const m = new GameModel();
+    m.beginEdit();
+    const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
+    const original = { x: b.x, y: b.y };
+    m.saveLayout(0);
+    m.dragTo(b.id, 2, 2);
+    m.saveLayout(1);
+    m.loadLayout(0);
+    expect([b.x, b.y]).toEqual([original.x, original.y]);
+    m.loadLayout(1);
+    expect([b.x, b.y]).toEqual([2, 2]);
+    expect(m.layouts).toHaveLength(3);
+    expect(validateSave(m.state)).toBe(true);
+    m.endEdit();
+    expect(m.editing).toBe(false);
+    expect(m.canUndo).toBe(false);
+  });
+});
+
+describe('saves', () => {
+  it('migrates a version 1 village and leaves its progress alone', () => {
+    const modern = initialSave();
+    const legacy = structuredClone(modern) as unknown as Record<string, unknown>;
+    legacy.version = 1;
+    legacy.gold = 4321;
+    delete legacy.spells;
+    delete legacy.spellQueue;
+    legacy.army = { swordsman: 3, archer: 2, giant: 1, wizard: 1 };
+    legacy.troopLevels = { swordsman: 2, archer: 1, giant: 1, wizard: 1 };
+    expect(validateSave(legacy)).toBe(false);
+    const migrated = migrateSave(legacy) as Save;
+    expect(validateSave(migrated)).toBe(true);
+    expect(migrated.gold).toBe(4321);
+    expect(migrated.army.balloon).toBe(0);
+    expect(migrated.troopLevels!.balloon).toBe(1);
+    expect(migrated.troopLevels!.swordsman).toBe(2);
+    expect(migrated.spells).toEqual({ rage: 0, heal: 0, lightning: 0 });
+    expect(new GameModel(migrated).armySize).toBe(
+      3 * TROOPS.swordsman.space +
+        2 * TROOPS.archer.space +
+        TROOPS.giant.space +
+        TROOPS.wizard.space,
+    );
+  });
+  it('rejects a save whose building level exceeds that building maximum', () => {
+    const s = initialSave();
+    s.buildings.find((b) => b.kind === 'spellfactory')!.level = BUILDINGS.spellfactory.maxLevel + 1;
+    expect(validateSave(s)).toBe(false);
+  });
+});

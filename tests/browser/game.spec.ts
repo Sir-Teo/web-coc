@@ -34,7 +34,7 @@ test('collects, upgrades, finishes and persists through reload', async ({ page }
   await page.locator('[data-action^="upgrade:"]').click();
   await expect(page.locator('[data-action^="finish:"]')).toBeVisible();
   await page.locator('[data-action^="finish:"]').click();
-  await expect(page.locator('.max-level')).toBeVisible();
+  await expect(page.locator('.context-info > span')).toContainText('Level 3');
   await page.waitForTimeout(1200);
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.ready);
@@ -44,9 +44,11 @@ test('collects, upgrades, finishes and persists through reload', async ({ page }
     ),
   ).toBe(3);
 });
-test('shop places a building and cancel leaves the village unchanged', async ({ page }) => {
+test('the shop drawer leaves the village live and places by tap or drag', async ({ page }) => {
   await page.locator('[data-action="shop"]').last().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
+  // A drawer is not a dialog: the map underneath stays interactive.
+  expect(await page.evaluate(() => window.__game.scene.uiBlocked)).toBe(false);
   await page.locator('[data-action="tab:Defenses"]').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/shop-desktop.png' });
@@ -56,21 +58,46 @@ test('shop places a building and cancel leaves the village unchanged', async ({ 
   const p = await page.evaluate(() => window.__game.scene.screenFor(2.5, 20.5));
   await page.mouse.click(p.x, p.y);
   expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 1);
-  await page.locator('[data-action="cancel"]').click();
+
+  // Now the same thing by dragging the tile art straight out of the drawer.
   await page.locator('[data-action="shop"]').last().click();
+  await page.locator('[data-action="tab:Army"]').click();
+  await page.waitForTimeout(400);
+  const art = page.locator('[data-drag="barracks"] .shop-tile-art').first();
+  const box = (await art.boundingBox())!;
+  const drop = await page.evaluate(() => window.__game.scene.screenFor(23.5, 4.5));
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(drop.x, drop.y, { steps: 12 });
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 2);
+
+  // The sheet owns the bottom bar while it is open, so it closes through its own control.
+  await expect(page.locator('.shop-btn')).toBeHidden();
+  await page.locator('[data-action="close-drawer"]').click();
+  await expect(page.locator('.shop-btn')).toBeVisible();
+  await page.locator('[data-action="shop"]').last().click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  await page.waitForTimeout(400);
   await page.locator('[data-action="build:wall"]').click();
   await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 1);
+  expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 2);
 });
-test('trains troops through the queue', async ({ page }) => {
+test('trains troops and brews spells through the army drawer', async ({ page }) => {
   await page.locator('.train-add').click();
   await page.locator('[data-action="train:archer"]').click();
-  await expect(page.locator('.queue-items>div')).toHaveCount(1);
+  await expect(page.locator('.drawer-foot [data-queue]')).toBeVisible();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/army-desktop.png' });
-  await page.waitForTimeout(5000);
-  expect(await page.evaluate(() => window.__game.model.state.army.archer)).toBe(13);
-  await expect(page.locator('.queue-items>div')).toHaveCount(0);
+  await page.waitForTimeout(9000);
+  expect(await page.evaluate(() => window.__game.model.state.army.archer)).toBe(11);
+  await expect(page.locator('.drawer-foot [data-queue]')).toHaveCount(0);
+  await page.evaluate(() => {
+    window.__game.model.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    window.__game.model.changed();
+  });
+  await page.locator('[data-action="brew:lightning"]').click();
+  expect(await page.evaluate(() => window.__game.model.state.spellQueue.length)).toBe(1);
 });
 test('plays an actual battle through results and unlocks the next village', async ({ page }) => {
   await page.locator('.attack-btn').click();
@@ -78,13 +105,19 @@ test('plays an actual battle through results and unlocks the next village', asyn
   await page.screenshot({ path: 'output/playtest/campaign-desktop.png' });
   await page.locator('[data-action="attack:0"]').click();
   await expect(page.locator('.battle-enemy h2')).toHaveText('Goblin Outpost');
+  await expect(page.locator('.prep-banner')).toBeVisible();
+  expect(await page.evaluate(() => window.__game.model.battle.started)).toBe(false);
   await page.locator('[data-action="troop:giant"]').click();
   const p = await page.evaluate(() => window.__game.scene.screenFor(4, 11));
   await page.mouse.click(p.x, p.y);
   expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(1);
+  await expect(page.locator('.prep-banner')).toHaveCount(0);
+  await expect(page.locator('.destruction-bar')).toBeVisible();
   await page.evaluate(() => {
     const m = window.__game.model;
-    for (const k of ['giant', 'swordsman', 'archer', 'wizard']) {
+    m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    m.battle.spells = { rage: 0, heal: 0, lightning: 0 };
+    for (const k of ['giant', 'swordsman', 'archer', 'wizard', 'balloon']) {
       m.activeTroop = k;
       let i = 0;
       while (m.battle.remaining[k] > 0) {
@@ -124,11 +157,11 @@ test('mobile portrait preserves playfield and usable menus', async ({ page }) =>
   await page.locator('.shop-btn').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/shop-mobile.png' });
-  await expect(page.locator('.shop-grid')).toBeVisible();
+  await expect(page.locator('.shop-strip')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
-  await expect(page.locator('.training-card')).toHaveCount(4);
+  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(8);
 });
 test('camera responds to zoom and drag while dialogs block the playfield', async ({ page }) => {
   const before = await page.evaluate(() => window.__game.scene.cameras.main.zoom);
@@ -140,17 +173,20 @@ test('camera responds to zoom and drag while dialogs block the playfield', async
   await page.mouse.up();
   await page.locator('[data-action="recenter"]').click();
   await page.locator('.shop-btn').click();
+  expect(await page.evaluate(() => window.__game.scene.uiBlocked)).toBe(false);
+  await page.keyboard.press('Escape');
+  await page.locator('[data-action="settings"]').click();
   expect(await page.evaluate(() => window.__game.scene.uiBlocked)).toBe(true);
 });
 
-test('open dialogs remain mounted through passive economy ticks', async ({ page }) => {
+test('open sheets and dialogs remain mounted through passive economy ticks', async ({ page }) => {
   await page.locator('.shop-btn').click();
   await page.evaluate(() => {
-    window.__dialogNode = document.querySelector('[role="dialog"]');
+    window.__dialogNode = document.querySelector('.drawer-sheet');
   });
   await page.waitForTimeout(2200);
   expect(
-    await page.evaluate(() => window.__dialogNode === document.querySelector('[role="dialog"]')),
+    await page.evaluate(() => window.__dialogNode === document.querySelector('.drawer-sheet')),
   ).toBe(true);
 });
 
@@ -165,23 +201,19 @@ test('exported villages restore through the file import control', async ({ page 
     window.__game.model.state.gold = 123;
     window.__game.model.changed();
   });
-  await page
-    .locator('#import-file')
-    .setInputFiles({
-      name: 'village.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(expected)),
-    });
+  await page.locator('#import-file').setInputFiles({
+    name: 'village.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(expected)),
+  });
   await expect(page.locator('#toast')).toContainText('Village restored');
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(expected.gold);
   await page.locator('[data-action="settings"]').click();
-  await page
-    .locator('#import-file')
-    .setInputFiles({
-      name: 'broken.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from('{broken'),
-    });
+  await page.locator('#import-file').setInputFiles({
+    name: 'broken.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{broken'),
+  });
   await expect(page.locator('#toast')).toContainText('not a valid');
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(expected.gold);
 });
@@ -208,7 +240,7 @@ test('touch input selects buildings and opens menus', async ({ browser }) => {
   await page.screenshot({ path: 'output/playtest/touch-building.png' });
   await page.locator('[data-action="cancel"]').tap();
   await page.locator('.shop-btn').tap();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
   await context.close();
 });
 
@@ -219,8 +251,9 @@ test('landscape phone keeps primary controls usable', async ({ page }) => {
   await expect(page.locator('.shop-btn')).toBeVisible();
   await page.screenshot({ path: 'output/playtest/village-landscape.png' });
   await page.locator('.shop-btn').click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  const bounds = await page.getByRole('dialog').boundingBox();
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
+  await page.waitForTimeout(500);
+  const bounds = await page.locator('.drawer-sheet').boundingBox();
   expect(bounds!.y).toBeGreaterThanOrEqual(0);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(391);
 });

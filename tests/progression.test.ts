@@ -37,7 +37,7 @@ describe('troop progression', () => {
     const gems = m.state.gems;
     m.researchTroop('archer');
     m.finishResearch();
-    expect(m.state.gems).toBe(gems - 5);
+    expect(m.state.gems).toBe(gems - 3);
     expect(m.troopLevel('archer')).toBe(2);
     expect(validateSave(m.state)).toBe(true);
     m.state.troopLevels!.archer = 4;
@@ -67,7 +67,7 @@ describe('troop progression', () => {
     expect(m.state.elixir).toBe(elixir - TROOPS.archer.cost * 5);
     m.retrain();
     expect(m.state.queue).toHaveLength(5);
-    m.tick(m.clock + 30000);
+    m.tick(m.clock + 60000);
     expect(m.state.army).toEqual(initial);
   });
   it('extra completed barracks speed up new training and construction does not', () => {

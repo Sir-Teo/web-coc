@@ -20,10 +20,10 @@ for (const [name, engine] of [
   );
   await page.waitForTimeout(1500);
   await page.locator('.shop-btn').click();
-  await page.getByRole('dialog').waitFor();
-  await page.waitForTimeout(250);
+  await page.locator('.drawer-sheet').waitFor();
+  await page.waitForTimeout(400);
   await page.screenshot({ path: `output/playtest/production-shop-${name}.png` });
-  await page.locator('[data-action="close"]').click();
+  await page.locator('[data-action="close-drawer"]').click();
   const waiting = await context.newPage();
   waiting.on('pageerror', (e) => errors.push(e.message));
   await waiting.goto('http://127.0.0.1:4173');
@@ -58,8 +58,8 @@ for (const [name, engine] of [
       () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
     );
     await page.locator('.train-add').click();
-    await page.getByRole('dialog').waitFor();
-    await page.waitForTimeout(250);
+    await page.locator('.drawer-sheet').waitFor();
+    await page.waitForTimeout(400);
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
     report.offline = { reload: true, army: true, ...cachesState };
     await context.setOffline(false);

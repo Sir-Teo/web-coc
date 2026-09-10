@@ -79,12 +79,13 @@ test('WebGL loss pauses combat and restoration keeps the village interactive', a
   await page.waitForFunction(() => !window.__game.scene.paused);
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => window.__game.model.battle.elapsed)).toBeGreaterThan(elapsed);
+  await page.locator('[data-action="surrender"]').click();
   await page.locator('[data-action="end"]').click();
   await page.locator('[data-action="home"]').click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'output/playtest/context-restored.png' });
   await page.locator('.shop-btn').click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
   expect(errors).toEqual([]);
 });
 test('twenty raid transitions release scene objects and keep saves valid', async ({ page }) => {
@@ -95,7 +96,8 @@ test('twenty raid transitions release scene objects and keep saves valid', async
   for (let i = 0; i < 20; i++) {
     await page.evaluate(() => {
       const { model } = window.__game;
-      model.state.army = { swordsman: 14, archer: 12, giant: 3, wizard: 3 };
+      model.state.army = { swordsman: 14, archer: 12, giant: 3, wizard: 3, balloon: 0 };
+      model.state.spells = { rage: 0, heal: 0, lightning: 0 };
       model.startBattle(0);
       for (const kind of ['giant', 'swordsman', 'archer', 'wizard']) {
         model.activeTroop = kind;

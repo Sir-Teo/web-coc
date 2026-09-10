@@ -106,15 +106,16 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldmine', 3, 10],
       ['collector', 21, 5],
       ['builder', 21, 20],
+      ['airdefense', 9, 7],
     ],
     rings: [
       [6, 6, 20, 20],
       [10, 10, 15, 15],
     ],
-    hint: 'Four towers cover the corners. Giants can dismantle one flank.',
+    hint: 'Four towers cover the corners, and the first air defense guards the keep.',
     recommended: 85,
     health: 1.1,
-    defense: 1.25,
+    defense: 1.1161,
   },
   {
     buildings: [
@@ -132,12 +133,13 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['barracks', 10, 20],
       ['camp', 3, 12],
       ['builder', 17, 21],
+      ['airdefense', 15, 12],
     ],
     rings: [[7, 6, 20, 19]],
-    hint: 'Two mortars guard the south. Approach from the north with ranged support.',
+    hint: 'Two mortars guard the south. An air defense watches the centre.',
     recommended: 95,
     health: 1.2,
-    defense: 1.35,
+    defense: 1.2054,
   },
   {
     buildings: [
@@ -157,12 +159,13 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['archertower', 19, 18],
       ['mortar', 8, 16],
       ['builder', 20, 21],
+      ['airdefense', 15, 10],
     ],
     rings: [[6, 6, 20, 20]],
-    hint: 'Collectors distract your troops. Send giants straight toward the defenses.',
+    hint: 'Collectors distract ground troops. Balloons ignore them — and the walls.',
     recommended: 105,
     health: 1.3,
-    defense: 1.45,
+    defense: 1.2946,
   },
   {
     buildings: [
@@ -182,15 +185,16 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['barracks', 12, 3],
       ['camp', 3, 12],
       ['builder', 22, 20],
+      ['airdefense', 14, 7],
     ],
     rings: [
       [6, 6, 21, 20],
       [10, 10, 17, 16],
     ],
-    hint: 'Break one compartment at a time. Upgrade your troops before this raid.',
+    hint: 'Break one compartment at a time. Clear the air defense before committing balloons.',
     recommended: 115,
     health: 1.4,
-    defense: 1.55,
+    defense: 1.3839,
   },
   {
     buildings: [
@@ -211,15 +215,17 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldmine', 20, 5],
       ['collector', 11, 21],
       ['builder', 5, 7],
+      ['airdefense', 7, 12],
+      ['airdefense', 16, 11],
     ],
     rings: [
       [6, 5, 20, 20],
       [10, 9, 15, 14],
     ],
-    hint: 'Layered walls protect the keep. Ranged troops can fire across them.',
+    hint: 'Layered walls protect the keep, and two air defenses cover the approach.',
     recommended: 125,
     health: 1.5,
-    defense: 1.7,
+    defense: 1.371,
   },
   {
     buildings: [
@@ -241,12 +247,14 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldmine', 3, 7],
       ['collector', 22, 7],
       ['builder', 5, 16],
+      ['airdefense', 9, 6],
+      ['airdefense', 15, 16],
     ],
     rings: [[5, 5, 22, 22]],
-    hint: 'Every approach is defended. Keep your wizards behind a strong frontline.',
+    hint: 'Every approach is defended. Lightning the air defenses, then fly over the walls.',
     recommended: 135,
     health: 1.6,
-    defense: 1.85,
+    defense: 1.4919,
   },
   {
     buildings: [
@@ -269,15 +277,17 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldmine', 3, 4],
       ['collector', 22, 19],
       ['builder', 3, 18],
+      ['airdefense', 7, 8],
+      ['airdefense', 13, 17],
     ],
     rings: [
       [6, 5, 20, 21],
       [10, 10, 15, 15],
     ],
-    hint: 'A reinforced inner keep and three mortars demand a veteran army.',
+    hint: 'A reinforced keep, three mortars and paired air defenses. Bring spells.',
     recommended: 145,
     health: 1.7,
-    defense: 2,
+    defense: 1.6129,
   },
   {
     buildings: [
@@ -303,15 +313,17 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldmine', 2, 20],
       ['collector', 21, 3],
       ['builder', 3, 17],
+      ['airdefense', 5, 19],
+      ['airdefense', 17, 19],
     ],
     rings: [
       [4, 4, 22, 22],
       [10, 10, 15, 15],
     ],
-    hint: 'The final fortress. Scout the gaps and commit your strongest army.',
+    hint: 'The final fortress. Scout the gaps, rage your frontline, and commit everything.',
     recommended: 160,
     health: 1.8,
-    defense: 2.15,
+    defense: 1.7339,
   },
 ];
 /** Authored structure footprints plus rings with deliberate gates and no overlapping posts. */

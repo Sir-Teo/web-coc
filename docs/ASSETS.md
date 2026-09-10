@@ -30,11 +30,23 @@ The generated usable output is 1254×1254. `scripts/walk-atlas.mjs` extracts mea
 
 1536×1024 transparent PNG with 4 columns × 3 rows in the same building order as the base set. Preserve the southeast orthographic view and cheerful orange-roof, ivory-stone, blue-banner palette. All buildings are visibly upgraded: dark slate reinforced bases, gleaming gold braces, thicker foundations, gold finials, additional battlements, and royal banners. Town hall gains towers and gold ridge caps; mine gains reinforced machinery and a second ore cart; collector gains paired vats; storages gain gold framing; barracks gains crossed swords; cannon and mortar gain black-and-gold armor; tower gains reinforced stone battlements; camp gains royal tents; builder gains a gold hammer sign; laboratory gains ornate gold fittings and brighter violet magic. No text, grid, interface, scene background, or watermark. Actual RGBA transparency.
 
+### Air layer and spells — derived, not generated
+
+The Air Defense, Spell Factory, Balloon, and the three spell vials were added after the original generation pass and contain **no new generated bitmaps**. `scripts/derived-assets.mjs` builds each of them from art already committed here, using only deterministic sharp transforms and drawn vector overlays:
+
+- **Air Defense** (`airdefense.webp`, and its final tier) is `mortar.webp` hue-rotated 190° with slightly raised saturation and brightness. The mortar's up-angled barrel on an octagonal base already reads as anti-air; the recolour to cold steel-blue is what separates it from its ground-only sibling at a glance.
+- **Spell Factory** (`spellfactory.webp`, and its final tier) is `laboratory.webp` hue-rotated 40°, turning its blue roof and violet glassware to the arcane magenta of brewed spells while keeping the same silhouette family.
+- **Balloon** (`balloon.webp` plus a four-frame 512×128 float cycle) is the glass sphere and gold crown of `elixirstorage.webp`, masked away from the stone base it normally sits on, recoloured warm — the glass alone, so the gold fittings stay gold — and composited over a drawn burner ring, rigging lines, wicker basket, and bomb. The sphere's own bottom is occluded by its base in the source, so the mask cuts it square and the burner ring hides the seam.
+- **Spell vials** (`rage.webp`, `heal.webp`, `lightning.webp`) are drawn as SVG and rasterized: a glass flask with a liquid gradient, a highlight sweep, a gold stopper, and a glyph. They read as a separate class of object from the buildings on purpose.
+
+Because every step is a pure function of committed inputs, re-running the script produces byte-identical output. `output/assets-before.sha` and `output/assets-after.sha` record a full rebuild and are identical.
+
 ## Processing and provenance
 
 - `scripts/assets.mjs`: measured cell extraction, alpha-preserving trim, size normalization, and WebP encoding for base assets.
 - `scripts/walk-atlas.mjs`: shared-scale normalization and bottom-center anchoring for four walking strips.
 - `scripts/tier3-assets.mjs`: final-tier building extraction and WebP encoding.
+- `scripts/derived-assets.mjs`: deterministic recolours, masks, and drawn overlays for the air-layer and spell artwork.
 - `npm run assets`: rebuilds every shipping bitmap from the committed source artwork.
 - Wall connections, hit particles, health bars, placement grids, and small resource glyphs are renderer-native geometry. Effects audio is synthesized locally with Web Audio.
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.

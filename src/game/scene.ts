@@ -1,7 +1,23 @@
 import Phaser from 'phaser';
-import { BUILDINGS, TROOPS, TROOP_KEYS, asset, type BuildingKind } from './data';
+import {
+  BUILDINGS,
+  SPELLS,
+  SPELL_KEYS,
+  TROOPS,
+  TROOP_KEYS,
+  TIER3_LEVEL,
+  asset,
+  type BuildingKind,
+} from './data';
 import { GameModel, type Building, type FX } from './model';
 import { AudioManager } from './audio';
+/** Screen height a flying troop floats above its ground position. */
+const AIR_LIFT = 46;
+const SPELL_COLOR: Record<string, number> = {
+  rage: 0xff6a3d,
+  heal: 0x8de35c,
+  lightning: 0x6fd4ff,
+};
 export const WORLD = { width: 1792, height: 1195, ox: 896, oy: 112, tw: 64, th: 32 };
 export const iso = (x: number, y: number) =>
   new Phaser.Math.Vector2(WORLD.ox + (x - y) * 32, WORLD.oy + (x + y) * 16);
@@ -16,13 +32,20 @@ export class VillageScene extends Phaser.Scene {
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
   private ground!: Phaser.GameObjects.Graphics;
+  /** Ground-level markings that buildings must sit on top of. */
+  private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
   private detail!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
   private mode = '';
   private lastRevision = -1;
-  private down?: { x: number; y: number; cx: number; cy: number };
+  private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
   private dragged = false;
+  /** Which role the current pointer gesture has committed to. */
+  private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' = 'none';
+  private lastDeploy = { x: -99, y: -99 };
+  private lastTap = { x: -99, y: -99, t: 0 };
+  private boundary: { signature: string; edges: number[][] } = { signature: '', edges: [] };
   private pinchDistance = 0;
   private tick = 0;
   private renderClock = 0;
@@ -45,8 +68,9 @@ export class VillageScene extends Phaser.Scene {
     this.load.image('terrain', '/assets/environment/terrain.webp');
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall') this.load.image(`${k}-tier3`, asset(k, 3));
+      if (k !== 'wall') this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
+    for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of TROOP_KEYS)
       this.load.spritesheet(`${k}-walk`, `/assets/characters/walk/${k}.webp`, {
         frameWidth: 128,
@@ -68,6 +92,7 @@ export class VillageScene extends Phaser.Scene {
       .setDisplaySize(WORLD.width, WORLD.height)
       .setDepth(-1000);
     this.ground = this.add.graphics().setDepth(-900);
+    this.groundMarks = this.add.graphics().setDepth(-850);
     this.detail = this.add.graphics().setDepth(5000);
     this.overlay = this.add.graphics().setDepth(6000);
     this.drawPaths();
@@ -83,8 +108,27 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
       this.audio.unlock();
-      this.down = { x: p.x, y: p.y, cx: this.cameras.main.scrollX, cy: this.cameras.main.scrollY };
+      const world = this.cameras.main.getWorldPoint(p.x, p.y),
+        grid = uniso(world.x, world.y);
+      const held =
+        this.model.editing && !this.model.placement
+          ? this.pickBuilding(world.x, world.y, grid)
+          : undefined;
+      this.down = {
+        x: p.x,
+        y: p.y,
+        cx: this.cameras.main.scrollX,
+        cy: this.cameras.main.scrollY,
+        t: performance.now(),
+        id: held?.id ?? null,
+      };
       this.dragged = false;
+      this.gesture = 'none';
+      this.lastDeploy = { x: -99, y: -99 };
+      if (held) {
+        this.model.selected = held.id;
+        this.model.changed();
+      }
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
@@ -99,41 +143,34 @@ export class VillageScene extends Phaser.Scene {
         if (this.pinchDistance) this.setZoom((this.cameras.main.zoom * dist) / this.pinchDistance);
         this.pinchDistance = dist;
         this.dragged = true;
+        this.gesture = 'pan';
         return;
       }
       this.pinchDistance = 0;
+      this.ghostPoint = undefined;
       if (p.isDown && this.down) {
         const dx = p.x - this.down.x,
-          dy = p.y - this.down.y;
-        if (Math.hypot(dx, dy) > 7) {
-          this.dragged = true;
+          dy = p.y - this.down.y,
+          travel = Math.hypot(dx, dy);
+        if (this.gesture === 'none' && travel > 7) this.gesture = this.classifyDrag(p);
+        if (this.gesture !== 'none') this.dragged = true;
+        if (this.gesture === 'pan') {
           this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoom;
           this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoom;
           this.clampCamera();
-        }
+        } else if (this.gesture === 'deploy') this.dragDeploy(p);
+        else if (this.gesture === 'drag-building') this.dragBuilding(p);
       }
       this.updateGhost(p);
     });
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
       this.pinchDistance = 0;
+      const gesture = this.gesture;
+      this.gesture = 'none';
       if (this.uiBlocked || !this.down) return;
       this.down = undefined;
-      if (this.dragged) return;
-      const world = this.cameras.main.getWorldPoint(p.x, p.y),
-        grid = uniso(world.x, world.y);
-      if (this.model.placement) {
-        if (this.model.place(Math.floor(grid.x), Math.floor(grid.y))) this.audio.play('build');
-        return;
-      }
-      if (this.model.battle) {
-        if (this.model.deploy(grid.x, grid.y)) this.audio.play('deploy');
-        return;
-      }
-      const hit = this.pickBuilding(world.x, world.y, grid);
-      this.model.selected = hit?.id ?? null;
-      this.model.changed();
-      this.onSelect();
-      if (hit) this.audio.play('click');
+      if (this.dragged || gesture !== 'none') return;
+      this.tap(p);
     });
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
       if (!this.uiBlocked) this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.92 : 1.08));
@@ -235,6 +272,121 @@ export class VillageScene extends Phaser.Scene {
       );
     c.centerOn(centerX, centerY);
   }
+  /** Decides once per gesture whether a drag pans, deploys, or moves a building. */
+  private classifyDrag(p: Phaser.Input.Pointer): 'pan' | 'deploy' | 'drag-building' {
+    if (this.model.editing && this.down?.id != null) return 'drag-building';
+    const b = this.model.battle;
+    if (b && !b.finished && !this.model.placement && !this.model.activeSpell) {
+      // A deliberate press then drag paints troops; a quick flick still pans.
+      const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
+      const grid = this.gridAtPointer(p);
+      if (
+        deliberate &&
+        b.remaining[this.model.activeTroop] > 0 &&
+        !this.model.deployBlocked(grid.x, grid.y)
+      )
+        return 'deploy';
+    }
+    return 'pan';
+  }
+  private dragDeploy(p: Phaser.Input.Pointer) {
+    const grid = this.gridAtPointer(p);
+    if (Math.hypot(grid.x - this.lastDeploy.x, grid.y - this.lastDeploy.y) < 0.75) return;
+    if (this.model.deployBlocked(grid.x, grid.y)) return;
+    if (this.model.deploy(grid.x, grid.y)) {
+      this.lastDeploy = { x: grid.x, y: grid.y };
+      this.audio.play('deploy');
+    }
+  }
+  private dragBuilding(p: Phaser.Input.Pointer) {
+    const id = this.down?.id;
+    if (id == null) return;
+    const b = this.model.state.buildings.find((v) => v.id === id);
+    if (!b) return;
+    const grid = this.gridAtPointer(p),
+      size = BUILDINGS[b.kind].size;
+    this.model.dragTo(id, Math.round(grid.x - size / 2), Math.round(grid.y - size / 2));
+  }
+  private tap(p: Phaser.Input.Pointer) {
+    const world = this.cameras.main.getWorldPoint(p.x, p.y),
+      grid = uniso(world.x, world.y);
+    if (this.model.placement) {
+      if (this.model.place(Math.floor(grid.x), Math.floor(grid.y))) this.audio.play('build');
+      return;
+    }
+    if (this.model.battle) {
+      if (this.model.activeSpell) {
+        if (this.model.castSpell(grid.x, grid.y)) this.audio.play('deploy');
+        return;
+      }
+      // A second tap on the same spot commits a full squad, the way rapid taps do in Clash.
+      const now = performance.now();
+      const repeat =
+        now - this.lastTap.t < 380 &&
+        Math.hypot(grid.x - this.lastTap.x, grid.y - this.lastTap.y) < 1.4;
+      this.lastTap = { x: grid.x, y: grid.y, t: now };
+      const placed = repeat
+        ? this.model.deployMany(grid.x, grid.y, 4)
+        : Number(this.model.deploy(grid.x, grid.y));
+      if (placed) this.audio.play('deploy');
+      return;
+    }
+    const hit = this.pickBuilding(world.x, world.y, grid);
+    this.model.selected = hit?.id ?? null;
+    this.model.changed();
+    this.onSelect();
+    if (hit) this.audio.play('click');
+  }
+  gridAtPointer(p: { x: number; y: number }) {
+    const world = this.cameras.main.getWorldPoint(p.x, p.y);
+    return uniso(world.x, world.y);
+  }
+  /** Converts a DOM pointer position, so the shop drawer can drag onto the map. */
+  canvasPoint(clientX: number, clientY: number) {
+    const rect = this.game.canvas.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+  gridAtScreen(clientX: number, clientY: number) {
+    return this.gridAtPointer(this.canvasPoint(clientX, clientY));
+  }
+  /** Drives the placement ghost from a DOM drag that Phaser never sees. */
+  trackGhost(clientX: number, clientY: number) {
+    this.ghostPoint = this.canvasPoint(clientX, clientY);
+    this.updateGhost(this.ghostPoint);
+  }
+  releaseGhost() {
+    this.ghostPoint = undefined;
+  }
+  private ghostPoint?: { x: number; y: number };
+  private pointerScreen(): { x: number; y: number } {
+    return this.ghostPoint ?? this.input.activePointer;
+  }
+  /**
+   * The outline of every tile a troop may not be dropped on. Cached against the
+   * set of surviving structures, because it only changes when one falls.
+   */
+  private battleBoundary() {
+    const b = this.model.battle;
+    if (!b) return [];
+    const signature = b.buildings
+      .filter((v) => v.hp > 0 && v.kind !== 'wall')
+      .map((v) => v.id)
+      .join(',');
+    if (signature === this.boundary.signature) return this.boundary.edges;
+    const blocked = (x: number, y: number) =>
+      x < 1 || y < 1 || x > 26 || y > 26 ? true : this.model.deployBlocked(x + 0.5, y + 0.5);
+    const edges: number[][] = [];
+    for (let x = 1; x <= 26; x++)
+      for (let y = 1; y <= 26; y++) {
+        if (!blocked(x, y)) continue;
+        if (!blocked(x - 1, y)) edges.push([x, y, x, y + 1]);
+        if (!blocked(x + 1, y)) edges.push([x + 1, y, x + 1, y + 1]);
+        if (!blocked(x, y - 1)) edges.push([x, y, x + 1, y]);
+        if (!blocked(x, y + 1)) edges.push([x, y + 1, x + 1, y + 1]);
+      }
+    this.boundary = { signature, edges };
+    return edges;
+  }
   pickBuilding(wx: number, wy: number, grid: { x: number; y: number }) {
     const sorted = [...this.model.buildings]
       .filter((b) => b.kind !== 'wall')
@@ -285,9 +437,9 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      const texture = b.level >= 3 && b.kind !== 'wall' ? `${b.kind}-tier3` : b.kind;
+      const texture = b.level >= TIER3_LEVEL && b.kind !== 'wall' ? `${b.kind}-tier3` : b.kind;
       if (im.texture.key !== texture) im.setTexture(texture);
-      const levelScale = b.kind === 'wall' ? 1 : 1 + (b.level - 1) * 0.045;
+      const levelScale = b.kind === 'wall' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
       im.setPosition(p.x, p.y)
         .setDisplaySize(
           d.width * levelScale,
@@ -295,7 +447,7 @@ export class VillageScene extends Phaser.Scene {
         )
         .setDepth(p.y);
       im.setAlpha(b.constructing ? 0.58 : 1);
-      if (b.level === 3) im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL) im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         im.setTint(0x514940)
@@ -404,7 +556,7 @@ export class VillageScene extends Phaser.Scene {
       }
     }
   }
-  updateGhost(p: Phaser.Input.Pointer) {
+  updateGhost(p: { x: number; y: number }) {
     if (!this.ghost || !this.model.placement) return;
     const point = this.cameras.main.getWorldPoint(p.x, p.y),
       grid = uniso(point.x, point.y),
@@ -439,20 +591,11 @@ export class VillageScene extends Phaser.Scene {
         g.strokeEllipse(p.x, p.y, d.range * 64, d.range * 32);
       }
     }
+    if (this.model.editing && !this.model.placement) this.drawGrid(g);
     if (this.model.placement) {
-      for (let x = 2; x <= 26; x++) {
-        g.lineStyle(1, 0xffffff, 0.15);
-        const p = iso(x, 2),
-          q = iso(x, 26);
-        g.lineBetween(p.x, p.y, q.x, q.y);
-        const r = iso(2, x),
-          s = iso(26, x);
-        g.lineBetween(r.x, r.y, s.x, s.y);
-      }
-      const point = this.cameras.main.getWorldPoint(
-          this.input.activePointer.x,
-          this.input.activePointer.y,
-        ),
+      this.drawGrid(g);
+      const screen = this.pointerScreen();
+      const point = this.cameras.main.getWorldPoint(screen.x, screen.y),
         grid = uniso(point.x, point.y),
         x = Math.floor(grid.x),
         y = Math.floor(grid.y);
@@ -466,17 +609,27 @@ export class VillageScene extends Phaser.Scene {
         0.28,
       );
     }
-    if (this.model.battle && !this.model.battle.started) {
-      for (const v of this.model.buildings.filter((v) => v.kind !== 'wall')) {
-        const s = BUILDINGS[v.kind].size;
-        const pts = [
-          iso(v.x - 1.5, v.y - 1.5),
-          iso(v.x + s + 1.5, v.y - 1.5),
-          iso(v.x + s + 1.5, v.y + s + 1.5),
-          iso(v.x - 1.5, v.y + s + 1.5),
-        ];
-        g.lineStyle(1.5, 0xff665c, 0.4);
-        g.strokePoints(pts, true);
+    this.groundMarks.clear();
+    const active = this.model.battle;
+    if (active && !active.finished) {
+      // One continuous red line around everything the base denies you, painted on
+      // the grass so the base itself stays in front of it.
+      const edges = this.battleBoundary();
+      this.groundMarks.lineStyle(2.5, 0xff4d42, 0.92);
+      for (const [x0, y0, x1, y1] of edges) {
+        const a = iso(x0, y0),
+          b = iso(x1, y1);
+        this.groundMarks.lineBetween(a.x, a.y, b.x, b.y);
+      }
+      for (const aura of active.auras) {
+        const p = iso(aura.x, aura.y),
+          radius = SPELLS[aura.kind].radius,
+          color = SPELL_COLOR[aura.kind],
+          pulse = 1 + Math.sin(time / 220) * 0.03;
+        g.fillStyle(color, 0.17);
+        g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+        g.lineStyle(2, color, 0.75);
+        g.strokeEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
       }
     }
     this.detail.clear();
@@ -484,8 +637,9 @@ export class VillageScene extends Phaser.Scene {
       if (v.hp <= 0) continue;
       const im = this.sprites.get(v.id)!;
       if (v.upgradeEnd) {
-        const duration = v.constructing ? 15000 : (20 + v.level * 10) * 1000,
-          progress = 1 - (v.upgradeEnd - this.model.clock) / duration;
+        const start = v.upgradeStart ?? v.upgradeEnd - 15000,
+          duration = Math.max(1, v.upgradeEnd - start),
+          progress = (this.model.clock - start) / duration;
         this.bar(im.x, im.y - im.displayHeight * 0.87, 54, progress, 0x82d745);
         const p = iso(v.x, v.y);
         this.detail.lineStyle(3, 0xe6b356, 0.7);
@@ -518,14 +672,21 @@ export class VillageScene extends Phaser.Scene {
           }
           continue;
         }
+        const flying = !!TROOPS[u.kind].flying;
         im.setFrame(
-          u.attacking || this.model.state.settings.reducedMotion
+          (u.attacking && !flying) || this.model.state.settings.reducedMotion
             ? 0
             : Math.floor(time / 140 + u.id) % 4,
         );
         const p = iso(u.x, u.y),
           motion = this.model.state.settings.reducedMotion ? 0 : Math.sin(time / 80 + u.id) * 1.6;
-        im.setPosition(p.x, p.y + motion).setDepth(p.y + 1);
+        const lift = flying ? AIR_LIFT : 0;
+        // Air troops draw above every rooftop, with a shadow left on the ground.
+        im.setPosition(p.x, p.y + motion - lift).setDepth(flying ? 7500 : p.y + 1);
+        if (flying) {
+          this.detail.fillStyle(0x1f2a16, 0.28);
+          this.detail.fillEllipse(p.x, p.y, 26, 13);
+        }
         const target = battle.buildings.find((b) => b.id === u.target);
         if (target) im.setFlipX(iso(target.x, target.y).x > p.x);
         const phase = 1 - Math.max(0, u.cooldown) / TROOPS[u.kind].rate;
@@ -534,9 +695,21 @@ export class VillageScene extends Phaser.Scene {
             ? Math.sin((phase / 0.28) * Math.PI)
             : 0;
         const facing = target && iso(target.x, target.y).x > p.x ? 1 : -1;
-        im.setX(p.x + facing * impulse * 4).setAngle(facing * impulse * 9);
-        if (u.hp < u.maxHp) this.bar(p.x, p.y - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
+        im.setX(p.x + facing * impulse * 4).setAngle(flying ? impulse * 4 : facing * impulse * 9);
+        if (u.hp < u.maxHp)
+          this.bar(p.x, p.y - lift - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
       }
+    }
+  }
+  private drawGrid(g: Phaser.GameObjects.Graphics) {
+    for (let x = 2; x <= 26; x++) {
+      g.lineStyle(1, 0xffffff, 0.15);
+      const p = iso(x, 2),
+        q = iso(x, 26);
+      g.lineBetween(p.x, p.y, q.x, q.y);
+      const r = iso(2, x),
+        s = iso(26, x);
+      g.lineBetween(r.x, r.y, s.x, s.y);
     }
   }
   bar(x: number, y: number, w: number, p: number, color: number) {
@@ -585,20 +758,56 @@ export class VillageScene extends Phaser.Scene {
       });
       return;
     }
+    if (fx.type === 'spell') {
+      const color = SPELL_COLOR[fx.spell ?? 'rage'];
+      const radius = (fx.radius ?? 3) * 64;
+      const ring = this.add
+        .ellipse(p.x, p.y, radius * 0.4, radius * 0.2)
+        .setStrokeStyle(4, color, 0.95)
+        .setDepth(7200);
+      this.tweens.add({
+        targets: ring,
+        scaleX: 5,
+        scaleY: 5,
+        alpha: 0,
+        duration: 520,
+        onComplete: () => ring.destroy(),
+      });
+      if (fx.spell === 'lightning')
+        for (let i = 0; i < 3; i++) {
+          const ox = (i - 1) * 26;
+          const bolt = this.add.rectangle(p.x + ox, p.y - 150, 6, 300, color, 0.9).setDepth(7300);
+          this.tweens.add({
+            targets: bolt,
+            alpha: 0,
+            scaleX: 0.2,
+            duration: 260,
+            delay: i * 55,
+            onComplete: () => bolt.destroy(),
+          });
+        }
+      this.sparks(p.x, p.y - 20, color, 16);
+      this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
+      if (fx.spell === 'lightning' && !this.model.state.settings.reducedMotion)
+        this.cameras.main.shake(140, 0.0022);
+      return;
+    }
     if (fx.type === 'projectile' && fx.toX !== undefined) {
       const q = iso(fx.toX, fx.toY!);
+      const fromY = p.y - 22 - (fx.fromAir ? AIR_LIFT : 0),
+        toY = q.y - 15 - (fx.toAir ? AIR_LIFT : 0);
       const orb = this.add
-        .circle(p.x, p.y - 22, fx.color === 0xff9c37 ? 5 : 3, fx.color ?? 0xffc65b)
+        .circle(p.x, fromY, fx.color === 0xff9c37 ? 5 : 3, fx.color ?? 0xffc65b)
         .setDepth(8000);
       this.tweens.add({
         targets: orb,
         x: q.x,
-        y: q.y - 15,
+        y: toY,
         duration: 200,
         ease: 'Quad.easeIn',
         onComplete: () => {
           orb.destroy();
-          this.sparks(q.x, q.y - 12, fx.color ?? 0xffdd89, 4);
+          this.sparks(q.x, toY + 3, fx.color ?? 0xffdd89, 4);
         },
       });
       if (Math.random() < 0.2) this.audio.play('hit');

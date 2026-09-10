@@ -20,7 +20,7 @@ describe('village progression', () => {
     expect(m.state.gold).toBe(gold - BUILDINGS.cannon.cost);
     const b = m.state.buildings.at(-1)!;
     expect(b.constructing).toBe(true);
-    m.tick(m.clock + 16000);
+    m.tick(m.clock + BUILDINGS.cannon.build * 1000 + 1000);
     expect(b.constructing).toBe(false);
     expect(b.level).toBe(1);
   });
@@ -54,8 +54,8 @@ describe('village progression', () => {
     m.train('wizard');
     expect(m.state.elixir).toBe(before - TROOPS.archer.cost - TROOPS.wizard.cost);
     expect(m.state.queue[1].end).toBeGreaterThan(m.state.queue[0].end);
-    m.tick(m.clock + 11000);
-    expect(m.state.army.archer).toBe(13);
+    m.tick(m.clock + 24000);
+    expect(m.state.army.archer).toBe(11);
     expect(m.state.army.wizard).toBe(4);
     expect(m.state.queue).toHaveLength(0);
     m.train('giant');
@@ -86,15 +86,17 @@ describe('combat', () => {
     expect(m.battle).toBeNull();
     m.startBattle(0);
     expect(m.deploy(12, 12)).toBe(false);
-    expect(m.state.army.swordsman).toBe(14);
+    expect(m.state.army.swordsman).toBe(12);
     expect(m.deploy(3, 12)).toBe(true);
-    expect(m.state.army.swordsman).toBe(13);
-    expect(m.battle!.remaining.swordsman).toBe(13);
+    expect(m.state.army.swordsman).toBe(11);
+    expect(m.battle!.remaining.swordsman).toBe(11);
   });
   it('a full starting army can complete the opening raid through actual simulation', () => {
     const m = new GameModel();
     m.startBattle(0);
-    for (const kind of ['giant', 'swordsman', 'archer', 'wizard'] as const) {
+    m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    m.battle!.spells = { rage: 0, heal: 0, lightning: 0 };
+    for (const kind of ['giant', 'swordsman', 'archer', 'wizard', 'balloon'] as const) {
       m.activeTroop = kind;
       let i = 0;
       while (m.battle!.remaining[kind] > 0) {
