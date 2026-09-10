@@ -50,13 +50,14 @@ describe('village progression', () => {
   it('trains sequentially, spends elixir and respects camp capacity', () => {
     const m = new GameModel();
     const before = m.state.elixir;
+    const wizardCount = m.state.army.wizard;
     m.train('archer');
     m.train('wizard');
     expect(m.state.elixir).toBe(before - TROOPS.archer.cost - TROOPS.wizard.cost);
     expect(m.state.queue[1].end).toBeGreaterThan(m.state.queue[0].end);
     m.tick(m.clock + 24000);
     expect(m.state.army.archer).toBe(11);
-    expect(m.state.army.wizard).toBe(4);
+    expect(m.state.army.wizard).toBe(wizardCount + 1);
     expect(m.state.queue).toHaveLength(0);
     m.train('giant');
     expect(m.state.queue).toHaveLength(0);
@@ -96,7 +97,15 @@ describe('combat', () => {
     m.startBattle(0);
     m.state.spells = { rage: 0, heal: 0, lightning: 0 };
     m.battle!.spells = { rage: 0, heal: 0, lightning: 0 };
-    for (const kind of ['giant', 'swordsman', 'archer', 'wizard', 'balloon'] as const) {
+    for (const kind of [
+      'giant',
+      'wallbreaker',
+      'swordsman',
+      'archer',
+      'wizard',
+      'balloon',
+      'goblin',
+    ] as const) {
       m.activeTroop = kind;
       let i = 0;
       while (m.battle!.remaining[kind] > 0) {

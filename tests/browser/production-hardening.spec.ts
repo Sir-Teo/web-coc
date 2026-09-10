@@ -96,7 +96,15 @@ test('twenty raid transitions release scene objects and keep saves valid', async
   for (let i = 0; i < 20; i++) {
     await page.evaluate(() => {
       const { model } = window.__game;
-      model.state.army = { swordsman: 14, archer: 12, giant: 3, wizard: 3, balloon: 0 };
+      model.state.army = {
+        swordsman: 14,
+        archer: 12,
+        giant: 3,
+        wizard: 3,
+        balloon: 0,
+        goblin: 0,
+        wallbreaker: 0,
+      };
       model.state.spells = { rage: 0, heal: 0, lightning: 0 };
       model.startBattle(0);
       for (const kind of ['giant', 'swordsman', 'archer', 'wizard']) {

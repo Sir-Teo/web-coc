@@ -41,12 +41,17 @@ The Air Defense, Spell Factory, Balloon, and the three spell vials were added af
 
 Because every step is a pure function of committed inputs, re-running the script produces byte-identical output. `output/assets-before.sha` and `output/assets-after.sha` record a full rebuild and are identical.
 
+## Specialist troops
+
+The Goblin and Wall Breaker use original transparent sprites generated with the built-in image tool. See [RAIDING-ASSETS.md](RAIDING-ASSETS.md) for exact prompts, source files, shipped paths, and current animation limits.
+
 ## Processing and provenance
 
 - `scripts/assets.mjs`: measured cell extraction, alpha-preserving trim, size normalization, and WebP encoding for base assets.
 - `scripts/walk-atlas.mjs`: shared-scale normalization and bottom-center anchoring for four walking strips.
 - `scripts/tier3-assets.mjs`: final-tier building extraction and WebP encoding.
 - `scripts/derived-assets.mjs`: deterministic recolours, masks, and drawn overlays for the air-layer and spell artwork.
+- `scripts/raiding-assets.mjs`: alpha-preserving normalization for the Goblin and Wall Breaker.
 - `npm run assets`: rebuilds every shipping bitmap from the committed source artwork.
 - Wall connections, hit particles, health bars, placement grids, and small resource glyphs are renderer-native geometry. Effects audio is synthesized locally with Web Audio.
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.

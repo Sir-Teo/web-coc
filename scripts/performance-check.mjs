@@ -34,7 +34,7 @@ await page.evaluate(() => {
   const m = window.__game.model;
   m.state.settings.sound = false;
   m.startBattle(0);
-  for (const k of ['giant', 'swordsman', 'archer', 'wizard']) {
+  for (const k of ['giant', 'wallbreaker', 'swordsman', 'archer', 'wizard', 'balloon', 'goblin']) {
     m.activeTroop = k;
     let i = 0;
     while (m.battle.remaining[k] > 0) {

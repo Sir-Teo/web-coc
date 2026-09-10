@@ -5,6 +5,8 @@ import {
   SPELLS,
   TROOP_KEYS,
   SPELL_KEYS,
+  TROOP_HOTKEYS,
+  SPELL_HOTKEYS,
   CAMPAIGN,
   MAX_TROOP_LEVEL,
   asset,
@@ -18,7 +20,7 @@ import {
 import { GameModel, formatTime, BATTLE_SECONDS, type Building } from '../game/model';
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
-import { exportSave, validateSave, saveGame } from '../game/save';
+import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
   | 'research'
@@ -29,6 +31,7 @@ type Panel =
   | 'info'
   | 'layouts'
   | 'surrender'
+  | 'troop-info'
   | null;
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
@@ -49,7 +52,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   ];
   if (d.damage) {
     rows.push(['Swords', 'Damage per hit', n(defenseDamage(kind, level))]);
-    rows.push(['Target', 'Range', `${d.range} tiles`]);
+    rows.push(['Target', 'Range', `${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles`]);
     rows.push(['Gauge', 'Attack speed', `${d.rate}s`]);
     rows.push([
       'Radar',
@@ -67,7 +70,11 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'camp') rows.push(['UsersRound', 'Troop spaces', `+${20 * level}`]);
   if (kind === 'spellfactory') rows.push(['Sparkles', 'Spell slots', String(level)]);
   if (kind === 'laboratory')
-    rows.push(['FlaskConical', 'Researches up to', `Troop level ${Math.min(3, level)}`]);
+    rows.push([
+      'FlaskConical',
+      'Researches up to',
+      `Troop level ${Math.min(MAX_TROOP_LEVEL, level)}`,
+    ]);
   if (kind === 'builder') rows.push(['Hammer', 'Builders', '+1 construction slot']);
   if (kind === 'barracks') rows.push(['Swords', 'Training', 'Divides training time']);
   if (kind === 'townhall') rows.push(['LayoutGrid', 'Caps buildings at', `Level ${level + 1}`]);
@@ -114,6 +121,7 @@ export class HUD {
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
   private tab = 'All';
+  private inspectedTroop: TroopKind = 'swordsman';
   private toastTimer?: ReturnType<typeof setTimeout>;
   private resultShown = false;
   private raf = false;
@@ -283,6 +291,10 @@ export class HUD {
         break;
       case 'army':
         this.showDrawer('army');
+        break;
+      case 'troop-info':
+        this.inspectedTroop = arg as TroopKind;
+        this.show('troop-info');
         break;
       case 'research':
         this.show('research');
@@ -456,7 +468,7 @@ export class HUD {
   private async import(file: File) {
     try {
       if (file.size > 1000000) throw Error();
-      const data = JSON.parse(await file.text());
+      const data = migrateSave(JSON.parse(await file.text()));
       if (!validateSave(data)) throw Error();
       this.model.state = data;
       this.model.returnHome();
@@ -504,13 +516,13 @@ export class HUD {
     }
     if (this.panel || e.target instanceof HTMLInputElement) return;
     if (this.model.battle) {
-      const troopIndex = ['1', '2', '3', '4', '5'].indexOf(e.key);
+      const troopIndex = TROOP_HOTKEYS.indexOf(e.key);
       if (troopIndex >= 0) {
         this.model.activeTroop = TROOP_KEYS[troopIndex];
         this.model.activeSpell = null;
         this.render();
       }
-      const spellIndex = ['6', '7', '8'].indexOf(e.key);
+      const spellIndex = SPELL_HOTKEYS.indexOf(e.key);
       if (spellIndex >= 0) this.action(`spell:${SPELL_KEYS[spellIndex]}`);
     }
     if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
@@ -526,6 +538,7 @@ export class HUD {
     const modalScroll = document.querySelector('.modal-body')?.scrollTop ?? 0;
     const drawerScroll = document.querySelector('.drawer-body')?.scrollLeft ?? 0;
     const drawerScrollY = document.querySelector('.drawer-body')?.scrollTop ?? 0;
+    const armyScroll = document.querySelector('.army-tray')?.scrollLeft ?? 0;
     const focused = (document.activeElement as HTMLElement)?.dataset?.action;
     document.querySelector('#hud')!.innerHTML = b ? this.battleHUD() : this.homeHUD();
     document.querySelector('#context')!.innerHTML = this.context();
@@ -545,6 +558,8 @@ export class HUD {
         ? this.modal()
         : '';
     document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+    const armyTray = document.querySelector('.army-tray');
+    if (armyTray) armyTray.scrollLeft = armyScroll;
     const body = document.querySelector('.drawer-body');
     if (body) {
       body.scrollLeft = drawerScroll;
@@ -635,10 +650,10 @@ export class HUD {
   }
   private troopCard(k: TroopKind, count: number, action: string, selected = false) {
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span><img src="${asset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_KEYS.indexOf(k)]}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
-    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span><img src="${asset(k)}" alt="" draggable="false"><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
+    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_KEYS.indexOf(k)]}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false"><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
   // ------------------------------------------------------- anchored context
@@ -682,14 +697,14 @@ export class HUD {
     return `<div class="battle-enemy"><span class="eyebrow">ENEMY VILLAGE</span><h2>${v.name}</h2><small>LOOT TAKEN</small><div class="loot-bars">${lootBar('gold')}${lootBar('elixir')}</div></div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep)}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="width:${pct(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
- ${!b.started ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Deploy a troop to start the battle early</small></div></div>` : ''}
- <div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : 'Tap to deploy · hold and drag to spread troops · double-tap for five'}</div><div class="army-tray">${TROOP_KEYS.map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeSpell && m.activeTroop === k)).join('')}${
+ ${!b.started ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
+ <div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${TROOP_KEYS.map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeSpell && m.activeTroop === k)).join('')}${
    SPELL_KEYS.some((k) => b.carried[k])
      ? `<span class="tray-divider"></span>${SPELL_KEYS.filter((k) => b.carried[k])
          .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
          .join('')}`
      : ''
- }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–5</b> · Spells <b>6–8</b><br>Drag the base to move the camera</span></div></div>`;
+ }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`;
   }
 
   // ----------------------------------------------------------------- drawer
@@ -719,7 +734,7 @@ export class HUD {
     const troopTile = (k: TroopKind) => {
       const d = m.troopStats(k);
       const blocked = m.armySize + m.queuedSize + d.space > m.capacity;
-      return `<article class="shop-tile"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopLevel(k)}</small></h3><small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${button(`train:${k}`, `${elixir} ${n(d.cost)}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, blocked ? 'disabled' : '')}${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || m.armySize + m.queuedSize + d.space * 5 > m.capacity || m.state.elixir < d.cost * 5 ? 'disabled' : '')}<small class="shop-note">${time(m.trainingTime(k))} · ${m.state.army[k]} ready</small></article>`;
+      return `<article class="shop-tile"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${button(`train:${k}`, `${elixir} ${n(d.cost)}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, blocked ? 'disabled' : '')}${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || m.armySize + m.queuedSize + d.space * 5 > m.capacity || m.state.elixir < d.cost * 5 ? 'disabled' : '')}<small class="shop-note">${time(m.trainingTime(k))} · ${m.state.army[k]} ready</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
       const d = SPELLS[k];
@@ -740,6 +755,7 @@ export class HUD {
   // ----------------------------------------------------------------- modals
   private modal() {
     const titles: Record<string, string> = {
+      'troop-info': TROOPS[this.inspectedTroop].name,
       research: 'The laboratory',
       campaign: 'The Goblin Valley',
       settings: 'Settings',
@@ -750,6 +766,7 @@ export class HUD {
       surrender: 'End this battle?',
     };
     const subtitles: Record<string, string> = {
+      'troop-info': 'Know your troops. Plan your attack.',
       research: 'A little elixir. A stronger army.',
       campaign: 'Beyond the forest, a whole valley is waiting.',
       settings: 'Make yourself at home.',
@@ -760,22 +777,45 @@ export class HUD {
       surrender: 'Your loot so far is kept.',
     };
     const content =
-      this.panel === 'campaign'
-        ? this.campaign()
-        : this.panel === 'settings'
-          ? this.settings()
-          : this.panel === 'achievements'
-            ? this.achievements()
-            : this.panel === 'research'
-              ? this.research()
-              : this.panel === 'info'
-                ? this.info()
-                : this.panel === 'layouts'
-                  ? this.layoutPanel()
-                  : this.panel === 'surrender'
-                    ? this.surrender()
-                    : this.help();
+      this.panel === 'troop-info'
+        ? this.troopInfo()
+        : this.panel === 'campaign'
+          ? this.campaign()
+          : this.panel === 'settings'
+            ? this.settings()
+            : this.panel === 'achievements'
+              ? this.achievements()
+              : this.panel === 'research'
+                ? this.research()
+                : this.panel === 'info'
+                  ? this.info()
+                  : this.panel === 'layouts'
+                    ? this.layoutPanel()
+                    : this.panel === 'surrender'
+                      ? this.surrender()
+                      : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
+  }
+  private troopInfo() {
+    const kind = this.inspectedTroop,
+      d = this.model.troopStats(kind);
+    const target = d.wallBreaker
+      ? 'Walls (40× damage)'
+      : d.prefersResources
+        ? 'Resources (2× damage)'
+        : d.prefersDefenses
+          ? 'Defenses'
+          : 'Any building';
+    const tactic = d.wallBreaker
+      ? 'Let Giants draw defensive fire first. Wall Breakers seek walls on the way to buildings; their blast opens a gap for the rest of your army.'
+      : d.prefersResources
+        ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
+        : d.flying
+          ? 'Ground defenses cannot touch this troop. Remove Air Defenses before sending it over the walls.'
+          : d.prefersDefenses
+            ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
+            : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats"><div><dt>Favorite target</dt><dd>${target}</dd></div><div><dt>Damage per hit</dt><dd>${d.damage}${d.wallBreaker ? ` / ${d.damage * 40} vs walls` : ''}</dd></div><div><dt>Hitpoints</dt><dd>${d.hp}</dd></div><div><dt>Housing space</dt><dd>${d.space}</dd></div><div><dt>Movement</dt><dd>${d.flying ? 'Air · ignores walls' : 'Ground'}</dd></div><div><dt>Attack range</dt><dd>${d.range} tiles</dd></div></dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }
   private surrender() {
     const b = this.model.battle!;
@@ -900,7 +940,7 @@ export class HUD {
       )}</div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
   }
   private help() {
-    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${asset('swordsman')}" alt="Your swordsman guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Every building is capped one level above your Town Hall, so upgrading it unlocks the next tier of everything. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Train troops and brew spells, then attack. You get 30 seconds to scout before the clock starts. Balloons fly over walls; only Air Defenses can touch them.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
+    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${asset('swordsman')}" alt="Your swordsman guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Every building is capped one level above your Town Hall, so upgrading it unlocks the next tier of everything. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Train troops and brew spells, then attack. You get 30 seconds to scout before the clock starts. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
   private result() {
     const r = this.model.battle!.result!;

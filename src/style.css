@@ -672,6 +672,18 @@ h3 {
 .troop-card.empty {
   filter: grayscale(0.7);
 }
+.troop-key {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  z-index: 2;
+  min-width: 17px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  background: #3b342cbb;
+  color: #fff8db;
+  font: 11px var(--heading);
+}
 .train-add {
   display: flex;
   flex-direction: column;
@@ -3526,5 +3538,183 @@ h3 {
   }
   .profile-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* The expanded army keeps a single row, with horizontal scrolling on small screens. */
+.bottom-center {
+  max-width: calc(100vw - 360px);
+}
+.bottom-center .army-tray {
+  overflow-x: auto;
+  padding-top: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #baad78 #343c27;
+}
+.deploy-tray {
+  min-width: 0;
+  flex: 1;
+}
+.deploy-tray .army-tray {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-top: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #baad78 #343c27;
+}
+.deploy-tray .air-tag {
+  top: 24px;
+}
+.troop-info-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #d6c49b;
+  color: #66532c;
+  font-size: 9px;
+  font-weight: 900;
+}
+.troop-info-button:hover {
+  background: #bbaa79;
+}
+.troop-info-hero {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 8px 16px 22px;
+}
+.troop-info-hero > img {
+  width: 130px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px #71502c35);
+}
+.troop-info-hero h2 {
+  font-family: var(--heading);
+  font-size: 32px;
+  margin: 7px 0;
+  font-weight: 400;
+}
+.troop-info-hero p {
+  max-width: 390px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.troop-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  gap: 8px;
+}
+.troop-stats > div {
+  padding: 12px 15px;
+  background: #ddceac;
+  border-radius: 8px;
+}
+.troop-stats dt {
+  font-size: 10px;
+  color: #76684d;
+  font-weight: 800;
+}
+.troop-stats dd {
+  margin: 5px 0 0;
+  font-family: var(--heading);
+  font-size: 17px;
+  color: #443923;
+}
+.troop-tactic {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px;
+  border-left: 3px solid #88a652;
+  background: #d8ddbf;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.troop-tactic > svg {
+  flex-shrink: 0;
+}
+@media (max-width: 1200px) {
+  .battle-tip {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .bottom-center {
+    max-width: calc(100vw - 20px);
+  }
+  .troop-key {
+    display: none;
+  }
+  .deploy-tray .air-tag {
+    top: 5px;
+  }
+  .troop-info-hero {
+    padding: 0 0 15px;
+    gap: 15px;
+  }
+  .troop-info-hero > img {
+    width: 85px;
+    height: 115px;
+  }
+  .troop-info-hero h2 {
+    font-size: 25px;
+  }
+  .troop-info-hero p {
+    font-size: 11px;
+  }
+  .troop-stats dd {
+    font-size: 14px;
+  }
+}
+@media (max-width: 700px) {
+  .bottom-center .army-label {
+    margin-left: 96px;
+    margin-right: 84px;
+    letter-spacing: 0;
+  }
+  .bottom-center .army-label > span {
+    font-size: 6px;
+  }
+}
+.troop-info-hero .eyebrow {
+  color: #826735;
+  text-shadow: none;
+}
+@media (max-width: 700px) and (min-height: 501px) {
+  .battle-clock {
+    top: 164px;
+  }
+  .prep-banner {
+    top: 228px;
+  }
+}
+@media (max-width: 700px) {
+  .battle-enemy {
+    max-width: 190px;
+  }
+  .battle-enemy h2 {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .loot-row {
+    gap: 4px;
+    font-size: 11px;
+  }
+  .loot-track {
+    width: 56px;
+  }
+  .loot-row > b {
+    min-width: 34px;
+  }
+  .loot-row > i {
+    font-size: 9px;
   }
 }

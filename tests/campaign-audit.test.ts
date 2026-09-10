@@ -12,17 +12,41 @@ const armies = [
   {
     name: 'starter',
     level: 1,
-    units: { swordsman: 14, archer: 12, giant: 3, wizard: 3, balloon: 0 },
+    units: {
+      swordsman: 14,
+      archer: 12,
+      giant: 3,
+      wizard: 3,
+      balloon: 0,
+      goblin: 0,
+      wallbreaker: 0,
+    },
   },
   {
     name: 'developed',
     level: 2,
-    units: { swordsman: 18, archer: 18, giant: 8, wizard: 6, balloon: 0 },
+    units: {
+      swordsman: 18,
+      archer: 18,
+      giant: 8,
+      wizard: 6,
+      balloon: 0,
+      goblin: 0,
+      wallbreaker: 0,
+    },
   },
   {
     name: 'veteran',
     level: 3,
-    units: { swordsman: 20, archer: 20, giant: 16, wizard: 10, balloon: 0 },
+    units: {
+      swordsman: 20,
+      archer: 20,
+      giant: 16,
+      wizard: 10,
+      balloon: 0,
+      goblin: 0,
+      wallbreaker: 0,
+    },
   },
 ];
 it('all twelve authored layouts are distinct, in bounds and have no overlapping footprints', () => {

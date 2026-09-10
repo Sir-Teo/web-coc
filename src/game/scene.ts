@@ -71,7 +71,7 @@ export class VillageScene extends Phaser.Scene {
       if (k !== 'wall') this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
-    for (const k of TROOP_KEYS)
+    for (const k of TROOP_KEYS.filter((kind) => !TROOPS[kind].staticSprite))
       this.load.spritesheet(`${k}-walk`, `/assets/characters/walk/${k}.webp`, {
         frameWidth: 128,
         frameHeight: 128,
@@ -320,6 +320,21 @@ export class VillageScene extends Phaser.Scene {
         if (this.model.castSpell(grid.x, grid.y)) this.audio.play('deploy');
         return;
       }
+      const hit = this.pickBuilding(world.x, world.y, grid);
+      if (
+        hit &&
+        hit.hp > 0 &&
+        BUILDINGS[hit.kind].damage &&
+        this.model.deployBlocked(grid.x, grid.y)
+      ) {
+        const d = BUILDINGS[hit.kind];
+        this.model.selected = hit.id;
+        this.model.changed();
+        this.model.notify(
+          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}`,
+        );
+        return;
+      }
       // A second tap on the same spot commits a full squad, the way rapid taps do in Clash.
       const now = performance.now();
       const repeat =
@@ -329,6 +344,7 @@ export class VillageScene extends Phaser.Scene {
         ? this.model.deployMany(grid.x, grid.y, 4)
         : Number(this.model.deploy(grid.x, grid.y));
       if (placed) {
+        this.model.selected = null;
         this.lastTap = { x: grid.x, y: grid.y, t: now };
         this.audio.play('deploy');
       }
@@ -589,13 +605,17 @@ export class VillageScene extends Phaser.Scene {
       g.lineStyle(2, color, 0.85);
       g.strokePoints(pts, true);
     };
-    if (b && !this.model.battle) {
+    if (b && b.hp > 0) {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);
       if (d.range) {
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
-        g.strokeEllipse(p.x, p.y, d.range * 64, d.range * 32);
+        g.strokeEllipse(p.x, p.y, d.range * 64 * Math.SQRT2, d.range * 32 * Math.SQRT2);
+        if (d.minRange) {
+          g.lineStyle(2, 0xffc56b, 0.75);
+          g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
+        }
       }
     }
     if (this.model.editing && !this.model.placement) this.drawGrid(g);
@@ -657,12 +677,38 @@ export class VillageScene extends Phaser.Scene {
     }
     const battle = this.model.battle;
     if (battle) {
+      for (const shell of battle.finished ? [] : battle.shells) {
+        const from = iso(shell.fromX, shell.fromY),
+          to = iso(shell.x, shell.y);
+        const progress = Phaser.Math.Clamp(
+          (battle.elapsed - shell.launched) / (shell.impact - shell.launched),
+          0,
+          1,
+        );
+        const sx = from.x + (to.x - from.x) * progress;
+        const sy =
+          from.y +
+          (to.y - from.y) * progress -
+          28 * (1 - progress) -
+          Math.sin(progress * Math.PI) * 115;
+        this.detail.lineStyle(1.5, 0xffc17a, 0.55);
+        this.detail.strokeEllipse(to.x, to.y, shell.radius * 90, shell.radius * 45);
+        this.detail.fillStyle(0x342b22, 0.2 + progress * 0.2);
+        this.detail.fillEllipse(to.x, to.y, 14, 7);
+        this.detail.fillStyle(0xffac43, 0.9);
+        this.detail.fillCircle(sx, sy, 6);
+        this.detail.fillStyle(0x42352c, 1);
+        this.detail.fillCircle(sx, sy, 4);
+      }
       for (const u of battle.units) {
         let im = this.unitSprites.get(u.id);
         if (!im) {
-          im = this.add.image(0, 0, `${u.kind}-walk`, 0).setOrigin(0.5, 0.953);
           const d = TROOPS[u.kind];
-          im.setDisplaySize(d.width * 1.48, d.width * 1.48);
+          im = this.add
+            .image(0, 0, d.staticSprite ? u.kind : `${u.kind}-walk`, 0)
+            .setOrigin(0.5, d.staticSprite ? 1 : 0.953);
+          if (d.staticSprite) im.setDisplaySize(d.width, (d.width * im.height) / im.width);
+          else im.setDisplaySize(d.width * 1.48, d.width * 1.48);
           this.unitSprites.set(u.id, im);
         }
         if (u.hp <= 0) {
@@ -680,11 +726,12 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
-        im.setFrame(
-          (u.attacking && !flying) || this.model.state.settings.reducedMotion
-            ? 0
-            : Math.floor(time / 140 + u.id) % 4,
-        );
+        if (!TROOPS[u.kind].staticSprite)
+          im.setFrame(
+            (u.attacking && !flying) || this.model.state.settings.reducedMotion
+              ? 0
+              : Math.floor(time / 140 + u.id) % 4,
+          );
         const p = iso(u.x, u.y),
           motion = this.model.state.settings.reducedMotion ? 0 : Math.sin(time / 80 + u.id) * 1.6;
         const lift = flying ? AIR_LIFT : 0;
@@ -695,7 +742,10 @@ export class VillageScene extends Phaser.Scene {
           this.detail.fillEllipse(p.x, p.y, 26, 13);
         }
         const target = battle.buildings.find((b) => b.id === u.target);
-        if (target) im.setFlipX(iso(target.x, target.y).x > p.x);
+        if (target) {
+          const targetOnRight = iso(target.x, target.y).x > p.x;
+          im.setFlipX(TROOPS[u.kind].staticSprite ? !targetOnRight : targetOnRight);
+        }
         const phase = 1 - Math.max(0, u.cooldown) / TROOPS[u.kind].rate;
         const impulse =
           u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion

@@ -15,23 +15,30 @@ const QUEST_IDS = [
   'high-flier',
 ];
 /**
- * Version 1 villages predate the air layer and spell factory. Their missing
- * fields are added at their zero values so an existing save opens untouched.
+ * Version 1 villages predate air troops and spells; early version 2 villages
+ * predate specialist troops. Add only missing expansion fields, preserving
+ * existing progress and leaving malformed values for validation to reject.
  */
 export function migrateSave(input: unknown): unknown {
   if (!input || typeof input !== 'object') return input;
   const s = input as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
-  if (s.version !== 1) return input;
+  if (s.version !== 1 && s.version !== 2) return input;
   const record = (value: unknown) =>
     value && typeof value === 'object' ? (value as Record<string, number>) : undefined;
   const army = record(s.army);
-  if (army && typeof army.balloon !== 'number') army.balloon = 0;
   const last = record(s.lastArmy);
-  if (last && typeof last.balloon !== 'number') last.balloon = 0;
   const levels = record(s.troopLevels);
-  if (levels && typeof levels.balloon !== 'number') levels.balloon = 1;
-  s.spells ??= { rage: 0, heal: 0, lightning: 0 };
-  s.spellQueue ??= [];
+  const added = s.version === 1 ? ['balloon', 'goblin', 'wallbreaker'] : ['goblin', 'wallbreaker'];
+  for (const kind of added) {
+    // Only absent fields are migrated; malformed values must still fail validation.
+    if (army && !(kind in army)) army[kind] = 0;
+    if (last && !(kind in last)) last[kind] = 0;
+    if (levels && !(kind in levels)) levels[kind] = 1;
+  }
+  if (s.version === 1) {
+    s.spells ??= { rage: 0, heal: 0, lightning: 0 };
+    s.spellQueue ??= [];
+  }
   s.version = 2;
   return s;
 }

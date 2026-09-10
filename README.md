@@ -43,16 +43,20 @@ For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deplo
 
 ### Army
 
-- Train five troops individually or five at a time. Camp capacity includes queued units, and extra completed barracks shorten training times. "Last army" replenishes a spent composition without duplicating ready or queued troops.
+- Train seven troops individually or five at a time. Camp capacity includes queued units, and extra completed barracks shorten training times. "Last army" replenishes a spent composition without duplicating ready or queued troops.
 - **Balloons fly.** They drift straight over walls and buildings, ignore pathing entirely, and prefer defenses. Only air-capable defenses can shoot them — and when one is shot down it detonates, damaging whatever it was over.
+- **Goblins** sprint for resource buildings, including the Town Hall, and deal double damage to them. Loot is released as resource buildings take damage, so a quick resource raid can pay without a star.
+- **Wall Breakers** seek walls blocking the path to buildings, ignoring isolated wall pieces. They sacrifice themselves to open a breach, dealing 40× damage to walls and a smaller blast if defeated early. Both new troops can be trained, researched, and replenished with Last army.
+- Tap a troop’s role badge in the Army drawer to see its full stats, favorite target, and a tactical tip.
 - **Air Defenses** hit hard but are blind to the ground. Cannons and mortars are ground-only. Archer towers hit both.
 - Build a **Spell Factory** to brew Rage, Healing, and Lightning. Its level is how many spells you can carry.
 
 ### Raids
 
 - Attack opens the 12-stage campaign. Every raid starts with a **30-second scouting phase**; the battle clock only starts when you deploy or when scouting runs out.
+- Tap an enemy defense to inspect its range without deploying. A mortar’s orange inner ring shows its 4-tile blind spot. Mortar shells travel for 1.15 seconds and land at a fixed point; moving troops can dodge them. Defenses keep their target while it remains alive and in range, so Giants can draw fire for fragile troops.
 - A continuous **red boundary** is drawn on the grass around every tile you may not deploy on.
-- Tap to deploy one troop, **hold and drag to spread a line of troops**, or double-tap to commit five at once. Keys 1–5 select troops, 6–8 select spells. A quick drag still pans the camera.
+- Tap to deploy one troop, **hold and drag to spread a line of troops**, or double-tap to commit five at once. Keys 1–7 select troops; 8, 9, and 0 select Rage, Healing, and Lightning. The cards display their shortcuts. A quick drag still pans the camera.
 - Select a spell and tap anywhere — including inside the base. Rage boosts damage and speed, Healing restores troops standing in it, Lightning damages every building in a small radius instantly.
 - The destruction bar is marked at the 50%, Town Hall, and 100% star thresholds. Loot bars show what you have taken against what is there.
 - Surrender asks for confirmation and keeps the result and the loot already taken.
@@ -61,14 +65,14 @@ For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deplo
 ### Saving
 
 - Only one tab can play a village at a time. A second tab waits until the first closes, then loads the latest save.
-- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Version 1 villages are migrated on load.
+- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Version 1 and older version 2 villages are migrated on load and import. Newly added troop types begin at zero in existing saves, preserving their army and resources.
 - Resource accumulation while away is capped at 8 hours and by collector storage.
 
 ## What is implemented
 
 - 14 building types plus walls, across level ceilings of 4 to 12, gated by Town Hall level and count.
 - Building placement by drag or tap, relocation, a full edit mode with undo/redo and three saved layouts, builder reservations, construction, upgrades, collection, resource storage, and camp capacity.
-- Five troops including a flying unit that detonates when shot down, three spells, a two-layer targeting model (ground / air / both), four-frame animation, five research levels, batch training, spell brewing, and army replenishment.
+- Seven troops including a flying unit that detonates when shot down, three spells, a two-layer targeting model (ground / air / both), four-frame animation, five research levels, batch training, spell brewing, and army replenishment.
 - A* navigation with wall breaking for ground troops, straight-line flight for air troops, deterministic crowd separation, splash damage, defense fire, destruction, and campaign progress.
 - 12 independently authored campaign layouts with escalating defenses and air defenses from stage 5, tactical previews, and suggested army sizes.
 - Bottom-sheet shop and army drawers, an anchored building card, a building info sheet with before/after stats, a scouting phase, a star-marked destruction bar, loot bars, drag-deploy, and a surrender confirmation.
@@ -93,13 +97,15 @@ npm run build
 node scripts/production-check.mjs
 ```
 
-46 simulation and save tests cover placement collisions, construction, upgrades, builder reservation, caps, training, save validation and version-1 migration, pathfinding, battle completion, deployment, campaign unlocks, research, batch training, the scouting phase, the deployment boundary, air/ground targeting in both directions, walls that stop ground troops and not balloons, spell brewing limits, each spell's effect, aura expiry, Town Hall level and count gating, the timer and gem curves, edit-mode drag/undo/redo (one entry per drag), saved layouts, wall runs, balloon detonation, five-level research, tutorial counters, and a 144-battle matrix across twelve stages, three armies, and four approaches.
+59 simulation and save tests cover placement collisions, construction, upgrades, builder reservation, caps, training, save validation and version-1 migration, pathfinding, battle completion, deployment, campaign unlocks, research, batch training, the scouting phase, the deployment boundary, air/ground targeting in both directions, walls that stop ground troops and not balloons, spell brewing limits, each spell's effect, aura expiry, Town Hall level and count gating, the timer and gem curves, edit-mode drag/undo/redo (one entry per drag), saved layouts, wall runs, balloon detonation, five-level research, tutorial counters, and a 144-battle matrix across twelve stages, three armies, and four approaches.
 
-23 browser tests exercise real menus and pointer input: first-run coaching and its target ring, wall runs, drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, and offline reload.
+28 browser tests exercise real menus and pointer input: first-run coaching and its target ring, wall runs, drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, and offline reload.
 
-Screenshots and reports are written to `output/playtest/` (not shipped). See `docs/QA.md` for verified coverage and remaining release limits.
+Screenshots and reports are written to `output/playtest/` (not shipped). The specialist tests also cover target preferences, wall breaches, one-time death bombs, mortar blind spots, delayed splash and dodging, target retention, resource loot, specialist research/retraining, seven troop hotkeys, mobile tray scrolling, defense inspection, and older-save import. See `docs/QA.md` for verified coverage and remaining release limits.
 
 ## Assets
+
+Goblin and Wall Breaker sources, shipped paths, and exact built-in generation prompts are recorded in [docs/RAIDING-ASSETS.md](docs/RAIDING-ASSETS.md). Rebuild their WebP files with `node scripts/raiding-assets.mjs`.
 
 Source artwork and generation records are in `art/source/` and `docs/ASSETS.md`. Optimized assets live in `public/assets/`. Rebuild them with `npm run assets`. The normal build does not regenerate artwork or call an image service.
 
@@ -107,4 +113,4 @@ The air-layer and spell artwork is **derived** from the existing shipped art by 
 
 ## Current scope
 
-This is a complete playable local game loop, not a full commercial Clash of Clans content replacement. It has no server-authoritative multiplayer, accounts, clans, matchmaking, purchases, or cloud sync. Local clocks and saves are intentionally user-controlled. Levels 1–4 share base artwork; level 5 and above use a separate set. Units have four-frame animation and simple attack feedback rather than full directional attack/death animation sets. Training times are deliberately kept short even though build, upgrade, and research timers were stretched, so the raid loop stays testable in a single sitting. Physical iOS/Android device performance, multi-hour sleep/resume endurance, broader army-composition balance testing with spells and air troops, and accessibility review remain release gates before a public production launch.
+This is a complete playable local game loop, not a full commercial Clash of Clans content replacement. It has no server-authoritative multiplayer, accounts, clans, matchmaking, purchases, or cloud sync. Local clocks and saves are intentionally user-controlled. Levels 1–4 share base artwork; level 5 and above use a separate set. The original troops have four-frame animation; Goblins and Wall Breakers currently use single full-body sprites with procedural movement and attack feedback. Full directional attack/death animation sets remain future work. Training times are deliberately kept short even though build, upgrade, and research timers were stretched, so the raid loop stays testable in a single sitting. Physical iOS/Android device performance, multi-hour sleep/resume endurance, broader army-composition balance testing with spells and air troops, and accessibility review remain release gates before a public production launch.

@@ -10,6 +10,7 @@ import {
   LIGHTNING_DAMAGE,
   MAX_TROOP_LEVEL,
   defenseDamage,
+  isResourceBuilding,
   gemCost,
   maxCountFor,
   maxLevelFor,
@@ -97,6 +98,16 @@ export interface Aura {
   y: number;
   end: number;
 }
+export interface MortarShell {
+  fromX: number;
+  fromY: number;
+  x: number;
+  y: number;
+  launched: number;
+  impact: number;
+  damage: number;
+  radius: number;
+}
 export interface Battle {
   index: number;
   buildings: Building[];
@@ -106,6 +117,8 @@ export interface Battle {
   /** What the raid started with, so emptied slots stay in place. */
   carried: SpellBook;
   auras: Aura[];
+  shells: MortarShell[];
+  defenseTargets: Record<number, number>;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
   prep: number;
@@ -404,7 +417,15 @@ export class GameModel {
     }
     if (this.state.research && this.state.research.end <= now) {
       const { kind } = this.state.research;
-      this.state.troopLevels ??= { swordsman: 1, archer: 1, giant: 1, wizard: 1, balloon: 1 };
+      this.state.troopLevels ??= {
+        swordsman: 1,
+        archer: 1,
+        giant: 1,
+        wizard: 1,
+        balloon: 1,
+        goblin: 1,
+        wallbreaker: 1,
+      };
       this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.troopLevel(kind) + 1);
       delete this.state.research;
       this.state.xp += 30;
@@ -781,6 +802,8 @@ export class GameModel {
       spells: { ...this.state.spells },
       carried: { ...this.state.spells },
       auras: [],
+      shells: [],
+      defenseTargets: {},
       elapsed: 0,
       prep: PREP_SECONDS,
       started: false,
@@ -913,12 +936,16 @@ export class GameModel {
       let target = b.buildings.find((t) => t.id === u.target && t.hp > 0);
       if (!target) {
         const alive = b.buildings.filter((v) => v.hp > 0 && v.kind !== 'wall');
-        const preferred = troop.prefersDefenses
-          ? alive.filter((v) => BUILDINGS[v.kind].damage)
-          : alive;
-        target = (preferred.length ? preferred : alive).sort(
-          (a, c) => distanceTo(u, a) - distanceTo(u, c),
-        )[0];
+        const preferred = troop.prefersResources
+          ? alive.filter((v) => isResourceBuilding(v.kind))
+          : troop.prefersDefenses
+            ? alive.filter((v) => BUILDINGS[v.kind].damage)
+            : alive;
+        target =
+          (troop.wallBreaker ? breachTarget(u, b.buildings) : undefined) ??
+          (preferred.length ? preferred : alive).sort(
+            (a, c) => distanceTo(u, a) - distanceTo(u, c),
+          )[0];
         if (!target) continue;
         u.target = target.id;
         u.path = [];
@@ -929,7 +956,12 @@ export class GameModel {
         u.attacking = true;
         if (u.cooldown <= 0) {
           u.cooldown = d.rate;
-          const damage = d.damage;
+          if (troop.wallBreaker) {
+            this.detonate(u, d.damage);
+            continue;
+          }
+          const damage =
+            d.damage * (troop.prefersResources && isResourceBuilding(target.kind) ? 2 : 1);
           this.damage(target, damage);
           this.onEffect({
             type: d.range > 2 ? 'projectile' : 'hit',
@@ -978,10 +1010,14 @@ export class GameModel {
             Math.floor(next.x) === v.x &&
             Math.floor(next.y) === v.y,
         );
-        if (wall) {
+        if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
           if (u.cooldown <= 0) {
             u.cooldown = d.rate;
+            if (troop.wallBreaker) {
+              this.detonate(u, d.damage);
+              continue;
+            }
             this.damage(wall, d.damage * 1.6);
             this.onEffect({ type: 'hit', x: wall.x + 0.5, y: wall.y + 0.5 });
           }
@@ -1002,6 +1038,20 @@ export class GameModel {
       }
     }
     separateUnits(b.units, b.buildings);
+    // Shells land where the target stood when fired. Air units and troops that
+    // have escaped the impact circle take no damage, even if they were targeted.
+    for (const shell of b.shells) {
+      if (shell.impact > b.elapsed) continue;
+      for (const u of b.units)
+        if (
+          u.hp > 0 &&
+          !TROOPS[u.kind].flying &&
+          Math.hypot(u.x - shell.x, u.y - shell.y) <= shell.radius
+        )
+          u.hp -= shell.damage;
+      this.onEffect({ type: 'blast', x: shell.x, y: shell.y, radius: shell.radius });
+    }
+    b.shells = b.shells.filter((shell) => shell.impact > b.elapsed);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
       if (!d.damage || tower.hp <= 0) continue;
@@ -1012,15 +1062,33 @@ export class GameModel {
         (u) =>
           u.hp > 0 &&
           canTarget(d.targets, u.kind) &&
-          Math.hypot(u.x - center.x, u.y - center.y) < d.range!,
+          Math.hypot(u.x - center.x, u.y - center.y) < d.range! &&
+          Math.hypot(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
       );
-      const target = targets.sort(
-        (a, c) =>
-          Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(c.x - center.x, c.y - center.y),
-      )[0];
+      // Keep firing at the same eligible target until it dies or leaves range.
+      const target =
+        targets.find((u) => u.id === b.defenseTargets[tower.id]) ??
+        targets.sort(
+          (a, c) =>
+            Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(c.x - center.x, c.y - center.y),
+        )[0];
       if (target) {
+        b.defenseTargets[tower.id] = target.id;
         tower.cooldown = d.rate!;
         const power = defenseDamage(tower.kind, tower.level) * CAMPAIGN_LAYOUTS[b.index].defense;
+        if (tower.kind === 'mortar') {
+          b.shells.push({
+            fromX: center.x,
+            fromY: center.y,
+            x: target.x,
+            y: target.y,
+            launched: b.elapsed,
+            impact: b.elapsed + 1.15,
+            damage: power,
+            radius: 1.5,
+          });
+          continue;
+        }
         target.hp -= power;
         this.onEffect({
           type: 'projectile',
@@ -1028,14 +1096,9 @@ export class GameModel {
           y: center.y,
           toX: target.x,
           toY: target.y,
-          color:
-            tower.kind === 'mortar' ? 0xff7035 : tower.kind === 'airdefense' ? 0x63d8ff : 0x303137,
+          color: tower.kind === 'airdefense' ? 0x63d8ff : 0x303137,
           toAir: TROOPS[target.kind].flying,
         });
-        if (tower.kind === 'mortar')
-          for (const u of targets)
-            if (u.id !== target.id && Math.hypot(u.x - target.x, u.y - target.y) < 2)
-              u.hp -= power * 0.5;
       }
     }
     for (const u of b.units) {
@@ -1043,30 +1106,62 @@ export class GameModel {
       u.spent = true;
       const troop = TROOPS[u.kind];
       if (!troop.deathDamage) continue;
+      if (troop.wallBreaker) {
+        const bonus = this.troopStats(u.kind).damage / troop.damage;
+        this.detonate(u, troop.deathDamage * bonus);
+        continue;
+      }
       this.onEffect({ type: 'blast', x: u.x, y: u.y, radius: troop.deathRadius });
       for (const v of b.buildings)
         if (v.hp > 0 && distanceTo(u, v) <= (troop.deathRadius ?? 1.5))
           this.damage(v, troop.deathDamage);
     }
-    const structures = b.buildings.filter((v) => v.kind !== 'wall'),
-      dead = structures.filter((v) => v.hp <= 0).length;
-    b.destruction = Math.floor((dead / structures.length) * 100);
-    b.stars =
-      Number(b.destruction >= 50) +
-      Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
-      Number(b.destruction === 100);
-    b.loot = {
-      gold: Math.floor((CAMPAIGN[b.index].gold * dead) / structures.length),
-      elixir: Math.floor((CAMPAIGN[b.index].elixir * dead) / structures.length),
-    };
+    this.refreshBattleScore();
     if (
       b.destruction === 100 ||
       b.elapsed >= BATTLE_SECONDS ||
-      (!b.units.some((u) => u.hp > 0) &&
+      (!b.shells.length &&
+        !b.units.some((u) => u.hp > 0) &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0) &&
         !SPELL_KEYS.some((k) => b.spells[k] > 0))
     )
       this.finishBattle();
+  }
+  private refreshBattleScore() {
+    const b = this.battle!;
+    const structures = b.buildings.filter((v) => v.kind !== 'wall');
+    const dead = structures.filter((v) => v.hp <= 0).length;
+    b.destruction = structures.length ? Math.floor((dead / structures.length) * 100) : 100;
+    b.stars =
+      Number(b.destruction >= 50) +
+      Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
+      Number(b.destruction === 100);
+    // Each resource building pays out as it is damaged. Storages hold four
+    // shares, collectors one, and the Town Hall two of each resource.
+    for (const resource of ['gold', 'elixir'] as const) {
+      const weight = (v: Building) =>
+        v.kind === 'townhall'
+          ? 2
+          : v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage')
+            ? 4
+            : v.kind === (resource === 'gold' ? 'goldmine' : 'collector')
+              ? 1
+              : 0;
+      const total = structures.reduce((n, v) => n + weight(v), 0);
+      const taken = total
+        ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
+        : dead / Math.max(1, structures.length);
+      b.loot[resource] = Math.floor(CAMPAIGN[b.index][resource] * Math.min(1, Math.max(0, taken)));
+    }
+  }
+  private detonate(u: Unit, power: number) {
+    u.hp = 0;
+    u.spent = true;
+    const radius = TROOPS[u.kind].deathRadius ?? 1.6;
+    this.onEffect({ type: 'blast', x: u.x, y: u.y, radius });
+    for (const building of this.battle?.buildings ?? [])
+      if (building.hp > 0 && distanceTo(u, building) <= radius)
+        this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
   damage(b: Building, n: number) {
     if (b.hp <= 0) return;
@@ -1087,6 +1182,7 @@ export class GameModel {
   finishBattle() {
     const b = this.battle;
     if (!b || b.finished) return;
+    this.refreshBattleScore();
     b.finished = true;
     const trophies = b.stars ? b.stars * 8 : -10;
     const gold = Math.min(b.loot.gold, this.resourceCap('gold') - this.state.gold),
@@ -1202,7 +1298,7 @@ export function initialSave(): Save {
     trophies: 1248,
     xp: 1850,
     buildings,
-    army: { swordsman: 12, archer: 10, giant: 2, wizard: 3, balloon: 2 },
+    army: { swordsman: 12, archer: 10, giant: 2, wizard: 2, balloon: 2, goblin: 2, wallbreaker: 1 },
     queue: [],
     spells: { rage: 1, heal: 1, lightning: 0 },
     spellQueue: [],
@@ -1225,6 +1321,23 @@ export function enemyBase(index: number) {
 export function distanceTo(u: { x: number; y: number }, b: Building) {
   const s = BUILDINGS[b.kind].size;
   return Math.hypot(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
+}
+/** Find an actual obstruction on an approach to a building, ignoring stray walls. */
+export function breachTarget(u: { x: number; y: number }, buildings: Building[]) {
+  const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
+  if (!walls.length) return undefined;
+  const structures = buildings
+    .filter((b) => b.kind !== 'wall' && b.hp > 0)
+    .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
+  const candidates: Building[] = [];
+  for (const structure of structures.slice(0, 5)) {
+    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range);
+    const obstruction = path
+      .map((p) => walls.find((wall) => wall.x === Math.floor(p.x) && wall.y === Math.floor(p.y)))
+      .find((wall) => wall !== undefined);
+    if (obstruction) candidates.push(obstruction);
+  }
+  return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b))[0];
 }
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
 export function findPath(

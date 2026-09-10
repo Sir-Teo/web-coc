@@ -76,12 +76,6 @@ async function boot() {
   });
   scene.onReady = () => {
     void saveGame(model.state);
-    if (!saved)
-      setTimeout(
-        () =>
-          hud.toast('Welcome, Chief! Your village and army are ready. Select a building to begin.'),
-        900,
-      );
   };
   // Structured browser QA surface; no renderer internals in saved data.
   const debug = { model, scene, game, hud, audio };
@@ -117,6 +111,17 @@ async function boot() {
               stars: model.battle.stars,
               remaining: model.battle.remaining,
               units: model.battle.units.filter((u) => u.hp > 0).length,
+              troops: model.battle.units
+                .filter((u) => u.hp > 0)
+                .map((u) => ({
+                  kind: u.kind,
+                  x: u.x,
+                  y: u.y,
+                  hp: Math.round(u.hp),
+                  target: u.target,
+                })),
+              shells: model.battle.shells,
+              loot: model.battle.loot,
               finished: model.battle.finished,
             }
           : null,

@@ -14,7 +14,8 @@ export type BuildingKind =
   | 'laboratory'
   | 'spellfactory'
   | 'wall';
-export type TroopKind = 'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon';
+export type TroopKind =
+  'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon' | 'goblin' | 'wallbreaker';
 export type SpellKind = 'rage' | 'heal' | 'lightning';
 export type Resource = 'gold' | 'elixir';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
@@ -36,6 +37,7 @@ export interface BuildingDef {
   build: number;
   damage?: number;
   range?: number;
+  minRange?: number;
   rate?: number;
   targets?: Targets;
 }
@@ -185,7 +187,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   mortar: {
     name: 'Mortar',
-    description: 'Lobs explosive shells over walls at groups of ground attackers.',
+    description:
+      'Lobs shells at groups of ground attackers. Rush inside its 4-tile blind spot to avoid its fire.',
     size: 2,
     width: 93,
     hp: 1050,
@@ -197,6 +200,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     build: 150,
     damage: 48,
     range: 10,
+    minRange: 4,
     rate: 3,
     targets: 'ground',
   },
@@ -276,6 +280,10 @@ export interface TroopDef {
   flying?: true;
   /** Prefers defensive buildings, the way giants and balloons do in Clash of Clans. */
   prefersDefenses?: true;
+  prefersResources?: true;
+  wallBreaker?: true;
+  /** New troops use a full-body sprite with movement driven by the scene. */
+  staticSprite?: true;
   /** Damage dealt to nearby buildings when this troop is destroyed. */
   deathDamage?: number;
   deathRadius?: number;
@@ -361,7 +369,50 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     deathDamage: 120,
     deathRadius: 1.8,
   },
+  goblin: {
+    name: 'Goblin',
+    role: 'LOOT',
+    description:
+      'Sprints for mines, collectors, storages and the Town Hall. Deals double damage to resources.',
+    hp: 95,
+    damage: 22,
+    speed: 2.7,
+    range: 0.8,
+    rate: 0.8,
+    cost: 120,
+    space: 1,
+    time: 7,
+    width: 28,
+    research: 480,
+    prefersResources: true,
+    staticSprite: true,
+  },
+  wallbreaker: {
+    name: 'Wall Breaker',
+    role: 'BREACH',
+    description:
+      'Runs at walls protecting buildings and sacrifices itself in a blast. Bombs deal 40× damage to walls.',
+    hp: 110,
+    damage: 20,
+    speed: 2.25,
+    range: 0.7,
+    rate: 1,
+    cost: 350,
+    space: 2,
+    time: 12,
+    width: 28,
+    research: 720,
+    wallBreaker: true,
+    staticSprite: true,
+    deathDamage: 8,
+    deathRadius: 1.6,
+  },
 };
+/** Stable keyboard assignments shared by the cards and keyboard handler. */
+export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7'];
+export const SPELL_HOTKEYS = ['8', '9', '0'];
+export const isResourceBuilding = (kind: BuildingKind) =>
+  ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage'].includes(kind);
 export interface SpellDef {
   name: string;
   role: string;
@@ -445,7 +496,15 @@ export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].
 export const defenseDamage = (kind: BuildingKind, level: number) =>
   (BUILDINGS[kind].damage ?? 0) * (1 + (level - 1) * 0.12);
 export const researchCost = (kind: TroopKind, level: number) => {
-  const base = { swordsman: 6000, archer: 8000, giant: 12000, wizard: 15000, balloon: 18000 };
+  const base = {
+    swordsman: 6000,
+    archer: 8000,
+    giant: 12000,
+    wizard: 15000,
+    balloon: 18000,
+    goblin: 7000,
+    wallbreaker: 10000,
+  };
   return base[kind] * level;
 };
 /**
