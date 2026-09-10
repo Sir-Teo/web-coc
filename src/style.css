@@ -3410,7 +3410,17 @@ h3 {
   border: 2px solid #ffd05c8c;
   border-radius: 14px;
   box-shadow: 0 6px 20px #16261a66;
+  /* An absolutely positioned box shrinks to fit the space from `left` to the
+     container edge, so `left:50%` alone would cap this at half the viewport and
+     crush the copy on a phone. max-content lifts that cap; max-width re-clamps. */
+  width: max-content;
   max-width: min(560px, calc(100vw - 40px));
+}
+/* The copy column takes the slack so the title does not collapse to a narrow
+   ragged block on a phone; min-width:0 lets it shrink below its longest word. */
+.coach-banner > div {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .coach-step {
   flex: 0 0 auto;

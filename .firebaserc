@@ -1,0 +1,6 @@
+{
+  "projects": { "default": "personal-website-3bc37" },
+  "targets": {
+    "personal-website-3bc37": { "hosting": { "coc": ["coc-teozeng"] } }
+  }
+}

@@ -20,6 +20,29 @@ npm run preview -- --port 4173
 
 For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deployment. Serve it over HTTPS for offline support and safe session ownership (localhost is also supported). No backend, API keys, CDN dependencies, paid services, or runtime AI calls are required.
 
+## Deploy
+
+The game is hosted on Firebase Hosting as the `coc-teozeng` site in the `personal-website-3bc37`
+project, served at https://coc-teozeng.web.app and https://coc.teozeng.dev.
+
+Pushing to `main` builds, tests, and publishes through
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). A pull request runs the same build
+and test steps but does not publish, so a branch can never take over the live site. The workflow
+needs one repository secret, `FIREBASE_TOKEN`, generated with `firebase login:ci`.
+
+To publish by hand:
+
+```sh
+npm run deploy
+```
+
+Both paths pin the deploy to the `coc-teozeng` site, so neither can overwrite the other sites in the
+same project. The local script runs the CLI through `npx` because the machine-global
+`firebase-tools` is installed under an older Node and fails on current runtimes.
+
+Assets under `assets/` are content-hashed and cached for a year; `index.html` and `sw.js` are sent
+with `no-cache` so a new release is picked up on the next visit.
+
 ## Play
 
 ### Village
