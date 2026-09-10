@@ -126,6 +126,7 @@ export class VillageScene extends Phaser.Scene {
       this.gesture = 'none';
       this.lastDeploy = { x: -99, y: -99 };
       if (held) {
+        this.model.beginDrag();
         this.model.selected = held.id;
         this.model.changed();
       }
@@ -324,11 +325,13 @@ export class VillageScene extends Phaser.Scene {
       const repeat =
         now - this.lastTap.t < 380 &&
         Math.hypot(grid.x - this.lastTap.x, grid.y - this.lastTap.y) < 1.4;
-      this.lastTap = { x: grid.x, y: grid.y, t: now };
       const placed = repeat
         ? this.model.deployMany(grid.x, grid.y, 4)
         : Number(this.model.deploy(grid.x, grid.y));
-      if (placed) this.audio.play('deploy');
+      if (placed) {
+        this.lastTap = { x: grid.x, y: grid.y, t: now };
+        this.audio.play('deploy');
+      }
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
@@ -368,10 +371,14 @@ export class VillageScene extends Phaser.Scene {
   private battleBoundary() {
     const b = this.model.battle;
     if (!b) return [];
-    const signature = b.buildings
-      .filter((v) => v.hp > 0 && v.kind !== 'wall')
-      .map((v) => v.id)
-      .join(',');
+    // Stage index included: two stages can share building ids and building counts.
+    const signature =
+      b.index +
+      ':' +
+      b.buildings
+        .filter((v) => v.hp > 0 && v.kind !== 'wall')
+        .map((v) => v.id)
+        .join(',');
     if (signature === this.boundary.signature) return this.boundary.edges;
     const blocked = (x: number, y: number) =>
       x < 1 || y < 1 || x > 26 || y > 26 ? true : this.model.deployBlocked(x + 0.5, y + 0.5);
@@ -738,6 +745,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'collect') {
+      this.flyToHud(p.x, p.y - 40, fx.color === 0xffd34b ? 'gold' : 'elixir');
       const text = this.add
         .text(p.x, p.y - 70, fx.text!, {
           fontFamily: 'Trebuchet MS',
@@ -792,6 +800,25 @@ export class VillageScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.0022);
       return;
     }
+    if (fx.type === 'blast') {
+      const radius = (fx.radius ?? 1.5) * 64;
+      const ring = this.add
+        .ellipse(p.x, p.y - 26, radius * 0.55, radius * 0.28)
+        .setStrokeStyle(4, 0xff9a3c, 0.95)
+        .setDepth(7400);
+      this.tweens.add({
+        targets: ring,
+        scaleX: 2.8,
+        scaleY: 2.8,
+        alpha: 0,
+        duration: 380,
+        onComplete: () => ring.destroy(),
+      });
+      this.sparks(p.x, p.y - 26, 0xffb457, 14);
+      this.audio.play('destroy');
+      if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
+      return;
+    }
     if (fx.type === 'projectile' && fx.toX !== undefined) {
       const q = iso(fx.toX, fx.toY!);
       const fromY = p.y - 22 - (fx.fromAir ? AIR_LIFT : 0),
@@ -814,9 +841,10 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'destroy') {
-      this.sparks(p.x, p.y - 15, 0xd9be8a, 16);
+      this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
       this.audio.play('destroy');
-      if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.001);
+      if (!this.model.state.settings.reducedMotion)
+        this.cameras.main.shake(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
       this.tweens.add({
         targets: smoke,
@@ -828,6 +856,38 @@ export class VillageScene extends Phaser.Scene {
       });
       this.lastRevision = -1;
     } else this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
+  }
+  /**
+   * Sends collected resources into the HUD counter that receives them. The dots
+   * are pinned to the screen, so panning mid-flight cannot pull them off course.
+   */
+  flyToHud(sx: number, sy: number, resource: 'gold' | 'elixir') {
+    if (this.model.state.settings.reducedMotion) return;
+    const target = document.querySelector<HTMLElement>(`[data-resource="${resource}"]`);
+    if (!target) return;
+    const box = target.getBoundingClientRect(),
+      canvas = this.game.canvas.getBoundingClientRect();
+    const tx = box.left + box.width / 2 - canvas.left,
+      ty = box.top + box.height / 2 - canvas.top;
+    const fill = resource === 'gold' ? 0xffd34b : 0xd567ff,
+      edge = resource === 'gold' ? 0xb07a12 : 0x7f2f9e;
+    for (let i = 0; i < 7; i++) {
+      const dot = this.add
+        .circle(sx + (Math.random() - 0.5) * 30, sy + (Math.random() - 0.5) * 18, 5, fill)
+        .setStrokeStyle(2, edge)
+        .setDepth(9500)
+        .setScrollFactor(0);
+      this.tweens.add({
+        targets: dot,
+        x: tx,
+        y: ty,
+        scale: 0.35,
+        duration: 420 + i * 45,
+        delay: i * 38,
+        ease: 'Cubic.easeIn',
+        onComplete: () => dot.destroy(),
+      });
+    }
   }
   sparks(x: number, y: number, color: number, count: number) {
     for (let i = 0; i < count; i++) {

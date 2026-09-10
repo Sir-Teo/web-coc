@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
-import { TROOPS } from '../src/game/data';
+import { MAX_TROOP_LEVEL, TROOPS } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 describe('troop progression', () => {
   it('research is gated by laboratory level, charged once and completes offline once', () => {
@@ -40,9 +40,9 @@ describe('troop progression', () => {
     expect(m.state.gems).toBe(gems - 3);
     expect(m.troopLevel('archer')).toBe(2);
     expect(validateSave(m.state)).toBe(true);
-    m.state.troopLevels!.archer = 4;
+    m.state.troopLevels!.archer = MAX_TROOP_LEVEL + 1;
     expect(validateSave(m.state)).toBe(false);
-    m.state.troopLevels!.archer = 3;
+    m.state.troopLevels!.archer = MAX_TROOP_LEVEL;
     m.state.research = { kind: 'archer', end: m.clock };
     expect(validateSave(m.state)).toBe(false);
     delete m.state.research;

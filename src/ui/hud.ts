@@ -6,6 +6,7 @@ import {
   TROOP_KEYS,
   SPELL_KEYS,
   CAMPAIGN,
+  MAX_TROOP_LEVEL,
   asset,
   defenseDamage,
   upgradeSeconds,
@@ -72,6 +73,42 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'townhall') rows.push(['LayoutGrid', 'Caps buildings at', `Level ${level + 1}`]);
   return rows;
 }
+/**
+ * First-run coaching. Each step is satisfied by a counter that already exists in
+ * the save, so a village part-way through the game opens with the tutorial already
+ * finished rather than being told to do things it has done.
+ */
+const TUTORIAL: {
+  title: string;
+  body: string;
+  target: string;
+  done: (m: GameModel) => boolean;
+}[] = [
+  {
+    title: 'Collect what your village made',
+    body: 'Tap Collect, or any bubble floating over a mine.',
+    target: '.collect-btn',
+    done: (m) => m.state.stats.collected > 0,
+  },
+  {
+    title: 'Put up a new building',
+    body: 'Open the Shop and drag a building onto clear ground.',
+    target: '.shop-btn',
+    done: (m) => (m.state.stats.built ?? 0) > 0,
+  },
+  {
+    title: 'Train a troop',
+    body: 'Open Army and train anything you can afford.',
+    target: '.train-add',
+    done: (m) => (m.state.stats.trained ?? 0) > 0,
+  },
+  {
+    title: 'Raid the valley',
+    body: 'Tap Attack! and take the Goblin Outpost.',
+    target: '.attack-btn',
+    done: (m) => m.state.stats.raids > 0,
+  },
+];
 export class HUD {
   private root: HTMLElement;
   private panel: Panel = null;
@@ -407,9 +444,12 @@ export class HUD {
         document.querySelector<HTMLInputElement>('#import-file')!.click();
         break;
       case 'tutorial':
-        m.state.tutorial = true;
         this.panel = null;
         this.render();
+        break;
+      case 'skip-tutorial':
+        m.state.tutorial = true;
+        m.changed();
         break;
     }
   }
@@ -511,6 +551,12 @@ export class HUD {
       body.scrollTop = drawerScrollY;
     }
     this.positionContext();
+    this.markCoachTarget();
+    // Every step satisfied: retire the coaching for good.
+    if (!m.state.tutorial && !b && TUTORIAL.every((step) => step.done(m))) {
+      m.state.tutorial = true;
+      this.toast('That is the whole loop, Chief. The valley is yours from here.');
+    }
     if (this.panel !== this.lastPanel) {
       document.querySelector<HTMLElement>('.modal [data-action="close"]')?.focus();
       this.lastPanel = this.panel;
@@ -523,10 +569,29 @@ export class HUD {
     }
     if (result && !this.resultShown) {
       this.resultShown = true;
+      this.countUp();
       this.audio.play('victory');
       document.querySelector<HTMLElement>('[data-action="home"]')?.focus();
     }
     this.updateLive();
+  }
+  /** The first unfinished coaching step, or -1 once there is nothing left to teach. */
+  private get coachStep() {
+    if (this.model.state.tutorial || this.model.battle || this.model.editing) return -1;
+    return TUTORIAL.findIndex((step) => !step.done(this.model));
+  }
+  private coach() {
+    const index = this.coachStep;
+    if (index < 0) return '';
+    const step = TUTORIAL[index];
+    return `<div class="coach-banner" data-coach="${step.target}"><span class="coach-step">${index + 1}<i>/${TUTORIAL.length}</i></span><div><b>${step.title}</b><small>${step.body}</small></div>${button('skip-tutorial', 'Skip', 'coach-skip')}</div>`;
+  }
+  /** Rings the control the current step is about, without touching its layout. */
+  private markCoachTarget() {
+    for (const el of Array.from(document.querySelectorAll('.coach-target')))
+      el.classList.remove('coach-target');
+    const banner = document.querySelector<HTMLElement>('[data-coach]');
+    if (banner) document.querySelector(banner.dataset.coach!)?.classList.add('coach-target');
   }
   private homeHUD() {
     const m = this.model,
@@ -536,7 +601,7 @@ export class HUD {
     return `
  <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
- <div class="resources">${(['gold', 'elixir', 'gems'] as const).map((k, i) => `<div class="resource-bar ${k}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${i < 2 ? 'collect' : 'achievements'}" aria-label="${i < 2 ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
+ <div class="resources">${(['gold', 'elixir', 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${i < 2 ? 'collect' : 'achievements'}" aria-label="${i < 2 ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
  <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${s.stars.some((v, i) => !v && (i === 0 || s.stars[i - 1])) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="help" aria-label="How to play">${icon('BookOpen', 27)}</button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
@@ -553,6 +618,7 @@ export class HUD {
      : ''
  }</div>
  <div class="bottom-right"><button class="collect-btn" data-action="collect">${coin}<span>Collect</span></button><button class="shop-btn ${this.drawerPanel === 'shop' ? 'open' : ''}" data-action="shop">${icon('ShoppingBasket', 38)}<span>Shop</span></button></div>
+ ${this.coach()}
  <div class="control-hint">Drag to explore <span>·</span> Scroll to zoom <span>·</span> Click a building</div>`;
   }
   private editHUD() {
@@ -618,8 +684,8 @@ export class HUD {
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="width:${pct(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${!b.started ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Deploy a troop to start the battle early</small></div></div>` : ''}
  <div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : 'Tap to deploy · hold and drag to spread troops · double-tap for five'}</div><div class="army-tray">${TROOP_KEYS.map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeSpell && m.activeTroop === k)).join('')}${
-   SPELL_KEYS.some((k) => b.spells[k])
-     ? `<span class="tray-divider"></span>${SPELL_KEYS.filter((k) => b.spells[k])
+   SPELL_KEYS.some((k) => b.carried[k])
+     ? `<span class="tray-divider"></span>${SPELL_KEYS.filter((k) => b.carried[k])
          .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
          .join('')}`
      : ''
@@ -760,7 +826,7 @@ export class HUD {
       (k) => {
         const d = m.troopStats(k),
           level = m.troopLevel(k),
-          max = level >= 3;
+          max = level >= MAX_TROOP_LEVEL;
         const gated = !lab || !!lab.upgradeEnd || lab.level <= level;
         const next = 1 + level * 0.3;
         const label = max
@@ -768,7 +834,7 @@ export class HUD {
           : gated
             ? `Requires laboratory ${level + 1}`
             : `Research ${elixir} ${n(m.researchCost(k))}`;
-        return `<article class="training-card"><span class="role-tag">LEVEL ${level}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].hp * next)}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].damage * next)}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
+        return `<article class="training-card"><span class="role-tag">LEVEL ${level} OF ${MAX_TROOP_LEVEL}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].hp * next)}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].damage * next)}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
       },
     ).join(
       '',
@@ -815,14 +881,47 @@ export class HUD {
   }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
+    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div><div class="profile-stats">${(
+      [
+        ['Swords', 'Raids won', n(s.stats.raids)],
+        ['Castle', 'Buildings destroyed', n(s.stats.destroyed)],
+        ['Coins', 'Resources collected', n(s.stats.collected)],
+        ['Star', 'Campaign stars', `${s.stars.reduce((a, b) => a + b, 0)} / 36`],
+        ['LayoutGrid', 'Town Hall', `Level ${this.model.townhallLevel}`],
+        ['Hammer', 'Builders', String(this.model.builders)],
+      ] as const
+    )
+      .map(
+        ([ic, label, value]) =>
+          `<div class="profile-stat">${icon(ic, 18)}<b>${value}</b><small>${label}</small></div>`,
+      )
+      .join(
+        '',
+      )}</div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
   }
   private help() {
     return `<div class="modal-body help-body"><div class="guide-hero"><img src="${asset('swordsman')}" alt="Your swordsman guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Every building is capped one level above your Town Hall, so upgrading it unlocks the next tier of everything. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Train troops and brew spells, then attack. You get 30 seconds to scout before the clock starts. Balloons fly over walls; only Air Defenses can touch them.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
   private result() {
     const r = this.model.battle!.result!;
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${CAMPAIGN[this.model.battle!.index].name}</p><div class="result-loot"><div>${coin}<b>${n(r.gold)}</b><small>Gold looted</small></div><div>${elixir}<b>${n(r.elixir)}</b><small>Elixir looted</small></div><div>${icon('Trophy', 35)}<b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b><small>Trophies</small></div></div>${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}<small class="result-note">Your undeployed troops are waiting at home.</small></section></div>`;
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${CAMPAIGN[this.model.battle!.index].name}</p><div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold looted</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir looted</small></div><div>${icon('Trophy', 35)}<b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b><small>Trophies</small></div></div>${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}<small class="result-note">Your undeployed troops are waiting at home.</small></section></div>`;
+  }
+  /** Runs the result screen's loot numbers up from zero, once. */
+  private countUp() {
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-count]'))) {
+      const target = Number(el.dataset.count);
+      if (!Number.isFinite(target) || this.model.state.settings.reducedMotion) {
+        el.textContent = n(target || 0);
+        continue;
+      }
+      const started = performance.now();
+      const step = () => {
+        const t = Math.min(1, (performance.now() - started) / 780);
+        el.textContent = n(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
   }
   private updateLive() {
     const m = this.model;

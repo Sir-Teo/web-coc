@@ -4,7 +4,7 @@ Verified locally on September 10, 2026.
 
 ## Automated coverage
 
-- **41 simulation and save tests pass.** Placement collisions and bounds, construction completion, builder reservations, upgrades, offline resource caps, production resuming after upgrades, storage saturation, sequential troop training, camp capacity, malformed-save rejection, A\* navigation, deployment boundaries, a complete opening battle, one-time quest rewards, crowd separation, corrupted backup recovery, and IndexedDB unavailability. Research is gated by laboratory level, charges once, completes offline once, and increases deployed troop health and damage. Batch training is atomic and army replenishment accounts for queued troops.
+- **46 simulation and save tests pass.** Placement collisions and bounds, construction completion, builder reservations, upgrades, offline resource caps, production resuming after upgrades, storage saturation, sequential troop training, camp capacity, malformed-save rejection, A\* navigation, deployment boundaries, a complete opening battle, one-time quest rewards, crowd separation, corrupted backup recovery, and IndexedDB unavailability. Research is gated by laboratory level, charges once, completes offline once, and increases deployed troop health and damage. Batch training is atomic and army replenishment accounts for queued troops.
 
   New in this pass:
   - **Scouting phase** — the battle clock holds for thirty seconds, starts on the first deploy, and starts on its own when scouting expires. `deployBlocked` is asserted to be the same predicate the red boundary is drawn from, so the line the player sees and the rule the model enforces cannot drift apart.
@@ -14,8 +14,9 @@ Verified locally on September 10, 2026.
   - **Timer and gem curves** — upgrade seconds increase monotonically per level, a late Town Hall upgrade exceeds an hour, and the gem curve hits its documented anchors (1 gem at a minute, 20 at an hour, 260 at a day).
   - **Edit mode** — dragging relocates, occupied ground is refused without mutating the building, undo and redo restore exact positions, three layout slots store and restore, and the state stays valid throughout.
   - **Save migration** — a version-1 village fails validation, migrates cleanly, keeps its gold and its existing troop levels, gains `balloon: 0` and an empty spell book, and loads into a working model. A building level above that building's maximum is rejected.
+  - **Second pass** — the wall tool re-arms after each segment and puts itself down when the next one is unaffordable; a felled balloon damages the buildings inside its radius exactly once and nothing outside it; a drag across four tiles is a single undo step; research climbs to level 5 behind a matching laboratory and stops there, with the laboratory ceiling asserted equal to the troop ceiling; the tutorial's `built` counter ignores walls, its `trained` counter follows batch size, and a battle's carried spell book keeps a slot recorded after the spell is spent.
 
-- **21 browser tests pass in Chromium.** Boot, collection, pointer selection, upgrading and gem completion, save persistence through reload, shop filtering, placement and cancellation, training completion, actual troop deployment and simulated battle results, campaign unlocking, settings, modal keyboard focus, camera zoom/pan/reset, portrait layout, landscape layout, touch selection, stable sheets during passive resource ticks, export, valid import, invalid import rejection, research at desktop/phone sizes, research persistence, exclusive tab handoff with the newest save, forced WebGL context loss/restoration, and twenty consecutive raids with object cleanup and a final save reload.
+- **23 browser tests pass in Chromium.** Boot, collection, pointer selection, upgrading and gem completion, save persistence through reload, shop filtering, placement and cancellation, training completion, actual troop deployment and simulated battle results, campaign unlocking, settings, modal keyboard focus, camera zoom/pan/reset, portrait layout, landscape layout, touch selection, stable sheets during passive resource ticks, export, valid import, invalid import rejection, research at desktop/phone sizes, research persistence, exclusive tab handoff with the newest save, forced WebGL context loss/restoration, and twenty consecutive raids with object cleanup and a final save reload.
 
   New in this pass:
   - The shop **drawer** is asserted not to block the playfield (`scene.uiBlocked === false`), while a real dialog still does.
@@ -27,6 +28,8 @@ Verified locally on September 10, 2026.
   - The **info sheet** renders its stat table with exactly two improved rows for an Air Defense (hitpoints and damage, not range or attack speed) and shows a real cost and build time.
   - **Edit mode** is driven with the mouse: a building is dragged to a new tile, undo restores it, redo re-applies it, and a layout slot stores more than forty positions.
   - **Town Hall gating** is checked in the shop: a locked building's buy button is disabled and its tile carries no drag handle until the Town Hall is raised.
+  - **First-run coaching** shows step 1, rings the Collect button, advances to step 2 and moves the ring to the Shop once a collection lands, marks a filled store with `.full`, and stays dismissed across a reload after Skip.
+  - **Wall runs**: three walls are laid with three taps without reopening the shop, the placement banner survives each one, and Escape puts the tool down.
 
 - **Production smoke checks pass in Chromium and WebKit.** The optimized build boots, renders the game, and opens the shop drawer and the laboratory without JavaScript errors. A second tab waits and resumes after the owner closes in both engines.
 - **Offline reload passes in Chromium.** The service worker pre-caches the complete production asset manifest (60 files); a disconnected reload renders the village and opens the army drawer. Cache matching tolerates Vary headers on these same-origin static files. Cached assets include local fonts.
@@ -60,7 +63,7 @@ Headless Chromium on the local macOS workstation, 1440×960 viewport, device sca
 | Village, decorative troops active      |          59 FPS |                        16.8 ms |
 | Opening battle, starting army deployed |          58 FPS |                        16.8 ms |
 
-The added boundary outline, spell auras, and airborne sprites did not regress frame time; the boundary is cached against the set of surviving structures and only recomputed when one falls. These are local observations, not a device-independent guarantee. Re-run `node scripts/performance-check.mjs` against the development server for a new report.
+Repeated runs land on 59 idle and 58 in battle; a first sample taken against a cold development server reads 20 FPS lower and should be discarded. The added boundary outline, spell auras, airborne sprites, coaching ring and fly-to-counter dots did not regress frame time; the boundary is cached against the set of surviving structures and only recomputed when one falls. These are local observations, not a device-independent guarantee. Re-run `node scripts/performance-check.mjs` against the development server for a new report.
 
 The complete static build is approximately 3.9 MB on disk. Its 46 optimized game images occupy approximately 2.3 MB. Original PNGs stay outside the shipped build. The Phaser engine is separately cacheable, approximately 357 KB gzipped; application JavaScript is approximately 37 KB gzipped.
 
@@ -68,7 +71,16 @@ The complete static build is approximately 3.9 MB on disk. Its 46 optimized game
 
 Screenshots in `output/playtest/` cover the home village, the shop and army drawers, the campaign, the scouting phase, an active battle with a red boundary and a cast spell, victory, edit mode, the saved-layouts panel, the building info sheet, mobile portrait, touch-selected buildings, landscape phone, Chromium/WebKit production shop, offline army drawer, and the laboratory on desktop and phone. Reviewed for alpha artifacts, consistent scale and anchors, HUD obstruction, responsive dialog bounds, selection readability, wall connections, and troop animation.
 
-Resolved during this pass:
+Resolved in the second pass:
+
+- The deployment-boundary cache was keyed only on surviving building ids, so two stages with the same ids and the same survivor count could show a stale outline; the stage index is now part of the key.
+- Edit mode recorded one undo entry per tile crossed, so reversing a single drag took as many presses of undo as tiles; a drag now opens exactly one entry.
+- A tap that could not deploy still armed the double-tap window, so the next tap deployed five where the player expected one.
+- The laboratory could be upgraded to level 8 while research stopped at troop level 3, leaving four levels that bought nothing. Research now runs to level 5 and the laboratory ceiling is exactly 5.
+- `retrain` returned a bare `undefined` when it had brewed spells but no troops to train, which read as a silent failure.
+- Relocating a building outside edit mode pushed an entry onto an undo stack nothing could reach.
+
+Resolved during the first pass:
 
 - The red deployment boundary was first drawn in the overlay layer and crossed over rooftops; it now draws in a ground-marks layer beneath every building.
 - Opening the building info sheet cleared the very selection it describes, because every panel ran `model.cancel()`; the info panel now preserves it.
@@ -93,6 +105,8 @@ Resolved in the previous pass (retained):
 - Replaced repeated enemy layouts and eliminated overlapping enemy footprints in later stages.
 - Added explicit troop research and removed the hidden laboratory damage multiplier so displayed troop damage matches normal attacks.
 - Protected saves from concurrent tabs, including reloading the latest state when ownership transfers.
+
+The visual review also covers the first-run coaching banner (`coach-desktop.png`), the player profile and achievement list (`profile-desktop.png`), and the five-level research panel (`research-desktop.png`).
 
 ## Known limits
 

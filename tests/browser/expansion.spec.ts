@@ -156,3 +156,53 @@ test('the town hall gate holds buildings back until it is upgraded', async ({ pa
   await expect(page.locator('[data-action="build:mortar"]')).toBeEnabled();
   await expect(page.locator('[data-drag="mortar"]')).toHaveCount(1);
 });
+
+test('first-run coaching walks the loop, rings its target, and can be skipped', async ({
+  page,
+}) => {
+  const banner = page.locator('.coach-banner');
+  await expect(banner).toContainText('Collect what your village made');
+  await expect(page.locator('.collect-btn.coach-target')).toBeVisible();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: 'output/playtest/coach-desktop.png' });
+
+  await page.locator('[data-action="collect"]').last().click();
+  await expect(banner).toContainText('Put up a new building');
+  await expect(page.locator('.shop-btn.coach-target')).toBeVisible();
+  await expect(page.locator('.collect-btn.coach-target')).toHaveCount(0);
+
+  // A storage at capacity says so rather than silently swallowing collections.
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.gold = m.resourceCap('gold');
+    m.changed();
+  });
+  await expect(page.locator('.resource-bar.gold.full')).toBeVisible();
+
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await expect(banner).toHaveCount(0);
+  await page.waitForTimeout(1500);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await expect(page.locator('.coach-banner')).toHaveCount(0);
+});
+
+test('a run of walls is laid without returning to the shop', async ({ page }) => {
+  await page.locator('[data-action="shop"]').last().click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  await page.locator('[data-action="build:wall"]').click();
+  await expect(page.locator('.placement-banner')).toBeVisible();
+  const before = await page.evaluate(() => window.__game.model.state.buildings.length);
+  for (const [x, y] of [
+    [2.5, 2.5],
+    [3.5, 2.5],
+    [4.5, 2.5],
+  ]) {
+    const p = await page.evaluate(([gx, gy]) => window.__game.scene.screenFor(gx, gy), [x, y]);
+    await page.mouse.click(p.x, p.y);
+  }
+  expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 3);
+  await expect(page.locator('.placement-banner')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.placement-banner')).toHaveCount(0);
+});

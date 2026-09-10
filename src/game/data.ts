@@ -41,6 +41,8 @@ export interface BuildingDef {
 }
 const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export const MAX_TOWNHALL = 8;
+/** Laboratory level N unlocks troop level N, so the two ceilings must match. */
+export const MAX_TROOP_LEVEL = 5;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   townhall: {
     name: 'Town Hall',
@@ -224,7 +226,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 15000,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 8,
+    maxLevel: MAX_TROOP_LEVEL,
     available: [0, 1, 1, 1, 1, 1, 1, 1],
     build: 180,
   },
@@ -274,6 +276,9 @@ export interface TroopDef {
   flying?: true;
   /** Prefers defensive buildings, the way giants and balloons do in Clash of Clans. */
   prefersDefenses?: true;
+  /** Damage dealt to nearby buildings when this troop is destroyed. */
+  deathDamage?: number;
+  deathRadius?: number;
 }
 export const TROOPS: Record<TroopKind, TroopDef> = {
   swordsman: {
@@ -353,6 +358,8 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     research: 1500,
     flying: true,
     prefersDefenses: true,
+    deathDamage: 120,
+    deathRadius: 1.8,
   },
 };
 export interface SpellDef {

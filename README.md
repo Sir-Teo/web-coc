@@ -29,19 +29,22 @@ For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deplo
 - **Drag a building out of the shop drawer** and drop it on clear ground, or tap its price to pick it up and then tap the map. A green footprint means the tile is free. Escape cancels.
 - Select a building for Info, Move, Upgrade, and Collect. The card is anchored to the building it describes.
 - **Info** shows the full stat sheet and a before → after comparison of what the next level buys, with its price, its build time, and how many builders are free.
-- **Edit mode** (pencil, left rail) lets you drag anything already built. It has undo, redo, Ctrl/⌘+Z, and three saved layouts you can restore at any time.
-- Click resource bubbles or Collect to gather gold and elixir.
+- **Edit mode** (pencil, left rail) lets you drag anything already built. It has undo, redo, Ctrl/⌘+Z, and three saved layouts you can restore at any time. A whole drag is one undo step.
+- Walls stay in hand: place one and the tool re-arms so you can lay a run in a single pass. Escape puts it down.
+- Click resource bubbles or Collect to gather gold and elixir. What you collect flies into the counter it lands in, and a store at capacity says so instead of silently swallowing collections.
+- A first-run **coach** walks you through collect → build → train → raid, ringing the control each step is about. It reads its progress from counters in the save, so a village part-way through the game opens with nothing left to teach. Skip dismisses it for good.
 
 ### Progression
 
 - Buildings run to level 4–12 depending on the type, and **nothing may exceed the Town Hall by more than one level**, so a Town Hall upgrade is what unlocks the next tier of everything else. The Town Hall also gates how many of each building you may own.
 - Build and upgrade timers run from seconds to hours, and gem prices to finish follow the same shape Clash of Clans uses: a minute is trivial, an hour is cheap, a long upgrade is a real decision.
-- Upgrade the laboratory, then open Research. Research unlocks troop levels 2 and 3 with permanent health and damage increases, completes while away, and can be finished with gems.
+- Upgrade the laboratory, then open Research. Laboratory level N unlocks troop level N, up to **level 5**, each a permanent health and damage increase. Research completes while away and can be finished with gems.
+- **Your legacy** collects the league banner, six lifetime statistics, and eight achievements that pay gems.
 
 ### Army
 
 - Train five troops individually or five at a time. Camp capacity includes queued units, and extra completed barracks shorten training times. "Last army" replenishes a spent composition without duplicating ready or queued troops.
-- **Balloons fly.** They drift straight over walls and buildings, ignore pathing entirely, and prefer defenses. Only air-capable defenses can shoot them.
+- **Balloons fly.** They drift straight over walls and buildings, ignore pathing entirely, and prefer defenses. Only air-capable defenses can shoot them — and when one is shot down it detonates, damaging whatever it was over.
 - **Air Defenses** hit hard but are blind to the ground. Cannons and mortars are ground-only. Archer towers hit both.
 - Build a **Spell Factory** to brew Rage, Healing, and Lightning. Its level is how many spells you can carry.
 
@@ -65,10 +68,11 @@ For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deplo
 
 - 14 building types plus walls, across level ceilings of 4 to 12, gated by Town Hall level and count.
 - Building placement by drag or tap, relocation, a full edit mode with undo/redo and three saved layouts, builder reservations, construction, upgrades, collection, resource storage, and camp capacity.
-- Five troops including a flying unit, three spells, a two-layer targeting model (ground / air / both), four-frame animation, three research levels, batch training, spell brewing, and army replenishment.
+- Five troops including a flying unit that detonates when shot down, three spells, a two-layer targeting model (ground / air / both), four-frame animation, five research levels, batch training, spell brewing, and army replenishment.
 - A* navigation with wall breaking for ground troops, straight-line flight for air troops, deterministic crowd separation, splash damage, defense fire, destruction, and campaign progress.
 - 12 independently authored campaign layouts with escalating defenses and air defenses from stage 5, tactical previews, and suggested army sizes.
 - Bottom-sheet shop and army drawers, an anchored building card, a building info sheet with before/after stats, a scouting phase, a star-marked destruction bar, loot bars, drag-deploy, and a surrender confirmation.
+- A first-run coaching sequence, a player profile with lifetime statistics, eight achievements, wall runs, and feedback that follows the action: collected resources fly to their counter, a falling Town Hall shakes the screen, and the victory tally counts up.
 - Responsive HUD, campaign, help, persistent quest rewards, settings, reduced motion, generated sound effects, and optional ambient tones.
 - Automatic saves, version-1 migration, exclusive tab ownership, validated import/export, self-hosted fonts, optimized WebP assets, and production offline caching.
 
@@ -89,9 +93,9 @@ npm run build
 node scripts/production-check.mjs
 ```
 
-41 simulation and save tests cover placement collisions, construction, upgrades, builder reservation, caps, training, save validation and version-1 migration, pathfinding, battle completion, deployment, campaign unlocks, research, batch training, the scouting phase, the deployment boundary, air/ground targeting in both directions, walls that stop ground troops and not balloons, spell brewing limits, each spell's effect, aura expiry, Town Hall level and count gating, the timer and gem curves, edit-mode drag/undo/redo, saved layouts, and a 144-battle matrix across twelve stages, three armies, and four approaches.
+46 simulation and save tests cover placement collisions, construction, upgrades, builder reservation, caps, training, save validation and version-1 migration, pathfinding, battle completion, deployment, campaign unlocks, research, batch training, the scouting phase, the deployment boundary, air/ground targeting in both directions, walls that stop ground troops and not balloons, spell brewing limits, each spell's effect, aura expiry, Town Hall level and count gating, the timer and gem curves, edit-mode drag/undo/redo (one entry per drag), saved layouts, wall runs, balloon detonation, five-level research, tutorial counters, and a 144-battle matrix across twelve stages, three armies, and four approaches.
 
-21 browser tests exercise real menus and pointer input: drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, and offline reload.
+23 browser tests exercise real menus and pointer input: first-run coaching and its target ring, wall runs, drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, and offline reload.
 
 Screenshots and reports are written to `output/playtest/` (not shipped). See `docs/QA.md` for verified coverage and remaining release limits.
 

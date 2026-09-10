@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
 import {
   BUILDINGS,
+  MAX_TROOP_LEVEL,
   SPELLS,
   TROOPS,
   LIGHTNING_DAMAGE,
@@ -310,5 +311,98 @@ describe('saves', () => {
     const s = initialSave();
     s.buildings.find((b) => b.kind === 'spellfactory')!.level = BUILDINGS.spellfactory.maxLevel + 1;
     expect(validateSave(s)).toBe(false);
+  });
+});
+
+describe('second-pass behaviour', () => {
+  it('keeps the wall tool in hand so a run can be laid in one go', () => {
+    const m = new GameModel();
+    m.beginBuild('wall');
+    expect(m.placement).toBe('wall');
+    expect(m.place(2, 2)).toBe(true);
+    // Still armed, and nothing is selected, so the next tap lays the next segment.
+    expect(m.placement).toBe('wall');
+    expect(m.selected).toBeNull();
+    expect(m.place(3, 2)).toBe(true);
+    expect(m.state.buildings.filter((b) => b.kind === 'wall').length).toBeGreaterThan(2);
+    m.state.gold = BUILDINGS.wall.cost;
+    expect(m.place(4, 2)).toBe(true);
+    // Out of gold: the tool is put down rather than left armed on a dead action.
+    expect(m.placement).toBeNull();
+  });
+  it('a felled balloon damages the buildings around it, once', () => {
+    const m = new GameModel();
+    arena(m, [
+      ['townhall', 12, 12, 1],
+      ['cannon', 20, 20, 1],
+    ]);
+    const balloon = spawn(m, 'balloon', 13.5, 13.5);
+    const [townhall, cannon] = m.battle!.buildings;
+    const before = { townhall: townhall.hp, cannon: cannon.hp };
+    balloon.hp = 0;
+    m.step(0.05);
+    expect(townhall.hp).toBeLessThan(before.townhall);
+    expect(balloon.spent).toBe(true);
+    const after = townhall.hp;
+    for (let i = 0; i < 5; i++) m.step(0.05);
+    // The blast resolves exactly once, even though the corpse is still in the list.
+    expect(townhall.hp).toBe(after);
+    expect(cannon.hp).toBe(before.cannon);
+  });
+  it('a whole drag is one undo step, not one per tile crossed', () => {
+    const m = new GameModel();
+    m.beginEdit();
+    const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
+    const from = { x: b.x, y: b.y };
+    m.beginDrag();
+    for (const [x, y] of [
+      [5, 23],
+      [4, 23],
+      [3, 23],
+      [2, 23],
+    ])
+      expect(m.dragTo(b.id, x, y)).toBe(true);
+    expect([b.x, b.y]).toEqual([2, 23]);
+    m.undo();
+    expect([b.x, b.y]).toEqual([from.x, from.y]);
+    expect(m.canUndo).toBe(false);
+  });
+  it('research runs to five levels behind a matching laboratory', () => {
+    const m = new GameModel();
+    const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
+    m.state.elixir = 999999;
+    for (let level = 1; level < MAX_TROOP_LEVEL; level++) {
+      lab.level = level + 1;
+      m.researchTroop('swordsman');
+      m.tick(m.state.research!.end + 1000);
+      expect(m.troopLevel('swordsman')).toBe(level + 1);
+    }
+    expect(m.troopLevel('swordsman')).toBe(MAX_TROOP_LEVEL);
+    lab.level = BUILDINGS.laboratory.maxLevel;
+    m.researchTroop('swordsman');
+    expect(m.state.research).toBeUndefined();
+    expect(BUILDINGS.laboratory.maxLevel).toBe(MAX_TROOP_LEVEL);
+    expect(validateSave(m.state)).toBe(true);
+  });
+  it('counts what the tutorial asks for and carries a spell book into battle', () => {
+    const m = new GameModel();
+    expect(m.state.stats.built ?? 0).toBe(0);
+    m.beginBuild('cannon');
+    m.place(2, 20);
+    expect(m.state.stats.built).toBe(1);
+    m.beginBuild('wall');
+    m.place(2, 2);
+    // Walls are not the lesson, so they do not satisfy it.
+    expect(m.state.stats.built).toBe(1);
+    expect(m.state.stats.trained ?? 0).toBe(0);
+    m.train('archer', 2);
+    expect(m.state.stats.trained).toBe(2);
+    m.startBattle(0);
+    expect(m.battle!.carried).toEqual(m.state.lastSpells);
+    m.activeSpell = 'rage';
+    m.castSpell(2, 2);
+    expect(m.battle!.spells.rage).toBe(0);
+    // Spent, but the slot it came from is still recorded for the tray.
+    expect(m.battle!.carried.rage).toBe(1);
   });
 });

@@ -1,10 +1,19 @@
-import { BUILDINGS, SPELL_KEYS, TROOP_KEYS } from './data';
+import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 function finite(v: unknown) {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0;
 }
-const QUEST_IDS = ['gold-rush', 'first-raid', 'wall-breaker', 'valley-explorer'];
+const QUEST_IDS = [
+  'gold-rush',
+  'first-raid',
+  'wall-breaker',
+  'valley-explorer',
+  'master-builder',
+  'drill-sergeant',
+  'town-planner',
+  'high-flier',
+];
 /**
  * Version 1 villages predate the air layer and spell factory. Their missing
  * fields are added at their zero values so an existing save opens untouched.
@@ -63,7 +72,8 @@ export function validateSave(input: unknown): input is Save {
     !['sound', 'music', 'reducedMotion'].every(
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
-    !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']]))
+    !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']])) ||
+    !(['built', 'trained'] as const).every((k) => s.stats[k] === undefined || finite(s.stats[k]))
   )
     return false;
   if (
@@ -86,7 +96,7 @@ export function validateSave(input: unknown): input is Save {
   if (
     s.troopLevels !== undefined &&
     (!armyRecord(s.troopLevels) ||
-      TROOP_KEYS.some((k) => s.troopLevels![k] < 1 || s.troopLevels![k] > 3))
+      TROOP_KEYS.some((k) => s.troopLevels![k] < 1 || s.troopLevels![k] > MAX_TROOP_LEVEL))
   )
     return false;
   if (s.lastArmy !== undefined && !armyRecord(s.lastArmy)) return false;
@@ -105,7 +115,7 @@ export function validateSave(input: unknown): input is Save {
     (!s.research ||
       !TROOP_KEYS.includes(s.research.kind) ||
       !finite(s.research.end) ||
-      (s.troopLevels?.[s.research.kind] ?? 1) >= 3)
+      (s.troopLevels?.[s.research.kind] ?? 1) >= MAX_TROOP_LEVEL)
   )
     return false;
   const ids = new Set<number>();

@@ -8,6 +8,7 @@ import {
   CAMPAIGN,
   HEAL_PER_SECOND,
   LIGHTNING_DAMAGE,
+  MAX_TROOP_LEVEL,
   defenseDamage,
   gemCost,
   maxCountFor,
@@ -73,7 +74,7 @@ export interface Save {
   lastSpells?: SpellBook;
   layouts?: Layout[];
   settings: { sound: boolean; music: boolean; reducedMotion: boolean };
-  stats: { raids: number; destroyed: number; collected: number };
+  stats: { raids: number; destroyed: number; collected: number; built?: number; trained?: number };
 }
 export interface Unit {
   id: number;
@@ -87,6 +88,8 @@ export interface Unit {
   path: { x: number; y: number }[];
   pathAt: number;
   attacking: boolean;
+  /** Set once a destroyed troop has resolved its death effect. */
+  spent?: boolean;
 }
 export interface Aura {
   kind: SpellKind;
@@ -100,6 +103,8 @@ export interface Battle {
   units: Unit[];
   remaining: Army;
   spells: SpellBook;
+  /** What the raid started with, so emptied slots stay in place. */
+  carried: SpellBook;
   auras: Aura[];
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -113,7 +118,7 @@ export interface Battle {
   seed: number;
 }
 export type FX = {
-  type: 'hit' | 'destroy' | 'projectile' | 'collect' | 'spawn' | 'upgrade' | 'spell';
+  type: 'hit' | 'destroy' | 'projectile' | 'collect' | 'spawn' | 'upgrade' | 'spell' | 'blast';
   x: number;
   y: number;
   toX?: number;
@@ -125,6 +130,8 @@ export type FX = {
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
   toAir?: boolean;
+  /** A landmark loss — the Town Hall — worth shaking the screen for. */
+  major?: boolean;
 };
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
@@ -140,6 +147,8 @@ export class GameModel {
   editing = false;
   private undoStack: Layout['slots'][] = [];
   private redoStack: Layout['slots'][] = [];
+  /** True once the current drag has recorded its single undo entry. */
+  private dragOpen = false;
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
   onToast = (_message: string) => {};
@@ -217,7 +226,8 @@ export class GameModel {
     const lab = this.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
     if (!lab || lab.upgradeEnd) return this.notify('Your laboratory must be ready to research.');
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.troopLevel(kind) >= 3) return this.notify('This troop is at its maximum level.');
+    if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
+      return this.notify('This troop is at its maximum level.');
     if (lab.level <= this.troopLevel(kind))
       return this.notify(`Upgrade your laboratory to level ${this.troopLevel(kind) + 1}.`);
     const cost = this.researchCost(kind);
@@ -273,6 +283,42 @@ export class GameModel {
         target: 12,
         reward: 40,
         icon: 'Star',
+      },
+      {
+        id: 'master-builder',
+        title: 'Master builder',
+        description: 'Raise 15 buildings',
+        progress: this.state.stats.built ?? 0,
+        target: 15,
+        reward: 30,
+        icon: 'Hammer',
+      },
+      {
+        id: 'drill-sergeant',
+        title: 'Drill sergeant',
+        description: 'Train 100 troops',
+        progress: this.state.stats.trained ?? 0,
+        target: 100,
+        reward: 35,
+        icon: 'UsersRound',
+      },
+      {
+        id: 'town-planner',
+        title: 'Town planner',
+        description: 'Reach Town Hall level 4',
+        progress: this.townhallLevel,
+        target: 4,
+        reward: 50,
+        icon: 'LayoutGrid',
+      },
+      {
+        id: 'high-flier',
+        title: 'High flier',
+        description: 'Climb to 1,500 trophies',
+        progress: this.state.trophies,
+        target: 1500,
+        reward: 45,
+        icon: 'Trophy',
       },
     ].map((q) => ({ ...q, claimed: this.state.claimedQuests?.includes(q.id) ?? false }));
   }
@@ -359,7 +405,7 @@ export class GameModel {
     if (this.state.research && this.state.research.end <= now) {
       const { kind } = this.state.research;
       this.state.troopLevels ??= { swordsman: 1, archer: 1, giant: 1, wizard: 1, balloon: 1 };
-      this.state.troopLevels[kind] = Math.min(3, this.troopLevel(kind) + 1);
+      this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.troopLevel(kind) + 1);
       delete this.state.research;
       this.state.xp += 30;
       this.notify(`${TROOPS[kind].name} upgraded to level ${this.troopLevel(kind)}!`);
@@ -443,7 +489,7 @@ export class GameModel {
     }
     if (this.moving !== null) {
       const b = this.state.buildings.find((b) => b.id === this.moving)!;
-      this.recordPositions();
+      if (this.editing) this.recordPositions();
       b.x = x;
       b.y = y;
       this.selected = b.id;
@@ -468,8 +514,18 @@ export class GameModel {
       b.upgradeEnd = this.clock + d.build * 1000;
     }
     this.state.buildings.push(b);
+    if (kind !== 'wall') this.state.stats.built = (this.state.stats.built ?? 0) + 1;
     this.placement = null;
     this.selected = b.id;
+    // Walls are laid in runs, so the tool stays in hand while another is affordable.
+    if (
+      kind === 'wall' &&
+      this.state[d.resource] >= d.cost &&
+      this.countOf(kind) < this.maxCount(kind)
+    ) {
+      this.placement = 'wall';
+      this.selected = null;
+    }
     this.changed();
     this.notify(
       kind === 'wall' ? 'Wall placed.' : `Construction started — ${formatTime(d.build)}.`,
@@ -553,12 +609,20 @@ export class GameModel {
   get canUndo() {
     return this.undoStack.length > 0;
   }
+  /**
+   * Opens one history entry for a whole drag. Without it a single drag across ten
+   * tiles would take ten presses of undo to reverse.
+   */
+  beginDrag() {
+    this.dragOpen = false;
+  }
   get canRedo() {
     return this.redoStack.length > 0;
   }
   beginEdit() {
     if (this.battle) return;
     this.editing = true;
+    this.dragOpen = false;
     this.selected = null;
     this.placement = null;
     this.moving = null;
@@ -579,7 +643,10 @@ export class GameModel {
     if (!b || !this.editing) return false;
     if (b.x === x && b.y === y) return true;
     if (!this.canPlace(b.kind, x, y, id)) return false;
-    this.recordPositions();
+    if (!this.dragOpen) {
+      this.recordPositions();
+      this.dragOpen = true;
+    }
     b.x = x;
     b.y = y;
     this.changed();
@@ -641,6 +708,7 @@ export class GameModel {
       return this.notify('Army camps are full. Upgrade or build another camp.');
     if (this.state.elixir < cost) return this.notify('Not enough elixir.');
     this.state.elixir -= cost;
+    this.state.stats.trained = (this.state.stats.trained ?? 0) + kinds.length;
     let end = Math.max(this.clock, this.state.queue.at(-1)?.end ?? 0);
     for (const kind of kinds) {
       end += this.trainingTime(kind) * 1000;
@@ -689,8 +757,10 @@ export class GameModel {
           brewed += missing;
         }
       }
-    if (!kinds.length)
-      return brewed ? undefined : this.notify('Your previous army is already ready or training.');
+    if (!kinds.length) {
+      if (!brewed) this.notify('Your previous army is already ready or training.');
+      return;
+    }
     this.enqueue(kinds);
   }
 
@@ -709,6 +779,7 @@ export class GameModel {
       units: [],
       remaining: { ...this.state.army },
       spells: { ...this.state.spells },
+      carried: { ...this.state.spells },
       auras: [],
       elapsed: 0,
       prep: PREP_SECONDS,
@@ -967,6 +1038,16 @@ export class GameModel {
               u.hp -= power * 0.5;
       }
     }
+    for (const u of b.units) {
+      if (u.hp > 0 || u.spent) continue;
+      u.spent = true;
+      const troop = TROOPS[u.kind];
+      if (!troop.deathDamage) continue;
+      this.onEffect({ type: 'blast', x: u.x, y: u.y, radius: troop.deathRadius });
+      for (const v of b.buildings)
+        if (v.hp > 0 && distanceTo(u, v) <= (troop.deathRadius ?? 1.5))
+          this.damage(v, troop.deathDamage);
+    }
     const structures = b.buildings.filter((v) => v.kind !== 'wall'),
       dead = structures.filter((v) => v.hp <= 0).length;
     b.destruction = Math.floor((dead / structures.length) * 100);
@@ -996,6 +1077,7 @@ export class GameModel {
         type: 'destroy',
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
+        major: b.kind === 'townhall',
       });
       for (const u of this.battle?.units ?? []) {
         u.pathAt = 0;
