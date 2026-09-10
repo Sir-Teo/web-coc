@@ -1,0 +1,63 @@
+name: Deploy to Firebase Hosting
+
+# Builds Crown & Clan and deploys it to the coc-teozeng Firebase Hosting site
+# (https://coc.teozeng.dev) on every push to main. Requires one repo secret:
+# FIREBASE_TOKEN. Generate it locally with:  firebase login:ci
+# then add it under GitHub repo Settings -> Secrets and variables -> Actions
+# as a secret named FIREBASE_TOKEN.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Serialize deploys to the live channel. Back-to-back pushes otherwise race:
+# two runs upload near-identical content and the slower one tries to release a
+# version that is already live, which Firebase rejects. Cancel any in-flight
+# deploy so only the newest commit reaches the live channel.
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The simulation rules carry the whole game loop, so a red suite must not
+      # reach players. `npm run build` type-checks before it bundles.
+      - run: npm test
+      - run: npm run build
+
+      # A pull request builds and tests only. Publishing stays on main so a
+      # branch can never take over the live site.
+      - name: Deploy to Firebase Hosting
+        if: github.event_name != 'pull_request'
+        # Deploy is pinned to the coc-teozeng site so it cannot overwrite the
+        # other sites in this project (teozeng.dev, finos.teozeng.dev).
+        # Treat the "version is already the current active version" response as
+        # success: it means the live channel already serves this exact build, so
+        # there is nothing to release. Any other non-zero exit still fails the job.
+        run: |
+          set -o pipefail
+          out=$(npx --yes firebase-tools@latest deploy --only hosting:coc-teozeng \
+            --project personal-website-3bc37 --non-interactive 2>&1 | tee /dev/stderr) || code=$?
+          if [ -n "${code:-}" ]; then
+            if printf '%s' "$out" | grep -qiE 'current active version|Nothing to deploy|no changes'; then
+              echo "::notice::Live channel already serves this build — nothing new to release."
+              exit 0
+            fi
+            exit "$code"
+          fi
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
