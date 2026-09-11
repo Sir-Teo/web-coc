@@ -2,8 +2,38 @@ import type Phaser from 'phaser';
 
 /** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */
 export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
-  const node = renderer.renderNodes.getNode('BatchHandlerQuad') as
-    Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
+  const node = renderer.renderNodes.getNode(
+    'BatchHandlerQuad',
+  ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
+  const sampler = node.programManager.getAdditionsByTag('TEXTURE')[0];
+  if (sampler) {
+    // The engine compares an interpolated float texture ID with exact integers.
+    // Rounding near IDs such as 3 and 5 can fall through to transparent black.
+    // Half-integer boundaries keep all pixels in the intended texture slot.
+    const branches = Array.from(
+      { length: renderer.maxTextures },
+      (_, i) =>
+        `#if TEXTURE_COUNT > ${i}\nif (outTexDatum < ${i}.5) return texture2D(uMainSampler[${i}], texCoord);\n#endif`,
+    ).join('\n');
+    node.programManager.replaceAddition(sampler.name, {
+      name: 'StableTextureSampling',
+      // A distinct tag prevents Phaser replacing this sampler when it adjusts
+      // batch sizes. Its TexCount addition still controls the active samplers.
+      tags: ['StableTextureSampling'],
+      additions: {
+        fragmentHeader: `uniform sampler2D uMainSampler[TEXTURE_COUNT];
+vec4 getTexture(vec2 texCoord) {
+#if TEXTURE_COUNT == 1
+return texture2D(uMainSampler[0], texCoord);
+#else
+${branches}
+return vec4(0.0);
+#endif
+}`,
+        fragmentProcess: 'vec4 fragColor = getTexture(texCoord);',
+      },
+    });
+  }
   if (node.topology === renderer.gl.TRIANGLES) return;
 
   // Phaser 4.2.1 stores each quad as BL, TL, BR, TR. Its default strip uses
@@ -17,8 +47,11 @@ export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRend
   }
   // Element-buffer bindings belong to the active VAO. Upload outside any VAO
   // and force the binding, so initialization after an earlier draw is safe too.
-  // @ts-expect-error Phaser accepts null to unbind a VAO; its declaration omits null.
-  renderer.glWrapper.update({ vao: null, bindings: { elementArrayBuffer: node.indexBuffer } }, true);
+  renderer.glWrapper.update(
+    // @ts-expect-error Phaser accepts null to unbind a VAO; its declaration omits null.
+    { vao: null, bindings: { elementArrayBuffer: node.indexBuffer } },
+    true,
+  );
   node.indexBuffer.update();
   node.topology = renderer.gl.TRIANGLES;
 }
