@@ -85,6 +85,19 @@ describe('Mortar normal mode', () => {
     });
   }
 
+  it('lands at the impact boundary despite accumulated floating-point rounding', () => {
+    const { m, b, u } = arena();
+    m.step(0.05);
+    const impact = b.shells[0].impact;
+    m.step(0.575);
+    m.step(0.574);
+    expect(u.hp).toBe(u.maxHp);
+    m.step(0.001);
+    expect(b.elapsed).toBeCloseTo(impact, 12);
+    expect(b.shells).toHaveLength(0);
+    expect(u.hp).toBe(u.maxHp - 20);
+  });
+
   it('never lands damage scheduled after the raid deadline', () => {
     const { m, b, u } = arena();
     b.elapsed = 179.5;

@@ -165,6 +165,7 @@ export interface Aura {
   end: number;
 }
 export interface MortarShell {
+  sourceId: number;
   fromX: number;
   fromY: number;
   x: number;
@@ -210,6 +211,7 @@ export type FX = {
     | 'destroy'
     | 'projectile'
     | 'impact'
+    | 'mortar-fire'
     | 'collect'
     | 'spawn'
     | 'upgrade'
@@ -1775,7 +1777,7 @@ export class GameModel {
     // Shells land where the target stood when fired. Air units and troops that
     // have escaped the impact circle take no damage, even if they were targeted.
     for (const shell of b.shells) {
-      if (shell.impact > b.elapsed) continue;
+      if (shell.impact > b.elapsed + 1e-9) continue;
       for (const u of b.units)
         if (
           u.hp > 0 &&
@@ -1788,9 +1790,10 @@ export class GameModel {
         x: shell.x,
         y: shell.y,
         radius: shell.radius,
+        weapon: 'cannonball',
       });
     }
-    b.shells = b.shells.filter((shell) => shell.impact > b.elapsed);
+    b.shells = b.shells.filter((shell) => shell.impact > b.elapsed + 1e-9);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
       if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
@@ -1822,6 +1825,7 @@ export class GameModel {
           (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'mortar') {
           b.shells.push({
+            sourceId: tower.id,
             fromX: center.x,
             fromY: center.y,
             x: target.x,
@@ -1831,6 +1835,7 @@ export class GameModel {
             damage: power,
             radius: d.splash!,
           });
+          this.onEffect({ type: 'mortar-fire', sourceId: tower.id, x: center.x, y: center.y });
           continue;
         }
         launchProjectile(

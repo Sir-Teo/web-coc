@@ -997,29 +997,6 @@ export class VillageScene extends Phaser.Scene {
         this.detail.fillStyle(0xffdc85, 1);
         this.detail.fillCircle(p.x, p.y - lift - 5, 3 + progress * 3);
       }
-      for (const shell of battle.finished ? [] : battle.shells) {
-        const from = iso(shell.fromX, shell.fromY),
-          to = iso(shell.x, shell.y);
-        const progress = Phaser.Math.Clamp(
-          (battle.elapsed - shell.launched) / (shell.impact - shell.launched),
-          0,
-          1,
-        );
-        const sx = from.x + (to.x - from.x) * progress;
-        const sy =
-          from.y +
-          (to.y - from.y) * progress -
-          28 * (1 - progress) -
-          Math.sin(progress * Math.PI) * 115;
-        this.detail.lineStyle(1.5, 0xffc17a, 0.55);
-        this.detail.strokeEllipse(to.x, to.y, shell.radius * 90, shell.radius * 45);
-        this.detail.fillStyle(0x342b22, 0.2 + progress * 0.2);
-        this.detail.fillEllipse(to.x, to.y, 14, 7);
-        this.detail.fillStyle(0xffac43, 0.9);
-        this.detail.fillCircle(sx, sy, 6);
-        this.detail.fillStyle(0x42352c, 1);
-        this.detail.fillCircle(sx, sy, 4);
-      }
       for (const u of battle.units) {
         const art = troopArt(u.kind);
         let im = this.unitSprites.get(u.id);
@@ -1225,6 +1202,14 @@ export class VillageScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.0022);
       return;
     }
+    if (fx.type === 'blast' && fx.weapon === 'cannonball') {
+      this.combatEffects.groundBlast(
+        p, fx.radius ?? 1.5, this.model.state.settings.reducedMotion, 'mortar',
+      );
+      this.audio.play('destroy');
+      if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
+      return;
+    }
     if (fx.type === 'blast') {
       const radius = (fx.radius ?? 1.5) * 64;
       const lift = fx.toAir ? AIR_LIFT : 0;
@@ -1244,6 +1229,14 @@ export class VillageScene extends Phaser.Scene {
       this.sparks(p.x, p.y - 26 - lift, color, 14);
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
+      return;
+    }
+    if (fx.type === 'mortar-fire') {
+      if (!this.model.state.settings.reducedMotion)
+        this.combatEffects.muzzle('cannonball', {
+          x: p.x, y: p.y - this.mortarMuzzleLift(fx.sourceId!),
+        });
+      this.audio.play('hit');
       return;
     }
     if (fx.type === 'projectile' && fx.projectileId) {
@@ -1354,11 +1347,27 @@ export class VillageScene extends Phaser.Scene {
     return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
   }
 
+  private mortarMuzzleLift(sourceId: number) {
+    const source = this.sprites.get(sourceId);
+    return source ? (source.getData('intactHeight') ?? source.displayHeight) * 0.7 : 28;
+  }
+
   private drawProjectiles() {
     const b = this.model.battle;
     const shots =
       !b || b.finished || this.model.state.settings.reducedMotion ? [] : (b.projectiles ?? []);
-    this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
+    const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
+    const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
+    this.combatEffects.retainProjectiles(new Set([...shots.map((p) => p.id), ...shells.map(shellId)]));
+    for (const shell of shells) {
+      const progress = Phaser.Math.Clamp(
+        (b!.elapsed - shell.launched) / (shell.impact - shell.launched), 0, 1,
+      );
+      this.combatEffects.poseMortar(
+        shellId(shell), iso(shell.fromX, shell.fromY), iso(shell.x, shell.y),
+        this.mortarMuzzleLift(shell.sourceId), progress,
+      );
+    }
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);

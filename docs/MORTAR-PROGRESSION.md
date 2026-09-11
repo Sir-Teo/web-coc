@@ -21,10 +21,16 @@ Counts at TH1–8 are **0, 0, 1, 1, 1, 2, 3, 4**. The existing level ceilings al
 
 `defense-progression.ts` supplies health, gold, duration and DPS. Construction, paid upgrades, Info comparisons and combat share those values. Running buildings retain their current level until the timer completes. Home ticks reconcile older health while preserving the saved damage fraction and existing paid timestamps. Older excess Mortars and accepted levels 7–10 remain in the village, although they cannot be newly built or upgraded through the TH8 catalog.
 
-Shells retain their launch damage and land at the selected location, so moving troops can escape. Flying units are unaffected. Destroying the Mortar does not cancel an airborne shell; ending the battle does. Practice uses the table directly; campaign defense multipliers remain scenario tuning. Replay version 6 identifies this rules change. Older result summaries remain readable.
+Shells retain their launch damage and land at the selected location, so moving troops can escape. Flying units are unaffected. Destroying the Mortar does not cancel an airborne shell; ending the battle does. Practice uses the table directly; campaign defense multipliers remain scenario tuning. Replay version 6 identified the table change; version 7 aligns shell impact rounding with other projectiles. Older result summaries remain readable.
 
 ## Verification and limits
 
 Tests cover exact-resource upgrades through every playable level, timer boundaries, builder reservations, saved health/timestamps, count gates, legacy levels, actual shell damage at every accepted level, blind-spot/range boundaries, ground/air targeting, 20/30/60 fps cadence and the battle deadline. Existing tests also cover splash, dodging, destroyed launchers, campaign viability and replay reproduction. Browser checks inspect the Info panel, restore paid upgrade timers after reload, and select a Mortar's range rings without ending scouting.
 
 Mortars still use the prototype 2×2 footprint and two artwork tiers. Native 3×3 layout migration, full per-level artwork and geared-up burst mode remain unfinished. Shell flight duration (1.15s) remains local tuning; this audit does not establish native projectile speed, animation or knockback parity.
+
+## Shell presentation
+
+Mortar fire now emits a flash at the visible barrel and a launch sound. The iron shell arcs from that same point while its shadow follows the ground beneath it. Shells use the shared projectile effect lifecycle, so pause holds the complete pose, playback speed follows battle time, seeking rebuilds the correct shell, and leaving a battle clears it. Impacts use a ground-aligned splash effect with the simulation radius instead of a blast floating above the target. The previous warning ellipse at the target has been removed.
+
+Reduced motion suppresses shell flight and launch flashes, including when enabled while a shell is airborne. A brief static ground burst still appears when damage lands. A one-nanosecond comparison tolerance, shared with the other projectile path, prevents accumulated rounding from delaying an otherwise due shell by a full simulation frame. Browser regressions exercise these transitions and compare visual impact with actual damage.

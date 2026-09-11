@@ -81,6 +81,25 @@ export class CombatEffects {
     if (weapon !== 'bomb') g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
   }
 
+  /** A shell and its ground shadow share a battle-time pose, never a wall-clock tween. */
+  poseMortar(id: string, from: Point, to: Point, muzzleLift: number, progress: number) {
+    let g = this.flights.get(id);
+    if (!g) {
+      g = this.graphic().setData('projectileId', id).setData('mortarShell', true);
+      this.flights.set(id, g);
+    }
+    const x = from.x + (to.x - from.x) * progress;
+    const groundY = from.y + (to.y - from.y) * progress;
+    const lift = muzzleLift * (1 - progress) + Math.sin(progress * Math.PI) * 115;
+    g.clear().setPosition(x, groundY - lift).setData('flightProgress', progress);
+    g.fillStyle(0x342b22, 0.14 + 0.2 * (1 - Math.min(1, lift / 160)));
+    g.fillEllipse(0, lift, 14, 7);
+    g.fillStyle(0xffb14a, 0.45).fillCircle(0, 0, 7);
+    g.fillStyle(0x302b26).fillCircle(0, 0, 5);
+    g.lineStyle(1, 0xc59b55).strokeCircle(0, 0, 5);
+    g.fillStyle(0xb8b2a3).fillCircle(-1.5, -2, 1.5);
+  }
+
   retainProjectiles(ids: Set<string>) {
     for (const [id, g] of this.flights)
       if (!ids.has(id)) {
@@ -114,7 +133,7 @@ export class CombatEffects {
 
   muzzle(weapon: Weapon, from: Point) {
     if (weapon === 'cannonball' || weapon === 'rocket') {
-      const flash = this.graphic().setPosition(from.x, from.y);
+      const flash = this.graphic().setPosition(from.x, from.y).setData('muzzle', weapon);
       flash.fillStyle(0xffd28b, 0.9).fillCircle(0, 0, 8);
       flash.fillStyle(0xfff4d2).fillCircle(0, 0, 3);
       this.animate({
@@ -127,8 +146,8 @@ export class CombatEffects {
     }
   }
 
-  groundBlast(at: Point, radius: number, reduced: boolean) {
-    const g = this.graphic().setDepth(7000).setPosition(at.x, at.y).setData('impact', 'bomb');
+  groundBlast(at: Point, radius: number, reduced: boolean, kind: 'bomb' | 'mortar' = 'bomb') {
+    const g = this.graphic().setDepth(7000).setPosition(at.x, at.y).setData('impact', kind);
     const width = radius * 64 * Math.SQRT2,
       height = width / 2;
     g.setData('blastRadius', radius);
