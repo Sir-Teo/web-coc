@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import './style.css';
+import './ui/compact-hud.css';
 import { GameModel } from './game/model';
 import { VillageScene } from './game/scene';
 import { AudioManager } from './game/audio';

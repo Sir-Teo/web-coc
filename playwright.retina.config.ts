@@ -6,6 +6,7 @@ export default defineConfig({
   testMatch: [
     '**/display-density.spec.ts',
     '**/game.spec.ts',
+    '**/hud-layout.spec.ts',
     '**/terrain-field.spec.ts',
     '**/village-camera.spec.ts',
     '**/placement-preview.spec.ts',

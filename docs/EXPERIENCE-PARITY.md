@@ -61,7 +61,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for verified reference rules, pla
 | Live activities and inventory | Absent | No season challenges, rotating events, magic items, event currencies, trader inventory, or purchase systems. |
 | Art and animation | Partial | Original isometric village artwork and readable portraits; most buildings use two broad tiers, while walls and camps have eight level sprites and Mortars have six. Camps now use open fire pits and cooking supports with troop gathering on their outer tiles (see CAMP-ART.md). Balloon, Spell Factory and Air Defense now have original dedicated silhouettes, including upgraded building variants. Need per-level silhouettes, directional movement/attack/death sets, complete destruction states, and richer environmental animation. |
 | Audio and feedback | Partial | Generated effects and optional ambient tones. Need a complete music/ambience mix, distinct unit/defense cues, action timing, and audio settings for more devices. |
-| Device and accessibility quality | Partial | Automated Chromium/WebKit smoke checks, touch/pointer input, portrait/landscape layouts, focus handling, and reduced motion. Physical-device performance, long suspend/resume sessions, and accessibility review remain unverified. |
+| Device and accessibility quality | Partial | Chromium/WebKit gameplay checks, native Retina/3× rendering, touch/pointer input, focus handling and reduced motion. Compact village controls now have tested hit areas across 38 starter/developed viewport combinations, with scrolling armies and separate camera/bottom action rows (see COMPACT-HUD.md). Physical-device performance, long suspend/resume sessions, and accessibility review remain unverified. |
 
 ## Next implementation order
 

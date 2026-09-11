@@ -1,5 +1,18 @@
 # Verification record
 
+## September 11 — compact village controls and landscape spacing
+
+Collect no longer covers Zoom out in the compact village HUD. The initial hit-test probe found obstructed controls in nine of thirteen viewport sizes, including hidden activity buttons at 320×568 and several controls at 568×320. The new compact stylesheet gives the side tools explicit clearance above bottom actions and 44×44 CSS-pixel targets. Short portrait views use side grids and place Collect between Attack and Shop; landscape places Collect beside Shop with a separate camera row above. A short army tray hugs its contents, while a developed roster retains horizontal scrolling. Safe-area variables reserve space at the screen edges. See [COMPACT-HUD.md](COMPACT-HUD.md).
+
+The initial 25-case gameplay/UI selection passes in each of Chromium and WebKit. A seven-case Retina selection also passes in Chromium. Six of seven initially pass in WebKit; the new developed-village fixture retained a DOM handle while a pending HUD redraw replaced it. Reading the control and its rectangle in one browser evaluation corrects that test race, while preserving the real center click and required zoom change. All four final compact-HUD cases pass at 2× in both Metal Chromium and WebKit, with the touch case retaining its 3× setting. Across the selections, 29 distinct scenarios per engine have passing coverage.
+
+The dedicated layout cases check 19 viewports for both starter and developed villages: 38 combinations per engine. Five points in each main control must hit that control, and clicking the exact center of Zoom out must change zoom. Small-screen Settings and Collect actions, 3× touch rotation, inset spacing, scrolling to Train, Army/Shop drawers, Edit camera controls and first-run coaching are exercised. Small starter trays are checked for unwanted empty width. Screenshots at 320×480, 568×320 and 844×390 were visually reviewed. The inset case reserves CSS space; physical-device ergonomics remain unverified.
+
+The production build passes Chromium and WebKit at 2× density without reported errors, including actual deployment, collection flights, replay, tab handoff and rotation. Chromium reloads, opens Army and plays a replay offline with 107 cached files, cache `crown-clan-002840677071`. The new layout regression is included in WebKit CI and the Retina configuration. This pass changes CSS and its import only; simulation, save/replay rules and source artwork are unchanged, so model and asset suites were not rerun.
+
+Evidence: `output/playtest/hud-spacing-baseline.json`, `hud-spacing-after.json`, `hud-layout-chromium.log`, `hud-layout-webkit.log`, `hud-layout-retina-chromium.log`, `hud-layout-retina-webkit.log`, `hud-layout-final-chromium.log`, `hud-layout-final-webkit.log`, `hud-layout-build.log`, `hud-layout-production-report.json`, and `hud-layout-*-320x480-*.png` / `hud-layout-*-568x320-*.png` / `hud-layout-*-844x390-*.png`. The consolidated record is `hud-layout-verification.json`.
+
+
 ## September 11 — native Retina and 3× rendering
 
 The canvas now uses physical display pixels with a 16-million-pixel allocation budget and GPU dimension limits. The former 390×844 buffer stayed at that size even on a 3× screen; it now renders at 1170×2532. A 1440×960 Retina view renders at 2880×1920. Camera framing, gesture tolerances, DOM shop dragging, context anchors and resource flights remain in CSS coordinates. Fractional-density rounding uses separate camera axes. Resize and live display changes preserve world focus and CSS zoom, cancel old gestures, and remap stationary mouse input. See [DISPLAY-DENSITY.md](DISPLAY-DENSITY.md).
@@ -12,7 +25,7 @@ Both hardware benchmarks use headless Chromium 153.0.8010.12 and the reported Ap
 
 The production build passes Chromium and WebKit at 2×, including buffer-size assertions, real deployment, replay, tab handoff and landscape resizing. Chromium reloads, opens Army and plays a replay offline: 107 cached files, cache `crown-clan-55031cfd516c`. No browser errors were reported. This rendering pass does not change game rules, saves, replay versions or source artwork; the last complete model/asset suite remains the 366-test camp-art run in the historical record.
 
-Visual follow-up: at 844×390, Collect covers the center of Zoom out. A DOM hit test returns `collect` at the zoom button's center (x≈804.6, y≈271.6). This is a separate CSS control-layout defect to fix next. Higher-density rendering also does not add missing source-art detail, world-text texture resolution, native content or backend services.
+Visual follow-up: at 844×390, Collect covers the center of Zoom out. A DOM hit test returns `collect` at the zoom button's center (x≈804.6, y≈271.6). This separate CSS control-layout defect is resolved in the compact HUD pass recorded above. Higher-density rendering also does not add missing source-art detail, world-text texture resolution, native content or backend services.
 
 Evidence: `output/playtest/display-unit.json`, `display-chromium.log`, `display-retina.log`, `display-webkit.log`, `display-pinch.log`, `display-restoration-metal.log`, `display-restoration-webkit.log`, `display-build.log`, `display-production-report.json`, `display-retina-performance.json`, `display-phone-performance.json`, `display-phone-camps.png`, `display-landscape-followup.json`, and `display-landscape-followup.png`. The consolidated record is `display-verification.json`.
 
