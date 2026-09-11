@@ -16,6 +16,7 @@ import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
+const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
 const SPELL_COLOR: Record<string, number> = {
   rage: 0xff6a3d,
   heal: 0x8de35c,
@@ -35,6 +36,7 @@ export class VillageScene extends Phaser.Scene {
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
   private ground!: Phaser.GameObjects.Graphics;
+  private ruinGround!: Phaser.GameObjects.Graphics;
   /** Ground-level markings that buildings must sit on top of. */
   private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
@@ -72,6 +74,8 @@ export class VillageScene extends Phaser.Scene {
   preload() {
     this.load.image('king', asset('king'));
     this.load.image('terrain', '/assets/environment/terrain.webp');
+    for (const material of ['stone', 'wood'])
+      this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
       if (k !== 'wall' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
@@ -99,6 +103,7 @@ export class VillageScene extends Phaser.Scene {
       .setDisplaySize(WORLD.width, WORLD.height)
       .setDepth(-1000);
     this.ground = this.add.graphics().setDepth(-900);
+    this.ruinGround = this.add.graphics().setDepth(-875);
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.detail = this.add.graphics().setDepth(5000);
     this.overlay = this.add.graphics().setDepth(6000);
@@ -495,6 +500,8 @@ export class VillageScene extends Phaser.Scene {
       if (im.texture.key !== texture) im.setTexture(texture);
       const levelScale = b.kind === 'wall' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
       im.setPosition(p.x, p.y)
+        .setOrigin(0.5, 0.88)
+        .setFlipX(false)
         .setDisplaySize(
           d.width * levelScale,
           b.kind === 'wall' ? 39 : (d.width * levelScale * im.height) / im.width,
@@ -506,10 +513,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.level >= TIER3_LEVEL) im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
-        im.setTint(0x514940)
-          .setAlpha(0.5)
-          .setDisplaySize(d.width * 0.82, d.width * 0.2)
-          .setDepth(p.y - 1);
+        this.renderRuin(b, im);
       }
       const shouldBubble =
         !this.model.battle &&
@@ -581,7 +585,31 @@ export class VillageScene extends Phaser.Scene {
       this.ghost = undefined;
     }
     this.syncWalls();
+    this.drawRuinGround();
     this.lastRevision = this.model.revision;
+  }
+  private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
+    const width = BUILDINGS[b.kind].width * (b.kind === 'wall' ? 0.9 : 0.98);
+    im.setTexture(WOOD_RUINS.has(b.kind) ? 'ruins-wood' : 'ruins-stone')
+      .setOrigin(0.5, 0.58)
+      .setFlipX(b.id % 2 === 0)
+      .clearTint()
+      .setAlpha(1)
+      .setDisplaySize(width, width * im.height / im.width)
+      .setDepth(im.y - 2);
+  }
+  private drawRuinGround() {
+    this.ruinGround.clear();
+    for (const b of this.model.buildings) {
+      if (b.hp > 0 || isTrap(b.kind)) continue;
+      const d = BUILDINGS[b.kind];
+      const p = iso(b.x + d.size / 2, b.y + d.size / 2);
+      const width = d.width * 1.12;
+      this.ruinGround.fillStyle(0x40331e, 0.3);
+      this.ruinGround.fillEllipse(p.x, p.y + 4, width, width * 0.46);
+      this.ruinGround.fillStyle(0x302719, 0.24);
+      this.ruinGround.fillEllipse(p.x, p.y, width * 0.76, width * 0.33);
+    }
   }
   private removeBubble(id: number) {
     const bubble = this.bubbles.get(id);
@@ -1077,10 +1105,9 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       for (const b of this.model.battle.buildings) {
         const im = this.sprites.get(b.id);
-        if (im && b.hp <= 0 && im.alpha !== 0.5) {
-          im.setTint(0x514940)
-            .setAlpha(0.5)
-            .setDisplaySize(BUILDINGS[b.kind].width * 0.82, BUILDINGS[b.kind].width * 0.2);
+        if (im && b.hp <= 0 && !im.texture.key.startsWith('ruins-')) {
+          this.renderRuin(b, im);
+          this.drawRuinGround();
         }
       }
     for (let i = 0; i < this.ambientUnits.length; i++) {
