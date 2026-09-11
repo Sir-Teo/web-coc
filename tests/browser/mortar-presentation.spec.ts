@@ -76,6 +76,8 @@ test('Mortar flashes at its muzzle, follows a paused arc, and bursts on the grou
   expect(middle.pose!.y).toBeLessThan(first.pose!.y);
   expect(middle.flashes).toHaveLength(0);
   expect(middle.hp).toBe(first.hp);
+  // Allow the canvas renderer to present the manually advanced, paused pose.
+  await page.waitForTimeout(100);
   await page.screenshot({
     path: `output/playtest/mortar-arc-${test.info().project.name}.png`,
     animations: 'disabled',
@@ -88,6 +90,8 @@ test('Mortar flashes at its muzzle, follows a paused arc, and bursts on the grou
   expect(impact.shells).toBe(0);
   expect(impact.hp).toBe(first.hp - 20);
   expect(impact.impacts).toBe(1);
+  // Allow the canvas renderer to present the manually advanced, paused pose.
+  await page.waitForTimeout(100);
   await page.screenshot({
     path: `output/playtest/mortar-impact-${test.info().project.name}.png`,
     animations: 'disabled',
