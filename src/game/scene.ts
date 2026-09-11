@@ -18,6 +18,7 @@ import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
 import { troopArt } from './troop-art';
+import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
@@ -72,6 +73,11 @@ export class VillageScene extends Phaser.Scene {
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
+  private campActors: CampActor[] = [];
+  private campViews = new Map<string, Phaser.GameObjects.Image>();
+  private campShadows!: Phaser.GameObjects.Graphics;
+  private campSignature = '';
+  private campTime = 0;
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
   private effectTimeline = new EffectTimeline();
@@ -115,6 +121,7 @@ export class VillageScene extends Phaser.Scene {
     this.ground = this.add.graphics().setDepth(-900);
     this.ruinGround = this.add.graphics().setDepth(-875);
     this.groundMarks = this.add.graphics().setDepth(-850);
+    this.campShadows = this.add.graphics().setDepth(-840);
     this.detail = this.add.graphics().setDepth(5000);
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
@@ -228,14 +235,6 @@ export class VillageScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-ESC', () => this.model.cancel());
     this.model.onEffect = (fx) => this.effect(fx);
     this.sync();
-    for (let i = 0; i < 8; i++) {
-      const k = TROOP_KEYS[i % 4];
-      const im = this.add
-        .image(0, 0, `${k}-walk`, 0)
-        .setOrigin(0.5, 0.953)
-        .setDisplaySize(i % 4 === 2 ? 32 : 25, i % 4 === 2 ? 32 : 25);
-      this.ambientUnits.push(im);
-    }
     this.ready = true;
     this.onReady();
     document.querySelector('#loading')?.classList.add('loaded');
@@ -628,7 +627,63 @@ export class VillageScene extends Phaser.Scene {
     }
     this.syncWalls();
     this.drawRuinGround();
+    this.syncCampUnits();
     this.lastRevision = this.model.revision;
+  }
+  private syncCampUnits() {
+    if (this.model.battle) {
+      for (const im of this.ambientUnits) im.setVisible(false);
+      this.campShadows.clear();
+      return;
+    }
+    const { army, buildings } = this.model.state;
+    const signature = TROOP_KEYS.map((k) => army[k]).join(',') + '|' +
+      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|');
+    if (signature !== this.campSignature) {
+      this.campSignature = signature;
+      this.campActors = campPlan(army, buildings);
+      const ids = new Set(this.campActors.map((a) => a.id));
+      for (const [id, im] of this.campViews)
+        if (!ids.has(id)) { im.destroy(); this.campViews.delete(id); }
+      this.ambientUnits = this.campActors.map((actor) => {
+        let im = this.campViews.get(actor.id);
+        if (!im) {
+          const art = troopArt(actor.kind), size = TROOPS[actor.kind].width * art.displayScale * 0.7;
+          im = this.add.image(0, 0, `${actor.kind}-walk`, art.idleFrame)
+            .setOrigin(0.5, 122 / 128).setDisplaySize(size, size)
+            .setData('campActor', actor.id).setData('kind', actor.kind);
+          this.campViews.set(actor.id, im);
+        }
+        return im.setData('campId', actor.campId);
+      });
+    }
+    this.drawCampUnits();
+  }
+  private drawCampUnits() {
+    this.campShadows.clear();
+    if (this.model.battle) return;
+    const reduced = this.model.state.settings.reducedMotion;
+    this.campShadows.fillStyle(0x1f2a16, 0.26);
+    for (let i = 0; i < this.campActors.length; i++) {
+      const actor = this.campActors[i], im = this.ambientUnits[i];
+      const pose = campPose(actor, this.campTime);
+      const px = WORLD.ox + (pose.x - pose.y) * 32, py = WORLD.oy + (pose.x + pose.y) * 16;
+      const art = troopArt(actor.kind), flying = !!TROOPS[actor.kind].flying;
+      const previousFacing = im.getData('facing');
+      const facing = pose.facing || previousFacing || art.nativeFacing;
+      const moving = pose.moving && !reduced;
+      const bob = !reduced && flying ? Math.sin(this.campTime * 1.7 + actor.phase) * 2 : 0;
+      const depth = flying ? 6500 : py + 1;
+      const frame = moving || flying && !reduced
+        ? Math.floor(this.campTime * 550 / art.frameMs + actor.phase * 4) % 4 : art.idleFrame;
+      im.setVisible(true).setPosition(px, py - (flying ? AIR_LIFT : 0) + bob);
+      if (im.depth !== depth) im.setDepth(depth);
+      // Avoid rebuilding identical frame geometry and dispatching data events each frame.
+      if (Number(im.frame.name) !== frame) im.setFrame(frame);
+      if (previousFacing !== facing)
+        im.setFlipX(art.nativeFacing > 0 ? facing < 0 : facing > 0).setData('facing', facing);
+      if (flying) this.campShadows.fillEllipse(px, py, 22, 11);
+    }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const width = BUILDINGS[b.kind].width * (b.kind === 'wall' ? 0.9 : 0.98);
@@ -1214,21 +1269,8 @@ export class VillageScene extends Phaser.Scene {
           this.drawRuinGround();
         }
       }
-    for (let i = 0; i < this.ambientUnits.length; i++) {
-      const im = this.ambientUnits[i];
-      im.setVisible(!this.model.battle && this.model.armySize > i);
-      if (this.model.battle) continue;
-      const camp = this.model.state.buildings.filter((b) => b.kind === 'camp')[i % 2];
-      if (!camp) continue;
-      const t = this.model.state.settings.reducedMotion ? i : time / 3500 + i * 1.8;
-      const x = camp.x + 1.5 + Math.cos(t) * 2.1,
-        y = camp.y + 1.5 + Math.sin(t) * 2.1,
-        p = iso(x, y);
-      im.setPosition(p.x, p.y)
-        .setDepth(p.y + 1)
-        .setFrame(this.model.state.settings.reducedMotion ? 0 : Math.floor(time / 160 + i) % 4)
-        .setFlipX(Math.cos(t) < 0);
-    }
+    if (!this.model.battle && !this.model.state.settings.reducedMotion) this.campTime += dt;
+    this.drawCampUnits();
     this.drawOverlay(time);
   }
   screenFor(x: number, y: number) {
