@@ -3,9 +3,19 @@ import fs from 'node:fs/promises';
 import { loadavg, availableParallelism } from 'node:os';
 const hostLoadStart = loadavg();
 const metal = process.argv.includes('--metal');
+const density = Number(
+  process.argv.find((arg) => arg.startsWith('--density='))?.split('=')[1] ?? 1,
+);
+const [width, height] = (
+  process.argv.find((arg) => arg.startsWith('--viewport='))?.split('=')[1] ?? '1440x960'
+)
+  .split('x')
+  .map(Number);
+if (![density, width, height].every((value) => Number.isFinite(value) && value > 0))
+  throw Error('Use --density=2 and --viewport=1440x960 with positive dimensions.');
 if (metal && process.platform !== 'darwin') throw Error('--metal requires macOS.');
 const browser = await chromium.launch(metal ? { args: ['--use-angle=metal'] } : {});
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: density });
 await page.goto('http://localhost:5173');
 await page.waitForFunction(() => window.__game?.scene.ready);
 await page.locator('[data-action="skip-tutorial"]').click();
@@ -190,7 +200,16 @@ await page.evaluate(() => {
 });
 const battle = await measure();
 const report = {
-  environment: `Headless Chromium ${browser.version()} on ${process.platform}, 1440×960, 1× pixel ratio; not a physical mobile benchmark`,
+  environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height}, ${density}× pixel ratio; not a physical mobile benchmark`,
+  display: await page.evaluate(() => {
+    const { game, scene } = window.__game;
+    return {
+      density: window.devicePixelRatio,
+      canvas: [game.canvas.width, game.canvas.height],
+      css: [game.canvas.clientWidth, game.canvas.clientHeight],
+      zoom: scene.viewZoom,
+    };
+  }),
   renderer,
   host: {
     logicalCpus: availableParallelism(),

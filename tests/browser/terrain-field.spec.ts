@@ -59,10 +59,10 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
               const p = s.screenFor(x, y);
               const pixel = new Uint8Array(4);
               gl.readPixels(
-                Math.floor((p.x * gl.drawingBufferWidth) / s.cameras.main.width),
+                Math.floor((p.x * gl.drawingBufferWidth) / s.scale.canvasBounds.width),
                 gl.drawingBufferHeight -
                   1 -
-                  Math.floor((p.y * gl.drawingBufferHeight) / s.cameras.main.height),
+                  Math.floor((p.y * gl.drawingBufferHeight) / s.scale.canvasBounds.height),
                 1,
                 1,
                 gl.RGBA,
@@ -183,7 +183,7 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
     [1440, 960],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === width, width);
+    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === Math.floor(width * devicePixelRatio), width);
     cases.push(
       ...(await page.evaluate(async () => {
         const { scene: s, game } = window.__game;
@@ -232,7 +232,7 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
             [2000.3, 1200.7, 0.9],
             [896.3, 1500.7, 2.11],
           ]) {
-            s.cameras.main.setZoom(zoom).centerOn(x, y);
+            s.cameras.main.setZoom(zoom * s.scale.displayScale.x, zoom * s.scale.displayScale.y).centerOn(x, y);
             outline.commandBuffer = original.slice();
             stencil.stencilInvert = release.stencilInvert = false;
             const actual = await capture();

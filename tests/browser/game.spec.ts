@@ -265,7 +265,7 @@ test('touch input selects buildings and opens menus', async ({ browser }) => {
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,
-    deviceScaleFactor: 2,
+    deviceScaleFactor: 3,
   });
   const page = await context.newPage();
   await page.goto('http://localhost:5173');

@@ -94,7 +94,7 @@ export class VillageScene extends Phaser.Scene {
   onReady = () => {};
   onSelect = () => {};
   baseZoom = 1;
-  private cameraViewport = { width: 0, height: 0 };
+  private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
@@ -210,12 +210,12 @@ export class VillageScene extends Phaser.Scene {
       const pointers = this.input.manager.pointers.filter((v) => v.isDown);
       if (pointers.length >= 2) {
         const dist = Phaser.Math.Distance.Between(
-          pointers[0].x,
-          pointers[0].y,
-          pointers[1].x,
-          pointers[1].y,
+          pointers[0].x / this.scale.displayScale.x,
+          pointers[0].y / this.scale.displayScale.y,
+          pointers[1].x / this.scale.displayScale.x,
+          pointers[1].y / this.scale.displayScale.y,
         );
-        if (this.pinchDistance) this.setZoom((this.cameras.main.zoom * dist) / this.pinchDistance);
+        if (this.pinchDistance) this.setZoom((this.viewZoom * dist) / this.pinchDistance);
         this.pinchDistance = dist;
         this.dragged = true;
         this.gesture = 'pan';
@@ -226,12 +226,12 @@ export class VillageScene extends Phaser.Scene {
       if (p.isDown && this.down) {
         const dx = p.x - this.down.x,
           dy = p.y - this.down.y,
-          travel = Math.hypot(dx, dy);
+          travel = Math.hypot(dx / this.scale.displayScale.x, dy / this.scale.displayScale.y);
         if (this.gesture === 'none' && travel > 7) this.gesture = this.classifyDrag(p);
         if (this.gesture !== 'none') this.dragged = true;
         if (this.gesture === 'pan') {
-          this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoom;
-          this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoom;
+          this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoomX;
+          this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoomY;
           this.clampCamera();
         } else if (this.gesture === 'deploy') this.dragDeploy(p);
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
@@ -270,7 +270,7 @@ export class VillageScene extends Phaser.Scene {
       this.game.canvas.removeEventListener('pointercancel', cancelGesture),
     );
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
-      if (!this.uiBlocked) this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.92 : 1.08));
+      if (!this.uiBlocked) this.setZoom(this.viewZoom * (dy > 0 ? 0.92 : 1.08));
     });
     this.model.onEffect = (fx) => this.effect(fx);
     this.sync();
@@ -336,21 +336,29 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private updateBaseZoom() {
-    const { width, height } = this.scale;
+    const { width, height } = this.scale.canvasBounds;
     this.baseZoom = Math.max(width / 1792, height / 1195) * 1.04;
     if (width < 700) this.baseZoom = Math.max(width / 1250, height / 1400);
   }
   get minZoom() {
     return Math.min(
       this.baseZoom * 0.78,
-      Math.max(this.scale.width / WORLD.width, this.scale.height / WORLD.height) * 0.95,
+      Math.max(this.scale.canvasBounds.width / WORLD.width, this.scale.canvasBounds.height / WORLD.height) * 0.95,
     );
+  }
+  /** Camera zoom in CSS pixels per world pixel, independent of display density. */
+  get viewZoom() {
+    return this.cameras.main.zoomX / this.cameraViewport.densityX;
+  }
+  private rememberViewport() {
+    const c = this.cameras.main;
+    this.cameraViewport = { width: c.width, height: c.height, densityX: this.scale.displayScale.x };
   }
   resetCamera() {
     if (!this.cameras) return;
     this.updateBaseZoom();
-    this.cameraViewport = { width: this.cameras.main.width, height: this.cameras.main.height };
-    this.cameras.main.setZoom(this.baseZoom);
+    this.rememberViewport();
+    this.setZoom(this.baseZoom);
     this.cameras.main.centerOn(896, 570);
     this.clampCamera();
   }
@@ -359,28 +367,37 @@ export class VillageScene extends Phaser.Scene {
     // Phaser has resized the viewport, but scroll still refers to its previous size.
     const x = c.scrollX + this.cameraViewport.width / 2;
     const y = c.scrollY + this.cameraViewport.height / 2;
-    const zoom = c.zoom;
+    const zoom = this.viewZoom;
     this.updateBaseZoom();
-    this.cameraViewport = { width: c.width, height: c.height };
-    c.setZoom(Phaser.Math.Clamp(zoom, this.minZoom, this.baseZoom * 2));
+    this.rememberViewport();
+    this.setZoom(zoom);
     c.centerOn(x, y);
     this.clampCamera();
     // A pointer's old screen coordinates no longer describe the resized playfield.
     this.down = undefined;
     this.gesture = 'none';
     this.pinchDistance = 0;
+    this.ghostPoint = undefined;
+    // Reproject the last DOM position into the new buffer for a stationary cursor.
+    const pointer = this.input.activePointer;
+    const event = pointer.event;
+    if (event && 'clientX' in event) {
+      const point = this.canvasPoint(event.clientX, event.clientY);
+      pointer.position.set(point.x, point.y);
+    }
   }
   setZoom(value: number) {
-    this.cameras.main.setZoom(Phaser.Math.Clamp(value, this.minZoom, this.baseZoom * 2));
+    const zoom = Phaser.Math.Clamp(value, this.minZoom, this.baseZoom * 2);
+    this.cameras.main.setZoom(zoom * this.scale.displayScale.x, zoom * this.scale.displayScale.y);
     this.clampCamera();
   }
   zoomBy(delta: number) {
-    this.setZoom(this.cameras.main.zoom * delta);
+    this.setZoom(this.viewZoom * delta);
   }
   clampCamera() {
     const c = this.cameras.main,
-      vw = c.width / c.zoom,
-      vh = c.height / c.zoom;
+      vw = c.width / c.zoomX,
+      vh = c.height / c.zoomY;
     const centerX = Phaser.Math.Clamp(
         c.scrollX + c.width / 2,
         WORLD.left + Math.min(vw / 2 - CAMERA_MARGIN, WORLD.width / 2),
@@ -499,7 +516,10 @@ export class VillageScene extends Phaser.Scene {
   /** Converts a DOM pointer position, so the shop drawer can drag onto the map. */
   canvasPoint(clientX: number, clientY: number) {
     const rect = this.game.canvas.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    return {
+      x: (clientX - rect.left) * this.scale.width / rect.width,
+      y: (clientY - rect.top) * this.scale.height / rect.height,
+    };
   }
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));
@@ -1334,9 +1354,9 @@ export class VillageScene extends Phaser.Scene {
     this.resourceFlights.emit(
       {
         x: canvas.left +
-          ((sx - c.scrollX - c.width / 2) * c.zoom + c.width / 2) * canvas.width / this.scale.width,
+          ((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width / this.scale.width,
         y: canvas.top +
-          ((sy - c.scrollY - c.height / 2) * c.zoom + c.height / 2) * canvas.height / this.scale.height,
+          ((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height / this.scale.height,
       },
       { x: box.left + box.width / 2, y: box.top + box.height / 2 },
       resource,
@@ -1457,10 +1477,11 @@ export class VillageScene extends Phaser.Scene {
   }
   screenFor(x: number, y: number) {
     const p = iso(x, y),
-      c = this.cameras.main;
+      c = this.cameras.main,
+      rect = this.scale.canvasBounds;
     return {
-      x: (p.x - (c.scrollX + c.width / 2)) * c.zoom + c.width / 2,
-      y: (p.y - (c.scrollY + c.height / 2)) * c.zoom + c.height / 2,
+      x: rect.left + ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
+      y: rect.top + ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
     };
   }
 }

@@ -7,6 +7,7 @@ import { loadSave, saveGame, SaveRecoveryError } from './game/save';
 import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
+import { configureDisplay, displaySize } from './game/display';
 async function boot() {
   const releaseSession = await acquireVillage();
   let saved;
@@ -37,7 +38,11 @@ async function boot() {
     antialias: true,
     roundPixels: false,
     powerPreference: 'high-performance',
-    scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
+    scale: {
+      mode: Phaser.Scale.NONE,
+      ...displaySize(window.innerWidth, window.innerHeight, 1),
+    },
+    callbacks: { postBoot: configureDisplay },
     render: { pixelArt: false, antialias: true },
     input: { activePointers: 3 },
     scene: [scene],

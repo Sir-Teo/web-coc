@@ -1,5 +1,22 @@
 # Verification record
 
+## September 11 — native Retina and 3× rendering
+
+The canvas now uses physical display pixels with a 16-million-pixel allocation budget and GPU dimension limits. The former 390×844 buffer stayed at that size even on a 3× screen; it now renders at 1170×2532. A 1440×960 Retina view renders at 2880×1920. Camera framing, gesture tolerances, DOM shop dragging, context anchors and resource flights remain in CSS coordinates. Fractional-density rounding uses separate camera axes. Resize and live display changes preserve world focus and CSS zoom, cancel old gestures, and remap stationary mouse input. See [DISPLAY-DENSITY.md](DISPLAY-DENSITY.md).
+
+Two allocation tests pass. The browser matrix contains 35 distinct passing Chromium cases across the focused 19-case default-renderer run, 21-case Retina Metal gameplay run and native pinch case. WebKit passes 33 cases, including 2× terrain/camera coverage and 3× touch input. Two CDP-only capabilities—live density switching and native multi-touch injection—are tested in Chromium. The live-switch test caught devicePixelRatio changing without a resize or media-query notification; a lightweight pre-step comparison now catches that condition. Two existing fixtures also needed explicit waits for a drawer redraw and asynchronous animation cancellation; their original held-button and particle assertions remain intact.
+
+Each density profile resolves alternating one-physical-pixel stripes. The final strengthened graphics-recovery reference includes buildings, troop sprites, text and terrain; three profiles pass in each of Metal Chromium and WebKit with zero changed RGBA pixels after context restoration. The Retina WebKit run also repeats the existing 180 terrain coverage views, field-boundary probes and 15 full-frame comparisons against the old stencil. CI includes the density scenarios and an additional six-case Retina terrain/camera selection.
+
+Both hardware benchmarks use headless Chromium 153.0.8010.12 and the reported Apple M5 Pro Metal renderer, with no other browser test suite from this task running. At 1440×960 CSS/2880×1920 pixels (2×), idle, native 200-troop camps, the 660-actor legacy roster and battle each measure 60 FPS, with 16.7 ms 95th-percentile frames. At 390×844 CSS/1170×2532 pixels (3×), all four samples also measure 60 FPS, with 16.7–16.8 ms 95th-percentile frames. Host load averages are recorded in the reports. The phone-sized run still uses the Mac GPU; physical phones/tablets and longer thermal sessions remain unverified.
+
+The production build passes Chromium and WebKit at 2×, including buffer-size assertions, real deployment, replay, tab handoff and landscape resizing. Chromium reloads, opens Army and plays a replay offline: 107 cached files, cache `crown-clan-55031cfd516c`. No browser errors were reported. This rendering pass does not change game rules, saves, replay versions or source artwork; the last complete model/asset suite remains the 366-test camp-art run in the historical record.
+
+Visual follow-up: at 844×390, Collect covers the center of Zoom out. A DOM hit test returns `collect` at the zoom button's center (x≈804.6, y≈271.6). This is a separate CSS control-layout defect to fix next. Higher-density rendering also does not add missing source-art detail, world-text texture resolution, native content or backend services.
+
+Evidence: `output/playtest/display-unit.json`, `display-chromium.log`, `display-retina.log`, `display-webkit.log`, `display-pinch.log`, `display-restoration-metal.log`, `display-restoration-webkit.log`, `display-build.log`, `display-production-report.json`, `display-retina-performance.json`, `display-phone-performance.json`, `display-phone-camps.png`, `display-landscape-followup.json`, and `display-landscape-followup.png`. The consolidated record is `display-verification.json`.
+
+
 ## September 11 — reduce terrain overdraw and verify Metal rendering
 
 The turf mask now draws only the four corners of its bounding rectangle outside the buildable diamond. It removes two full-viewport stencil inversion draws per frame, while retaining the same repeating texture, tint, alpha, clipping, world detail and troop roster. The matching subtract operation still clears the mask before later world objects render. Gameplay, saves, replay rules and artwork are unchanged.

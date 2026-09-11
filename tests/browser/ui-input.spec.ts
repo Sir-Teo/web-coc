@@ -38,6 +38,8 @@ test('a queued redraw cannot detach a pressed Save button or interrupt an army c
   await page.locator('[data-action="army-presets"]').click();
   await page.locator('#preset-name-0').fill('Keep this click');
   const save = page.locator('[data-action="preset-save:0"]');
+  // Let the opening redraw settle before retaining a DOM node for the held press.
+  await save.hover();
   const box = (await save.boundingBox())!;
   const node = await save.elementHandle();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

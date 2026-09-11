@@ -24,9 +24,9 @@ The implementation uses the installed Phaser 4.2.1 stencil API. The older `setMa
 
 ## Rotation and resize
 
-Viewport changes preserve the camera's current world center and absolute zoom, subject to the new viewport's zoom limits and playable-world pan limits. Phaser updates camera dimensions before the scene resize listener; the old viewport dimensions are retained so the previous world center can be recovered from its scroll offsets. Recenter is still an explicit action that restores the fitted starting view. Battle transitions retain their deliberate starting framing.
+Viewport changes preserve the camera's current world center and CSS zoom, subject to the new viewport's zoom limits and playable-world pan limits. Phaser updates camera dimensions before the scene resize listener; the old viewport dimensions are retained so the previous world center can be recovered from its scroll offsets. Recenter is still an explicit action that restores the fitted starting view. Battle transitions retain their deliberate starting framing.
 
-A resize cancels any unfinished pan or pinch gesture, since its previous screen coordinates no longer describe the playfield. Resource-flight particles are also cleared. The exact world midpoint is used in camera clamping.
+A resize cancels any unfinished pan or pinch gesture, since its previous screen coordinates no longer describe the playfield. Resource-flight particles are also cleared. The exact world midpoint is used in camera clamping. [Native-density rendering](DISPLAY-DENSITY.md) scales the physical buffer and each camera axis while keeping this CSS framing and DOM input mapping consistent on Retina, 3× and fractional-density displays.
 
 ## Verification
 

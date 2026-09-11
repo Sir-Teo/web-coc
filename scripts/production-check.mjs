@@ -8,7 +8,10 @@ for (const [name, engine] of [
   ['webkit', webkit],
 ]) {
   const browser = await engine.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 960 },
+    deviceScaleFactor: 2,
+  });
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
@@ -46,6 +49,11 @@ for (const [name, engine] of [
     () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
   );
   await page.waitForTimeout(1500);
+  expect(
+    await page
+      .locator('#game canvas')
+      .evaluate((canvas) => [canvas.width, canvas.height, canvas.clientWidth, canvas.clientHeight]),
+  ).toEqual([2880, 1920, 1440, 960]);
   await page.locator('[data-action="collect"]').last().click();
   await page.locator('.resource-flight').first().waitFor({ state: 'attached' });
   await page.locator('.resource-flight').last().waitFor({ state: 'detached' });
@@ -105,6 +113,9 @@ for (const [name, engine] of [
     return { resources: s.resources, army: s.army };
   });
   await page.setViewportSize({ width: 844, height: 390 });
+  await expect
+    .poll(() => page.locator('#game canvas').evaluate((canvas) => [canvas.width, canvas.height]))
+    .toEqual([1688, 780]);
   await page.locator('[data-action="battle-log"]').click();
   await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
   await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });
@@ -125,6 +136,8 @@ for (const [name, engine] of [
   await page.setViewportSize({ width: 1440, height: 960 });
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
   report[name] = {
+    displayDensity: 2,
+    nativeBuffer: true,
     boot: true,
     shop: true,
     research: true,

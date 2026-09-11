@@ -25,3 +25,8 @@ The extension is specific to the pinned Phaser renderer's public buffer layout a
 ## Terrain and hardware follow-up
 
 The [field stencil optimization](TERRAIN-CAMERA.md) removes two full-viewport draws without changing any tested framebuffer pixels. Sprite batching and sampler limits remain unchanged after a new comparison found no consistent gain from lowering the texture limit. On this Mac, `node scripts/performance-check.mjs --camps --compare-field-mask --metal` verifies ANGLE Metal and records the actual renderer. The September 11 Apple M5 Pro sample held 60 FPS at 1440×960 with the native 200-troop army and preserved 660-actor roster. Shared-host SwiftShader results remain variable. These hardware samples use a 1× pixel ratio and do not establish high-DPI or physical phone/tablet performance; see [QA.md](QA.md).
+
+
+## Display density
+
+The canvas now uses native display pixels within a bounded buffer allocation, with CSS-independent camera and pointer coordinates. [DISPLAY-DENSITY.md](DISPLAY-DENSITY.md) covers the Phaser scale configuration, fractional densities, display switching and graphics restoration. The benchmark accepts `--density=2` and `--viewport=390x844` and records the actual physical buffer alongside its CSS dimensions. Historical 1× measurements above describe earlier runs; current density-specific measurements are in [QA.md](QA.md).
