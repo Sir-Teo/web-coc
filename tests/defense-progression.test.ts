@@ -5,32 +5,32 @@ import { validateSave } from '../src/game/save';
 
 const expected = {
   airdefense: {
-    costs: [22000, 90000, 270000, 500000, 800000, 1000000],
-    seconds: [10800, 21600, 36000, 57600, 86400, 129600],
+    costs: [22000, 90000, 210000, 500000, 800000, 1000000],
+    seconds: [3600, 7200, 21600, 43200, 64800, 86400],
     hp: [800, 850, 900, 950, 1000, 1050],
     counts: [0, 0, 0, 1, 1, 2, 3, 3],
   },
   wizardtower: {
-    costs: [120000, 220000, 400000, 540000, 700000, 1000000],
-    seconds: [7200, 10800, 21600, 43200, 64800, 86400],
+    costs: [100000, 150000, 250000, 400000, 550000, 660000],
+    seconds: [3600, 5400, 14400, 28800, 36000, 43200],
     hp: [620, 650, 680, 730, 840, 960],
     counts: [0, 0, 0, 0, 1, 2, 2, 3],
   },
   cannon: {
-    costs: [250, 1000, 4000, 16000, 50000, 100000, 150000, 240000, 360000, 500000],
-    seconds: [10, 120, 600, 2700, 3600, 7200, 14400, 21600, 28800, 36000],
-    hp: [420, 470, 520, 570, 620, 670, 730, 800, 880, 960],
+    costs: [250, 1000, 4000, 16000, 50000, 60000, 100000, 160000, 250000, 330000],
+    seconds: [5, 30, 120, 1200, 1800, 3600, 7200, 10800, 12600, 14400],
+    hp: [300, 360, 420, 500, 600, 660, 730, 800, 880, 960],
     counts: [1, 2, 2, 2, 3, 3, 5, 5],
   },
   mortar: {
-    costs: [5000, 25000, 100000, 200000, 300000, 560000],
-    seconds: [7200, 10800, 14400, 21600, 43200, 64800],
+    costs: [5000, 25000, 90000, 180000, 300000, 500000],
+    seconds: [1800, 3600, 7200, 10800, 21600, 28800],
     hp: [400, 450, 500, 550, 600, 650],
     counts: [0, 0, 1, 1, 1, 2, 3, 4],
   },
   archertower: {
-    costs: [1000, 2000, 5000, 20000, 80000, 150000, 300000, 480000, 580000, 760000],
-    seconds: [60, 900, 2700, 10800, 14400, 18000, 21600, 28800, 36000, 43200],
+    costs: [1000, 2000, 5000, 20000, 70000, 80000, 150000, 200000, 400000, 460000],
+    seconds: [15, 120, 1200, 3600, 5400, 7200, 10800, 14400, 18000, 21600],
     hp: [380, 420, 460, 500, 540, 580, 630, 690, 750, 810],
     counts: [0, 1, 1, 2, 3, 3, 4, 5],
   },
@@ -129,18 +129,63 @@ describe.each(['cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower'] a
       b.maxHp = 2000;
       b.hp = 1000;
       b.upgradeStart = Date.now();
-      b.upgradeEnd = b.upgradeStart + 900000;
+      const previousSeconds = {
+        cannon: 600,
+        archertower: 2700,
+        mortar: 14400,
+        airdefense: 36000,
+        wizardtower: 21600,
+      };
+      b.upgradeEnd = b.upgradeStart + previousSeconds[kind] * 1000;
       const end = b.upgradeEnd,
         gold = save.gold;
       const m = new GameModel(save);
       expect([b.hp, b.maxHp]).toEqual([values.hp[1] / 2, values.hp[1]]);
       expect(b.upgradeEnd).toBe(end);
       expect(m.state.gold).toBe(gold);
+      m.tick(b.upgradeStart! + values.seconds[2] * 1000);
+      expect(b.level).toBe(2);
+      expect(b.upgradeEnd).toBe(end);
       m.tick(end);
       expect([b.level, b.hp, b.maxHp]).toEqual([3, values.hp[2], values.hp[2]]);
       expect(m.state.gold).toBe(gold);
       m.tick(end + 1000);
       expect(b.level).toBe(3);
+    });
+
+    it('retains a paid construction deadline from before the time reduction through reload', () => {
+      const save = initialSave();
+      save.obstacles = [];
+      const b = makeBuilding(save.nextId++, kind, 2, 2);
+      const previousSeconds = {
+        cannon: 10,
+        archertower: 60,
+        mortar: 7200,
+        airdefense: 10800,
+        wizardtower: 7200,
+      };
+      b.constructing = true;
+      b.upgradeStart = Date.now();
+      b.upgradeEnd = b.upgradeStart + previousSeconds[kind] * 1000;
+      save.buildings.push(b);
+      const gold = save.gold,
+        end = b.upgradeEnd;
+      const m = new GameModel(structuredClone(save));
+      const restored = m.state.buildings.find((v) => v.id === b.id)!;
+      m.tick(b.upgradeStart + values.seconds[0] * 1000);
+      expect(restored.constructing).toBe(true);
+      expect(restored.upgradeEnd).toBe(end);
+      expect(m.busy).toBe(1);
+      m.tick(end);
+      m.tick(end + 1);
+      expect([
+        restored.level,
+        restored.constructing,
+        restored.upgradeEnd,
+        m.busy,
+        m.state.gold,
+      ]).toEqual([1, false, undefined, 0, gold]);
+      expect(validateSave(m.state)).toBe(true);
     });
   },
 );

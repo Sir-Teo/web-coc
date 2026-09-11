@@ -1,5 +1,7 @@
 # Home Village wall progression
 
+**Source freshness follow-up.** The official June 2025 changes show lower Wall health at levels 1–7 than this earlier audit implemented. A current health/economy re-audit is required; see [defense source reconciliation](DEFENSE-SOURCE-AUDIT.md#remaining-fidelity-work).
+
 Wall construction, upgrades, health and purchase limits now use explicit tables. The reference is the [CoC Guide Home Village wall table](https://coc.guide/defense/wall), checked September 11, 2026. These are undiscounted base values; temporary events, Gold Pass reductions and Wall Rings are not implemented.
 
 | Destination level | Cost per piece | Hitpoints | Required Town Hall |

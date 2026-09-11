@@ -1,5 +1,13 @@
 # Verification record
 
+## Defense source reconciliation — September 11, 2026
+
+All 335 unit tests pass after updating the five defense cost/time tables and the official low-level Cannon health/damage values. The full Chromium run passed 142 of 143 scenarios; its only failure expected the obsolete six-hour Air Defense level-2 timer. The corrected two-hour assertion then passed in Chromium and WebKit, giving all 143 Chromium scenarios passing coverage across the full run and targeted rerun. Nineteen focused WebKit scenarios pass. Production checks pass in both engines with no reported errors, including offline reload, Army and replay in Chromium with 98 cached files.
+
+Migration checks cover old paid construction and upgrade deadlines across reloads: reaching the newly shortened duration cannot finish a previously purchased job early or charge it again. Actual projectile tests verify every accepted Cannon damage tier. The Lightning damage fixture now uses level-4 Cannons so their health exceeds the fixed spell damage, preserving the test's full-damage assertion. Combat version 10 identifies the Cannon correction and retains incompatible result summaries.
+
+Phone Cannon and Wizard Tower Info screens were visually reviewed for health, fractional damage, revised prices/times and control reachability. See [DEFENSE-SOURCE-AUDIT.md](DEFENSE-SOURCE-AUDIT.md) for the rejected stale entries, source limitations and next Wall/TH1 corrections. Evidence: `output/playtest/defense-current-verification.json`, `defense-current-production-report.json` and `*-progression-*.png`.
+
 ## Trap progression and vertical spring feedback — September 11, 2026
 
 All 330 unit tests pass, including exact trap price boundaries, instant placement with occupied builders, paid upgrade reloads, accepted legacy levels, blast-radius edges, spring targeting and half hero damage, healing during stun, and campaign viability. Eighteen browser scenarios pass in each of Chromium and WebKit, covering the four phone placement/upgrade flows, hidden traps, replay playback, effect timing and vertical spring presentation. The production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files.

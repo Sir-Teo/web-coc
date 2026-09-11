@@ -8,11 +8,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
-  ['cannon', 470, 520, 4000, 600, '10m', 3],
-  ['archertower', 420, 460, 5000, 2700, '45m', 3],
-  ['mortar', 450, 500, 100000, 14400, '4h', 5],
-  ['airdefense', 850, 900, 270000, 36000, '10h', 5],
-  ['wizardtower', 650, 680, 400000, 21600, '6h', 6],
+  ['cannon', 360, 420, 4000, 120, '2m', 3],
+  ['archertower', 420, 460, 5000, 1200, '20m', 3],
+  ['mortar', 450, 500, 90000, 7200, '2h', 5],
+  ['airdefense', 850, 900, 210000, 21600, '6h', 5],
+  ['wizardtower', 650, 680, 250000, 14400, '4h', 6],
 ] as const) {
   test(`${kind} Info and saved timer agree with the destination level`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -62,10 +62,10 @@ for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
             }
           : kind === 'cannon'
             ? {
-                dps: '11',
-                nextDps: '15',
-                hit: '8.8',
-                nextHit: '12',
+                dps: '10',
+                nextDps: '13',
+                hit: '8',
+                nextHit: '10.4',
                 range: '9 tiles',
                 rate: '0.8s',
               }
@@ -109,7 +109,7 @@ for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
     await expect(page.locator('.info-cost')).toContainText(cost.toLocaleString('en-US'));
     await expect(page.locator('.info-cost')).toContainText(label);
     await page.screenshot({
-      path: `output/playtest/${kind}-progression-${test.info().project.name}.png`,
+      path: `output/playtest/${kind}-progression-${test.info().project.name || 'chromium'}.png`,
       animations: 'disabled',
     });
     await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
@@ -189,7 +189,7 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(page.locator('[data-action="build:cannon"]')).toContainText('250');
   await expect(tile('wizardtower')).toContainText('0/1');
   await expect(page.locator('[data-action="build:wizardtower"]')).toBeEnabled();
-  await expect(page.locator('[data-action="build:wizardtower"]')).toContainText('120,000');
+  await expect(page.locator('[data-action="build:wizardtower"]')).toContainText('100,000');
 });
 
 test('older combat recordings retain the result and explain why playback is unavailable', async ({
