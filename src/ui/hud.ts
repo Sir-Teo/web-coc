@@ -906,6 +906,15 @@ export class HUD {
   }
   private army() {
     const m = this.model;
+    const upgradingFacilities = (['barracks', 'spellfactory'] as const)
+      .filter((kind) => m.state.buildings.some((b) =>
+        b.kind === kind && !b.constructing && !!b.upgradeEnd))
+      .map((kind) => BUILDINGS[kind].name);
+    const preparationLabel = upgradingFacilities.length
+      ? 'Free &amp; instant during upgrades' : 'Free &amp; instant preparation';
+    const preparationNote = upgradingFacilities.length
+      ? `${upgradingFacilities.join(' and ')} upgrading`
+      : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
     const troopTile = (k: TroopKind) => {
       const d = m.troopStats(k);
       const blocked = !m.barracksReady || m.armySize + m.queuedSize + d.space > m.capacity;
@@ -916,7 +925,7 @@ export class HUD {
       const blocked = !m.factoryReady || m.spellHousing + d.space > m.spellCapacity;
       return `<article class="shop-tile ${m.spellCapacity ? '' : 'unavailable'}"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')}</h3><small class="shop-count">${d.effect}</small>${button(`brew:${k}`, m.spellCapacity ? '+ Add' : `${icon('LockKeyhole', 13)} Factory`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
-    return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_KEYS.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_KEYS.map(spellTile).join('')}</div><footer class="drawer-foot">${icon('Check', 17)} Free &amp; instant preparation <span>Rage and Healing use 2 spell spaces · Lightning uses 1</span></footer>`;
+    return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_KEYS.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_KEYS.map(spellTile).join('')}</div><footer class="drawer-foot">${icon('Check', 17)} ${preparationLabel} <span>${preparationNote}</span></footer>`;
   }
 
   // ----------------------------------------------------------------- modals

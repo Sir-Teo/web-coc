@@ -74,7 +74,10 @@ describe('troop progression', () => {
   });
   it('requires a completed barracks, with no training timer', () => {
     const m = new GameModel();
-    for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) b.upgradeEnd = m.clock + 100000;
+    for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) {
+      b.constructing = true;
+      b.upgradeEnd = m.clock + 100000;
+    }
     const before = m.state.army.archer;
     m.train('archer');
     expect(m.state.army.archer).toBe(before);

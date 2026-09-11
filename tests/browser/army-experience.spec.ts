@@ -203,10 +203,11 @@ test('campaign results prepare the last army and start a fresh repeat attack', a
       logs: window.__game.model.state.raidLog.length,
     })),
   ).toEqual({ units: 0, raids: 1, logs: 1 });
-  // An upgrading facility must not silently send an incomplete army into another raid.
+  // An unfinished facility must not silently send an incomplete army into another raid.
   await page.evaluate(() => {
     const m = window.__game.model;
     for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) {
+      b.constructing = true;
       b.upgradeStart = m.clock;
       b.upgradeEnd = m.clock + 600000;
     }

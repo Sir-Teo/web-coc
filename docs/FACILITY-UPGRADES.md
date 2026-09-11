@@ -1,0 +1,11 @@
+# Preparing armies during facility upgrades
+
+Completed Barracks and Spell Factories remain available while their upgrades run. Players can add troops or spells, equip a Quick army, replenish their Last army, and prepare a repeat campaign attack. A facility's first construction must still finish before it can prepare an army.
+
+Supercell's [October 2022 release notes](https://supercell.com/en/games/clashofclans/blog/release-notes/full-release-notes-2/) explicitly retain production during facility upgrades. Its [March 2025 training announcement](https://supercell.com/en/games/clashofclans/blog/news/troop-training-the-wait-is-over/) removes troop and spell training time. Together these support keeping this game's free, instant preparation available while completed facilities upgrade.
+
+Upgrades still consume builders and retain their timers. The current completed factory level supplies spell housing until the upgrade finishes; starting an upgrade does not grant future capacity. Batch and preset preparation still validate the whole composition before changing the army, and battle guards still prevent editing a home army mid-attack. Existing in-progress upgrades need no save migration. The Army drawer confirms that preparation remains free and instant during upgrades, including on phones.
+
+Four model cases cover preparation and capacity boundaries, independent completion, persistence, Quick armies, Last army, and atomic rejection while a facility is under construction. Browser cases start both upgrades through building controls, edit and save an army on a phone, reload and equip the preset, and replenish a complete repeat attack. The existing unavailable-facility cases now use initial construction rather than an upgrade as the blocking condition.
+
+This corrects facility availability only. Troop/spell unlock tables, facility counts, housing progression, prices and timers remain separate fidelity gaps; the game still uses its documented local catalog and economy.

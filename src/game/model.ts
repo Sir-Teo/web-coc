@@ -821,14 +821,11 @@ export class GameModel {
     return 0;
   }
   get barracksReady() {
-    return this.state.buildings.some(
-      (b) => b.kind === 'barracks' && !b.constructing && !b.upgradeEnd,
-    );
+    // Completed production facilities remain usable throughout an upgrade.
+    return this.state.buildings.some((b) => b.kind === 'barracks' && !b.constructing);
   }
   get factoryReady() {
-    return this.state.buildings.some(
-      (b) => b.kind === 'spellfactory' && !b.constructing && !b.upgradeEnd,
-    );
+    return this.state.buildings.some((b) => b.kind === 'spellfactory' && !b.constructing);
   }
   train(kind: TroopKind, count = 1) {
     if (
