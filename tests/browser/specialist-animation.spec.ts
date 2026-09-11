@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
     m.startBattle(0, true);
     const hall = m.battle.buildings.find((b) => b.kind === 'townhall');
     m.battle.buildings = [hall];
-    for (const kind of ['goblin', 'wallbreaker']) {
+    for (const kind of ['swordsman', 'goblin', 'wallbreaker']) {
       m.activeTroop = kind;
       m.deploy(1, 13);
       const u = m.battle.units.at(-1);
@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('specialists load four distinct transparent frames with stable size and foot anchors', async ({
+test('ground troop atlases load four distinct transparent frames with stable size and foot anchors', async ({
   page,
 }) => {
   const result = await page.evaluate(() => {
@@ -93,7 +93,7 @@ test('walking advances four poses, faces the route, and stays still when battle 
     const { model: m, scene } = window.__game;
     return m.battle.units.map((u) => {
       const im = scene.unitSprites.get(u.id);
-      const frameMs = u.kind === 'goblin' ? 100 : 110;
+      const frameMs = u.kind === 'goblin' ? 100 : u.kind === 'swordsman' ? 140 : 110;
       const frames = [];
       const widths = [];
       for (let i = 0; i < 4; i++) {
@@ -108,19 +108,19 @@ test('walking advances four poses, faces the route, and stays still when battle 
       const left = im.flipX;
       u.path = [{ x: u.x + 2, y: u.y }];
       scene.drawOverlay(99999);
-      return { frames, widths, before, paused, left, right: im.flipX };
+      return { kind: u.kind, frames, widths, before, paused, left, right: im.flipX };
     });
   });
   for (const r of result) {
     expect(new Set(r.frames).size).toBe(4);
     expect(new Set(r.widths).size).toBe(1);
     expect(r.paused).toEqual(r.before);
-    expect(r.left).toBe(true);
-    expect(r.right).toBe(false);
+    expect(r.left).toBe(r.kind !== 'swordsman');
+    expect(r.right).toBe(r.kind === 'swordsman');
   }
 });
 
-test('idle, attacking and reduced-motion specialists use a planted pose on phone', async ({
+test('idle, attacking and reduced-motion ground troops use a planted pose on phone', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -146,6 +146,6 @@ test('idle, attacking and reduced-motion specialists use a planted pose on phone
     scene.drawOverlay(9999);
     return { idle, attacking, reduced: frames() };
   });
-  expect(poses).toEqual({ idle: [1, 1], attacking: [1, 1], reduced: [1, 1] });
+  expect(poses).toEqual({ idle: [1, 1, 1], attacking: [1, 1, 1], reduced: [1, 1, 1] });
   await page.screenshot({ path: 'output/playtest/specialist-animation-phone.png' });
 });

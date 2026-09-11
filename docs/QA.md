@@ -1,5 +1,15 @@
 # Verification record
 
+## September 11 — Barbarian identity, portrait and walk cycle
+
+The starter melee troop now uses the Barbarian name and a new matching portrait and four-frame walk atlas throughout preparation, camps, combat and replay. The built-in image-generation tool produced the source artwork using a Supercell character reference. A corrected source replaces the initial opaque checkerboard and repeated stride; the deterministic importer removes its magenta matte, registers the hair, preserves a shared scale and aligns feet. The retained `swordsman` save/replay key, combat stats and save/replay versions are unchanged. See [BARBARIAN-ART.md](BARBARIAN-ART.md) for sources, exact prompts, importer details and remaining animation gaps.
+
+All 37 focused model/asset cases pass across Barbarian artwork, facing, army preparation/unlocks and deterministic replay. Exact asset rebuilds pass. Ten distinct browser scenarios pass in each of Metal Chromium and WebKit at 2× density: army roster, starter naming/portraits and save reload, camp texture/idle, ground-troop animation, and desktop/phone replay. Initial new-fixture failures used a battle-only selector in the village and assumed Phaser retained a fetchable image URL; the final checks use the accessible village card and compare the decoded camp texture pixels directly with the shipping atlas. Screenshots wait for the details modal animation before capture. The portrait and enlarged phone camp were visually reviewed.
+
+The build and production checks pass in Chromium and WebKit at 2×, including the new required artwork, deployment, replay, tab handoff and landscape rotation. Chromium reloads, opens Army and plays a replay offline with 109 cached files, cache `crown-clan-9eaad3630bed`; no browser errors were reported. The new art rebuild and presentation tests are included in CI. This pass covers one low-level appearance; level variants, full directional/attack/death art and physical-phone verification remain open.
+
+Evidence: `output/playtest/barbarian-verification.json`, `barbarian-chromium.log`, `barbarian-chromium-final.log`, `barbarian-webkit.log`, `barbarian-webkit-final.log`, `barbarian-build.log`, `barbarian-production.log`, `barbarian-production-report.json`, `barbarian-details-{chromium,webkit}.png` and `barbarian-camp-phone-{chromium,webkit}.png`.
+
 ## September 11 — compact village controls and landscape spacing
 
 Collect no longer covers Zoom out in the compact village HUD. The initial hit-test probe found obstructed controls in nine of thirteen viewport sizes, including hidden activity buttons at 320×568 and several controls at 568×320. The new compact stylesheet gives the side tools explicit clearance above bottom actions and 44×44 CSS-pixel targets. Short portrait views use side grids and place Collect between Attack and Shop; landscape places Collect beside Shop with a separate camera row above. A short army tray hugs its contents, while a developed roster retains horizontal scrolling. Safe-area variables reserve space at the screen edges. See [COMPACT-HUD.md](COMPACT-HUD.md).

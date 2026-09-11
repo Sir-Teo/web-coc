@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. New villages start at Town Hall 2 with Swordsmen and Archers. Upgrade the Barracks to unlock more troops, and build the Spell Factory after reaching Town Hall 5. Existing villages retain their buildings and prepared armies.
+Open http://localhost:5173. New villages start at Town Hall 2 with Barbarians and Archers. Upgrade the Barracks to unlock more troops, and build the Spell Factory after reaching Town Hall 5. Existing villages retain their buildings and prepared armies.
 
 ```sh
 npm run build
@@ -83,7 +83,7 @@ with `no-cache` so a new release is picked up on the next visit.
 
 - Build a **Hero Hall at Town Hall 4** to unlock the Barbarian King. Open **Army → Heroes** for stats and upgrades.
 - The King uses no army housing and returns at full health for each attack. Select his card or press **H**, then tap outside the deployment boundary.
-- At Town Hall 7, use his card or **H** again for **Iron Fist**: healing, rage, and four summoned swordsmen, once per attack. It also activates automatically at low health.
+- At Town Hall 7, use his card or **H** again for **Iron Fist**: healing, rage, and four summoned Barbarians, once per attack. It also activates automatically at low health.
 - Dark Elixir Drills and Storage unlock at Town Hall 7. Collect dark elixir to upgrade the King using one builder. Army → Progression shows building unlocks and level caps.
 - This is the first hero implementation; equipment, other heroes, and defending heroes remain unfinished. See [docs/HERO-PROGRESSION.md](docs/HERO-PROGRESSION.md).
 

@@ -469,7 +469,7 @@ export interface TroopDef {
 }
 export const TROOPS: Record<TroopKind, TroopDef> = {
   swordsman: {
-    name: 'Swordsman',
+    name: 'Barbarian',
     role: 'MELEE',
     description: 'Fearless frontline fighters. Best deployed in a group.',
     hp: 200,
@@ -683,7 +683,9 @@ export const buildingTexture = (kind: BuildingKind, level = 1) => {
 };
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
-const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
+// Keep the persisted swordsman key in armies, research, presets and replay actions.
+const artName = (kind: string) => kind === 'swordsman'
+  ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
   if (kind === 'wall') return wallAsset(level);

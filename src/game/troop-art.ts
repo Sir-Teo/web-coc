@@ -17,6 +17,7 @@ const specialist = {
   bob: 0,
 };
 const profiles: Partial<Record<TroopKind, typeof normal>> = {
+  swordsman: { ...normal, displayScale: 1.6, idleFrame: 1, bob: 0 },
   goblin: { ...specialist, frameMs: 100 },
   wallbreaker: { ...specialist, frameMs: 110 },
   balloon: { ...normal, frameMs: 360 },
