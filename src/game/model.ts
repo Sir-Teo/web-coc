@@ -44,6 +44,7 @@ import {
   gemCost,
   maxCountFor,
   maxLevelFor,
+  producedResource,
   researchCost,
   researchSeconds,
   storageCapacity,
@@ -674,24 +675,35 @@ export class GameModel {
     let gold = 0,
       elixir = 0,
       dark = 0;
+    // Why nothing came out, so a full storage never reads as an idle collector.
+    let full: Resource | null = null;
+    let unfinished = false;
     for (const b of this.state.buildings) {
-      if ((id === undefined || b.id === id) && b.stored >= 1) {
-        const k = b.kind === 'goldmine' ? 'gold' : b.kind === 'darkdrill' ? 'dark' : 'elixir';
-        const amount = Math.min(Math.floor(b.stored), this.resourceCap(k) - this.state[k]);
-        if (amount <= 0) continue;
-        this.state[k] += amount;
-        b.stored -= amount;
-        if (k === 'gold') gold += amount;
-        else if (k === 'elixir') elixir += amount;
-        else dark += amount;
-        this.onEffect({
-          type: 'collect',
-          x: b.x + BUILDINGS[b.kind].size / 2,
-          y: b.y + BUILDINGS[b.kind].size / 2,
-          color: k === 'gold' ? 0xffd34b : k === 'dark' ? 0x514076 : 0xd567ff,
-          text: `+${amount.toLocaleString()}`,
-        });
+      if (id !== undefined && b.id !== id) continue;
+      const k = producedResource(b.kind);
+      if (!k || b.stored < 1) continue;
+      // A building still being raised or upgraded keeps what it holds.
+      if (b.upgradeEnd) {
+        unfinished = true;
+        continue;
       }
+      const amount = Math.min(Math.floor(b.stored), this.resourceCap(k) - this.state[k]);
+      if (amount <= 0) {
+        full ??= k;
+        continue;
+      }
+      this.state[k] += amount;
+      b.stored -= amount;
+      if (k === 'gold') gold += amount;
+      else if (k === 'elixir') elixir += amount;
+      else dark += amount;
+      this.onEffect({
+        type: 'collect',
+        x: b.x + BUILDINGS[b.kind].size / 2,
+        y: b.y + BUILDINGS[b.kind].size / 2,
+        color: k === 'gold' ? 0xffd34b : k === 'dark' ? 0x514076 : 0xd567ff,
+        text: `+${amount.toLocaleString()}`,
+      });
     }
     if (gold + elixir + dark) {
       this.state.stats.collected += gold + elixir + dark;
@@ -699,7 +711,11 @@ export class GameModel {
         `Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir${dark ? ` · ${dark.toLocaleString()} dark elixir` : ''}`,
       );
       this.changed();
-    } else this.notify('Your collectors are working. Come back in a moment.');
+    } else if (full === 'dark' && this.resourceCap('dark') === 0)
+      this.notify('Build a Dark Elixir Storage to hold what your drills bring up.');
+    else if (full) this.notify(`Your ${full === 'dark' ? 'dark elixir' : full} storages are full.`);
+    else if (unfinished) this.notify('That building keeps its resources until it is ready.');
+    else this.notify('Your collectors are working. Come back in a moment.');
   }
   canPlace(kind: BuildingKind, x: number, y: number, ignore?: number) {
     const size = BUILDINGS[kind].size;
@@ -1133,10 +1149,13 @@ export class GameModel {
     return this.state.layouts ?? [];
   }
   saveLayout(slot: number) {
+    if (!Number.isInteger(slot) || slot < 0 || slot > 2) return;
     this.state.layouts ??= [];
     while (this.state.layouts.length < 3)
-      this.state.layouts.push({ name: `Layout ${this.state.layouts.length + 1}`, slots: [] });
-    if (slot < 0 || slot > 2) return;
+      this.state.layouts.push({
+        name: `Layout ${this.state.layouts.length + 1}`,
+        slots: [],
+      });
     this.state.layouts[slot] = {
       name: this.state.layouts[slot].name,
       slots: this.positions(),
@@ -2312,6 +2331,8 @@ export function initialSave(): Save {
   for (let n = 9; n < 19; n++) {
     add('wall', 8, n, 2);
   }
+  // The opening village has been running a while; its mines start with something to collect.
+  for (const v of b) if (v.kind === 'goldmine' || v.kind === 'collector') v.stored = 1800;
   // Walls may border footprints; remove any segment occupying another building's footprint.
   const buildings = b.filter(
     (v) =>

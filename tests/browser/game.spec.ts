@@ -227,6 +227,39 @@ test('exported villages restore through the file import control', async ({ page 
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(expected.gold);
 });
 
+test('an imported village cannot smuggle markup into the layout panel', async ({ page }) => {
+  const fired: string[] = [];
+  page.on('dialog', async (d) => {
+    fired.push(d.message());
+    await d.dismiss();
+  });
+  page.on('pageerror', (e) => fired.push(String(e)));
+  const village = await page.evaluate(() => {
+    const state = structuredClone(window.__game.model.state);
+    state.layouts = [
+      { name: '<img src=x onerror="alert(\'xss\')">pwned', slots: [] },
+      { name: 'Layout 2', slots: [] },
+      { name: 'Layout 3', slots: [] },
+    ];
+    return state;
+  });
+  await page.locator('[data-action="settings"]').click();
+  await page.locator('#import-file').setInputFiles({
+    name: 'village.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(village)),
+  });
+  await expect(page.locator('#toast')).toContainText('Village restored');
+  await page.locator('[data-action="edit"]').click();
+  await page.locator('[data-action="layouts"]').click();
+  const row = page.locator('.layout-row h3').first();
+  // The name must arrive as text, with no element built out of it.
+  await expect(row).toHaveText('<img src=x onerror="alert(\'xss\')">pwned');
+  expect(await row.locator('img').count()).toBe(0);
+  await page.waitForTimeout(300);
+  expect(fired).toEqual([]);
+});
+
 test('touch input selects buildings and opens menus', async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },

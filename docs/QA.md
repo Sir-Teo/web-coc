@@ -4,6 +4,21 @@ Verified locally on September 10, 2026. The hero/progression pass has **99 passi
 
 Production checks in Chromium and WebKit pass for boot, shop, research, tab handoff, imported hero saves, gem-finished hero upgrades, pointer deployment and H-key ability use. Chromium also reloads and plays the upgraded hero offline with cached artwork. Reports: `output/playtest/production-report.json` and `hero-production-report.json`. Run `node scripts/production-check.mjs` and `node scripts/hero-production-check.mjs` after a build with the development and preview servers running.
 
+## Defect audit — economy, persistence, editing and escaping (September 11, 2026)
+
+Regression coverage now includes the following economy, persistence, editing and imported-content safeguards. The current verification results are recorded in `output/playtest/replay-audit-verification.json`; older pass counts below describe earlier milestones.
+
+- **Free resources from every new producer.** `makeBuilding` seeded 1,800 stored resources for mines and collectors — intended only for the opening village, but `place` uses the same helper. A Gold Mine cost 1,800 elixir and paid back 1,800 gold; a Collector did the reverse. New buildings now start empty and `initialSave` seeds its own.
+- **Collecting from buildings that were not finished.** `collect` tested only `stored >= 1`, so the Collect button drained a mine that was still under construction or mid-upgrade — the renderer already suppressed the bubble for those, so the model and the view disagreed. Collection now skips anything with a timer running.
+- **A raid abandoned by closing the tab spent the army for nothing.** Troops leave the camps on deploy and the battle is not part of the save, so a refresh or an app switch lost them with no loot, trophies or stars. `suspendBattle` now settles an attack that has committed troops exactly as surrendering does, and leaves a scouted-but-untouched attack free.
+- **Markup in an imported village reached the DOM.** `validateSave` accepts any layout name, and the layout panel interpolated it into `innerHTML` unescaped, unlike the army preset names beside it. The name is now escaped; a browser scenario imports a scripted name and asserts no element is built from it.
+- **Restoring a layout could stack two buildings on the same tiles.** Stored arrangements say nothing about buildings raised since, and neither the restore nor save validation checked, so the corruption survived a reload. Restores, undo and redo are now applied only as a whole, and refused with an explanation otherwise.
+- **Wall builder rules were inconsistent.** Gold/elixir upgrades and new placement require a free builder, complete instantly, and never reserve that builder afterward.
+- **Empty collections all reported the same reason.** Full storages, a Dark Elixir Drill with no storage to empty into, and an unfinished building each said "your collectors are working". Each now names what is actually blocking it.
+- **Loot bars promised more than the raid could bank.** `finishBattle` clamped the award to storage headroom while the bars showed the full amount, so a 100% raid into full storages read 8,500 gold during the battle and 0 on the result. Headroom is captured at the start of a campaign attack and the bars, the result and the award now agree. Replays keep showing what the recorded attack earned.
+
+Not changed: dark elixir still needs a Dark Elixir Storage before any can be kept, which is deliberate and separately tested. Only the silent failure around it was fixed.
+
 ## Hero and progression pass
 
 - Added 12 model cases covering Hero Hall completion, TH4/TH7/TH8 gates, dark-elixir charges, builder reservations, one-time offline completion, gem finishes, legacy and malformed saves, dark drill downtime and overflow, hero-only combat, duplicate/blocked deployment, ability healing/rage/summons, automatic activation, spring damage/no ejection, defeat/reuse, history, independent building ceilings, and construction/upgrade affordability at every supported tier.
@@ -155,5 +170,14 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 - The campaign matrix does not cover balloon-led, specialist-led, or spell-supported attacks; focused interaction tests cover the new specialists.
 - Specialist health/damage and the resource loot shares are tuned for this local campaign, not the current live game economy.
 - Air troops have a float cycle but no distinct attack or death animation.
-- Levels 1–4 share base artwork; level 5 and above use the final-tier set. There is no per-level art beyond those two tiers.
+- Most buildings share base artwork at levels 1–4 and final-tier artwork at level 5 and above. Walls have distinct artwork at levels 1–8; the other buildings still need per-level art.
 - Physical iOS/Android performance, multi-hour sleep/resume endurance, and accessibility review remain release gates.
+
+## Replay audit — September 11, 2026
+
+- Recording, seeking, speed controls, portable files and read-only playback are covered by model tests and real browser input in Chromium and WebKit.
+- Version 4 records raid-limited storage headroom. Regression cases compare final loot and results, verify that home research uses home levels while watching, and bound tiny-step playback and reconstruction work.
+- Imported replay limits preserve older recordings as incompatible summaries. Unsupported new recordings are omitted without invalidating the village save.
+- Portrait and landscape playback targets are at least 44 CSS pixels; the 320px layout and 844×390 production view were visually reviewed.
+- `npm run test:production` now records a practice attack through the canvas, watches/seeks/restarts/exits the replay in Chromium and WebKit, compares home resources/army, and reopens the saved recording offline in Chromium.
+- Reports and screenshots: `output/playtest/replay-audit-verification.json`, `production-replay-*.png`, and `replay-controls-*.png`.

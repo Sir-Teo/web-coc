@@ -25,6 +25,20 @@ function arena(
   return m.battle!;
 }
 
+function overlapping(model: GameModel) {
+  const all = model.state.buildings;
+  return all.some((a) =>
+    all.some(
+      (b) =>
+        a.id !== b.id &&
+        a.x < b.x + BUILDINGS[b.kind].size &&
+        a.x + BUILDINGS[a.kind].size > b.x &&
+        a.y < b.y + BUILDINGS[b.kind].size &&
+        a.y + BUILDINGS[a.kind].size > b.y,
+    ),
+  );
+}
+
 describe('scouting phase', () => {
   it('holds the battle clock for thirty seconds and starts early on the first deploy', () => {
     const m = new GameModel();
@@ -250,6 +264,14 @@ describe('town hall gating and stretched timers', () => {
 });
 
 describe('edit mode', () => {
+  it('rejects invalid layout slots without allocating or altering saved layouts', () => {
+    const m = new GameModel();
+    const before = structuredClone(m.state);
+    for (const slot of [-1, 3, 0.5, NaN, Infinity]) {
+      m.saveLayout(slot);
+      expect(m.state).toEqual(before);
+    }
+  });
   it('drags buildings, refuses occupied ground, and undoes and redoes', () => {
     const m = new GameModel(developedSave());
     m.beginEdit();
@@ -266,6 +288,48 @@ describe('edit mode', () => {
     m.redo();
     expect([b.x, b.y]).toEqual([2, 2]);
     expect(validateSave(m.state)).toBe(true);
+  });
+  it('refuses to restore a layout that would stack buildings raised since it was saved', () => {
+    const m = new GameModel();
+    m.townhall!.level = 5; // The third Cannon unlocks at TH5.
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
+    m.state.gold = 9_000_000;
+    m.state.elixir = 9_000_000;
+    m.beginEdit();
+    m.saveLayout(0);
+    const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
+    const vacated = { x: mine.x, y: mine.y };
+    expect(m.dragTo(mine.id, 23, 2)).toBe(true);
+    m.endEdit();
+    m.placement = 'cannon';
+    expect(m.place(vacated.x, vacated.y)).toBe(true);
+    const cannon = m.state.buildings.at(-1)!;
+    const messages: string[] = [];
+    m.onToast = (t) => messages.push(t);
+    m.loadLayout(0);
+    expect(messages.at(-1)).toMatch(/does not fit/i);
+    expect([mine.x, mine.y]).toEqual([23, 2]);
+    expect([cannon.x, cannon.y]).toEqual([vacated.x, vacated.y]);
+    expect(overlapping(m)).toBe(false);
+    expect(validateSave(m.state)).toBe(true);
+  });
+  it('refuses an undo that a newly placed building would collide with', () => {
+    const m = new GameModel();
+    m.townhall!.level = 5; // The third Cannon unlocks at TH5.
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
+    m.state.gold = 9_000_000;
+    m.state.elixir = 9_000_000;
+    m.beginEdit();
+    const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
+    const vacated = { x: mine.x, y: mine.y };
+    expect(m.dragTo(mine.id, 23, 2)).toBe(true);
+    expect(m.canUndo).toBe(true);
+    m.placement = 'cannon';
+    expect(m.place(vacated.x, vacated.y)).toBe(true);
+    m.undo();
+    expect([mine.x, mine.y]).toEqual([23, 2]);
+    expect(overlapping(m)).toBe(false);
+    expect(m.canUndo).toBe(true);
   });
   it('stores and restores three layouts', () => {
     const m = new GameModel(developedSave());

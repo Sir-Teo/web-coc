@@ -576,6 +576,15 @@ export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7'];
 export const SPELL_HOTKEYS = ['8', '9', '0'];
 export const isResourceBuilding = (kind: BuildingKind) =>
   ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage'].includes(kind);
+/** Which resource a building accumulates over time, if any. */
+export const producedResource = (kind: BuildingKind): Resource | null =>
+  kind === 'goldmine'
+    ? 'gold'
+    : kind === 'collector'
+      ? 'elixir'
+      : kind === 'darkdrill'
+        ? 'dark'
+        : null;
 export interface SpellDef {
   name: string;
   role: string;

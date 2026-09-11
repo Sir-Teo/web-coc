@@ -38,6 +38,79 @@ describe('village progression', () => {
     m.tick(m.clock + 99999);
     expect(b.level).toBe(3);
   });
+  it('starts new producers empty and leaves unfinished buildings holding their resources', () => {
+    const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
+    m.state.gold = 0;
+    m.state.elixir = 50000;
+    m.placement = 'goldmine';
+    expect(m.place(2, 2)).toBe(true);
+    const fresh = m.state.buildings.at(-1)!;
+    expect(fresh.stored).toBe(0);
+    expect(fresh.constructing).toBe(true);
+    const running = m.state.buildings.find((b) => b.kind === 'goldmine' && b.id !== fresh.id)!;
+    running.stored = 4000;
+    m.upgrade(running.id);
+    expect(running.upgradeEnd).toBeTruthy();
+    m.collect(fresh.id);
+    m.collect(running.id);
+    expect(m.state.gold).toBe(0);
+    expect(running.stored).toBe(4000);
+    expect(validateSave(m.state)).toBe(true);
+  });
+  it('says why a collection came back empty', () => {
+    const m = new GameModel();
+    const messages: string[] = [];
+    m.onToast = (t) => messages.push(t);
+    const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
+    mine.stored = 5000;
+    m.state.gold = m.resourceCap('gold');
+    m.collect(mine.id);
+    expect(messages.at(-1)).toMatch(/full/i);
+    expect(mine.stored).toBe(5000);
+    const drill = makeBuilding(m.state.nextId++, 'darkdrill', 2, 2);
+    drill.stored = 500;
+    m.state.buildings.push(drill);
+    expect(m.resourceCap('dark')).toBe(0);
+    m.collect(drill.id);
+    expect(messages.at(-1)).toMatch(/Dark Elixir Storage/);
+    expect(m.state.dark).toBe(0);
+  });
+  it('never converts stored fields on non-producers into collectible resources', () => {
+    const m = new GameModel();
+    m.state.gold = m.state.elixir = 0;
+    for (const b of m.state.buildings) b.stored = b.kind === 'goldstorage' ? 50000 : 0;
+    const collected = m.state.stats.collected;
+    m.collect();
+    expect(m.state.gold).toBe(0);
+    expect(m.state.elixir).toBe(0);
+    expect(m.state.stats.collected).toBe(collected);
+    expect(m.state.buildings.find((b) => b.kind === 'goldstorage')!.stored).toBe(50000);
+  });
+  it('requires an available builder for walls without reserving it afterward', () => {
+    const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
+    m.state.gold = 9_000_000;
+    m.state.elixir = 9_000_000;
+    m.townhall!.level = 8;
+    const cannons = m.state.buildings.filter((b) => b.kind === 'cannon');
+    m.upgrade(cannons[0].id);
+    m.upgrade(cannons[1].id);
+    expect(m.busy).toBe(m.builders);
+    const wall = m.state.buildings.find((b) => b.kind === 'wall')!;
+    m.upgrade(wall.id);
+    expect(wall.upgradeEnd).toBeUndefined();
+    expect(wall.level).toBe(2);
+    m.placement = 'wall';
+    expect(m.place(2, 2)).toBe(false);
+    delete cannons[0].upgradeEnd;
+    m.upgrade(wall.id);
+    expect(wall.level).toBe(3);
+    expect(wall.upgradeEnd).toBeUndefined();
+    expect(m.place(2, 2)).toBe(true);
+    expect(m.busy).toBe(1);
+    expect(validateSave(m.state)).toBe(true);
+  });
   it('limits offline generation and prevents collecting beyond storage capacity', () => {
     const m = new GameModel();
     const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
