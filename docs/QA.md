@@ -1,5 +1,20 @@
 # Verification record
 
+## September 11 — reduce terrain overdraw and verify Metal rendering
+
+The turf mask now draws only the four corners of its bounding rectangle outside the buildable diamond. It removes two full-viewport stencil inversion draws per frame, while retaining the same repeating texture, tint, alpha, clipping, world detail and troop roster. The matching subtract operation still clears the mask before later world objects render. Gameplay, saves, replay rules and artwork are unchanged.
+
+Nine focused browser cases pass in each of Chromium and WebKit. The new regression compares every RGBA framebuffer pixel against the previous inverted-diamond implementation in 15 views per engine: five fractional camera/zoom settings across phone portrait, phone landscape and desktop sizes. Every comparison has zero changed pixels and exactly two fewer draw calls. Existing checks cover all 1,936 grass tile centers, edge clipping, later objects outside the stencil, context restoration, sprite raster equivalence and 180 terrain coverage views per engine. Six additional cases pass in Chromium with ANGLE Metal, including the same pixel comparison and graphics restoration.
+
+Profiling showed approximately 0.4 ms of JavaScript rendering work per frame. Changing the texture batch limit gave no consistent improvement, so batching remains unchanged. Removing the turf overlay temporarily raised the same frozen scene from 54 to 60 FPS. An initial alternating-mask probe measured 56 FPS for each inverted-mask sample and 58/60 FPS for the corner mask, with zero changed pixels in five full-frame comparisons. The longer SwiftShader run overlapped other browser workloads and measured 40/40 and 27/31 FPS for old/new pairs; its native 200-troop sample measured 50 FPS and the legacy roster 41 FPS. These shared-host results do not establish a stable global frame-rate improvement. The verified reduction is two full-screen passes with identical tested output.
+
+The benchmark now supports `--compare-field-mask`, which alternates both implementations twice on the same frozen 200-troop village and restores the original scene configuration afterward. macOS `--metal` explicitly requests ANGLE Metal and rejects a silent renderer fallback. With the reported **Apple M5 Pro Metal renderer**, headless Chromium 153.0.8010.12 at 1440×960 and 1× pixel ratio held **60 FPS** idle, in battle, with 200 native troops and with 660 legacy actors. Its 95th-percentile frames were 16.7–16.8 ms. Both masks reached the same 60-FPS cap on this hardware. High-DPI rendering and physical phone/tablet performance remain unverified.
+
+The production build passes Chromium and WebKit without reported errors. Chromium reloads, opens Army and plays a replay offline with 107 cached files, cache `crown-clan-38e6420cd7a5`. The existing terrain WebKit CI selection automatically includes the new framebuffer case. See [TERRAIN-CAMERA.md](TERRAIN-CAMERA.md) for implementation and benchmark commands.
+
+Evidence: `output/playtest/field-mask-verification.json`, `render-profile-baseline.log`, `render-profile.json`, `render-profile.cpuprofile`, `render-layers-profile.json`, `field-corners-profile.json`, `field-mask-chromium.log`, `field-mask-webkit.log`, `field-mask-metal.log`, `field-mask-build.log`, `field-mask-production-report.json`, `field-mask-performance.json`, and `field-mask-metal-performance.json`.
+
+
 ## September 11 — eight camp level sprites and open gathering areas
 
 All 366 model and asset tests pass across 37 files. Eight original built-in ImageGen sprites replace the camp's two tent-and-wall tiers, with clean alpha, explicit level selection, measured ground origins, untinted materials and matching placement previews. Camps retain 4×4 placement while home troops can gather on their outer tiles and avoid the central fire pit, buildings, walls, trees and rocks. Higher rock-ring camps leave stone debris; cooking-support camps leave wood debris. Health and upgrade bars follow the actual sprite origin. Exact prompts, source files and importer are documented in [CAMP-ART.md](CAMP-ART.md).

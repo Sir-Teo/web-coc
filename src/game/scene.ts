@@ -301,22 +301,23 @@ export class VillageScene extends Phaser.Scene {
       .tileSprite(center.x, center.y, side * 64, side * 32, 'field-checks')
       .setTint(0x23491d)
       .setAlpha(0.065);
-    // Keep the grass visible and stop the checks exactly at the buildable boundary.
+    // Stencil only the four corners of the TileSprite's rectangle. Inverting
+    // the diamond instead would fill the whole viewport when applying AND
+    // removing the mask, even when the camera sees only the field interior.
     const outline = this.add.graphics().fillStyle(0xffffff);
-    outline.fillPoints(
-      [
-        iso(BUILD_MIN, BUILD_MIN), iso(BUILD_MAX, BUILD_MIN),
-        iso(BUILD_MAX, BUILD_MAX), iso(BUILD_MIN, BUILD_MAX),
-      ],
-      true,
-    );
+    const left = center.x - side * 32, right = center.x + side * 32;
+    const top = center.y - side * 16, bottom = center.y + side * 16;
+    outline.fillTriangle(left, top, center.x, top, left, center.y);
+    outline.fillTriangle(center.x, top, right, top, right, center.y);
+    outline.fillTriangle(left, center.y, left, bottom, center.x, bottom);
+    outline.fillTriangle(right, center.y, right, bottom, center.x, bottom);
     const stencil = this.add.stencil(0, 0, [outline], {
-      stencilInvert: true,
+      stencilInvert: false,
       stencilLayerMode: 'addLayer',
       stencilCompositeCheck: false,
     });
     const release = this.add.stencilreference(stencil, {
-      stencilInvert: true,
+      stencilInvert: false,
       stencilLayerMode: 'subtractLayer',
       stencilCompositeCheck: false,
     });

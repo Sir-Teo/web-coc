@@ -2,7 +2,9 @@ import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { loadavg, availableParallelism } from 'node:os';
 const hostLoadStart = loadavg();
-const browser = await chromium.launch();
+const metal = process.argv.includes('--metal');
+if (metal && process.platform !== 'darwin') throw Error('--metal requires macOS.');
+const browser = await chromium.launch(metal ? { args: ['--use-angle=metal'] } : {});
 const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
 await page.goto('http://localhost:5173');
 await page.waitForFunction(() => window.__game?.scene.ready);
@@ -12,6 +14,10 @@ const renderer = await page.evaluate(() => {
   const debug = gl.getExtension('WEBGL_debug_renderer_info');
   return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
 });
+if (metal && !renderer.includes('Metal')) {
+  await browser.close();
+  throw Error(`Metal was requested, but Chromium selected ${renderer}.`);
+}
 async function measure() {
   await page.waitForTimeout(500);
   return page.evaluate(
@@ -42,7 +48,10 @@ const idle = await measure();
 let fullCamps;
 let legacyCamps;
 let quadComparison;
-if (process.argv.includes('--camps') || process.argv.includes('--compare-quads')) {
+let fieldComparison;
+if (
+  ['--camps', '--compare-quads', '--compare-field-mask'].some((flag) => process.argv.includes(flag))
+) {
   const saved = await page.evaluate(() => structuredClone(window.__game.model.state));
   const actors = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
@@ -89,6 +98,65 @@ if (process.argv.includes('--camps') || process.argv.includes('--compare-quads')
     }
     quadComparison.triangles = await measure();
   }
+  if (process.argv.includes('--compare-field-mask')) {
+    await page.evaluate(() => {
+      const s = window.__game.scene;
+      const [stencil, turf, release] = s.ground.list;
+      window.__fieldMaskBenchmark = {
+        paused: s.paused,
+        commands: stencil.list[0].commandBuffer.slice(),
+        invert: stencil.stencilInvert,
+        releaseInvert: release.stencilInvert,
+      };
+      s.paused = true;
+      // Both alternatives render the same frozen village and the same turf.
+      // Only the shape and inversion of the clipping stencil differ.
+      window.__fieldMaskBenchmark.apply = (reference) => {
+        const outline = stencil.list[0];
+        if (reference) {
+          const cx = turf.x,
+            cy = turf.y,
+            hx = turf.width / 2,
+            hy = turf.height / 2;
+          outline
+            .clear()
+            .fillStyle(0xffffff)
+            .fillPoints(
+              [
+                { x: cx, y: cy - hy },
+                { x: cx + hx, y: cy },
+                { x: cx, y: cy + hy },
+                { x: cx - hx, y: cy },
+              ],
+              true,
+            );
+        } else outline.commandBuffer = window.__fieldMaskBenchmark.commands.slice();
+        stencil.stencilInvert = reference;
+        release.stencilInvert = reference;
+      };
+    });
+    fieldComparison = [];
+    try {
+      for (const reference of [true, false, true, false]) {
+        await page.evaluate((reference) => window.__fieldMaskBenchmark.apply(reference), reference);
+        fieldComparison.push({
+          mask: reference ? 'inverted diamond' : 'corner triangles',
+          ...(await measure()),
+        });
+      }
+    } finally {
+      await page.evaluate(() => {
+        const s = window.__game.scene,
+          saved = window.__fieldMaskBenchmark;
+        const [stencil, , release] = s.ground.list;
+        stencil.list[0].commandBuffer = saved.commands;
+        stencil.stencilInvert = saved.invert;
+        release.stencilInvert = saved.releaseInvert;
+        s.paused = saved.paused;
+        delete window.__fieldMaskBenchmark;
+      });
+    }
+  }
   if (process.argv.includes('--camps')) {
     const actors = await page.evaluate(() => {
       const { model, scene } = window.__game;
@@ -133,6 +201,7 @@ const report = {
   ...(fullCamps ? { fullCamps } : {}),
   ...(legacyCamps ? { legacyCamps } : {}),
   ...(quadComparison ? { quadComparison } : {}),
+  ...(fieldComparison ? { fieldComparison } : {}),
   battle,
 };
 await fs.writeFile('output/playtest/performance.json', JSON.stringify(report, null, 2));

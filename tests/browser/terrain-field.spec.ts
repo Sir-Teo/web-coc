@@ -168,3 +168,118 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
   ]);
   expect(result.glError).toBe(0);
 });
+
+test('corner masking preserves every pixel of the inverted-diamond reference with two fewer draws', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await expect(page.locator('#loading')).toBeHidden();
+  const cases = [];
+  for (const [width, height] of [
+    [390, 844],
+    [844, 390],
+    [1440, 960],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === width, width);
+    cases.push(
+      ...(await page.evaluate(async () => {
+        const { scene: s, game } = window.__game;
+        s.paused = true;
+        s.tweens.pauseAll();
+        const gl = game.renderer.gl;
+        const [stencil, , release] = s.ground.list;
+        const outline = stencil.list[0];
+        const original = outline.commandBuffer.slice();
+        const drawElements = gl.drawElements,
+          drawArrays = gl.drawArrays;
+        let draws = 0;
+        gl.drawElements = function (...args) {
+          draws++;
+          return drawElements.apply(this, args);
+        };
+        gl.drawArrays = function (...args) {
+          draws++;
+          return drawArrays.apply(this, args);
+        };
+        const capture = () =>
+          new Promise<{ pixels: Uint8Array; draws: number }>((resolve) => {
+            draws = 0;
+            game.events.once('postrender', () => {
+              const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+              gl.readPixels(
+                0,
+                0,
+                gl.drawingBufferWidth,
+                gl.drawingBufferHeight,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                pixels,
+              );
+              resolve({ pixels, draws });
+            });
+          });
+        const result = [];
+        try {
+          // Fractional zoom and camera positions exercise both sides of every
+          // diamond edge, including where the field crosses the viewport border.
+          for (const [x, y, zoom] of [
+            [896.3, 600.7, 0.83],
+            [896.3, 900.7, 1.37],
+            [-400.3, 200.7, 1.03],
+            [2000.3, 1200.7, 0.9],
+            [896.3, 1500.7, 2.11],
+          ]) {
+            s.cameras.main.setZoom(zoom).centerOn(x, y);
+            outline.commandBuffer = original.slice();
+            stencil.stencilInvert = release.stencilInvert = false;
+            const actual = await capture();
+            // Independent previous implementation: one complete field diamond
+            // and the engine's full-viewport stencil inversion on apply/release.
+            outline
+              .clear()
+              .fillStyle(0xffffff)
+              .fillPoints(
+                [
+                  { x: 896, y: 176 },
+                  { x: 2304, y: 880 },
+                  { x: 896, y: 1584 },
+                  { x: -512, y: 880 },
+                ],
+                true,
+              );
+            stencil.stencilInvert = release.stencilInvert = true;
+            const reference = await capture();
+            let changed = 0;
+            for (let i = 0; i < actual.pixels.length; i += 4)
+              if (
+                actual.pixels[i] !== reference.pixels[i] ||
+                actual.pixels[i + 1] !== reference.pixels[i + 1] ||
+                actual.pixels[i + 2] !== reference.pixels[i + 2] ||
+                actual.pixels[i + 3] !== reference.pixels[i + 3]
+              )
+                changed++;
+            result.push({
+              x,
+              y,
+              zoom,
+              changed,
+              savedDraws: reference.draws - actual.draws,
+              error: gl.getError(),
+            });
+          }
+        } finally {
+          outline.commandBuffer = original;
+          stencil.stencilInvert = release.stencilInvert = false;
+          gl.drawElements = drawElements;
+          gl.drawArrays = drawArrays;
+        }
+        return result;
+      })),
+    );
+  }
+  expect(cases).toHaveLength(15);
+  expect(cases.filter((c) => c.changed || c.savedDraws !== 2 || c.error)).toEqual([]);
+});
