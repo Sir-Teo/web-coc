@@ -49,6 +49,8 @@ import {
   producedResource,
   researchCost,
   researchSeconds,
+  researchLaboratory,
+  troopStatsAt,
   storageCapacity,
   buildingHp,
   upgradeCost,
@@ -387,14 +389,8 @@ export class GameModel {
   troopLevel(kind: TroopKind) {
     return this.battle?.troopLevels?.[kind] ?? this.state.troopLevels?.[kind] ?? 1;
   }
-  troopStats(kind: TroopKind) {
-    const d = TROOPS[kind],
-      bonus = 1 + (this.troopLevel(kind) - 1) * 0.3;
-    return {
-      ...d,
-      hp: Math.round(d.hp * bonus),
-      damage: Math.round(d.damage * bonus),
-    };
+  troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
+    return troopStatsAt(kind, level);
   }
   researchCost(kind: TroopKind) {
     return researchCost(kind, this.troopLevel(kind));
@@ -412,8 +408,9 @@ export class GameModel {
     if (this.state.research) return this.notify('Research is already in progress.');
     if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
       return this.notify('This troop is at its maximum level.');
-    if (lab.level <= this.troopLevel(kind))
-      return this.notify(`Upgrade your laboratory to level ${this.troopLevel(kind) + 1}.`);
+    const requiredLab = researchLaboratory(kind, this.troopLevel(kind));
+    if (lab.level < requiredLab)
+      return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
     const cost = this.researchCost(kind);
     if (this.state.elixir < cost) return this.notify('Not enough elixir.');
     this.state.elixir -= cost;
@@ -1750,12 +1747,12 @@ export class GameModel {
                   fromY: u.y,
                   x: wall.x + 0.5,
                   y: wall.y + 0.5,
-                  damage: d.damage * 1.6,
+                  damage: d.damage,
                 },
                 this.onEffect,
               );
             else {
-              this.damage(wall, d.damage * 1.6);
+              this.damage(wall, d.damage);
               this.onEffect({ type: 'hit', x: wall.x + 0.5, y: wall.y + 0.5 });
             }
           }
@@ -2435,6 +2432,7 @@ export function findPath(
   cost[first] = 0;
   const open = [first];
   let goal = -1;
+  let approach: { x: number; y: number } | undefined;
   while (open.length) {
     let best = 0;
     for (let i = 1; i < open.length; i++) {
@@ -2454,6 +2452,22 @@ export function findPath(
     if (distanceTo({ x: x + 0.5, y: y + 0.5 }, target) <= range) {
       goal = current;
       break;
+    }
+    // A melee reach below half a tile cannot reach a building from grid centers.
+    // Finish with a short segment inside the final cell, never through a corner
+    // or an extra occupied cell. Other ranges retain their original grid route.
+    if (range < 0.5 && !blocked[current]) {
+      const center = { x: x + 0.5, y: y + 0.5 }, s = BUILDINGS[target.kind].size;
+      const tx = Math.max(target.x, Math.min(center.x, target.x + s));
+      const ty = Math.max(target.y, Math.min(center.y, target.y + s));
+      const dx = center.x - tx, dy = center.y - ty, distance = Math.hypot(dx, dy);
+      const reach = Math.max(0, range - 1e-6); // Stay inside range despite float rounding.
+      const point = { x: tx + dx * reach / distance, y: ty + dy * reach / distance };
+      if (Math.floor(point.x) === x && Math.floor(point.y) === y) {
+        approach = point;
+        goal = current;
+        break;
+      }
     }
     for (const [dx, dy] of [
       [1, 0],
@@ -2480,7 +2494,9 @@ export function findPath(
     path.push({ x: (goal % size) + 0.5, y: Math.floor(goal / size) + 0.5 });
     goal = prev[goal];
   }
-  return path.reverse();
+  path.reverse();
+  if (approach) path.push(approach);
+  return path;
 }
 
 /** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */

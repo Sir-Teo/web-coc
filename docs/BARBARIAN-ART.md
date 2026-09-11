@@ -25,4 +25,4 @@ The internal `swordsman` identifier is intentionally retained in armies, queues,
 
 Asset checks require four distinct frames, real transparent margins, no visible magenta matte, sufficient silhouette coverage and aligned feet. Browser scenarios exercise the player-facing name, card/detail portraits, adding and reloading troops, the actual camp texture pixels, idle poses, left/right facing, four walking poses, frozen battle time and reduced motion. Existing army and replay scenarios cover the shared paths.
 
-This pass covers one low-level Barbarian appearance. Level-specific weapons/armor, full directional sprites and dedicated idle/attack/death animation sets remain open, as does the troop combat-stat audit. Physical-phone visual/thermal QA remains separate from browser emulation.
+This pass covers one low-level Barbarian appearance. Level-specific weapons/armor, full directional sprites and dedicated idle/attack/death animation sets remain open, while the subsequent [starter troop progression pass](STARTER-TROOP-PROGRESSION.md) supplies native Barbarian and Archer values through level 5. Physical-phone visual/thermal QA remains separate from browser emulation.

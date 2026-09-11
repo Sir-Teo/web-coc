@@ -12,11 +12,14 @@ import {
   BUILDINGS,
   buildingHp,
   TROOPS,
+  TROOP_KEYS,
   SPELLS,
   TROOP_HOTKEYS,
   SPELL_HOTKEYS,
   CAMPAIGN,
   MAX_TROOP_LEVEL,
+  researchLaboratory,
+  researchLevelForLab,
   asset,
   defenseDamage,
   defenseDps,
@@ -119,7 +122,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
     rows.push([
       'FlaskConical',
       'Researches up to',
-      `Troop level ${Math.min(MAX_TROOP_LEVEL, level)}`,
+      `Up to level ${Math.max(...TROOP_KEYS.map((k) => researchLevelForLab(k, level)))} · varies by troop`,
     ]);
   if (kind === 'builder') rows.push(['Hammer', 'Builders', '+1 construction slot']);
   if (kind === 'barracks') rows.push(['Swords', 'Preparation', 'Free and instant']);
@@ -1360,7 +1363,7 @@ export class HUD {
           : d.prefersDefenses
             ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
             : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
-    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats"><div><dt>Unlock requirement</dt><dd>Barracks ${TROOP_UNLOCK[kind]}</dd></div><div><dt>Favorite target</dt><dd>${target}</dd></div><div><dt>Damage per hit</dt><dd>${d.damage}${d.wallBreaker ? ` / ${d.damage * 40} vs walls` : ''}</dd></div><div><dt>Hitpoints</dt><dd>${d.hp}</dd></div><div><dt>Housing space</dt><dd>${d.space}</dd></div><div><dt>Movement</dt><dd>${d.flying ? 'Air · ignores walls' : 'Ground'}</dd></div><div><dt>Attack range</dt><dd>${d.range} tiles</dd></div>${d.splash ? `<div><dt>Attack splash</dt><dd>${d.splash} tiles</dd></div>` : ''}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats"><div><dt>Unlock requirement</dt><dd>Barracks ${TROOP_UNLOCK[kind]}</dd></div><div><dt>Favorite target</dt><dd>${target}</dd></div><div><dt>Damage per second</dt><dd>${damageNumber(d.damage / d.rate)}</dd></div><div><dt>Damage per hit</dt><dd>${d.damage}${d.wallBreaker ? ` / ${d.damage * 40} vs walls` : ''}</dd></div><div><dt>Hitpoints</dt><dd>${d.hp}</dd></div><div><dt>Housing space</dt><dd>${d.space}</dd></div><div><dt>Movement</dt><dd>${d.flying ? 'Air · ignores walls' : 'Ground'}</dd></div><div><dt>Attack range</dt><dd>${d.range} tile${d.range === 1 ? '' : 's'}</dd></div><div><dt>Attack interval</dt><dd>${d.rate}s</dd></div>${d.splash ? `<div><dt>Attack splash</dt><dd>${d.splash} tiles</dd></div>` : ''}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }
   private surrender() {
     const b = this.model.battle!;
@@ -1419,16 +1422,17 @@ export class HUD {
         const d = m.troopStats(k),
           level = m.troopLevel(k),
           max = level >= MAX_TROOP_LEVEL;
-        const gated = !m.troopUnlocked(k) || !lab || !!lab.upgradeEnd || lab.level <= level;
-        const next = 1 + level * 0.3;
+        const requiredLab = researchLaboratory(k, level);
+        const gated = !m.troopUnlocked(k) || !lab || !!lab.upgradeEnd || lab.level < requiredLab;
+        const next = m.troopStats(k, level + 1);
         const label = max
           ? '★ Fully researched'
           : !m.troopUnlocked(k)
             ? `Requires Barracks ${TROOP_UNLOCK[k]}`
           : gated
-            ? `Requires laboratory ${level + 1}`
+            ? lab?.upgradeEnd ? 'Laboratory upgrading' : `Requires laboratory ${requiredLab}`
             : `Research ${elixir} ${n(m.researchCost(k))}`;
-        return `<article class="training-card"><span class="role-tag">LEVEL ${level} OF ${MAX_TROOP_LEVEL}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].hp * next)}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].damage * next)}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
+        return `<article class="training-card"><span class="role-tag">LEVEL ${level} OF ${MAX_TROOP_LEVEL}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${next.hp}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${next.damage}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
       },
     ).join(
       '',

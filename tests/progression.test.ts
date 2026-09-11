@@ -38,7 +38,7 @@ describe('troop progression', () => {
     const gems = m.state.gems;
     m.researchTroop('archer');
     m.finishResearch();
-    expect(m.state.gems).toBe(gems - 3);
+    expect(m.state.gems).toBe(gems - 20);
     expect(m.troopLevel('archer')).toBe(2);
     expect(validateSave(m.state)).toBe(true);
     m.state.troopLevels!.archer = MAX_TROOP_LEVEL + 1;

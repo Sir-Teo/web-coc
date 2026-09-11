@@ -46,7 +46,7 @@ describe('physical projectile damage', () => {
     expect(b.projectiles![0].targetId).toBe(wall.id);
     expect(wall.hp).toBe(wall.maxHp);
     land(m);
-    expect(wall.hp).toBeCloseTo(wall.maxHp - m.troopStats('archer').damage * 1.6);
+    expect(wall.hp).toBeCloseTo(wall.maxHp - m.troopStats('archer').damage);
     expect(hall.hp).toBe(hall.maxHp);
   });
 

@@ -6,6 +6,7 @@ import { mortarAsset, mortarTexture } from './mortar-art';
 import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
+import { troopProgression } from './troop-progression';
 export type BuildingKind =
   | 'herohall'
   | 'darkdrill'
@@ -472,31 +473,31 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     name: 'Barbarian',
     role: 'MELEE',
     description: 'Fearless frontline fighters. Best deployed in a group.',
-    hp: 200,
-    damage: 25,
-    speed: 1.45,
-    range: 1,
-    rate: 0.8,
+    hp: troopProgression('swordsman', 1)!.hp,
+    damage: troopProgression('swordsman', 1)!.dps,
+    speed: 2.2,
+    range: 0.4,
+    rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 29,
-    research: 300,
+    research: troopProgression('swordsman', 2)!.seconds,
   },
   archer: {
     name: 'Archer',
     role: 'RANGED',
     description: 'Picks off buildings from behind your frontline.',
-    hp: 100,
-    damage: 21,
-    speed: 1.65,
-    range: 4.8,
+    hp: troopProgression('archer', 1)!.hp,
+    damage: troopProgression('archer', 1)!.dps,
+    speed: 3,
+    range: 3.5,
     rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 26,
-    research: 420,
+    research: troopProgression('archer', 2)!.seconds,
   },
   giant: {
     name: 'Giant',
@@ -728,7 +729,27 @@ export const upgradeCost = (kind: BuildingKind, level: number) =>
   (kind === 'wall'
     ? (WALL_LEVELS[level]?.cost ?? 0)
     : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
-export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;
+/** Shared current/preview stats. Unaudited troops retain their existing progression. */
+export const troopStatsAt = (kind: TroopKind, level: number) => {
+  const safeLevel = Math.min(MAX_TROOP_LEVEL, Math.max(1, Math.floor(level) || 1));
+  const d = TROOPS[kind], audited = troopProgression(kind, safeLevel);
+  const bonus = 1 + (safeLevel - 1) * 0.3;
+  return {
+    ...d,
+    hp: audited?.hp ?? Math.round(d.hp * bonus),
+    damage: audited ? audited.dps * d.rate : Math.round(d.damage * bonus),
+  };
+};
+/** Requirements/cost/duration to move from the current level to the next. */
+export const researchLaboratory = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.laboratory ?? level + 1;
+export const researchLevelForLab = (kind: TroopKind, laboratory: number) => {
+  let level = 1;
+  while (level < MAX_TROOP_LEVEL && researchLaboratory(kind, level) <= laboratory) level++;
+  return level;
+};
+export const researchSeconds = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.seconds ?? TROOPS[kind].research * level;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
   const audited = defenseProgression(kind, level);
@@ -749,7 +770,7 @@ export const researchCost = (kind: TroopKind, level: number) => {
     goblin: 7000,
     wallbreaker: 10000,
   };
-  return base[kind] * level;
+  return troopProgression(kind, level + 1)?.cost ?? base[kind] * level;
 };
 /**
  * Gem prices follow the Clash of Clans shape: a minute is trivial, an hour is

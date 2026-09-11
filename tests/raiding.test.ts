@@ -287,7 +287,7 @@ describe('putting the village away mid-raid', () => {
     m.startBattle(0);
     m.activeTroop = 'swordsman';
     for (let i = 0; i < 8; i++) m.deploy(1 + i * 0.2, 10);
-    for (let t = 0; t < 2600 && !m.battle!.finished; t++) m.step(0.05);
+    for (let t = 0; t < 3600 && !m.battle!.finished; t++) m.step(0.05);
     const viewer = new GameModel(structuredClone(m.state));
     expect(viewer.startReplay(viewer.state.raidLog![0].id)).toBe(true);
     viewer.suspendBattle();
@@ -305,7 +305,7 @@ describe('loot the storages can actually take', () => {
     m.startBattle(0);
     m.activeTroop = 'swordsman';
     for (let i = 0; i < 12; i++) m.deploy(1 + i * 0.2, 10);
-    for (let t = 0; t < 2600 && !m.battle!.finished; t++) m.step(0.05);
+    for (let t = 0; t < 3600 && !m.battle!.finished; t++) m.step(0.05);
     return m;
   };
   it('shows nothing on the loot bars when there is nowhere to put it', () => {

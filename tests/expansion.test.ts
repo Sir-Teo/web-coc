@@ -4,6 +4,7 @@ import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '.
 import {
   BUILDINGS,
   MAX_TROOP_LEVEL,
+  researchLaboratory,
   SPELLS,
   TROOPS,
   LIGHTNING_DAMAGE,
@@ -133,7 +134,7 @@ describe('the air layer', () => {
     m.activeTroop = 'swordsman';
     m.deploy(6, 12);
     let attackedIntactWall = false;
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 400; i++) {
       m.step(0.05);
       if (battle.buildings.some((b) => b.kind === 'wall' && b.hp > 0 && b.hp < b.maxHp)) {
         attackedIntactWall = true;
@@ -448,12 +449,12 @@ describe('second-pass behaviour', () => {
     expect([b.x, b.y]).toEqual([from.x, from.y]);
     expect(m.canUndo).toBe(false);
   });
-  it('research runs to five levels behind a matching laboratory', () => {
+  it('research runs to five levels behind the required laboratory', () => {
     const m = new GameModel(developedSave());
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
     m.state.elixir = 999999;
     for (let level = 1; level < MAX_TROOP_LEVEL; level++) {
-      lab.level = level + 1;
+      lab.level = researchLaboratory('swordsman', level);
       m.researchTroop('swordsman');
       m.tick(m.state.research!.end + 1000);
       expect(m.troopLevel('swordsman')).toBe(level + 1);
