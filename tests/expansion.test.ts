@@ -148,8 +148,8 @@ describe('spells', () => {
     const m = new GameModel();
     m.state.spells = { rage: 0, heal: 0, lightning: 1 };
     const battle = arena(m, [
-      ['cannon', 10, 10, 1],
-      ['cannon', 11, 12, 1],
+      ['cannon', 10, 10, 3],
+      ['cannon', 11, 12, 3],
       ['cannon', 22, 22, 1],
     ]);
     battle.spells = { rage: 0, heal: 0, lightning: 1 };
@@ -239,7 +239,7 @@ describe('town hall gating and stretched timers', () => {
     expect(m.maxCount('airdefense')).toBe(3);
   });
   it('scales upgrade timers and prices gems on the Clash curve', () => {
-    expect(upgradeSeconds('cannon', 1)).toBe(BUILDINGS.cannon.build);
+    expect(upgradeSeconds('cannon', 1)).toBe(120);
     expect(upgradeSeconds('cannon', 5)).toBeGreaterThan(upgradeSeconds('cannon', 4));
     expect(upgradeSeconds('townhall', 7)).toBeGreaterThan(3600);
     expect(gemCost(30)).toBe(1);

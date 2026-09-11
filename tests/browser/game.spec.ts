@@ -48,7 +48,7 @@ test('collects, upgrades, finishes and persists through reload', async ({ page }
 test('the shop drawer leaves the village live and places by tap or drag', async ({ page }) => {
   await page.evaluate(() => {
     const m = window.__game.model;
-    m.townhall!.level = 3; // TH2 already contains its full allowance of 25 walls.
+    m.townhall!.level = 5; // Make room for a third Cannon and additional walls.
     m.changed();
   });
   await page.locator('[data-action="shop"]').last().click();

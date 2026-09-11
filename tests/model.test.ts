@@ -13,6 +13,7 @@ describe('village progression', () => {
   });
   it('rejects occupied placement without spending and constructs on valid ground', () => {
     const m = new GameModel();
+    m.townhall!.level = 5; // The third Cannon unlocks at TH5.
     const gold = m.state.gold;
     m.beginBuild('cannon');
     expect(m.place(11, 10)).toBe(false);

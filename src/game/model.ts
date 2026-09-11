@@ -528,9 +528,12 @@ export class GameModel {
     }
     const dt = Math.max(0, Math.min(now - this.state.lastTick, 8 * 3600000)) / 1000;
     for (const b of this.state.buildings) {
-      // Home-wall health is derived from its level. Preserve the damage fraction
+      // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
-      if (b.kind === 'wall' && b.maxHp !== buildingHp(b.kind, b.level)) {
+      if (
+        ['wall', 'cannon', 'archertower'].includes(b.kind) &&
+        b.maxHp !== buildingHp(b.kind, b.level)
+      ) {
         const hp = buildingHp(b.kind, b.level);
         b.hp = b.maxHp > 0 ? Math.min(1, b.hp / b.maxHp) * hp : hp;
         b.maxHp = hp;
@@ -1960,7 +1963,6 @@ export function initialSave(): Save {
   add('builder', 21, 19);
   add('goldstorage', 6, 20);
   add('elixirstorage', 9, 4);
-  add('archertower', 21, 15);
   add('cannon', 5, 11);
   for (let n = 8; n <= 19; n++) {
     if (n <= 12) add('wall', n, 8, 2);

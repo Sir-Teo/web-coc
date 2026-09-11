@@ -1,3 +1,4 @@
+import { defenseProgression, DEFENSE_PROGRESSION } from './defense-progression';
 import { wallAsset } from './wall-art';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
@@ -196,13 +197,13 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'A dependable defense with a powerful punch. Ground troops only.',
     size: 2,
     width: 94,
-    hp: 900,
-    cost: 6000,
+    hp: DEFENSE_PROGRESSION.cannon[0].hp,
+    cost: DEFENSE_PROGRESSION.cannon[0].cost,
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [2, 3, 4, 5, 5, 6, 6, 7],
-    build: 60,
+    available: [1, 2, 2, 2, 3, 3, 5, 5],
+    build: DEFENSE_PROGRESSION.cannon[0].seconds,
     damage: 32,
     range: 7,
     rate: 1.2,
@@ -213,13 +214,13 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'A high vantage point and a long reach. Fires at ground and air.',
     size: 2,
     width: 90,
-    hp: 750,
-    cost: 8000,
+    hp: DEFENSE_PROGRESSION.archertower[0].hp,
+    cost: DEFENSE_PROGRESSION.archertower[0].cost,
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [1, 2, 3, 4, 5, 5, 6, 6],
-    build: 75,
+    available: [0, 1, 1, 2, 3, 3, 4, 5],
+    build: DEFENSE_PROGRESSION.archertower[0].seconds,
     damage: 20,
     range: 9,
     rate: 0.8,
@@ -661,20 +662,23 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  defenseProgression(kind, level + 1)?.seconds ??
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
 /** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
 export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
-  kind === 'wall'
+  defenseProgression(kind, level)?.hp ??
+  (kind === 'wall'
     ? WALL_LEVELS[Math.min(WALL_LEVELS.length, Math.max(1, level)) - 1].hp
-    : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25);
-/** Cost of the destination level; walls use the undiscounted Home Village table. */
+    : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
+/** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
-  kind === 'wall'
+  defenseProgression(kind, level + 1)?.cost ??
+  (kind === 'wall'
     ? (WALL_LEVELS[level]?.cost ?? 0)
-    : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level));
+    : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
 export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;
 /** Defences hit 12% harder per level, which is what a defence upgrade buys. */
 export const defenseDamage = (kind: BuildingKind, level: number) =>
