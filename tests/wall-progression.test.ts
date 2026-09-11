@@ -9,10 +9,10 @@ describe('Home Village wall progression', () => {
     m.townhall!.level = 8;
     const wall = makeBuilding(m.state.nextId++, 'wall', 2, 2);
     m.state.buildings.push(wall);
-    expect(BUILDINGS.wall.cost).toBe(50);
-    expect(wall.hp).toBe(300);
+    expect(BUILDINGS.wall.cost).toBe(0);
+    expect(wall.hp).toBe(100);
     const prices = [1000, 5000, 10000, 20000, 30000, 50000, 75000];
-    const hp = [500, 700, 900, 1400, 2000, 2500, 3000];
+    const hp = [200, 400, 800, 1200, 1800, 2400, 3000];
     for (let i = 0; i < prices.length; i++) {
       expect(upgradeCost('wall', wall.level)).toBe(prices[i]);
       m.state.gold = prices[i] - 1;
@@ -44,10 +44,10 @@ describe('Home Village wall progression', () => {
     m.state.elixir++;
     expect(m.upgradeWalls(ids, 'elixir')).toBe(true);
     expect(m.state.elixir).toBe(0);
-    expect(walls.map((b) => b.hp)).toEqual([2000, 2500, 3000, 3000]);
+    expect(walls.map((b) => b.hp)).toEqual([1800, 2400, 3000, 3000]);
   });
 
-  it('starts within the TH2 limit and charges 50 gold for the final available piece', () => {
+  it('starts within the TH2 limit and places for free with no gold for the final available piece', () => {
     expect(Array.from({ length: 8 }, (_, i) => maxCountFor('wall', i + 1))).toEqual([
       0, 25, 50, 75, 100, 125, 175, 225,
     ]);
@@ -61,22 +61,22 @@ describe('Home Village wall progression', () => {
       m.state.buildings.findIndex((b) => b.kind === 'wall'),
       1,
     );
-    m.state.gold = 50;
+    m.state.gold = 0;
     m.beginBuild('wall');
     expect(m.place(2, 2)).toBe(true);
     expect(m.state.gold).toBe(0);
     expect(m.countOf('wall')).toBe(25);
     expect(m.placement).toBeNull();
     const placed = m.state.buildings.at(-1)!;
-    expect([placed.hp, placed.maxHp]).toEqual([300, 300]);
+    expect([placed.hp, placed.maxHp]).toEqual([100, 100]);
     expect(placed.upgradeEnd).toBeUndefined();
-    m.state.gold = 50;
+    m.state.gold = 0;
     m.beginBuild('wall');
     expect(m.placement).toBeNull();
     // A stale armed tool must also respect the limit when the player places it.
     m.placement = 'wall';
     expect(m.place(3, 2)).toBe(false);
-    expect(m.state.gold).toBe(50);
+    expect(m.state.gold).toBe(0);
   });
 
   it('retains legacy extras and levels, normalizes health, and uses it in practice battles', () => {
@@ -112,8 +112,40 @@ describe('Home Village wall progression', () => {
     wall.upgradeEnd = m.clock + 1000;
     const gold = m.state.gold;
     m.tick(m.clock + 1000);
-    expect([wall.level, wall.hp, wall.maxHp]).toEqual([5, 1400, 1400]);
+    expect([wall.level, wall.hp, wall.maxHp]).toEqual([5, 1200, 1200]);
     expect(m.state.gold).toBe(gold);
     expect(wall.upgradeEnd).toBeUndefined();
   });
+});
+
+it('reconciles every reduced wall tier at the saved damage fraction without changing the layout', () => {
+  const oldHp = [300, 500, 700, 900, 1400, 2000, 2500];
+  const currentHp = [100, 200, 400, 800, 1200, 1800, 2400];
+  const save = initialSave();
+  save.obstacles = [];
+  const walls = oldHp.map((hp, i) => ({
+    ...makeBuilding(save.nextId++, 'wall', i + 2, 2, i + 1),
+    hp: hp / 2,
+    maxHp: hp,
+  }));
+  save.buildings.push(...walls);
+  const m = new GameModel(structuredClone(save));
+  for (const [i, old] of walls.entries()) {
+    const wall = m.state.buildings.find((b) => b.id === old.id)!;
+    expect([wall.x, wall.y, wall.level, wall.hp, wall.maxHp]).toEqual([
+      old.x,
+      old.y,
+      old.level,
+      currentHp[i] / 2,
+      currentHp[i],
+    ]);
+  }
+  m.startBattle(0, true);
+  for (const [i, wall] of walls.entries())
+    expect(m.battle!.buildings.find((b) => b.id === wall.id)!.hp).toBe(currentHp[i]);
+  m.returnHome();
+  const reloaded = new GameModel(structuredClone(m.state));
+  for (const [i, wall] of walls.entries())
+    expect(reloaded.state.buildings.find((b) => b.id === wall.id)!.hp).toBe(currentHp[i] / 2);
+  expect(validateSave(reloaded.state)).toBe(true);
 });

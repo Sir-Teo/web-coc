@@ -213,3 +213,80 @@ test('older combat recordings retain the result and explain why playback is unav
   await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toHaveCount(0);
   await expect(page.locator('.raid-score')).toContainText('0%');
 });
+
+test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the TH2 gate', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    const { model: m, scene } = window.__game;
+    m.townhall.level = 1;
+    const first = m.state.buildings.find((b) => b.kind === 'cannon');
+    m.state.buildings = m.state.buildings.filter((b) => b.kind !== 'cannon' || b.id === first.id);
+    m.state.obstacles = [];
+    m.state.gold = 250;
+    m.changed();
+    scene.cameras.main.centerOn(896, 208);
+  });
+  await page.locator('.shop-btn').click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  const buy = page.locator('[data-action="build:cannon"]');
+  await expect(buy).toBeEnabled();
+  await expect(buy).toHaveText(/250/);
+  await buy.click();
+  const p = await page.evaluate(() => window.__game.scene.screenFor(3, 3));
+  await page.mouse.click(p.x, p.y);
+  const id = await page.evaluate(() => {
+    const m = window.__game.model,
+      b = m.state.buildings.at(-1);
+    if (b.kind !== 'cannon' || b.upgradeEnd - b.upgradeStart !== 5000)
+      throw Error('Wrong Cannon construction');
+    m.tick(b.upgradeEnd);
+    m.state.gold = 1000;
+    m.selected = b.id;
+    m.changed();
+    return b.id;
+  });
+  await page
+    .locator('.building-context')
+    .getByRole('button', { name: 'Info', exact: true })
+    .click();
+  await expect(page.locator('.info-cost')).toContainText('30s');
+  await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
+  const end = await page.evaluate((id) => {
+    const m = window.__game.model,
+      b = m.state.buildings.find((b) => b.id === id);
+    if (m.state.gold !== 0 || b.upgradeEnd - b.upgradeStart !== 30000)
+      throw Error('Wrong Cannon upgrade');
+    return b.upgradeEnd;
+  }, id);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.evaluate(
+    ({ id, end }) => {
+      const m = window.__game.model,
+        b = m.state.buildings.find((b) => b.id === id);
+      if (b.upgradeEnd !== end) throw Error('Paid deadline changed');
+      m.tick(end);
+      m.state.gold = 4000;
+      m.selected = id;
+      m.changed();
+    },
+    { id, end },
+  );
+  await page
+    .locator('.building-context')
+    .getByRole('button', { name: 'Info', exact: true })
+    .click();
+  await expect(page.locator('.info-body')).toContainText('Town Hall 2');
+  await expect(page.locator('.info-cost')).toHaveCount(0);
+  await page.screenshot({
+    path: `output/playtest/th1-cannon-gate-${test.info().project.name || 'chromium'}.png`,
+    animations: 'disabled',
+  });
+  await page.locator('[data-action="close"]').click();
+  await page.locator('.shop-btn').click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  await expect(buy).toBeDisabled();
+  await expect(buy).toHaveText('At limit');
+});

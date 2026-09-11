@@ -19,7 +19,7 @@ Sources: [Cannon](https://clashofclans.fandom.com/wiki/Cannon) and [Archer Tower
 | 9 | 250,000 | 3h 30m | 880 | 400,000 | 5h | 750 |
 | 10 | 330,000 | 4h | 960 | 460,000 | 6h | 810 |
 
-Cannon counts at TH1–8 are **1, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5**. Both defenses end at level 10 in the TH8 catalog. The newly checked Cannon reference allows two pieces and level 2 at TH1; the current TH1 count of one and level ceiling of one still need correction. A new TH2 village starts with two Cannons and one Archer Tower.
+Cannon counts at TH1–8 are **2, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5**. Both defenses end at level 10 in the TH8 catalog. TH1 now permits two Cannons and upgrades through level 2; level 3 requires TH2. Both shop placement and paid upgrades enforce these limits. A new TH2 village starts with two Cannons and one Archer Tower.
 
 ## Shared behavior and compatibility
 

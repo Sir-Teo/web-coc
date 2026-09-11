@@ -8,7 +8,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
   goldstorage: [1, 3, 6, 8, 9, 10, 11, 11],
   elixirstorage: [1, 3, 6, 8, 9, 10, 11, 11],
   barracks: [1, 4, 5, 6, 7, 8, 9, 10],
-  cannon: [1, 3, 4, 5, 6, 7, 8, 10],
+  cannon: [2, 3, 4, 5, 6, 7, 8, 10],
   archertower: [0, 2, 3, 4, 6, 7, 8, 10],
   camp: [1, 2, 3, 4, 5, 6, 6, 6],
   builder: [1, 1, 1, 1, 1, 1, 1, 1],

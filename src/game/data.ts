@@ -204,7 +204,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [1, 2, 2, 2, 3, 3, 5, 5],
+    available: [2, 2, 2, 2, 3, 3, 5, 5],
     build: DEFENSE_PROGRESSION.cannon[0].seconds,
     damage: 5.6,
     ...DEFENSE_WEAPONS.cannon,

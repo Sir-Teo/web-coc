@@ -1,12 +1,12 @@
 /** Undiscounted Home Village values. Source and compatibility notes: docs/WALL-PROGRESSION.md. */
 export const WALL_LEVELS = [
-  { hp: 300, cost: 50 },
-  { hp: 500, cost: 1000 },
-  { hp: 700, cost: 5000 },
-  { hp: 900, cost: 10000 },
-  { hp: 1400, cost: 20000 },
-  { hp: 2000, cost: 30000 },
-  { hp: 2500, cost: 50000 },
+  { hp: 100, cost: 0 },
+  { hp: 200, cost: 1000 },
+  { hp: 400, cost: 5000 },
+  { hp: 800, cost: 10000 },
+  { hp: 1200, cost: 20000 },
+  { hp: 1800, cost: 30000 },
+  { hp: 2400, cost: 50000 },
   { hp: 3000, cost: 75000 },
   // Retained for validated legacy saves; the playable Town Hall catalog ends at TH8.
   { hp: 3500, cost: 100000 },
