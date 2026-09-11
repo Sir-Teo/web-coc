@@ -2,7 +2,7 @@
 
 The original terrain rectangle matched the world bounds, but the supported camera view could be taller or wider than that rectangle. At phone zoom levels this exposed horizontal strips of the solid camera background; minimum zoom exposed additional edges on desktop. Moving the camera could not repair a view larger than the painted terrain.
 
-The village now uses a wider original forest-and-river backdrop, centered on the same world and displayed at 1.6 times its width and height. The playable 28×28 grid, isometric origin, building positions, sprite sizes, pan limits, and existing zoom range are unchanged. The extended scenery supplies the margin visible outside those bounds. The original terrain source and derived asset remain available.
+The village uses a wider original forest-and-river backdrop displayed at 1.6 times the world width and height. The later [native-grid pass](NATIVE-GRID.md) expands the buildable field to 44×44 inside a 48×48 simulation map, preserving the isometric origin and building pixel sizes. Pan bounds include a 224-world-pixel viewing margin; minimum zoom permits an overview while the initial zoom keeps the village readable. The same scenery source now covers a larger world, so fine detail is softer. The original terrain source and derived asset remain available.
 
 ## Artwork and rebuild
 

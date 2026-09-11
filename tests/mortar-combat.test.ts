@@ -13,7 +13,7 @@ function arena(level = 1) {
     id: 9001,
     kind: 'giant',
     x: 17,
-    y: 11,
+    y: 11.5,
     hp: 100000,
     maxHp: 100000,
     springUntil: 100000,
@@ -59,7 +59,7 @@ describe('Mortar normal mode', () => {
       [11.001, false],
     ] as const) {
       const { m, b, u } = arena();
-      u.x = 11 + distance;
+      u.x = 11.5 + distance;
       m.step(0.01);
       expect(b.shells.length).toBe(fires ? 1 : 0);
     }

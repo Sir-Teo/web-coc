@@ -781,8 +781,8 @@ export class HUD {
       document.documentElement.classList.toggle('reduce-motion', data.settings.reducedMotion);
       this.audio.enabled = data.settings.sound;
       this.audio.music(data.settings.music);
+      if (!this.showMapUpgrade()) this.toast('Village restored successfully.');
       await saveGame(data);
-      this.toast('Village restored successfully.');
       this.panel = null;
       this.render();
     } catch {
@@ -790,6 +790,16 @@ export class HUD {
     } finally {
       document.querySelector<HTMLInputElement>('#import-file')!.value = '';
     }
+  }
+  showMapUpgrade() {
+    const moved = this.model.state.mapUpgrade?.moved;
+    if (!moved) return false;
+    delete this.model.state.mapUpgrade;
+    this.model.changed(true);
+    this.toast(
+      `Village expanded · ${moved} building${moved === 1 ? '' : 's'} moved to clear ground. Your progress is preserved.`,
+    );
+    return true;
   }
   private keydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {

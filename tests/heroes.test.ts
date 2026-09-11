@@ -113,6 +113,7 @@ describe('hero progression', () => {
 
   it('preserves old villages and rejects malformed hero state', () => {
     const legacy = initialSave();
+    (legacy as unknown as { version: number }).version = 2;
     const before = structuredClone(legacy);
     delete (legacy as Partial<typeof legacy>).dark;
     const migrated = migrateSave(legacy) as typeof legacy;

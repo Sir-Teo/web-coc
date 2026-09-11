@@ -221,6 +221,7 @@ describe('resource raids and save compatibility', () => {
   });
   it('opens an older version-2 save without granting troops or changing progress', () => {
     const old = structuredClone(initialSave());
+    (old as unknown as { version: number }).version = 2;
     old.gold = 4321;
     old.lastArmy = { ...old.army };
     old.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as Record<

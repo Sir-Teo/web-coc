@@ -1,5 +1,15 @@
 # Verification record
 
+## Expanded village and native defense footprints — September 11, 2026
+
+All 345 unit tests pass, including dense legacy migration, saved layouts, damaged-health and paid-deadline preservation, expanded-grid pathfinding and campaign viability. The full Chromium run passed 150 of 154 scenarios. After fixes, 26 focused scenarios pass, covering all four failures and a new deterministic input regression: 155 distinct Chromium scenarios have passing coverage across the full run and follow-up. All 46 focused WebKit scenarios pass. CI now includes the native-grid, building-art and placement-preview cases in its WebKit selection.
+
+The field now has 44×44 buildable tiles, with 3×3 Cannons, Archer Towers and Mortars. Save format 3 relocates conflicting legacy defenses deterministically and reports moved buildings once. Sixteen campaign placements were corrected. Combat version 12 retains older result summaries while refusing playback under changed geometry. Browser testing found an overwritten scene-ready callback hiding the migration notice, an older-backup fixture incorrectly using the current save version, and a redraw that could detach a pressed Save button or interrupt Army category scrolling. These are resolved; the input fix is described in [INPUT-GESTURES.md](INPUT-GESTURES.md).
+
+The final production build passes Chromium and WebKit without reported errors. Chromium reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-272db0eddc04`. Phone placement at (43,43), the normal phone village and the desktop grid overview were visually reviewed. The larger field is usable, but the existing terrain source is softer at its increased display scale. The two-tile simulation border is local; remaining catalog dimensions and per-level artwork still need work. See [NATIVE-GRID.md](NATIVE-GRID.md).
+
+Evidence: `output/playtest/native-grid-verification.json`, `native-grid-production-report.json`, `native-grid-final-check.log`, `native-grid-chromium.log`, `native-grid-fixes-chromium.log`, `native-grid-final-webkit.log`, `native-grid-final-phone.png`, `native-grid-final-overview.png` and `native-grid-far-corner-webkit.png`.
+
 ## Placement preview follows the active pointer and camera — September 11, 2026
 
 All 22 targeted browser scenarios pass in each of Chromium and WebKit after the placement follow-up. Coverage includes stationary-pointer keyboard pan, zoom and viewport resize; DOM shop pointer retention through a scene refresh; return to canvas input on release; actual shop placement by tap/drag; touch input; phone layouts; and the building-art cases. The earlier appearance pass completed 338 unit tests and 27 browser scenarios per engine (46 distinct browser scenarios across the two phases).

@@ -1,3 +1,4 @@
+import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
 import { SPRING_AIRTIME } from './trap-stats';
 import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
@@ -38,7 +39,16 @@ const SPELL_COLOR: Record<string, number> = {
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
 const TERRAIN_SCALE = 1.6;
-export const WORLD = { width: 1792, height: 1195, ox: 896, oy: 112, tw: 64, th: 32 };
+const CAMERA_MARGIN = 224;
+export const WORLD = {
+  left: 896 - MAP_SIZE * 32,
+  width: MAP_SIZE * 64,
+  height: MAP_SIZE * 32 + 299,
+  ox: 896,
+  oy: 112,
+  tw: 64,
+  th: 32,
+};
 export const iso = (x: number, y: number) =>
   new Phaser.Math.Vector2(WORLD.ox + (x - y) * 32, WORLD.oy + (x + y) * 16);
 export const uniso = (x: number, y: number) => ({
@@ -133,7 +143,7 @@ export class VillageScene extends Phaser.Scene {
   create() {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     this.add
-      .image(WORLD.width / 2, WORLD.height / 2, 'terrain')
+      .image(WORLD.ox, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
       .setDepth(-1000);
     this.ground = this.add.graphics().setDepth(-900);
@@ -310,8 +320,14 @@ export class VillageScene extends Phaser.Scene {
   }
   private updateBaseZoom() {
     const { width, height } = this.scale;
-    this.baseZoom = Math.max(width / WORLD.width, height / WORLD.height) * 1.04;
+    this.baseZoom = Math.max(width / 1792, height / 1195) * 1.04;
     if (width < 700) this.baseZoom = Math.max(width / 1250, height / 1400);
+  }
+  get minZoom() {
+    return Math.min(
+      this.baseZoom * 0.78,
+      Math.max(this.scale.width / WORLD.width, this.scale.height / WORLD.height) * 0.95,
+    );
   }
   resetCamera() {
     if (!this.cameras) return;
@@ -329,7 +345,7 @@ export class VillageScene extends Phaser.Scene {
     const zoom = c.zoom;
     this.updateBaseZoom();
     this.cameraViewport = { width: c.width, height: c.height };
-    c.setZoom(Phaser.Math.Clamp(zoom, this.baseZoom * 0.78, this.baseZoom * 2));
+    c.setZoom(Phaser.Math.Clamp(zoom, this.minZoom, this.baseZoom * 2));
     c.centerOn(x, y);
     this.clampCamera();
     // A pointer's old screen coordinates no longer describe the resized playfield.
@@ -338,7 +354,7 @@ export class VillageScene extends Phaser.Scene {
     this.pinchDistance = 0;
   }
   setZoom(value: number) {
-    this.cameras.main.setZoom(Phaser.Math.Clamp(value, this.baseZoom * 0.78, this.baseZoom * 2));
+    this.cameras.main.setZoom(Phaser.Math.Clamp(value, this.minZoom, this.baseZoom * 2));
     this.clampCamera();
   }
   zoomBy(delta: number) {
@@ -350,13 +366,13 @@ export class VillageScene extends Phaser.Scene {
       vh = c.height / c.zoom;
     const centerX = Phaser.Math.Clamp(
         c.scrollX + c.width / 2,
-        Math.min(vw / 2, WORLD.width / 2),
-        Math.max(WORLD.width - vw / 2, WORLD.width / 2),
+        WORLD.left + Math.min(vw / 2 - CAMERA_MARGIN, WORLD.width / 2),
+        WORLD.left + Math.max(WORLD.width - vw / 2 + CAMERA_MARGIN, WORLD.width / 2),
       ),
       centerY = Phaser.Math.Clamp(
         c.scrollY + c.height / 2,
-        Math.min(vh / 2, WORLD.height / 2),
-        Math.max(WORLD.height - vh / 2, WORLD.height / 2),
+        Math.min(vh / 2 - CAMERA_MARGIN, WORLD.height / 2),
+        Math.max(WORLD.height - vh / 2 + CAMERA_MARGIN, WORLD.height / 2),
       );
     c.centerOn(centerX, centerY);
   }
@@ -500,10 +516,12 @@ export class VillageScene extends Phaser.Scene {
         .join(',');
     if (signature === this.boundary.signature) return this.boundary.edges;
     const blocked = (x: number, y: number) =>
-      x < 1 || y < 1 || x > 26 || y > 26 ? true : this.model.deployBlocked(x + 0.5, y + 0.5);
+      x < 1 || y < 1 || x > MAP_SIZE - 2 || y > MAP_SIZE - 2
+        ? true
+        : this.model.deployBlocked(x + 0.5, y + 0.5);
     const edges: number[][] = [];
-    for (let x = 1; x <= 26; x++)
-      for (let y = 1; y <= 26; y++) {
+    for (let x = 1; x <= MAP_SIZE - 2; x++)
+      for (let y = 1; y <= MAP_SIZE - 2; y++) {
         if (!blocked(x, y)) continue;
         if (!blocked(x - 1, y)) edges.push([x, y, x, y + 1]);
         if (!blocked(x + 1, y)) edges.push([x + 1, y, x + 1, y + 1]);
@@ -1082,13 +1100,13 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private drawGrid(g: Phaser.GameObjects.Graphics) {
-    for (let x = 2; x <= 26; x++) {
+    for (let x = BUILD_MIN; x <= BUILD_MAX; x++) {
       g.lineStyle(1, 0xffffff, 0.15);
-      const p = iso(x, 2),
-        q = iso(x, 26);
+      const p = iso(x, BUILD_MIN),
+        q = iso(x, BUILD_MAX);
       g.lineBetween(p.x, p.y, q.x, q.y);
-      const r = iso(2, x),
-        s = iso(26, x);
+      const r = iso(BUILD_MIN, x),
+        s = iso(BUILD_MAX, x);
       g.lineBetween(r.x, r.y, s.x, s.y);
     }
   }

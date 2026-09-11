@@ -121,7 +121,7 @@ describe('village obstacles', () => {
         s.obstacles![0].kind = 'unknown' as 'trees';
       },
       (s: typeof old) => {
-        s.obstacles![0].x = 28;
+        s.obstacles![0].x = 48;
       },
       (s: typeof old) => {
         s.obstacles![0].removeEnd = Infinity;

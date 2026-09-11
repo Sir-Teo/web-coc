@@ -1,3 +1,4 @@
+import { MAP_SIZE } from './grid';
 import { BUILDINGS, isTrap, TROOPS, TROOP_KEYS, type TroopKind } from './data';
 import type { Army, Building } from './model';
 
@@ -26,8 +27,8 @@ export function campPlan(army: Army, buildings: Building[]): CampActor[] {
       for (let y = b.y; y < b.y + BUILDINGS[b.kind].size; y++) occupied.add(`${x},${y}`);
   }
   const free: Point[] = [];
-  for (let y = 1; y < 27; y++)
-    for (let x = 1; x < 27; x++)
+  for (let y = 1; y < MAP_SIZE - 1; y++)
+    for (let x = 1; x < MAP_SIZE - 1; x++)
       if (!occupied.has(`${x},${y}`)) free.push({ x: x + 0.5, y: y + 0.5 });
   const routes = camps.map((camp) => {
     const cx = camp.x + 1.5,

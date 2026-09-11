@@ -1,3 +1,5 @@
+import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
+import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
@@ -44,13 +46,25 @@ export function migrateSave(input: unknown): unknown {
   }
   s.dark ??= 0;
   s.version = 2;
+  if (!validateVersion(s, true)) return s;
+  const moved = migrateFootprints(s as unknown as Save);
+  if (moved) s.mapUpgrade = { moved };
+  s.version = 3;
   return s;
 }
 export function validateSave(input: unknown): input is Save {
+  return validateVersion(input);
+}
+function validateVersion(input: unknown, legacy = false): input is Save {
   if (!input || typeof input !== 'object') return false;
   const s = input as Save;
   if (
-    s.version !== 2 ||
+    s.mapUpgrade !== undefined &&
+    (!s.mapUpgrade || !Number.isInteger(s.mapUpgrade.moved) ||
+      s.mapUpgrade.moved < 1 || s.mapUpgrade.moved > 400)
+  ) return false;
+  if (
+    (s.version as number) !== (legacy ? 2 : 3) ||
     typeof s.tutorial !== 'boolean' ||
     !Number.isInteger(s.nextId) ||
     !['gold', 'elixir', 'gems', 'trophies', 'xp', 'lastTick', 'nextId'].every((k) =>
@@ -223,8 +237,8 @@ export function validateSave(input: unknown): input is Save {
       !Number.isInteger(b.y) ||
       b.x < 0 ||
       b.y < 0 ||
-      b.x + BUILDINGS[b.kind].size > 28 ||
-      b.y + BUILDINGS[b.kind].size > 28 ||
+      b.x + (legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size) > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
+      b.y + (legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size) > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
       b.level > BUILDINGS[b.kind].maxLevel ||
@@ -238,7 +252,8 @@ export function validateSave(input: unknown): input is Save {
       return false;
     ids.add(b.id);
   }
-  if (s.obstacles !== undefined && !validObstacles(s.obstacles, s.buildings)) return false;
+  if (!validArrangement(s.buildings, [], legacy)) return false;
+  if (s.obstacles !== undefined && !validObstacles(s.obstacles, s.buildings, legacy)) return false;
   if (s.obstacleGrowth !== undefined && (!Array.isArray(s.obstacles)
     || !validObstacleGrowth(s.obstacleGrowth, s.obstacles))) return false;
   if (s.obstacleGemIndex !== undefined && (!Number.isInteger(s.obstacleGemIndex)
@@ -262,8 +277,8 @@ export function validateSave(input: unknown): input is Save {
               !Number.isInteger(v.y) ||
               v.x < 0 ||
               v.y < 0 ||
-              v.x > 27 ||
-              v.y > 27,
+              v.x >= (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
+              v.y >= (legacy ? LEGACY_MAP_SIZE : MAP_SIZE),
           ),
       ))
   )

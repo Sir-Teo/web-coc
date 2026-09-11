@@ -10,4 +10,4 @@ The village, contextual card, Info sheet, upgrades and moving preview select the
 
 Verification covers distinct images, transparent borders, aligned feet, opaque dark barrel anchors, stable scale and position through a paid upgrade, matching contextual/Info art, moving previews, battle-time projectile presentation, reduced motion and replay seeking. Production checks require all six new textures and exercise offline reload. Inspect the gallery and phone Info captures in `output/playtest/` for visual evidence.
 
-The prototype 2×2 footprint still differs from the native 3×3 building. Camera, animation and exact native shape parity remain further work; this asset pass changes no simulation or replay rules.
+The later [native-grid pass](NATIVE-GRID.md) replaces the prototype 2×2 footprint with 3×3 geometry and migrates existing layouts. Animation and exact native shape parity remain further work; this earlier asset pass itself changed no simulation or replay rules.

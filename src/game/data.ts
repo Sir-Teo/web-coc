@@ -197,7 +197,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   cannon: {
     name: 'Cannon',
     description: 'A dependable defense with a powerful punch. Ground troops only.',
-    size: 2,
+    size: 3,
     width: 94,
     hp: DEFENSE_PROGRESSION.cannon[0].hp,
     cost: DEFENSE_PROGRESSION.cannon[0].cost,
@@ -213,7 +213,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   archertower: {
     name: 'Archer Tower',
     description: 'A high vantage point and a long reach. Fires at ground and air.',
-    size: 2,
+    size: 3,
     width: 90,
     hp: DEFENSE_PROGRESSION.archertower[0].hp,
     cost: DEFENSE_PROGRESSION.archertower[0].cost,
@@ -256,7 +256,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     name: 'Mortar',
     description:
       'Lobs shells at groups of ground attackers. Rush inside its 4-tile blind spot to avoid its fire.',
-    size: 2,
+    size: 3,
     width: 104,
     hp: DEFENSE_PROGRESSION.mortar[0].hp,
     cost: DEFENSE_PROGRESSION.mortar[0].cost,

@@ -12,4 +12,4 @@ The browser audit compares all 23 building kinds at four requested levels (clamp
 
 The placement follow-up checks keyboard panning, zoom, resize, DOM pointer retention across a scene refresh, and release back to canvas input. Its economy clock is held to ensure a periodic refresh cannot mask a stale preview. See `output/playtest/placement-preview-verification.json` and `placement-camera-phone-webkit.png` for results and visual evidence.
 
-Most buildings still share two broad artwork tiers; several have only one sprite. Generic growth and warm tint remain local presentation choices. Full per-level native appearance and footprint parity remain open work.
+Most buildings still share two broad artwork tiers; several have only one sprite. Generic growth and warm tint remain local presentation choices. Full per-level native appearance and remaining catalog footprint parity remain open work. Cannon, Archer Tower and Mortar now use native 3×3 footprints; see [NATIVE-GRID.md](NATIVE-GRID.md).

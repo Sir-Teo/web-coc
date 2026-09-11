@@ -201,7 +201,7 @@ it('TH1 permits two Cannons through level 2 and gates the third piece and level 
   m.beginBuild('cannon');
   expect(m.place(2, 2)).toBe(true);
   m.beginBuild('cannon');
-  expect(m.place(5, 2)).toBe(true);
+  expect(m.place(32, 2)).toBe(true);
   expect(m.state.gold).toBe(0);
   m.tick(m.clock + 5000);
   m.state.gold = 1000;

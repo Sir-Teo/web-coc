@@ -112,7 +112,7 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
     m.changed();
   }, original.id);
   await page.locator(`[data-action="move:${original.id}"]`).click();
-  const destination = await point(12.2, 16.2);
+  const destination = await point(19.2, 14.2);
   await page.mouse.move(destination.x, destination.y);
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.ghost?.tintTopLeft))
@@ -133,7 +133,7 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
         b = m.state.buildings.find((b) => b.id === id);
       return { x: b.x, y: b.y, level: b.level, gold: m.state.gold, busy: m.busy };
     }, original.id),
-  ).toEqual({ x: 12, y: 16, level: 8, gold: original.gold, busy: original.busy });
+  ).toEqual({ x: 19, y: 14, level: 8, gold: original.gold, busy: original.busy });
 });
 
 test('a paid upgrade completing during a move refreshes preview size without changing texture', async ({
