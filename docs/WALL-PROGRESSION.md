@@ -13,7 +13,7 @@ Re-audited September 11, 2026 against the [modern Home Village Wall table](https
 | 7 | 50,000 | 2,400 | 7 |
 | 8 | 75,000 | 3,000 | 8 |
 
-New pieces are free and the shop says “Free.” An empty treasury can place a run until the Town Hall count limit, after which the tool closes and the shop says “At limit.” The existing resource-upgrade rules allow gold or elixir from level 5 to 6 onward and require a free builder, without reserving that builder or starting a timer. Mixed selections sum each eligible piece's destination price. Ineligible pieces are disclosed and skipped; an unaffordable batch changes nothing.
+New pieces are free and the shop says “Free.” An empty treasury can place a run until the Town Hall count limit, after which the tool closes and the shop says “At limit.” Resource upgrades allow gold or elixir from level 4 to 5 onward (TH5) and require a free builder, without reserving that builder or starting a timer. Mixed selections sum each eligible piece's destination price. Ineligible pieces are disclosed and skipped; an unaffordable batch changes nothing.
 
 The wall-piece limits at Town Halls 1–8 are 0, 25, 50, 75, 100, 125, 175 and 225. Both entering construction and committing placement enforce the limit. New TH2 villages start with 25 walls along the western boundary and two southern runs; subsequent Town Hall upgrades open room for more.
 
@@ -31,4 +31,4 @@ The remainder of the building economy still uses prototype scaling. This increme
 
 The health reduction uses combat version 11. Older replay summaries remain readable but incompatible recordings cannot play under changed rules. Ground troops must break a wall before crossing it; lower-tier walls now break sooner under the same attack. Reload checks preserve the saved damage fraction at every reduced tier and leave home damage unchanged after practice.
 
-Source discrepancy still to resolve: the wiki’s elixir column starts at destination level 5, while its row-upgrade prose requires all selected pieces to be at least level 5 already. The existing level-5-to-6 elixir gate is retained pending stronger evidence; this audit does not claim complete native wall-upgrade parity.
+Source discrepancy resolved: the wiki’s elixir column starts at destination level 5, while its row-upgrade prose requires every piece to already be level 5. [Supercell’s June 26, 2022 announcement](https://supercell.com/en/games/clashofclans/blog/news/home-village-changes-2/) explicitly unlocks elixir Wall upgrades at TH5, whose maximum Wall level is 5. The implementation follows that announcement and the table: current level 4 is eligible for an elixir upgrade to 5. Mixed rows containing any lower-level piece offer gold first. Same-level selection includes eligible elixir balances when calculating how many pieces can be added.

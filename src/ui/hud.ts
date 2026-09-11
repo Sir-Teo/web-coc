@@ -1058,7 +1058,7 @@ export class HUD {
       <div class="wall-tools">${button('info', `${icon('Info', 17)} Info`, 'game-btn stone')}${walls.length === 1 ? button(`move:${anchor.id}`, `${icon('Move', 17)} Move`, 'game-btn stone') : button('wall-single', 'Single wall', 'game-btn stone')}${button('wall-row', `${icon('LayoutGrid', 17)} ${m.wallAxis ? 'Other row' : 'Select row'}`, 'game-btn stone', rowAvailable ? '' : 'disabled')}</div>
       ${m.wallAxis ? `<div class="wall-tools wall-row-move">${button('wall-move', `${icon('Move', 18)} Move row`, 'game-btn blue')}</div>` : ''}
       ${m.editing ? '' : m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}
-      <div class="wall-upgrade-actions">${!m.editing && gold.walls.length ? purchase('gold', gold) + (low >= 5 ? purchase('elixir', pink) : '') : ''}</div>
+      <div class="wall-upgrade-actions">${!m.editing && gold.walls.length ? purchase('gold', gold) + (low >= 4 ? purchase('elixir', pink) : '') : ''}</div>
       <p class="wall-note">${m.editing ? 'Select a row to move or rotate it together.' : note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
   }
 

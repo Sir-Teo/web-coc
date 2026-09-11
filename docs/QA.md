@@ -1,5 +1,15 @@
 # Verification record
 
+## Wall balance, free placement and early Cannon progression — September 11, 2026
+
+All 338 unit tests pass. The health/free-placement/TH1 Cannon pass completed 39 targeted browser scenarios in each of Chromium and WebKit. The subsequent TH5 elixir correction completed nine Wall scenarios in each engine, including one new case (40 distinct scenarios covered across the two phases). The final production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-bf593c648a1d`.
+
+Walls use the official reduced level-1–7 health values. New pieces cost zero, remain placeable with an empty treasury, and stop at the Town Hall count limit. TH1 supports two Cannons and their level-2 upgrade. Saved damaged Walls retain their damage fraction after health reconciliation; paid legacy deadlines survive reload. Combat version 11 prevents playback of recordings made under the older Wall health rules while preserving their summaries.
+
+Supercell’s TH5 elixir announcement resolves the conflicting community prose: level 4 → 5 Walls can use elixir. Exact-budget selection works with zero gold, mixed rows containing lower-level pieces reject elixir without partial charges, and successful upgrades persist without timers or reserved builders. See [WALL-PROGRESSION.md](WALL-PROGRESSION.md) and [DEFENSE-SOURCE-AUDIT.md](DEFENSE-SOURCE-AUDIT.md) for sources and remaining limits.
+
+Phone screenshots were visually reviewed for the actual free Wall shop tile, destination health, and elixir-funded group controls. The shop evidence initially captured the horizontal list before the Wall tile was scrolled into view; the capture now explicitly reveals that tile. Earlier test fixtures were updated for free placement, earlier Wall destruction and the reduced health of a Wall Breaker target. Evidence: `output/playtest/wall-current-verification.json`, `wall-current-production-report.json`, `free-wall-shop-*.png`, `th5-elixir-walls-*.png` and `th1-cannon-gate-*.png`. Native footprints, the full catalog, remaining building/troop balance, artwork and online systems are still incomplete.
+
 ## Defense source reconciliation — September 11, 2026
 
 All 335 unit tests pass after updating the five defense cost/time tables and the official low-level Cannon health/damage values. The full Chromium run passed 142 of 143 scenarios; its only failure expected the obsolete six-hour Air Defense level-2 timer. The corrected two-hour assertion then passed in Chromium and WebKit, giving all 143 Chromium scenarios passing coverage across the full run and targeted rerun. Nineteen focused WebKit scenarios pass. Production checks pass in both engines with no reported errors, including offline reload, Army and replay in Chromium with 98 cached files.

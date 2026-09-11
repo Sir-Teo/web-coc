@@ -149,3 +149,37 @@ it('reconciles every reduced wall tier at the saved damage fraction without chan
     expect(reloaded.state.buildings.find((b) => b.id === wall.id)!.hp).toBe(currentHp[i] / 2);
   expect(validateSave(reloaded.state)).toBe(true);
 });
+
+it('TH5 can fund level 4 to 5 walls and same-level selection with elixir, but lower pieces block a mixed batch', () => {
+  const m = new GameModel();
+  m.townhall!.level = 5;
+  const walls = [
+    makeBuilding(m.state.nextId++, 'wall', 2, 2, 4),
+    makeBuilding(m.state.nextId++, 'wall', 3, 2, 4),
+  ];
+  m.state.buildings.push(...walls);
+  m.selected = walls[0].id;
+  m.state.gold = 0;
+  m.state.elixir = 39999;
+  expect(m.canAdjustWallSelection(1)).toBe(false);
+  m.state.elixir++;
+  expect(m.adjustWallSelection(1)).toBe(true);
+  expect(m.selectedWalls.map((b) => b.id)).toEqual(walls.map((b) => b.id));
+  walls[1].level = 3;
+  const ids = walls.map((b) => b.id);
+  expect(m.upgradeWalls(ids, 'elixir')).toBe(false);
+  expect(m.state.elixir).toBe(40000);
+  expect(walls[0].level).toBe(4);
+  walls[1].level = 4;
+  expect(m.upgradeWalls(ids, 'elixir')).toBe(true);
+  expect([m.state.gold, m.state.elixir, m.busy]).toEqual([0, 0, 0]);
+  expect(walls.map((b) => [b.level, b.hp, b.upgradeEnd])).toEqual([
+    [5, 1200, undefined],
+    [5, 1200, undefined],
+  ]);
+  const restored = new GameModel(structuredClone(m.state));
+  expect(restored.state.elixir).toBe(0);
+  expect(restored.state.buildings.filter((b) => ids.includes(b.id)).map((b) => b.level)).toEqual([
+    5, 5,
+  ]);
+});

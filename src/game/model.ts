@@ -847,7 +847,7 @@ export class GameModel {
     if (count < 1) return false;
     if (delta < 0) return true;
     if (anchor.level >= this.maxLevel('wall')) return false;
-    const funds = Math.max(this.state.gold, anchor.level >= 5 ? this.state.elixir : 0);
+    const funds = Math.max(this.state.gold, anchor.level >= 4 ? this.state.elixir : 0);
     return (
       count <= matchingWalls(this.state.buildings, anchor.id).length &&
       count * this.upgradeCost(anchor) <= funds
@@ -881,8 +881,8 @@ export class GameModel {
         ? 'Select walls in your village.'
         : !walls.length
           ? 'These walls are at the maximum for your Town Hall.'
-          : resource === 'elixir' && selected.some((b) => b!.level < 5)
-            ? 'Elixir upgrades require every selected wall to be level 5 or higher.'
+          : resource === 'elixir' && selected.some((b) => b!.level < 4)
+            ? 'Elixir upgrades start at wall level 4 → 5. Upgrade lower-level walls with gold first.'
             : this.busy >= this.builders
               ? 'A free builder is needed for instant wall upgrades.'
               : this.state[resource] < cost

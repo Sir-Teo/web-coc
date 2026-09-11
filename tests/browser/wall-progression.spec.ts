@@ -96,6 +96,7 @@ test('an empty treasury can place a free wall run up to the count limit and relo
   await page.locator('[data-action="tab:Defenses"]').click();
   const buy = page.locator('[data-action="build:wall"]');
   await expect(buy).toHaveText('Free');
+  await buy.scrollIntoViewIfNeeded();
   await page.screenshot({
     path: `output/playtest/free-wall-shop-${test.info().project.name || 'chromium'}.png`,
     animations: 'disabled',
@@ -130,4 +131,62 @@ test('an empty treasury can place a free wall run up to the count limit and relo
   await page.locator('[data-action="tab:Defenses"]').click();
   await expect(buy).toBeDisabled();
   await expect(buy).toHaveText('At limit');
+});
+
+test('TH5 can select and instantly upgrade level 4 walls using only elixir', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const ids = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall.level = 5;
+    const walls = m.state.buildings.filter((b) => b.kind === 'wall').slice(0, 2);
+    for (const b of walls) {
+      b.level = 4;
+      b.hp = b.maxHp = 800;
+    }
+    m.selected = walls[0].id;
+    m.state.gold = 0;
+    m.state.elixir = 39999;
+    m.changed();
+    return walls.map((b) => b.id);
+  });
+  const add = page.locator('[data-action="wall-count:1"]');
+  await expect(add).toBeDisabled();
+  await page.evaluate(() => {
+    window.__game.model.state.elixir++;
+    window.__game.model.changed();
+  });
+  await expect(add).toBeEnabled();
+  await add.click();
+  const upgrade = page.locator('[data-action="wall-upgrade:elixir"]');
+  await expect(upgrade).toBeEnabled();
+  await expect(upgrade).toContainText('40,000');
+  await expect(page.locator('[data-action="wall-upgrade:gold"]')).toBeDisabled();
+  await page.screenshot({
+    path: `output/playtest/th5-elixir-walls-${test.info().project.name || 'chromium'}.png`,
+    animations: 'disabled',
+  });
+  await upgrade.click();
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  expect(
+    await page.evaluate((ids) => {
+      const m = window.__game.model;
+      return {
+        gold: m.state.gold,
+        elixir: m.state.elixir,
+        busy: m.busy,
+        walls: m.state.buildings
+          .filter((b) => ids.includes(b.id))
+          .map((b) => [b.level, b.hp, !!b.upgradeEnd]),
+      };
+    }, ids),
+  ).toEqual({
+    gold: 0,
+    elixir: 0,
+    busy: 0,
+    walls: [
+      [5, 1200, false],
+      [5, 1200, false],
+    ],
+  });
 });
