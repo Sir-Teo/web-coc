@@ -1,0 +1,43 @@
+# Recorded attacks
+
+Audited and committed September 11, 2026. The latest five completed campaign or practice attacks now support **Watch replay**, both from their result screen and from the village's Battle log. Twenty result summaries are still retained. Attacks completed before this feature have no recording.
+
+Playback has pause/play, restart, a draggable timeline, ±10-second jumps, First deployment, and 1×/2×/4× speed. Space toggles pause. Camera dragging, zooming, and defense inspection remain available; deployment, spell casting, hero activation, and surrender are disabled. Completion leaves the battlefield visible, with Restart and Back to log available. Replay controls adapt to phone portrait and landscape widths.
+
+## Reproduction and isolation
+
+`src/game/replay.ts` defines a versioned initial snapshot containing the actual enemy layout, defense levels and upgrade state, original army/spells, troop research levels, King level/Town Hall, and starting unit identifier. A compact event stream records successful troop deployments, spell casts, hero deployment, manual hero activation, and battle termination, in order at simulation-step boundaries. Failed inputs and selection/camera movements are not recorded. The actual simulation deltas are preserved, including scouting time. Automatic hero activation, traps, mortar impacts, and combat outcomes are reproduced by the normal simulation.
+
+Troop research is frozen at attack entry. Research that finishes at home during an attack applies to the next attack. While watching a replay, home research advances from the home level, never from the recorded troop level. This closes a timing dependency that would otherwise change damage midway through a recording.
+
+Playback runs a separate GameModel and exposes only its battlefield to the scene. It never spends home troops or spells, pays loot, changes trophies/stars/statistics, or appends a result to the home log. Home collectors and upgrade timers continue their normal wall-clock behavior while watching. Restart creates a fresh simulation from the stored snapshot, so later layout changes, upgrades, or empty army camps cannot alter an old replay.
+
+## Persistence and limits
+
+Recordings travel with normal IndexedDB/localStorage saves and JSON export/import. Import validation bounds step/action counts, timestamps, coordinates, types, research, hero values, and initial building data. Existing saves and result records without a replay remain valid. Only the latest five result entries retain recording payloads; all twenty retain their summaries.
+
+The current combat version is `REPLAY_VERSION = 4`, which records raid-limited storage headroom and keeps playback loot/results independent of the viewing village. Version 3 introduced Balloon splash; version 2 added timed projectile damage. Increment it whenever combat rules or campaign multipliers change in ways that affect playback. Incompatible recordings remain in the save with their result summary, but cannot be played. This does not provide historical combat engines. Portable file sharing and seeking work. No hosted replay sharing service, defense replay, or online opponent recording exists yet.
+
+Each recording is bounded to 6,000 steps, 2,000 inputs, 700 carried troops and 100 carried spells, sufficient for the supported village catalog. Normal playback and seeking process at most 100 recorded steps per update and yield after an 8ms work budget (checked between simulation steps); excess playback time carries forward. This keeps very small imported deltas from exhausting the full recording in a single frame. Unsupported debug step durations or oversized recordings disable recording without interrupting the attack. A developer-tool forced victory deliberately discards its recording, since direct hitpoint edits are not player inputs.
+
+## Seeking and portable files
+
+The timeline accepts pointer dragging and keyboard Home/End. Changes snap to a recorded simulation boundary. Jump ±10 seconds for a quick review, or use First deployment to skip scouting. Scrubbing pauses playback. Button-based jumps preserve whether playback was running or paused; seeking backwards from a completed replay leaves it paused for inspection.
+
+Seeking reconstructs an isolated simulation from the initial snapshot in chunks of at most 100 simulation steps per update. Reconstruction emits no sound or combat effects. New seeks supersede pending ones, and exiting cancels pending work. The battlefield switches to the reconstructed state only when it is ready; camera position and zoom stay put. Scene sprites and transient combat effects are reset, so buildings and troops that were destroyed later can reappear correctly. The slider stays mounted throughout a pointer drag even if another HUD update occurs.
+
+**Export replay** in the log or playback controls creates a `.crown-replay.json` file. **Open shared replay** in the log accepts that file, including when the local log is empty. All playback controls provide at least 44×44 CSS-pixel targets on supported portrait and landscape screens. Shared replays are temporary: they never become a village result record and close on page reload. Keep the downloaded file to watch it again or send it using your own preferred channel.
+
+`src/game/replay-file.ts` owns the separate `crown-clan-replay` file envelope, version 1. Exports whitelist combat fields, clear collector inventories, and exclude village balances, presets, log history, and unknown imported fields. The replay includes raid-capped loot capacity needed to reproduce the result, without exporting wallet balances or total storage capacity. Files are capped at 512 KB and checked against the replay validator and current combat version. Village backups, malformed files, and incompatible versions are rejected without changing the active village or playback. A shared recording cannot interrupt a live attack. No file is uploaded to a service.
+
+## Verification
+
+Eight simulation/save tests cover exact campaign and practice combat reproduction; all seven troop types and three spells; manual and automatic hero activation; traps and mortar fire; research finishing during a raid; scouting timeout and automatic termination; pause/speed/restart; JSON round trips; retention/version handling; and malformed data rejection. Equality checks include unit positions and health, building damage, targets, paths, active spells, traps, shells, loot, and destruction. The home save is compared before and after playback.
+
+Two browser tests create attacks through real pointer deployment, surrender, reload the save, and play them from the log on desktop and phone. They verify pause, speed, completion, restart, exit, control bounds, unchanged army/rewards/history, and absence of page errors. Screenshots are in `output/playtest/replay-desktop.png` and `output/playtest/replay-phone.png`.
+
+Production Chromium and WebKit additionally passed recorded campaign playback at 844×390, including pause, speed, restart, exit, and unchanged resources/army. Landscape Battle log navigation is now reachable through a two-column village tool rail. Reports and screenshots are under `output/playtest/replay-production-*`.
+
+Six additional model tests cover seek equivalence at earlier/later/final positions, silent reconstruction, superseding requests, cancellation, playing/paused state, First deployment, standalone replay round trips, export filtering, invalid files, version/size limits, and active-attack guards. Three additional browser scenarios exercise keyboard and pointer scrubbing, live HUD updates during dragging, revived sprites, camera preservation, file downloads/uploads, repeated imports, error feedback, and persistence isolation. Screenshots: `output/playtest/replay-seek-*` and `output/playtest/replay-imported.png`.
+
+The September 11 audit added regression coverage for nearly full storages, exact replay results, viewing-village capacity independence, research completion while watching older levels, tiny imported time steps, roster limits, saveable oversized debug raids, and older recording retention. Invalid new recordings are omitted before saving their result; older combat versions retain their original validation limits and remain readable as summaries.

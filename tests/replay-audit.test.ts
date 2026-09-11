@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { CAMPAIGN, TROOP_KEYS } from '../src/game/data';
 import { emptyArmy, emptySpells } from '../src/game/army';
@@ -104,6 +104,28 @@ describe('replay isolation and input budgets', () => {
     for (let i = 0; i < 60 && !m.replay!.complete; i++) m.step(0.05);
     expect(m.replay!.complete).toBe(true);
     expect(m.replay!.time).toBeCloseTo(0.006, 9);
+  });
+
+  it('yields playback and seeking when the frame work budget is exhausted', () => {
+    const data = simpleReplay();
+    data.steps = Array(200).fill(0.05);
+    data.actions = [{ step: 200, type: 'end' }];
+    const m = new GameModel();
+    m.openReplay(data);
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => (now += 10));
+    try {
+      m.step(1);
+      expect(m.replay!.time).toBe(0.05);
+      m.seekReplay(5);
+      expect(m.replay!.time).toBe(0.05);
+      expect(m.replay!.seeking).toBe(true);
+    } finally {
+      clock.mockRestore();
+    }
+    for (let i = 0; i < 20 && m.replay!.seeking; i++) m.step(0.05);
+    expect(m.replay!.seeking).toBe(false);
+    expect(m.replay!.time).toBeCloseTo(5);
   });
 
   it('rejects oversized rosters and invalid loot limits without replacing current playback', () => {

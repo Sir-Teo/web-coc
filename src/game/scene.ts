@@ -61,6 +61,7 @@ export class VillageScene extends Phaser.Scene {
   private wallDragOffset?: { x: number; y: number };
   private mode = '';
   private renderedBattle: GameModel['battle'] = null;
+  private renderedReplay: GameModel['replay'] = null;
   private lastRevision = -1;
   private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
   private dragged = false;
@@ -359,7 +360,13 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.wallMove) return this.wallDragOffset ? 'drag-wall' : 'pan';
     if (this.model.editing && this.down?.id != null) return 'drag-building';
     const b = this.model.battle;
-    if (b && !b.finished && !this.model.placement && !this.model.activeSpell) {
+    if (
+      b &&
+      !this.model.replay &&
+      !b.finished &&
+      !this.model.placement &&
+      !this.model.activeSpell
+    ) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
       const grid = this.gridAtPointer(p);
@@ -549,7 +556,18 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
+      const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
+      this.renderedReplay = this.model.replay;
       this.renderedBattle = this.model.battle;
+      // Short-lived combat effects must not survive a jump to an earlier timeline.
+      const troops = new Set(this.unitSprites.values());
+      for (const object of [...this.children.list]) {
+        const display = object as Phaser.GameObjects.Image;
+        if (display.depth >= 7000 && !troops.has(display)) {
+          this.tweens.killTweensOf(display);
+          display.destroy();
+        }
+      }
       this.boundary.signature = '';
       for (const s of this.sprites.values()) s.destroy();
       for (const s of this.unitSprites.values()) s.destroy();
@@ -558,7 +576,7 @@ export class VillageScene extends Phaser.Scene {
       this.unitSprites.clear();
       this.bubbles.clear();
       this.mode = mode;
-      this.resetCamera();
+      if (!keepCamera) this.resetCamera();
     }
     const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));
     for (const [id, im] of this.obstacleSprites) {
@@ -1351,7 +1369,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.paused) return;
     this.renderClock = time;
     const dt = Math.min(delta / 1000, 0.1);
-    if (!this.uiBlocked) {
+    if (!this.uiBlocked && !(document.activeElement instanceof HTMLInputElement)) {
       let x = 0,
         y = 0;
       const k = this.focusKeys;

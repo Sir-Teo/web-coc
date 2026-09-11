@@ -1,6 +1,8 @@
 import { OBSTACLES } from '../game/obstacles';
 import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
+import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
+import { REPLAY_VERSION } from '../game/replay';
 import { heroStats, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
@@ -170,6 +172,7 @@ export class HUD {
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private anchorFrame = 0;
+  private replayScrubbing = false;
   constructor(
     private model: GameModel,
     private scene: VillageScene,
@@ -177,7 +180,7 @@ export class HUD {
   ) {
     this.root = document.querySelector('#ui')!;
     this.root.innerHTML =
-      '<div id="hud"></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><input id="import-file" type="file" accept="application/json,.json" hidden>';
+      '<div id="hud"></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
     this.root.addEventListener('click', (e) => {
       const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
       if (target && !(target as HTMLButtonElement).disabled) {
@@ -192,17 +195,40 @@ export class HUD {
     });
     this.root.addEventListener('pointerdown', (e) => {
       const target = e.target as HTMLElement;
+      if (target.id === 'replay-progress' && this.model.replay) {
+        this.replayScrubbing = true;
+        this.model.replay.paused = true;
+      }
       const card = target.closest<HTMLElement>('[data-drag]');
       // The price button is a tap target; everything else on the tile is a drag handle.
       if (card && !target.closest('button') && e.isPrimary)
         this.beginDrawerDrag(card.dataset.drag as BuildingKind, e);
     });
+    const finishScrub = () => {
+      if (!this.replayScrubbing) return;
+      this.replayScrubbing = false;
+      this.scheduleRender();
+    };
+    document.addEventListener('pointerup', finishScrub);
+    document.addEventListener('pointercancel', finishScrub);
     this.root.addEventListener('change', (e) => {
       const t = e.target as HTMLInputElement;
       if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
+      if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
+      if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
     });
     this.root.addEventListener('input', (e) => {
       const t = e.target as HTMLInputElement;
+      if (t.id === 'replay-progress' && this.model.replay) {
+        // Keep the slider mounted while the pointer or keyboard changes its value.
+        this.model.replay.paused = true;
+        const time = document.querySelector('#replay-time');
+        if (time)
+          time.textContent = `${clock(Number(t.value))} / ${clock(this.model.replay.duration)}`;
+        t.setAttribute('aria-valuetext', clock(Number(t.value)));
+        const status = document.querySelector('.replay-status strong');
+        if (status) status.textContent = 'Replay paused';
+      }
       if (t.id.startsWith('preset-name-'))
         this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
     });
@@ -476,6 +502,49 @@ export class HUD {
       case 'clear-army':
         m.clearArmy();
         break;
+      case 'replay':
+        if (m.startReplay(Number(arg))) {
+          clearTimeout(this.toastTimer);
+          document.querySelector('#toast')?.classList.remove('show');
+          this.panel = null;
+          this.drawerPanel = null;
+          this.resultShown = false;
+          this.render();
+        }
+        break;
+      case 'replay-pause':
+        m.toggleReplay();
+        break;
+      case 'replay-speed':
+        m.setReplaySpeed(Number(arg));
+        break;
+      case 'replay-restart':
+        m.restartReplay();
+        break;
+      case 'replay-jump':
+        if (m.replay) m.seekReplay(m.replay.time + Number(arg));
+        break;
+      case 'replay-skip':
+        m.skipReplayScouting();
+        break;
+      case 'replay-export': {
+        try {
+          const data = m.replayRecording(arg ? Number(arg) : undefined);
+          if (data) exportReplayFile(data);
+          else this.toast('This recording is no longer available.');
+        } catch (error) {
+          this.toast(error instanceof Error ? error.message : 'Could not export this replay.');
+        }
+        break;
+      }
+      case 'replay-import':
+        document.querySelector<HTMLInputElement>('#import-replay-file')!.click();
+        break;
+      case 'replay-exit':
+        m.returnHome();
+        this.resultShown = false;
+        this.show('battle-log');
+        break;
       case 'practice':
         m.startBattle(0, true);
         if (m.battle) {
@@ -660,6 +729,24 @@ export class HUD {
         break;
     }
   }
+  private async importReplay(file: File) {
+    try {
+      if (file.size > MAX_REPLAY_FILE_BYTES)
+        throw Error('Replay files must be smaller than 512 KB.');
+      const replay = parseReplayFile(await file.text());
+      if (!this.model.openReplay(replay))
+        throw Error('Finish your current attack before opening a replay.');
+      this.panel = null;
+      this.drawerPanel = null;
+      this.resultShown = false;
+      this.render();
+      this.toast('Shared replay opened. Your village is unchanged.');
+    } catch (error) {
+      this.toast(error instanceof Error ? error.message : 'Could not open this replay.');
+    } finally {
+      document.querySelector<HTMLInputElement>('#import-replay-file')!.value = '';
+    }
+  }
   private async import(file: File) {
     try {
       if (file.size > 1000000) throw Error();
@@ -717,7 +804,12 @@ export class HUD {
       if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); this.action('wall-place'); }
       return;
     }
-    if (this.model.battle) {
+    if (this.model.replay && e.code === 'Space') {
+      e.preventDefault();
+      this.model.toggleReplay();
+      return;
+    }
+    if (this.model.battle && !this.model.replay) {
       if (e.key.toLowerCase() === 'h') {
         this.action('hero-select');
         return;
@@ -737,6 +829,10 @@ export class HUD {
   render() {
     const m = this.model,
       b = m.battle;
+    if (this.replayScrubbing && m.replay) {
+      this.updateLive();
+      return;
+    }
     const modalScroll = document.querySelector('.modal-body')?.scrollTop ?? 0;
     const drawerScroll = document.querySelector('.drawer-body')?.scrollLeft ?? 0;
     const drawerScrollY = document.querySelector('.drawer-body')?.scrollTop ?? 0;
@@ -749,7 +845,7 @@ export class HUD {
     document.querySelector('#drawer')!.classList.toggle('dragging', this.dragging);
     // An open sheet owns the bottom of the screen, so the bars beneath it step aside.
     this.root.classList.toggle('drawer-open', !!this.drawerPanel && !b);
-    const result = b?.finished;
+    const result = b?.finished && !m.replay;
     // Drawers deliberately leave the map live; only real dialogs block it.
     this.scene.uiBlocked = !!this.panel || !!result;
     (document.querySelector('#hud') as HTMLElement).inert = this.scene.uiBlocked;
@@ -965,23 +1061,41 @@ export class HUD {
   private battleHUD() {
     const m = this.model,
       b = m.battle!,
-      v = b.practice ? { name: 'Your village', gold: 0, elixir: 0 } : CAMPAIGN[b.index];
+      v = b.practice
+        ? {
+            name: m.replay?.recordId === null ? 'Shared village' : 'Your village',
+            gold: 0,
+            elixir: 0,
+          }
+        : CAMPAIGN[b.index];
     const lootBar = (k: 'gold' | 'elixir') =>
       `<div class="loot-row">${k === 'gold' ? coin : elixir}<div class="loot-track"><i data-lootbar="${k}" style="width:${pct((b.loot[k] / Math.max(1, v[k])) * 100)}"></i></div><b data-loot="${k}">${n(b.loot[k])}</b><i>/ ${n(v[k])}</i></div>`;
-    return `<div class="battle-enemy"><span class="eyebrow">${b.practice ? 'PRACTICE ATTACK' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : `<small>LOOT TAKEN</small><div class="loot-bars">${lootBar('gold')}${lootBar('elixir')}</div>`}</div>
+    return `<div class="battle-enemy"><span class="eyebrow">${m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : `<small>LOOT TAKEN</small><div class="loot-bars">${lootBar('gold')}${lootBar('elixir')}</div>`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep)}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="width:${pct(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
- ${!b.started ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
- <div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates Iron Fist after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter((k) => b.carriedArmy[k] > 0).map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeHero && !m.activeSpell && m.activeTroop === k)).join('')}${
-   SPELL_ORDER.some((k) => b.carried[k])
-     ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
-         .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
-         .join('')}`
-     : ''
- }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`;
+ ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
+ ${
+   m.replay
+     ? this.replayControls()
+     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates Iron Fist after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter((k) => b.carriedArmy[k] > 0).map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeHero && !m.activeSpell && m.activeTroop === k)).join('')}${
+         SPELL_ORDER.some((k) => b.carried[k])
+           ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
+               .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
+               .join('')}`
+           : ''
+       }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`
+ }`;
   }
 
   // ----------------------------------------------------------------- drawer
+  private replayControls() {
+    const r = this.model.replay!;
+    return `<section class="replay-controls" aria-label="Replay playback">
+      <div class="replay-status"><strong>${r.seeking ? 'Seeking…' : r.complete ? 'Replay complete' : r.paused ? 'Replay paused' : 'Watching replay'}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
+      <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', 'First deployment', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-export', `${icon('Download', 14)} Export replay`, 'replay-link')}</div>
+      <div class="replay-buttons">${button('replay-pause', r.paused ? 'Play' : 'Pause', 'game-btn blue', r.complete || r.seeking ? 'disabled' : '')}${button('replay-restart', `${icon('RotateCcw', 17)} Restart`, 'game-btn stone')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', 'Back to log', 'game-btn stone')}</div>
+    </section>`;
+  }
   private heroCard() {
     const m = this.model,
       h = m.battle?.hero;
@@ -1174,7 +1288,7 @@ export class HUD {
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];
-    return `<div class="modal-body battle-log-body">${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : CAMPAIGN[r.index].name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
+    return `<div class="modal-body battle-log-body"><div class="replay-import-bar">${button('replay-import', `${icon('Upload', 17)} Open shared replay`, 'game-btn blue')}<small>Watch a replay file without replacing your village.</small></div>${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : CAMPAIGN[r.index].name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.replay?.version === REPLAY_VERSION ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : '<p class="replay-unavailable">Replay unavailable · Recordings kept for the latest five attacks.</p>'}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
   }
   private troopInfo() {
     const kind = this.inspectedTroop,
@@ -1335,7 +1449,7 @@ export class HUD {
   private result() {
     const b = this.model.battle!,
       r = b.result!;
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : CAMPAIGN[b.index].name}</p>${b.practice ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>' : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold looted</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir looted</small></div><div>${icon('Trophy', 35)}<b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b><small>Trophies</small></div></div>`}<div class="result-actions">${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : 'Your undeployed troops are waiting at home.'}</small></section></div>`;
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : CAMPAIGN[b.index].name}</p>${b.practice ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>' : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold looted</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir looted</small></div><div>${icon('Trophy', 35)}<b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b><small>Trophies</small></div></div>`}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : 'Your undeployed troops are waiting at home.'}</small></section></div>`;
   }
   /** Runs the result screen's loot numbers up from zero, once. */
   private countUp() {
@@ -1408,6 +1522,19 @@ export class HUD {
     const queue = document.querySelector('[data-queue]');
     const nextQueued = [...m.state.queue, ...m.state.spellQueue].sort((a, b) => a.end - b.end)[0];
     if (queue && nextQueued) queue.textContent = time((nextQueued.end - m.clock) / 1000);
+    const replay = m.replay;
+    if (replay) {
+      const time = document.querySelector('#replay-time');
+      const progress = document.querySelector<HTMLInputElement>('#replay-progress');
+      if (document.activeElement !== progress) {
+        const value = replay.seeking ? replay.seekTarget : replay.time;
+        if (time) time.textContent = `${clock(value)} / ${clock(replay.duration)}`;
+        if (progress) {
+          progress.value = String(value);
+          progress.setAttribute('aria-valuetext', clock(value));
+        }
+      }
+    }
     const b = m.battle;
     if (b) {
       const timer = document.querySelector('#battle-timer');

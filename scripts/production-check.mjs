@@ -1,4 +1,4 @@
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 const baseURL = process.env.PRODUCTION_BASE_URL ?? 'http://127.0.0.1:4173';
 await fs.mkdir('output/playtest', { recursive: true });
@@ -63,6 +63,59 @@ for (const [name, engine] of [
   await page.waitForTimeout(250);
   await page.screenshot({ path: `output/playtest/production-research-${name}.png` });
   await page.locator('[data-action="close"]').click();
+  // Exercise the shipping replay UI without development globals or state writes.
+  await page.locator('.train-add').click();
+  await page.locator('[data-action="practice"]').click();
+  await page.locator('[data-action="troop:swordsman"]').click();
+  let deployed = false;
+  for (const [x, y] of [
+    [320, 500],
+    [1120, 500],
+    [350, 580],
+    [1090, 580],
+    [500, 640],
+    [940, 640],
+  ]) {
+    if (
+      await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS', [x, y])
+    ) {
+      await page.mouse.click(x, y);
+      deployed = await page.evaluate(
+        () => JSON.parse(window.render_game_to_text()).battle.units > 0,
+      );
+      if (deployed) break;
+    }
+  }
+  if (!deployed)
+    throw Error('Production replay check could not deploy a troop through the canvas.');
+  await page.waitForTimeout(2000);
+  await page.locator('[data-action="surrender"]').click();
+  await page.locator('[data-action="end"]').click();
+  await expect(page.locator('#result-title')).toHaveText('Practice complete');
+  await page.locator('[data-action="home"]').click();
+  const home = await page.evaluate(() => {
+    const s = JSON.parse(window.render_game_to_text());
+    return { resources: s.resources, army: s.army };
+  });
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.locator('[data-action="battle-log"]').click();
+  await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
+  await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });
+  await page.locator('[data-action="replay-pause"]').click();
+  await expect(page.locator('.replay-status')).toContainText('Replay paused');
+  await page.screenshot({ path: `output/playtest/production-replay-${name}.png` });
+  await page.getByRole('slider', { name: 'Replay position' }).press('End');
+  await expect(page.locator('.replay-status')).toContainText('Replay complete');
+  await page.locator('[data-action="replay-restart"]').click();
+  await page.locator('[data-action="replay-exit"]').click();
+  await page.locator('[data-action="close"]').click();
+  const afterReplay = await page.evaluate(() => {
+    const s = JSON.parse(window.render_game_to_text());
+    return { resources: s.resources, army: s.army };
+  });
+  if (JSON.stringify(afterReplay) !== JSON.stringify(home))
+    throw Error('Replay changed the production village.');
+  await page.setViewportSize({ width: 1440, height: 960 });
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
   report[name] = {
     boot: true,
@@ -71,6 +124,7 @@ for (const [name, engine] of [
     collection: true,
     artwork: true,
     tabHandoff: true,
+    replay: true,
     errors,
   };
   if (name === 'chromium') {
@@ -90,11 +144,16 @@ for (const [name, engine] of [
     await page.waitForFunction(
       () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
     );
+    await page.locator('[data-action="battle-log"]').click();
+    await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
+    await page.locator('.replay-controls').waitFor();
+    await page.locator('[data-action="replay-exit"]').click();
+    await page.locator('[data-action="close"]').click();
     await page.locator('.train-add').click();
     await page.locator('.drawer-sheet').waitFor();
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
-    report.offline = { reload: true, army: true, ...cachesState };
+    report.offline = { reload: true, army: true, replay: true, ...cachesState };
     await context.setOffline(false);
   }
   await browser.close();

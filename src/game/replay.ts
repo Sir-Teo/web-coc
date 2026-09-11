@@ -9,6 +9,7 @@ export const MAX_REPLAY_ACTIONS = 2000;
 export const MAX_REPLAY_TROOPS = 700;
 export const MAX_REPLAY_SPELLS = 100;
 export const MAX_REPLAY_STEPS_PER_UPDATE = 100;
+export const MAX_REPLAY_UPDATE_MS = 8;
 export type ReplayAction = { step: number } & (
   | { type: 'troop'; kind: keyof Army; x: number; y: number }
   | { type: 'spell'; kind: keyof SpellBook; x: number; y: number }

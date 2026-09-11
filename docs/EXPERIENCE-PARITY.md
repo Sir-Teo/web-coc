@@ -50,7 +50,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for verified reference rules, pla
 | Troop and spell roster | Partial | Seven troops and three spells. No complete elixir/dark-elixir roster, siege machines, donated units, super troops, or complete spell research. |
 | Raid rules and rewards | Partial | Scouting, timed attacks, three-star scoring, partial resource loot, surrender, and results work. Campaign repeat loot and trophy changes use local rules; they do not reproduce live single-player/multiplayer reward rules. |
 | Practice / friendly challenges | Partial | Local attacks against your own village work. No shared friendly challenges, challenge restrictions, or friend/clan interaction. |
-| Attack history / replay | Partial | Local result records exist. No deterministic input recording, replay playback/speed controls, defense history, revenge, or replay sharing. A result log is not a replay. |
+| Attack history / replay | Partial | The latest five local campaign/practice attacks have deterministic snapshot/input playback, pause, restart, timeline seeking, and 1×/2×/4× speeds. Standalone replay files can be exported and opened without replacing a village. Twenty result records remain available. Missing defense history, revenge, hosted sharing links, and cross-version playback. See [REPLAYS.md](REPLAYS.md). |
 | Matchmaking and defense | Absent | No real opponents, persistent defensive attacks, shields, revenge eligibility, matchmaking pools, ranked seasons, or competitive reward calculations. These need an authoritative service and asynchronous battle handling. |
 | Accounts and durable progress | Partial | IndexedDB, backup/import/export, offline loading, and single-tab ownership work. No accounts, cloud sync, cross-device recovery, server time, or authoritative inventory. |
 | Clans and social play | Absent | No clan creation/search, chat, donations, clan castle defenders, wars, leagues, games, or clan capital. No fake online activity is displayed. |
@@ -64,7 +64,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for verified reference rules, pla
 
 1. Extend the explicit building level tables to counts, troop/spell unlocks, housing and economy. Expand troop/spell and defense catalogs together and re-audit the campaign.
 2. Expand the playable King into a complete hero system: equipment and Blacksmith, defending heroes, hero slots, and additional heroes.
-3. Record battle inputs and initial snapshots to support actual replays and reproducible combat debugging.
+3. Keep combat-version compatibility explicit as the roster expands; local seeking and portable replay-file sharing now work. Hosted sharing and historical combat engines remain later work.
 4. Build accounts, authoritative saves and battle outcomes, then real matchmaking/defense. Clan and war features depend on that foundation.
 5. Expand remaining modes and activities while improving per-level art, directional animations, audio, and physical-device quality.
 

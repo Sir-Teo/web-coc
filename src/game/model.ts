@@ -8,6 +8,7 @@ import {
   MAX_REPLAY_STEPS,
   MAX_REPLAY_ACTIONS,
   MAX_REPLAY_STEPS_PER_UPDATE,
+  MAX_REPLAY_UPDATE_MS,
   replayBattle,
   validateReplay,
   type ReplayData,
@@ -2137,12 +2138,15 @@ export class GameModel {
     const r = this.replay!,
       data = this.replayData!;
     let work = 0;
+    const deadline = performance.now() + MAX_REPLAY_UPDATE_MS;
     // Stop on the last recorded simulation boundary at or before the requested time.
     while (
       this.replayStep < data.steps.length &&
       r.time + data.steps[this.replayStep] <= r.seekTarget + 1e-9 &&
-      work++ < MAX_REPLAY_STEPS_PER_UPDATE
+      work < MAX_REPLAY_STEPS_PER_UPDATE &&
+      (work === 0 || performance.now() < deadline)
     ) {
+      work++;
       const dt = data.steps[this.replayStep++];
       r.time += dt;
       this.replayRunner!.step(dt);
@@ -2214,11 +2218,14 @@ export class GameModel {
     this.replayBudget += dt * replay.speed;
     const data = this.replayData!;
     let work = 0;
+    const deadline = performance.now() + MAX_REPLAY_UPDATE_MS;
     while (
       this.replayStep < data.steps.length &&
       this.replayBudget + 1e-9 >= data.steps[this.replayStep] &&
-      work++ < MAX_REPLAY_STEPS_PER_UPDATE
+      work < MAX_REPLAY_STEPS_PER_UPDATE &&
+      (work === 0 || performance.now() < deadline)
     ) {
+      work++;
       const delta = data.steps[this.replayStep++];
       this.replayBudget -= delta;
       replay.time += delta;

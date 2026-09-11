@@ -2488,12 +2488,13 @@ h3 {
     display: none;
   }
   .left-tools {
-    gap: 9px;
+    grid-template-columns: repeat(2, 44px);
+    gap: 14px;
     top: 34%;
   }
   .left-tools .square-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   .left-tools svg {
     width: 23px;
@@ -4172,6 +4173,163 @@ h3 {
   }
   .progression-tier > div {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* A compact transport bar leaves the recorded battlefield open for inspection. */
+.replay-controls {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(620px, calc(100% - 28px));
+  padding: 14px 18px;
+  border: 2px solid #a89a7c;
+  border-radius: 16px;
+  background: #292b23f5;
+  box-shadow: 0 8px 24px #0008;
+  color: #fff4d5;
+  pointer-events: auto;
+}
+.replay-controls button {
+  min-width: 44px;
+}
+.replay-status,
+.replay-buttons,
+.replay-speeds {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.replay-status {
+  margin-bottom: 8px;
+}
+.replay-status span {
+  font-variant-numeric: tabular-nums;
+  color: #ded3b7;
+}
+.replay-controls input[type='range'] {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  accent-color: #99d76e;
+}
+.replay-buttons .game-btn {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.replay-watch {
+  margin: 10px 8px 8px 0;
+}
+.replay-unavailable {
+  color: #6d6558;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .replay-controls {
+    padding: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .replay-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .replay-buttons .game-btn {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  .replay-status {
+    font-size: 13px;
+  }
+}
+
+.replay-shortcuts {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.replay-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #fff0c9;
+  padding: 6px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.replay-link:hover {
+  background: #ffffff18;
+  border-radius: 7px;
+}
+.replay-link:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.replay-import-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+}
+.replay-import-bar small {
+  color: #6d6558;
+}
+@media (max-height: 550px) {
+  .replay-controls {
+    padding: 8px 14px;
+    bottom: 8px;
+  }
+  .replay-status {
+    margin-bottom: 0;
+  }
+  .replay-shortcuts {
+    margin-bottom: 2px;
+  }
+}
+
+@media (max-height: 550px) and (min-width: 800px) {
+  .replay-controls {
+    width: min(780px, calc(100% - 28px));
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px;
+  }
+  .replay-status,
+  .replay-controls input[type='range'] {
+    grid-column: 1 / -1;
+  }
+  .replay-shortcuts {
+    margin: 0;
+    align-self: center;
+  }
+  .replay-buttons {
+    gap: 5px;
+  }
+  .replay-buttons .game-btn {
+    min-height: 44px;
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+  .replay-speeds {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 600px) {
+  .replay-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
