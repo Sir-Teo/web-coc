@@ -4,12 +4,13 @@ import { developerToolsEnabled } from '../src/dev/access';
 import { GameModel } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 
-it('requires explicit opt-in and a development build or an exact loopback host', () => {
-  for (const host of ['localhost', '127.0.0.1', '[::1]']) {
+it('requires explicit opt-in and development, an exact loopback host, or the hosted game', () => {
+  for (const host of ['localhost', '127.0.0.1', '[::1]', '::1', 'coc.teozeng.dev']) {
     expect(developerToolsEnabled(false, host, '?devtools=1')).toBe(true);
     expect(developerToolsEnabled(false, host, '')).toBe(false);
+    expect(developerToolsEnabled(false, host, '?devtools=0')).toBe(false);
   }
-  for (const host of ['coc.teozeng.dev', 'localhost.example.com', '192.168.0.20'])
+  for (const host of ['coc.teozeng.dev.example.com', 'localhost.example.com', '192.168.0.20'])
     expect(developerToolsEnabled(false, host, '?devtools=1')).toBe(false);
   expect(developerToolsEnabled(true, '192.168.0.20', '?devtools=1')).toBe(true);
   expect(developerToolsEnabled(true, 'localhost', '?devtools=0')).toBe(false);

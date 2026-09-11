@@ -1,9 +1,10 @@
 # Developer testing tools
 
-Open the local game with `?devtools=1`:
+Open the game with `?devtools=1`:
 
 - Development: `http://localhost:5173/?devtools=1`
 - Production preview: `http://localhost:4173/?devtools=1`
+- Hosted game: `https://coc.teozeng.dev/?devtools=1`
 
 Click **DEV** in the lower-right corner, or press **Ctrl/⌘ Shift D**. Escape closes the panel. The scene and attack simulation pause while the panel is open; real-time construction and resource production continue. Keyboard input stays inside the dialog.
 
@@ -52,7 +53,7 @@ Partial resource/army records leave unspecified types unchanged. `checkpoint()` 
 
 ## Availability and implementation
 
-The URL must explicitly include `devtools=1`. The toolbox is allowed in Vite development builds, including LAN testing, and on exact loopback production-preview hosts (`localhost`, `127.0.0.1`, `::1`). It stays disabled on deployed hosts even with the query parameter. There is no secret password, saved admin flag, account bypass, or remote endpoint. This is a local testing convenience in a client-controlled game, not a server authorization mechanism.
+The URL must explicitly include `devtools=1`. The toolbox is allowed in Vite development builds, including LAN testing, on exact loopback production-preview hosts (`localhost`, `127.0.0.1`, `::1`), and on `coc.teozeng.dev`. It stays disabled on other deployed hosts even with the query parameter. There is no secret password, saved admin flag, account bypass, or remote endpoint. This is a testing convenience in a client-controlled game, not a server authorization mechanism.
 
 `src/dev/access.ts` owns availability, `controls.ts` owns atomic save mutations, and `panel.ts` owns the optional dialog/console API. The panel loads as a separate chunk only when enabled. No core gameplay rules depend on the toolbox.
 
