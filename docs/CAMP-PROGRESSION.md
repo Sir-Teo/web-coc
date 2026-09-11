@@ -21,7 +21,7 @@ TH1–8 camp count limits are **1, 1, 2, 2, 3, 3, 4, 4**. With the existing per-
 - [The Home Village Army Camp reference](https://clashofclans.fandom.com/wiki/Army_Camp) lists housing, counts, level requirements, costs and durations, and states that camps remain usable during upgrades. The page also contains Builder Base and Clan Capital material; those tables do not apply here.
 - [Gibi Arena’s Army Camp upgrade table](https://www.gibiarena.com/en/clash-of-clans/upgrades/army-camp) independently corroborates the supported health, cost, duration, count and level tables. Its footer identifies game data dated September 1, 2026, processed September 3 via the independent ClashKing project. This is a secondary reference, not an official Supercell source.
 
-No Gold Pass, event, magic-item or other discounts are applied. These values do not establish parity for the remaining building economy, troop statistics, spell housing, campaign rewards or the complete catalog. Camp artwork is a separate unfinished pass.
+No Gold Pass, event, magic-item or other discounts are applied. These values do not establish parity for the remaining building economy, troop statistics, spell housing, campaign rewards or the complete catalog. Eight original camp level sprites are documented separately in [CAMP-ART.md](CAMP-ART.md).
 
 ## Existing progress and replay compatibility
 

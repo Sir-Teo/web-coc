@@ -1,5 +1,7 @@
 # Art direction and generation record
 
+The original camp atlas tiers described below are superseded by [eight individual Army Camp sprites](CAMP-ART.md), with source renders and exact prompts under `art/source/camp-levels-v1/`.
+
 All bitmap artwork was created for this project using the built-in image-generation tool. There are no downloaded Clash of Clans assets in the shipping files and no runtime image-generation calls. The final source files are kept in `art/source/`; derived shipping files are in `public/assets/`.
 
 Mortars now have six distinct playable level sprites with timber carriages, gold reinforcement and later blue supports. [MORTAR-ART.md](MORTAR-ART.md) documents the reference, original prompts, transparent-frame pipeline and measured muzzle anchors. Their earlier atlas sprites remain as legacy build inputs.

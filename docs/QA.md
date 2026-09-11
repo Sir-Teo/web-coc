@@ -1,5 +1,18 @@
 # Verification record
 
+## September 11 — eight camp level sprites and open gathering areas
+
+All 366 model and asset tests pass across 37 files. Eight original built-in ImageGen sprites replace the camp's two tent-and-wall tiers, with clean alpha, explicit level selection, measured ground origins, untinted materials and matching placement previews. Camps retain 4×4 placement while home troops can gather on their outer tiles and avoid the central fire pit, buildings, walls, trees and rocks. Higher rock-ring camps leave stone debris; cooking-support camps leave wood debris. Health and upgrade bars follow the actual sprite origin. Exact prompts, source files and importer are documented in [CAMP-ART.md](CAMP-ART.md).
+
+The first 23 focused browser scenarios pass in each engine. An expanded nine-case pass found one new test fixture with an empty army, which correctly could not start practice. Retaining one troop fixes that fixture; all four camp-art cases then pass in Chromium and WebKit, alongside the five previously passing combat-presentation cases. The combined runs provide 29 distinct passing scenarios per engine. Visual review found an immediate phone screenshot could precede the changed scene's render; camp-art captures now wait for `postrender`. The eight-level gallery, upgrade Info, mixed village roster, phone placement and open camp gathering were visually inspected after that correction.
+
+The final production build passes Chromium and WebKit without reported errors, and requires successful loading of all eight camp textures. Chromium reloads, opens Army and plays a replay offline with 107 cached files, cache `crown-clan-75c106fb5d57`. Rebuilding the accepted sources byte-matches all eight committed WebPs.
+
+`performance-check.mjs --camps` now measures native TH8 housing (four level-six camps, 200 one-space troops) separately from the preserved 660-actor legacy roster. The final headless Chromium/SwiftShader sample at 1440×960 measured 40 FPS idle, 37 FPS with 200 troops, 35 FPS with 660 actors and 40 FPS in battle, with 33.4 ms 95th-percentile frames. Host load rose from 4.45 to 8.10 during this sample on 18 logical CPUs. An earlier sample measured 28/39/31/45 FPS, and another browser renderer was observed using several CPU cores afterward. These are shared-host samples, not a controlled regression comparison or a physical-device certification. A reliable 60-FPS result remains unverified; performance, closer native art matching and animated camp fire remain open.
+
+Evidence: `output/playtest/camp-art-verification.json`, `camp-art-unit.json`, `camp-art-chromium.log`, `camp-art-webkit.log`, `camp-art-final-chromium.log`, `camp-art-final-webkit.log`, `camp-art-verified-chromium.log`, `camp-art-verified-webkit.log`, `camp-art-final-build.log`, `camp-art-final-production-report.json`, `camp-art-rebuild.log`, `camp-art-performance.json`, `camp-art-final-performance.json`, `camp-level-gallery-webkit.png`, `camp-open-gathering-webkit.png`, `camp-art-info-webkit.png`, and `camp-cutouts-on-grass.png`.
+
+
 ## September 11 — native camp capacity and progression
 
 All 363 unit tests pass across 36 files, including all 144 campaign attacks. Six dedicated camp cases cover native values, count/level ceilings, actual capacity, paid deadlines, old prepared armies and replay health. A further focused six-case run passes after strengthening the old deadline test: a purchased ten-minute upgrade stays unfinished at five minutes and completes at its saved deadline.

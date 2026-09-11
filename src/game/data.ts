@@ -1,3 +1,4 @@
+import { campArt, campAsset, campTexture } from './camp-art';
 import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset, wallTexture } from './wall-art';
@@ -232,7 +233,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description:
       'Houses your prepared troops. Upgrade to increase capacity; camps keep working during upgrades.',
     size: 4,
-    width: 177,
+    width: campArt(1).width,
     hp: CAMP_LEVELS[0].hp,
     cost: CAMP_LEVELS[0].cost,
     resource: 'elixir',
@@ -677,6 +678,7 @@ export const TIER3_LEVEL = 5;
 export const buildingTexture = (kind: BuildingKind, level = 1) => {
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
+  if (kind === 'camp') return campTexture(level);
   return level >= TIER3_LEVEL && !BUILDINGS[kind].singleArtwork ? `${kind}-tier3` : kind;
 };
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
@@ -686,6 +688,7 @@ export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(ki
 export const asset = (kind: string, level = 1) => {
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
+  if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))

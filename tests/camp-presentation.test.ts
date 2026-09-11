@@ -54,7 +54,7 @@ describe('camp occupants', () => {
     expect(campPlan({ ...emptyArmy(), giant: 1 }, [])).toEqual([]);
   });
 
-  it('keeps complete walking segments outside buildings and walls, including at map edges', () => {
+  it('keeps complete walking segments clear of fire pits, buildings, walls and obstacles at map edges', () => {
     const buildings = [
       makeBuilding(1, 'camp', 2, 2),
       makeBuilding(2, 'camp', 42, 42),
@@ -62,7 +62,11 @@ describe('camp occupants', () => {
       makeBuilding(4, 'barracks', 39, 42),
       ...Array.from({ length: 5 }, (_, i) => makeBuilding(10 + i, 'wall', 2 + i, 6)),
     ];
-    const actors = campPlan({ ...emptyArmy(), goblin: 80 }, buildings);
+    const obstacles = [
+      { id: 1, kind: 'trees' as const, x: 7, y: 5 },
+      { id: 2, kind: 'rocks' as const, x: 40, y: 45 },
+    ];
+    const actors = campPlan({ ...emptyArmy(), goblin: 80 }, buildings, obstacles);
     for (const actor of actors)
       for (let time = 0; time < 20; time += 0.11) {
         const pose = campPose(actor, time);
@@ -71,15 +75,41 @@ describe('camp occupants', () => {
         expect(pose.x).toBeLessThan(47);
         expect(pose.y).toBeLessThan(47);
         expect(
-          buildings.some(
-            (b) =>
-              pose.x >= b.x &&
-              pose.x < b.x + BUILDINGS[b.kind].size &&
-              pose.y >= b.y &&
-              pose.y < b.y + BUILDINGS[b.kind].size,
+          buildings.some((b) =>
+            b.kind === 'camp'
+              ? pose.x >= b.x + 1 && pose.x < b.x + 3 && pose.y >= b.y + 1 && pose.y < b.y + 3
+              : pose.x >= b.x &&
+                pose.x < b.x + BUILDINGS[b.kind].size &&
+                pose.y >= b.y &&
+                pose.y < b.y + BUILDINGS[b.kind].size,
+          ),
+        ).toBe(false);
+        expect(
+          obstacles.some(
+            (o) => pose.x >= o.x && pose.x < o.x + 2 && pose.y >= o.y && pose.y < o.y + 2,
           ),
         ).toBe(false);
       }
+  });
+
+  it('gathers troops inside the open camp perimeter and clears newly added obstacles', () => {
+    const camp = makeBuilding(1, 'camp', 10, 10);
+    const army = { ...emptyArmy(), swordsman: 30 };
+    const first = campPlan(army, [camp]);
+    const inside = (p: { x: number; y: number }) => p.x >= 10 && p.x < 14 && p.y >= 10 && p.y < 14;
+    expect(first.filter((a) => inside(campPose(a, 0))).length).toBeGreaterThan(10);
+    const rock = { id: 1, kind: 'rocks' as const, x: 14, y: 11 };
+    expect(
+      first.some((a) => a.route.some((p) => p.x >= 14 && p.x < 16 && p.y >= 11 && p.y < 13)),
+    ).toBe(true);
+    const obstructed = campPlan(army, [camp], [rock]);
+    expect(obstructed).toHaveLength(30);
+    expect(
+      obstructed.every((a) =>
+        a.route.every((p) => !(p.x >= 14 && p.x < 16 && p.y >= 11 && p.y < 13)),
+      ),
+    ).toBe(true);
+    expect(campPlan(army, [camp], [])).toEqual(first);
   });
 
   it('produces deterministic poses with pauses and reanchors a moved camp', () => {

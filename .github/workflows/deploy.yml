@@ -38,6 +38,7 @@ jobs:
       - run: npm test
       - run: node scripts/specialist-walk-assets.mjs --check
       - run: node scripts/mortar-assets.mjs --check
+      - run: node scripts/camp-assets.mjs --check
       - run: node scripts/terrain-assets.mjs --check
       - run: npm run build
 
@@ -48,7 +49,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Verify visual feedback in WebKit
-        run: npx playwright test tests/browser/visual-feedback.spec.ts tests/browser/combat-presentation.spec.ts tests/browser/projectile-timing.spec.ts tests/browser/ui-input.spec.ts tests/browser/movement-presentation.spec.ts tests/browser/balloon-bombs.spec.ts tests/browser/defeat-presentation.spec.ts tests/browser/effect-timing.spec.ts tests/browser/specialist-animation.spec.ts tests/browser/camp-presentation.spec.ts tests/browser/camp-progression.spec.ts tests/browser/quad-renderer.spec.ts tests/browser/facility-upgrades.spec.ts tests/browser/army-unlocks.spec.ts tests/browser/army-roster.spec.ts tests/browser/obstacles.spec.ts tests/browser/village-camera.spec.ts tests/browser/wall-upgrades.spec.ts tests/browser/wall-movement.spec.ts tests/browser/wall-art.spec.ts tests/browser/wall-progression.spec.ts tests/browser/defense-progression.spec.ts tests/browser/modal-focus.spec.ts tests/browser/replay.spec.ts tests/browser/replay-tools.spec.ts tests/browser/mortar-presentation.spec.ts tests/browser/mortar-art.spec.ts tests/browser/trap-progression.spec.ts tests/browser/native-grid.spec.ts tests/browser/building-art.spec.ts tests/browser/placement-preview.spec.ts tests/browser/terrain-field.spec.ts tests/browser/army-footprints.spec.ts tests/browser/save-recovery.spec.ts --browser=webkit --output=output/webkit-results
+        run: npx playwright test tests/browser/visual-feedback.spec.ts tests/browser/combat-presentation.spec.ts tests/browser/projectile-timing.spec.ts tests/browser/ui-input.spec.ts tests/browser/movement-presentation.spec.ts tests/browser/balloon-bombs.spec.ts tests/browser/defeat-presentation.spec.ts tests/browser/effect-timing.spec.ts tests/browser/specialist-animation.spec.ts tests/browser/camp-presentation.spec.ts tests/browser/camp-progression.spec.ts tests/browser/camp-art.spec.ts tests/browser/quad-renderer.spec.ts tests/browser/facility-upgrades.spec.ts tests/browser/army-unlocks.spec.ts tests/browser/army-roster.spec.ts tests/browser/obstacles.spec.ts tests/browser/village-camera.spec.ts tests/browser/wall-upgrades.spec.ts tests/browser/wall-movement.spec.ts tests/browser/wall-art.spec.ts tests/browser/wall-progression.spec.ts tests/browser/defense-progression.spec.ts tests/browser/modal-focus.spec.ts tests/browser/replay.spec.ts tests/browser/replay-tools.spec.ts tests/browser/mortar-presentation.spec.ts tests/browser/mortar-art.spec.ts tests/browser/trap-progression.spec.ts tests/browser/native-grid.spec.ts tests/browser/building-art.spec.ts tests/browser/placement-preview.spec.ts tests/browser/terrain-field.spec.ts tests/browser/army-footprints.spec.ts tests/browser/save-recovery.spec.ts --browser=webkit --output=output/webkit-results
 
       - name: Verify production build and offline play
         run: npm run test:production

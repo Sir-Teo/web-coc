@@ -1,3 +1,4 @@
+import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
 import { SPRING_AIRTIME } from './trap-stats';
@@ -115,13 +116,15 @@ export class VillageScene extends Phaser.Scene {
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
+    for (const level of CAMP_ART_LEVELS)
+      if (level > 1) this.load.image(campTexture(level), asset('camp', level));
     this.load.image('king', asset('king'));
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall' && k !== 'mortar' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+      if (k !== 'wall' && k !== 'mortar' && k !== 'camp' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
@@ -656,7 +659,7 @@ export class VillageScene extends Phaser.Scene {
       }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar') im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp') im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -739,9 +742,10 @@ export class VillageScene extends Phaser.Scene {
     const texture = buildingTexture(kind, level);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
-    const scale = wall || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
-    const width = wall ? wall.height * .75 : BUILDINGS[kind].width * scale;
-    return im.setOrigin(.5, wall ? .84 : .88).setFlipX(false)
+    const camp = kind === 'camp' ? campArt(level) : undefined;
+    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
+    const width = wall ? wall.height * .75 : camp ? camp.width : BUILDINGS[kind].width * scale;
+    return im.setOrigin(camp?.originX ?? .5, camp?.originY ?? (wall ? .84 : .88)).setFlipX(false)
       .setDisplaySize(width, wall ? wall.height : width * im.height / im.width);
   }
   private syncCampUnits() {
@@ -751,11 +755,13 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const { army, buildings } = this.model.state;
+    const obstacles = this.model.obstacles;
     const signature = TROOP_KEYS.map((k) => army[k]).join(',') + '|' +
-      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|');
+      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|') + '|' +
+      obstacles.map((o) => `${o.id}:${o.kind}:${o.x}:${o.y}`).join('|');
     if (signature !== this.campSignature) {
       this.campSignature = signature;
-      this.campActors = campPlan(army, buildings);
+      this.campActors = campPlan(army, buildings, obstacles);
       const ids = new Set(this.campActors.map((a) => a.id));
       for (const [id, im] of this.campViews)
         if (!ids.has(id)) { im.destroy(); this.campViews.delete(id); }
@@ -800,8 +806,8 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
-    const width = BUILDINGS[b.kind].width * (b.kind === 'wall' ? 0.9 : 0.98);
-    im.setTexture(WOOD_RUINS.has(b.kind) ? 'ruins-wood' : 'ruins-stone')
+    const width = (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) * (b.kind === 'wall' ? 0.9 : 0.98);
+    im.setTexture(WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone')
       .setOrigin(0.5, 0.58)
       .setFlipX(b.id % 2 === 0)
       .clearTint()
@@ -815,7 +821,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.hp > 0 || isTrap(b.kind)) continue;
       const d = BUILDINGS[b.kind];
       const p = iso(b.x + d.size / 2, b.y + d.size / 2);
-      const width = d.width * 1.12;
+      const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
       this.ruinGround.fillStyle(0x40331e, 0.3);
       this.ruinGround.fillEllipse(p.x, p.y + 4, width, width * 0.46);
       this.ruinGround.fillStyle(0x302719, 0.24);
@@ -917,7 +923,7 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       valid
-        ? this.model.placement === 'wall' || this.model.placement === 'mortar' ? 0xffffff : 0xd9ffb0
+        ? this.model.placement === 'wall' || this.model.placement === 'mortar' || this.model.placement === 'camp' ? 0xffffff : 0xd9ffb0
         : 0xff7272,
     );
     return { x, y, size: s, valid };
@@ -1000,13 +1006,13 @@ export class VillageScene extends Phaser.Scene {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
           progress = (this.model.clock - start) / duration;
-        this.bar(im.x, im.y - im.displayHeight * 0.87, 54, progress, 0x82d745);
+        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87), 54, progress, 0x82d745);
         const p = iso(v.x, v.y);
         this.detail.lineStyle(3, 0xe6b356, 0.7);
         this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
         this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
       } else if (this.model.battle && v.hp < v.maxHp)
-        this.bar(im.x, im.y - im.displayHeight * 0.88, 42, v.hp / v.maxHp, 0xea654d);
+        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88), 42, v.hp / v.maxHp, 0xea654d);
     }
     const battle = this.model.battle;
     if (battle) {

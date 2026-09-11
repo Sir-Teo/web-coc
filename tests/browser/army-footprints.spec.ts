@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { legacyArmyVillage } from '../fixtures/legacy-army-village';
 
 for (const [kind, width, cost] of [
-  ['camp', 177, 200],
+  ['camp', 88, 200],
   ['herohall', 187, 20000],
 ] as const) {
   test(`the phone shop places a 4×4 ${kind} with an aligned preview and persistent full footprint`, async ({
@@ -38,7 +38,7 @@ for (const [kind, width, cost] of [
     await page.mouse.move(clear.x, clear.y);
     await expect
       .poll(() => page.evaluate(() => window.__game.scene.ghost?.tintTopLeft))
-      .toBe(0xd9ffb0);
+      .toBe(kind === 'camp' ? 0xffffff : 0xd9ffb0);
     expect(
       await page.evaluate(() => {
         const g = window.__game.scene.ghost;
