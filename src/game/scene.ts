@@ -1,3 +1,6 @@
+import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { SWEEPER, sweeperAngle } from './air-control-stats';
+import { isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
@@ -97,6 +100,7 @@ export class VillageScene extends Phaser.Scene {
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
+  private mineFlights = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
   private campViews = new Map<string, Phaser.GameObjects.Image>();
@@ -113,6 +117,10 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const level of SWEEPER_ART_LEVELS)
+      for (let direction = 0; direction < 8; direction++)
+        this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
+    for (const state of ['flying', 'spent']) this.load.image(`mine-${state}`, mineAsset(state));
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
@@ -494,12 +502,7 @@ export class VillageScene extends Phaser.Scene {
         return;
       }
       const hit = this.pickBuilding(world.x, world.y, grid);
-      if (
-        hit &&
-        hit.hp > 0 &&
-        BUILDINGS[hit.kind].damage &&
-        this.model.deployBlocked(grid.x, grid.y)
-      ) {
+      if (hit && hit.hp > 0 && isDefense(hit.kind) && this.model.deployBlocked(grid.x, grid.y)) {
         const d = BUILDINGS[hit.kind];
         this.model.selected = hit.id;
         this.model.changed();
@@ -708,7 +711,7 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level).setPosition(p.x, p.y).setDepth(p.y);
+      this.styleBuilding(im, b.kind, b.level, b.direction).setPosition(p.x, p.y).setDepth(p.y);
       im.setVisible(
         this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
       );
@@ -722,6 +725,7 @@ export class VillageScene extends Phaser.Scene {
       }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
+      if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
       if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp')
         im.setTint(0xffecc7);
       else im.clearTint();
@@ -797,7 +801,12 @@ export class VillageScene extends Phaser.Scene {
           .setDepth(6001);
       }
       // A paid upgrade can finish while this preview is open, even within one artwork tier.
-      this.styleBuilding(this.ghost, this.model.placement, level);
+      this.styleBuilding(
+        this.ghost,
+        this.model.placement,
+        level,
+        this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
+      );
       this.updateGhost(this.pointerScreen());
     } else {
       this.ghost?.destroy();
@@ -809,12 +818,20 @@ export class VillageScene extends Phaser.Scene {
     this.syncCampUnits();
     this.lastRevision = this.model.revision;
   }
-  private styleBuilding(im: Phaser.GameObjects.Image, kind: BuildingKind, level: number) {
-    const texture = buildingTexture(kind, level);
+  private styleBuilding(
+    im: Phaser.GameObjects.Image,
+    kind: BuildingKind,
+    level: number,
+    direction = 0,
+  ) {
+    const texture = buildingTexture(kind, level, direction);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
-    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * 0.035;
+    const scale =
+      wall || camp || kind === 'mortar' || kind === 'airsweeper'
+        ? 1
+        : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
     return im
       .setOrigin(camp?.originX ?? 0.5, camp?.originY ?? (wall ? 0.84 : 0.88))
@@ -1105,7 +1122,21 @@ export class VillageScene extends Phaser.Scene {
         const range = d.trap?.trigger ?? d.range!;
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
-        g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
+        if (b.kind === 'airsweeper') {
+          const angle = sweeperAngle(b.direction),
+            x = b.x + 1,
+            y = b.y + 1;
+          const arc = (radius: number, reverse = false) =>
+            Array.from({ length: 49 }, (_, i) => {
+              const a = angle + SWEEPER.cone * ((reverse ? 48 - i : i) / 48 - 0.5);
+              return iso(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+            });
+          const points = [...arc(range), ...arc(SWEEPER.minRange, true)];
+          g.fillStyle(0xcaf8ff, 0.1).fillPoints(points, true);
+          g.lineStyle(2, 0xe1fbff, 0.8).strokePoints(points, true);
+          const arrow = iso(x + Math.cos(angle) * 3, y + Math.sin(angle) * 3);
+          g.lineStyle(3, 0xffffff, 0.9).lineBetween(p.x, p.y, arrow.x, arrow.y);
+        } else g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
         if (d.minRange) {
           g.lineStyle(2, 0xffc56b, 0.75);
           g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
@@ -1156,6 +1187,13 @@ export class VillageScene extends Phaser.Scene {
     for (const v of this.model.buildings) {
       if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
       const im = this.sprites.get(v.id)!;
+      if (v.kind === 'airsweeper' && v.hp > 0) {
+        const state = this.model.battle?.sweepers?.[v.id];
+        const direction = state
+          ? (Math.round(state.angle / (Math.PI / 4)) + 8) % 8
+          : (v.direction ?? 0);
+        im.setTexture(sweeperTexture(v.level, direction));
+      }
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
@@ -1181,11 +1219,65 @@ export class VillageScene extends Phaser.Scene {
         );
     }
     const battle = this.model.battle;
+    for (const [id, sprite] of this.mineFlights) {
+      if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
+        sprite.destroy();
+        this.mineFlights.delete(id);
+      }
+    }
+    if (battle && !battle.finished) {
+      for (const gust of battle.gusts ?? []) {
+        const half = Math.min(
+          SWEEPER.waveCone / 2,
+          Math.asin(Math.min(1, SWEEPER.halfWidth / gust.radius)),
+        );
+        const alpha = 0.9 * Math.min(1, (SWEEPER.range - gust.radius) / 2);
+        for (let trail = 0; trail < 3; trail++) {
+          const radius = Math.max(1, gust.radius - trail * 0.24);
+          const points = Array.from({ length: 21 }, (_, i) => {
+            const a = gust.angle + half * (i / 10 - 1),
+              p = iso(gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius);
+            return new Phaser.Math.Vector2(p.x, p.y - AIR_LIFT);
+          });
+          this.detail.lineStyle(
+            trail ? 2 : 4,
+            trail ? 0x91dbe9 : 0xe4fbff,
+            alpha * (1 - trail * 0.25),
+          );
+          this.detail.strokePoints(points, false);
+        }
+      }
+    }
     if (battle) {
       for (const trap of battle.finished ? [] : battle.buildings) {
         const state = battle.traps[trap.id];
         const def = BUILDINGS[trap.kind].trap;
-        if (!def || !state || state.resolved) continue;
+        if (!def || !state) continue;
+        if (trap.kind === 'seekingairmine') {
+          const launched = battle.elapsed >= state.activatedAt + def.delay;
+          const ground = this.sprites.get(trap.id);
+          if (ground && (state.resolved || launched)) ground.setTexture('mine-spent').setAlpha(1);
+          if (!state.resolved) {
+            let sprite = this.mineFlights.get(trap.id);
+            if (!sprite) {
+              sprite = this.add.image(0, 0, 'mine-flying').setOrigin(0.5, 0.88);
+              sprite.setDisplaySize(38, (38 * sprite.height) / sprite.width);
+              this.mineFlights.set(trap.id, sprite);
+            }
+            const p = iso(state.x, state.y),
+              rise = Math.min(1, (battle.elapsed - state.activatedAt) / def.delay);
+            sprite
+              .setPosition(p.x, p.y - AIR_LIFT * rise)
+              .setDepth(7499)
+              .setAlpha(rise);
+            if (launched) {
+              this.detail.lineStyle(3, 0xd62b44, 0.55);
+              this.detail.lineBetween(p.x, p.y - AIR_LIFT + 4, p.x, p.y - AIR_LIFT + 17);
+            }
+          }
+          continue;
+        }
+        if (state.resolved) continue;
         const p = iso(state.x, state.y);
         const progress = Math.min(
           1,
@@ -1321,6 +1413,10 @@ export class VillageScene extends Phaser.Scene {
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'gust') {
+      this.audio.play('gust');
+      return;
+    }
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.state.settings.reducedMotion;
       const label = this.add
@@ -1613,14 +1709,20 @@ export class VillageScene extends Phaser.Scene {
               ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
               : target.displayHeight * 0.48
             : 15));
-    const bodyMuzzle = fx.type === 'breath'
-      ? { forward: 0.32, height: 0.27 }
-      : fx.weapon === 'healing' ? { forward: 0.25, height: 0.37 } : null;
+    const bodyMuzzle =
+      fx.type === 'breath'
+        ? { forward: 0.32, height: 0.27 }
+        : fx.weapon === 'healing'
+          ? { forward: 0.25, height: 0.37 }
+          : null;
     const facing = Math.sign(q.x - p.x) || source?.getData('facing') || 1;
-    const from = source && bodyMuzzle
-      ? { x: p.x + facing * source.displayWidth * bodyMuzzle.forward,
-          y: p.y - AIR_LIFT - source.displayHeight * bodyMuzzle.height }
-      : { x: p.x, y: fromY };
+    const from =
+      source && bodyMuzzle
+        ? {
+            x: p.x + facing * source.displayWidth * bodyMuzzle.forward,
+            y: p.y - AIR_LIFT - source.displayHeight * bodyMuzzle.height,
+          }
+        : { x: p.x, y: fromY };
     return { from, to: { x: q.x, y: toY } };
   }
 

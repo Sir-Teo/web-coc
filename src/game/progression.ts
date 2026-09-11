@@ -13,6 +13,8 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
   camp: [1, 2, 3, 4, 5, 6, 6, 6],
   builder: [1, 1, 1, 1, 1, 1, 1, 1],
   mortar: [0, 0, 1, 2, 3, 4, 5, 6],
+  airsweeper: [0, 0, 0, 0, 0, 2, 3, 4],
+  seekingairmine: [0, 0, 0, 0, 0, 0, 1, 1],
   airdefense: [0, 0, 0, 2, 3, 4, 5, 6],
   laboratory: [0, 0, 1, 2, 3, 4, 5, 6],
   spellfactory: [0, 0, 0, 0, 1, 2, 3, 3],

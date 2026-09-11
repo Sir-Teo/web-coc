@@ -1,5 +1,7 @@
 # Art direction and generation record
 
+Air-control defense art is retained under `art/source/air-control-v1/`: four eight-direction Air Sweeper sheets and armed/flying/spent Seeking Air Mine states. `scripts/air-control-assets.mjs` builds 35 alpha sprites and verifies a repeat build with `--check`. Accepted sprites have real alpha; failed checkerboard candidates were rejected. See [AIR-CONTROL.md](AIR-CONTROL.md).
+
 The prototype Swordsman portrait and walk frames below are superseded by [Barbarian artwork](BARBARIAN-ART.md). Exact built-in generation prompts and retained source renders are in `art/source/barbarian-v1/`.
 
 The original camp atlas tiers described below are superseded by [eight individual Army Camp sprites](CAMP-ART.md), with source renders and exact prompts under `art/source/camp-levels-v1/`.

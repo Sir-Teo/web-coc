@@ -1,5 +1,5 @@
 import { BUILDINGS, type BuildingKind } from './data';
-export type Blueprint = readonly [BuildingKind, number, number];
+export type Blueprint = readonly [BuildingKind, number, number, number?];
 type Ring = readonly [number, number, number, number];
 export interface CampaignLayout {
   buildings: readonly Blueprint[];
@@ -136,7 +136,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['airdefense', 15, 12],
     ],
     rings: [[7, 6, 20, 19]],
-    hint: 'A Wizard Tower splashes clustered troops in the northwest. Spread your approach and probe gaps for traps.',
+    hint: 'A Sweeper guards the western air approach. Fly behind its nozzle or use ground troops to clear it.',
     recommended: 95,
     health: 1.2,
     defense: 1.2054,
@@ -191,7 +191,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       [6, 6, 21, 20],
       [10, 10, 17, 16],
     ],
-    hint: 'Break one compartment at a time. Clear the air defense before committing balloons.',
+    hint: 'A hidden Seeking Air Mine can cripple a flyer. Scout with a Balloon before committing Dragons or Healers.',
     recommended: 115,
     health: 1.4,
     defense: 1.3839,
@@ -320,7 +320,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       [4, 4, 22, 22],
       [10, 10, 15, 15],
     ],
-    hint: 'The final fortress. Scout the gaps, rage your frontline, and commit everything.',
+    hint: 'The final fortress. Two Seeking Air Mines protect the core; attack behind the Sweeper and bring spells.',
     recommended: 160,
     health: 1.8,
     defense: 1.55,
@@ -379,11 +379,45 @@ const CAMPAIGN_TRAPS: readonly (readonly Blueprint[])[] = [
     ['airbomb', 22, 14],
   ],
 ];
+const CAMPAIGN_AIR_CONTROL: readonly (readonly Blueprint[])[] = [
+  [],
+  [],
+  [],
+  [],
+  [],
+  [['airsweeper', 12, 8, 4]],
+  [['airsweeper', 11, 14, 2]],
+  [
+    ['airsweeper', 13, 15, 4],
+    ['seekingairmine', 8, 11],
+  ],
+  [
+    ['airsweeper', 16, 9, 6],
+    ['seekingairmine', 9, 15],
+  ],
+  [
+    ['airsweeper', 12, 9, 0],
+    ['seekingairmine', 11, 17],
+  ],
+  [
+    ['airsweeper', 18, 9, 4],
+    ['seekingairmine', 12, 15],
+  ],
+  [
+    ['airsweeper', 16, 10, 6],
+    ['seekingairmine', 10, 8],
+    ['seekingairmine', 10, 17],
+  ],
+];
 /** Authored structure footprints plus rings with deliberate gates and no overlapping posts. */
 export function campaignBlueprint(index: number): Blueprint[] {
   const layout = CAMPAIGN_LAYOUTS[index];
   if (!layout) throw new RangeError('Unknown campaign stage');
-  const result: Blueprint[] = [...layout.buildings, ...CAMPAIGN_TRAPS[index]];
+  const result: Blueprint[] = [
+    ...layout.buildings,
+    ...CAMPAIGN_TRAPS[index],
+    ...CAMPAIGN_AIR_CONTROL[index],
+  ];
   const occupied = new Set<string>();
   for (const [k, x, y] of result)
     for (let dx = 0; dx < BUILDINGS[k].size; dx++)

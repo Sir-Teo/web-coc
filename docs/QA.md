@@ -1,5 +1,19 @@
 # Verification record
 
+## September 11 — directional air control
+
+Air Sweepers and Seeking Air Mines now extend the local TH1–8 roster. Four Sweeper levels use native health/cost/time/push tables, eight free rotation directions, a traveling gust, zero-damage defense preference and Lightning interruption. Mines use 1,500 single-target damage, five-space eligibility and 3.5 tiles/s homing. Authored campaign stages 6–12 add Sweepers; stages 8–12 add mines. [AIR-CONTROL.md](AIR-CONTROL.md) records the unresolved native cone interpretation, gust geometry/easing and mine activation/target-loss behavior.
+
+**545 model/asset tests across 48 files pass.** The new 25 simulation/save/replay cases cover direction bounds, layout save/undo/redo, front/rear/blind-spot acquisition, all four push strengths, traveling fronts and five-second cadence, ground immunity, interruption, source destruction, defense preference, Balloons/Healers/Dragons, homing speed, single-target damage, inactive traps and exported JSON replay equality. Two asset cases verify 32 distinct transparent directional frames plus three mine states. The final strengthened export test also passes after assigning the exported JSON payload back to the recording.
+
+**35 distinct browser scenarios pass per engine** in Chromium using Metal and in WebKit at 2× density. New checks cover catalog gates, all sprite keys, rotation/Info/layout restore/reload at 1440px, 390px and 320px, touch placement with a real construction timer, instant mine arming, flying mine/gust display and replay seeking. Existing defense, trap, late-troop, replay and replay-file scenarios pass. The initial flight capture was after impact and was moved earlier; the touch fixture's `count` typo was corrected to `countOf`. Verification records the exact union of passing cases, rather than presenting the initial failing runs as clean.
+
+The **288-battle campaign matrix** still finds a three-star veteran approach for every stage. The veteran army earns 47 three-star results and one two-star result across four approaches. The Healer/P.E.K.K.A and Dragon armies each clear all 48 approaches; this remains an authored campaign, not validated multiplayer balance.
+
+Production checks pass in Chromium and WebKit with no reported errors, including all new asset requests. Chromium reloads, opens Army and plays a replay offline with **150 cached files**, cache `crown-clan-a4f74e1abfa3`. Runtime source stayed unchanged during browser and production checks. The 35 original sprites rebuild byte-for-byte with `node scripts/air-control-assets.mjs --check`; generation prompts and accepted PNGs are committed under `art/source/air-control-v1/`.
+
+Evidence: `output/playtest/air-control-verification.json`, `air-control-check.log`, `air-control-export-final.log`, `air-control-art.log`, `air-control-campaign.json`, `air-control-chromium*.log`, `air-control-webkit.log`, `air-control-touch-*.log`, `air-control-production-report.json`, and `air-control-{rotation,info,flight,replay}-*.png`. Native animation comparison, remaining content and online services remain unfinished.
+
 ## September 11 — Healer, Dragon and P.E.K.K.A
 
 The elixir Barracks roster now reaches TH8: ten troops, with explicit level 1–3 records for Healer, Dragon and P.E.K.K.A. Primary client CSV records drive health, damage/healing, cadence, housing, movement, range and research. Healer pulses heal living ground groups at their fixed landing location, with hero modifiers and diminishing contributions. Dragon breath applies direct splash; P.E.K.K.A uses heavy ground melee. See [LATE-TROOPS.md](LATE-TROOPS.md) for the immutable data URLs, hashes, exact tables, generated artwork prompts and native behavior still approximated.

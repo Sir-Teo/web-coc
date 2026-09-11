@@ -1,3 +1,5 @@
+import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
 import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
@@ -30,6 +32,8 @@ export type BuildingKind =
   | 'builder'
   | 'mortar'
   | 'airdefense'
+  | 'airsweeper'
+  | 'seekingairmine'
   | 'laboratory'
   | 'spellfactory'
   | 'wizardtower'
@@ -83,6 +87,8 @@ export interface BuildingDef {
     damage: number;
     targets: 'ground' | 'air';
     springCapacity?: number;
+    minHousing?: number;
+    homingSpeed?: number;
   };
   singleArtwork?: boolean;
 }
@@ -307,6 +313,49 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     damage: 80,
     ...DEFENSE_WEAPONS.airdefense,
     targets: 'air',
+  },
+  airsweeper: {
+    name: 'Air Sweeper',
+    description:
+      'Blows flying enemies backward without dealing damage. Rotate its nozzle to cover an approach; troops behind it and inside its blind spot are safe.',
+    size: 2,
+    width: 94,
+    hp: SWEEPER_LEVELS[0].hp,
+    cost: SWEEPER_LEVELS[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 4,
+    available: [0, 0, 0, 0, 0, 1, 1, 1],
+    build: SWEEPER_LEVELS[0].seconds,
+    range: SWEEPER.range,
+    minRange: SWEEPER.minRange,
+    rate: SWEEPER.rate,
+    targets: 'air',
+    singleArtwork: true,
+  },
+  seekingairmine: {
+    name: 'Seeking Air Mine',
+    description:
+      'A hidden homing mine that strikes one air troop for heavy damage. Requires at least 5 housing spaces to trigger, including Balloons, Healers and Dragons.',
+    size: 1,
+    width: 44,
+    hp: 1,
+    cost: 12000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 1,
+    available: [0, 0, 0, 0, 0, 0, 1, 2],
+    build: 0,
+    singleArtwork: true,
+    trap: {
+      trigger: 4,
+      radius: 0,
+      delay: SEEKING_MINE.delay,
+      damage: 1500,
+      targets: 'air',
+      minHousing: SEEKING_MINE.minHousing,
+      homingSpeed: SEEKING_MINE.speed,
+    },
   },
   laboratory: {
     name: 'Laboratory',
@@ -758,6 +807,7 @@ export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
 export const isSpellKind = (kind: unknown): kind is SpellKind =>
   typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
+export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
   BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
@@ -779,7 +829,8 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
-export const buildingTexture = (kind: BuildingKind, level = 1) => {
+export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+  if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
   if (kind === 'camp') return campTexture(level);
@@ -792,6 +843,8 @@ const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
+  if (kind === 'airsweeper') return sweeperAsset(level);
+  if (kind === 'seekingairmine') return mineAsset();
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
@@ -812,6 +865,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.seconds : undefined) ??
   facilityProgression(kind, level + 1)?.seconds ??
   campProgression(kind, level + 1)?.seconds ??
   trapProgression(kind, level + 1)?.seconds ??
@@ -822,6 +876,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? sweeperStats(level).hp : undefined) ??
   facilityProgression(kind, level)?.hp ??
   campProgression(kind, level)?.hp ??
   defenseProgression(kind, level)?.hp ??
@@ -830,6 +885,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.cost : undefined) ??
   facilityProgression(kind, level + 1)?.cost ??
   campProgression(kind, level + 1)?.cost ??
   trapProgression(kind, level + 1)?.cost ??

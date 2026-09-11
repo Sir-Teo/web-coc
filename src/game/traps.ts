@@ -29,6 +29,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     };
     const eligible = (u: Unit) =>
       u.hp > 0 &&
+      (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
       !!TROOPS[u.kind].flying === (d.targets === 'air');
     if (!state) {
@@ -60,6 +61,33 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
           color: d.targets === 'air' ? 0xff746c : 0xffd175,
         });
       changed = true;
+    }
+    if (d.homingSpeed) {
+      // A mine follows one live air target; loss of that target consumes the shot.
+      const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
+      if (!target) {
+        state.resolved = true;
+        changed = true;
+        continue;
+      }
+      const flightDt = Math.min(dt, Math.max(0, battle.elapsed - state.activatedAt - d.delay));
+      if (flightDt <= 0) continue;
+      const x = target.x - state.x,
+        y = target.y - state.y;
+      const distance = Math.hypot(x, y),
+        travel = d.homingSpeed * flightDt;
+      if (distance > travel + 1e-9) {
+        state.x += (x / distance) * travel;
+        state.y += (y / distance) * travel;
+        continue;
+      }
+      state.x = target.x;
+      state.y = target.y;
+      target.hp -= trapDamage(trap.kind, trap.level);
+      state.resolved = true;
+      changed = true;
+      effect({ type: 'blast', x: state.x, y: state.y, radius: 0.6, toAir: true, color: 0xff3c46 });
+      continue;
     }
     if (d.targets === 'air') {
       const target = battle.units.find((u) => u.id === state.targetId);

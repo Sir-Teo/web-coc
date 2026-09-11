@@ -1,3 +1,12 @@
+import { validDirection } from './air-control-stats';
+import {
+  stepSweepers,
+  stepAirPush,
+  type AirGust,
+  type SweeperState,
+  type AirPush,
+} from './air-sweeper';
+import { isDefense } from './data';
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import {
@@ -106,6 +115,8 @@ export interface Building {
   constructing?: boolean;
   stored: number;
   cooldown: number;
+  /** Air Sweeper orientation in 45-degree map increments; absent means zero. */
+  direction?: number;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -117,7 +128,7 @@ export interface SpellQueueItem {
 }
 export interface Layout {
   name: string;
-  slots: { id: number; x: number; y: number }[];
+  slots: { id: number; x: number; y: number; direction?: number }[];
 }
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
@@ -197,6 +208,7 @@ export interface Unit {
   defeatedAt?: number;
   ejected?: boolean;
   springUntil?: number;
+  airPush?: AirPush;
 }
 export interface Aura {
   kind: SpellKind;
@@ -235,6 +247,8 @@ export interface Battle {
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
   traps: Record<number, TrapState>;
+  gusts?: AirGust[];
+  sweepers?: Record<number, SweeperState>;
   hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -263,7 +277,8 @@ export type FX = {
     | 'blast'
     | 'breath'
     | 'trap'
-    | 'spring';
+    | 'spring'
+    | 'gust';
   x: number;
   y: number;
   toX?: number;
@@ -1136,7 +1151,22 @@ export class GameModel {
 
   // ---------------------------------------------------------------- edit mode
   private positions(): Layout['slots'] {
-    return this.state.buildings.map((b) => ({ id: b.id, x: b.x, y: b.y }));
+    return this.state.buildings.map((b) => ({
+      id: b.id,
+      x: b.x,
+      y: b.y,
+      ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
+    }));
+  }
+  rotateSweeper() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'airsweeper' || b.constructing || !validDirection(b.direction))
+      return false;
+    if (this.editing) this.recordPositions();
+    b.direction = ((b.direction ?? 0) + 1) % 8;
+    this.changed();
+    return true;
   }
   private recordPositions() {
     this.undoStack.push(this.positions());
@@ -1172,6 +1202,7 @@ export class GameModel {
     for (const [i, b] of this.state.buildings.entries()) {
       b.x = placed[i].x;
       b.y = placed[i].y;
+      if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
     }
     return true;
   }
@@ -1709,7 +1740,7 @@ export class GameModel {
           distanceTo({ x, y }, v) <= d.radius
         ) {
           this.damage(v, d.damage);
-          if (v.hp > 0 && BUILDINGS[v.kind].damage) {
+          if (v.hp > 0 && isDefense(v.kind)) {
             b.defenseStuns[v.id] = b.elapsed + LIGHTNING_STUN;
             v.cooldown = BUILDINGS[v.kind].rate!;
             delete b.defenseTargets[v.id];
@@ -1754,8 +1785,10 @@ export class GameModel {
     stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
     stepSpellAuras(b);
     prepareHealerTargets(b);
+    stepSweepers(b, dt, this.onEffect);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
+      if (stepAirPush(u, dt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
@@ -1804,7 +1837,7 @@ export class GameModel {
         const preferred = troop.prefersResources
           ? alive.filter((v) => isResourceBuilding(v.kind))
           : troop.prefersDefenses
-            ? alive.filter((v) => BUILDINGS[v.kind].damage)
+            ? alive.filter((v) => isDefense(v.kind))
             : alive;
         target =
           (troop.wallBreaker ? breachTarget(u, b.buildings) : undefined) ??
@@ -2564,8 +2597,15 @@ export function initialSave(): Save {
   };
 }
 export function enemyBase(index: number) {
-  return campaignBlueprint(index).map(([kind, x, y], i) => {
-    const b = makeBuilding(1000 + i, kind, x, y, Math.min(3, 1 + Math.floor(index / 4)));
+  return campaignBlueprint(index).map(([kind, x, y, direction], i) => {
+    const b = makeBuilding(
+      1000 + i,
+      kind,
+      x,
+      y,
+      Math.min(BUILDINGS[kind].maxLevel, 3, 1 + Math.floor(index / 4)),
+    );
+    if (kind === 'airsweeper') b.direction = direction ?? 0;
     b.hp *= CAMPAIGN_LAYOUTS[index].health;
     b.maxHp = b.hp;
     return b;

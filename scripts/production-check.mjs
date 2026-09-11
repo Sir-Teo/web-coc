@@ -15,8 +15,16 @@ for (const [name, engine] of [
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...Array.from({ length: 4 }, (_, l) =>
+      Array.from(
+        { length: 8 },
+        (_, d) => `/assets/buildings/airsweeper-v1/level-${l + 1}-${d}.webp`,
+      ),
+    ).flat(),
+    ...['armed', 'flying', 'spent'].map((s) => `/assets/buildings/seekingairmine-v1/${s}.webp`),
     ...['healer', 'dragon', 'pekka'].flatMap((kind) => [
-      `/assets/characters/${kind}-v1.webp`, `/assets/characters/walk/${kind}-v1.webp`,
+      `/assets/characters/${kind}-v1.webp`,
+      `/assets/characters/walk/${kind}-v1.webp`,
     ]),
     ...['lightning', 'heal', 'rage'].map((kind) => `/assets/spells/${kind}-v2.webp`),
     ...Array.from({ length: 8 }, (_, i) => `/assets/buildings/camp-levels-v1/level-${i + 1}.webp`),

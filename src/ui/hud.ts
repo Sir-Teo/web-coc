@@ -1,3 +1,5 @@
+import { sweeperStats } from '../game/air-control-stats';
+import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import {
@@ -95,10 +97,25 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
     rows.push(['Radar', 'Trigger radius', `${trap.trigger} tile${trap.trigger === 1 ? '' : 's'}`]);
     if (trap.springCapacity)
       rows.push(['Users', 'Spring capacity', `${springCapacity(level)} spaces`]);
-    else rows.push(['Target', 'Blast radius', `${trap.radius} tiles`]);
-    rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
+    else if (!trap.homingSpeed) rows.push(['Target', 'Blast radius', `${trap.radius} tiles`]);
+    if (trap.homingSpeed)
+      rows.push(
+        ['Target', 'Damage type', 'Single target'],
+        ['Gauge', 'Flight speed', `${trap.homingSpeed} tiles/s`],
+        ['Users', 'Minimum housing', `${trap.minHousing} spaces`],
+      );
+    if (!trap.homingSpeed)
+      rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
     rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
+  if (kind === 'airsweeper')
+    rows.push(
+      ['Wind', 'Push strength', `${sweeperStats(level).push.toFixed(1)} tiles`],
+      ['Target', 'Range', '1–15 tiles'],
+      ['Gauge', 'Attack speed', '5s'],
+      ['Radar', 'Targets', 'Air only'],
+      ['RotateCw', 'Rotation', '8 directions'],
+    );
   if (d.damage) {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
@@ -437,6 +454,9 @@ export class HUD {
         break;
       case 'wall-move':
         m.beginWallMove();
+        break;
+      case 'sweeper-rotate':
+        m.rotateSweeper();
         break;
       case 'wall-rotate':
         m.rotateWallMove();
@@ -896,6 +916,10 @@ export class HUD {
       }
       return;
     }
+    if (!this.model.battle && e.key.toLowerCase() === 'r' && this.model.rotateSweeper()) {
+      e.preventDefault();
+      return;
+    }
     if (this.model.replay && e.code === 'Space') {
       e.preventDefault();
       this.model.toggleReplay();
@@ -1097,13 +1121,22 @@ export class HUD {
       const d = OBSTACLES[o.kind];
       return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="${asset(o.kind)}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · No builder needed</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
     }
+    const rotate =
+      b.kind === 'airsweeper' && !b.constructing
+        ? button(
+            'sweeper-rotate',
+            `${icon('RotateCw', 21)}<span>Rotate</span>`,
+            'game-btn blue',
+            'aria-label="Rotate Air Sweeper 45 degrees" title="Rotate clockwise · R"',
+          )
+        : '';
     if (m.editing && b.kind !== 'wall')
-      return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div></div>`;
+      return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${
+    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
       b.upgradeEnd
         ? button(
             `finish:${b.id}`,
@@ -1646,7 +1679,7 @@ export class HUD {
       .filter(([k]) => !isTrap(k))
       .map(
         ([k, x, y]) =>
-          `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : BUILDINGS[k].damage ? '#655666' : '#e0cf97'}"/>`,
+          `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : isDefense(k) ? '#655666' : '#e0cf97'}"/>`,
       )
       .join('')}</svg>`;
   }

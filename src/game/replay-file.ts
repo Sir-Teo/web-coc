@@ -28,7 +28,9 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         army: army(s.army),
         spells,
         troopLevels: army(s.troopLevels),
-        spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, s.spellLevels![k]])) as typeof s.spells,
+        spellLevels: Object.fromEntries(
+          SPELL_KEYS.map((k) => [k, s.spellLevels![k]]),
+        ) as typeof s.spells,
         ...(s.hero ? { hero: { level: s.hero.level, townhall: s.hero.townhall } } : {}),
         buildings: s.buildings.map((b) => ({
           id: b.id,
@@ -40,6 +42,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
           maxHp: b.maxHp,
           stored: 0,
           cooldown: 0,
+          ...(b.direction !== undefined ? { direction: b.direction } : {}),
           ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
           ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
           ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),
