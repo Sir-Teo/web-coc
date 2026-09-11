@@ -116,13 +116,19 @@ test('hero and progression panels fit phone portrait and landscape with reachabl
   await boot(page);
   await unlock(page);
   await heroes(page);
-  await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
-  await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+  // A queued village render or viewport resize can replace the dialog during scrolling.
+  await expect(async () => {
+    await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+  }).toPass({ timeout: 5000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-mobile.png' });
   await page.setViewportSize({ width: 844, height: 390 });
-  await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
-  await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+  // A queued village render or viewport resize can replace the dialog during scrolling.
+  await expect(async () => {
+    await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+  }).toPass({ timeout: 5000 });
   await page.locator('[data-action="hero-upgrade"]').click();
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-landscape.png' });

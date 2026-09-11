@@ -14,6 +14,13 @@ async function selectTree(page: Page, id: number) {
   }, id);
   await page.mouse.click(point.x, point.y);
   await expect(page.locator('.obstacle-context h2')).toHaveText('Tree');
+  await expect
+    .poll(() =>
+      page
+        .locator('.obstacle-context .context-art')
+        .evaluate((im: HTMLImageElement) => im.complete && im.naturalWidth > 0),
+    )
+    .toBe(true);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -114,4 +121,100 @@ test('home obstacles stay out of combat and clearing finishes while away from th
     )
     .toBe(true);
   expect(await page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), id)).toBe(false);
+});
+
+test('offline regrowth renders a persistent selectable tree with saved identity and removal', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const setup = await page.evaluate(() => {
+    const m = window.__game.model;
+    const g = m.state.obstacleGrowth!;
+    g.nextAt = Date.now() - 1000;
+    g.seed = 4000;
+    m.changed();
+    return { id: g.nextId, count: m.obstacles.length };
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await expect
+    .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id))
+    .toBe(true);
+  const grown = await page.evaluate((id) => {
+    const m = window.__game.model;
+    return {
+      tree: m.obstacles.find((o) => o.id === id),
+      growth: m.state.obstacleGrowth,
+      count: m.obstacles.length,
+      text: JSON.parse(window.render_game_to_text()),
+    };
+  }, setup.id);
+  expect(grown.count).toBe(setup.count + 1);
+  expect(grown.tree.kind).toBe('trees');
+  expect(grown.text.obstacles).toContainEqual({
+    id: setup.id,
+    type: 'trees',
+    x: grown.tree.x,
+    y: grown.tree.y,
+    size: 2,
+    removalSeconds: null,
+  });
+  await selectTree(page, setup.id);
+  await expect(page.locator(`[data-action="obstacle-remove:${setup.id}"]`)).toBeVisible();
+  await expect(
+    page.locator(`.obstacle-context [data-action="obstacle-remove:${setup.id}"] svg path`).first(),
+  ).toBeVisible();
+  await page.screenshot({ path: `output/playtest/tree-regrowth-${test.info().project.name}.png` });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  expect(
+    await page.evaluate(
+      (id) => ({
+        tree: window.__game.model.obstacles.find((o) => o.id === id),
+        growth: window.__game.model.state.obstacleGrowth,
+      }),
+      setup.id,
+    ),
+  ).toEqual({ tree: grown.tree, growth: grown.growth });
+  await selectTree(page, setup.id);
+  await page.locator(`[data-action="obstacle-remove:${setup.id}"]`).click();
+  await page.locator(`[data-action="obstacle-finish:${setup.id}"]`).click();
+  await expect
+    .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id))
+    .toBe(false);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  expect(
+    await page.evaluate((id) => window.__game.model.obstacles.some((o) => o.id === id), setup.id),
+  ).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('trees grow at home during an attack and appear only when returning home', async ({
+  page,
+}) => {
+  const id = await page.evaluate(() => {
+    const m = window.__game.model;
+    const g = m.state.obstacleGrowth!;
+    const id = g.nextId;
+    m.startBattle(0);
+    g.nextAt = m.clock + 1000;
+    m.tick(g.nextAt);
+    return id;
+  });
+  await expect
+    .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.get(id)?.visible, id))
+    .toBe(false);
+  expect(await page.evaluate(() => JSON.parse(window.render_game_to_text()).obstacles)).toEqual([]);
+  await page.locator('[data-action="home"]').click();
+  await expect
+    .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.get(id)?.visible, id))
+    .toBe(true);
+  expect(
+    await page.evaluate(
+      (id) => JSON.parse(window.render_game_to_text()).obstacles.some((o) => o.id === id),
+      id,
+    ),
+  ).toBe(true);
 });

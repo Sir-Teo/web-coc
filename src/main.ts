@@ -102,6 +102,10 @@ async function boot() {
         army: model.state.army,
         capacity: model.capacity,
         hero: model.state.king,
+        obstacles: model.battle ? [] : model.obstacles.map((o) => ({
+          id: o.id, type: o.kind, x: o.x, y: o.y, size: 2,
+          removalSeconds: o.removeEnd === undefined ? null : Math.max(0, (o.removeEnd - model.clock) / 1000),
+        })),
         buildings: model.buildings
           .filter((b) => model.visibleBuilding(b))
           .map((b) => ({

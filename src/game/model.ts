@@ -1,4 +1,4 @@
-import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, type Obstacle } from './obstacles';
+import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
   HERO_ABILITY,
@@ -98,6 +98,7 @@ export interface Save {
   buildings: Building[];
   obstacles?: Obstacle[];
   obstacleGemIndex?: number;
+  obstacleGrowth?: ObstacleGrowth;
   army: Army;
   queue: QueueItem[];
   spells: SpellBook;
@@ -240,8 +241,6 @@ export class GameModel {
   constructor(saved?: Save) {
     this.state = saved ?? initialSave();
     this.state.dark ??= 0;
-    this.state.obstacles ??= initialObstacles(this.state.buildings);
-    this.state.obstacleGemIndex ??= 0;
     this.tick(Date.now());
   }
   changed(passive = false) {
@@ -505,6 +504,12 @@ export class GameModel {
     this.clock = now;
     let changed = false;
     let structural = false;
+    if (!this.state.obstacles || !this.state.obstacleGrowth || this.state.obstacleGemIndex === undefined) {
+      this.state.obstacles ??= initialObstacles(this.state.buildings);
+      this.state.obstacleGemIndex ??= 0;
+      this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
+      structural = changed = true;
+    }
     const dt = Math.max(0, Math.min(now - this.state.lastTick, 8 * 3600000)) / 1000;
     for (const b of this.state.buildings) {
       const productionSeconds = b.upgradeEnd
@@ -538,9 +543,12 @@ export class GameModel {
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
       }
     }
-    for (const o of [...this.obstacles].sort((a, b) => (a.removeEnd ?? Infinity) - (b.removeEnd ?? Infinity) || a.id - b.id)) {
-      if (o.removeEnd === undefined || o.removeEnd > now) continue;
-      this.state.obstacles = this.obstacles.filter((v) => v.id !== o.id);
+    const growth = this.state.obstacleGrowth!;
+    const nextGrowth = growth.nextAt;
+    const obstacleEvents = advanceObstacles(this.obstacles, this.state.buildings, growth, now);
+    if (growth.nextAt !== nextGrowth) changed = true;
+    if (obstacleEvents.grown.length) structural = changed = true;
+    for (const o of obstacleEvents.removed) {
       if (this.selected === -o.id) this.selected = null;
       const gems = OBSTACLE_GEMS[this.state.obstacleGemIndex ?? 0];
       this.state.obstacleGemIndex = ((this.state.obstacleGemIndex ?? 0) + 1) % OBSTACLE_GEMS.length;
@@ -840,7 +848,15 @@ export class GameModel {
     this.changed();
     return true;
   }
+  private layoutOverlapsObstacles(slots: Layout['slots']) {
+    return slots.some((v) => {
+      const b = this.state.buildings.find((b) => b.id === v.id);
+      return b && overlapsObstacle(this.obstacles, v.x, v.y, BUILDINGS[b.kind].size);
+    });
+  }
   undo() {
+    if (this.layoutOverlapsObstacles(this.undoStack.at(-1) ?? []))
+      return this.notify('Clear the obstacles beneath this layout before undoing.');
     const previous = this.undoStack.pop();
     if (!previous) return this.notify('Nothing left to undo.');
     this.redoStack.push(this.positions());
@@ -848,6 +864,8 @@ export class GameModel {
     this.changed();
   }
   redo() {
+    if (this.layoutOverlapsObstacles(this.redoStack.at(-1) ?? []))
+      return this.notify('Clear the obstacles beneath this layout before redoing.');
     const next = this.redoStack.pop();
     if (!next) return this.notify('Nothing left to redo.');
     this.undoStack.push(this.positions());
@@ -872,10 +890,7 @@ export class GameModel {
   loadLayout(slot: number) {
     const layout = this.state.layouts?.[slot];
     if (!layout?.slots.length) return this.notify('That layout slot is still empty.');
-    if (layout.slots.some((v) => {
-      const b = this.state.buildings.find((b) => b.id === v.id);
-      return b && overlapsObstacle(this.obstacles, v.x, v.y, BUILDINGS[b.kind].size);
-    })) return this.notify('Clear the obstacles beneath this layout before restoring it.');
+    if (this.layoutOverlapsObstacles(layout.slots)) return this.notify('Clear the obstacles beneath this layout before restoring it.');
     this.recordPositions();
     this.applyPositions(layout.slots);
     this.notify(`${layout.name} restored.`);
