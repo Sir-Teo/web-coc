@@ -171,6 +171,10 @@ export class HUD {
   private toastTimer?: ReturnType<typeof setTimeout>;
   private resultShown = false;
   private raf = false;
+  private pressedActions = new Set<number>();
+  private renderPending = false;
+  private drawerMarkup = '';
+  private modalMarkup = '';
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
   private focusBefore: HTMLElement | null = null;
@@ -200,6 +204,7 @@ export class HUD {
     });
     this.root.addEventListener('pointerdown', (e) => {
       const target = e.target as HTMLElement;
+      if (target.closest('[data-action]')) this.pressedActions.add(e.pointerId);
       if (target.id === 'replay-progress' && this.model.replay) {
         this.replayScrubbing = true;
         this.model.replay.paused = true;
@@ -216,6 +221,17 @@ export class HUD {
     };
     document.addEventListener('pointerup', finishScrub);
     document.addEventListener('pointercancel', finishScrub);
+    const releaseAction = (e: PointerEvent) => {
+      this.pressedActions.delete(e.pointerId);
+      // The browser dispatches click after pointerup; render on the next frame.
+      if (!this.pressedActions.size && this.renderPending) this.scheduleRender();
+    };
+    document.addEventListener('pointerup', releaseAction);
+    document.addEventListener('pointercancel', releaseAction);
+    window.addEventListener('blur', () => {
+      this.pressedActions.clear();
+      if (this.renderPending) this.scheduleRender();
+    });
     this.root.addEventListener('change', (e) => {
       const t = e.target as HTMLInputElement;
       if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
@@ -832,6 +848,13 @@ export class HUD {
     if (e.key === '-') this.scene.zoomBy(1 / 1.15);
   }
   render() {
+    // A structural update must not remove a control between press and release.
+    if (this.pressedActions.size) {
+      this.renderPending = true;
+      this.updateLive();
+      return;
+    }
+    this.renderPending = false;
     const m = this.model,
       b = m.battle;
     if (this.replayScrubbing && m.replay) {
@@ -846,7 +869,12 @@ export class HUD {
     const focused = (document.activeElement as HTMLElement)?.dataset?.action;
     document.querySelector('#hud')!.innerHTML = b ? this.battleHUD() : this.homeHUD();
     document.querySelector('#context')!.innerHTML = this.context();
-    document.querySelector('#drawer')!.innerHTML = this.drawer();
+    const drawerMarkup = this.drawer();
+    const drawerChanged = drawerMarkup !== this.drawerMarkup;
+    if (drawerChanged) {
+      document.querySelector('#drawer')!.innerHTML = drawerMarkup;
+      this.drawerMarkup = drawerMarkup;
+    }
     document.querySelector('#drawer')!.classList.toggle('dragging', this.dragging);
     // An open sheet owns the bottom of the screen, so the bars beneath it step aside.
     this.root.classList.toggle('drawer-open', !!this.drawerPanel && !b);
@@ -856,16 +884,20 @@ export class HUD {
     (document.querySelector('#hud') as HTMLElement).inert = this.scene.uiBlocked;
     (document.querySelector('#context') as HTMLElement).inert = this.scene.uiBlocked;
     (document.querySelector('#drawer') as HTMLElement).inert = this.scene.uiBlocked;
-    document.querySelector('#modal-root')!.innerHTML = result
+    const modalMarkup = result
       ? this.result()
       : this.panel
         ? this.modal()
         : '';
-    document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+    if (modalMarkup !== this.modalMarkup) {
+      document.querySelector('#modal-root')!.innerHTML = modalMarkup;
+      this.modalMarkup = modalMarkup;
+      document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+    }
     const armyTray = document.querySelector('.army-tray');
     if (armyTray) armyTray.scrollLeft = armyScroll;
     const body = document.querySelector('.drawer-body');
-    if (body) {
+    if (body && drawerChanged) {
       body.scrollLeft = drawerScroll;
       body.scrollTop = drawerScrollY;
     }
