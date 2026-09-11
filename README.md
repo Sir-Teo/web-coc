@@ -25,9 +25,11 @@ For preview, use http://127.0.0.1:4173. `dist/` is a self-contained static deplo
 The game is hosted on Firebase Hosting as the `coc-teozeng` site in the `personal-website-3bc37`
 project, served at https://coc-teozeng.web.app and https://coc.teozeng.dev.
 
-Pushing to `main` builds, tests, and publishes through
+Pushing to `main` builds, runs simulation tests, Chromium gameplay checks, WebKit visual checks,
+and production/offline smoke checks before publishing through
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). A pull request runs the same build
-and test steps but does not publish, so a branch can never take over the live site. The workflow
+and test steps but does not publish. Manual workflow runs also publish only from `main`.
+Pull-request checks cannot cancel an active main-branch release. The workflow
 needs one repository secret, `FIREBASE_TOKEN`, generated with `firebase login:ci`.
 
 To publish by hand:
@@ -133,6 +135,8 @@ npm test
 npx playwright install chromium webkit
 npm run test:e2e
 npm run build
+# Starts and stops its own production preview on an isolated local port:
+npm run test:production
 # With the preview server running:
 node scripts/production-check.mjs
 ```

@@ -13,17 +13,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Serialize deploys to the live channel. Back-to-back pushes otherwise race:
-# two runs upload near-identical content and the slower one tries to release a
-# version that is already live, which Firebase rejects. Cancel any in-flight
-# deploy so only the newest commit reaches the live channel.
+# Serialize runs for each ref, keeping pull-request checks from cancelling a
+# live release. Only the newest main-branch run should publish.
 concurrency:
-  group: firebase-hosting-live
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
@@ -39,10 +38,34 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: Install browser test engines
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Verify gameplay in Chromium
+        run: npm run test:e2e
+
+      - name: Verify visual feedback in WebKit
+        run: npx playwright test tests/browser/visual-feedback.spec.ts --browser=webkit --output=output/webkit-results
+
+      - name: Verify production build and offline play
+        run: npm run test:production
+
+      - name: Preserve browser evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-verification
+          path: |
+            output/test-results/
+            output/webkit-results/
+            output/playtest/
+          retention-days: 7
+          if-no-files-found: ignore
+
       # A pull request builds and tests only. Publishing stays on main so a
       # branch can never take over the live site.
       - name: Deploy to Firebase Hosting
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         # Deploy is pinned to the coc-teozeng site so it cannot overwrite the
         # other sites in this project (teozeng.dev, finos.teozeng.dev).
         # Treat the "version is already the current active version" response as

@@ -19,6 +19,9 @@ The particle lifecycle uses the browser's [Web Animations API](https://developer
 - Compared the decoded pixels of all six live Phaser textures with their accepted WebP files in both Chromium and WebKit. All matched. Actual pointer deployment selected and rendered the new Balloon atlas with no browser or asset errors.
 - Rebuilt the six new assets and compared SHA-256 hashes: identical. All five source images and all six outputs have real alpha transparency. Source originals remain outside the public build.
 - Production smoke checks passed in Chromium and WebKit for boot, shop, research and tab ownership transfer, plus Chromium offline reload and army access. The offline manifest contains 79 files.
+- A fresh four-second local performance sample measured 59 FPS in both the village and a deployed battle, with 16.8 ms 95th-percentile frame times. This is headless Chromium at 1440×960 on the local Mac, not a physical-phone benchmark.
+
+The automated deployment checks are documented in [RELEASE-VERIFICATION.md](RELEASE-VERIFICATION.md).
 
 Review evidence is under `output/playtest/`: `air-magic-visual-report.json`, `air-magic-hashes.json`, `collection-feedback-chromium.png`, `collection-feedback-webkit.png`, `balloon-scale-chromium.png`, `balloon-scale-webkit.png`, and the `air-magic-*` desktop/phone/landscape captures. Reports and screenshots are development evidence, not shipped game assets.
 
