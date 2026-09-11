@@ -69,7 +69,8 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
   await page.locator('[data-action="shop"]').last().click();
   await page.locator('[data-action="tab:Army"]').click();
   await page.waitForTimeout(400);
-  const art = page.locator('[data-drag="barracks"] .shop-tile-art').first();
+  // The village already has its single Barracks; the Laboratory is available at TH5.
+  const art = page.locator('[data-drag="laboratory"] .shop-tile-art').first();
   const box = (await art.boundingBox())!;
   const drop = await page.evaluate(() => window.__game.scene.screenFor(2.5, 4.5));
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

@@ -7,6 +7,7 @@ import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 import { troopProgression } from './troop-progression';
+import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
   | 'herohall'
   | 'darkdrill'
@@ -189,13 +190,13 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'Train your troops here. Prepare troops instantly, ready for your next attack.',
     size: 3,
     width: 134,
-    hp: 850,
-    cost: 4500,
+    hp: FACILITY_LEVELS.barracks[0].hp,
+    cost: FACILITY_LEVELS.barracks[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 10,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
-    build: 120,
+    available: FACILITY_COUNTS.barracks,
+    build: FACILITY_LEVELS.barracks[0].seconds,
   },
   cannon: {
     name: 'Cannon',
@@ -294,26 +295,26 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'Research permanent troop upgrades. Higher levels unlock stronger troops.',
     size: 3,
     width: 122,
-    hp: 950,
-    cost: 15000,
+    hp: FACILITY_LEVELS.laboratory[0].hp,
+    cost: FACILITY_LEVELS.laboratory[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 6,
-    available: [0, 1, 1, 1, 1, 1, 1, 1],
-    build: 180,
+    available: FACILITY_COUNTS.laboratory,
+    build: FACILITY_LEVELS.laboratory[0].seconds,
   },
   spellfactory: {
     name: 'Spell Factory',
-    description: 'Brews battle spells. Each level adds two housing spaces for battle spells.',
+    description: 'Prepares spells instantly. Upgrades unlock new spells and increase spell housing.',
     size: 3,
     width: 122,
-    hp: 900,
-    cost: 18000,
+    hp: FACILITY_LEVELS.spellfactory[0].hp,
+    cost: FACILITY_LEVELS.spellfactory[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 5,
-    available: [0, 1, 1, 1, 1, 1, 1, 1],
-    build: 240,
+    available: FACILITY_COUNTS.spellfactory,
+    build: FACILITY_LEVELS.spellfactory[0].seconds,
   },
   wizardtower: {
     name: 'Wizard Tower',
@@ -707,6 +708,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  facilityProgression(kind, level + 1)?.seconds ??
   campProgression(kind, level + 1)?.seconds ??
   trapProgression(kind, level + 1)?.seconds ??
   defenseProgression(kind, level + 1)?.seconds ??
@@ -716,6 +718,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  facilityProgression(kind, level)?.hp ??
   campProgression(kind, level)?.hp ??
   defenseProgression(kind, level)?.hp ??
   (kind === 'wall'
@@ -723,6 +726,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  facilityProgression(kind, level + 1)?.cost ??
   campProgression(kind, level + 1)?.cost ??
   trapProgression(kind, level + 1)?.cost ??
   defenseProgression(kind, level + 1)?.cost ??

@@ -18,7 +18,9 @@ describe('troop progression', () => {
     m.researchTroop('archer');
     expect(m.state.elixir).toBe(elixir - 40000);
     m.upgrade(lab.id);
-    expect(lab.upgradeEnd).toBeUndefined();
+    expect(lab.upgradeEnd! - lab.upgradeStart!).toBe(7200000);
+    expect(m.state.research?.kind).toBe('giant');
+    expect(m.state.elixir).toBe(elixir - 40000 - 50000);
     expect(validateSave(m.state)).toBe(true);
     const restored = new GameModel(structuredClone(m.state));
     restored.tick(restored.state.research!.end + 8 * 3600000);

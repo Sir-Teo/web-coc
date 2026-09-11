@@ -1,4 +1,5 @@
 import { campCapacity } from '../game/camp-stats';
+import { spellFactoryCapacity } from '../game/facility-progression';
 import { OBSTACLES } from '../game/obstacles';
 import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
@@ -117,7 +118,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
   if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
-  if (kind === 'spellfactory') rows.push(['Sparkles', 'Spell housing', String(level * 2)]);
+  if (kind === 'spellfactory') rows.push(['Sparkles', 'Spell housing', String(spellFactoryCapacity(level))]);
   if (kind === 'laboratory')
     rows.push([
       'FlaskConical',
@@ -1225,9 +1226,15 @@ export class HUD {
       .map((kind) => BUILDINGS[kind].name);
     const preparationLabel = upgradingFacilities.length
       ? 'Free &amp; instant during upgrades' : 'Free &amp; instant preparation';
-    const overCapacity = m.armySize + m.queuedSize > m.capacity;
+    const overTroops = m.armySize + m.queuedSize > m.capacity;
+    const overSpells = m.spellHousing + m.queuedSpellHousing > m.spellCapacity;
+    const overCapacity = overTroops || overSpells;
     const preparationNote = overCapacity
-      ? 'Your troops are kept. Deploy or remove troops to make room.'
+      ? overTroops && overSpells
+        ? 'Your army is kept. Deploy or remove troops and spells to make room.'
+        : overSpells
+        ? 'Your army is kept. Deploy or remove spells to make room.'
+        : 'Your troops are kept. Deploy or remove troops to make room.'
       : upgradingFacilities.length
       ? `${upgradingFacilities.join(' and ')} upgrading`
       : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
@@ -1434,22 +1441,22 @@ export class HUD {
   }
   private research() {
     const m = this.model,
-      lab = m.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
+      lab = m.laboratory;
     const r = m.state.research;
-    return `<div class="modal-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${TROOPS[r.kind].name} research` : 'Make every troop count'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently increases troop health and damage. Upgrade the laboratory to unlock higher levels.'}</p>${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${TROOP_ORDER.map(
+    return `<div class="modal-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${TROOPS[r.kind].name} research` : 'Make every troop count'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently increases troop health and damage. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? '<p class="facility-research-note">Laboratory upgrade in progress. Research remains available at its completed level.</p>' : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${TROOP_ORDER.map(
       (k) => {
         const d = m.troopStats(k),
           level = m.troopLevel(k),
           max = level >= MAX_TROOP_LEVEL;
         const requiredLab = researchLaboratory(k, level);
-        const gated = !m.troopUnlocked(k) || !lab || !!lab.upgradeEnd || lab.level < requiredLab;
+        const gated = !m.troopUnlocked(k) || !lab || lab.level < requiredLab;
         const next = m.troopStats(k, level + 1);
         const label = max
           ? '★ Fully researched'
           : !m.troopUnlocked(k)
             ? `Requires Barracks ${TROOP_UNLOCK[k]}`
           : gated
-            ? lab?.upgradeEnd ? 'Laboratory upgrading' : `Requires laboratory ${requiredLab}`
+            ? `Requires laboratory ${requiredLab}`
             : `Research ${elixir} ${n(m.researchCost(k))}`;
         return `<article class="training-card"><span class="role-tag">LEVEL ${level} OF ${MAX_TROOP_LEVEL}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${next.hp}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${next.damage}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
       },

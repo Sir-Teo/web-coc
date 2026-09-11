@@ -74,6 +74,9 @@ test('factory construction and each completed upgrade unlock the next spell', as
   const id = await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall.level = 7;
+    m.state.buildings.find((b) => b.kind === 'elixirstorage').level = 11;
+    m.state.elixir = 1500000;
+    m.state.gems = 1000;
     m.placement = 'spellfactory';
     m.place(21, 23);
     const factory = m.state.buildings.find((b) => b.kind === 'spellfactory');

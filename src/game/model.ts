@@ -1,4 +1,5 @@
 import { campCapacity } from './camp-stats';
+import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
@@ -364,9 +365,12 @@ export class GameModel {
       .reduce((n, b) => n + campCapacity(b.level), 0);
   }
   get spellCapacity() {
+    return spellFactoryCapacity(facilityLevel(this.state.buildings, 'spellfactory'));
+  }
+  get laboratory() {
     return this.state.buildings
-      .filter((b) => b.kind === 'spellfactory' && !b.constructing)
-      .reduce((n, b) => n + b.level * 2, 0);
+      .filter((b) => b.kind === 'laboratory' && !b.constructing)
+      .reduce<Building | undefined>((best, b) => !best || b.level > best.level ? b : best, undefined);
   }
   get armySize() {
     return TROOP_KEYS.reduce((n, k) => n + this.state.army[k] * TROOPS[k].space, 0);
@@ -399,8 +403,9 @@ export class GameModel {
     return researchSeconds(kind, this.troopLevel(kind));
   }
   researchTroop(kind: TroopKind) {
-    const lab = this.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
-    if (!lab || lab.upgradeEnd) return this.notify('Your laboratory must be ready to research.');
+    if (this.battle) return;
+    const lab = this.laboratory;
+    if (!lab) return this.notify('Complete a laboratory before starting research.');
     if (!this.troopUnlocked(kind))
       return this.notify(
         `Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`,
@@ -569,7 +574,8 @@ export class GameModel {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
-        ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(b.kind) &&
+        (facilityProgression(b.kind, b.level) ||
+          ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(b.kind)) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);
@@ -745,7 +751,9 @@ export class GameModel {
       return this.notify(`Upgrade your Town Hall to unlock the ${d.name.toLowerCase()}.`);
     if (this.countOf(kind) >= limit)
       return this.notify(
-        `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`,
+        d.available.some((count) => count > limit)
+          ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
+          : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
@@ -977,8 +985,6 @@ export class GameModel {
     }
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b || b.upgradeEnd) return;
-    if (b.kind === 'laboratory' && this.state.research)
-      return this.notify('Finish troop research before upgrading the laboratory.');
     if (b.level >= BUILDINGS[b.kind].maxLevel)
       return this.notify('This building is at its maximum level.');
     if (b.level >= this.maxLevel(b.kind))

@@ -4,7 +4,7 @@ The supported roster now unlocks through completed army facilities. One shared t
 
 | Barracks level | Troop | Earliest local Town Hall |
 | --- | --- | --- |
-| 1 | Swordsman (Barbarian role) | 1 |
+| 1 | Barbarian | 1 |
 | 2 | Archer | 2 |
 | 3 | Giant | 2 |
 | 4 | Goblin | 2 |
@@ -20,6 +20,8 @@ The supported roster now unlocks through completed army facilities. One shared t
 
 The troop sequence and early Barracks caps were checked against [ClashDaddy's Barracks table](https://clashdaddy.com/barracks-max-levels-and-upgrade-cost-clash-of-clans). Its article is dated December 2023; its later roster and historical prices are not adopted here. The spell sequence and Town Hall requirements were checked against [CoC Guide's Spell Factory table](https://coc.guide/army/spell-forge). Sources inspected September 11, 2026. [Facility upgrade behavior](FACILITY-UPGRADES.md) separately documents the official production changes.
 
+The [facility progression audit](FACILITY-PROGRESSION.md) now provides native prices, timers, health and count gates. One Barracks is available from TH1, one Laboratory from TH3 and one Spell Factory from TH5. Multiple imported factories retain their buildings and prepared spells but use only the highest completed factory’s housing.
+
 ## Behavior
 
 - Initial construction grants no unlock. During an upgrade, the facility retains its completed level's unlocks; the new troop or spell becomes available when the upgrade finishes.
@@ -32,7 +34,7 @@ The troop sequence and early Barracks caps were checked against [ClashDaddy's Ba
 
 ## New villages
 
-New games start at Town Hall 2 with Barracks level 2, twelve Swordsmen and ten Archers, and no spells. The former prototype's Mortar, Air Defense, Laboratory, and level-2 Spell Factory are no longer prebuilt above their Town Hall requirements. Existing villages are unchanged. Advanced combat and presentation tests use an explicit developed-village fixture; initial village and onboarding tests continue to use the real starter.
+New games start at Town Hall 2 with Barracks level 2, twelve Barbarians and ten Archers, and no spells. The former prototype's Mortar, Air Defense, Laboratory, and level-2 Spell Factory are no longer prebuilt above their Town Hall requirements. Existing villages are unchanged. Advanced combat and presentation tests use an explicit developed-village fixture; initial village and onboarding tests continue to use the real starter.
 
 The starter's building counts and levels are checked against the progression tables. Its unmodified army can earn a victory in the first campaign raid without upgrades or spells.
 
