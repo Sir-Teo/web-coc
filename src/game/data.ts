@@ -1,3 +1,4 @@
+import { wallAsset } from './wall-art';
 import { BUILDING_LEVELS } from './progression';
 export type BuildingKind =
   | 'herohall'
@@ -403,7 +404,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     },
   },
   wall: {
-    name: 'Stone Wall',
+    name: 'Wall',
     description: 'Slows ground attackers and channels them toward your defenses.',
     size: 1,
     width: 47,
@@ -638,6 +639,7 @@ const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
+  if (kind === 'wall') return wallAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
   if (

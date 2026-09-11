@@ -27,4 +27,6 @@ Model tests cover straight rows, gaps and corners, mixed levels, stable same-lev
 
 Browser tests touch a real wall, select and upgrade its row, reload the purchase, adjust same-level quantities, wait for an available builder, upgrade a mixed row with gold then elixir, verify that Info upgrades only its displayed wall, and inspect every primary control on 320px portrait and 844px landscape phones. Label and cost use separate lines, with checks that both remain within each purchase button. Chromium and WebKit exercise these flows; WebKit CI includes the wall suite.
 
-Remaining wall work includes the full per-level wall artwork and connector system, live-game price/HP tables, Wall Rings and higher Town Hall content. Broader village and multiplayer requirements remain tracked separately.
+Remaining wall work includes higher-level artwork and closer native connection geometry, live-game price/HP tables, Wall Rings and higher Town Hall content. Broader village and multiplayer requirements remain tracked separately.
+
+Level 1–8 material artwork and shared placement/preview connections are documented in [WALL-ART.md](WALL-ART.md).

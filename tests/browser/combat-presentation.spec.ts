@@ -58,6 +58,12 @@ test('returning from a destroyed practice village restores every home building',
   const result = await page.evaluate(() => {
     const { model, scene } = window.__game;
     const before = model.state.buildings.map((b) => [b.id, b.hp]);
+    const presentation = () =>
+      model.state.buildings.map((b) => {
+        const s = scene.sprites.get(b.id)!;
+        return [b.id, s.texture.key, s.originX, s.originY, s.displayWidth, s.displayHeight];
+      });
+    const beforeArt = presentation();
     model.startBattle(0, true);
     for (const b of model.battle.buildings) model.damage(b, b.maxHp);
     scene.sync();
@@ -73,14 +79,15 @@ test('returning from a destroyed practice village restores every home building',
       rubble,
       remainingRuins: [...scene.sprites.values()].filter((s) => s.texture.key.startsWith('ruins-'))
         .length,
-      wrongOrigin: [...scene.sprites.values()].filter((s) => s.originY !== 0.88).length,
+      beforeArt,
+      afterArt: presentation(),
       groundCommands: scene.ruinGround.commandBuffer.length,
     };
   });
   expect(result.rubble).toBeGreaterThan(30);
   expect(result.after).toEqual(result.before);
   expect(result.remainingRuins).toBe(0);
-  expect(result.wrongOrigin).toBe(0);
+  expect(result.afterArt).toEqual(result.beforeArt);
   // Phaser clear() may retain its line/fill setup, but no scar drawing commands.
   expect(result.groundCommands).toBeLessThan(10);
 });

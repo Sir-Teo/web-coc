@@ -16,4 +16,6 @@ The anchored preview, Place/Cancel controls, keyboard shortcuts and collision me
 
 Model tests cover four-turn identity preservation, overlapping the row's old footprint, one blocked piece rejecting the whole transaction, obstacles and village bounds, stale sources, unchanged resources and IDs, preview reload/cancel, single-step edit undo/redo and battle guards. Browser checks exercise real wall selection, tap placement, rotation, dragging with an offset, blocked red previews, source/ghost visibility, persisted coordinates, edit-mode keyboard controls, and 44px controls on 320px portrait and 844px landscape screens. Existing wall-upgrade flows run alongside these checks.
 
-Remaining wall fidelity work includes full per-level art and connectors, live-game price/HP tables, Wall Rings and higher Town Hall content. Whole-village rotation and additional layout conveniences remain separate work.
+Remaining wall fidelity work includes higher-level art and closer native connection geometry, live-game price/HP tables, Wall Rings and higher Town Hall content. Whole-village rotation and additional layout conveniences remain separate work.
+
+Level 1–8 material artwork and shared placement/preview connections are documented in [WALL-ART.md](WALL-ART.md).

@@ -943,7 +943,7 @@ export class HUD {
           : 'Instant upgrade · Requires one free builder';
     return `<div class="building-context wall-context" data-anchor="${anchor.id}">
       <img class="context-art" src="${asset('wall', anchor.level)}" alt="">
-      <div class="context-info"><small>${m.wallAxis ? `WALL ROW ${m.wallAxis === 'x' ? '↘' : '↙'}` : 'WALLS'}</small><h2>${walls.length === 1 ? 'Stone Wall' : `${walls.length} Walls`}</h2><span>${levelText} · ${walls.length} selected</span></div>
+      <div class="context-info"><small>${m.wallAxis ? `WALL ROW ${m.wallAxis === 'x' ? '↘' : '↙'}` : 'WALLS'}</small><h2>${walls.length === 1 ? 'Wall' : `${walls.length} Walls`}</h2><span>${levelText} · ${walls.length} selected</span></div>
       <div class="wall-tools">${button('info', `${icon('Info', 17)} Info`, 'game-btn stone')}${walls.length === 1 ? button(`move:${anchor.id}`, `${icon('Move', 17)} Move`, 'game-btn stone') : button('wall-single', 'Single wall', 'game-btn stone')}${button('wall-row', `${icon('LayoutGrid', 17)} ${m.wallAxis ? 'Other row' : 'Select row'}`, 'game-btn stone', rowAvailable ? '' : 'disabled')}</div>
       ${m.wallAxis ? `<div class="wall-tools wall-row-move">${button('wall-move', `${icon('Move', 18)} Move row`, 'game-btn blue')}</div>` : ''}
       ${m.editing ? '' : m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}

@@ -24,6 +24,10 @@ The active background extends the original forest and river beyond the playable 
 
 1536×1024 transparent PNG, 4 columns × 2 rows. Premium chunky friendly 3D mobile strategy art, isometric southeast view, upper-left sunlight. Top row: blond mustachioed swordsman with blue sash and broad sword; magenta-haired female archer in green tunic with bow; massive bald ginger-bearded giant in brown leather tunic; blue-hooded black-bearded wizard with fireball. Full body, weapons fully visible. Bottom row: reinforced stone wall post with gold cap, three-conifer cluster, mossy boulder cluster, blue swallowtail flag. All independently isolated; no text, grid, background, or scenery beyond each prop.
 
+### Wall level progression — `art/source/walls-levels-v1-chroma.png`
+
+Eight original generated wall designs cover levels 1–8, with level-specific material connections in the renderer. The accepted sheet uses a cyan production matte because the initial generated transparency was a baked checkerboard. `scripts/wall-assets.mjs` exports clean RGBA frames with aligned feet and no matte spill; it runs in the normal asset pipeline. See [WALL-ART.md](WALL-ART.md) for references, export details and scope. The old wall post remains as an unused legacy asset; runtime walls now use the versioned `walls-v1/` directory.
+
 ### Walking animation — `art/source/walk-final.png`
 
 Production transparent RGBA sprite atlas. Four columns × four rows; each row is a four-frame walking cycle for one character. Row 1 blond mustachioed swordsman in blue sash and leather kilt with sword. Row 2 magenta-bob-haired green-tunic archer with bow. Row 3 massive bald ginger-bearded giant in brown sleeveless leather tunic. Row 4 blue-hooded black-bearded wizard with gold belt and small fireball. Warm upper-left light, isometric three-quarter facing lower-left. Consistent scale and foot baseline within each row. Four poses: left foot forward, passing, right foot forward, passing. All figures inside their cells with transparent margins. No checkerboard, opaque background, labels, or dividing lines.

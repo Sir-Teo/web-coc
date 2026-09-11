@@ -1,3 +1,4 @@
+import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
 import { OBSTACLES } from './obstacles';
 import Phaser from 'phaser';
 import {
@@ -97,6 +98,7 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     this.load.image('king', asset('king'));
     this.load.image('terrain', '/assets/environment/terrain-expanded-v2.webp');
     for (const material of ['stone', 'wood'])
@@ -588,25 +590,25 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      const texture =
-        b.level >= TIER3_LEVEL && b.kind !== 'wall' && !d.singleArtwork
+      const texture = b.kind === 'wall' ? wallTexture(b.level) :
+        b.level >= TIER3_LEVEL && !d.singleArtwork
           ? `${b.kind}-tier3`
           : b.kind;
       if (im.texture.key !== texture) im.setTexture(texture);
       const levelScale = b.kind === 'wall' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
       im.setPosition(p.x, p.y)
-        .setOrigin(0.5, 0.88)
+        .setOrigin(0.5, b.kind === 'wall' ? .84 : .88)
         .setFlipX(false)
         .setDisplaySize(
-          d.width * levelScale,
-          b.kind === 'wall' ? 39 : (d.width * levelScale * im.height) / im.width,
+          b.kind === 'wall' ? wallArt(b.level).height * .75 : d.width * levelScale,
+          b.kind === 'wall' ? wallArt(b.level).height : (d.width * levelScale * im.height) / im.width,
         )
         .setDepth(p.y);
       im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
       im.setData('intactHeight', im.displayHeight);
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL) im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL && b.kind !== 'wall') im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -665,15 +667,18 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     if (this.model.placement) {
-      if (this.ghost?.texture.key !== this.model.placement) {
+      const level = this.model.moving === null ? 1 : this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
+      const texture = this.model.placement === 'wall' ? wallTexture(level) : this.model.placement;
+      if (this.ghost?.texture.key !== texture) {
         this.ghost?.destroy();
         this.ghost = this.add
-          .image(0, 0, this.model.placement)
+          .image(0, 0, texture)
           .setOrigin(0.5, 0.88)
           .setAlpha(0.72)
           .setDepth(6001);
         const d = BUILDINGS[this.model.placement];
-        this.ghost.setDisplaySize(d.width, (d.width * this.ghost.height) / this.ghost.width);
+        if (this.model.placement === 'wall') this.ghost.setOrigin(.5, .84).setDisplaySize(wallArt(level).height * .75, wallArt(level).height);
+        else this.ghost.setDisplaySize(d.width, (d.width * this.ghost.height) / this.ghost.width);
       }
       this.updateGhost(this.input.activePointer);
     } else {
@@ -773,38 +778,53 @@ export class VillageScene extends Phaser.Scene {
   }
   syncWalls() {
     const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id));
-    const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y}`).join(';');
+    const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y},${b.level}`).join(';');
     if (signature === this.wallSignature) return;
     this.wallSignature = signature;
     for (const g of this.wallViews) g.destroy();
     this.wallViews = [];
     for (const b of walls) {
-      for (const [dx, dy] of [
-        [1, 0],
-        [0, 1],
-      ]) {
-        if (!walls.some((w) => w.x === b.x + dx && w.y === b.y + dy)) continue;
-        const p = iso(b.x + 0.5, b.y + 0.5),
-          q = iso(b.x + dx + 0.5, b.y + dy + 0.5);
-        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
-        const pts = [
-          new Phaser.Math.Vector2(p.x, p.y - 3),
-          new Phaser.Math.Vector2(q.x, q.y - 3),
-          new Phaser.Math.Vector2(q.x, q.y - 24),
-          new Phaser.Math.Vector2(p.x, p.y - 24),
-        ];
-        g.fillStyle(dx ? 0x9e9885 : 0x797967);
-        g.fillPoints(pts, true);
-        g.lineStyle(1, 0x5c5e51, 0.7);
-        g.strokePoints(pts, true);
-        g.lineStyle(2, 0xd3c5a0, 0.9);
-        g.lineBetween(p.x, p.y - 24, q.x, q.y - 24);
-        g.lineStyle(1, 0x605f50, 0.6);
-        g.lineBetween(p.x, p.y - 12, q.x, q.y - 12);
-        const mx = (p.x + q.x) / 2,
-          my = (p.y + q.y) / 2;
-        g.lineBetween(mx, my - 3, mx, my - 13);
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        const next = walls.find((w) => w.x === b.x + dx && w.y === b.y + dy);
+        if (!next) continue;
+        const p = iso(b.x + .5, b.y + .5), q = iso(next.x + .5, next.y + .5);
+        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - .5);
+        this.paintWallLink(g, p, q, b.level, next.level);
         this.wallViews.push(g);
+      }
+    }
+  }
+  /** Two material halves meet at the seam, including when neighbouring walls differ in level. */
+  private paintWallLink(g: Phaser.GameObjects.Graphics, p: Phaser.Math.Vector2, q: Phaser.Math.Vector2, fromLevel: number, toLevel: number, blocked = false) {
+    const a = wallArt(fromLevel), b = wallArt(toLevel);
+    const mid = new Phaser.Math.Vector2((p.x + q.x) / 2, (p.y + q.y) / 2);
+    const midHeight = (a.linkHeight + b.linkHeight) / 2;
+    const halves = [{ p, q: mid, art: a, h0: a.linkHeight, h1: midHeight }, { p: mid, q, art: b, h0: midHeight, h1: b.linkHeight }];
+    for (const half of halves) {
+      const { p, q, art, h0, h1 } = half;
+      const top0 = new Phaser.Math.Vector2(p.x, p.y - h0), top1 = new Phaser.Math.Vector2(q.x, q.y - h1);
+      const bottom0 = new Phaser.Math.Vector2(p.x, p.y - 2), bottom1 = new Phaser.Math.Vector2(q.x, q.y - 2);
+      const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, mh = (h0 + h1) / 2;
+      const jagged = art.material === 'crystal' || art.material === 'obsidian' || art.material === 'wood';
+      const peak = new Phaser.Math.Vector2(mx, my - mh - (art.material === 'crystal' ? 5 : 3));
+      const pts = jagged ? [bottom0, bottom1, top1, peak, top0] : [bottom0, bottom1, top1, top0];
+      g.fillStyle(blocked ? 0xc94e4e : q.x > p.x ? art.face : art.shade, .98).fillPoints(pts, true);
+      g.lineStyle(1, art.edge, .8).strokePoints(pts, true);
+      if (jagged) {
+        g.fillStyle(blocked ? 0xe77575 : art.top, .45).fillTriangle(mx, my - 2, peak.x, peak.y, top1.x, top1.y);
+        g.lineStyle(1, art.edge, .6).lineBetween(mx, my - 2, peak.x, peak.y);
+      } else {
+        g.lineStyle(3, blocked ? 0xe77575 : art.top, 1).lineBetween(top0.x, top0.y, top1.x, top1.y);
+        if (art.material === 'rubble' || art.material === 'stone') {
+          g.lineStyle(1, art.edge, .55).lineBetween(p.x, p.y - h0 / 2, q.x, q.y - h1 / 2);
+          g.lineBetween(mx, my - 2, mx, my - mh / 2);
+        } else {
+          g.lineStyle(1, art.top, .5).lineBetween(mx, my - 3, mx, my - mh + 3);
+        }
+      }
+      if (art.material === 'wood') {
+        g.lineStyle(2, 0xd9b76f, .9).lineBetween(p.x, p.y - h0 * .35, q.x, q.y - h1 * .35);
+        g.lineBetween(p.x, p.y - h0 * .7, q.x, q.y - h1 * .7);
       }
     }
   }
@@ -814,20 +834,21 @@ export class VillageScene extends Phaser.Scene {
     for (const [id, im] of this.wallGhosts) if (!ids.has(id)) { im.destroy(); this.wallGhosts.delete(id); }
     this.wallGhostLinks?.clear();
     if (!preview.length) { this.wallGhostLinks?.destroy(); this.wallGhostLinks = undefined; return; }
-    const color = this.model.wallPlacementIssue ? 0xff7272 : 0xb9ed86;
+    const blocked = !!this.model.wallPlacementIssue;
+    const color = blocked ? 0xff7272 : 0xffffff;
     const g = this.wallGhostLinks ??= this.add.graphics().setDepth(6000);
     for (const w of preview) {
       const p = iso(w.x + .5, w.y + .5);
       let im = this.wallGhosts.get(w.id);
       if (!im) { im = this.add.image(0, 0, 'wall').setOrigin(.5, .88); this.wallGhosts.set(w.id, im); }
-      im.setPosition(p.x, p.y).setDisplaySize(BUILDINGS.wall.width, 39).setDepth(6001 + p.y / 10000).setTint(color).setAlpha(.85);
+      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level, art = wallArt(level);
+      im.setTexture(wallTexture(level)).setOrigin(.5, .84).setPosition(p.x, p.y).setDisplaySize(art.height * .75, art.height).setDepth(6001 + p.y / 10000).setTint(color).setAlpha(.85);
       for (const [dx, dy] of [[1, 0], [0, 1]]) {
-        if (!preview.some((v) => v.x === w.x + dx && v.y === w.y + dy)) continue;
-        const q = iso(w.x + dx + .5, w.y + dy + .5);
-        const pts = [new Phaser.Math.Vector2(p.x, p.y - 3), new Phaser.Math.Vector2(q.x, q.y - 3), new Phaser.Math.Vector2(q.x, q.y - 24), new Phaser.Math.Vector2(p.x, p.y - 24)];
-        g.fillStyle(color, .7).fillPoints(pts, true);
-        g.lineStyle(1, 0x514d3e, .7).strokePoints(pts, true);
-        g.lineBetween(p.x, p.y - 12, q.x, q.y - 12);
+        const next = preview.find((v) => v.x === w.x + dx && v.y === w.y + dy);
+        if (!next) continue;
+        const q = iso(next.x + .5, next.y + .5);
+        const nextLevel = this.model.state.buildings.find((b) => b.id === next.id)!.level;
+        this.paintWallLink(g, p, q, level, nextLevel, blocked);
       }
     }
   }
@@ -842,7 +863,7 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined)
-        ? 0xd9ffb0
+        ? this.model.placement === 'wall' ? 0xffffff : 0xd9ffb0
         : 0xff7272,
     );
   }

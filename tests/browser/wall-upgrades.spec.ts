@@ -11,7 +11,7 @@ async function selectWall(page: Page) {
     return scene.screenFor(w.x + 0.5, w.y + 0.5);
   });
   await page.touchscreen.tap(point.x, point.y);
-  await expect(page.locator('.wall-context h2')).toHaveText('Stone Wall');
+  await expect(page.locator('.wall-context h2')).toHaveText('Wall');
   await expect
     .poll(() =>
       page
@@ -86,7 +86,7 @@ test('same-level controls respect the budget and wait for a free builder', async
   await expect(page.locator('.wall-context h2')).toHaveText('11 Walls');
   await expect(page.locator('[data-action="wall-count:1"]')).toBeDisabled();
   await page.locator('[data-action="wall-count:-10"]').tap();
-  await expect(page.locator('.wall-context h2')).toHaveText('Stone Wall');
+  await expect(page.locator('.wall-context h2')).toHaveText('Wall');
   await page.locator('[data-action="wall-count:10"]').tap();
   const ids = await page.evaluate(() => {
     const m = window.__game.model;
