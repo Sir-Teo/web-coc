@@ -78,6 +78,7 @@ async function boot() {
     }
   });
   scene.onReady = () => {
+    hud.showMapUpgrade();
     void saveGame(model.state);
   };
   // Structured browser QA surface; no renderer internals in saved data.

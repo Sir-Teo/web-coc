@@ -125,16 +125,25 @@ describe('the air layer', () => {
       true,
     );
   });
-  it('a ground troop is stopped by the same wall', () => {
+  it('a ground troop stops at an intact wall and proceeds only after breaking it', () => {
     const m = new GameModel();
     const walls: [Parameters<typeof makeBuilding>[1], number, number, number][] = [];
     for (let y = 6; y <= 18; y++) walls.push(['wall', 12, y, 1]);
     const battle = arena(m, [['townhall', 16, 11, 1], ...walls]);
     m.activeTroop = 'swordsman';
     m.deploy(6, 12);
-    for (let i = 0; i < 120; i++) m.step(0.05);
-    expect(battle.units[0].x).toBeLessThan(12);
-    expect(battle.buildings.some((b) => b.kind === 'wall' && b.hp < b.maxHp)).toBe(true);
+    let attackedIntactWall = false;
+    for (let i = 0; i < 120; i++) {
+      m.step(0.05);
+      if (battle.buildings.some((b) => b.kind === 'wall' && b.hp > 0 && b.hp < b.maxHp)) {
+        attackedIntactWall = true;
+        expect(battle.units[0].x).toBeLessThan(12);
+      }
+      if (battle.units[0].x >= 12)
+        expect(battle.buildings.some((b) => b.kind === 'wall' && b.hp === 0)).toBe(true);
+    }
+    expect(attackedIntactWall).toBe(true);
+    expect(battle.units[0].x).toBeGreaterThan(12);
   });
 });
 
@@ -162,8 +171,8 @@ describe('spells', () => {
     const m = new GameModel();
     m.state.spells = { rage: 0, heal: 0, lightning: 1 };
     const battle = arena(m, [
-      ['cannon', 10, 10, 3],
-      ['cannon', 11, 12, 3],
+      ['cannon', 10, 10, 4],
+      ['cannon', 11, 12, 4],
       ['cannon', 22, 22, 1],
     ]);
     battle.spells = { rage: 0, heal: 0, lightning: 1 };
@@ -253,7 +262,7 @@ describe('town hall gating and stretched timers', () => {
     expect(m.maxCount('airdefense')).toBe(2);
   });
   it('scales upgrade timers and prices gems on the Clash curve', () => {
-    expect(upgradeSeconds('cannon', 1)).toBe(120);
+    expect(upgradeSeconds('cannon', 1)).toBe(30);
     expect(upgradeSeconds('cannon', 5)).toBeGreaterThan(upgradeSeconds('cannon', 4));
     expect(upgradeSeconds('townhall', 7)).toBeGreaterThan(3600);
     expect(gemCost(30)).toBe(1);
@@ -398,8 +407,9 @@ describe('second-pass behaviour', () => {
     expect(m.state.buildings.filter((b) => b.kind === 'wall').length).toBeGreaterThan(2);
     m.state.gold = BUILDINGS.wall.cost;
     expect(m.place(4, 2)).toBe(true);
-    // Out of gold: the tool is put down rather than left armed on a dead action.
-    expect(m.placement).toBeNull();
+    // New walls are free; the tool stays armed even with an empty treasury.
+    expect(m.state.gold).toBe(0);
+    expect(m.placement).toBe('wall');
   });
   it('a felled balloon damages the buildings around it, once', () => {
     const m = new GameModel(developedSave());

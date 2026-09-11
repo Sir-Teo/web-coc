@@ -6,10 +6,10 @@ Wall selection now supports connected straight rows and groups of same-level wal
 
 - Supercell's [February 10, 2025 update](https://supercell.com/en/games/clashofclans/blog/news/get-geared-up-for-the-latest-update--3/) added selection of multiple same-level walls, with increments of one or ten and a resource/availability limit. The local controls provide +1, +10, −1 and −10. Adding walls is limited by matching pieces and the balance of an eligible resource; removing pieces retains the anchor.
 - The [Home Village wall reference](https://clashofclans.fandom.com/wiki/Wall/Home_Village?page=3) describes instant wall construction and upgrades, the free-builder requirement for resource purchases, and upgrading the eligible pieces in a selected row. A row here follows one grid axis, stops at gaps and never turns around corners. At an intersection, Other row switches direction. Same-level additions prefer nearby walls, with ID as a stable tie-breaker; that ordering is a local interaction choice.
-- The [wall reference](https://clashofclans.fandom.com/wiki/Wall) documents elixir eligibility once every selected piece is at least level 5. Mixed rows containing a lower-level wall offer gold until that wall reaches level 5.
+- [Supercell’s June 26, 2022 announcement](https://supercell.com/en/games/clashofclans/blog/news/home-village-changes-2/) unlocks elixir Wall upgrades at TH5. The modern Wall table starts elixir at destination level 5, so each selected piece must already be at least level 4. This supersedes the wiki’s stale row-upgrade prose. Mixed rows containing a lower-level wall offer gold until that wall reaches level 4.
 - Supercell's [August 30, 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/) specifically removes the free-builder requirement for **Wall Rings**. It does not make ordinary gold/elixir upgrades builder-free. Wall Rings are not implemented here.
 
-Sources checked September 11, 2026; the community wall pages were available through indexed excerpts. Existing local wall prices, HP and Town Hall ceilings remain in use. This change does not claim live-game price or per-level artwork parity.
+Sources checked September 11, 2026; the community wall pages were available through indexed excerpts. Current prices, health and count limits are documented in [WALL-PROGRESSION.md](WALL-PROGRESSION.md); new placement is free. Eight original level sprites are documented in [WALL-ART.md](WALL-ART.md).
 
 ## Purchase and selection rules
 

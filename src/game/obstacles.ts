@@ -1,3 +1,4 @@
+import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
 import { BUILDINGS } from './data';
 import type { Building } from './model';
 
@@ -49,6 +50,7 @@ export function initialObstacles(buildings: readonly Building[]): Obstacle[] {
 export function validObstacles(
   value: unknown,
   buildings: readonly Building[],
+  legacy = false,
 ): value is Obstacle[] {
   if (!Array.isArray(value) || value.length > OBSTACLE_LIMIT) return false;
   const ids = new Set<number>();
@@ -64,8 +66,8 @@ export function validObstacles(
       !Number.isInteger(o.y) ||
       o.x < 0 ||
       o.y < 0 ||
-      o.x + 2 > 28 ||
-      o.y + 2 > 28
+      o.x + 2 > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
+      o.y + 2 > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE)
     )
       return false;
     if (o.removeEnd !== undefined || o.removeStart !== undefined) {
@@ -78,7 +80,7 @@ export function validObstacles(
       )
         return false;
     }
-    if (buildings.some((b) => overlapsObstacle([o], b.x, b.y, BUILDINGS[b.kind].size)))
+    if (buildings.some((b) => overlapsObstacle([o], b.x, b.y, legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size)))
       return false;
     if (
       overlapsObstacle(
@@ -136,8 +138,8 @@ export function treeGrowthSites(buildings: readonly Building[], obstacles: reado
     ...obstacles.map((o) => ({ x: o.x, y: o.y, size: OBSTACLES[o.kind].size })),
   ];
   const sites: { x: number; y: number }[] = [];
-  for (let y = 0; y <= 26; y++) {
-    for (let x = 0; x <= 26; x++) {
+  for (let y = 0; y <= MAP_SIZE - 2; y++) {
+    for (let x = 0; x <= MAP_SIZE - 2; x++) {
       if (
         !occupied.some(
           (o) => x < o.x + o.size + 1 && x + 3 > o.x && y < o.y + o.size + 1 && y + 3 > o.y,

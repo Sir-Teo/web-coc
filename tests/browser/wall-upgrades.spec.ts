@@ -113,17 +113,17 @@ test('same-level controls respect the budget and wait for a free builder', async
   ).toEqual(Array(11).fill(3));
 });
 
-test('mixed rows disclose capped walls and unlock elixir after every piece reaches level five', async ({
+test('mixed rows disclose capped walls and unlock elixir after every piece reaches level four', async ({
   page,
 }) => {
   await page.evaluate(() => {
     const m = window.__game.model;
-    m.state.elixir = 200000; // Four eligible pieces cost 180,000 on the second upgrade.
+    m.state.elixir = 200000; // Four eligible pieces cost 110,000 on the second upgrade.
     const row = m.state.buildings
       .filter((b) => b.kind === 'wall' && b.y === 19 && b.x <= 12)
       .sort((a, b) => a.x - b.x);
     row.forEach((b, i) => {
-      b.level = [5, 5, 4, 8, 5][i];
+      b.level = [4, 4, 3, 8, 4][i];
       b.hp = b.maxHp = 500 * (1 + (b.level - 1) * 0.25);
     });
     m.changed();
@@ -150,7 +150,7 @@ test('mixed rows disclose capped walls and unlock elixir after every piece reach
   );
   expect(
     await page.evaluate(() => window.__game.model.selectedWalls.map((b) => b.level).sort()),
-  ).toEqual([6, 7, 7, 7, 8]);
+  ).toEqual([5, 6, 6, 6, 8]);
 });
 
 test('wall tools keep resource costs and touch controls reachable on narrow and landscape phones', async ({

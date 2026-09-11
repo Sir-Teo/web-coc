@@ -1,8 +1,9 @@
+import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
 import { BUILDINGS, CAMPAIGN, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 9;
+export const REPLAY_VERSION = 12;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -108,14 +109,17 @@ export function validateReplay(value: unknown): value is ReplayData {
   )
     return false;
   const ids = new Set<number>();
+  const legacyGrid = value.version < 12;
+  const mapSize = legacyGrid ? LEGACY_MAP_SIZE : MAP_SIZE;
   for (const b of s.buildings) {
     if (!object(b) || !Object.hasOwn(BUILDINGS, b.kind)) return false;
     const d = BUILDINGS[b.kind as keyof typeof BUILDINGS];
+    const size = legacyGrid ? legacySize(b.kind, d.size) : d.size;
     if (
       !integer(b.id, 1, Number.MAX_SAFE_INTEGER) ||
       ids.has(b.id) ||
-      !integer(b.x, 0, 28 - d.size) ||
-      !integer(b.y, 0, 28 - d.size) ||
+      !integer(b.x, 0, mapSize - size) ||
+      !integer(b.y, 0, mapSize - size) ||
       !integer(b.level, 1, d.maxLevel) ||
       !number(b.maxHp, 1, 1e9) ||
       b.hp !== b.maxHp ||
@@ -147,7 +151,7 @@ export function validateReplay(value: unknown): value is ReplayData {
     } else if (a.type === 'ability') {
       if (!s.hero) return false;
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
-      if (!number(a.x, 0, 28) || !number(a.y, 0, 28)) return false;
+      if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !TROOP_KEYS.includes(a.kind)) return false;
       if (a.type === 'spell' && !SPELL_KEYS.includes(a.kind)) return false;
       if (a.type === 'hero' && !s.hero) return false;

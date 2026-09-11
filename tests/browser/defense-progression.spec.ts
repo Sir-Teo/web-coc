@@ -8,11 +8,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
-  ['cannon', 470, 520, 4000, 600, '10m', 3],
-  ['archertower', 420, 460, 5000, 2700, '45m', 3],
-  ['mortar', 450, 500, 100000, 14400, '4h', 5],
-  ['airdefense', 850, 900, 270000, 36000, '10h', 5],
-  ['wizardtower', 650, 680, 400000, 21600, '6h', 6],
+  ['cannon', 360, 420, 4000, 120, '2m', 3],
+  ['archertower', 420, 460, 5000, 1200, '20m', 3],
+  ['mortar', 450, 500, 90000, 7200, '2h', 5],
+  ['airdefense', 850, 900, 210000, 21600, '6h', 5],
+  ['wizardtower', 650, 680, 250000, 14400, '4h', 6],
 ] as const) {
   test(`${kind} Info and saved timer agree with the destination level`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -62,10 +62,10 @@ for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
             }
           : kind === 'cannon'
             ? {
-                dps: '11',
-                nextDps: '15',
-                hit: '8.8',
-                nextHit: '12',
+                dps: '10',
+                nextDps: '13',
+                hit: '8',
+                nextHit: '10.4',
                 range: '9 tiles',
                 rate: '0.8s',
               }
@@ -109,7 +109,7 @@ for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
     await expect(page.locator('.info-cost')).toContainText(cost.toLocaleString('en-US'));
     await expect(page.locator('.info-cost')).toContainText(label);
     await page.screenshot({
-      path: `output/playtest/${kind}-progression-${test.info().project.name}.png`,
+      path: `output/playtest/${kind}-progression-${test.info().project.name || 'chromium'}.png`,
       animations: 'disabled',
     });
     await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
@@ -189,7 +189,7 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(page.locator('[data-action="build:cannon"]')).toContainText('250');
   await expect(tile('wizardtower')).toContainText('0/1');
   await expect(page.locator('[data-action="build:wizardtower"]')).toBeEnabled();
-  await expect(page.locator('[data-action="build:wizardtower"]')).toContainText('120,000');
+  await expect(page.locator('[data-action="build:wizardtower"]')).toContainText('100,000');
 });
 
 test('older combat recordings retain the result and explain why playback is unavailable', async ({
@@ -212,4 +212,81 @@ test('older combat recordings retain the result and explain why playback is unav
   );
   await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toHaveCount(0);
   await expect(page.locator('.raid-score')).toContainText('0%');
+});
+
+test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the TH2 gate', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    const { model: m, scene } = window.__game;
+    m.townhall.level = 1;
+    const first = m.state.buildings.find((b) => b.kind === 'cannon');
+    m.state.buildings = m.state.buildings.filter((b) => b.kind !== 'cannon' || b.id === first.id);
+    m.state.obstacles = [];
+    m.state.gold = 250;
+    m.changed();
+    scene.cameras.main.centerOn(896, 208);
+  });
+  await page.locator('.shop-btn').click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  const buy = page.locator('[data-action="build:cannon"]');
+  await expect(buy).toBeEnabled();
+  await expect(buy).toHaveText(/250/);
+  await buy.click();
+  const p = await page.evaluate(() => window.__game.scene.screenFor(3, 3));
+  await page.mouse.click(p.x, p.y);
+  const id = await page.evaluate(() => {
+    const m = window.__game.model,
+      b = m.state.buildings.at(-1);
+    if (b.kind !== 'cannon' || b.upgradeEnd - b.upgradeStart !== 5000)
+      throw Error('Wrong Cannon construction');
+    m.tick(b.upgradeEnd);
+    m.state.gold = 1000;
+    m.selected = b.id;
+    m.changed();
+    return b.id;
+  });
+  await page
+    .locator('.building-context')
+    .getByRole('button', { name: 'Info', exact: true })
+    .click();
+  await expect(page.locator('.info-cost')).toContainText('30s');
+  await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
+  const end = await page.evaluate((id) => {
+    const m = window.__game.model,
+      b = m.state.buildings.find((b) => b.id === id);
+    if (m.state.gold !== 0 || b.upgradeEnd - b.upgradeStart !== 30000)
+      throw Error('Wrong Cannon upgrade');
+    return b.upgradeEnd;
+  }, id);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.evaluate(
+    ({ id, end }) => {
+      const m = window.__game.model,
+        b = m.state.buildings.find((b) => b.id === id);
+      if (b.upgradeEnd !== end) throw Error('Paid deadline changed');
+      m.tick(end);
+      m.state.gold = 4000;
+      m.selected = id;
+      m.changed();
+    },
+    { id, end },
+  );
+  await page
+    .locator('.building-context')
+    .getByRole('button', { name: 'Info', exact: true })
+    .click();
+  await expect(page.locator('.info-body')).toContainText('Town Hall 2');
+  await expect(page.locator('.info-cost')).toHaveCount(0);
+  await page.screenshot({
+    path: `output/playtest/th1-cannon-gate-${test.info().project.name || 'chromium'}.png`,
+    animations: 'disabled',
+  });
+  await page.locator('[data-action="close"]').click();
+  await page.locator('.shop-btn').click();
+  await page.locator('[data-action="tab:Defenses"]').click();
+  await expect(buy).toBeDisabled();
+  await expect(buy).toHaveText('At limit');
 });

@@ -8,7 +8,7 @@ CoC Guide's trap pages contain stale values: its Spring Trap still ends at level
 
 The Bomb wiki's prose says a one-tile trigger but its statistics table says 1.5; CoC Guide also says 1.5. This pass retains 1.5 and uses the documented 1.5-second fuse. Spring Trap uses the modern one-tile trigger and no activation delay, following the release notes over the wiki's older delay paragraph. Exact physical-device timing remains a verification gap.
 
-This discrepancy also makes the earlier CoC Guide-only defense economy audits insufficient evidence of current price/time parity. Their shared tables remain implemented and tested, but require a fresh cross-source economy audit; do not treat their green tests as proof of current live values.
+This discrepancy prompted a [new defense source audit](DEFENSE-SOURCE-AUDIT.md). The five tower tables now use the newer costs/times, and low-level Cannon health/damage follows the official June 2025 changes. Earlier passing test counts only validate the tables implemented at that milestone.
 
 ## Bomb
 

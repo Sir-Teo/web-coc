@@ -1,23 +1,23 @@
 # Air Defense and Wizard Tower progression
 
-Source freshness follow-up: newer trap references expose stale CoC Guide economy data. These implemented defense tables need a current cross-source price/time re-audit; see [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md#source-reconciliation).
+Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
-Audited September 11, 2026 using the undiscounted [Air Defense](https://coc.guide/defense/air-defense) and [Wizard Tower](https://coc.guide/defense/wizard-tower) tables. Costs and times apply to reaching the listed level. No event or Gold Pass reduction is applied.
+Sources: [Air Defense](https://clashofclans.fandom.com/wiki/Air_Defense) and [Wizard Tower](https://clashofclans.fandom.com/wiki/Wizard_Tower).
 
 ## Air Defense
 
 | Level | Gold | Time | HP | DPS / damage per rocket |
 | --- | ---: | --- | ---: | ---: |
-| 1 | 22,000 | 3h | 800 | 80 |
-| 2 | 90,000 | 6h | 850 | 110 |
-| 3 | 270,000 | 10h | 900 | 140 |
-| 4 | 500,000 | 16h | 950 | 160 |
-| 5 | 800,000 | 1d | 1,000 | 190 |
-| 6 | 1,000,000 | 1d 12h | 1,050 | 230 |
+| 1 | 22,000 | 1h | 800 | 80 |
+| 2 | 90,000 | 2h | 850 | 110 |
+| 3 | 210,000 | 6h | 900 | 140 |
+| 4 | 500,000 | 12h | 950 | 160 |
+| 5 | 800,000 | 18h | 1,000 | 190 |
+| 6 | 1,000,000 | 1d | 1,050 | 230 |
 | 7 (legacy) | 1,750,000 | 2d | 1,100 | 280 |
 | 8 (legacy) | 2,300,000 | 2d 12h | 1,210 | 320 |
 | 9 (legacy) | 3,400,000 | 3d | 1,300 | 360 |
-| 10 (legacy) | 5,800,000 | 4d | 1,400 | 400 |
+| 10 (legacy) | 5,000,000 | 4d | 1,400 | 400 |
 
 Counts at TH1–8: **0, 0, 0, 1, 1, 2, 3, 3**. Level ceilings: **0, 0, 0, 2, 3, 4, 5, 6**. Fires every **1 second**, has **10-tile range**, and hits a single airborne target. The existing 3×3 footprint is retained.
 
@@ -25,14 +25,14 @@ Counts at TH1–8: **0, 0, 0, 1, 1, 2, 3, 3**. Level ceilings: **0, 0, 0, 2, 3, 
 
 | Level | Gold | Time | HP | DPS | Damage per shot |
 | --- | ---: | --- | ---: | ---: | ---: |
-| 1 | 120,000 | 2h | 620 | 11 | 14.3 |
-| 2 | 220,000 | 3h | 650 | 13 | 16.9 |
-| 3 | 400,000 | 6h | 680 | 16 | 20.8 |
-| 4 | 540,000 | 12h | 730 | 20 | 26 |
-| 5 | 700,000 | 18h | 840 | 24 | 31.2 |
-| 6 | 1,000,000 | 1d | 960 | 32 | 41.6 |
-| 7 (legacy) | 1,500,000 | 1d 12h | 1,200 | 40 | 52 |
-| 8 (legacy) | 1,600,000 | 1d 18h | 1,440 | 45 | 58.5 |
+| 1 | 100,000 | 1h | 620 | 11 | 14.3 |
+| 2 | 150,000 | 1h 30m | 650 | 13 | 16.9 |
+| 3 | 250,000 | 4h | 680 | 16 | 20.8 |
+| 4 | 400,000 | 8h | 730 | 20 | 26 |
+| 5 | 550,000 | 10h | 840 | 24 | 31.2 |
+| 6 | 660,000 | 12h | 960 | 32 | 41.6 |
+| 7 (legacy) | 1,000,000 | 18h | 1,200 | 40 | 52 |
+| 8 (legacy) | 1,100,000 | 20h | 1,440 | 45 | 58.5 |
 
 Counts at TH1–8: **0, 0, 0, 0, 1, 2, 2, 3**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained.
 

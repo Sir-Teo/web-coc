@@ -53,9 +53,9 @@ describe('wall row movement', () => {
     const before = JSON.stringify(m.state);
     for (const [x, y] of [
       [2, 2],
-      [25, 2],
+      [45, 2],
       [3, 1],
-      [3, 26],
+      [3, 46],
       [m.townhall!.x, m.townhall!.y],
     ]) {
       m.previewWallMove(x, y);

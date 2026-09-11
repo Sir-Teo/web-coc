@@ -1,3 +1,4 @@
+import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
 import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
@@ -105,7 +106,8 @@ export interface RaidRecord {
   replay?: ReplayData;
 }
 export interface Save {
-  version: 2;
+  version: 3;
+  mapUpgrade?: { moved: number };
   dark: number;
   king?: HeroProgress;
   gold: number;
@@ -724,10 +726,10 @@ export class GameModel {
     if (
       !Number.isInteger(x) ||
       !Number.isInteger(y) ||
-      x < 2 ||
-      y < 2 ||
-      x + size > 26 ||
-      y + size > 26
+      x < BUILD_MIN ||
+      y < BUILD_MIN ||
+      x + size > BUILD_MAX ||
+      y + size > BUILD_MAX
     )
       return false;
     if (overlapsObstacle(this.obstacles, x, y, size)) return false;
@@ -847,7 +849,7 @@ export class GameModel {
     if (count < 1) return false;
     if (delta < 0) return true;
     if (anchor.level >= this.maxLevel('wall')) return false;
-    const funds = Math.max(this.state.gold, anchor.level >= 5 ? this.state.elixir : 0);
+    const funds = Math.max(this.state.gold, anchor.level >= 4 ? this.state.elixir : 0);
     return (
       count <= matchingWalls(this.state.buildings, anchor.id).length &&
       count * this.upgradeCost(anchor) <= funds
@@ -881,8 +883,8 @@ export class GameModel {
         ? 'Select walls in your village.'
         : !walls.length
           ? 'These walls are at the maximum for your Town Hall.'
-          : resource === 'elixir' && selected.some((b) => b!.level < 5)
-            ? 'Elixir upgrades require every selected wall to be level 5 or higher.'
+          : resource === 'elixir' && selected.some((b) => b!.level < 4)
+            ? 'Elixir upgrades start at wall level 4 → 5. Upgrade lower-level walls with gold first.'
             : this.busy >= this.builders
               ? 'A free builder is needed for instant wall upgrades.'
               : this.state[resource] < cost
@@ -1048,7 +1050,7 @@ export class GameModel {
     for (let i = 0; i < placed.length; i++) {
       const v = placed[i],
         size = BUILDINGS[v.kind].size;
-      if (v.x < 0 || v.y < 0 || v.x + size > 28 || v.y + size > 28) return false;
+      if (v.x < 0 || v.y < 0 || v.x + size > MAP_SIZE || v.y + size > MAP_SIZE) return false;
       for (let j = i + 1; j < placed.length; j++) {
         const o = placed[j];
         if (
@@ -1488,7 +1490,10 @@ export class GameModel {
   deployBlocked(x: number, y: number) {
     const b = this.battle;
     if (!b) return true;
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 1 || y < 1 || x > 27 || y > 27)
+    if (
+      !Number.isFinite(x) || !Number.isFinite(y) ||
+      x < 1 || y < 1 || x > MAP_SIZE - 1 || y > MAP_SIZE - 1
+    )
       return true;
     return b.buildings.some(
       (v) =>
@@ -1550,7 +1555,7 @@ export class GameModel {
     const b = this.battle,
       k = this.activeSpell;
     if (!b || b.finished || !k || b.spells[k] <= 0) return false;
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > 28 || y > 28)
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > MAP_SIZE || y > MAP_SIZE)
       return false;
     this.recordAction({ type: 'spell', kind: k, x, y });
     this.beginFight();
@@ -2319,7 +2324,7 @@ export function initialSave(): Save {
   add('townhall', 11, 10, 2);
   add('goldstorage', 9, 14, 2);
   add('elixirstorage', 15, 10, 2);
-  add('cannon', 9, 10, 2);
+  add('cannon', 12, 14, 2);
   add('archertower', 15, 15, 2);
   add('barracks', 4, 15, 2);
   add('camp', 10, 21);
@@ -2356,7 +2361,7 @@ export function initialSave(): Save {
       ),
   );
   return {
-    version: 2,
+    version: 3,
     dark: 0,
     gold: 205000,
     elixir: 165000,
@@ -2413,7 +2418,7 @@ export function findPath(
   buildings: Building[],
   range: number,
 ): { x: number; y: number }[] {
-  const size = 28,
+  const size = MAP_SIZE,
     blocked = new Uint8Array(size * size),
     wall = new Uint8Array(size * size);
   for (const b of buildings) {
@@ -2424,8 +2429,8 @@ export function findPath(
         else blocked[y * size + x] = 1;
       }
   }
-  const sx = Math.max(0, Math.min(27, Math.floor(start.x))),
-    sy = Math.max(0, Math.min(27, Math.floor(start.y))),
+  const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
+    sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
     first = sy * size + sx;
   const cost = new Float64Array(size * size).fill(Infinity),
     prev = new Int16Array(size * size).fill(-1),
@@ -2488,12 +2493,12 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
     if (b.hp > 0 && !isTrap(b.kind)) {
       const size = BUILDINGS[b.kind].size;
       for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) solid.add(y * 28 + x);
+        for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
     }
   const buckets = new Map<number, Unit[]>();
   const alive = units.filter((u) => u.hp > 0);
   for (const u of alive) {
-    const key = Math.floor(u.y) * 28 + Math.floor(u.x);
+    const key = Math.floor(u.y) * MAP_SIZE + Math.floor(u.x);
     const bucket = buckets.get(key) ?? [];
     bucket.push(u);
     buckets.set(key, bucket);
@@ -2502,9 +2507,9 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
   const free = (u: Unit, x: number, y: number) =>
     x >= 0.1 &&
     y >= 0.1 &&
-    x < 27.9 &&
-    y < 27.9 &&
-    (!!TROOPS[u.kind].flying || !solid.has(Math.floor(y) * 28 + Math.floor(x)));
+    x < MAP_SIZE - 0.1 &&
+    y < MAP_SIZE - 0.1 &&
+    (!!TROOPS[u.kind].flying || !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x)));
   for (const u of alive) {
     const cx = Math.floor(u.x),
       cy = Math.floor(u.y);
@@ -2512,9 +2517,9 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
       for (let ox = -1; ox <= 1; ox++) {
         const nx = cx + ox,
           ny = cy + oy;
-        // A flat index wraps at the row edges; column 0 must not neighbour column 27.
-        if (nx < 0 || nx > 27 || ny < 0 || ny > 27) continue;
-        for (const v of buckets.get(ny * 28 + nx) ?? []) {
+        // A flat index wraps at the row edges; column 0 must not neighbour the last column.
+        if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
+        for (const v of buckets.get(ny * MAP_SIZE + nx) ?? []) {
           if (v.id <= u.id) continue;
           if (!!TROOPS[u.kind].flying !== !!TROOPS[v.kind].flying) continue;
           const spacing = (u.kind === 'giant' ? 0.85 : 0.5) + (v.kind === 'giant' ? 0.85 : 0.5);

@@ -101,6 +101,7 @@ test('imports an older village backup and preserves its gold and existing army',
 }) => {
   const backup = await page.evaluate(() => {
     const s = structuredClone(window.__game.model.state);
+    s.version = 2;
     delete s.army.goblin;
     delete s.army.wallbreaker;
     s.gold = 4321;

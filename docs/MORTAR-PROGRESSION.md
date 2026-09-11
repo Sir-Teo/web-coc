@@ -1,21 +1,21 @@
 # Mortar progression and normal-mode combat
 
-Source freshness follow-up: newer trap references expose stale CoC Guide economy data. These implemented defense tables need a current cross-source price/time re-audit; see [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md#source-reconciliation).
+Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
-Audited September 11, 2026 against the undiscounted [Mortar reference](https://coc.guide/defense/mortar). Prices and times apply to reaching the listed level. No event or Gold Pass discount is included.
+Source: [Mortar](https://clashofclans.fandom.com/wiki/Mortar).
 
 | Level | Gold | Time | HP | DPS | Damage per shell |
 | --- | ---: | --- | ---: | ---: | ---: |
-| 1 | 5,000 | 2h | 400 | 4 | 20 |
-| 2 | 25,000 | 3h | 450 | 5 | 25 |
-| 3 | 100,000 | 4h | 500 | 6 | 30 |
-| 4 | 200,000 | 6h | 550 | 7 | 35 |
-| 5 | 300,000 | 12h | 600 | 9 | 45 |
-| 6 | 560,000 | 18h | 650 | 11 | 55 |
-| 7 (legacy) | 1,300,000 | 1d | 700 | 15 | 75 |
-| 8 (legacy) | 1,900,000 | 1d 12h | 800 | 20 | 100 |
-| 9 (legacy) | 2,500,000 | 1d 18h | 950 | 25 | 125 |
-| 10 (legacy) | 3,500,000 | 2d | 1,100 | 30 | 150 |
+| 1 | 5,000 | 30m | 400 | 4 | 20 |
+| 2 | 25,000 | 1h | 450 | 5 | 25 |
+| 3 | 90,000 | 2h | 500 | 6 | 30 |
+| 4 | 180,000 | 3h | 550 | 7 | 35 |
+| 5 | 300,000 | 6h | 600 | 9 | 45 |
+| 6 | 500,000 | 8h | 650 | 11 | 55 |
+| 7 (legacy) | 900,000 | 12h | 700 | 15 | 75 |
+| 8 (legacy) | 1,200,000 | 18h | 800 | 20 | 100 |
+| 9 (legacy) | 1,600,000 | 20h | 950 | 25 | 125 |
+| 10 (legacy) | 1,800,000 | 1d | 1,100 | 30 | 150 |
 
 Counts at TH1–8 are **0, 0, 1, 1, 1, 2, 3, 4**. The existing level ceilings already match: **0, 0, 1, 2, 3, 4, 5, 6**. Normal mode fires every **5 seconds** at ground targets from **4 through 11 tiles**, including the boundary. The **1.5-tile splash radius** is also described by the [Mortar wiki](https://clashofclans.fandom.com/wiki/Mortar).
 
@@ -29,7 +29,7 @@ Shells retain their launch damage and land at the selected location, so moving t
 
 Tests cover exact-resource upgrades through every playable level, timer boundaries, builder reservations, saved health/timestamps, count gates, legacy levels, actual shell damage at every accepted level, blind-spot/range boundaries, ground/air targeting, 20/30/60 fps cadence and the battle deadline. Existing tests also cover splash, dodging, destroyed launchers, campaign viability and replay reproduction. Browser checks inspect the Info panel, restore paid upgrade timers after reload, and select a Mortar's range rings without ending scouting.
 
-Mortars have distinct original artwork for playable levels 1–6; accepted legacy levels 7–10 share level 6. See [MORTAR-ART.md](MORTAR-ART.md). They still use the prototype 2×2 footprint. Native 3×3 layout migration, artwork beyond level 6 and geared-up burst mode remain unfinished. Shell flight duration (1.15s) remains local tuning; this audit does not establish native projectile speed, animation or knockback parity.
+Mortars have distinct original artwork for playable levels 1–6; accepted legacy levels 7–10 share level 6. See [MORTAR-ART.md](MORTAR-ART.md). The footprint is now 3×3 with legacy layout migration; see [NATIVE-GRID.md](NATIVE-GRID.md). Artwork beyond level 6 and geared-up burst mode remain unfinished. Shell flight duration (1.15s) remains local tuning; this audit does not establish native projectile speed, animation or knockback parity.
 
 ## Shell presentation
 

@@ -1,5 +1,49 @@
 # Verification record
 
+## Expanded village and native defense footprints — September 11, 2026
+
+All 345 unit tests pass, including dense legacy migration, saved layouts, damaged-health and paid-deadline preservation, expanded-grid pathfinding and campaign viability. The full Chromium run passed 150 of 154 scenarios. After fixes, 26 focused scenarios pass, covering all four failures and a new deterministic input regression: 155 distinct Chromium scenarios have passing coverage across the full run and follow-up. All 46 focused WebKit scenarios pass. CI now includes the native-grid, building-art and placement-preview cases in its WebKit selection.
+
+The field now has 44×44 buildable tiles, with 3×3 Cannons, Archer Towers and Mortars. Save format 3 relocates conflicting legacy defenses deterministically and reports moved buildings once. Sixteen campaign placements were corrected. Combat version 12 retains older result summaries while refusing playback under changed geometry. Browser testing found an overwritten scene-ready callback hiding the migration notice, an older-backup fixture incorrectly using the current save version, and a redraw that could detach a pressed Save button or interrupt Army category scrolling. These are resolved; the input fix is described in [INPUT-GESTURES.md](INPUT-GESTURES.md).
+
+The final production build passes Chromium and WebKit without reported errors. Chromium reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-272db0eddc04`. Phone placement at (43,43), the normal phone village and the desktop grid overview were visually reviewed. The larger field is usable, but the existing terrain source is softer at its increased display scale. The two-tile simulation border is local; remaining catalog dimensions and per-level artwork still need work. See [NATIVE-GRID.md](NATIVE-GRID.md).
+
+Evidence: `output/playtest/native-grid-verification.json`, `native-grid-production-report.json`, `native-grid-final-check.log`, `native-grid-chromium.log`, `native-grid-fixes-chromium.log`, `native-grid-final-webkit.log`, `native-grid-final-phone.png`, `native-grid-final-overview.png` and `native-grid-far-corner-webkit.png`.
+
+## Placement preview follows the active pointer and camera — September 11, 2026
+
+All 22 targeted browser scenarios pass in each of Chromium and WebKit after the placement follow-up. Coverage includes stationary-pointer keyboard pan, zoom and viewport resize; DOM shop pointer retention through a scene refresh; return to canvas input on release; actual shop placement by tap/drag; touch input; phone layouts; and the building-art cases. The earlier appearance pass completed 338 unit tests and 27 browser scenarios per engine (46 distinct browser scenarios across the two phases).
+
+The final production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-300ec5409ef6`. The new regressions reproduced a stale preview after a camera transform and a 440-world-pixel jump to an outdated canvas pointer during a shop drag. Holding the economy clock ensures its periodic refresh cannot mask the camera defect.
+
+The preview sprite and footprint now use the same snapped tile and validity result each frame. A phone capture after zooming a stationary cursor shows the upgraded Gold Mine over the blocked footprint; the measured anchor error is zero world pixels. See [BUILDING-PRESENTATION.md](BUILDING-PRESENTATION.md). Evidence: `output/playtest/placement-preview-verification.json`, `placement-preview-production-report.json` and `placement-camera-phone-webkit.png`.
+
+## Consistent building artwork during movement — September 11, 2026
+
+All 338 unit tests and 27 targeted browser scenarios in each of Chromium and WebKit pass. The production build passes both engines with no reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-f0d4678aece6`.
+
+Moving previews retain the placed building's level artwork, size and ground anchor, and refresh when a paid upgrade finishes. The progression panel uses the artwork for its displayed level. The initial catalog check reproduced the old shrinking preview; the corrected run compares every building kind at four requested levels. A phone relocation checks blocked placement, cancellation, actual pointer placement and reload without resource or builder changes. Its first proposed destination overlapped a Gold Mine; the corrected fixture uses clear village tiles.
+
+Visually reviewed the phone Archer Tower moving preview and the TH5 progression card. See [BUILDING-PRESENTATION.md](BUILDING-PRESENTATION.md) for implementation and remaining artwork limits. Evidence: `output/playtest/building-appearance-verification.json`, `building-appearance-production-report.json`, `upgraded-building-move-*.png` and `progression-level-art-webkit.png`.
+
+## Wall balance, free placement and early Cannon progression — September 11, 2026
+
+All 338 unit tests pass. The health/free-placement/TH1 Cannon pass completed 39 targeted browser scenarios in each of Chromium and WebKit. The subsequent TH5 elixir correction completed nine Wall scenarios in each engine, including one new case (40 distinct scenarios covered across the two phases). The final production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-bf593c648a1d`.
+
+Walls use the official reduced level-1–7 health values. New pieces cost zero, remain placeable with an empty treasury, and stop at the Town Hall count limit. TH1 supports two Cannons and their level-2 upgrade. Saved damaged Walls retain their damage fraction after health reconciliation; paid legacy deadlines survive reload. Combat version 11 prevents playback of recordings made under the older Wall health rules while preserving their summaries.
+
+Supercell’s TH5 elixir announcement resolves the conflicting community prose: level 4 → 5 Walls can use elixir. Exact-budget selection works with zero gold, mixed rows containing lower-level pieces reject elixir without partial charges, and successful upgrades persist without timers or reserved builders. See [WALL-PROGRESSION.md](WALL-PROGRESSION.md) and [DEFENSE-SOURCE-AUDIT.md](DEFENSE-SOURCE-AUDIT.md) for sources and remaining limits.
+
+Phone screenshots were visually reviewed for the actual free Wall shop tile, destination health, and elixir-funded group controls. The shop evidence initially captured the horizontal list before the Wall tile was scrolled into view; the capture now explicitly reveals that tile. Earlier test fixtures were updated for free placement, earlier Wall destruction and the reduced health of a Wall Breaker target. Evidence: `output/playtest/wall-current-verification.json`, `wall-current-production-report.json`, `free-wall-shop-*.png`, `th5-elixir-walls-*.png` and `th1-cannon-gate-*.png`. Native footprints, the full catalog, remaining building/troop balance, artwork and online systems are still incomplete.
+
+## Defense source reconciliation — September 11, 2026
+
+All 335 unit tests pass after updating the five defense cost/time tables and the official low-level Cannon health/damage values. The full Chromium run passed 142 of 143 scenarios; its only failure expected the obsolete six-hour Air Defense level-2 timer. The corrected two-hour assertion then passed in Chromium and WebKit, giving all 143 Chromium scenarios passing coverage across the full run and targeted rerun. Nineteen focused WebKit scenarios pass. Production checks pass in both engines with no reported errors, including offline reload, Army and replay in Chromium with 98 cached files.
+
+Migration checks cover old paid construction and upgrade deadlines across reloads: reaching the newly shortened duration cannot finish a previously purchased job early or charge it again. Actual projectile tests verify every accepted Cannon damage tier. The Lightning damage fixture now uses level-4 Cannons so their health exceeds the fixed spell damage, preserving the test's full-damage assertion. Combat version 10 identifies the Cannon correction and retains incompatible result summaries.
+
+Phone Cannon and Wizard Tower Info screens were visually reviewed for health, fractional damage, revised prices/times and control reachability. See [DEFENSE-SOURCE-AUDIT.md](DEFENSE-SOURCE-AUDIT.md) for the rejected stale entries, source limitations and next Wall/TH1 corrections. Evidence: `output/playtest/defense-current-verification.json`, `defense-current-production-report.json` and `*-progression-*.png`.
+
 ## Trap progression and vertical spring feedback — September 11, 2026
 
 All 330 unit tests pass, including exact trap price boundaries, instant placement with occupied builders, paid upgrade reloads, accepted legacy levels, blast-radius edges, spring targeting and half hero damage, healing during stun, and campaign viability. Eighteen browser scenarios pass in each of Chromium and WebKit, covering the four phone placement/upgrade flows, hidden traps, replay playback, effect timing and vertical spring presentation. The production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files.

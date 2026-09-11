@@ -88,7 +88,7 @@ describe('specialist troops', () => {
     expect(m.battle!.buildings.map((b) => b.hp)).toEqual(hp);
   });
   it('a defeated Wall Breaker leaves a weaker bomb, with researched damage', () => {
-    const wall = makeBuilding(1000, 'wall', 10, 10, 3);
+    const wall = makeBuilding(1000, 'wall', 10, 10, 4);
     const hall = makeBuilding(1001, 'townhall', 20, 20);
     const m = arena([wall, hall], (model) => {
       model.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 2])) as Record<
@@ -221,6 +221,7 @@ describe('resource raids and save compatibility', () => {
   });
   it('opens an older version-2 save without granting troops or changing progress', () => {
     const old = structuredClone(initialSave());
+    (old as unknown as { version: number }).version = 2;
     old.gold = 4321;
     old.lastArmy = { ...old.army };
     old.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as Record<

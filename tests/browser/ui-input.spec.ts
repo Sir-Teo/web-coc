@@ -27,3 +27,34 @@ test('a canvas press released onto a DOM control cancels the village gesture', a
   await page.locator('[data-action="tab:Army"]').click();
   await expect(page.locator('[data-drag="barracks"]')).toBeVisible();
 });
+
+test('a queued redraw cannot detach a pressed Save button or interrupt an army catalog jump', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.locator('.train-add').click();
+  await page.locator('[data-action="army-presets"]').click();
+  await page.locator('#preset-name-0').fill('Keep this click');
+  const save = page.locator('[data-action="preset-save:0"]');
+  const box = (await save.boundingBox())!;
+  const node = await save.elementHandle();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.evaluate(() => window.__game.model.changed());
+  await page.waitForTimeout(100);
+  expect(await node!.evaluate((el) => el.isConnected)).toBe(true);
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.__game.model.state.armyPresets?.[0]?.name))
+    .toBe('Keep this click');
+  await page.keyboard.press('Escape');
+  await page.locator('.train-add').click();
+  await page.locator('[data-action="army-jump:spells"]').click();
+  await page.evaluate(() => window.__game.model.changed());
+  await expect(page.locator('[data-army-category="spells"]').first()).toBeInViewport();
+  await page.locator('[data-action="army-jump:troops"]').click();
+  await page.evaluate(() => window.__game.model.changed());
+  await expect(page.locator('[data-army-category="troops"]').first()).toBeInViewport();
+});

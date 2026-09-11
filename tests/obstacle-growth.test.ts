@@ -121,8 +121,8 @@ describe('recurring village vegetation', () => {
   });
 
   it('skips years of blocked growth without banking spawns or consuming the random sequence', () => {
-    const buildings = Array.from({ length: 100 }, (_, i) =>
-      makeBuilding(i + 1, 'wall', (i % 10) * 3, Math.floor(i / 10) * 3),
+    const buildings = Array.from({ length: 256 }, (_, i) =>
+      makeBuilding(i + 1, 'wall', (i % 16) * 3, Math.floor(i / 16) * 3),
     );
     expect(treeGrowthSites(buildings, [])).toEqual([]);
     const obstacles: Obstacle[] = [];

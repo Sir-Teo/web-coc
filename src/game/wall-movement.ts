@@ -1,3 +1,4 @@
+import { BUILD_MIN, BUILD_MAX } from './grid';
 import { BUILDINGS } from './data';
 import type { Building } from './model';
 import { overlapsObstacle, type Obstacle } from './obstacles';
@@ -53,10 +54,10 @@ export function wallMoveIssue(
       (b) =>
         !Number.isInteger(b.x) ||
         !Number.isInteger(b.y) ||
-        b.x < 2 ||
-        b.y < 2 ||
-        b.x >= 26 ||
-        b.y >= 26,
+        b.x < BUILD_MIN ||
+        b.y < BUILD_MIN ||
+        b.x >= BUILD_MAX ||
+        b.y >= BUILD_MAX,
     )
   )
     return 'Keep every wall inside the village.';
