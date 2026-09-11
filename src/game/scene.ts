@@ -16,6 +16,8 @@ import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
+import { unitPose } from './unit-pose';
+import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
 const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
@@ -853,11 +855,16 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
+        const target = battle.buildings.find((b) => b.id === u.target);
+        const pose = unitPose(u, target, im.getData('facing') ?? -1);
+        im.setData('facing', pose.facing).setFlipX(pose.flipX);
+        // Presentation shares battle time, so pause, playback speed and seeking agree.
+        const animationTime = battle.elapsed * 1000;
         if (!u.hero && !TROOPS[u.kind].staticSprite)
           im.setFrame(
-            (u.attacking && !flying) || this.model.state.settings.reducedMotion
+            (!pose.moving && !flying) || this.model.state.settings.reducedMotion
               ? 0
-              : Math.floor(time / (flying ? 360 : 140) + u.id) % 4,
+              : Math.floor(animationTime / (flying ? 360 : 140) + u.id) % 4,
           );
         if (u.hero) {
           const enraged = (battle.hero?.rageUntil ?? 0) > battle.elapsed;
@@ -868,8 +875,8 @@ export class VillageScene extends Phaser.Scene {
           motion = this.model.state.settings.reducedMotion
             ? 0
             : flying
-              ? Math.sin(time / 600 + u.id) * 2.2
-              : Math.sin(time / 80 + u.id) * 1.6;
+              ? Math.sin(animationTime / 600 + u.id) * 2.2
+              : pose.moving ? Math.sin(animationTime / 80 + u.id) * 1.6 : 0;
         const lift = flying ? AIR_LIFT : 0;
         // Air troops draw above every rooftop, with a shadow left on the ground.
         im.setPosition(p.x, p.y + motion - lift).setDepth(flying ? 7500 : p.y + 1);
@@ -877,17 +884,14 @@ export class VillageScene extends Phaser.Scene {
           this.detail.fillStyle(0x1f2a16, 0.28);
           this.detail.fillEllipse(p.x, p.y, 26, 13);
         }
-        const target = battle.buildings.find((b) => b.id === u.target);
-        if (target) {
-          const targetOnRight = iso(target.x, target.y).x > p.x;
-          im.setFlipX(u.hero || TROOPS[u.kind].staticSprite ? !targetOnRight : targetOnRight);
-        }
-        const phase = 1 - Math.max(0, u.cooldown) / TROOPS[u.kind].rate;
+        const rate = u.hero && battle.hero
+          ? heroStats(battle.hero.level, battle.hero.townhall).rate : TROOPS[u.kind].rate;
+        const phase = 1 - Math.max(0, u.cooldown) / rate;
         const impulse =
           u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
             ? Math.sin((phase / 0.28) * Math.PI)
             : 0;
-        const facing = target && iso(target.x, target.y).x > p.x ? 1 : -1;
+        const facing = pose.facing;
         im.setX(p.x + facing * impulse * 4).setAngle(flying ? impulse * 4 : facing * impulse * 9);
         if (u.hp < u.maxHp)
           this.bar(p.x, p.y - lift - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
