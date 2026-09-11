@@ -28,7 +28,7 @@ The [facility progression audit](FACILITY-PROGRESSION.md) now provides native pr
 - Multiple imported facilities use the highest completed level.
 - Train, brew, repeat preparation, and saved armies check unlocks before adding units. A failed composition changes neither troops nor spells.
 - Existing saves retain prepared troops and spells, including units above their facility's present level. Players may deploy or remove these units and retain them in a preset. Replenishing them requires the appropriate unlock. No save migration deletes an army.
-- Research requires both an unlocked troop and the existing Laboratory requirements.
+- Troop and spell research require the corresponding completed facility unlock and their own Laboratory requirements. Both share one research project slot; see [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md).
 - Locked cards show the required facility level. Building information identifies the next unlock, and Progression shows which Town Hall tier permits each unlock.
 - Phone building menus wrap all actions into a second row, keeping Upgrade, Finish, Train, and other building actions reachable.
 

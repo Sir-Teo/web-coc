@@ -7,6 +7,7 @@ import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 import { troopProgression } from './troop-progression';
+import { spellProgression, HEAL_PULSES, SPELL_PULSE_INTERVAL, RAGE_PULSES } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
   | 'herohall'
@@ -35,6 +36,7 @@ export type BuildingKind =
 export type TroopKind =
   'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon' | 'goblin' | 'wallbreaker';
 export type SpellKind = 'rage' | 'heal' | 'lightning';
+export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
 export type Targets = 'ground' | 'air' | 'both';
@@ -624,9 +626,9 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     cost: 0,
     space: 2,
     time: 0,
-    radius: 4.4,
-    duration: 12,
-    effect: '+70% damage, +60% speed',
+    radius: 5,
+    duration: RAGE_PULSES * SPELL_PULSE_INTERVAL,
+    effect: '+130% damage · +2.5 tiles/s',
   },
   heal: {
     name: 'Healing Spell',
@@ -635,26 +637,38 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     cost: 0,
     space: 2,
     time: 0,
-    radius: 4,
-    duration: 12,
-    effect: '55 health per second',
+    radius: 5,
+    duration: HEAL_PULSES * SPELL_PULSE_INTERVAL,
+    effect: '615 total healing',
   },
   lightning: {
     name: 'Lightning Spell',
     role: 'DIRECT',
-    description: 'Calls down bolts that damage every building in a small area.',
+    description: 'A focused bolt damages and briefly stuns enemies. Town Halls and resource storages are immune.',
     cost: 0,
     space: 1,
     time: 0,
-    radius: 2.3,
+    radius: 2,
     duration: 0,
-    effect: '480 damage instantly',
+    effect: '150 damage · 0.1s stun',
   },
 };
-export const LIGHTNING_DAMAGE = 480;
-export const HEAL_PER_SECOND = 55;
+export function spellStatsAt(kind: SpellKind, level = 1) {
+  const stats = spellProgression(kind, level) ?? spellProgression(kind, 1);
+  return {
+    ...SPELLS[kind],
+    ...stats,
+    effect: kind === 'lightning'
+      ? `${stats.damage} damage · 0.1s stun`
+      : kind === 'heal'
+        ? `${stats.heal * HEAL_PULSES} total healing`
+        : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+  };
+}
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
 export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
+export const isSpellKind = (kind: unknown): kind is SpellKind =>
+  typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>

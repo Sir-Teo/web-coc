@@ -28,6 +28,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         army: army(s.army),
         spells,
         troopLevels: army(s.troopLevels),
+        spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, s.spellLevels![k]])) as typeof s.spells,
         ...(s.hero ? { hero: { level: s.hero.level, townhall: s.hero.townhall } } : {}),
         buildings: s.buildings.map((b) => ({
           id: b.id,

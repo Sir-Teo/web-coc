@@ -7,7 +7,6 @@ import {
   researchLaboratory,
   SPELLS,
   TROOPS,
-  LIGHTNING_DAMAGE,
   upgradeSeconds,
   gemCost,
 } from '../src/game/data';
@@ -180,8 +179,8 @@ describe('spells', () => {
     m.activeSpell = 'lightning';
     expect(m.castSpell(11.5, 11.5)).toBe(true);
     const [near, alsoNear, far] = battle.buildings;
-    expect(near.maxHp - near.hp).toBeCloseTo(LIGHTNING_DAMAGE, 3);
-    expect(alsoNear.maxHp - alsoNear.hp).toBeCloseTo(LIGHTNING_DAMAGE, 3);
+    expect(near.maxHp - near.hp).toBeCloseTo(150, 3);
+    expect(alsoNear.maxHp - alsoNear.hp).toBeCloseTo(150, 3);
     expect(far.hp).toBe(far.maxHp);
     expect(battle.spells.lightning).toBe(0);
     expect(m.state.spells.lightning).toBe(0);

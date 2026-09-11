@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BUILDINGS,
-  HEAL_PER_SECOND,
   maxCountFor,
   maxLevelFor,
   trapDamage,
@@ -235,9 +234,9 @@ it('a stunned hero still receives healing while movement and attacks are suspend
   u.hp = 1000;
   u.springUntil = 1;
   u.attacking = true;
-  b.auras.push({ kind: 'heal', x: u.x, y: u.y, end: 10 });
+  b.auras.push({ kind: 'heal', x: u.x, y: u.y, start: 0, end: 12.3, pulses: 0 });
   m.step(0.1);
-  expect(u.hp).toBe(1000 + HEAL_PER_SECOND * 0.1 * 0.5);
+  expect(u.hp).toBe(1000 + 15 * 0.55);
   expect([u.x, u.y, u.attacking]).toEqual([10.5, 10.5, false]);
 });
 

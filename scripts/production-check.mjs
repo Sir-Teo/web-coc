@@ -80,7 +80,7 @@ for (const [name, engine] of [
   await page.screenshot({ path: `output/playtest/production-research-${name}.png` });
   await page.locator('[data-action="close"]').click();
   // Exercise the shipping replay UI without development globals or state writes.
-  await page.locator('.train-add').click();
+  await expect(page.locator('[data-action="research"]')).toBeFocused();
   await page.locator('[data-action="practice"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
   let deployed = false;

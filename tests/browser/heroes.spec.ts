@@ -138,7 +138,7 @@ test('hero and progression panels fit phone portrait and landscape with reachabl
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-landscape.png' });
   await page.locator('[data-action="close"]').click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.train-add').click();
+  await expect(page.locator('[data-action="heroes"]')).toBeFocused();
   await page.locator('[data-action="progression"]').click();
   await expect(page.locator('.progression-tier')).toHaveCount(8);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

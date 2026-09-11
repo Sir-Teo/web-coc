@@ -3,7 +3,8 @@ import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
-import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
+import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
+import { MAX_SPELL_LEVEL } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 function finite(v: unknown) {
@@ -231,10 +232,16 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (
     s.research !== undefined &&
     (!s.research ||
-      !TROOP_KEYS.includes(s.research.kind) ||
+      !(isSpellKind(s.research.kind) || TROOP_KEYS.includes(s.research.kind)) ||
       !finite(s.research.end) ||
-      (s.troopLevels?.[s.research.kind] ?? 1) >= MAX_TROOP_LEVEL)
+      (isSpellKind(s.research.kind)
+        ? (s.spellLevels?.[s.research.kind] ?? 1) >= MAX_SPELL_LEVEL
+        : (s.troopLevels?.[s.research.kind] ?? 1) >= MAX_TROOP_LEVEL))
   )
+    return false;
+  if (s.spellLevels !== undefined &&
+      (!spellRecord(s.spellLevels) ||
+       SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > MAX_SPELL_LEVEL)))
     return false;
   const ids = new Set<number>();
   for (const b of s.buildings) {

@@ -1,5 +1,7 @@
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
+import { MAX_SPELL_LEVEL, spellProgression, LIGHTNING_STUN, RAGE_HERO_MULTIPLIER, SPELL_SPEED_SCALE } from './spell-progression';
+import { startSpellAura, stepSpellAuras } from './spell-effects';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
@@ -38,8 +40,8 @@ import {
   TROOP_KEYS,
   SPELL_KEYS,
   CAMPAIGN,
-  HEAL_PER_SECOND,
-  LIGHTNING_DAMAGE,
+  isSpellKind,
+  spellStatsAt,
   MAX_TROOP_LEVEL,
   defenseDamage,
   isResourceBuilding,
@@ -59,6 +61,7 @@ import {
   type BuildingKind,
   type TroopKind,
   type SpellKind,
+  type ResearchKind,
   type Resource,
 } from './data';
 export interface Building {
@@ -133,7 +136,8 @@ export interface Save {
   tutorial: boolean;
   claimedQuests?: string[];
   troopLevels?: Record<TroopKind, number>;
-  research?: { kind: TroopKind; end: number };
+  spellLevels?: Record<SpellKind, number>;
+  research?: { kind: ResearchKind; end: number };
   lastArmy?: Army;
   lastSpells?: SpellBook;
   layouts?: Layout[];
@@ -148,6 +152,7 @@ export interface Unit {
   hero?: 'king';
   summoned?: boolean;
   rageUntil?: number;
+  spellRageUntil?: number;
   x: number;
   y: number;
   hp: number;
@@ -169,6 +174,8 @@ export interface Aura {
   x: number;
   y: number;
   end: number;
+  start: number;
+  pulses: number;
 }
 export interface MortarShell {
   sourceId: number;
@@ -183,6 +190,7 @@ export interface MortarShell {
 }
 export interface Battle {
   troopLevels?: Army;
+  spellLevels?: SpellBook;
   index: number;
   practice: boolean;
   carriedArmy: Army;
@@ -196,6 +204,7 @@ export interface Battle {
   shells: MortarShell[];
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
+  defenseStuns: Record<number, number>;
   traps: Record<number, TrapState>;
   hero?: BattleHero;
   elapsed: number;
@@ -396,24 +405,47 @@ export class GameModel {
   troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
     return troopStatsAt(kind, level);
   }
-  researchCost(kind: TroopKind) {
-    return researchCost(kind, this.troopLevel(kind));
+  spellLevel(kind: SpellKind) {
+    return this.battle?.spellLevels?.[kind] ?? this.state.spellLevels?.[kind] ?? 1;
   }
-  researchSeconds(kind: TroopKind) {
-    return researchSeconds(kind, this.troopLevel(kind));
+  spellStats(kind: SpellKind, level = this.spellLevel(kind)) {
+    return spellStatsAt(kind, level);
+  }
+  researchLevel(kind: ResearchKind) {
+    return isSpellKind(kind) ? this.spellLevel(kind) : this.troopLevel(kind);
+  }
+  researchCost(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? spellProgression(kind, this.spellLevel(kind) + 1)?.cost ?? 0
+      : researchCost(kind, this.troopLevel(kind));
+  }
+  researchSeconds(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? spellProgression(kind, this.spellLevel(kind) + 1)?.seconds ?? 0
+      : researchSeconds(kind, this.troopLevel(kind));
+  }
+  researchLaboratory(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? spellProgression(kind, this.spellLevel(kind) + 1)?.laboratory ?? Infinity
+      : researchLaboratory(kind, this.troopLevel(kind));
   }
   researchTroop(kind: TroopKind) {
+    this.research(kind);
+  }
+  research(kind: ResearchKind) {
     if (this.battle) return;
     const lab = this.laboratory;
     if (!lab) return this.notify('Complete a laboratory before starting research.');
-    if (!this.troopUnlocked(kind))
+    const spell = isSpellKind(kind);
+    const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
+    if (spell ? !this.spellUnlocked(kind) : !this.troopUnlocked(kind))
       return this.notify(
-        `Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`,
+        `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
       );
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
-      return this.notify('This troop is at its maximum level.');
-    const requiredLab = researchLaboratory(kind, this.troopLevel(kind));
+    if (this.researchLevel(kind) >= (spell ? MAX_SPELL_LEVEL : MAX_TROOP_LEVEL))
+      return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
+    const requiredLab = this.researchLaboratory(kind);
     if (lab.level < requiredLab)
       return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
     const cost = this.researchCost(kind);
@@ -423,7 +455,7 @@ export class GameModel {
       kind,
       end: this.clock + this.researchSeconds(kind) * 1000,
     };
-    this.notify(`Researching level ${this.troopLevel(kind) + 1} ${TROOPS[kind].name}.`);
+    this.notify(`Researching level ${this.researchLevel(kind) + 1} ${name}.`);
     this.changed();
   }
   finishResearch() {
@@ -657,7 +689,13 @@ export class GameModel {
     }
     if (this.state.research && this.state.research.end <= now) {
       const { kind } = this.state.research;
-      this.state.troopLevels ??= {
+      let name: string, level: number;
+      if (isSpellKind(kind)) {
+        this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
+        level = this.state.spellLevels[kind] = Math.min(MAX_SPELL_LEVEL, this.state.spellLevels[kind] + 1);
+        name = SPELLS[kind].name;
+      } else {
+        this.state.troopLevels ??= {
         swordsman: 1,
         archer: 1,
         giant: 1,
@@ -666,10 +704,12 @@ export class GameModel {
         goblin: 1,
         wallbreaker: 1,
       };
-      this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.state.troopLevels[kind] + 1);
+        level = this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.state.troopLevels[kind] + 1);
+        name = TROOPS[kind].name;
+      }
       delete this.state.research;
       this.state.xp += 30;
-      this.notify(`${TROOPS[kind].name} upgraded to level ${this.state.troopLevels[kind]}!`);
+      this.notify(`${name} upgraded to level ${level}!`);
       structural = true;
       changed = true;
     }
@@ -1460,6 +1500,7 @@ export class GameModel {
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
+      spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, this.spellLevel(k)])) as SpellBook,
       nextId: this.state.nextId,
       ...(!practice
         ? { lootRoom: {
@@ -1562,17 +1603,23 @@ export class GameModel {
     this.beginFight();
     b.spells[k]--;
     if (!b.practice) this.state.spells[k]--;
-    const d = SPELLS[k];
+    const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
       for (const v of b.buildings)
         if (
-          v.hp > 0 &&
-          Math.hypot(v.x + BUILDINGS[v.kind].size / 2 - x, v.y + BUILDINGS[v.kind].size / 2 - y) <=
-            d.radius
-        )
-          this.damage(v, LIGHTNING_DAMAGE);
-    } else b.auras.push({ kind: k, x, y, end: b.elapsed + d.duration });
+          v.hp > 0 && !isTrap(v.kind) &&
+          !['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(v.kind) &&
+          distanceTo({ x, y }, v) <= d.radius
+        ) {
+          this.damage(v, d.damage);
+          if (v.hp > 0 && BUILDINGS[v.kind].damage) {
+            b.defenseStuns[v.id] = b.elapsed + LIGHTNING_STUN;
+            v.cooldown = BUILDINGS[v.kind].rate!;
+            delete b.defenseTargets[v.id];
+          }
+        }
+    } else startSpellAura(b, k, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.changed();
     return true;
@@ -1582,12 +1629,6 @@ export class GameModel {
     if (b.started) return;
     b.started = true;
     b.prep = 0;
-  }
-  private inAura(kind: SpellKind, x: number, y: number) {
-    const b = this.battle;
-    if (!b) return false;
-    const radius = SPELLS[kind].radius;
-    return b.auras.some((a) => a.kind === kind && Math.hypot(a.x - x, a.y - y) <= radius);
   }
   step(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
@@ -1615,20 +1656,19 @@ export class GameModel {
     dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
     stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
-    b.auras = b.auras.filter((a) => a.end > b.elapsed);
+    stepSpellAuras(b);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
-      if (this.inAura('heal', u.x, u.y))
-        u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt * (u.hero ? 0.5 : 1));
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
       }
       const troop = TROOPS[u.kind];
-      const raged =
-        this.inAura('rage', u.x, u.y) ||
+      const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed ||
         !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
+      const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
+      const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
       u.cooldown -= dt;
       u.pathAt -= dt;
       u.attacking = false;
@@ -1641,8 +1681,11 @@ export class GameModel {
           : this.troopStats(u.kind);
       const d = {
         ...base,
-        damage: raged ? base.damage * 1.7 : base.damage,
-        speed: raged ? base.speed * (u.hero ? HERO_ABILITY.speed : 1.6) : base.speed,
+        damage: base.damage * Math.max(abilityRage ? HERO_ABILITY.damage : 1,
+          1 + (spellRage?.damageBoost ?? 0) / 100 * heroScale),
+        speed: base.speed + Math.max(
+          abilityRage ? base.speed * ((u.hero ? HERO_ABILITY.speed : 1.6) - 1) : 0,
+          (spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE * heroScale),
       };
       let target = b.buildings.find((t) => t.id === u.target && t.hp > 0 && !isTrap(t.kind));
       if (!target) {
@@ -1802,8 +1845,10 @@ export class GameModel {
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
       if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
+      const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
+      if (activeDt <= 0) continue;
       const cooling = tower.cooldown > 0;
-      tower.cooldown -= dt;
+      tower.cooldown -= activeDt;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
       const targets = b.units.filter(

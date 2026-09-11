@@ -1,9 +1,10 @@
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import { BUILDINGS, CAMPAIGN, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
+import { MAX_SPELL_LEVEL } from './spell-progression';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 16;
+export const REPLAY_VERSION = 17;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -26,6 +27,7 @@ export interface ReplaySetup {
   spells: SpellBook;
   hero?: { level: number; townhall: number };
   troopLevels: Army;
+  spellLevels?: SpellBook;
   nextId: number;
   /** Raid-limited storage headroom, not the player's balance or total capacity. */
   lootRoom?: { gold: number; elixir: number };
@@ -57,11 +59,13 @@ export function replayBattle(s: ReplaySetup): Battle {
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
+    spellLevels: { lightning: 1, heal: 1, rage: 1, ...s.spellLevels },
     hero: s.hero ? { ...s.hero, unitId: null, abilityUsed: false, rageUntil: 0 } : undefined,
     units: [],
     auras: [],
     shells: [],
     defenseTargets: {},
+    defenseStuns: {},
     traps: {},
     elapsed: 0,
     prep: 30,
@@ -93,6 +97,8 @@ export function validateReplay(value: unknown): value is ReplayData {
     !counts(s.army, TROOP_KEYS, 0, 9999) ||
     !counts(s.spells, SPELL_KEYS, 0, 999) ||
     !counts(s.troopLevels, TROOP_KEYS, 1, MAX_TROOP_LEVEL) ||
+    (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
+    (s.spellLevels !== undefined && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
     (value.version >= 4 &&
       (TROOP_KEYS.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||

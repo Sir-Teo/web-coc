@@ -70,7 +70,7 @@ for (const viewport of [
       path: `output/playtest/starter-research-${viewport.width}-${browserName}.png`,
     });
     await page.locator('[data-action="close"]').click();
-    await page.locator('.train-add').click();
+    await expect(page.locator('[data-action="research"]')).toBeFocused();
     await page.getByRole('button', { name: 'About Barbarian', exact: true }).click();
     const stat = (name: string) =>
       page

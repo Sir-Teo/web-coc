@@ -273,7 +273,7 @@ describe('independent Laboratory construction and research', () => {
   });
 });
 
-it('replays existing version-16 facility health exactly while normalizing only the home village', () => {
+it('replays snapshotted facility health exactly while normalizing only the home village', () => {
   const save = initialSave();
   save.obstacles = [];
   save.spells = emptySpells();
@@ -287,8 +287,7 @@ it('replays existing version-16 facility health exactly while normalizing only t
   m.finishBattle();
   const expected = structuredClone(m.battle!);
   const record = m.state.raidLog![0];
-  expect(record.replay!.version).toBe(16);
-  expect(REPLAY_VERSION).toBe(16);
+  expect(record.replay!.version).toBe(REPLAY_VERSION);
   expect(validateReplay(record.replay)).toBe(true);
   expect(record.replay!.initial.buildings.find((b) => b.id === home.id)!.maxHp).toBe(1062.5);
   const loaded = new GameModel(JSON.parse(JSON.stringify(m.state)));

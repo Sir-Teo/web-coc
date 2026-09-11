@@ -148,11 +148,12 @@ describe('physical projectile damage', () => {
     const { m, b, hall, u } = arena('wizard');
     const neighbor = makeBuilding(9002, 'builder', 14, 11);
     b.buildings.push(neighbor);
-    b.auras.push({ kind: 'rage', x: u.x, y: u.y, end: 0.1 });
+    // The final pulse has already landed; the remaining boost expires during flight.
+    u.spellRageUntil = 0.1;
     m.step(0.05);
     const shot = b.projectiles![0];
     u.cooldown = 100;
-    expect(shot.damage).toBe(m.troopStats('wizard').damage * 1.7);
+    expect(shot.damage).toBeCloseTo(m.troopStats('wizard').damage * 2.3);
     expect(neighbor.hp).toBe(neighbor.maxHp);
     land(m);
     expect(hall.hp).toBeCloseTo(hall.maxHp - shot.damage);

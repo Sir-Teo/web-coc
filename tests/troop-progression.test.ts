@@ -307,7 +307,7 @@ describe('native specialist combat', () => {
       const { m, b, target, u } = arena('balloon', level, 8.8, 11);
       const far = makeBuilding(9001, 'wall', 8, 13);
       b.buildings.push(far);
-      b.auras.push({ kind: 'rage', x: u.x, y: u.y, end: 100 });
+      b.auras.push({ kind: 'rage', x: u.x, y: u.y, start: 0, end: 18, pulses: 0 });
       u.hp = 0;
       m.step(0.05);
       expect(target.maxHp - target.hp).toBe([25, 32, 48, 72, 108][level - 1]);
@@ -329,10 +329,10 @@ describe('native specialist combat', () => {
           target.y = 11;
           b.buildings.push(wall);
           u.target = wall.id;
-          if (raged) b.auras.push({ kind: 'rage', x: u.x, y: u.y, end: 100 });
+          if (raged) b.auras.push({ kind: 'rage', x: u.x, y: u.y, start: 0, end: 18, pulses: 0 });
           if (defeated) u.hp = 0;
           const death = [6, 9, 13, 16, 23][level - 1];
-          const attack = [10, 20, 25, 30, 43][level - 1] * (raged ? 1.7 : 1);
+          const attack = [10, 20, 25, 30, 43][level - 1] * (raged ? 2.3 : 1);
           const combined = death + (defeated ? 0 : attack);
           m.step(0.05);
           expect(wall.maxHp - wall.hp).toBeCloseTo(combined * 40);
