@@ -6,6 +6,7 @@ import { AudioManager } from './game/audio';
 import { loadSave, saveGame } from './game/save';
 import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
+import { developerToolsEnabled } from './dev/access';
 async function boot() {
   const releaseSession = await acquireVillage();
   const saved = await loadSave(),
@@ -139,6 +140,10 @@ async function boot() {
         coordinates: '28×28 isometric grid; x toward lower-right, y toward lower-left',
       }),
   });
+  if (developerToolsEnabled(import.meta.env.DEV, location.hostname, location.search)) {
+    const { installDeveloperTools } = await import('./dev/panel');
+    installDeveloperTools(model, scene);
+  }
   if ('serviceWorker' in navigator && !import.meta.env.DEV)
     void navigator.serviceWorker.register('/sw.js');
 }

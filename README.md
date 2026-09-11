@@ -122,6 +122,10 @@ with `no-cache` so a new release is picked up on the next visit.
 
 In development, `window.__game` exposes the model and scene, and `window.advanceTime(ms)` advances simulation for tests. `window.render_game_to_text()` provides a compact structured snapshot in both builds.
 
+## Developer tools
+
+Open `http://localhost:4173/?devtools=1` (or port 5173), then click **DEV** or press **Ctrl/⌘ Shift D**. Edit resources, troops and spells; jump progression; finish timers; test battle outcomes; and restore a checkpoint. Changes save normally. The toolbox is opt-in and limited to development/local previews. See [docs/DEVELOPER-TOOLS.md](docs/DEVELOPER-TOOLS.md) for controls and the `window.__dev` API.
+
 ## Verification
 
 ```sh
