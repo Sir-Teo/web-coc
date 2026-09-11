@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. The village begins with an established settlement, a trained army, and two brewed spells, so every core interaction is immediately available.
+Open http://localhost:5173. New villages start at Town Hall 2 with Swordsmen and Archers. Upgrade the Barracks to unlock more troops, and build the Spell Factory after reaching Town Hall 5. Existing villages retain their buildings and prepared armies.
 
 ```sh
 npm run build
@@ -61,14 +61,14 @@ with `no-cache` so a new release is picked up on the next visit.
 
 ### Progression
 
-- Buildings run to level 4–12 depending on the type, and **nothing may exceed the Town Hall by more than one level**, so a Town Hall upgrade is what unlocks the next tier of everything else. The Town Hall also gates how many of each building you may own.
+- Each building has explicit Town Hall level limits. The Progression screen shows those limits alongside troop and spell unlocks; building information previews what the next facility upgrade unlocks. The Town Hall also gates building counts.
 - Build and upgrade timers run from seconds to hours, and gem prices to finish follow the same shape Clash of Clans uses: a minute is trivial, an hour is cheap, a long upgrade is a real decision.
 - Upgrade the laboratory, then open Research. Laboratory level N unlocks troop level N, up to **level 5**, each a permanent health and damage increase. Research completes while away and can be finished with gems.
 - **Your legacy** collects the league banner, six lifetime statistics, and eight achievements that pay gems.
 
 ### Army
 
-- Prepare seven troops individually or five at a time, **free and instantly**. Remove individual troops/spells or clear the army to change strategy. Whole batches must fit camp capacity. "Last army" replenishes the previous campaign composition without duplicating ready units.
+- Unlock seven troop types through Barracks levels 1–7, then prepare them individually or five at a time, **free and instantly**. Lightning, Healing and Rage unlock at Spell Factory levels 1, 2 and 3. Remove individual troops/spells or clear the army to change strategy. Whole batches must fit camp capacity. "Last army" replenishes the previous campaign composition without duplicating ready units.
 - **Quick armies** stores three named troop-and-spell compositions. Save your current army, then use a preset in one tap. Both housing limits and ready facilities are checked before changing anything.
 - **Balloons fly.** They drift straight over walls and buildings, ignore pathing entirely, and prefer defenses. Only air-capable defenses can shoot them — and when one is shot down it detonates, damaging whatever it was over.
 - **Goblins** sprint for resource buildings, including the Town Hall, and deal double damage to them. Loot is released as resource buildings take damage, so a quick resource raid can pay without a star.

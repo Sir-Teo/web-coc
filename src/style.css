@@ -2104,6 +2104,7 @@ h3 {
     border-bottom-width: 4px;
     border-radius: 11px;
     justify-content: center;
+    flex-wrap: wrap;
   }
   .context-art {
     width: 45px;
@@ -2121,6 +2122,9 @@ h3 {
   }
   .context-actions {
     gap: 4px;
+    flex-basis: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
   }
   .context-actions .game-btn {
     font-size: 9px;
@@ -2141,9 +2145,6 @@ h3 {
     height: 14px;
     font-size: 8px;
     line-height: 8px;
-  }
-  .context-actions .game-btn:nth-child(n + 3) {
-    display: none;
   }
   .placement-banner {
     bottom: 25px;
