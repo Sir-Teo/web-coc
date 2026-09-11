@@ -35,6 +35,40 @@ function land(m: GameModel) {
 }
 
 describe('physical projectile damage', () => {
+  it('an archer held at a blocking wall launches an arrow instead of damaging it early', () => {
+    const { m, b, hall, u } = arena();
+    const wall = makeBuilding(9002, 'wall', 6, 11);
+    b.buildings.push(wall);
+    u.x = 5;
+    u.path = [{ x: 6.5, y: 11.5 }];
+    u.pathAt = 100;
+    m.step(0.05);
+    expect(b.projectiles![0].targetId).toBe(wall.id);
+    expect(wall.hp).toBe(wall.maxHp);
+    land(m);
+    expect(wall.hp).toBeCloseTo(wall.maxHp - m.troopStats('archer').damage * 1.6);
+    expect(hall.hp).toBe(hall.maxHp);
+  });
+
+  it('impacts within a long step resolve by arrival time, not the order towers launched', () => {
+    const { m, b, u, fx } = arena('giant');
+    const cannon = makeBuilding(9002, 'cannon', 1, 10);
+    const archer = makeBuilding(9003, 'archertower', 5, 7);
+    b.buildings.push(cannon, archer);
+    u.hp = 1;
+    u.cooldown = 100;
+    m.step(0.05);
+    const shots = b.projectiles!;
+    expect(shots.map((p) => p.sourceId)).toEqual([cannon.id, archer.id]);
+    expect(shots[1].impact).toBeLessThan(shots[0].impact);
+    m.step(0.5);
+    expect(u.hp).toBe(1 - shots[1].damage);
+    expect(fx.filter((e) => e.type === 'impact').map((e) => e.sourceId)).toEqual([
+      archer.id,
+      cannon.id,
+    ]);
+  });
+
   it('a long final frame cannot apply a hit scheduled beyond the raid deadline', () => {
     const { m, b, hall } = arena();
     b.elapsed = 179.85;
