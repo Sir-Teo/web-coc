@@ -3,6 +3,18 @@ import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall
 import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
+  REPLAY_VERSION,
+  REPLAY_LIMIT,
+  MAX_REPLAY_STEPS,
+  MAX_REPLAY_ACTIONS,
+  MAX_REPLAY_STEPS_PER_UPDATE,
+  replayBattle,
+  validateReplay,
+  type ReplayData,
+  type ReplayAction,
+  type ReplayPlayback,
+} from './replay';
+import {
   HERO_ABILITY,
   heroStats,
   heroLevelCap,
@@ -88,6 +100,7 @@ export interface RaidRecord {
   deployed: Army;
   spells: SpellBook;
   hero?: { level: number; abilityUsed: boolean };
+  replay?: ReplayData;
 }
 export interface Save {
   version: 2;
@@ -160,6 +173,7 @@ export interface MortarShell {
   radius: number;
 }
 export interface Battle {
+  troopLevels?: Army;
   index: number;
   practice: boolean;
   carriedArmy: Army;
@@ -183,6 +197,8 @@ export interface Battle {
   destruction: number;
   stars: number;
   loot: { gold: number; elixir: number };
+  /** Storage headroom at the attacker's village; absent during replays, which never bank loot. */
+  lootRoom?: { gold: number; elixir: number };
   result?: BattleResult;
   seed: number;
 }
@@ -224,6 +240,15 @@ export const BATTLE_SECONDS = 180;
 export class GameModel {
   state: Save;
   battle: Battle | null = null;
+  replay: ReplayPlayback | null = null;
+  private recording: ReplayData | null = null;
+  private recordBattles = true;
+  private replayRunner: GameModel | null = null;
+  private replayData: ReplayData | null = null;
+  private replayStep = 0;
+  private replayAction = 0;
+  private replayBudget = 0;
+  private replaySeekPaused = true;
   private selection: number | null = null;
   private wallGroup: number[] = [];
   wallMove: WallMove | null = null;
@@ -356,12 +381,16 @@ export class GameModel {
     return this.state.spellQueue.length;
   }
   troopLevel(kind: TroopKind) {
-    return this.state.troopLevels?.[kind] ?? 1;
+    return this.battle?.troopLevels?.[kind] ?? this.state.troopLevels?.[kind] ?? 1;
   }
   troopStats(kind: TroopKind) {
     const d = TROOPS[kind],
       bonus = 1 + (this.troopLevel(kind) - 1) * 0.3;
-    return { ...d, hp: Math.round(d.hp * bonus), damage: Math.round(d.damage * bonus) };
+    return {
+      ...d,
+      hp: Math.round(d.hp * bonus),
+      damage: Math.round(d.damage * bonus),
+    };
   }
   researchCost(kind: TroopKind) {
     return researchCost(kind, this.troopLevel(kind));
@@ -373,7 +402,9 @@ export class GameModel {
     const lab = this.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
     if (!lab || lab.upgradeEnd) return this.notify('Your laboratory must be ready to research.');
     if (!this.troopUnlocked(kind))
-      return this.notify(`Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`);
+      return this.notify(
+        `Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`,
+      );
     if (this.state.research) return this.notify('Research is already in progress.');
     if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
       return this.notify('This troop is at its maximum level.');
@@ -382,7 +413,10 @@ export class GameModel {
     const cost = this.researchCost(kind);
     if (this.state.elixir < cost) return this.notify('Not enough elixir.');
     this.state.elixir -= cost;
-    this.state.research = { kind, end: this.clock + this.researchSeconds(kind) * 1000 };
+    this.state.research = {
+      kind,
+      end: this.clock + this.researchSeconds(kind) * 1000,
+    };
     this.notify(`Researching level ${this.troopLevel(kind) + 1} ${TROOPS[kind].name}.`);
     this.changed();
   }
@@ -469,7 +503,10 @@ export class GameModel {
         reward: 45,
         icon: 'Trophy',
       },
-    ].map((q) => ({ ...q, claimed: this.state.claimedQuests?.includes(q.id) ?? false }));
+    ].map((q) => ({
+      ...q,
+      claimed: this.state.claimedQuests?.includes(q.id) ?? false,
+    }));
   }
   claimQuest(id: string) {
     const quest = this.quests.find((q) => q.id === id);
@@ -622,10 +659,10 @@ export class GameModel {
         goblin: 1,
         wallbreaker: 1,
       };
-      this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.troopLevel(kind) + 1);
+      this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.state.troopLevels[kind] + 1);
       delete this.state.research;
       this.state.xp += 30;
-      this.notify(`${TROOPS[kind].name} upgraded to level ${this.troopLevel(kind)}!`);
+      this.notify(`${TROOPS[kind].name} upgraded to level ${this.state.troopLevels[kind]}!`);
       structural = true;
       changed = true;
     }
@@ -755,7 +792,6 @@ export class GameModel {
     );
     return true;
   }
-
   get selectedWalls(): Building[] {
     if (this.battle || this.placement || this.wallMove) return [];
     const anchor = this.state.buildings.find((b) => b.id === this.selected && b.kind === 'wall');
@@ -1296,9 +1332,11 @@ export class GameModel {
     return true;
   }
   deployHero(x: number, y: number) {
+    if (this.replay) return false;
     const b = this.battle,
       h = b?.hero;
     if (!b || b.finished || !h || h.unitId !== null || this.deployBlocked(x, y)) return false;
+    this.recordAction({ type: 'hero', x, y });
     this.beginFight();
     const stats = heroStats(h.level, h.townhall);
     h.unitId = this.state.nextId++;
@@ -1321,6 +1359,7 @@ export class GameModel {
     return true;
   }
   activateHeroAbility(automatic = false) {
+    if (this.replay) return false;
     const b = this.battle,
       h = b?.hero;
     const u = b?.units.find((u) => u.id === h?.unitId);
@@ -1335,6 +1374,7 @@ export class GameModel {
       (!automatic && u.hp <= 0)
     )
       return false;
+    if (!automatic) this.recordAction({ type: 'ability' });
     h.abilityUsed = true;
     h.rageUntil = b.elapsed + HERO_ABILITY.duration;
     u.hp = Math.min(u.maxHp, u.hp + u.maxHp * HERO_ABILITY.healFraction);
@@ -1356,7 +1396,13 @@ export class GameModel {
         attacking: false,
       });
     }
-    this.onEffect({ type: 'trap', x: u.x, y: u.y, text: 'IRON FIST!', color: 0xffcc4d });
+    this.onEffect({
+      type: 'trap',
+      x: u.x,
+      y: u.y,
+      text: 'IRON FIST!',
+      color: 0xffcc4d,
+    });
     this.changed();
     return true;
   }
@@ -1365,8 +1411,9 @@ export class GameModel {
   }
   startBattle(index: number, practice = false) {
     if (this.battle) return;
-    if (index < 0 || index >= CAMPAIGN.length || (index > 0 && !this.state.stars[index - 1]))
-      return;
+    if (index < 0 || index >= CAMPAIGN.length) return;
+    if (index > 0 && !this.state.stars[index - 1])
+      return this.notify(`Earn a star on ${CAMPAIGN[index - 1].name} to unlock this village.`);
     if (this.armySize === 0 && !this.heroReady)
       return this.notify('Prepare an army or a hero before attacking.');
     this.cancel();
@@ -1375,39 +1422,41 @@ export class GameModel {
       this.state.lastArmy = { ...this.state.army };
       this.state.lastSpells = { ...this.state.spells };
     }
-    this.battle = {
+    const initial = {
       index,
       practice,
-      carriedArmy: { ...this.state.army },
       buildings: practice
-        ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
+        ? this.state.buildings.map((building) => ({
+            ...building,
+            hp: building.maxHp,
+            cooldown: 0,
+          }))
         : enemyBase(index),
-      units: [],
-      remaining: { ...this.state.army },
+      army: { ...this.state.army },
       spells: { ...this.state.spells },
-      carried: { ...this.state.spells },
-      auras: [],
-      shells: [],
-      defenseTargets: {},
-      traps: {},
+      troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
+      nextId: this.state.nextId,
+      ...(!practice
+        ? { lootRoom: {
+            gold: Math.min(CAMPAIGN[index].gold,
+              Math.max(0, Math.floor(this.resourceCap('gold') - this.state.gold))),
+            elixir: Math.min(CAMPAIGN[index].elixir,
+              Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir))),
+          } }
+        : {}),
       hero: this.heroReady
-        ? {
-            level: this.state.king!.level,
-            townhall: this.townhallLevel,
-            unitId: null,
-            abilityUsed: false,
-            rageUntil: 0,
-          }
+        ? { level: this.state.king!.level, townhall: this.townhallLevel }
         : undefined,
-      elapsed: 0,
-      prep: PREP_SECONDS,
-      started: false,
-      finished: false,
-      destruction: 0,
-      stars: 0,
-      loot: { gold: 0, elixir: 0 },
-      seed: 1337 + index,
     };
+    this.battle = replayBattle(initial);
+    this.recording = this.recordBattles
+      ? {
+          version: REPLAY_VERSION,
+          initial: structuredClone(initial),
+          steps: [],
+          actions: [],
+        }
+      : null;
     this.activeTroop = TROOP_KEYS.find((k) => this.state.army[k] > 0) ?? 'swordsman';
     this.activeSpell = null;
     this.activeHero = false;
@@ -1417,7 +1466,8 @@ export class GameModel {
   deployBlocked(x: number, y: number) {
     const b = this.battle;
     if (!b) return true;
-    if (x < 1 || y < 1 || x > 27 || y > 27) return true;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 1 || y < 1 || x > 27 || y > 27)
+      return true;
     return b.buildings.some(
       (v) =>
         v.hp > 0 &&
@@ -1430,6 +1480,7 @@ export class GameModel {
     );
   }
   deploy(x: number, y: number) {
+    if (this.replay) return false;
     if (this.activeHero) return this.deployHero(x, y);
     const b = this.battle,
       k = this.activeTroop;
@@ -1438,6 +1489,7 @@ export class GameModel {
       this.notify('Deploy on the grass outside the red boundary.');
       return false;
     }
+    this.recordAction({ type: 'troop', kind: k, x, y });
     this.beginFight();
     b.remaining[k]--;
     if (!b.practice) this.state.army[k]--;
@@ -1472,10 +1524,13 @@ export class GameModel {
     return placed;
   }
   castSpell(x: number, y: number) {
+    if (this.replay) return false;
     const b = this.battle,
       k = this.activeSpell;
     if (!b || b.finished || !k || b.spells[k] <= 0) return false;
-    if (x < 0 || y < 0 || x > 28 || y > 28) return false;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > 28 || y > 28)
+      return false;
+    this.recordAction({ type: 'spell', kind: k, x, y });
     this.beginFight();
     b.spells[k]--;
     if (!b.practice) this.state.spells[k]--;
@@ -1507,12 +1562,25 @@ export class GameModel {
     return b.auras.some((a) => a.kind === kind && Math.hypot(a.x - x, a.y - y) <= radius);
   }
   step(dt: number) {
+    if (!Number.isFinite(dt) || dt <= 0) return;
+    if (this.replay) {
+      this.stepReplay(dt);
+      return;
+    }
     const b = this.battle;
     if (!b || b.finished) return;
+    if (this.recording) {
+      if (this.recording.steps.length >= MAX_REPLAY_STEPS || dt > 10 || dt < 0.000001)
+        this.recording = null;
+      else this.recording.steps.push(dt);
+    }
     if (!b.started) {
       // Scouting. The battle clock has not begun, but the countdown to it has.
       b.prep = Math.max(0, b.prep - dt);
-      if (b.prep <= 0) b.started = true;
+      if (b.prep <= 0) {
+        b.started = true;
+        this.changed();
+      }
       return;
     }
     // A long frame or imported replay delta cannot land a shot after the raid deadline.
@@ -1538,7 +1606,10 @@ export class GameModel {
       u.attacking = false;
       const base =
         u.hero && b.hero
-          ? { ...this.troopStats(u.kind), ...heroStats(b.hero.level, b.hero.townhall) }
+          ? {
+              ...this.troopStats(u.kind),
+              ...heroStats(b.hero.level, b.hero.townhall),
+            }
           : this.troopStats(u.kind);
       const d = {
         ...base,
@@ -1692,7 +1763,12 @@ export class GameModel {
           Math.hypot(u.x - shell.x, u.y - shell.y) <= shell.radius
         )
           u.hp -= shell.damage;
-      this.onEffect({ type: 'blast', x: shell.x, y: shell.y, radius: shell.radius });
+      this.onEffect({
+        type: 'blast',
+        x: shell.x,
+        y: shell.y,
+        radius: shell.radius,
+      });
     }
     b.shells = b.shells.filter((shell) => shell.impact > b.elapsed);
     for (const tower of b.buildings) {
@@ -1775,7 +1851,12 @@ export class GameModel {
         this.detonate(u, troop.deathDamage * bonus);
         continue;
       }
-      this.onEffect({ type: 'blast', x: u.x, y: u.y, radius: troop.deathRadius });
+      this.onEffect({
+        type: 'blast',
+        x: u.x,
+        y: u.y,
+        radius: troop.deathRadius,
+      });
       for (const v of b.buildings)
         if (v.hp > 0 && distanceTo(u, v) <= (troop.deathRadius ?? 1.5))
           this.damage(v, troop.deathDamage);
@@ -1821,7 +1902,10 @@ export class GameModel {
       const taken = total
         ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
         : dead / Math.max(1, structures.length);
-      b.loot[resource] = Math.floor(CAMPAIGN[b.index][resource] * Math.min(1, Math.max(0, taken)));
+      b.loot[resource] = Math.min(
+        Math.floor(CAMPAIGN[b.index][resource] * Math.min(1, Math.max(0, taken))),
+        b.lootRoom?.[resource] ?? Infinity,
+      );
     }
   }
   private detonate(u: Unit, power: number) {
@@ -1850,12 +1934,27 @@ export class GameModel {
     }
   }
   finishBattle() {
+    if (this.replay) return;
     const b = this.battle;
     if (!b || b.finished) return;
+    this.recordAction({ type: 'end' });
     this.refreshBattleScore();
     b.finished = true;
     b.projectiles = [];
     const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
+    // A playback runner reproduces the recorded result without applying a
+    // second village's storage limits or producing rewards/history of its own.
+    if (!this.recordBattles) {
+      b.result = {
+        gold: b.loot.gold,
+        elixir: b.loot.elixir,
+        trophies,
+        stars: b.stars,
+        destruction: b.destruction,
+      };
+      this.changed();
+      return;
+    }
     const gold = b.practice
         ? 0
         : Math.max(0, Math.min(b.loot.gold, this.resourceCap('gold') - this.state.gold)),
@@ -1873,7 +1972,13 @@ export class GameModel {
       ).length;
       this.state.xp += b.stars * 15;
     }
-    b.result = { gold, elixir, trophies, stars: b.stars, destruction: b.destruction };
+    b.result = {
+      gold,
+      elixir,
+      trophies,
+      stars: b.stars,
+      destruction: b.destruction,
+    };
     const deployed = emptyArmy(),
       spells = emptySpells();
     for (const k of TROOP_KEYS) deployed[k] = b.carriedArmy[k] - b.remaining[k];
@@ -1886,6 +1991,7 @@ export class GameModel {
         practice: b.practice,
         duration: Math.min(BATTLE_SECONDS, b.elapsed),
         result: { ...b.result },
+        ...(this.recording && validateReplay(this.recording) ? { replay: this.recording } : {}),
         deployed,
         spells,
         ...(b.hero?.unitId != null
@@ -1894,9 +2000,237 @@ export class GameModel {
       },
       ...(this.state.raidLog ?? []),
     ].slice(0, 20);
+    for (const old of this.state.raidLog.slice(REPLAY_LIMIT)) delete old.replay;
+    this.recording = null;
     this.changed();
   }
+  /**
+   * The village is about to be put away while a raid is open. Troops leave the camps the
+   * moment they are deployed, so abandoning the battle unresolved would spend an army for
+   * nothing: settle it at its current score instead, exactly as surrendering does.
+   */
+  suspendBattle() {
+    const b = this.battle;
+    if (!b) return;
+    if (this.replay) return this.returnHome();
+    const spent =
+      TROOP_KEYS.some((k) => b.remaining[k] < b.carriedArmy[k]) ||
+      SPELL_KEYS.some((k) => b.spells[k] < b.carried[k]) ||
+      b.hero?.unitId != null;
+    // Nothing was committed yet, so scouting costs the player nothing.
+    if (!b.finished && spent) this.finishBattle();
+    this.battle = null;
+    this.recording = null;
+    this.selected = null;
+    this.activeSpell = null;
+    this.activeHero = false;
+  }
+  /** Toolbox mutations are not player inputs and cannot produce faithful recordings. */
+  discardRecording() {
+    this.recording = null;
+  }
+  private recordAction(
+    action:
+      | Omit<Extract<ReplayAction, { type: 'troop' }>, 'step'>
+      | Omit<Extract<ReplayAction, { type: 'spell' }>, 'step'>
+      | { type: 'hero'; x: number; y: number }
+      | { type: 'ability' | 'end' },
+  ) {
+    if (!this.recording) return;
+    if (this.recording.actions.length >= MAX_REPLAY_ACTIONS) {
+      this.recording = null;
+      return;
+    }
+    this.recording.actions.push({
+      ...action,
+      step: this.recording.steps.length,
+    } as ReplayAction);
+  }
+  startReplay(recordId: number) {
+    if (this.battle && !this.battle.finished && !this.replay) return false;
+    const record = this.state.raidLog?.find((r) => r.id === recordId);
+    if (
+      !record?.replay ||
+      record.replay.version !== REPLAY_VERSION ||
+      !validateReplay(record.replay)
+    ) {
+      this.notify('This attack has no compatible replay. New attacks record automatically.');
+      return false;
+    }
+    return this.openReplay(record.replay, recordId);
+  }
+  /** Imported recordings are transient and never enter the home result log. */
+  openReplay(data: ReplayData, recordId: number | null = null) {
+    if (
+      (this.battle && !this.battle.finished && !this.replay) ||
+      !validateReplay(data) ||
+      data.version !== REPLAY_VERSION
+    )
+      return false;
+    this.cancel();
+    this.editing = false;
+    this.recording = null;
+    this.replayData = structuredClone(data);
+    this.replay = {
+      recordId,
+      paused: false,
+      speed: 1,
+      time: 0,
+      duration: data.steps.reduce((n, dt) => n + dt, 0),
+      complete: false,
+      seeking: false,
+      seekTarget: 0,
+    };
+    this.resetReplayRunner();
+    this.battle = this.replayRunner!.battle;
+    this.activeHero = false;
+    this.activeSpell = null;
+    this.selected = null;
+    this.applyReplayActions();
+    this.changed();
+    return true;
+  }
+  private resetReplayRunner() {
+    const data = this.replayData!;
+    const runner = new GameModel();
+    runner.recordBattles = false;
+    runner.state.army = { ...data.initial.army };
+    runner.state.spells = { ...data.initial.spells };
+    runner.state.troopLevels = { ...data.initial.troopLevels };
+    runner.state.nextId = data.initial.nextId;
+    runner.battle = replayBattle(data.initial);
+    runner.onEffect = (fx) => {
+      if (!this.replay?.seeking) this.onEffect(fx);
+    };
+    runner.onChange = () => {
+      if (!this.replay?.seeking) this.changed();
+    };
+    this.replayRunner = runner;
+    this.replayStep = this.replayAction = this.replayBudget = 0;
+  }
+  replayRecording(recordId?: number) {
+    return recordId === undefined
+      ? this.replayData
+      : (this.state.raidLog?.find((r) => r.id === recordId)?.replay ?? null);
+  }
+  restartReplay() {
+    if (!this.replayData || !this.replay) return false;
+    return this.openReplay(this.replayData, this.replay.recordId);
+  }
+  /** Reconstruct silently in bounded chunks; dragging never blocks the browser for a whole raid. */
+  seekReplay(seconds: number) {
+    const r = this.replay;
+    if (!r || !Number.isFinite(seconds)) return false;
+    if (!r.seeking) this.replaySeekPaused = r.paused;
+    r.seekTarget = Math.max(0, Math.min(r.duration, seconds));
+    r.seeking = true;
+    r.complete = false;
+    r.paused = true;
+    r.time = 0;
+    this.resetReplayRunner();
+    this.applyReplayActions();
+    this.advanceReplaySeek();
+    this.changed();
+    return true;
+  }
+  private advanceReplaySeek() {
+    const r = this.replay!,
+      data = this.replayData!;
+    let work = 0;
+    // Stop on the last recorded simulation boundary at or before the requested time.
+    while (
+      this.replayStep < data.steps.length &&
+      r.time + data.steps[this.replayStep] <= r.seekTarget + 1e-9 &&
+      work++ < MAX_REPLAY_STEPS_PER_UPDATE
+    ) {
+      const dt = data.steps[this.replayStep++];
+      r.time += dt;
+      this.replayRunner!.step(dt);
+      this.applyReplayActions();
+    }
+    if (
+      this.replayStep === data.steps.length ||
+      r.time + data.steps[this.replayStep] > r.seekTarget + 1e-9
+    ) {
+      r.seeking = false;
+      r.paused = r.complete || this.replaySeekPaused;
+      this.battle = this.replayRunner!.battle;
+      this.changed();
+    }
+  }
+  skipReplayScouting() {
+    const data = this.replayData;
+    if (!this.replay || !data) return;
+    const first = data.actions.find(
+      (a) => a.type === 'troop' || a.type === 'hero' || a.type === 'spell',
+    );
+    this.seekReplay(
+      first
+        ? data.steps.slice(0, first.step).reduce((n, dt) => n + dt, 0)
+        : Math.min(PREP_SECONDS, this.replay.duration),
+    );
+  }
+  toggleReplay() {
+    if (!this.replay || this.replay.complete || this.replay.seeking) return;
+    this.replay.paused = !this.replay.paused;
+    this.changed();
+  }
+  setReplaySpeed(speed: number) {
+    if (!this.replay || (speed !== 1 && speed !== 2 && speed !== 4)) return;
+    this.replay.speed = speed;
+    this.changed();
+  }
+  private applyReplayActions() {
+    const data = this.replayData!,
+      runner = this.replayRunner!;
+    while (
+      this.replayAction < data.actions.length &&
+      data.actions[this.replayAction].step === this.replayStep
+    ) {
+      const a = data.actions[this.replayAction++];
+      if (a.type === 'troop') {
+        runner.activeTroop = a.kind;
+        runner.deploy(a.x, a.y);
+      } else if (a.type === 'spell') {
+        runner.activeSpell = a.kind;
+        runner.castSpell(a.x, a.y);
+      } else if (a.type === 'hero') runner.deployHero(a.x, a.y);
+      else if (a.type === 'ability') runner.activateHeroAbility();
+      else runner.finishBattle();
+    }
+    if (this.replayStep === data.steps.length) {
+      this.replay!.complete = true;
+      this.replay!.paused = true;
+      if (!this.replay!.seeking) this.changed();
+    }
+  }
+  private stepReplay(dt: number) {
+    const replay = this.replay!;
+    if (replay.seeking) {
+      this.advanceReplaySeek();
+      return;
+    }
+    if (replay.paused || replay.complete) return;
+    this.replayBudget += dt * replay.speed;
+    const data = this.replayData!;
+    let work = 0;
+    while (
+      this.replayStep < data.steps.length &&
+      this.replayBudget + 1e-9 >= data.steps[this.replayStep] &&
+      work++ < MAX_REPLAY_STEPS_PER_UPDATE
+    ) {
+      const delta = data.steps[this.replayStep++];
+      this.replayBudget -= delta;
+      replay.time += delta;
+      this.replayRunner!.step(delta);
+      this.applyReplayActions();
+    }
+  }
   returnHome() {
+    this.replay = null;
+    this.replayRunner = null;
+    this.replayData = null;
+    this.recording = null;
     this.battle = null;
     this.selected = null;
     this.activeSpell = null;
@@ -1938,7 +2272,7 @@ export function makeBuilding(
     level,
     hp,
     maxHp: hp,
-    stored: kind === 'goldmine' || kind === 'collector' ? 1800 : 0,
+    stored: 0,
     cooldown: 0,
   };
 }
@@ -2139,7 +2473,11 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
       cy = Math.floor(u.y);
     for (let oy = -1; oy <= 1; oy++)
       for (let ox = -1; ox <= 1; ox++) {
-        for (const v of buckets.get((cy + oy) * 28 + cx + ox) ?? []) {
+        const nx = cx + ox,
+          ny = cy + oy;
+        // A flat index wraps at the row edges; column 0 must not neighbour column 27.
+        if (nx < 0 || nx > 27 || ny < 0 || ny > 27) continue;
+        for (const v of buckets.get(ny * 28 + nx) ?? []) {
           if (v.id <= u.id) continue;
           if (!!TROOPS[u.kind].flying !== !!TROOPS[v.kind].flying) continue;
           const spacing = (u.kind === 'giant' ? 0.85 : 0.5) + (v.kind === 'giant' ? 0.85 : 0.5);

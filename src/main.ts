@@ -56,6 +56,8 @@ async function boot() {
   window.addEventListener('pagehide', () => {
     clearInterval(economyTimer);
     model.tick(Date.now());
+    // A raid in progress has already spent its troops; settle it before the state is stored.
+    model.suspendBattle();
     // saveGame writes its local backup synchronously before yielding to IndexedDB.
     void saveGame(model.state);
     ownsSession = false;
@@ -119,6 +121,7 @@ async function boot() {
             level: b.level,
             upgrading: !!b.upgradeEnd,
           })),
+        replay: model.replay,
         battle: model.battle
           ? {
               time: model.battle.elapsed,

@@ -12,8 +12,9 @@ import {
 import { TROOPS, TROOP_KEYS, CAMPAIGN, type TroopKind } from '../src/game/data';
 import { migrateSave, validateSave } from '../src/game/save';
 
-function arena(buildings: Building[]) {
+function arena(buildings: Building[], configure?: (model: GameModel) => void) {
   const model = new GameModel();
+  configure?.(model);
   model.startBattle(0);
   model.battle!.buildings = buildings;
   model.battle!.started = true;
@@ -89,11 +90,12 @@ describe('specialist troops', () => {
   it('a defeated Wall Breaker leaves a weaker bomb, with researched damage', () => {
     const wall = makeBuilding(1000, 'wall', 10, 10, 3);
     const hall = makeBuilding(1001, 'townhall', 20, 20);
-    const m = arena([wall, hall]);
-    m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 2])) as Record<
-      TroopKind,
-      number
-    >;
+    const m = arena([wall, hall], (model) => {
+      model.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 2])) as Record<
+        TroopKind,
+        number
+      >;
+    });
     const breaker = unit(m, 'wallbreaker', 9.5, 10.5);
     breaker.hp = 0;
     m.step(0.05);
@@ -244,5 +246,96 @@ describe('resource raids and save compatibility', () => {
     const invalid = initialSave();
     invalid.army.goblin = NaN;
     expect(validateSave(migrateSave(invalid))).toBe(false);
+  });
+});
+
+describe('putting the village away mid-raid', () => {
+  it('settles an attack in progress instead of spending the army for nothing', () => {
+    const m = new GameModel();
+    const army = { ...m.state.army };
+    const trophies = m.state.trophies;
+    m.startBattle(0);
+    m.activeTroop = 'swordsman';
+    for (let i = 0; i < 6; i++) expect(m.deploy(1 + i * 0.3, 1)).toBe(true);
+    for (let t = 0; t < 400; t++) m.step(0.05);
+    m.suspendBattle();
+    expect(m.battle).toBeNull();
+    expect(m.state.raidLog).toHaveLength(1);
+    expect(m.state.stats.raids).toBe(1);
+    expect(m.state.army.swordsman).toBe(army.swordsman - 6);
+    expect(m.state.trophies).not.toBe(trophies);
+    // The settled result survives the reload the suspension was preparing for.
+    const reloaded = new GameModel(structuredClone(m.state));
+    expect(validateSave(reloaded.state)).toBe(true);
+    expect(reloaded.state.raidLog).toHaveLength(1);
+  });
+  it('charges nothing when the attack was still being scouted', () => {
+    const m = new GameModel();
+    const army = { ...m.state.army };
+    const trophies = m.state.trophies;
+    m.startBattle(0);
+    for (let t = 0; t < 100; t++) m.step(0.05);
+    m.suspendBattle();
+    expect(m.battle).toBeNull();
+    expect(m.state.raidLog ?? []).toHaveLength(0);
+    expect(m.state.army).toEqual(army);
+    expect(m.state.trophies).toBe(trophies);
+  });
+  it('leaves a replay alone rather than recording it as an attack', () => {
+    const m = new GameModel();
+    m.startBattle(0);
+    m.activeTroop = 'swordsman';
+    for (let i = 0; i < 8; i++) m.deploy(1 + i * 0.2, 10);
+    for (let t = 0; t < 2600 && !m.battle!.finished; t++) m.step(0.05);
+    const viewer = new GameModel(structuredClone(m.state));
+    expect(viewer.startReplay(viewer.state.raidLog![0].id)).toBe(true);
+    viewer.suspendBattle();
+    expect(viewer.replay).toBeNull();
+    expect(viewer.battle).toBeNull();
+    expect(viewer.state.raidLog).toHaveLength(1);
+    expect(viewer.state.stats.raids).toBe(m.state.stats.raids);
+  });
+});
+
+describe('loot the storages can actually take', () => {
+  const raid = (prepare: (model: GameModel) => void) => {
+    const m = new GameModel();
+    prepare(m);
+    m.startBattle(0);
+    m.activeTroop = 'swordsman';
+    for (let i = 0; i < 12; i++) m.deploy(1 + i * 0.2, 10);
+    for (let t = 0; t < 2600 && !m.battle!.finished; t++) m.step(0.05);
+    return m;
+  };
+  it('shows nothing on the loot bars when there is nowhere to put it', () => {
+    const m = raid((v) => {
+      v.state.gold = v.resourceCap('gold');
+      v.state.elixir = v.resourceCap('elixir');
+    });
+    expect(m.battle!.destruction).toBeGreaterThan(0);
+    expect(m.battle!.loot).toEqual({ gold: 0, elixir: 0 });
+    expect(m.battle!.result!.gold).toBe(0);
+    expect(m.battle!.result!.elixir).toBe(0);
+  });
+  it('stops the bars at the remaining headroom and banks exactly that', () => {
+    const m = raid((v) => {
+      v.state.gold = v.resourceCap('gold') - 500;
+      v.state.elixir = v.resourceCap('elixir') - 700;
+    });
+    expect(m.battle!.loot.gold).toBe(500);
+    expect(m.battle!.loot.elixir).toBe(700);
+    expect(m.battle!.result!.gold).toBe(m.battle!.loot.gold);
+    expect(m.battle!.result!.elixir).toBe(m.battle!.loot.elixir);
+    expect(m.state.gold).toBe(m.resourceCap('gold'));
+    expect(m.state.elixir).toBe(m.resourceCap('elixir'));
+  });
+  it('still pays a full raid into an empty village', () => {
+    const m = raid((v) => {
+      v.state.gold = 0;
+      v.state.elixir = 0;
+    });
+    expect(m.battle!.loot.gold).toBeGreaterThan(0);
+    expect(m.battle!.result!.gold).toBe(m.battle!.loot.gold);
+    expect(m.state.gold).toBe(m.battle!.loot.gold);
   });
 });

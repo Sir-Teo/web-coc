@@ -170,8 +170,11 @@ export class DeveloperControls {
   }
   endBattle(victory: boolean) {
     const battle = this.model.battle;
-    if (!battle || battle.finished) throw Error('Start an attack first.');
-    if (victory) for (const b of battle.buildings) b.hp = 0;
+    if (!battle || battle.finished || this.model.replay) throw Error('Start an attack first.');
+    if (victory) {
+      this.model.discardRecording();
+      for (const b of battle.buildings) b.hp = 0;
+    }
     this.model.finishBattle();
   }
 }

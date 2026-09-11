@@ -1,0 +1,90 @@
+import { REPLAY_VERSION, validateReplay, type ReplayData } from './replay';
+import { TROOP_KEYS, SPELL_KEYS } from './data';
+
+export const MAX_REPLAY_FILE_BYTES = 512_000;
+export interface ReplayFile {
+  format: 'crown-clan-replay';
+  version: 1;
+  replay: ReplayData;
+}
+/** Only combat data travels; never serialize a village or unknown imported fields. */
+export function makeReplayFile(replay: ReplayData): ReplayFile {
+  if (!validateReplay(replay)) throw Error('This recording is invalid.');
+  if (replay.version !== REPLAY_VERSION) throw Error('This replay needs a different game version.');
+  const s = replay.initial;
+  const army = (v: typeof s.army) =>
+    Object.fromEntries(TROOP_KEYS.map((k) => [k, v[k]])) as typeof v;
+  const spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, s.spells[k]])) as typeof s.spells;
+  return {
+    format: 'crown-clan-replay',
+    version: 1,
+    replay: {
+      version: replay.version,
+      initial: {
+        index: s.index,
+        practice: s.practice,
+        nextId: s.nextId,
+        ...(s.lootRoom ? { lootRoom: { gold: s.lootRoom.gold, elixir: s.lootRoom.elixir } } : {}),
+        army: army(s.army),
+        spells,
+        troopLevels: army(s.troopLevels),
+        ...(s.hero ? { hero: { level: s.hero.level, townhall: s.hero.townhall } } : {}),
+        buildings: s.buildings.map((b) => ({
+          id: b.id,
+          kind: b.kind,
+          x: b.x,
+          y: b.y,
+          level: b.level,
+          hp: b.hp,
+          maxHp: b.maxHp,
+          stored: 0,
+          cooldown: 0,
+          ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
+          ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
+          ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),
+        })),
+      },
+      steps: [...replay.steps],
+      actions: replay.actions.map((a) => {
+        const base = { step: a.step, type: a.type };
+        if (a.type === 'troop' || a.type === 'spell')
+          return { ...base, type: a.type, kind: a.kind, x: a.x, y: a.y } as typeof a;
+        if (a.type === 'hero') return { ...base, type: a.type, x: a.x, y: a.y };
+        return { ...base, type: a.type };
+      }),
+    },
+  };
+}
+export function parseReplayFile(text: string): ReplayData {
+  if (new TextEncoder().encode(text).length > MAX_REPLAY_FILE_BYTES)
+    throw Error('Replay files must be smaller than 512 KB.');
+  let file: unknown;
+  try {
+    file = JSON.parse(text);
+  } catch {
+    throw Error('That file is not valid replay JSON.');
+  }
+  if (
+    !file ||
+    typeof file !== 'object' ||
+    !('format' in file) ||
+    file.format !== 'crown-clan-replay' ||
+    !('version' in file) ||
+    file.version !== 1 ||
+    !('replay' in file) ||
+    !validateReplay(file.replay)
+  )
+    throw Error('Choose a Crown & Clan replay file, not a village backup.');
+  return makeReplayFile(file.replay).replay;
+}
+export function exportReplayFile(data: ReplayData) {
+  const text = JSON.stringify(makeReplayFile(data));
+  if (new TextEncoder().encode(text).length > MAX_REPLAY_FILE_BYTES)
+    throw Error('This recording is too large to share.');
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'crown-and-clan.crown-replay.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

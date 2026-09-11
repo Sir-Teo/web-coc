@@ -1,4 +1,5 @@
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
+import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import { initialSave, type Save } from './model';
@@ -176,6 +177,7 @@ export function validateSave(input: unknown): input is Save {
               r.hero.level < 1 ||
               r.hero.level > HERO_MAX_LEVEL ||
               typeof r.hero.abilityUsed !== 'boolean')) ||
+          (r.replay !== undefined && !validateReplay(r.replay)) ||
           !r.result ||
           !finite(r.result.gold) ||
           !finite(r.result.elixir) ||
