@@ -292,12 +292,20 @@ function validateVersion(input: unknown, legacy = false): input is Save {
   );
 }
 let db: IDBDatabase | null = null;
+export class SaveRecoveryError extends Error {
+  constructor(public readonly copies: { source: string; text: string }[]) {
+    super('Your saved village could not be opened. Download your saved data before trying again.');
+    this.name = 'SaveRecoveryError';
+  }
+}
 export async function loadSave(): Promise<Save | undefined> {
   // Read stores independently: a corrupt backup must not hide a healthy primary save.
   let backup: unknown;
   let primary: unknown;
+  let backupText: string | null = null;
   try {
-    backup = JSON.parse(localStorage.getItem(KEY) || 'null');
+    backupText = localStorage.getItem(KEY);
+    backup = JSON.parse(backupText || 'null');
   } catch {
     /* Try IndexedDB. */
   }
@@ -317,12 +325,18 @@ export async function loadSave(): Promise<Save | undefined> {
   } catch {
     /* A valid local backup remains usable. */
   }
+  const primaryText = primary == null ? undefined : JSON.stringify(primary, null, 2);
   primary = migrateSave(primary);
   backup = migrateSave(backup);
   if (validateSave(primary) && validateSave(backup))
     return primary.lastTick > backup.lastTick ? primary : backup;
   if (validateSave(primary)) return primary;
   if (validateSave(backup)) return backup;
+  // Existing data must never be overwritten by the new-village autosave.
+  const copies: SaveRecoveryError['copies'] = [];
+  if (backupText !== null) copies.push({ source: 'backup', text: backupText });
+  if (primaryText !== undefined) copies.push({ source: 'primary', text: primaryText });
+  if (copies.length) throw new SaveRecoveryError(copies);
   return undefined;
 }
 export async function saveGame(state: Save): Promise<boolean> {

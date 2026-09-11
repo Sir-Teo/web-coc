@@ -134,8 +134,17 @@ h3 {
 }
 #loading small {
   margin-top: 14px;
+  max-width: min(420px, calc(100% - 48px));
+  text-align: center;
   color: #c1d1b4;
   font-size: 12px;
+}
+.save-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px;
 }
 .player-hud {
   position: absolute;
