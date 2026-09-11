@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { FX } from './model';
+import type { EffectTween } from './effect-timeline';
 
 type Point = { x: number; y: number };
 type Weapon = NonNullable<FX['weapon']>;
@@ -16,7 +17,12 @@ const COLORS: Record<Weapon, number> = {
 export class CombatEffects {
   private objects = new Set<Phaser.GameObjects.Graphics>();
   private flights = new Map<string, Phaser.GameObjects.Graphics>();
-  constructor(private scene: Phaser.Scene) {}
+  constructor(
+    private scene: Phaser.Scene,
+    private animate: (config: EffectTween) => void = (config) => {
+      scene.tweens.add(config);
+    },
+  ) {}
 
   private graphic() {
     const graphic = this.scene.add.graphics().setDepth(8000);
@@ -111,7 +117,7 @@ export class CombatEffects {
       const flash = this.graphic().setPosition(from.x, from.y);
       flash.fillStyle(0xffd28b, 0.9).fillCircle(0, 0, 8);
       flash.fillStyle(0xfff4d2).fillCircle(0, 0, 3);
-      this.scene.tweens.add({
+      this.animate({
         targets: flash,
         alpha: 0,
         scale: 1.6,
@@ -136,7 +142,7 @@ export class CombatEffects {
     g.fillTriangle(8, 13, -6, -1, 8, -4);
     g.fillStyle(0xffe4a5, 0.85).fillEllipse(0, -3, 13, 8);
     g.setScale(reduced ? 1 : 0.6);
-    this.scene.tweens.add({
+    this.animate({
       targets: g,
       scale: 1,
       alpha: 0,
@@ -159,7 +165,7 @@ export class CombatEffects {
       g.lineBetween(-7, -5, 7, 5);
       g.lineBetween(-4, 7, 4, -7);
     }
-    this.scene.tweens.add({
+    this.animate({
       targets: g,
       alpha: 0,
       scale: reduced ? 1 : explosive ? 1.8 : 1.3,

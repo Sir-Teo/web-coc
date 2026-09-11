@@ -18,6 +18,7 @@ import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
 import { defeatPose } from './unit-defeat';
+import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
@@ -72,6 +73,7 @@ export class VillageScene extends Phaser.Scene {
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
+  private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
     super('village');
@@ -114,8 +116,11 @@ export class VillageScene extends Phaser.Scene {
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.detail = this.add.graphics().setDepth(5000);
     this.overlay = this.add.graphics().setDepth(6000);
-    this.combatEffects = new CombatEffects(this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.combatEffects.clear());
+    this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.combatEffects.clear();
+      this.effectTimeline.clear();
+    });
     this.drawPaths();
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
@@ -490,12 +495,16 @@ export class VillageScene extends Phaser.Scene {
   }
   sync() {
     const reduced = this.model.state.settings.reducedMotion;
-    if (reduced && !this.reducedCombatMotion) this.combatEffects.clear();
+    if (reduced && !this.reducedCombatMotion) {
+      this.combatEffects.clear();
+      this.effectTimeline.clear();
+    }
     this.reducedCombatMotion = reduced;
     if (this.model.state.settings.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
+      this.effectTimeline.clear();
       this.resourceFlights.clear();
       this.renderedBattle = this.model.battle;
       this.boundary.signature = '';
@@ -703,6 +712,8 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   drawOverlay(time: number) {
+    if (this.model.battle)
+      this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
     const g = this.overlay;
     g.clear();
@@ -762,7 +773,7 @@ export class VillageScene extends Phaser.Scene {
         const p = iso(aura.x, aura.y),
           radius = SPELLS[aura.kind].radius,
           color = SPELL_COLOR[aura.kind],
-          pulse = 1 + Math.sin(time / 220) * 0.03;
+          pulse = this.model.state.settings.reducedMotion ? 1 : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
         g.fillStyle(color, 0.17);
         g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
         g.lineStyle(2, color, 0.75);
@@ -918,6 +929,15 @@ export class VillageScene extends Phaser.Scene {
     this.detail.fillStyle(color);
     this.detail.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
   }
+  private animateEffect(config: EffectTween) {
+    if (this.model.state.settings.reducedMotion) {
+      // Phaser treats present-but-undefined properties as tween definitions.
+      const { x, y, scale, scaleX, scaleY, ...stationary } = config;
+      config = { ...stationary, delay: 0 };
+    }
+    if (this.model.battle) this.effectTimeline.add(config, this.model.battle.elapsed);
+    else this.tweens.add(config);
+  }
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
@@ -934,7 +954,7 @@ export class VillageScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(8500);
-      this.tweens.add({
+      this.animateEffect({
         targets: label,
         y: p.y - (reduced ? 38 : 80),
         alpha: 0,
@@ -951,7 +971,7 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, 110, 55)
         .setStrokeStyle(3, 0xe9ffb1, 0.8)
         .setDepth(7000);
-      this.tweens.add({
+      this.animateEffect({
         targets: ring,
         scale: 1.8,
         alpha: 0,
@@ -978,7 +998,7 @@ export class VillageScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(9000);
-      this.tweens.add({
+      this.animateEffect({
         targets: text,
         y: p.y - 145,
         alpha: 0,
@@ -994,7 +1014,7 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y, radius * 0.4, radius * 0.2)
         .setStrokeStyle(4, color, 0.95)
         .setDepth(7200);
-      this.tweens.add({
+      this.animateEffect({
         targets: ring,
         scaleX: 5,
         scaleY: 5,
@@ -1006,7 +1026,7 @@ export class VillageScene extends Phaser.Scene {
         for (let i = 0; i < 3; i++) {
           const ox = (i - 1) * 26;
           const bolt = this.add.rectangle(p.x + ox, p.y - 150, 6, 300, color, 0.9).setDepth(7300);
-          this.tweens.add({
+          this.animateEffect({
             targets: bolt,
             alpha: 0,
             scaleX: 0.2,
@@ -1029,7 +1049,7 @@ export class VillageScene extends Phaser.Scene {
         .ellipse(p.x, p.y - 26 - lift, radius * 0.55, radius * 0.28)
         .setStrokeStyle(4, color, 0.95)
         .setDepth(7400);
-      this.tweens.add({
+      this.animateEffect({
         targets: ring,
         scaleX: 2.8,
         scaleY: 2.8,
@@ -1068,7 +1088,7 @@ export class VillageScene extends Phaser.Scene {
       if (!this.model.state.settings.reducedMotion)
         this.cameras.main.shake(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
-      this.tweens.add({
+      this.animateEffect({
         targets: smoke,
         scale: 2.4,
         y: p.y - 65,
@@ -1102,9 +1122,10 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sparks(x: number, y: number, color: number, count: number) {
+    if (this.model.state.settings.reducedMotion) return;
     for (let i = 0; i < count; i++) {
       const dot = this.add.circle(x, y, 2 + Math.random() * 3, color, 0.9).setDepth(8100);
-      this.tweens.add({
+      this.animateEffect({
         targets: dot,
         x: x + (Math.random() - 0.5) * 75,
         y: y - 10 - Math.random() * 55,
