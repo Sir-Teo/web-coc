@@ -53,6 +53,10 @@ test('Hero Hall, dark buildings, and King art load with accurate unlock labels',
   await page.locator('[data-action="progression"]').click();
   await expect(page.locator('.progression-tier')).toHaveCount(8);
   await expect(page.locator('.progression-tier.current')).toContainText('Town Hall 2');
+  const th5 = page.locator('.progression-tier').filter({ has: page.getByRole('heading', { name: 'Town Hall 5', exact: true }) });
+  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Wall/ }).locator('img')).toHaveAttribute('src', /walls-v1\/level-5.webp$/);
+  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Mortar/ }).locator('img')).toHaveAttribute('src', /mortar-levels-v1\/level-3.webp$/);
+  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Archer Tower/ }).locator('img')).toHaveAttribute('src', /tier3\/archertower.webp$/);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/progression-desktop.png',

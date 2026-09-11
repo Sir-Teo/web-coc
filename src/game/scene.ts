@@ -11,6 +11,7 @@ import {
   TROOPS,
   TROOP_KEYS,
   TIER3_LEVEL,
+  buildingTexture,
   asset,
   walkAsset,
   type BuildingKind,
@@ -612,21 +613,7 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      const texture = b.kind === 'wall' ? wallTexture(b.level) :
-        b.kind === 'mortar' ? mortarTexture(b.level) :
-        b.level >= TIER3_LEVEL && !d.singleArtwork
-          ? `${b.kind}-tier3`
-          : b.kind;
-      if (im.texture.key !== texture) im.setTexture(texture);
-      const levelScale = b.kind === 'wall' || b.kind === 'mortar' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
-      im.setPosition(p.x, p.y)
-        .setOrigin(0.5, b.kind === 'wall' ? .84 : .88)
-        .setFlipX(false)
-        .setDisplaySize(
-          b.kind === 'wall' ? wallArt(b.level).height * .75 : d.width * levelScale,
-          b.kind === 'wall' ? wallArt(b.level).height : (d.width * levelScale * im.height) / im.width,
-        )
-        .setDepth(p.y);
+      this.styleBuilding(im, b.kind, b.level).setPosition(p.x, p.y).setDepth(p.y);
       im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
       im.setData('intactHeight', im.displayHeight);
       if (b.kind === 'mortar') {
@@ -698,19 +685,14 @@ export class VillageScene extends Phaser.Scene {
     }
     if (this.model.placement) {
       const level = this.model.moving === null ? 1 : this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
-      const texture = this.model.placement === 'wall' ? wallTexture(level) :
-        this.model.placement === 'mortar' ? mortarTexture(level) : this.model.placement;
-      if (this.ghost?.texture.key !== texture) {
-        this.ghost?.destroy();
+      if (!this.ghost) {
         this.ghost = this.add
-          .image(0, 0, texture)
-          .setOrigin(0.5, 0.88)
+          .image(0, 0, buildingTexture(this.model.placement, level))
           .setAlpha(0.72)
           .setDepth(6001);
-        const d = BUILDINGS[this.model.placement];
-        if (this.model.placement === 'wall') this.ghost.setOrigin(.5, .84).setDisplaySize(wallArt(level).height * .75, wallArt(level).height);
-        else this.ghost.setDisplaySize(d.width, (d.width * this.ghost.height) / this.ghost.width);
       }
+      // A paid upgrade can finish while this preview is open, even within one artwork tier.
+      this.styleBuilding(this.ghost, this.model.placement, level);
       this.updateGhost(this.input.activePointer);
     } else {
       this.ghost?.destroy();
@@ -721,6 +703,15 @@ export class VillageScene extends Phaser.Scene {
     this.drawRuinGround();
     this.syncCampUnits();
     this.lastRevision = this.model.revision;
+  }
+  private styleBuilding(im: Phaser.GameObjects.Image, kind: BuildingKind, level: number) {
+    const texture = buildingTexture(kind, level);
+    if (im.texture.key !== texture) im.setTexture(texture);
+    const wall = kind === 'wall' ? wallArt(level) : undefined;
+    const scale = wall || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
+    const width = wall ? wall.height * .75 : BUILDINGS[kind].width * scale;
+    return im.setOrigin(.5, wall ? .84 : .88).setFlipX(false)
+      .setDisplaySize(width, wall ? wall.height : width * im.height / im.width);
   }
   private syncCampUnits() {
     if (this.model.battle) {

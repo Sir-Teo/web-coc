@@ -1,6 +1,6 @@
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
-import { wallAsset } from './wall-art';
-import { mortarAsset } from './mortar-art';
+import { wallAsset, wallTexture } from './wall-art';
+import { mortarAsset, mortarTexture } from './mortar-art';
 import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
@@ -670,6 +670,12 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 };
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
+/** Shared by placed buildings and placement previews, including legacy art fallbacks. */
+export const buildingTexture = (kind: BuildingKind, level = 1) => {
+  if (kind === 'wall') return wallTexture(level);
+  if (kind === 'mortar') return mortarTexture(level);
+  return level >= TIER3_LEVEL && !BUILDINGS[kind].singleArtwork ? `${kind}-tier3` : kind;
+};
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
@@ -679,12 +685,7 @@ export const asset = (kind: string, level = 1) => {
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
-  if (
-    level >= TIER3_LEVEL &&
-    kind in BUILDINGS &&
-    kind !== 'wall' &&
-    !BUILDINGS[kind as BuildingKind].singleArtwork
-  )
+  if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
     return `/assets/buildings/tier3/${artName(kind)}.webp`;
   const folder =
     kind in TROOPS ? 'characters' : ENVIRONMENT.has(kind) ? 'environment' : 'buildings';

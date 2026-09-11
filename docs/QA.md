@@ -1,5 +1,13 @@
 # Verification record
 
+## Consistent building artwork during movement — September 11, 2026
+
+All 338 unit tests and 27 targeted browser scenarios in each of Chromium and WebKit pass. The production build passes both engines with no reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-f0d4678aece6`.
+
+Moving previews retain the placed building's level artwork, size and ground anchor, and refresh when a paid upgrade finishes. The progression panel uses the artwork for its displayed level. The initial catalog check reproduced the old shrinking preview; the corrected run compares every building kind at four requested levels. A phone relocation checks blocked placement, cancellation, actual pointer placement and reload without resource or builder changes. Its first proposed destination overlapped a Gold Mine; the corrected fixture uses clear village tiles.
+
+Visually reviewed the phone Archer Tower moving preview and the TH5 progression card. See [BUILDING-PRESENTATION.md](BUILDING-PRESENTATION.md) for implementation and remaining artwork limits. Evidence: `output/playtest/building-appearance-verification.json`, `building-appearance-production-report.json`, `upgraded-building-move-*.png` and `progression-level-art-webkit.png`.
+
 ## Wall balance, free placement and early Cannon progression — September 11, 2026
 
 All 338 unit tests pass. The health/free-placement/TH1 Cannon pass completed 39 targeted browser scenarios in each of Chromium and WebKit. The subsequent TH5 elixir correction completed nine Wall scenarios in each engine, including one new case (40 distinct scenarios covered across the two phases). The final production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-bf593c648a1d`.
