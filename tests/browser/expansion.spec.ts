@@ -200,6 +200,11 @@ test('first-run coaching walks the loop, rings its target, and can be skipped', 
 });
 
 test('a run of walls is laid without returning to the shop', async ({ page }) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 3; // TH2 already contains its full allowance of 25 walls.
+    m.changed();
+  });
   await page.locator('[data-action="shop"]').last().click();
   await page.locator('[data-action="tab:Defenses"]').click();
   await page.locator('[data-action="build:wall"]').click();

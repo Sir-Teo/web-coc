@@ -34,6 +34,7 @@ import {
   researchCost,
   researchSeconds,
   storageCapacity,
+  buildingHp,
   upgradeCost,
   upgradeSeconds,
   type BuildingKind,
@@ -527,6 +528,14 @@ export class GameModel {
     }
     const dt = Math.max(0, Math.min(now - this.state.lastTick, 8 * 3600000)) / 1000;
     for (const b of this.state.buildings) {
+      // Home-wall health is derived from its level. Preserve the damage fraction
+      // when loading prototype saves; recorded battle snapshots remain untouched.
+      if (b.kind === 'wall' && b.maxHp !== buildingHp(b.kind, b.level)) {
+        const hp = buildingHp(b.kind, b.level);
+        b.hp = b.maxHp > 0 ? Math.min(1, b.hp / b.maxHp) * hp : hp;
+        b.maxHp = hp;
+        structural = changed = true;
+      }
       const productionSeconds = b.upgradeEnd
         ? Math.max(0, Math.min(dt, (now - b.upgradeEnd) / 1000))
         : dt;
@@ -535,7 +544,7 @@ export class GameModel {
         b.constructing = false;
         b.upgradeEnd = undefined;
         b.upgradeStart = undefined;
-        b.maxHp = BUILDINGS[b.kind].hp * (1 + (b.level - 1) * 0.25);
+        b.maxHp = buildingHp(b.kind, b.level);
         b.hp = b.maxHp;
         structural = true;
         this.notify(`${BUILDINGS[b.kind].name} is ready!`);
@@ -833,7 +842,7 @@ export class GameModel {
     this.state[resource] -= quote.cost;
     for (const b of quote.walls) {
       b.level++;
-      b.maxHp = BUILDINGS.wall.hp * (1 + (b.level - 1) * 0.25);
+      b.maxHp = buildingHp(b.kind, b.level);
       b.hp = b.maxHp;
     }
     const anchor = quote.walls.find((b) => b.id === this.selected) ?? quote.walls[0];
@@ -1917,7 +1926,7 @@ export function makeBuilding(
   y: number,
   level = 1,
 ): Building {
-  const hp = BUILDINGS[kind].hp * (1 + (level - 1) * 0.25);
+  const hp = buildingHp(kind, level);
   return {
     id,
     kind,
@@ -1954,12 +1963,11 @@ export function initialSave(): Save {
   add('archertower', 21, 15);
   add('cannon', 5, 11);
   for (let n = 8; n <= 19; n++) {
-    add('wall', n, 8, 2);
+    if (n <= 12) add('wall', n, 8, 2);
     if (n !== 13 && n !== 14) add('wall', n, 19, 2);
   }
   for (let n = 9; n < 19; n++) {
     add('wall', 8, n, 2);
-    if (n !== 13 && n !== 14) add('wall', 19, n, 2);
   }
   // Walls may border footprints; remove any segment occupying another building's footprint.
   const buildings = b.filter(

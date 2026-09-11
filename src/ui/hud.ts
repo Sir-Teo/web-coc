@@ -7,6 +7,7 @@ import { armySpace, spellSpace } from '../game/army';
 import { CAMPAIGN_LAYOUTS, campaignBlueprint } from '../game/campaign';
 import {
   BUILDINGS,
+  buildingHp,
   TROOPS,
   SPELLS,
   TROOP_HOTKEYS,
@@ -66,7 +67,7 @@ const pct = (v: number) => `${Math.max(0, Math.min(100, Number.isNaN(v) ? 0 : v)
 function statRows(kind: BuildingKind, level: number): [string, string, string][] {
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [
-    ['Heart', 'Hitpoints', n(d.hp * (1 + (level - 1) * 0.25))],
+    ['Heart', 'Hitpoints', n(buildingHp(kind, level))],
   ];
   if (d.trap) {
     rows.length = 0;

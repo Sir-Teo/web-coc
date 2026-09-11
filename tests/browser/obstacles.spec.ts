@@ -68,6 +68,7 @@ test('phone obstacle removal works with busy builders, cancels, reloads and free
   await page.evaluate(() => {
     const m = window.__game.model;
     for (const b of m.state.buildings) delete b.upgradeEnd;
+    m.townhall!.level = 3; // Make room beyond the starter's TH2 wall allowance.
     m.beginBuild('wall');
   });
   const p = await page.evaluate(

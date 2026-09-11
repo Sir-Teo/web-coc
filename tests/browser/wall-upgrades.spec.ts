@@ -118,6 +118,7 @@ test('mixed rows disclose capped walls and unlock elixir after every piece reach
 }) => {
   await page.evaluate(() => {
     const m = window.__game.model;
+    m.state.elixir = 200000; // Four eligible pieces cost 180,000 on the second upgrade.
     const row = m.state.buildings
       .filter((b) => b.kind === 'wall' && b.y === 19 && b.x <= 12)
       .sort((a, b) => a.x - b.x);
@@ -157,6 +158,7 @@ test('wall tools keep resource costs and touch controls reachable on narrow and 
 }) => {
   await page.evaluate(() => {
     const m = window.__game.model;
+    m.state.gold = m.state.elixir = 1000000;
     for (const b of m.state.buildings.filter((b) => b.kind === 'wall')) {
       b.level = 5;
       b.hp = b.maxHp = 1000;

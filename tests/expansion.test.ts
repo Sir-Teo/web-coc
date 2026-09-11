@@ -322,6 +322,7 @@ describe('saves', () => {
 describe('second-pass behaviour', () => {
   it('keeps the wall tool in hand so a run can be laid in one go', () => {
     const m = new GameModel();
+    m.townhall!.level = 3; // TH3 adds room beyond the starter village’s 25 walls.
     m.state.obstacles = []; // Cleared ground for this placement scenario.
     m.beginBuild('wall');
     expect(m.placement).toBe('wall');

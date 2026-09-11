@@ -1,4 +1,5 @@
 import { wallAsset } from './wall-art';
+import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 export type BuildingKind =
   | 'herohall'
@@ -408,12 +409,12 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'Slows ground attackers and channels them toward your defenses.',
     size: 1,
     width: 47,
-    hp: 500,
-    cost: 150,
+    hp: WALL_LEVELS[0].hp,
+    cost: WALL_LEVELS[0].cost,
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [25, 50, 75, 100, 125, 150, 175, 200],
+    available: WALL_COUNTS,
     build: 0,
   },
 };
@@ -664,8 +665,16 @@ export const upgradeSeconds = (kind: BuildingKind, level: number) =>
 /** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
 export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
+/** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
+export const buildingHp = (kind: BuildingKind, level: number) =>
+  kind === 'wall'
+    ? WALL_LEVELS[Math.min(WALL_LEVELS.length, Math.max(1, level)) - 1].hp
+    : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25);
+/** Cost of the destination level; walls use the undiscounted Home Village table. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
-  Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level));
+  kind === 'wall'
+    ? (WALL_LEVELS[level]?.cost ?? 0)
+    : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level));
 export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;
 /** Defences hit 12% harder per level, which is what a defence upgrade buys. */
 export const defenseDamage = (kind: BuildingKind, level: number) =>

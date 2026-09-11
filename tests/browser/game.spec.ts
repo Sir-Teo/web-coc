@@ -46,6 +46,11 @@ test('collects, upgrades, finishes and persists through reload', async ({ page }
   ).toBe(3);
 });
 test('the shop drawer leaves the village live and places by tap or drag', async ({ page }) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall!.level = 3; // TH2 already contains its full allowance of 25 walls.
+    m.changed();
+  });
   await page.locator('[data-action="shop"]').last().click();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   // A drawer is not a dialog: the map underneath stays interactive.

@@ -1,6 +1,7 @@
 import { GameModel, makeBuilding, type Save } from '../game/model';
 import {
   BUILDINGS,
+  buildingHp,
   MAX_TROOP_LEVEL,
   SPELL_KEYS,
   TROOP_KEYS,
@@ -105,7 +106,7 @@ export class DeveloperControls {
     this.edit((m) => {
       for (const b of m.state.buildings) {
         if (b.kind !== 'townhall') b.level = Math.max(b.level, m.maxLevel(b.kind));
-        b.hp = b.maxHp = BUILDINGS[b.kind].hp * (1 + (b.level - 1) * 0.25);
+        b.hp = b.maxHp = buildingHp(b.kind, b.level);
         delete b.upgradeEnd;
         delete b.upgradeStart;
         delete b.constructing;
