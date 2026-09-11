@@ -167,6 +167,7 @@ export class HUD {
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
   private focusBefore: HTMLElement | null = null;
+  private actionSource: HTMLElement | null = null;
   private dragging = false;
   private anchorFrame = 0;
   constructor(
@@ -181,7 +182,12 @@ export class HUD {
       const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
       if (target && !(target as HTMLButtonElement).disabled) {
         this.audio.play('click');
-        this.action(target.dataset.action!);
+        this.actionSource = target;
+        try {
+          this.action(target.dataset.action!);
+        } finally {
+          this.actionSource = null;
+        }
       }
     });
     this.root.addEventListener('pointerdown', (e) => {
@@ -271,12 +277,15 @@ export class HUD {
     // The info sheet describes the selected building, so it is the one panel that
     // must survive the cancel that clears placement state.
     const selected = this.model.selected;
+    // Mouse/touch activation does not necessarily focus a button (notably in
+    // WebKit). Remember the actual launcher before cancellation can redraw it.
+    if (panel && !this.panel)
+      this.focusBefore = this.actionSource ?? (document.activeElement as HTMLElement);
     this.panel = panel;
     if (panel) {
       this.drawerPanel = null;
       this.model.cancel();
       if (panel === 'info') this.model.selected = selected;
-      this.focusBefore = document.activeElement as HTMLElement;
     }
     this.render();
   }
