@@ -190,11 +190,29 @@ export class VillageScene extends Phaser.Scene {
       this.pinchDistance = 0;
       const gesture = this.gesture;
       this.gesture = 'none';
-      if (this.uiBlocked || !this.down) return;
+      const down = this.down;
       this.down = undefined;
+      if (
+        this.uiBlocked || !down || p.downElement !== this.game.canvas ||
+        p.event.type.includes('cancel')
+      ) return;
       if (this.dragged || gesture !== 'none') return;
       this.tap(p);
     });
+    // Phaser sends DOM releases through a separate event. A control can move
+    // under a held pointer when a drawer opens or rerenders.
+    const cancelGesture = () => {
+      this.down = undefined;
+      this.gesture = 'none';
+      this.dragged = false;
+      this.pinchDistance = 0;
+    };
+    this.input.on('pointerdownoutside', cancelGesture);
+    this.input.on('pointerupoutside', cancelGesture);
+    this.game.canvas.addEventListener('pointercancel', cancelGesture);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.game.canvas.removeEventListener('pointercancel', cancelGesture),
+    );
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
       if (!this.uiBlocked) this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.92 : 1.08));
     });
