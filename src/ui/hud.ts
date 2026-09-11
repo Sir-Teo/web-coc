@@ -905,7 +905,16 @@ export class HUD {
         ? this.modal()
         : '';
     if (modalMarkup !== this.modalMarkup) {
-      document.querySelector('#modal-root')!.innerHTML = modalMarkup;
+      const root = document.querySelector('#modal-root')!;
+      const updatingOpenDialog =
+        !!this.modalMarkup &&
+        (result ? this.resultShown : this.panel !== null && this.panel === this.lastPanel);
+      root.innerHTML = modalMarkup;
+      // Updating research, settings or results must not fade/shrink an already open dialog.
+      if (updatingOpenDialog)
+        root.querySelectorAll<HTMLElement>('.modal, .modal-backdrop').forEach((el) => {
+          el.style.animation = 'none';
+        });
       this.modalMarkup = modalMarkup;
       document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
     }
@@ -1443,7 +1452,7 @@ export class HUD {
     const m = this.model,
       lab = m.laboratory;
     const r = m.state.research;
-    return `<div class="modal-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${TROOPS[r.kind].name} research` : 'Make every troop count'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently increases troop health and damage. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? '<p class="facility-research-note">Laboratory upgrade in progress. Research remains available at its completed level.</p>' : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${TROOP_ORDER.map(
+    return `<div class="modal-body research-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${TROOPS[r.kind].name} research` : 'Make every troop count'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently increases troop health and damage. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${TROOP_ORDER.map(
       (k) => {
         const d = m.troopStats(k),
           level = m.troopLevel(k),
