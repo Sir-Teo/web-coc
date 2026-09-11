@@ -130,6 +130,8 @@ export interface Unit {
   attacking: boolean;
   /** Set once a destroyed troop has resolved its death effect. */
   spent?: boolean;
+  /** Simulation time of defeat, retained when reconstructing a battle for display. */
+  defeatedAt?: number;
   ejected?: boolean;
   springUntil?: number;
 }
@@ -1451,7 +1453,9 @@ export class GameModel {
     if (king && !king.spent && king.hp <= king.maxHp * 0.2 && b.hero && !b.hero.abilityUsed)
       this.activateHeroAbility(true);
     for (const u of b.units) {
-      if (u.hp > 0 || u.spent) continue;
+      if (u.hp > 0) continue;
+      u.defeatedAt ??= b.elapsed;
+      if (u.spent) continue;
       u.spent = true;
       const troop = TROOPS[u.kind];
       if (!troop.deathDamage) continue;

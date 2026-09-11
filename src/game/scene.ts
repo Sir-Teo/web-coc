@@ -17,6 +17,7 @@ import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
+import { defeatPose } from './unit-defeat';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
@@ -839,19 +840,21 @@ export class VillageScene extends Phaser.Scene {
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
         }
         if (u.hp <= 0) {
-          if (!im.getData('dying')) {
-            im.setData('dying', true);
-            im.setTint(u.ejected ? 0xffe9ae : 0xa09482);
-            this.tweens.add({
-              targets: im,
-              alpha: 0,
-              angle: u.ejected ? 360 : 70,
-              y: im.y - (u.ejected ? 180 : 0),
-              x: im.x + (u.ejected ? 70 : 0),
-              duration: this.model.state.settings.reducedMotion ? 0 : 320,
-              onComplete: () => im.setVisible(false),
-            });
-          }
+          const flying = !!TROOPS[u.kind].flying;
+          const at = u.defeatedAt ?? im.getData('defeatedAt') ?? battle.elapsed;
+          const pose = defeatPose(
+            battle.finished ? Infinity : battle.elapsed - at,
+            u.ejected ? 'spring' : flying ? 'air' : 'ground',
+            im.getData('facing') ?? -1,
+            this.model.state.settings.reducedMotion,
+            AIR_LIFT,
+          );
+          const p = iso(u.x, u.y);
+          im.setData('dying', true).setData('defeatedAt', at)
+            .setTint(u.ejected ? 0xffe9ae : 0xa09482)
+            .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
+            .setDepth(flying || u.ejected ? 7500 : p.y + 1)
+            .setAngle(pose.angle).setAlpha(pose.alpha).setVisible(pose.visible);
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
