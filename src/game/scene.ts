@@ -19,6 +19,7 @@ import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
 import { troopArt } from './troop-art';
 import { campPlan, campPose, type CampActor } from './camp-presentation';
+import { configureQuadRendering } from './quad-renderer';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
@@ -114,6 +115,7 @@ export class VillageScene extends Phaser.Scene {
     });
   }
   create() {
+    configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     this.add
       .image(WORLD.width / 2, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width, WORLD.height)
