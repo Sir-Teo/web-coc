@@ -194,6 +194,11 @@ export type FX = {
   text?: string;
   spell?: SpellKind;
   radius?: number;
+  /** Presentation only: weapon identity and the source/target entities. */
+  weapon?: 'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'arcane';
+  sourceId?: number;
+  targetId?: number;
+  targetBuilding?: boolean;
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
   toAir?: boolean;
@@ -1251,13 +1256,23 @@ export class GameModel {
             d.damage * (troop.prefersResources && isResourceBuilding(target.kind) ? 2 : 1);
           this.damage(target, damage);
           this.onEffect({
-            type: d.range > 2 ? 'projectile' : 'hit',
+            type: d.range > 2 || troop.flying ? 'projectile' : 'hit',
             x: u.x,
             y: u.y,
             toX: target.x + BUILDINGS[target.kind].size / 2,
             toY: target.y + BUILDINGS[target.kind].size / 2,
             color: u.kind === 'wizard' ? 0xff9c37 : 0xffe2a0,
             fromAir: troop.flying,
+            weapon: troop.flying
+              ? 'bomb'
+              : u.kind === 'wizard'
+                ? 'fireball'
+                : u.kind === 'archer'
+                  ? 'arrow'
+                  : undefined,
+            sourceId: u.id,
+            targetId: target.id,
+            targetBuilding: true,
           });
           if (u.kind === 'wizard') {
             for (const near of b.buildings) {
@@ -1409,6 +1424,16 @@ export class GameModel {
                 ? 0x63d8ff
                 : 0x303137,
           toAir: TROOPS[target.kind].flying,
+          weapon: tower.kind === 'airdefense'
+            ? 'rocket'
+            : tower.kind === 'archertower'
+              ? 'arrow'
+              : tower.kind === 'wizardtower'
+                ? 'arcane'
+                : 'cannonball',
+          sourceId: tower.id,
+          targetId: target.id,
+          targetBuilding: false,
         });
       }
     }

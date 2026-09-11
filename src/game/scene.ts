@@ -14,6 +14,7 @@ import {
 import { GameModel, type Building, type FX } from './model';
 import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
+import { CombatEffects } from './combat-effects';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
 const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
@@ -66,6 +67,8 @@ export class VillageScene extends Phaser.Scene {
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private resourceFlights = new ResourceFlights();
+  private combatEffects!: CombatEffects;
+  private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
     super('village');
     this.model = model;
@@ -107,6 +110,8 @@ export class VillageScene extends Phaser.Scene {
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.detail = this.add.graphics().setDepth(5000);
     this.overlay = this.add.graphics().setDepth(6000);
+    this.combatEffects = new CombatEffects(this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.combatEffects.clear());
     this.drawPaths();
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
@@ -462,9 +467,13 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sync() {
+    const reduced = this.model.state.settings.reducedMotion;
+    if (reduced && !this.reducedCombatMotion) this.combatEffects.clear();
+    this.reducedCombatMotion = reduced;
     if (this.model.state.settings.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      this.combatEffects.clear();
       this.resourceFlights.clear();
       this.renderedBattle = this.model.battle;
       this.boundary.signature = '';
@@ -1005,24 +1014,22 @@ export class VillageScene extends Phaser.Scene {
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
       return;
     }
-    if (fx.type === 'projectile' && fx.toX !== undefined) {
+    if ((fx.type === 'projectile' || fx.type === 'hit') && fx.toX !== undefined) {
       const q = iso(fx.toX, fx.toY!);
-      const fromY = p.y - 22 - (fx.fromAir ? AIR_LIFT : 0),
-        toY = q.y - 15 - (fx.toAir ? AIR_LIFT : 0);
-      const orb = this.add
-        .circle(p.x, fromY, fx.color === 0xff9c37 ? 5 : 3, fx.color ?? 0xffc65b)
-        .setDepth(8000);
-      this.tweens.add({
-        targets: orb,
-        x: q.x,
-        y: toY,
-        duration: 200,
-        ease: 'Quad.easeIn',
-        onComplete: () => {
-          orb.destroy();
-          this.sparks(q.x, toY + 3, fx.color ?? 0xffdd89, 4);
-        },
-      });
+      const source = fx.sourceId == null ? undefined :
+        fx.targetBuilding ? this.unitSprites.get(fx.sourceId) : this.sprites.get(fx.sourceId);
+      const target = fx.targetId == null ? undefined :
+        fx.targetBuilding ? this.sprites.get(fx.targetId) : this.unitSprites.get(fx.targetId);
+      const fromY = p.y - (fx.fromAir ? AIR_LIFT + 6 :
+        source && !fx.targetBuilding ? source.displayHeight * 0.7 : 22);
+      const toY = q.y - (fx.toAir ? AIR_LIFT : 0) -
+        (target ? target.displayHeight * (fx.targetBuilding ? 0.38 : 0.48) : 15);
+      const reduced = this.model.state.settings.reducedMotion;
+      if (fx.type === 'hit') this.combatEffects.impact('melee', { x: q.x, y: toY }, reduced);
+      else this.combatEffects.projectile(
+        fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
+        { x: p.x, y: fromY }, { x: q.x, y: toY }, reduced,
+      );
       if (Math.random() < 0.2) this.audio.play('hit');
       return;
     }

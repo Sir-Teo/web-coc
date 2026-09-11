@@ -45,6 +45,10 @@ The earlier Air Defense, Spell Factory, Balloon, and the three spell vials conta
 
 Because every step is a pure function of committed inputs, re-running the script produces byte-identical output. `output/assets-before.sha` and `output/assets-after.sha` record a full rebuild and are identical.
 
+## Destruction states
+
+Original stone and timber rubble replace compressed intact building sprites after destruction. Sources, exact built-in image-generation prompts, and alpha-preserving rebuild instructions are in [DESTRUCTION-ART.md](DESTRUCTION-ART.md). `scripts/ruins-assets.mjs` builds both material families. Weapon projectiles, muzzle flashes, impacts and ground scars use renderer-native geometry; see [COMBAT-PRESENTATION.md](COMBAT-PRESENTATION.md).
+
 ## Specialist troops
 
 The Goblin and Wall Breaker use original transparent sprites generated with the built-in image tool. See [RAIDING-ASSETS.md](RAIDING-ASSETS.md) for exact prompts, source files, shipped paths, and current animation limits.

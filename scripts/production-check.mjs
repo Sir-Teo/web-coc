@@ -18,6 +18,8 @@ for (const [name, engine] of [
     '/assets/buildings/tier3/spellfactory-v2.webp',
     '/assets/characters/balloon-v2.webp',
     '/assets/characters/walk/balloon-v2.webp',
+    '/assets/environment/ruins-stone.webp',
+    '/assets/environment/ruins-wood.webp',
   ]);
   const observe = (page) => {
     page.on('pageerror', (e) => errors.push(e.message));
