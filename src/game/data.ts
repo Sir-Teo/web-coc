@@ -1,4 +1,4 @@
-import { defenseProgression, DEFENSE_PROGRESSION } from './defense-progression';
+import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset } from './wall-art';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
@@ -204,9 +204,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     maxLevel: 12,
     available: [1, 2, 2, 2, 3, 3, 5, 5],
     build: DEFENSE_PROGRESSION.cannon[0].seconds,
-    damage: 32,
-    range: 7,
-    rate: 1.2,
+    damage: 7.2,
+    ...DEFENSE_WEAPONS.cannon,
     targets: 'ground',
   },
   archertower: {
@@ -221,9 +220,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     maxLevel: 12,
     available: [0, 1, 1, 2, 3, 3, 4, 5],
     build: DEFENSE_PROGRESSION.archertower[0].seconds,
-    damage: 20,
-    range: 9,
-    rate: 0.8,
+    damage: 5.5,
+    ...DEFENSE_WEAPONS.archertower,
     targets: 'both',
   },
   camp: {
@@ -689,9 +687,16 @@ export const upgradeCost = (kind: BuildingKind, level: number) =>
     ? (WALL_LEVELS[level]?.cost ?? 0)
     : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
 export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;
-/** Defences hit 12% harder per level, which is what a defence upgrade buys. */
-export const defenseDamage = (kind: BuildingKind, level: number) =>
-  (BUILDINGS[kind].damage ?? 0) * (1 + (level - 1) * 0.12);
+/** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
+export const defenseDamage = (kind: BuildingKind, level: number) => {
+  const audited = defenseProgression(kind, level);
+  return audited
+    ? Math.round(audited.dps * BUILDINGS[kind].rate! * 10) / 10
+    : (BUILDINGS[kind].damage ?? 0) * (1 + (level - 1) * 0.12);
+};
+export const defenseDps = (kind: BuildingKind, level: number) =>
+  defenseProgression(kind, level)?.dps ??
+  (BUILDINGS[kind].rate ? defenseDamage(kind, level) / BUILDINGS[kind].rate! : 0);
 export const researchCost = (kind: TroopKind, level: number) => {
   const base = {
     swordsman: 6000,

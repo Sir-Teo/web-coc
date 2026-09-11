@@ -31,6 +31,22 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
     const row = page.locator('.info-table tr').filter({ hasText: 'Hitpoints' });
     await expect(row.locator('td').nth(1)).toHaveText(String(hp));
     await expect(row.locator('td').nth(2)).toHaveText(new RegExp(String(nextHp)));
+    const stats =
+      kind === 'cannon'
+        ? { dps: '11', nextDps: '15', hit: '8.8', nextHit: '12', range: '9 tiles', rate: '0.8s' }
+        : { dps: '15', nextDps: '19', hit: '7.5', nextHit: '9.5', range: '10 tiles', rate: '0.5s' };
+    for (const [label, current, next] of [
+      ['Damage per second', stats.dps, stats.nextDps],
+      ['Damage per hit', stats.hit, stats.nextHit],
+      ['Range', stats.range, stats.range],
+      ['Attack speed', stats.rate, stats.rate],
+    ]) {
+      const stat = page
+        .locator('.info-table tr')
+        .filter({ has: page.getByRole('cell', { name: label, exact: true }) });
+      await expect(stat.locator('td').nth(1)).toHaveText(current);
+      await expect(stat.locator('td').nth(2)).toContainText(next);
+    }
     await expect(page.locator('.info-cost')).toContainText(cost.toLocaleString('en-US'));
     await expect(page.locator('.info-cost')).toContainText(label);
     await page.screenshot({
@@ -105,4 +121,26 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(tile('cannon')).toContainText('2/3');
   await expect(page.locator('[data-action="build:cannon"]')).toBeEnabled();
   await expect(page.locator('[data-action="build:cannon"]')).toContainText('250');
+});
+
+test('older combat recordings retain the result and explain why playback is unavailable', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.startBattle(0, true);
+    m.deploy(1, 13);
+    m.step(0.05);
+    m.finishBattle();
+    m.state.raidLog[0].replay.version = 4;
+    m.returnHome();
+    m.changed();
+  });
+  await page.locator('[data-action="battle-log"]').click();
+  await expect(page.locator('.raid-record')).toHaveCount(1);
+  await expect(page.locator('.replay-unavailable')).toHaveText(
+    'Replay unavailable · Recorded before a combat update.',
+  );
+  await expect(page.getByRole('button', { name: 'Watch replay', exact: true })).toHaveCount(0);
+  await expect(page.locator('.raid-score')).toContainText('0%');
 });

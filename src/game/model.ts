@@ -1794,6 +1794,7 @@ export class GameModel {
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
       if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
+      const cooling = tower.cooldown > 0;
       tower.cooldown -= dt;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
@@ -1801,7 +1802,7 @@ export class GameModel {
         (u) =>
           u.hp > 0 &&
           canTarget(d.targets, u.kind) &&
-          Math.hypot(u.x - center.x, u.y - center.y) < d.range! &&
+          Math.hypot(u.x - center.x, u.y - center.y) <= d.range! &&
           Math.hypot(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
       );
       // Keep firing at the same eligible target until it dies or leaves range.
@@ -1813,7 +1814,9 @@ export class GameModel {
         )[0];
       if (target) {
         b.defenseTargets[tower.id] = target.id;
-        tower.cooldown = d.rate!;
+        // Carry the fraction of a frame past the deadline, so sustained fire
+        // does not lose time every shot. Idle towers never accumulate a burst.
+        tower.cooldown = Math.max(0, d.rate! + (cooling ? tower.cooldown : 0));
         const power =
           defenseDamage(tower.kind, tower.level) *
           (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);

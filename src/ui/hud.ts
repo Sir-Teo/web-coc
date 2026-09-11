@@ -18,6 +18,7 @@ import {
   MAX_TROOP_LEVEL,
   asset,
   defenseDamage,
+  defenseDps,
   trapDamage,
   isTrap,
   springCapacity,
@@ -52,6 +53,7 @@ type Panel =
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
+const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const time = (seconds: number) => formatTime(seconds);
 const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
@@ -82,7 +84,8 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
     rows.push(['Radar', 'Targets', d.trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
   if (d.damage) {
-    rows.push(['Swords', 'Damage per hit', n(defenseDamage(kind, level))]);
+    rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
+    rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
     rows.push(['Target', 'Range', `${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles`]);
     rows.push(['Gauge', 'Attack speed', `${d.rate}s`]);
     if (d.splash) rows.push(['Sparkles', 'Splash radius', `${d.splash} tiles`]);
@@ -1288,7 +1291,7 @@ export class HUD {
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];
-    return `<div class="modal-body battle-log-body"><div class="replay-import-bar">${button('replay-import', `${icon('Upload', 17)} Open shared replay`, 'game-btn blue')}<small>Watch a replay file without replacing your village.</small></div>${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : CAMPAIGN[r.index].name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.replay?.version === REPLAY_VERSION ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : '<p class="replay-unavailable">Replay unavailable · Recordings kept for the latest five attacks.</p>'}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
+    return `<div class="modal-body battle-log-body"><div class="replay-import-bar">${button('replay-import', `${icon('Upload', 17)} Open shared replay`, 'game-btn blue')}<small>Watch a replay file without replacing your village.</small></div>${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : CAMPAIGN[r.index].name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.replay?.version === REPLAY_VERSION ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
   }
   private troopInfo() {
     const kind = this.inspectedTroop,
