@@ -1,0 +1,56 @@
+name: Browser regression (on demand)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: ${{ matrix.browser }} (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps --only-shell ${{ matrix.browser }}
+
+      # Distribute individual tests, including large spec files, across runners.
+      # One browser worker per runner avoids competing for software-rendering CPU.
+      - name: Run browser regressions
+        run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line
+
+      - name: Build production bundle
+        if: matrix.shard == 1
+        run: npm run build
+      - name: Verify production bundle
+        if: matrix.shard == 1
+        timeout-minutes: 3
+        run: npm run test:production
+        env:
+          PRODUCTION_BROWSER: ${{ matrix.browser }}
+
+      - name: Preserve browser evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-${{ matrix.browser }}-${{ matrix.shard }}
+          path: |
+            output/test-results/
+            output/playtest/
+          retention-days: 7
+          if-no-files-found: ignore

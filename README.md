@@ -132,6 +132,19 @@ Open `https://coc.teozeng.dev/?devtools=1` or `http://localhost:4173/?devtools=1
 
 ## Verification
 
+Every push and pull request runs the unit suite, asset checks, a production build,
+and a Chromium production smoke check covering boot, menus, artwork, tab handoff,
+replay, and offline reload. Successful pushes to `main` deploy to Firebase. This
+release workflow has an eight-minute ceiling; the smoke check has a three-minute
+ceiling.
+
+The full browser suite is separate from deployment. Run **Browser regression
+(on demand)** from GitHub Actions, or `gh workflow run browser-regression.yml`.
+It runs Chromium and WebKit on four shards each, with separate failure traces and
+screenshots. Full browser regressions are not release gates; run them when changing
+gameplay or presentation. Local production checks still run both engines by default;
+use `PRODUCTION_BROWSER=chromium npm run test:production` for the fast release check.
+
 ```sh
 npm test
 npx playwright install chromium webkit
