@@ -1,12 +1,20 @@
 # Verification record
 
+## September 11 — normalize countdown rounding at hour boundaries
+
+Long countdowns round the total minutes before splitting hours and minutes. A timer just below three hours now reads `3h` instead of `2h 60m`. Seconds remain visible below an hour, and actual research/construction deadlines and gem prices are unchanged.
+
+The new regression reproduces the original defect before the fix. **33 focused timer and progression cases pass**, including two new formatting cases covering 16 concrete boundary values. The preceding full suite's 446 cases remain the broader validation. Both landscape research scenarios pass again in each of Metal Chromium and WebKit at 2×, asserting the actual live `3h` label while retaining payment, independent construction, scrolling, Finish and Close checks. The updated 568px screenshot was visually reviewed.
+
+The build and production checks pass in both engines without reported errors. Chromium also reloads, opens Army and plays a replay offline with 109 cached files, cache `crown-clan-8715614afee5`. Evidence: `output/playtest/countdown-verification.json`, `countdown-regression-before.log`, `countdown-regression-final.log`, `countdown-{chromium,webkit}.log`, `countdown-build.log` and `countdown-production-report.json`.
+
 ## September 11 — compact research and stable dialog refreshes
 
 Research now places its active timer and Laboratory status beside compact troop cards on short landscape screens. The first two research actions fit at 568×320; three cards fit at 844×390. Research, Finish and Close retain 44px touch targets. The status column stays visible while scrolling the catalog. Updating an already open dialog also stops replaying its fade/scale entrance animation; opening a new dialog still animates.
 
 The two new landscape cases initially exposed the repeated entrance animation, then the smallest viewport exposed a clipped Finish button during simultaneous research and construction. Both defects are corrected. **All seven final research-layout and modal-focus cases pass in each of Metal Chromium and WebKit at 2× density.** The preceding broader 38-case run passed its other 37 cases in each engine, including facility progression, starter/specialist research, details and gameplay. Together with the facility pass, **51 distinct browser scenarios per engine have passing coverage**. Active and scrolled landscape screenshots were visually inspected, including the fully visible 568px Finish action. Model validation remains the preceding 446 passing cases; this follow-up changes presentation only.
 
-The final production build and both browser checks pass without reported errors. Chromium reloads, opens Army and plays a replay offline with 109 cached files, cache `crown-clan-fed32f664d4f`. Save and replay formats are unchanged. Evidence: `output/playtest/research-layout-verification.json`, `research-layout-{chromium,webkit}-final.log`, `research-layout-{chromium,webkit}-compact.log`, `research-layout-build-compact-final.log`, `research-layout-production-report.json` and `research-landscape-{active,scrolled}-*.png`. Screenshot review found a separate countdown rounding defect ("2h 60m" just below three hours), queued for the next small correction.
+The final production build and both browser checks pass without reported errors. Chromium reloads, opens Army and plays a replay offline with 109 cached files, cache `crown-clan-fed32f664d4f`. Save and replay formats are unchanged. Evidence: `output/playtest/research-layout-verification.json`, `research-layout-{chromium,webkit}-final.log`, `research-layout-{chromium,webkit}-compact.log`, `research-layout-build-compact-final.log`, `research-layout-production-report.json` and `research-landscape-{active,scrolled}-*.png`. Screenshot review found a separate countdown rounding defect ("2h 60m" just below three hours), corrected in the follow-up recorded above.
 
 ## September 11 — native army facilities and independent Laboratory timers
 

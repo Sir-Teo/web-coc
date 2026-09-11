@@ -85,6 +85,8 @@ for (const viewport of [
     await expect(wallBreaker).toBeInViewport({ ratio: 1 });
     await wallBreaker.click();
     expect(await page.evaluate(() => window.__game.model.state.research.kind)).toBe('wallbreaker');
+    // Just below three hours, rounding carries into the hour instead of showing "2h 60m".
+    await expect(page.locator('[data-research]')).toHaveText('3h');
     // The research controls stay beside the catalog while browsing its lower rows.
     await expect(page.locator('[data-action="research-finish"]')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('#toast')).toHaveCSS('opacity', '0');

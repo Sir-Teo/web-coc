@@ -2285,8 +2285,9 @@ export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: 
 export function formatTime(seconds: number) {
   const s = Math.max(0, Math.round(seconds));
   if (s >= 3600) {
-    const h = Math.floor(s / 3600),
-      m = Math.round((s % 3600) / 60);
+    const minutes = Math.round(s / 60),
+      h = Math.floor(minutes / 60),
+      m = minutes % 60;
     return m ? `${h}h ${m}m` : `${h}h`;
   }
   if (s >= 60) {
