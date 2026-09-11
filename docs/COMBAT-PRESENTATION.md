@@ -18,6 +18,6 @@ Stone/timber wreckage and subdued ground scars replace the old flattened intact 
 
 ## Remaining work
 
-These are presentation effects. Except for the existing delayed mortar shells and trap fuses, damage still applies at the attack event, ahead of the short visual projectile flight. Physical flight/impact scheduling and its replay compatibility need a simulation pass. Ranged attacks are not yet certified as live-game-equivalent.
+The subsequent [projectile simulation pass](PROJECTILE-SIMULATION.md) moves ranged damage and flight onto the battle clock, including wall attacks, splash, pending-shot termination rules, and replay reconstruction. Exact live-game flight speeds and attack statistics remain unverified.
 
 Per-building wreckage, level-specific destruction, directional attack/death animation, persistent damage smoke, distinct weapon audio and complete roster behavior also remain open. This pass does not establish full production or content parity.

@@ -7,6 +7,7 @@ import {
   type HeroProgress,
   type BattleHero,
 } from './heroes';
+import { launchProjectile, stepProjectiles, type CombatProjectile, type Weapon } from './projectiles';
 import { campaignBlueprint, CAMPAIGN_LAYOUTS } from './campaign';
 import { armySpace, spellSpace, emptyArmy, emptySpells, type ArmyPreset } from './army';
 import { stepTraps, type TrapState } from './traps';
@@ -160,6 +161,7 @@ export interface Battle {
   carried: SpellBook;
   auras: Aura[];
   shells: MortarShell[];
+  projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   traps: Record<number, TrapState>;
   hero?: BattleHero;
@@ -179,6 +181,7 @@ export type FX = {
     | 'hit'
     | 'destroy'
     | 'projectile'
+    | 'impact'
     | 'collect'
     | 'spawn'
     | 'upgrade'
@@ -195,7 +198,8 @@ export type FX = {
   spell?: SpellKind;
   radius?: number;
   /** Presentation only: weapon identity and the source/target entities. */
-  weapon?: 'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'arcane';
+  weapon?: Weapon;
+  projectileId?: string;
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;
@@ -1198,7 +1202,10 @@ export class GameModel {
       if (b.prep <= 0) b.started = true;
       return;
     }
+    // A long frame or imported replay delta cannot land a shot after the raid deadline.
+    dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
+    stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
     b.auras = b.auras.filter((a) => a.end > b.elapsed);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
@@ -1254,35 +1261,37 @@ export class GameModel {
           }
           const damage =
             d.damage * (troop.prefersResources && isResourceBuilding(target.kind) ? 2 : 1);
-          this.damage(target, damage);
-          this.onEffect({
-            type: d.range > 2 || troop.flying ? 'projectile' : 'hit',
-            x: u.x,
-            y: u.y,
-            toX: target.x + BUILDINGS[target.kind].size / 2,
-            toY: target.y + BUILDINGS[target.kind].size / 2,
-            color: u.kind === 'wizard' ? 0xff9c37 : 0xffe2a0,
-            fromAir: troop.flying,
-            weapon: troop.flying
-              ? 'bomb'
-              : u.kind === 'wizard'
-                ? 'fireball'
-                : u.kind === 'archer'
-                  ? 'arrow'
-                  : undefined,
-            sourceId: u.id,
-            targetId: target.id,
-            targetBuilding: true,
-          });
-          if (u.kind === 'wizard') {
-            for (const near of b.buildings) {
-              if (
-                near.id !== target.id &&
-                near.hp > 0 &&
-                Math.hypot(near.x - target.x, near.y - target.y) < 3
-              )
-                this.damage(near, damage * 0.35);
-            }
+          if (d.range > 2 || troop.flying) {
+            launchProjectile(
+              b,
+              {
+                weapon: troop.flying ? 'bomb' : u.kind === 'wizard' ? 'fireball' : 'arrow',
+                sourceId: u.id,
+                targetId: target.id,
+                targetBuilding: true,
+                fromX: u.x,
+                fromY: u.y,
+                x: target.x + BUILDINGS[target.kind].size / 2,
+                y: target.y + BUILDINGS[target.kind].size / 2,
+                fromAir: troop.flying,
+                damage,
+                splash: u.kind === 'wizard' ? 3 : undefined,
+                splashScale: 0.35,
+              },
+              this.onEffect,
+            );
+          } else {
+            this.damage(target, damage);
+            this.onEffect({
+              type: 'hit',
+              x: u.x,
+              y: u.y,
+              toX: target.x + BUILDINGS[target.kind].size / 2,
+              toY: target.y + BUILDINGS[target.kind].size / 2,
+              sourceId: u.id,
+              targetId: target.id,
+              targetBuilding: true,
+            });
           }
         }
         continue;
@@ -1320,8 +1329,26 @@ export class GameModel {
               this.detonate(u, d.damage);
               continue;
             }
-            this.damage(wall, d.damage * 1.6);
-            this.onEffect({ type: 'hit', x: wall.x + 0.5, y: wall.y + 0.5 });
+            if (d.range > 2)
+              launchProjectile(
+                b,
+                {
+                  weapon: u.kind === 'wizard' ? 'fireball' : 'arrow',
+                  sourceId: u.id,
+                  targetId: wall.id,
+                  targetBuilding: true,
+                  fromX: u.x,
+                  fromY: u.y,
+                  x: wall.x + 0.5,
+                  y: wall.y + 0.5,
+                  damage: d.damage * 1.6,
+                },
+                this.onEffect,
+              );
+            else {
+              this.damage(wall, d.damage * 1.6);
+              this.onEffect({ type: 'hit', x: wall.x + 0.5, y: wall.y + 0.5 });
+            }
           }
           continue;
         }
@@ -1394,47 +1421,30 @@ export class GameModel {
           });
           continue;
         }
-        if (d.splash) {
-          for (const u of b.units)
-            if (
-              u.hp > 0 &&
-              !!TROOPS[u.kind].flying === !!TROOPS[target.kind].flying &&
-              Math.hypot(u.x - target.x, u.y - target.y) <= d.splash
-            )
-              u.hp -= power;
-          this.onEffect({
-            type: 'blast',
+        launchProjectile(
+          b,
+          {
+            fromX: center.x,
+            fromY: center.y,
             x: target.x,
             y: target.y,
-            radius: d.splash,
-            color: 0xba85ff,
+            damage: power,
+            splash: d.splash,
             toAir: TROOPS[target.kind].flying,
-          });
-        } else target.hp -= power;
-        this.onEffect({
-          type: 'projectile',
-          x: center.x,
-          y: center.y,
-          toX: target.x,
-          toY: target.y,
-          color:
-            tower.kind === 'wizardtower'
-              ? 0xba85ff
-              : tower.kind === 'airdefense'
-                ? 0x63d8ff
-                : 0x303137,
-          toAir: TROOPS[target.kind].flying,
-          weapon: tower.kind === 'airdefense'
-            ? 'rocket'
-            : tower.kind === 'archertower'
-              ? 'arrow'
-              : tower.kind === 'wizardtower'
-                ? 'arcane'
-                : 'cannonball',
-          sourceId: tower.id,
-          targetId: target.id,
-          targetBuilding: false,
-        });
+            weapon:
+              tower.kind === 'airdefense'
+                ? 'rocket'
+                : tower.kind === 'archertower'
+                  ? 'arrow'
+                  : tower.kind === 'wizardtower'
+                    ? 'arcane'
+                    : 'cannonball',
+            sourceId: tower.id,
+            targetId: target.id,
+            targetBuilding: false,
+          },
+          this.onEffect,
+        );
       }
     }
     const king = b.units.find((u) => u.hero);
@@ -1460,6 +1470,7 @@ export class GameModel {
       b.destruction === 100 ||
       b.elapsed >= BATTLE_SECONDS ||
       (!b.shells.length &&
+        !b.projectiles?.length &&
         !b.units.some((u) => u.hp > 0) &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0) &&
         !SPELL_KEYS.some((k) => b.spells[k] > 0) &&
@@ -1528,6 +1539,7 @@ export class GameModel {
     if (!b || b.finished) return;
     this.refreshBattleScore();
     b.finished = true;
+    b.projectiles = [];
     const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
     const gold = b.practice
         ? 0

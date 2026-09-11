@@ -37,17 +37,24 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
-    expect(target.maxHp - target.hp).toBe(m.troopStats(kind).damage);
-    expect(effects.find((e) => e.sourceId === attacker.id)).toMatchObject({
+    expect(target.maxHp - target.hp).toBe(weapon ? 0 : m.troopStats(kind).damage);
+    const attack = effects.find((e) => e.sourceId === attacker.id);
+    expect(attack?.weapon).toBe(weapon);
+    expect(attack).toMatchObject({
       type: weapon ? 'projectile' : 'hit',
-      weapon,
       targetId: target.id,
       targetBuilding: true,
       toX: 12,
       toY: 12,
     });
-    for (let i = 0; i < 5; i++) m.step(0.05);
-    expect(effects.filter((e) => e.sourceId === attacker.id)).toHaveLength(1);
+    for (let i = 0; i < 8; i++) m.step(0.05);
+    expect(target.maxHp - target.hp).toBe(m.troopStats(kind).damage);
+    expect(effects.filter((e) => e.sourceId === attacker.id && e.type !== 'impact')).toHaveLength(
+      1,
+    );
+    expect(effects.filter((e) => e.sourceId === attacker.id && e.type === 'impact')).toHaveLength(
+      weapon ? 1 : 0,
+    );
   });
 
   it.each([
@@ -65,7 +72,7 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
-    expect(target.hp).toBeLessThan(target.maxHp);
+    expect(target.hp).toBe(target.maxHp);
     expect(effects.find((e) => e.sourceId === defense.id)).toMatchObject({
       type: 'projectile',
       weapon,
@@ -73,5 +80,7 @@ describe('combat feedback comes from actual attacks', () => {
       targetBuilding: false,
       toAir: troop === 'balloon' ? true : undefined,
     });
+    for (let i = 0; i < 8; i++) m.step(0.05);
+    expect(target.hp).toBeLessThan(target.maxHp);
   });
 });

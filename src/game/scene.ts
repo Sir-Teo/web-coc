@@ -15,6 +15,7 @@ import { GameModel, type Building, type FX } from './model';
 import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
+import { projectileEffect } from './projectiles';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
 const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
@@ -517,6 +518,7 @@ export class VillageScene extends Phaser.Scene {
         )
         .setDepth(p.y);
       im.setVisible(this.model.visibleBuilding(b));
+      im.setData('intactHeight', im.displayHeight);
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (b.level >= TIER3_LEVEL) im.setTint(0xffecc7);
@@ -680,6 +682,7 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   drawOverlay(time: number) {
+    this.drawProjectiles();
     const g = this.overlay;
     g.clear();
     const b = this.model.buildings.find((b) => b.id === this.model.selected);
@@ -1014,21 +1017,20 @@ export class VillageScene extends Phaser.Scene {
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
       return;
     }
-    if ((fx.type === 'projectile' || fx.type === 'hit') && fx.toX !== undefined) {
-      const q = iso(fx.toX, fx.toY!);
-      const source = fx.sourceId == null ? undefined :
-        fx.targetBuilding ? this.unitSprites.get(fx.sourceId) : this.sprites.get(fx.sourceId);
-      const target = fx.targetId == null ? undefined :
-        fx.targetBuilding ? this.sprites.get(fx.targetId) : this.unitSprites.get(fx.targetId);
-      const fromY = p.y - (fx.fromAir ? AIR_LIFT + 6 :
-        source && !fx.targetBuilding ? source.displayHeight * 0.7 : 22);
-      const toY = q.y - (fx.toAir ? AIR_LIFT : 0) -
-        (target ? target.displayHeight * (fx.targetBuilding ? 0.38 : 0.48) : 15);
+    if (fx.type === 'projectile' && fx.projectileId) {
+      this.drawProjectiles();
+      if (!this.model.state.settings.reducedMotion)
+        this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
+      return;
+    }
+    if ((fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') && fx.toX !== undefined) {
+      const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
-      if (fx.type === 'hit') this.combatEffects.impact('melee', { x: q.x, y: toY }, reduced);
+      if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
+      else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
       else this.combatEffects.projectile(
         fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
-        { x: p.x, y: fromY }, { x: q.x, y: toY }, reduced,
+        from, to, reduced,
       );
       if (Math.random() < 0.2) this.audio.play('hit');
       return;
@@ -1083,6 +1085,50 @@ export class VillageScene extends Phaser.Scene {
         duration: 300 + Math.random() * 400,
         onComplete: () => dot.destroy(),
       });
+    }
+  }
+  private projectileAnchors(fx: FX) {
+    const p = iso(fx.x, fx.y),
+      q = iso(fx.toX!, fx.toY!);
+    const source =
+      fx.sourceId == null
+        ? undefined
+        : fx.targetBuilding
+          ? this.unitSprites.get(fx.sourceId)
+          : this.sprites.get(fx.sourceId);
+    const target =
+      fx.targetId == null
+        ? undefined
+        : fx.targetBuilding
+          ? this.sprites.get(fx.targetId)
+          : this.unitSprites.get(fx.targetId);
+    const fromY =
+      p.y -
+      (fx.fromAir
+        ? AIR_LIFT + 6
+        : source && !fx.targetBuilding
+          ? (source.getData('intactHeight') ?? source.displayHeight) * 0.7
+          : 22);
+    const toY =
+      q.y -
+      (fx.toAir ? AIR_LIFT : 0) -
+      (target
+        ? fx.targetBuilding
+          ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
+          : target.displayHeight * 0.48
+        : 15);
+    return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
+  }
+
+  private drawProjectiles() {
+    const b = this.model.battle;
+    const shots =
+      !b || b.finished || this.model.state.settings.reducedMotion ? [] : (b.projectiles ?? []);
+    this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
+    for (const p of shots) {
+      const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
+      const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
+      this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
   }
   update(time: number, delta: number) {

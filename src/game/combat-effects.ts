@@ -15,6 +15,7 @@ const COLORS: Record<Weapon, number> = {
 /** Short-lived weapon graphics. They never apply damage or mutate the battle. */
 export class CombatEffects {
   private objects = new Set<Phaser.GameObjects.Graphics>();
+  private flights = new Map<string, Phaser.GameObjects.Graphics>();
   constructor(private scene: Phaser.Scene) {}
 
   private graphic() {
@@ -29,13 +30,10 @@ export class CombatEffects {
   }
   clear() {
     for (const graphic of [...this.objects]) this.remove(graphic);
+    this.flights.clear();
   }
 
-  projectile(weapon: Weapon, from: Point, to: Point, reduced: boolean) {
-    if (reduced) {
-      this.impact(weapon, to, true);
-      return;
-    }
+  private weaponGraphic(weapon: Weapon, from: Point) {
     const g = this.graphic().setPosition(from.x, from.y).setData('weapon', weapon);
     const color = COLORS[weapon];
     if (weapon === 'arrow') {
@@ -63,6 +61,34 @@ export class CombatEffects {
         g.fillStyle(0xffd56b).fillCircle(3, -9, 2);
       }
     }
+    return g;
+  }
+
+  poseProjectile(id: string, weapon: Weapon, from: Point, to: Point, progress: number) {
+    let g = this.flights.get(id);
+    if (!g) {
+      g = this.weaponGraphic(weapon, from).setData('projectileId', id);
+      this.flights.set(id, g);
+    }
+    const t = weapon === 'bomb' ? progress ** 3 : progress;
+    g.setPosition(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t);
+    if (weapon !== 'bomb') g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
+  }
+
+  retainProjectiles(ids: Set<string>) {
+    for (const [id, g] of this.flights)
+      if (!ids.has(id)) {
+        this.remove(g);
+        this.flights.delete(id);
+      }
+  }
+
+  projectile(weapon: Weapon, from: Point, to: Point, reduced: boolean) {
+    if (reduced) {
+      this.impact(weapon, to, true);
+      return;
+    }
+    const g = this.weaponGraphic(weapon, from);
     if (weapon !== 'bomb') g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
     const distance = Math.hypot(to.x - from.x, to.y - from.y);
     const duration = weapon === 'bomb' ? 330 : Phaser.Math.Clamp(distance * 1.05, 120, 300);
@@ -77,6 +103,10 @@ export class CombatEffects {
         this.impact(weapon, to, false);
       },
     });
+    this.muzzle(weapon, from);
+  }
+
+  muzzle(weapon: Weapon, from: Point) {
     if (weapon === 'cannonball' || weapon === 'rocket') {
       const flash = this.graphic().setPosition(from.x, from.y);
       flash.fillStyle(0xffd28b, 0.9).fillCircle(0, 0, 8);

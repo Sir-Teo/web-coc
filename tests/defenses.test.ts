@@ -228,6 +228,8 @@ describe('Wizard Tower', () => {
       const neighbor = unit(m, kind, 15.8, 11);
       const other = unit(m, kind === 'giant' ? 'balloon' : 'giant', 16, 11);
       m.step(0.05);
+      expect(target.hp).toBe(target.maxHp);
+      for (let i = 0; i < 6; i++) m.step(0.05);
       expect(target.hp).toBe(target.maxHp - BUILDINGS.wizardtower.damage!);
       expect(neighbor.hp).toBe(neighbor.maxHp - BUILDINGS.wizardtower.damage!);
       expect(other.hp).toBe(other.maxHp);

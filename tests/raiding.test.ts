@@ -186,6 +186,9 @@ describe('mortar fire and defense targeting', () => {
     giant.hp = 0;
     cannon.cooldown = 0;
     m.step(0.05);
+    expect(m.battle!.defenseTargets[cannon.id]).toBe(archer.id);
+    expect(archer.hp).toBe(archer.maxHp);
+    advance(m, 0.4);
     expect(archer.hp).toBeLessThan(archer.maxHp);
   });
 });
