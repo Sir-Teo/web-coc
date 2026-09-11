@@ -71,6 +71,8 @@ it('all twelve authored layouts are distinct, in bounds and have no overlapping 
   }
   expect(signatures.size).toBe(12);
 });
+// The 144 full battle simulations take over 20 seconds on GitHub-hosted runners.
+// Allow CI headroom for this audit while keeping the normal timeout for other tests.
 it('campaign has a viable opening, a progression gate and a reachable final fortress', () => {
   const results = [];
   for (let stage = 0; stage < 12; stage++)
@@ -120,7 +122,7 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
       results.some((r) => r.stage === stage && r.army === 'veteran' && r.stars === 3),
       `Stage ${stage} cannot be cleared`,
     ).toBe(true);
-}, 20000);
+}, 60_000);
 
 it('the actual starter army can win the opening raid without spells or upgrades', () => {
   const stars = approaches.map((approach) => {

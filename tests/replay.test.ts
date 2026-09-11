@@ -144,6 +144,9 @@ describe('recorded battle playback', () => {
     loaded.setReplaySpeed(4);
     loaded.toggleReplay();
     loaded.step(0.25);
+    // Replay work can span frames when the wall-clock budget is exhausted.
+    // Drain that work without adding time before checking the 4x speed.
+    for (let frame = 0; frame < 100 && loaded.replay!.time < 1 - 1e-9; frame++) loaded.step(0);
     expect(loaded.replay!.time).toBeCloseTo(1);
     const id = loaded.replay!.recordId;
     loaded.startReplay(id);
