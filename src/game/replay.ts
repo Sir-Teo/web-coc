@@ -1,10 +1,18 @@
 import { gridSize, footprintSize, type GridVersion } from './grid';
-import { BUILDINGS, CAMPAIGN, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
+import {
+  BUILDINGS,
+  CAMPAIGN,
+  MAX_TROOP_LEVEL,
+  maxTroopLevel,
+  SPELL_KEYS,
+  TROOP_KEYS,
+  LEGACY_TROOP_KEYS,
+} from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL } from './spell-progression';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 17;
+export const REPLAY_VERSION = 18;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -90,17 +98,19 @@ const counts = (v: unknown, keys: readonly string[], min: number, max: number) =
 export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
+  const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
   if (
     !integer(s.index, 0, CAMPAIGN.length - 1) ||
     typeof s.practice !== 'boolean' ||
     !integer(s.nextId, 1, Number.MAX_SAFE_INTEGER - 10000) ||
-    !counts(s.army, TROOP_KEYS, 0, 9999) ||
+    !counts(s.army, troopKeys, 0, 9999) ||
     !counts(s.spells, SPELL_KEYS, 0, 999) ||
-    !counts(s.troopLevels, TROOP_KEYS, 1, MAX_TROOP_LEVEL) ||
+    !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
+    (value.version >= 18 && TROOP_KEYS.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
     (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
     (s.spellLevels !== undefined && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
     (value.version >= 4 &&
-      (TROOP_KEYS.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
+      (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
     (value.version >= 4 && !s.practice && !object(s.lootRoom)) ||
     (s.lootRoom !== undefined &&
@@ -158,7 +168,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       if (!s.hero) return false;
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
-      if (a.type === 'troop' && !TROOP_KEYS.includes(a.kind)) return false;
+      if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
       if (a.type === 'spell' && !SPELL_KEYS.includes(a.kind)) return false;
       if (a.type === 'hero' && !s.hero) return false;
     } else return false;

@@ -124,15 +124,24 @@ export class VillageScene extends Phaser.Scene {
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall' && k !== 'mortar' && k !== 'camp' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+      if (
+        k !== 'wall' &&
+        k !== 'mortar' &&
+        k !== 'camp' &&
+        !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork
+      )
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of TROOP_KEYS)
-      this.load.spritesheet(`${k}-walk`, walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`), {
-        frameWidth: 128,
-        frameHeight: 128,
-      });
+      this.load.spritesheet(
+        `${k}-walk`,
+        walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`),
+        {
+          frameWidth: 128,
+          frameHeight: 128,
+        },
+      );
     for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     this.load.on('progress', (p: number) => {
       const bar = document.querySelector<HTMLElement>('#load-progress');
@@ -180,9 +189,14 @@ export class VillageScene extends Phaser.Scene {
         grid = uniso(world.x, world.y);
       this.wallDragOffset = undefined;
       const move = this.model.wallMove;
-      if (move && this.model.wallPreview.some((w) =>
-        (Math.floor(grid.x) === w.x && Math.floor(grid.y) === w.y) ||
-        this.wallGhosts.get(w.id)?.getBounds().contains(world.x, world.y)))
+      if (
+        move &&
+        this.model.wallPreview.some(
+          (w) =>
+            (Math.floor(grid.x) === w.x && Math.floor(grid.y) === w.y) ||
+            this.wallGhosts.get(w.id)?.getBounds().contains(world.x, world.y),
+        )
+      )
         this.wallDragOffset = { x: move.x - Math.floor(grid.x), y: move.y - Math.floor(grid.y) };
       const held =
         this.model.editing && !this.model.placement && !move
@@ -237,7 +251,10 @@ export class VillageScene extends Phaser.Scene {
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
         else if (this.gesture === 'drag-wall' && this.wallDragOffset) {
           const grid = this.gridAtPointer(p);
-          this.model.previewWallMove(Math.floor(grid.x) + this.wallDragOffset.x, Math.floor(grid.y) + this.wallDragOffset.y);
+          this.model.previewWallMove(
+            Math.floor(grid.x) + this.wallDragOffset.x,
+            Math.floor(grid.y) + this.wallDragOffset.y,
+          );
         }
       }
       this.updateGhost(p);
@@ -249,9 +266,12 @@ export class VillageScene extends Phaser.Scene {
       const down = this.down;
       this.down = undefined;
       if (
-        this.uiBlocked || !down || p.downElement !== this.game.canvas ||
+        this.uiBlocked ||
+        !down ||
+        p.downElement !== this.game.canvas ||
         p.event.type.includes('cancel')
-      ) return;
+      )
+        return;
       if (this.dragged || gesture !== 'none') return;
       this.tap(p);
     });
@@ -305,8 +325,10 @@ export class VillageScene extends Phaser.Scene {
     // the diamond instead would fill the whole viewport when applying AND
     // removing the mask, even when the camera sees only the field interior.
     const outline = this.add.graphics().fillStyle(0xffffff);
-    const left = center.x - side * 32, right = center.x + side * 32;
-    const top = center.y - side * 16, bottom = center.y + side * 16;
+    const left = center.x - side * 32,
+      right = center.x + side * 32;
+    const top = center.y - side * 16,
+      bottom = center.y + side * 16;
     outline.fillTriangle(left, top, center.x, top, left, center.y);
     outline.fillTriangle(center.x, top, right, top, right, center.y);
     outline.fillTriangle(left, center.y, left, bottom, center.x, bottom);
@@ -343,7 +365,10 @@ export class VillageScene extends Phaser.Scene {
   get minZoom() {
     return Math.min(
       this.baseZoom * 0.78,
-      Math.max(this.scale.canvasBounds.width / WORLD.width, this.scale.canvasBounds.height / WORLD.height) * 0.95,
+      Math.max(
+        this.scale.canvasBounds.width / WORLD.width,
+        this.scale.canvasBounds.height / WORLD.height,
+      ) * 0.95,
     );
   }
   /** Camera zoom in CSS pixels per world pixel, independent of display density. */
@@ -499,11 +524,18 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
-    const obstacle = !hit ? [...this.obstacleSprites.entries()]
-      .sort((a, b) => b[1].depth - a[1].depth)
-      .find(([, im]) => im.visible && world.x > im.x - im.displayWidth * .4
-        && world.x < im.x + im.displayWidth * .4
-        && world.y > im.y - im.displayHeight * .83 && world.y < im.y + im.displayHeight * .06) : undefined;
+    const obstacle = !hit
+      ? [...this.obstacleSprites.entries()]
+          .sort((a, b) => b[1].depth - a[1].depth)
+          .find(
+            ([, im]) =>
+              im.visible &&
+              world.x > im.x - im.displayWidth * 0.4 &&
+              world.x < im.x + im.displayWidth * 0.4 &&
+              world.y > im.y - im.displayHeight * 0.83 &&
+              world.y < im.y + im.displayHeight * 0.06,
+          )
+      : undefined;
     this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
@@ -517,8 +549,8 @@ export class VillageScene extends Phaser.Scene {
   canvasPoint(clientX: number, clientY: number) {
     const rect = this.game.canvas.getBoundingClientRect();
     return {
-      x: (clientX - rect.left) * this.scale.width / rect.width,
-      y: (clientY - rect.top) * this.scale.height / rect.height,
+      x: ((clientX - rect.left) * this.scale.width) / rect.width,
+      y: ((clientY - rect.top) * this.scale.height) / rect.height,
     };
   }
   gridAtScreen(clientX: number, clientY: number) {
@@ -640,17 +672,25 @@ export class VillageScene extends Phaser.Scene {
     }
     const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));
     for (const [id, im] of this.obstacleSprites) {
-      if (!obstacleIds.has(id)) { im.destroy(); this.obstacleSprites.delete(id); }
+      if (!obstacleIds.has(id)) {
+        im.destroy();
+        this.obstacleSprites.delete(id);
+      }
     }
     for (const o of this.model.obstacles) {
-      const d = OBSTACLES[o.kind], p = iso(o.x + d.size / 2, o.y + d.size / 2);
+      const d = OBSTACLES[o.kind],
+        p = iso(o.x + d.size / 2, o.y + d.size / 2);
       let im = this.obstacleSprites.get(o.id);
       if (!im) {
-        im = this.add.image(p.x, p.y, o.kind).setOrigin(.5, .88);
+        im = this.add.image(p.x, p.y, o.kind).setOrigin(0.5, 0.88);
         this.obstacleSprites.set(o.id, im);
       }
-      im.setTexture(o.kind).setPosition(p.x, p.y).setDisplaySize(d.width, d.width * im.height / im.width)
-        .setDepth(p.y).setVisible(!this.model.battle).setAlpha(o.removeEnd ? .65 : 1);
+      im.setTexture(o.kind)
+        .setPosition(p.x, p.y)
+        .setDisplaySize(d.width, (d.width * im.height) / im.width)
+        .setDepth(p.y)
+        .setVisible(!this.model.battle)
+        .setAlpha(o.removeEnd ? 0.65 : 1);
     }
     const ids = new Set(this.model.buildings.map((b) => b.id));
     for (const [id, s] of this.sprites) {
@@ -669,7 +709,9 @@ export class VillageScene extends Phaser.Scene {
         this.sprites.set(b.id, im);
       }
       this.styleBuilding(im, b.kind, b.level).setPosition(p.x, p.y).setDepth(p.y);
-      im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
+      im.setVisible(
+        this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
+      );
       im.setData('intactHeight', im.displayHeight);
       if (b.kind === 'mortar') {
         const muzzle = mortarMuzzle(b.level);
@@ -680,7 +722,8 @@ export class VillageScene extends Phaser.Scene {
       }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp') im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp')
+        im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -702,8 +745,10 @@ export class VillageScene extends Phaser.Scene {
           .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
             fontFamily: 'Arial',
             fontSize: '24px',
-            color: b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
-            stroke: b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
+            color:
+              b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
+            stroke:
+              b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
             strokeThickness: 1,
           })
           .setOrigin(0.5);
@@ -723,7 +768,9 @@ export class VillageScene extends Phaser.Scene {
         const anchor = `${p.x},${y},${reduced}`;
         if (c.getData('anchor') !== anchor) {
           this.tweens.killTweensOf(c);
-          c.setPosition(p.x, y).setDepth(p.y + 300).setData('anchor', anchor);
+          c.setPosition(p.x, y)
+            .setDepth(p.y + 300)
+            .setData('anchor', anchor);
           if (!reduced)
             this.tweens.add({
               targets: c,
@@ -739,7 +786,10 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     if (this.model.placement) {
-      const level = this.model.moving === null ? 1 : this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
+      const level =
+        this.model.moving === null
+          ? 1
+          : (this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1);
       if (!this.ghost) {
         this.ghost = this.add
           .image(0, 0, buildingTexture(this.model.placement, level))
@@ -764,10 +814,12 @@ export class VillageScene extends Phaser.Scene {
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
-    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
-    const width = wall ? wall.height * .75 : camp ? camp.width : BUILDINGS[kind].width * scale;
-    return im.setOrigin(camp?.originX ?? .5, camp?.originY ?? (wall ? .84 : .88)).setFlipX(false)
-      .setDisplaySize(width, wall ? wall.height : width * im.height / im.width);
+    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * 0.035;
+    const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
+    return im
+      .setOrigin(camp?.originX ?? 0.5, camp?.originY ?? (wall ? 0.84 : 0.88))
+      .setFlipX(false)
+      .setDisplaySize(width, wall ? wall.height : (width * im.height) / im.width);
   }
   private syncCampUnits() {
     if (this.model.battle) {
@@ -777,22 +829,34 @@ export class VillageScene extends Phaser.Scene {
     }
     const { army, buildings } = this.model.state;
     const obstacles = this.model.obstacles;
-    const signature = TROOP_KEYS.map((k) => army[k]).join(',') + '|' +
-      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|') + '|' +
+    const signature =
+      TROOP_KEYS.map((k) => army[k]).join(',') +
+      '|' +
+      buildings
+        .map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`)
+        .join('|') +
+      '|' +
       obstacles.map((o) => `${o.id}:${o.kind}:${o.x}:${o.y}`).join('|');
     if (signature !== this.campSignature) {
       this.campSignature = signature;
       this.campActors = campPlan(army, buildings, obstacles);
       const ids = new Set(this.campActors.map((a) => a.id));
       for (const [id, im] of this.campViews)
-        if (!ids.has(id)) { im.destroy(); this.campViews.delete(id); }
+        if (!ids.has(id)) {
+          im.destroy();
+          this.campViews.delete(id);
+        }
       this.ambientUnits = this.campActors.map((actor) => {
         let im = this.campViews.get(actor.id);
         if (!im) {
-          const art = troopArt(actor.kind), size = TROOPS[actor.kind].width * art.displayScale * 0.7;
-          im = this.add.image(0, 0, `${actor.kind}-walk`, art.idleFrame)
-            .setOrigin(0.5, 122 / 128).setDisplaySize(size, size)
-            .setData('campActor', actor.id).setData('kind', actor.kind);
+          const art = troopArt(actor.kind),
+            size = TROOPS[actor.kind].width * art.displayScale * 0.7;
+          im = this.add
+            .image(0, 0, `${actor.kind}-walk`, art.idleFrame)
+            .setOrigin(0.5, 122 / 128)
+            .setDisplaySize(size, size)
+            .setData('campActor', actor.id)
+            .setData('kind', actor.kind);
           this.campViews.set(actor.id, im);
         }
         return im.setData('campId', actor.campId);
@@ -806,17 +870,22 @@ export class VillageScene extends Phaser.Scene {
     const reduced = this.model.state.settings.reducedMotion;
     this.campShadows.fillStyle(0x1f2a16, 0.26);
     for (let i = 0; i < this.campActors.length; i++) {
-      const actor = this.campActors[i], im = this.ambientUnits[i];
+      const actor = this.campActors[i],
+        im = this.ambientUnits[i];
       const pose = campPose(actor, this.campTime);
-      const px = WORLD.ox + (pose.x - pose.y) * 32, py = WORLD.oy + (pose.x + pose.y) * 16;
-      const art = troopArt(actor.kind), flying = !!TROOPS[actor.kind].flying;
+      const px = WORLD.ox + (pose.x - pose.y) * 32,
+        py = WORLD.oy + (pose.x + pose.y) * 16;
+      const art = troopArt(actor.kind),
+        flying = !!TROOPS[actor.kind].flying;
       const previousFacing = im.getData('facing');
       const facing = pose.facing || previousFacing || art.nativeFacing;
       const moving = pose.moving && !reduced;
       const bob = !reduced && flying ? Math.sin(this.campTime * 1.7 + actor.phase) * 2 : 0;
       const depth = flying ? 6500 : py + 1;
-      const frame = moving || flying && !reduced
-        ? Math.floor(this.campTime * 550 / art.frameMs + actor.phase * 4) % 4 : art.idleFrame;
+      const frame =
+        moving || (flying && !reduced)
+          ? Math.floor((this.campTime * 550) / art.frameMs + actor.phase * 4) % 4
+          : art.idleFrame;
       im.setVisible(true).setPosition(px, py - (flying ? AIR_LIFT : 0) + bob);
       if (im.depth !== depth) im.setDepth(depth);
       // Avoid rebuilding identical frame geometry and dispatching data events each frame.
@@ -827,13 +896,17 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
-    const width = (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) * (b.kind === 'wall' ? 0.9 : 0.98);
-    im.setTexture(WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone')
+    const width =
+      (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) *
+      (b.kind === 'wall' ? 0.9 : 0.98);
+    im.setTexture(
+      WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone',
+    )
       .setOrigin(0.5, 0.58)
       .setFlipX(b.id % 2 === 0)
       .clearTint()
       .setAlpha(1)
-      .setDisplaySize(width, width * im.height / im.width)
+      .setDisplaySize(width, (width * im.height) / im.width)
       .setDepth(im.y - 2);
   }
   private drawRuinGround() {
@@ -857,76 +930,130 @@ export class VillageScene extends Phaser.Scene {
     this.bubbles.delete(id);
   }
   syncWalls() {
-    const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id));
+    const walls = this.model.buildings.filter(
+      (b) =>
+        b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id),
+    );
     const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y},${b.level}`).join(';');
     if (signature === this.wallSignature) return;
     this.wallSignature = signature;
     for (const g of this.wallViews) g.destroy();
     this.wallViews = [];
     for (const b of walls) {
-      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      for (const [dx, dy] of [
+        [1, 0],
+        [0, 1],
+      ]) {
         const next = walls.find((w) => w.x === b.x + dx && w.y === b.y + dy);
         if (!next) continue;
-        const p = iso(b.x + .5, b.y + .5), q = iso(next.x + .5, next.y + .5);
-        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - .5);
+        const p = iso(b.x + 0.5, b.y + 0.5),
+          q = iso(next.x + 0.5, next.y + 0.5);
+        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
         this.paintWallLink(g, p, q, b.level, next.level);
         this.wallViews.push(g);
       }
     }
   }
   /** Two material halves meet at the seam, including when neighbouring walls differ in level. */
-  private paintWallLink(g: Phaser.GameObjects.Graphics, p: Phaser.Math.Vector2, q: Phaser.Math.Vector2, fromLevel: number, toLevel: number, blocked = false) {
-    const a = wallArt(fromLevel), b = wallArt(toLevel);
+  private paintWallLink(
+    g: Phaser.GameObjects.Graphics,
+    p: Phaser.Math.Vector2,
+    q: Phaser.Math.Vector2,
+    fromLevel: number,
+    toLevel: number,
+    blocked = false,
+  ) {
+    const a = wallArt(fromLevel),
+      b = wallArt(toLevel);
     const mid = new Phaser.Math.Vector2((p.x + q.x) / 2, (p.y + q.y) / 2);
     const midHeight = (a.linkHeight + b.linkHeight) / 2;
-    const halves = [{ p, q: mid, art: a, h0: a.linkHeight, h1: midHeight }, { p: mid, q, art: b, h0: midHeight, h1: b.linkHeight }];
+    const halves = [
+      { p, q: mid, art: a, h0: a.linkHeight, h1: midHeight },
+      { p: mid, q, art: b, h0: midHeight, h1: b.linkHeight },
+    ];
     for (const half of halves) {
       const { p, q, art, h0, h1 } = half;
-      const top0 = new Phaser.Math.Vector2(p.x, p.y - h0), top1 = new Phaser.Math.Vector2(q.x, q.y - h1);
-      const bottom0 = new Phaser.Math.Vector2(p.x, p.y - 2), bottom1 = new Phaser.Math.Vector2(q.x, q.y - 2);
-      const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, mh = (h0 + h1) / 2;
-      const jagged = art.material === 'crystal' || art.material === 'obsidian' || art.material === 'wood';
+      const top0 = new Phaser.Math.Vector2(p.x, p.y - h0),
+        top1 = new Phaser.Math.Vector2(q.x, q.y - h1);
+      const bottom0 = new Phaser.Math.Vector2(p.x, p.y - 2),
+        bottom1 = new Phaser.Math.Vector2(q.x, q.y - 2);
+      const mx = (p.x + q.x) / 2,
+        my = (p.y + q.y) / 2,
+        mh = (h0 + h1) / 2;
+      const jagged =
+        art.material === 'crystal' || art.material === 'obsidian' || art.material === 'wood';
       const peak = new Phaser.Math.Vector2(mx, my - mh - (art.material === 'crystal' ? 5 : 3));
       const pts = jagged ? [bottom0, bottom1, top1, peak, top0] : [bottom0, bottom1, top1, top0];
-      g.fillStyle(blocked ? 0xc94e4e : q.x > p.x ? art.face : art.shade, .98).fillPoints(pts, true);
-      g.lineStyle(1, art.edge, .8).strokePoints(pts, true);
+      g.fillStyle(blocked ? 0xc94e4e : q.x > p.x ? art.face : art.shade, 0.98).fillPoints(
+        pts,
+        true,
+      );
+      g.lineStyle(1, art.edge, 0.8).strokePoints(pts, true);
       if (jagged) {
-        g.fillStyle(blocked ? 0xe77575 : art.top, .45).fillTriangle(mx, my - 2, peak.x, peak.y, top1.x, top1.y);
-        g.lineStyle(1, art.edge, .6).lineBetween(mx, my - 2, peak.x, peak.y);
+        g.fillStyle(blocked ? 0xe77575 : art.top, 0.45).fillTriangle(
+          mx,
+          my - 2,
+          peak.x,
+          peak.y,
+          top1.x,
+          top1.y,
+        );
+        g.lineStyle(1, art.edge, 0.6).lineBetween(mx, my - 2, peak.x, peak.y);
       } else {
         g.lineStyle(3, blocked ? 0xe77575 : art.top, 1).lineBetween(top0.x, top0.y, top1.x, top1.y);
         if (art.material === 'rubble' || art.material === 'stone') {
-          g.lineStyle(1, art.edge, .55).lineBetween(p.x, p.y - h0 / 2, q.x, q.y - h1 / 2);
+          g.lineStyle(1, art.edge, 0.55).lineBetween(p.x, p.y - h0 / 2, q.x, q.y - h1 / 2);
           g.lineBetween(mx, my - 2, mx, my - mh / 2);
         } else {
-          g.lineStyle(1, art.top, .5).lineBetween(mx, my - 3, mx, my - mh + 3);
+          g.lineStyle(1, art.top, 0.5).lineBetween(mx, my - 3, mx, my - mh + 3);
         }
       }
       if (art.material === 'wood') {
-        g.lineStyle(2, 0xd9b76f, .9).lineBetween(p.x, p.y - h0 * .35, q.x, q.y - h1 * .35);
-        g.lineBetween(p.x, p.y - h0 * .7, q.x, q.y - h1 * .7);
+        g.lineStyle(2, 0xd9b76f, 0.9).lineBetween(p.x, p.y - h0 * 0.35, q.x, q.y - h1 * 0.35);
+        g.lineBetween(p.x, p.y - h0 * 0.7, q.x, q.y - h1 * 0.7);
       }
     }
   }
   private syncWallPreview() {
     const preview = this.model.wallPreview;
     const ids = new Set(preview.map((b) => b.id));
-    for (const [id, im] of this.wallGhosts) if (!ids.has(id)) { im.destroy(); this.wallGhosts.delete(id); }
+    for (const [id, im] of this.wallGhosts)
+      if (!ids.has(id)) {
+        im.destroy();
+        this.wallGhosts.delete(id);
+      }
     this.wallGhostLinks?.clear();
-    if (!preview.length) { this.wallGhostLinks?.destroy(); this.wallGhostLinks = undefined; return; }
+    if (!preview.length) {
+      this.wallGhostLinks?.destroy();
+      this.wallGhostLinks = undefined;
+      return;
+    }
     const blocked = !!this.model.wallPlacementIssue;
     const color = blocked ? 0xff7272 : 0xffffff;
-    const g = this.wallGhostLinks ??= this.add.graphics().setDepth(6000);
+    const g = (this.wallGhostLinks ??= this.add.graphics().setDepth(6000));
     for (const w of preview) {
-      const p = iso(w.x + .5, w.y + .5);
+      const p = iso(w.x + 0.5, w.y + 0.5);
       let im = this.wallGhosts.get(w.id);
-      if (!im) { im = this.add.image(0, 0, 'wall').setOrigin(.5, .88); this.wallGhosts.set(w.id, im); }
-      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level, art = wallArt(level);
-      im.setTexture(wallTexture(level)).setOrigin(.5, .84).setPosition(p.x, p.y).setDisplaySize(art.height * .75, art.height).setDepth(6001 + p.y / 10000).setTint(color).setAlpha(.85);
-      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      if (!im) {
+        im = this.add.image(0, 0, 'wall').setOrigin(0.5, 0.88);
+        this.wallGhosts.set(w.id, im);
+      }
+      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level,
+        art = wallArt(level);
+      im.setTexture(wallTexture(level))
+        .setOrigin(0.5, 0.84)
+        .setPosition(p.x, p.y)
+        .setDisplaySize(art.height * 0.75, art.height)
+        .setDepth(6001 + p.y / 10000)
+        .setTint(color)
+        .setAlpha(0.85);
+      for (const [dx, dy] of [
+        [1, 0],
+        [0, 1],
+      ]) {
         const next = preview.find((v) => v.x === w.x + dx && v.y === w.y + dy);
         if (!next) continue;
-        const q = iso(next.x + .5, next.y + .5);
+        const q = iso(next.x + 0.5, next.y + 0.5);
         const nextLevel = this.model.state.buildings.find((b) => b.id === next.id)!.level;
         this.paintWallLink(g, p, q, level, nextLevel, blocked);
       }
@@ -944,7 +1071,11 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       valid
-        ? this.model.placement === 'wall' || this.model.placement === 'mortar' || this.model.placement === 'camp' ? 0xffffff : 0xd9ffb0
+        ? this.model.placement === 'wall' ||
+          this.model.placement === 'mortar' ||
+          this.model.placement === 'camp'
+          ? 0xffffff
+          : 0xd9ffb0
         : 0xff7272,
     );
     return { x, y, size: s, valid };
@@ -984,8 +1115,8 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.wallMove) {
       this.drawGrid(g);
       const color = this.model.wallPlacementIssue ? 0xff6464 : 0x8fff73;
-      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, .06);
-      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, .3);
+      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, 0.06);
+      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, 0.3);
     }
     if (this.model.editing && !this.model.placement && !this.model.wallMove) this.drawGrid(g);
     if (this.model.placement) {
@@ -994,7 +1125,7 @@ export class VillageScene extends Phaser.Scene {
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());
       if (preview)
-        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, .28);
+        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, 0.28);
     }
     this.groundMarks.clear();
     const active = this.model.battle;
@@ -1012,7 +1143,9 @@ export class VillageScene extends Phaser.Scene {
         const p = iso(aura.x, aura.y),
           radius = SPELLS[aura.kind].radius,
           color = SPELL_COLOR[aura.kind],
-          pulse = this.model.state.settings.reducedMotion ? 1 : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
+          pulse = this.model.state.settings.reducedMotion
+            ? 1
+            : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
         g.fillStyle(color, 0.17);
         g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
         g.lineStyle(2, color, 0.75);
@@ -1027,13 +1160,25 @@ export class VillageScene extends Phaser.Scene {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
           progress = (this.model.clock - start) / duration;
-        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87), 54, progress, 0x82d745);
+        this.bar(
+          im.x,
+          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87),
+          54,
+          progress,
+          0x82d745,
+        );
         const p = iso(v.x, v.y);
         this.detail.lineStyle(3, 0xe6b356, 0.7);
         this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
         this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
       } else if (this.model.battle && v.hp < v.maxHp)
-        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88), 42, v.hp / v.maxHp, 0xea654d);
+        this.bar(
+          im.x,
+          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88),
+          42,
+          v.hp / v.maxHp,
+          0xea654d,
+        );
     }
     const battle = this.model.battle;
     if (battle) {
@@ -1077,11 +1222,14 @@ export class VillageScene extends Phaser.Scene {
             AIR_LIFT,
           );
           const p = iso(u.x, u.y);
-          im.setData('dying', true).setData('defeatedAt', at)
+          im.setData('dying', true)
+            .setData('defeatedAt', at)
             .setTint(u.ejected ? 0xffe9ae : 0xa09482)
             .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
             .setDepth(flying || u.ejected ? 7500 : p.y + 1)
-            .setAngle(pose.angle).setAlpha(pose.alpha).setVisible(pose.visible);
+            .setAngle(pose.angle)
+            .setAlpha(pose.alpha)
+            .setVisible(pose.visible);
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
@@ -1094,7 +1242,9 @@ export class VillageScene extends Phaser.Scene {
           sprung && !this.model.state.settings.reducedMotion
             ? Math.sin(springProgress * Math.PI) * 45
             : 0;
-        const target = battle.buildings.find((b) => b.id === u.target);
+        const target = TROOPS[u.kind].healer
+          ? battle.units.find((ally) => ally.id === u.healTarget)
+          : battle.buildings.find((b) => b.id === u.target);
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
@@ -1109,11 +1259,14 @@ export class VillageScene extends Phaser.Scene {
         else if (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) im.setTint(0xffbd76);
         else im.clearTint();
         const p = iso(u.x, u.y),
-          motion = sprung || this.model.state.settings.reducedMotion
-            ? 0
-            : flying
-              ? Math.sin(animationTime / 600 + u.id) * 2.2
-              : pose.moving ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob) : 0;
+          motion =
+            sprung || this.model.state.settings.reducedMotion
+              ? 0
+              : flying
+                ? Math.sin(animationTime / 600 + u.id) * 2.2
+                : pose.moving
+                  ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob)
+                  : 0;
         const lift = flying ? AIR_LIFT : springLift;
         // Air troops draw above every rooftop, with a shadow left on the ground.
         im.setPosition(p.x, p.y + motion - lift)
@@ -1123,8 +1276,10 @@ export class VillageScene extends Phaser.Scene {
           this.detail.fillStyle(0x1f2a16, 0.28);
           this.detail.fillEllipse(p.x, p.y, 26, 13);
         }
-        const rate = u.hero && battle.hero
-          ? heroStats(battle.hero.level, battle.hero.townhall).rate : TROOPS[u.kind].rate;
+        const rate =
+          u.hero && battle.hero
+            ? heroStats(battle.hero.level, battle.hero.townhall).rate
+            : TROOPS[u.kind].rate;
         const phase = 1 - Math.max(0, u.cooldown) / rate;
         const impulse =
           u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
@@ -1251,11 +1406,34 @@ export class VillageScene extends Phaser.Scene {
         const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
         bolt.setData('spell', 'lightning');
         const paths = [
-          [[-18, -310], [9, -251], [-10, -229], [21, -175], [-6, -146], [12, -93], [-9, -63], [0, 0]],
-          [[-10, -229], [-42, -199], [-25, -185], [-55, -150]],
-          [[12, -93], [40, -72], [27, -56], [48, -33]],
+          [
+            [-18, -310],
+            [9, -251],
+            [-10, -229],
+            [21, -175],
+            [-6, -146],
+            [12, -93],
+            [-9, -63],
+            [0, 0],
+          ],
+          [
+            [-10, -229],
+            [-42, -199],
+            [-25, -185],
+            [-55, -150],
+          ],
+          [
+            [12, -93],
+            [40, -72],
+            [27, -56],
+            [48, -33],
+          ],
         ];
-        for (const [width, tint, alpha] of [[11, color, 0.16], [5, color, 0.9], [2, 0xffffff, 1]]) {
+        for (const [width, tint, alpha] of [
+          [11, color, 0.16],
+          [5, color, 0.9],
+          [2, 0xffffff, 1],
+        ]) {
           bolt.lineStyle(width, tint, alpha);
           for (const points of paths) {
             bolt.beginPath().moveTo(points[0][0], points[0][1]);
@@ -1263,7 +1441,12 @@ export class VillageScene extends Phaser.Scene {
             bolt.strokePath();
           }
         }
-        this.animateEffect({ targets: bolt, alpha: 0, duration: 260, onComplete: () => bolt.destroy() });
+        this.animateEffect({
+          targets: bolt,
+          alpha: 0,
+          duration: 260,
+          onComplete: () => bolt.destroy(),
+        });
       }
       this.sparks(p.x, p.y - 20, color, 16);
       this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
@@ -1273,7 +1456,10 @@ export class VillageScene extends Phaser.Scene {
     }
     if (fx.type === 'blast' && fx.weapon === 'cannonball') {
       this.combatEffects.groundBlast(
-        p, fx.radius ?? 1.5, this.model.state.settings.reducedMotion, 'mortar',
+        p,
+        fx.radius ?? 1.5,
+        this.model.state.settings.reducedMotion,
+        'mortar',
       );
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
@@ -1306,24 +1492,36 @@ export class VillageScene extends Phaser.Scene {
       this.audio.play('hit');
       return;
     }
+    if (fx.type === 'breath') {
+      const { from, to } = this.projectileAnchors(fx);
+      this.combatEffects.breath(from, to, this.model.state.settings.reducedMotion);
+      this.audio.play('hit');
+      return;
+    }
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
       if (!this.model.state.settings.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
     }
-    if ((fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') && fx.toX !== undefined) {
+    if (
+      (fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') &&
+      fx.toX !== undefined
+    ) {
       const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
       if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
         this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
       else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
-      else this.combatEffects.projectile(
-        fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
-        from, to, reduced,
-      );
-      if (Math.random() < 0.2) this.audio.play('hit');
+      else
+        this.combatEffects.projectile(
+          fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
+          from,
+          to,
+          reduced,
+        );
+      if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
@@ -1356,10 +1554,14 @@ export class VillageScene extends Phaser.Scene {
     const c = this.cameras.main;
     this.resourceFlights.emit(
       {
-        x: canvas.left +
-          ((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width / this.scale.width,
-        y: canvas.top +
-          ((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height / this.scale.height,
+        x:
+          canvas.left +
+          (((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width) /
+            this.scale.width,
+        y:
+          canvas.top +
+          (((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height) /
+            this.scale.height,
       },
       { x: box.left + box.width / 2, y: box.top + box.height / 2 },
       resource,
@@ -1385,7 +1587,7 @@ export class VillageScene extends Phaser.Scene {
     const source =
       fx.sourceId == null
         ? undefined
-        : fx.targetBuilding
+        : fx.targetBuilding || fx.weapon === 'healing'
           ? this.unitSprites.get(fx.sourceId)
           : this.sprites.get(fx.sourceId);
     const target =
@@ -1411,13 +1613,25 @@ export class VillageScene extends Phaser.Scene {
               ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
               : target.displayHeight * 0.48
             : 15));
-    return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
+    const bodyMuzzle = fx.type === 'breath'
+      ? { forward: 0.32, height: 0.27 }
+      : fx.weapon === 'healing' ? { forward: 0.25, height: 0.37 } : null;
+    const facing = Math.sign(q.x - p.x) || source?.getData('facing') || 1;
+    const from = source && bodyMuzzle
+      ? { x: p.x + facing * source.displayWidth * bodyMuzzle.forward,
+          y: p.y - AIR_LIFT - source.displayHeight * bodyMuzzle.height }
+      : { x: p.x, y: fromY };
+    return { from, to: { x: q.x, y: toY } };
   }
 
   private mortarMuzzlePoint(sourceId: number, ground: { x: number; y: number }) {
     const source = this.sprites.get(sourceId);
-    return (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ??
-      { x: ground.x, y: ground.y - 28 };
+    return (
+      (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ?? {
+        x: ground.x,
+        y: ground.y - 28,
+      }
+    );
   }
 
   private drawProjectiles() {
@@ -1426,14 +1640,21 @@ export class VillageScene extends Phaser.Scene {
       !b || b.finished || this.model.state.settings.reducedMotion ? [] : (b.projectiles ?? []);
     const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
     const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
-    this.combatEffects.retainProjectiles(new Set([...shots.map((p) => p.id), ...shells.map(shellId)]));
+    this.combatEffects.retainProjectiles(
+      new Set([...shots.map((p) => p.id), ...shells.map(shellId)]),
+    );
     for (const shell of shells) {
       const progress = Phaser.Math.Clamp(
-        (b!.elapsed - shell.launched) / (shell.impact - shell.launched), 0, 1,
+        (b!.elapsed - shell.launched) / (shell.impact - shell.launched),
+        0,
+        1,
       );
       this.combatEffects.poseMortar(
-        shellId(shell), iso(shell.fromX, shell.fromY), iso(shell.x, shell.y),
-        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)), progress,
+        shellId(shell),
+        iso(shell.fromX, shell.fromY),
+        iso(shell.x, shell.y),
+        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)),
+        progress,
       );
     }
     for (const p of shots) {
@@ -1483,8 +1704,12 @@ export class VillageScene extends Phaser.Scene {
       c = this.cameras.main,
       rect = this.scale.canvasBounds;
     return {
-      x: rect.left + ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
-      y: rect.top + ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
+      x:
+        rect.left +
+        ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
+      y:
+        rect.top +
+        ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
     };
   }
 }

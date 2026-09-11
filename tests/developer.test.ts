@@ -4,6 +4,20 @@ import { DeveloperControls } from '../src/dev/controls';
 import { developerToolsEnabled } from '../src/dev/access';
 import { GameModel } from '../src/game/model';
 import { validateSave } from '../src/game/save';
+import { LATE_TROOP_KEYS } from '../src/game/data';
+
+it('retains a seven-troop developer checkpoint after the roster expands', () => {
+  const m = new GameModel();
+  const old = JSON.parse(JSON.stringify(m.state));
+  old.gold = 12345;
+  for (const kind of LATE_TROOP_KEYS) delete old.army[kind];
+  m.state.army.healer = 2;
+  const dev = new DeveloperControls(m, old);
+  dev.restore();
+  expect(m.state.gold).toBe(12345);
+  expect(m.state.army.healer).toBe(0);
+  expect(validateSave(m.state)).toBe(true);
+});
 
 it('requires explicit opt-in and development, an exact loopback host, or the hosted game', () => {
   for (const host of ['localhost', '127.0.0.1', '[::1]', '::1', 'coc.teozeng.dev']) {

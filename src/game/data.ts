@@ -7,7 +7,12 @@ import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 import { troopProgression } from './troop-progression';
-import { spellProgression, HEAL_PULSES, SPELL_PULSE_INTERVAL, RAGE_PULSES } from './spell-progression';
+import {
+  spellProgression,
+  HEAL_PULSES,
+  SPELL_PULSE_INTERVAL,
+  RAGE_PULSES,
+} from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
   | 'herohall'
@@ -34,7 +39,16 @@ export type BuildingKind =
   | 'springtrap'
   | 'wall';
 export type TroopKind =
-  'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon' | 'goblin' | 'wallbreaker';
+  | 'swordsman'
+  | 'archer'
+  | 'giant'
+  | 'wizard'
+  | 'balloon'
+  | 'goblin'
+  | 'wallbreaker'
+  | 'healer'
+  | 'dragon'
+  | 'pekka';
 export type SpellKind = 'rage' | 'heal' | 'lightning';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
@@ -76,6 +90,8 @@ const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export const MAX_TOWNHALL = 8;
 /** Local research roster currently supports five troop levels. */
 export const MAX_TROOP_LEVEL = 5;
+export const maxTroopLevel = (kind: TroopKind) =>
+  kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   herohall: {
     name: 'Hero Hall',
@@ -307,7 +323,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   spellfactory: {
     name: 'Spell Factory',
-    description: 'Prepares spells instantly. Upgrades unlock new spells and increase spell housing.',
+    description:
+      'Prepares spells instantly. Upgrades unlock new spells and increase spell housing.',
     size: 3,
     width: 122,
     hp: FACILITY_LEVELS.spellfactory[0].hp,
@@ -470,6 +487,9 @@ export interface TroopDef {
   /** Damage dealt to nearby buildings when this troop is destroyed. */
   deathDamage?: number;
   deathRadius?: number;
+  /** Friendly ground support; never attacks buildings. */
+  healer?: boolean;
+  heal?: number;
 }
 export const TROOPS: Record<TroopKind, TroopDef> = {
   swordsman: {
@@ -591,12 +611,74 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     deathDamage: troopProgression('wallbreaker', 1)!.deathDamage,
     deathRadius: 2,
   },
+  healer: {
+    name: 'Healer',
+    role: 'SUPPORT',
+    description:
+      'Flies behind ground troops and restores health to their group. Protect her from air defenses.',
+    hp: troopProgression('healer', 1)!.hp,
+    damage: 0,
+    heal: troopProgression('healer', 1)!.heal! * 0.7,
+    speed: 2,
+    range: 4.5,
+    rate: 0.7,
+    splash: 1.5,
+    cost: 0,
+    space: 14,
+    time: 0,
+    width: 42,
+    research: troopProgression('healer', 2)!.seconds,
+    flying: true,
+    healer: true,
+  },
+  dragon: {
+    name: 'Dragon',
+    role: 'AIR SPLASH',
+    description:
+      'Flies over walls and breathes fire onto nearby buildings. A powerful attacker that needs protection from air defenses.',
+    hp: troopProgression('dragon', 1)!.hp,
+    damage: troopProgression('dragon', 1)!.dps * 1.25,
+    speed: 2,
+    range: 2.5,
+    rate: 1.25,
+    splash: 0.3,
+    cost: 0,
+    space: 20,
+    time: 0,
+    width: 64,
+    research: troopProgression('dragon', 2)!.seconds,
+    flying: true,
+  },
+  pekka: {
+    name: 'P.E.K.K.A',
+    role: 'HEAVY MELEE',
+    description:
+      'A heavily armored warrior with devastating sword strikes. Clear a path through walls to keep her moving.',
+    hp: troopProgression('pekka', 1)!.hp,
+    damage: troopProgression('pekka', 1)!.dps * 1.8,
+    speed: 2,
+    range: 0.8,
+    rate: 1.8,
+    cost: 0,
+    space: 25,
+    time: 0,
+    width: 44,
+    research: troopProgression('pekka', 2)!.seconds,
+  },
 };
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
-export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7'];
+export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
 export const SPELL_HOTKEYS = ['8', '9', '0'];
 export const isResourceBuilding = (kind: BuildingKind) =>
-  ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage', 'darkdrill', 'darkstorage'].includes(kind);
+  [
+    'townhall',
+    'goldmine',
+    'collector',
+    'goldstorage',
+    'elixirstorage',
+    'darkdrill',
+    'darkstorage',
+  ].includes(kind);
 /** Which resource a building accumulates over time, if any. */
 export const producedResource = (kind: BuildingKind): Resource | null =>
   kind === 'goldmine'
@@ -644,7 +726,8 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
   lightning: {
     name: 'Lightning Spell',
     role: 'DIRECT',
-    description: 'A focused bolt damages and briefly stuns enemies. Town Halls and resource storages are immune.',
+    description:
+      'A focused bolt damages and briefly stuns enemies. Town Halls and resource storages are immune.',
     cost: 0,
     space: 1,
     time: 0,
@@ -658,14 +741,19 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
   return {
     ...SPELLS[kind],
     ...stats,
-    effect: kind === 'lightning'
-      ? `${stats.damage} damage · 0.1s stun`
-      : kind === 'heal'
-        ? `${stats.heal * HEAL_PULSES} total healing`
-        : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+    effect:
+      kind === 'lightning'
+        ? `${stats.damage} damage · 0.1s stun`
+        : kind === 'heal'
+          ? `${stats.heal * HEAL_PULSES} total healing`
+          : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
+export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
+export const LEGACY_TROOP_KEYS = TROOP_KEYS.filter(
+  (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),
+);
 export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
 export const isSpellKind = (kind: unknown): kind is SpellKind =>
   typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
@@ -700,14 +788,16 @@ export const buildingTexture = (kind: BuildingKind, level = 1) => {
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 // Keep the persisted swordsman key in armies, research, presets and replay actions.
-const artName = (kind: string) => kind === 'swordsman'
-  ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
+const artName = (kind: string) =>
+  kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
+  if (LATE_TROOP_KEYS.includes(kind as (typeof LATE_TROOP_KEYS)[number]))
+    return `/assets/characters/${kind}-v1.webp`;
   if (kind in SPELLS) return `/assets/spells/${kind}-v2.webp`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
     return `/assets/buildings/tier3/${artName(kind)}.webp`;
@@ -749,12 +839,14 @@ export const upgradeCost = (kind: BuildingKind, level: number) =>
     : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
 /** Shared native current/preview stats for every supported troop level. */
 export const troopStatsAt = (kind: TroopKind, level: number) => {
-  const safeLevel = Math.min(MAX_TROOP_LEVEL, Math.max(1, Math.floor(level) || 1));
-  const d = TROOPS[kind], audited = troopProgression(kind, safeLevel)!;
+  const safeLevel = Math.min(maxTroopLevel(kind), Math.max(1, Math.floor(level) || 1));
+  const d = TROOPS[kind],
+    audited = troopProgression(kind, safeLevel)!;
   return {
     ...d,
     hp: audited.hp,
     damage: audited.dps * d.rate,
+    heal: audited.heal === undefined ? undefined : audited.heal * d.rate,
     deathDamage: audited.deathDamage,
   };
 };
@@ -763,7 +855,7 @@ export const researchLaboratory = (kind: TroopKind, level: number) =>
   troopProgression(kind, level + 1)?.laboratory ?? Infinity;
 export const researchLevelForLab = (kind: TroopKind, laboratory: number) => {
   let level = 1;
-  while (level < MAX_TROOP_LEVEL && researchLaboratory(kind, level) <= laboratory) level++;
+  while (level < maxTroopLevel(kind) && researchLaboratory(kind, level) <= laboratory) level++;
   return level;
 };
 export const researchSeconds = (kind: TroopKind, level: number) =>

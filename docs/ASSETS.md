@@ -84,3 +84,7 @@ The Goblin and Wall Breaker use original transparent sprites generated with the 
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.
 
 Sources stay outside `public/` and `dist/`, so rejected generations and large original PNGs are not downloaded by players.
+
+## Healer, Dragon and P.E.K.K.A
+
+Three generated transparent character sheets supply four-frame atlases and matching portraits. See [LATE-TROOPS.md](LATE-TROOPS.md) for source data, provenance, rendering limits and rebuild instructions, and [the complete prompts](../art/source/late-troops-v1/prompts.json). Run `node scripts/late-troop-assets.mjs --check` to verify all six shipping WebPs against their retained source sheets.

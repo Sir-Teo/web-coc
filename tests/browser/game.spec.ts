@@ -171,7 +171,7 @@ test('mobile portrait preserves playfield and usable menus', async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
-  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(10);
+  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(13);
 });
 test('camera responds to zoom and drag while dialogs block the playfield', async ({ page }) => {
   const before = await page.evaluate(() => window.__game.scene.cameras.main.zoom);

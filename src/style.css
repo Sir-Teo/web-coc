@@ -2928,7 +2928,7 @@ h3 {
   border-radius: 4px;
 }
 .troop-card .air-tag {
-  top: 4px;
+  top: 26px;
   left: 4px;
 }
 .spell-card img {
@@ -3601,7 +3601,7 @@ h3 {
   scrollbar-color: #baad78 #343c27;
 }
 .deploy-tray .air-tag {
-  top: 24px;
+  top: 26px;
 }
 .troop-info-button {
   display: inline-flex;
@@ -3691,9 +3691,6 @@ h3 {
   }
   .troop-key {
     display: none;
-  }
-  .deploy-tray .air-tag {
-    top: 5px;
   }
   .troop-info-hero {
     padding: 0 0 15px;

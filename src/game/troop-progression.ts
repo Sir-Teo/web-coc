@@ -10,8 +10,24 @@ interface TroopLevel {
   seconds: number;
   laboratory: number;
   deathDamage?: number;
+  heal?: number;
 }
 export const TROOP_LEVELS: Readonly<Record<TroopKind, readonly TroopLevel[]>> = {
+  healer: [
+    { hp: 500, dps: 0, heal: 36, cost: 0, seconds: 0, laboratory: 0 },
+    { hp: 700, dps: 0, heal: 48, cost: 450000, seconds: 43200, laboratory: 5 },
+    { hp: 900, dps: 0, heal: 60, cost: 900000, seconds: 86400, laboratory: 6 },
+  ],
+  dragon: [
+    { hp: 1900, dps: 140, cost: 0, seconds: 0, laboratory: 0 },
+    { hp: 2100, dps: 160, cost: 1000000, seconds: 64800, laboratory: 5 },
+    { hp: 2300, dps: 180, cost: 2000000, seconds: 129600, laboratory: 6 },
+  ],
+  pekka: [
+    { hp: 3000, dps: 260, cost: 0, seconds: 0, laboratory: 0 },
+    { hp: 3500, dps: 290, cost: 600000, seconds: 43200, laboratory: 6 },
+    { hp: 4000, dps: 320, cost: 1300000, seconds: 64800, laboratory: 6 },
+  ],
   swordsman: [
     { hp: 45, dps: 9, cost: 0, seconds: 0, laboratory: 0 },
     { hp: 54, dps: 12, cost: 10000, seconds: 1800, laboratory: 1 },
@@ -62,5 +78,4 @@ export const TROOP_LEVELS: Readonly<Record<TroopKind, readonly TroopLevel[]>> = 
     { hp: 53, dps: 43, deathDamage: 23, cost: 1000000, seconds: 57600, laboratory: 6 },
   ],
 };
-export const troopProgression = (kind: TroopKind, level: number) =>
-  TROOP_LEVELS[kind][level - 1];
+export const troopProgression = (kind: TroopKind, level: number) => TROOP_LEVELS[kind][level - 1];

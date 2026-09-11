@@ -102,7 +102,8 @@ for (const viewport of [
     }) => {
       await page.evaluate(() => {
         const m = window.__game.model;
-        m.state.troopLevels = Object.fromEntries(Object.keys(m.state.army).map((k) => [k, 4]));
+        m.state.troopLevels = Object.fromEntries(Object.keys(m.state.army).map((k) =>
+          [k, ['healer', 'dragon', 'pekka'].includes(k) ? 3 : 4]));
         m.changed();
       });
       await page.locator('.train-add').click();

@@ -20,6 +20,8 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
       .filter({ has: page.getByRole('heading', { name: 'Town Hall 2 · Current', exact: true }) }),
   ).toContainText('Giant');
   await page.keyboard.press('Escape');
+  await expect(page.locator('[data-action="progression"]')).toBeFocused();
+  await page.locator('[data-action="close-drawer"]').click();
   const id = await page.evaluate(() => {
     const m = window.__game.model;
     const b = m.state.buildings.find((b) => b.kind === 'barracks');

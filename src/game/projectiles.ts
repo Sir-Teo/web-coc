@@ -1,7 +1,8 @@
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
+import { healerContribution, HEALER_HERO_SCALE } from './healing';
 
-export type Weapon = 'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'arcane';
+export type Weapon = 'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'arcane' | 'healing';
 export interface CombatProjectile {
   id: string;
   weapon: Weapon;
@@ -28,6 +29,7 @@ const SPEED: Record<Weapon, number> = {
   fireball: 14,
   bomb: 10,
   arcane: 16,
+  healing: 12,
 };
 function buildingAim(p: Pick<CombatProjectile, 'weapon' | 'fromX' | 'fromY'>, b: Building) {
   const size = BUILDINGS[b.kind].size;
@@ -48,7 +50,10 @@ export function launchProjectile(
   const duration =
     shot.weapon === 'bomb'
       ? 0.33
-      : Math.max(0.12, Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / SPEED[shot.weapon]);
+      : Math.max(
+          shot.weapon === 'healing' ? 0.01 : 0.12,
+          Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / SPEED[shot.weapon],
+        );
   const projectile: CombatProjectile = {
     ...shot,
     id: `${shot.sourceId}:${battle.elapsed}`,
@@ -91,7 +96,7 @@ export function stepProjectiles(
     const target = p.targetBuilding
       ? battle.buildings.find((b) => b.id === p.targetId)
       : battle.units.find((u) => u.id === p.targetId);
-    if (target && target.hp > 0) {
+    if (target && target.hp > 0 && p.weapon !== 'healing') {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
       p.y = aim.y;
@@ -100,7 +105,21 @@ export function stepProjectiles(
       pending.push(p);
       continue;
     }
-    if (p.targetBuilding) {
+    if (p.weapon === 'healing') {
+      for (const unit of battle.units)
+        if (
+          unit.hp > 0 &&
+          !TROOPS[unit.kind].flying &&
+          Math.hypot(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
+        )
+          unit.hp = Math.min(
+            unit.maxHp,
+            unit.hp +
+              p.damage *
+                healerContribution(battle, unit, p.sourceId) *
+                (unit.hero ? HEALER_HERO_SCALE : 1),
+          );
+    } else if (p.targetBuilding) {
       if (target && target.hp > 0) damage(target as Building, p.damage);
       if (p.splash)
         for (const b of battle.buildings) {

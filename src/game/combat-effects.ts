@@ -11,6 +11,7 @@ const COLORS: Record<Weapon, number> = {
   fireball: 0xff8c32,
   bomb: 0xffb54f,
   arcane: 0xcf8dff,
+  healing: 0xffed8a,
 };
 
 /** Short-lived weapon graphics. They never apply damage or mutate the battle. */
@@ -42,7 +43,11 @@ export class CombatEffects {
   private weaponGraphic(weapon: Weapon, from: Point) {
     const g = this.graphic().setPosition(from.x, from.y).setData('weapon', weapon);
     const color = COLORS[weapon];
-    if (weapon === 'arrow') {
+    if (weapon === 'healing') {
+      g.fillStyle(color, 0.2).fillEllipse(-5, 0, 22, 12);
+      g.fillStyle(color, 0.85).fillCircle(0, 0, 4);
+      g.fillStyle(0xfffff0).fillCircle(0, 0, 2);
+    } else if (weapon === 'arrow') {
       g.lineStyle(2, 0x67442a).lineBetween(-12, 0, 8, 0);
       g.fillStyle(0xdce2d4).fillTriangle(7, -3, 14, 0, 7, 3);
       g.fillStyle(0xffecc3).fillTriangle(-13, -4, -6, 0, -13, 4);
@@ -171,12 +176,47 @@ export class CombatEffects {
     });
   }
 
+  breath(from: Point, to: Point, reduced: boolean) {
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const g = this.graphic().setPosition(from.x, from.y).setData('dragonBreath', true);
+    g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
+    for (const [color, alpha, width, reach] of [
+      [0xf75a24, 0.4, 14, 1], [0xff9d29, 0.95, 9, 0.97], [0xffedbe, 0.95, 4, 0.82],
+    ]) {
+      const plume = [{ x: 0, y: -1 }];
+      for (let i = 1; i <= 9; i++) {
+        const t = i / 10;
+        plume.push({ x: length * reach * t,
+          y: -width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.sin(i * 2.7)) });
+      }
+      plume.push({ x: length * reach + width * 0.5, y: 0 });
+      for (let i = 9; i >= 1; i--) {
+        const t = i / 10;
+        plume.push({ x: length * reach * t,
+          y: width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.cos(i * 2.3)) });
+      }
+      g.fillStyle(color, alpha).fillPoints(plume.map((p) => new Phaser.Math.Vector2(p.x, p.y)), true);
+    }
+    g.fillStyle(0xffc657, 0.75).fillCircle(length, -4, 5).fillCircle(length + 3, 4, 4);
+    this.animate({
+      targets: g,
+      alpha: 0,
+      duration: reduced ? 100 : 280,
+      onComplete: () => this.remove(g),
+    });
+  }
+
   impact(weapon: Weapon | 'melee', at: Point, reduced: boolean) {
     const color = weapon === 'melee' ? 0xffe5b7 : COLORS[weapon];
     const explosive =
       weapon === 'bomb' || weapon === 'rocket' || weapon === 'fireball' || weapon === 'arcane';
     const g = this.graphic().setPosition(at.x, at.y).setData('impact', weapon);
-    if (explosive) {
+    if (weapon === 'healing') {
+      g.fillStyle(color, 0.18).fillCircle(0, 0, 13);
+      g.lineStyle(1.5, color, 0.8).strokeEllipse(0, 3, 24, 12);
+      g.fillStyle(0xffffdd, 0.95).fillRoundedRect(-2, -8, 4, 14, 1);
+      g.fillRoundedRect(-7, -3, 14, 4, 1);
+    } else if (explosive) {
       g.fillStyle(color, 0.3).fillCircle(0, 0, 13);
       g.lineStyle(2, color, 0.9).strokeCircle(0, 0, 9);
       g.fillStyle(0xfff1c4).fillCircle(0, 0, 4);

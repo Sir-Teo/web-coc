@@ -25,6 +25,9 @@ export function developedSave() {
     balloon: 2,
     goblin: 2,
     wallbreaker: 1,
+    healer: 0,
+    dragon: 0,
+    pekka: 0,
   };
   save.spells = { rage: 1, heal: 1, lightning: 0 };
   return save;

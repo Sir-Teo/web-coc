@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Battle } from '../src/game/model';
-import { TROOP_KEYS } from '../src/game/data';
+import { TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
@@ -63,8 +63,12 @@ describe('recorded battle playback', () => {
     m.state.obstacles = [];
     m.state.buildings = [makeBuilding(1, 'townhall', 10, 10), makeBuilding(2, 'builder', 30, 30)];
     m.state.nextId = 3;
-    m.state.army = Object.fromEntries(TROOP_KEYS.map((k) => [k, k === 'wizard' ? 1 : 0])) as typeof m.state.army;
-    m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 4])) as typeof m.state.army;
+    m.state.army = Object.fromEntries(
+      TROOP_KEYS.map((k) => [k, k === 'wizard' ? 1 : 0]),
+    ) as typeof m.state.army;
+    m.state.troopLevels = Object.fromEntries(
+      TROOP_KEYS.map((k) => [k, Math.min(4, maxTroopLevel(k))]),
+    ) as typeof m.state.army;
     m.startBattle(0, true);
     m.activeTroop = 'wizard';
     expect(m.deploy(6, 11.5)).toBe(true);

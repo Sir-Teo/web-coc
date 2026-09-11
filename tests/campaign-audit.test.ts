@@ -1,7 +1,8 @@
+import { emptyArmy } from '../src/game/army';
 import { it, expect } from 'vitest';
 import fs from 'node:fs';
 import { GameModel, enemyBase, makeBuilding } from '../src/game/model';
-import { BUILDINGS, CAMPAIGN, TROOP_KEYS, type TroopKind } from '../src/game/data';
+import { BUILDINGS, CAMPAIGN, TROOP_KEYS, maxTroopLevel, type TroopKind } from '../src/game/data';
 const approaches = [
   [1, 13],
   [5, 1],
@@ -9,6 +10,24 @@ const approaches = [
   [13, 27],
 ] as const;
 const armies = [
+  {
+    name: 'healer-pekka',
+    level: 3,
+    townhall: 8,
+    laboratory: 6,
+    campLevel: 6,
+    campCount: 4,
+    units: { pekka: 4, healer: 4, wizard: 6, wallbreaker: 2, archer: 16 },
+  },
+  {
+    name: 'dragons',
+    level: 3,
+    townhall: 8,
+    laboratory: 6,
+    campLevel: 6,
+    campCount: 4,
+    units: { dragon: 10 },
+  },
   {
     name: 'early-developed',
     level: 1,
@@ -107,23 +126,40 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
       for (let side = 0; side < 4; side++) {
         const m = new GameModel();
         m.state.stars.fill(1);
-        m.state.army = { ...army.units };
-        // These scenarios measure ground armies, so no spells are carried in.
+        m.state.army = { ...emptyArmy(), ...army.units };
+        // Compare troop compositions without spell assistance.
         m.state.spells = { rage: 0, heal: 0, lightning: 0 };
-        m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, army.level])) as Record<
-          TroopKind,
-          number
-        >;
+        m.state.troopLevels = Object.fromEntries(
+          TROOP_KEYS.map((k) => [k, Math.min(army.level, maxTroopLevel(k))]),
+        ) as Record<TroopKind, number>;
         // Each scenario fits native Town Hall, barracks, laboratory and housing gates.
         m.townhall!.level = army.townhall;
-        m.state.buildings.find((b) => b.kind === 'barracks')!.level = 7;
-        m.state.buildings.push(makeBuilding(m.state.nextId++, 'laboratory', 32, 30, army.laboratory));
+        m.state.buildings.find((b) => b.kind === 'barracks')!.level =
+          army.name === 'healer-pekka' || army.name === 'dragons' ? 10 : 7;
+        m.state.buildings.push(
+          makeBuilding(m.state.nextId++, 'laboratory', 32, 30, army.laboratory),
+        );
         m.state.buildings.find((b) => b.kind === 'camp')!.level = army.campLevel;
-        for (const [x, y] of [[28, 8], [28, 16], [28, 24]].slice(0, army.campCount - 1))
+        for (const [x, y] of [
+          [28, 8],
+          [28, 16],
+          [28, 24],
+        ].slice(0, army.campCount - 1))
           m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', x, y, army.campLevel));
         expect(m.armySize).toBeLessThanOrEqual(m.capacity);
         m.startBattle(stage);
-        for (const kind of ['giant', 'wallbreaker', 'balloon', 'swordsman', 'archer', 'wizard', 'goblin'] as const) {
+        for (const kind of [
+          'pekka',
+          'giant',
+          'healer',
+          'dragon',
+          'wallbreaker',
+          'balloon',
+          'swordsman',
+          'archer',
+          'wizard',
+          'goblin',
+        ] as const) {
           m.activeTroop = kind;
           while (m.battle!.remaining[kind] > 0) expect(m.deploy(...approaches[side])).toBe(true);
         }

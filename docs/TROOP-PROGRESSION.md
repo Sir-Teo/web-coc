@@ -1,6 +1,8 @@
 # Home Village troop progression
 
-September 11, 2026. All seven currently implemented troop types use explicit level 1–5 records for health, damage, research price, duration and laboratory requirement. The prototype 30% upgrade multiplier has been removed. Barbarian and Archer values are documented in [the starter troop audit](STARTER-TROOP-PROGRESSION.md); this pass completes the other five supported types.
+September 11, 2026. The seven earlier troop types use explicit level 1–5 records for health, damage, research price, duration and laboratory requirement. The prototype 30% upgrade multiplier has been removed. Barbarian and Archer values are documented in [the starter troop audit](STARTER-TROOP-PROGRESSION.md); this pass completes the other five supported types.
+
+The later Healer, Dragon and P.E.K.K.A expansion is documented in [LATE-TROOPS.md](LATE-TROOPS.md), including its separate three-level ceilings and engine version 18.
 
 ## References and values
 

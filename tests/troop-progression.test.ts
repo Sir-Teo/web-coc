@@ -4,6 +4,7 @@ import {
   researchLaboratory,
   researchLevelForLab,
   TROOP_KEYS,
+  maxTroopLevel,
   type TroopKind,
 } from '../src/game/data';
 import { stepProjectiles } from '../src/game/projectiles';
@@ -76,7 +77,10 @@ const reference = {
 };
 const kinds = Object.keys(reference) as (keyof typeof reference)[];
 const levels = (level: number) =>
-  Object.fromEntries(TROOP_KEYS.map((k) => [k, level])) as Record<TroopKind, number>;
+  Object.fromEntries(TROOP_KEYS.map((k) => [k, Math.min(level, maxTroopLevel(k))])) as Record<
+    TroopKind,
+    number
+  >;
 function arena(kind: TroopKind, level = 1, x = 9.5, y = 11) {
   const m = new GameModel(developedSave());
   m.state.troopLevels = levels(level);

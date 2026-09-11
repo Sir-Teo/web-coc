@@ -42,7 +42,7 @@ test('catalog jumps and unlock ordering stay usable across phone sizes, with mat
     await page
       .locator('[data-action^="train:"]')
       .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-action')!.split(':')[1])),
-  ).toEqual(troops);
+  ).toEqual([...troops, 'healer', 'dragon', 'pekka']);
   expect(
     await page
       .locator('[data-action^="brew:"]')
