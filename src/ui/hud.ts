@@ -337,6 +337,9 @@ export class HUD {
         this.render();
         this.restoreFocus();
         break;
+      case 'wall-move': m.beginWallMove(); break;
+      case 'wall-rotate': m.rotateWallMove(); break;
+      case 'wall-place': if (m.confirmWallMove()) this.audio.play('build'); break;
       case 'wall-row':
         m.selectWallRow();
         break;
@@ -679,7 +682,8 @@ export class HUD {
       } else if (this.drawerPanel) {
         this.drawerPanel = null;
         this.render();
-      } else if (this.model.editing) this.action('edit-done');
+      } else if (this.model.wallMove) this.model.cancel();
+      else if (this.model.editing) this.action('edit-done');
       else this.model.cancel();
     }
     if ((this.panel || this.model.battle?.finished) && e.key === 'Tab') {
@@ -698,6 +702,11 @@ export class HUD {
       }
     }
     if (this.panel || e.target instanceof HTMLInputElement) return;
+    if (this.model.wallMove) {
+      if (e.key.toLowerCase() === 'r') { e.preventDefault(); this.model.rotateWallMove(); }
+      if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); this.action('wall-place'); }
+      return;
+    }
     if (this.model.battle) {
       if (e.key.toLowerCase() === 'h') {
         this.action('hero-select');
@@ -831,6 +840,7 @@ export class HUD {
   }
   private editHUD() {
     const m = this.model;
+    if (m.wallMove) return '';
     return `
  <div class="village-caption edit-caption"><span class="caption-line"></span> EDIT MODE <span class="caption-line"></span><small>Drag any building to a clear tile · Ctrl/⌘+Z to undo · Esc to finish</small></div>
  <div class="right-tools"><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
@@ -853,6 +863,7 @@ export class HUD {
   private context() {
     const m = this.model;
     if (m.battle) return '';
+    if (m.wallMove) return this.wallMoveContext();
     if (m.placement) {
       return `<div class="placement-banner">${icon('Move', 23)}<div><b>${m.moving ? 'Move' : 'Place'} ${BUILDINGS[m.placement].name}</b><small>Drop it on a clear green tile</small></div>${button('cancel', icon('X', 20), 'square-btn small', 'aria-label="Cancel placement"')}</div>`;
     }
@@ -863,7 +874,7 @@ export class HUD {
       const d = OBSTACLES[o.kind];
       return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="${asset(o.kind)}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · No builder needed</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
     }
-    if (m.editing)
+    if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div></div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
@@ -886,6 +897,15 @@ export class HUD {
     }${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
+  private wallMoveContext() {
+    const m = this.model, move = m.wallMove!;
+    const issue = m.wallPlacementIssue;
+    return `<section class="wall-move-toolbar" aria-label="Move wall row">
+      <div class="wall-move-heading"><b>Move ${move.source.length} walls</b><span>Tap ground or drag the row · R to rotate</span></div>
+      <p class="wall-move-status ${issue ? 'blocked' : ''}" role="status">${issue ?? 'Clear ground · Ready to place'}</p>
+      <div class="wall-move-actions">${button('cancel', `${icon('X', 18)} Cancel`, 'game-btn stone')}${button('wall-rotate', `${icon('RotateCw', 18)} Rotate`, 'game-btn blue', 'aria-label="Rotate wall row 90 degrees"')}${button('wall-place', `${icon('Check', 18)} Place`, 'game-btn green', issue ? 'disabled' : '')}</div>
+    </section>`;
+  }
   private wallContext(anchor: Building) {
     const m = this.model;
     const walls = m.selectedWalls,
@@ -925,9 +945,10 @@ export class HUD {
       <img class="context-art" src="${asset('wall', anchor.level)}" alt="">
       <div class="context-info"><small>${m.wallAxis ? `WALL ROW ${m.wallAxis === 'x' ? '↘' : '↙'}` : 'WALLS'}</small><h2>${walls.length === 1 ? 'Stone Wall' : `${walls.length} Walls`}</h2><span>${levelText} · ${walls.length} selected</span></div>
       <div class="wall-tools">${button('info', `${icon('Info', 17)} Info`, 'game-btn stone')}${walls.length === 1 ? button(`move:${anchor.id}`, `${icon('Move', 17)} Move`, 'game-btn stone') : button('wall-single', 'Single wall', 'game-btn stone')}${button('wall-row', `${icon('LayoutGrid', 17)} ${m.wallAxis ? 'Other row' : 'Select row'}`, 'game-btn stone', rowAvailable ? '' : 'disabled')}</div>
-      ${m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}
-      <div class="wall-upgrade-actions">${gold.walls.length ? purchase('gold', gold) + (low >= 5 ? purchase('elixir', pink) : '') : ''}</div>
-      <p class="wall-note">${note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
+      ${m.wallAxis ? `<div class="wall-tools wall-row-move">${button('wall-move', `${icon('Move', 18)} Move row`, 'game-btn blue')}</div>` : ''}
+      ${m.editing ? '' : m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}
+      <div class="wall-upgrade-actions">${!m.editing && gold.walls.length ? purchase('gold', gold) + (low >= 5 ? purchase('elixir', pink) : '') : ''}</div>
+      <p class="wall-note">${m.editing ? 'Select a row to move or rotate it together.' : note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
   }
 
   // ----------------------------------------------------------------- battle

@@ -1,3 +1,4 @@
+import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
 import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
@@ -224,12 +225,14 @@ export class GameModel {
   battle: Battle | null = null;
   private selection: number | null = null;
   private wallGroup: number[] = [];
+  wallMove: WallMove | null = null;
   wallAxis: WallAxis | null = null;
   get selected() {
     return this.selection;
   }
   set selected(value: number | null) {
     this.selection = value;
+    this.wallMove = null;
     this.wallGroup = [];
     this.wallAxis = null;
   }
@@ -742,7 +745,7 @@ export class GameModel {
   }
 
   get selectedWalls(): Building[] {
-    if (this.battle || this.editing || this.placement) return [];
+    if (this.battle || this.placement || this.wallMove) return [];
     const anchor = this.state.buildings.find((b) => b.id === this.selected && b.kind === 'wall');
     if (!anchor) return [];
     const ids = new Set(this.wallGroup.length ? this.wallGroup : [anchor.id]);
@@ -769,7 +772,7 @@ export class GameModel {
     this.changed();
   }
   canAdjustWallSelection(delta: number) {
-    if (this.wallAxis || ![-10, -1, 1, 10].includes(delta)) return false;
+    if (this.editing || this.wallAxis || ![-10, -1, 1, 10].includes(delta)) return false;
     const walls = this.selectedWalls;
     const anchor = walls.find((b) => b.id === this.selected);
     if (!anchor) return false;
@@ -838,6 +841,57 @@ export class GameModel {
     this.notify(
       `${quote.walls.length === 1 ? 'Wall' : `${quote.walls.length} walls`} upgraded instantly.`,
     );
+    this.changed();
+    return true;
+  }
+  beginWallMove() {
+    const walls = this.selectedWalls;
+    const anchor = walls.find((b) => b.id === this.selected);
+    if (!anchor || !this.wallAxis || walls.length < 2) return false;
+    this.wallMove = {
+      anchorId: anchor.id, axis: this.wallAxis,
+      source: walls.map(({ id, x, y }) => ({ id, x, y })),
+      x: anchor.x, y: anchor.y, turns: 0,
+    };
+    this.changed();
+    return true;
+  }
+  get wallPreview() {
+    return this.wallMove && !this.battle ? wallDestinations(this.wallMove) : [];
+  }
+  get wallPlacementIssue() {
+    if (this.battle || !this.wallMove) return 'Select a wall row at home.';
+    return wallMoveIssue(this.wallMove, this.state.buildings, this.obstacles);
+  }
+  previewWallMove(x: number, y: number) {
+    if (this.battle || !this.wallMove || !Number.isInteger(x) || !Number.isInteger(y)) return false;
+    if (this.wallMove.x === x && this.wallMove.y === y) return true;
+    this.wallMove.x = x;
+    this.wallMove.y = y;
+    this.changed();
+    return true;
+  }
+  rotateWallMove() {
+    if (this.battle || !this.wallMove) return false;
+    this.wallMove.turns = (this.wallMove.turns + 1) % 4;
+    this.changed();
+    return true;
+  }
+  confirmWallMove() {
+    const issue = this.wallPlacementIssue;
+    if (issue) { this.notify(issue); return false; }
+    const move = this.wallMove!, target = this.wallPreview;
+    const changed = target.some((s, i) => s.x !== move.source[i].x || s.y !== move.source[i].y);
+    if (changed && this.editing) this.recordPositions();
+    // Every destination was validated against the current village before any coordinate changes.
+    for (const slot of target) {
+      const b = this.state.buildings.find((b) => b.id === slot.id)!;
+      b.x = slot.x; b.y = slot.y;
+    }
+    this.selected = move.anchorId;
+    this.wallGroup = target.map((b) => b.id);
+    this.wallAxis = move.turns % 2 ? (move.axis === 'x' ? 'y' : 'x') : move.axis;
+    this.notify(changed ? `${target.length} walls moved.` : 'Wall row kept in place.');
     this.changed();
     return true;
   }
@@ -913,14 +967,37 @@ export class GameModel {
     if (this.undoStack.length > 60) this.undoStack.shift();
     this.redoStack = [];
   }
+  /**
+   * Move buildings to `slots`, but only as a whole. A stored arrangement says nothing
+   * about buildings raised since it was saved, so applying it blindly can stack two
+   * structures on the same tiles — a corruption that survives saving and reloading.
+   */
   private applyPositions(slots: Layout['slots']) {
-    for (const slot of slots) {
-      const b = this.state.buildings.find((v) => v.id === slot.id);
-      if (b) {
-        b.x = slot.x;
-        b.y = slot.y;
+    const moved = new Map(slots.map((s) => [s.id, s]));
+    const placed = this.state.buildings.map((b) => {
+      const slot = moved.get(b.id);
+      return { kind: b.kind, x: slot?.x ?? b.x, y: slot?.y ?? b.y };
+    });
+    for (let i = 0; i < placed.length; i++) {
+      const v = placed[i],
+        size = BUILDINGS[v.kind].size;
+      if (v.x < 0 || v.y < 0 || v.x + size > 28 || v.y + size > 28) return false;
+      for (let j = i + 1; j < placed.length; j++) {
+        const o = placed[j];
+        if (
+          v.x < o.x + BUILDINGS[o.kind].size &&
+          v.x + size > o.x &&
+          v.y < o.y + BUILDINGS[o.kind].size &&
+          v.y + size > o.y
+        )
+          return false;
       }
     }
+    for (const [i, b] of this.state.buildings.entries()) {
+      b.x = placed[i].x;
+      b.y = placed[i].y;
+    }
+    return true;
   }
   get canUndo() {
     return this.undoStack.length > 0;
@@ -948,6 +1025,7 @@ export class GameModel {
     this.changed();
   }
   endEdit() {
+    this.wallMove = null;
     this.editing = false;
     this.undoStack = [];
     this.redoStack = [];
@@ -979,8 +1057,13 @@ export class GameModel {
       return this.notify('Clear the obstacles beneath this layout before undoing.');
     const previous = this.undoStack.pop();
     if (!previous) return this.notify('Nothing left to undo.');
-    this.redoStack.push(this.positions());
-    this.applyPositions(previous);
+    const current = this.positions();
+    if (!this.applyPositions(previous)) {
+      this.undoStack.push(previous);
+      return this.notify('That step cannot be undone around the buildings you have added.');
+    }
+    this.redoStack.push(current);
+    this.selected = this.selected;
     this.changed();
   }
   redo() {
@@ -988,8 +1071,13 @@ export class GameModel {
       return this.notify('Clear the obstacles beneath this layout before redoing.');
     const next = this.redoStack.pop();
     if (!next) return this.notify('Nothing left to redo.');
-    this.undoStack.push(this.positions());
-    this.applyPositions(next);
+    const current = this.positions();
+    if (!this.applyPositions(next)) {
+      this.redoStack.push(next);
+      return this.notify('That step cannot be redone around the buildings you have added.');
+    }
+    this.undoStack.push(current);
+    this.selected = this.selected;
     this.changed();
   }
   get layouts() {
@@ -1011,8 +1099,15 @@ export class GameModel {
     const layout = this.state.layouts?.[slot];
     if (!layout?.slots.length) return this.notify('That layout slot is still empty.');
     if (this.layoutOverlapsObstacles(layout.slots)) return this.notify('Clear the obstacles beneath this layout before restoring it.');
-    this.recordPositions();
-    this.applyPositions(layout.slots);
+    const before = this.positions();
+    if (!this.applyPositions(layout.slots))
+      return this.notify(
+        `${layout.name} does not fit your village any more. Save it again to update it.`,
+      );
+    this.undoStack.push(before);
+    if (this.undoStack.length > 60) this.undoStack.shift();
+    this.redoStack = [];
+    this.selected = this.selected;
     this.notify(`${layout.name} restored.`);
     this.changed();
   }

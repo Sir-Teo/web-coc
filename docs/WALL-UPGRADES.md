@@ -19,7 +19,7 @@ A bulk purchase validates IDs, duplicate selection, wall type, current levels, T
 
 Upgraded rows remain selected. Selecting another object, returning home from combat, entering edit mode, opening another activity, or canceling discards the transient selection. Reloading retains upgrades and resource balances but does not persist an active selection. Home wall tools cannot alter a village during a battle.
 
-The card supports narrow phones and short landscape viewports, uses at least 44px targets for its controls, and exposes gold/elixir totals before purchase. It avoids the resource counter stack where the viewport has room and keeps the card inside the viewport. Existing individual-wall Move and Info controls remain available. Moving or rotating a whole row is still unfinished.
+The card supports narrow phones and short landscape viewports, uses at least 44px targets for its controls, and exposes gold/elixir totals before purchase. It avoids the resource counter stack where the viewport has room and keeps the card inside the viewport. Existing individual-wall Move and Info controls remain available. Connected rows also support an atomic move/rotate preview in normal and edit modes; see [WALL-MOVEMENT.md](WALL-MOVEMENT.md).
 
 ## Verification and remaining work
 
@@ -27,4 +27,4 @@ Model tests cover straight rows, gaps and corners, mixed levels, stable same-lev
 
 Browser tests touch a real wall, select and upgrade its row, reload the purchase, adjust same-level quantities, wait for an available builder, upgrade a mixed row with gold then elixir, verify that Info upgrades only its displayed wall, and inspect every primary control on 320px portrait and 844px landscape phones. Label and cost use separate lines, with checks that both remain within each purchase button. Chromium and WebKit exercise these flows; WebKit CI includes the wall suite.
 
-Remaining wall work includes row movement/rotation, the full per-level wall artwork and connector system, live-game price/HP tables, Wall Rings and higher Town Hall content. Broader village and multiplayer requirements remain tracked separately.
+Remaining wall work includes the full per-level wall artwork and connector system, live-game price/HP tables, Wall Rings and higher Town Hall content. Broader village and multiplayer requirements remain tracked separately.

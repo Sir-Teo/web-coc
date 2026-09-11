@@ -4302,3 +4302,19 @@ h3 {
   .wall-context > .context-art { height: 42px; }
   .wall-context .context-info h2 { margin: 0; font-size: 18px; }
 }
+
+.wall-row-move > .game-btn { flex-direction: row; }
+.wall-move-toolbar {
+  position: absolute; left: 50%; bottom: max(12px, env(safe-area-inset-bottom));
+  transform: translateX(-50%); width: min(470px, calc(100vw - 24px));
+  padding: 10px 12px 12px; border: 2px solid #85734d; border-radius: 12px;
+  background: linear-gradient(#fff8df, #e7dab1); color: #584a32;
+  box-shadow: 0 4px 0 #51452d88, 0 8px 20px #20301f44;
+}
+.wall-move-heading { display: flex; flex-direction: column; gap: 3px; text-align: center; }
+.wall-move-heading b { font: 20px var(--heading); }
+.wall-move-heading span { font-size: 11px; }
+.wall-move-status { margin: 7px 0; font-size: 12px; text-align: center; color: #355f27; }
+.wall-move-status.blocked { color: #983c29; }
+.wall-move-actions { display: flex; gap: 7px; }
+.wall-move-actions > .game-btn { flex: 1; min-width: 0; min-height: 44px; gap: 4px; padding: 6px; font-size: 14px; }

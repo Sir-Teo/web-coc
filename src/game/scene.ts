@@ -55,13 +55,16 @@ export class VillageScene extends Phaser.Scene {
   private overlay!: Phaser.GameObjects.Graphics;
   private detail!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
+  wallGhosts = new Map<number, Phaser.GameObjects.Image>();
+  private wallGhostLinks?: Phaser.GameObjects.Graphics;
+  private wallDragOffset?: { x: number; y: number };
   private mode = '';
   private renderedBattle: GameModel['battle'] = null;
   private lastRevision = -1;
   private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
   private dragged = false;
   /** Which role the current pointer gesture has committed to. */
-  private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' = 'none';
+  private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' | 'drag-wall' = 'none';
   private lastDeploy = { x: -99, y: -99 };
   private lastTap = { x: -99, y: -99, t: 0 };
   private boundary: { signature: string; edges: number[][] } = { signature: '', edges: [] };
@@ -155,8 +158,14 @@ export class VillageScene extends Phaser.Scene {
       this.audio.unlock();
       const world = this.cameras.main.getWorldPoint(p.x, p.y),
         grid = uniso(world.x, world.y);
+      this.wallDragOffset = undefined;
+      const move = this.model.wallMove;
+      if (move && this.model.wallPreview.some((w) =>
+        (Math.floor(grid.x) === w.x && Math.floor(grid.y) === w.y) ||
+        this.wallGhosts.get(w.id)?.getBounds().contains(world.x, world.y)))
+        this.wallDragOffset = { x: move.x - Math.floor(grid.x), y: move.y - Math.floor(grid.y) };
       const held =
-        this.model.editing && !this.model.placement
+        this.model.editing && !this.model.placement && !move
           ? this.pickBuilding(world.x, world.y, grid)
           : undefined;
       this.down = {
@@ -206,6 +215,10 @@ export class VillageScene extends Phaser.Scene {
           this.clampCamera();
         } else if (this.gesture === 'deploy') this.dragDeploy(p);
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
+        else if (this.gesture === 'drag-wall' && this.wallDragOffset) {
+          const grid = this.gridAtPointer(p);
+          this.model.previewWallMove(Math.floor(grid.x) + this.wallDragOffset.x, Math.floor(grid.y) + this.wallDragOffset.y);
+        }
       }
       this.updateGhost(p);
     });
@@ -239,7 +252,6 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
       if (!this.uiBlocked) this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.92 : 1.08));
     });
-    this.input.keyboard!.on('keydown-ESC', () => this.model.cancel());
     this.model.onEffect = (fx) => this.effect(fx);
     this.sync();
     this.ready = true;
@@ -341,7 +353,8 @@ export class VillageScene extends Phaser.Scene {
     c.centerOn(centerX, centerY);
   }
   /** Decides once per gesture whether a drag pans, deploys, or moves a building. */
-  private classifyDrag(p: Phaser.Input.Pointer): 'pan' | 'deploy' | 'drag-building' {
+  private classifyDrag(p: Phaser.Input.Pointer): 'pan' | 'deploy' | 'drag-building' | 'drag-wall' {
+    if (this.model.wallMove) return this.wallDragOffset ? 'drag-wall' : 'pan';
     if (this.model.editing && this.down?.id != null) return 'drag-building';
     const b = this.model.battle;
     if (b && !b.finished && !this.model.placement && !this.model.activeSpell) {
@@ -378,6 +391,10 @@ export class VillageScene extends Phaser.Scene {
   private tap(p: Phaser.Input.Pointer) {
     const world = this.cameras.main.getWorldPoint(p.x, p.y),
       grid = uniso(world.x, world.y);
+    if (this.model.wallMove) {
+      this.model.previewWallMove(Math.floor(grid.x), Math.floor(grid.y));
+      return;
+    }
     if (this.model.placement) {
       if (this.model.place(Math.floor(grid.x), Math.floor(grid.y))) this.audio.play('build');
       return;
@@ -585,7 +602,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'wall' ? 39 : (d.width * levelScale * im.height) / im.width,
         )
         .setDepth(p.y);
-      im.setVisible(this.model.visibleBuilding(b));
+      im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
       im.setData('intactHeight', im.displayHeight);
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
@@ -664,6 +681,7 @@ export class VillageScene extends Phaser.Scene {
       this.ghost = undefined;
     }
     this.syncWalls();
+    this.syncWallPreview();
     this.drawRuinGround();
     this.syncCampUnits();
     this.lastRevision = this.model.revision;
@@ -754,7 +772,7 @@ export class VillageScene extends Phaser.Scene {
     this.bubbles.delete(id);
   }
   syncWalls() {
-    const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
+    const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id));
     const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y}`).join(';');
     if (signature === this.wallSignature) return;
     this.wallSignature = signature;
@@ -787,6 +805,29 @@ export class VillageScene extends Phaser.Scene {
           my = (p.y + q.y) / 2;
         g.lineBetween(mx, my - 3, mx, my - 13);
         this.wallViews.push(g);
+      }
+    }
+  }
+  private syncWallPreview() {
+    const preview = this.model.wallPreview;
+    const ids = new Set(preview.map((b) => b.id));
+    for (const [id, im] of this.wallGhosts) if (!ids.has(id)) { im.destroy(); this.wallGhosts.delete(id); }
+    this.wallGhostLinks?.clear();
+    if (!preview.length) { this.wallGhostLinks?.destroy(); this.wallGhostLinks = undefined; return; }
+    const color = this.model.wallPlacementIssue ? 0xff7272 : 0xb9ed86;
+    const g = this.wallGhostLinks ??= this.add.graphics().setDepth(6000);
+    for (const w of preview) {
+      const p = iso(w.x + .5, w.y + .5);
+      let im = this.wallGhosts.get(w.id);
+      if (!im) { im = this.add.image(0, 0, 'wall').setOrigin(.5, .88); this.wallGhosts.set(w.id, im); }
+      im.setPosition(p.x, p.y).setDisplaySize(BUILDINGS.wall.width, 39).setDepth(6001 + p.y / 10000).setTint(color).setAlpha(.85);
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        if (!preview.some((v) => v.x === w.x + dx && v.y === w.y + dy)) continue;
+        const q = iso(w.x + dx + .5, w.y + dy + .5);
+        const pts = [new Phaser.Math.Vector2(p.x, p.y - 3), new Phaser.Math.Vector2(q.x, q.y - 3), new Phaser.Math.Vector2(q.x, q.y - 24), new Phaser.Math.Vector2(p.x, p.y - 24)];
+        g.fillStyle(color, .7).fillPoints(pts, true);
+        g.lineStyle(1, 0x514d3e, .7).strokePoints(pts, true);
+        g.lineBetween(p.x, p.y - 12, q.x, q.y - 12);
       }
     }
   }
@@ -823,7 +864,7 @@ export class VillageScene extends Phaser.Scene {
       if (wall.id !== b?.id) diamond(wall.x, wall.y, 1, 0xffe8a0);
     const obstacle = this.model.selectedObstacle;
     if (obstacle) diamond(obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
-    if (b && b.hp > 0 && this.model.visibleBuilding(b)) {
+    if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);
       if (d.range || d.trap) {
@@ -837,7 +878,13 @@ export class VillageScene extends Phaser.Scene {
         }
       }
     }
-    if (this.model.editing && !this.model.placement) this.drawGrid(g);
+    if (this.model.wallMove) {
+      this.drawGrid(g);
+      const color = this.model.wallPlacementIssue ? 0xff6464 : 0x8fff73;
+      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, .06);
+      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, .3);
+    }
+    if (this.model.editing && !this.model.placement && !this.model.wallMove) this.drawGrid(g);
     if (this.model.placement) {
       this.drawGrid(g);
       const screen = this.pointerScreen();
