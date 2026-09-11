@@ -4,6 +4,18 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 
 const expected = {
+  airdefense: {
+    costs: [22000, 90000, 270000, 500000, 800000, 1000000],
+    seconds: [10800, 21600, 36000, 57600, 86400, 129600],
+    hp: [800, 850, 900, 950, 1000, 1050],
+    counts: [0, 0, 0, 1, 1, 2, 3, 3],
+  },
+  wizardtower: {
+    costs: [120000, 220000, 400000, 540000, 700000, 1000000],
+    seconds: [7200, 10800, 21600, 43200, 64800, 86400],
+    hp: [620, 650, 680, 730, 840, 960],
+    counts: [0, 0, 0, 0, 1, 2, 2, 3],
+  },
   cannon: {
     costs: [250, 1000, 4000, 16000, 50000, 100000, 150000, 240000, 360000, 500000],
     seconds: [10, 120, 600, 2700, 3600, 7200, 14400, 21600, 28800, 36000],
@@ -24,7 +36,7 @@ const expected = {
   },
 };
 
-describe.each(['cannon', 'archertower', 'mortar'] as const)(
+describe.each(['cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower'] as const)(
   '%s construction progression',
   (kind) => {
     const values = expected[kind];
@@ -69,7 +81,7 @@ describe.each(['cannon', 'archertower', 'mortar'] as const)(
       const m = new GameModel();
       m.state.obstacles = [];
       m.state.buildings = m.state.buildings.filter((b) => b.kind !== kind);
-      m.townhall!.level = 3;
+      m.townhall!.level = values.counts.findIndex((count) => count > 0) + 1;
       expect(BUILDINGS[kind].cost).toBe(values.costs[0]);
       expect(BUILDINGS[kind].build).toBe(values.seconds[0]);
       m.state.gold = values.costs[0];
@@ -104,7 +116,7 @@ describe.each(['cannon', 'archertower', 'mortar'] as const)(
         level: BUILDINGS[kind].maxLevel,
       });
       restored.placement = kind;
-      expect(restored.place(4, 2)).toBe(false);
+      expect(restored.place(7, 2)).toBe(false);
       expect(validateSave(restored.state)).toBe(true);
     });
 

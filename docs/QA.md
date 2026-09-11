@@ -1,5 +1,13 @@
 # Verification record
 
+## Air Defense and Wizard Tower — September 11, 2026
+
+All 307 unit tests pass after replacing prototype health, damage, prices and timers with explicit level tables. Twenty-five browser scenarios pass in each of Chromium and WebKit, covering all five defense Info panels, paid upgrade reloads, shop gates, traps, village editing, replay playback, seeking and file sharing. The production build passes both engines with no reported errors; Chromium also reloads, opens the Army drawer and plays a replay offline with 98 cached files.
+
+New combat checks exercise every accepted Air Defense/Wizard Tower damage level, range edges, firing cadence at 20/30/60 fps, inactive upgrades, air-only single-target rockets, rocket impact after launcher destruction, and Wizard Tower's exact one-tile splash boundary on both layers. An existing hero replay fixture needed extra defensive crossfire to reach automatic Iron Fist under the corrected tower health/damage. The replay is still compared exactly against its recording. Combat version 8 preserves older result summaries while refusing incompatible playback.
+
+Phone screenshots were visually reviewed for fractional damage, prices, timers and the singular “1 tile” label. See [AIR-WIZARD-PROGRESSION.md](AIR-WIZARD-PROGRESSION.md) for source values and remaining limits. Evidence is recorded in `output/playtest/air-wizard-verification.json` and `air-wizard-production-report.json`.
+
 ## Mortar artwork — September 11, 2026
 
 Six original level sprites replace the two atlas tiers across the village, Info, paid upgrades and moving previews. All 282 unit tests pass. Eighteen targeted scenarios pass in each of Chromium and WebKit, including all six muzzle anchors, airborne shells after launcher destruction, reduced motion, replay seeking and shared defense presentation. Production checks pass in both engines; Chromium reloads, opens the Army drawer and plays a replay offline with 98 cached files. All six new Mortar textures are explicitly required by the production check. The deterministic asset check also passes.

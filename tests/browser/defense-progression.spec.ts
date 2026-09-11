@@ -7,18 +7,20 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#loading')).toBeHidden();
 });
 
-for (const [kind, hp, nextHp, cost, seconds, label] of [
-  ['cannon', 470, 520, 4000, 600, '10m'],
-  ['archertower', 420, 460, 5000, 2700, '45m'],
-  ['mortar', 450, 500, 100000, 14400, '4h'],
+for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
+  ['cannon', 470, 520, 4000, 600, '10m', 3],
+  ['archertower', 420, 460, 5000, 2700, '45m', 3],
+  ['mortar', 450, 500, 100000, 14400, '4h', 5],
+  ['airdefense', 850, 900, 270000, 36000, '10h', 5],
+  ['wizardtower', 650, 680, 400000, 21600, '6h', 6],
 ] as const) {
   test(`${kind} Info and saved timer agree with the destination level`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const id = await page.evaluate(
-      ({ kind, cost, hp }) => {
+      ({ kind, cost, hp, townhall }) => {
         const m = window.__game.model;
-        m.townhall!.level = kind === 'mortar' ? 5 : 3;
-        if (kind === 'mortar') {
+        m.townhall!.level = townhall;
+        if (!m.state.buildings.some((b) => b.kind === kind)) {
           m.state.obstacles = [];
           m.state.buildings.push({
             id: m.state.nextId++,
@@ -37,7 +39,7 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
         m.changed();
         return m.selected;
       },
-      { kind, cost, hp },
+      { kind, cost, hp, townhall },
     );
     await page
       .locator('.building-context')
@@ -47,18 +49,43 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
     await expect(row.locator('td').nth(1)).toHaveText(String(hp));
     await expect(row.locator('td').nth(2)).toHaveText(new RegExp(String(nextHp)));
     const stats =
-      kind === 'cannon'
-        ? { dps: '11', nextDps: '15', hit: '8.8', nextHit: '12', range: '9 tiles', rate: '0.8s' }
-        : kind === 'archertower'
+      kind === 'airdefense'
+        ? { dps: '110', nextDps: '140', hit: '110', nextHit: '140', range: '10 tiles', rate: '1s' }
+        : kind === 'wizardtower'
           ? {
-              dps: '15',
-              nextDps: '19',
-              hit: '7.5',
-              nextHit: '9.5',
-              range: '10 tiles',
-              rate: '0.5s',
+              dps: '13',
+              nextDps: '16',
+              hit: '16.9',
+              nextHit: '20.8',
+              range: '7 tiles',
+              rate: '1.3s',
             }
-          : { dps: '5', nextDps: '6', hit: '25', nextHit: '30', range: '4–11 tiles', rate: '5s' };
+          : kind === 'cannon'
+            ? {
+                dps: '11',
+                nextDps: '15',
+                hit: '8.8',
+                nextHit: '12',
+                range: '9 tiles',
+                rate: '0.8s',
+              }
+            : kind === 'archertower'
+              ? {
+                  dps: '15',
+                  nextDps: '19',
+                  hit: '7.5',
+                  nextHit: '9.5',
+                  range: '10 tiles',
+                  rate: '0.5s',
+                }
+              : {
+                  dps: '5',
+                  nextDps: '6',
+                  hit: '25',
+                  nextHit: '30',
+                  range: '4–11 tiles',
+                  rate: '5s',
+                };
     for (const [label, current, next] of [
       ['Damage per second', stats.dps, stats.nextDps],
       ['Damage per hit', stats.hit, stats.nextHit],
@@ -75,6 +102,10 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
       await expect(
         page.locator('.info-table tr').filter({ hasText: 'Splash radius' }),
       ).toContainText('1.5 tiles');
+    if (kind === 'wizardtower')
+      await expect(
+        page.locator('.info-table tr').filter({ hasText: 'Splash radius' }),
+      ).toContainText('1 tile');
     await expect(page.locator('.info-cost')).toContainText(cost.toLocaleString('en-US'));
     await expect(page.locator('.info-cost')).toContainText(label);
     await page.screenshot({
@@ -133,6 +164,10 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(tile('archertower')).toContainText('1/1');
   await expect(page.locator('[data-action="build:cannon"]')).toBeDisabled();
   await expect(page.locator('[data-action="build:archertower"]')).toBeDisabled();
+  await expect(page.locator('[data-action="build:airdefense"]')).toBeDisabled();
+  await expect(tile('airdefense')).toContainText('Town Hall 4');
+  await expect(page.locator('[data-action="build:wizardtower"]')).toBeDisabled();
+  await expect(tile('wizardtower')).toContainText('Town Hall 5');
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall!.level = 4;
@@ -141,6 +176,9 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(page.locator('[data-action="build:cannon"]')).toBeDisabled();
   await expect(tile('archertower')).toContainText('1/2');
   await expect(page.locator('[data-action="build:archertower"]')).toContainText('1,000');
+  await expect(tile('airdefense')).toContainText('0/1');
+  await expect(page.locator('[data-action="build:airdefense"]')).toBeEnabled();
+  await expect(page.locator('[data-action="build:airdefense"]')).toContainText('22,000');
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall!.level = 5;
@@ -149,6 +187,9 @@ test('new villages respect defense counts and the shop unlocks the next pieces a
   await expect(tile('cannon')).toContainText('2/3');
   await expect(page.locator('[data-action="build:cannon"]')).toBeEnabled();
   await expect(page.locator('[data-action="build:cannon"]')).toContainText('250');
+  await expect(tile('wizardtower')).toContainText('0/1');
+  await expect(page.locator('[data-action="build:wizardtower"]')).toBeEnabled();
+  await expect(page.locator('[data-action="build:wizardtower"]')).toContainText('120,000');
 });
 
 test('older combat recordings retain the result and explain why playback is unavailable', async ({
@@ -160,7 +201,7 @@ test('older combat recordings retain the result and explain why playback is unav
     m.deploy(1, 13);
     m.step(0.05);
     m.finishBattle();
-    m.state.raidLog[0].replay.version = 4;
+    m.state.raidLog[0].replay.version = 7;
     m.returnHome();
     m.changed();
   });

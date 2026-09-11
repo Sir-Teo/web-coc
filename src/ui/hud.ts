@@ -88,7 +88,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
     rows.push(['Target', 'Range', `${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles`]);
     rows.push(['Gauge', 'Attack speed', `${d.rate}s`]);
-    if (d.splash) rows.push(['Sparkles', 'Splash radius', `${d.splash} tiles`]);
+    if (d.splash) rows.push(['Sparkles', 'Splash radius', `${d.splash} tile${d.splash === 1 ? '' : 's'}`]);
     rows.push([
       'Radar',
       'Targets',

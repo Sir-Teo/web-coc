@@ -88,7 +88,7 @@ test('the building info sheet compares this level with the next', async ({ page 
     window.__game.model.townhall!.level = 4;
     window.__game.model.changed();
   });
-  await expect(page.locator('.info-cost')).toContainText('m');
+  await expect(page.locator('.info-cost')).toContainText('6h');
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/info-desktop.png' });
   await page.locator('[data-action="close"]').click();

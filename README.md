@@ -76,6 +76,7 @@ with `no-cache` so a new release is picked up on the next visit.
 - **Wall Breakers** seek walls blocking the path to buildings, ignoring isolated wall pieces. They sacrifice themselves to open a breach, dealing 40× damage to walls and a smaller blast if defeated early. Both new troops can be trained, researched, and replenished with Last army.
 - Tap a troop’s role badge in the Army drawer to see its full stats, favorite target, and a tactical tip.
 - **Air Defenses** hit hard but are blind to the ground. Cannons and mortars are ground-only. Archer towers hit both.
+- **Defense progression** uses explicit health, prices, timers and damage tables for Cannon, Archer Tower, Mortar, Air Defense and Wizard Tower. Wizard Tower splash reaches one tile on the selected ground or air layer. See the [Air Defense and Wizard Tower audit](docs/AIR-WIZARD-PROGRESSION.md).
 - Build a **Spell Factory** to prepare Rage, Healing, and Lightning for free. Rage and Healing take two housing spaces; Lightning takes one. The current factory provides two spaces per level.
 
 ### Heroes

@@ -1,6 +1,6 @@
 # Clash of Clans experience coverage
 
-Updated September 10, 2026. This is an implementation inventory, not a claim of complete live-game parity. The current build is a local village-and-campaign game. A working menu or similar-looking sprite does not count as implementing the corresponding CoC system.
+Updated September 11, 2026. This is an implementation inventory, not a claim of complete live-game parity. The current build is a local village-and-campaign game. A working menu or similar-looking sprite does not count as implementing the corresponding CoC system.
 
 ## Baseline
 
@@ -12,6 +12,8 @@ The target is the modern Home Village loop, with original generated artwork. Two
 Those sources establish free, instant army preparation. They do not establish that this game's catalog, housing progression, economy, combat numbers, or campaign reproduce the live game. Those remain separately tracked below. Future catalog additions need their own current primary-source checks.
 
 ## Defense pass
+
+Cannon, Archer Tower, Mortar, Air Defense and Wizard Tower now have explicit reference tables for playable health, cost, duration and normal-mode damage, with compatible handling of accepted older levels. Count limits and TH ceilings are explicit. See [Air Defense / Wizard Tower](AIR-WIZARD-PROGRESSION.md), [Cannon / Archer Tower](DEFENSE-PROGRESSION.md), and [Mortar](MORTAR-PROGRESSION.md). Mortar has six individual level sprites and walls have eight; other buildings still share artwork tiers. These audits do not establish parity for troop stats, campaign tuning or the full defense roster.
 
 Bombs, Giant Bombs, Air Bombs, Spring Traps, and Wizard Towers are now playable, with original artwork, shop categories, correct catalog unlock labels, placement, upgrading, and save persistence. Traps are concealed in scouting, campaign miniatures, pointer picking, and the text snapshot until triggered. They never block troop paths or deployment, cannot be attacked or damaged by spells, and do not count toward destruction. Each new practice or campaign attack starts with fresh trap state; upgrading traps remain inactive. Campaign stages 2–12 include authored traps, and stages 6, 8, 10, and 12 include Wizard Towers.
 
@@ -56,7 +58,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for verified reference rules, pla
 | Clans and social play | Absent | No clan creation/search, chat, donations, clan castle defenders, wars, leagues, games, or clan capital. No fake online activity is displayed. |
 | Other bases and modes | Absent | No Builder Base, Clan Capital combat, event modes, or alternate-mode progression. |
 | Live activities and inventory | Absent | No season challenges, rotating events, magic items, event currencies, trader inventory, or purchase systems. |
-| Art and animation | Partial | Original isometric village artwork and readable portraits; two broad building art tiers. Balloon, Spell Factory and Air Defense now have original dedicated silhouettes, including upgraded building variants. Need per-level silhouettes, directional movement/attack/death sets, complete destruction states, and richer environmental animation. |
+| Art and animation | Partial | Original isometric village artwork and readable portraits; most buildings use two broad tiers, while walls have eight level sprites and Mortars have six. Balloon, Spell Factory and Air Defense now have original dedicated silhouettes, including upgraded building variants. Need per-level silhouettes, directional movement/attack/death sets, complete destruction states, and richer environmental animation. |
 | Audio and feedback | Partial | Generated effects and optional ambient tones. Need a complete music/ambience mix, distinct unit/defense cues, action timing, and audio settings for more devices. |
 | Device and accessibility quality | Partial | Automated Chromium/WebKit smoke checks, touch/pointer input, portrait/landscape layouts, focus handling, and reduced motion. Physical-device performance, long suspend/resume sessions, and accessibility review remain unverified. |
 

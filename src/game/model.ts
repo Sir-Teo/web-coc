@@ -572,7 +572,7 @@ export class GameModel {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
-        ['wall', 'cannon', 'archertower', 'mortar'].includes(b.kind) &&
+        ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower'].includes(b.kind) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);

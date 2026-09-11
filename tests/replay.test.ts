@@ -92,13 +92,14 @@ describe('recorded battle playback', () => {
       makeBuilding(3, 'herohall', 24, 23),
       makeBuilding(4, 'cannon', 4, 12, 8),
       makeBuilding(5, 'mortar', 8, 12, 4),
-      makeBuilding(6, 'wizardtower', 8, 8, 8), // Enough sustained damage to trigger Iron Fist.
+      makeBuilding(6, 'wizardtower', 8, 8, 8),
       makeBuilding(7, 'bomb', 1, 13),
       makeBuilding(8, 'giantbomb', 1, 14),
       makeBuilding(9, 'springtrap', 3, 13),
       makeBuilding(10, 'airbomb', 2, 13),
+      makeBuilding(11, 'cannon', 6, 15, 10), // Crossfire drives the King into automatic Iron Fist.
     ];
-    m.state.nextId = 11;
+    m.state.nextId = 12;
     m.state.king = { level: 1 };
     m.state.army.balloon = 1;
     m.startBattle(0, true);
