@@ -16,6 +16,10 @@ Production isometric strategy game building atlas. 1536×1024 transparent PNG, 4
 
 1536×1024 full-bleed production terrain. Premium colorful 3D pre-rendered village game environment, elevated southeast orthographic view without a horizon. A large, empty, light spring-green clearing at the center, bordered by dense rounded pines and deciduous trees. Keep the central 80% calm and almost empty, with subtle grass variation and sparse daisies. Turquoise river with foam and pale boulders at the lower-left edge, rugged rock outcrops at upper right. Warm golden sunlight and cool shadows. No buildings, walls, characters, interface, lettering, or logos.
 
+### Expanded terrain — `art/source/terrain-expanded-v2.png`
+
+The active background extends the original forest and river beyond the playable world so phone views and minimum zoom never reveal unpainted canvas. The accepted 1536×1024 image is displayed at 1.6× world size; gameplay coordinates and sprite sizes stay fixed. It rebuilds through `scripts/terrain-assets.mjs`. See [TERRAIN-CAMERA.md](TERRAIN-CAMERA.md) for generation provenance, camera behavior and rendered coverage checks.
+
 ### Character seeds and scenery — `art/source/characters.png`
 
 1536×1024 transparent PNG, 4 columns × 2 rows. Premium chunky friendly 3D mobile strategy art, isometric southeast view, upper-left sunlight. Top row: blond mustachioed swordsman with blue sash and broad sword; magenta-haired female archer in green tunic with bow; massive bald ginger-bearded giant in brown leather tunic; blue-hooded black-bearded wizard with fireball. Full body, weapons fully visible. Bottom row: reinforced stone wall post with gold cap, three-conifer cluster, mossy boulder cluster, blue swallowtail flag. All independently isolated; no text, grid, background, or scenery beyond each prop.

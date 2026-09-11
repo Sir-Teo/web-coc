@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:production": "node scripts/release-check.mjs",
-    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs && node scripts/defense-assets.mjs && node scripts/hero-assets.mjs && node scripts/air-magic-assets.mjs && node scripts/ruins-assets.mjs && node scripts/specialist-walk-assets.mjs",
+    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs && node scripts/defense-assets.mjs && node scripts/hero-assets.mjs && node scripts/air-magic-assets.mjs && node scripts/ruins-assets.mjs && node scripts/specialist-walk-assets.mjs && node scripts/terrain-assets.mjs",
     "format": "prettier --write src tests scripts *.ts *.json index.html",
     "check": "npm test && npm run build",
     "deploy": "npm run build && npx -y firebase-tools deploy --only hosting:coc-teozeng --project personal-website-3bc37"

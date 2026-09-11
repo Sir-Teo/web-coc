@@ -32,6 +32,8 @@ const SPELL_COLOR: Record<string, number> = {
   heal: 0x8de35c,
   lightning: 0x6fd4ff,
 };
+// The painted surround covers the full supported zoom-out view beyond the playable grid.
+const TERRAIN_SCALE = 1.6;
 export const WORLD = { width: 1792, height: 1195, ox: 896, oy: 112, tw: 64, th: 32 };
 export const iso = (x: number, y: number) =>
   new Phaser.Math.Vector2(WORLD.ox + (x - y) * 32, WORLD.oy + (x + y) * 16);
@@ -73,6 +75,7 @@ export class VillageScene extends Phaser.Scene {
   onReady = () => {};
   onSelect = () => {};
   baseZoom = 1;
+  private cameraViewport = { width: 0, height: 0 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
@@ -92,7 +95,7 @@ export class VillageScene extends Phaser.Scene {
   }
   preload() {
     this.load.image('king', asset('king'));
-    this.load.image('terrain', '/assets/environment/terrain.webp');
+    this.load.image('terrain', '/assets/environment/terrain-expanded-v2.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
@@ -120,7 +123,7 @@ export class VillageScene extends Phaser.Scene {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     this.add
       .image(WORLD.width / 2, WORLD.height / 2, 'terrain')
-      .setDisplaySize(WORLD.width, WORLD.height)
+      .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
       .setDepth(-1000);
     this.ground = this.add.graphics().setDepth(-900);
     this.ruinGround = this.add.graphics().setDepth(-875);
@@ -139,7 +142,7 @@ export class VillageScene extends Phaser.Scene {
     this.resetCamera();
     this.scale.on('resize', () => {
       this.resourceFlights.clear();
-      this.resetCamera();
+      this.resizeCamera();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.resourceFlights.clear());
     this.input.addPointer(2);
@@ -285,14 +288,34 @@ export class VillageScene extends Phaser.Scene {
       im.setDisplaySize(w, (w * im.height) / im.width).setDepth(p.y);
     }
   }
-  resetCamera() {
-    if (!this.cameras) return;
+  private updateBaseZoom() {
     const { width, height } = this.scale;
     this.baseZoom = Math.max(width / WORLD.width, height / WORLD.height) * 1.04;
     if (width < 700) this.baseZoom = Math.max(width / 1250, height / 1400);
+  }
+  resetCamera() {
+    if (!this.cameras) return;
+    this.updateBaseZoom();
+    this.cameraViewport = { width: this.cameras.main.width, height: this.cameras.main.height };
     this.cameras.main.setZoom(this.baseZoom);
     this.cameras.main.centerOn(896, 570);
     this.clampCamera();
+  }
+  private resizeCamera() {
+    const c = this.cameras.main;
+    // Phaser has resized the viewport, but scroll still refers to its previous size.
+    const x = c.scrollX + this.cameraViewport.width / 2;
+    const y = c.scrollY + this.cameraViewport.height / 2;
+    const zoom = c.zoom;
+    this.updateBaseZoom();
+    this.cameraViewport = { width: c.width, height: c.height };
+    c.setZoom(Phaser.Math.Clamp(zoom, this.baseZoom * 0.78, this.baseZoom * 2));
+    c.centerOn(x, y);
+    this.clampCamera();
+    // A pointer's old screen coordinates no longer describe the resized playfield.
+    this.down = undefined;
+    this.gesture = 'none';
+    this.pinchDistance = 0;
   }
   setZoom(value: number) {
     this.cameras.main.setZoom(Phaser.Math.Clamp(value, this.baseZoom * 0.78, this.baseZoom * 2));
@@ -307,13 +330,13 @@ export class VillageScene extends Phaser.Scene {
       vh = c.height / c.zoom;
     const centerX = Phaser.Math.Clamp(
         c.scrollX + c.width / 2,
-        Math.min(vw / 2, 896),
-        Math.max(WORLD.width - vw / 2, 896),
+        Math.min(vw / 2, WORLD.width / 2),
+        Math.max(WORLD.width - vw / 2, WORLD.width / 2),
       ),
       centerY = Phaser.Math.Clamp(
         c.scrollY + c.height / 2,
-        Math.min(vh / 2, 597),
-        Math.max(WORLD.height - vh / 2, 597),
+        Math.min(vh / 2, WORLD.height / 2),
+        Math.max(WORLD.height - vh / 2, WORLD.height / 2),
       );
     c.centerOn(centerX, centerY);
   }

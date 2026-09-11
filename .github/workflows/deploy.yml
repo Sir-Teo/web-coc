@@ -46,7 +46,7 @@ jobs:
         run: npm run test:e2e
 
       - name: Verify visual feedback in WebKit
-        run: npx playwright test tests/browser/visual-feedback.spec.ts tests/browser/combat-presentation.spec.ts tests/browser/projectile-timing.spec.ts tests/browser/ui-input.spec.ts tests/browser/movement-presentation.spec.ts tests/browser/balloon-bombs.spec.ts tests/browser/defeat-presentation.spec.ts tests/browser/effect-timing.spec.ts tests/browser/specialist-animation.spec.ts tests/browser/camp-presentation.spec.ts tests/browser/quad-renderer.spec.ts tests/browser/facility-upgrades.spec.ts tests/browser/army-unlocks.spec.ts tests/browser/army-roster.spec.ts tests/browser/obstacles.spec.ts --browser=webkit --output=output/webkit-results
+        run: npx playwright test tests/browser/visual-feedback.spec.ts tests/browser/combat-presentation.spec.ts tests/browser/projectile-timing.spec.ts tests/browser/ui-input.spec.ts tests/browser/movement-presentation.spec.ts tests/browser/balloon-bombs.spec.ts tests/browser/defeat-presentation.spec.ts tests/browser/effect-timing.spec.ts tests/browser/specialist-animation.spec.ts tests/browser/camp-presentation.spec.ts tests/browser/quad-renderer.spec.ts tests/browser/facility-upgrades.spec.ts tests/browser/army-unlocks.spec.ts tests/browser/army-roster.spec.ts tests/browser/obstacles.spec.ts tests/browser/village-camera.spec.ts --browser=webkit --output=output/webkit-results
 
       - name: Verify production build and offline play
         run: npm run test:production
