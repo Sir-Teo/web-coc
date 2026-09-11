@@ -206,9 +206,9 @@ test('a run of walls is laid without returning to the shop', async ({ page }) =>
   await expect(page.locator('.placement-banner')).toBeVisible();
   const before = await page.evaluate(() => window.__game.model.state.buildings.length);
   for (const [x, y] of [
-    [2.5, 2.5],
-    [3.5, 2.5],
-    [4.5, 2.5],
+    [2.5, 6.5],
+    [3.5, 6.5],
+    [4.5, 6.5],
   ]) {
     const p = await page.evaluate(([gx, gy]) => window.__game.scene.screenFor(gx, gy), [x, y]);
     await page.mouse.click(p.x, p.y);

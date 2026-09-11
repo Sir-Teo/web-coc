@@ -322,6 +322,7 @@ describe('saves', () => {
 describe('second-pass behaviour', () => {
   it('keeps the wall tool in hand so a run can be laid in one go', () => {
     const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
     m.beginBuild('wall');
     expect(m.placement).toBe('wall');
     expect(m.place(2, 2)).toBe(true);

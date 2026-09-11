@@ -1,3 +1,4 @@
+import { OBSTACLES } from '../game/obstacles';
 import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
 import { heroStats, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
@@ -230,9 +231,11 @@ export class HUD {
     const card = document.querySelector<HTMLElement>('.building-context[data-anchor]');
     if (!card) return;
     const b = this.model.state.buildings.find((v) => v.id === Number(card.dataset.anchor));
-    if (!b) return;
-    const d = BUILDINGS[b.kind];
-    const p = this.scene.screenFor(b.x + d.size / 2, b.y + d.size / 2);
+    const o = this.model.selectedObstacle;
+    if (!b && !o) return;
+    const target = b ?? o!;
+    const size = b ? BUILDINGS[b.kind].size : OBSTACLES[o!.kind].size;
+    const p = this.scene.screenFor(target.x + size / 2, target.y + size / 2);
     const width = card.offsetWidth || 470,
       height = card.offsetHeight || 120;
     const left = Math.min(Math.max(width / 2 + 12, p.x), window.innerWidth - width / 2 - 12);
@@ -323,6 +326,9 @@ export class HUD {
         this.render();
         this.restoreFocus();
         break;
+      case 'obstacle-remove': m.removeObstacle(Number(arg)); break;
+      case 'obstacle-cancel': m.cancelObstacleRemoval(Number(arg)); break;
+      case 'obstacle-finish': m.finishObstacleRemoval(Number(arg)); break;
       case 'close-drawer':
         this.drawerPanel = null;
         this.render();
@@ -806,7 +812,12 @@ export class HUD {
       return `<div class="placement-banner">${icon('Move', 23)}<div><b>${m.moving ? 'Move' : 'Place'} ${BUILDINGS[m.placement].name}</b><small>Drop it on a clear green tile</small></div>${button('cancel', icon('X', 20), 'square-btn small', 'aria-label="Cancel placement"')}</div>`;
     }
     const b = m.state.buildings.find((v) => v.id === m.selected);
-    if (!b) return '';
+    if (!b) {
+      const o = m.selectedObstacle;
+      if (!o) return '';
+      const d = OBSTACLES[o.kind];
+      return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="${asset(o.kind)}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · No builder needed</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
+    }
     if (m.editing)
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div></div>`;
     const d = BUILDINGS[b.kind];
@@ -1251,6 +1262,10 @@ export class HUD {
         (el) =>
           (el.textContent = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems'])),
       );
+    document.querySelectorAll<HTMLElement>('[data-obstacle-time]').forEach((el) => {
+      const o = m.obstacles.find((o) => o.id === Number(el.dataset.obstacleTime));
+      if (o?.removeEnd) el.textContent = time((o.removeEnd - m.clock) / 1000);
+    });
     document.querySelectorAll<HTMLElement>('[data-upgrade]').forEach((el) => {
       const b = m.state.buildings.find((v) => v.id === Number(el.dataset.upgrade));
       if (b?.upgradeEnd) el.textContent = time((b.upgradeEnd - m.clock) / 1000);

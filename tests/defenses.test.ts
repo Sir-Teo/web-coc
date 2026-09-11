@@ -46,6 +46,7 @@ function traps(m: GameModel, seconds: number, effects: FX[] = []) {
 describe('hidden traps', () => {
   it('obeys unlocks, building limits, collision, builders, upgrades and save round trips', () => {
     const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
     m.beginBuild('springtrap');
     expect(m.placement).toBeNull();
     m.beginBuild('bomb');
@@ -158,6 +159,7 @@ describe('hidden traps', () => {
 
   it('upgrading traps stay inactive; each practice starts armed and preserves the home state', () => {
     const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
     const bomb = makeBuilding(m.state.nextId++, 'bomb', 2, 2);
     const inactive = makeBuilding(m.state.nextId++, 'giantbomb', 23, 2);
     inactive.upgradeEnd = m.clock + 100000;

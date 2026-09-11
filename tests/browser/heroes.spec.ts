@@ -8,6 +8,7 @@ async function boot(page: Page) {
 async function unlock(page: Page, th = 7) {
   await page.evaluate((th) => {
     const m = window.__game.model;
+    m.state.obstacles = []; // The developed hero fixture uses cleared ground.
     m.townhall!.level = th;
     m.beginBuild('herohall');
     if (!m.place(2, 2)) throw Error('Hero Hall fixture cannot be placed');

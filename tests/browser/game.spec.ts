@@ -66,7 +66,7 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
   await page.waitForTimeout(400);
   const art = page.locator('[data-drag="barracks"] .shop-tile-art').first();
   const box = (await art.boundingBox())!;
-  const drop = await page.evaluate(() => window.__game.scene.screenFor(23.5, 4.5));
+  const drop = await page.evaluate(() => window.__game.scene.screenFor(2.5, 4.5));
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(drop.x, drop.y, { steps: 12 });

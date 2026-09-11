@@ -17,6 +17,7 @@ import { stepTraps } from '../src/game/traps';
 
 function village(th = 7) {
   const m = new GameModel();
+  m.state.obstacles = [];
   m.townhall!.level = th;
   m.state.buildings.push(makeBuilding(m.state.nextId++, 'herohall', 1, 1));
   m.tick(m.clock);
@@ -34,6 +35,7 @@ function battle(th = 7) {
 describe('hero progression', () => {
   it('unlocks only after a Hero Hall finishes at Town Hall 4', () => {
     const m = new GameModel();
+    m.state.obstacles = []; // Cleared ground for this placement scenario.
     m.beginBuild('herohall');
     expect(m.placement).toBeNull();
     m.townhall!.level = 4;

@@ -3,6 +3,7 @@ import { initialSave, makeBuilding } from '../../src/game/model';
 /** Explicit veteran fixture for tests of combat, advanced armies and research. */
 export function developedSave() {
   const save = initialSave();
+  save.obstacles = []; // Developed test villages have already cleared their ground.
   save.buildings.find((b) => b.kind === 'townhall')!.level = 7;
   save.buildings.find((b) => b.kind === 'barracks')!.level = 7;
   for (const [kind, x, y, level] of [

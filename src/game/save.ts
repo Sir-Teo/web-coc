@@ -1,3 +1,4 @@
+import { validObstacles, OBSTACLE_GEMS } from './obstacles';
 import { HERO_MAX_LEVEL } from './heroes';
 import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import { initialSave, type Save } from './model';
@@ -235,6 +236,9 @@ export function validateSave(input: unknown): input is Save {
       return false;
     ids.add(b.id);
   }
+  if (s.obstacles !== undefined && !validObstacles(s.obstacles, s.buildings)) return false;
+  if (s.obstacleGemIndex !== undefined && (!Number.isInteger(s.obstacleGemIndex)
+    || s.obstacleGemIndex < 0 || s.obstacleGemIndex >= OBSTACLE_GEMS.length)) return false;
   if (
     s.layouts !== undefined &&
     (!Array.isArray(s.layouts) ||

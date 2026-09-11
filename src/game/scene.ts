@@ -1,3 +1,4 @@
+import { OBSTACLES } from './obstacles';
 import Phaser from 'phaser';
 import {
   BUILDINGS,
@@ -41,6 +42,7 @@ export const uniso = (x: number, y: number) => ({
 export class VillageScene extends Phaser.Scene {
   model: GameModel;
   audio: AudioManager;
+  obstacleSprites = new Map<number, Phaser.GameObjects.Image>();
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
@@ -274,14 +276,6 @@ export class VillageScene extends Phaser.Scene {
   }
   decorate() {
     const dec: [string, number, number, number][] = [
-      ['trees', 3, 3, 135],
-      ['trees', 1, 13, 150],
-      ['trees', 23, 4, 120],
-      ['trees', 25, 24, 155],
-      ['trees', 3, 25, 140],
-      ['rocks', 2, 18, 82],
-      ['rocks', 23, 2, 94],
-      ['rocks', 24, 20, 68],
       ['flag', 9, 24, 34],
       ['flag', 14, 24, 34],
     ];
@@ -401,7 +395,12 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
-    this.model.selected = hit?.id ?? null;
+    const obstacle = !hit ? [...this.obstacleSprites.entries()]
+      .sort((a, b) => b[1].depth - a[1].depth)
+      .find(([, im]) => im.visible && world.x > im.x - im.displayWidth * .4
+        && world.x < im.x + im.displayWidth * .4
+        && world.y > im.y - im.displayHeight * .83 && world.y < im.y + im.displayHeight * .06) : undefined;
+    this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
     if (hit) this.audio.play('click');
@@ -518,6 +517,20 @@ export class VillageScene extends Phaser.Scene {
       this.bubbles.clear();
       this.mode = mode;
       this.resetCamera();
+    }
+    const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));
+    for (const [id, im] of this.obstacleSprites) {
+      if (!obstacleIds.has(id)) { im.destroy(); this.obstacleSprites.delete(id); }
+    }
+    for (const o of this.model.obstacles) {
+      const d = OBSTACLES[o.kind], p = iso(o.x + d.size / 2, o.y + d.size / 2);
+      let im = this.obstacleSprites.get(o.id);
+      if (!im) {
+        im = this.add.image(p.x, p.y, o.kind).setOrigin(.5, .88);
+        this.obstacleSprites.set(o.id, im);
+      }
+      im.setTexture(o.kind).setPosition(p.x, p.y).setDisplaySize(d.width, d.width * im.height / im.width)
+        .setDepth(p.y).setVisible(!this.model.battle).setAlpha(o.removeEnd ? .65 : 1);
     }
     const ids = new Set(this.model.buildings.map((b) => b.id));
     for (const [id, s] of this.sprites) {
@@ -783,6 +796,8 @@ export class VillageScene extends Phaser.Scene {
       g.lineStyle(2, color, 0.85);
       g.strokePoints(pts, true);
     };
+    const obstacle = this.model.selectedObstacle;
+    if (obstacle) diamond(obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
     if (b && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);

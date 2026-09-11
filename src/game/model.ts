@@ -1,3 +1,4 @@
+import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, type Obstacle } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
   HERO_ABILITY,
@@ -95,6 +96,8 @@ export interface Save {
   trophies: number;
   xp: number;
   buildings: Building[];
+  obstacles?: Obstacle[];
+  obstacleGemIndex?: number;
   army: Army;
   queue: QueueItem[];
   spells: SpellBook;
@@ -237,6 +240,8 @@ export class GameModel {
   constructor(saved?: Save) {
     this.state = saved ?? initialSave();
     this.state.dark ??= 0;
+    this.state.obstacles ??= initialObstacles(this.state.buildings);
+    this.state.obstacleGemIndex ??= 0;
     this.tick(Date.now());
   }
   changed(passive = false) {
@@ -245,6 +250,47 @@ export class GameModel {
   }
   notify(message: string) {
     this.onToast(message);
+  }
+  get obstacles() { return this.state.obstacles ?? []; }
+  get selectedObstacle() {
+    return !this.battle && this.selected !== null && this.selected < 0
+      ? this.obstacles.find((o) => o.id === -this.selected!) : undefined;
+  }
+  removeObstacle(id: number) {
+    if (this.battle) return false;
+    const o = this.obstacles.find((o) => o.id === id);
+    if (!o || o.removeEnd) return false;
+    const d = OBSTACLES[o.kind];
+    if (this.state[d.resource] < d.cost) { this.notify(`Not enough ${d.resource}.`); return false; }
+    this.state[d.resource] -= d.cost;
+    o.removeStart = this.clock;
+    o.removeEnd = this.clock + d.seconds * 1000;
+    this.notify(`Clearing ${d.name.toLowerCase()}. No builder needed.`);
+    this.changed();
+    return true;
+  }
+  cancelObstacleRemoval(id: number) {
+    if (this.battle) return false;
+    const o = this.obstacles.find((o) => o.id === id);
+    if (!o?.removeEnd) return false;
+    const d = OBSTACLES[o.kind];
+    this.state[d.resource] += d.cost;
+    delete o.removeEnd;
+    delete o.removeStart;
+    this.notify(`Removal canceled. ${d.cost.toLocaleString()} ${d.resource} refunded.`);
+    this.changed();
+    return true;
+  }
+  finishObstacleRemoval(id: number) {
+    if (this.battle) return false;
+    const o = this.obstacles.find((o) => o.id === id);
+    if (!o?.removeEnd) return false;
+    const cost = gemCost((o.removeEnd - this.clock) / 1000);
+    if (this.state.gems < cost) { this.notify('Not enough gems.'); return false; }
+    this.state.gems -= cost;
+    o.removeEnd = this.clock;
+    this.tick(this.clock);
+    return true;
   }
   get buildings() {
     return this.battle ? this.battle.buildings : this.state.buildings;
@@ -492,6 +538,18 @@ export class GameModel {
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
       }
     }
+    for (const o of [...this.obstacles].sort((a, b) => (a.removeEnd ?? Infinity) - (b.removeEnd ?? Infinity) || a.id - b.id)) {
+      if (o.removeEnd === undefined || o.removeEnd > now) continue;
+      this.state.obstacles = this.obstacles.filter((v) => v.id !== o.id);
+      if (this.selected === -o.id) this.selected = null;
+      const gems = OBSTACLE_GEMS[this.state.obstacleGemIndex ?? 0];
+      this.state.obstacleGemIndex = ((this.state.obstacleGemIndex ?? 0) + 1) % OBSTACLE_GEMS.length;
+      this.state.gems += gems;
+      this.state.xp += 3;
+      structural = changed = true;
+      this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
+      if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1 });
+    }
     if (this.heroHall && !this.state.king) {
       this.state.king = { level: 1 };
       structural = changed = true;
@@ -581,6 +639,7 @@ export class GameModel {
       y + size > 26
     )
       return false;
+    if (overlapsObstacle(this.obstacles, x, y, size)) return false;
     return !this.state.buildings.some(
       (b) =>
         b.id !== ignore &&
@@ -813,6 +872,10 @@ export class GameModel {
   loadLayout(slot: number) {
     const layout = this.state.layouts?.[slot];
     if (!layout?.slots.length) return this.notify('That layout slot is still empty.');
+    if (layout.slots.some((v) => {
+      const b = this.state.buildings.find((b) => b.id === v.id);
+      return b && overlapsObstacle(this.obstacles, v.x, v.y, BUILDINGS[b.kind].size);
+    })) return this.notify('Clear the obstacles beneath this layout before restoring it.');
     this.recordPositions();
     this.applyPositions(layout.slots);
     this.notify(`${layout.name} restored.`);
@@ -1690,6 +1753,7 @@ export function initialSave(): Save {
     trophies: 1248,
     xp: 1850,
     buildings,
+    obstacles: initialObstacles(buildings),
     army: { ...emptyArmy(), swordsman: 12, archer: 10 },
     queue: [],
     spells: emptySpells(),
