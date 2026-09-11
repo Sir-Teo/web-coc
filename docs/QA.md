@@ -1,5 +1,13 @@
 # Verification record
 
+## Trap progression and vertical spring feedback — September 11, 2026
+
+All 330 unit tests pass, including exact trap price boundaries, instant placement with occupied builders, paid upgrade reloads, accepted legacy levels, blast-radius edges, spring targeting and half hero damage, healing during stun, and campaign viability. Eighteen browser scenarios pass in each of Chromium and WebKit, covering the four phone placement/upgrade flows, hidden traps, replay playback, effect timing and vertical spring presentation. The production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files.
+
+The spring arc follows battle time, pauses without drifting, and becomes stationary with reduced motion. Visual review exposed two simultaneous activation labels and sounds; instantaneous springs now emit only their spring feedback, with a browser regression assertion. Phone Info screenshots were checked for damage, growing Giant Bomb radius, spring capacity and upgrade prices/timers. Combat version 9 keeps older summaries while refusing incompatible playback.
+
+The initial new browser fixture used an ambiguous upgrade selector; scoping it to the Info panel resolved the fixture failure. Source reconciliation rejected stale trap references and also exposed a need to re-audit the earlier defense price/time tables. Remaining timing and art limits are explicit in [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md). Evidence: `output/playtest/trap-verification.json`, `trap-production-report.json`, `*-audit-*.png` and `spring-toss-*.png`.
+
 ## Air Defense and Wizard Tower — September 11, 2026
 
 All 307 unit tests pass after replacing prototype health, damage, prices and timers with explicit level tables. Twenty-five browser scenarios pass in each of Chromium and WebKit, covering all five defense Info panels, paid upgrade reloads, shop gates, traps, village editing, replay playback, seeking and file sharing. The production build passes both engines with no reported errors; Chromium also reloads, opens the Army drawer and plays a replay offline with 98 cached files.

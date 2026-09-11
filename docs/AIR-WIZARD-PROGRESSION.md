@@ -1,5 +1,7 @@
 # Air Defense and Wizard Tower progression
 
+Source freshness follow-up: newer trap references expose stale CoC Guide economy data. These implemented defense tables need a current cross-source price/time re-audit; see [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md#source-reconciliation).
+
 Audited September 11, 2026 using the undiscounted [Air Defense](https://coc.guide/defense/air-defense) and [Wizard Tower](https://coc.guide/defense/wizard-tower) tables. Costs and times apply to reaching the listed level. No event or Gold Pass reduction is applied.
 
 ## Air Defense

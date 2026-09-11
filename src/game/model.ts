@@ -751,7 +751,7 @@ export class GameModel {
         `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`,
       );
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
-    if (this.busy >= this.builders)
+    if (!isTrap(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
     this.selected = null;
     this.moving = null;
@@ -780,14 +780,14 @@ export class GameModel {
     if (
       this.state[d.resource] < d.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
-      this.busy >= this.builders
+      (!isTrap(kind) && this.busy >= this.builders)
     ) {
       this.notify('Unable to build. Check your resources and builders.');
       return false;
     }
     this.state[d.resource] -= d.cost;
     const b = makeBuilding(this.state.nextId++, kind, x, y, 1);
-    if (kind !== 'wall') {
+    if (d.build > 0) {
       b.constructing = true;
       b.upgradeStart = this.clock;
       b.upgradeEnd = this.clock + d.build * 1000;
@@ -807,7 +807,7 @@ export class GameModel {
     }
     this.changed();
     this.notify(
-      kind === 'wall' ? 'Wall placed.' : `Construction started — ${formatTime(d.build)}.`,
+      d.build === 0 ? `${d.name} placed.` : `Construction started — ${formatTime(d.build)}.`,
     );
     return true;
   }
@@ -1612,13 +1612,13 @@ export class GameModel {
     b.auras = b.auras.filter((a) => a.end > b.elapsed);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
+      if (this.inAura('heal', u.x, u.y))
+        u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt * (u.hero ? 0.5 : 1));
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
       }
       const troop = TROOPS[u.kind];
-      if (this.inAura('heal', u.x, u.y))
-        u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt * (u.hero ? 0.5 : 1));
       const raged =
         this.inAura('rage', u.x, u.y) ||
         (u.rageUntil ?? 0) > b.elapsed ||

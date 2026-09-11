@@ -20,6 +20,7 @@ import {
   defenseDamage,
   defenseDps,
   trapDamage,
+  trapStats,
   isTrap,
   springCapacity,
   unlockTownHall,
@@ -73,15 +74,16 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   const rows: [string, string, string][] = [
     ['Heart', 'Hitpoints', n(buildingHp(kind, level))],
   ];
-  if (d.trap) {
+  const trap = trapStats(kind, level);
+  if (trap) {
     rows.length = 0;
     rows.push(['Swords', 'Damage', n(trapDamage(kind, level))]);
-    rows.push(['Radar', 'Trigger radius', `${d.trap.trigger} tiles`]);
-    if (d.trap.springCapacity)
+    rows.push(['Radar', 'Trigger radius', `${trap.trigger} tile${trap.trigger === 1 ? '' : 's'}`]);
+    if (trap.springCapacity)
       rows.push(['Users', 'Spring capacity', `${springCapacity(level)} spaces`]);
-    else rows.push(['Target', 'Blast radius', `${d.trap.radius} tiles`]);
-    rows.push(['Clock3', 'Fuse / flight', d.trap.delay ? `${d.trap.delay}s` : 'Instant']);
-    rows.push(['Radar', 'Targets', d.trap.targets === 'air' ? 'Air only' : 'Ground only']);
+    else rows.push(['Target', 'Blast radius', `${trap.radius} tiles`]);
+    rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
+    rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
   if (d.damage) {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);

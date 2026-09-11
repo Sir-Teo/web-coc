@@ -50,16 +50,16 @@ describe('hidden traps', () => {
     m.beginBuild('springtrap');
     expect(m.placement).toBeNull();
     m.beginBuild('bomb');
+    expect(m.placement).toBeNull();
+    m.townhall!.level = 3;
+    m.beginBuild('bomb');
     expect(m.place(2, 2)).toBe(true);
     const bomb = m.state.buildings.at(-1)!;
     expect(m.canPlace('bomb', 2, 2)).toBe(false);
-    expect(m.busy).toBe(1);
-    m.tick(bomb.upgradeEnd! + 1);
     expect(m.busy).toBe(0);
-    m.upgrade(bomb.id);
     expect(bomb.upgradeEnd).toBeUndefined();
-    m.townhall!.level = 3;
     m.upgrade(bomb.id);
+    expect(m.busy).toBe(1);
     m.tick(bomb.upgradeEnd! + 1);
     expect(bomb.level).toBe(2);
     expect(trapDamage('bomb', bomb.level)).toBeGreaterThan(trapDamage('bomb', 1));
@@ -181,24 +181,23 @@ describe('hidden traps', () => {
     expect(validateSave(m.state)).toBe(true);
   });
 
-  it('pushes an oversized survivor without crossing walls or taking two spring hits', () => {
+  it('tosses an oversized survivor in place without crossing walls or taking two spring hits', () => {
     // The shipping roster has no troop over ten spaces yet. Exercise the future
     // heavy-unit path using a tank with larger housing, restoring the catalog.
     const space = TROOPS.giant.space;
     try {
       TROOPS.giant.space = 20;
       const m = arena([
-        makeBuilding(1000, 'springtrap', 10, 10),
-        makeBuilding(1001, 'springtrap', 11, 10),
+        makeBuilding(1000, 'springtrap', 10, 10, 2),
+        makeBuilding(1001, 'springtrap', 11, 10, 2),
         makeBuilding(1002, 'wall', 12, 10),
       ]);
       const tank = unit(m, 'giant', 11, 10.5);
       tank.path = [{ x: 15, y: 15 }];
       traps(m, 0.05);
-      expect(tank.hp).toBe(tank.maxHp - trapDamage('springtrap', 1));
+      expect(tank.hp).toBe(tank.maxHp - 250);
       expect(tank.ejected).toBe(false);
-      expect(tank.x).toBeGreaterThan(11);
-      expect(tank.x).toBeLessThan(12);
+      expect([tank.x, tank.y]).toEqual([11, 10.5]);
       expect(tank.path).toEqual([]);
       expect(m.battle!.traps[1001]).toBeUndefined();
     } finally {

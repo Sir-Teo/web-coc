@@ -17,7 +17,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
   laboratory: [0, 0, 1, 2, 3, 4, 5, 6],
   spellfactory: [0, 0, 0, 0, 1, 2, 3, 3],
   wizardtower: [0, 0, 0, 0, 2, 3, 4, 6],
-  bomb: [0, 1, 2, 2, 3, 3, 4, 5],
+  bomb: [0, 0, 2, 2, 3, 3, 4, 5],
   giantbomb: [0, 0, 0, 0, 0, 2, 2, 3],
   airbomb: [0, 0, 0, 0, 2, 2, 3, 3],
   springtrap: [0, 0, 0, 1, 1, 1, 2, 3],

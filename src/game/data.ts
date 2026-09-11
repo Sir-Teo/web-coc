@@ -1,6 +1,7 @@
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset } from './wall-art';
 import { mortarAsset } from './mortar-art';
+import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 export type BuildingKind =
@@ -335,14 +336,20 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 1,
     width: 39,
     hp: 1,
-    cost: 400,
+    cost: TRAP_LEVELS.bomb[0].cost,
     resource: 'gold',
     category: 'Traps',
     maxLevel: 8,
-    available: [0, 2, 2, 2, 4, 4, 6, 6],
-    build: 10,
+    available: [0, 0, 2, 2, 4, 4, 6, 6],
+    build: 0,
     singleArtwork: true,
-    trap: { trigger: 1.5, radius: 3, delay: 1, damage: 25, targets: 'ground' },
+    trap: {
+      trigger: 1.5,
+      radius: 3,
+      delay: 1.5,
+      damage: TRAP_LEVELS.bomb[0].damage,
+      targets: 'ground',
+    },
   },
   giantbomb: {
     name: 'Giant Bomb',
@@ -351,14 +358,20 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 2,
     width: 70,
     hp: 1,
-    cost: 6000,
+    cost: TRAP_LEVELS.giantbomb[0].cost,
     resource: 'gold',
     category: 'Traps',
     maxLevel: 5,
     available: [0, 0, 0, 0, 1, 1, 2, 3],
-    build: 60,
+    build: 0,
     singleArtwork: true,
-    trap: { trigger: 2, radius: 3.5, delay: 1.5, damage: 175, targets: 'ground' },
+    trap: {
+      trigger: 2,
+      radius: 3,
+      delay: 1.5,
+      damage: TRAP_LEVELS.giantbomb[0].damage,
+      targets: 'ground',
+    },
   },
   airbomb: {
     name: 'Air Bomb',
@@ -367,34 +380,40 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 1,
     width: 44,
     hp: 1,
-    cost: 4000,
+    cost: TRAP_LEVELS.airbomb[0].cost,
     resource: 'gold',
     category: 'Traps',
     maxLevel: 6,
     available: [0, 0, 0, 2, 2, 2, 2, 4],
-    build: 45,
+    build: 0,
     singleArtwork: true,
-    trap: { trigger: 4, radius: 3, delay: 0.9, damage: 120, targets: 'air' },
+    trap: {
+      trigger: 4,
+      radius: 3,
+      delay: 0.9,
+      damage: TRAP_LEVELS.airbomb[0].damage,
+      targets: 'air',
+    },
   },
   springtrap: {
     name: 'Spring Trap',
     description:
-      'Springs the largest ground troop in range out of battle. Oversized troops take damage and are knocked back instead.',
+      'Springs the largest ground troop in range out of battle. Oversized troops are tossed upward and stunned; upgraded springs also damage them.',
     size: 1,
     width: 44,
     hp: 1,
-    cost: 2500,
+    cost: TRAP_LEVELS.springtrap[0].cost,
     resource: 'gold',
     category: 'Traps',
     maxLevel: 5,
     available: [0, 0, 0, 2, 2, 4, 4, 6],
-    build: 30,
+    build: 0,
     singleArtwork: true,
     trap: {
-      trigger: 0.8,
-      radius: 0.8,
+      trigger: 1,
+      radius: 1,
       delay: 0,
-      damage: 500,
+      damage: TRAP_LEVELS.springtrap[0].damage,
       targets: 'ground',
       springCapacity: 10,
     },
@@ -635,8 +654,20 @@ export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
   BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
-  Math.round((BUILDINGS[kind].trap?.damage ?? 0) * (1 + (level - 1) * 0.2));
-export const springCapacity = (level: number) => 10 + (level - 1) * 2;
+  trapProgression(kind, level)?.damage ?? 0;
+export const springCapacity = (level: number) =>
+  TRAP_LEVELS.springtrap[Math.min(5, Math.max(1, level)) - 1].capacity;
+export const trapStats = (kind: BuildingKind, level: number) => {
+  const base = BUILDINGS[kind].trap;
+  if (!base) return undefined;
+  const stats = trapProgression(kind, level);
+  return {
+    ...base,
+    damage: trapDamage(kind, level),
+    radius: stats && 'radius' in stats ? stats.radius : base.radius,
+    springCapacity: base.springCapacity ? springCapacity(level) : undefined,
+  };
+};
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
@@ -666,6 +697,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  trapProgression(kind, level + 1)?.seconds ??
   defenseProgression(kind, level + 1)?.seconds ??
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
 /** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
@@ -679,6 +711,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  trapProgression(kind, level + 1)?.cost ??
   defenseProgression(kind, level + 1)?.cost ??
   (kind === 'wall'
     ? (WALL_LEVELS[level]?.cost ?? 0)

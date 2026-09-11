@@ -1,5 +1,7 @@
 # Cannon and Archer Tower progression and combat
 
+Source freshness follow-up: newer trap references expose stale CoC Guide economy data. These implemented defense tables need a current cross-source price/time re-audit; see [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md#source-reconciliation).
+
 Related audits: [Mortar](MORTAR-PROGRESSION.md) and [Air Defense / Wizard Tower](AIR-WIZARD-PROGRESSION.md). All five current tower types now use explicit progression and normal-mode weapon values.
 
 Checked September 11, 2026 against the undiscounted Home Village tables for [Cannon](https://coc.guide/defense/cannon) and [Archer Tower](https://coc.guide/defense/archer-tower). Prices are gold; durations apply to reaching the destination level. No event or Gold Pass discount is applied.

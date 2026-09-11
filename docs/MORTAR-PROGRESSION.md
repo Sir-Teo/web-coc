@@ -1,5 +1,7 @@
 # Mortar progression and normal-mode combat
 
+Source freshness follow-up: newer trap references expose stale CoC Guide economy data. These implemented defense tables need a current cross-source price/time re-audit; see [TRAP-PROGRESSION.md](TRAP-PROGRESSION.md#source-reconciliation).
+
 Audited September 11, 2026 against the undiscounted [Mortar reference](https://coc.guide/defense/mortar). Prices and times apply to reaching the listed level. No event or Gold Pass discount is included.
 
 | Level | Gold | Time | HP | DPS | Damage per shell |

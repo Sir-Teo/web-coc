@@ -188,9 +188,9 @@ describe('hero combat', () => {
     const m = battle();
     m.deployHero(2, 13);
     const u = m.battle!.units[0];
-    m.battle!.buildings.push(makeBuilding(9998, 'springtrap', 2, 13));
+    m.battle!.buildings.push(makeBuilding(9998, 'springtrap', 2, 13, 2));
     stepTraps(m.battle!, 0.05, () => {});
-    expect(u.hp).toBe(u.maxHp - trapDamage('springtrap', 1) * 0.5);
+    expect(u.hp).toBe(u.maxHp - 125);
     expect(u.ejected).toBeFalsy();
   });
 

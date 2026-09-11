@@ -1,4 +1,5 @@
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
+import { SPRING_AIRTIME } from './trap-stats';
 import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
 import { OBSTACLES } from './obstacles';
 import Phaser from 'phaser';
@@ -1042,6 +1043,15 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
+        const sprung = (u.springUntil ?? 0) > battle.elapsed;
+        const springProgress =
+          1 -
+          Math.min(SPRING_AIRTIME, Math.max(0, (u.springUntil ?? 0) - battle.elapsed)) /
+            SPRING_AIRTIME;
+        const springLift =
+          sprung && !this.model.state.settings.reducedMotion
+            ? Math.sin(springProgress * Math.PI) * 45
+            : 0;
         const target = battle.buildings.find((b) => b.id === u.target);
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         im.setData('facing', pose.facing).setFlipX(pose.flipX);
@@ -1049,7 +1059,7 @@ export class VillageScene extends Phaser.Scene {
         const animationTime = battle.elapsed * 1000;
         if (!u.hero)
           im.setFrame(
-            (!pose.moving && !flying) || this.model.state.settings.reducedMotion
+            sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
@@ -1059,15 +1069,17 @@ export class VillageScene extends Phaser.Scene {
           else im.clearTint();
         }
         const p = iso(u.x, u.y),
-          motion = this.model.state.settings.reducedMotion
+          motion = sprung || this.model.state.settings.reducedMotion
             ? 0
             : flying
               ? Math.sin(animationTime / 600 + u.id) * 2.2
               : pose.moving ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob) : 0;
-        const lift = flying ? AIR_LIFT : 0;
+        const lift = flying ? AIR_LIFT : springLift;
         // Air troops draw above every rooftop, with a shadow left on the ground.
-        im.setPosition(p.x, p.y + motion - lift).setDepth(flying ? 7500 : p.y + 1);
-        if (flying) {
+        im.setPosition(p.x, p.y + motion - lift)
+          .setDepth(flying || sprung ? 7500 : p.y + 1)
+          .setData('springLift', springLift);
+        if (flying || sprung) {
           this.detail.fillStyle(0x1f2a16, 0.28);
           this.detail.fillEllipse(p.x, p.y, 26, 13);
         }

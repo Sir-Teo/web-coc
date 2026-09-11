@@ -6,6 +6,11 @@ async function boot(page: Page) {
   await page.locator('[data-action="skip-tutorial"]').click();
 }
 async function placeBomb(page: Page) {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.townhall.level = 3;
+    m.changed();
+  });
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Traps"]').click();
   await page.locator('[data-action="build:bomb"]').click();
@@ -14,8 +19,6 @@ async function placeBomb(page: Page) {
   const id = await page.evaluate(() => {
     const m = window.__game.model;
     const bomb = m.state.buildings.find((b) => b.kind === 'bomb')!;
-    m.tick(bomb.upgradeEnd! + 1);
-    m.townhall!.level = 3;
     m.changed();
     return bomb.id;
   });

@@ -1,5 +1,6 @@
-import { BUILDINGS, TROOPS, springCapacity, trapDamage } from './data';
-import type { Battle, Building, FX, Unit } from './model';
+import { BUILDINGS, TROOPS, springCapacity, trapDamage, trapStats } from './data';
+import type { Battle, FX, Unit } from './model';
+import { SPRING_AIRTIME } from './trap-stats';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -15,43 +16,10 @@ export function springOutcome(housing: number, hp: number, capacity: number, dam
   return { ejected, hp: ejected ? 0 : hp - damage };
 }
 
-function pushBack(u: Unit, trap: Building, buildings: Building[]) {
-  const cx = trap.x + BUILDINGS[trap.kind].size / 2;
-  const cy = trap.y + BUILDINGS[trap.kind].size / 2;
-  const dx = u.x - cx || 0.01,
-    dy = u.y - cy || 0.01;
-  const length = Math.hypot(dx, dy);
-  // Advance in small increments so a spring never pushes a survivor through a wall.
-  for (let i = 0; i < 8; i++) {
-    const x = u.x + (dx / length) * 0.15,
-      y = u.y + (dy / length) * 0.15;
-    if (
-      x < 0.1 ||
-      y < 0.1 ||
-      x > 27.9 ||
-      y > 27.9 ||
-      buildings.some(
-        (b) =>
-          !BUILDINGS[b.kind].trap &&
-          b.hp > 0 &&
-          x >= b.x &&
-          y >= b.y &&
-          x < b.x + BUILDINGS[b.kind].size &&
-          y < b.y + BUILDINGS[b.kind].size,
-      )
-    )
-      break;
-    u.x = x;
-    u.y = y;
-  }
-  u.path = [];
-  u.pathAt = 0;
-}
-
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
   let changed = false;
   for (const trap of battle.buildings) {
-    const d = BUILDINGS[trap.kind].trap;
+    const d = trapStats(trap.kind, trap.level);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
     let state = battle.traps[trap.id];
     if (state?.resolved) continue;
@@ -69,7 +37,9 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       );
       nearby.sort(
         (a, b) =>
-          (d.springCapacity ? (b.hero ? 25 : TROOPS[b.kind].space) - (a.hero ? 25 : TROOPS[a.kind].space) : 0) ||
+          (d.springCapacity
+            ? (b.hero ? 25 : TROOPS[b.kind].space) - (a.hero ? 25 : TROOPS[a.kind].space)
+            : 0) ||
           Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y) ||
           a.id - b.id,
       );
@@ -81,12 +51,14 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         targetId: target.id,
         ...center,
       };
-      effect({
-        type: 'trap',
-        ...center,
-        text: BUILDINGS[trap.kind].name,
-        color: d.targets === 'air' ? 0xff746c : 0xffd175,
-      });
+      // Springs resolve immediately and provide their own label and sound below.
+      if (!d.springCapacity)
+        effect({
+          type: 'trap',
+          ...center,
+          text: BUILDINGS[trap.kind].name,
+          color: d.targets === 'air' ? 0xff746c : 0xffd175,
+        });
       changed = true;
     }
     if (d.targets === 'air') {
@@ -113,8 +85,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       if (outcome.ejected)
         target.spent = true; // No death bomb from a troop flung out of the village.
       else {
-        target.springUntil = battle.elapsed + 0.6;
-        pushBack(target, trap, battle.buildings);
+        target.springUntil = battle.elapsed + SPRING_AIRTIME;
+        target.attacking = false;
+        target.path = [];
+        target.pathAt = 0;
       }
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
