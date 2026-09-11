@@ -1,4 +1,4 @@
-import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
+import { MAP_SIZE, gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
 import { BUILDINGS } from './data';
 import type { Building } from './model';
 
@@ -50,7 +50,7 @@ export function initialObstacles(buildings: readonly Building[]): Obstacle[] {
 export function validObstacles(
   value: unknown,
   buildings: readonly Building[],
-  legacy = false,
+  version: GridVersion = SAVE_VERSION,
 ): value is Obstacle[] {
   if (!Array.isArray(value) || value.length > OBSTACLE_LIMIT) return false;
   const ids = new Set<number>();
@@ -66,8 +66,8 @@ export function validObstacles(
       !Number.isInteger(o.y) ||
       o.x < 0 ||
       o.y < 0 ||
-      o.x + 2 > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
-      o.y + 2 > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE)
+      o.x + 2 > gridSize(version) ||
+      o.y + 2 > gridSize(version)
     )
       return false;
     if (o.removeEnd !== undefined || o.removeStart !== undefined) {
@@ -80,7 +80,7 @@ export function validObstacles(
       )
         return false;
     }
-    if (buildings.some((b) => overlapsObstacle([o], b.x, b.y, legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size)))
+    if (buildings.some((b) => overlapsObstacle([o], b.x, b.y, footprintSize(b.kind, BUILDINGS[b.kind].size, version))))
       return false;
     if (
       overlapsObstacle(

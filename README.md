@@ -103,7 +103,7 @@ with `no-cache` so a new release is picked up on the next visit.
 ### Saving
 
 - Only one tab can play a village at a time. A second tab waits until the first closes, then loads the latest save.
-- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Version 1 and older version 2 villages are migrated on load and import. Newly added troop types begin at zero in existing saves, preserving their army and resources. Old paid training queues complete once immediately on load. Army presets and battle history are included in backups.
+- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Save formats 1–3 are migrated on load and import, preserving progress while correcting old building footprints. If stored villages cannot be recovered, startup offers downloads instead of replacing them with a new village. Newly added troop types begin at zero in existing saves, preserving their army and resources. Old paid training queues complete once immediately on load. Army presets and battle history are included in backups.
 - Resource accumulation while away is capped at 8 hours and by collector storage.
 
 ## What is implemented

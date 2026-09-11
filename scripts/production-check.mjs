@@ -13,7 +13,10 @@ for (const [name, engine] of [
   const errors = [];
   const requiredArt = new Set([
     '/assets/environment/terrain-field-v4.webp',
-    ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`),
+    ...Array.from(
+      { length: 6 },
+      (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`,
+    ),
     '/assets/buildings/airdefense-v2.webp',
     '/assets/buildings/tier3/airdefense-v2.webp',
     '/assets/buildings/spellfactory-v2.webp',
@@ -70,26 +73,27 @@ for (const [name, engine] of [
   await page.locator('[data-action="practice"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
   let deployed = false;
-  for (const [x, y] of [
-    [320, 500],
-    [1120, 500],
-    [350, 580],
-    [1090, 580],
-    [500, 640],
-    [940, 640],
-  ]) {
+  // Probe clear visible ground through real canvas input. Building footprints
+  // can change between releases, so six fixed points may all be inside the boundary.
+  const sites = [720, 640, 560, 480, 400, 320, 240].flatMap((y) =>
+    [720, 560, 880, 400, 1040, 240, 1200, 80, 1360].map((x) => [x, y]),
+  );
+  for (const [x, y] of sites) {
     if (
       await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS', [x, y])
     ) {
       await page.mouse.click(x, y);
+      await page.waitForTimeout(50); // Phaser consumes pointer input on a render frame.
       deployed = await page.evaluate(
         () => JSON.parse(window.render_game_to_text()).battle.units > 0,
       );
       if (deployed) break;
     }
   }
-  if (!deployed)
+  if (!deployed) {
+    await page.screenshot({ path: `output/playtest/production-deploy-failure-${name}.png` });
     throw Error('Production replay check could not deploy a troop through the canvas.');
+  }
   await page.waitForTimeout(2000);
   await page.locator('[data-action="surrender"]').click();
   await page.locator('[data-action="end"]').click();

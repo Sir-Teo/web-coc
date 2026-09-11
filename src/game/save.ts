@@ -1,4 +1,4 @@
-import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
+import { gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
 import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
 import { validateReplay } from './replay';
@@ -26,14 +26,21 @@ const QUEST_IDS = [
  */
 export function migrateSave(input: unknown): unknown {
   if (!input || typeof input !== 'object') return input;
-  const s = input as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
-  if (s.version !== 1 && s.version !== 2) return input;
+  const raw = input as { version?: unknown };
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3) return input;
+  const s = structuredClone(input) as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
+  const version: GridVersion = raw.version === 3 ? 3 : 2;
   const record = (value: unknown) =>
     value && typeof value === 'object' ? (value as Record<string, number>) : undefined;
   const army = record(s.army);
   const last = record(s.lastArmy);
   const levels = record(s.troopLevels);
-  const added = s.version === 1 ? ['balloon', 'goblin', 'wallbreaker'] : ['goblin', 'wallbreaker'];
+  const added =
+    s.version === 1
+      ? ['balloon', 'goblin', 'wallbreaker']
+      : s.version === 2
+        ? ['goblin', 'wallbreaker']
+        : [];
   for (const kind of added) {
     // Only absent fields are migrated; malformed values must still fail validation.
     if (army && !(kind in army)) army[kind] = 0;
@@ -44,27 +51,31 @@ export function migrateSave(input: unknown): unknown {
     s.spells ??= { rage: 0, heal: 0, lightning: 0 };
     s.spellQueue ??= [];
   }
-  s.dark ??= 0;
-  s.version = 2;
-  if (!validateVersion(s, true)) return s;
-  const moved = migrateFootprints(s as unknown as Save);
+  if (version === 2) s.dark ??= 0;
+  s.version = version;
+  if (!validateVersion(s, version)) return input;
+  const moved = migrateFootprints(s as unknown as Save, version);
+  if (moved === undefined) return input;
   if (moved) s.mapUpgrade = { moved };
-  s.version = 3;
+  s.version = SAVE_VERSION;
   return s;
 }
 export function validateSave(input: unknown): input is Save {
   return validateVersion(input);
 }
-function validateVersion(input: unknown, legacy = false): input is Save {
+function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): input is Save {
   if (!input || typeof input !== 'object') return false;
   const s = input as Save;
   if (
     s.mapUpgrade !== undefined &&
-    (!s.mapUpgrade || !Number.isInteger(s.mapUpgrade.moved) ||
-      s.mapUpgrade.moved < 1 || s.mapUpgrade.moved > 400)
-  ) return false;
+    (!s.mapUpgrade ||
+      !Number.isInteger(s.mapUpgrade.moved) ||
+      s.mapUpgrade.moved < 1 ||
+      s.mapUpgrade.moved > 400)
+  )
+    return false;
   if (
-    (s.version as number) !== (legacy ? 2 : 3) ||
+    (s.version as number) !== version ||
     typeof s.tutorial !== 'boolean' ||
     !Number.isInteger(s.nextId) ||
     !['gold', 'elixir', 'gems', 'trophies', 'xp', 'lastTick', 'nextId'].every((k) =>
@@ -237,8 +248,8 @@ function validateVersion(input: unknown, legacy = false): input is Save {
       !Number.isInteger(b.y) ||
       b.x < 0 ||
       b.y < 0 ||
-      b.x + (legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size) > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
-      b.y + (legacy ? legacySize(b.kind, BUILDINGS[b.kind].size) : BUILDINGS[b.kind].size) > (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
+      b.x + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
+      b.y + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
       b.level > BUILDINGS[b.kind].maxLevel ||
@@ -252,12 +263,20 @@ function validateVersion(input: unknown, legacy = false): input is Save {
       return false;
     ids.add(b.id);
   }
-  if (!validArrangement(s.buildings, [], legacy)) return false;
-  if (s.obstacles !== undefined && !validObstacles(s.obstacles, s.buildings, legacy)) return false;
-  if (s.obstacleGrowth !== undefined && (!Array.isArray(s.obstacles)
-    || !validObstacleGrowth(s.obstacleGrowth, s.obstacles))) return false;
-  if (s.obstacleGemIndex !== undefined && (!Number.isInteger(s.obstacleGemIndex)
-    || s.obstacleGemIndex < 0 || s.obstacleGemIndex >= OBSTACLE_GEMS.length)) return false;
+  if (!validArrangement(s.buildings, [], version)) return false;
+  if (s.obstacles !== undefined && !validObstacles(s.obstacles, s.buildings, version)) return false;
+  if (
+    s.obstacleGrowth !== undefined &&
+    (!Array.isArray(s.obstacles) || !validObstacleGrowth(s.obstacleGrowth, s.obstacles))
+  )
+    return false;
+  if (
+    s.obstacleGemIndex !== undefined &&
+    (!Number.isInteger(s.obstacleGemIndex) ||
+      s.obstacleGemIndex < 0 ||
+      s.obstacleGemIndex >= OBSTACLE_GEMS.length)
+  )
+    return false;
   if (
     s.layouts !== undefined &&
     (!Array.isArray(s.layouts) ||
@@ -277,8 +296,8 @@ function validateVersion(input: unknown, legacy = false): input is Save {
               !Number.isInteger(v.y) ||
               v.x < 0 ||
               v.y < 0 ||
-              v.x >= (legacy ? LEGACY_MAP_SIZE : MAP_SIZE) ||
-              v.y >= (legacy ? LEGACY_MAP_SIZE : MAP_SIZE),
+              v.x >= gridSize(version) ||
+              v.y >= gridSize(version),
           ),
       ))
   )
@@ -326,12 +345,24 @@ export async function loadSave(): Promise<Save | undefined> {
     /* A valid local backup remains usable. */
   }
   const primaryText = primary == null ? undefined : JSON.stringify(primary, null, 2);
+  const originals = [primary, backup];
   primary = migrateSave(primary);
   backup = migrateSave(backup);
-  if (validateSave(primary) && validateSave(backup))
+  const migrated = [primary, backup];
+  const newestValid = Math.max(-1, ...migrated.filter(validateSave).map((s) => s.lastTick));
+  const blocked = originals.some((s, i) => {
+    const old = s as { version?: number; lastTick?: number } | undefined;
+    return (
+      old?.version === 3 &&
+      validateVersion(s, 3) &&
+      !validateSave(migrated[i]) &&
+      old.lastTick! >= newestValid
+    );
+  });
+  if (!blocked && validateSave(primary) && validateSave(backup))
     return primary.lastTick > backup.lastTick ? primary : backup;
-  if (validateSave(primary)) return primary;
-  if (validateSave(backup)) return backup;
+  if (!blocked && validateSave(primary)) return primary;
+  if (!blocked && validateSave(backup)) return backup;
   // Existing data must never be overwritten by the new-village autosave.
   const copies: SaveRecoveryError['copies'] = [];
   if (backupText !== null) copies.push({ source: 'backup', text: backupText });

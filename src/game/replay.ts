@@ -1,9 +1,9 @@
-import { MAP_SIZE, LEGACY_MAP_SIZE, legacySize } from './grid';
+import { gridSize, footprintSize, type GridVersion } from './grid';
 import { BUILDINGS, CAMPAIGN, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 12;
+export const REPLAY_VERSION = 13;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -109,12 +109,12 @@ export function validateReplay(value: unknown): value is ReplayData {
   )
     return false;
   const ids = new Set<number>();
-  const legacyGrid = value.version < 12;
-  const mapSize = legacyGrid ? LEGACY_MAP_SIZE : MAP_SIZE;
+  const gridVersion: GridVersion = value.version < 12 ? 2 : value.version < 13 ? 3 : 4;
+  const mapSize = gridSize(gridVersion);
   for (const b of s.buildings) {
     if (!object(b) || !Object.hasOwn(BUILDINGS, b.kind)) return false;
     const d = BUILDINGS[b.kind as keyof typeof BUILDINGS];
-    const size = legacyGrid ? legacySize(b.kind, d.size) : d.size;
+    const size = footprintSize(b.kind, d.size, gridVersion);
     if (
       !integer(b.id, 1, Number.MAX_SAFE_INTEGER) ||
       ids.has(b.id) ||

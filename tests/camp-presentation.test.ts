@@ -57,9 +57,9 @@ describe('camp occupants', () => {
   it('keeps complete walking segments outside buildings and walls, including at map edges', () => {
     const buildings = [
       makeBuilding(1, 'camp', 2, 2),
-      makeBuilding(2, 'camp', 43, 43),
-      makeBuilding(3, 'goldstorage', 5, 2),
-      makeBuilding(4, 'barracks', 40, 43),
+      makeBuilding(2, 'camp', 42, 42),
+      makeBuilding(3, 'goldstorage', 6, 2),
+      makeBuilding(4, 'barracks', 39, 42),
       ...Array.from({ length: 5 }, (_, i) => makeBuilding(10 + i, 'wall', 2 + i, 6)),
     ];
     const actors = campPlan({ ...emptyArmy(), goblin: 80 }, buildings);

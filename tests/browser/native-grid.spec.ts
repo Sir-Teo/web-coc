@@ -104,7 +104,7 @@ test('an existing version-2 village expands once, discloses relocation and retai
       };
     }, cannon.id);
   const before = await snapshot();
-  expect(before.version).toBe(3);
+  expect(before.version).toBe(4);
   expect(before.notice).toBeNull();
   expect(before.gold).toBe(87654);
   expect(before.building).toMatchObject({

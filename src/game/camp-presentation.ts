@@ -31,8 +31,8 @@ export function campPlan(army: Army, buildings: Building[]): CampActor[] {
     for (let x = 1; x < MAP_SIZE - 1; x++)
       if (!occupied.has(`${x},${y}`)) free.push({ x: x + 0.5, y: y + 0.5 });
   const routes = camps.map((camp) => {
-    const cx = camp.x + 1.5,
-      cy = camp.y + 1.5;
+    const cx = camp.x + BUILDINGS.camp.size / 2,
+      cy = camp.y + BUILDINGS.camp.size / 2;
     const candidates = free.filter((p) => Math.hypot(p.x - cx, p.y - cy) <= 4.5);
     // A tightly packed camp can muster on its nearest clear tile.
     if (!candidates.length && free.length)

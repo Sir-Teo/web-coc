@@ -153,7 +153,7 @@ async function boot() {
               finished: model.battle.finished,
             }
           : null,
-        coordinates: '28×28 isometric grid; x toward lower-right, y toward lower-left',
+        coordinates: '48×48 isometric grid; x toward lower-right, y toward lower-left',
       }),
   });
   if (developerToolsEnabled(import.meta.env.DEV, location.hostname, location.search)) {

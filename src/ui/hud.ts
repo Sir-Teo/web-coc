@@ -797,7 +797,7 @@ export class HUD {
     delete this.model.state.mapUpgrade;
     this.model.changed(true);
     this.toast(
-      `Village expanded · ${moved} building${moved === 1 ? '' : 's'} moved to clear ground. Your progress is preserved.`,
+      `Village updated · ${moved} building${moved === 1 ? '' : 's'} moved to clear ground. Your progress is preserved.`,
     );
     return true;
   }

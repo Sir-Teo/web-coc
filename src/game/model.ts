@@ -106,7 +106,7 @@ export interface RaidRecord {
   replay?: ReplayData;
 }
 export interface Save {
-  version: 3;
+  version: 4;
   mapUpgrade?: { moved: number };
   dark: number;
   king?: HeroProgress;
@@ -2361,7 +2361,7 @@ export function initialSave(): Save {
       ),
   );
   return {
-    version: 3,
+    version: 4,
     dark: 0,
     gold: 205000,
     elixir: 165000,

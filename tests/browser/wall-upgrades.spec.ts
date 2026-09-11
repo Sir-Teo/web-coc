@@ -185,12 +185,27 @@ test('wall tools keep resource costs and touch controls reachable on narrow and 
       await expect(button).toBeInViewport({ ratio: 1 });
       expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
-    for (const purchase of await card.locator('.wall-upgrade-actions > button').all()) {
-      const rect = (await purchase.boundingBox())!;
-      for (const child of await purchase.locator(':scope > span, :scope > small').all()) {
-        const content = (await child.boundingBox())!;
-        expect(content.x).toBeGreaterThanOrEqual(rect.x);
-        expect(content.x + content.width).toBeLessThanOrEqual(rect.x + rect.width);
+    // Read one DOM snapshot so an economy refresh cannot detach a child between measurements.
+    const purchases = await card.locator('.wall-upgrade-actions > button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          children: [...button.querySelectorAll(':scope > span, :scope > small')].map((child) => {
+            const content = child.getBoundingClientRect();
+            return { left: content.left, right: content.right, width: content.width };
+          }),
+        };
+      }),
+    );
+    expect(purchases).toHaveLength(2);
+    for (const purchase of purchases) {
+      expect(purchase.children).toHaveLength(2);
+      for (const content of purchase.children) {
+        expect(content.width).toBeGreaterThan(0);
+        expect(content.left).toBeGreaterThanOrEqual(purchase.left);
+        expect(content.right).toBeLessThanOrEqual(purchase.right);
       }
     }
     const box = (await card.boundingBox())!;
@@ -228,13 +243,18 @@ test('the Info panel upgrades only its displayed wall when a row is selected', a
   await page.locator('.wall-context').getByRole('button', { name: 'Info', exact: true }).tap();
   await expect(page.locator('.info-cost')).toContainText('Instant');
   await page.locator(`[data-action="wall-info-upgrade:${before.id}"]`).tap();
-  const after = await page.evaluate((ids) => {
-    const m = window.__game.model;
-    return {
-      gold: m.state.gold,
-      walls: m.state.buildings.filter((b) => ids.includes(b.id)).map((b) => ({ id: b.id, level: b.level })),
-    };
-  }, before.walls.map((b) => b.id));
+  const after = await page.evaluate(
+    (ids) => {
+      const m = window.__game.model;
+      return {
+        gold: m.state.gold,
+        walls: m.state.buildings
+          .filter((b) => ids.includes(b.id))
+          .map((b) => ({ id: b.id, level: b.level })),
+      };
+    },
+    before.walls.map((b) => b.id),
+  );
   expect(after.gold).toBe(before.gold - before.cost);
   expect(after.walls).toEqual(
     before.walls.map((b) => ({ ...b, level: b.level + Number(b.id === before.id) })),

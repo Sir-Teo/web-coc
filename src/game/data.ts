@@ -75,8 +75,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     name: 'Hero Hall',
     description:
       'Home of the Barbarian King. Unlock your first hero here, then upgrade him from Town Hall 7.',
-    size: 3,
-    width: 140,
+    size: 4,
+    width: 187,
     hp: 1500,
     cost: 20000,
     resource: 'elixir',
@@ -229,8 +229,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   camp: {
     name: 'Army Camp',
     description: 'Your troops gather here before battle. Every level adds 20 army spaces.',
-    size: 3,
-    width: 133,
+    size: 4,
+    width: 177,
     hp: 700,
     cost: 3000,
     resource: 'elixir',
