@@ -6,10 +6,44 @@ export class AudioManager {
     if (!this.context) this.context = new AudioContext();
     if (this.context.state === 'suspended') void this.context.resume();
   }
-  play(kind: 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory' | 'gust') {
+  play(
+    kind:
+      'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory' | 'gust' | 'tesla',
+  ) {
     if (!this.enabled) return;
     this.unlock();
     const ctx = this.context!;
+    if (kind === 'tesla') {
+      const duration = 0.16,
+        at = ctx.currentTime;
+      const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const t = i / ctx.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * (0.35 + 0.65 * Math.max(0, Math.sin(t * 480)));
+      }
+      const noise = ctx.createBufferSource(),
+        filter = ctx.createBiquadFilter(),
+        gain = ctx.createGain();
+      noise.buffer = buffer;
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(3900, at);
+      filter.frequency.exponentialRampToValueAtTime(1000, at + duration);
+      filter.Q.value = 1.3;
+      gain.gain.setValueAtTime(0.06, at);
+      gain.gain.exponentialRampToValueAtTime(0.001, at + duration);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.onended = () => {
+        noise.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+      };
+      noise.start(at);
+      noise.stop(at + duration);
+      return;
+    }
     if (kind === 'gust') {
       const duration = 0.55,
         buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);

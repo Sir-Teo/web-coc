@@ -1,3 +1,4 @@
+import { teslaTexture, teslaAsset } from './tesla-art';
 import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
@@ -33,6 +34,7 @@ export type BuildingKind =
   | 'mortar'
   | 'airdefense'
   | 'airsweeper'
+  | 'tesla'
   | 'seekingairmine'
   | 'laboratory'
   | 'spellfactory'
@@ -331,6 +333,24 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     minRange: SWEEPER.minRange,
     rate: SWEEPER.rate,
     targets: 'air',
+    singleArtwork: true,
+  },
+  tesla: {
+    name: 'Hidden Tesla',
+    description:
+      'Stays hidden until an enemy comes within 6 tiles or destruction reaches 51%. Fires rapid electrical bolts at ground and air troops.',
+    size: 2,
+    width: 104,
+    hp: DEFENSE_PROGRESSION.tesla[0].hp,
+    cost: DEFENSE_PROGRESSION.tesla[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 6,
+    available: [0, 0, 0, 0, 0, 0, 2, 3],
+    build: DEFENSE_PROGRESSION.tesla[0].seconds,
+    damage: 20.4,
+    ...DEFENSE_WEAPONS.tesla,
+    targets: 'both',
     singleArtwork: true,
   },
   seekingairmine: {
@@ -830,6 +850,7 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
 export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+  if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
@@ -843,6 +864,7 @@ const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
+  if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);
   if (kind === 'seekingairmine') return mineAsset();
   if (kind === 'wall') return wallAsset(level);

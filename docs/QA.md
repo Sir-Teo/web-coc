@@ -1,5 +1,19 @@
 # Verification record
 
+## September 11 — Hidden Tesla
+
+Hidden Teslas now extend the TH7–8 defense catalog with six native numerical level records and six original sprites. Concealment covers targeting, paths, crowd separation, deployment boundaries, pointer picking, scouting text, campaign miniatures and all building damage paths. Reveal is permanent after six-tile proximity or 51% displayed destruction. Electrical attacks hit one ground/air target at seven tiles every 0.6 seconds. Upgrading Teslas are visible but inactive; fresh attacks and replay seeking reconstruct their state. See [HIDDEN-TESLA.md](HIDDEN-TESLA.md) for primary sources and explicit fidelity limits.
+
+**571 model/asset tests pass across 50 files.** Twenty-five new simulation/save/replay cases cover all ten troop triggers, dead/out-of-circle exclusions, native progression, hidden Lightning and splash immunity, hidden paths, forced retargeting, upgrading visibility, exact 50/51 thresholds, target retention, P.E.K.K.A behavior, cadence, interruption and exported replay equality/seeking. The asset test verifies six distinct transparent sprites and clear margins; the production derivatives rebuild byte-for-byte.
+
+**46 distinct browser scenarios pass per engine** in Chromium with Metal and WebKit at 2× density. Eight Tesla scenarios cover catalog gates and all textures, Info/reload at 1440px, 390px and 320px, actual hidden picking/text/deployment boundaries, emergence and ground/air bolts, replay seeks, mobile construction, upgrading visibility, reduced motion and destruction during emergence. Review caught the need to reset crop and ground position when a rising tower becomes rubble; the final regression verifies that path. Info captures now wait for the panel animation before screenshots. Existing air-control, defense, trap, late-troop, defeat and replay/file scenarios also pass.
+
+The **288-battle campaign audit** passes with one or two Teslas added to stages 7–12. The veteran army has a three-star route through every village: 47 three-star results and one zero-star result, the final fortress from the south (40% destruction). Healer/P.E.K.K.A and Dragon armies each clear all 48 approaches. This remains authored single-player difficulty, not verified multiplayer balance.
+
+Production checks pass in Chromium and WebKit without reported errors, including all six new asset requests. Chromium reload, Army and replay work offline with **156 cached files**, cache `crown-clan-d9b142e1ae6d`. Runtime source SHA-256 `627ad6193dd4a7c0b296e7314a043a8713d8aba4450d9ac02f470ed3c0c81a69` stayed unchanged during the final browser and production checks. Six generated originals and exact prompts are committed under `art/source/tesla-v1/`; unwanted glow and baked-checkerboard candidates were rejected.
+
+Evidence: `output/playtest/tesla-verification.json`, `tesla-check-final.log`, `tesla-art.log`, `tesla-campaign.json`, `tesla-chromium.log`, `tesla-defenses-chromium.log`, `tesla-webkit.log`, `tesla-production-report.json`, `tesla-contact.png`, and `tesla-{info,hidden,rise,zap}-*.png`. Native fractional-threshold handling, reveal/retarget timing, animation, sound and pixel matching remain approximations. The complete content catalog and online systems are unfinished.
+
 ## September 11 — directional air control
 
 Air Sweepers and Seeking Air Mines now extend the local TH1–8 roster. Four Sweeper levels use native health/cost/time/push tables, eight free rotation directions, a traveling gust, zero-damage defense preference and Lightning interruption. Mines use 1,500 single-target damage, five-space eligibility and 3.5 tiles/s homing. Authored campaign stages 6–12 add Sweepers; stages 8–12 add mines. [AIR-CONTROL.md](AIR-CONTROL.md) records the unresolved native cone interpretation, gust geometry/easing and mine activation/target-loss behavior.

@@ -40,6 +40,35 @@ export class CombatEffects {
     this.flights.clear();
   }
 
+  tesla(from: Point, to: Point, seed: number, reduced: boolean) {
+    const g = this.graphic().setData('teslaZap', { from, to });
+    const dx = to.x - from.x,
+      dy = to.y - from.y,
+      length = Math.hypot(dx, dy) || 1;
+    const points = Array.from({ length: 11 }, (_, i) => {
+      const t = i / 10;
+      const offset = i === 0 || i === 10 ? 0 : Math.sin(seed * 0.71 + i * 19.7) * (reduced ? 2 : 7);
+      return {
+        x: from.x + dx * t - (dy / length) * offset,
+        y: from.y + dy * t + (dx / length) * offset,
+      };
+    });
+    for (const [width, color, alpha] of [
+      [9, 0x488eff, 0.15],
+      [4, 0x67d7ff, 0.8],
+      [1.5, 0xf3fcff, 1],
+    ]) {
+      g.lineStyle(width, color, alpha);
+      g.beginPath();
+      g.moveTo(from.x, from.y);
+      for (const point of points.slice(1)) g.lineTo(point.x, point.y);
+      g.strokePath();
+    }
+    g.fillStyle(0xb9eeff, 0.5).fillCircle(to.x, to.y, 4);
+    g.fillStyle(0xffffff).fillCircle(to.x, to.y, 1.8);
+    this.animate({ targets: g, alpha: 0, duration: 180, onComplete: () => this.remove(g) });
+  }
+
   private weaponGraphic(weapon: Weapon, from: Point) {
     const g = this.graphic().setPosition(from.x, from.y).setData('weapon', weapon);
     const color = COLORS[weapon];
@@ -181,23 +210,34 @@ export class CombatEffects {
     const g = this.graphic().setPosition(from.x, from.y).setData('dragonBreath', true);
     g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
     for (const [color, alpha, width, reach] of [
-      [0xf75a24, 0.4, 14, 1], [0xff9d29, 0.95, 9, 0.97], [0xffedbe, 0.95, 4, 0.82],
+      [0xf75a24, 0.4, 14, 1],
+      [0xff9d29, 0.95, 9, 0.97],
+      [0xffedbe, 0.95, 4, 0.82],
     ]) {
       const plume = [{ x: 0, y: -1 }];
       for (let i = 1; i <= 9; i++) {
         const t = i / 10;
-        plume.push({ x: length * reach * t,
-          y: -width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.sin(i * 2.7)) });
+        plume.push({
+          x: length * reach * t,
+          y: -width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.sin(i * 2.7)),
+        });
       }
       plume.push({ x: length * reach + width * 0.5, y: 0 });
       for (let i = 9; i >= 1; i--) {
         const t = i / 10;
-        plume.push({ x: length * reach * t,
-          y: width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.cos(i * 2.3)) });
+        plume.push({
+          x: length * reach * t,
+          y: width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.cos(i * 2.3)),
+        });
       }
-      g.fillStyle(color, alpha).fillPoints(plume.map((p) => new Phaser.Math.Vector2(p.x, p.y)), true);
+      g.fillStyle(color, alpha).fillPoints(
+        plume.map((p) => new Phaser.Math.Vector2(p.x, p.y)),
+        true,
+      );
     }
-    g.fillStyle(0xffc657, 0.75).fillCircle(length, -4, 5).fillCircle(length + 3, 4, 4);
+    g.fillStyle(0xffc657, 0.75)
+      .fillCircle(length, -4, 5)
+      .fillCircle(length + 3, 4, 4);
     this.animate({
       targets: g,
       alpha: 0,

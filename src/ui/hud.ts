@@ -129,6 +129,12 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
       d.targets === 'air' ? 'Air only' : d.targets === 'ground' ? 'Ground only' : 'Ground & air',
     ]);
   }
+  if (kind === 'tesla')
+    rows.push(
+      ['Radar', 'Reveal radius', '6 tiles'],
+      ['Eye', 'Automatic reveal', '51% destruction'],
+      ['Target', 'Damage type', 'Single target'],
+    );
   if (kind === 'goldmine' || kind === 'collector')
     rows.push(
       ['Timer', 'Production', `${3 * level} / second`],
@@ -1676,7 +1682,7 @@ export class HUD {
     return `<svg class="campaign-map" viewBox="0 0 30 30" role="img" aria-label="${CAMPAIGN[index].name} base layout"><rect width="30" height="30" rx="3" fill="#637d43"/>${campaignBlueprint(
       index,
     )
-      .filter(([k]) => !isTrap(k))
+      .filter(([k]) => !isTrap(k) && k !== 'tesla')
       .map(
         ([k, x, y]) =>
           `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : isDefense(k) ? '#655666' : '#e0cf97'}"/>`,

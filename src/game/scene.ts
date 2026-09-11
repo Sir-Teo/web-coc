@@ -1,3 +1,5 @@
+import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
+import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
@@ -35,7 +37,14 @@ import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
-const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
+const WOOD_RUINS = new Set<BuildingKind>([
+  'barracks',
+  'builder',
+  'camp',
+  'archertower',
+  'cannon',
+  'tesla',
+]);
 const SPELL_COLOR: Record<string, number> = {
   rage: 0xcf79ef,
   heal: 0xffed8a,
@@ -117,6 +126,8 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const level of TESLA_ART_LEVELS)
+      if (level > 1) this.load.image(teslaTexture(level), teslaAsset(level));
     for (const level of SWEEPER_ART_LEVELS)
       for (let direction = 0; direction < 8; direction++)
         this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
@@ -583,7 +594,9 @@ export class VillageScene extends Phaser.Scene {
       b.index +
       ':' +
       b.buildings
-        .filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind))
+        .filter(
+          (v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind) && this.model.visibleBuilding(v),
+        )
         .map((v) => v.id)
         .join(',');
     if (signature === this.boundary.signature) return this.boundary.edges;
@@ -711,7 +724,10 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction).setPosition(p.x, p.y).setDepth(p.y);
+      this.styleBuilding(im, b.kind, b.level, b.direction)
+        .setPosition(p.x, p.y)
+        .setDepth(p.y)
+        .setCrop();
       im.setVisible(
         this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
       );
@@ -726,7 +742,13 @@ export class VillageScene extends Phaser.Scene {
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp')
+      if (
+        b.level >= TIER3_LEVEL &&
+        b.kind !== 'wall' &&
+        b.kind !== 'mortar' &&
+        b.kind !== 'camp' &&
+        b.kind !== 'tesla'
+      )
         im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
@@ -829,7 +851,7 @@ export class VillageScene extends Phaser.Scene {
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
-      wall || camp || kind === 'mortar' || kind === 'airsweeper'
+      wall || camp || kind === 'mortar' || kind === 'airsweeper' || kind === 'tesla'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -913,12 +935,15 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
+    const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
     const width =
       (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) *
       (b.kind === 'wall' ? 0.9 : 0.98);
     im.setTexture(
       WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone',
     )
+      .setCrop()
+      .setPosition(p.x, p.y)
       .setOrigin(0.5, 0.58)
       .setFlipX(b.id % 2 === 0)
       .clearTint()
@@ -1187,6 +1212,22 @@ export class VillageScene extends Phaser.Scene {
     for (const v of this.model.buildings) {
       if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
       const im = this.sprites.get(v.id)!;
+      if (v.kind === 'tesla') {
+        const progress = this.teslaRise(v.id),
+          p = iso(v.x + 1, v.y + 1);
+        im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
+        if (progress < 1) im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
+        else im.setCrop();
+        if (!this.model.state.settings.reducedMotion && progress === 1) {
+          const t = this.model.battle?.elapsed ?? this.renderClock / 1000;
+          if (Math.sin(t * 23 + v.id * 7) > 0.8) {
+            const y = im.y - im.displayHeight * 0.79;
+            this.detail.lineStyle(1.2, 0xb6edff, 0.7);
+            this.detail.lineBetween(im.x - 4, y + 4, im.x + 1, y + 1);
+            this.detail.lineBetween(im.x + 1, y + 1, im.x - 1, y - 2);
+          }
+        }
+      }
       if (v.kind === 'airsweeper' && v.hp > 0) {
         const state = this.model.battle?.sweepers?.[v.id];
         const direction = state
@@ -1410,9 +1451,37 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle) this.effectTimeline.add(config, this.model.battle.elapsed);
     else this.tweens.add(config);
   }
+  private teslaRise(id: number) {
+    const b = this.model.battle,
+      at = b?.revealedTeslas?.[id];
+    if (!b || b.finished || at === undefined || this.model.state.settings.reducedMotion) return 1;
+    const t = Math.min(1, Math.max(0, (b.elapsed - at) / TESLA_RISE_SECONDS));
+    return 1 - (1 - t) ** 3;
+  }
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'tesla-zap') {
+      const im = this.sprites.get(fx.sourceId!);
+      const height = im?.getData('intactHeight') ?? 139;
+      const progress = this.teslaRise(fx.sourceId!);
+      const to = iso(fx.toX!, fx.toY!);
+      const target = this.unitSprites.get(fx.targetId!);
+      to.y -= (fx.toAir ? AIR_LIFT : 0) + (target ? target.displayHeight * 0.45 : 17);
+      this.combatEffects.tesla(
+        { x: p.x, y: p.y - height * 0.79 * progress },
+        to,
+        fx.sourceId! + Math.round((this.model.battle?.elapsed ?? 0) * 1000),
+        this.model.state.settings.reducedMotion,
+      );
+      this.audio.play('tesla');
+      return;
+    }
+    if (fx.type === 'tesla-reveal') {
+      this.audio.play('build');
+      if (!this.model.state.settings.reducedMotion) this.sparks(p.x, p.y, 0xb5a27d, 7);
+      return;
+    }
     if (fx.type === 'gust') {
       this.audio.play('gust');
       return;

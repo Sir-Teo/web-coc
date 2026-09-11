@@ -1,3 +1,4 @@
+import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import { validDirection } from './air-control-stats';
 import {
   stepSweepers,
@@ -249,6 +250,8 @@ export interface Battle {
   traps: Record<number, TrapState>;
   gusts?: AirGust[];
   sweepers?: Record<number, SweeperState>;
+  /** Reveal time in battle seconds. Never persisted in the home village. */
+  revealedTeslas?: Record<number, number>;
   hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -278,7 +281,9 @@ export type FX = {
     | 'breath'
     | 'trap'
     | 'spring'
-    | 'gust';
+    | 'gust'
+    | 'tesla-reveal'
+    | 'tesla-zap';
   x: number;
   y: number;
   toX?: number;
@@ -1581,7 +1586,11 @@ export class GameModel {
     return true;
   }
   visibleBuilding(building: Building) {
-    return !this.battle || !isTrap(building.kind) || !!this.battle.traps[building.id];
+    return (
+      !this.battle ||
+      (!concealedTesla(this.battle, building) &&
+        (!isTrap(building.kind) || !!this.battle.traps[building.id]))
+    );
   }
   startBattle(index: number, practice = false) {
     if (this.battle) return;
@@ -1661,6 +1670,7 @@ export class GameModel {
         v.hp > 0 &&
         v.kind !== 'wall' &&
         !isTrap(v.kind) &&
+        !concealedTesla(b, v) &&
         x > v.x - 1.5 &&
         x < v.x + BUILDINGS[v.kind].size + 1.5 &&
         y > v.y - 1.5 &&
@@ -1736,6 +1746,7 @@ export class GameModel {
         if (
           v.hp > 0 &&
           !isTrap(v.kind) &&
+          !concealedTesla(b, v) &&
           !['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(v.kind) &&
           distanceTo({ x, y }, v) <= d.radius
         ) {
@@ -1782,10 +1793,13 @@ export class GameModel {
     // A long frame or imported replay delta cannot land a shot after the raid deadline.
     dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
+    if (revealTeslas(b, this.onEffect)) this.changed();
     stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
     stepSpellAuras(b);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
+    // Concealed defenses cannot influence target selection or navigation.
+    const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     for (const u of b.units) {
       if (u.hp <= 0) continue;
       if (stepAirPush(u, dt)) continue;
@@ -1831,16 +1845,16 @@ export class GameModel {
         stepHealer(b, u, d, dt, this.onEffect);
         continue;
       }
-      let target = b.buildings.find((t) => t.id === u.target && t.hp > 0 && !isTrap(t.kind));
+      let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
-        const alive = b.buildings.filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind));
+        const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
         const preferred = troop.prefersResources
           ? alive.filter((v) => isResourceBuilding(v.kind))
           : troop.prefersDefenses
             ? alive.filter((v) => isDefense(v.kind))
             : alive;
         target =
-          (troop.wallBreaker ? breachTarget(u, b.buildings) : undefined) ??
+          (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
           (preferred.length ? preferred : alive).sort(
             (a, c) => distanceTo(u, a) - distanceTo(u, c),
           )[0];
@@ -1933,7 +1947,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, b.buildings, d.range);
+        u.path = findPath(u, target, knownBuildings, d.range);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -1990,7 +2004,8 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, b.buildings);
+    separateUnits(b.units, knownBuildings);
+    if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     // Shells land where the target stood when fired. Air units and troops that
     // have escaped the impact circle take no damage, even if they were targeted.
@@ -2014,7 +2029,8 @@ export class GameModel {
     b.shells = b.shells.filter((shell) => shell.impact > b.elapsed + 1e-9);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
-      if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
+      if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
+        continue;
       const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
       if (activeDt <= 0) continue;
       const cooling = tower.cooldown > 0;
@@ -2043,6 +2059,20 @@ export class GameModel {
         const power =
           defenseDamage(tower.kind, tower.level) *
           (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+        if (tower.kind === 'tesla') {
+          target.hp -= power;
+          this.onEffect({
+            type: 'tesla-zap',
+            sourceId: tower.id,
+            targetId: target.id,
+            x: center.x,
+            y: center.y,
+            toX: target.x,
+            toY: target.y,
+            toAir: TROOPS[target.kind].flying,
+          });
+          continue;
+        }
         if (tower.kind === 'mortar') {
           b.shells.push({
             sourceId: tower.id,
@@ -2130,6 +2160,7 @@ export class GameModel {
       Number(b.destruction >= 50) +
       Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
       Number(b.destruction === 100);
+    if (revealTeslas(b, this.onEffect)) this.changed();
     if (b.practice) {
       b.loot = { gold: 0, elixir: 0 };
       return;
@@ -2165,7 +2196,7 @@ export class GameModel {
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
   damage(b: Building, n: number) {
-    if (b.hp <= 0 || isTrap(b.kind)) return;
+    if (b.hp <= 0 || isTrap(b.kind) || (this.battle && concealedTesla(this.battle, b))) return;
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;

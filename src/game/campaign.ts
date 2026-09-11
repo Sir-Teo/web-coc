@@ -409,6 +409,29 @@ const CAMPAIGN_AIR_CONTROL: readonly (readonly Blueprint[])[] = [
     ['seekingairmine', 10, 17],
   ],
 ];
+const CAMPAIGN_TESLAS: readonly (readonly Blueprint[])[] = [
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [['tesla', 9, 10]],
+  [['tesla', 15, 17]],
+  [
+    ['tesla', 9, 7],
+    ['tesla', 18, 14],
+  ],
+  [
+    ['tesla', 9, 10],
+    ['tesla', 16, 9],
+  ],
+  [['tesla', 16, 18]],
+  [
+    ['tesla', 8, 10],
+    ['tesla', 19, 17],
+  ],
+];
 /** Authored structure footprints plus rings with deliberate gates and no overlapping posts. */
 export function campaignBlueprint(index: number): Blueprint[] {
   const layout = CAMPAIGN_LAYOUTS[index];
@@ -417,6 +440,7 @@ export function campaignBlueprint(index: number): Blueprint[] {
     ...layout.buildings,
     ...CAMPAIGN_TRAPS[index],
     ...CAMPAIGN_AIR_CONTROL[index],
+    ...CAMPAIGN_TESLAS[index],
   ];
   const occupied = new Set<string>();
   for (const [k, x, y] of result)

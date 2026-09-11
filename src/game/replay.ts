@@ -13,7 +13,7 @@ import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL } from './spell-progression';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 19;
+export const REPLAY_VERSION = 20;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
