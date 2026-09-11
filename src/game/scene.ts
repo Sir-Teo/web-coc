@@ -819,6 +819,8 @@ export class VillageScene extends Phaser.Scene {
       g.lineStyle(2, color, 0.85);
       g.strokePoints(pts, true);
     };
+    for (const wall of this.model.selectedWalls)
+      if (wall.id !== b?.id) diamond(wall.x, wall.y, 1, 0xffe8a0);
     const obstacle = this.model.selectedObstacle;
     if (obstacle) diamond(obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
     if (b && b.hp > 0 && this.model.visibleBuilding(b)) {

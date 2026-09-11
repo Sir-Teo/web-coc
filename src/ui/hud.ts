@@ -239,7 +239,18 @@ export class HUD {
     const width = card.offsetWidth || 470,
       height = card.offsetHeight || 120;
     const left = Math.min(Math.max(width / 2 + 12, p.x), window.innerWidth - width / 2 - 12);
-    const top = Math.min(Math.max(150, p.y - height - 62), window.innerHeight - height - 150);
+    const hudFloor = card.classList.contains('wall-context')
+      ? Math.max(
+          150,
+          (document.querySelector('.resources')?.getBoundingClientRect().bottom ?? 0) + 8,
+        )
+      : 150;
+    const minTop = Math.min(hudFloor, Math.max(8, window.innerHeight - height - 12));
+    const maxTop = Math.max(
+      minTop,
+      window.innerHeight - height - (window.innerHeight >= 650 ? 150 : 12),
+    );
+    const top = Math.min(Math.max(minTop, p.y - height - 62), maxTop);
     card.style.left = `${Math.round(left)}px`;
     card.style.top = `${Math.round(top)}px`;
   }
@@ -326,9 +337,33 @@ export class HUD {
         this.render();
         this.restoreFocus();
         break;
-      case 'obstacle-remove': m.removeObstacle(Number(arg)); break;
-      case 'obstacle-cancel': m.cancelObstacleRemoval(Number(arg)); break;
-      case 'obstacle-finish': m.finishObstacleRemoval(Number(arg)); break;
+      case 'wall-row':
+        m.selectWallRow();
+        break;
+      case 'wall-single':
+        m.selectSingleWall();
+        break;
+      case 'wall-count':
+        m.adjustWallSelection(Number(arg));
+        break;
+      case 'wall-info-upgrade':
+        m.upgradeWalls([Number(arg)], 'gold');
+        break;
+      case 'wall-upgrade':
+        m.upgradeWalls(
+          m.selectedWalls.map((b) => b.id),
+          arg as 'gold' | 'elixir',
+        );
+        break;
+      case 'obstacle-remove':
+        m.removeObstacle(Number(arg));
+        break;
+      case 'obstacle-cancel':
+        m.cancelObstacleRemoval(Number(arg));
+        break;
+      case 'obstacle-finish':
+        m.finishObstacleRemoval(Number(arg));
+        break;
       case 'close-drawer':
         this.drawerPanel = null;
         this.render();
@@ -365,9 +400,15 @@ export class HUD {
         const body = document.querySelector<HTMLElement>('.army-strip');
         const tile = body?.querySelector<HTMLElement>(`[data-army-category="${arg}"]`);
         if (body && tile) {
-          const left = body.scrollLeft + tile.getBoundingClientRect().left
-            - body.getBoundingClientRect().left - parseFloat(getComputedStyle(body).paddingLeft);
-          body.scrollTo({ left, behavior: m.state.settings.reducedMotion ? 'instant' : 'smooth' });
+          const left =
+            body.scrollLeft +
+            tile.getBoundingClientRect().left -
+            body.getBoundingClientRect().left -
+            parseFloat(getComputedStyle(body).paddingLeft);
+          body.scrollTo({
+            left,
+            behavior: m.state.settings.reducedMotion ? 'instant' : 'smooth',
+          });
         }
         break;
       }
@@ -536,14 +577,18 @@ export class HUD {
         m.activeTroop = arg as TroopKind;
         m.activeSpell = null;
         this.render();
-        document.querySelector(`[data-action="troop:${arg}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        document
+          .querySelector(`[data-action="troop:${arg}"]`)
+          ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         break;
       case 'spell':
         if (!m.battle || !m.battle.spells[arg as SpellKind]) break;
         m.activeHero = false;
         m.activeSpell = m.activeSpell === arg ? null : (arg as SpellKind);
         this.render();
-        document.querySelector(`[data-action="spell:${arg}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        document
+          .querySelector(`[data-action="spell:${arg}"]`)
+          ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         break;
       case 'surrender':
         this.show('surrender');
@@ -820,6 +865,7 @@ export class HUD {
     }
     if (m.editing)
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div></div>`;
+    if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
@@ -838,6 +884,50 @@ export class HUD {
                 `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
               )
     }${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+  }
+
+  private wallContext(anchor: Building) {
+    const m = this.model;
+    const walls = m.selectedWalls,
+      ids = walls.map((b) => b.id);
+    const gold = m.wallUpgradeQuote(ids, 'gold'),
+      pink = m.wallUpgradeQuote(ids, 'elixir');
+    const low = Math.min(...walls.map((b) => b.level)),
+      high = Math.max(...walls.map((b) => b.level));
+    const rowAvailable = m.wallAxis
+      ? m.selectedWallRow(m.wallAxis === 'x' ? 'y' : 'x').length > 1
+      : Math.max(m.selectedWallRow('x').length, m.selectedWallRow('y').length) > 1;
+    const adjust = (delta: number) =>
+      button(
+        `wall-count:${delta}`,
+        `${delta > 0 ? '+' : '−'}${Math.abs(delta)}`,
+        'game-btn stone',
+        `${m.canAdjustWallSelection(delta) ? '' : 'disabled'} aria-label="${delta > 0 ? 'Add' : 'Remove'} ${Math.abs(delta)} ${Math.abs(delta) === 1 ? 'wall' : 'walls'}"`,
+      );
+    const purchase = (kind: 'gold' | 'elixir', quote: typeof gold) =>
+      button(
+        `wall-upgrade:${kind}`,
+        `<span>${icon('ArrowBigUp', 18)} Upgrade ${quote.walls.length > 1 ? quote.walls.length : ''}</span><small>${resource(kind)} ${n(quote.cost)}</small>`,
+        'game-btn green',
+        `${quote.issue ? 'disabled' : ''} aria-label="Upgrade ${quote.walls.length} ${quote.walls.length === 1 ? 'wall' : 'walls'} with ${kind}"`,
+      );
+    const levelText = low === high ? `Level ${low}` : `Levels ${low}–${high}`;
+    const note = !gold.walls.length
+      ? requiredTownHall('wall', low + 1)
+        ? `Requires Town Hall ${requiredTownHall('wall', low + 1)} for the next level.`
+        : 'Maximum wall level reached.'
+      : m.busy >= m.builders
+        ? 'A free builder is needed. Walls finish instantly.'
+        : gold.skipped
+          ? `${gold.walls.length} of ${walls.length} walls can upgrade; capped or unfinished walls stay as they are.`
+          : 'Instant upgrade · Requires one free builder';
+    return `<div class="building-context wall-context" data-anchor="${anchor.id}">
+      <img class="context-art" src="${asset('wall', anchor.level)}" alt="">
+      <div class="context-info"><small>${m.wallAxis ? `WALL ROW ${m.wallAxis === 'x' ? '↘' : '↙'}` : 'WALLS'}</small><h2>${walls.length === 1 ? 'Stone Wall' : `${walls.length} Walls`}</h2><span>${levelText} · ${walls.length} selected</span></div>
+      <div class="wall-tools">${button('info', `${icon('Info', 17)} Info`, 'game-btn stone')}${walls.length === 1 ? button(`move:${anchor.id}`, `${icon('Move', 17)} Move`, 'game-btn stone') : button('wall-single', 'Single wall', 'game-btn stone')}${button('wall-row', `${icon('LayoutGrid', 17)} ${m.wallAxis ? 'Other row' : 'Select row'}`, 'game-btn stone', rowAvailable ? '' : 'disabled')}</div>
+      ${m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}
+      <div class="wall-upgrade-actions">${gold.walls.length ? purchase('gold', gold) + (low >= 5 ? purchase('elixir', pink) : '') : ''}</div>
+      <p class="wall-note">${note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
   }
 
   // ----------------------------------------------------------------- battle
@@ -1089,10 +1179,12 @@ export class HUD {
     const gated = !capped && b.level >= m.maxLevel(b.kind);
     const now = statRows(b.kind, b.level);
     const next = capped ? [] : statRows(b.kind, b.level + 1);
-    const nextUnlocks = b.kind === 'barracks'
-      ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
-      : b.kind === 'spellfactory'
-        ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name) : [];
+    const nextUnlocks =
+      b.kind === 'barracks'
+        ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
+        : b.kind === 'spellfactory'
+          ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
+          : [];
     return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
@@ -1107,7 +1199,7 @@ export class HUD {
      ? `<span class="max-level">★ Fully upgraded</span>`
      : gated
        ? `<span class="max-level locked">${icon('LockKeyhole', 15)} ${requiredTownHall(b.kind, b.level + 1) ? `Requires Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Maximum level for the available Town Hall tiers'}</span>`
-       : `<div class="info-cost"><span>${resource(d.resource)} <b>${n(costFor(b.kind, b.level))}</b></span><span>${icon('Clock3', 15)} <b>${time(upgradeSeconds(b.kind, b.level))}</b></span><span>${icon('Hammer', 15)} <b>${m.builders - m.busy} free</b></span></div>${button(`upgrade:${b.id}`, `${icon('ArrowBigUp', 19)} Upgrade to level ${b.level + 1}`, 'game-btn green', b.upgradeEnd || m.busy >= m.builders ? 'disabled' : '')}`
+       : `<div class="info-cost"><span>${resource(d.resource)} <b>${n(costFor(b.kind, b.level))}</b></span><span>${icon('Clock3', 15)} <b>${b.kind === 'wall' ? 'Instant' : time(upgradeSeconds(b.kind, b.level))}</b></span><span>${icon('Hammer', 15)} <b>${m.builders - m.busy} free</b></span></div>${button(b.kind === 'wall' ? `wall-info-upgrade:${b.id}` : `upgrade:${b.id}`, `${icon('ArrowBigUp', 19)} Upgrade to level ${b.level + 1}`, 'game-btn green', b.upgradeEnd || m.busy >= m.builders ? 'disabled' : '')}`
  }</div></div>`;
   }
   private layoutPanel() {

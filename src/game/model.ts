@@ -1,3 +1,4 @@
+import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
 import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
@@ -221,7 +222,17 @@ export const BATTLE_SECONDS = 180;
 export class GameModel {
   state: Save;
   battle: Battle | null = null;
-  selected: number | null = null;
+  private selection: number | null = null;
+  private wallGroup: number[] = [];
+  wallAxis: WallAxis | null = null;
+  get selected() {
+    return this.selection;
+  }
+  set selected(value: number | null) {
+    this.selection = value;
+    this.wallGroup = [];
+    this.wallAxis = null;
+  }
   placement: BuildingKind | null = null;
   moving: number | null = null;
   activeHero = false;
@@ -480,9 +491,10 @@ export class GameModel {
   get builders() {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
+  /** Timed builder reservations. Walls require a free builder but finish immediately. */
   get busy() {
     return (
-      this.state.buildings.filter((b) => b.upgradeEnd).length +
+      this.state.buildings.filter((b) => b.upgradeEnd && b.kind !== 'wall').length +
       Number(!!this.state.king?.upgradeEnd)
     );
   }
@@ -658,6 +670,7 @@ export class GameModel {
     );
   }
   beginBuild(kind: BuildingKind) {
+    if (this.battle) return;
     const d = BUILDINGS[kind];
     const limit = this.maxCount(kind);
     if (limit === 0)
@@ -667,7 +680,7 @@ export class GameModel {
         `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`,
       );
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
-    if (kind !== 'wall' && this.busy >= this.builders)
+    if (this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
     this.selected = null;
     this.moving = null;
@@ -675,7 +688,7 @@ export class GameModel {
     this.changed();
   }
   place(x: number, y: number) {
-    if (!this.placement) return false;
+    if (this.battle || !this.placement) return false;
     const kind = this.placement,
       d = BUILDINGS[kind];
     if (!this.canPlace(kind, x, y, this.moving ?? undefined)) {
@@ -696,7 +709,7 @@ export class GameModel {
     if (
       this.state[d.resource] < d.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
-      (kind !== 'wall' && this.busy >= this.builders)
+      this.busy >= this.builders
     ) {
       this.notify('Unable to build. Check your resources and builders.');
       return false;
@@ -727,6 +740,107 @@ export class GameModel {
     );
     return true;
   }
+
+  get selectedWalls(): Building[] {
+    if (this.battle || this.editing || this.placement) return [];
+    const anchor = this.state.buildings.find((b) => b.id === this.selected && b.kind === 'wall');
+    if (!anchor) return [];
+    const ids = new Set(this.wallGroup.length ? this.wallGroup : [anchor.id]);
+    return this.state.buildings.filter((b) => b.kind === 'wall' && ids.has(b.id));
+  }
+  selectedWallRow(axis: WallAxis) {
+    return this.selected === null ? [] : wallRow(this.state.buildings, this.selected, axis);
+  }
+  selectWallRow() {
+    if (!this.selectedWalls.length) return false;
+    const x = this.selectedWallRow('x'),
+      y = this.selectedWallRow('y');
+    const axis =
+      this.wallAxis === 'x' ? 'y' : this.wallAxis === 'y' ? 'x' : x.length >= y.length ? 'x' : 'y';
+    const row = axis === 'x' ? x : y;
+    if (row.length < 2) return false;
+    this.wallAxis = axis;
+    this.wallGroup = row.map((b) => b.id);
+    this.changed();
+    return true;
+  }
+  selectSingleWall() {
+    this.selected = this.selected;
+    this.changed();
+  }
+  canAdjustWallSelection(delta: number) {
+    if (this.wallAxis || ![-10, -1, 1, 10].includes(delta)) return false;
+    const walls = this.selectedWalls;
+    const anchor = walls.find((b) => b.id === this.selected);
+    if (!anchor) return false;
+    const count = walls.length + delta;
+    if (count < 1) return false;
+    if (delta < 0) return true;
+    if (anchor.level >= this.maxLevel('wall')) return false;
+    const funds = Math.max(this.state.gold, anchor.level >= 5 ? this.state.elixir : 0);
+    return (
+      count <= matchingWalls(this.state.buildings, anchor.id).length &&
+      count * this.upgradeCost(anchor) <= funds
+    );
+  }
+  adjustWallSelection(delta: number) {
+    if (!this.canAdjustWallSelection(delta)) return false;
+    const count = this.selectedWalls.length + delta;
+    this.wallGroup = matchingWalls(this.state.buildings, this.selected!)
+      .slice(0, count)
+      .map((b) => b.id);
+    this.changed();
+    return true;
+  }
+  wallUpgradeQuote(ids: readonly number[], resource: WallResource) {
+    const selected = ids.map((id) => this.state.buildings.find((b) => b.id === id));
+    const valid =
+      ids.length > 0 &&
+      new Set(ids).size === ids.length &&
+      selected.every((b) => b?.kind === 'wall') &&
+      (resource === 'gold' || resource === 'elixir');
+    const walls = valid
+      ? (selected as Building[]).filter(
+          (b) => !b.constructing && !b.upgradeEnd && b.level < this.maxLevel('wall'),
+        )
+      : [];
+    const cost = walls.reduce((total, b) => total + this.upgradeCost(b), 0);
+    const issue = this.battle
+      ? 'Return home to upgrade walls.'
+      : !valid
+        ? 'Select walls in your village.'
+        : !walls.length
+          ? 'These walls are at the maximum for your Town Hall.'
+          : resource === 'elixir' && selected.some((b) => b!.level < 5)
+            ? 'Elixir upgrades require every selected wall to be level 5 or higher.'
+            : this.busy >= this.builders
+              ? 'A free builder is needed for instant wall upgrades.'
+              : this.state[resource] < cost
+                ? `You need ${cost.toLocaleString()} ${resource}.`
+                : null;
+    return { walls, cost, skipped: ids.length - walls.length, issue };
+  }
+  upgradeWalls(ids: readonly number[], resource: WallResource) {
+    const quote = this.wallUpgradeQuote(ids, resource);
+    if (quote.issue) {
+      this.notify(quote.issue);
+      return false;
+    }
+    // Validate the whole purchase before charging once; no transient timers or builder reservations.
+    this.state[resource] -= quote.cost;
+    for (const b of quote.walls) {
+      b.level++;
+      b.maxHp = BUILDINGS.wall.hp * (1 + (b.level - 1) * 0.25);
+      b.hp = b.maxHp;
+    }
+    const anchor = quote.walls.find((b) => b.id === this.selected) ?? quote.walls[0];
+    this.onEffect({ type: 'upgrade', x: anchor.x + 0.5, y: anchor.y + 0.5 });
+    this.notify(
+      `${quote.walls.length === 1 ? 'Wall' : `${quote.walls.length} walls`} upgraded instantly.`,
+    );
+    this.changed();
+    return true;
+  }
   upgradeCost(b: Building) {
     return upgradeCost(b.kind, b.level);
   }
@@ -738,6 +852,11 @@ export class GameModel {
     return b.upgradeEnd ? gemCost((b.upgradeEnd - this.clock) / 1000) : 0;
   }
   upgrade(id: number) {
+    if (this.battle) return;
+    if (this.state.buildings.find((b) => b.id === id)?.kind === 'wall') {
+      this.upgradeWalls([id], 'gold');
+      return;
+    }
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b || b.upgradeEnd) return;
     if (b.kind === 'laboratory' && this.state.research)
@@ -746,7 +865,8 @@ export class GameModel {
       return this.notify('This building is at its maximum level.');
     if (b.level >= this.maxLevel(b.kind))
       return this.notify(`Upgrade your Town Hall to raise this past level ${b.level}.`);
-    if (this.busy >= this.builders) return this.notify('All builders are busy.');
+    if (b.kind !== 'wall' && this.busy >= this.builders)
+      return this.notify('All builders are busy.');
     const d = BUILDINGS[b.kind],
       cost = this.upgradeCost(b);
     if (this.state[d.resource] < cost)
