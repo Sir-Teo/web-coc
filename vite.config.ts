@@ -7,5 +7,10 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173,
+    strictPort: true,
+    // Generated reports and verification checkouts must not reload a live game.
+    watch: { ignored: ['**/output/**'] },
+  },
 });
