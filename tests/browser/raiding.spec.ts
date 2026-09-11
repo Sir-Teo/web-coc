@@ -139,8 +139,8 @@ test('scouting a mortar shows its range without starting the battle', async ({ p
   });
   await page.mouse.click(mortar.x, mortar.y);
   await expect.poll(() => page.evaluate(() => window.__game.model.selected)).toBe(mortar.id);
-  await expect(page.locator('#toast')).toContainText('Range 4–10 tiles');
+  await expect(page.locator('#toast')).toContainText('Range 4–11 tiles');
   expect(await page.evaluate(() => window.__game.model.battle.started)).toBe(false);
   await page.waitForTimeout(350);
-  await page.screenshot({ path: 'output/playtest/mortar-scouting-desktop.png' });
+  await page.screenshot({ path: `output/playtest/mortar-scouting-${test.info().project.name}.png` });
 });

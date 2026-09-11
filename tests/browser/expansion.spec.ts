@@ -79,8 +79,9 @@ test('the building info sheet compares this level with the next', async ({ page 
   await expect(page.locator('#modal-title')).toHaveText('Building details');
   const rows = page.locator('.info-table tbody tr');
   await expect(rows.first()).toContainText('Hitpoints');
-  // Hitpoints and damage both improve; range does not.
-  await expect(page.locator('.info-table td.better')).toHaveCount(2);
+  // The upgrade improves health and both damage measures; range stays fixed.
+  await expect(page.locator('.info-table tr').filter({ has: page.locator('td.better') }).locator('td:first-child'))
+    .toHaveText(['Hitpoints', 'Damage per second', 'Damage per hit']);
   await expect(page.locator('.info-body')).toContainText('Town Hall 4');
   await expect(page.locator('.info-cost')).toHaveCount(0);
   await page.evaluate(() => {

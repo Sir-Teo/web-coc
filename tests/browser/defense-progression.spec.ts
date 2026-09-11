@@ -10,19 +10,34 @@ test.beforeEach(async ({ page }) => {
 for (const [kind, hp, nextHp, cost, seconds, label] of [
   ['cannon', 470, 520, 4000, 600, '10m'],
   ['archertower', 420, 460, 5000, 2700, '45m'],
+  ['mortar', 450, 500, 100000, 14400, '4h'],
 ] as const) {
   test(`${kind} Info and saved timer agree with the destination level`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const id = await page.evaluate(
-      ({ kind, cost }) => {
+      ({ kind, cost, hp }) => {
         const m = window.__game.model;
-        m.townhall!.level = 3;
+        m.townhall!.level = kind === 'mortar' ? 5 : 3;
+        if (kind === 'mortar') {
+          m.state.obstacles = [];
+          m.state.buildings.push({
+            id: m.state.nextId++,
+            kind,
+            x: 2,
+            y: 2,
+            level: 2,
+            hp,
+            maxHp: hp,
+            stored: 0,
+            cooldown: 0,
+          });
+        }
         m.state.gold = cost;
         m.selected = m.state.buildings.find((b) => b.kind === kind)!.id;
         m.changed();
         return m.selected;
       },
-      { kind, cost },
+      { kind, cost, hp },
     );
     await page
       .locator('.building-context')
@@ -34,7 +49,16 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
     const stats =
       kind === 'cannon'
         ? { dps: '11', nextDps: '15', hit: '8.8', nextHit: '12', range: '9 tiles', rate: '0.8s' }
-        : { dps: '15', nextDps: '19', hit: '7.5', nextHit: '9.5', range: '10 tiles', rate: '0.5s' };
+        : kind === 'archertower'
+          ? {
+              dps: '15',
+              nextDps: '19',
+              hit: '7.5',
+              nextHit: '9.5',
+              range: '10 tiles',
+              rate: '0.5s',
+            }
+          : { dps: '5', nextDps: '6', hit: '25', nextHit: '30', range: '4–11 tiles', rate: '5s' };
     for (const [label, current, next] of [
       ['Damage per second', stats.dps, stats.nextDps],
       ['Damage per hit', stats.hit, stats.nextHit],
@@ -47,6 +71,10 @@ for (const [kind, hp, nextHp, cost, seconds, label] of [
       await expect(stat.locator('td').nth(1)).toHaveText(current);
       await expect(stat.locator('td').nth(2)).toContainText(next);
     }
+    if (kind === 'mortar')
+      await expect(
+        page.locator('.info-table tr').filter({ hasText: 'Splash radius' }),
+      ).toContainText('1.5 tiles');
     await expect(page.locator('.info-cost')).toContainText(cost.toLocaleString('en-US'));
     await expect(page.locator('.info-cost')).toContainText(label);
     await page.screenshot({

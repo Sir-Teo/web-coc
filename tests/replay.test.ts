@@ -92,7 +92,7 @@ describe('recorded battle playback', () => {
       makeBuilding(3, 'herohall', 24, 23),
       makeBuilding(4, 'cannon', 4, 12, 8),
       makeBuilding(5, 'mortar', 8, 12, 4),
-      makeBuilding(6, 'wizardtower', 8, 8, 4),
+      makeBuilding(6, 'wizardtower', 8, 8, 8), // Enough sustained damage to trigger Iron Fist.
       makeBuilding(7, 'bomb', 1, 13),
       makeBuilding(8, 'giantbomb', 1, 14),
       makeBuilding(9, 'springtrap', 3, 13),

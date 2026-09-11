@@ -249,7 +249,7 @@ describe('town hall gating and stretched timers', () => {
     m.townhall!.level = 3;
     expect(m.maxCount('mortar')).toBe(1);
     m.townhall!.level = 6;
-    expect(m.maxCount('mortar')).toBe(3);
+    expect(m.maxCount('mortar')).toBe(2);
     expect(m.maxCount('airdefense')).toBe(3);
   });
   it('scales upgrade timers and prices gems on the Clash curve', () => {

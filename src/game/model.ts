@@ -570,7 +570,7 @@ export class GameModel {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
-        ['wall', 'cannon', 'archertower'].includes(b.kind) &&
+        ['wall', 'cannon', 'archertower', 'mortar'].includes(b.kind) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);
@@ -1829,7 +1829,7 @@ export class GameModel {
             launched: b.elapsed,
             impact: b.elapsed + 1.15,
             damage: power,
-            radius: 1.5,
+            radius: d.splash!,
           });
           continue;
         }
@@ -1964,6 +1964,7 @@ export class GameModel {
     this.refreshBattleScore();
     b.finished = true;
     b.projectiles = [];
+    b.shells = [];
     const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
     // A playback runner reproduces the recorded result without applying a
     // second village's storage limits or producing rewards/history of its own.
