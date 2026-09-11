@@ -1,5 +1,18 @@
 # Verification record
 
+## September 11 — native camp capacity and progression
+
+All 363 unit tests pass across 36 files, including all 144 campaign attacks. Six dedicated camp cases cover native values, count/level ceilings, actual capacity, paid deadlines, old prepared armies and replay health. A further focused six-case run passes after strengthening the old deadline test: a purchased ten-minute upgrade stays unfinished at five minutes and completes at its saved deadline.
+
+The initial 40-scenario browser selections each passed 39 scenarios in Chromium and WebKit. Both found the same outdated expectation that a second Giant could be added to the corrected starter's 27/30 army. The test now removes the first Giant and verifies that the unlocked Add control becomes available again. All five corrected/focused scenarios pass in each engine, providing 40 distinct passing scenarios per engine across the runs. Camp Info/Upgrade, shop counts, legacy reload and above-capacity remove/add flows are included; phone Info and capacity-warning screenshots were visually reviewed.
+
+The new TH2 village has one completed level-two camp and 30 spaces. Explicit tables now drive camp housing, health, prices, timers, counts and occupant distribution. Existing camps, prepared armies and purchased deadlines are preserved. New recordings use combat version 14; older snapshots retain their original health as incompatible summaries. See [CAMP-PROGRESSION.md](CAMP-PROGRESSION.md). Native per-level camp artwork remains a separate unfinished pass.
+
+Production Chromium and WebKit pass without reported errors. Chromium reloads, opens Army and plays a replay offline with 99 cached files, cache `crown-clan-4e0af935cc71`. The final formatting cleanup builds the identical cache. CI includes the new camp browser cases in its WebKit selection.
+
+Evidence: `output/playtest/camp-progression-verification.json`, `camp-progression-unit.json`, `camp-progression-deadline-unit.json`, `camp-progression-chromium.log`, `camp-progression-webkit.log`, `camp-progression-rerun-chromium.log`, `camp-progression-rerun-webkit.log`, `camp-progression-production-report.json`, `camp-progression-final-build.log`, `camp-progression-info-chromium.png`, and `camp-over-capacity-320-webkit.png`.
+
+
 ## Native army footprints and save recovery — September 11, 2026
 
 All 357 unit tests pass across 35 files. The full Chromium run passed 159 of 161 scenarios. The two failures were an Archer Tower test destination newly blocked by the enlarged camp and a wall-layout test reading a child element after a redraw detached it. The destination now uses clear ground; the layout test reads one DOM snapshot. The final 19 focused scenarios pass in each engine, giving 161 distinct Chromium and 36 distinct WebKit scenarios with passing coverage across the runs. A separate catalog rerun hit its 30-second timeout while both rendering suites were active; batching the level comparisons reduced browser round trips and the revised test passes in both engines.

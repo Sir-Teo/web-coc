@@ -2801,6 +2801,17 @@ h3 {
   align-items: center;
   gap: 5px;
 }
+.drawer-foot.army-over-capacity {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: #805127;
+}
+.drawer-foot.army-over-capacity > span {
+  display: block;
+  flex-basis: 100%;
+  margin-left: 25px;
+}
+
 .shop-tile {
   flex: 0 0 132px;
   background: #fffaea;

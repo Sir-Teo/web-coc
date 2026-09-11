@@ -3,7 +3,7 @@ import { BUILDINGS, CAMPAIGN, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './
 import type { Army, Battle, Building, SpellBook } from './model';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 13;
+export const REPLAY_VERSION = 14;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;

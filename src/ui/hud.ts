@@ -1,3 +1,4 @@
+import { campCapacity } from '../game/camp-stats';
 import { OBSTACLES } from '../game/obstacles';
 import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
@@ -112,7 +113,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'darkstorage') rows.push(['Layers', 'Dark elixir capacity', n(10000 * level)]);
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
-  if (kind === 'camp') rows.push(['UsersRound', 'Troop spaces', `+${20 * level}`]);
+  if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
   if (kind === 'spellfactory') rows.push(['Sparkles', 'Spell housing', String(level * 2)]);
   if (kind === 'laboratory')
     rows.push([
@@ -1221,7 +1222,10 @@ export class HUD {
       .map((kind) => BUILDINGS[kind].name);
     const preparationLabel = upgradingFacilities.length
       ? 'Free &amp; instant during upgrades' : 'Free &amp; instant preparation';
-    const preparationNote = upgradingFacilities.length
+    const overCapacity = m.armySize + m.queuedSize > m.capacity;
+    const preparationNote = overCapacity
+      ? 'Your troops are kept. Deploy or remove troops to make room.'
+      : upgradingFacilities.length
       ? `${upgradingFacilities.join(' and ')} upgrading`
       : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
     const troopTile = (k: TroopKind) => {
@@ -1236,7 +1240,7 @@ export class HUD {
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
       return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')}</h3><small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
-    return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_ORDER.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_ORDER.map(spellTile).join('')}</div><footer class="drawer-foot">${icon('Check', 17)} ${preparationLabel} <span>${preparationNote}</span></footer>`;
+    return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_ORDER.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_ORDER.map(spellTile).join('')}</div><footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`;
   }
 
   // ----------------------------------------------------------------- modals

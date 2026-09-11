@@ -85,10 +85,20 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           TroopKind,
           number
         >;
-        for (const camp of m.state.buildings.filter((b) => b.kind === 'camp'))
-          camp.level = army.level;
-        if (army.name === 'veteran')
-          m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', 1, 1, 1));
+        // Army research level and camp housing have separate progression.
+        m.townhall!.level = army.name === 'early-developed' ? 4 : 7;
+        const campLevel = army.name === 'early-developed' ? 4 : 6;
+        m.state.buildings.find((b) => b.kind === 'camp')!.level = campLevel;
+        const campSites =
+          army.name === 'early-developed'
+            ? [[28, 8]]
+            : [
+                [28, 8],
+                [28, 16],
+                [28, 24],
+              ];
+        for (const [x, y] of campSites)
+          m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', x, y, campLevel));
         expect(m.armySize).toBeLessThanOrEqual(m.capacity);
         m.startBattle(stage);
         for (const kind of ['giant', 'swordsman', 'archer', 'wizard'] as const) {
@@ -134,5 +144,8 @@ it('the actual starter army can win the opening raid without spells or upgrades'
     expect(m.battle!.finished).toBe(true);
     return m.battle!.stars;
   });
-  expect(stars.some((n) => n >= 1), `Starter raid stars by approach: ${stars}`).toBe(true);
+  expect(
+    stars.some((n) => n >= 1),
+    `Starter raid stars by approach: ${stars}`,
+  ).toBe(true);
 });

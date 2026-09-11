@@ -17,7 +17,7 @@ describe('camp occupants', () => {
     expect(army).toEqual(original);
   });
 
-  it('distributes housing across all completed camps in proportion to their level', () => {
+  it('distributes housing across all completed camps in proportion to their actual capacity', () => {
     const buildings = [
       makeBuilding(1, 'camp', 3, 3, 1),
       makeBuilding(2, 'camp', 19, 3, 2),
@@ -28,7 +28,7 @@ describe('camp occupants', () => {
     const load = buildings.map((b) =>
       actors.filter((a) => a.campId === b.id).reduce((n, a) => n + TROOPS[a.kind].space, 0),
     );
-    expect(load).toEqual([10, 20, 10, 20]);
+    expect(load).toEqual([12, 18, 12, 18]);
     buildings[1].constructing = true;
     expect(campPlan({ ...emptyArmy(), archer: 60 }, buildings).some((a) => a.campId === 2)).toBe(
       false,

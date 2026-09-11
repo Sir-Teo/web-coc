@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { legacyArmyVillage } from '../fixtures/legacy-army-village';
 
 for (const [kind, width, cost] of [
-  ['camp', 177, 3000],
+  ['camp', 177, 200],
   ['herohall', 187, 20000],
 ] as const) {
   test(`the phone shop places a 4×4 ${kind} with an aligned preview and persistent full footprint`, async ({

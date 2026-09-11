@@ -1,3 +1,4 @@
+import { campCapacity } from './camp-stats';
 import { MAP_SIZE } from './grid';
 import { BUILDINGS, isTrap, TROOPS, TROOP_KEYS, type TroopKind } from './data';
 import type { Army, Building } from './model';
@@ -12,10 +13,9 @@ export type CampActor = {
   offsetX: number;
   offsetY: number;
 };
-// All troops in the largest supported four level-8 camps plus the base 20 spaces.
-// Over-capacity imported saves must not allocate tens of thousands of sprites.
-export const MAX_CAMP_ACTORS =
-  20 + 20 * BUILDINGS.camp.maxLevel * Math.max(...BUILDINGS.camp.available);
+// Preserve the visible roster of old saves that could prepare 660 one-space troops.
+// This is a rendering safety limit, not camp capacity or a training allowance.
+export const MAX_CAMP_ACTORS = 660;
 
 export function campPlan(army: Army, buildings: Building[]): CampActor[] {
   const camps = buildings.filter((b) => b.kind === 'camp' && !b.constructing);
@@ -80,7 +80,8 @@ export function campPlan(army: Army, buildings: Building[]): CampActor[] {
       for (let i = 0; i < camps.length; i++)
         if (
           routes[i].length &&
-          (camp < 0 || load[i] / camps[i].level < load[camp] / camps[camp].level)
+          (camp < 0 ||
+            load[i] / campCapacity(camps[i].level) < load[camp] / campCapacity(camps[camp].level))
         )
           camp = i;
       const slot = slots[camp]++;

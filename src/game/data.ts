@@ -1,3 +1,4 @@
+import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset, wallTexture } from './wall-art';
 import { mortarAsset, mortarTexture } from './mortar-art';
@@ -228,16 +229,17 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   camp: {
     name: 'Army Camp',
-    description: 'Your troops gather here before battle. Every level adds 20 army spaces.',
+    description:
+      'Houses your prepared troops. Upgrade to increase capacity; camps keep working during upgrades.',
     size: 4,
     width: 177,
-    hp: 700,
-    cost: 3000,
+    hp: CAMP_LEVELS[0].hp,
+    cost: CAMP_LEVELS[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 8,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
-    build: 90,
+    available: CAMP_COUNTS,
+    build: CAMP_LEVELS[0].seconds,
   },
   builder: {
     name: 'Builder’s Hut',
@@ -530,7 +532,8 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
   balloon: {
     name: 'Balloon',
     role: 'AIR',
-    description: 'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
+    description:
+      'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
     hp: 780,
     damage: 190,
     speed: 0.62,
@@ -698,6 +701,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level + 1)?.seconds ??
   trapProgression(kind, level + 1)?.seconds ??
   defenseProgression(kind, level + 1)?.seconds ??
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
@@ -706,12 +710,14 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level)?.hp ??
   defenseProgression(kind, level)?.hp ??
   (kind === 'wall'
     ? WALL_LEVELS[Math.min(WALL_LEVELS.length, Math.max(1, level)) - 1].hp
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level + 1)?.cost ??
   trapProgression(kind, level + 1)?.cost ??
   defenseProgression(kind, level + 1)?.cost ??
   (kind === 'wall'

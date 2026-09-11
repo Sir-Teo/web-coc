@@ -156,7 +156,7 @@ it('keeps old replay snapshots valid at their old map edge and records new-map a
   m.deploy(4, 11);
   m.finishBattle();
   const replay = structuredClone(m.state.raidLog![0].replay!);
-  expect(REPLAY_VERSION).toBe(13);
+  expect(REPLAY_VERSION).toBe(14);
   replay.initial.buildings = [makeBuilding(9000, 'cannon', 26, 26)];
   replay.initial.nextId = 9001;
   replay.version = 11;

@@ -1,3 +1,4 @@
+import { campCapacity } from './camp-stats';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
@@ -356,12 +357,9 @@ export class GameModel {
     return this.state.buildings.filter((b) => b.kind === kind).length;
   }
   get capacity() {
-    return (
-      20 +
-      this.state.buildings
-        .filter((b) => b.kind === 'camp' && !b.constructing)
-        .reduce((n, b) => n + 20 * b.level, 0)
-    );
+    return this.state.buildings
+      .filter((b) => b.kind === 'camp' && !b.constructing)
+      .reduce((n, b) => n + campCapacity(b.level), 0);
   }
   get spellCapacity() {
     return this.state.buildings
@@ -574,7 +572,7 @@ export class GameModel {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
-        ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower'].includes(b.kind) &&
+        ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(b.kind) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);
@@ -2327,8 +2325,7 @@ export function initialSave(): Save {
   add('cannon', 12, 14, 2);
   add('archertower', 15, 15, 2);
   add('barracks', 4, 15, 2);
-  add('camp', 10, 21);
-  add('camp', 21, 11);
+  add('camp', 10, 21, 2);
   add('goldmine', 3, 8, 2);
   add('goldmine', 5, 4);
   add('collector', 17, 4, 2);

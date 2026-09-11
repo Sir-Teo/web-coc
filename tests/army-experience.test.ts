@@ -30,9 +30,10 @@ describe('instant army preparation', () => {
     expect(m.state.spells.lightning).toBe(1);
     m.brew('lightning');
     expect(m.spellHousing).toBe(m.spellCapacity);
-    m.state.army.giant = 11;
+    const almostFull = m.capacity / 5 - 1;
+    m.state.army.giant = almostFull;
     m.train('giant', 2);
-    expect(m.state.army.giant).toBe(11);
+    expect(m.state.army.giant).toBe(almostFull);
     m.train('giant');
     expect(m.armySize).toBe(m.capacity);
   });
