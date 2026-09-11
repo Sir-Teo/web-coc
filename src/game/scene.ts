@@ -13,6 +13,7 @@ import {
 } from './data';
 import { GameModel, type Building, type FX } from './model';
 import { AudioManager } from './audio';
+import { ResourceFlights } from '../ui/resource-flight';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
 const SPELL_COLOR: Record<string, number> = {
@@ -62,6 +63,7 @@ export class VillageScene extends Phaser.Scene {
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
+  private resourceFlights = new ResourceFlights();
   constructor(model: GameModel, audio: AudioManager) {
     super('village');
     this.model = model;
@@ -104,7 +106,11 @@ export class VillageScene extends Phaser.Scene {
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
     this.resetCamera();
-    this.scale.on('resize', () => this.resetCamera());
+    this.scale.on('resize', () => {
+      this.resourceFlights.clear();
+      this.resetCamera();
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.resourceFlights.clear());
     this.input.addPointer(2);
     this.focusKeys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<
       string,
@@ -451,13 +457,15 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sync() {
+    if (this.model.state.settings.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      this.resourceFlights.clear();
       this.renderedBattle = this.model.battle;
       this.boundary.signature = '';
       for (const s of this.sprites.values()) s.destroy();
       for (const s of this.unitSprites.values()) s.destroy();
-      for (const s of this.bubbles.values()) s.destroy();
+      for (const id of this.bubbles.keys()) this.removeBubble(id);
       this.sprites.clear();
       this.unitSprites.clear();
       this.bubbles.clear();
@@ -469,6 +477,7 @@ export class VillageScene extends Phaser.Scene {
       if (!ids.has(id)) {
         s.destroy();
         this.sprites.delete(id);
+        this.removeBubble(id);
       }
     }
     for (const b of this.model.buildings) {
@@ -519,8 +528,8 @@ export class VillageScene extends Phaser.Scene {
           .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
             fontFamily: 'Arial',
             fontSize: '24px',
-            color: b.kind === 'goldmine' ? '#efaa10' : '#c449e2',
-            stroke: b.kind === 'goldmine' ? '#b87516' : '#823b9c',
+            color: b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
+            stroke: b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
             strokeThickness: 1,
           })
           .setOrigin(0.5);
@@ -532,19 +541,27 @@ export class VillageScene extends Phaser.Scene {
           this.audio.play('collect');
         });
         this.bubbles.set(b.id, c);
-        if (!this.model.state.settings.reducedMotion)
-          this.tweens.add({
-            targets: c,
-            y: c.y - 5,
-            duration: 1100,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-          });
       }
-      if (!shouldBubble && this.bubbles.has(b.id)) {
-        this.bubbles.get(b.id)!.destroy();
-        this.bubbles.delete(b.id);
+      if (shouldBubble) {
+        const c = this.bubbles.get(b.id)!;
+        const y = p.y - im.displayHeight * 0.86 - 13;
+        const reduced = this.model.state.settings.reducedMotion;
+        const anchor = `${p.x},${y},${reduced}`;
+        if (c.getData('anchor') !== anchor) {
+          this.tweens.killTweensOf(c);
+          c.setPosition(p.x, y).setDepth(p.y + 300).setData('anchor', anchor);
+          if (!reduced)
+            this.tweens.add({
+              targets: c,
+              y: y - 5,
+              duration: 1100,
+              yoyo: true,
+              repeat: -1,
+              ease: 'Sine.easeInOut',
+            });
+        }
+      } else {
+        this.removeBubble(b.id);
       }
     }
     if (this.model.placement) {
@@ -565,6 +582,13 @@ export class VillageScene extends Phaser.Scene {
     }
     this.syncWalls();
     this.lastRevision = this.model.revision;
+  }
+  private removeBubble(id: number) {
+    const bubble = this.bubbles.get(id);
+    if (!bubble) return;
+    this.tweens.killTweensOf(bubble);
+    bubble.destroy();
+    this.bubbles.delete(id);
   }
   syncWalls() {
     const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
@@ -775,7 +799,7 @@ export class VillageScene extends Phaser.Scene {
           im.setFrame(
             (u.attacking && !flying) || this.model.state.settings.reducedMotion
               ? 0
-              : Math.floor(time / 140 + u.id) % 4,
+              : Math.floor(time / (flying ? 360 : 140) + u.id) % 4,
           );
         if (u.hero) {
           const enraged = (battle.hero?.rageUntil ?? 0) > battle.elapsed;
@@ -783,7 +807,11 @@ export class VillageScene extends Phaser.Scene {
           else im.clearTint();
         }
         const p = iso(u.x, u.y),
-          motion = this.model.state.settings.reducedMotion ? 0 : Math.sin(time / 80 + u.id) * 1.6;
+          motion = this.model.state.settings.reducedMotion
+            ? 0
+            : flying
+              ? Math.sin(time / 600 + u.id) * 2.2
+              : Math.sin(time / 80 + u.id) * 1.6;
         const lift = flying ? AIR_LIFT : 0;
         // Air troops draw above every rooftop, with a shadow left on the ground.
         im.setPosition(p.x, p.y + motion - lift).setDepth(flying ? 7500 : p.y + 1);
@@ -997,27 +1025,17 @@ export class VillageScene extends Phaser.Scene {
     if (!target) return;
     const box = target.getBoundingClientRect(),
       canvas = this.game.canvas.getBoundingClientRect();
-    const tx = box.left + box.width / 2 - canvas.left,
-      ty = box.top + box.height / 2 - canvas.top;
-    const fill = resource === 'gold' ? 0xffd34b : resource === 'dark' ? 0x514076 : 0xd567ff,
-      edge = resource === 'gold' ? 0xb07a12 : 0x7f2f9e;
-    for (let i = 0; i < 7; i++) {
-      const dot = this.add
-        .circle(sx + (Math.random() - 0.5) * 30, sy + (Math.random() - 0.5) * 18, 5, fill)
-        .setStrokeStyle(2, edge)
-        .setDepth(9500)
-        .setScrollFactor(0);
-      this.tweens.add({
-        targets: dot,
-        x: tx,
-        y: ty,
-        scale: 0.35,
-        duration: 420 + i * 45,
-        delay: i * 38,
-        ease: 'Cubic.easeIn',
-        onComplete: () => dot.destroy(),
-      });
-    }
+    const c = this.cameras.main;
+    this.resourceFlights.emit(
+      {
+        x: canvas.left +
+          ((sx - c.scrollX - c.width / 2) * c.zoom + c.width / 2) * canvas.width / this.scale.width,
+        y: canvas.top +
+          ((sy - c.scrollY - c.height / 2) * c.zoom + c.height / 2) * canvas.height / this.scale.height,
+      },
+      { x: box.left + box.width / 2, y: box.top + box.height / 2 },
+      resource,
+    );
   }
   sparks(x: number, y: number, color: number, count: number) {
     for (let i = 0; i < count; i++) {

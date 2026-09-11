@@ -513,7 +513,7 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
   balloon: {
     name: 'Balloon',
     role: 'AIR',
-    description: 'Drifts over walls to bomb defenses. Only air defenses can reach it.',
+    description: 'Drifts over walls to bomb defenses. Only defenses that target air can reach it.',
     hp: 780,
     damage: 190,
     speed: 0.62,
@@ -522,7 +522,7 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     cost: 0,
     space: 5,
     time: 0,
-    width: 34,
+    width: 50,
     research: 1500,
     flying: true,
     prefersDefenses: true,

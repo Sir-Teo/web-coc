@@ -4173,3 +4173,29 @@ h3 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Collection feedback stays aligned to the HUD while the village camera moves. */
+.resource-flight {
+  position: fixed;
+  z-index: 150;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border: 2px solid #b07a12;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff5bc, #ffd34b 45%, #e1a529);
+  box-shadow: 0 1px 3px #36280b66;
+  will-change: transform;
+}
+.resource-flight.elixir {
+  border-color: #7f2f9e;
+  border-radius: 55% 55% 50% 50%;
+  background: radial-gradient(circle at 30% 25%, #f6bdff, #d567ff 45%, #9b32c0);
+}
+.resource-flight.dark {
+  border-color: #291d3e;
+  background: radial-gradient(circle at 30% 25%, #a08cbd, #514076 45%, #302240);
+}
+.reduce-motion .resource-flight {
+  display: none;
+}
