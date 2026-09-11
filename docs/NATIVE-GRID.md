@@ -20,7 +20,7 @@ The starter Cannon moves from (9,10) to (12,14) to clear the Town Hall. Sixteen 
 
 ## Camera and replays
 
-The original isometric origin and building pixel sizes are retained. Camera pan bounds span the enlarged field with an additional viewing margin, and minimum zoom permits an overview while the initial zoom keeps buildings readable. The existing backdrop covers this larger world at a larger display scale; its source resolution has not increased. More detailed scenery is still needed.
+The original isometric origin and building pixel sizes are retained. Camera pan bounds span the enlarged field with an additional viewing margin, and minimum zoom permits an overview while the initial zoom keeps buildings readable. The subsequent [terrain pass](TERRAIN-CAMERA.md) fits a new 1672×941 backdrop to this larger field at a tighter display scale and adds subtle grass tiles. Full native scenery detail is still incomplete.
 
 Combat version 12 marks the new geometry and pathfinding field. Older snapshots retain their original coordinates and validation bounds. Their result summaries remain available, but they cannot be played using changed combat geometry. Current recordings accept deployments throughout the expanded field.
 

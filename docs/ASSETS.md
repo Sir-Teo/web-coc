@@ -20,7 +20,11 @@ Production isometric strategy game building atlas. 1536×1024 transparent PNG, 4
 
 ### Expanded terrain — `art/source/terrain-expanded-v2.png`
 
-The active background extends the original forest and river beyond the playable world so phone views and minimum zoom never reveal unpainted canvas. The accepted 1536×1024 image is displayed at 1.6× world size; gameplay coordinates and sprite sizes stay fixed. It rebuilds through `scripts/terrain-assets.mjs`. See [TERRAIN-CAMERA.md](TERRAIN-CAMERA.md) for generation provenance, camera behavior and rendered coverage checks.
+This earlier 1536×1024 background expanded the original forest and river beyond the playable world. It remains the style reference for the current terrain.
+
+### Village field terrain — `art/source/terrain-field-v4.png`
+
+The active 1672×941 terrain follows the expanded village field with a calmer lawn and a closer forest surround. It is displayed at 1.35× world size, with a separate subtle turf pattern aligned to the buildable tiles. It rebuilds through `scripts/terrain-assets.mjs`; `--check` verifies the derivative. Exact built-in generation/refinement prompts are in `art/source/terrain-field-v4.json`. See [TERRAIN-CAMERA.md](TERRAIN-CAMERA.md) for dimensions, provenance, rendering and remaining fidelity limits.
 
 ### Character seeds and scenery — `art/source/characters.png`
 

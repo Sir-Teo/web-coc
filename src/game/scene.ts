@@ -38,7 +38,7 @@ const SPELL_COLOR: Record<string, number> = {
   lightning: 0x6fd4ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
-const TERRAIN_SCALE = 1.6;
+const TERRAIN_SCALE = 1.35;
 const CAMERA_MARGIN = 224;
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
@@ -62,7 +62,7 @@ export class VillageScene extends Phaser.Scene {
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
-  private ground!: Phaser.GameObjects.Graphics;
+  private ground!: Phaser.GameObjects.Container;
   private ruinGround!: Phaser.GameObjects.Graphics;
   /** Ground-level markings that buildings must sit on top of. */
   private groundMarks!: Phaser.GameObjects.Graphics;
@@ -116,7 +116,7 @@ export class VillageScene extends Phaser.Scene {
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
     this.load.image('king', asset('king'));
-    this.load.image('terrain', '/assets/environment/terrain-expanded-v2.webp');
+    this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
@@ -146,7 +146,6 @@ export class VillageScene extends Phaser.Scene {
       .image(WORLD.ox, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
       .setDepth(-1000);
-    this.ground = this.add.graphics().setDepth(-900);
     this.ruinGround = this.add.graphics().setDepth(-875);
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
@@ -157,7 +156,7 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.effectTimeline.clear();
     });
-    this.drawPaths();
+    this.drawField();
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
     this.resetCamera();
@@ -284,28 +283,42 @@ export class VillageScene extends Phaser.Scene {
       this.paused = false;
     });
   }
-  drawPaths() {
-    const g = this.ground;
-    g.clear();
-    const path = (x: number, y: number, w: number, h: number) => {
-      const pts = [iso(x, y), iso(x + w, y), iso(x + w, y + h), iso(x, y + h)];
-      g.fillStyle(0xcdb780, 0.26);
-      g.fillPoints(pts, true);
-      g.lineStyle(1, 0xe5c798, 0.18);
-      g.strokePoints(pts, true);
-    };
-    path(9, 5, 1, 16);
-    path(5, 9, 16, 1);
-    path(5, 18, 16, 1);
-    path(18, 6, 1, 15);
-    path(11, 19, 3, 3);
-    for (let i = 0; i < 60; i++) {
-      const x = 5 + ((i * 7.31) % 17),
-        y = 5 + ((i * 11.13) % 17),
-        p = iso(x, y);
-      g.fillStyle(i % 3 === 0 ? 0xe8daa6 : 0x607e3f, 0.25);
-      g.fillEllipse(p.x, p.y, 3 + (i % 4), 2);
+  private drawField() {
+    // One tiny repeating texture avoids tessellating 968 static diamonds every frame.
+    if (!this.textures.exists('field-checks')) {
+      const tile = this.add.graphics().fillStyle(0xffffff);
+      tile.fillTriangle(0, 0, 64, 0, 32, 16);
+      tile.fillTriangle(0, 32, 32, 16, 64, 32);
+      tile.generateTexture('field-checks', 64, 32);
+      tile.destroy();
     }
+    const side = BUILD_MAX - BUILD_MIN;
+    const center = iso((BUILD_MIN + BUILD_MAX) / 2, (BUILD_MIN + BUILD_MAX) / 2);
+    const turf = this.add
+      .tileSprite(center.x, center.y, side * 64, side * 32, 'field-checks')
+      .setTint(0x23491d)
+      .setAlpha(0.065);
+    // Keep the grass visible and stop the checks exactly at the buildable boundary.
+    const outline = this.add.graphics().fillStyle(0xffffff);
+    outline.fillPoints(
+      [
+        iso(BUILD_MIN, BUILD_MIN), iso(BUILD_MAX, BUILD_MIN),
+        iso(BUILD_MAX, BUILD_MAX), iso(BUILD_MIN, BUILD_MAX),
+      ],
+      true,
+    );
+    const stencil = this.add.stencil(0, 0, [outline], {
+      stencilInvert: true,
+      stencilLayerMode: 'addLayer',
+      stencilCompositeCheck: false,
+    });
+    const release = this.add.stencilreference(stencil, {
+      stencilInvert: true,
+      stencilLayerMode: 'subtractLayer',
+      stencilCompositeCheck: false,
+    });
+    // Keep stencil application and removal together so later village objects stay unclipped.
+    this.ground = this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
   }
   decorate() {
     const dec: [string, number, number, number][] = [

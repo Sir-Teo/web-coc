@@ -1,29 +1,39 @@
 # Village scenery and camera coverage
 
-The original terrain rectangle matched the world bounds, but the supported camera view could be taller or wider than that rectangle. At phone zoom levels this exposed horizontal strips of the solid camera background; minimum zoom exposed additional edges on desktop. Moving the camera could not repair a view larger than the painted terrain.
+The active scenery frames the 44×44 buildable field with a continuous forest and stream. The field uses subtle alternating grass tiles aligned to the same 2:1 isometric coordinates as buildings. Fixed dirt strips from the prototype have been removed. The original background remains available as an earlier source.
 
-The village uses a wider original forest-and-river backdrop displayed at 1.6 times the world width and height. The later [native-grid pass](NATIVE-GRID.md) expands the buildable field to 44×44 inside a 48×48 simulation map, preserving the isometric origin and building pixel sizes. Pan bounds include a 224-world-pixel viewing margin; minimum zoom permits an overview while the initial zoom keeps the village readable. The same scenery source now covers a larger world, so fine detail is softer. The original terrain source and derived asset remain available.
+The previous expanded backdrop was displayed at 1.6× world size. After the grid expansion, that stretched its detail and put parts of the painted forest, dirt and river under valid building tiles. The new composition fits the field at 1.35× world size while retaining coverage of every supported camera edge. The isometric origin, camera limits, building positions and sprite sizes are unchanged by this artwork pass.
 
 ## Artwork and rebuild
 
-- Original edit reference: `art/source/terrain.png` (1536×1024).
-- Accepted source: `art/source/terrain-expanded-v2.png` (1536×1024), generated with the built-in image tool on September 11, 2026.
-- Shipping asset: `public/assets/environment/terrain-expanded-v2.webp`, encoded at quality 90 by `node scripts/terrain-assets.mjs`; also included in `npm run assets`.
-- The generated image expands the forest, rocky outcrops and turquoise river. Its composition is not a pixel-registered outpaint of the original; the 1.6 display scale was selected by inspecting the village and its playable footprint in the browser. The source is not upscaled to claim additional detail.
-- The background remains one opaque image and one sprite. There are no repeated tiles, mirrored river banks, feathered overlapping forests or additional background effects.
+- Active source: `art/source/terrain-field-v4.png`, 1672×941, generated with the built-in image tool on September 11, 2026.
+- Shipping asset: `public/assets/environment/terrain-field-v4.webp`, encoded at quality 90 by `node scripts/terrain-assets.mjs`; also included in `npm run assets`.
+- Exact generation and refinement prompts, generated filenames and dimensions: `art/source/terrain-field-v4.json`.
+- Style reference: `art/source/terrain-expanded-v2.png` (1536×1024). The first new candidate retained conspicuous angular grass patches; the accepted refinement makes the lawn quieter while preserving the surrounding composition.
+- The request asked for 3840×2160. Both actual outputs are 1672×941. No upscaling is used and this is not a 4K source.
+- At the tighter display scale, the new source supplies approximately 29% more horizontal and 9% more vertical source pixels per world unit than the previous backdrop. This is a sampling-density comparison, not a claim of native-game pixel parity.
+- `node scripts/terrain-assets.mjs --check` verifies that the committed WebP exactly matches the current source and encoder. CI performs this check and requires the active terrain in the production loading audit.
 
-Generation request: expand the attached terrain with dense rounded pines and deciduous forest, continue the turquoise river beyond the lower-left edge, preserve the warm upper-left sun and elevated orthographic style, keep the clearing empty, and omit buildings, characters, UI, text and borders. The request asked for a larger pixel canvas; the actual accepted output is the 1536×1024 source recorded above.
+The scene uses one opaque backdrop. The subtle turf overlay is a separate 64×32 repeating texture, clipped to the exact buildable diamond. It has no painted flowers, paths or obstacles. Real trees and rocks remain independent selectable world objects. The forest-and-stream composition and turf colors remain original artwork/local styling; the native [Classic scenery reference](https://clashofclans.fandom.com/wiki/Scenery) also includes scenery details and a beach not fully reproduced here.
+
+## Turf rendering
+
+A small transparent texture repeats at the isometric tile spacing. An inverted stencil admits only the buildable diamond; a matching subtract operation removes that stencil before later world objects draw. These objects share one container so hiding the turf cannot leave its stencil active. This avoids rebuilding 968 static grass polygons each frame or allocating a full-field overlay texture.
+
+The implementation uses the installed Phaser 4.2.1 stencil API. The older `setMask` API is Canvas-only in Phaser 4, as described in the [Phaser mask documentation](https://docs.phaser.io/api-documentation/4.0.0/namespace/gameobjects-components-mask); a framebuffer regression caught its ineffective WebGL clipping during development. Stencil references do not inherit the target’s settings, so the release explicitly repeats its inversion and composition options. Runtime checks verify edge clipping, post-stencil drawing and graphics-context restoration.
 
 ## Rotation and resize
 
-Viewport changes preserve the camera's current world center and absolute zoom, subject to the new viewport's zoom limits and the existing playable-world pan limits. Phaser updates camera dimensions before the scene resize listener; the old viewport dimensions are retained so the previous world center can be recovered from its scroll offsets. Recenter is still an explicit action that restores the fitted starting view. Battle transitions retain their deliberate starting framing.
+Viewport changes preserve the camera's current world center and absolute zoom, subject to the new viewport's zoom limits and playable-world pan limits. Phaser updates camera dimensions before the scene resize listener; the old viewport dimensions are retained so the previous world center can be recovered from its scroll offsets. Recenter is still an explicit action that restores the fitted starting view. Battle transitions retain their deliberate starting framing.
 
-A resize cancels any unfinished pan or pinch gesture, since its previous screen coordinates no longer describe the playfield. Resource-flight particles are also cleared as before. The exact world midpoint replaces the earlier half-pixel vertical rounding in camera clamping.
+A resize cancels any unfinished pan or pinch gesture, since its previous screen coordinates no longer describe the playfield. Resource-flight particles are also cleared. The exact world midpoint is used in camera clamping.
 
 ## Verification
 
-`tests/browser/village-camera.spec.ts` reads the actual WebGL framebuffer borders against a magenta sentinel background with foreground sprites hidden. It checks six viewports (narrow and tall phones, phone landscape, desktop and ultrawide), both village and battle modes, three zoom levels, and five pan positions: 180 rendered views. No sentinel pixel may be exposed. Each viewport/mode also hides the terrain for a negative control and requires every border pixel to show the sentinel, proving the readback can detect uncovered canvas. Separate tests verify focus/zoom preservation through rotation, pointer selection after recentering, and cancellation of a pan interrupted by resizing.
+`tests/browser/village-camera.spec.ts` reads the actual WebGL framebuffer borders against a magenta sentinel with foreground objects hidden. It checks six viewports (narrow and tall phones, phone landscape, desktop and ultrawide), both village and battle modes, three zoom levels, and five pan positions: 180 rendered views. No sentinel pixel may be exposed. Each viewport/mode also hides the terrain for a negative control and requires every border pixel to show the sentinel. Separate tests verify focus/zoom preservation through rotation, pointer selection after recentering, and cancellation of a pan interrupted by resizing.
 
-Screenshots are inspected with the normal HUD and scene objects visible. Chromium and WebKit run the camera suite; CI includes it in the WebKit selection. The shipping terrain is included in the generated offline manifest and production loading checks.
+`tests/browser/terrain-field.spec.ts` samples all 1,936 buildable tile centers from the shipping texture through its actual world transform. Its grass-palette check found 18 non-grass centers in the previous backdrop and none in the accepted replacement. This is a targeted palette check, not an exhaustive proof that every painted pixel is unobstructed. Screenshots are also inspected with normal world objects and HUD visible.
 
-This addresses terrain coverage and camera continuity. It does not complete the broader per-level artwork catalog, character animation, scenery animation, or physical-device performance certification.
+A second framebuffer test compares turf-on and turf-off pixels at fixed alternate cells and outside all four field edges. It repeats after WebGL context restoration and verifies that a later magenta probe remains visible outside the clipped field. This checks alignment, clipping and stencil cleanup using rendered output. The turf tile is 64×32 pixels. CI runs these cases in Chromium and WebKit; the shipping artwork is included in the offline manifest.
+
+Full native scenery composition, per-level building artwork, character/scenery animation and physical-device performance certification remain incomplete. See [QA.md](QA.md) for completed checks and visual evidence.

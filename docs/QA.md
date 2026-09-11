@@ -1,5 +1,15 @@
 # Verification record
 
+## Terrain fitted to the buildable field — September 11, 2026
+
+All 345 unit tests pass. After correcting the clipping issues found during development, all 26 focused browser scenarios pass in each of Chromium and WebKit. These cover all 1,936 buildable tile centers, turf alignment and clipping at all four edges, subsequent world-object rendering, graphics-context restoration, camera coverage, actual placement, building artwork, collection, replay and twenty raid transitions. The terrain asset rebuild check and final production build also pass.
+
+The new 1672×941 backdrop fits at 1.35× world size. The accepted refinement reduces conspicuous grass patches, and a 64×32 repeating turf texture replaces fixed prototype dirt strips. All sampled buildable centers sit on grass; the earlier backdrop failed the same palette check at 18 centers. The first masking approach used a Canvas-only API; the new framebuffer test caught the ineffective WebGL clipping. A later probe caught a stencil-release option that did not inherit the inverted mask setting. The release now explicitly matches those settings, and both browsers verify drawing outside the field after it.
+
+The final production check reports no errors in either browser. Chromium reloads, opens Army and plays a replay offline with 99 cached files, cache `crown-clan-5d332058113c`. Phone, desktop overview and western-boundary screenshots were visually inspected with normal scene objects. The image tool returned 1672×941 despite the initial 4K request; no upscaling or 4K claim is made. Full native scenery composition, building-level artwork and device performance certification remain open. See [TERRAIN-CAMERA.md](TERRAIN-CAMERA.md) and `art/source/terrain-field-v4.json` for source details and exact prompts.
+
+Evidence: `output/playtest/terrain-field-verification.json`, `terrain-field-production-report.json`, `terrain-field-check.log`, `terrain-field-final-build.log`, `terrain-field-verified-chromium.log`, `terrain-field-verified-webkit.log`, `terrain-field-final-phone.png`, `terrain-field-final-overview.png` and `terrain-field-final-west-edge.png`.
+
 ## Expanded village and native defense footprints — September 11, 2026
 
 All 345 unit tests pass, including dense legacy migration, saved layouts, damaged-health and paid-deadline preservation, expanded-grid pathfinding and campaign viability. The full Chromium run passed 150 of 154 scenarios. After fixes, 26 focused scenarios pass, covering all four failures and a new deterministic input regression: 155 distinct Chromium scenarios have passing coverage across the full run and follow-up. All 46 focused WebKit scenarios pass. CI now includes the native-grid, building-art and placement-preview cases in its WebKit selection.
