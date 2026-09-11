@@ -1,5 +1,13 @@
 # Verification record
 
+## Placement preview follows the active pointer and camera — September 11, 2026
+
+All 22 targeted browser scenarios pass in each of Chromium and WebKit after the placement follow-up. Coverage includes stationary-pointer keyboard pan, zoom and viewport resize; DOM shop pointer retention through a scene refresh; return to canvas input on release; actual shop placement by tap/drag; touch input; phone layouts; and the building-art cases. The earlier appearance pass completed 338 unit tests and 27 browser scenarios per engine (46 distinct browser scenarios across the two phases).
+
+The final production build passes both engines without reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-300ec5409ef6`. The new regressions reproduced a stale preview after a camera transform and a 440-world-pixel jump to an outdated canvas pointer during a shop drag. Holding the economy clock ensures its periodic refresh cannot mask the camera defect.
+
+The preview sprite and footprint now use the same snapped tile and validity result each frame. A phone capture after zooming a stationary cursor shows the upgraded Gold Mine over the blocked footprint; the measured anchor error is zero world pixels. See [BUILDING-PRESENTATION.md](BUILDING-PRESENTATION.md). Evidence: `output/playtest/placement-preview-verification.json`, `placement-preview-production-report.json` and `placement-camera-phone-webkit.png`.
+
 ## Consistent building artwork during movement — September 11, 2026
 
 All 338 unit tests and 27 targeted browser scenarios in each of Chromium and WebKit pass. The production build passes both engines with no reported errors; Chromium also reloads, opens Army and plays a replay offline with 98 cached files, cache `crown-clan-f0d4678aece6`.

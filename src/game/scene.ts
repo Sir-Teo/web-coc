@@ -693,7 +693,7 @@ export class VillageScene extends Phaser.Scene {
       }
       // A paid upgrade can finish while this preview is open, even within one artwork tier.
       this.styleBuilding(this.ghost, this.model.placement, level);
-      this.updateGhost(this.input.activePointer);
+      this.updateGhost(this.pointerScreen());
     } else {
       this.ghost?.destroy();
       this.ghost = undefined;
@@ -881,13 +881,15 @@ export class VillageScene extends Phaser.Scene {
       x = Math.floor(grid.x),
       y = Math.floor(grid.y),
       s = BUILDINGS[this.model.placement].size,
-      screen = iso(x + s / 2, y + s / 2);
+      screen = iso(x + s / 2, y + s / 2),
+      valid = this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined);
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
-      this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined)
+      valid
         ? this.model.placement === 'wall' || this.model.placement === 'mortar' ? 0xffffff : 0xd9ffb0
         : 0xff7272,
     );
+    return { x, y, size: s, valid };
   }
   drawOverlay(time: number) {
     if (this.model.battle)
@@ -930,20 +932,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.editing && !this.model.placement && !this.model.wallMove) this.drawGrid(g);
     if (this.model.placement) {
       this.drawGrid(g);
-      const screen = this.pointerScreen();
-      const point = this.cameras.main.getWorldPoint(screen.x, screen.y),
-        grid = uniso(point.x, point.y),
-        x = Math.floor(grid.x),
-        y = Math.floor(grid.y);
-      diamond(
-        x,
-        y,
-        BUILDINGS[this.model.placement].size,
-        this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined)
-          ? 0x8fff73
-          : 0xff6464,
-        0.28,
-      );
+      // Camera motion and DOM drags can change the tile without a Phaser pointer event.
+      // Resolve it once per frame for both the sprite and its placement footprint.
+      const preview = this.updateGhost(this.pointerScreen());
+      if (preview)
+        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, .28);
     }
     this.groundMarks.clear();
     const active = this.model.battle;
