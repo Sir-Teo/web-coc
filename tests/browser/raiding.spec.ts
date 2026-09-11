@@ -42,7 +42,7 @@ test('seven troop keys and three spell keys select and deploy the right units', 
 }) => {
   await page.locator('[data-action="campaign"]').first().click();
   await page.locator('[data-action="attack:0"]').click();
-  await page.keyboard.press('7');
+  await page.keyboard.press('5');
   await expect(page.locator('[data-action="troop:wallbreaker"]')).toHaveClass(/selected/);
   await expect(page.locator('.deploy-label')).toContainText('Walls ×40');
   const point = await page.evaluate(() => window.__game.scene.screenFor(4, 12));
@@ -52,7 +52,7 @@ test('seven troop keys and three spell keys select and deploy the right units', 
       page.evaluate(() => window.__game.model.battle.units.some((u) => u.kind === 'wallbreaker')),
     )
     .toBe(true);
-  await page.keyboard.press('6');
+  await page.keyboard.press('4');
   await expect(page.locator('[data-action="troop:goblin"]')).toHaveClass(/selected/);
   await page.mouse.click(point.x, point.y + 20);
   await expect
@@ -60,7 +60,7 @@ test('seven troop keys and three spell keys select and deploy the right units', 
       page.evaluate(() => window.__game.model.battle.units.some((u) => u.kind === 'goblin')),
     )
     .toBe(true);
-  await page.keyboard.press('8');
+  await page.keyboard.press('0');
   await expect(page.locator('[data-action="spell:rage"]')).toHaveClass(/selected/);
   await page.waitForTimeout(350);
   await page.screenshot({ path: 'output/playtest/specialists-battle-desktop.png' });

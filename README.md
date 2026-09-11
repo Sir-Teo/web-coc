@@ -69,6 +69,7 @@ with `no-cache` so a new release is picked up on the next visit.
 ### Army
 
 - Unlock seven troop types through Barracks levels 1–7, then prepare them individually or five at a time, **free and instantly**. Lightning, Healing and Rage unlock at Spell Factory levels 1, 2 and 3. Remove individual troops/spells or clear the army to change strategy. Whole batches must fit camp capacity. "Last army" replenishes the previous campaign composition without duplicating ready units.
+- The catalog follows facility unlock order. Troop and spell housing controls jump directly to each section; locked portraits remain inspectable. Home trays show prepared units, and battle trays keep only carried units, including their depleted cards.
 - **Quick armies** stores three named troop-and-spell compositions. Save your current army, then use a preset in one tap. Both housing limits and ready facilities are checked before changing anything.
 - **Balloons fly.** They drift straight over walls and buildings, ignore pathing entirely, and prefer defenses. Only air-capable defenses can shoot them — and when one is shot down it detonates, damaging whatever it was over.
 - **Goblins** sprint for resource buildings, including the Town Hall, and deal double damage to them. Loot is released as resource buildings take damage, so a quick resource raid can pay without a star.
@@ -92,7 +93,7 @@ with `no-cache` so a new release is picked up on the next visit.
 - Attack opens the 12-stage campaign. Every raid starts with a **30-second scouting phase**; the battle clock only starts when you deploy or when scouting runs out.
 - Tap an enemy defense to inspect its range without deploying. A mortar’s orange inner ring shows its 4-tile blind spot. Mortar shells travel for 1.15 seconds and land at a fixed point; moving troops can dodge them. Defenses keep their target while it remains alive and in range, so Giants can draw fire for fragile troops.
 - A continuous **red boundary** is drawn on the grass around every tile you may not deploy on.
-- Tap to deploy one troop, **hold and drag to spread a line of troops**, or double-tap to commit five at once. Keys 1–7 select troops; 8, 9, and 0 select Rage, Healing, and Lightning. The cards display their shortcuts. A quick drag still pans the camera.
+- Tap to deploy one troop, **hold and drag to spread a line of troops**, or double-tap to commit five at once. Keys 1–7 follow Barracks unlock order; 8, 9, and 0 select Lightning, Healing, and Rage. Unavailable units cannot be selected. The cards display their shortcuts. A quick drag still pans the camera.
 - Select a spell and tap anywhere — including inside the base. Rage boosts damage and speed, Healing restores troops standing in it, Lightning damages every building in a small radius instantly.
 - The destruction bar is marked at the 50%, Town Hall, and 100% star thresholds. Loot bars show what you have taken against what is there.
 - Surrender asks for confirmation and keeps the result and the loot already taken.

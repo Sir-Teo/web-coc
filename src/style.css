@@ -4200,3 +4200,69 @@ h3 {
 .reduce-motion .resource-flight {
   display: none;
 }
+
+/* Army navigation stays visible while the catalog scrolls. */
+.drawer-sheet:has(.army-strip) { max-height: min(65dvh, 400px); }
+.army-strip { overflow-y: auto; }
+.army-tile { min-height: min-content; }
+.army-categories {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.army-category {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 1px solid #ad9767;
+  border-bottom: 3px solid #ad9767;
+  border-radius: 8px;
+  background: linear-gradient(#fffbea, #eaddb9);
+  color: #645335;
+  cursor: pointer;
+}
+.army-category > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.army-category b { color: #4d3f2c; }
+.army-category:hover { filter: brightness(1.05); }
+.army-category:active { border-bottom-width: 1px; transform: translateY(2px); }
+.army-tile { cursor: default; }
+.army-locked .shop-tile-art img { filter: grayscale(1) opacity(0.55); }
+.army-locked { background: #eee6d0; border-color: #c6bba0; }
+@media (max-width: 700px) {
+  .army-categories { gap: 5px; }
+  .army-category { gap: 4px; padding: 3px 7px; }
+  .army-category > span { flex-direction: column; gap: 0; font-size: 10px; }
+  .army-category > svg { width: 15px; }
+}
+@media (max-height: 550px) {
+  .drawer-sheet:has(.army-strip) { max-height: calc(100dvh - 64px); }
+  .army-strip { padding-top: 7px; padding-bottom: 7px; overflow-y: auto; }
+  .army-strip .army-tile {
+    display: grid;
+    flex-basis: 192px;
+    grid-template-columns: 65px minmax(0, 1fr);
+    align-content: start;
+    align-items: center;
+    gap: 2px 6px;
+    padding: 6px;
+  }
+  .army-tile > * { grid-column: 2; }
+  .army-tile > .shop-tile-art {
+    grid-column: 1;
+    grid-row: 1 / span 7;
+    height: 92px;
+    align-items: center;
+  }
+  .army-tile .shop-tile-art img { max-width: 65px; max-height: 92px; }
+  .army-tile .shop-count { font-size: 9px; justify-content: center; }
+  .army-tile .shop-note { font-size: 8px; }
+  .army-tile h3 { font-size: 12px; }
+}
