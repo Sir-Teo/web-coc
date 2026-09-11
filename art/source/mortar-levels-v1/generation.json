@@ -1,0 +1,46 @@
+{
+  "mode": "built-in image_gen",
+  "date": "2026-09-11",
+  "reference": "https://coc.guide/defense/mortar",
+  "alphaExtractionPrompt": "Use case: background-extraction. Remove the entire background from this single Mortar sprite. Output a transparent PNG cutout with a REAL alpha channel: pixels outside the object must have alpha=0, not a checkerboard pattern, black, gray or white fill. Preserve the Mortar itself exactly: same shape, proportions, angle, framing, colours, metal, wood and details. Keep the dark inside of the barrel opaque. Remove all checkerboard squares/background pixels between the feet as well as around the outline. No ground shadow. Do not redraw, add details, change colours, crop, or add any background. The requested deliverable is the same object on actual TRANSPARENCY.",
+  "mattePrompt": "Edit the background only. Preserve this Mortar sprite exactly. Replace every checkerboard pixel outside the object and between its feet with one perfectly FLAT SOLID vivid hot MAGENTA #FF00FF background. No transparency, no checkerboard, no shadow, no gradient, no ground. Entire background must be uniform RGB(255,0,255). Preserve all gold, dark grey, blue and wood object pixels. Keep barrel interior dark and opaque. This is a production sprite chroma-key matte.",
+  "accepted": [
+    {
+      "level": 1,
+      "generatedFile": "exec-cfc06797-6b81-4917-af95-9a001cddaa03.png",
+      "source": "level-1.png",
+      "background": "generated alpha; near-opaque pixels normalized"
+    },
+    {
+      "level": 2,
+      "generatedFile": "exec-2ee32a22-d55e-485a-91e6-d7ac9eb0fc76.png",
+      "source": "level-2.png",
+      "background": "generated alpha; near-opaque pixels normalized"
+    },
+    {
+      "level": 3,
+      "generatedFile": "exec-c83066e4-7400-435d-81ae-f5f237252b85.png",
+      "source": "level-3.png",
+      "background": "generated alpha; near-opaque pixels normalized"
+    },
+    {
+      "level": 4,
+      "generatedFile": "exec-5e5cf5ad-c99c-4e7f-98e0-186ba6da0ddc.png",
+      "source": "level-4.png",
+      "background": "generated magenta matte; deterministic alpha extraction"
+    },
+    {
+      "level": 5,
+      "generatedFile": "exec-63cae6ed-0869-4535-8c02-fbc2e98f678b.png",
+      "source": "level-5.png",
+      "background": "generated alpha; near-opaque pixels normalized"
+    },
+    {
+      "level": 6,
+      "generatedFile": "exec-728b85f5-015b-4728-8aea-706e28e68413.png",
+      "source": "level-6.png",
+      "background": "generated magenta matte; deterministic alpha extraction"
+    }
+  ],
+  "rejected": "Initial six RGB backgrounds; levels 4 and 6 also failed two requested alpha extraction edits. These outputs were not shipped."
+}
