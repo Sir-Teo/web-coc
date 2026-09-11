@@ -155,6 +155,8 @@ async function boot() {
                   target: u.target,
                 })),
               shells: model.battle.shells,
+              projectiles: model.battle.projectiles ?? [],
+              deathBombs: Object.values(model.battle.deathBombs ?? {}).filter(b => !b.resolved && !b.cancelled),
               loot: model.battle.loot,
               finished: model.battle.finished,
             }

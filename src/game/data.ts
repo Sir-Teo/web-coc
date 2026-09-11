@@ -1,4 +1,5 @@
 import { teslaTexture, teslaAsset } from './tesla-art';
+import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
 import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
@@ -35,6 +36,7 @@ export type BuildingKind =
   | 'airdefense'
   | 'airsweeper'
   | 'tesla'
+  | 'bombtower'
   | 'seekingairmine'
   | 'laboratory'
   | 'spellfactory'
@@ -333,6 +335,24 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     minRange: SWEEPER.minRange,
     rate: SWEEPER.rate,
     targets: 'air',
+    singleArtwork: true,
+  },
+  bombtower: {
+    name: 'Bomb Tower',
+    description:
+      'Throws bombs at nearby ground troops. When destroyed, a larger bomb explodes after one second, damaging enemies still nearby.',
+    size: 3,
+    width: 130,
+    hp: DEFENSE_PROGRESSION.bombtower[0].hp,
+    cost: DEFENSE_PROGRESSION.bombtower[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 2,
+    available: [0, 0, 0, 0, 0, 0, 0, 1],
+    build: DEFENSE_PROGRESSION.bombtower[0].seconds,
+    damage: 26.4,
+    ...DEFENSE_WEAPONS.bombtower,
+    targets: 'ground',
     singleArtwork: true,
   },
   tesla: {
@@ -850,6 +870,7 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
 export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+  if (kind === 'bombtower') return bombTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'wall') return wallTexture(level);
@@ -864,6 +885,7 @@ const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
+  if (kind === 'bombtower') return bombTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);
   if (kind === 'seekingairmine') return mineAsset();

@@ -15,6 +15,11 @@ for (const [name, engine] of [
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...[1, 2].flatMap((l) =>
+      ['base', 'preview'].map((p) => `/assets/buildings/bombtower-v1/level-${l}-${p}.webp`),
+    ),
+    '/assets/buildings/bombtower-v1/bomber.webp',
+    '/assets/buildings/bombtower-v1/death-bomb.webp',
     ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/tesla-v1/level-${i + 1}.webp`),
     ...Array.from({ length: 4 }, (_, l) =>
       Array.from(

@@ -2,7 +2,8 @@ import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 
-export type Weapon = 'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'arcane' | 'healing';
+export type Weapon =
+  'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'towerbomb' | 'arcane' | 'healing';
 export interface CombatProjectile {
   id: string;
   weapon: Weapon;
@@ -28,6 +29,7 @@ const SPEED: Record<Weapon, number> = {
   rocket: 22,
   fireball: 14,
   bomb: 10,
+  towerbomb: 8,
   arcane: 16,
   healing: 12,
 };
@@ -51,7 +53,7 @@ export function launchProjectile(
     shot.weapon === 'bomb'
       ? 0.33
       : Math.max(
-          shot.weapon === 'healing' ? 0.01 : 0.12,
+          shot.weapon === 'healing' || shot.weapon === 'towerbomb' ? 0.01 : 0.12,
           Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / SPEED[shot.weapon],
         );
   const projectile: CombatProjectile = {
@@ -88,7 +90,7 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
 /** Resolve once even if the shooter died. Direct shots never switch targets. */
 export function stepProjectiles(
   battle: Battle,
-  damage: (target: Building, power: number) => void,
+  damage: (target: Building, power: number, at: number) => void,
   emit: (fx: FX) => void,
 ) {
   const pending: CombatProjectile[] = [];
@@ -96,7 +98,7 @@ export function stepProjectiles(
     const target = p.targetBuilding
       ? battle.buildings.find((b) => b.id === p.targetId)
       : battle.units.find((u) => u.id === p.targetId);
-    if (target && target.hp > 0 && p.weapon !== 'healing') {
+    if (target && target.hp > 0 && p.weapon !== 'healing' && p.weapon !== 'towerbomb') {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
       p.y = aim.y;
@@ -120,7 +122,7 @@ export function stepProjectiles(
                 (unit.hero ? HEALER_HERO_SCALE : 1),
           );
     } else if (p.targetBuilding) {
-      if (target && target.hp > 0) damage(target as Building, p.damage);
+      if (target && target.hp > 0) damage(target as Building, p.damage, p.impact);
       if (p.splash)
         for (const b of battle.buildings) {
           if (b.id === p.targetId || b.hp <= 0 || isTrap(b.kind)) continue;
@@ -129,7 +131,7 @@ export function stepProjectiles(
             Math.max(b.x - p.x, 0, p.x - b.x - size),
             Math.max(b.y - p.y, 0, p.y - b.y - size),
           );
-          if (distance <= p.splash) damage(b, p.damage);
+          if (distance <= p.splash) damage(b, p.damage, p.impact);
         }
     } else if (p.splash) {
       for (const u of battle.units)

@@ -1,5 +1,6 @@
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import { validDirection } from './air-control-stats';
+import { primeDeathBomb, stepDeathBombs, bombTowerDeathDamage, type DeathBomb } from './bomb-tower';
 import {
   stepSweepers,
   stepAirPush,
@@ -252,6 +253,7 @@ export interface Battle {
   sweepers?: Record<number, SweeperState>;
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
+  deathBombs?: Record<number, DeathBomb>;
   hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -1794,7 +1796,8 @@ export class GameModel {
     dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
     if (revealTeslas(b, this.onEffect)) this.changed();
-    stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
+    stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
+    stepDeathBombs(b, this.onEffect);
     stepSpellAuras(b);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
@@ -2099,13 +2102,15 @@ export class GameModel {
             splash: d.splash,
             toAir: TROOPS[target.kind].flying,
             weapon:
-              tower.kind === 'airdefense'
-                ? 'rocket'
-                : tower.kind === 'archertower'
-                  ? 'arrow'
-                  : tower.kind === 'wizardtower'
-                    ? 'arcane'
-                    : 'cannonball',
+              tower.kind === 'bombtower'
+                ? 'towerbomb'
+                : tower.kind === 'airdefense'
+                  ? 'rocket'
+                  : tower.kind === 'archertower'
+                    ? 'arrow'
+                    : tower.kind === 'wizardtower'
+                      ? 'arcane'
+                      : 'cannonball',
             sourceId: tower.id,
             targetId: target.id,
             targetBuilding: false,
@@ -2144,6 +2149,7 @@ export class GameModel {
       b.elapsed >= BATTLE_SECONDS ||
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
+        !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !b.units.some((u) => u.hp > 0 && !TROOPS[u.kind].healer) &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !TROOPS[k].healer) &&
         !b.spells.lightning &&
@@ -2195,11 +2201,19 @@ export class GameModel {
       if (building.hp > 0 && distanceTo(u, building) <= radius)
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
-  damage(b: Building, n: number) {
+  damage(b: Building, n: number, at = this.battle?.elapsed ?? 0) {
     if (b.hp <= 0 || isTrap(b.kind) || (this.battle && concealedTesla(this.battle, b))) return;
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
+      if (this.battle && b.kind === 'bombtower')
+        primeDeathBomb(
+          this.battle,
+          b,
+          bombTowerDeathDamage(b.level) *
+            (this.battle.practice ? 1 : CAMPAIGN_LAYOUTS[this.battle.index].defense),
+          at,
+        );
       this.onEffect({
         type: 'destroy',
         x: b.x + BUILDINGS[b.kind].size / 2,
@@ -2220,6 +2234,7 @@ export class GameModel {
     b.finished = true;
     b.projectiles = [];
     b.shells = [];
+    for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
     const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
     // A playback runner reproduces the recorded result without applying a
     // second village's storage limits or producing rewards/history of its own.

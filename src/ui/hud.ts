@@ -2,6 +2,7 @@ import { sweeperStats } from '../game/air-control-stats';
 import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
+import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
 import {
   MAX_SPELL_LEVEL,
   SPELL_LEVELS,
@@ -129,6 +130,12 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
       d.targets === 'air' ? 'Air only' : d.targets === 'ground' ? 'Ground only' : 'Ground & air',
     ]);
   }
+  if (kind === 'bombtower')
+    rows.push(
+      ['Swords', 'Death damage', n(bombTowerDeathDamage(level))],
+      ['Target', 'Death blast radius', `${BOMB_TOWER.deathRadius} tiles`],
+      ['Clock3', 'Death fuse', `${BOMB_TOWER.deathDelay}s`],
+    );
   if (kind === 'tesla')
     rows.push(
       ['Radar', 'Reveal radius', '6 tiles'],

@@ -433,6 +433,20 @@ const CAMPAIGN_TESLAS: readonly (readonly Blueprint[])[] = [
   ],
 ];
 /** Authored structure footprints plus rings with deliberate gates and no overlapping posts. */
+const CAMPAIGN_BOMB_TOWERS: readonly (readonly Blueprint[])[] = [
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [],
+  [['bombtower', 14, 17]],
+  [['bombtower', 12, 15]],
+  [['bombtower', 21, 13]],
+  [['bombtower', 19, 7]],
+];
 export function campaignBlueprint(index: number): Blueprint[] {
   const layout = CAMPAIGN_LAYOUTS[index];
   if (!layout) throw new RangeError('Unknown campaign stage');
@@ -441,6 +455,7 @@ export function campaignBlueprint(index: number): Blueprint[] {
     ...CAMPAIGN_TRAPS[index],
     ...CAMPAIGN_AIR_CONTROL[index],
     ...CAMPAIGN_TESLAS[index],
+    ...CAMPAIGN_BOMB_TOWERS[index],
   ];
   const occupied = new Set<string>();
   for (const [k, x, y] of result)

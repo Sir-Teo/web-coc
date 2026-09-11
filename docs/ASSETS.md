@@ -1,5 +1,7 @@
 # Art direction and generation record
 
+Bomb Tower art retains two tower bases, a four-pose roof Bomber and an exposed destruction bomb under `art/source/bombtower-v1/`, with exact built-in generation prompts. `scripts/bomb-tower-assets.mjs` builds the two base/preview pairs, actor atlas and charge; `--check` verifies deterministic output. See [BOMB-TOWER.md](BOMB-TOWER.md).
+
 Hidden Tesla sprites for levels 1–6 are retained under `art/source/tesla-v1/` with built-in generation prompts and accepted iterations. `scripts/tesla-assets.mjs` builds six transparent 384×512 sprites and verifies repeat builds with `--check`. See [HIDDEN-TESLA.md](HIDDEN-TESLA.md).
 
 Air-control defense art is retained under `art/source/air-control-v1/`: four eight-direction Air Sweeper sheets and armed/flying/spent Seeking Air Mine states. `scripts/air-control-assets.mjs` builds 35 alpha sprites and verifies a repeat build with `--check`. Accepted sprites have real alpha; failed checkerboard candidates were rejected. See [AIR-CONTROL.md](AIR-CONTROL.md).

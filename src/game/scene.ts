@@ -1,3 +1,13 @@
+import {
+  BOMB_TOWER_ART_LEVELS,
+  bombTowerTexture,
+  bombTowerAsset,
+  BOMBER_ASSET,
+  DEATH_BOMB_ASSET,
+  BOMB_TOWER_ROOF,
+  BOMBER_WIDTH,
+} from './bomb-tower-art';
+import { bomberFrame } from './bomb-tower';
 import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
 import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
@@ -44,6 +54,7 @@ const WOOD_RUINS = new Set<BuildingKind>([
   'archertower',
   'cannon',
   'tesla',
+  'bombtower',
 ]);
 const SPELL_COLOR: Record<string, number> = {
   rage: 0xcf79ef,
@@ -110,6 +121,8 @@ export class VillageScene extends Phaser.Scene {
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private mineFlights = new Map<number, Phaser.GameObjects.Image>();
+  private roofBombers = new Map<number, Phaser.GameObjects.Image>();
+  private deathBombSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
   private campViews = new Map<string, Phaser.GameObjects.Image>();
@@ -126,6 +139,12 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const level of BOMB_TOWER_ART_LEVELS) {
+      this.load.image(bombTowerTexture(level), bombTowerAsset(level, 'base'));
+      if (level > 1) this.load.image(`bombtower-preview-${level}`, bombTowerAsset(level));
+    }
+    this.load.spritesheet('roof-bomber', BOMBER_ASSET, { frameWidth: 256, frameHeight: 256 });
+    this.load.image('tower-death-bomb', DEATH_BOMB_ASSET);
     for (const level of TESLA_ART_LEVELS)
       if (level > 1) this.load.image(teslaTexture(level), teslaAsset(level));
     for (const level of SWEEPER_ART_LEVELS)
@@ -683,6 +702,10 @@ export class VillageScene extends Phaser.Scene {
       this.sprites.clear();
       this.unitSprites.clear();
       this.bubbles.clear();
+      for (const actor of this.roofBombers.values()) actor.destroy();
+      for (const bomb of this.deathBombSprites.values()) bomb.destroy();
+      this.roofBombers.clear();
+      this.deathBombSprites.clear();
       this.mode = mode;
       if (!keepCamera) this.resetCamera();
     }
@@ -830,6 +853,8 @@ export class VillageScene extends Phaser.Scene {
         this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
       );
       this.updateGhost(this.pointerScreen());
+      if (this.model.placement === 'bombtower')
+        this.ghost.setTexture(level === 1 ? 'bombtower' : `bombtower-preview-${level}`);
     } else {
       this.ghost?.destroy();
       this.ghost = undefined;
@@ -851,7 +876,12 @@ export class VillageScene extends Phaser.Scene {
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
-      wall || camp || kind === 'mortar' || kind === 'airsweeper' || kind === 'tesla'
+      wall ||
+      camp ||
+      kind === 'mortar' ||
+      kind === 'airsweeper' ||
+      kind === 'tesla' ||
+      kind === 'bombtower'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -1126,6 +1156,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
+    this.drawBombTowers();
     const g = this.overlay;
     g.clear();
     const b = this.model.buildings.find((b) => b.id === this.model.selected);
@@ -1619,12 +1650,12 @@ export class VillageScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.0022);
       return;
     }
-    if (fx.type === 'blast' && fx.weapon === 'cannonball') {
+    if (fx.type === 'blast' && (fx.weapon === 'cannonball' || fx.weapon === 'towerbomb')) {
       this.combatEffects.groundBlast(
         p,
         fx.radius ?? 1.5,
         this.model.state.settings.reducedMotion,
-        'mortar',
+        fx.weapon === 'towerbomb' ? 'towerbomb' : 'mortar',
       );
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
@@ -1675,8 +1706,8 @@ export class VillageScene extends Phaser.Scene {
     ) {
       const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
-      if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
-        this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced);
+      if (fx.type === 'impact' && (fx.weapon === 'bomb' || fx.weapon === 'towerbomb') && fx.radius)
+        this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced, fx.weapon);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
       else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
       else
@@ -1686,7 +1717,8 @@ export class VillageScene extends Phaser.Scene {
           to,
           reduced,
         );
-      if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
+      if (fx.weapon === 'towerbomb' && fx.type === 'impact') this.audio.play('destroy');
+      else if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
@@ -1749,6 +1781,18 @@ export class VillageScene extends Phaser.Scene {
   private projectileAnchors(fx: FX) {
     const p = iso(fx.x, fx.y),
       q = iso(fx.toX!, fx.toY!);
+    if (fx.weapon === 'towerbomb') {
+      const source = this.sprites.get(fx.sourceId!);
+      const height = source?.getData('intactHeight') ?? (130 * 512) / 384;
+      const facing = Math.sign(q.x - p.x) || -1;
+      return {
+        from: {
+          x: p.x + facing * BOMBER_WIDTH * 0.2,
+          y: p.y - height * (0.88 - BOMB_TOWER_ROOF.y) - BOMBER_WIDTH * 0.48,
+        },
+        to: { x: q.x, y: q.y },
+      };
+    }
     const source =
       fx.sourceId == null
         ? undefined
@@ -1831,9 +1875,73 @@ export class VillageScene extends Phaser.Scene {
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
-      this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
+      if (p.weapon === 'towerbomb')
+        this.combatEffects.poseTowerBomb(p.id, iso(p.fromX, p.fromY), to, from, progress);
+      else this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
   }
+  private drawBombTowers() {
+    const battle = this.model.battle,
+      reduced = this.model.state.settings.reducedMotion;
+    const towers = this.model.buildings.filter(
+      (v) => v.kind === 'bombtower' && v.hp > 0 && this.model.visibleBuilding(v),
+    );
+    const pending = Object.values(battle?.deathBombs ?? {}).filter(
+      (b) => !battle?.finished && !b.resolved && !b.cancelled,
+    );
+    for (const [id, actor] of this.roofBombers)
+      if (!towers.some((v) => v.id === id)) {
+        actor.destroy();
+        this.roofBombers.delete(id);
+      }
+    for (const [id, sprite] of this.deathBombSprites)
+      if (!pending.some((v) => v.sourceId === id)) {
+        sprite.destroy();
+        this.deathBombSprites.delete(id);
+      }
+    for (const tower of towers) {
+      const base = this.sprites.get(tower.id);
+      if (!base) continue;
+      let actor = this.roofBombers.get(tower.id);
+      if (!actor) {
+        actor = this.add
+          .image(0, 0, 'roof-bomber')
+          .setOrigin(0.5, 232 / 256)
+          .setData('bomber', tower.id);
+        this.roofBombers.set(tower.id, actor);
+      }
+      const target = battle?.units.find(
+        (u) => u.id === battle.defenseTargets[tower.id] && u.hp > 0,
+      );
+      actor
+        .setFrame(bomberFrame(tower, battle, reduced))
+        .setDisplaySize(BOMBER_WIDTH, BOMBER_WIDTH)
+        .setPosition(base.x, base.y - base.displayHeight * (base.originY - BOMB_TOWER_ROOF.y))
+        .setDepth(base.depth + 0.1)
+        .setAlpha(base.alpha)
+        .setVisible(!tower.constructing)
+        .setFlipX(!!target && iso(target.x, target.y).x > base.x);
+    }
+    for (const bomb of pending) {
+      let sprite = this.deathBombSprites.get(bomb.sourceId);
+      if (!sprite) {
+        sprite = this.add
+          .image(0, 0, 'tower-death-bomb')
+          .setOrigin(0.5, 0.82)
+          .setData('deathBomb', bomb.sourceId);
+        this.deathBombSprites.set(bomb.sourceId, sprite);
+      }
+      const p = iso(bomb.x, bomb.y),
+        age = Math.max(0, battle!.elapsed - bomb.armedAt);
+      sprite
+        .setPosition(p.x, p.y)
+        .setDisplaySize(32, 32)
+        .setDepth(p.y + 0.5);
+      if (!reduced && Math.sin(age * 34) > 0.35) sprite.setTint(0xffb085);
+      else sprite.clearTint();
+    }
+  }
+
   update(time: number, delta: number) {
     if (this.paused) return;
     this.renderClock = time;

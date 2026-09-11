@@ -10,6 +10,7 @@ const COLORS: Record<Weapon, number> = {
   rocket: 0xffa94a,
   fireball: 0xff8c32,
   bomb: 0xffb54f,
+  towerbomb: 0xffb54f,
   arcane: 0xcf8dff,
   healing: 0xffed8a,
 };
@@ -92,11 +93,11 @@ export class CombatEffects {
       g.fillStyle(color).fillCircle(0, 0, 7);
       g.fillStyle(0xfff4cf).fillCircle(2, -1, 3);
     } else {
-      const radius = weapon === 'bomb' ? 6 : 4;
+      const radius = weapon === 'bomb' || weapon === 'towerbomb' ? 6 : 4;
       g.fillStyle(0x272a2d).fillCircle(0, 0, radius);
       g.lineStyle(1, 0x141619).strokeCircle(0, 0, radius);
       g.fillStyle(0x90918b).fillCircle(-2, -2, 1.5);
-      if (weapon === 'bomb') {
+      if (weapon === 'bomb' || weapon === 'towerbomb') {
         g.lineStyle(2, 0xcda867).lineBetween(0, -6, 3, -9);
         g.fillStyle(0xffd56b).fillCircle(3, -9, 2);
       }
@@ -133,6 +134,28 @@ export class CombatEffects {
     g.fillStyle(0x302b26).fillCircle(0, 0, 5);
     g.lineStyle(1, 0xc59b55).strokeCircle(0, 0, 5);
     g.fillStyle(0xb8b2a3).fillCircle(-1.5, -2, 1.5);
+  }
+
+  /** Fixed-point thrown bomb, with its shadow staying on the ground plane. */
+  poseTowerBomb(id: string, ground: Point, to: Point, muzzle: Point, progress: number) {
+    let g = this.flights.get(id);
+    if (!g) {
+      g = this.graphic().setData('projectileId', id).setData('weapon', 'towerbomb');
+      this.flights.set(id, g);
+    }
+    const x = muzzle.x + (to.x - muzzle.x) * progress;
+    const y = muzzle.y + (to.y - muzzle.y) * progress - Math.sin(progress * Math.PI) * 42;
+    const lift = ground.y + (to.y - ground.y) * progress - y;
+    g.clear().setPosition(x, y).setData('flightProgress', progress);
+    g.fillStyle(0x332b25, 0.22).fillEllipse(0, lift, 13, 6);
+    g.fillStyle(0x20242a).fillCircle(0, 0, 5.5);
+    g.lineStyle(1, 0x131719).strokeCircle(0, 0, 5.5);
+    g.fillStyle(0x858b91).fillCircle(-1.6, -2, 1.5);
+    const angle = -Math.PI / 2 + progress * Math.PI * 2;
+    const fx = Math.cos(angle) * 8,
+      fy = Math.sin(angle) * 8;
+    g.lineStyle(1.6, 0xd2ae66).lineBetween(Math.cos(angle) * 5, Math.sin(angle) * 5, fx, fy);
+    g.fillStyle(0xffd367).fillCircle(fx, fy, 1.7);
   }
 
   retainProjectiles(ids: Set<string>) {
@@ -181,7 +204,12 @@ export class CombatEffects {
     }
   }
 
-  groundBlast(at: Point, radius: number, reduced: boolean, kind: 'bomb' | 'mortar' = 'bomb') {
+  groundBlast(
+    at: Point,
+    radius: number,
+    reduced: boolean,
+    kind: 'bomb' | 'mortar' | 'towerbomb' = 'bomb',
+  ) {
     const g = this.graphic().setDepth(7000).setPosition(at.x, at.y).setData('impact', kind);
     const width = radius * 64 * Math.SQRT2,
       height = width / 2;
