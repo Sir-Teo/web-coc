@@ -27,7 +27,7 @@ Shells retain their launch damage and land at the selected location, so moving t
 
 Tests cover exact-resource upgrades through every playable level, timer boundaries, builder reservations, saved health/timestamps, count gates, legacy levels, actual shell damage at every accepted level, blind-spot/range boundaries, ground/air targeting, 20/30/60 fps cadence and the battle deadline. Existing tests also cover splash, dodging, destroyed launchers, campaign viability and replay reproduction. Browser checks inspect the Info panel, restore paid upgrade timers after reload, and select a Mortar's range rings without ending scouting.
 
-Mortars still use the prototype 2×2 footprint and two artwork tiers. Native 3×3 layout migration, full per-level artwork and geared-up burst mode remain unfinished. Shell flight duration (1.15s) remains local tuning; this audit does not establish native projectile speed, animation or knockback parity.
+Mortars have distinct original artwork for playable levels 1–6; accepted legacy levels 7–10 share level 6. See [MORTAR-ART.md](MORTAR-ART.md). They still use the prototype 2×2 footprint. Native 3×3 layout migration, artwork beyond level 6 and geared-up burst mode remain unfinished. Shell flight duration (1.15s) remains local tuning; this audit does not establish native projectile speed, animation or knockback parity.
 
 ## Shell presentation
 

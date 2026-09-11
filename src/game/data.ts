@@ -1,5 +1,6 @@
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset } from './wall-art';
+import { mortarAsset } from './mortar-art';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
 export type BuildingKind =
@@ -255,7 +256,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description:
       'Lobs shells at groups of ground attackers. Rush inside its 4-tile blind spot to avoid its fire.',
     size: 2,
-    width: 93,
+    width: 104,
     hp: DEFENSE_PROGRESSION.mortar[0].hp,
     cost: DEFENSE_PROGRESSION.mortar[0].cost,
     resource: 'gold',
@@ -647,6 +648,7 @@ const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
   if (kind === 'wall') return wallAsset(level);
+  if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
   if (

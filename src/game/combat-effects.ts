@@ -82,16 +82,17 @@ export class CombatEffects {
   }
 
   /** A shell and its ground shadow share a battle-time pose, never a wall-clock tween. */
-  poseMortar(id: string, from: Point, to: Point, muzzleLift: number, progress: number) {
+  poseMortar(id: string, from: Point, to: Point, muzzle: Point, progress: number) {
     let g = this.flights.get(id);
     if (!g) {
       g = this.graphic().setData('projectileId', id).setData('mortarShell', true);
       this.flights.set(id, g);
     }
-    const x = from.x + (to.x - from.x) * progress;
+    const x = muzzle.x + (to.x - muzzle.x) * progress;
     const groundY = from.y + (to.y - from.y) * progress;
-    const lift = muzzleLift * (1 - progress) + Math.sin(progress * Math.PI) * 115;
-    g.clear().setPosition(x, groundY - lift).setData('flightProgress', progress);
+    const y = muzzle.y + (to.y - muzzle.y) * progress - Math.sin(progress * Math.PI) * 115;
+    const lift = groundY - y;
+    g.clear().setPosition(x, y).setData('flightProgress', progress);
     g.fillStyle(0x342b22, 0.14 + 0.2 * (1 - Math.min(1, lift / 160)));
     g.fillEllipse(0, lift, 14, 7);
     g.fillStyle(0xffb14a, 0.45).fillCircle(0, 0, 7);

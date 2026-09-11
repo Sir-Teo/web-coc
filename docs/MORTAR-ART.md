@@ -1,0 +1,13 @@
+# Mortar artwork, levels 1–6
+
+Six original sprites replace the two atlas tiers for every playable Mortar level. The visual reference was [CoC Guide's Mortar gallery](https://coc.guide/defense/mortar), inspected September 11, 2026. Its raised barrel, timber carriage, increasingly gold reinforcement and later blue supports inform these recreations. Native reference images were used for inspection, not shipped. These are original generated interpretations, not pixel-exact native assets.
+
+The built-in `image_gen` tool produced each level separately. Exact initial prompts are in `art/source/mortar-levels-v1/prompts.json`; extraction prompts and accepted output provenance are in `generation.json` alongside the six source PNGs. The initial renders incorrectly painted their backgrounds. Levels 1, 2, 3 and 5 received successful alpha extraction edits. Two further extraction attempts for levels 4 and 6 failed, so those levels received a uniform magenta matte edit instead.
+
+`node scripts/mortar-assets.mjs` deterministically extracts the two mattes, snaps nearly opaque material pixels to full opacity, trims, fits inside 350×350 and aligns the feet at y=366 inside transparent 384×384 frames. Lossless WebP files live in `public/assets/buildings/mortar-levels-v1/`. `--check` byte-compares a fresh rebuild with the committed assets and runs in CI. There is no runtime image-service dependency. Earlier atlas Mortars remain on disk as inputs to legacy derived assets.
+
+The village, contextual card, Info sheet, upgrades and moving preview select the same level through `mortar-art.ts`. Mortars use a stable 104px frame without generic level growth or gold tint. Levels 7–10 accepted from older saves fall back to level 6; they do not have distinct art. Each level has a measured barrel-opening anchor used by both the muzzle flash and shell flight. The scene records that anchor before rendering ruins, so an airborne shell stays on its original trajectory after its launcher is destroyed.
+
+Verification covers distinct images, transparent borders, aligned feet, opaque dark barrel anchors, stable scale and position through a paid upgrade, matching contextual/Info art, moving previews, battle-time projectile presentation, reduced motion and replay seeking. Production checks require all six new textures and exercise offline reload. Inspect the gallery and phone Info captures in `output/playtest/` for visual evidence.
+
+The prototype 2×2 footprint still differs from the native 3×3 building. Camera, animation and exact native shape parity remain further work; this asset pass changes no simulation or replay rules.

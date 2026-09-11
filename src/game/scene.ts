@@ -1,3 +1,4 @@
+import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
 import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
 import { OBSTACLES } from './obstacles';
 import Phaser from 'phaser';
@@ -100,13 +101,15 @@ export class VillageScene extends Phaser.Scene {
   }
   preload() {
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
+    for (const level of MORTAR_ART_LEVELS)
+      if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
     this.load.image('king', asset('king'));
     this.load.image('terrain', '/assets/environment/terrain-expanded-v2.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+      if (k !== 'wall' && k !== 'mortar' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
@@ -609,11 +612,12 @@ export class VillageScene extends Phaser.Scene {
         this.sprites.set(b.id, im);
       }
       const texture = b.kind === 'wall' ? wallTexture(b.level) :
+        b.kind === 'mortar' ? mortarTexture(b.level) :
         b.level >= TIER3_LEVEL && !d.singleArtwork
           ? `${b.kind}-tier3`
           : b.kind;
       if (im.texture.key !== texture) im.setTexture(texture);
-      const levelScale = b.kind === 'wall' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
+      const levelScale = b.kind === 'wall' || b.kind === 'mortar' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
       im.setPosition(p.x, p.y)
         .setOrigin(0.5, b.kind === 'wall' ? .84 : .88)
         .setFlipX(false)
@@ -624,9 +628,16 @@ export class VillageScene extends Phaser.Scene {
         .setDepth(p.y);
       im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
       im.setData('intactHeight', im.displayHeight);
+      if (b.kind === 'mortar') {
+        const muzzle = mortarMuzzle(b.level);
+        im.setData('mortarMuzzle', {
+          x: im.x + (muzzle.x - im.originX) * im.displayWidth,
+          y: im.y + (muzzle.y - im.originY) * im.displayHeight,
+        });
+      }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall') im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar') im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -686,7 +697,8 @@ export class VillageScene extends Phaser.Scene {
     }
     if (this.model.placement) {
       const level = this.model.moving === null ? 1 : this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
-      const texture = this.model.placement === 'wall' ? wallTexture(level) : this.model.placement;
+      const texture = this.model.placement === 'wall' ? wallTexture(level) :
+        this.model.placement === 'mortar' ? mortarTexture(level) : this.model.placement;
       if (this.ghost?.texture.key !== texture) {
         this.ghost?.destroy();
         this.ghost = this.add
@@ -881,7 +893,7 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined)
-        ? this.model.placement === 'wall' ? 0xffffff : 0xd9ffb0
+        ? this.model.placement === 'wall' || this.model.placement === 'mortar' ? 0xffffff : 0xd9ffb0
         : 0xff7272,
     );
   }
@@ -1233,9 +1245,7 @@ export class VillageScene extends Phaser.Scene {
     }
     if (fx.type === 'mortar-fire') {
       if (!this.model.state.settings.reducedMotion)
-        this.combatEffects.muzzle('cannonball', {
-          x: p.x, y: p.y - this.mortarMuzzleLift(fx.sourceId!),
-        });
+        this.combatEffects.muzzle('cannonball', this.mortarMuzzlePoint(fx.sourceId!, p));
       this.audio.play('hit');
       return;
     }
@@ -1347,9 +1357,10 @@ export class VillageScene extends Phaser.Scene {
     return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
   }
 
-  private mortarMuzzleLift(sourceId: number) {
+  private mortarMuzzlePoint(sourceId: number, ground: { x: number; y: number }) {
     const source = this.sprites.get(sourceId);
-    return source ? (source.getData('intactHeight') ?? source.displayHeight) * 0.7 : 28;
+    return (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ??
+      { x: ground.x, y: ground.y - 28 };
   }
 
   private drawProjectiles() {
@@ -1365,7 +1376,7 @@ export class VillageScene extends Phaser.Scene {
       );
       this.combatEffects.poseMortar(
         shellId(shell), iso(shell.fromX, shell.fromY), iso(shell.x, shell.y),
-        this.mortarMuzzleLift(shell.sourceId), progress,
+        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)), progress,
       );
     }
     for (const p of shots) {

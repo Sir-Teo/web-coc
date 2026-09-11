@@ -12,6 +12,7 @@ for (const [name, engine] of [
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`),
     '/assets/buildings/airdefense-v2.webp',
     '/assets/buildings/tier3/airdefense-v2.webp',
     '/assets/buildings/spellfactory-v2.webp',

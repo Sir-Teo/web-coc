@@ -1,5 +1,13 @@
 # Verification record
 
+## Mortar artwork — September 11, 2026
+
+Six original level sprites replace the two atlas tiers across the village, Info, paid upgrades and moving previews. All 282 unit tests pass. Eighteen targeted scenarios pass in each of Chromium and WebKit, including all six muzzle anchors, airborne shells after launcher destruction, reduced motion, replay seeking and shared defense presentation. Production checks pass in both engines; Chromium reloads, opens the Army drawer and plays a replay offline with 98 cached files. All six new Mortar textures are explicitly required by the production check. The deterministic asset check also passes.
+
+Visual review covers transparent edges against grass, a six-level gallery, the phone Info panel and shell flight. The first new Info test incorrectly tried to reopen a still-open sheet after an upgrade; it now checks the live update. Source alpha near 253 was normalized to full opacity, and generated checkerboard backgrounds were rejected. See [MORTAR-ART.md](MORTAR-ART.md) for provenance and remaining fidelity limits. Detailed evidence is in `output/playtest/mortar-art-verification.json`.
+
+## Earlier milestones
+
 Verified locally on September 10, 2026. The hero/progression pass has **99 passing simulation/save tests**, a successful production build, and **71 precached files**. All **43 browser scenarios** pass across the full run and targeted rerun: the first run passed 40/42, revealing one obsolete Town Hall expectation and a real phone Army-menu clipping bug. After fixing both and adding a dark-elixir collection case, all 22 affected hero/army/expansion/specialist scenarios passed. Other scenarios retained their passing full-run result.
 
 Production checks in Chromium and WebKit pass for boot, shop, research, tab handoff, imported hero saves, gem-finished hero upgrades, pointer deployment and H-key ability use. Chromium also reloads and plays the upgraded hero offline with cached artwork. Reports: `output/playtest/production-report.json` and `hero-production-report.json`. Run `node scripts/production-check.mjs` and `node scripts/hero-production-check.mjs` after a build with the development and preview servers running.
@@ -170,7 +178,7 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 - The campaign matrix does not cover balloon-led, specialist-led, or spell-supported attacks; focused interaction tests cover the new specialists.
 - Specialist health/damage and the resource loot shares are tuned for this local campaign, not the current live game economy.
 - Air troops have a float cycle but no distinct attack or death animation.
-- Most buildings share base artwork at levels 1–4 and final-tier artwork at level 5 and above. Walls have distinct artwork at levels 1–8; the other buildings still need per-level art.
+- Most buildings share base artwork at levels 1–4 and final-tier artwork at level 5 and above. Walls have distinct artwork at levels 1–8 and Mortars at levels 1–6; the other buildings still need per-level art.
 - Physical iOS/Android performance, multi-hour sleep/resume endurance, and accessibility review remain release gates.
 
 ## Replay audit — September 11, 2026
