@@ -270,7 +270,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   airdefense: {
     name: 'Air Defense',
-    description: 'A cold-steel flak gun. Devastating against balloons — and blind to the ground.',
+    description: 'An iron rocket battery. Devastating against balloons — and blind to the ground.',
     size: 3,
     width: 104,
     hp: 1100,
@@ -634,6 +634,9 @@ export const springCapacity = (level: number) => 10 + (level - 1) * 2;
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
+const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
+const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
+export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
@@ -643,10 +646,10 @@ export const asset = (kind: string, level = 1) => {
     kind !== 'wall' &&
     !BUILDINGS[kind as BuildingKind].singleArtwork
   )
-    return `/assets/buildings/tier3/${kind}.webp`;
+    return `/assets/buildings/tier3/${artName(kind)}.webp`;
   const folder =
     kind in TROOPS ? 'characters' : ENVIRONMENT.has(kind) ? 'environment' : 'buildings';
-  return `/assets/${folder}/${kind}.webp`;
+  return `/assets/${folder}/${artName(kind)}.webp`;
 };
 /** Explicit catalog ceilings; old villages retain existing buildings above them. */
 export const maxLevelFor = (kind: BuildingKind, townhall: number) =>

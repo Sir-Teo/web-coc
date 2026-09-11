@@ -30,9 +30,13 @@ The generated usable output is 1254×1254. `scripts/walk-atlas.mjs` extracts mea
 
 1536×1024 transparent PNG with 4 columns × 3 rows in the same building order as the base set. Preserve the southeast orthographic view and cheerful orange-roof, ivory-stone, blue-banner palette. All buildings are visibly upgraded: dark slate reinforced bases, gleaming gold braces, thicker foundations, gold finials, additional battlements, and royal banners. Town hall gains towers and gold ridge caps; mine gains reinforced machinery and a second ore cart; collector gains paired vats; storages gain gold framing; barracks gains crossed swords; cannon and mortar gain black-and-gold armor; tower gains reinforced stone battlements; camp gains royal tents; builder gains a gold hammer sign; laboratory gains ornate gold fittings and brighter violet magic. No text, grid, interface, scene background, or watermark. Actual RGBA transparency.
 
-### Air layer and spells — derived, not generated
+### Air layer — original replacement sprites, September 11
 
-The Air Defense, Spell Factory, Balloon, and the three spell vials were added after the original generation pass and contain **no new generated bitmaps**. `scripts/derived-assets.mjs` builds each of them from art already committed here, using only deterministic sharp transforms and drawn vector overlays:
+The active Balloon, Air Defense and Spell Factory use the original artwork documented in [AIR-MAGIC-ART.md](AIR-MAGIC-ART.md). The Balloon has a fabric envelope and skeleton bomber; Air Defense uses three upright rockets; Spell Factory uses an open purple cauldron. Both buildings have separate reinforced level 5+ variants. Versioned `-v2.webp` paths preserve the earlier assets. The accepted sources have real RGBA transparency and rebuild through `scripts/air-magic-assets.mjs`.
+
+### Earlier air layer and spell vials — derived, not generated
+
+The earlier Air Defense, Spell Factory, Balloon, and the three spell vials contain **no new generated bitmaps**. The building and troop assets below have been superseded by the v2 sprites; the spell vials remain active. `scripts/derived-assets.mjs` preserves their deterministic rebuild from existing art and vector overlays:
 
 - **Air Defense** (`airdefense.webp`, and its final tier) is `mortar.webp` hue-rotated 190° with slightly raised saturation and brightness. The mortar's up-angled barrel on an octagonal base already reads as anti-air; the recolour to cold steel-blue is what separates it from its ground-only sibling at a glance.
 - **Spell Factory** (`spellfactory.webp`, and its final tier) is `laboratory.webp` hue-rotated 40°, turning its blue roof and violet glassware to the arcane magenta of brewed spells while keeping the same silhouette family.
@@ -52,6 +56,7 @@ The Goblin and Wall Breaker use original transparent sprites generated with the 
 - `scripts/tier3-assets.mjs`: final-tier building extraction and WebP encoding.
 - `scripts/derived-assets.mjs`: deterministic recolours, masks, and drawn overlays for the air-layer and spell artwork.
 - `scripts/raiding-assets.mjs`: alpha-preserving normalization for the Goblin and Wall Breaker.
+- `scripts/air-magic-assets.mjs`: original Air Defense, Spell Factory, their upgraded variants, and stable-scale Balloon sprite/animation normalization.
 - `npm run assets`: rebuilds every shipping bitmap from the committed source artwork.
 - Wall connections, hit particles, health bars, placement grids, and small resource glyphs are renderer-native geometry. Effects audio is synthesized locally with Web Audio.
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.

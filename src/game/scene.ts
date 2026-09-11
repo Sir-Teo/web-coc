@@ -8,6 +8,7 @@ import {
   TROOP_KEYS,
   TIER3_LEVEL,
   asset,
+  walkAsset,
   type BuildingKind,
 } from './data';
 import { GameModel, type Building, type FX } from './model';
@@ -76,7 +77,7 @@ export class VillageScene extends Phaser.Scene {
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of TROOP_KEYS.filter((kind) => !TROOPS[kind].staticSprite))
-      this.load.spritesheet(`${k}-walk`, `/assets/characters/walk/${k}.webp`, {
+      this.load.spritesheet(`${k}-walk`, walkAsset(k), {
         frameWidth: 128,
         frameHeight: 128,
       });

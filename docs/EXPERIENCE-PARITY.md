@@ -56,7 +56,7 @@ See [HERO-PROGRESSION.md](HERO-PROGRESSION.md) for verified reference rules, pla
 | Clans and social play | Absent | No clan creation/search, chat, donations, clan castle defenders, wars, leagues, games, or clan capital. No fake online activity is displayed. |
 | Other bases and modes | Absent | No Builder Base, Clan Capital combat, event modes, or alternate-mode progression. |
 | Live activities and inventory | Absent | No season challenges, rotating events, magic items, event currencies, trader inventory, or purchase systems. |
-| Art and animation | Partial | Original isometric village artwork and readable portraits; two broad building art tiers. Need per-level silhouettes, directional movement/attack/death sets, better derived balloon/factory/air-defense assets, complete destruction states, and richer environmental animation. |
+| Art and animation | Partial | Original isometric village artwork and readable portraits; two broad building art tiers. Balloon, Spell Factory and Air Defense now have original dedicated silhouettes, including upgraded building variants. Need per-level silhouettes, directional movement/attack/death sets, complete destruction states, and richer environmental animation. |
 | Audio and feedback | Partial | Generated effects and optional ambient tones. Need a complete music/ambience mix, distinct unit/defense cues, action timing, and audio settings for more devices. |
 | Device and accessibility quality | Partial | Automated Chromium/WebKit smoke checks, touch/pointer input, portrait/landscape layouts, focus handling, and reduced motion. Physical-device performance, long suspend/resume sessions, and accessibility review remain unverified. |
 

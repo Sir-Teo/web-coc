@@ -153,7 +153,7 @@ Goblin and Wall Breaker sources, shipped paths, and exact built-in generation pr
 
 Source artwork and generation records are in `art/source/` and `docs/ASSETS.md`. Optimized assets live in `public/assets/`. Rebuild them with `npm run assets`. The normal build does not regenerate artwork or call an image service.
 
-The air-layer and spell artwork is **derived** from the existing shipped art by `scripts/derived-assets.mjs`: the Air Defense is the mortar recoloured to cold steel, the Spell Factory is the laboratory recoloured to arcane magenta, and the Balloon is the elixir storage sphere isolated from its base, recoloured warm, and hung over a drawn basket. Every step is a deterministic transform with no image service, so re-running produces byte-identical files (`output/assets-before.sha` and `output/assets-after.sha` are the proof).
+The Balloon, Air Defense, and Spell Factory use original generated sprites, including distinct upgraded building variants. Sources, exact built-in prompts, transparency checks, and rebuild instructions are in [docs/AIR-MAGIC-ART.md](docs/AIR-MAGIC-ART.md). `scripts/air-magic-assets.mjs` produces the six versioned WebPs and a stable-scale Balloon animation strip. Earlier derived art remains preserved; the three spell vials still use `scripts/derived-assets.mjs`. Asset rebuilds are deterministic and need no image service.
 
 ## Current scope
 
