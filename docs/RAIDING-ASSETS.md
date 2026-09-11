@@ -1,6 +1,6 @@
 # Specialist troop artwork
 
-Generated with the built-in image generation tool on September 10, 2026. These are original generated sprites, not extracted game assets. The generated alpha is preserved. The shipped Goblin and Wall Breaker use single full-body poses with procedural movement and attack feedback; they do not have directional walk atlases yet.
+Generated with the built-in image generation tool on September 10, 2026. These are original generated sprites, not extracted game assets. The generated alpha is preserved. These full-body portraits remain in the HUD. Combat now uses separate [four-frame walking atlases](SPECIALIST-WALK-ART.md), with native facing, a planted idle pose, and battle-timed animation. Full directional coverage and dedicated attack/death artwork remain open.
 
 | Troop | Generated source | Production sprite |
 | --- | --- | --- |

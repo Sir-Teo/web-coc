@@ -1,0 +1,26 @@
+import type { TroopKind } from './data';
+
+const normal = {
+  nativeFacing: -1,
+  frameMs: 140,
+  displayScale: 1.48,
+  idleFrame: 0,
+  version: '',
+  bob: 1.6,
+};
+const specialist = {
+  ...normal,
+  nativeFacing: 1,
+  displayScale: 1.25,
+  idleFrame: 1,
+  version: '-v1',
+  bob: 0,
+};
+const profiles: Partial<Record<TroopKind, typeof normal>> = {
+  goblin: { ...specialist, frameMs: 100 },
+  wallbreaker: { ...specialist, frameMs: 110 },
+  balloon: { ...normal, frameMs: 360 },
+};
+
+/** Rendering metadata stays separate from troop balance and saved progression. */
+export const troopArt = (kind: TroopKind) => profiles[kind] ?? normal;

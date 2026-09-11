@@ -444,8 +444,6 @@ export interface TroopDef {
   prefersDefenses?: true;
   prefersResources?: true;
   wallBreaker?: true;
-  /** New troops use a full-body sprite with movement driven by the scene. */
-  staticSprite?: true;
   /** Damage dealt to nearby buildings when this troop is destroyed. */
   deathDamage?: number;
   deathRadius?: number;
@@ -549,7 +547,6 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     width: 28,
     research: 480,
     prefersResources: true,
-    staticSprite: true,
   },
   wallbreaker: {
     name: 'Wall Breaker',
@@ -567,7 +564,6 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     width: 28,
     research: 720,
     wallBreaker: true,
-    staticSprite: true,
     deathDamage: 8,
     deathRadius: 1.6,
   },

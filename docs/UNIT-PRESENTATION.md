@@ -1,6 +1,6 @@
 # Troop presentation
 
-September 11, 2026. Ground troops face their next navigation waypoint while walking around obstacles and turn toward the building's center when attacking. Static Goblin, Wall Breaker and King artwork uses its native opposite orientation. Nearly vertical headings keep the previous side to avoid flicker.
+September 11, 2026. Ground troops face their next navigation waypoint while walking around obstacles and turn toward the building's center when attacking. Goblin and Wall Breaker walk atlases and static King artwork use their native opposite orientation. Nearly vertical headings keep the previous side to avoid flicker. The specialist atlases use a planted passing pose when idle, attacking or in reduced motion; their drawn gait replaces procedural body bobbing. See [the artwork record](SPECIALIST-WALK-ART.md).
 
 Walk frames and Balloon sway now use battle time. Pausing playback stops their motion, and playback speed advances it with the simulation. Stationary ground troops stop walking and bobbing in place. Reduced motion selects a fixed frame and removes bobbing and attack recoil. King's attack recoil uses his actual 1.2-second attack cycle rather than the Swordsman's 0.8-second cycle.
 

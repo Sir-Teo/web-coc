@@ -17,6 +17,7 @@ import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
+import { troopArt } from './troop-art';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
@@ -91,8 +92,8 @@ export class VillageScene extends Phaser.Scene {
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
-    for (const k of TROOP_KEYS.filter((kind) => !TROOPS[kind].staticSprite))
-      this.load.spritesheet(`${k}-walk`, walkAsset(k), {
+    for (const k of TROOP_KEYS)
+      this.load.spritesheet(`${k}-walk`, walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`), {
         frameWidth: 128,
         frameHeight: 128,
       });
@@ -837,15 +838,15 @@ export class VillageScene extends Phaser.Scene {
         this.detail.fillCircle(sx, sy, 4);
       }
       for (const u of battle.units) {
+        const art = troopArt(u.kind);
         let im = this.unitSprites.get(u.id);
         if (!im) {
           const d = TROOPS[u.kind];
           im = this.add
-            .image(0, 0, u.hero ? 'king' : d.staticSprite ? u.kind : `${u.kind}-walk`, 0)
-            .setOrigin(0.5, u.hero || d.staticSprite ? 1 : 0.953);
+            .image(0, 0, u.hero ? 'king' : `${u.kind}-walk`, 0)
+            .setOrigin(0.5, u.hero ? 1 : 122 / 128);
           if (u.hero) im.setDisplaySize(52, (52 * im.height) / im.width);
-          else if (d.staticSprite) im.setDisplaySize(d.width, (d.width * im.height) / im.width);
-          else im.setDisplaySize(d.width * 1.48, d.width * 1.48);
+          else im.setDisplaySize(d.width * art.displayScale, d.width * art.displayScale);
           this.unitSprites.set(u.id, im);
           const spawn = iso(u.x, u.y);
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
@@ -874,11 +875,11 @@ export class VillageScene extends Phaser.Scene {
         im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
         const animationTime = battle.elapsed * 1000;
-        if (!u.hero && !TROOPS[u.kind].staticSprite)
+        if (!u.hero)
           im.setFrame(
             (!pose.moving && !flying) || this.model.state.settings.reducedMotion
-              ? 0
-              : Math.floor(animationTime / (flying ? 360 : 140) + u.id) % 4,
+              ? art.idleFrame
+              : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
         if (u.hero) {
           const enraged = (battle.hero?.rageUntil ?? 0) > battle.elapsed;
@@ -890,7 +891,7 @@ export class VillageScene extends Phaser.Scene {
             ? 0
             : flying
               ? Math.sin(animationTime / 600 + u.id) * 2.2
-              : pose.moving ? Math.sin(animationTime / 80 + u.id) * 1.6 : 0;
+              : pose.moving ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob) : 0;
         const lift = flying ? AIR_LIFT : 0;
         // Air troops draw above every rooftop, with a shadow left on the ground.
         im.setPosition(p.x, p.y + motion - lift).setDepth(flying ? 7500 : p.y + 1);

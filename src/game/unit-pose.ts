@@ -1,5 +1,6 @@
 import { BUILDINGS, TROOPS } from './data';
 import type { Building, Unit } from './model';
+import { troopArt } from './troop-art';
 
 /** Sprite mirroring follows navigation while walking and the target when striking. */
 export function unitPose(u: Unit, target: Building | undefined, previousFacing = -1) {
@@ -16,5 +17,9 @@ export function unitPose(u: Unit, target: Building | undefined, previousFacing =
   // Looking straight up/down should preserve the last side rather than flicker.
   const facing = Math.abs(screenDx) > 0.03 ? Math.sign(screenDx) : previousFacing;
   const moving = !u.attacking && !!(TROOPS[u.kind].flying ? center : waypoint);
-  return { facing, moving, flipX: u.hero || TROOPS[u.kind].staticSprite ? facing < 0 : facing > 0 };
+  return {
+    facing,
+    moving,
+    flipX: u.hero || troopArt(u.kind).nativeFacing > 0 ? facing < 0 : facing > 0,
+  };
 }

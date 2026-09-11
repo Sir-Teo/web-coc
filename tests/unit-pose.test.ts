@@ -25,7 +25,7 @@ describe('troop facing and locomotion', () => {
     u.attacking = true;
     expect(unitPose(u, hall)).toMatchObject({ facing: 1, flipX: true, moving: false });
   });
-  it('uses the opposite native orientation of static goblin and hero art', () => {
+  it('uses the opposite native orientation of specialist atlases and hero art', () => {
     const u = troop('goblin');
     expect(unitPose(u, hall).flipX).toBe(true);
     u.hero = 'king';

@@ -18,6 +18,8 @@ for (const [name, engine] of [
     '/assets/buildings/tier3/spellfactory-v2.webp',
     '/assets/characters/balloon-v2.webp',
     '/assets/characters/walk/balloon-v2.webp',
+    '/assets/characters/walk/goblin-v1.webp',
+    '/assets/characters/walk/wallbreaker-v1.webp',
     '/assets/environment/ruins-stone.webp',
     '/assets/environment/ruins-wood.webp',
   ]);
