@@ -1,5 +1,13 @@
 # Verification record
 
+## September 11 — readable troop details in compact landscape
+
+Troop Info now places the portrait beside its stat grid on short landscape screens. A compact fixed header keeps the troop name and a 44px Close button, while removing repeated headings and branding. All five specialist panels show at least their first six stats immediately at both 844×390 and 568×320, with remaining stats, tactics and the 44px Train action reachable by scrolling. Desktop and portrait layouts keep their existing arrangement. Final WebKit Wizard and Chromium Wall Breaker screenshots were visually reviewed at those two landscape sizes.
+
+**13 affected UI scenarios pass in each of Metal Chromium and WebKit at 2× density**, including research, details, starter progression and Balloon behavior. After the final header refinement, all four detail scenarios pass again in each engine, covering five specialist panels per viewport, stat placement and overflow, Train interactions and actual Close behavior. The added 568×320 research and detail cases bring this troop progression pass to **46 distinct passing browser scenarios per engine** across the recorded runs. The preceding combat commit's 419 model/asset tests remain the model validation; this follow-up changes only presentation CSS and its browser coverage.
+
+The final build and production checks pass in both engines at 2× without reported browser errors. Chromium reloads, opens Army and plays a replay offline with 109 cached files, cache `crown-clan-5e5c7e9556f5`. Evidence: `output/playtest/troop-details-verification.json`, `troop-details-{chromium,webkit}.log`, `troop-details-{chromium,webkit}-final.log`, `troop-details-build-final.log`, `troop-details-production-report.json`, and `troop-roster-{wizard,wall-breaker}-{844,568}-{chromium,webkit}.png`.
+
 ## September 11 — complete supported troop combat and research tables
 
 All seven supported troop types now use explicit Home Village level 1–5 records. This pass adds Giant, Wizard, Balloon, Goblin and Wall Breaker health, hit/DPS values, movement, range, cadence, prices, research durations and laboratory gates. It removes the prototype 30% level multiplier, corrects Wizard splash to 0.3 tiles at full collateral damage, applies researched Balloon death damage at 1.2 tiles, and separates Wall Breaker contact (hit plus death) from early defeat (death only). Goblins prefer and deal double damage to Dark Elixir buildings. Info includes movement speed, damage on destruction and wall contact totals, with a 44px Train action. Save version stays 4 and paid legacy research remains intact. Combat version 16 retains old summaries without incompatible playback. See [TROOP-PROGRESSION.md](TROOP-PROGRESSION.md).

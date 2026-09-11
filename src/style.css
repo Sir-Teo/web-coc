@@ -3727,6 +3727,83 @@ h3 {
   color: #826735;
   text-shadow: none;
 }
+/* Keep useful combat stats beside the portrait on short landscape screens. */
+@media (max-height: 600px) and (min-aspect-ratio: 4/3) {
+  .modal:has(> .troop-info-body) .modal-header {
+    align-items: center;
+    padding: 8px 16px;
+  }
+  .modal:has(> .troop-info-body) .modal-header h1 {
+    margin: 0;
+    font-size: 25px;
+  }
+  .modal:has(> .troop-info-body) .modal-header small,
+  .modal:has(> .troop-info-body) .modal-header p {
+    display: none;
+  }
+  .modal:has(> .troop-info-body) .close-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .troop-info-body {
+    display: grid;
+    grid-template-columns: minmax(130px, 0.8fr) minmax(0, 2fr);
+    align-items: start;
+    gap: 12px 16px;
+    padding: 12px 16px;
+  }
+  .troop-info-hero {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+    text-align: center;
+  }
+  .troop-info-hero > img {
+    width: 90px;
+    height: 104px;
+  }
+  .troop-info-hero h2 {
+    display: none; /* The fixed dialog header already names the troop. */
+  }
+  .troop-info-hero .eyebrow {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .troop-info-hero p {
+    margin: 8px 0 0;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .troop-stats,
+  .troop-tactic,
+  .troop-info-body > .game-btn {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .troop-stats {
+    gap: 6px;
+  }
+  .troop-stats > div {
+    min-width: 0;
+    padding: 7px 10px;
+  }
+  .troop-stats dt {
+    line-height: 1.2;
+  }
+  .troop-stats dd {
+    margin-top: 3px;
+    font-size: 15px;
+    line-height: 1.2;
+  }
+  .troop-tactic {
+    margin: 0;
+    padding: 10px;
+    gap: 8px;
+    font-size: 11px;
+  }
+}
 @media (max-width: 700px) and (min-height: 501px) {
   .battle-clock {
     top: 164px;

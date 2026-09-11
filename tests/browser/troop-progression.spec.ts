@@ -5,6 +5,7 @@ for (const viewport of [
   { width: 1440, height: 960 },
   { width: 390, height: 844 },
   { width: 844, height: 390 },
+  { width: 568, height: 320 },
 ]) {
   test.describe(`native troop roster at ${viewport.width}×${viewport.height}`, () => {
     test.beforeEach(async ({ page }) => {
@@ -176,6 +177,37 @@ for (const viewport of [
         await page.locator('.modal').evaluate(async (el) => {
           await Promise.all(el.getAnimations().map((a) => a.finished));
         });
+        if (viewport.height <= 600 && viewport.width > viewport.height) {
+          const layout = await page.locator('.troop-info-body').evaluate((body) => {
+            const portrait = body.querySelector('.troop-info-hero')!.getBoundingClientRect();
+            const stats = body.querySelector('.troop-stats')!.getBoundingClientRect();
+            const bounds = body.getBoundingClientRect();
+            return {
+              portraitRight: portrait.right,
+              portraitTop: portrait.top,
+              statsLeft: stats.left,
+              statsTop: stats.top,
+              visibleFirstRows: [...body.querySelectorAll('.troop-stats > div')]
+                .slice(0, 6)
+                .every((cell) => {
+                  const r = cell.getBoundingClientRect();
+                  return (
+                    r.top >= bounds.top &&
+                    r.bottom <= bounds.bottom &&
+                    cell.scrollWidth <= cell.clientWidth
+                  );
+                }),
+            };
+          });
+          expect(layout.statsLeft).toBeGreaterThan(layout.portraitRight);
+          expect(layout.statsTop).toBeCloseTo(layout.portraitTop, 0);
+          expect(layout.visibleFirstRows).toBe(true);
+          const close = await page
+            .getByRole('button', { name: 'Close dialog', exact: true })
+            .boundingBox();
+          expect(close!.width).toBeGreaterThanOrEqual(44);
+          expect(close!.height).toBeGreaterThanOrEqual(44);
+        }
         if (name === 'Wall Breaker' || name === 'Wizard')
           await page.screenshot({
             path: `output/playtest/troop-roster-${name.replace(' ', '-').toLowerCase()}-${viewport.width}-${browserName}.png`,
@@ -193,6 +225,9 @@ for (const viewport of [
           page.getByRole('button', { name: `About ${name}`, exact: true }),
         ).toBeVisible();
       }
+      await page.getByRole('button', { name: 'About Wizard', exact: true }).click();
+      await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+      await expect(page.locator('.troop-info-body')).toHaveCount(0);
     });
   });
 }
