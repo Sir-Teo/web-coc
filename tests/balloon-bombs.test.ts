@@ -34,7 +34,7 @@ describe('Balloon bombing', () => {
     const { m, b, target, neighbor, nearWall, outsideWall, trap, u } = arena();
     m.step(0.05);
     const shot = b.projectiles![0];
-    expect(shot).toMatchObject({ weapon: 'bomb', x: 10, y: 11, splash: 1.2, splashScale: 1 });
+    expect(shot).toMatchObject({ weapon: 'bomb', x: 10, y: 11, splash: 1.2 });
     expect(b.buildings.every((v) => v.hp === v.maxHp)).toBe(true);
     u.cooldown = 100;
     m.step(0.34);

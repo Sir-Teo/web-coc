@@ -1,6 +1,6 @@
 # Starter troop progression
 
-September 11, 2026. Barbarian and Archer levels 1–5 now use explicit Home Village health, damage, research costs, durations and laboratory requirements. These are the supported Town Hall 1–8 levels. The other five supported troop types still use the local prototype progression and need separate audits.
+September 11, 2026. Barbarian and Archer levels 1–5 now use explicit Home Village health, damage, research costs, durations and laboratory requirements. These are the supported Town Hall 1–8 levels. The other five supported troop types are now audited in [the full supported troop progression pass](TROOP-PROGRESSION.md).
 
 ## References
 
@@ -39,4 +39,4 @@ Combat version is now 15. Version-14 and earlier records retain their result sum
 
 Seventeen focused cases cover all ten level records, real deployment health, current/next previews, costs and timers, laboratory gates, paid legacy deadlines, old replay summaries, eight approach directions, short final segments, obstacle avoidance, wall breach damage, movement speed and Archer range. The full model suite also exercises campaign viability, projectile impacts, saves, replay seeking and hero summons. Browser tests cover real research actions, reload, completion, gating and detail values at desktop and phone sizes, alongside gameplay, replay and repeated raid transitions.
 
-Remaining work includes the other five troop tables, the full roster and higher Town Halls, native spell/hero balancing, native campaign layouts/rewards, detailed collision/targeting fidelity and physical-device validation. Passing the local campaign audit does not establish native game balance for the unaudited catalog.
+Remaining work includes the full roster and higher Town Halls, native spell/hero balancing, native campaign layouts/rewards, detailed collision/targeting fidelity and physical-device validation. Passing the local campaign audit does not establish native game balance for the full game.

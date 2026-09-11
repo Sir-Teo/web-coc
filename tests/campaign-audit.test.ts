@@ -12,6 +12,10 @@ const armies = [
   {
     name: 'early-developed',
     level: 1,
+    townhall: 5,
+    laboratory: 3,
+    campLevel: 5,
+    campCount: 3,
     units: {
       swordsman: 14,
       archer: 12,
@@ -25,6 +29,10 @@ const armies = [
   {
     name: 'developed',
     level: 2,
+    townhall: 6,
+    laboratory: 4,
+    campLevel: 5,
+    campCount: 3,
     units: {
       swordsman: 18,
       archer: 18,
@@ -36,8 +44,12 @@ const armies = [
     },
   },
   {
-    name: 'veteran',
+    name: 'mid-research',
     level: 3,
+    townhall: 7,
+    laboratory: 5,
+    campLevel: 6,
+    campCount: 4,
     units: {
       swordsman: 20,
       archer: 20,
@@ -46,6 +58,23 @@ const armies = [
       balloon: 0,
       goblin: 0,
       wallbreaker: 0,
+    },
+  },
+  {
+    name: 'veteran',
+    level: 5,
+    townhall: 8,
+    laboratory: 6,
+    campLevel: 6,
+    campCount: 4,
+    units: {
+      swordsman: 20,
+      archer: 20,
+      giant: 16,
+      wizard: 14,
+      balloon: 2,
+      goblin: 10,
+      wallbreaker: 2,
     },
   },
 ];
@@ -85,23 +114,16 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           TroopKind,
           number
         >;
-        // Army research level and camp housing have separate progression.
-        m.townhall!.level = army.name === 'early-developed' ? 4 : 7;
-        const campLevel = army.name === 'early-developed' ? 4 : 6;
-        m.state.buildings.find((b) => b.kind === 'camp')!.level = campLevel;
-        const campSites =
-          army.name === 'early-developed'
-            ? [[28, 8]]
-            : [
-                [28, 8],
-                [28, 16],
-                [28, 24],
-              ];
-        for (const [x, y] of campSites)
-          m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', x, y, campLevel));
+        // Each scenario fits native Town Hall, barracks, laboratory and housing gates.
+        m.townhall!.level = army.townhall;
+        m.state.buildings.find((b) => b.kind === 'barracks')!.level = 7;
+        m.state.buildings.push(makeBuilding(m.state.nextId++, 'laboratory', 32, 30, army.laboratory));
+        m.state.buildings.find((b) => b.kind === 'camp')!.level = army.campLevel;
+        for (const [x, y] of [[28, 8], [28, 16], [28, 24]].slice(0, army.campCount - 1))
+          m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', x, y, army.campLevel));
         expect(m.armySize).toBeLessThanOrEqual(m.capacity);
         m.startBattle(stage);
-        for (const kind of ['giant', 'swordsman', 'archer', 'wizard'] as const) {
+        for (const kind of ['giant', 'wallbreaker', 'balloon', 'swordsman', 'archer', 'wizard', 'goblin'] as const) {
           m.activeTroop = kind;
           while (m.battle!.remaining[kind] > 0) expect(m.deploy(...approaches[side])).toBe(true);
         }

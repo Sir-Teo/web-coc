@@ -144,7 +144,7 @@ describe('physical projectile damage', () => {
     expect(spare.hp).toBe(spare.maxHp);
   });
 
-  it('wizard splash waits for impact and retains its launch damage after Rage expires', () => {
+  it('a wizard retains launch damage after Rage expires without splashing distant buildings', () => {
     const { m, b, hall, u } = arena('wizard');
     const neighbor = makeBuilding(9002, 'builder', 14, 11);
     b.buildings.push(neighbor);
@@ -156,7 +156,8 @@ describe('physical projectile damage', () => {
     expect(neighbor.hp).toBe(neighbor.maxHp);
     land(m);
     expect(hall.hp).toBeCloseTo(hall.maxHp - shot.damage);
-    expect(neighbor.hp).toBeCloseTo(neighbor.maxHp - shot.damage * 0.35);
+    expect(shot.splash).toBe(0.3);
+    expect(neighbor.hp).toBe(neighbor.maxHp);
     expect(b.auras).toHaveLength(0);
   });
 

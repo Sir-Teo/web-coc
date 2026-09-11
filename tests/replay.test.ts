@@ -58,6 +58,27 @@ function playToEnd(m: GameModel) {
   expect(m.replay!.complete).toBe(true);
 }
 describe('recorded battle playback', () => {
+  it('preserves a level-four Wizard fractional hit through JSON and playback', () => {
+    const m = new GameModel();
+    m.state.obstacles = [];
+    m.state.buildings = [makeBuilding(1, 'townhall', 10, 10), makeBuilding(2, 'builder', 30, 30)];
+    m.state.nextId = 3;
+    m.state.army = Object.fromEntries(TROOP_KEYS.map((k) => [k, k === 'wizard' ? 1 : 0])) as typeof m.state.army;
+    m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 4])) as typeof m.state.army;
+    m.startBattle(0, true);
+    m.activeTroop = 'wizard';
+    expect(m.deploy(6, 11.5)).toBe(true);
+    const hall = m.battle!.buildings[0];
+    for (let i = 0; i < 100 && hall.hp === hall.maxHp; i++) m.step(0.05);
+    expect(hall.maxHp - hall.hp).toBe(187.5);
+    m.finishBattle();
+    const expected = structuredClone(combat(m.battle!));
+    const loaded = new GameModel(JSON.parse(JSON.stringify(m.state)));
+    expect(validateSave(loaded.state)).toBe(true);
+    expect(loaded.startReplay(loaded.state.raidLog![0].id)).toBe(true);
+    playToEnd(loaded);
+    expect(combat(loaded.battle!)).toEqual(expected);
+  });
   for (const practice of [false, true])
     it(`reproduces ${practice ? 'practice' : 'campaign'} combat exactly without touching the save`, () => {
       const m = recorded(practice);

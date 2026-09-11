@@ -1355,7 +1355,7 @@ export class HUD {
           ? 'Defenses'
           : 'Any building';
     const tactic = d.wallBreaker
-      ? 'Let Giants draw defensive fire first. Wall Breakers seek walls on the way to buildings; their blast opens a gap for the rest of your army.'
+      ? 'Let Giants draw defensive fire first. Reaching a wall deals both attack and death damage; being defeated on the way deals only death damage. Both deal 40× damage to walls.'
       : d.prefersResources
         ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
         : d.flying
@@ -1363,7 +1363,26 @@ export class HUD {
           : d.prefersDefenses
             ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
             : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
-    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats"><div><dt>Unlock requirement</dt><dd>Barracks ${TROOP_UNLOCK[kind]}</dd></div><div><dt>Favorite target</dt><dd>${target}</dd></div><div><dt>Damage per second</dt><dd>${damageNumber(d.damage / d.rate)}</dd></div><div><dt>Damage per hit</dt><dd>${d.damage}${d.wallBreaker ? ` / ${d.damage * 40} vs walls` : ''}</dd></div><div><dt>Hitpoints</dt><dd>${d.hp}</dd></div><div><dt>Housing space</dt><dd>${d.space}</dd></div><div><dt>Movement</dt><dd>${d.flying ? 'Air · ignores walls' : 'Ground'}</dd></div><div><dt>Attack range</dt><dd>${d.range} tile${d.range === 1 ? '' : 's'}</dd></div><div><dt>Attack interval</dt><dd>${d.rate}s</dd></div>${d.splash ? `<div><dt>Attack splash</dt><dd>${d.splash} tiles</dd></div>` : ''}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+    const rows: [string, string][] = [
+      ['Unlock requirement', `Barracks ${TROOP_UNLOCK[kind]}`],
+      ['Favorite target', target],
+      ['Damage per second', damageNumber(d.damage / d.rate)],
+      ['Damage per hit', damageNumber(d.damage)],
+      ['Hitpoints', n(d.hp)],
+      ['Housing space', `${d.space}`],
+      ['Movement', d.flying ? 'Air · ignores walls' : 'Ground'],
+      ['Movement speed', `${d.speed} tiles/s`],
+      ['Attack range', `${d.range} tile${d.range === 1 ? '' : 's'}`],
+      ['Attack interval', `${d.rate}s`],
+    ];
+    if (d.splash) rows.push(['Attack splash', `${d.splash} tiles`]);
+    if (d.deathDamage) {
+      rows.push(['Damage on destruction', damageNumber(d.deathDamage)]);
+      rows.push(['Death blast radius', `${d.deathRadius} tiles`]);
+    }
+    if (d.wallBreaker)
+      rows.push(['Contact damage vs walls', damageNumber((d.damage + (d.deathDamage ?? 0)) * 40)]);
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
   }
   private surrender() {
     const b = this.model.battle!;

@@ -1662,7 +1662,7 @@ export class GameModel {
         if (u.cooldown <= 0) {
           u.cooldown = d.rate;
           if (troop.wallBreaker) {
-            this.detonate(u, d.damage);
+            this.detonate(u, d.damage + (base.deathDamage ?? 0));
             continue;
           }
           const damage =
@@ -1682,7 +1682,6 @@ export class GameModel {
                 fromAir: troop.flying,
                 damage,
                 splash: troop.splash,
-                splashScale: u.kind === 'wizard' ? 0.35 : 1,
               },
               this.onEffect,
             );
@@ -1732,7 +1731,7 @@ export class GameModel {
           if (u.cooldown <= 0) {
             u.cooldown = d.rate;
             if (troop.wallBreaker) {
-              this.detonate(u, d.damage);
+              this.detonate(u, d.damage + (base.deathDamage ?? 0));
               continue;
             }
             if (d.range > 2)
@@ -1872,11 +1871,10 @@ export class GameModel {
       u.defeatedAt ??= b.elapsed;
       if (u.spent) continue;
       u.spent = true;
-      const troop = TROOPS[u.kind];
+      const troop = this.troopStats(u.kind);
       if (!troop.deathDamage) continue;
       if (troop.wallBreaker) {
-        const bonus = this.troopStats(u.kind).damage / troop.damage;
-        this.detonate(u, troop.deathDamage * bonus);
+        this.detonate(u, troop.deathDamage);
         continue;
       }
       this.onEffect({

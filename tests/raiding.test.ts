@@ -50,7 +50,7 @@ describe('specialist troops', () => {
     const goblin = unit(m, 'goblin', 6, 9);
     m.step(0.05);
     expect(goblin.target).toBe(mine.id);
-    goblin.x = 11.5;
+    goblin.x = 11.7;
     goblin.y = 9;
     m.step(0.05);
     expect(mine.maxHp - mine.hp).toBe(TROOPS.goblin.damage * 2);
@@ -59,7 +59,7 @@ describe('specialist troops', () => {
     m.damage(mine, mine.hp);
     m.step(0.05);
     expect(goblin.target).toBe(barracks.id);
-    goblin.x = 6.5;
+    goblin.x = 6.7;
     goblin.y = 9;
     goblin.cooldown = 0;
     m.step(0.05);
@@ -99,7 +99,7 @@ describe('specialist troops', () => {
     const breaker = unit(m, 'wallbreaker', 9.5, 10.5);
     breaker.hp = 0;
     m.step(0.05);
-    expect(wall.maxHp - wall.hp).toBeCloseTo(TROOPS.wallbreaker.deathDamage! * 1.3 * 40);
+    expect(wall.maxHp - wall.hp).toBeCloseTo(9 * 40);
     const hp = wall.hp;
     advance(m, 1);
     expect(wall.hp).toBe(hp);
@@ -110,7 +110,7 @@ describe('specialist troops', () => {
     const breaker = unit(m, 'wallbreaker', 9.5, 11);
     m.step(0.05);
     expect(breaker.hp).toBe(0);
-    expect(hall.maxHp - hall.hp).toBe(TROOPS.wallbreaker.damage);
+    expect(hall.maxHp - hall.hp).toBe(16);
   });
   it('trains, researches, deploys and replenishes the new troops', () => {
     const m = new GameModel(developedSave());
@@ -159,6 +159,9 @@ describe('mortar fire and defense targeting', () => {
     const one = unit(m, 'giant', shell.x, shell.y);
     const two = unit(m, 'giant', shell.x + 0.1, shell.y);
     const air = unit(m, 'balloon', shell.x, shell.y);
+    const anchor = makeBuilding(1002, 'builder', Math.floor(shell.x), Math.floor(shell.y));
+    m.battle!.buildings.push(anchor);
+    for (const u of [one, two, air]) { u.target = anchor.id; u.cooldown = 100; }
     advance(m, 1.3);
     expect(m.battle!.shells).toHaveLength(0);
     expect(decoy.hp).toBe(decoy.maxHp);
@@ -173,6 +176,10 @@ describe('mortar fire and defense targeting', () => {
     m.step(0.05);
     const shell = m.battle!.shells[0];
     m.damage(mortar, mortar.hp);
+    const anchor = makeBuilding(1002, 'builder', Math.floor(shell.x), Math.floor(shell.y));
+    m.battle!.buildings.push(anchor);
+    giant.target = anchor.id;
+    giant.cooldown = 100;
     advance(m, 1.3);
     expect(giant.hp).toBe(giant.maxHp - shell.damage);
   });

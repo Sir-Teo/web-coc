@@ -18,7 +18,6 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
-  splashScale?: number;
 }
 
 // Local tuning in tiles/second. Flight is driven by battle time, including replay speed.
@@ -107,14 +106,11 @@ export function stepProjectiles(
         for (const b of battle.buildings) {
           if (b.id === p.targetId || b.hp <= 0 || isTrap(b.kind)) continue;
           const size = BUILDINGS[b.kind].size;
-          const distance =
-            p.weapon === 'bomb'
-              ? Math.hypot(
-                  Math.max(b.x - p.x, 0, p.x - b.x - size),
-                  Math.max(b.y - p.y, 0, p.y - b.y - size),
-                )
-              : Math.hypot(b.x + size / 2 - p.x, b.y + size / 2 - p.y);
-          if (distance <= p.splash) damage(b, p.damage * (p.splashScale ?? 1));
+          const distance = Math.hypot(
+            Math.max(b.x - p.x, 0, p.x - b.x - size),
+            Math.max(b.y - p.y, 0, p.y - b.y - size),
+          );
+          if (distance <= p.splash) damage(b, p.damage);
         }
     } else if (p.splash) {
       for (const u of battle.units)

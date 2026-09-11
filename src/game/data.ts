@@ -456,7 +456,7 @@ export interface TroopDef {
   space: number;
   time: number;
   width: number;
-  /** Seconds for the first laboratory research. Later levels scale from this. */
+  /** Seconds for the first laboratory research. Each upgrade uses its explicit level record. */
   research: number;
   /** Flying troops ignore walls and pathing, and only air-capable defences hit them. */
   flying?: true;
@@ -503,97 +503,97 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     name: 'Giant',
     role: 'TANK',
     description: 'Soaks up damage and targets defensive buildings first.',
-    hp: 1250,
-    damage: 45,
-    speed: 0.95,
-    range: 1.1,
-    rate: 1.5,
+    hp: troopProgression('giant', 1)!.hp,
+    damage: troopProgression('giant', 1)!.dps * 2,
+    speed: 1.5,
+    range: 1,
+    rate: 2,
     cost: 0,
     space: 5,
     time: 0,
     width: 45,
-    research: 900,
+    research: troopProgression('giant', 2)!.seconds,
     prefersDefenses: true,
   },
   wizard: {
     name: 'Wizard',
     role: 'SPLASH',
-    description: 'Hurls fireballs that damage nearby buildings.',
-    hp: 155,
-    damage: 66,
-    speed: 1.35,
-    range: 4.5,
-    rate: 1.6,
-    splash: 3,
+    description: 'Hurls concentrated fireballs with a small splash radius.',
+    hp: troopProgression('wizard', 1)!.hp,
+    damage: troopProgression('wizard', 1)!.dps * 1.5,
+    speed: 2,
+    range: 3,
+    rate: 1.5,
+    splash: 0.3,
     cost: 0,
     space: 4,
     time: 0,
     width: 30,
-    research: 1200,
+    research: troopProgression('wizard', 2)!.seconds,
   },
   balloon: {
     name: 'Balloon',
     role: 'AIR',
     description:
       'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
-    hp: 780,
-    damage: 190,
-    speed: 0.62,
-    range: 0.9,
+    hp: troopProgression('balloon', 1)!.hp,
+    damage: troopProgression('balloon', 1)!.dps * 3,
+    speed: 1.25,
+    range: 0.5,
     rate: 3,
     splash: 1.2,
     cost: 0,
     space: 5,
     time: 0,
     width: 50,
-    research: 1500,
+    research: troopProgression('balloon', 2)!.seconds,
     flying: true,
     prefersDefenses: true,
-    deathDamage: 120,
-    deathRadius: 1.8,
+    deathDamage: troopProgression('balloon', 1)!.deathDamage,
+    deathRadius: 1.2,
   },
   goblin: {
     name: 'Goblin',
     role: 'LOOT',
     description:
-      'Sprints for mines, collectors, storages and the Town Hall. Deals double damage to resources.',
-    hp: 95,
-    damage: 22,
-    speed: 2.7,
-    range: 0.8,
-    rate: 0.8,
+      'Sprints for mines, collectors, drills, storages and the Town Hall. Deals double damage to resources.',
+    hp: troopProgression('goblin', 1)!.hp,
+    damage: troopProgression('goblin', 1)!.dps,
+    speed: 4,
+    range: 0.4,
+    rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 28,
-    research: 480,
+    research: troopProgression('goblin', 2)!.seconds,
     prefersResources: true,
   },
   wallbreaker: {
     name: 'Wall Breaker',
     role: 'BREACH',
     description:
-      'Runs at walls protecting buildings and sacrifices itself in a blast. Bombs deal 40× damage to walls.',
-    hp: 110,
-    damage: 20,
-    speed: 2.25,
-    range: 0.7,
+      'Runs at walls protecting buildings and sacrifices itself in a blast. Its attack and death blast both deal 40× damage to walls.',
+    hp: troopProgression('wallbreaker', 1)!.hp,
+    damage: troopProgression('wallbreaker', 1)!.dps,
+    speed: 3,
+    range: 1,
     rate: 1,
     cost: 0,
     space: 2,
     time: 0,
     width: 28,
-    research: 720,
+    research: troopProgression('wallbreaker', 2)!.seconds,
     wallBreaker: true,
-    deathDamage: 8,
-    deathRadius: 1.6,
+    deathDamage: troopProgression('wallbreaker', 1)!.deathDamage,
+    deathRadius: 2,
   },
 };
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
 export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7'];
 export const SPELL_HOTKEYS = ['8', '9', '0'];
 export const isResourceBuilding = (kind: BuildingKind) =>
-  ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage'].includes(kind);
+  ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage', 'darkdrill', 'darkstorage'].includes(kind);
 /** Which resource a building accumulates over time, if any. */
 export const producedResource = (kind: BuildingKind): Resource | null =>
   kind === 'goldmine'
@@ -729,27 +729,27 @@ export const upgradeCost = (kind: BuildingKind, level: number) =>
   (kind === 'wall'
     ? (WALL_LEVELS[level]?.cost ?? 0)
     : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
-/** Shared current/preview stats. Unaudited troops retain their existing progression. */
+/** Shared native current/preview stats for every supported troop level. */
 export const troopStatsAt = (kind: TroopKind, level: number) => {
   const safeLevel = Math.min(MAX_TROOP_LEVEL, Math.max(1, Math.floor(level) || 1));
-  const d = TROOPS[kind], audited = troopProgression(kind, safeLevel);
-  const bonus = 1 + (safeLevel - 1) * 0.3;
+  const d = TROOPS[kind], audited = troopProgression(kind, safeLevel)!;
   return {
     ...d,
-    hp: audited?.hp ?? Math.round(d.hp * bonus),
-    damage: audited ? audited.dps * d.rate : Math.round(d.damage * bonus),
+    hp: audited.hp,
+    damage: audited.dps * d.rate,
+    deathDamage: audited.deathDamage,
   };
 };
 /** Requirements/cost/duration to move from the current level to the next. */
 export const researchLaboratory = (kind: TroopKind, level: number) =>
-  troopProgression(kind, level + 1)?.laboratory ?? level + 1;
+  troopProgression(kind, level + 1)?.laboratory ?? Infinity;
 export const researchLevelForLab = (kind: TroopKind, laboratory: number) => {
   let level = 1;
   while (level < MAX_TROOP_LEVEL && researchLaboratory(kind, level) <= laboratory) level++;
   return level;
 };
 export const researchSeconds = (kind: TroopKind, level: number) =>
-  troopProgression(kind, level + 1)?.seconds ?? TROOPS[kind].research * level;
+  troopProgression(kind, level + 1)?.seconds ?? 0;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
   const audited = defenseProgression(kind, level);
@@ -760,18 +760,8 @@ export const defenseDamage = (kind: BuildingKind, level: number) => {
 export const defenseDps = (kind: BuildingKind, level: number) =>
   defenseProgression(kind, level)?.dps ??
   (BUILDINGS[kind].rate ? defenseDamage(kind, level) / BUILDINGS[kind].rate! : 0);
-export const researchCost = (kind: TroopKind, level: number) => {
-  const base = {
-    swordsman: 6000,
-    archer: 8000,
-    giant: 12000,
-    wizard: 15000,
-    balloon: 18000,
-    goblin: 7000,
-    wallbreaker: 10000,
-  };
-  return troopProgression(kind, level + 1)?.cost ?? base[kind] * level;
-};
+export const researchCost = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.cost ?? 0;
 /**
  * Gem prices follow the Clash of Clans shape: a minute is trivial, an hour is
  * cheap, and a multi-hour upgrade is a real decision.

@@ -1,7 +1,7 @@
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
-import { MAX_TROOP_LEVEL, TROOPS } from '../src/game/data';
+import { MAX_TROOP_LEVEL } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 describe('troop progression', () => {
   it('research is gated by laboratory level, charged once and completes offline once', () => {
@@ -14,9 +14,9 @@ describe('troop progression', () => {
     expect(m.state.elixir).toBe(elixir);
     lab.level = 2;
     m.researchTroop('giant');
-    expect(m.state.elixir).toBe(elixir - 12000);
+    expect(m.state.elixir).toBe(elixir - 40000);
     m.researchTroop('archer');
-    expect(m.state.elixir).toBe(elixir - 12000);
+    expect(m.state.elixir).toBe(elixir - 40000);
     m.upgrade(lab.id);
     expect(lab.upgradeEnd).toBeUndefined();
     expect(validateSave(m.state)).toBe(true);
@@ -29,8 +29,8 @@ describe('troop progression', () => {
     restored.startBattle(0);
     restored.activeTroop = 'giant';
     restored.deploy(1, 13);
-    expect(restored.battle!.units[0].maxHp).toBe(Math.round(TROOPS.giant.hp * 1.3));
-    expect(restored.troopStats('giant').damage).toBe(Math.round(TROOPS.giant.damage * 1.3));
+    expect(restored.battle!.units[0].maxHp).toBe(500);
+    expect(restored.troopStats('giant').damage).toBe(30);
   });
   it('finishes research with gems and refuses malformed or over-level research saves', () => {
     const m = new GameModel(developedSave());

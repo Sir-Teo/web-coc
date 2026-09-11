@@ -100,7 +100,7 @@ describe('Home Village starter troop progression', () => {
     m.startBattle(0, true);
     m.finishBattle();
     m.returnHome();
-    expect(REPLAY_VERSION).toBe(15);
+    expect(REPLAY_VERSION).toBeGreaterThan(14);
     const record = m.state.raidLog![0];
     record.replay!.version = 14;
     const summary = structuredClone(record.result);

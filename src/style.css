@@ -3642,6 +3642,9 @@ h3 {
   line-height: 1.6;
   font-size: 13px;
 }
+.troop-info-body > .game-btn {
+  min-height: 44px;
+}
 .troop-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
