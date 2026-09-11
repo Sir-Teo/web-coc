@@ -30,6 +30,17 @@ const SPEED: Record<Weapon, number> = {
   bomb: 10,
   arcane: 16,
 };
+function buildingAim(p: Pick<CombatProjectile, 'weapon' | 'fromX' | 'fromY'>, b: Building) {
+  const size = BUILDINGS[b.kind].size;
+  // Bombs drop onto the approached edge of the footprint. Forcing the far
+  // center could send a falling bomb upward across a tall building's artwork.
+  return p.weapon === 'bomb'
+    ? {
+        x: Math.max(b.x, Math.min(p.fromX, b.x + size)),
+        y: Math.max(b.y, Math.min(p.fromY, b.y + size)),
+      }
+    : { x: b.x + size / 2, y: b.y + size / 2 };
+}
 export function launchProjectile(
   battle: Battle,
   shot: Omit<CombatProjectile, 'id' | 'launched' | 'impact'>,
@@ -45,6 +56,8 @@ export function launchProjectile(
     launched: battle.elapsed,
     impact: battle.elapsed + duration,
   };
+  const target = shot.targetBuilding && battle.buildings.find((b) => b.id === shot.targetId);
+  if (target && shot.weapon === 'bomb') Object.assign(projectile, buildingAim(shot, target));
   (battle.projectiles ??= []).push(projectile);
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;
@@ -64,6 +77,7 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
     targetBuilding: p.targetBuilding,
     fromAir: p.fromAir,
     toAir: p.toAir,
+    radius: p.splash,
   };
 }
 
@@ -79,9 +93,9 @@ export function stepProjectiles(
       ? battle.buildings.find((b) => b.id === p.targetId)
       : battle.units.find((u) => u.id === p.targetId);
     if (target && target.hp > 0) {
-      const size = p.targetBuilding ? BUILDINGS[(target as Building).kind].size : 0;
-      p.x = target.x + size / 2;
-      p.y = target.y + size / 2;
+      const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
+      p.x = aim.x;
+      p.y = aim.y;
     }
     if (p.impact > battle.elapsed + 1e-9) {
       pending.push(p);
@@ -93,8 +107,14 @@ export function stepProjectiles(
         for (const b of battle.buildings) {
           if (b.id === p.targetId || b.hp <= 0 || isTrap(b.kind)) continue;
           const size = BUILDINGS[b.kind].size;
-          if (Math.hypot(b.x + size / 2 - p.x, b.y + size / 2 - p.y) <= p.splash)
-            damage(b, p.damage * (p.splashScale ?? 1));
+          const distance =
+            p.weapon === 'bomb'
+              ? Math.hypot(
+                  Math.max(b.x - p.x, 0, p.x - b.x - size),
+                  Math.max(b.y - p.y, 0, p.y - b.y - size),
+                )
+              : Math.hypot(b.x + size / 2 - p.x, b.y + size / 2 - p.y);
+          if (distance <= p.splash) damage(b, p.damage * (p.splashScale ?? 1));
         }
     } else if (p.splash) {
       for (const u of battle.units)

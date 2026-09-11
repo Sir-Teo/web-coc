@@ -121,6 +121,30 @@ export class CombatEffects {
     }
   }
 
+  groundBlast(at: Point, radius: number, reduced: boolean) {
+    const g = this.graphic().setDepth(7000).setPosition(at.x, at.y).setData('impact', 'bomb');
+    const width = radius * 64 * Math.SQRT2,
+      height = width / 2;
+    g.setData('blastRadius', radius);
+    g.fillStyle(0xffa244, 0.17).fillEllipse(0, 0, width, height);
+    g.lineStyle(2, 0xffd18b, 0.9).strokeEllipse(0, 0, width, height);
+    g.fillStyle(0x493020, 0.45).fillEllipse(0, 0, 26, 13);
+    g.fillStyle(0xffac38, 0.95);
+    g.fillTriangle(-22, -3, -4, -8, 0, 3);
+    g.fillTriangle(22, -3, 4, -8, 0, 3);
+    g.fillTriangle(-6, -24, -10, 1, 4, 2);
+    g.fillTriangle(8, 13, -6, -1, 8, -4);
+    g.fillStyle(0xffe4a5, 0.85).fillEllipse(0, -3, 13, 8);
+    g.setScale(reduced ? 1 : 0.6);
+    this.scene.tweens.add({
+      targets: g,
+      scale: 1,
+      alpha: 0,
+      duration: reduced ? 100 : 240,
+      onComplete: () => this.remove(g),
+    });
+  }
+
   impact(weapon: Weapon | 'melee', at: Point, reduced: boolean) {
     const color = weapon === 'melee' ? 0xffe5b7 : COLORS[weapon];
     const explosive =

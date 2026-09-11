@@ -430,6 +430,8 @@ export interface TroopDef {
   speed: number;
   range: number;
   rate: number;
+  /** Radius of attack splash; death blasts are specified separately. */
+  splash?: number;
   cost: number;
   space: number;
   time: number;
@@ -504,6 +506,7 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 1.35,
     range: 4.5,
     rate: 1.6,
+    splash: 3,
     cost: 0,
     space: 4,
     time: 0,
@@ -513,12 +516,13 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
   balloon: {
     name: 'Balloon',
     role: 'AIR',
-    description: 'Drifts over walls to bomb defenses. Only defenses that target air can reach it.',
+    description: 'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
     hp: 780,
     damage: 190,
     speed: 0.62,
     range: 0.9,
     rate: 3,
+    splash: 1.2,
     cost: 0,
     space: 5,
     time: 0,

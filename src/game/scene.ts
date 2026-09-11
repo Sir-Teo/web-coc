@@ -1048,7 +1048,9 @@ export class VillageScene extends Phaser.Scene {
     if ((fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') && fx.toX !== undefined) {
       const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
-      if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
+      if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
+        this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced);
+      else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
       else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
       else this.combatEffects.projectile(
         fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
@@ -1133,12 +1135,14 @@ export class VillageScene extends Phaser.Scene {
           : 22);
     const toY =
       q.y -
-      (fx.toAir ? AIR_LIFT : 0) -
-      (target
-        ? fx.targetBuilding
-          ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
-          : target.displayHeight * 0.48
-        : 15);
+      (fx.weapon === 'bomb'
+        ? 3
+        : (fx.toAir ? AIR_LIFT : 0) +
+          (target
+            ? fx.targetBuilding
+              ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
+              : target.displayHeight * 0.48
+            : 15));
     return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
   }
 

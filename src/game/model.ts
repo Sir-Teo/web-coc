@@ -1275,8 +1275,8 @@ export class GameModel {
                 y: target.y + BUILDINGS[target.kind].size / 2,
                 fromAir: troop.flying,
                 damage,
-                splash: u.kind === 'wizard' ? 3 : undefined,
-                splashScale: 0.35,
+                splash: troop.splash,
+                splashScale: u.kind === 'wizard' ? 0.35 : 1,
               },
               this.onEffect,
             );
@@ -1303,7 +1303,7 @@ export class GameModel {
         const dx = cx - u.x,
           dy = cy - u.y,
           len = Math.hypot(dx, dy) || 1,
-          move = d.speed * dt;
+          move = Math.min(d.speed * dt, len);
         u.x += (dx / len) * move;
         u.y += (dy / len) * move;
         continue;

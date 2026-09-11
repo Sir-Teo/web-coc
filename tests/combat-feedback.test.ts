@@ -44,8 +44,8 @@ describe('combat feedback comes from actual attacks', () => {
       type: weapon ? 'projectile' : 'hit',
       targetId: target.id,
       targetBuilding: true,
-      toX: 12,
-      toY: 12,
+      toX: kind === 'balloon' ? 10 : 12,
+      toY: kind === 'balloon' ? 11 : 12,
     });
     for (let i = 0; i < 8; i++) m.step(0.05);
     expect(target.maxHp - target.hp).toBe(m.troopStats(kind).damage);
