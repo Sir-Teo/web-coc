@@ -1,3 +1,4 @@
+import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -8,6 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('edit mode drags a building, undoes it and stores a layout', async ({ page }) => {
+  await useDevelopedVillage(page);
   await page.locator('[data-action="edit"]').click();
   await expect(page.locator('.edit-toolbar')).toBeVisible();
   await expect(page.locator('[data-action="undo"]')).toBeDisabled();
@@ -63,6 +65,8 @@ test('edit mode drags a building, undoes it and stores a layout', async ({ page 
 });
 
 test('the building info sheet compares this level with the next', async ({ page }) => {
+  await useDevelopedVillage(page);
+  await page.evaluate(() => { window.__game.model.townhall.level = 3; window.__game.model.changed(); });
   const point = await page.evaluate(() => {
     const { model, scene } = window.__game;
     const b = model.state.buildings.find((v) => v.kind === 'airdefense');
@@ -90,6 +94,7 @@ test('the building info sheet compares this level with the next', async ({ page 
 });
 
 test('a raid scouts first, then deploys by drag and casts a spell', async ({ page }) => {
+  await useDevelopedVillage(page);
   await page.locator('.attack-btn').click();
   await page.locator('[data-action="attack:0"]').click();
   await expect(page.locator('.prep-banner')).toBeVisible();
@@ -139,6 +144,7 @@ test('a raid scouts first, then deploys by drag and casts a spell', async ({ pag
 });
 
 test('a double tap commits a squad of five', async ({ page }) => {
+  await useDevelopedVillage(page);
   await page.locator('.attack-btn').click();
   await page.locator('[data-action="attack:0"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
@@ -156,7 +162,7 @@ test('the town hall gate holds buildings back until it is upgraded', async ({ pa
   await expect(page.locator('[data-drag="mortar"]')).toHaveCount(0);
   await page.evaluate(() => {
     const m = window.__game.model;
-    m.townhall.level = 6;
+    m.townhall.level = 3;
     m.changed();
   });
   await expect(page.locator('[data-action="build:mortar"]')).toBeEnabled();

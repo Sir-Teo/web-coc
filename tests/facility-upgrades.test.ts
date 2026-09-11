@@ -1,13 +1,17 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { validateSave } from '../src/game/save';
 
 function upgradeFacilities() {
-  const model = new GameModel();
+  const model = new GameModel(developedSave());
   model.townhall!.level = 8;
+  model.state.elixir = 3000000;
   const barracks = model.state.buildings.find((b) => b.kind === 'barracks')!;
   const factory = model.state.buildings.find((b) => b.kind === 'spellfactory')!;
+  factory.level = 2;
+  model.state.spells = { rage: 0, heal: 2, lightning: 0 };
   model.upgrade(barracks.id);
   model.upgrade(factory.id);
   expect(barracks.upgradeEnd).toBeGreaterThan(model.clock);
@@ -48,9 +52,9 @@ describe('army preparation during facility upgrades', () => {
         building.upgradeEnd,
       );
     reloaded.train('wallbreaker', 5);
-    reloaded.brew('rage');
+    reloaded.brew('heal');
     expect(reloaded.state.army.wallbreaker).toBe(5);
-    expect(reloaded.state.spells.rage).toBe(1);
+    expect(reloaded.state.spells.heal).toBe(1);
     expect(reloaded.spellCapacity).toBe(model.spellCapacity);
     expect(validateSave(reloaded.state)).toBe(true);
   });

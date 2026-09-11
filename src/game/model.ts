@@ -1,3 +1,4 @@
+import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
   HERO_ABILITY,
   heroStats,
@@ -311,6 +312,8 @@ export class GameModel {
   researchTroop(kind: TroopKind) {
     const lab = this.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
     if (!lab || lab.upgradeEnd) return this.notify('Your laboratory must be ready to research.');
+    if (!this.troopUnlocked(kind))
+      return this.notify(`Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`);
     if (this.state.research) return this.notify('Research is already in progress.');
     if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
       return this.notify('This troop is at its maximum level.');
@@ -820,6 +823,12 @@ export class GameModel {
   trainingTime(_kind: TroopKind) {
     return 0;
   }
+  troopUnlocked(kind: TroopKind) {
+    return facilityLevel(this.state.buildings, 'barracks') >= TROOP_UNLOCK[kind];
+  }
+  spellUnlocked(kind: SpellKind) {
+    return facilityLevel(this.state.buildings, 'spellfactory') >= SPELL_UNLOCK[kind];
+  }
   get barracksReady() {
     // Completed production facilities remain usable throughout an upgrade.
     return this.state.buildings.some((b) => b.kind === 'barracks' && !b.constructing);
@@ -836,7 +845,8 @@ export class GameModel {
       count > 5
     )
       return;
-    if (!this.barracksReady) return this.notify('Your barracks must be ready to prepare troops.');
+    if (!this.troopUnlocked(kind))
+      return this.notify(`${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} Barracks.`);
     if (this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity)
       return this.notify('Army camps are full. Remove troops or upgrade a camp.');
     this.state.army[kind] += count;
@@ -852,8 +862,8 @@ export class GameModel {
       count > 5
     )
       return;
-    if (!this.factoryReady)
-      return this.notify('Your spell factory must be ready to prepare spells.');
+    if (!this.spellUnlocked(kind))
+      return this.notify(`${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} Spell Factory.`);
     if (
       this.spellHousing + this.queuedSpellHousing + SPELLS[kind].space * count >
       this.spellCapacity
@@ -880,21 +890,20 @@ export class GameModel {
     this.state.spellQueue = [];
     this.changed();
   }
-  /** Validate the entire composition before changing either troops or spells. */
+  /** Shared validation for preparation controls and atomic composition changes. */
+  armyPreparationIssue(army: Army, spells: SpellBook): string | null {
+    if (this.battle) return 'Return home before preparing an army.';
+    if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
+      return 'This army needs more troop or spell housing.';
+    const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));
+    if (troop) return `${TROOPS[troop].name} requires a completed level ${TROOP_UNLOCK[troop]} Barracks.`;
+    const spell = SPELL_KEYS.find((k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k));
+    if (spell) return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} Spell Factory.`;
+    return null;
+  }
   private prepareArmy(army: Army, spells: SpellBook) {
-    if (this.battle) return false;
-    if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity) {
-      this.notify('This army needs more troop or spell housing.');
-      return false;
-    }
-    if (armySpace(army) && !this.barracksReady) {
-      this.notify('Your barracks must be ready.');
-      return false;
-    }
-    if (spellSpace(spells) && !this.factoryReady) {
-      this.notify('Your spell factory must be ready.');
-      return false;
-    }
+    const issue = this.armyPreparationIssue(army, spells);
+    if (issue) { this.notify(issue); return false; }
     const added = TROOP_KEYS.reduce((n, k) => n + Math.max(0, army[k] - this.state.army[k]), 0);
     this.state.army = { ...army };
     this.state.spells = { ...spells };
@@ -1638,10 +1647,6 @@ export function initialSave(): Save {
   add('elixirstorage', 15, 10, 2);
   add('cannon', 9, 10, 2);
   add('archertower', 15, 15, 2);
-  add('mortar', 13, 16);
-  add('airdefense', 12, 2);
-  add('laboratory', 17, 20);
-  add('spellfactory', 21, 23, 2);
   add('barracks', 4, 15, 2);
   add('camp', 10, 21);
   add('camp', 21, 11);
@@ -1685,9 +1690,9 @@ export function initialSave(): Save {
     trophies: 1248,
     xp: 1850,
     buildings,
-    army: { swordsman: 12, archer: 10, giant: 2, wizard: 2, balloon: 2, goblin: 2, wallbreaker: 1 },
+    army: { ...emptyArmy(), swordsman: 12, archer: 10 },
     queue: [],
-    spells: { rage: 1, heal: 1, lightning: 0 },
+    spells: emptySpells(),
     spellQueue: [],
     stars: Array(12).fill(0),
     lastTick: Date.now(),

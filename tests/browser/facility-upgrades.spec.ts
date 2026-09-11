@@ -1,12 +1,17 @@
+import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall.level = 8;
+    m.state.elixir = 3000000;
+    m.state.buildings.find((b) => b.kind === 'spellfactory').level = 2;
+    m.state.spells = { heal: 2, rage: 0, lightning: 0 };
     m.changed();
   });
   for (const kind of ['barracks', 'spellfactory']) {
@@ -31,7 +36,7 @@ test('upgrading facilities keep phone army editing and saved presets available',
   await expect(page.locator('.drawer-foot')).toContainText('Free & instant during upgrades');
   await page.locator('[data-action="train-five:giant"]').click();
   await page.locator('[data-action="brew:heal"]').click();
-  await page.locator('[data-action="brew:rage"]').click();
+  await page.locator('[data-action="brew:heal"]').click();
   await expect(page.locator('[data-action="brew:lightning"]')).toBeDisabled();
   await page.locator('[data-action="army-presets"]').click();
   await page.locator('#preset-name-0').fill('Ready during upgrades');
@@ -52,7 +57,7 @@ test('upgrading facilities keep phone army editing and saved presets available',
         busy: m.busy,
       };
     }),
-  ).toEqual({ giants: 5, spells: { heal: 1, rage: 1, lightning: 0 }, housing: 4, busy: 2 });
+  ).toEqual({ giants: 5, spells: { heal: 2, rage: 0, lightning: 0 }, housing: 4, busy: 2 });
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
   await expect(page.locator('.drawer-sheet')).toBeVisible();

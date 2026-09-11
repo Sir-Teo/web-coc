@@ -31,7 +31,7 @@ test('tools are absent by default, opted in explicitly, and edits/checkpoints su
   await expect(page.locator('.developer-panel input[name="gold"]')).toHaveValue('9876543');
   await page.getByRole('button', { name: 'Restore checkpoint', exact: true }).click();
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(initial);
-  expect(await page.evaluate(() => window.__game.model.state.army.giant)).toBe(2);
+  expect(await page.evaluate(() => window.__game.model.state.army.giant)).toBe(0);
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/developer-desktop.png' });
 });
 test('progression controls unlock and level the King, and keyboard input stays in the dialog', async ({

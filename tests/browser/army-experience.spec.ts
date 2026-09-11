@@ -1,8 +1,10 @@
+import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
@@ -14,6 +16,7 @@ test('army editing is immediate, free, and respects weighted spell housing', asy
   await page.locator('[data-action="train:archer"]').click();
   await page.locator('[data-action="remove-troop:archer"]').click();
   await expect(page.locator('[data-action="remove-troop:archer"]')).toBeDisabled();
+  await page.locator('[data-action="brew:rage"]').click();
   await page.locator('[data-action="brew:rage"]').click();
   await page.locator('[data-action="brew:lightning"]').click();
   await expect(page.locator('[data-action="brew:heal"]')).toBeDisabled();
@@ -37,8 +40,8 @@ test('army editing is immediate, free, and respects weighted spell housing', asy
     elixir,
     giant: 1,
     archer: 0,
-    housing: 4,
-    spells: { rage: 0, heal: 1, lightning: 2 },
+    housing: 6,
+    spells: { rage: 1, heal: 1, lightning: 2 },
     queue: 0,
   });
 });
@@ -211,6 +214,8 @@ test('campaign results prepare the last army and start a fresh repeat attack', a
       b.upgradeStart = m.clock;
       b.upgradeEnd = m.clock + 600000;
     }
+    m.activeTroop = 'giant';
+    m.deploy(4, 11);
     m.finishBattle();
   });
   await page.locator('[data-action="raid-again"]').click();

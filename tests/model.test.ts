@@ -1,3 +1,4 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, initialSave, makeBuilding, findPath, distanceTo } from '../src/game/model';
 import { BUILDINGS, TROOP_KEYS, TROOPS } from '../src/game/data';
@@ -48,7 +49,7 @@ describe('village progression', () => {
     expect(mine.stored).toBe(10000 * mine.level - 5);
   });
   it('prepares instantly for free and respects camp capacity', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     const before = m.state.elixir;
     const wizardCount = m.state.army.wizard;
     m.train('archer');

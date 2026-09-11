@@ -1,3 +1,4 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
 import {
@@ -67,7 +68,7 @@ function spawn(m: GameModel, kind: Parameters<GameModel['train']>[0], x: number,
 
 describe('the air layer', () => {
   it('a ground-only cannon never touches a balloon', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     arena(m, [
       ['cannon', 10, 10, 1],
       ['townhall', 20, 20, 1],
@@ -87,7 +88,7 @@ describe('the air layer', () => {
     expect(swordsman.hp).toBe(swordsman.maxHp);
   });
   it('an air defense tears into a balloon', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     arena(m, [
       ['airdefense', 10, 10, 1],
       ['townhall', 20, 20, 1],
@@ -97,7 +98,7 @@ describe('the air layer', () => {
     expect(balloon.hp).toBeLessThan(balloon.maxHp);
   });
   it('a balloon crosses walls without breaking them', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     const walls: [Parameters<typeof makeBuilding>[1], number, number, number][] = [];
     for (let y = 6; y <= 18; y++) walls.push(['wall', 12, y, 1]);
     const battle = arena(m, [['townhall', 16, 11, 1], ...walls]);
@@ -125,21 +126,21 @@ describe('the air layer', () => {
 
 describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.state.spells = { rage: 0, heal: 0, lightning: 0 };
-    expect(m.spellCapacity).toBe(4);
+    expect(m.spellCapacity).toBe(6);
     const elixir = m.state.elixir;
-    m.brew('rage');
+    m.brew('rage', 2);
     m.brew('lightning');
-    expect(m.spellHousing).toBe(3);
+    expect(m.spellHousing).toBe(5);
     expect(m.state.spellQueue).toHaveLength(0);
     expect(m.state.elixir).toBe(elixir);
     m.brew('heal');
-    expect(m.spellHousing).toBe(3);
+    expect(m.spellHousing).toBe(5);
     expect(m.state.spellQueue).toHaveLength(0);
     expect(m.state.elixir).toBe(elixir);
     m.tick(m.clock + (SPELLS.rage.time + SPELLS.lightning.time) * 1000 + 1000);
-    expect(m.state.spells.rage).toBe(1);
+    expect(m.state.spells.rage).toBe(2);
     expect(m.state.spells.lightning).toBe(1);
     expect(validateSave(m.state)).toBe(true);
   });
@@ -250,7 +251,7 @@ describe('town hall gating and stretched timers', () => {
 
 describe('edit mode', () => {
   it('drags buildings, refuses occupied ground, and undoes and redoes', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.beginEdit();
     expect(m.editing).toBe(true);
     const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
@@ -267,7 +268,7 @@ describe('edit mode', () => {
     expect(validateSave(m.state)).toBe(true);
   });
   it('stores and restores three layouts', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.beginEdit();
     const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
     const original = { x: b.x, y: b.y };
@@ -312,7 +313,7 @@ describe('saves', () => {
     );
   });
   it('rejects a save whose building level exceeds that building maximum', () => {
-    const s = initialSave();
+    const s = developedSave();
     s.buildings.find((b) => b.kind === 'spellfactory')!.level = BUILDINGS.spellfactory.maxLevel + 1;
     expect(validateSave(s)).toBe(false);
   });
@@ -335,7 +336,7 @@ describe('second-pass behaviour', () => {
     expect(m.placement).toBeNull();
   });
   it('a felled balloon damages the buildings around it, once', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     arena(m, [
       ['townhall', 12, 12, 1],
       ['cannon', 20, 20, 1],
@@ -354,7 +355,7 @@ describe('second-pass behaviour', () => {
     expect(cannon.hp).toBe(before.cannon);
   });
   it('a whole drag is one undo step, not one per tile crossed', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.beginEdit();
     const b = m.state.buildings.find((v) => v.kind === 'laboratory')!;
     const from = { x: b.x, y: b.y };
@@ -372,7 +373,7 @@ describe('second-pass behaviour', () => {
     expect(m.canUndo).toBe(false);
   });
   it('research runs to five levels behind a matching laboratory', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
     m.state.elixir = 999999;
     for (let level = 1; level < MAX_TROOP_LEVEL; level++) {
@@ -389,7 +390,7 @@ describe('second-pass behaviour', () => {
     expect(validateSave(m.state)).toBe(true);
   });
   it('counts what the tutorial asks for and carries a spell book into battle', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     expect(m.state.stats.built ?? 0).toBe(0);
     m.beginBuild('cannon');
     m.place(2, 20);

@@ -1,10 +1,11 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { MAX_TROOP_LEVEL, TROOPS } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 describe('troop progression', () => {
   it('research is gated by laboratory level, charged once and completes offline once', () => {
-    const m = new GameModel(),
+    const m = new GameModel(developedSave()),
       lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
     lab.level = 1;
     const elixir = m.state.elixir;
@@ -32,7 +33,7 @@ describe('troop progression', () => {
     expect(restored.troopStats('giant').damage).toBe(Math.round(TROOPS.giant.damage * 1.3));
   });
   it('finishes research with gems and refuses malformed or over-level research saves', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.state.buildings.find((b) => b.kind === 'laboratory')!.level = 3;
     const gems = m.state.gems;
     m.researchTroop('archer');
@@ -73,7 +74,7 @@ describe('troop progression', () => {
     expect(m.state.army).toEqual(initial);
   });
   it('requires a completed barracks, with no training timer', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) {
       b.constructing = true;
       b.upgradeEnd = m.clock + 100000;
@@ -81,7 +82,7 @@ describe('troop progression', () => {
     const before = m.state.army.archer;
     m.train('archer');
     expect(m.state.army.archer).toBe(before);
-    const b = makeBuilding(m.state.nextId++, 'barracks', 1, 1);
+    const b = makeBuilding(m.state.nextId++, 'barracks', 1, 1, 2);
     b.constructing = true; m.state.buildings.push(b);
     m.train('archer');
     expect(m.state.army.archer).toBe(before);

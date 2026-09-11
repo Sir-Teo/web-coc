@@ -1,3 +1,4 @@
+import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -84,6 +85,7 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
   expect(await page.evaluate(() => window.__game.model.state.buildings.length)).toBe(before + 2);
 });
 test('trains troops and brews spells through the army drawer', async ({ page }) => {
+  await useDevelopedVillage(page);
   await page.locator('.train-add').click();
   await page.locator('[data-action="train:archer"]').click();
   await expect(page.locator('.drawer-foot')).toContainText('Free & instant');
@@ -101,6 +103,7 @@ test('trains troops and brews spells through the army drawer', async ({ page }) 
   expect(await page.evaluate(() => window.__game.model.state.spellQueue.length)).toBe(0);
 });
 test('plays an actual battle through results and unlocks the next village', async ({ page }) => {
+  await useDevelopedVillage(page);
   await page.locator('.attack-btn').click();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/campaign-desktop.png' });

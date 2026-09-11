@@ -1,3 +1,4 @@
+import { developedSave } from './fixtures/developed-village';
 import { it, expect } from 'vitest';
 import { DeveloperControls } from '../src/dev/controls';
 import { developerToolsEnabled } from '../src/dev/access';
@@ -60,7 +61,7 @@ it('checkpoint restoration isolates copies, cancels battle and preserves user se
   expect(validateSave(m.state)).toBe(true);
 });
 it('completes all construction and research without advancing the wall clock or charging', () => {
-  const m = new GameModel(),
+  const m = new GameModel(developedSave()),
     dev = new DeveloperControls(m);
   m.upgrade(m.state.buildings.find((b) => b.kind === 'cannon')!.id);
   m.state.buildings.find((b) => b.kind === 'laboratory')!.level = 2;

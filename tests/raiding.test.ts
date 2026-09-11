@@ -1,3 +1,4 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import {
   GameModel,
@@ -110,7 +111,7 @@ describe('specialist troops', () => {
     expect(hall.maxHp - hall.hp).toBe(TROOPS.wallbreaker.damage);
   });
   it('trains, researches, deploys and replenishes the new troops', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     for (const kind of TROOP_KEYS) m.state.army[kind] = 0;
     m.train('goblin', 2);
     m.train('wallbreaker');

@@ -99,7 +99,7 @@ test('practice conceals traps, reveals a pointer-triggered bomb, and rearms on r
       id,
     ),
   ).toBe(false);
-  await page.locator('[data-action="troop:giant"]').click();
+  await page.locator('[data-action="troop:swordsman"]').click();
   const point = await page.evaluate(() => window.__game.scene.screenFor(2.5, 13.5));
   await page.mouse.click(point.x, point.y);
   await expect

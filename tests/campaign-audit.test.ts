@@ -10,7 +10,7 @@ const approaches = [
 ] as const;
 const armies = [
   {
-    name: 'starter',
+    name: 'early-developed',
     level: 1,
     units: {
       swordsman: 14,
@@ -85,7 +85,6 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           TroopKind,
           number
         >;
-        m.state.buildings.find((b) => b.kind === 'laboratory')!.level = army.level;
         for (const camp of m.state.buildings.filter((b) => b.kind === 'camp'))
           camp.level = army.level;
         if (army.name === 'veteran')
@@ -111,10 +110,10 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
   fs.mkdirSync('output/playtest', { recursive: true });
   fs.writeFileSync('output/playtest/campaign-balance.json', JSON.stringify(results, null, 2));
   expect(
-    results.filter((r) => r.stage === 1 && r.army === 'starter').every((r) => r.stars >= 1),
+    results.filter((r) => r.stage === 1 && r.army === 'early-developed').every((r) => r.stars >= 1),
   ).toBe(true);
   expect(
-    results.filter((r) => r.stage === 12 && r.army === 'starter').every((r) => r.stars < 3),
+    results.filter((r) => r.stage === 12 && r.army === 'early-developed').every((r) => r.stars < 3),
   ).toBe(true);
   for (let stage = 1; stage <= 12; stage++)
     expect(
@@ -122,3 +121,18 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
       `Stage ${stage} cannot be cleared`,
     ).toBe(true);
 }, 20000);
+
+it('the actual starter army can win the opening raid without spells or upgrades', () => {
+  const stars = approaches.map((approach) => {
+    const m = new GameModel();
+    m.startBattle(0);
+    for (const kind of ['swordsman', 'archer'] as const) {
+      m.activeTroop = kind;
+      while (m.battle!.remaining[kind]) expect(m.deploy(...approach)).toBe(true);
+    }
+    for (let step = 0; step < 3600 && !m.battle!.finished; step++) m.step(0.05);
+    expect(m.battle!.finished).toBe(true);
+    return m.battle!.stars;
+  });
+  expect(stars.some((n) => n >= 1), `Starter raid stars by approach: ${stars}`).toBe(true);
+});

@@ -1,3 +1,4 @@
+import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, initialSave } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
@@ -5,7 +6,7 @@ import { validateSave, migrateSave } from '../src/game/save';
 
 describe('instant army preparation', () => {
   it('prepares troops and spells without elixir or waiting', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.clearArmy();
     m.state.elixir = 0;
     m.train('giant', 5);
@@ -19,9 +20,9 @@ describe('instant army preparation', () => {
     expect(m.state.spellQueue).toEqual([]);
   });
   it('checks the whole batch, including weighted spell housing', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.clearArmy();
-    m.brew('rage');
+    m.brew('rage', 2);
     m.brew('lightning');
     m.brew('heal');
     expect(m.state.spells.heal).toBe(0);
@@ -137,7 +138,7 @@ describe('quick armies', () => {
 
 describe('practice and battle history', () => {
   it('copies the village and consumes neither army nor spells, even on a full clear', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     // Imported villages can exceed current storage limits; practice must preserve them too.
     m.state.gold = m.resourceCap('gold') + 123;
     m.state.elixir = m.resourceCap('elixir') + 456;
@@ -197,7 +198,7 @@ describe('practice and battle history', () => {
     expect(m.battle).toBe(battle);
   });
   it('records campaign losses once, including deployed troops and spells', () => {
-    const m = new GameModel();
+    const m = new GameModel(developedSave());
     m.startBattle(0);
     m.activeTroop = 'goblin';
     m.deploy(1, 13);

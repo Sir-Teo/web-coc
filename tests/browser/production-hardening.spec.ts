@@ -1,8 +1,10 @@
+import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 test('research is usable on desktop and mobile and survives reloading', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   await page.evaluate(() => {
     const m = window.__game.model;
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory');
@@ -44,6 +46,7 @@ test('a second tab waits and receives the latest village after the owner closes'
 }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   const second = await context.newPage();
   await second.goto('/');
   await expect(second.locator('#loading')).toHaveAttribute('data-session', 'waiting');
@@ -63,6 +66,7 @@ test('WebGL loss pauses combat and restoration keeps the village interactive', a
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   await page.evaluate(() => {
     const { game, model } = window.__game;
     model.startBattle(0);
@@ -93,6 +97,7 @@ test('twenty raid transitions release scene objects and keep saves valid', async
   test.setTimeout(60000);
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  await useDevelopedVillage(page);
   const counts = [];
   for (let i = 0; i < 20; i++) {
     await page.evaluate(() => {
