@@ -708,7 +708,7 @@ export const asset = (kind: string, level = 1) => {
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
-  if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
+  if (kind in SPELLS) return `/assets/spells/${kind}-v2.webp`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
     return `/assets/buildings/tier3/${artName(kind)}.webp`;
   const folder =

@@ -41,6 +41,7 @@ jobs:
       - run: node scripts/mortar-assets.mjs --check
       - run: node scripts/camp-assets.mjs --check
       - run: node scripts/terrain-assets.mjs --check
+      - run: node scripts/spell-assets.mjs --check
       - run: npm run build
 
       - name: Install browser test engines

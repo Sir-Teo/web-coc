@@ -1,5 +1,13 @@
 # Verification record
 
+## September 11 — consistent spell colors and a forked Lightning strike
+
+Healing bottles and auras now use yellow, while Rage uses purple; Lightning keeps blue. The original SVG generator is isolated in `scripts/spell-assets.mjs`, imported by the full asset pipeline and verified with `--check` in CI. Three versioned 256×256 WebPs replace the old URLs, retaining real alpha and totaling 14,002 bytes. A single blue/white forked Lightning graphic replaces the three rectangular beams and uses the existing paused/reduced-motion/cleanup lifecycle. These are authored visual approximations; native silhouettes and deployment staging remain open. See [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md).
+
+**All 11 affected browser scenarios pass in each of Metal Chromium and WebKit at 2×**, covering every spell's researched details at four viewports, paused spell/effect timing, reduced motion and cleanup. Battle captures in both engines show yellow and purple aura footprints and the forked bolt; the graphic reaches alpha 0.5 at 130ms and is destroyed on exit. The generated assets and final spell screens were visually inspected. The preceding **484 model/asset cases and 66 distinct browser scenarios per engine** remain the broader validation; this follow-up changes presentation and asset routing only.
+
+The build and production checks pass in both engines without reported errors. Production now requires all three new spell assets. Chromium reloads, opens Army and watches a replay offline with 109 cached files, cache `crown-clan-5f6da844dc59`. Save and combat formats are unchanged. Evidence: `output/playtest/spell-art-verification.json`, `spell-art-{chromium,webkit}.log`, `spell-art-assets.{log,json}`, `spell-art-build.log`, `spell-art-production-report.json`, `spell-art-capture.{mjs,json}`, `spell-art-battle-*.png`, `spell-art-lightning-fade-*.png` and the refreshed `spell-*-max-*.png` screens.
+
 ## September 11 — native spell research, effects and details
 
 Lightning, Healing and Rage levels 1–5 now use explicit research prices, durations, laboratory gates and combat values from Supercell's published game CSV. Lightning uses footprint intersections, storage/Town Hall immunity and defense interruption. Healing delivers 41 discrete pulses with the current 55% hero multiplier. Rage adds researched damage and movement boosts, preserves attack cadence, applies half boosts to heroes, does not stack and lingers after the last pulse. See [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md) for the immutable reference, hashes, tables and remaining timing limitations.

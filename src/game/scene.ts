@@ -34,8 +34,8 @@ import { heroStats } from './heroes';
 const AIR_LIFT = 46;
 const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
 const SPELL_COLOR: Record<string, number> = {
-  rage: 0xff6a3d,
-  heal: 0x8de35c,
+  rage: 0xcf79ef,
+  heal: 0xffed8a,
   lightning: 0x6fd4ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
@@ -1247,19 +1247,24 @@ export class VillageScene extends Phaser.Scene {
         duration: 520,
         onComplete: () => ring.destroy(),
       });
-      if (fx.spell === 'lightning')
-        for (let i = 0; i < 3; i++) {
-          const ox = (i - 1) * 26;
-          const bolt = this.add.rectangle(p.x + ox, p.y - 150, 6, 300, color, 0.9).setDepth(7300);
-          this.animateEffect({
-            targets: bolt,
-            alpha: 0,
-            scaleX: 0.2,
-            duration: 260,
-            delay: i * 55,
-            onComplete: () => bolt.destroy(),
-          });
+      if (fx.spell === 'lightning') {
+        const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
+        bolt.setData('spell', 'lightning');
+        const paths = [
+          [[-18, -310], [9, -251], [-10, -229], [21, -175], [-6, -146], [12, -93], [-9, -63], [0, 0]],
+          [[-10, -229], [-42, -199], [-25, -185], [-55, -150]],
+          [[12, -93], [40, -72], [27, -56], [48, -33]],
+        ];
+        for (const [width, tint, alpha] of [[11, color, 0.16], [5, color, 0.9], [2, 0xffffff, 1]]) {
+          bolt.lineStyle(width, tint, alpha);
+          for (const points of paths) {
+            bolt.beginPath().moveTo(points[0][0], points[0][1]);
+            for (const [x, y] of points.slice(1)) bolt.lineTo(x, y);
+            bolt.strokePath();
+          }
         }
+        this.animateEffect({ targets: bolt, alpha: 0, duration: 260, onComplete: () => bolt.destroy() });
+      }
       this.sparks(p.x, p.y - 20, color, 16);
       this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.state.settings.reducedMotion)
