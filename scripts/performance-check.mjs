@@ -1,7 +1,21 @@
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
-const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+import { loadavg, availableParallelism } from 'node:os';
+const hostLoadStart = loadavg();
+const metal = process.argv.includes('--metal');
+const density = Number(
+  process.argv.find((arg) => arg.startsWith('--density='))?.split('=')[1] ?? 1,
+);
+const [width, height] = (
+  process.argv.find((arg) => arg.startsWith('--viewport='))?.split('=')[1] ?? '1440x960'
+)
+  .split('x')
+  .map(Number);
+if (![density, width, height].every((value) => Number.isFinite(value) && value > 0))
+  throw Error('Use --density=2 and --viewport=1440x960 with positive dimensions.');
+if (metal && process.platform !== 'darwin') throw Error('--metal requires macOS.');
+const browser = await chromium.launch(metal ? { args: ['--use-angle=metal'] } : {});
+const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: density });
 await page.goto('http://localhost:5173');
 await page.waitForFunction(() => window.__game?.scene.ready);
 await page.locator('[data-action="skip-tutorial"]').click();
@@ -10,6 +24,10 @@ const renderer = await page.evaluate(() => {
   const debug = gl.getExtension('WEBGL_debug_renderer_info');
   return debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
 });
+if (metal && !renderer.includes('Metal')) {
+  await browser.close();
+  throw Error(`Metal was requested, but Chromium selected ${renderer}.`);
+}
 async function measure() {
   await page.waitForTimeout(500);
   return page.evaluate(
@@ -38,18 +56,22 @@ async function measure() {
 }
 const idle = await measure();
 let fullCamps;
+let legacyCamps;
 let quadComparison;
-if (process.argv.includes('--camps') || process.argv.includes('--compare-quads')) {
+let fieldComparison;
+if (
+  ['--camps', '--compare-quads', '--compare-field-mask'].some((flag) => process.argv.includes(flag))
+) {
   const saved = await page.evaluate(() => structuredClone(window.__game.model.state));
   const actors = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.townhall.level = 8;
     const template = m.state.buildings.find((b) => b.kind === 'camp');
-    for (const b of m.state.buildings) if (b.kind === 'camp') b.level = 8;
+    for (const b of m.state.buildings) if (b.kind === 'camp') b.level = 6;
     for (let y = 2; y < 24 && m.countOf('camp') < 4; y++)
       for (let x = 2; x < 24 && m.countOf('camp') < 4; x++)
         if (m.canPlace('camp', x, y))
-          m.state.buildings.push({ ...template, id: m.state.nextId++, x, y, level: 8 });
+          m.state.buildings.push({ ...template, id: m.state.nextId++, x, y, level: 6 });
     for (const k of Object.keys(m.state.army)) m.state.army[k] = 0;
     m.state.army.swordsman = m.capacity;
     m.changed();
@@ -86,6 +108,76 @@ if (process.argv.includes('--camps') || process.argv.includes('--compare-quads')
     }
     quadComparison.triangles = await measure();
   }
+  if (process.argv.includes('--compare-field-mask')) {
+    await page.evaluate(() => {
+      const s = window.__game.scene;
+      const [stencil, turf, release] = s.ground.list;
+      window.__fieldMaskBenchmark = {
+        paused: s.paused,
+        commands: stencil.list[0].commandBuffer.slice(),
+        invert: stencil.stencilInvert,
+        releaseInvert: release.stencilInvert,
+      };
+      s.paused = true;
+      // Both alternatives render the same frozen village and the same turf.
+      // Only the shape and inversion of the clipping stencil differ.
+      window.__fieldMaskBenchmark.apply = (reference) => {
+        const outline = stencil.list[0];
+        if (reference) {
+          const cx = turf.x,
+            cy = turf.y,
+            hx = turf.width / 2,
+            hy = turf.height / 2;
+          outline
+            .clear()
+            .fillStyle(0xffffff)
+            .fillPoints(
+              [
+                { x: cx, y: cy - hy },
+                { x: cx + hx, y: cy },
+                { x: cx, y: cy + hy },
+                { x: cx - hx, y: cy },
+              ],
+              true,
+            );
+        } else outline.commandBuffer = window.__fieldMaskBenchmark.commands.slice();
+        stencil.stencilInvert = reference;
+        release.stencilInvert = reference;
+      };
+    });
+    fieldComparison = [];
+    try {
+      for (const reference of [true, false, true, false]) {
+        await page.evaluate((reference) => window.__fieldMaskBenchmark.apply(reference), reference);
+        fieldComparison.push({
+          mask: reference ? 'inverted diamond' : 'corner triangles',
+          ...(await measure()),
+        });
+      }
+    } finally {
+      await page.evaluate(() => {
+        const s = window.__game.scene,
+          saved = window.__fieldMaskBenchmark;
+        const [stencil, , release] = s.ground.list;
+        stencil.list[0].commandBuffer = saved.commands;
+        stencil.stencilInvert = saved.invert;
+        release.stencilInvert = saved.releaseInvert;
+        s.paused = saved.paused;
+        delete window.__fieldMaskBenchmark;
+      });
+    }
+  }
+  if (process.argv.includes('--camps')) {
+    const actors = await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      model.state.army.swordsman = 660;
+      model.changed();
+      scene.sync();
+      return scene.ambientUnits.length;
+    });
+    legacyCamps = { actors, ...(await measure()) };
+    await page.screenshot({ path: 'output/playtest/legacy-camps.png' });
+  }
   await page.evaluate((saved) => {
     const { model, scene } = window.__game;
     model.state = saved;
@@ -108,11 +200,27 @@ await page.evaluate(() => {
 });
 const battle = await measure();
 const report = {
-  environment: `Headless Chromium ${browser.version()} on ${process.platform}, 1440×960, 1× pixel ratio; not a physical mobile benchmark`,
+  environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height}, ${density}× pixel ratio; not a physical mobile benchmark`,
+  display: await page.evaluate(() => {
+    const { game, scene } = window.__game;
+    return {
+      density: window.devicePixelRatio,
+      canvas: [game.canvas.width, game.canvas.height],
+      css: [game.canvas.clientWidth, game.canvas.clientHeight],
+      zoom: scene.viewZoom,
+    };
+  }),
   renderer,
+  host: {
+    logicalCpus: availableParallelism(),
+    loadAverageStart: hostLoadStart,
+    loadAverageEnd: loadavg(),
+  },
   idle,
   ...(fullCamps ? { fullCamps } : {}),
+  ...(legacyCamps ? { legacyCamps } : {}),
   ...(quadComparison ? { quadComparison } : {}),
+  ...(fieldComparison ? { fieldComparison } : {}),
   battle,
 };
 await fs.writeFile('output/playtest/performance.json', JSON.stringify(report, null, 2));

@@ -18,9 +18,7 @@ test('collections fly from the producer to its counter across camera zoom and pa
       scene.setZoom(scene.baseZoom * factor);
       scene.cameras.main.centerOn(840, 430);
       const origin = scene.screenFor(mine.x + 1.5, mine.y + 1.5);
-      const canvas = scene.game.canvas.getBoundingClientRect();
-      origin.x += canvas.left;
-      origin.y += canvas.top - 40 * scene.cameras.main.zoom;
+      origin.y -= 40 * scene.viewZoom;
       model.collect(mine.id);
       const particles = Array.from(document.querySelectorAll<HTMLElement>('.resource-flight'));
       const centers = (nodes: HTMLElement[]) =>
@@ -61,6 +59,8 @@ test('collections fly from the producer to its counter across camera zoom and pa
       expect(p.x).toBeCloseTo(result.target.x, 0);
       expect(p.y).toBeCloseTo(result.target.y, 0);
     }
+    // Animation.cancel dispatches cleanup asynchronously, after this evaluate.
+    await expect(page.locator('.resource-flight')).toHaveCount(0);
   }
 });
 

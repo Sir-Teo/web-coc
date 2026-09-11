@@ -37,28 +37,33 @@ test('moving previews preserve artwork and geometry across the building catalog'
     return Object.keys(BUILDINGS);
   });
   for (const kind of kinds) {
-    for (const requestedLevel of [1, 3, 5, 8]) {
-      const id = await page.evaluate(
-        async ({ kind, requestedLevel }) => {
-          const { BUILDINGS } = await import('/src/game/data.ts');
-          const { model: m, scene } = window.__game;
-          m.cancel();
-          const b = m.state.buildings[0];
-          b.kind = kind;
-          b.level = Math.min(requestedLevel, BUILDINGS[kind].maxLevel);
-          m.changed();
-          scene.sync();
-          return b.id;
-        },
-        { kind, requestedLevel },
-      );
-      const placed = await appearance(page, id);
-      await page.evaluate((id) => {
-        window.__game.model.move(id);
-        window.__game.scene.sync();
-      }, id);
-      expect(await appearance(page), `${kind} at level ${requestedLevel}`).toEqual(placed);
-    }
+    // Compare all levels in one browser call; hundreds of protocol round trips
+    // can exhaust the test timeout while another rendering suite is running.
+    const comparisons = await page.evaluate(async (kind) => {
+      const { BUILDINGS } = await import('/src/game/data.ts');
+      const { model: m, scene } = window.__game;
+      const snapshot = (im) => ({
+        texture: im.texture.key,
+        width: im.displayWidth,
+        height: im.displayHeight,
+        originX: im.originX,
+        originY: im.originY,
+      });
+      return [1, 3, 5, 8].map((requestedLevel) => {
+        m.cancel();
+        const b = m.state.buildings[0];
+        b.kind = kind;
+        b.level = Math.min(requestedLevel, BUILDINGS[kind].maxLevel);
+        m.changed();
+        scene.sync();
+        const placed = snapshot(scene.sprites.get(b.id));
+        m.move(b.id);
+        scene.sync();
+        return { requestedLevel, placed, moving: snapshot(scene.ghost) };
+      });
+    }, kind);
+    for (const { requestedLevel, placed, moving } of comparisons)
+      expect(moving, `${kind} at level ${requestedLevel}`).toEqual(placed);
   }
 });
 
@@ -112,7 +117,7 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
     m.changed();
   }, original.id);
   await page.locator(`[data-action="move:${original.id}"]`).click();
-  const destination = await point(19.2, 14.2);
+  const destination = await point(19.2, 15.2);
   await page.mouse.move(destination.x, destination.y);
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.ghost?.tintTopLeft))
@@ -133,7 +138,7 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
         b = m.state.buildings.find((b) => b.id === id);
       return { x: b.x, y: b.y, level: b.level, gold: m.state.gold, busy: m.busy };
     }, original.id),
-  ).toEqual({ x: 19, y: 14, level: 8, gold: original.gold, busy: original.busy });
+  ).toEqual({ x: 19, y: 15, level: 8, gold: original.gold, busy: original.busy });
 });
 
 test('a paid upgrade completing during a move refreshes preview size without changing texture', async ({

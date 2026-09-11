@@ -40,7 +40,7 @@ describe('hero progression', () => {
     expect(m.placement).toBeNull();
     m.townhall!.level = 4;
     m.beginBuild('herohall');
-    expect(m.place(2, 2)).toBe(true);
+    expect(m.place(2, 26)).toBe(true);
     expect(m.heroReady).toBe(false);
     const hall = m.state.buildings.at(-1)!;
     m.tick(hall.upgradeEnd! + 1);

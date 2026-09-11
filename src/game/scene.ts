@@ -1,3 +1,4 @@
+import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
 import { SPRING_AIRTIME } from './trap-stats';
@@ -38,7 +39,7 @@ const SPELL_COLOR: Record<string, number> = {
   lightning: 0x6fd4ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
-const TERRAIN_SCALE = 1.6;
+const TERRAIN_SCALE = 1.35;
 const CAMERA_MARGIN = 224;
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
@@ -62,7 +63,7 @@ export class VillageScene extends Phaser.Scene {
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
-  private ground!: Phaser.GameObjects.Graphics;
+  private ground!: Phaser.GameObjects.Container;
   private ruinGround!: Phaser.GameObjects.Graphics;
   /** Ground-level markings that buildings must sit on top of. */
   private groundMarks!: Phaser.GameObjects.Graphics;
@@ -93,7 +94,7 @@ export class VillageScene extends Phaser.Scene {
   onReady = () => {};
   onSelect = () => {};
   baseZoom = 1;
-  private cameraViewport = { width: 0, height: 0 };
+  private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private ambientUnits: Phaser.GameObjects.Image[] = [];
@@ -115,13 +116,15 @@ export class VillageScene extends Phaser.Scene {
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
+    for (const level of CAMP_ART_LEVELS)
+      if (level > 1) this.load.image(campTexture(level), asset('camp', level));
     this.load.image('king', asset('king'));
-    this.load.image('terrain', '/assets/environment/terrain-expanded-v2.webp');
+    this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall' && k !== 'mortar' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+      if (k !== 'wall' && k !== 'mortar' && k !== 'camp' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
@@ -146,7 +149,6 @@ export class VillageScene extends Phaser.Scene {
       .image(WORLD.ox, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
       .setDepth(-1000);
-    this.ground = this.add.graphics().setDepth(-900);
     this.ruinGround = this.add.graphics().setDepth(-875);
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
@@ -157,7 +159,7 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.effectTimeline.clear();
     });
-    this.drawPaths();
+    this.drawField();
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
     this.resetCamera();
@@ -208,12 +210,12 @@ export class VillageScene extends Phaser.Scene {
       const pointers = this.input.manager.pointers.filter((v) => v.isDown);
       if (pointers.length >= 2) {
         const dist = Phaser.Math.Distance.Between(
-          pointers[0].x,
-          pointers[0].y,
-          pointers[1].x,
-          pointers[1].y,
+          pointers[0].x / this.scale.displayScale.x,
+          pointers[0].y / this.scale.displayScale.y,
+          pointers[1].x / this.scale.displayScale.x,
+          pointers[1].y / this.scale.displayScale.y,
         );
-        if (this.pinchDistance) this.setZoom((this.cameras.main.zoom * dist) / this.pinchDistance);
+        if (this.pinchDistance) this.setZoom((this.viewZoom * dist) / this.pinchDistance);
         this.pinchDistance = dist;
         this.dragged = true;
         this.gesture = 'pan';
@@ -224,12 +226,12 @@ export class VillageScene extends Phaser.Scene {
       if (p.isDown && this.down) {
         const dx = p.x - this.down.x,
           dy = p.y - this.down.y,
-          travel = Math.hypot(dx, dy);
+          travel = Math.hypot(dx / this.scale.displayScale.x, dy / this.scale.displayScale.y);
         if (this.gesture === 'none' && travel > 7) this.gesture = this.classifyDrag(p);
         if (this.gesture !== 'none') this.dragged = true;
         if (this.gesture === 'pan') {
-          this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoom;
-          this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoom;
+          this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoomX;
+          this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoomY;
           this.clampCamera();
         } else if (this.gesture === 'deploy') this.dragDeploy(p);
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
@@ -268,7 +270,7 @@ export class VillageScene extends Phaser.Scene {
       this.game.canvas.removeEventListener('pointercancel', cancelGesture),
     );
     this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
-      if (!this.uiBlocked) this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.92 : 1.08));
+      if (!this.uiBlocked) this.setZoom(this.viewZoom * (dy > 0 ? 0.92 : 1.08));
     });
     this.model.onEffect = (fx) => this.effect(fx);
     this.sync();
@@ -284,28 +286,43 @@ export class VillageScene extends Phaser.Scene {
       this.paused = false;
     });
   }
-  drawPaths() {
-    const g = this.ground;
-    g.clear();
-    const path = (x: number, y: number, w: number, h: number) => {
-      const pts = [iso(x, y), iso(x + w, y), iso(x + w, y + h), iso(x, y + h)];
-      g.fillStyle(0xcdb780, 0.26);
-      g.fillPoints(pts, true);
-      g.lineStyle(1, 0xe5c798, 0.18);
-      g.strokePoints(pts, true);
-    };
-    path(9, 5, 1, 16);
-    path(5, 9, 16, 1);
-    path(5, 18, 16, 1);
-    path(18, 6, 1, 15);
-    path(11, 19, 3, 3);
-    for (let i = 0; i < 60; i++) {
-      const x = 5 + ((i * 7.31) % 17),
-        y = 5 + ((i * 11.13) % 17),
-        p = iso(x, y);
-      g.fillStyle(i % 3 === 0 ? 0xe8daa6 : 0x607e3f, 0.25);
-      g.fillEllipse(p.x, p.y, 3 + (i % 4), 2);
+  private drawField() {
+    // One tiny repeating texture avoids tessellating 968 static diamonds every frame.
+    if (!this.textures.exists('field-checks')) {
+      const tile = this.add.graphics().fillStyle(0xffffff);
+      tile.fillTriangle(0, 0, 64, 0, 32, 16);
+      tile.fillTriangle(0, 32, 32, 16, 64, 32);
+      tile.generateTexture('field-checks', 64, 32);
+      tile.destroy();
     }
+    const side = BUILD_MAX - BUILD_MIN;
+    const center = iso((BUILD_MIN + BUILD_MAX) / 2, (BUILD_MIN + BUILD_MAX) / 2);
+    const turf = this.add
+      .tileSprite(center.x, center.y, side * 64, side * 32, 'field-checks')
+      .setTint(0x23491d)
+      .setAlpha(0.065);
+    // Stencil only the four corners of the TileSprite's rectangle. Inverting
+    // the diamond instead would fill the whole viewport when applying AND
+    // removing the mask, even when the camera sees only the field interior.
+    const outline = this.add.graphics().fillStyle(0xffffff);
+    const left = center.x - side * 32, right = center.x + side * 32;
+    const top = center.y - side * 16, bottom = center.y + side * 16;
+    outline.fillTriangle(left, top, center.x, top, left, center.y);
+    outline.fillTriangle(center.x, top, right, top, right, center.y);
+    outline.fillTriangle(left, center.y, left, bottom, center.x, bottom);
+    outline.fillTriangle(right, center.y, right, bottom, center.x, bottom);
+    const stencil = this.add.stencil(0, 0, [outline], {
+      stencilInvert: false,
+      stencilLayerMode: 'addLayer',
+      stencilCompositeCheck: false,
+    });
+    const release = this.add.stencilreference(stencil, {
+      stencilInvert: false,
+      stencilLayerMode: 'subtractLayer',
+      stencilCompositeCheck: false,
+    });
+    // Keep stencil application and removal together so later village objects stay unclipped.
+    this.ground = this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
   }
   decorate() {
     const dec: [string, number, number, number][] = [
@@ -319,21 +336,29 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private updateBaseZoom() {
-    const { width, height } = this.scale;
+    const { width, height } = this.scale.canvasBounds;
     this.baseZoom = Math.max(width / 1792, height / 1195) * 1.04;
     if (width < 700) this.baseZoom = Math.max(width / 1250, height / 1400);
   }
   get minZoom() {
     return Math.min(
       this.baseZoom * 0.78,
-      Math.max(this.scale.width / WORLD.width, this.scale.height / WORLD.height) * 0.95,
+      Math.max(this.scale.canvasBounds.width / WORLD.width, this.scale.canvasBounds.height / WORLD.height) * 0.95,
     );
+  }
+  /** Camera zoom in CSS pixels per world pixel, independent of display density. */
+  get viewZoom() {
+    return this.cameras.main.zoomX / this.cameraViewport.densityX;
+  }
+  private rememberViewport() {
+    const c = this.cameras.main;
+    this.cameraViewport = { width: c.width, height: c.height, densityX: this.scale.displayScale.x };
   }
   resetCamera() {
     if (!this.cameras) return;
     this.updateBaseZoom();
-    this.cameraViewport = { width: this.cameras.main.width, height: this.cameras.main.height };
-    this.cameras.main.setZoom(this.baseZoom);
+    this.rememberViewport();
+    this.setZoom(this.baseZoom);
     this.cameras.main.centerOn(896, 570);
     this.clampCamera();
   }
@@ -342,28 +367,37 @@ export class VillageScene extends Phaser.Scene {
     // Phaser has resized the viewport, but scroll still refers to its previous size.
     const x = c.scrollX + this.cameraViewport.width / 2;
     const y = c.scrollY + this.cameraViewport.height / 2;
-    const zoom = c.zoom;
+    const zoom = this.viewZoom;
     this.updateBaseZoom();
-    this.cameraViewport = { width: c.width, height: c.height };
-    c.setZoom(Phaser.Math.Clamp(zoom, this.minZoom, this.baseZoom * 2));
+    this.rememberViewport();
+    this.setZoom(zoom);
     c.centerOn(x, y);
     this.clampCamera();
     // A pointer's old screen coordinates no longer describe the resized playfield.
     this.down = undefined;
     this.gesture = 'none';
     this.pinchDistance = 0;
+    this.ghostPoint = undefined;
+    // Reproject the last DOM position into the new buffer for a stationary cursor.
+    const pointer = this.input.activePointer;
+    const event = pointer.event;
+    if (event && 'clientX' in event) {
+      const point = this.canvasPoint(event.clientX, event.clientY);
+      pointer.position.set(point.x, point.y);
+    }
   }
   setZoom(value: number) {
-    this.cameras.main.setZoom(Phaser.Math.Clamp(value, this.minZoom, this.baseZoom * 2));
+    const zoom = Phaser.Math.Clamp(value, this.minZoom, this.baseZoom * 2);
+    this.cameras.main.setZoom(zoom * this.scale.displayScale.x, zoom * this.scale.displayScale.y);
     this.clampCamera();
   }
   zoomBy(delta: number) {
-    this.setZoom(this.cameras.main.zoom * delta);
+    this.setZoom(this.viewZoom * delta);
   }
   clampCamera() {
     const c = this.cameras.main,
-      vw = c.width / c.zoom,
-      vh = c.height / c.zoom;
+      vw = c.width / c.zoomX,
+      vh = c.height / c.zoomY;
     const centerX = Phaser.Math.Clamp(
         c.scrollX + c.width / 2,
         WORLD.left + Math.min(vw / 2 - CAMERA_MARGIN, WORLD.width / 2),
@@ -482,7 +516,10 @@ export class VillageScene extends Phaser.Scene {
   /** Converts a DOM pointer position, so the shop drawer can drag onto the map. */
   canvasPoint(clientX: number, clientY: number) {
     const rect = this.game.canvas.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    return {
+      x: (clientX - rect.left) * this.scale.width / rect.width,
+      y: (clientY - rect.top) * this.scale.height / rect.height,
+    };
   }
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));
@@ -643,7 +680,7 @@ export class VillageScene extends Phaser.Scene {
       }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar') im.setTint(0xffecc7);
+      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp') im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -726,9 +763,10 @@ export class VillageScene extends Phaser.Scene {
     const texture = buildingTexture(kind, level);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
-    const scale = wall || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
-    const width = wall ? wall.height * .75 : BUILDINGS[kind].width * scale;
-    return im.setOrigin(.5, wall ? .84 : .88).setFlipX(false)
+    const camp = kind === 'camp' ? campArt(level) : undefined;
+    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
+    const width = wall ? wall.height * .75 : camp ? camp.width : BUILDINGS[kind].width * scale;
+    return im.setOrigin(camp?.originX ?? .5, camp?.originY ?? (wall ? .84 : .88)).setFlipX(false)
       .setDisplaySize(width, wall ? wall.height : width * im.height / im.width);
   }
   private syncCampUnits() {
@@ -738,11 +776,13 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const { army, buildings } = this.model.state;
+    const obstacles = this.model.obstacles;
     const signature = TROOP_KEYS.map((k) => army[k]).join(',') + '|' +
-      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|');
+      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|') + '|' +
+      obstacles.map((o) => `${o.id}:${o.kind}:${o.x}:${o.y}`).join('|');
     if (signature !== this.campSignature) {
       this.campSignature = signature;
-      this.campActors = campPlan(army, buildings);
+      this.campActors = campPlan(army, buildings, obstacles);
       const ids = new Set(this.campActors.map((a) => a.id));
       for (const [id, im] of this.campViews)
         if (!ids.has(id)) { im.destroy(); this.campViews.delete(id); }
@@ -787,8 +827,8 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
-    const width = BUILDINGS[b.kind].width * (b.kind === 'wall' ? 0.9 : 0.98);
-    im.setTexture(WOOD_RUINS.has(b.kind) ? 'ruins-wood' : 'ruins-stone')
+    const width = (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) * (b.kind === 'wall' ? 0.9 : 0.98);
+    im.setTexture(WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone')
       .setOrigin(0.5, 0.58)
       .setFlipX(b.id % 2 === 0)
       .clearTint()
@@ -802,7 +842,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.hp > 0 || isTrap(b.kind)) continue;
       const d = BUILDINGS[b.kind];
       const p = iso(b.x + d.size / 2, b.y + d.size / 2);
-      const width = d.width * 1.12;
+      const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
       this.ruinGround.fillStyle(0x40331e, 0.3);
       this.ruinGround.fillEllipse(p.x, p.y + 4, width, width * 0.46);
       this.ruinGround.fillStyle(0x302719, 0.24);
@@ -904,7 +944,7 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       valid
-        ? this.model.placement === 'wall' || this.model.placement === 'mortar' ? 0xffffff : 0xd9ffb0
+        ? this.model.placement === 'wall' || this.model.placement === 'mortar' || this.model.placement === 'camp' ? 0xffffff : 0xd9ffb0
         : 0xff7272,
     );
     return { x, y, size: s, valid };
@@ -987,13 +1027,13 @@ export class VillageScene extends Phaser.Scene {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
           progress = (this.model.clock - start) / duration;
-        this.bar(im.x, im.y - im.displayHeight * 0.87, 54, progress, 0x82d745);
+        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87), 54, progress, 0x82d745);
         const p = iso(v.x, v.y);
         this.detail.lineStyle(3, 0xe6b356, 0.7);
         this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
         this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
       } else if (this.model.battle && v.hp < v.maxHp)
-        this.bar(im.x, im.y - im.displayHeight * 0.88, 42, v.hp / v.maxHp, 0xea654d);
+        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88), 42, v.hp / v.maxHp, 0xea654d);
     }
     const battle = this.model.battle;
     if (battle) {
@@ -1314,9 +1354,9 @@ export class VillageScene extends Phaser.Scene {
     this.resourceFlights.emit(
       {
         x: canvas.left +
-          ((sx - c.scrollX - c.width / 2) * c.zoom + c.width / 2) * canvas.width / this.scale.width,
+          ((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width / this.scale.width,
         y: canvas.top +
-          ((sy - c.scrollY - c.height / 2) * c.zoom + c.height / 2) * canvas.height / this.scale.height,
+          ((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height / this.scale.height,
       },
       { x: box.left + box.width / 2, y: box.top + box.height / 2 },
       resource,
@@ -1437,10 +1477,11 @@ export class VillageScene extends Phaser.Scene {
   }
   screenFor(x: number, y: number) {
     const p = iso(x, y),
-      c = this.cameras.main;
+      c = this.cameras.main,
+      rect = this.scale.canvasBounds;
     return {
-      x: (p.x - (c.scrollX + c.width / 2)) * c.zoom + c.width / 2,
-      y: (p.y - (c.scrollY + c.height / 2)) * c.zoom + c.height / 2,
+      x: rect.left + ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
+      y: rect.top + ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
     };
   }
 }

@@ -11,7 +11,7 @@ async function unlock(page: Page, th = 7) {
     m.state.obstacles = []; // The developed hero fixture uses cleared ground.
     m.townhall!.level = th;
     m.beginBuild('herohall');
-    if (!m.place(2, 2)) throw Error('Hero Hall fixture cannot be placed');
+    if (!m.place(2, 26)) throw Error('Hero Hall fixture cannot be placed');
     m.tick(m.state.buildings.at(-1)!.upgradeEnd! + 1);
     m.cancel();
     m.state.dark = 5000;

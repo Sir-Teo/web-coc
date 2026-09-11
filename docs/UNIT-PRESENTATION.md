@@ -1,8 +1,10 @@
 # Troop presentation
 
+The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.
+
 September 11, 2026. Ground troops face their next navigation waypoint while walking around obstacles and turn toward the building's center when attacking. Goblin and Wall Breaker walk atlases and static King artwork use their native opposite orientation. Nearly vertical headings keep the previous side to avoid flicker. The specialist atlases use a planted passing pose when idle, attacking or in reduced motion; their drawn gait replaces procedural body bobbing. See [the artwork record](SPECIALIST-WALK-ART.md).
 
-Walk frames and Balloon sway now use battle time. Pausing playback stops their motion, and playback speed advances it with the simulation. Stationary ground troops stop walking and bobbing in place. Reduced motion selects a fixed frame and removes bobbing and attack recoil. King's attack recoil uses his actual 1.2-second attack cycle rather than the Swordsman's 0.8-second cycle.
+Walk frames and Balloon sway now use battle time. Pausing playback stops their motion, and playback speed advances it with the simulation. Stationary ground troops stop walking and bobbing in place. Reduced motion selects a fixed frame and removes bobbing and attack recoil. King's attack recoil uses his actual 1.2-second attack cycle rather than the Barbarian's 0.8-second cycle.
 
 Six focused pose tests and three browser scenarios cover obstacle-facing direction, attack-facing direction, static art orientation, airborne headings, vertical stability, stationary units, pause behavior and reduced motion. The neighboring projectile timing scenarios also pass.
 

@@ -59,7 +59,7 @@ it('migrates an actual legacy layout without changing progress, walls, obstacles
   old.gold = 4321;
   const before = structuredClone(old);
   const migrated = migrateSave(old) as Save;
-  expect(migrated.version).toBe(3);
+  expect(migrated.version).toBe(4);
   expect(validateSave(migrated)).toBe(true);
   expect(migrated.buildings.map((b) => b.id)).toEqual(before.buildings.map((b) => b.id));
   for (const b of migrated.buildings) {
@@ -79,26 +79,43 @@ it('migrates an actual legacy layout without changing progress, walls, obstacles
   );
 });
 
-it('preserves every building in a densely packed legacy village and migrates deterministically', () => {
-  const old = legacyVillage();
-  old.buildings = [makeBuilding(1, 'townhall', 0, 0), makeBuilding(2, 'builder', 26, 26)];
-  old.obstacles = [];
-  old.nextId = 3;
-  for (let y = 0; y < 28; y += 2)
-    for (let x = 0; x < 28; x += 2) {
-      if ((x < 4 && y < 4) || (x === 26 && y === 26)) continue;
-      old.buildings.push(makeBuilding(old.nextId++, 'cannon', x, y));
+it.each([false, true])(
+  'preserves every building in a dense legacy village (army buildings=%s) and migrates deterministically',
+  (armyBuildings) => {
+    const old = legacyVillage();
+    old.buildings = [makeBuilding(1, 'townhall', 0, 0), makeBuilding(2, 'builder', 26, 26)];
+    old.obstacles = [];
+    old.nextId = 3;
+    for (let y = 0; y < 28; y += 2)
+      for (let x = 0; x < 28; x += 2) {
+        if ((x < 4 && y < 4) || (x === 26 && y === 26)) continue;
+        old.buildings.push(makeBuilding(old.nextId++, 'cannon', x, y));
+      }
+    if (armyBuildings) {
+      for (const [kind, y] of [
+        ['camp', 4],
+        ['herohall', 16],
+      ] as const) {
+        // Clear a 3×3 site at the old map edge using the original 2×2 defense sizes.
+        old.buildings = old.buildings.filter(
+          (b) => b.kind !== 'cannon' || b.x + 2 <= 25 || b.y + 2 <= y || b.y >= y + 3,
+        );
+        old.buildings.push(makeBuilding(old.nextId++, kind, 25, y));
+      }
     }
-  expect(validArrangement(old.buildings, [], true)).toBe(true);
-  const before = structuredClone(old);
-  const migrated = migrateSave(old) as Save;
-  expect(validateSave(migrated)).toBe(true);
-  expect(migrated.buildings).toHaveLength(before.buildings.length);
-  expect(migrated.buildings.some((b) => b.x >= 28 || b.y >= 28)).toBe(true);
-  const reversed = { ...before, buildings: [...before.buildings].reverse() };
-  const other = migrateSave(reversed) as Save;
-  expect([...other.buildings].sort((a, b) => a.id - b.id)).toEqual(migrated.buildings);
-});
+    expect(validArrangement(old.buildings, [], 2)).toBe(true);
+    const before = structuredClone(old);
+    const migrated = migrateSave(old) as Save;
+    expect(validateSave(migrated)).toBe(true);
+    expect(migrated.buildings).toHaveLength(before.buildings.length);
+    expect(migrated.buildings.some((b) => b.x >= 28 || b.y >= 28)).toBe(true);
+    const reversed = { ...before, buildings: [...before.buildings].reverse() };
+    const other = migrateSave(reversed) as Save;
+    expect([...other.buildings].sort((a, b) => a.id - b.id)).toEqual(
+      [...migrated.buildings].sort((a, b) => a.id - b.id),
+    );
+  },
+);
 
 it('migrates saved layout slots and restores them without changing a purchased upgrade', () => {
   const old = legacyVillage();
@@ -139,7 +156,7 @@ it('keeps old replay snapshots valid at their old map edge and records new-map a
   m.deploy(4, 11);
   m.finishBattle();
   const replay = structuredClone(m.state.raidLog![0].replay!);
-  expect(REPLAY_VERSION).toBe(12);
+  expect(REPLAY_VERSION).toBe(14);
   replay.initial.buildings = [makeBuilding(9000, 'cannon', 26, 26)];
   replay.initial.nextId = 9001;
   replay.version = 11;

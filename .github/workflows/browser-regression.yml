@@ -34,6 +34,10 @@ jobs:
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line
 
+      - name: Verify Retina terrain and camera coverage
+        if: matrix.browser == 'webkit' && matrix.shard == 4
+        run: npx playwright test tests/browser/terrain-field.spec.ts tests/browser/village-camera.spec.ts --config=playwright.retina.config.ts --browser=webkit
+
       - name: Build production bundle
         if: matrix.shard == 1
         run: npm run build
@@ -51,6 +55,7 @@ jobs:
           name: browser-${{ matrix.browser }}-${{ matrix.shard }}
           path: |
             output/test-results/
+            output/retina-results/
             output/playtest/
           retention-days: 7
           if-no-files-found: ignore

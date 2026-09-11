@@ -1,16 +1,24 @@
 import Phaser from 'phaser';
 import './style.css';
+import './ui/compact-hud.css';
 import { GameModel } from './game/model';
 import { VillageScene } from './game/scene';
 import { AudioManager } from './game/audio';
-import { loadSave, saveGame } from './game/save';
+import { loadSave, saveGame, SaveRecoveryError } from './game/save';
 import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
+import { configureDisplay, displaySize } from './game/display';
 async function boot() {
   const releaseSession = await acquireVillage();
-  const saved = await loadSave(),
-    model = new GameModel(saved);
+  let saved;
+  try {
+    saved = await loadSave();
+  } catch (error) {
+    releaseSession();
+    throw error;
+  }
+  const model = new GameModel(saved);
   const audio = new AudioManager();
   audio.enabled = model.state.settings.sound;
   document.documentElement.classList.toggle('reduce-motion', model.state.settings.reducedMotion);
@@ -31,7 +39,11 @@ async function boot() {
     antialias: true,
     roundPixels: false,
     powerPreference: 'high-performance',
-    scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
+    scale: {
+      mode: Phaser.Scale.NONE,
+      ...displaySize(window.innerWidth, window.innerHeight, 1),
+    },
+    callbacks: { postBoot: configureDisplay },
     render: { pixelArt: false, antialias: true },
     input: { activePointers: 3 },
     scene: [scene],
@@ -147,7 +159,7 @@ async function boot() {
               finished: model.battle.finished,
             }
           : null,
-        coordinates: '28×28 isometric grid; x toward lower-right, y toward lower-left',
+        coordinates: '48×48 isometric grid; x toward lower-right, y toward lower-left',
       }),
   });
   if (developerToolsEnabled(import.meta.env.DEV, location.hostname, location.search)) {
@@ -162,7 +174,27 @@ boot().catch((error) => {
   const label = document.querySelector('#load-label');
   if (label)
     label.textContent =
-      error instanceof SessionUnavailableError
+      error instanceof SessionUnavailableError || error instanceof SaveRecoveryError
         ? error.message
         : 'Your village could not start. Refresh the page to try again.';
+  if (error instanceof SaveRecoveryError) {
+    document.querySelector('.load-track')?.remove();
+    const actions = document.createElement('div');
+    actions.className = 'save-recovery-actions';
+    for (const copy of error.copies) {
+      const button = document.createElement('button');
+      button.className = 'game-btn blue';
+      button.textContent = `Download ${copy.source}`;
+      button.onclick = () => {
+        const url = URL.createObjectURL(new Blob([copy.text], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `crown-and-clan-${copy.source}-recovery.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+      actions.append(button);
+    }
+    document.querySelector('#loading')?.append(actions);
+  }
 });

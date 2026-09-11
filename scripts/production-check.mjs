@@ -10,16 +10,26 @@ const report = {};
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 960 },
+    deviceScaleFactor: 2,
+  });
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
-    ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`),
+    ...Array.from({ length: 8 }, (_, i) => `/assets/buildings/camp-levels-v1/level-${i + 1}.webp`),
+    '/assets/environment/terrain-field-v4.webp',
+    ...Array.from(
+      { length: 6 },
+      (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`,
+    ),
     '/assets/buildings/airdefense-v2.webp',
     '/assets/buildings/tier3/airdefense-v2.webp',
     '/assets/buildings/spellfactory-v2.webp',
     '/assets/buildings/tier3/spellfactory-v2.webp',
     '/assets/characters/balloon-v2.webp',
+    '/assets/characters/barbarian-v1.webp',
+    '/assets/characters/walk/barbarian-v1.webp',
     '/assets/characters/walk/balloon-v2.webp',
     '/assets/characters/walk/goblin-v1.webp',
     '/assets/characters/walk/wallbreaker-v1.webp',
@@ -43,6 +53,11 @@ for (const [name, engine] of Object.entries(engines)) {
     () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
   );
   await page.waitForTimeout(1500);
+  expect(
+    await page
+      .locator('#game canvas')
+      .evaluate((canvas) => [canvas.width, canvas.height, canvas.clientWidth, canvas.clientHeight]),
+  ).toEqual([2880, 1920, 1440, 960]);
   await page.locator('[data-action="collect"]').last().click();
   await page.locator('.resource-flight').first().waitFor({ state: 'attached' });
   await page.locator('.resource-flight').last().waitFor({ state: 'detached' });
@@ -71,26 +86,27 @@ for (const [name, engine] of Object.entries(engines)) {
   await page.locator('[data-action="practice"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
   let deployed = false;
-  for (const [x, y] of [
-    [320, 500],
-    [1120, 500],
-    [350, 580],
-    [1090, 580],
-    [500, 640],
-    [940, 640],
-  ]) {
+  // Probe clear visible ground through real canvas input. Building footprints
+  // can change between releases, so six fixed points may all be inside the boundary.
+  const sites = [720, 640, 560, 480, 400, 320, 240].flatMap((y) =>
+    [720, 560, 880, 400, 1040, 240, 1200, 80, 1360].map((x) => [x, y]),
+  );
+  for (const [x, y] of sites) {
     if (
       await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.tagName === 'CANVAS', [x, y])
     ) {
       await page.mouse.click(x, y);
+      await page.waitForTimeout(50); // Phaser consumes pointer input on a render frame.
       deployed = await page.evaluate(
         () => JSON.parse(window.render_game_to_text()).battle.units > 0,
       );
       if (deployed) break;
     }
   }
-  if (!deployed)
+  if (!deployed) {
+    await page.screenshot({ path: `output/playtest/production-deploy-failure-${name}.png` });
     throw Error('Production replay check could not deploy a troop through the canvas.');
+  }
   await page.waitForTimeout(2000);
   await page.locator('[data-action="surrender"]').click();
   await page.locator('[data-action="end"]').click();
@@ -101,6 +117,9 @@ for (const [name, engine] of Object.entries(engines)) {
     return { resources: s.resources, army: s.army };
   });
   await page.setViewportSize({ width: 844, height: 390 });
+  await expect
+    .poll(() => page.locator('#game canvas').evaluate((canvas) => [canvas.width, canvas.height]))
+    .toEqual([1688, 780]);
   await page.locator('[data-action="battle-log"]').click();
   await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
   await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });
@@ -121,6 +140,8 @@ for (const [name, engine] of Object.entries(engines)) {
   await page.setViewportSize({ width: 1440, height: 960 });
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
   report[name] = {
+    displayDensity: 2,
+    nativeBuffer: true,
     boot: true,
     shop: true,
     research: true,

@@ -163,7 +163,7 @@ test('mixed camp occupants remain visible on a phone', async ({ page }) => {
     scene.sync();
     const camp = model.state.buildings.find((b) => b.kind === 'camp');
     scene.cameras.main.setZoom(scene.baseZoom * 1.5);
-    scene.cameras.main.centerOn(896 + (camp.x - camp.y) * 32, 112 + (camp.x + camp.y + 3) * 16);
+    scene.cameras.main.centerOn(896 + (camp.x - camp.y) * 32, 112 + (camp.x + camp.y + 4) * 16);
   });
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'output/playtest/camp-roster-phone.png' });

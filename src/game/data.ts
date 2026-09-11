@@ -1,3 +1,5 @@
+import { campArt, campAsset, campTexture } from './camp-art';
+import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
 import { wallAsset, wallTexture } from './wall-art';
 import { mortarAsset, mortarTexture } from './mortar-art';
@@ -75,8 +77,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     name: 'Hero Hall',
     description:
       'Home of the Barbarian King. Unlock your first hero here, then upgrade him from Town Hall 7.',
-    size: 3,
-    width: 140,
+    size: 4,
+    width: 187,
     hp: 1500,
     cost: 20000,
     resource: 'elixir',
@@ -228,16 +230,17 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   camp: {
     name: 'Army Camp',
-    description: 'Your troops gather here before battle. Every level adds 20 army spaces.',
-    size: 3,
-    width: 133,
-    hp: 700,
-    cost: 3000,
+    description:
+      'Houses your prepared troops. Upgrade to increase capacity; camps keep working during upgrades.',
+    size: 4,
+    width: campArt(1).width,
+    hp: CAMP_LEVELS[0].hp,
+    cost: CAMP_LEVELS[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 8,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
-    build: 90,
+    available: CAMP_COUNTS,
+    build: CAMP_LEVELS[0].seconds,
   },
   builder: {
     name: 'Builder’s Hut',
@@ -466,7 +469,7 @@ export interface TroopDef {
 }
 export const TROOPS: Record<TroopKind, TroopDef> = {
   swordsman: {
-    name: 'Swordsman',
+    name: 'Barbarian',
     role: 'MELEE',
     description: 'Fearless frontline fighters. Best deployed in a group.',
     hp: 200,
@@ -530,7 +533,8 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
   balloon: {
     name: 'Balloon',
     role: 'AIR',
-    description: 'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
+    description:
+      'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
     hp: 780,
     damage: 190,
     speed: 0.62,
@@ -674,15 +678,19 @@ export const TIER3_LEVEL = 5;
 export const buildingTexture = (kind: BuildingKind, level = 1) => {
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
+  if (kind === 'camp') return campTexture(level);
   return level >= TIER3_LEVEL && !BUILDINGS[kind].singleArtwork ? `${kind}-tier3` : kind;
 };
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
-const artName = (kind: string) => `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
+// Keep the persisted swordsman key in armies, research, presets and replay actions.
+const artName = (kind: string) => kind === 'swordsman'
+  ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1) => {
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
+  if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
@@ -698,6 +706,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level + 1)?.seconds ??
   trapProgression(kind, level + 1)?.seconds ??
   defenseProgression(kind, level + 1)?.seconds ??
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
@@ -706,12 +715,14 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level)?.hp ??
   defenseProgression(kind, level)?.hp ??
   (kind === 'wall'
     ? WALL_LEVELS[Math.min(WALL_LEVELS.length, Math.max(1, level)) - 1].hp
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  campProgression(kind, level + 1)?.cost ??
   trapProgression(kind, level + 1)?.cost ??
   defenseProgression(kind, level + 1)?.cost ??
   (kind === 'wall'

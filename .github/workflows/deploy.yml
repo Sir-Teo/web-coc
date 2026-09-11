@@ -36,8 +36,11 @@ jobs:
       # The simulation rules carry the whole game loop, so a red suite must not
       # reach players. `npm run build` type-checks before it bundles.
       - run: npm test
+      - run: node scripts/barbarian-assets.mjs --check
       - run: node scripts/specialist-walk-assets.mjs --check
       - run: node scripts/mortar-assets.mjs --check
+      - run: node scripts/camp-assets.mjs --check
+      - run: node scripts/terrain-assets.mjs --check
       - run: npm run build
 
       # Exhaustive browser regressions run through browser-regression.yml on

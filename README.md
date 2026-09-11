@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. New villages start at Town Hall 2 with Swordsmen and Archers. Upgrade the Barracks to unlock more troops, and build the Spell Factory after reaching Town Hall 5. Existing villages retain their buildings and prepared armies.
+Open http://localhost:5173. New villages start at Town Hall 2 with Barbarians and Archers. Upgrade the Barracks to unlock more troops, and build the Spell Factory after reaching Town Hall 5. Existing villages retain their buildings and prepared armies.
 
 ```sh
 npm run build
@@ -83,12 +83,13 @@ with `no-cache` so a new release is picked up on the next visit.
 
 - Build a **Hero Hall at Town Hall 4** to unlock the Barbarian King. Open **Army → Heroes** for stats and upgrades.
 - The King uses no army housing and returns at full health for each attack. Select his card or press **H**, then tap outside the deployment boundary.
-- At Town Hall 7, use his card or **H** again for **Iron Fist**: healing, rage, and four summoned swordsmen, once per attack. It also activates automatically at low health.
+- At Town Hall 7, use his card or **H** again for **Iron Fist**: healing, rage, and four summoned Barbarians, once per attack. It also activates automatically at low health.
 - Dark Elixir Drills and Storage unlock at Town Hall 7. Collect dark elixir to upgrade the King using one builder. Army → Progression shows building unlocks and level caps.
 - This is the first hero implementation; equipment, other heroes, and defending heroes remain unfinished. See [docs/HERO-PROGRESSION.md](docs/HERO-PROGRESSION.md).
 
 ### Raids
 
+- Army Camps have eight distinct fire-pit and cooking-spit sprites, with troops gathering around the central pit. They use native housing values: 20, 30, 35, 40, 45 and 50 spaces at playable levels 1–6. A new TH2 village starts with one level-two camp. Upgrading camps keep their existing capacity; constructing camps add capacity on completion. Older prepared armies are preserved even if over capacity. See [camp progression](docs/CAMP-PROGRESSION.md).
 - **Practice** in the Army drawer or campaign screen attacks a copy of your own village with its real layout and defense levels. It spends no troops or spells and awards no loot, trophies, or campaign stars. Change your defenses and try again.
 - **Battle log** on the left rail keeps your twenty most recent results and deployed compositions, including practice. **Watch replay** plays the latest five recorded attacks with a draggable timeline, ±10-second jumps, First deployment, pause/play, restart, and 1×/2×/4× speeds. Export replay downloads a standalone recording; Open shared replay plays a file without replacing your village. Space toggles pause; drag and zoom to inspect the battlefield. Recordings preserve the original layout, research levels, spells, and hero actions, and survive reload/export. Playback awards nothing and spends nothing. Older results and incompatible recordings remain in the log without playback. Results also offer a repeat-attack button; campaign repeats prepare the last army first.
 - Attack opens the 12-stage campaign. Every raid starts with a **30-second scouting phase**; the battle clock only starts when you deploy or when scouting runs out.
@@ -103,7 +104,7 @@ with `no-cache` so a new release is picked up on the next visit.
 ### Saving
 
 - Only one tab can play a village at a time. A second tab waits until the first closes, then loads the latest save.
-- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Version 1 and older version 2 villages are migrated on load and import. Newly added troop types begin at zero in existing saves, preserving their army and resources. Old paid training queues complete once immediately on load. Army presets and battle history are included in backups.
+- Progress saves in IndexedDB with a localStorage backup. Settings includes export/import; importing replaces the current village. Save formats 1–3 are migrated on load and import, preserving progress while correcting old building footprints. If stored villages cannot be recovered, startup offers downloads instead of replacing them with a new village. Newly added troop types begin at zero in existing saves, preserving their army and resources. Old paid training queues complete once immediately on load. Army presets and battle history are included in backups.
 - Resource accumulation while away is capped at 8 hours and by collector storage.
 
 ## What is implemented

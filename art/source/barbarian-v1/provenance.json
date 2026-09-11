@@ -1,0 +1,29 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "date": "2026-09-11",
+  "reference": "https://support.supercell.com/images/Barbarian-Triumphant.png?v=1676029959",
+  "referenceUse": "Character identity reference; not shipped",
+  "generations": [
+    {
+      "file": "generated.png",
+      "prompt": "prompt.txt",
+      "result": "Character design accepted; opaque checkerboard and repeated strides required correction",
+      "toolFile": "exec-32db6db1-9668-4987-94f8-f52aa693dc2b.png"
+    },
+    {
+      "file": "walk-matte.png",
+      "prompt": "correction-prompt.txt",
+      "result": "Accepted source; flat magenta removed deterministically by importer",
+      "toolFile": "exec-828f8be3-8d93-4ced-b91c-61491846de22.png"
+    }
+  ],
+  "importer": "scripts/barbarian-assets.mjs",
+  "sha256": {
+    "art/source/barbarian-v1/generated.png": "4ac65c8527193c8c9e2c470119edebccb15d45c336bb145bfa6c9a8b860ff74b",
+    "art/source/barbarian-v1/walk-matte.png": "7d14ec7f546dc9566a61d2970ee2740b1dea7a9db2843cdf61465ba243d08b2e",
+    "art/source/barbarian-v1/prompt.txt": "18b94aaf566bb72c94fbde4a174989c42bd8969d84960acc4348cf82f0660538",
+    "art/source/barbarian-v1/correction-prompt.txt": "781a0611cf062620cd36a0082b7e49eaab7ec6a69a4423cfb5067730fe024c43",
+    "public/assets/characters/barbarian-v1.webp": "dcd4b9567c08fce1d31219bed9a8316c27ea795f49958add1145e9113fab064d",
+    "public/assets/characters/walk/barbarian-v1.webp": "16ac5696f0acbbaa08ea34a1a052f6adaf281fa4dd71b11d54c849d03005385c"
+  }
+}

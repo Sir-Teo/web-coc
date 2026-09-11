@@ -14,8 +14,11 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
   await expect(page.locator('[data-action="train:giant"]')).toContainText('Barracks 3');
   await expect(page.locator('[data-action="brew:lightning"]')).toBeDisabled();
   await page.locator('[data-action="progression"]').click();
-  await expect(page.locator('.progression-tier').filter({ has: page.getByRole('heading', { name: 'Town Hall 2 · Current', exact: true }) }))
-    .toContainText('Giant');
+  await expect(
+    page
+      .locator('.progression-tier')
+      .filter({ has: page.getByRole('heading', { name: 'Town Hall 2 · Current', exact: true }) }),
+  ).toContainText('Giant');
   await page.keyboard.press('Escape');
   const id = await page.evaluate(() => {
     const m = window.__game.model;
@@ -43,7 +46,9 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
   }, id);
   await expect(page.locator('.context-actions [data-action="army"]')).toBeVisible();
   await expect(page.locator('.building-context')).toBeInViewport({ ratio: 1 });
-  await page.screenshot({ path: `output/playtest/army-unlocks-building-phone-${test.info().project.name}.png` });
+  await page.screenshot({
+    path: `output/playtest/army-unlocks-building-phone-${test.info().project.name}.png`,
+  });
   await page.locator(`[data-action="finish:${id}"]`).click();
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
@@ -53,10 +58,16 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.ready);
   await page.locator('.train-add').click();
+  // The first Giant leaves 27/30 spaces occupied. It stays unlocked, but a
+  // second five-space Giant cannot fit until the player makes room.
+  await expect(page.locator('[data-action="train:giant"]')).toBeDisabled();
+  await page.locator('[data-action="remove-troop:giant"]').click();
   await expect(page.locator('[data-action="train:giant"]')).toBeEnabled();
   await page.locator('[data-action="train:giant"]').scrollIntoViewIfNeeded();
   await expect(page.locator('.drawer-foot')).toBeInViewport({ ratio: 1 });
-  await page.screenshot({ path: `output/playtest/army-unlocks-phone-${test.info().project.name}.png` });
+  await page.screenshot({
+    path: `output/playtest/army-unlocks-phone-${test.info().project.name}.png`,
+  });
 });
 
 test('factory construction and each completed upgrade unlock the next spell', async ({ page }) => {

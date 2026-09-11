@@ -214,7 +214,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['elixirstorage', 20, 12],
       ['goldmine', 20, 5],
       ['collector', 11, 21],
-      ['builder', 5, 7],
+      ['builder', 5, 8],
       ['airdefense', 7, 12],
       ['airdefense', 16, 11],
     ],
@@ -273,7 +273,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['goldstorage', 3, 10],
       ['elixirstorage', 21, 10],
       ['barracks', 11, 21],
-      ['camp', 11, 2],
+      ['camp', 12, 2],
       ['goldmine', 3, 4],
       ['collector', 22, 19],
       ['builder', 3, 18],
@@ -355,7 +355,7 @@ const CAMPAIGN_TRAPS: readonly (readonly Blueprint[])[] = [
   [
     ['bomb', 13, 20],
     ['airbomb', 21, 14],
-    ['springtrap', 6, 13],
+    ['springtrap', 6, 16],
   ],
   [
     ['giantbomb', 12, 14],

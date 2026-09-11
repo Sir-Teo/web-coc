@@ -9,7 +9,7 @@ async function boot(page: Page) {
 async function camera(page: Page) {
   return page.evaluate(() => {
     const c = window.__game.scene.cameras.main;
-    return { x: c.scrollX + c.width / 2, y: c.scrollY + c.height / 2, zoom: c.zoom };
+    return { x: c.scrollX + c.width / 2, y: c.scrollY + c.height / 2, zoom: window.__game.scene.viewZoom };
   });
 }
 
@@ -29,7 +29,7 @@ test('terrain covers every canvas edge through zoom, pan, aspect changes and bat
     [320, 1200],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === width, width);
+    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === Math.floor(width * devicePixelRatio), width);
     for (const battle of [false, true]) {
       gaps.push(
         ...(await page.evaluate(
@@ -84,7 +84,7 @@ test('terrain covers every canvas edge through zoom, pan, aspect changes and bat
                 c.centerOn(x, y);
                 scene.clampCamera();
                 const exposed = await capture();
-                if (exposed) failures.push({ width, height, battle, zoom: c.zoom, x, y, exposed });
+                if (exposed) failures.push({ width, height, battle, zoom: window.__game.scene.viewZoom, x, y, exposed });
               }
             }
             return failures;
@@ -113,7 +113,7 @@ test('rotation preserves world focus and zoom, and recenter remains explicit', a
     [390, 844],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === width, width);
+    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === Math.floor(width * devicePixelRatio), width);
     expect(await camera(page)).toEqual(before);
   }
   await page.locator('[data-action="recenter"]').click();
@@ -145,7 +145,7 @@ test('resizing cancels an in-progress pan and clamps zoom to the new viewport li
   await page.mouse.down();
   await page.mouse.move(770, 550, { steps: 5 });
   await page.setViewportSize({ width: 1200, height: 800 });
-  await page.waitForFunction(() => window.__game.scene.cameras.main.width === 1200);
+  await page.waitForFunction(() => window.__game.scene.cameras.main.width === Math.floor(1200 * devicePixelRatio));
   const afterResize = await camera(page);
   expect(afterResize.zoom).toBeCloseTo(await page.evaluate(() => window.__game.scene.baseZoom * 2));
   await page.mouse.move(970, 690, { steps: 5 });
