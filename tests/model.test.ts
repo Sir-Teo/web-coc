@@ -47,15 +47,14 @@ describe('village progression', () => {
     expect(m.state.gold).toBe(m.resourceCap('gold'));
     expect(mine.stored).toBe(10000 * mine.level - 5);
   });
-  it('trains sequentially, spends elixir and respects camp capacity', () => {
+  it('prepares instantly for free and respects camp capacity', () => {
     const m = new GameModel();
     const before = m.state.elixir;
     const wizardCount = m.state.army.wizard;
     m.train('archer');
     m.train('wizard');
-    expect(m.state.elixir).toBe(before - TROOPS.archer.cost - TROOPS.wizard.cost);
-    expect(m.state.queue[1].end).toBeGreaterThan(m.state.queue[0].end);
-    m.tick(m.clock + 24000);
+    expect(m.state.elixir).toBe(before);
+    expect(m.state.queue).toHaveLength(0);
     expect(m.state.army.archer).toBe(11);
     expect(m.state.army.wizard).toBe(wizardCount + 1);
     expect(m.state.queue).toHaveLength(0);

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import {
   BUILDINGS,
+  isTrap,
   SPELLS,
   SPELL_KEYS,
   TROOPS,
@@ -38,6 +39,7 @@ export class VillageScene extends Phaser.Scene {
   private detail!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
   private mode = '';
+  private renderedBattle: GameModel['battle'] = null;
   private lastRevision = -1;
   private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
   private dragged = false;
@@ -65,10 +67,12 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    this.load.image('king', asset('king'));
     this.load.image('terrain', '/assets/environment/terrain.webp');
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall') this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
+      if (k !== 'wall' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+        this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of TROOP_KEYS.filter((kind) => !TROOPS[kind].staticSprite))
@@ -392,7 +396,7 @@ export class VillageScene extends Phaser.Scene {
       b.index +
       ':' +
       b.buildings
-        .filter((v) => v.hp > 0 && v.kind !== 'wall')
+        .filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind))
         .map((v) => v.id)
         .join(',');
     if (signature === this.boundary.signature) return this.boundary.edges;
@@ -411,8 +415,19 @@ export class VillageScene extends Phaser.Scene {
     return edges;
   }
   pickBuilding(wx: number, wy: number, grid: { x: number; y: number }) {
+    // A small ground trap must remain selectable beneath a neighbouring roof.
+    const groundTrap = this.model.buildings.find(
+      (b) =>
+        isTrap(b.kind) &&
+        this.model.visibleBuilding(b) &&
+        grid.x >= b.x &&
+        grid.y >= b.y &&
+        grid.x < b.x + BUILDINGS[b.kind].size &&
+        grid.y < b.y + BUILDINGS[b.kind].size,
+    );
+    if (groundTrap) return groundTrap;
     const sorted = [...this.model.buildings]
-      .filter((b) => b.kind !== 'wall')
+      .filter((b) => b.kind !== 'wall' && this.model.visibleBuilding(b))
       .sort((a, b) => b.x + b.y - (a.x + a.y));
     for (const b of sorted) {
       const im = this.sprites.get(b.id);
@@ -427,6 +442,7 @@ export class VillageScene extends Phaser.Scene {
     }
     return this.model.buildings.find(
       (b) =>
+        this.model.visibleBuilding(b) &&
         grid.x >= b.x &&
         grid.y >= b.y &&
         grid.x < b.x + BUILDINGS[b.kind].size &&
@@ -435,7 +451,9 @@ export class VillageScene extends Phaser.Scene {
   }
   sync() {
     const mode = this.model.battle ? 'battle' : 'home';
-    if (mode !== this.mode) {
+    if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      this.renderedBattle = this.model.battle;
+      this.boundary.signature = '';
       for (const s of this.sprites.values()) s.destroy();
       for (const s of this.unitSprites.values()) s.destroy();
       for (const s of this.bubbles.values()) s.destroy();
@@ -460,7 +478,10 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      const texture = b.level >= TIER3_LEVEL && b.kind !== 'wall' ? `${b.kind}-tier3` : b.kind;
+      const texture =
+        b.level >= TIER3_LEVEL && b.kind !== 'wall' && !d.singleArtwork
+          ? `${b.kind}-tier3`
+          : b.kind;
       if (im.texture.key !== texture) im.setTexture(texture);
       const levelScale = b.kind === 'wall' ? 1 : 1 + Math.min(4, b.level - 1) * 0.035;
       im.setPosition(p.x, p.y)
@@ -469,7 +490,9 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'wall' ? 39 : (d.width * levelScale * im.height) / im.width,
         )
         .setDepth(p.y);
-      im.setAlpha(b.constructing ? 0.58 : 1);
+      im.setVisible(this.model.visibleBuilding(b));
+      const trap = this.model.battle?.traps[b.id];
+      im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (b.level >= TIER3_LEVEL) im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
@@ -480,7 +503,7 @@ export class VillageScene extends Phaser.Scene {
       }
       const shouldBubble =
         !this.model.battle &&
-        (b.kind === 'goldmine' || b.kind === 'collector') &&
+        (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
         b.stored >= 100 &&
         !b.upgradeEnd;
       if (shouldBubble && !this.bubbles.has(b.id)) {
@@ -605,13 +628,14 @@ export class VillageScene extends Phaser.Scene {
       g.lineStyle(2, color, 0.85);
       g.strokePoints(pts, true);
     };
-    if (b && b.hp > 0) {
+    if (b && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);
-      if (d.range) {
+      if (d.range || d.trap) {
+        const range = d.trap?.trigger ?? d.range!;
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
-        g.strokeEllipse(p.x, p.y, d.range * 64 * Math.SQRT2, d.range * 32 * Math.SQRT2);
+        g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
         if (d.minRange) {
           g.lineStyle(2, 0xffc56b, 0.75);
           g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
@@ -661,7 +685,7 @@ export class VillageScene extends Phaser.Scene {
     }
     this.detail.clear();
     for (const v of this.model.buildings) {
-      if (v.hp <= 0) continue;
+      if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
       const im = this.sprites.get(v.id)!;
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
@@ -677,6 +701,21 @@ export class VillageScene extends Phaser.Scene {
     }
     const battle = this.model.battle;
     if (battle) {
+      for (const trap of battle.finished ? [] : battle.buildings) {
+        const state = battle.traps[trap.id];
+        const def = BUILDINGS[trap.kind].trap;
+        if (!def || !state || state.resolved) continue;
+        const p = iso(state.x, state.y);
+        const progress = Math.min(
+          1,
+          (battle.elapsed - state.activatedAt) / Math.max(0.01, def.delay),
+        );
+        const lift = def.targets === 'air' ? AIR_LIFT * progress : 0;
+        this.detail.lineStyle(2, def.targets === 'air' ? 0xff746c : 0xffd175, 0.9);
+        this.detail.strokeEllipse(p.x, p.y - lift, 20, 10);
+        this.detail.fillStyle(0xffdc85, 1);
+        this.detail.fillCircle(p.x, p.y - lift - 5, 3 + progress * 3);
+      }
       for (const shell of battle.finished ? [] : battle.shells) {
         const from = iso(shell.fromX, shell.fromY),
           to = iso(shell.x, shell.y);
@@ -705,20 +744,25 @@ export class VillageScene extends Phaser.Scene {
         if (!im) {
           const d = TROOPS[u.kind];
           im = this.add
-            .image(0, 0, d.staticSprite ? u.kind : `${u.kind}-walk`, 0)
-            .setOrigin(0.5, d.staticSprite ? 1 : 0.953);
-          if (d.staticSprite) im.setDisplaySize(d.width, (d.width * im.height) / im.width);
+            .image(0, 0, u.hero ? 'king' : d.staticSprite ? u.kind : `${u.kind}-walk`, 0)
+            .setOrigin(0.5, u.hero || d.staticSprite ? 1 : 0.953);
+          if (u.hero) im.setDisplaySize(52, (52 * im.height) / im.width);
+          else if (d.staticSprite) im.setDisplaySize(d.width, (d.width * im.height) / im.width);
           else im.setDisplaySize(d.width * 1.48, d.width * 1.48);
           this.unitSprites.set(u.id, im);
+          const spawn = iso(u.x, u.y);
+          im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
         }
         if (u.hp <= 0) {
           if (!im.getData('dying')) {
             im.setData('dying', true);
-            im.setTint(0xa09482);
+            im.setTint(u.ejected ? 0xffe9ae : 0xa09482);
             this.tweens.add({
               targets: im,
               alpha: 0,
-              angle: 70,
+              angle: u.ejected ? 360 : 70,
+              y: im.y - (u.ejected ? 180 : 0),
+              x: im.x + (u.ejected ? 70 : 0),
               duration: this.model.state.settings.reducedMotion ? 0 : 320,
               onComplete: () => im.setVisible(false),
             });
@@ -726,12 +770,17 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
-        if (!TROOPS[u.kind].staticSprite)
+        if (!u.hero && !TROOPS[u.kind].staticSprite)
           im.setFrame(
             (u.attacking && !flying) || this.model.state.settings.reducedMotion
               ? 0
               : Math.floor(time / 140 + u.id) % 4,
           );
+        if (u.hero) {
+          const enraged = (battle.hero?.rageUntil ?? 0) > battle.elapsed;
+          if (enraged) im.setTint(0xffbd76);
+          else im.clearTint();
+        }
         const p = iso(u.x, u.y),
           motion = this.model.state.settings.reducedMotion ? 0 : Math.sin(time / 80 + u.id) * 1.6;
         const lift = flying ? AIR_LIFT : 0;
@@ -744,7 +793,7 @@ export class VillageScene extends Phaser.Scene {
         const target = battle.buildings.find((b) => b.id === u.target);
         if (target) {
           const targetOnRight = iso(target.x, target.y).x > p.x;
-          im.setFlipX(TROOPS[u.kind].staticSprite ? !targetOnRight : targetOnRight);
+          im.setFlipX(u.hero || TROOPS[u.kind].staticSprite ? !targetOnRight : targetOnRight);
         }
         const phase = 1 - Math.max(0, u.cooldown) / TROOPS[u.kind].rate;
         const impulse =
@@ -778,6 +827,30 @@ export class VillageScene extends Phaser.Scene {
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'trap' || fx.type === 'spring') {
+      const reduced = this.model.state.settings.reducedMotion;
+      const label = this.add
+        .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '17px',
+          fontStyle: 'bold',
+          color: '#ffe4a2',
+          stroke: '#453521',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5)
+        .setDepth(8500);
+      this.tweens.add({
+        targets: label,
+        y: p.y - (reduced ? 38 : 80),
+        alpha: 0,
+        duration: 950,
+        onComplete: () => label.destroy(),
+      });
+      this.audio.play('hit');
+      if (!reduced) this.sparks(p.x, p.y - 10, fx.color ?? 0xffd175, 8);
+      return;
+    }
     if (fx.type === 'upgrade') {
       this.sparks(p.x, p.y - 55, 0xd4f480, 18);
       const ring = this.add
@@ -795,7 +868,11 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'collect') {
-      this.flyToHud(p.x, p.y - 40, fx.color === 0xffd34b ? 'gold' : 'elixir');
+      this.flyToHud(
+        p.x,
+        p.y - 40,
+        fx.color === 0xffd34b ? 'gold' : fx.color === 0x514076 ? 'dark' : 'elixir',
+      );
       const text = this.add
         .text(p.x, p.y - 70, fx.text!, {
           fontFamily: 'Trebuchet MS',
@@ -852,9 +929,11 @@ export class VillageScene extends Phaser.Scene {
     }
     if (fx.type === 'blast') {
       const radius = (fx.radius ?? 1.5) * 64;
+      const lift = fx.toAir ? AIR_LIFT : 0;
+      const color = fx.color ?? 0xff9a3c;
       const ring = this.add
-        .ellipse(p.x, p.y - 26, radius * 0.55, radius * 0.28)
-        .setStrokeStyle(4, 0xff9a3c, 0.95)
+        .ellipse(p.x, p.y - 26 - lift, radius * 0.55, radius * 0.28)
+        .setStrokeStyle(4, color, 0.95)
         .setDepth(7400);
       this.tweens.add({
         targets: ring,
@@ -864,7 +943,7 @@ export class VillageScene extends Phaser.Scene {
         duration: 380,
         onComplete: () => ring.destroy(),
       });
-      this.sparks(p.x, p.y - 26, 0xffb457, 14);
+      this.sparks(p.x, p.y - 26 - lift, color, 14);
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
       return;
@@ -911,7 +990,7 @@ export class VillageScene extends Phaser.Scene {
    * Sends collected resources into the HUD counter that receives them. The dots
    * are pinned to the screen, so panning mid-flight cannot pull them off course.
    */
-  flyToHud(sx: number, sy: number, resource: 'gold' | 'elixir') {
+  flyToHud(sx: number, sy: number, resource: 'gold' | 'elixir' | 'dark') {
     if (this.model.state.settings.reducedMotion) return;
     const target = document.querySelector<HTMLElement>(`[data-resource="${resource}"]`);
     if (!target) return;
@@ -919,7 +998,7 @@ export class VillageScene extends Phaser.Scene {
       canvas = this.game.canvas.getBoundingClientRect();
     const tx = box.left + box.width / 2 - canvas.left,
       ty = box.top + box.height / 2 - canvas.top;
-    const fill = resource === 'gold' ? 0xffd34b : 0xd567ff,
+    const fill = resource === 'gold' ? 0xffd34b : resource === 'dark' ? 0x514076 : 0xd567ff,
       edge = resource === 'gold' ? 0xb07a12 : 0x7f2f9e;
     for (let i = 0; i < 7; i++) {
       const dot = this.add

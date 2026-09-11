@@ -1,6 +1,38 @@
 # Verification record
 
-Verified locally on September 10, 2026.
+Verified locally on September 10, 2026. The hero/progression pass has **99 passing simulation/save tests**, a successful production build, and **71 precached files**. All **43 browser scenarios** pass across the full run and targeted rerun: the first run passed 40/42, revealing one obsolete Town Hall expectation and a real phone Army-menu clipping bug. After fixing both and adding a dark-elixir collection case, all 22 affected hero/army/expansion/specialist scenarios passed. Other scenarios retained their passing full-run result.
+
+Production checks in Chromium and WebKit pass for boot, shop, research, tab handoff, imported hero saves, gem-finished hero upgrades, pointer deployment and H-key ability use. Chromium also reloads and plays the upgraded hero offline with cached artwork. Reports: `output/playtest/production-report.json` and `hero-production-report.json`. Run `node scripts/production-check.mjs` and `node scripts/hero-production-check.mjs` after a build with the development and preview servers running.
+
+## Hero and progression pass
+
+- Added 12 model cases covering Hero Hall completion, TH4/TH7/TH8 gates, dark-elixir charges, builder reservations, one-time offline completion, gem finishes, legacy and malformed saves, dark drill downtime and overflow, hero-only combat, duplicate/blocked deployment, ability healing/rage/summons, automatic activation, spring damage/no ejection, defeat/reuse, history, independent building ceilings, and construction/upgrade affordability at every supported tier.
+- Added five browser cases covering new art and shop gates, the progression panel, upgrade persistence, real pointer deployment and keyboard ability activation, fresh repeat attacks, portrait/landscape controls, dark collection and reload.
+- Fixed the expanded Army action list clipping its first buttons behind the phone drawer header. Actions use a two-column grid and remain scrollable in short viewports. Rechecked existing army/preset and specialist flows.
+- Hero-card health updates preserve the actual button node until its interaction state changes. Disabled/spent/dead states update without replacing the card on every economy tick.
+- Production hero checks exercise actual import, upgrade, finish, practice, deployment and ability controls; production needs no development model exposure. Chromium repeats this flow offline. Both engines report no browser or asset errors.
+- Screenshots under `output/playtest/`: `heroes-desktop.png`, `heroes-mobile.png`, `heroes-landscape.png`, `hero-battle-desktop.png`, `progression-desktop.png`, `progression-mobile.png`, `dark-elixir-village.png`, and `production-hero-*.png`.
+- The first screenshots caught a modal mid-animation; final visual captures disable CSS animation. Reviewed source sprites, desktop hero panel/battle, and phone hero/progression panels.
+- Reference rules, local balance choices, migration behavior and remaining features are documented in [HERO-PROGRESSION.md](HERO-PROGRESSION.md). Source artwork and exact generation prompts are in [HERO-ASSETS.md](HERO-ASSETS.md).
+
+## Defense and trap pass
+
+- Added 13 simulation/save cases in `tests/defenses.test.ts` for trap placement and count/unlock gates, collisions, construction and upgrades, save round trips and level rejection, concealment, path/deployment exclusion, troop targeting, Bomb/Giant Bomb fuses and escape, air-only tracking splash, single-target springs, ejected death-bomb suppression, oversized knockback, collision-safe pushback, anti-stacking, bomb damage during spring knockback, inactive upgrading traps, fresh practice arming, spell immunity, full-clear scoring, and Wizard Tower targeting/splash.
+- Added five browser cases in `tests/browser/defenses.spec.ts`: missing-asset detection and correct shop unlocks; pointer placement, trap info, upgrade and reload; concealed practice traps, pointer activation and repeat reset; phone portrait/landscape controls; campaign miniature concealment and visible Wizard Towers.
+- Fixed small ground-trap selection beneath neighboring rooftops, selected shop-category visibility after redraw, and the initial position of a troop ejected before its first rendered frame.
+- Original generated RGBA sources are preserved outside the production build. The five shipped WebPs are built with `scripts/defense-assets.mjs`; prompts and source paths are in [DEFENSE-ASSETS.md](DEFENSE-ASSETS.md). Rebuilding all five sprites produced identical SHA-256 hashes (`output/playtest/defense-asset-hashes.json`).
+- The 144-battle campaign audit passes after adding traps to stages 2–12 and Wizard Towers to stages 6, 8, 10 and 12. Every stage has a three-star veteran approach, stage 1 remains approachable, and starter armies cannot fully clear the final fortress. The final defense multiplier changed from 1.7339 to 1.55 to offset the new defenses.
+- Visually reviewed desktop and phone trap shop, trap information in portrait/landscape, activation in practice, and a campaign Wizard Tower. Screenshots: `traps-shop-desktop.png`, `traps-shop-mobile.png`, `trap-info-desktop.png`, `trap-info-mobile.png`, `trap-info-landscape.png`, `trap-trigger-practice.png`, and `wizard-tower-campaign.png` under `output/playtest/`.
+- Live-game costs/timers, exact catalog progression, additional defense and trap types, physical-device performance, and asynchronous defensive attacks remain outside this pass. The enlarged tank fixture tests a future oversized troop branch; the current roster itself has no troop above the spring capacity.
+
+## Army preparation and practice pass
+
+- Added 15 simulation/save tests for free instant preparation, weighted spell housing, editing and underflow, active-battle guards, one-time legacy queue migration, preset capacity and persistence, bounded names, atomic replenishment, practice isolation, campaign results, and the twenty-entry battle log.
+- Added five browser tests for real add/remove controls, spell capacity, preset names and reload, practice deployment/casting/surrender, repeat attacks, log persistence, and portrait/landscape results.
+- Fixed a redraw race that could replace an in-progress preset name. Unsaved input survives rerenders and is cleared when importing another village.
+- Reset scene objects when the battle instance changes, including an immediate result-to-repeat transition. If replenishment fails because a facility is upgrading, repeat attack returns to the Army drawer instead of starting with an incomplete composition. Practice also preserves imported resources above current storage caps.
+- Screenshots: `quick-armies-desktop.png`, `quick-armies-mobile.png`, `practice-desktop.png`, `practice-mobile.png`, `practice-result-desktop.png`, `practice-result-mobile.png`, `practice-result-landscape.png`, `campaign-result-landscape.png`, `battle-log-desktop.png`, and `battle-log-mobile.png`, under `output/playtest/`.
+- Remaining system-level differences and next priorities are explicit in [EXPERIENCE-PARITY.md](EXPERIENCE-PARITY.md). Passing these tests does not imply complete CoC parity.
 
 ## Specialist raiding pass
 
@@ -9,21 +41,21 @@ Verified locally on September 10, 2026.
 - Updated old fixed army fixtures to contain zero of the new troop types, retaining the existing 144-battle campaign balance audit.
 - The new sprites use their original generated alpha, with a procedural bob and attack impulse instead of a directional walk atlas.
 
-## Automated coverage
+## Earlier automated coverage (army and practice baseline)
 
-- **59 simulation and save tests pass.** Placement collisions and bounds, construction completion, builder reservations, upgrades, offline resource caps, production resuming after upgrades, storage saturation, sequential troop training, camp capacity, malformed-save rejection, A\* navigation, deployment boundaries, a complete opening battle, one-time quest rewards, crowd separation, corrupted backup recovery, and IndexedDB unavailability. Research is gated by laboratory level, charges once, completes offline once, and increases deployed troop health and damage. Batch training is atomic and army replenishment accounts for queued troops.
+- **74 simulation and save tests pass.** Placement collisions and bounds, construction completion, builder reservations, upgrades, offline resource caps, production resuming after upgrades, storage saturation, instant troop preparation, camp capacity, malformed-save rejection, A\* navigation, deployment boundaries, a complete opening battle, one-time quest rewards, crowd separation, corrupted backup recovery, and IndexedDB unavailability. Research is gated by laboratory level, charges once, completes offline once, and increases deployed troop health and damage. Batch preparation is atomic, troops and spells cost no elixir, and army replenishment checks both housing limits before changing either composition.
 
   New in this pass:
   - **Scouting phase** — the battle clock holds for thirty seconds, starts on the first deploy, and starts on its own when scouting expires. `deployBlocked` is asserted to be the same predicate the red boundary is drawn from, so the line the player sees and the rule the model enforces cannot drift apart.
   - **Air layer, in both directions** — a ground-only cannon leaves a balloon untouched over 6 seconds of simulation; an air defense leaves a swordsman untouched over the same window; an air defense does tear into a balloon. A wall line stops a ground troop and takes damage from it, while a balloon crosses the same line and leaves every segment at full health.
   - **Spells** — brewing respects spell factory capacity and refuses (without charging) beyond it; Lightning damages every building inside its radius exactly once and nothing outside it; Rage measurably increases damage dealt over a fixed window against an identical control run; Healing restores a wounded troop standing inside it without exceeding its maximum; auras expire and stop applying.
-  - **Town Hall gating** — a building can be upgraded to one level above the Town Hall and no further, and building count limits open up as the Town Hall grows.
+  - **Town Hall gating** — independent per-building TH1–8 ceilings now control upgrades and first unlocks. Info panels report the next required Town Hall. Building counts remain locally tuned.
   - **Timer and gem curves** — upgrade seconds increase monotonically per level, a late Town Hall upgrade exceeds an hour, and the gem curve hits its documented anchors (1 gem at a minute, 20 at an hour, 260 at a day).
   - **Edit mode** — dragging relocates, occupied ground is refused without mutating the building, undo and redo restore exact positions, three layout slots store and restore, and the state stays valid throughout.
   - **Save migration** — a version-1 village fails validation, migrates cleanly, keeps its gold and its existing troop levels, gains `balloon: 0` and an empty spell book, and loads into a working model. A building level above that building's maximum is rejected.
   - **Second pass** — the wall tool re-arms after each segment and puts itself down when the next one is unaffordable; a felled balloon damages the buildings inside its radius exactly once and nothing outside it; a drag across four tiles is a single undo step; research climbs to level 5 behind a matching laboratory and stops there, with the laboratory ceiling asserted equal to the troop ceiling; the tutorial's `built` counter ignores walls, its `trained` counter follows batch size, and a battle's carried spell book keeps a slot recorded after the spell is spent.
 
-- **28 browser tests pass in Chromium.** Boot, collection, pointer selection, upgrading and gem completion, save persistence through reload, shop filtering, placement and cancellation, training completion, actual troop deployment and simulated battle results, campaign unlocking, settings, modal keyboard focus, camera zoom/pan/reset, portrait layout, landscape layout, touch selection, stable sheets during passive resource ticks, export, valid import, invalid import rejection, research at desktop/phone sizes, research persistence, exclusive tab handoff with the newest save, forced WebGL context loss/restoration, and twenty consecutive raids with object cleanup and a final save reload.
+- **33 browser tests pass in Chromium.** Boot, collection, pointer selection, upgrading and gem completion, save persistence through reload, shop filtering, placement and cancellation, instant army preparation, actual troop deployment and simulated battle results, campaign unlocking, settings, modal keyboard focus, camera zoom/pan/reset, portrait layout, landscape layout, touch selection, stable sheets during passive resource ticks, export, valid import, invalid import rejection, research at desktop/phone sizes, research persistence, exclusive tab handoff with the newest save, forced WebGL context loss/restoration, and twenty consecutive raids with object cleanup and a final save reload.
 
   New in this pass:
   - The shop **drawer** is asserted not to block the playfield (`scene.uiBlocked === false`), while a real dialog still does.
@@ -72,7 +104,7 @@ Headless Chromium on the local macOS workstation, 1440×960 viewport, device sca
 
 The specialist-pass sample records 59 FPS in the village and 57 FPS with the full starting army, including Goblins, Wall Breakers and Balloons. Both 95th-percentile frame times were 16.8 ms. These are local observations, not a physical-device performance guarantee. Re-run `node scripts/performance-check.mjs` against the development server for a new report.
 
-The complete static build is approximately 4.0 MB on disk. Its 48 optimized game images occupy approximately 2.3 MB. Original PNGs stay outside the shipped build. The Phaser engine is separately cacheable, approximately 357 KB gzipped; application JavaScript is approximately 40 KB gzipped.
+The defense-pass static build is approximately 4.2 MB on disk. Its 53 optimized game images occupy approximately 2.6 MB. Original PNGs stay outside the shipped build. The Phaser engine is separately cacheable, approximately 357 KB gzipped; application JavaScript is approximately 45 KB gzipped.
 
 ## Visual review
 
@@ -85,7 +117,7 @@ Resolved in the second pass:
 - The deployment-boundary cache was keyed only on surviving building ids, so two stages with the same ids and the same survivor count could show a stale outline; the stage index is now part of the key.
 - Edit mode recorded one undo entry per tile crossed, so reversing a single drag took as many presses of undo as tiles; a drag now opens exactly one entry.
 - A tap that could not deploy still armed the double-tap window, so the next tap deployed five where the player expected one.
-- The laboratory could be upgraded to level 8 while research stopped at troop level 3, leaving four levels that bought nothing. Research now runs to level 5 and the laboratory ceiling is exactly 5.
+- The laboratory could be upgraded to level 8 while research stopped at troop level 3, leaving four levels that bought nothing. Research runs to troop level 5. The new Town Hall progression pass allows laboratory level 6 at TH8; research beyond troop level 5 remains unfinished.
 - `retrain` returned a bare `undefined` when it had brewed spells but no troops to train, which read as a silent failure.
 - Relocating a building outside edit mode pushed an entry onto an undo stack nothing could reach.
 
@@ -119,7 +151,7 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 
 ## Known limits
 
-- Training times were kept short while build, upgrade, and research timers were stretched. This is a deliberate playability choice for a single-sitting demo, not a modelled economy.
+- Army preparation is now free and instant. Build, upgrade, and research prices/timers still use a simplified local economy. Factory capacity grows by two housing spaces per level; exact live-game progression remains unimplemented.
 - The campaign matrix does not cover balloon-led, specialist-led, or spell-supported attacks; focused interaction tests cover the new specialists.
 - Specialist health/damage and the resource loot shares are tuned for this local campaign, not the current live game economy.
 - Air troops have a float cycle but no distinct attack or death animation.

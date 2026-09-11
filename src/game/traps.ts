@@ -1,0 +1,134 @@
+import { BUILDINGS, TROOPS, springCapacity, trapDamage } from './data';
+import type { Battle, Building, FX, Unit } from './model';
+
+/** Battle-only state. A home trap is always armed when a fresh attack starts. */
+export interface TrapState {
+  activatedAt: number;
+  resolved: boolean;
+  targetId: number;
+  x: number;
+  y: number;
+}
+
+export function springOutcome(housing: number, hp: number, capacity: number, damage: number) {
+  const ejected = housing <= capacity || hp <= damage;
+  return { ejected, hp: ejected ? 0 : hp - damage };
+}
+
+function pushBack(u: Unit, trap: Building, buildings: Building[]) {
+  const cx = trap.x + BUILDINGS[trap.kind].size / 2;
+  const cy = trap.y + BUILDINGS[trap.kind].size / 2;
+  const dx = u.x - cx || 0.01,
+    dy = u.y - cy || 0.01;
+  const length = Math.hypot(dx, dy);
+  // Advance in small increments so a spring never pushes a survivor through a wall.
+  for (let i = 0; i < 8; i++) {
+    const x = u.x + (dx / length) * 0.15,
+      y = u.y + (dy / length) * 0.15;
+    if (
+      x < 0.1 ||
+      y < 0.1 ||
+      x > 27.9 ||
+      y > 27.9 ||
+      buildings.some(
+        (b) =>
+          !BUILDINGS[b.kind].trap &&
+          b.hp > 0 &&
+          x >= b.x &&
+          y >= b.y &&
+          x < b.x + BUILDINGS[b.kind].size &&
+          y < b.y + BUILDINGS[b.kind].size,
+      )
+    )
+      break;
+    u.x = x;
+    u.y = y;
+  }
+  u.path = [];
+  u.pathAt = 0;
+}
+
+export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
+  let changed = false;
+  for (const trap of battle.buildings) {
+    const d = BUILDINGS[trap.kind].trap;
+    if (!d || trap.constructing || trap.upgradeEnd) continue;
+    let state = battle.traps[trap.id];
+    if (state?.resolved) continue;
+    const center = {
+      x: trap.x + BUILDINGS[trap.kind].size / 2,
+      y: trap.y + BUILDINGS[trap.kind].size / 2,
+    };
+    const eligible = (u: Unit) =>
+      u.hp > 0 &&
+      (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
+      !!TROOPS[u.kind].flying === (d.targets === 'air');
+    if (!state) {
+      const nearby = battle.units.filter(
+        (u) => eligible(u) && Math.hypot(u.x - center.x, u.y - center.y) <= d.trigger,
+      );
+      nearby.sort(
+        (a, b) =>
+          (d.springCapacity ? (b.hero ? 25 : TROOPS[b.kind].space) - (a.hero ? 25 : TROOPS[a.kind].space) : 0) ||
+          Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y) ||
+          a.id - b.id,
+      );
+      const target = nearby[0];
+      if (!target) continue;
+      state = battle.traps[trap.id] = {
+        activatedAt: battle.elapsed,
+        resolved: false,
+        targetId: target.id,
+        ...center,
+      };
+      effect({
+        type: 'trap',
+        ...center,
+        text: BUILDINGS[trap.kind].name,
+        color: d.targets === 'air' ? 0xff746c : 0xffd175,
+      });
+      changed = true;
+    }
+    if (d.targets === 'air') {
+      const target = battle.units.find((u) => u.id === state.targetId);
+      if (target) {
+        const remaining = Math.max(dt, state.activatedAt + d.delay - battle.elapsed + dt);
+        const fraction = Math.min(1, dt / remaining);
+        state.x += (target.x - state.x) * fraction;
+        state.y += (target.y - state.y) * fraction;
+      }
+    }
+    if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
+    state.resolved = true;
+    changed = true;
+    const power = trapDamage(trap.kind, trap.level);
+    if (d.springCapacity) {
+      const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
+      if (!target) continue;
+      const outcome = target.hero
+        ? { ejected: false, hp: target.hp - power * 0.5 }
+        : springOutcome(TROOPS[target.kind].space, target.hp, springCapacity(trap.level), power);
+      target.hp = outcome.hp;
+      target.ejected = outcome.ejected;
+      if (outcome.ejected)
+        target.spent = true; // No death bomb from a troop flung out of the village.
+      else {
+        target.springUntil = battle.elapsed + 0.6;
+        pushBack(target, trap, battle.buildings);
+      }
+      effect({ type: 'spring', x: target.x, y: target.y });
+    } else {
+      for (const u of battle.units)
+        if (eligible(u) && Math.hypot(u.x - state.x, u.y - state.y) <= d.radius) u.hp -= power;
+      effect({
+        type: 'blast',
+        x: state.x,
+        y: state.y,
+        radius: d.radius,
+        toAir: d.targets === 'air',
+        color: d.targets === 'air' ? 0xff7065 : 0xff9a3c,
+      });
+    }
+  }
+  return changed;
+}

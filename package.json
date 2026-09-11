@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs",
+    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs && node scripts/defense-assets.mjs && node scripts/hero-assets.mjs",
     "format": "prettier --write src tests scripts *.ts *.json index.html",
     "check": "npm test && npm run build",
     "deploy": "npm run build && npx -y firebase-tools deploy --only hosting:coc-teozeng --project personal-website-3bc37"

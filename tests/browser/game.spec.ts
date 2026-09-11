@@ -86,10 +86,10 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
 test('trains troops and brews spells through the army drawer', async ({ page }) => {
   await page.locator('.train-add').click();
   await page.locator('[data-action="train:archer"]').click();
-  await expect(page.locator('.drawer-foot [data-queue]')).toBeVisible();
+  await expect(page.locator('.drawer-foot')).toContainText('Free & instant');
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/army-desktop.png' });
-  await page.waitForTimeout(9000);
+
   expect(await page.evaluate(() => window.__game.model.state.army.archer)).toBe(11);
   await expect(page.locator('.drawer-foot [data-queue]')).toHaveCount(0);
   await page.evaluate(() => {
@@ -97,7 +97,8 @@ test('trains troops and brews spells through the army drawer', async ({ page }) 
     window.__game.model.changed();
   });
   await page.locator('[data-action="brew:lightning"]').click();
-  expect(await page.evaluate(() => window.__game.model.state.spellQueue.length)).toBe(1);
+  expect(await page.evaluate(() => window.__game.model.state.spells.lightning)).toBe(1);
+  expect(await page.evaluate(() => window.__game.model.state.spellQueue.length)).toBe(0);
 });
 test('plays an actual battle through results and unlocks the next village', async ({ page }) => {
   await page.locator('.attack-btn').click();

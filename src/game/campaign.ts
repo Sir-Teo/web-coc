@@ -43,7 +43,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['archertower', 16, 6],
     ],
     rings: [[6, 8, 21, 20]],
-    hint: 'The open west approach leads toward the treasury.',
+    hint: 'The open west approach leads toward the treasury. Send a scout before committing a group through a gate.',
     recommended: 55,
     health: 0.8,
     defense: 0.85,
@@ -120,7 +120,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
   {
     buildings: [
       ['townhall', 11, 10],
-      ['archertower', 7, 7],
+      ['wizardtower', 7, 7],
       ['archertower', 18, 14],
       ['cannon', 8, 13],
       ['cannon', 16, 9],
@@ -136,7 +136,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['airdefense', 15, 12],
     ],
     rings: [[7, 6, 20, 19]],
-    hint: 'Two mortars guard the south. An air defense watches the centre.',
+    hint: 'A Wizard Tower splashes clustered troops in the northwest. Spread your approach and probe gaps for traps.',
     recommended: 95,
     health: 1.2,
     defense: 1.2054,
@@ -170,7 +170,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
   {
     buildings: [
       ['townhall', 12, 11],
-      ['archertower', 8, 8],
+      ['wizardtower', 7, 8],
       ['archertower', 18, 8],
       ['archertower', 8, 17],
       ['archertower', 18, 17],
@@ -230,7 +230,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
   {
     buildings: [
       ['townhall', 11, 11],
-      ['archertower', 7, 7],
+      ['wizardtower', 6, 7],
       ['archertower', 18, 7],
       ['archertower', 7, 18],
       ['archertower', 18, 18],
@@ -296,7 +296,7 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
       ['elixirstorage', 16, 7],
       ['goldstorage', 7, 16],
       ['elixirstorage', 16, 16],
-      ['archertower', 5, 10],
+      ['wizardtower', 4, 10],
       ['archertower', 20, 10],
       ['archertower', 10, 5],
       ['archertower', 10, 20],
@@ -323,14 +323,67 @@ export const CAMPAIGN_LAYOUTS: readonly CampaignLayout[] = [
     hint: 'The final fortress. Scout the gaps, rage your frontline, and commit everything.',
     recommended: 160,
     health: 1.8,
-    defense: 1.7339,
+    defense: 1.55,
   },
+];
+/** Hidden hazards are separate so scouting previews never list their positions or counts. */
+const CAMPAIGN_TRAPS: readonly (readonly Blueprint[])[] = [
+  [],
+  [['bomb', 13, 8]],
+  [
+    ['bomb', 13, 6],
+    ['bomb', 13, 20],
+  ],
+  [
+    ['bomb', 10, 14],
+    ['springtrap', 15, 20],
+  ],
+  [
+    ['bomb', 13, 20],
+    ['airbomb', 16, 6],
+  ],
+  [
+    ['bomb', 13, 6],
+    ['springtrap', 20, 13],
+    ['airbomb', 18, 11],
+  ],
+  [
+    ['giantbomb', 13, 20],
+    ['bomb', 6, 13],
+    ['springtrap', 13, 6],
+  ],
+  [
+    ['bomb', 13, 20],
+    ['airbomb', 21, 14],
+    ['springtrap', 6, 13],
+  ],
+  [
+    ['giantbomb', 12, 14],
+    ['bomb', 6, 11],
+    ['airbomb', 13, 5],
+  ],
+  [
+    ['bomb', 13, 22],
+    ['springtrap', 5, 13],
+    ['airbomb', 22, 14],
+  ],
+  [
+    ['giantbomb', 10, 5],
+    ['springtrap', 14, 20],
+    ['airbomb', 20, 14],
+  ],
+  [
+    ['bomb', 13, 4],
+    ['giantbomb', 12, 22],
+    ['springtrap', 4, 13],
+    ['airbomb', 22, 14],
+  ],
 ];
 /** Authored structure footprints plus rings with deliberate gates and no overlapping posts. */
 export function campaignBlueprint(index: number): Blueprint[] {
   const layout = CAMPAIGN_LAYOUTS[index];
   if (!layout) throw new RangeError('Unknown campaign stage');
-  const result: Blueprint[] = [...layout.buildings];
+  const result: Blueprint[] = [...layout.buildings, ...CAMPAIGN_TRAPS[index]];
   const occupied = new Set<string>();
   for (const [k, x, y] of result)
     for (let dx = 0; dx < BUILDINGS[k].size; dx++)

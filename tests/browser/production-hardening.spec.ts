@@ -6,6 +6,7 @@ test('research is usable on desktop and mobile and survives reloading', async ({
   await page.evaluate(() => {
     const m = window.__game.model;
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory');
+    m.townhall!.level = 4;
     m.upgrade(lab.id);
     m.finish(lab.id);
   });

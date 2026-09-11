@@ -118,5 +118,7 @@ export function icon(name: string, size = 22) {
 }
 export const coin = '<span class="resource-icon coin" aria-hidden="true">✦</span>';
 export const elixir = '<span class="resource-icon elixir" aria-hidden="true"></span>';
+export const darkElixir = '<span class="resource-icon dark" aria-hidden="true"></span>';
 export const gem = '<span class="resource-icon gem" aria-hidden="true"></span>';
-export const resource = (k: string) => (k === 'gold' ? coin : k === 'elixir' ? elixir : gem);
+export const resource = (k: string) =>
+  k === 'gold' ? coin : k === 'elixir' ? elixir : k === 'dark' ? darkElixir : gem;

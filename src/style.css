@@ -1589,7 +1589,8 @@ h3 {
   position: relative;
   width: 500px;
   max-width: 100%;
-  overflow: hidden;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden auto;
   text-align: center;
   padding: 40px 35px 30px;
   border: 3px solid #a0b475;
@@ -1597,6 +1598,7 @@ h3 {
   background: radial-gradient(ellipse at top, #65804d, #314b35 80%);
   box-shadow: 0 20px 70px #0a251aba;
 }
+
 .result-eyebrow {
   font-size: 10px;
   letter-spacing: 3px;
@@ -3726,5 +3728,448 @@ h3 {
   }
   .loot-row > i {
     font-size: 9px;
+  }
+}
+
+/* Army preparation, presets and battle records share the village's parchment UI. */
+.modern-army-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  grid-auto-rows: min-content;
+  width: 280px;
+  min-width: 280px;
+  gap: 6px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.modern-army-actions .army-ready-label {
+  grid-column: 1 / -1;
+}
+.army-ready-label {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #807043;
+  text-align: center;
+}
+.army-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 8px;
+  min-height: 25px;
+  font-size: 10px;
+  color: #807150;
+  border: 1px solid #c8b98c;
+  border-radius: 5px;
+}
+.army-remove:hover:not(:disabled) {
+  background: #decea6;
+}
+.army-remove:disabled {
+  opacity: 0.4;
+}
+.preset-current {
+  padding: 12px 16px;
+  margin: 0 0 15px;
+  background: #dce4c4;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.preset-card,
+.raid-record {
+  padding: 20px;
+  border: 1px solid #d2c298;
+  border-bottom: 3px solid #c4b18a;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  background: #f3e8c9;
+}
+.preset-title,
+.raid-record-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.preset-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  height: 43px;
+  border-radius: 8px;
+  font: 25px var(--heading);
+  background: linear-gradient(#ffda70, #e5aa37);
+  color: #70501e;
+  border-bottom: 3px solid #ac7d24;
+}
+.preset-title label {
+  flex: 1;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #8c7750;
+}
+.preset-title input {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  padding: 7px 9px;
+  border: 1px solid #c7b88e;
+  border-radius: 5px;
+  background: #fff7e4;
+  color: #4c4029;
+  font: 18px var(--heading);
+}
+.preset-title > small {
+  font-size: 10px;
+  color: #807150;
+}
+.preset-empty {
+  min-height: 40px;
+  padding-top: 10px;
+  color: #8b7a55;
+  font-size: 12px;
+}
+.preset-actions,
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.preset-actions .game-btn {
+  padding: 9px 14px;
+  font-size: 12px;
+}
+.result-actions {
+  justify-content: center;
+}
+.result-actions .game-btn {
+  min-height: 43px;
+  padding: 10px 15px;
+  font-size: 14px;
+}
+.composition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.composition > span {
+  position: relative;
+  display: block;
+  width: 49px;
+  height: 57px;
+  border: 1px solid #beaa7c;
+  border-bottom: 3px solid #b39e6f;
+  border-radius: 6px;
+  background: linear-gradient(#e3d7ac, #c6b98e);
+  overflow: hidden;
+}
+.composition img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.composition b {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  color: #fff;
+  font: 13px var(--heading);
+  text-shadow:
+    0 1px 2px #332b1c,
+    1px 0 #332b1c;
+}
+.raid-record-head {
+  justify-content: space-between;
+}
+.raid-record h3 {
+  font: 23px var(--heading);
+  margin: 5px 0 0;
+  color: #493c26;
+}
+.raid-record-head small,
+.deployed-label {
+  color: #8b7850;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  font-weight: 800;
+}
+.raid-score {
+  text-align: right;
+}
+.raid-score > b {
+  display: block;
+  font: 22px var(--heading);
+}
+.raid-score > span {
+  font-size: 23px;
+  color: #e6a822;
+  text-shadow: 0 1px #9b7426;
+}
+.raid-score i {
+  color: #bdaf8a;
+  font-style: normal;
+}
+.raid-loot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.raid-loot > span:last-child {
+  margin-left: auto;
+  color: #8a7954;
+}
+.raid-record > .game-btn {
+  font-size: 11px;
+  padding: 7px 12px;
+}
+.empty-log {
+  text-align: center;
+  padding: 32px;
+}
+.empty-log h2 {
+  font: 26px var(--heading);
+}
+.empty-log p {
+  color: #8b7850;
+  line-height: 1.6;
+  margin: 14px 0 22px;
+}
+.practice-note {
+  display: block;
+  line-height: 1.7;
+  margin-top: 8px;
+  color: #eaf1d7;
+}
+.practice-result-note {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 18px 0;
+}
+.campaign-summary .game-btn {
+  font-size: 11px;
+  padding: 8px 10px;
+}
+@media (max-width: 700px) {
+  .preset-card,
+  .raid-record {
+    padding: 12px;
+  }
+  .preset-title {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .preset-title > small {
+    flex-basis: 100%;
+    padding-left: 46px;
+  }
+  .preset-title input {
+    font-size: 16px;
+  }
+  .preset-current {
+    font-size: 10px;
+  }
+  .raid-record h3 {
+    font-size: 20px;
+  }
+  .result-actions {
+    flex-direction: column;
+  }
+  .result-actions .game-btn {
+    width: 100%;
+  }
+  .campaign-summary {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .campaign-summary .game-btn {
+    flex-basis: 100%;
+  }
+  .modern-army-actions {
+    width: 260px;
+    min-width: 260px;
+  }
+}
+
+@media (max-height: 550px) {
+  .result-modal {
+    padding: 14px 24px;
+  }
+  .result-modal h1 {
+    font-size: 34px;
+    margin: 5px 0;
+  }
+  .result-modal .result-stars {
+    font-size: 40px;
+    line-height: 1;
+  }
+  .result-modal .result-stars span:nth-child(2) {
+    font-size: 50px;
+  }
+  .result-modal .result-loot {
+    padding: 8px 0;
+    margin: 8px 0;
+  }
+  .result-modal .practice-result-note {
+    margin: 8px 0;
+  }
+}
+
+/* Keep all five shop categories reachable on narrow screens. */
+.drawer-head .shop-tabs {
+  min-width: 0;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+.drawer-head .shop-tabs .tab {
+  flex: 0 0 auto;
+}
+.trap-note {
+  color: #716246;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.resource-icon.dark {
+  width: 23px;
+  height: 28px;
+  border-radius: 50% 50% 48% 48%;
+  background: linear-gradient(135deg, #9987bd, #322041 65%);
+  border: 2px solid #22192c;
+  box-shadow: inset 3px 3px 3px #d3b7ff80;
+}
+.resource-bar.dark .resource-fill {
+  background: linear-gradient(90deg, #362544, #8e64b7);
+}
+.hero-card {
+  border-color: #be83dc;
+  background: linear-gradient(#faeaff, #baa1cc);
+}
+.hero-card img {
+  object-fit: contain;
+}
+.hero-health {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 26px;
+  height: 5px;
+  border-radius: 3px;
+  background: #4d384f;
+  overflow: hidden;
+}
+.hero-health i {
+  display: block;
+  height: 100%;
+  background: #b1ee74;
+}
+.hero-body {
+  text-align: center;
+}
+.hero-overview {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  text-align: left;
+}
+.hero-portrait {
+  flex: 0 0 150px;
+}
+.hero-portrait img {
+  max-width: 150px;
+  height: 190px;
+  object-fit: contain;
+}
+.hero-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+}
+.hero-stat-grid > div,
+.hero-ability {
+  padding: 16px;
+  background: #f3e8c8;
+  border: 1px solid #d3be89;
+  border-radius: 12px;
+}
+.hero-stat-grid b {
+  display: block;
+  font-size: 21px;
+  margin-top: 5px;
+}
+.hero-ability h3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 0;
+}
+.hero-upgrade {
+  margin: 20px 0;
+}
+.hero-log {
+  font-size: 12px;
+  color: #795191;
+}
+.progression-tier {
+  border: 1px solid #d3be89;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  background: #fff9e9;
+}
+.progression-tier.current {
+  border: 2px solid #86a850;
+}
+.progression-tier h2 {
+  margin: 0 0 12px;
+  font-family: var(--heading);
+  font-weight: 400;
+}
+.progression-tier > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.progression-unlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.progression-unlock img {
+  width: 38px;
+  height: 42px;
+  object-fit: contain;
+}
+.progression-unlock small {
+  display: block;
+  font-size: 10px;
+  color: #867356;
+}
+@media (max-width: 700px) {
+  .hero-overview {
+    flex-direction: column;
+    text-align: center;
+    gap: 0;
+  }
+  .hero-portrait {
+    flex-basis: auto;
+  }
+  .hero-portrait img {
+    height: 135px;
+  }
+  .progression-tier > div {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

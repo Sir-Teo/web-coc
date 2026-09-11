@@ -63,20 +63,28 @@ describe('troop progression', () => {
     m.returnHome();
     m.train('archer', 1);
     m.retrain();
-    expect(m.state.queue).toHaveLength(5);
-    expect(m.state.elixir).toBe(elixir - TROOPS.archer.cost * 5);
+    expect(m.state.queue).toHaveLength(0);
+    expect(m.state.army).toEqual(initial);
+    expect(m.state.elixir).toBe(elixir);
     m.retrain();
-    expect(m.state.queue).toHaveLength(5);
+    expect(m.state.queue).toHaveLength(0);
+    expect(m.state.army).toEqual(initial);
     m.tick(m.clock + 60000);
     expect(m.state.army).toEqual(initial);
   });
-  it('extra completed barracks speed up new training and construction does not', () => {
+  it('requires a completed barracks, with no training timer', () => {
     const m = new GameModel();
+    for (const b of m.state.buildings.filter((b) => b.kind === 'barracks')) b.upgradeEnd = m.clock + 100000;
+    const before = m.state.army.archer;
+    m.train('archer');
+    expect(m.state.army.archer).toBe(before);
     const b = makeBuilding(m.state.nextId++, 'barracks', 1, 1);
-    b.constructing = true;
-    m.state.buildings.push(b);
-    expect(m.trainingTime('giant')).toBe(TROOPS.giant.time);
+    b.constructing = true; m.state.buildings.push(b);
+    m.train('archer');
+    expect(m.state.army.archer).toBe(before);
     b.constructing = false;
-    expect(m.trainingTime('giant')).toBe(TROOPS.giant.time / 2);
+    m.train('archer');
+    expect(m.state.army.archer).toBe(before + 1);
+    expect(m.state.queue).toEqual([]);
   });
 });

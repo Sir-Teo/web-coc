@@ -1,4 +1,8 @@
+import { BUILDING_LEVELS } from './progression';
 export type BuildingKind =
+  | 'herohall'
+  | 'darkdrill'
+  | 'darkstorage'
   | 'townhall'
   | 'goldmine'
   | 'collector'
@@ -13,11 +17,16 @@ export type BuildingKind =
   | 'airdefense'
   | 'laboratory'
   | 'spellfactory'
+  | 'wizardtower'
+  | 'bomb'
+  | 'giantbomb'
+  | 'airbomb'
+  | 'springtrap'
   | 'wall';
 export type TroopKind =
   'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon' | 'goblin' | 'wallbreaker';
 export type SpellKind = 'rage' | 'heal' | 'lightning';
-export type Resource = 'gold' | 'elixir';
+export type Resource = 'gold' | 'elixir' | 'dark';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
 export type Targets = 'ground' | 'air' | 'both';
 export interface BuildingDef {
@@ -28,7 +37,7 @@ export interface BuildingDef {
   hp: number;
   cost: number;
   resource: Resource;
-  category: 'Army' | 'Resources' | 'Defenses';
+  category: 'Army' | 'Resources' | 'Defenses' | 'Traps';
   /** Highest level this building can ever reach, before the Town Hall gate. */
   maxLevel: number;
   /** Maximum count allowed at Town Hall level 1..8, indexed from zero. */
@@ -40,12 +49,67 @@ export interface BuildingDef {
   minRange?: number;
   rate?: number;
   targets?: Targets;
+  splash?: number;
+  /** Traps occupy village tiles but never block movement, deployment or targeting. */
+  trap?: {
+    trigger: number;
+    radius: number;
+    delay: number;
+    damage: number;
+    targets: 'ground' | 'air';
+    springCapacity?: number;
+  };
+  singleArtwork?: boolean;
 }
 const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export const MAX_TOWNHALL = 8;
-/** Laboratory level N unlocks troop level N, so the two ceilings must match. */
+/** Local research roster currently supports five troop levels. */
 export const MAX_TROOP_LEVEL = 5;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  herohall: {
+    name: 'Hero Hall',
+    description:
+      'Home of the Barbarian King. Unlock your first hero here, then upgrade him from Town Hall 7.',
+    size: 3,
+    width: 140,
+    hp: 1500,
+    cost: 20000,
+    resource: 'elixir',
+    category: 'Army',
+    maxLevel: 2,
+    available: [0, 0, 0, 1, 1, 1, 1, 1],
+    build: 180,
+    singleArtwork: true,
+  },
+  darkdrill: {
+    name: 'Dark Elixir Drill',
+    description:
+      'Extracts dark elixir to upgrade your heroes. Collect regularly to keep the drill working.',
+    size: 3,
+    width: 110,
+    hp: 900,
+    cost: 25000,
+    resource: 'elixir',
+    category: 'Resources',
+    maxLevel: 3,
+    available: [0, 0, 0, 0, 0, 0, 1, 2],
+    build: 180,
+    singleArtwork: true,
+  },
+  darkstorage: {
+    name: 'Dark Elixir Storage',
+    description: 'Protects dark elixir for hero upgrades. Every level adds 10,000 capacity.',
+    size: 3,
+    width: 110,
+    hp: 1500,
+    cost: 30000,
+    resource: 'elixir',
+    category: 'Resources',
+    maxLevel: 4,
+    available: [0, 0, 0, 0, 0, 0, 1, 1],
+    build: 240,
+    singleArtwork: true,
+  },
   townhall: {
     name: 'Town Hall',
     description:
@@ -69,20 +133,20 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 1800,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 10,
+    maxLevel: 12,
     available: [2, 3, 4, 5, 6, 7, 7, 7],
     build: 45,
   },
   collector: {
     name: 'Elixir Collector',
-    description: 'Draws magical elixir from deep underground to train your army.',
+    description: 'Draws magical elixir from deep underground for upgrades and research.',
     size: 3,
     width: 115,
     hp: 650,
     cost: 1800,
     resource: 'gold',
     category: 'Resources',
-    maxLevel: 10,
+    maxLevel: 12,
     available: [2, 3, 4, 5, 6, 7, 7, 7],
     build: 45,
   },
@@ -95,7 +159,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 4000,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 10,
+    maxLevel: 11,
     available: [1, 2, 2, 3, 3, 4, 4, 4],
     build: 90,
   },
@@ -108,20 +172,20 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 4000,
     resource: 'gold',
     category: 'Resources',
-    maxLevel: 10,
+    maxLevel: 11,
     available: [1, 2, 2, 3, 3, 4, 4, 4],
     build: 90,
   },
   barracks: {
     name: 'Barracks',
-    description: 'Train your troops here. Each extra barracks shortens training times.',
+    description: 'Train your troops here. Prepare troops instantly, ready for your next attack.',
     size: 3,
     width: 134,
     hp: 850,
     cost: 4500,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 8,
+    maxLevel: 10,
     available: [1, 2, 2, 3, 3, 4, 4, 4],
     build: 120,
   },
@@ -230,13 +294,13 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 15000,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: MAX_TROOP_LEVEL,
+    maxLevel: 6,
     available: [0, 1, 1, 1, 1, 1, 1, 1],
     build: 180,
   },
   spellfactory: {
     name: 'Spell Factory',
-    description: 'Brews battle spells. Each level holds one more spell in your army.',
+    description: 'Brews battle spells. Each level adds two housing spaces for battle spells.',
     size: 3,
     width: 122,
     hp: 900,
@@ -246,6 +310,97 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     maxLevel: 5,
     available: [0, 1, 1, 1, 1, 1, 1, 1],
     build: 240,
+  },
+  wizardtower: {
+    name: 'Wizard Tower',
+    description:
+      'A crystal lookout with a splash attack. Hits groups of ground or air troops, one layer at a time.',
+    size: 3,
+    width: 112,
+    hp: 900,
+    cost: 16000,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 8,
+    available: [0, 0, 0, 0, 1, 2, 2, 3],
+    build: 180,
+    damage: 35,
+    range: 7,
+    rate: 1.3,
+    targets: 'both',
+    splash: 1.5,
+    singleArtwork: true,
+  },
+  bomb: {
+    name: 'Bomb',
+    description:
+      'Hidden until a ground troop approaches. A short fuse gives fast troops a chance to escape the blast.',
+    size: 1,
+    width: 39,
+    hp: 1,
+    cost: 400,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 8,
+    available: [0, 2, 2, 2, 4, 4, 6, 6],
+    build: 10,
+    singleArtwork: true,
+    trap: { trigger: 1.5, radius: 3, delay: 1, damage: 25, targets: 'ground' },
+  },
+  giantbomb: {
+    name: 'Giant Bomb',
+    description:
+      'A powerful hidden blast for groups of ground troops. Place beside a gap in your walls.',
+    size: 2,
+    width: 70,
+    hp: 1,
+    cost: 6000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 5,
+    available: [0, 0, 0, 0, 1, 1, 2, 3],
+    build: 60,
+    singleArtwork: true,
+    trap: { trigger: 2, radius: 3.5, delay: 1.5, damage: 175, targets: 'ground' },
+  },
+  airbomb: {
+    name: 'Air Bomb',
+    description:
+      'A concealed balloon bomb that tracks an air troop and bursts among nearby flyers. Ground troops never trigger it.',
+    size: 1,
+    width: 44,
+    hp: 1,
+    cost: 4000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 6,
+    available: [0, 0, 0, 2, 2, 2, 2, 4],
+    build: 45,
+    singleArtwork: true,
+    trap: { trigger: 4, radius: 3, delay: 0.9, damage: 120, targets: 'air' },
+  },
+  springtrap: {
+    name: 'Spring Trap',
+    description:
+      'Springs the largest ground troop in range out of battle. Oversized troops take damage and are knocked back instead.',
+    size: 1,
+    width: 44,
+    hp: 1,
+    cost: 2500,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 5,
+    available: [0, 0, 0, 2, 2, 4, 4, 6],
+    build: 30,
+    singleArtwork: true,
+    trap: {
+      trigger: 0.8,
+      radius: 0.8,
+      delay: 0,
+      damage: 500,
+      targets: 'ground',
+      springCapacity: 10,
+    },
   },
   wall: {
     name: 'Stone Wall',
@@ -261,6 +416,11 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     build: 0,
   },
 };
+for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
+  BUILDINGS[kind].available = BUILDINGS[kind].available.map((count, i) =>
+    BUILDING_LEVELS[kind][i] ? count : 0,
+  );
+}
 export interface TroopDef {
   name: string;
   role: string;
@@ -298,9 +458,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 1.45,
     range: 1,
     rate: 0.8,
-    cost: 100,
+    cost: 0,
     space: 1,
-    time: 6,
+    time: 0,
     width: 29,
     research: 300,
   },
@@ -313,9 +473,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 1.65,
     range: 4.8,
     rate: 1,
-    cost: 160,
+    cost: 0,
     space: 1,
-    time: 8,
+    time: 0,
     width: 26,
     research: 420,
   },
@@ -328,9 +488,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 0.95,
     range: 1.1,
     rate: 1.5,
-    cost: 650,
+    cost: 0,
     space: 5,
-    time: 20,
+    time: 0,
     width: 45,
     research: 900,
     prefersDefenses: true,
@@ -344,9 +504,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 1.35,
     range: 4.5,
     rate: 1.6,
-    cost: 450,
+    cost: 0,
     space: 4,
-    time: 15,
+    time: 0,
     width: 30,
     research: 1200,
   },
@@ -359,9 +519,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 0.62,
     range: 0.9,
     rate: 3,
-    cost: 900,
+    cost: 0,
     space: 5,
-    time: 22,
+    time: 0,
     width: 34,
     research: 1500,
     flying: true,
@@ -379,9 +539,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 2.7,
     range: 0.8,
     rate: 0.8,
-    cost: 120,
+    cost: 0,
     space: 1,
-    time: 7,
+    time: 0,
     width: 28,
     research: 480,
     prefersResources: true,
@@ -397,9 +557,9 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
     speed: 2.25,
     range: 0.7,
     rate: 1,
-    cost: 350,
+    cost: 0,
     space: 2,
-    time: 12,
+    time: 0,
     width: 28,
     research: 720,
     wallBreaker: true,
@@ -430,9 +590,9 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     name: 'Rage Spell',
     role: 'BOOST',
     description: 'Troops inside the cloud hit harder and move faster.',
-    cost: 4500,
+    cost: 0,
     space: 2,
-    time: 90,
+    time: 0,
     radius: 4.4,
     duration: 12,
     effect: '+70% damage, +60% speed',
@@ -441,9 +601,9 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     name: 'Healing Spell',
     role: 'SUPPORT',
     description: 'A ring of restoring light that mends your troops where they stand.',
-    cost: 4000,
+    cost: 0,
     space: 2,
-    time: 80,
+    time: 0,
     radius: 4,
     duration: 12,
     effect: '55 health per second',
@@ -452,9 +612,9 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     name: 'Lightning Spell',
     role: 'DIRECT',
     description: 'Calls down bolts that damage every building in a small area.',
-    cost: 3500,
+    cost: 0,
     space: 1,
-    time: 60,
+    time: 0,
     radius: 2.3,
     duration: 0,
     effect: '480 damage instantly',
@@ -465,30 +625,40 @@ export const HEAL_PER_SECOND = 55;
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
 export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
+export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
+export const unlockTownHall = (kind: BuildingKind) =>
+  BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
+export const trapDamage = (kind: BuildingKind, level: number) =>
+  Math.round((BUILDINGS[kind].trap?.damage ?? 0) * (1 + (level - 1) * 0.2));
+export const springCapacity = (level: number) => 10 + (level - 1) * 2;
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 export const asset = (kind: string, level = 1) => {
+  if (kind === 'king') return '/assets/characters/king.webp';
   if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
-  if (level >= TIER3_LEVEL && kind in BUILDINGS && kind !== 'wall')
+  if (
+    level >= TIER3_LEVEL &&
+    kind in BUILDINGS &&
+    kind !== 'wall' &&
+    !BUILDINGS[kind as BuildingKind].singleArtwork
+  )
     return `/assets/buildings/tier3/${kind}.webp`;
   const folder =
     kind in TROOPS ? 'characters' : ENVIRONMENT.has(kind) ? 'environment' : 'buildings';
   return `/assets/${folder}/${kind}.webp`;
 };
-/**
- * Nothing may outrank the Town Hall by more than a single level, so a Town Hall
- * upgrade is what opens the next tier of everything else.
- */
+/** Explicit catalog ceilings; old villages retain existing buildings above them. */
 export const maxLevelFor = (kind: BuildingKind, townhall: number) =>
-  kind === 'townhall'
-    ? BUILDINGS.townhall.maxLevel
-    : Math.min(BUILDINGS[kind].maxLevel, townhall + 1);
+  Math.min(BUILDINGS[kind].maxLevel, BUILDING_LEVELS[kind][Math.min(8, Math.max(1, townhall)) - 1]);
 export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
+/** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
+export const storageCapacity = (level: number) =>
+  level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 export const upgradeCost = (kind: BuildingKind, level: number) =>
   Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level));
 export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;

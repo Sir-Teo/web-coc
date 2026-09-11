@@ -127,7 +127,8 @@ describe('specialist troops', () => {
     m.finishBattle();
     m.returnHome();
     m.retrain();
-    expect(m.state.queue.map((q) => q.kind)).toEqual(['wallbreaker']);
+    expect(m.state.queue).toEqual([]);
+    expect(m.state.army.wallbreaker).toBe(1);
     expect(validateSave(m.state)).toBe(true);
   });
 });

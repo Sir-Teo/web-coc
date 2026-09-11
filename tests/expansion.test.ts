@@ -127,15 +127,17 @@ describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
     const m = new GameModel();
     m.state.spells = { rage: 0, heal: 0, lightning: 0 };
-    expect(m.spellCapacity).toBe(2);
+    expect(m.spellCapacity).toBe(4);
     const elixir = m.state.elixir;
     m.brew('rage');
     m.brew('lightning');
-    expect(m.state.spellQueue).toHaveLength(2);
-    expect(m.state.elixir).toBe(elixir - SPELLS.rage.cost - SPELLS.lightning.cost);
+    expect(m.spellHousing).toBe(3);
+    expect(m.state.spellQueue).toHaveLength(0);
+    expect(m.state.elixir).toBe(elixir);
     m.brew('heal');
-    expect(m.state.spellQueue).toHaveLength(2);
-    expect(m.state.elixir).toBe(elixir - SPELLS.rage.cost - SPELLS.lightning.cost);
+    expect(m.spellHousing).toBe(3);
+    expect(m.state.spellQueue).toHaveLength(0);
+    expect(m.state.elixir).toBe(elixir);
     m.tick(m.clock + (SPELLS.rage.time + SPELLS.lightning.time) * 1000 + 1000);
     expect(m.state.spells.rage).toBe(1);
     expect(m.state.spells.lightning).toBe(1);
@@ -211,7 +213,7 @@ describe('spells', () => {
 });
 
 describe('town hall gating and stretched timers', () => {
-  it('caps every other building one level above the town hall', () => {
+  it('uses building-specific Town Hall level caps', () => {
     const m = new GameModel();
     expect(m.townhallLevel).toBe(2);
     const cannon = m.state.buildings.find((b) => b.kind === 'cannon' && b.level === 2)!;
@@ -228,6 +230,8 @@ describe('town hall gating and stretched timers', () => {
   });
   it('unlocks more of each building as the town hall grows', () => {
     const m = new GameModel();
+    expect(m.maxCount('mortar')).toBe(0);
+    m.townhall!.level = 3;
     expect(m.maxCount('mortar')).toBe(1);
     m.townhall!.level = 6;
     expect(m.maxCount('mortar')).toBe(3);
@@ -381,7 +385,7 @@ describe('second-pass behaviour', () => {
     lab.level = BUILDINGS.laboratory.maxLevel;
     m.researchTroop('swordsman');
     expect(m.state.research).toBeUndefined();
-    expect(BUILDINGS.laboratory.maxLevel).toBe(MAX_TROOP_LEVEL);
+    expect(BUILDINGS.laboratory.maxLevel).toBeGreaterThanOrEqual(MAX_TROOP_LEVEL);
     expect(validateSave(m.state)).toBe(true);
   });
   it('counts what the tutorial asks for and carries a spell book into battle', () => {

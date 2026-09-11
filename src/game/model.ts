@@ -1,4 +1,15 @@
+import {
+  HERO_ABILITY,
+  heroStats,
+  heroLevelCap,
+  heroUpgradeCost,
+  heroUpgradeSeconds,
+  type HeroProgress,
+  type BattleHero,
+} from './heroes';
 import { campaignBlueprint, CAMPAIGN_LAYOUTS } from './campaign';
+import { armySpace, spellSpace, emptyArmy, emptySpells, type ArmyPreset } from './army';
+import { stepTraps, type TrapState } from './traps';
 import {
   BUILDINGS,
   TROOPS,
@@ -11,11 +22,13 @@ import {
   MAX_TROOP_LEVEL,
   defenseDamage,
   isResourceBuilding,
+  isTrap,
   gemCost,
   maxCountFor,
   maxLevelFor,
   researchCost,
   researchSeconds,
+  storageCapacity,
   upgradeCost,
   upgradeSeconds,
   type BuildingKind,
@@ -52,8 +65,28 @@ export interface Layout {
 }
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
+export interface BattleResult {
+  gold: number;
+  elixir: number;
+  trophies: number;
+  stars: number;
+  destruction: number;
+}
+export interface RaidRecord {
+  id: number;
+  at: number;
+  index: number;
+  practice: boolean;
+  duration: number;
+  result: BattleResult;
+  deployed: Army;
+  spells: SpellBook;
+  hero?: { level: number; abilityUsed: boolean };
+}
 export interface Save {
   version: 2;
+  dark: number;
+  king?: HeroProgress;
   gold: number;
   elixir: number;
   gems: number;
@@ -74,12 +107,17 @@ export interface Save {
   lastArmy?: Army;
   lastSpells?: SpellBook;
   layouts?: Layout[];
+  armyPresets?: (ArmyPreset | null)[];
+  raidLog?: RaidRecord[];
   settings: { sound: boolean; music: boolean; reducedMotion: boolean };
   stats: { raids: number; destroyed: number; collected: number; built?: number; trained?: number };
 }
 export interface Unit {
   id: number;
   kind: TroopKind;
+  hero?: 'king';
+  summoned?: boolean;
+  rageUntil?: number;
   x: number;
   y: number;
   hp: number;
@@ -91,6 +129,8 @@ export interface Unit {
   attacking: boolean;
   /** Set once a destroyed troop has resolved its death effect. */
   spent?: boolean;
+  ejected?: boolean;
+  springUntil?: number;
 }
 export interface Aura {
   kind: SpellKind;
@@ -110,6 +150,8 @@ export interface MortarShell {
 }
 export interface Battle {
   index: number;
+  practice: boolean;
+  carriedArmy: Army;
   buildings: Building[];
   units: Unit[];
   remaining: Army;
@@ -119,6 +161,8 @@ export interface Battle {
   auras: Aura[];
   shells: MortarShell[];
   defenseTargets: Record<number, number>;
+  traps: Record<number, TrapState>;
+  hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
   prep: number;
@@ -127,11 +171,21 @@ export interface Battle {
   destruction: number;
   stars: number;
   loot: { gold: number; elixir: number };
-  result?: { gold: number; elixir: number; trophies: number; stars: number; destruction: number };
+  result?: BattleResult;
   seed: number;
 }
 export type FX = {
-  type: 'hit' | 'destroy' | 'projectile' | 'collect' | 'spawn' | 'upgrade' | 'spell' | 'blast';
+  type:
+    | 'hit'
+    | 'destroy'
+    | 'projectile'
+    | 'collect'
+    | 'spawn'
+    | 'upgrade'
+    | 'spell'
+    | 'blast'
+    | 'trap'
+    | 'spring';
   x: number;
   y: number;
   toX?: number;
@@ -154,6 +208,7 @@ export class GameModel {
   selected: number | null = null;
   placement: BuildingKind | null = null;
   moving: number | null = null;
+  activeHero = false;
   activeTroop: TroopKind = 'swordsman';
   /** When set, tapping the battlefield casts this spell instead of deploying. */
   activeSpell: SpellKind | null = null;
@@ -169,6 +224,7 @@ export class GameModel {
   clock = Date.now();
   constructor(saved?: Save) {
     this.state = saved ?? initialSave();
+    this.state.dark ??= 0;
     this.tick(Date.now());
   }
   changed(passive = false) {
@@ -207,7 +263,7 @@ export class GameModel {
   get spellCapacity() {
     return this.state.buildings
       .filter((b) => b.kind === 'spellfactory' && !b.constructing)
-      .reduce((n, b) => n + b.level, 0);
+      .reduce((n, b) => n + b.level * 2, 0);
   }
   get armySize() {
     return TROOP_KEYS.reduce((n, k) => n + this.state.army[k] * TROOPS[k].space, 0);
@@ -217,6 +273,12 @@ export class GameModel {
   }
   get spellCount() {
     return SPELL_KEYS.reduce((n, k) => n + this.state.spells[k], 0);
+  }
+  get spellHousing() {
+    return spellSpace(this.state.spells);
+  }
+  get queuedSpellHousing() {
+    return this.state.spellQueue.reduce((n, q) => n + SPELLS[q.kind].space, 0);
   }
   get queuedSpellCount() {
     return this.state.spellQueue.length;
@@ -360,16 +422,23 @@ export class GameModel {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
   get busy() {
-    return this.state.buildings.filter((b) => b.upgradeEnd).length;
+    return (
+      this.state.buildings.filter((b) => b.upgradeEnd).length +
+      Number(!!this.state.king?.upgradeEnd)
+    );
   }
   resourceCap(kind: Resource) {
+    if (kind === 'dark')
+      return this.state.buildings
+        .filter((b) => b.kind === 'darkstorage' && !b.constructing)
+        .reduce((n, b) => n + b.level * 10000, 0);
     return (
       100000 +
       this.state.buildings
         .filter(
           (b) => b.kind === (kind === 'gold' ? 'goldstorage' : 'elixirstorage') && !b.constructing,
         )
-        .reduce((n, b) => n + b.level * 60000, 0)
+        .reduce((n, b) => n + storageCapacity(b.level), 0)
     );
   }
   tick(now: number) {
@@ -397,19 +466,39 @@ export class GameModel {
         });
         changed = true;
       }
-      if ((b.kind === 'goldmine' || b.kind === 'collector') && !b.upgradeEnd) {
+      if (
+        (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
+        !b.upgradeEnd
+      ) {
         const before = b.stored;
-        b.stored = Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
+        b.stored = Math.min(
+          (b.kind === 'darkdrill' ? 2000 : 10000) * b.level,
+          b.stored + productionSeconds * (b.kind === 'darkdrill' ? 0.1 : 3) * b.level,
+        );
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
       }
     }
-    while (this.state.queue.length && this.state.queue[0].end <= now) {
+    if (this.heroHall && !this.state.king) {
+      this.state.king = { level: 1 };
+      structural = changed = true;
+      this.notify('The Barbarian King has joined your village!');
+    }
+    if (this.state.king?.upgradeEnd && this.state.king.upgradeEnd <= now) {
+      this.state.king.level++;
+      delete this.state.king.upgradeEnd;
+      delete this.state.king.upgradeStart;
+      structural = changed = true;
+      this.notify(`Barbarian King reached level ${this.state.king.level}!`);
+    }
+    // Older saves may still contain paid training queues. Complete those once;
+    // new armies are prepared immediately and never create queue entries.
+    while (this.state.queue.length) {
       const q = this.state.queue.shift()!;
       this.state.army[q.kind]++;
       structural = true;
       changed = true;
     }
-    while (this.state.spellQueue.length && this.state.spellQueue[0].end <= now) {
+    while (this.state.spellQueue.length) {
       const q = this.state.spellQueue.shift()!;
       this.state.spells[q.kind]++;
       structural = true;
@@ -438,28 +527,32 @@ export class GameModel {
   }
   collect(id?: number) {
     let gold = 0,
-      elixir = 0;
+      elixir = 0,
+      dark = 0;
     for (const b of this.state.buildings) {
       if ((id === undefined || b.id === id) && b.stored >= 1) {
-        const k = b.kind === 'goldmine' ? 'gold' : 'elixir';
+        const k = b.kind === 'goldmine' ? 'gold' : b.kind === 'darkdrill' ? 'dark' : 'elixir';
         const amount = Math.min(Math.floor(b.stored), this.resourceCap(k) - this.state[k]);
         if (amount <= 0) continue;
         this.state[k] += amount;
         b.stored -= amount;
         if (k === 'gold') gold += amount;
-        else elixir += amount;
+        else if (k === 'elixir') elixir += amount;
+        else dark += amount;
         this.onEffect({
           type: 'collect',
           x: b.x + BUILDINGS[b.kind].size / 2,
           y: b.y + BUILDINGS[b.kind].size / 2,
-          color: k === 'gold' ? 0xffd34b : 0xd567ff,
+          color: k === 'gold' ? 0xffd34b : k === 'dark' ? 0x514076 : 0xd567ff,
           text: `+${amount.toLocaleString()}`,
         });
       }
     }
-    if (gold + elixir) {
-      this.state.stats.collected += gold + elixir;
-      this.notify(`Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir`);
+    if (gold + elixir + dark) {
+      this.state.stats.collected += gold + elixir + dark;
+      this.notify(
+        `Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir${dark ? ` · ${dark.toLocaleString()} dark elixir` : ''}`,
+      );
       this.changed();
     } else this.notify('Your collectors are working. Come back in a moment.');
   }
@@ -606,6 +699,7 @@ export class GameModel {
     this.placement = null;
     this.moving = null;
     this.activeSpell = null;
+    this.activeHero = false;
     this.changed();
   }
 
@@ -712,91 +806,260 @@ export class GameModel {
   }
 
   // ----------------------------------------------------------------- training
-  trainingTime(kind: TroopKind) {
-    const barracks = this.state.buildings.filter(
+  trainingTime(_kind: TroopKind) {
+    return 0;
+  }
+  get barracksReady() {
+    return this.state.buildings.some(
       (b) => b.kind === 'barracks' && !b.constructing && !b.upgradeEnd,
-    ).length;
-    return TROOPS[kind].time / Math.max(1, barracks);
+    );
   }
-  private enqueue(kinds: TroopKind[]) {
-    if (
-      !this.state.buildings.some((b) => b.kind === 'barracks' && !b.constructing && !b.upgradeEnd)
-    )
-      return this.notify('Your barracks must be ready to train.');
-    const space = kinds.reduce((n, k) => n + TROOPS[k].space, 0);
-    const cost = kinds.reduce((n, k) => n + TROOPS[k].cost, 0);
-    if (this.armySize + this.queuedSize + space > this.capacity)
-      return this.notify('Army camps are full. Upgrade or build another camp.');
-    if (this.state.elixir < cost) return this.notify('Not enough elixir.');
-    this.state.elixir -= cost;
-    this.state.stats.trained = (this.state.stats.trained ?? 0) + kinds.length;
-    let end = Math.max(this.clock, this.state.queue.at(-1)?.end ?? 0);
-    for (const kind of kinds) {
-      end += this.trainingTime(kind) * 1000;
-      this.state.queue.push({ kind, end });
-    }
-    this.changed();
-  }
-  train(kind: TroopKind, count = 1) {
-    if (!Number.isInteger(count) || count < 1 || count > 5) return;
-    this.enqueue(Array<TroopKind>(count).fill(kind));
-  }
-  brew(kind: SpellKind, count = 1) {
-    if (!Number.isInteger(count) || count < 1 || count > 5) return;
-    const factory = this.state.buildings.find(
+  get factoryReady() {
+    return this.state.buildings.some(
       (b) => b.kind === 'spellfactory' && !b.constructing && !b.upgradeEnd,
     );
-    if (!factory) return this.notify('Your spell factory must be ready to brew.');
-    if (this.spellCount + this.queuedSpellCount + count > this.spellCapacity)
-      return this.notify('The spell factory is full. Upgrade it to hold more.');
-    const cost = SPELLS[kind].cost * count;
-    if (this.state.elixir < cost) return this.notify('Not enough elixir.');
-    this.state.elixir -= cost;
-    let end = Math.max(this.clock, this.state.spellQueue.at(-1)?.end ?? 0);
-    for (let i = 0; i < count; i++) {
-      end += SPELLS[kind].time * 1000;
-      this.state.spellQueue.push({ kind, end });
-    }
+  }
+  train(kind: TroopKind, count = 1) {
+    if (
+      this.battle ||
+      !TROOP_KEYS.includes(kind) ||
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > 5
+    )
+      return;
+    if (!this.barracksReady) return this.notify('Your barracks must be ready to prepare troops.');
+    if (this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity)
+      return this.notify('Army camps are full. Remove troops or upgrade a camp.');
+    this.state.army[kind] += count;
+    this.state.stats.trained = (this.state.stats.trained ?? 0) + count;
     this.changed();
   }
-  retrain() {
-    if (!this.state.lastArmy) return this.notify('Complete a raid to save an army composition.');
-    const kinds: TroopKind[] = [];
-    for (const kind of TROOP_KEYS) {
-      const ready = this.state.army[kind] + this.state.queue.filter((q) => q.kind === kind).length;
-      for (let i = ready; i < this.state.lastArmy[kind]; i++) kinds.push(kind);
-    }
-    const spells = this.state.lastSpells;
-    let brewed = 0;
-    if (spells)
-      for (const kind of SPELL_KEYS) {
-        const ready =
-          this.state.spells[kind] + this.state.spellQueue.filter((q) => q.kind === kind).length;
-        const missing = spells[kind] - ready;
-        if (missing > 0) {
-          this.brew(kind, Math.min(5, missing));
-          brewed += missing;
-        }
-      }
-    if (!kinds.length) {
-      if (!brewed) this.notify('Your previous army is already ready or training.');
+  brew(kind: SpellKind, count = 1) {
+    if (
+      this.battle ||
+      !SPELL_KEYS.includes(kind) ||
+      !Number.isInteger(count) ||
+      count < 1 ||
+      count > 5
+    )
       return;
+    if (!this.factoryReady)
+      return this.notify('Your spell factory must be ready to prepare spells.');
+    if (
+      this.spellHousing + this.queuedSpellHousing + SPELLS[kind].space * count >
+      this.spellCapacity
+    )
+      return this.notify('Not enough spell housing. Remove a spell or upgrade the factory.');
+    this.state.spells[kind] += count;
+    this.changed();
+  }
+  removeTroop(kind: TroopKind) {
+    if (this.battle || !TROOP_KEYS.includes(kind) || this.state.army[kind] <= 0) return;
+    this.state.army[kind]--;
+    this.changed();
+  }
+  removeSpell(kind: SpellKind) {
+    if (this.battle || !SPELL_KEYS.includes(kind) || this.state.spells[kind] <= 0) return;
+    this.state.spells[kind]--;
+    this.changed();
+  }
+  clearArmy() {
+    if (this.battle) return;
+    this.state.army = emptyArmy();
+    this.state.spells = emptySpells();
+    this.state.queue = [];
+    this.state.spellQueue = [];
+    this.changed();
+  }
+  /** Validate the entire composition before changing either troops or spells. */
+  private prepareArmy(army: Army, spells: SpellBook) {
+    if (this.battle) return false;
+    if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity) {
+      this.notify('This army needs more troop or spell housing.');
+      return false;
     }
-    this.enqueue(kinds);
+    if (armySpace(army) && !this.barracksReady) {
+      this.notify('Your barracks must be ready.');
+      return false;
+    }
+    if (spellSpace(spells) && !this.factoryReady) {
+      this.notify('Your spell factory must be ready.');
+      return false;
+    }
+    const added = TROOP_KEYS.reduce((n, k) => n + Math.max(0, army[k] - this.state.army[k]), 0);
+    this.state.army = { ...army };
+    this.state.spells = { ...spells };
+    this.state.queue = [];
+    this.state.spellQueue = [];
+    this.state.stats.trained = (this.state.stats.trained ?? 0) + added;
+    this.changed();
+    return true;
+  }
+  saveArmyPreset(slot: number, name?: string) {
+    if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return;
+    if (!this.armySize) return this.notify('Add troops before saving an army.');
+    this.state.armyPresets ??= [null, null, null];
+    this.state.armyPresets[slot] = {
+      name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),
+      army: { ...this.state.army },
+      spells: { ...this.state.spells },
+    };
+    this.notify('Army saved.');
+    this.changed();
+  }
+  loadArmyPreset(slot: number) {
+    const preset = this.state.armyPresets?.[slot];
+    if (!preset) return this.notify('Save an army in this slot first.');
+    if (this.prepareArmy(preset.army, preset.spells)) this.notify('Your army is ready.');
+  }
+  retrain() {
+    if (!this.state.lastArmy) {
+      this.notify('Complete a raid to save an army composition.');
+      return false;
+    }
+    const army = { ...this.state.army },
+      spells = { ...this.state.spells };
+    for (const k of TROOP_KEYS) army[k] = Math.max(army[k], this.state.lastArmy[k]);
+    for (const k of SPELL_KEYS) spells[k] = Math.max(spells[k], this.state.lastSpells?.[k] ?? 0);
+    if (!this.prepareArmy(army, spells)) return false;
+    this.notify('Your last army is ready.');
+    return true;
   }
 
   // ------------------------------------------------------------------- battle
-  startBattle(index: number) {
+  get heroHall() {
+    return this.state.buildings.find((b) => b.kind === 'herohall' && !b.constructing);
+  }
+  get heroReady() {
+    return !!this.state.king && !!this.heroHall && !this.state.king.upgradeEnd;
+  }
+  get heroMaxLevel() {
+    return heroLevelCap(this.townhallLevel, this.heroHall?.level ?? 0);
+  }
+  upgradeHero() {
+    const king = this.state.king;
+    if (this.battle || !king || !this.heroHall || king.upgradeEnd) return false;
+    if (king.level >= this.heroMaxLevel) {
+      this.notify('Upgrade your Town Hall and Hero Hall to unlock more hero levels.');
+      return false;
+    }
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    const cost = heroUpgradeCost(king.level);
+    if (this.state.dark < cost) {
+      this.notify('Collect more dark elixir from your drills.');
+      return false;
+    }
+    this.state.dark -= cost;
+    king.upgradeStart = this.clock;
+    king.upgradeEnd = this.clock + heroUpgradeSeconds(king.level) * 1000;
+    this.changed();
+    return true;
+  }
+  finishHero() {
+    const king = this.state.king;
+    if (this.battle || !king?.upgradeEnd) return false;
+    const cost = gemCost((king.upgradeEnd - this.clock) / 1000);
+    if (this.state.gems < cost) {
+      this.notify('Not enough gems.');
+      return false;
+    }
+    this.state.gems -= cost;
+    king.upgradeEnd = this.clock;
+    this.tick(this.clock);
+    this.changed();
+    return true;
+  }
+  deployHero(x: number, y: number) {
+    const b = this.battle,
+      h = b?.hero;
+    if (!b || b.finished || !h || h.unitId !== null || this.deployBlocked(x, y)) return false;
+    this.beginFight();
+    const stats = heroStats(h.level, h.townhall);
+    h.unitId = this.state.nextId++;
+    b.units.push({
+      id: h.unitId,
+      kind: 'swordsman',
+      hero: 'king',
+      x,
+      y,
+      hp: stats.hp,
+      maxHp: stats.hp,
+      cooldown: 0,
+      target: null,
+      path: [],
+      pathAt: 0,
+      attacking: false,
+    });
+    this.onEffect({ type: 'spawn', x, y });
+    this.changed();
+    return true;
+  }
+  activateHeroAbility(automatic = false) {
+    const b = this.battle,
+      h = b?.hero;
+    const u = b?.units.find((u) => u.id === h?.unitId);
+    if (
+      !b ||
+      b.finished ||
+      !h ||
+      !u ||
+      h.abilityUsed ||
+      h.townhall < 7 ||
+      u.spent ||
+      (!automatic && u.hp <= 0)
+    )
+      return false;
+    h.abilityUsed = true;
+    h.rageUntil = b.elapsed + HERO_ABILITY.duration;
+    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * HERO_ABILITY.healFraction);
+    for (let i = 0; i < HERO_ABILITY.summons; i++) {
+      const stats = this.troopStats('swordsman');
+      b.units.push({
+        id: this.state.nextId++,
+        kind: 'swordsman',
+        summoned: true,
+        rageUntil: b.elapsed + HERO_ABILITY.duration,
+        x: u.x,
+        y: u.y,
+        hp: stats.hp,
+        maxHp: stats.hp,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+      });
+    }
+    this.onEffect({ type: 'trap', x: u.x, y: u.y, text: 'IRON FIST!', color: 0xffcc4d });
+    this.changed();
+    return true;
+  }
+  visibleBuilding(building: Building) {
+    return !this.battle || !isTrap(building.kind) || !!this.battle.traps[building.id];
+  }
+  startBattle(index: number, practice = false) {
+    if (this.battle) return;
     if (index < 0 || index >= CAMPAIGN.length || (index > 0 && !this.state.stars[index - 1]))
       return;
-    if (this.armySize === 0) return this.notify('Train an army before attacking.');
+    if (this.armySize === 0 && !this.heroReady)
+      return this.notify('Prepare an army or a hero before attacking.');
     this.cancel();
     this.editing = false;
-    this.state.lastArmy = { ...this.state.army };
-    this.state.lastSpells = { ...this.state.spells };
+    if (!practice) {
+      this.state.lastArmy = { ...this.state.army };
+      this.state.lastSpells = { ...this.state.spells };
+    }
     this.battle = {
       index,
-      buildings: enemyBase(index),
+      practice,
+      carriedArmy: { ...this.state.army },
+      buildings: practice
+        ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
+        : enemyBase(index),
       units: [],
       remaining: { ...this.state.army },
       spells: { ...this.state.spells },
@@ -804,6 +1067,16 @@ export class GameModel {
       auras: [],
       shells: [],
       defenseTargets: {},
+      traps: {},
+      hero: this.heroReady
+        ? {
+            level: this.state.king!.level,
+            townhall: this.townhallLevel,
+            unitId: null,
+            abilityUsed: false,
+            rageUntil: 0,
+          }
+        : undefined,
       elapsed: 0,
       prep: PREP_SECONDS,
       started: false,
@@ -815,6 +1088,7 @@ export class GameModel {
     };
     this.activeTroop = TROOP_KEYS.find((k) => this.state.army[k] > 0) ?? 'swordsman';
     this.activeSpell = null;
+    this.activeHero = false;
     this.changed();
   }
   /** True where a troop may not be dropped: the red boundary the scene draws. */
@@ -826,6 +1100,7 @@ export class GameModel {
       (v) =>
         v.hp > 0 &&
         v.kind !== 'wall' &&
+        !isTrap(v.kind) &&
         x > v.x - 1.5 &&
         x < v.x + BUILDINGS[v.kind].size + 1.5 &&
         y > v.y - 1.5 &&
@@ -833,6 +1108,7 @@ export class GameModel {
     );
   }
   deploy(x: number, y: number) {
+    if (this.activeHero) return this.deployHero(x, y);
     const b = this.battle,
       k = this.activeTroop;
     if (!b || b.finished || b.remaining[k] <= 0) return false;
@@ -842,7 +1118,7 @@ export class GameModel {
     }
     this.beginFight();
     b.remaining[k]--;
-    this.state.army[k]--;
+    if (!b.practice) this.state.army[k]--;
     const d = this.troopStats(k);
     b.units.push({
       id: this.state.nextId++,
@@ -880,7 +1156,7 @@ export class GameModel {
     if (x < 0 || y < 0 || x > 28 || y > 28) return false;
     this.beginFight();
     b.spells[k]--;
-    this.state.spells[k]--;
+    if (!b.practice) this.state.spells[k]--;
     const d = SPELLS[k];
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
@@ -921,21 +1197,32 @@ export class GameModel {
     b.auras = b.auras.filter((a) => a.end > b.elapsed);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
+      if ((u.springUntil ?? 0) > b.elapsed) {
+        u.attacking = false;
+        continue;
+      }
       const troop = TROOPS[u.kind];
-      if (this.inAura('heal', u.x, u.y)) u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt);
-      const raged = this.inAura('rage', u.x, u.y);
+      if (this.inAura('heal', u.x, u.y))
+        u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt * (u.hero ? 0.5 : 1));
+      const raged =
+        this.inAura('rage', u.x, u.y) ||
+        (u.rageUntil ?? 0) > b.elapsed ||
+        !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       u.cooldown -= dt;
       u.pathAt -= dt;
       u.attacking = false;
-      const base = this.troopStats(u.kind);
+      const base =
+        u.hero && b.hero
+          ? { ...this.troopStats(u.kind), ...heroStats(b.hero.level, b.hero.townhall) }
+          : this.troopStats(u.kind);
       const d = {
         ...base,
         damage: raged ? base.damage * 1.7 : base.damage,
-        speed: raged ? base.speed * 1.6 : base.speed,
+        speed: raged ? base.speed * (u.hero ? HERO_ABILITY.speed : 1.6) : base.speed,
       };
-      let target = b.buildings.find((t) => t.id === u.target && t.hp > 0);
+      let target = b.buildings.find((t) => t.id === u.target && t.hp > 0 && !isTrap(t.kind));
       if (!target) {
-        const alive = b.buildings.filter((v) => v.hp > 0 && v.kind !== 'wall');
+        const alive = b.buildings.filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind));
         const preferred = troop.prefersResources
           ? alive.filter((v) => isResourceBuilding(v.kind))
           : troop.prefersDefenses
@@ -1038,6 +1325,7 @@ export class GameModel {
       }
     }
     separateUnits(b.units, b.buildings);
+    if (stepTraps(b, dt, this.onEffect)) this.changed();
     // Shells land where the target stood when fired. Air units and troops that
     // have escaped the impact circle take no damage, even if they were targeted.
     for (const shell of b.shells) {
@@ -1054,7 +1342,7 @@ export class GameModel {
     b.shells = b.shells.filter((shell) => shell.impact > b.elapsed);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
-      if (!d.damage || tower.hp <= 0) continue;
+      if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
       tower.cooldown -= dt;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
@@ -1075,7 +1363,9 @@ export class GameModel {
       if (target) {
         b.defenseTargets[tower.id] = target.id;
         tower.cooldown = d.rate!;
-        const power = defenseDamage(tower.kind, tower.level) * CAMPAIGN_LAYOUTS[b.index].defense;
+        const power =
+          defenseDamage(tower.kind, tower.level) *
+          (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'mortar') {
           b.shells.push({
             fromX: center.x,
@@ -1089,18 +1379,42 @@ export class GameModel {
           });
           continue;
         }
-        target.hp -= power;
+        if (d.splash) {
+          for (const u of b.units)
+            if (
+              u.hp > 0 &&
+              !!TROOPS[u.kind].flying === !!TROOPS[target.kind].flying &&
+              Math.hypot(u.x - target.x, u.y - target.y) <= d.splash
+            )
+              u.hp -= power;
+          this.onEffect({
+            type: 'blast',
+            x: target.x,
+            y: target.y,
+            radius: d.splash,
+            color: 0xba85ff,
+            toAir: TROOPS[target.kind].flying,
+          });
+        } else target.hp -= power;
         this.onEffect({
           type: 'projectile',
           x: center.x,
           y: center.y,
           toX: target.x,
           toY: target.y,
-          color: tower.kind === 'airdefense' ? 0x63d8ff : 0x303137,
+          color:
+            tower.kind === 'wizardtower'
+              ? 0xba85ff
+              : tower.kind === 'airdefense'
+                ? 0x63d8ff
+                : 0x303137,
           toAir: TROOPS[target.kind].flying,
         });
       }
     }
+    const king = b.units.find((u) => u.hero);
+    if (king && !king.spent && king.hp <= king.maxHp * 0.2 && b.hero && !b.hero.abilityUsed)
+      this.activateHeroAbility(true);
     for (const u of b.units) {
       if (u.hp > 0 || u.spent) continue;
       u.spent = true;
@@ -1123,19 +1437,24 @@ export class GameModel {
       (!b.shells.length &&
         !b.units.some((u) => u.hp > 0) &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0) &&
-        !SPELL_KEYS.some((k) => b.spells[k] > 0))
+        !SPELL_KEYS.some((k) => b.spells[k] > 0) &&
+        !(b.hero && b.hero.unitId === null))
     )
       this.finishBattle();
   }
   private refreshBattleScore() {
     const b = this.battle!;
-    const structures = b.buildings.filter((v) => v.kind !== 'wall');
+    const structures = b.buildings.filter((v) => v.kind !== 'wall' && !isTrap(v.kind));
     const dead = structures.filter((v) => v.hp <= 0).length;
     b.destruction = structures.length ? Math.floor((dead / structures.length) * 100) : 100;
     b.stars =
       Number(b.destruction >= 50) +
       Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
       Number(b.destruction === 100);
+    if (b.practice) {
+      b.loot = { gold: 0, elixir: 0 };
+      return;
+    }
     // Each resource building pays out as it is damaged. Storages hold four
     // shares, collectors one, and the Town Hall two of each resource.
     for (const resource of ['gold', 'elixir'] as const) {
@@ -1164,7 +1483,7 @@ export class GameModel {
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
   damage(b: Building, n: number) {
-    if (b.hp <= 0) return;
+    if (b.hp <= 0 || isTrap(b.kind)) return;
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
@@ -1184,23 +1503,52 @@ export class GameModel {
     if (!b || b.finished) return;
     this.refreshBattleScore();
     b.finished = true;
-    const trophies = b.stars ? b.stars * 8 : -10;
-    const gold = Math.min(b.loot.gold, this.resourceCap('gold') - this.state.gold),
-      elixir = Math.min(b.loot.elixir, this.resourceCap('elixir') - this.state.elixir);
+    const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
+    const gold = b.practice
+        ? 0
+        : Math.max(0, Math.min(b.loot.gold, this.resourceCap('gold') - this.state.gold)),
+      elixir = b.practice
+        ? 0
+        : Math.max(0, Math.min(b.loot.elixir, this.resourceCap('elixir') - this.state.elixir));
     this.state.gold += gold;
     this.state.elixir += elixir;
     this.state.trophies = Math.max(0, this.state.trophies + trophies);
-    this.state.stars[b.index] = Math.max(this.state.stars[b.index] ?? 0, b.stars);
-    this.state.stats.raids++;
-    this.state.stats.destroyed += b.buildings.filter((v) => v.hp <= 0 && v.kind !== 'wall').length;
-    this.state.xp += b.stars * 15;
+    if (!b.practice) {
+      this.state.stars[b.index] = Math.max(this.state.stars[b.index] ?? 0, b.stars);
+      this.state.stats.raids++;
+      this.state.stats.destroyed += b.buildings.filter(
+        (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
+      ).length;
+      this.state.xp += b.stars * 15;
+    }
     b.result = { gold, elixir, trophies, stars: b.stars, destruction: b.destruction };
+    const deployed = emptyArmy(),
+      spells = emptySpells();
+    for (const k of TROOP_KEYS) deployed[k] = b.carriedArmy[k] - b.remaining[k];
+    for (const k of SPELL_KEYS) spells[k] = b.carried[k] - b.spells[k];
+    this.state.raidLog = [
+      {
+        id: this.state.nextId++,
+        at: this.clock,
+        index: b.index,
+        practice: b.practice,
+        duration: Math.min(BATTLE_SECONDS, b.elapsed),
+        result: { ...b.result },
+        deployed,
+        spells,
+        ...(b.hero?.unitId != null
+          ? { hero: { level: b.hero.level, abilityUsed: b.hero.abilityUsed } }
+          : {}),
+      },
+      ...(this.state.raidLog ?? []),
+    ].slice(0, 20);
     this.changed();
   }
   returnHome() {
     this.battle = null;
     this.selected = null;
     this.activeSpell = null;
+    this.activeHero = false;
     this.changed();
   }
 }
@@ -1292,6 +1640,7 @@ export function initialSave(): Save {
   );
   return {
     version: 2,
+    dark: 0,
     gold: 205000,
     elixir: 165000,
     gems: 250,
@@ -1327,7 +1676,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
   const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
   if (!walls.length) return undefined;
   const structures = buildings
-    .filter((b) => b.kind !== 'wall' && b.hp > 0)
+    .filter((b) => b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0)
     .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
   const candidates: Building[] = [];
   for (const structure of structures.slice(0, 5)) {
@@ -1350,7 +1699,7 @@ export function findPath(
     blocked = new Uint8Array(size * size),
     wall = new Uint8Array(size * size);
   for (const b of buildings) {
-    if (b.hp <= 0) continue;
+    if (b.hp <= 0 || isTrap(b.kind)) continue;
     for (let x = b.x; x < b.x + BUILDINGS[b.kind].size; x++)
       for (let y = b.y; y < b.y + BUILDINGS[b.kind].size; y++) {
         if (b.kind === 'wall') wall[y * size + x] = 1;
@@ -1418,7 +1767,7 @@ export function findPath(
 export function separateUnits(units: Unit[], buildings: Building[]) {
   const solid = new Set<number>();
   for (const b of buildings)
-    if (b.hp > 0) {
+    if (b.hp > 0 && !isTrap(b.kind)) {
       const size = BUILDINGS[b.kind].size;
       for (let x = b.x; x < b.x + size; x++)
         for (let y = b.y; y < b.y + size; y++) solid.add(y * 28 + x);

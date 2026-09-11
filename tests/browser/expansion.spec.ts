@@ -77,6 +77,12 @@ test('the building info sheet compares this level with the next', async ({ page 
   await expect(rows.first()).toContainText('Hitpoints');
   // Hitpoints and damage both improve; range does not.
   await expect(page.locator('.info-table td.better')).toHaveCount(2);
+  await expect(page.locator('.info-body')).toContainText('Town Hall 4');
+  await expect(page.locator('.info-cost')).toHaveCount(0);
+  await page.evaluate(() => {
+    window.__game.model.townhall!.level = 4;
+    window.__game.model.changed();
+  });
   await expect(page.locator('.info-cost')).toContainText('m');
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/info-desktop.png' });

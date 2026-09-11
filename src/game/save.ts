@@ -1,3 +1,4 @@
+import { HERO_MAX_LEVEL } from './heroes';
 import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
@@ -39,6 +40,7 @@ export function migrateSave(input: unknown): unknown {
     s.spells ??= { rage: 0, heal: 0, lightning: 0 };
     s.spellQueue ??= [];
   }
+  s.dark ??= 0;
   s.version = 2;
   return s;
 }
@@ -91,6 +93,22 @@ export function validateSave(input: unknown): input is Save {
       new Set(s.claimedQuests).size !== s.claimedQuests.length)
   )
     return false;
+  if (s.dark !== undefined && !finite(s.dark)) return false;
+  if (
+    s.king !== undefined &&
+    (!s.king ||
+      !Number.isInteger(s.king.level) ||
+      s.king.level < 1 ||
+      s.king.level > HERO_MAX_LEVEL ||
+      !s.buildings.some((b) => b?.kind === 'herohall' && !b.constructing) ||
+      (s.king.upgradeEnd !== undefined &&
+        (!finite(s.king.upgradeEnd) ||
+          !finite(s.king.upgradeStart) ||
+          s.king.upgradeEnd <= s.king.upgradeStart! ||
+          s.king.level >= HERO_MAX_LEVEL)) ||
+      (s.king.upgradeEnd === undefined && s.king.upgradeStart !== undefined))
+  )
+    return false;
   const armyRecord = (value: unknown) =>
     value !== null &&
     typeof value === 'object' &&
@@ -107,6 +125,71 @@ export function validateSave(input: unknown): input is Save {
   )
     return false;
   if (s.lastArmy !== undefined && !armyRecord(s.lastArmy)) return false;
+  const spellRecord = (value: unknown) =>
+    value !== null &&
+    typeof value === 'object' &&
+    SPELL_KEYS.every(
+      (k) =>
+        Number.isInteger((value as Record<string, number>)[k]) &&
+        (value as Record<string, number>)[k] >= 0 &&
+        (value as Record<string, number>)[k] < 1000,
+    );
+  if (
+    s.armyPresets !== undefined &&
+    (!Array.isArray(s.armyPresets) ||
+      s.armyPresets.length > 3 ||
+      s.armyPresets.some(
+        (p) =>
+          p !== null &&
+          (!p ||
+            typeof p.name !== 'string' ||
+            p.name.length > 32 ||
+            !armyRecord(p.army) ||
+            !spellRecord(p.spells)),
+      ))
+  )
+    return false;
+  if (
+    s.raidLog !== undefined &&
+    (!Array.isArray(s.raidLog) ||
+      s.raidLog.length > 20 ||
+      new Set(s.raidLog.map((r) => r?.id)).size !== s.raidLog.length ||
+      s.raidLog.some(
+        (r) =>
+          !r ||
+          !Number.isInteger(r.id) ||
+          r.id < 1 ||
+          r.id >= s.nextId ||
+          !finite(r.at) ||
+          !Number.isInteger(r.index) ||
+          r.index < 0 ||
+          r.index >= 12 ||
+          typeof r.practice !== 'boolean' ||
+          !finite(r.duration) ||
+          r.duration > 180 ||
+          !armyRecord(r.deployed) ||
+          !spellRecord(r.spells) ||
+          (r.hero !== undefined &&
+            (!r.hero ||
+              !Number.isInteger(r.hero.level) ||
+              r.hero.level < 1 ||
+              r.hero.level > HERO_MAX_LEVEL ||
+              typeof r.hero.abilityUsed !== 'boolean')) ||
+          !r.result ||
+          !finite(r.result.gold) ||
+          !finite(r.result.elixir) ||
+          !Number.isInteger(r.result.trophies) ||
+          r.result.trophies < -10 ||
+          r.result.trophies > 24 ||
+          !Number.isInteger(r.result.stars) ||
+          r.result.stars < 0 ||
+          r.result.stars > 3 ||
+          !Number.isInteger(r.result.destruction) ||
+          r.result.destruction < 0 ||
+          r.result.destruction > 100,
+      ))
+  )
+    return false;
   if (
     s.lastSpells !== undefined &&
     (!s.lastSpells ||

@@ -92,29 +92,40 @@ async function boot() {
     render_game_to_text: () =>
       JSON.stringify({
         mode: model.battle ? 'battle' : 'village',
-        resources: { gold: model.state.gold, elixir: model.state.elixir, gems: model.state.gems },
+        resources: {
+          gold: model.state.gold,
+          elixir: model.state.elixir,
+          dark: model.state.dark,
+          gems: model.state.gems,
+        },
         army: model.state.army,
         capacity: model.capacity,
-        buildings: model.buildings.map((b) => ({
-          id: b.id,
-          type: b.kind,
-          x: b.x,
-          y: b.y,
-          hp: Math.round(b.hp),
-          level: b.level,
-          upgrading: !!b.upgradeEnd,
-        })),
+        hero: model.state.king,
+        buildings: model.buildings
+          .filter((b) => model.visibleBuilding(b))
+          .map((b) => ({
+            id: b.id,
+            type: b.kind,
+            x: b.x,
+            y: b.y,
+            hp: Math.round(b.hp),
+            level: b.level,
+            upgrading: !!b.upgradeEnd,
+          })),
         battle: model.battle
           ? {
               time: model.battle.elapsed,
               destruction: model.battle.destruction,
               stars: model.battle.stars,
               remaining: model.battle.remaining,
+              hero: model.battle.hero,
               units: model.battle.units.filter((u) => u.hp > 0).length,
               troops: model.battle.units
                 .filter((u) => u.hp > 0)
                 .map((u) => ({
                   kind: u.kind,
+                  hero: u.hero,
+                  summoned: u.summoned,
                   x: u.x,
                   y: u.y,
                   hp: Math.round(u.hp),
