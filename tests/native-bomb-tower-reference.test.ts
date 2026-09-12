@@ -7,6 +7,7 @@ import body from '../reference/bombtower/body.json';
 import defender from '../reference/bombtower/defender.json';
 import combat from '../reference/bombtower/combat.json';
 import effects from '../reference/bombtower/effects.json';
+import particleArt from '../reference/bombtower/particle_art.json';
 import { nativeScenePoses, type NativeMeshGraph } from '../src/game/native-mesh';
 
 const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
@@ -65,8 +66,8 @@ it('retains all 13 native levels and the level-three weapon/defender transition'
     defender: true,
     projectile: true,
     deathBomb: true,
-    impactParticles: false,
-    audio: false,
+    impactParticles: true,
+    audio: true,
   });
 });
 
@@ -111,6 +112,7 @@ it('preserves each animation table header, the original three directions and act
 for (const [name, packed, original] of [
   ['body', body, native.body],
   ['defender', defender, native.defender],
+  ['particles', particleArt, native.particleArt],
 ] as const)
   it(`preserves ${name} polygons, transforms, timelines and exact texture sampling regions`, async () => {
     const graph = packed as unknown as NativeMeshGraph;
@@ -172,6 +174,7 @@ it('ships the verified textures, thirteen source portraits and six original soun
   const expected = [
     ...Object.values(native.body.textures),
     ...Object.values(native.defender.textures),
+    ...Object.values(native.particleArt.textures),
     ...Object.values(native.previews),
   ].map((v) => v.path.replace('assets/buildings/bombtower-native/', ''));
   for (const sound of Object.values(native.sounds)) {

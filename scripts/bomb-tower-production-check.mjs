@@ -3,12 +3,20 @@ import { createServer, preview } from 'vite';
 import fs from 'node:fs/promises';
 
 await fs.mkdir('output/playtest', { recursive: true });
+const native = JSON.parse(await fs.readFile('reference/bombtower/native.json', 'utf8'));
+const nativeAssets = [
+  ...Object.values(native.body.textures),
+  ...Object.values(native.defender.textures),
+  ...Object.values(native.particleArt.textures),
+  ...Object.values(native.previews),
+  ...Object.values(native.sounds),
+].map((value) => '/' + value.path);
 const modules = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
   logLevel: 'error',
 });
-let file, expected, firingAt, fuseAt;
+let file, expected, firingAt, fuseAt, explosionAt;
 try {
   const { GameModel, makeBuilding } = await modules.ssrLoadModule('/src/game/model.ts');
   const { makeReplayFile } = await modules.ssrLoadModule('/src/game/replay-file.ts');
@@ -36,6 +44,7 @@ try {
   if (!bomb?.resolved || firingAt === undefined)
     throw Error('Bomb Tower fixture did not fire and explode');
   fuseAt = Math.round((bomb.armedAt + 0.3) * 20) / 20;
+  explosionAt = Math.round((bomb.impact + 0.15) * 20) / 20;
   m.finishBattle();
   expected = structuredClone(m.battle.result);
   file = JSON.stringify(makeReplayFile(m.state.raidLog[0].replay));
@@ -65,15 +74,18 @@ try {
         deviceScaleFactor: 2,
       });
       const page = await context.newPage(),
-        errors = [];
+        errors = [],
+        missingAssets = new Set(nativeAssets);
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
+        if (r.ok()) missingAssets.delete(new URL(r.url()).pathname);
       });
       await page.goto(url);
       await page.locator('[data-action="skip-tutorial"]').click();
       await page.locator('#loading').waitFor({ state: 'detached' });
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
+      expect([...missingAssets]).toEqual([]);
       const read = () => page.evaluate(() => JSON.parse(window.render_game_to_text()));
       const seek = async (time) => {
         if (!(await read()).replay.paused)
@@ -91,6 +103,12 @@ try {
         }, time);
         await expect.poll(async () => (await read()).replay.seeking).toBe(false);
         await expect.poll(async () => (await read()).replay.time).toBeCloseTo(time, 6);
+        // Seeking updates the model synchronously; let Phaser commit the new scene
+        // before screenshots, which otherwise can capture the preceding fuse frame.
+        await page.evaluate(
+          () =>
+            new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+        );
         return read();
       };
       const open = async (input) => {
@@ -118,6 +136,12 @@ try {
         path: `output/playtest/bomb-tower-production-${name}.png`,
         animations: 'disabled',
       });
+      const exploded = await seek(explosionAt);
+      expect(exploded.battle.deathBombs).toEqual([]);
+      await page.screenshot({
+        path: `output/playtest/bomb-tower-production-explosion-${name}.png`,
+        animations: 'disabled',
+      });
       await page.getByRole('slider', { name: 'Replay position' }).press('End');
       await expect(page.locator('.replay-status')).toContainText('Replay complete');
       expect((await read()).battle.result).toEqual(expected);
@@ -135,7 +159,9 @@ try {
       expect(back.buildings).toEqual(initial.buildings);
       expect((await seek(firingAt)).battle.projectiles).toEqual(firing.battle.projectiles);
       expect((await seek(fuseAt)).battle.deathBombs).toEqual(fused.battle.deathBombs);
-      let offline = false;
+      expect((await seek(explosionAt)).battle).toEqual(exploded.battle);
+      let offline = false,
+        offlineSounds = [];
       if (name === 'chromium') {
         await page.evaluate(async () => {
           await navigator.serviceWorker.ready;
@@ -158,10 +184,31 @@ try {
           ),
         );
         expect(images).toEqual(Array.from({ length: 13 }, () => [360, 420]));
+        offlineSounds = await page.evaluate(
+          async (paths) => {
+            const audio = new AudioContext();
+            try {
+              return await Promise.all(
+                paths.map(async (path) => {
+                  const response = await fetch('/' + path);
+                  if (!response.ok) throw Error(`Offline sound unavailable: ${path}`);
+                  const buffer = await audio.decodeAudioData(await response.arrayBuffer());
+                  return { path, seconds: buffer.duration };
+                }),
+              );
+            } finally {
+              await audio.close();
+            }
+          },
+          Object.values(native.sounds).map((sound) => sound.path),
+        );
+        expect(offlineSounds).toHaveLength(6);
+        for (const sound of offlineSounds) expect(sound.seconds).toBeGreaterThan(0.3);
         await open(path);
         expect((await seek(0)).buildings).toEqual(initial.buildings);
         expect((await seek(firingAt)).battle.projectiles).toEqual(firing.battle.projectiles);
         expect((await seek(fuseAt)).battle.deathBombs).toEqual(fused.battle.deathBombs);
+        expect((await seek(explosionAt)).battle).toEqual(exploded.battle);
         await page.getByRole('slider', { name: 'Replay position' }).press('End');
         await expect(page.locator('.replay-status')).toContainText('Replay complete');
         expect((await read()).battle.result).toEqual(expected);
@@ -178,8 +225,12 @@ try {
         firingAndFuseRewind: true,
         firingAt,
         fuseAt,
+        explosionAt,
+        explosionRewind: true,
         seekResult: expected,
         offline,
+        offlineSounds,
+        nativeAssetsLoaded: nativeAssets.length,
       };
     } finally {
       await browser.close();

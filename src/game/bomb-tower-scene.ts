@@ -1,3 +1,19 @@
+import type { AudioManager } from './audio';
+import type { SampleCue } from './sample-audio';
+import {
+  BOMB_TOWER_PARTICLES,
+  BOMB_TOWER_SOUNDS,
+  bombTowerSample,
+  bombTowerSoundCues,
+  bombTowerEffectPoses,
+  bombTowerTrailPoses,
+  bombTowerHitEffect,
+  bombTowerDestroyedEffect,
+  bombTowerHandlingCues,
+  bombTowerHandlingPoses,
+  type BombTowerHandling,
+  type BombTowerEffectPose,
+} from './bomb-tower-effects';
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { NativeSceneView } from './native-scene-view';
@@ -17,6 +33,9 @@ import {
 export function preloadBombTowers(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, BOMB_TOWER_GRAPH, 'bombtower');
   preloadNativeMeshes(scene, BOMBER_GRAPH, 'bomber');
+  preloadNativeMeshes(scene, BOMB_TOWER_PARTICLES, 'bombtower-effects');
+  for (const [path, sound] of Object.entries(BOMB_TOWER_SOUNDS))
+    scene.load.binary(bombTowerSample(path), '/' + sound.path);
   // Level one is loaded by the common building catalog.
   for (const level of BOMB_TOWER_ART_LEVELS)
     if (level > 1) scene.load.image(bombTowerTexture(level), bombTowerAsset(level));
@@ -28,14 +47,45 @@ export class BombTowerPresentation {
   readonly bombs = new Map<number, NativeSceneView>();
   readonly projectiles = new Map<string, NativeSceneView>();
   readonly shadows = new Map<string, NativeSceneView>();
+  readonly effects = new Map<string, NativeSceneView>();
   private signatures = new Map<string, string>();
-  constructor(private scene: Phaser.Scene) {}
+  private homeSequence = 0;
+  private homeEffects: {
+    id: number;
+    index: number;
+    kind: BombTowerHandling;
+    at: number;
+    x: number;
+    y: number;
+  }[] = [];
+  constructor(
+    private scene: Phaser.Scene,
+    audio: AudioManager,
+  ) {
+    for (const path of Object.keys(BOMB_TOWER_SOUNDS))
+      audio.samples.register(bombTowerSample(path), scene.cache.binary.get(bombTowerSample(path)));
+  }
+  handling(id: number, kind: BombTowerHandling | 'cancel', at: number, x: number, y: number) {
+    if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((v) => v.id !== id);
+    else {
+      this.homeEffects.push({ id, index: ++this.homeSequence, kind, at, x, y });
+      if (this.homeEffects.length > 16) this.homeEffects.shift();
+    }
+  }
   clear() {
-    for (const map of [this.towers, this.defenders, this.bombs, this.projectiles, this.shadows]) {
+    for (const map of [
+      this.towers,
+      this.defenders,
+      this.bombs,
+      this.projectiles,
+      this.shadows,
+      this.effects,
+    ]) {
       for (const view of map.values()) view.destroy();
       map.clear();
     }
     this.signatures.clear();
+    this.homeEffects = [];
   }
   destroy() {
     this.clear();
@@ -50,7 +100,20 @@ export class BombTowerPresentation {
     const wanted = new Set<number>(),
       defending = new Set<number>(),
       bombing = new Set<number>(),
-      flying = new Set<string>();
+      flying = new Set<string>(),
+      showing = new Set<string>();
+    const cues: SampleCue[] = [];
+    const drawEffects = (poses: BombTowerEffectPose[]) => {
+      for (const fx of poses) {
+        showing.add(fx.key);
+        let view = this.effects.get(fx.key);
+        if (!view)
+          this.effects.set(fx.key, (view = new NativeSceneView(this.scene, 'bombtower-effects')));
+        view.render(fx.poses, fx.x, fx.y, fx.depth);
+        for (const object of view.objects)
+          object.setData('nativeBombTowerEffect', { key: fx.key, emitter: fx.emitter });
+      }
+    };
     const zoom = `${this.scene.cameras.main.zoomX}:${this.scene.cameras.main.zoomY}`;
     for (const tower of buildings) {
       if (tower.kind !== 'bombtower') continue;
@@ -109,6 +172,82 @@ export class BombTowerPresentation {
           this.signatures.set(key, signature);
         }
       }
+      if (battle && !battle.finished) {
+        const state = battle.bombTowers?.[tower.id];
+        for (const shot of state?.shots ?? []) {
+          cues.push(
+            ...bombTowerSoundCues(tower.id, 'throw', shot.index, 'Bomb Tower Throw Start', shot.at),
+          );
+          if (!reduced) drawEffects(bombTowerTrailPoses(tower.id, tower.level, shot, elapsed, iso));
+        }
+        for (const hit of state?.hits ?? []) {
+          const effect = bombTowerHitEffect(tower.level);
+          cues.push(...bombTowerSoundCues(tower.id, 'hit', hit.index, effect, hit.at));
+          drawEffects(
+            bombTowerEffectPoses(
+              tower.id,
+              'hit',
+              hit.index,
+              effect,
+              hit.at,
+              elapsed,
+              iso(hit.x, hit.y),
+              reduced,
+            ),
+          );
+        }
+        if (state?.destroyedAt !== undefined) {
+          const effect = bombTowerDestroyedEffect(tower.level, !!bomb);
+          cues.push(...bombTowerSoundCues(tower.id, 'destroy', 0, effect, state.destroyedAt));
+          drawEffects(
+            bombTowerEffectPoses(
+              tower.id,
+              'destroy',
+              0,
+              effect,
+              state.destroyedAt,
+              elapsed,
+              p,
+              reduced,
+            ),
+          );
+        }
+        if (bomb?.resolved && !bomb.cancelled) {
+          cues.push(
+            ...bombTowerSoundCues(tower.id, 'explode', 0, 'Bomb Tower Explode', bomb.impact),
+          );
+          drawEffects(
+            bombTowerEffectPoses(
+              tower.id,
+              'explode',
+              0,
+              'Bomb Tower Explode',
+              bomb.impact,
+              elapsed,
+              iso(bomb.x, bomb.y),
+              reduced,
+            ),
+          );
+        }
+      }
+    }
+    if (battle) this.homeEffects = [];
+    else {
+      this.homeEffects = this.homeEffects.filter((v) => elapsed - v.at < 1 && wanted.has(v.id));
+      for (const event of this.homeEffects) {
+        cues.push(...bombTowerHandlingCues(event.id, event.index, event.kind, event.at));
+        drawEffects(
+          bombTowerHandlingPoses(
+            event.id,
+            event.index,
+            event.kind,
+            event.at,
+            elapsed,
+            iso(event.x, event.y),
+            reduced,
+          ),
+        );
+      }
     }
     if (battle && !battle.finished && !reduced)
       for (const shot of battle.projectiles ?? []) {
@@ -139,11 +278,17 @@ export class BombTowerPresentation {
           map.delete(id);
           this.signatures.delete(`${prefix}:${id}`);
         }
+    for (const [key, view] of this.effects)
+      if (!showing.has(key)) {
+        view.destroy();
+        this.effects.delete(key);
+      }
     for (const map of [this.projectiles, this.shadows])
       for (const [id, view] of map)
         if (!flying.has(id)) {
           view.destroy();
           map.delete(id);
         }
+    return cues;
   }
 }

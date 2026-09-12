@@ -1,3 +1,4 @@
+import { bombTowerShake } from './bomb-tower-shake';
 import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-building-scene';
 import { isGoblinBuilding } from './goblin-building-art';
 import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-scene';
@@ -258,14 +259,14 @@ export class VillageScene extends Phaser.Scene {
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
-    this.bombTowerPresentation = new BombTowerPresentation(this);
-    this.cameraShake = new CameraShakeLayer(this.cameras.main, () =>
-      teslaRevealShake(
-        this.model.battle,
-        this.model.state.settings.reducedMotion,
-        !!this.model.replay,
-      ),
-    );
+    this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
+    this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
+      const reduced = this.model.state.settings.reducedMotion,
+        replay = !!this.model.replay;
+      const tesla = teslaRevealShake(this.model.battle, reduced, replay);
+      const bomb = bombTowerShake(this.model.battle, reduced, replay);
+      return { x: tesla.x + bomb.x, y: tesla.y + bomb.y };
+    });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
@@ -697,7 +698,7 @@ export class VillageScene extends Phaser.Scene {
   placeBuilding(x: number, y: number) {
     const kind = this.model.placement;
     if (!this.model.place(x, y)) return false;
-    if (kind !== 'tesla') this.audio.play('build');
+    if (kind !== 'tesla' && kind !== 'bombtower') this.audio.play('build');
     return true;
   }
   /** Drives the placement ghost from a DOM drag that Phaser never sees. */
@@ -1389,7 +1390,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
-    this.drawBombTowers();
+    const bombTowerCues = this.drawBombTowers();
     const g = this.overlay;
     g.clear();
     const b = this.model.buildings.find((b) => b.id === this.model.selected);
@@ -1581,7 +1582,7 @@ export class VillageScene extends Phaser.Scene {
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      [...xbowCues, ...teslaCues],
+      [...xbowCues, ...teslaCues, ...bombTowerCues],
       this.renderClock / 1000,
     );
     for (const [id, sprite] of this.mineFlights) {
@@ -1923,6 +1924,33 @@ export class VillageScene extends Phaser.Scene {
       if (fx.type !== 'tesla-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
+    if (
+      fx.type === 'bombtower-pickup' ||
+      fx.type === 'bombtower-place' ||
+      fx.type === 'bombtower-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.bombTowerPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'bombtower-pickup'
+          ? 'pickup'
+          : fx.type === 'bombtower-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'bombtower-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
+    if (
+      fx.weapon === 'towerbomb' &&
+      ['projectile', 'impact', 'blast', 'destroy'].includes(fx.type)
+    ) {
+      if (fx.type === 'destroy') this.lastRevision = -1;
+      return;
+    }
     const p = iso(fx.x, fx.y);
     if (fx.type === 'quake') {
       this.combatEffects.quake(p, fx.radius ?? 8, this.model.state.settings.reducedMotion);
@@ -2067,12 +2095,12 @@ export class VillageScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.0022);
       return;
     }
-    if (fx.type === 'blast' && (fx.weapon === 'cannonball' || fx.weapon === 'towerbomb')) {
+    if (fx.type === 'blast' && fx.weapon === 'cannonball') {
       this.combatEffects.groundBlast(
         p,
         fx.radius ?? 1.5,
         this.model.state.settings.reducedMotion,
-        fx.weapon === 'towerbomb' ? 'towerbomb' : 'mortar',
+        'mortar',
       );
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
@@ -2114,7 +2142,7 @@ export class VillageScene extends Phaser.Scene {
     if (fx.weapon === 'xbowbolt' && (fx.type === 'projectile' || fx.type === 'impact')) return;
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
-      if (!this.model.state.settings.reducedMotion && fx.weapon !== 'towerbomb')
+      if (!this.model.state.settings.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
     }
@@ -2124,7 +2152,7 @@ export class VillageScene extends Phaser.Scene {
     ) {
       const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
-      if (fx.type === 'impact' && (fx.weapon === 'bomb' || fx.weapon === 'towerbomb') && fx.radius)
+      if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
         this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced, fx.weapon);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
       else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
@@ -2135,8 +2163,7 @@ export class VillageScene extends Phaser.Scene {
           to,
           reduced,
         );
-      if (fx.weapon === 'towerbomb' && fx.type === 'impact') this.audio.play('destroy');
-      else if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
+      if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
@@ -2292,7 +2319,7 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private drawBombTowers() {
-    this.bombTowerPresentation.render(
+    return this.bombTowerPresentation.render(
       this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
       this.model.battle,
       this.model.battle?.elapsed ?? this.renderClock / 1000,

@@ -1,0 +1,673 @@
+{
+  "width": 2400,
+  "height": 2800,
+  "cell": 400,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "4ce8ef021d78c3d0af5232d71d783b5eb49a73ed9161791e7c9c74da60ac6b65",
+  "cases": [
+    {
+      "graph": "particleArt",
+      "export": "bomb_crater",
+      "time": 0.0,
+      "controls": {},
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        201.25,
+        0.0,
+        2.0,
+        116.6499969959259
+      ],
+      "rgbaSha256": "273a20998c3b34fe45a8b4a1434690f3959c8b398f59b8b0da733bb01d072714"
+    },
+    {
+      "graph": "particleArt",
+      "export": "cannon_range_marker_white",
+      "time": 0.0,
+      "controls": {},
+      "x": 400,
+      "y": 0,
+      "root": [
+        0.5719871526323139,
+        0.0,
+        200.0,
+        0.0,
+        0.5719871526323139,
+        200.08993157380255
+      ],
+      "rgbaSha256": "3a6188e4fdf89a5850f9dc0ef07479219ad468201c1bde358171dcd1d1d632e1"
+    },
+    {
+      "graph": "particleArt",
+      "export": "d1",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "bf122cdfa9bd90cddf80cb2449b189256b71b3de2c0ced257d4c5f7c9ee0afbb"
+    },
+    {
+      "graph": "particleArt",
+      "export": "d2",
+      "time": 0.0,
+      "controls": {},
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "63febe2daf18fc85d67d4263b6773b50292cd8413be9c354f83c85e5b4feea86"
+    },
+    {
+      "graph": "particleArt",
+      "export": "d3",
+      "time": 0.0,
+      "controls": {},
+      "x": 1600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "651883fef4fd2538197358e81e09becbb29a23fe16421e1f820d455dd15d0528"
+    },
+    {
+      "graph": "particleArt",
+      "export": "d4",
+      "time": 0.0,
+      "controls": {},
+      "x": 2000,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "1d9b1c6a4f682d659393e7ffa023fb4d8ceb99436e819aa61525707c11be3f4e"
+    },
+    {
+      "graph": "particleArt",
+      "export": "d5",
+      "time": 1.5,
+      "controls": {},
+      "x": 0,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.24941420555115,
+        0.0,
+        2.0,
+        195.09999990463257
+      ],
+      "rgbaSha256": "b80c17ca6baa9a5a8718c4dc608b1e4adb7d7e9a30a23d77d5392643cba382f5"
+    },
+    {
+      "graph": "particleArt",
+      "export": "damage_radius_bomb",
+      "time": 0.3333333333333333,
+      "controls": {},
+      "x": 400,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        201.0,
+        0.0,
+        2.0,
+        200.23437623493373
+      ],
+      "rgbaSha256": "1e67eb0f1e2a982e76d308d872a906b10f320673d6a5bfa4fc5469481f18a657"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris1",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "5cd1b2c25d560f10804e3a007020ff0ad593362393e848bb243fdbe0f6c903ce"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris10",
+      "time": 0.0,
+      "controls": {},
+      "x": 1200,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "d540b9a4279e9c35f2d5f63b37afa7629afca578813e6af34254553bb9a602ed"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris11",
+      "time": 0.0,
+      "controls": {},
+      "x": 1600,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "8a56707bfda013b8509cc34fa50d1989b923ce2dd969d11787141e6d0a185b93"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "x": 2000,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "38f6c6f1931666742cf44155a1d95b528a077073553b3e3bb508c239309f6197"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "x": 0,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "294007fe0d2c7649e9228cf93eeeeefb8b00f417c28eb665912bb2aa63747d85"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris14",
+      "time": 0.0,
+      "controls": {},
+      "x": 400,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "77ea384462e62f92d03490e5cdf9eab20d6aa3f64f2c8a5d61263cff16551070"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris15",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "aadebde17df1c2b58ea5f055741118ad952ec3c20f8812c2629a36d86760ba5f"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris16",
+      "time": 0.0,
+      "controls": {},
+      "x": 1200,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "73517b5b0288e06a94474ff9c54a3c1cdb80bd293220e14eecb6c22186592287"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "x": 1600,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "abe35b2184d8e2f6d1246ce42779d41f5f56c230f8640239e0b77cd6fb9b7d9c"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "x": 2000,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "3b7d1b7fc45f4b3eb688faa1fed9c6ebbefac67c0a16840eec9530e2a24e941d"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris19",
+      "time": 0.0,
+      "controls": {},
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "6cfd7e07c665e953a82a5adcebc12889a5ae95201acb2990e785a2caaa46c7f4"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris2",
+      "time": 0.0,
+      "controls": {},
+      "x": 400,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "49671bb888e9280802d4192ca9cfae4e847088d738d7cac31ebbcf268fde0bef"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris3",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "aabbef0fc0f93110d78c740f38903e95f0abfa53c94be281df317f438de9a06a"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris4",
+      "time": 0.0,
+      "controls": {},
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "f2f5fe36d0f92878c9d3f69ed05b5d81c89d08dfbd8aad547187c8f0b9d3f668"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris5",
+      "time": 0.0,
+      "controls": {},
+      "x": 1600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "94667c53f1085e7d24f5775825a220601dade4d3bf127c50be5064328c542c48"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris6",
+      "time": 0.0,
+      "controls": {},
+      "x": 2000,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "459d53c47e370a2cd90171f85a476628bd7c88876b0345e89d6b6273ecceaf2b"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris7",
+      "time": 0.0,
+      "controls": {},
+      "x": 0,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "dd77b2e6e1832ae7a8b2a566c69ddfc90102bd53f8478469b66655ad9ddb8055"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris8",
+      "time": 0.0,
+      "controls": {},
+      "x": 400,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "16bcfcc0ff9d9a589674139c044acbd617e8854a9908331e5dfef6521d42b53b"
+    },
+    {
+      "graph": "particleArt",
+      "export": "debris9",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "f4e3426db38c8976f80a27e5a0eb67778a69ece453c8fa934b98a68707e34d26"
+    },
+    {
+      "graph": "particleArt",
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "controls": {},
+      "x": 1200,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "799e8d09810471e4bac1394f868d69df6b6d2a2f9d6128887d4a967de1ea1035"
+    },
+    {
+      "graph": "particleArt",
+      "export": "g1",
+      "time": 0.0,
+      "controls": {},
+      "x": 1600,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "3752d4eab1272bff43415910abb86ba6b41234c4d0893fc65ccc7ce7e4f84d1b"
+    },
+    {
+      "graph": "particleArt",
+      "export": "g2",
+      "time": 0.0,
+      "controls": {},
+      "x": 2000,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "2d1b2b0786080cf839c8b4f5bfabaeba2479b2177f025b203f307207c011d144"
+    },
+    {
+      "graph": "particleArt",
+      "export": "g3",
+      "time": 0.0,
+      "controls": {},
+      "x": 0,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "b13cd3793b41b051faebc1cb611bd056d6d24fd790c519b9ddca11d94eb5a066"
+    },
+    {
+      "graph": "particleArt",
+      "export": "g4",
+      "time": 0.0,
+      "controls": {},
+      "x": 400,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "7a04533f3564ee3d3b1a98e98ddfcbd53eb44a317d18b9c7abf17a410f120764"
+    },
+    {
+      "graph": "particleArt",
+      "export": "s3",
+      "time": 0.0,
+      "controls": {},
+      "x": 800,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "014ecbe8f01cbb6e24d5d877abaaf3b6811d51c7a8e277606b92864e340cc607"
+    },
+    {
+      "graph": "particleArt",
+      "export": "s4",
+      "time": 0.0,
+      "controls": {},
+      "x": 1200,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "rgbaSha256": "a3a2957ae6e5a3085f9269cca0d04940c2317be0a9c5bcaf66b5e8819b9bcc66"
+    },
+    {
+      "graph": "particleArt",
+      "export": "skele_summon_area_edge",
+      "time": 0.3333333333333333,
+      "controls": {},
+      "x": 1600,
+      "y": 2000,
+      "root": [
+        1.8021995209091983,
+        0.0,
+        200.0,
+        0.0,
+        1.8021995209091983,
+        199.9098900226118
+      ],
+      "rgbaSha256": "3cafca41057ce403e40ee591131af2dd5da94e12aae376fa32fcac4da293b581"
+    },
+    {
+      "graph": "particleArt",
+      "export": "smoke00",
+      "time": 0.125,
+      "controls": {},
+      "x": 2000,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        201.30000114440918,
+        0.0,
+        2.0,
+        204.55000019073486
+      ],
+      "rgbaSha256": "a8c6bfceff19e3292cd1e2a3e13cf56349128d5835fa9561ef8264cee65ad0c6"
+    },
+    {
+      "graph": "particleArt",
+      "export": "smoke01",
+      "time": 0.125,
+      "controls": {},
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        203.25,
+        0.0,
+        2.0,
+        202.60000038146973
+      ],
+      "rgbaSha256": "88752f8f9ca7f888a6dc484468575f30867ab73fd6ec798c699cb840c2b16ed7"
+    },
+    {
+      "graph": "particleArt",
+      "export": "smoke02",
+      "time": 0.375,
+      "controls": {},
+      "x": 400,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        203.25,
+        0.0,
+        2.0,
+        202.60000038146973
+      ],
+      "rgbaSha256": "992666a052ae4552dad8e94c41157c65b414a77d3a3a76fda3c1b3751c018541"
+    },
+    {
+      "graph": "particleArt",
+      "export": "spell_range_marker_3",
+      "time": 0.3333333333333333,
+      "controls": {},
+      "x": 800,
+      "y": 2400,
+      "root": [
+        1.8520091216481875,
+        0.0,
+        200.0,
+        0.0,
+        1.8520091216481875,
+        200.0
+      ],
+      "rgbaSha256": "3f539cdf91a0981d2875e58cf272e77c4f5a64e1a8f074fefd4c93f15ecf91d3"
+    }
+  ]
+}

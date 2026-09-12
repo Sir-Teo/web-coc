@@ -4,7 +4,7 @@ Santa Trap source assets now include the original present reveal, sleigh compone
 
 Skeleton Trap coffin states and ground/air skeleton animation sources are retained under `art/source/skeleton-v1/`, with exact built-in generation prompts. `scripts/skeleton-assets.mjs` builds transparent gameplay atlases and supports deterministic `--check`. See [SKELETON-TRAP.md](SKELETON-TRAP.md).
 
-Bomb Tower now uses original client polygons, textures, directional defender clips, bombs, shadows and rubble, with thirteen source-rendered portraits. `scripts/import-native-bomb-tower.py --check` reproduces the pinned reference and all 24 assets. The earlier authored tower bases, four-pose Bomber and charge remain historical inputs under `art/source/bombtower-v1/`. See [BOMB-TOWER.md](BOMB-TOWER.md).
+Bomb Tower now uses original client polygons, textures, directional defender clips, bombs, shadows, rubble and all 39 referenced particle exports, with thirteen source-rendered portraits and six original sounds. `scripts/import-native-bomb-tower.py --check` reproduces the pinned reference and all 27 assets. The earlier authored tower bases, four-pose Bomber and charge remain historical inputs under `art/source/bombtower-v1/`. See [BOMB-TOWER.md](BOMB-TOWER.md).
 
 Hidden Tesla sprites for levels 1–6 are retained under `art/source/tesla-v1/` with built-in generation prompts and accepted iterations. `scripts/tesla-assets.mjs` builds six transparent 384×512 sprites and verifies repeat builds with `--check`. See [HIDDEN-TESLA.md](HIDDEN-TESLA.md).
 

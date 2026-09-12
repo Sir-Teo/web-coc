@@ -26,6 +26,9 @@ PINS = {
     'sc/buildings_5.sctx': '6403f600eb8303935d63df9edfd7832ba8eb84d8fc4cd1ecf2f3788fc0285184',
     'sc/buildings_8.sctx': '588eba7d5739a5d9b53d3e14f2ab83bd170cad735363a81dd37bea7bcc0bb3bd',
     'sc/buildings_25.sctx': 'c290a82b3940513f16b55dba2305e875d923d4120c5997b6b6908c680ec8ca3d',
+    'sc/buildings_30.sctx': '2159db826ffba3ca31bfed16a7d6985991f0745403d36ba7135b3aa17031c4c2',
+    'sc/buildings_39.sctx': 'dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16',
+    'sc/buildings_66.sctx': SOURCES['sc/buildings_66.sctx'],
     'sc/buildings_36.sctx': '9b0798f9eeb63bc6d5994c8424af84262835f7fc968b0130f5f6d1f01a7d7749',
     'sc/chr_b_skeleton.sc': '108d73e0021eb67336410cb8f2b1ab293a1accda44129fb389f7b27d19840f6c',
     'sc/chr_b_skeleton_0.sctx': 'e4f018d6fee615e5429d7548cb11ad107ac8a9a3455534e98fc837eb07cccb97',
@@ -146,6 +149,11 @@ def build():
     outputs, body, body_runtime = capture('sc/buildings.sc', body_names, PREFIX + '/body', {5, 8, 25, 36})
     actor_outputs, actor, actor_runtime = capture('sc/chr_b_skeleton.sc', defender_names, PREFIX + '/defender', {0})
     outputs.update(actor_outputs)
+    particle_names = {row['ParticleExportName'] for name, rows in particles.items()
+                      if not name.startswith('Bomb Tower Bomb Appear') for row in rows}
+    particle_outputs, particle_art, particle_runtime = capture('sc/buildings.sc', particle_names,
+                                                               PREFIX + '/particles', {30, 39, 66})
+    outputs.update(particle_outputs)
     # Original normal-blend source polygons for background-independent portraits.
     # The roof is centered at source (0, 0); the local ground anchor is (0, 80).
     cpu = runpy.run_path(str(ROOT / 'scripts/native-tesla-gpu-fixtures.py'))
@@ -201,12 +209,12 @@ def build():
     actor_runtime['animations'] = {name: value['rows'] for name, value in defender.items()}
     metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                     building=building, projectiles=projectiles, animations=defender, effects=effects,
-                    particles=particles, body=body, defender=actor, sounds=sounds, previews=previews,
+                    particles=particles, body=body, defender=actor, sounds=sounds, previews=previews, particleArt=particle_art,
                     reconstruction=dict(liveIntegration=dict(body=True, defender=True, projectile=True, deathBomb=True,
-                                                             impactParticles=False, audio=False), nativePlaybackVerified=False,
+                                                             impactParticles=True, audio=True), nativePlaybackVerified=False,
                         directionMappingVerified=False, worldProjectionVerified=False, particleEngineVerified=False,
-                        scope='All 13 bodies, foundations/scaffolds/rubble, three directional defender families, three projectiles, four death bombs and six source sounds. Other effect/emitter rows are retained as data; their particle artwork is not yet imported.'))
-    return outputs, dict(native=metadata, body=body_runtime, defender=actor_runtime, combat=combat,
+                        scope='All 13 bodies, foundations/scaffolds/rubble, three directional defender families, three projectiles, four death bombs and six source sounds. All referenced particle artwork and original sounds are retained; particle projection and motion remain local interpretations.'))
+    return outputs, dict(native=metadata, body=body_runtime, defender=actor_runtime, combat=combat, particle_art=particle_runtime,
                          effects=dict(effects=effects, particles=particles, sounds=sounds))
 
 

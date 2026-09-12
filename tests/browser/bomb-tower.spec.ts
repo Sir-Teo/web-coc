@@ -255,15 +255,15 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
       visible,
       after: scene.bombTowerPresentation.bombs.has(2),
       hp: u.hp,
-      blasts: scene.children.list
-        .filter((o) => o.getData?.('impact') === 'towerbomb')
-        .map((o) => o.getData('blastRadius')),
+      emitters: [...scene.bombTowerPresentation.effects.values()].flatMap((v) =>
+        v.objects.map((o) => o.getData('nativeBombTowerEffect').emitter),
+      ),
     };
   });
   expect(blast.visible).toBe(true);
   expect(blast.after).toBe(false);
   expect(blast.hp).toBe(4820);
-  expect(blast.blasts).toContain(2.75);
+  expect(blast.emitters).toContain('Force');
   await page.screenshot({ path: `output/playtest/bombtower-blast-${browserName}.png` });
   expect(errors).toEqual([]);
 });

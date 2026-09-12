@@ -162,7 +162,7 @@ export function bombTowerMuzzle(from: { x: number; y: number }, to: { x: number;
 
 export function bombProjectilePose(
   level: number,
-  shot: CombatProjectile,
+  shot: Pick<CombatProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact'>,
   elapsed: number,
   iso: (x: number, y: number) => { x: number; y: number },
 ) {

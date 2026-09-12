@@ -22,22 +22,28 @@ def leaves(poses):
         else: yield pose
 
 
-def build():
+def build(particles_only=False):
     native = json.loads((ROOT / 'reference/bombtower/native.json').read_text())
-    graphs = {key: copy.deepcopy(native[key]['graph']) for key in ['body', 'defender']}
-    for clip in graphs['defender']['clips'].values():
+    keys = ['particleArt'] if particles_only else ['body', 'defender']
+    graphs = {key: copy.deepcopy(native[key]['graph']) for key in keys}
+    for clip in graphs.get('defender', {}).get('clips', {}).values():
         clip['frames'] = [[p for p in frame if clip['names'][p[0]] != 'ability_on'] for frame in clip['frames']]
     textures = {
         key: {int(t): np.array(decode_sctx(source(f'sc/{prefix}_{t}.sctx', native['sources']))) / 255
               for t in native[key]['textures']}
-        for key, prefix in [('body', 'buildings'), ('defender', 'chr_b_skeleton')]
+        for key, prefix in ([('particleArt', 'buildings')] if particles_only else [('body', 'buildings'), ('defender', 'chr_b_skeleton')])
     }
-    cases = [dict(graph='body', export=name, time=5 / 30 if name.startswith('bomb_tower_bomb') else 0, controls={})
-             for name in sorted(graphs['body']['exports'])]
-    cases += [dict(graph='defender', export=name, time=(11 if '_attack' in name else 47) / 24,
-                   controls={'ability_on': False}) for name in sorted(graphs['defender']['exports'])]
-    cases += [dict(graph='defender', export='b_skeleton2_attack1_2', time=frame / 24,
-                   controls={'ability_on': False}) for frame in [0, 20]]
+    if particles_only:
+        graph = graphs['particleArt']
+        cases = [dict(graph='particleArt', export=name, time=int(len(graph['clips'][str(id_)]['timeline']) * .35) / graph['clips'][str(id_)]['fps'], controls={})
+                 for name, id_ in sorted(graph['exports'].items())]
+    else:
+        cases = [dict(graph='body', export=name, time=5 / 30 if name.startswith('bomb_tower_bomb') else 0, controls={})
+                 for name in sorted(graphs['body']['exports'])]
+        cases += [dict(graph='defender', export=name, time=(11 if '_attack' in name else 47) / 24,
+                       controls={'ability_on': False}) for name in sorted(graphs['defender']['exports'])]
+        cases += [dict(graph='defender', export='b_skeleton2_attack1_2', time=frame / 24,
+                       controls={'ability_on': False}) for frame in [0, 20]]
     cell, columns = 400, 6
     width, height = columns * cell, ((len(cases) + columns - 1) // columns) * cell
     sheet = Image.new('RGBA', (width, height), (48, 65, 53, 255))
@@ -70,9 +76,10 @@ def build():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--particles-only', action='store_true')
     args = parser.parse_args()
-    image, manifest = build()
-    folder = ROOT / 'tests/fixtures/native-bomb-tower-mesh'
+    image, manifest = build(args.particles_only)
+    folder = ROOT / 'tests/fixtures' / ('native-bomb-tower-particles' if args.particles_only else 'native-bomb-tower-mesh')
     content = json.dumps(manifest, indent=2) + '\n'
     if args.check:
         require((folder / 'manifest.json').read_text() == content, 'Source witness metadata differs')

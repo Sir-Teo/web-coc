@@ -260,7 +260,7 @@ it('aligns native frame 11 with actual launches and holds the release direction 
   m.step(0.05);
   const at = b.elapsed;
   const sample = () => bomberPose(tower, b, b.elapsed, false);
-  expect(b.bombTowers![tower.id].shots).toEqual([{ at, x: target.x, y: target.y }]);
+  expect(b.bombTowers![tower.id].shots[0]).toMatchObject({ at, x: target.x, y: target.y });
   expect(sample()).toMatchObject({ action: 'attack', time: 11 / 24 });
   const facing = sample();
   b.elapsed = at + 9 / 24;

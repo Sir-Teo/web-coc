@@ -1,4 +1,8 @@
-import { recordBombTowerShot, type BombTowerAttackState } from './bomb-tower-attack';
+import {
+  recordBombTowerShot,
+  recordBombTowerDestroyed,
+  type BombTowerAttackState,
+} from './bomb-tower-attack';
 import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
 import {
@@ -378,6 +382,9 @@ export type FX = {
     | 'tesla-pickup'
     | 'tesla-place'
     | 'tesla-cancel'
+    | 'bombtower-pickup'
+    | 'bombtower-place'
+    | 'bombtower-cancel'
     | 'quake';
   x: number;
   y: number;
@@ -985,7 +992,7 @@ export class GameModel {
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
-    this.cancelTeslaHandling();
+    this.cancelNativeHandling();
     this.selected = null;
     this.moving = null;
     this.placement = kind;
@@ -1008,7 +1015,7 @@ export class GameModel {
       this.moving = null;
       this.placement = null;
       this.notify('');
-      this.teslaHandling(b, 'tesla-place');
+      this.nativeBuildingHandling(b, 'place');
       this.changed();
       return true;
     }
@@ -1044,7 +1051,7 @@ export class GameModel {
     this.notify(
       d.build === 0 ? `${d.name} placed.` : `Construction started — ${formatTime(d.build)}.`,
     );
-    this.teslaHandling(b, 'tesla-place');
+    this.nativeBuildingHandling(b, 'place');
     return true;
   }
   get selectedWalls(): Building[] {
@@ -1254,24 +1261,31 @@ export class GameModel {
     if (this.battle || this.moving === id) return;
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b) return;
-    this.cancelTeslaHandling();
+    this.cancelNativeHandling();
     this.moving = id;
     this.placement = b.kind;
     this.selected = null;
-    this.teslaHandling(b, 'tesla-pickup');
+    this.nativeBuildingHandling(b, 'pickup');
     this.changed();
   }
-  private teslaHandling(b: Building, type: 'tesla-pickup' | 'tesla-place' | 'tesla-cancel') {
-    if (!this.battle && b.kind === 'tesla')
-      this.onEffect({ type, sourceId: b.id, x: b.x + 1, y: b.y + 1 });
+  private nativeBuildingHandling(b: Building, action: 'pickup' | 'place' | 'cancel') {
+    if (!this.battle && (b.kind === 'tesla' || b.kind === 'bombtower')) {
+      const size = BUILDINGS[b.kind].size;
+      this.onEffect({
+        type: `${b.kind}-${action}`,
+        sourceId: b.id,
+        x: b.x + size / 2,
+        y: b.y + size / 2,
+      });
+    }
   }
-  private cancelTeslaHandling() {
+  private cancelNativeHandling() {
     const b = this.state.buildings.find((b) => b.id === this.moving);
-    if (b) this.teslaHandling(b, 'tesla-cancel');
+    if (b) this.nativeBuildingHandling(b, 'cancel');
     this.endDrag(true);
   }
   cancel() {
-    this.cancelTeslaHandling();
+    this.cancelNativeHandling();
     if (this.placement) this.notify('');
     this.selected = null;
     this.placement = null;
@@ -1377,14 +1391,14 @@ export class GameModel {
     const b = this.state.buildings.find((b) => b.id === this.draggedBuilding);
     this.draggedBuilding = null;
     this.dragOpen = false;
-    if (b) this.teslaHandling(b, cancelled ? 'tesla-cancel' : 'tesla-place');
+    if (b) this.nativeBuildingHandling(b, cancelled ? 'cancel' : 'place');
   }
   get canRedo() {
     return this.redoStack.length > 0;
   }
   beginEdit() {
     if (this.battle) return;
-    this.cancelTeslaHandling();
+    this.cancelNativeHandling();
     this.editing = true;
     this.dragOpen = false;
     this.selected = null;
@@ -1413,7 +1427,7 @@ export class GameModel {
       this.recordPositions();
       this.dragOpen = true;
       this.draggedBuilding = b.id;
-      this.teslaHandling(b, 'tesla-pickup');
+      this.nativeBuildingHandling(b, 'pickup');
     }
     b.x = x;
     b.y = y;
@@ -2412,7 +2426,7 @@ export class GameModel {
           this.onEffect({ type: 'mortar-fire', sourceId: tower.id, x: center.x, y: center.y });
           continue;
         }
-        launchProjectile(
+        const projectile = launchProjectile(
           b,
           {
             fromX: center.x,
@@ -2438,7 +2452,7 @@ export class GameModel {
           },
           this.onEffect,
         );
-        if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, target);
+        if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
       }
     }
     const king = b.units.find((u) => u.hero);
@@ -2548,7 +2562,8 @@ export class GameModel {
       b.hp = 0;
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
-      if (this.battle && b.kind === 'bombtower')
+      if (this.battle && b.kind === 'bombtower') {
+        recordBombTowerDestroyed(this.battle, b, at);
         primeDeathBomb(
           this.battle,
           b,
@@ -2558,8 +2573,10 @@ export class GameModel {
               : CAMPAIGN_LAYOUTS[this.battle.index].defense),
           at,
         );
+      }
       this.onEffect({
         type: 'destroy',
+        ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',

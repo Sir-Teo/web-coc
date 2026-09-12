@@ -55,11 +55,15 @@ it('bounds derived shot history without mutating targets or combat randomness', 
   m.startBattle(0, true);
   const battle = m.battle!,
     tower = makeBuilding(7, 'bombtower', 4, 4);
-  const target = { x: 7, y: 8 } as Parameters<typeof recordBombTowerShot>[2];
+  const target = { x: 7, y: 8 };
   const before = JSON.stringify({ ...battle, elapsed: 0 });
   for (let i = 0; i < 100; i++) {
     battle.elapsed = i;
-    recordBombTowerShot(battle, tower, target);
+    recordBombTowerShot(battle, tower, {
+      ...target,
+      launched: i,
+      impact: i + 0.5,
+    } as CombatProjectile);
   }
   expect(battle.bombTowers![7].shots).toHaveLength(16);
   expect(battle.bombTowers![7].shots[0].at).toBe(84);

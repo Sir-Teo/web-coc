@@ -43,6 +43,8 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(teslaNative.previews),
       ...Object.values(bombTowerNative.body.textures),
       ...Object.values(bombTowerNative.defender.textures),
+      ...Object.values(bombTowerNative.particleArt.textures),
+      ...Object.values(bombTowerNative.sounds),
       ...Object.values(bombTowerNative.previews),
       ...[
         'tesla_appear_01',

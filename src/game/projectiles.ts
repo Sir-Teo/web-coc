@@ -1,3 +1,4 @@
+import { recordBombTowerHit } from './bomb-tower-attack';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
@@ -233,6 +234,7 @@ export function stepProjectiles(
         if (state.hits.length > 32) state.hits.shift();
       }
     }
+    if (p.weapon === 'towerbomb') recordBombTowerHit(battle, p);
     emit(projectileEffect(p, 'impact'));
   }
   battle.projectiles = pending;
