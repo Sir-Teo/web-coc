@@ -28,4 +28,4 @@ npx playwright test tests/browser/native-tesla-mesh.spec.ts --config output/play
 npx playwright test tests/browser/native-tesla-mesh.spec.ts --config output/playtest/retina-webkit.config.ts --workers=1
 ```
 
-This renderer and the native Tesla asset import are ready for live integration. The game still uses its earlier Tesla presentation and six-level catalog. Battle/replay integration, particle trajectories, native sound selection, construction/ruin presentation and campaign level support remain the next implementation work.
+The [live Tesla integration](HIDDEN-TESLA.md) now uses this renderer for all 17 levels, held reveals, independently animated electricity and source construction/upgrade/damaged compositions. Battle-clock sampling reconstructs the same meshes and groups after replay seeking. Native particle trajectories, attack/pickup/drop sound selection and native-client world/timeline registration remain unfinished.

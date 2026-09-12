@@ -31,7 +31,9 @@ import {
   skeletonAsset,
 } from './skeleton-art';
 import { skeletonStats, type SkeletonMode } from './skeleton-stats';
-import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
+import { TESLA_ART } from './tesla-art';
+import { preloadTeslas, TeslaPresentation } from './tesla-scene';
+import { teslaBodyBounds } from './tesla-poses';
 import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
@@ -161,6 +163,7 @@ export class VillageScene extends Phaser.Scene {
   private goblinBuildingPresentation!: GoblinBuildingPresentation;
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
+  private teslaPresentation!: TeslaPresentation;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
@@ -173,6 +176,7 @@ export class VillageScene extends Phaser.Scene {
     preloadXbows(this);
     preloadDarkStorages(this);
     preloadGoblinBuildings(this);
+    preloadTeslas(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -194,8 +198,6 @@ export class VillageScene extends Phaser.Scene {
     }
     this.load.spritesheet('roof-bomber', BOMBER_ASSET, { frameWidth: 256, frameHeight: 256 });
     this.load.image('tower-death-bomb', DEATH_BOMB_ASSET);
-    for (const level of TESLA_ART_LEVELS)
-      if (level > 1) this.load.image(teslaTexture(level), teslaAsset(level));
     for (const level of SWEEPER_ART_LEVELS)
       for (let direction = 0; direction < 8; direction++)
         this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
@@ -267,6 +269,7 @@ export class VillageScene extends Phaser.Scene {
     this.goblinBuildingPresentation = new GoblinBuildingPresentation(this);
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
+    this.teslaPresentation = new TeslaPresentation(this, this.audio);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
@@ -274,6 +277,7 @@ export class VillageScene extends Phaser.Scene {
       this.xbowPresentation.destroy();
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
+      this.teslaPresentation.destroy();
     });
     this.drawField();
     this.decorate();
@@ -745,6 +749,26 @@ export class VillageScene extends Phaser.Scene {
       .sort((a, b) => b.x + b.y - (a.x + a.y));
     for (const b of sorted) {
       const im = this.sprites.get(b.id);
+      if (im && b.kind === 'tesla') {
+        const bounds = teslaBodyBounds(
+          b.level,
+          b.hp <= 0
+            ? 'ruin'
+            : b.constructing
+              ? 'constructing'
+              : b.upgradeEnd
+                ? 'upgrading'
+                : 'setup',
+        );
+        if (
+          wx > im.x + bounds[0] &&
+          wx < im.x + bounds[2] &&
+          wy > im.y + bounds[1] &&
+          wy < im.y + bounds[3]
+        )
+          return b;
+        continue;
+      }
       if (
         im &&
         wx > im.x - im.displayWidth * 0.42 &&
@@ -783,6 +807,7 @@ export class VillageScene extends Phaser.Scene {
       this.xbowPresentation.clear();
       this.darkStoragePresentation.clear();
       this.goblinBuildingPresentation.clear();
+      this.teslaPresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -892,7 +917,13 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if ((b.kind === 'xbow' || b.kind === 'darkstorage' || isGoblinBuilding(b.npc)) && b.hp > 0)
+      if (
+        (b.kind === 'xbow' ||
+          b.kind === 'darkstorage' ||
+          b.kind === 'tesla' ||
+          isGoblinBuilding(b.npc)) &&
+        b.hp > 0
+      )
         im.setAlpha(0);
       if (b.npc === 'santa-trap')
         im.setFrame(
@@ -1045,15 +1076,16 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(XBOW_ART.originX, XBOW_ART.originY)
         .setFlipX(false)
         .setDisplaySize(XBOW_ART.width, XBOW_ART.height);
+    if (kind === 'tesla')
+      return im
+        .setOrigin(TESLA_ART.originX, TESLA_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(TESLA_ART.width, TESLA_ART.height)
+        .setData('nativeTeslaRuin', false);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
-      wall ||
-      camp ||
-      kind === 'mortar' ||
-      kind === 'airsweeper' ||
-      kind === 'tesla' ||
-      kind === 'bombtower'
+      wall || camp || kind === 'mortar' || kind === 'airsweeper' || kind === 'bombtower'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -1138,6 +1170,10 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+    if (b.kind === 'tesla') {
+      im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeTeslaRuin', true);
+      return;
+    }
     const width =
       (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) *
       (b.kind === 'wall' ? 0.9 : 0.98);
@@ -1156,7 +1192,7 @@ export class VillageScene extends Phaser.Scene {
   private drawRuinGround() {
     this.ruinGround.clear();
     for (const b of this.model.buildings) {
-      if (b.hp > 0 || isTrap(b.kind)) continue;
+      if (b.hp > 0 || isTrap(b.kind) || b.kind === 'tesla') continue;
       const d = BUILDINGS[b.kind];
       const p = iso(b.x + d.size / 2, b.y + d.size / 2);
       const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
@@ -1431,22 +1467,6 @@ export class VillageScene extends Phaser.Scene {
           .setCrop()
           .setAlpha(1);
       }
-      if (v.kind === 'tesla') {
-        const progress = this.teslaRise(v.id),
-          p = iso(v.x + 1, v.y + 1);
-        im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
-        if (progress < 1) im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
-        else im.setCrop();
-        if (!this.model.state.settings.reducedMotion && progress === 1) {
-          const t = this.model.battle?.elapsed ?? this.renderClock / 1000;
-          if (Math.sin(t * 23 + v.id * 7) > 0.8) {
-            const y = im.y - im.displayHeight * 0.79;
-            this.detail.lineStyle(1.2, 0xb6edff, 0.7);
-            this.detail.lineBetween(im.x - 4, y + 4, im.x + 1, y + 1);
-            this.detail.lineBetween(im.x + 1, y + 1, im.x - 1, y - 2);
-          }
-        }
-      }
       if (v.kind === 'airsweeper' && v.hp > 0) {
         const state = this.model.battle?.sweepers?.[v.id];
         const direction = state
@@ -1460,31 +1480,54 @@ export class VillageScene extends Phaser.Scene {
           progress = (this.model.clock - start) / duration;
         this.bar(
           im.x,
-          im.y -
-            im.displayHeight *
-              (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87),
+          v.kind === 'tesla'
+            ? im.y +
+                teslaBodyBounds(
+                  v.level,
+                  v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
+                )[1] -
+                6
+            : im.y -
+                im.displayHeight *
+                  (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87),
           54,
           progress,
           0x82d745,
         );
-        const p = iso(v.x, v.y);
-        this.detail.lineStyle(3, 0xe6b356, 0.7);
-        this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
-        this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
+        if (v.kind !== 'tesla') {
+          const p = iso(v.x, v.y);
+          this.detail.lineStyle(3, 0xe6b356, 0.7);
+          this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
+          this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
+        }
       } else if (this.model.battle && v.hp < v.maxHp)
         this.bar(
           im.x,
-          im.y -
-            im.displayHeight *
-              (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
-                ? im.originY
-                : 0.88),
+          v.kind === 'tesla'
+            ? im.y +
+                teslaBodyBounds(
+                  v.level,
+                  v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
+                )[1] -
+                6
+            : im.y -
+                im.displayHeight *
+                  (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
+                    ? im.originY
+                    : 0.88),
           42,
           v.hp / v.maxHp,
           0xea654d,
         );
     }
     const battle = this.model.battle;
+    const teslaCues = this.teslaPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+    );
     this.goblinBuildingPresentation.render(
       this.model.buildings,
       battle?.elapsed ?? 0,
@@ -1512,7 +1555,7 @@ export class VillageScene extends Phaser.Scene {
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      xbowCues,
+      [...xbowCues, ...teslaCues],
     );
     for (const [id, sprite] of this.mineFlights) {
       if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
@@ -1855,14 +1898,14 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'tesla-zap') {
-      const im = this.sprites.get(fx.sourceId!);
-      const height = im?.getData('intactHeight') ?? 139;
+      const tower = this.model.buildings.find((b) => b.id === fx.sourceId);
+      const muzzleY = tower ? teslaBodyBounds(tower.level)[1] + 8 : -100;
       const progress = this.teslaRise(fx.sourceId!);
       const to = iso(fx.toX!, fx.toY!);
       const target = this.unitSprites.get(fx.targetId!);
       to.y -= (fx.toAir ? AIR_LIFT : 0) + (target ? target.displayHeight * 0.45 : 17);
       this.combatEffects.tesla(
-        { x: p.x, y: p.y - height * 0.79 * progress },
+        { x: p.x, y: p.y + muzzleY * progress },
         to,
         fx.sourceId! + Math.round((this.model.battle?.elapsed ?? 0) * 1000),
         this.model.state.settings.reducedMotion,
@@ -1871,8 +1914,6 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'tesla-reveal') {
-      this.audio.play('build');
-      if (!this.model.state.settings.reducedMotion) this.sparks(p.x, p.y, 0xb5a27d, 7);
       return;
     }
     if (fx.type === 'gust') {
@@ -2338,7 +2379,13 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       for (const b of this.model.battle.buildings) {
         const im = this.sprites.get(b.id);
-        if (im && b.hp <= 0 && !im.texture.key.startsWith('ruins-')) {
+        if (
+          im &&
+          b.hp <= 0 &&
+          (b.kind === 'tesla'
+            ? !im.getData('nativeTeslaRuin')
+            : !im.texture.key.startsWith('ruins-'))
+        ) {
           this.renderRuin(b, im);
           this.drawRuinGround();
         }

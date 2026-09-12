@@ -1,11 +1,12 @@
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
+import { TESLA } from './tesla-stats';
 
 /** Public client data: 600 hundredths of a tile; destruction threshold 50. */
-export const TESLA_TRIGGER = 6;
+export const TESLA_TRIGGER = TESLA.trigger;
 export const TESLA_REVEAL_PERCENT = 50;
-/** Presentation duration only; reveal and the first shot are immediate in the simulation. */
-export const TESLA_RISE_SECONDS = 0.28;
+/** Native clip duration; reveal and the first shot remain immediate in the simulation. */
+export const TESLA_RISE_SECONDS = 18 / 24;
 
 export function concealedTesla(battle: Battle, building: Building) {
   return (

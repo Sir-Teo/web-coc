@@ -16,6 +16,8 @@ import { concealedTesla, revealTeslas, targetableBuilding } from '../src/game/hi
 import { stepProjectiles, launchProjectile } from '../src/game/projectiles';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
+import { TESLA_LEVELS } from '../src/game/tesla-stats';
+import { requiredTownHall } from '../src/game/progression';
 import { makeReplayFile } from '../src/game/replay-file';
 
 function arena(level = 1) {
@@ -73,6 +75,25 @@ it('uses native TH7–8 counts, ceilings, damage, HP, costs and destination time
     rate: 0.6,
     targets: 'both',
   });
+});
+
+it('uses every imported Tesla level in combat without changing the home progression ceiling', () => {
+  expect(BUILDINGS.tesla.maxLevel).toBe(17);
+  for (const row of TESLA_LEVELS) {
+    expect(buildingHp('tesla', row.level)).toBe(row.hp);
+    expect(defenseDps('tesla', row.level)).toBe(row.dps);
+    expect(defenseDamage('tesla', row.level)).toBeCloseTo(row.dps * 0.6);
+    expect(requiredTownHall('tesla', row.level)).toBe(row.townhall);
+    if (row.level > 1) {
+      expect(upgradeCost('tesla', row.level - 1)).toBe(row.cost);
+      expect(upgradeSeconds('tesla', row.level - 1)).toBe(row.seconds);
+    }
+    const { m } = arena(row.level);
+    const target = unit(m, 16, 11, 'dragon');
+    m.step(0.05);
+    expect(target.hp).toBeCloseTo(5000 - row.dps * 0.6);
+  }
+  expect(maxLevelFor('tesla', 8)).toBe(6);
 });
 
 describe('concealment', () => {
@@ -303,45 +324,48 @@ describe('electrical attacks', () => {
   });
 });
 
-it('persists six-level Teslas at home and reconstructs reveal/attack state after exported replay and seeking', () => {
-  const m = new GameModel();
-  m.state.obstacles = [];
-  m.state.buildings = [
-    makeBuilding(1, 'townhall', 15, 15, 8),
-    makeBuilding(2, 'builder', 25, 25),
-    makeBuilding(3, 'tesla', 6, 10, 6),
-  ];
-  m.state.nextId = 4;
-  m.state.army = Object.fromEntries(
-    TROOP_KEYS.map((k) => [k, k === 'dragon' ? 3 : 0]),
-  ) as typeof m.state.army;
-  expect(validateSave(m.state)).toBe(true);
-  expect(m.visibleBuilding(m.state.buildings[2])).toBe(true);
-  m.startBattle(0, true);
-  m.step(0.05);
-  m.activeTroop = 'dragon';
-  expect(m.deploy(1, 11)).toBe(true);
-  for (let i = 0; i < 200; i++) m.step(0.05);
-  m.finishBattle();
-  const before = JSON.parse(JSON.stringify(m.battle));
-  expect(before.revealedTeslas[3]).toBeGreaterThan(0);
-  const record = m.state.raidLog![0];
-  const imported = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
-  expect(imported.version).toBe(REPLAY_VERSION);
-  expect(validateReplay(imported)).toBe(true);
-  record.replay = imported;
-  m.returnHome();
-  m.startReplay(record.id);
-  for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
-  const after = JSON.parse(JSON.stringify(m.battle));
-  for (const key of ['buildings', 'units', 'revealedTeslas', 'result'])
-    expect(after[key]).toEqual(before[key]);
-  m.seekReplay(0);
-  for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);
-  expect(m.battle!.revealedTeslas).toBeUndefined();
-  expect(m.visibleBuilding(m.battle!.buildings[2])).toBe(false);
-  m.returnHome();
-  m.startBattle(0, true);
-  expect(m.battle!.revealedTeslas).toBeUndefined();
-  expect(m.state.buildings[2].hp).toBe(770);
-});
+it.each([6, 17])(
+  'preserves Tesla level %i and reconstructs reveal/attack state after exported replay and seeking',
+  (level) => {
+    const m = new GameModel();
+    m.state.obstacles = [];
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 15, 15, 8),
+      makeBuilding(2, 'builder', 25, 25),
+      makeBuilding(3, 'tesla', 6, 10, level),
+    ];
+    m.state.nextId = 4;
+    m.state.army = Object.fromEntries(
+      TROOP_KEYS.map((k) => [k, k === 'dragon' ? 3 : 0]),
+    ) as typeof m.state.army;
+    expect(validateSave(m.state)).toBe(true);
+    expect(m.visibleBuilding(m.state.buildings[2])).toBe(true);
+    m.startBattle(0, true);
+    m.step(0.05);
+    m.activeTroop = 'dragon';
+    expect(m.deploy(1, 11)).toBe(true);
+    for (let i = 0; i < 200; i++) m.step(0.05);
+    m.finishBattle();
+    const before = JSON.parse(JSON.stringify(m.battle));
+    expect(before.revealedTeslas[3]).toBeGreaterThan(0);
+    const record = m.state.raidLog![0];
+    const imported = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
+    expect(imported.version).toBe(REPLAY_VERSION);
+    expect(validateReplay(imported)).toBe(true);
+    record.replay = imported;
+    m.returnHome();
+    m.startReplay(record.id);
+    for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
+    const after = JSON.parse(JSON.stringify(m.battle));
+    for (const key of ['buildings', 'units', 'revealedTeslas', 'result'])
+      expect(after[key]).toEqual(before[key]);
+    m.seekReplay(0);
+    for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);
+    expect(m.battle!.revealedTeslas).toBeUndefined();
+    expect(m.visibleBuilding(m.battle!.buildings[2])).toBe(false);
+    m.returnHome();
+    m.startBattle(0, true);
+    expect(m.battle!.revealedTeslas).toBeUndefined();
+    expect(m.state.buildings[2].hp).toBe(TESLA_LEVELS[level - 1].hp);
+  },
+);

@@ -1,6 +1,6 @@
 import { DARK_STORAGE_LEVELS, darkStorageStats } from './dark-storage-stats';
 import { darkStorageAsset, darkStorageTexture } from './dark-storage-art';
-import { teslaTexture, teslaAsset } from './tesla-art';
+import { TESLA_ART, TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
 import { XBOW, XBOW_LEVELS, xbowDamage, type XbowMode } from './xbow-stats';
 import { xbowAsset, xbowTexture } from './xbow-art';
 import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
@@ -419,12 +419,12 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description:
       'Stays hidden until an enemy comes within 6 tiles or destruction reaches 51%. Fires rapid electrical bolts at ground and air troops.',
     size: 2,
-    width: 104,
+    width: TESLA_ART.width,
     hp: DEFENSE_PROGRESSION.tesla[0].hp,
     cost: DEFENSE_PROGRESSION.tesla[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 6,
+    maxLevel: TESLA_ART_LEVELS.length,
     available: [0, 0, 0, 0, 0, 0, 2, 3],
     build: DEFENSE_PROGRESSION.tesla[0].seconds,
     damage: 20.4,

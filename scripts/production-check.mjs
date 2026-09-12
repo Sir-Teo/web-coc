@@ -14,6 +14,7 @@ const darkStorageNative = JSON.parse(
   await fs.readFile('reference/dark-storage/native.json', 'utf8'),
 );
 const xbowNative = JSON.parse(await fs.readFile('reference/xbow/native.json', 'utf8'));
+const teslaNative = JSON.parse(await fs.readFile('reference/tesla/native.json', 'utf8'));
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -37,6 +38,9 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(xbowNative.textures),
       ...Object.values(xbowNative.sounds),
       ...Object.values(xbowNative.previews),
+      ...Object.values(teslaNative.textures),
+      ...Object.values(teslaNative.previews),
+      teslaNative.sounds['sfx/tesla_appear_01.ogg'],
     ].map((v) => '/' + v.path),
     ...['trap', 'sleigh', 'shadow', 'presents', 'particles'].map(
       (p) => `/assets/effects/santa-native/${p}-0.png`,
@@ -56,7 +60,6 @@ for (const [name, engine] of Object.entries(engines)) {
     ),
     '/assets/buildings/bombtower-v1/bomber.webp',
     '/assets/buildings/bombtower-v1/death-bomb.webp',
-    ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/tesla-v1/level-${i + 1}.webp`),
     ...Array.from({ length: 4 }, (_, l) =>
       Array.from(
         { length: 8 },
