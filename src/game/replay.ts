@@ -1,3 +1,4 @@
+import { validCampaignResources, type CampaignResources } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, type GridVersion } from './grid';
@@ -15,9 +16,9 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 24;
+export const REPLAY_VERSION = 25;
 export const REPLAY_LIMIT = 5;
-export const MAX_REPLAY_STEPS = 6000;
+export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
 export const MAX_REPLAY_TROOPS = 700;
 export const MAX_REPLAY_SPELLS = 100;
@@ -40,6 +41,8 @@ export interface ReplaySetup {
   troopLevels: Army;
   spellLevels?: SpellBook;
   nextId: number;
+  /** Remaining enemy inventory at entry; never inferred from the viewer's progress. */
+  availableLoot?: CampaignResources;
   /** Raid-limited storage headroom, not the player's balance or total capacity. */
   lootRoom?: { gold: number; elixir: number };
 }
@@ -81,13 +84,24 @@ export function replayBattle(s: ReplaySetup): Battle {
     defenseStuns: {},
     traps: {},
     elapsed: 0,
-    prep: 30,
+    prep: s.practice ? 30 : 0,
     started: false,
     finished: false,
     destruction: 0,
     stars: 0,
     loot: { gold: 0, elixir: 0 },
     ...(s.lootRoom ? { lootRoom: { ...s.lootRoom } } : {}),
+    ...(!s.practice
+      ? {
+          availableLoot: {
+            ...(s.availableLoot ?? {
+              gold: CAMPAIGN[s.index].gold,
+              elixir: CAMPAIGN[s.index].elixir,
+            }),
+          },
+          lootTaken: { gold: 0, elixir: 0 },
+        }
+      : {}),
     seed: 1337 + s.index,
   };
 }
@@ -117,11 +131,16 @@ export function validateReplay(value: unknown): value is ReplayData {
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
+    (value.version >= 25 &&
+      !s.practice &&
+      !validCampaignResources(s.availableLoot, CAMPAIGN[s.index])) ||
+    (s.availableLoot !== undefined &&
+      !validCampaignResources(s.availableLoot, CAMPAIGN[s.index])) ||
     (value.version >= 4 && !s.practice && !object(s.lootRoom)) ||
     (s.lootRoom !== undefined &&
       (!object(s.lootRoom) ||
-        !integer(s.lootRoom.gold, 0, CAMPAIGN[s.index].gold) ||
-        !integer(s.lootRoom.elixir, 0, CAMPAIGN[s.index].elixir))) ||
+        !integer(s.lootRoom.gold, 0, s.availableLoot?.gold ?? CAMPAIGN[s.index].gold) ||
+        !integer(s.lootRoom.elixir, 0, s.availableLoot?.elixir ?? CAMPAIGN[s.index].elixir))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
         !integer(s.hero.level, 1, 20) ||
@@ -161,9 +180,9 @@ export function validateReplay(value: unknown): value is ReplayData {
   }
   if (
     !Array.isArray(value.steps) ||
-    value.steps.length > MAX_REPLAY_STEPS ||
+    value.steps.length > (value.version >= 25 ? MAX_REPLAY_STEPS : 6000) ||
     !value.steps.every((d) => number(d, 0.000001, 10)) ||
-    value.steps.reduce((n, d) => n + d, 0) > 230 ||
+    value.steps.reduce((n, d) => n + d, 0) > (value.version >= 25 ? MAX_REPLAY_STEPS * 10 : 230) ||
     !Array.isArray(value.actions) ||
     !value.actions.length ||
     value.actions.length > MAX_REPLAY_ACTIONS

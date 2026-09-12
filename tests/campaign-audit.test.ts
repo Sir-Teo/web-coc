@@ -163,8 +163,13 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           m.activeTroop = kind;
           while (m.battle!.remaining[kind] > 0) expect(m.deploy(...approaches[side])).toBe(true);
         }
-        for (let step = 0; step < 3600 && !m.battle!.finished; step++) m.step(0.05);
-        expect(m.battle!.finished).toBe(true);
+        for (let step = 0; step < 12000 && !m.battle!.finished; step++) m.step(0.05);
+        if (!m.battle!.finished)
+          fs.writeFileSync(
+            'output/playtest/campaign-unfinished.json',
+            JSON.stringify({ stage, army, side, battle: m.battle }, null, 2),
+          );
+        expect(m.battle!.finished, `${stage + 1}/${army.name}/${side}`).toBe(true);
         results.push({
           stage: stage + 1,
           name: CAMPAIGN[stage].name,
@@ -199,7 +204,7 @@ it('the actual starter army can win the opening raid without spells or upgrades'
       m.activeTroop = kind;
       while (m.battle!.remaining[kind]) expect(m.deploy(...approach)).toBe(true);
     }
-    for (let step = 0; step < 3600 && !m.battle!.finished; step++) m.step(0.05);
+    for (let step = 0; step < 12000 && !m.battle!.finished; step++) m.step(0.05);
     expect(m.battle!.finished).toBe(true);
     return m.battle!.stars;
   });

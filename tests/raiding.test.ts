@@ -161,7 +161,10 @@ describe('mortar fire and defense targeting', () => {
     const air = unit(m, 'balloon', shell.x, shell.y);
     const anchor = makeBuilding(1002, 'builder', Math.floor(shell.x), Math.floor(shell.y));
     m.battle!.buildings.push(anchor);
-    for (const u of [one, two, air]) { u.target = anchor.id; u.cooldown = 100; }
+    for (const u of [one, two, air]) {
+      u.target = anchor.id;
+      u.cooldown = 100;
+    }
     advance(m, 1.3);
     expect(m.battle!.shells).toHaveLength(0);
     expect(decoy.hp).toBe(decoy.maxHp);
@@ -271,7 +274,7 @@ describe('putting the village away mid-raid', () => {
     expect(m.state.raidLog).toHaveLength(1);
     expect(m.state.stats.raids).toBe(1);
     expect(m.state.army.swordsman).toBe(army.swordsman - 6);
-    expect(m.state.trophies).not.toBe(trophies);
+    expect(m.state.trophies).toBe(trophies);
     // The settled result survives the reload the suspension was preparing for.
     const reloaded = new GameModel(structuredClone(m.state));
     expect(validateSave(reloaded.state)).toBe(true);
@@ -295,6 +298,7 @@ describe('putting the village away mid-raid', () => {
     m.activeTroop = 'swordsman';
     for (let i = 0; i < 8; i++) m.deploy(1 + i * 0.2, 10);
     for (let t = 0; t < 3600 && !m.battle!.finished; t++) m.step(0.05);
+    m.finishBattle();
     const viewer = new GameModel(structuredClone(m.state));
     expect(viewer.startReplay(viewer.state.raidLog![0].id)).toBe(true);
     viewer.suspendBattle();
@@ -313,9 +317,10 @@ describe('loot the storages can actually take', () => {
     m.activeTroop = 'swordsman';
     for (let i = 0; i < 12; i++) m.deploy(1 + i * 0.2, 10);
     for (let t = 0; t < 3600 && !m.battle!.finished; t++) m.step(0.05);
+    m.finishBattle();
     return m;
   };
-  it('shows nothing on the loot bars when there is nowhere to put it', () => {
+  it('credits no loot when there is nowhere to put it', () => {
     const m = raid((v) => {
       v.state.gold = v.resourceCap('gold');
       v.state.elixir = v.resourceCap('elixir');
@@ -325,7 +330,7 @@ describe('loot the storages can actually take', () => {
     expect(m.battle!.result!.gold).toBe(0);
     expect(m.battle!.result!.elixir).toBe(0);
   });
-  it('stops the bars at the remaining headroom and banks exactly that', () => {
+  it('caps credited loot at remaining headroom and banks exactly that', () => {
     const m = raid((v) => {
       v.state.gold = v.resourceCap('gold') - 500;
       v.state.elixir = v.resourceCap('elixir') - 700;

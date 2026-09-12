@@ -39,10 +39,10 @@ function overlapping(model: GameModel) {
   );
 }
 
-describe('scouting phase', () => {
+describe('scouting phase (practice countdown, shared deployment boundary)', () => {
   it('holds the battle clock for thirty seconds and starts early on the first deploy', () => {
     const m = new GameModel();
-    m.startBattle(0);
+    m.startBattle(0, true);
     expect(m.battle!.prep).toBe(PREP_SECONDS);
     expect(m.battle!.started).toBe(false);
     m.step(1);
@@ -54,7 +54,7 @@ describe('scouting phase', () => {
   });
   it('starts on its own when the scouting time runs out', () => {
     const m = new GameModel();
-    m.startBattle(0);
+    m.startBattle(0, true);
     for (let i = 0; i < PREP_SECONDS * 2; i++) m.step(1);
     expect(m.battle!.started).toBe(true);
     expect(m.battle!.elapsed).toBeGreaterThan(0);

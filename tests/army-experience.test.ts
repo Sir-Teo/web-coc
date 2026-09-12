@@ -211,7 +211,7 @@ describe('practice and battle history', () => {
     const log = m.state.raidLog!;
     expect(log).toHaveLength(1);
     expect(log[0].practice).toBe(false);
-    expect(log[0].result.trophies).toBe(-10);
+    expect(log[0].result.trophies).toBe(0);
     expect(log[0].duration).toBe(1);
     expect(log[0].deployed.goblin).toBe(1);
     expect(log[0].spells.heal).toBe(1);

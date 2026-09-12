@@ -1,3 +1,4 @@
+import { validCampaignLoot, validCampaignResources } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
@@ -6,7 +7,7 @@ import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles'
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
-import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
+import { BUILDINGS, CAMPAIGN, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { expandArmyRoster } from './army';
 import { MAX_SPELL_LEVEL } from './spell-progression';
 import { initialSave, type Save } from './model';
@@ -128,6 +129,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       new Set(s.claimedQuests).size !== s.claimedQuests.length)
   )
     return false;
+  if (s.campaignLoot !== undefined && !validCampaignLoot(s.campaignLoot)) return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;
   if (s.ores !== undefined && !validOres(s.ores)) return false;
   if (s.equipment !== undefined) {
@@ -210,7 +212,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           r.index >= 12 ||
           typeof r.practice !== 'boolean' ||
           !finite(r.duration) ||
-          r.duration > 180 ||
+          r.duration > Number.MAX_SAFE_INTEGER ||
+          (r.replayUnavailable !== undefined && r.replayUnavailable !== 'limit') ||
           !armyRecord(r.deployed) ||
           !spellRecord(r.spells) ||
           (r.hero !== undefined &&
@@ -221,6 +224,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               typeof r.hero.abilityUsed !== 'boolean')) ||
           (r.replay !== undefined && !validateReplay(r.replay)) ||
           !r.result ||
+          (r.result.lostLoot !== undefined &&
+            !validCampaignResources(r.result.lostLoot, CAMPAIGN[r.index])) ||
           !finite(r.result.gold) ||
           !finite(r.result.elixir) ||
           !Number.isInteger(r.result.trophies) ||

@@ -1,3 +1,4 @@
+import { freshCampaignLoot, type CampaignLoot, type CampaignResources } from './campaign-loot';
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
   defaultEquipment,
@@ -158,6 +159,8 @@ export interface Layout {
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
 export interface BattleResult {
+  /** Resources removed from the enemy that could not fit in home storages. */
+  lostLoot?: CampaignResources;
   gold: number;
   elixir: number;
   trophies: number;
@@ -175,6 +178,7 @@ export interface RaidRecord {
   spells: SpellBook;
   hero?: { level: number; abilityUsed: boolean };
   replay?: ReplayData;
+  replayUnavailable?: 'limit';
 }
 export interface Save {
   version: 4;
@@ -197,6 +201,7 @@ export interface Save {
   spells: SpellBook;
   spellQueue: SpellQueueItem[];
   stars: number[];
+  campaignLoot?: CampaignLoot;
   lastTick: number;
   nextId: number;
   tutorial: boolean;
@@ -285,14 +290,18 @@ export interface Battle {
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
   elapsed: number;
-  /** Seconds left to scout before the battle clock starts. */
+  /** Practice countdown. Campaign scouting has no deadline. */
   prep: number;
   started: boolean;
   finished: boolean;
   destruction: number;
   stars: number;
   loot: { gold: number; elixir: number };
-  /** Storage headroom at the attacker's village; absent during replays, which never bank loot. */
+  /** Enemy inventory at entry, independent of the home village and future raids. */
+  availableLoot?: CampaignResources;
+  /** Removed from enemy inventory, including any overflow. */
+  lootTaken?: CampaignResources;
+  /** Raid-capped storage headroom, preserved in recorded attacks. */
   lootRoom?: { gold: number; elixir: number };
   result?: BattleResult;
   seed: number;
@@ -345,6 +354,7 @@ export class GameModel {
   battle: Battle | null = null;
   replay: ReplayPlayback | null = null;
   private recording: ReplayData | null = null;
+  private recordingLimitReached = false;
   private recordBattles = true;
   private replayRunner: GameModel | null = null;
   private replayData: ReplayData | null = null;
@@ -1719,10 +1729,14 @@ export class GameModel {
         (!isTrap(building.kind) || !!this.battle.traps[building.id]))
     );
   }
+  campaignLoot(index: number): CampaignResources {
+    const loot = this.state.campaignLoot?.remaining[index] ?? CAMPAIGN[index];
+    return { gold: loot.gold, elixir: loot.elixir };
+  }
   startBattle(index: number, practice = false) {
     if (this.battle) return;
-    if (index < 0 || index >= CAMPAIGN.length) return;
-    if (index > 0 && !this.state.stars[index - 1])
+    if (!Number.isInteger(index) || index < 0 || index >= CAMPAIGN.length) return;
+    if (!practice && index > 0 && !this.state.stars[index - 1])
       return this.notify(`Earn a star on ${CAMPAIGN[index - 1].name} to unlock this village.`);
     if (this.armySize === 0 && !this.heroReady)
       return this.notify('Prepare an army or a hero before attacking.');
@@ -1749,13 +1763,14 @@ export class GameModel {
       nextId: this.state.nextId,
       ...(!practice
         ? {
+            availableLoot: this.campaignLoot(index),
             lootRoom: {
               gold: Math.min(
-                CAMPAIGN[index].gold,
+                this.campaignLoot(index).gold,
                 Math.max(0, Math.floor(this.resourceCap('gold') - this.state.gold)),
               ),
               elixir: Math.min(
-                CAMPAIGN[index].elixir,
+                this.campaignLoot(index).elixir,
                 Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir)),
               ),
             },
@@ -1770,6 +1785,7 @@ export class GameModel {
         : undefined,
     };
     this.battle = replayBattle(initial);
+    this.recordingLimitReached = false;
     this.recording = this.recordBattles
       ? {
           version: REPLAY_VERSION,
@@ -1911,10 +1927,13 @@ export class GameModel {
     }
     const b = this.battle;
     if (!b || b.finished) return;
+    // Untimed campaign scouting changes no combat state and needs no replay frames.
+    if (!b.practice && !b.started) return;
     if (this.recording) {
-      if (this.recording.steps.length >= MAX_REPLAY_STEPS || dt > 10 || dt < 0.000001)
+      if (this.recording.steps.length >= MAX_REPLAY_STEPS || dt > 10 || dt < 0.000001) {
         this.recording = null;
-      else this.recording.steps.push(dt);
+        this.recordingLimitReached = true;
+      } else this.recording.steps.push(dt);
     }
     if (!b.started) {
       // Scouting. The battle clock has not begun, but the countdown to it has.
@@ -1925,8 +1944,8 @@ export class GameModel {
       }
       return;
     }
-    // A long frame or imported replay delta cannot land a shot after the raid deadline.
-    dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
+    // Practice has a deadline; single-player combat continues until resolved or ended.
+    if (b.practice) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
@@ -2300,7 +2319,7 @@ export class GameModel {
     this.refreshBattleScore();
     if (
       b.destruction === 100 ||
-      b.elapsed >= BATTLE_SECONDS ||
+      (b.practice && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
@@ -2340,10 +2359,12 @@ export class GameModel {
       const taken = total
         ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
         : dead / Math.max(1, structures.length);
-      b.loot[resource] = Math.min(
-        Math.floor(CAMPAIGN[b.index][resource] * Math.min(1, Math.max(0, taken))),
-        b.lootRoom?.[resource] ?? Infinity,
+      const removed = Math.floor(
+        (b.availableLoot ?? CAMPAIGN[b.index])[resource] * Math.min(1, Math.max(0, taken)),
       );
+      b.lootTaken ??= { gold: 0, elixir: 0 };
+      b.lootTaken[resource] = removed;
+      b.loot[resource] = Math.min(removed, b.lootRoom?.[resource] ?? Infinity);
     }
   }
   private detonate(u: Unit, power: number) {
@@ -2390,13 +2411,21 @@ export class GameModel {
     b.projectiles = [];
     b.shells = [];
     for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
-    const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
+    const trophies = 0;
+    const overflow = (gold: number, elixir: number) => {
+      const lost = {
+        gold: Math.max(0, (b.lootTaken?.gold ?? 0) - gold),
+        elixir: Math.max(0, (b.lootTaken?.elixir ?? 0) - elixir),
+      };
+      return lost.gold || lost.elixir ? { lostLoot: lost } : {};
+    };
     // A playback runner reproduces the recorded result without applying a
     // second village's storage limits or producing rewards/history of its own.
     if (!this.recordBattles) {
       b.result = {
         gold: b.loot.gold,
         elixir: b.loot.elixir,
+        ...overflow(b.loot.gold, b.loot.elixir),
         trophies,
         stars: b.stars,
         destruction: b.destruction,
@@ -2412,8 +2441,11 @@ export class GameModel {
         : Math.max(0, Math.min(b.loot.elixir, this.resourceCap('elixir') - this.state.elixir));
     this.state.gold += gold;
     this.state.elixir += elixir;
-    this.state.trophies = Math.max(0, this.state.trophies + trophies);
     if (!b.practice) {
+      this.state.campaignLoot ??= freshCampaignLoot();
+      const remaining = this.state.campaignLoot.remaining[b.index];
+      for (const k of ['gold', 'elixir'] as const)
+        remaining[k] = Math.max(0, remaining[k] - (b.lootTaken?.[k] ?? 0));
       this.state.stars[b.index] = Math.max(this.state.stars[b.index] ?? 0, b.stars);
       this.state.stats.raids++;
       this.state.stats.destroyed += b.buildings.filter(
@@ -2424,6 +2456,7 @@ export class GameModel {
     b.result = {
       gold,
       elixir,
+      ...overflow(gold, elixir),
       trophies,
       stars: b.stars,
       destruction: b.destruction,
@@ -2438,7 +2471,8 @@ export class GameModel {
         at: this.clock,
         index: b.index,
         practice: b.practice,
-        duration: Math.min(BATTLE_SECONDS, b.elapsed),
+        duration: b.elapsed,
+        ...(this.recordingLimitReached ? { replayUnavailable: 'limit' as const } : {}),
         result: { ...b.result },
         ...(this.recording && validateReplay(this.recording) ? { replay: this.recording } : {}),
         deployed,
@@ -2488,6 +2522,7 @@ export class GameModel {
     if (!this.recording) return;
     if (this.recording.actions.length >= MAX_REPLAY_ACTIONS) {
       this.recording = null;
+      this.recordingLimitReached = true;
       return;
     }
     this.recording.actions.push({
@@ -2879,7 +2914,9 @@ export function findPath(
     const x = current % size,
       y = Math.floor(current / size);
     if (distanceTo({ x: x + 0.5, y: y + 0.5 }, target) <= range) {
-      if (!('level' in target) && current === first && distanceTo(start, target) > range)
+      // A grid-center goal can be in range while the unit's actual position is not.
+      // Keep that final segment for buildings as well as defending troops.
+      if (current === first && distanceTo(start, target) > range)
         approach = { x: x + 0.5, y: y + 0.5 };
       goal = current;
       break;

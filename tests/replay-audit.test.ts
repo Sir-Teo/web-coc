@@ -25,6 +25,7 @@ function simpleReplay(): ReplayData {
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as ReturnType<
         typeof emptyArmy
       >,
+      availableLoot: { gold: CAMPAIGN[11].gold, elixir: CAMPAIGN[11].elixir },
       lootRoom: { gold: CAMPAIGN[11].gold, elixir: CAMPAIGN[11].elixir },
     },
     steps: [],

@@ -185,9 +185,9 @@ describe('recorded battle playback', () => {
     loaded.step(10);
     expect(combat(loaded.battle!)).toEqual(result);
   });
-  it('records scouting timeout and automatic battle completion', () => {
+  it('records practice scouting timeout and automatic battle completion', () => {
     const m = new GameModel();
-    m.startBattle(0);
+    m.startBattle(0, true);
     for (let i = 0; i < 4300 && !m.battle!.finished; i++) m.step(0.05);
     const expected = structuredClone(combat(m.battle!));
     expect(m.battle!.finished).toBe(true);

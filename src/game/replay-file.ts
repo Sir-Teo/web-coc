@@ -25,6 +25,9 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         index: s.index,
         practice: s.practice,
         nextId: s.nextId,
+        ...(s.availableLoot
+          ? { availableLoot: { gold: s.availableLoot.gold, elixir: s.availableLoot.elixir } }
+          : {}),
         ...(s.lootRoom ? { lootRoom: { gold: s.lootRoom.gold, elixir: s.lootRoom.elixir } } : {}),
         army: army(s.army),
         spells,
