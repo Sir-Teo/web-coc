@@ -38,6 +38,7 @@ jobs:
       - run: npm test
       - run: node scripts/barbarian-assets.mjs --check
       - run: node scripts/king-assets.mjs --check
+      - run: node scripts/blacksmith-assets.mjs --check
       - run: node scripts/specialist-walk-assets.mjs --check
       - run: node scripts/mortar-assets.mjs --check
       - run: node scripts/camp-assets.mjs --check

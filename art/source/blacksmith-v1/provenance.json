@@ -26,5 +26,42 @@
       "prompt": "icons-matte-prompt.txt"
     }
   ],
-  "processing": "Building generated alpha is retained; icons are keyed from the final flat green matte, despoiled, cropped and registered by scripts/blacksmith-assets.mjs. Icons draft had an opaque glow background and is not shipped. No external reference pixels are shipped."
+  "processing": "Building generated alpha is retained; icons are keyed from the final flat green matte, despilled, cropped and registered by scripts/blacksmith-assets.mjs. Icons draft had an opaque glow background and is not shipped. No external reference pixels are shipped.",
+  "runtimeAssets": [
+    {
+      "path": "public/assets/buildings/blacksmith.webp",
+      "sha256": "c02e303f73c396dd4874fb5996e5e4d6efc18ed3511d20bb32a8660a9b205b25",
+      "bytes": 167046
+    },
+    {
+      "path": "public/assets/equipment/boots-v1.webp",
+      "sha256": "883fa2133a8b50a772c3165828d7f0356b1ad3d57c536b317624ec3cd8e4c96b",
+      "bytes": 50386
+    },
+    {
+      "path": "public/assets/equipment/glowy-v1.webp",
+      "sha256": "e402717669f4a346bf54b38c144cd4a56f4253988b7bc28b485552b3c96a191a",
+      "bytes": 50052
+    },
+    {
+      "path": "public/assets/equipment/puppet-v1.webp",
+      "sha256": "ff4a6cb69fc0c499ef0582049563cb0b16f897f4502574e7bb91b7e002cc8f11",
+      "bytes": 57174
+    },
+    {
+      "path": "public/assets/equipment/shiny-v1.webp",
+      "sha256": "1811d11863c3208637ee6bf3608b6de1b1ee3705ac35439d587d79c3e18180f4",
+      "bytes": 42432
+    },
+    {
+      "path": "public/assets/equipment/starry-v1.webp",
+      "sha256": "158eb706a19f964be75754af1ce6ad85c2a95170c2364902154aa4b91db25446",
+      "bytes": 33178
+    },
+    {
+      "path": "public/assets/equipment/vial-v1.webp",
+      "sha256": "c3981fa0b960004b1b4494b449443e16535637dbab877c7814dedece348b732c",
+      "bytes": 46634
+    }
+  ]
 }

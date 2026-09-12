@@ -48,11 +48,19 @@ for (const [i, kind] of ['puppet', 'vial', 'boots', 'shiny', 'glowy', 'starry'].
     .extract({ left: (i % 3) * 512, top: Math.floor(i / 3) * 512, width: 512, height: 512 })
     .png()
     .toBuffer();
-  const crop = await sharp(cell)
+  const resizedPng = await sharp(cell)
     .trim()
     .resize({ width: 216, height: 216, fit: 'inside' })
     .png()
     .toBuffer();
+  const resized = await sharp(resizedPng).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  // Filtering can bring back matte hue at a few semi-transparent silhouette pixels.
+  for (let p = 0; p < resized.data.length; p += 4)
+    resized.data[p + 1] = Math.min(
+      resized.data[p + 1],
+      Math.max(resized.data[p], resized.data[p + 2]) + 12,
+    );
+  const crop = await sharp(resized.data, { raw: resized.info }).png().toBuffer();
   const size = await sharp(crop).metadata();
   await emit(
     `public/assets/equipment/${kind}-v1.webp`,
