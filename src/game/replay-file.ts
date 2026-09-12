@@ -52,6 +52,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         buildings: s.buildings.map((b) => ({
           id: b.id,
           kind: b.kind,
+          ...(b.npc !== undefined ? { npc: b.npc } : {}),
           x: b.x,
           y: b.y,
           level: b.level,

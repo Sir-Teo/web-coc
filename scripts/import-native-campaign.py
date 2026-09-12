@@ -109,9 +109,18 @@ for i, group in enumerate(npcs):
                        darkElixir=int(row.get('DarkElixir', 0)),
                        recommendedTownHall=int(row.get('minRecommendedTHLevel', 0)) or None,
                        nativeRows=group))
+npc_columns = ['Name', 'GlobalID', 'BuildingClass', 'SecondaryTargetingClass',
+               'Width', 'Height', 'BuildingLevel', 'Hitpoints', 'HousingSpace',
+               'DPS', 'AttackSpeed', 'AttackRange', 'AirTargets', 'GroundTargets',
+               'ExportName', 'ExportNameNpc']
+building_groups = {g[0]['Name']: g for g in groups(table('logic/buildings.csv'))}
+npc_buildings = {name: [{k: row[k] for k in npc_columns if k in row}
+                       for row in building_groups[name][:8 if name == 'Town Hall' else 1]]
+                 for name in ['Town Hall', 'Goblin Hut', 'Tutorial Cannon']}
 outputs = {
     'catalog.json': json.dumps(dict(bundle=BUNDLE, stages=stages, entities=entities), indent=2) + '\n',
     'layouts.jsonl': ''.join(json.dumps(v, separators=(',', ':')) + '\n' for v in layouts),
+    'npc-buildings.json': json.dumps(npc_buildings, indent=2) + '\n',
 }
 outputs['provenance.json'] = json.dumps(dict(
     clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, retrieved='2026-09-11',

@@ -587,3 +587,7 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 - Chromium and WebKit each pass 31 browser scenarios at DPR 2. Settled campaign map, battle and result captures cover desktop, portrait and landscape. Surrender remains outside the scrolling army tray at tablet widths.
 - `npm run test:campaign:production` verifies the built bundle's finite inventory, five-minute replay, portable file sharing and reload in both engines. Chromium repeats reload and sharing offline; WebKit offline remains unchecked.
 - Details and transition/rounding limits: [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Evidence: `output/playtest/campaign-rules-verification.json` and `campaign-*.png`.
+
+## Goblin building foundation · September 11
+
+683 model tests pass, plus six NPC rendering scenarios across Chromium/WebKit and five Chromium artwork/replay regressions. Both production engines import, seek and export the new NPC identities; Chromium also reloads their art and opens the recording offline. The playable campaign is still the authored twelve-map catalog. See [GOBLIN-BUILDINGS.md](GOBLIN-BUILDINGS.md) for exact scope and evidence.

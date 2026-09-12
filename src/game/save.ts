@@ -271,6 +271,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     if (
       !b ||
       !Object.hasOwn(BUILDINGS, b.kind) ||
+      b.npc !== undefined ||
       !Number.isInteger(b.id) ||
       b.id < 1 ||
       ids.has(b.id) ||

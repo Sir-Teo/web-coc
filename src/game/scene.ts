@@ -1,3 +1,4 @@
+import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
 import {
   BOMB_TOWER_ART_LEVELS,
   bombTowerTexture,
@@ -168,6 +169,8 @@ export class VillageScene extends Phaser.Scene {
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
     for (const level of CAMP_ART_LEVELS)
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
+    for (const npc of ['goblin-townhall', 'goblin-hut'] as const)
+      this.load.image(npcArt(npc)!.texture, npcAsset(npc));
     this.load.image('king', asset('king'));
     for (const direction of KING_DIRECTIONS)
       this.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
@@ -767,7 +770,7 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode)
+      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode, b.npc)
         .setPosition(p.x, p.y)
         .setDepth(p.y)
         .setCrop();
@@ -786,6 +789,7 @@ export class VillageScene extends Phaser.Scene {
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
       if (
+        !b.npc &&
         b.level >= TIER3_LEVEL &&
         b.kind !== 'wall' &&
         b.kind !== 'mortar' &&
@@ -892,7 +896,15 @@ export class VillageScene extends Phaser.Scene {
     level: number,
     direction = 0,
     skeletonMode: SkeletonMode = 'ground',
+    npc?: NpcBuildingKind,
   ) {
+    const npcVisual = npc && npcArt(npc);
+    if (npcVisual)
+      return im
+        .setTexture(npcVisual.texture)
+        .setOrigin(npcVisual.originX, npcVisual.originY)
+        .setFlipX(false)
+        .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture =
       kind === 'skeletontrap'
         ? skeletonTrapTexture(skeletonMode)

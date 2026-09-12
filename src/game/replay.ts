@@ -1,3 +1,4 @@
+import { validNpcBuilding } from './npc-buildings';
 import { validCampaignResources, type CampaignResources } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
@@ -16,7 +17,7 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 25;
+export const REPLAY_VERSION = 26;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -167,6 +168,8 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !integer(b.level, 1, d.maxLevel) ||
+      !validNpcBuilding(b.npc, b.kind, b.level) ||
+      (b.npc !== undefined && (s.practice || value.version < 26)) ||
       !number(b.maxHp, 1, 1e9) ||
       b.hp !== b.maxHp ||
       b.cooldown !== 0 ||

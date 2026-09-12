@@ -1,3 +1,9 @@
+import {
+  NPC_BUILDINGS,
+  TUTORIAL_CANNON_DAMAGE,
+  validNpcBuilding,
+  type NpcBuildingKind,
+} from './npc-buildings';
 import { freshCampaignLoot, type CampaignLoot, type CampaignResources } from './campaign-loot';
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
@@ -127,6 +133,8 @@ import {
   type Resource,
 } from './data';
 export interface Building {
+  /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
+  npc?: NpcBuildingKind;
   id: number;
   kind: BuildingKind;
   x: number;
@@ -2232,8 +2240,10 @@ export class GameModel {
         // does not lose time every shot. Idle towers never accumulate a burst.
         tower.cooldown = Math.max(0, d.rate! + (cooling ? tower.cooldown : 0));
         const power =
-          defenseDamage(tower.kind, tower.level) *
-          (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+          tower.npc === 'tutorial-cannon'
+            ? TUTORIAL_CANNON_DAMAGE
+            : defenseDamage(tower.kind, tower.level) *
+              (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'tesla') {
           target.hp -= power;
           this.onEffect({
@@ -2831,6 +2841,18 @@ export function initialSave(): Save {
     settings: { sound: true, music: false, reducedMotion: false },
     stats: { raids: 0, destroyed: 0, collected: 0 },
   };
+}
+export function makeNpcBuilding(
+  id: number,
+  npc: NpcBuildingKind,
+  x: number,
+  y: number,
+  level = 1,
+): Building {
+  const d = NPC_BUILDINGS[npc];
+  if (!d || !validNpcBuilding(npc, d.kind, level)) throw Error('Unsupported NPC building level');
+  const b = makeBuilding(id, d.kind, x, y, level);
+  return { ...b, npc, hp: d.hp[level - 1], maxHp: d.hp[level - 1] };
 }
 export function enemyBase(index: number) {
   return campaignBlueprint(index).map(([kind, x, y, direction, skeletonMode], i) => {

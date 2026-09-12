@@ -1,0 +1,25 @@
+{
+  "mode": "built-in image_gen",
+  "created": "2026-09-11",
+  "references": [
+    {
+      "url": "https://image.pngaaa.com/462/1708462-middle.png",
+      "interpretation": "Goblin Town Hall; search result mislabeled it Goblin Hut. Used as visual reference only."
+    },
+    {
+      "url": "https://clash-wiki.com/images/tactics/single_player/02_goblin_forest.jpg",
+      "interpretation": "Historical gameplay screenshot, small hut upper left of the Town Hall. Not the current native layout."
+    }
+  ],
+  "prompts": [
+    "prompt.txt",
+    "matte-prompt.txt"
+  ],
+  "sourceFiles": {
+    "matte.png": "419f9efe786ef223612b73c47f17db4f05c7a9ed4041cfdec9befdb4390ad87e",
+    "generated.png": "78d69260b07158ea3cf23bd9c0069c44860de9521b6b0c324f985aa403fb9982"
+  },
+  "generatedRecreation": true,
+  "nativePixelIdentityVerified": false,
+  "processing": "Magenta extraction, crop, resize, lossless WebP; see scripts/goblin-assets.mjs."
+}
