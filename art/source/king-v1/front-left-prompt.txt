@@ -1,0 +1,17 @@
+Use case: stylized-concept.
+Asset type: production animated Barbarian King sprite atlas for our Clash of Clans clone.
+Input image: official Supercell Barbarian King identity reference. Create newly rendered full-body game poses that faithfully match THIS character, not a generic fantasy king.
+Output: one square 3 by 3 sprite sheet, exactly NINE separated full-body figures of the SAME character, on actual transparent alpha. No checkerboard, no ground, no shadows, no text or borders.
+Identity: huge stocky bare muscular torso; chunky stylized proportions; clean-shaven square chin; straight yellow horseshoe moustache and yellow eyebrows; blue eyes; short straight blond hair down to the nape; simple bronze crenellated band crown with rivets, no jewels. Crossed red leather chest straps with central bronze fastening, brown leather short kilt with broad brown belt and rectangular bronze buckle, brown strapped open-toed sandals. The CHARACTER'S RIGHT shoulder has one broad steel pauldron with a single conical spike and RIGHT hand a large bronze spiked gauntlet; CHARACTER'S LEFT hand grips the massive broad dark steel sword with lighter beveled edges, asymmetric blade notch, simple bronze guard and pommel; left wrist has a studded leather band. No beard, cape, chainmail, boots, additional armor, extra weapons or skin effects.
+Camera and scale: orthographic isometric game camera elevated 30 degrees. All nine figures face LOWER LEFT, showing his front, chest and face in the same three-quarter orientation. No turntable. Identical head/body size, same feet baseline and centered pelvis within each of the nine equal cells. Crisp polished rounded 3D Supercell rendering, warm upper-left diffuse light, broad simple materials, no pore texture. Entire crown, sword tip, hand and both feet in every cell with generous transparent gutters and at least 8 percent safe margins.
+Animation read order:
+row 1 col 1: quiet standing idle, sword low and forward.
+row 1 col 2: WALK CONTACT A, near leg extends toward lower-left, far leg behind; sword held low to side.
+row 1 col 3: WALK PASSING A, near foot under hips and far knee moving forward.
+row 2 col 1: WALK CONTACT B, the opposite leg now extends toward lower-left, near leg behind, clearly reverse the stride.
+row 2 col 2: WALK PASSING B, far foot under hips and near knee moving forward.
+row 2 col 3: ATTACK WINDUP, planted feet, sword raised behind and over the sword-side shoulder.
+row 3 col 1: ATTACK STRIKE, torso leans forward and sword sweeps forward/down toward lower-left.
+row 3 col 2: ATTACK FOLLOW-THROUGH, sword low and forward, torso lowered after impact.
+row 3 col 3: ATTACK RECOVERY, return sword and torso toward idle.
+Keep the anatomical weapon hand and armored side identical across all frames. Clear distinct poses; no motion streaks, glow, dust or debris. This sheet will be cut at exact thirds; nothing may overlap another cell. Real transparent RGBA output.

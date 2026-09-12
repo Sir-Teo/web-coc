@@ -1,0 +1,100 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "date": "2026-09-11",
+  "reference": "https://make.supercell.com/img/characters/barb-king-large.png",
+  "referencePage": "https://make.supercell.com/en/create/clash-of-clans/troop-design/assets",
+  "referenceSha256": "bb05e51834a7c533570056ab43e321c7f81ad383dafd819e3b57315a0928e2bf",
+  "referenceUse": "Identity comparison and generation input; native reference image is not shipped",
+  "generations": [
+    {
+      "file": "front-left-generated.png",
+      "prompt": "front-left-prompt.txt",
+      "toolFile": "exec-d66d0d5d-0328-463e-b77c-314f57383e78.png",
+      "input": "Official Supercell reference",
+      "review": "Identity accepted; baked checkerboard rejected"
+    },
+    {
+      "file": "front-left.png",
+      "prompt": "front-left-correction.txt",
+      "toolFile": "exec-9ac07cf3-a45e-4de3-93aa-58b126fe2155.png",
+      "input": "front-left-generated.png",
+      "review": "Accepted: nine front-left poses with magenta matte and wider gutters"
+    },
+    {
+      "file": "front-right-generated.png",
+      "prompt": "front-right-prompt.txt",
+      "toolFile": "exec-127299e9-5f9b-4e0f-b6ac-8337521a434d.png",
+      "input": "front-left.png",
+      "review": "Repeated walking stride and wrong sword hand during windup rejected"
+    },
+    {
+      "file": "front-right.png",
+      "prompt": "front-right-correction.txt",
+      "toolFile": "exec-426a14c6-07ac-4c11-9541-e9a9d1257192.png",
+      "input": "front-right-generated.png",
+      "review": "Accepted corrected opposite-leg walking poses and sword hand"
+    },
+    {
+      "file": "back-left-generated.png",
+      "prompt": "back-left-prompt.txt",
+      "toolFile": "exec-6174c9a0-d636-4ec5-a2ab-954eae8037d0.png",
+      "input": "front-right.png",
+      "review": "Rear identity accepted; repeated walk stride corrected"
+    },
+    {
+      "file": "back-left.png",
+      "prompt": "back-left-correction.txt",
+      "toolFile": "exec-1658ccdf-cac9-4bbe-8dcb-879a70c7adbb.png",
+      "input": "back-left-generated.png",
+      "review": "Accepted corrected rear-left stride"
+    },
+    {
+      "file": "back-right-generated.png",
+      "prompt": "back-right-prompt.txt",
+      "toolFile": "exec-88aa2d10-4408-4ff8-98d6-1cfc2a60031b.png",
+      "input": "back-left-generated.png",
+      "review": "Rear orientation accepted; mirrored attack equipment and repeated stride rejected"
+    },
+    {
+      "file": "back-right.png",
+      "prompt": "back-right-correction.txt",
+      "toolFile": "exec-0c62d687-d4c2-4512-ab77-8e266442d42f.png",
+      "input": "back-right-generated.png",
+      "review": "Idle/walk/recovery accepted. Three attack cells replaced; sword fleck cropped from walking gutter"
+    },
+    {
+      "file": "back-right-attack.png",
+      "prompt": "back-right-attack-prompt.txt",
+      "toolFile": "exec-d9fc9cd7-4bb5-4e65-928c-7e16c076c6e7.png",
+      "input": "First 418x418 idle cell of back-right.png",
+      "review": "Accepted three replacement attack poses with correct anatomical equipment"
+    }
+  ],
+  "importer": "scripts/king-assets.mjs",
+  "sha256": {
+    "art/source/king-v1/back-left-correction.txt": "3991f2ead0535b83f9ee1d0fac010ed1c320e8ab235564a6077d159e7f25d4d7",
+    "art/source/king-v1/back-left-generated.png": "41f4a64da36fefd9371b1e8b2ec17c9ff7fd48a96a623bd89ee0238b9cb2ca12",
+    "art/source/king-v1/back-left-prompt.txt": "f0cbd1683e7f7cf637e35fffb00c813f83adbe88fee7c37c16913bff96e13f7b",
+    "art/source/king-v1/back-left.png": "84073465d6aa0df519f197934298de3eb9f127b6c5753fe857cff91ad66381c8",
+    "art/source/king-v1/back-right-attack-prompt.txt": "fdd29b37d769db563e4d615426c6db80a48f6629fd147278f06f5b63c974b780",
+    "art/source/king-v1/back-right-attack.png": "cec6afd97da042a7dcf45d385e70097117ac39046cbc5f45408a5cc29c35beab",
+    "art/source/king-v1/back-right-correction.txt": "065a882f25004023806d39403451e3ceb43fcd037bf5f60f962b8d1fd5edb641",
+    "art/source/king-v1/back-right-generated.png": "1e399f970e926f6fc720beb9eab96fdf2443f6e2303fe8f7db31edc3b497d668",
+    "art/source/king-v1/back-right-prompt.txt": "efad4361c7fe11d74802cc67ca904b38492080a4437f80f808c16727449d4825",
+    "art/source/king-v1/back-right.png": "b84d2005e0c0e66af0c94e4539259bf09133f6bddbd8419254fae538b70a1641",
+    "art/source/king-v1/front-left-correction.txt": "57e6ce416998c7b724f7950581b83ecca3047973888a0bda966be910cd57cca1",
+    "art/source/king-v1/front-left-generated.png": "5b2e13269ab483a9b9705fe84dd215e3d817916dae27d9da290249c4f8d3b8c6",
+    "art/source/king-v1/front-left-prompt.txt": "f4551282c7ecf02885e62083f04ed3a31710916d78b46c551068381bf5deba80",
+    "art/source/king-v1/front-left.png": "da5245c9b048bf9da907acb0d1d84c22544bd22f8139e2d145597fb75cd453aa",
+    "art/source/king-v1/front-right-correction.txt": "862899a082de264de4c14abe7d5d0f436eb1e588149de30f8d1bbdeff1bfc417",
+    "art/source/king-v1/front-right-generated.png": "ab608ab4cf3034013e80662aa9d16274ba135917aacd8f4d8902cdc8f2f03ede",
+    "art/source/king-v1/front-right-prompt.txt": "35f65a5042b37a6828b83f7cd06887c0f4d9b262246016aec56a1284503bac6e",
+    "art/source/king-v1/front-right.png": "d7cfce47d074772cde3ed00de010aea1c39bb1ec5a52b1364a38640825d092f9",
+    "public/assets/characters/king-v1/back-left.webp": "4ff3bbe8b1f6989db0ec0218a84cefe825de87c5c740280d2af46252b34af0fa",
+    "public/assets/characters/king-v1/back-right.webp": "b50c62099e075f3fa1c8db2f7b59e9a6d35db3076c0b5a33125113857674d5bb",
+    "public/assets/characters/king-v1/front-left.webp": "470f5737f8b772f043dc72bf4f8150e9033a25a5bd87f11d7d1f32f30eb03b70",
+    "public/assets/characters/king-v1/front-right.webp": "1a29f9e53917115732d9a5740e1004ed8237d043245c1dd196376cfa6833f07e",
+    "public/assets/characters/king-v1/portrait.webp": "226e319353bfa9e5254f4357c73247769f123ab542ca60e7d6d4ab1b02856a97"
+  },
+  "limits": "Generated approximations of the default King; four quarters rather than a full native turntable. Poses and attack timing are not pixel-identical native frames."
+}
