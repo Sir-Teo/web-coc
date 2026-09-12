@@ -13,6 +13,7 @@ const COLORS: Record<Weapon, number> = {
   towerbomb: 0xffb54f,
   arcane: 0xcf8dff,
   healing: 0xffed8a,
+  xbowbolt: 0xffe3a3,
 };
 
 /** Short-lived weapon graphics. They never apply damage or mutate the battle. */

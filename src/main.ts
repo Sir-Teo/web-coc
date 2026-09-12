@@ -144,6 +144,7 @@ async function boot() {
             level: b.level,
             upgrading: !!b.upgradeEnd,
             ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
+            ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
           })),
         replay: model.replay,
         battle: model.battle
@@ -176,6 +177,7 @@ async function boot() {
                 })),
               shells: model.battle.shells,
               projectiles: model.battle.projectiles ?? [],
+              xbows: model.battle.xbows ?? {},
               defenders: (model.battle.defenders ?? [])
                 .filter((d) => d.hp > 0)
                 .map((d) => ({

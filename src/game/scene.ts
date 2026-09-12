@@ -4,6 +4,9 @@ import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
 import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
+import { preloadXbows, XbowPresentation } from './xbow-scene';
+import { XBOW_ART } from './xbow-art';
+import { xbowRange, type XbowMode } from './xbow-stats';
 import { battleTrapStats } from './traps';
 import {
   BOMB_TOWER_ART_LEVELS,
@@ -151,6 +154,7 @@ export class VillageScene extends Phaser.Scene {
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
   private santaPresentation!: SantaPresentation;
+  private xbowPresentation!: XbowPresentation;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
@@ -160,6 +164,7 @@ export class VillageScene extends Phaser.Scene {
   }
   preload() {
     preloadSanta(this);
+    preloadXbows(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -253,10 +258,12 @@ export class VillageScene extends Phaser.Scene {
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.santaPresentation = new SantaPresentation(this, this.audio);
+    this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.santaPresentation.destroy();
+      this.xbowPresentation.destroy();
     });
     this.drawField();
     this.decorate();
@@ -613,7 +620,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = hit.id;
         this.model.changed();
         this.model.notify(
-          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}`,
+          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }
@@ -732,7 +739,7 @@ export class VillageScene extends Phaser.Scene {
         im &&
         wx > im.x - im.displayWidth * 0.42 &&
         wx < im.x + im.displayWidth * 0.42 &&
-        wy > im.y - im.displayHeight * 0.83 &&
+        wy > im.y - im.displayHeight * (b.kind === 'xbow' ? im.originY : 0.83) &&
         wy < im.y + im.displayHeight * 0.06
       )
         return b;
@@ -758,6 +765,7 @@ export class VillageScene extends Phaser.Scene {
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
       this.santaPresentation.clear();
+      this.xbowPresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -842,7 +850,7 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode, b.npc)
+      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode, b.npc, b.xbowMode)
         .setPosition(p.x, p.y)
         .setDepth(p.y)
         .setCrop();
@@ -867,6 +875,7 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
+      if (b.kind === 'xbow' && b.hp > 0) im.setAlpha(0);
       if (b.npc === 'santa-trap')
         im.setFrame(
           santaTrapFrame(
@@ -882,6 +891,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'wall' &&
         b.kind !== 'mortar' &&
         b.kind !== 'camp' &&
+        b.kind !== 'xbow' &&
         b.kind !== 'tesla'
       )
         im.setTint(0xffecc7);
@@ -964,6 +974,8 @@ export class VillageScene extends Phaser.Scene {
         level,
         this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
         this.model.state.buildings.find((b) => b.id === this.model.moving)?.skeletonMode,
+        undefined,
+        this.model.state.buildings.find((b) => b.id === this.model.moving)?.xbowMode,
       );
       this.updateGhost(this.pointerScreen());
       if (this.model.placement === 'bombtower')
@@ -985,6 +997,7 @@ export class VillageScene extends Phaser.Scene {
     direction = 0,
     skeletonMode: SkeletonMode = 'ground',
     npc?: NpcBuildingKind,
+    xbowMode: XbowMode = 'ground',
   ) {
     if (kind === 'skeletontrap') {
       const art = skeletonTrapArt(level);
@@ -1001,8 +1014,13 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
-    const texture = buildingTexture(kind, level, direction);
+    const texture = buildingTexture(kind, level, direction, xbowMode);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (kind === 'xbow')
+      return im
+        .setOrigin(XBOW_ART.originX, XBOW_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(XBOW_ART.width, XBOW_ART.height);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
@@ -1305,7 +1323,7 @@ export class VillageScene extends Phaser.Scene {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);
       if (d.range || d.trap) {
-        const range = d.trap?.trigger ?? d.range!;
+        const range = b.kind === 'xbow' ? xbowRange(b.xbowMode) : (d.trap?.trigger ?? d.range!);
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
         if (b.kind === 'airsweeper') {
@@ -1430,19 +1448,28 @@ export class VillageScene extends Phaser.Scene {
       } else if (this.model.battle && v.hp < v.maxHp)
         this.bar(
           im.x,
-          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88),
+          im.y - im.displayHeight * (v.kind === 'camp' || v.kind === 'xbow' ? im.originY : 0.88),
           42,
           v.hp / v.maxHp,
           0xea654d,
         );
     }
     const battle = this.model.battle;
+    const xbowCues = this.xbowPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+    );
     this.santaPresentation.render(
       battle,
       this.model.state.settings.reducedMotion,
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
+      xbowCues,
     );
     for (const [id, sprite] of this.mineFlights) {
       if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
@@ -1986,6 +2013,7 @@ export class VillageScene extends Phaser.Scene {
       this.audio.play('hit');
       return;
     }
+    if (fx.weapon === 'xbowbolt' && (fx.type === 'projectile' || fx.type === 'impact')) return;
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
       if (!this.model.state.settings.reducedMotion)
@@ -2148,7 +2176,9 @@ export class VillageScene extends Phaser.Scene {
   private drawProjectiles() {
     const b = this.model.battle;
     const shots =
-      !b || b.finished || this.model.state.settings.reducedMotion ? [] : (b.projectiles ?? []);
+      !b || b.finished || this.model.state.settings.reducedMotion
+        ? []
+        : (b.projectiles ?? []).filter((p) => p.weapon !== 'xbowbolt');
     const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
     const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
     this.combatEffects.retainProjectiles(

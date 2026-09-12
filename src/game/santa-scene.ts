@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Battle } from './model';
 import type { AudioManager } from './audio';
+import type { SampleCue } from './sample-audio';
 import {
   SANTA_GROUPS,
   SANTA_SOUNDS,
@@ -58,9 +59,10 @@ export class SantaPresentation {
     playing: boolean,
     speed: number,
     iso: (x: number, y: number) => { x: number; y: number },
+    additionalCues: SampleCue[] = [],
   ) {
     const wanted = new Set<string>(),
-      cues: ReturnType<typeof santaSoundCues> = [];
+      cues: SampleCue[] = [...additionalCues];
     this.marks.clear();
     this.flashes.clear();
     if (battle && !battle.finished)

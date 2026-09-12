@@ -1,4 +1,6 @@
 import { teslaTexture, teslaAsset } from './tesla-art';
+import { XBOW, XBOW_LEVELS, xbowDamage, type XbowMode } from './xbow-stats';
+import { xbowAsset, xbowTexture } from './xbow-art';
 import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
 import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
 import type { SkeletonMode } from './skeleton-stats';
@@ -21,6 +23,7 @@ import {
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
+  | 'xbow'
   | 'blacksmith'
   | 'herohall'
   | 'darkdrill'
@@ -107,6 +110,25 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  xbow: {
+    name: 'X-Bow',
+    description:
+      'Fires a rapid stream of bolts. Choose long-range ground targeting or a shorter range that covers ground and air.',
+    size: 3,
+    width: 240,
+    hp: XBOW_LEVELS[0].hp,
+    cost: XBOW_LEVELS[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: XBOW_LEVELS.length,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: XBOW_LEVELS[0].seconds,
+    damage: xbowDamage(1),
+    range: XBOW.groundRange,
+    rate: XBOW.interval,
+    targets: 'ground',
+    singleArtwork: true,
+  },
   blacksmith: {
     name: 'Blacksmith',
     description: 'Upgrade hero equipment with ore and choose two abilities for your King.',
@@ -884,7 +906,7 @@ export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
 export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
-  BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
+  kind === 'xbow' ? XBOW_LEVELS[0].townhall : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
   trapProgression(kind, level)?.damage ?? 0;
 export const springCapacity = (level: number) =>
@@ -903,7 +925,13 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
-export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+export const buildingTexture = (
+  kind: BuildingKind,
+  level = 1,
+  direction = 0,
+  xbowMode: XbowMode = 'ground',
+) => {
+  if (kind === 'xbow') return xbowTexture(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapTexture('ground', level);
   if (kind === 'bombtower') return bombTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
@@ -919,7 +947,13 @@ const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
-export const asset = (kind: string, level = 1, skeletonMode: SkeletonMode = 'ground') => {
+export const asset = (
+  kind: string,
+  level = 1,
+  skeletonMode: SkeletonMode = 'ground',
+  xbowMode: XbowMode = 'ground',
+) => {
+  if (kind === 'xbow') return xbowAsset(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode, level);
   if (kind === 'bombtower') return bombTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
@@ -998,6 +1032,7 @@ export const researchSeconds = (kind: TroopKind, level: number) =>
   troopProgression(kind, level + 1)?.seconds ?? 0;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
+  if (kind === 'xbow') return xbowDamage(level);
   const audited = defenseProgression(kind, level);
   return audited
     ? Math.round(audited.dps * BUILDINGS[kind].rate! * 10) / 10

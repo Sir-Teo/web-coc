@@ -2,9 +2,18 @@ import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
+import { XBOW_PROJECTILES } from './xbow-stats';
 
 export type Weapon =
-  'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'towerbomb' | 'arcane' | 'healing';
+  | 'arrow'
+  | 'cannonball'
+  | 'rocket'
+  | 'fireball'
+  | 'bomb'
+  | 'towerbomb'
+  | 'arcane'
+  | 'healing'
+  | 'xbowbolt';
 export interface CombatProjectile {
   id: string;
   weapon: Weapon;
@@ -22,6 +31,11 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
+  /** Native X-Bow projectile level and ammunition sequence. */
+  variant?: number;
+  sequence?: number;
+  /** Actual position of a tracking X-Bow bolt at the last simulation sample. */
+  flight?: { x: number; y: number; at: number };
 }
 
 // Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;
@@ -35,7 +49,13 @@ const SPEED: Record<Weapon, number> = {
   towerbomb: 8,
   arcane: 16,
   healing: 12,
+  xbowbolt: XBOW_PROJECTILES[0].speed,
 };
+function xbowSpeed(p: Pick<CombatProjectile, 'variant'>) {
+  const source = XBOW_PROJECTILES[(p.variant ?? 1) - 1];
+  if (!source) throw Error('Unsupported native X-Bow projectile');
+  return source.speed;
+}
 function buildingAim(p: Pick<CombatProjectile, 'weapon' | 'fromX' | 'fromY'>, b: Building) {
   const size = BUILDINGS[b.kind].size;
   // Bombs drop onto the approached edge of the footprint. Forcing the far
@@ -51,21 +71,27 @@ export function launchProjectile(
   battle: Battle,
   shot: Omit<CombatProjectile, 'id' | 'launched' | 'impact'>,
   emit: (fx: FX) => void,
+  at = battle.elapsed,
 ) {
   const duration =
     shot.weapon === 'bomb'
       ? 0.33
       : Math.max(
-          shot.weapon === 'healing' || shot.weapon === 'towerbomb' || shot.weapon === 'fireball'
+          shot.weapon === 'healing' ||
+            shot.weapon === 'towerbomb' ||
+            shot.weapon === 'fireball' ||
+            shot.weapon === 'xbowbolt'
             ? 0.01
             : 0.12,
-          Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / SPEED[shot.weapon],
+          Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) /
+            (shot.weapon === 'xbowbolt' ? xbowSpeed(shot) : SPEED[shot.weapon]),
         );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${battle.elapsed}`,
-    launched: battle.elapsed,
-    impact: battle.elapsed + duration,
+    id: `${shot.sourceId}:${at}`,
+    launched: at,
+    impact: at + duration,
+    ...(shot.weapon === 'xbowbolt' ? { flight: { x: shot.fromX, y: shot.fromY, at } } : {}),
   };
   const target = shot.targetBuilding && battle.buildings.find((b) => b.id === shot.targetId);
   if (target && shot.weapon === 'bomb') Object.assign(projectile, buildingAim(shot, target));
@@ -100,6 +126,25 @@ export function stepProjectiles(
   emit: (fx: FX) => void,
 ) {
   const pending: CombatProjectile[] = [];
+  // Tracking bolts travel a bounded distance each sample. Moving a target does
+  // not teleport the bolt or preserve an arrival deadline at its old position.
+  for (const p of battle.projectiles ?? []) {
+    if (p.weapon !== 'xbowbolt' || !p.flight) continue;
+    const target = battle.units.find((u) => u.id === p.targetId && u.hp > 0);
+    if (target) {
+      p.x = target.x;
+      p.y = target.y;
+    }
+    const distance = Math.hypot(p.x - p.flight.x, p.y - p.flight.y);
+    const speed = xbowSpeed(p);
+    p.impact = Math.max(p.launched + 0.01, p.flight.at + distance / speed);
+    const fraction = distance
+      ? Math.min(1, (Math.max(0, battle.elapsed - p.flight.at) * speed) / distance)
+      : 1;
+    p.flight.x += (p.x - p.flight.x) * fraction;
+    p.flight.y += (p.y - p.flight.y) * fraction;
+    p.flight.at = Math.min(battle.elapsed, p.impact);
+  }
   for (const p of [...(battle.projectiles ?? [])].sort((a, b) => a.impact - b.impact)) {
     const target = p.targetDefender
       ? battle.defenders?.find((d) => d.id === p.targetId)
@@ -121,6 +166,7 @@ export function stepProjectiles(
       pending.push(p);
       continue;
     }
+    const hitLivingTarget = !!target && target.hp > 0;
     if (p.weapon === 'healing') {
       for (const unit of battle.units)
         if (
@@ -180,6 +226,13 @@ export function stepProjectiles(
       (!('spawnedAt' in target) || (target.spawnedAt ?? 0) <= p.impact + 1e-9)
     )
       target.hp -= p.damage;
+    if (p.weapon === 'xbowbolt') {
+      const state = battle.xbows?.[p.sourceId];
+      if (state && hitLivingTarget) {
+        state.hits.push({ at: p.impact, index: p.sequence! });
+        if (state.hits.length > 32) state.hits.shift();
+      }
+    }
     emit(projectileEffect(p, 'impact'));
   }
   battle.projectiles = pending;

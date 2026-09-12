@@ -1,7 +1,9 @@
 import type { BuildingKind } from './data';
+import { XBOW_LEVELS } from './xbow-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
+  xbow: [0, 0, 0, 0, 0, 0, 0, 0],
   blacksmith: [0, 0, 0, 0, 0, 0, 0, 1],
   townhall: [8, 8, 8, 8, 8, 8, 8, 8],
   goldmine: [1, 4, 6, 8, 10, 10, 11, 12],
@@ -34,6 +36,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'xbow') return XBOW_LEVELS[level - 1]?.townhall ?? null;
   // Native trap rows retain later requirements even while the home village caps at TH8.
   if (kind === 'skeletontrap' && (level === 3 || level === 4)) return level + 6;
   const index = BUILDING_LEVELS[kind].findIndex((cap) => cap >= level);

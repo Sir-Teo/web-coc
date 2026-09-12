@@ -53,6 +53,17 @@ it('keeps color variants, additive instances and removal distinct while rewindin
   );
 });
 
+it('hides only the named ammunition instance while retaining the armed base and turret', () => {
+  const armed = nativeMeshPoses(graph, 'rapidfire_turret_lvl13', 0, { turret: 225, ammo: 225 });
+  const empty = nativeMeshPoses(graph, 'rapidfire_turret_lvl13', 0, { turret: 225, ammo: false });
+  expect(empty.length).toBeLessThan(armed.length);
+  expect(empty.length).toBeGreaterThan(0);
+  for (const pose of empty) expect(armed.find((p) => p.key === pose.key)).toEqual(pose);
+  expect(nativeMeshPoses(graph, 'rapidfire_turret_lvl13', 0, { turret: 225, ammo: 225 })).toEqual(
+    armed,
+  );
+});
+
 it('preserves complete affine transforms, strip cutouts and normalized UVs', () => {
   const pose = nativeMeshPoses(graph, 'rapidfire_turret_lvl1', 0)[0];
   pose.matrix = [2, 0.5, 17, -0.2, 3, 19];

@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import { XBOW_LEVELS, XBOW } from './xbow-stats';
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
@@ -83,6 +84,7 @@ export const DEFENSE_PROGRESSION = {
 
 /** Normal mode; geared-up variants are not yet supported. */
 export const DEFENSE_WEAPONS = {
+  xbow: { range: XBOW.groundRange, rate: XBOW.interval },
   bombtower: { range: 6, rate: 1.1, splash: 1.5 },
   tesla: { range: 7, rate: 0.6 },
   airdefense: { range: 10, rate: 1 },
@@ -94,6 +96,7 @@ export const DEFENSE_WEAPONS = {
 
 /** Returns a destination's stats when this defense has been audited. */
 export function defenseProgression(kind: BuildingKind, level: number) {
+  if (kind === 'xbow') return XBOW_LEVELS[level - 1];
   return kind === 'bombtower' ||
     kind === 'tesla' ||
     kind === 'cannon' ||

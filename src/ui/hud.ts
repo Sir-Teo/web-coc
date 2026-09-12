@@ -6,6 +6,7 @@ import {
   nativeUnlocked,
 } from '../game/native-campaign';
 import { sweeperStats } from '../game/air-control-stats';
+import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
 import {
   EQUIPMENT,
   EQUIPMENT_KEYS,
@@ -117,7 +118,11 @@ const html = (value: string) =>
   );
 const pct = (v: number) => `${Math.max(0, Math.min(100, Number.isNaN(v) ? 0 : v))}%`;
 /** The one place that says what a building level actually buys you. */
-function statRows(kind: BuildingKind, level: number): [string, string, string][] {
+function statRows(
+  kind: BuildingKind,
+  level: number,
+  xbowMode: XbowMode = 'ground',
+): [string, string, string][] {
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
   const trap = trapStats(kind, level);
@@ -164,16 +169,29 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (d.damage) {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
-    rows.push(['Target', 'Range', `${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles`]);
+    rows.push([
+      'Target',
+      'Range',
+      `${d.minRange ? `${d.minRange}–` : ''}${kind === 'xbow' ? xbowRange(xbowMode) : d.range} tiles`,
+    ]);
     rows.push(['Gauge', 'Attack speed', `${d.rate}s`]);
     if (d.splash)
       rows.push(['Sparkles', 'Splash radius', `${d.splash} tile${d.splash === 1 ? '' : 's'}`]);
     rows.push([
       'Radar',
       'Targets',
-      d.targets === 'air' ? 'Air only' : d.targets === 'ground' ? 'Ground only' : 'Ground & air',
+      kind === 'xbow'
+        ? xbowMode === 'both'
+          ? 'Ground & air'
+          : 'Ground only'
+        : d.targets === 'air'
+          ? 'Air only'
+          : d.targets === 'ground'
+            ? 'Ground only'
+            : 'Ground & air',
     ]);
   }
+  if (kind === 'xbow') rows.push(['Layers', 'Ammunition', `${n(XBOW.ammunition)} bolts`]);
   if (kind === 'bombtower')
     rows.push(
       ['Swords', 'Death damage', n(bombTowerDeathDamage(level))],
@@ -557,6 +575,9 @@ export class HUD {
         break;
       case 'skeleton-mode':
         m.toggleSkeletonMode();
+        break;
+      case 'xbow-mode':
+        this.model.toggleXbowMode();
         break;
       case 'wall-rotate':
         m.rotateWallMove();
@@ -1236,14 +1257,21 @@ export class HUD {
               'game-btn blue',
               `aria-label="Switch Skeleton Trap to ${b.skeletonMode === 'air' ? 'ground' : 'air'} mode"`,
             )
-          : '';
+          : b.kind === 'xbow' && !b.constructing
+            ? button(
+                'xbow-mode',
+                `${icon(b.xbowMode === 'both' ? 'Wind' : 'Swords', 21)}<span>${b.xbowMode === 'both' ? 'Ground & air' : 'Ground'}</span>`,
+                'game-btn blue',
+                `aria-label="Switch X-Bow to ${b.xbowMode === 'both' ? 'ground' : 'ground and air'} mode"`,
+              )
+            : '';
     if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
+    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level, b.skeletonMode, b.xbowMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
       b.upgradeEnd
         ? button(
             `finish:${b.id}`,
@@ -1805,15 +1833,15 @@ export class HUD {
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    const now = statRows(b.kind, b.level);
-    const next = capped ? [] : statRows(b.kind, b.level + 1);
+    const now = statRows(b.kind, b.level, b.xbowMode);
+    const next = capped ? [] : statRows(b.kind, b.level + 1, b.xbowMode);
     const nextUnlocks =
       b.kind === 'barracks'
         ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
         : b.kind === 'spellfactory'
           ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
           : [];
-    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
+    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level, b.skeletonMode, b.xbowMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];

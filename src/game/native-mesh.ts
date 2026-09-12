@@ -70,7 +70,7 @@ export function nativeMeshPoses(
   graph: NativeMeshGraph,
   name: string,
   seconds: number,
-  controls: Readonly<Record<string, number>> = {},
+  controls: Readonly<Record<string, number | false>> = {},
   root: NativeMatrix = NATIVE_IDENTITY,
 ): NativeMeshPose[] {
   const id = graph.exports[name];
@@ -102,6 +102,7 @@ export function nativeMeshPoses(
       const age = placementAges(graph, id, slot)[f];
       const elapsed = age < 0 ? frame : Math.min(frame, age);
       const control = controls[clip.names[slot]];
+      if (control === false) continue;
       const phase = Number.isFinite(control)
         ? Math.max(0, Math.floor(control))
         : nested

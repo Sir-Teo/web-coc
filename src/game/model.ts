@@ -37,6 +37,8 @@ import {
 import { startKingQuake, stepKingQuakes, type KingQuake } from './king-quake';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode, SKELETON_COFFIN_SECONDS, type SkeletonMode } from './skeleton-stats';
+import { validXbowMode, type XbowMode, type XbowState } from './xbow-stats';
+import { stepXbow } from './xbow';
 import {
   stepDefenders,
   stepAttackerVsDefenders,
@@ -166,6 +168,7 @@ export interface Building {
   /** Air Sweeper orientation in 45-degree map increments; absent means zero. */
   direction?: number;
   skeletonMode?: SkeletonMode;
+  xbowMode?: XbowMode;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -177,7 +180,14 @@ export interface SpellQueueItem {
 }
 export interface Layout {
   name: string;
-  slots: { id: number; x: number; y: number; direction?: number; skeletonMode?: SkeletonMode }[];
+  slots: {
+    id: number;
+    x: number;
+    y: number;
+    direction?: number;
+    skeletonMode?: SkeletonMode;
+    xbowMode?: XbowMode;
+  }[];
 }
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
@@ -310,6 +320,7 @@ export interface Battle {
   traps: Record<number, TrapState>;
   gusts?: AirGust[];
   sweepers?: Record<number, SweeperState>;
+  xbows?: Record<number, XbowState>;
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
@@ -1236,6 +1247,7 @@ export class GameModel {
       y: b.y,
       ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
+      ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
     }));
   }
   toggleSkeletonMode() {
@@ -1245,6 +1257,15 @@ export class GameModel {
       return false;
     if (this.editing) this.recordPositions();
     b.skeletonMode = b.skeletonMode === 'air' ? 'ground' : 'air';
+    this.changed();
+    return true;
+  }
+  toggleXbowMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'xbow' || b.constructing || !validXbowMode(b.xbowMode)) return false;
+    if (this.editing) this.recordPositions();
+    b.xbowMode = b.xbowMode === 'both' ? 'ground' : 'both';
     this.changed();
     return true;
   }
@@ -1295,6 +1316,7 @@ export class GameModel {
       if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
       if (b.kind === 'skeletontrap')
         b.skeletonMode = moved.get(b.id)?.skeletonMode ?? b.skeletonMode ?? 'ground';
+      if (b.kind === 'xbow') b.xbowMode = moved.get(b.id)?.xbowMode ?? b.xbowMode ?? 'ground';
     }
     return true;
   }
@@ -2260,6 +2282,17 @@ export class GameModel {
         continue;
       const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
       if (activeDt <= 0) continue;
+      if (tower.kind === 'xbow') {
+        stepXbow(
+          b,
+          tower,
+          activeDt,
+          defenseDamage(tower.kind, tower.level) *
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+          this.onEffect,
+        );
+        continue;
+      }
       const cooling = tower.cooldown > 0;
       tower.cooldown -= activeDt;
       if (tower.cooldown > 0) continue;

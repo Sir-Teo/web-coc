@@ -211,7 +211,15 @@ test('native Santa replay rewinds all meshes and audio without changing the home
   expect(result.end).toEqual(result.final);
   expect(result).toMatchObject({ cleared: true, isolated: true });
   await page.screenshot({ path: `output/playtest/santa-replay-${browserName}.png` });
-  await expect.poll(() => page.evaluate(() => window.__game.audio.samples.buffers.size)).toBe(4);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          [...window.__game.audio.samples.buffers.keys()].filter((k) => k.startsWith('santa-'))
+            .length,
+      ),
+    )
+    .toBe(4);
   const sound = await page.evaluate(async () => {
     const { model: m, audio } = window.__game;
     const { santaSoundCues } = await import('/src/game/santa-art.ts');
