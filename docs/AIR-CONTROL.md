@@ -1,6 +1,6 @@
 # Air Sweeper and Seeking Air Mine audit
 
-Implemented for the local Town Hall 1–8 catalog. Reviewed 2026-09-12. Live Sweeper/mine presentation still uses authored artwork and a local simulation, with unresolved native behavior listed below. [Original Seeking Air Mine assets](../reference/seeking-mine/README.md) now retain all eight source levels, four animated families, effects, sounds and the original Info portrait; live integration is pending.
+Implemented for the local Town Hall 1–8 catalog. Reviewed 2026-09-12. The Sweeper uses authored artwork. [Seeking Air Mines](../reference/seeking-mine/README.md) now render the original four animated families, appearance and impact effects, five sounds and original Info portrait across all eight source levels. Both run in the local simulation, with unresolved native behavior listed below.
 
 ## Primary data
 
@@ -17,7 +17,7 @@ Supercell public client bundle `18.400.21`, asset hash `7f04bdfdc4124b1f49308423
 | 3 | 850 | 450,000 | 8h | 2.4 tiles |
 | 4 | 900 | 800,000 | 12h | 2.8 tiles |
 
-The mine now uses all eight original damage/cost/time rows for campaign, retained saves and practice. Home availability remains level 1: 1,500 damage, 12,000 gold, instant placement. Every level uses a four-tile trigger, minimum five housing spaces, a single target and 3.5 tiles/s. Healers are eligible. The focused runtime projection also preserves all four projectile exports, shadow, emitter, start height/offset, scale and play-once fields for presentation integration.
+The mine now uses all eight original damage/cost/time rows for campaign, retained saves and practice. Home availability remains level 1: 1,500 damage, 12,000 gold, instant placement. Every level uses a four-tile trigger, minimum five housing spaces, a single target and 3.5 tiles/s. Healers are eligible. The focused runtime projection preserves all four projectile exports, shadow, emitter, start height/offset, scale and play-once fields.
 
 Catalog ceilings/counts were cross-checked against [Sweeper progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/air-sweeper) and [mine progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/seeking-air-mine): one Sweeper from TH6, levels 2/3/4 at TH6/7/8; one mine at TH7 and two at TH8. Mine level 2 requires TH9 and is outside this catalog. The trap CSV's level-one TownHallLevel field is not its unlock gate.
 
@@ -31,12 +31,16 @@ The traveling front uses a 60-degree sector capped at five tiles wide, with a 0.
 
 Mine activation now divides source action frame 7 by the original `air_trap` clip’s 24 fps, replacing the former 30 fps assumption. This 7/24-second release is a source-based interpretation; native action-frame numbering and executable spawn ordering remain unverified. Combat version 33 expires older playback while keeping saved results readable. The original reveal/projectile clips also begin with empty frames; their native handoff remains unverified. Flight duration depends on distance, never a fixed arrival timer. Loss of its target consumes the mine without splash or retargeting. Native target-loss/retarget behavior still needs direct verification. Ground troops never trigger it. Fresh attacks re-arm home traps; practice cannot consume village defenses.
 
-The later campaign maps introduce a Sweeper from stage 6 and Seeking Air Mines from stage 8, with two mines in the final fortress. Campaign layouts and health/damage multipliers are authored local content; these stages do not claim native campaign or matchmaking balance.
+The campaign now supports the first 54 original layouts. Cross and Bows, Forest Outing and Skeleton Run retain all 59 original level-three mines and their 2,100 damage. Practice layouts remain local content. Source layouts and numerical records do not establish native combat parity or matchmaking balance.
 
 ## Controls and artwork
 
 Select a built Sweeper and use **Rotate** or **R** to turn it 45 degrees. Rotation costs nothing. It is preserved in layout save/restore, layout undo/redo, village persistence, moving previews and replay exports. Older records without orientation use zero; malformed directions are rejected. Replay version 19 expires playback of older combat rules while preserving their results.
 
-`art/source/air-control-v1/` retains accepted authored PNGs and prompts. Built-in image generation produced four eight-direction Sweeper sheets and a three-state mine sheet. Generated checkerboard backgrounds were rejected and corrected through the image tool. `scripts/air-control-assets.mjs` creates 32 lossless 384px directional sprites and armed/flying/spent mine sprites, validates alpha and supports reproducible `--check`. Those files remain live while the separate `seeking-mine-native` source assets await integration.
+`art/source/air-control-v1/` retains accepted authored PNGs and prompts. Built-in image generation produced four eight-direction Sweeper sheets and the former three-state mine sheet. `scripts/air-control-assets.mjs` reproduces these historical assets and validates alpha. The 32 Sweeper sprites remain live. Mine setup, construction, upgrade, reveal, flight, shadow and spent states now use the original `seeking-mine-native` source graph; the former mine sprites are no longer loaded by the scene.
 
-Visual design was compared with the [official Air Sweeper announcement](https://x.com/ClashofClans/status/593626016469413889) and the [Sweeper upgrade descriptions](https://clashofclans.fandom.com/wiki/Air_Sweeper?jw_start=%7Bseek_to_second_number%7D&page=1). Original render proportions, directional granularity, bellows animation and per-pixel native correspondence remain areas for further refinement.
+Mine geometry uses a locally chosen 0.8 scale and 32-unit anchor, with matching moving previews, selection bounds and progress bars. The complete ground reveal runs independently of impact; the original play-once projectile shares the activation clock. Original particle ranges, lifetimes, colors and additive layers drive deterministic effects and a bounded red smoke trail. Home pickup/place sounds use source volume/pitch, as do trigger and impact sounds. Rewinding regenerates presentation history from the replay. Reduced motion suppresses flight, particles, flashes and shake without changing combat.
+
+The mine's 0.5-second rise to local air height, projectile clock handoff, source offset/height interpretation, particle motion equations, spawn-limit semantics and camera-strength conversion still require native executable comparison. [The source audit](../reference/seeking-mine/README.md#live-presentation-and-fidelity-limits) records these choices separately from original geometry and pixel verification.
+
+Sweeper visual design was compared with the [official Air Sweeper announcement](https://x.com/ClashofClans/status/593626016469413889) and the [Sweeper upgrade descriptions](https://clashofclans.fandom.com/wiki/Air_Sweeper?jw_start=%7Bseek_to_second_number%7D&page=1). Its original render proportions, directional granularity, bellows animation and per-pixel native correspondence remain areas for further refinement.

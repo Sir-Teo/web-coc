@@ -1,7 +1,7 @@
 import { it, expect } from 'vitest';
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
-import { sweeperAsset, sweeperTexture, mineAsset } from '../src/game/air-control-art';
+import { sweeperAsset, sweeperTexture } from '../src/game/air-control-art';
 import { asset, buildingTexture } from '../src/game/data';
 
 it('ships 32 distinct transparent Sweeper views with clear cell borders', async () => {
@@ -28,24 +28,4 @@ it('ships 32 distinct transparent Sweeper views with clear cell borders', async 
       hashes.add(createHash('sha256').update(data).digest('hex'));
     }
   expect(hashes.size).toBe(32);
-});
-
-it('uses separate alpha cutouts for armed, flying and spent mines', async () => {
-  expect(asset('seekingairmine')).toBe(mineAsset('armed'));
-  const hashes = new Set<string>();
-  for (const state of ['armed', 'flying', 'spent']) {
-    const image = sharp(`public${mineAsset(state)}`),
-      meta = await image.metadata(),
-      stats = await image.stats();
-    expect(meta.hasAlpha).toBe(true);
-    expect(stats.channels[3].min).toBe(0);
-    expect(meta.width).toBeLessThanOrEqual(368);
-    expect(meta.height).toBeLessThanOrEqual(368);
-    hashes.add(
-      createHash('sha256')
-        .update(await image.raw().toBuffer())
-        .digest('hex'),
-    );
-  }
-  expect(hashes.size).toBe(3);
 });

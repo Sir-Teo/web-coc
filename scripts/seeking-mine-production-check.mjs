@@ -3,6 +3,15 @@ import { createServer, preview } from 'vite';
 import fs from 'node:fs/promises';
 
 await fs.mkdir('output/playtest', { recursive: true });
+const native = JSON.parse(await fs.readFile('reference/seeking-mine/native.json', 'utf8'));
+const runtimeAssets = [
+  ...Object.values(native.world.textures),
+  ...Object.values(native.previews),
+  native.info,
+  ...Object.values(native.sounds),
+]
+  .map((asset) => '/' + asset.path)
+  .sort();
 const modules = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -85,7 +94,13 @@ try {
         deviceScaleFactor: 2,
       });
       const page = await context.newPage(),
-        errors = [];
+        errors = [],
+        requestedMineAssets = new Set();
+      page.on('request', (request) => {
+        const path = new URL(request.url()).pathname;
+        if (path.startsWith('/assets/buildings/seeking-mine-native/'))
+          requestedMineAssets.add(path);
+      });
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
@@ -94,6 +109,7 @@ try {
       await page.locator('[data-action="skip-tutorial"]').click();
       await page.locator('#loading').waitFor({ state: 'detached' });
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
+      expect([...requestedMineAssets].sort()).toEqual(runtimeAssets);
       await page.locator('#import-file').setInputFiles({
         name: 'mine-village.json',
         mimeType: 'application/json',
@@ -209,6 +225,7 @@ try {
         errors,
         dpr: 2,
         viewport: [390, 844],
+        requestedMineAssets: [...requestedMineAssets].sort(),
         stages,
         portableReplay: true,
         flightRewind: true,

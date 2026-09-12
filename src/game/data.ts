@@ -6,7 +6,8 @@ import { xbowAsset, xbowTexture } from './xbow-art';
 import { BOMB_TOWER_ART, bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
 import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
 import type { SkeletonMode } from './skeleton-stats';
-import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { sweeperTexture, sweeperAsset } from './air-control-art';
+import { seekingMineTexture, seekingMineAsset } from './seeking-mine-art';
 import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { SEEKING_MINE_LEVELS } from './seeking-mine-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
@@ -941,6 +942,7 @@ export const buildingTexture = (
   if (kind === 'bombtower') return bombTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
+  if (kind === 'seekingairmine') return seekingMineTexture(level);
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
   if (kind === 'camp') return campTexture(level);
@@ -964,7 +966,7 @@ export const asset = (
   if (kind === 'bombtower') return bombTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);
-  if (kind === 'seekingairmine') return mineAsset();
+  if (kind === 'seekingairmine') return seekingMineAsset();
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);

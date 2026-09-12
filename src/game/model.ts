@@ -385,6 +385,9 @@ export type FX = {
     | 'bombtower-pickup'
     | 'bombtower-place'
     | 'bombtower-cancel'
+    | 'seekingairmine-pickup'
+    | 'seekingairmine-place'
+    | 'seekingairmine-cancel'
     | 'quake';
   x: number;
   y: number;
@@ -1269,7 +1272,10 @@ export class GameModel {
     this.changed();
   }
   private nativeBuildingHandling(b: Building, action: 'pickup' | 'place' | 'cancel') {
-    if (!this.battle && (b.kind === 'tesla' || b.kind === 'bombtower')) {
+    if (
+      !this.battle &&
+      (b.kind === 'tesla' || b.kind === 'bombtower' || b.kind === 'seekingairmine')
+    ) {
       const size = BUILDINGS[b.kind].size;
       this.onEffect({
         type: `${b.kind}-${action}`,

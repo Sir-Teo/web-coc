@@ -30715,8 +30715,8 @@
   },
   "reconstruction": {
     "nativePlaybackVerified": false,
-    "liveIntegration": false,
-    "scope": "Eight source levels, four setup/projectile families, upgrade/spent/reveal/shadow clips, all referenced particles, original Info portrait and five sounds.",
+    "liveIntegration": true,
+    "scope": "Live eight source levels, four setup/projectile families, upgrade/spent/reveal/shadow and appearance clips, all referenced particles, original Info portrait and five sounds.",
     "emptyBounds": "The Info root contains one explicitly empty TextField named bounds. Its source rectangle and placement remain metadata; it paints no pixels.",
     "timing": "Trigger ActionFrame=7 and original clip=24 fps. The local simulation derives a 7/24-second release from these fields; native action-frame and projectile handoff semantics remain unverified."
   }

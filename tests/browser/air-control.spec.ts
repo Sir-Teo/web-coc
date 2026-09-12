@@ -27,7 +27,9 @@ test('shop gates both defenses and loads every direction and mine state', async 
       Array.from({ length: 32 }, (_, i) =>
         textures.exists(`airsweeper-${Math.floor(i / 8) + 1}-${i % 8}`),
       ).every(Boolean) &&
-      ['seekingairmine', 'mine-flying', 'mine-spent'].every((k) => textures.exists(k))
+      ['seekingairmine', ...[1, 3, 5, 7].map((level) => `seeking-mine-setup-${level}`)].every((k) =>
+        textures.exists(k),
+      )
     );
   });
   expect(ready).toBe(true);

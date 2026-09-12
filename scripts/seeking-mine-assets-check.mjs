@@ -2,7 +2,7 @@ import { chromium, webkit, expect } from '@playwright/test';
 import { preview } from 'vite';
 import fs from 'node:fs/promises';
 
-// This verifies shipping asset delivery only. Live native mine integration is pending.
+// This verifies shipping asset delivery; the live browser suite checks presentation.
 const native = JSON.parse(await fs.readFile('reference/seeking-mine/native.json', 'utf8'));
 await fs.mkdir('output/playtest', { recursive: true });
 const assets = [
@@ -79,7 +79,7 @@ try {
           }
         }, assets);
       const online = await decode();
-      expect(online).toHaveLength(16);
+      expect(online).toHaveLength(17);
       expect(online.filter((v) => v.seconds !== undefined)).toHaveLength(5);
       for (const value of online) {
         if (value.seconds !== undefined) expect(value.seconds).toBeGreaterThan(0.1);
@@ -108,7 +108,7 @@ try {
         offline = true;
       }
       expect(errors).toEqual([]);
-      report[name] = { errors, dpr: 2, online, offline, liveNativeIntegration: false };
+      report[name] = { errors, dpr: 2, online, offline, scope: 'source-asset-delivery' };
     } finally {
       await browser.close();
     }

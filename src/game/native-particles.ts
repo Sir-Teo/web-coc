@@ -37,9 +37,10 @@ export function nativeParticleSampler(
   options: {
     reducedEmitters?: readonly string[];
     staticEmitters?: Readonly<Record<string, number>>;
+    altitudeScale?: number;
   } = {},
 ) {
-  const { reducedEmitters = [], staticEmitters = {} } = options;
+  const { reducedEmitters = [], staticEmitters = {}, altitudeScale = 0.8 } = options;
   return function particle(
     key: string,
     emitter: string,
@@ -122,7 +123,7 @@ export function nativeParticleSampler(
     if (row.OrientToMovement === 'TRUE') {
       const vx = Math.cos(horizontal) * Math.cos(vertical) * velocity,
         vy = Math.sin(horizontal) * Math.cos(vertical) * velocity;
-      angle += Math.atan2((vx + vy) * 0.16 - verticalSpeed * 0.8, (vx - vy) * 0.32);
+      angle += Math.atan2((vx + vy) * 0.16 - verticalSpeed * altitudeScale, (vx - vy) * 0.32);
     }
     const c = Math.cos(angle) * scale,
       sn = Math.sin(angle) * scale;
@@ -164,7 +165,7 @@ export function nativeParticleSampler(
       y:
         ground.y +
         (x + y) * 0.16 -
-        (Object.hasOwn(staticEmitters, emitter) || reduced ? 0 : z * 0.8),
+        (Object.hasOwn(staticEmitters, emitter) || reduced ? 0 : z * altitudeScale),
       depth: groundLayer
         ? -870
         : emitter === 'Grass'

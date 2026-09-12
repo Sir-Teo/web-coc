@@ -1,3 +1,7 @@
+import { preloadSeekingMines, SeekingMinePresentation } from './seeking-mine-scene';
+import { SEEKING_MINE_ART } from './seeking-mine-art';
+import { seekingMineBounds, seekingMineBodyState } from './seeking-mine-poses';
+import { seekingMineShake } from './seeking-mine-shake';
 import { bombTowerShake } from './bomb-tower-shake';
 import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-building-scene';
 import { isGoblinBuilding } from './goblin-building-art';
@@ -30,7 +34,7 @@ import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
 import { teslaRevealShake } from './tesla-shake';
 import { CameraShakeLayer } from './camera-shake-layer';
-import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset } from './air-control-art';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
@@ -141,7 +145,7 @@ export class VillageScene extends Phaser.Scene {
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
-  private mineFlights = new Map<number, Phaser.GameObjects.Image>();
+  private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
@@ -172,6 +176,7 @@ export class VillageScene extends Phaser.Scene {
     preloadGoblinBuildings(this);
     preloadTeslas(this);
     preloadBombTowers(this);
+    preloadSeekingMines(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -190,7 +195,6 @@ export class VillageScene extends Phaser.Scene {
     for (const level of SWEEPER_ART_LEVELS)
       for (let direction = 0; direction < 8; direction++)
         this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
-    for (const state of ['flying', 'spent']) this.load.image(`mine-${state}`, mineAsset(state));
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
@@ -260,12 +264,14 @@ export class VillageScene extends Phaser.Scene {
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
+    this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
       const reduced = this.model.state.settings.reducedMotion,
         replay = !!this.model.replay;
       const tesla = teslaRevealShake(this.model.battle, reduced, replay);
       const bomb = bombTowerShake(this.model.battle, reduced, replay);
-      return { x: tesla.x + bomb.x, y: tesla.y + bomb.y };
+      const mine = seekingMineShake(this.model.battle, reduced, replay);
+      return { x: tesla.x + bomb.x + mine.x, y: tesla.y + bomb.y + mine.y };
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
@@ -276,6 +282,7 @@ export class VillageScene extends Phaser.Scene {
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
       this.bombTowerPresentation.destroy();
+      this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
     });
     this.drawField();
@@ -698,7 +705,8 @@ export class VillageScene extends Phaser.Scene {
   placeBuilding(x: number, y: number) {
     const kind = this.model.placement;
     if (!this.model.place(x, y)) return false;
-    if (kind !== 'tesla' && kind !== 'bombtower') this.audio.play('build');
+    if (kind !== 'tesla' && kind !== 'bombtower' && kind !== 'seekingairmine')
+      this.audio.play('build');
     return true;
   }
   /** Drives the placement ghost from a DOM drag that Phaser never sees. */
@@ -747,6 +755,29 @@ export class VillageScene extends Phaser.Scene {
     this.boundary = { signature, edges };
     return edges;
   }
+  private nativeBuildingBounds(b: Building) {
+    const sample =
+      b.kind === 'tesla'
+        ? teslaBodyBounds
+        : b.kind === 'bombtower'
+          ? bombTowerBounds
+          : b.kind === 'seekingairmine'
+            ? seekingMineBounds
+            : undefined;
+    if (!sample) return;
+    const state =
+      b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
+    if (b.kind === 'seekingairmine' && state === 'setup') {
+      const pose = seekingMineBodyState(
+        this.model.battle?.traps[b.id],
+        this.model.battle?.elapsed ?? 0,
+        this.model.state.settings.reducedMotion,
+        !!this.model.battle?.finished,
+      );
+      return seekingMineBounds(b.level, pose.state);
+    }
+    return sample(b.level, state);
+  }
   pickBuilding(wx: number, wy: number, grid: { x: number; y: number }) {
     // A small ground trap must remain selectable beneath a neighbouring roof.
     const groundTrap = this.model.buildings.find(
@@ -764,17 +795,8 @@ export class VillageScene extends Phaser.Scene {
       .sort((a, b) => b.x + b.y - (a.x + a.y));
     for (const b of sorted) {
       const im = this.sprites.get(b.id);
-      if (im && (b.kind === 'tesla' || b.kind === 'bombtower')) {
-        const bounds = (b.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
-          b.level,
-          b.hp <= 0
-            ? 'ruin'
-            : b.constructing
-              ? 'constructing'
-              : b.upgradeEnd
-                ? 'upgrading'
-                : 'setup',
-        );
+      const bounds = this.nativeBuildingBounds(b);
+      if (im && bounds) {
         if (
           wx > im.x + bounds[0] &&
           wx < im.x + bounds[2] &&
@@ -824,6 +846,7 @@ export class VillageScene extends Phaser.Scene {
       this.goblinBuildingPresentation.clear();
       this.teslaPresentation.clear();
       this.bombTowerPresentation.clear();
+      this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -939,6 +962,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'darkstorage' ||
           b.kind === 'tesla' ||
           b.kind === 'bombtower' ||
+          b.kind === 'seekingairmine' ||
           isGoblinBuilding(b.npc)) &&
         b.hp > 0
       )
@@ -951,7 +975,6 @@ export class VillageScene extends Phaser.Scene {
             this.model.state.settings.reducedMotion,
           ),
         ).setAlpha(1);
-      if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
       if (
         !b.npc &&
         b.level >= TIER3_LEVEL &&
@@ -961,7 +984,8 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'xbow' &&
         b.kind !== 'darkstorage' &&
         b.kind !== 'tesla' &&
-        b.kind !== 'bombtower'
+        b.kind !== 'bombtower' &&
+        b.kind !== 'seekingairmine'
       )
         im.setTint(0xffecc7);
       else im.clearTint();
@@ -1105,6 +1129,11 @@ export class VillageScene extends Phaser.Scene {
         .setFlipX(false)
         .setDisplaySize(BOMB_TOWER_ART.width, BOMB_TOWER_ART.height)
         .setData('nativeBombTowerRuin', false);
+    if (kind === 'seekingairmine')
+      return im
+        .setOrigin(SEEKING_MINE_ART.originX, SEEKING_MINE_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(SEEKING_MINE_ART.width, SEEKING_MINE_ART.height);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
@@ -1193,6 +1222,10 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+    if (b.kind === 'seekingairmine') {
+      im.setCrop().setPosition(p.x, p.y).setAlpha(0);
+      return;
+    }
     if (b.kind === 'tesla' || b.kind === 'bombtower') {
       im.setCrop()
         .setPosition(p.x, p.y)
@@ -1500,19 +1533,15 @@ export class VillageScene extends Phaser.Scene {
           : (v.direction ?? 0);
         im.setTexture(sweeperTexture(v.level, direction));
       }
+      const nativeBounds = this.nativeBuildingBounds(v);
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
           progress = (this.model.clock - start) / duration;
         this.bar(
           im.x,
-          v.kind === 'tesla' || v.kind === 'bombtower'
-            ? im.y +
-                (v.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
-                  v.level,
-                  v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
-                )[1] -
-                6
+          nativeBounds
+            ? im.y + nativeBounds[1] - 6
             : im.y -
                 im.displayHeight *
                   (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87),
@@ -1520,7 +1549,7 @@ export class VillageScene extends Phaser.Scene {
           progress,
           0x82d745,
         );
-        if (v.kind !== 'tesla' && v.kind !== 'bombtower') {
+        if (!nativeBounds) {
           const p = iso(v.x, v.y);
           this.detail.lineStyle(3, 0xe6b356, 0.7);
           this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
@@ -1529,13 +1558,8 @@ export class VillageScene extends Phaser.Scene {
       } else if (this.model.battle && v.hp < v.maxHp)
         this.bar(
           im.x,
-          v.kind === 'tesla' || v.kind === 'bombtower'
-            ? im.y +
-                (v.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
-                  v.level,
-                  v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
-                )[1] -
-                6
+          nativeBounds
+            ? im.y + nativeBounds[1] - 6
             : im.y -
                 im.displayHeight *
                   (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
@@ -1576,21 +1600,23 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
+    const mineCues = this.seekingMinePresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+    );
     this.santaPresentation.render(
       battle,
       this.model.state.settings.reducedMotion,
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      [...xbowCues, ...teslaCues, ...bombTowerCues],
+      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues],
       this.renderClock / 1000,
     );
-    for (const [id, sprite] of this.mineFlights) {
-      if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
-        sprite.destroy();
-        this.mineFlights.delete(id);
-      }
-    }
     if (battle && !battle.finished) {
       for (const gust of battle.gusts ?? []) {
         const half = Math.min(
@@ -1636,30 +1662,7 @@ export class VillageScene extends Phaser.Scene {
             );
           continue;
         }
-        if (trap.kind === 'seekingairmine') {
-          const launched = battle.elapsed >= state.activatedAt + def.delay;
-          const ground = this.sprites.get(trap.id);
-          if (ground && (state.resolved || launched)) ground.setTexture('mine-spent').setAlpha(1);
-          if (!state.resolved) {
-            let sprite = this.mineFlights.get(trap.id);
-            if (!sprite) {
-              sprite = this.add.image(0, 0, 'mine-flying').setOrigin(0.5, 0.88);
-              sprite.setDisplaySize(38, (38 * sprite.height) / sprite.width);
-              this.mineFlights.set(trap.id, sprite);
-            }
-            const p = iso(state.x, state.y),
-              rise = Math.min(1, (battle.elapsed - state.activatedAt) / def.delay);
-            sprite
-              .setPosition(p.x, p.y - AIR_LIFT * rise)
-              .setDepth(7499)
-              .setAlpha(rise);
-            if (launched) {
-              this.detail.lineStyle(3, 0xd62b44, 0.55);
-              this.detail.lineBetween(p.x, p.y - AIR_LIFT + 4, p.x, p.y - AIR_LIFT + 17);
-            }
-          }
-          continue;
-        }
+        if (trap.kind === 'seekingairmine') continue;
         if (state.resolved || trap.kind === 'skeletontrap') continue;
         const p = iso(state.x, state.y);
         const progress = Math.min(
@@ -1912,6 +1915,31 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    if (
+      fx.type === 'seekingairmine-pickup' ||
+      fx.type === 'seekingairmine-place' ||
+      fx.type === 'seekingairmine-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.seekingMinePresentation.handling(
+        fx.sourceId!,
+        fx.type === 'seekingairmine-pickup'
+          ? 'pickup'
+          : fx.type === 'seekingairmine-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'seekingairmine-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
+    if (
+      (fx.type === 'trap' || fx.type === 'blast') &&
+      this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind === 'seekingairmine'
+    )
+      return;
     if (fx.type === 'tesla-pickup' || fx.type === 'tesla-place' || fx.type === 'tesla-cancel') {
       if (this.model.battle) return;
       this.teslaPresentation.handling(

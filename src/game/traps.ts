@@ -6,6 +6,7 @@ import { SPRING_AIRTIME } from './trap-stats';
 import { SKELETON_TRAP, skeletonCount } from './skeleton-stats';
 import { spawnSkeleton } from './defenders';
 import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-trap';
+import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -16,6 +17,7 @@ export interface TrapState {
   y: number;
   spawned?: number;
   santa?: SantaState;
+  mine?: SeekingMineFlight;
 }
 
 export function springOutcome(housing: number, hp: number, capacity: number, damage: number) {
@@ -70,10 +72,12 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         ...center,
       };
       if (trap.npc === 'santa-trap') state.santa = makeSantaState(state, trap.id, battle.seed);
+      if (d.homingSpeed) state.mine = { trail: [], nextTrail: 0 };
       // Springs resolve immediately and provide their own label and sound below.
       if (!d.springCapacity && trap.npc !== 'santa-trap')
         effect({
           type: 'trap',
+          sourceId: trap.id,
           ...center,
           text: trap.npc ? NPC_BUILDINGS[trap.npc].name : BUILDINGS[trap.kind].name,
           color: mode === 'air' ? 0xff746c : 0xffd175,
@@ -98,10 +102,13 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       continue;
     }
     if (d.homingSpeed) {
+      const flight = (state.mine ??= { trail: [], nextTrail: 0 });
       // A mine follows one live air target; loss of that target consumes the shot.
       const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
       if (!target) {
         state.resolved = true;
+        flight.resolvedAt = battle.elapsed;
+        flight.hit = false;
         changed = true;
         continue;
       }
@@ -111,17 +118,49 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         y = target.y - state.y;
       const distance = Math.hypot(x, y),
         travel = d.homingSpeed * flightDt;
+      const from = { x: state.x, y: state.y },
+        start = battle.elapsed - flightDt;
       if (distance > travel + 1e-9) {
         state.x += (x / distance) * travel;
         state.y += (y / distance) * travel;
+        recordSeekingMineTrail(
+          flight,
+          state.activatedAt + d.delay,
+          start,
+          battle.elapsed,
+          battle.elapsed,
+          from,
+          state,
+          false,
+        );
         continue;
       }
       state.x = target.x;
       state.y = target.y;
+      flight.resolvedAt = start + distance / d.homingSpeed;
+      flight.hit = true;
+      recordSeekingMineTrail(
+        flight,
+        state.activatedAt + d.delay,
+        start,
+        flight.resolvedAt,
+        battle.elapsed,
+        from,
+        state,
+        true,
+      );
       target.hp -= d.damage;
       state.resolved = true;
       changed = true;
-      effect({ type: 'blast', x: state.x, y: state.y, radius: 0.6, toAir: true, color: 0xff3c46 });
+      effect({
+        type: 'blast',
+        sourceId: trap.id,
+        x: state.x,
+        y: state.y,
+        radius: 0.6,
+        toAir: true,
+        color: 0xff3c46,
+      });
       continue;
     }
     if (d.targets === 'air') {

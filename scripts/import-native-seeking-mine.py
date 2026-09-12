@@ -168,8 +168,8 @@ def build():
                               width=info_image.width, height=info_image.height, pixelsPerNativeUnit=2,
                               rgbaSha256=digest(info_image.tobytes()), decompressedSourceBytes=UI_DECOMPRESSED_BYTES),
                     previews=previews, sounds=sounds,
-                    reconstruction=dict(nativePlaybackVerified=False, liveIntegration=False,
-                        scope='Eight source levels, four setup/projectile families, upgrade/spent/reveal/shadow clips, all referenced particles, original Info portrait and five sounds.',
+                    reconstruction=dict(nativePlaybackVerified=False, liveIntegration=True,
+                        scope='Live eight source levels, four setup/projectile families, upgrade/spent/reveal/shadow and appearance clips, all referenced particles, original Info portrait and five sounds.',
                         emptyBounds='The Info root contains one explicitly empty TextField named bounds. Its source rectangle and placement remain metadata; it paints no pixels.',
                         timing='Trigger ActionFrame=7 and original clip=24 fps. The local simulation derives a 7/24-second release from these fields; native action-frame and projectile handoff semantics remain unverified.'))
     print(f'World: {len(graph["exports"])} exports, {len(graph["clips"])} clips, {len(graph["shapes"])} shapes, {len(textures)} textures', flush=True)

@@ -16,6 +16,9 @@ const darkStorageNative = JSON.parse(
 const xbowNative = JSON.parse(await fs.readFile('reference/xbow/native.json', 'utf8'));
 const teslaNative = JSON.parse(await fs.readFile('reference/tesla/native.json', 'utf8'));
 const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native.json', 'utf8'));
+const seekingMineNative = JSON.parse(
+  await fs.readFile('reference/seeking-mine/native.json', 'utf8'),
+);
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -46,6 +49,10 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(bombTowerNative.particleArt.textures),
       ...Object.values(bombTowerNative.sounds),
       ...Object.values(bombTowerNative.previews),
+      ...Object.values(seekingMineNative.world.textures),
+      ...Object.values(seekingMineNative.previews),
+      ...Object.values(seekingMineNative.sounds),
+      seekingMineNative.info,
       ...[
         'tesla_appear_01',
         'tesla_zap_01',
@@ -73,7 +80,6 @@ for (const [name, engine] of Object.entries(engines)) {
         (_, d) => `/assets/buildings/airsweeper-v1/level-${l + 1}-${d}.webp`,
       ),
     ).flat(),
-    ...['armed', 'flying', 'spent'].map((s) => `/assets/buildings/seekingairmine-v1/${s}.webp`),
     ...['healer', 'dragon', 'pekka'].flatMap((kind) => [
       `/assets/characters/${kind}-v1.webp`,
       `/assets/characters/walk/${kind}-v1.webp`,
