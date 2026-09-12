@@ -72,6 +72,23 @@ it('uses native TH8 availability, both levels and destination upgrade values', (
   });
 });
 describe('fixed-point thrown bombs', () => {
+  it.each(
+    [24, 28, 32, 40, 48, 56, 64, 72, 84, 94, 104, 114, 122].map((dps, i) => ({
+      level: i + 1,
+      dps,
+    })),
+  )('level $level lands the original normal attack damage', ({ level, dps }) => {
+    const { m, b } = arena(level);
+    const target = unit(m),
+      air = unit(m, 16, 11.5, 'dragon');
+    m.step(0.05);
+    const shot = b.projectiles![0];
+    expect(shot.damage).toBeCloseTo(dps * 1.1, 10);
+    b.elapsed = shot.impact;
+    stepProjectiles(b, (t, p, at) => m.damage(t, p, at), m.onEffect);
+    expect(target.hp).toBeCloseTo(5000 - dps * 1.1, 10);
+    expect(air.hp).toBe(5000);
+  });
   it('waits for travel, retains the landing point and can miss a moving target', () => {
     const { m, b, tower, effects } = arena();
     const target = unit(m);
@@ -160,31 +177,35 @@ describe('fixed-point thrown bombs', () => {
   );
 });
 describe('destruction charge', () => {
-  it.each([1, 2])('level %i primes once and deals ground-only damage at one second', (level) => {
-    const { m, b, tower, effects } = arena(level);
-    const center = unit(m, 11.5),
-      edge = unit(m, 14.25),
-      outside = unit(m, 14.251),
-      air = unit(m, 11.5, 11.5, 'balloon');
-    m.damage(tower, 10000);
-    m.damage(tower, 10000);
-    expect(Object.values(b.deathBombs!)).toHaveLength(1);
-    b.elapsed = 0.999;
-    stepDeathBombs(b, m.onEffect);
-    expect(center.hp).toBe(5000);
-    b.elapsed = 1;
-    stepDeathBombs(b, m.onEffect);
-    const hp = 5000 - BOMB_TOWER.deathDamage[level - 1];
-    expect(center.hp).toBe(hp);
-    expect(edge.hp).toBe(hp);
-    expect(outside.hp).toBe(5000);
-    expect(air.hp).toBe(5000);
-    stepDeathBombs(b, m.onEffect);
-    expect(center.hp).toBe(hp);
-    expect(effects.filter((f) => f.type === 'blast')).toEqual([
-      expect.objectContaining({ weapon: 'towerbomb', radius: 2.75, x: 11.5, y: 11.5 }),
-    ]);
-  });
+  it.each(Array.from({ length: 13 }, (_, i) => i + 1))(
+    'level %i primes once and deals ground-only damage at one second',
+    (level) => {
+      const { m, b, tower, effects } = arena(level);
+      const center = unit(m, 11.5),
+        edge = unit(m, 14.25),
+        outside = unit(m, 14.251),
+        air = unit(m, 11.5, 11.5, 'balloon');
+      m.damage(tower, 10000);
+      m.damage(tower, 10000);
+      expect(Object.values(b.deathBombs!)).toHaveLength(1);
+      b.elapsed = 0.999;
+      stepDeathBombs(b, m.onEffect);
+      expect(center.hp).toBe(5000);
+      b.elapsed = 1;
+      stepDeathBombs(b, m.onEffect);
+      const hp =
+        5000 - [150, 180, 220, 260, 300, 350, 400, 450, 500, 550, 600, 650, 700][level - 1];
+      expect(center.hp).toBe(hp);
+      expect(edge.hp).toBe(hp);
+      expect(outside.hp).toBe(5000);
+      expect(air.hp).toBe(5000);
+      stepDeathBombs(b, m.onEffect);
+      expect(center.hp).toBe(hp);
+      expect(effects.filter((f) => f.type === 'blast')).toEqual([
+        expect.objectContaining({ weapon: 'towerbomb', radius: 2.75, x: 11.5, y: 11.5 }),
+      ]);
+    },
+  );
   it('starts the fuse at the killing projectile impact, including a wider simulation step', () => {
     const { m, b, tower } = arena();
     unit(m, 11.5);
@@ -281,44 +302,47 @@ it('aligns native frame 11 with actual launches and holds the release direction 
   b.defenseStuns[tower.id] = b.elapsed + 1;
   expect(sample().action).toBe('idle');
 });
-it('persists level two and reconstructs projectiles and destruction charges after replay import and seeking', () => {
-  const m = new GameModel();
-  m.state.obstacles = [];
-  m.state.buildings = [
-    makeBuilding(1, 'townhall', 30, 30, 8),
-    makeBuilding(2, 'builder', 26, 26),
-    makeBuilding(3, 'bombtower', 6, 10, 2),
-  ];
-  m.state.nextId = 4;
-  m.state.army = Object.fromEntries(
-    TROOP_KEYS.map((k) => [k, k === 'dragon' ? 3 : k === 'giant' ? 2 : 0]),
-  ) as typeof m.state.army;
-  expect(validateSave(m.state)).toBe(true);
-  m.startBattle(0, true);
-  for (const kind of ['giant', 'dragon'] as const) {
-    m.activeTroop = kind;
-    while (m.battle!.remaining[kind]) expect(m.deploy(1, 11)).toBe(true);
-  }
-  for (let i = 0; i < 500; i++) m.step(0.05);
-  m.finishBattle();
-  const before = JSON.parse(JSON.stringify(m.battle));
-  expect(before.deathBombs[3].resolved).toBe(true);
-  const record = m.state.raidLog![0],
-    imported = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
-  expect(imported.version).toBe(REPLAY_VERSION);
-  expect(validateReplay(imported)).toBe(true);
-  record.replay = imported;
-  m.returnHome();
-  m.startReplay(record.id);
-  for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
-  const after = JSON.parse(JSON.stringify(m.battle));
-  for (const key of ['buildings', 'units', 'deathBombs', 'bombTowers', 'result'])
-    expect(after[key]).toEqual(before[key]);
-  m.seekReplay(0);
-  for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);
-  expect(m.battle!.deathBombs).toBeUndefined();
-  m.returnHome();
-  m.startBattle(0, true);
-  expect(m.battle!.deathBombs).toBeUndefined();
-  expect(m.state.buildings[2].hp).toBe(700);
-});
+it.each([2, 3, 4, 5, 6, 13])(
+  'persists level %i and reconstructs projectiles and destruction charges after replay import and seeking',
+  (level) => {
+    const m = new GameModel();
+    m.state.obstacles = [];
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 30, 30, 8),
+      makeBuilding(2, 'builder', 26, 26),
+      makeBuilding(3, 'bombtower', 6, 10, level),
+    ];
+    m.state.nextId = 4;
+    m.state.army = Object.fromEntries(
+      TROOP_KEYS.map((k) => [k, k === 'dragon' ? 3 : k === 'giant' ? 2 : 0]),
+    ) as typeof m.state.army;
+    expect(validateSave(m.state)).toBe(true);
+    m.startBattle(0, true);
+    for (const kind of ['giant', 'dragon'] as const) {
+      m.activeTroop = kind;
+      while (m.battle!.remaining[kind]) expect(m.deploy(1, 11)).toBe(true);
+    }
+    for (let i = 0; i < 500; i++) m.step(0.05);
+    m.finishBattle();
+    const before = JSON.parse(JSON.stringify(m.battle));
+    expect(before.deathBombs[3].resolved).toBe(true);
+    const record = m.state.raidLog![0],
+      imported = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
+    expect(imported.version).toBe(REPLAY_VERSION);
+    expect(validateReplay(imported)).toBe(true);
+    record.replay = imported;
+    m.returnHome();
+    m.startReplay(record.id);
+    for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
+    const after = JSON.parse(JSON.stringify(m.battle));
+    for (const key of ['buildings', 'units', 'deathBombs', 'bombTowers', 'result'])
+      expect(after[key]).toEqual(before[key]);
+    m.seekReplay(0);
+    for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);
+    expect(m.battle!.deathBombs).toBeUndefined();
+    m.returnHome();
+    m.startBattle(0, true);
+    expect(m.battle!.deathBombs).toBeUndefined();
+    expect(m.state.buildings[2].hp).toBe(buildingHp('bombtower', level));
+  },
+);

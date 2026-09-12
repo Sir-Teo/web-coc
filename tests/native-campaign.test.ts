@@ -32,7 +32,7 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    expect(playable).toHaveLength(50);
+    expect(playable).toEqual(Array.from({ length: 51 }, (_, i) => i));
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];
@@ -65,9 +65,10 @@ describe('native campaign adapter and progress isolation', () => {
 
   it('rejects missing campaign mechanics instead of replacing or omitting them', () => {
     expect(nativeCampaignIssues(37)).toEqual([]);
-    expect(nativeCampaignIssues(50)).toEqual(['Bomb Tower level 3']);
+    expect(nativeCampaignIssues(50)).toEqual([]);
+    expect(nativeCampaignIssues(51)).toEqual(['Seeking Air Mine level 3']);
     expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
-    for (const index of [50, 74, 89]) {
+    for (const index of [51, 74, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
       const m = new GameModel();
       const before = structuredClone(m.state);

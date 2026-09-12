@@ -406,7 +406,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: DEFENSE_PROGRESSION.bombtower[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 2,
+    maxLevel: DEFENSE_PROGRESSION.bombtower.length,
     available: [0, 0, 0, 0, 0, 0, 0, 1],
     build: DEFENSE_PROGRESSION.bombtower[0].seconds,
     damage: 26.4,

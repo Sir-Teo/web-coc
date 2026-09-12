@@ -2,14 +2,14 @@
 
 Pinned client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`, from the [original public client fingerprint](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/fingerprint.json). `native.json` records SHA-256 checksums for 22 inputs and verifies their SHA-1 membership in that pinned fingerprint.
 
-The live game consumes these native bodies, rooftop defender clips, bombs, shadows, scaffolds, rubble, all referenced particles and six sounds. Gameplay remains at levels 1–2; these presentation changes do not enable level 3 or another campaign village.
+The live game consumes these native bodies, rooftop defender clips, bombs, shadows, scaffolds, rubble, all referenced particles and six sounds. Combat, save validation and replay now support all thirteen source levels. Home purchases/upgrades retain their TH8 ceiling of level 2. Invaders (village 51) now uses its original level-3 tower; later campaign guards remain active.
 
 ## Preserved content
 
 - `native.json`: original sparse building, projectile, effect, emitter and defender animation records; original SC6 graphs; texture sampling footprints and sound hashes.
 - `body.json`: packed, unscaled runtime graph for all 13 bodies, separate foundation, construction/upgrade scaffolds, rubble, three projectiles, four death bombs and projectile shadow. It retains 25 exports, 30 clips and 39 shapes.
 - `defender.json`: packed runtime graph for three defender families, each with three native directional idle and attack exports: 18 exports, 23 clips and 124 shapes. Named `ability_on` controls and additive container boundaries are retained. Idle clips have 101 frames and attacks have 21, both at 24 fps.
-- `combat.json`: all 13 source level records with HP, DPS, death damage, costs, destination timers, projectile/defender/effect selection and common range/timing values. Presentation uses its source variant selection; numerical gameplay continues to use the supported progression records.
+- `combat.json`: all 13 source level records with HP, DPS, death damage, costs, destination timers, projectile/defender/effect selection and common range/timing values. Both presentation variant selection and numerical gameplay use these source records through `bomb-tower-stats.ts`.
 - `effects.json`: all 13 referenced effects (including spawned effects), 25 emitters and six original sounds.
 - `particle_art.json`: all 39 non-charge particle exports, 44 clips and 57 shapes, including smoke, debris, fire, force/range rings, ground effects and the crater. The four configured death-charge exports remain in the body graph.
 - `public/assets/buildings/bombtower-native`: eight losslessly packed texture crops, thirteen independently rasterized 360×420 source portraits and six unchanged original Ogg files. Source polygon geometry and texture sampling texels are preserved without repainting or resizing.

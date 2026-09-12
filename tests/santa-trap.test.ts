@@ -48,7 +48,7 @@ function arena() {
   return { m, b, trap, unit, step };
 }
 describe('native Santa Trap', () => {
-  it('preserves the hidden map entity and unlocks the first fifty villages without changing home Bombs', () => {
+  it('preserves the hidden map entity and unlocks the first fifty-one villages without changing home Bombs', () => {
     expect(nativeCampaignIssues(37)).toEqual([]);
     expect(nativeBuildings(37).find((b) => b.npc === 'santa-trap')).toMatchObject({
       kind: 'bomb',
@@ -63,7 +63,7 @@ describe('native Santa Trap', () => {
       for (let i = 0; i < 90; i++)
         if (!nativeCampaignIssues(i).length && nativeUnlocked(i, stars)) stars[i] = 1;
     expect(stars.flatMap((s, i) => (s ? [i] : []))).toEqual(
-      Array.from({ length: 50 }, (_, i) => i),
+      Array.from({ length: 51 }, (_, i) => i),
     );
     expect(NATIVE_CAMPAIGN[37].name).toBe('Goblin Picnic');
     expect(battleTrapStats(makeNpcBuilding(1, 'santa-trap', 1, 1))).toMatchObject(SANTA_TRAP);

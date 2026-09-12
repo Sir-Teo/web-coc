@@ -1,14 +1,10 @@
 import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
+import { BOMB_TOWER, bombTowerStats } from './bomb-tower-stats';
 
 /** Public client values. See docs/BOMB-TOWER.md for sources and timing assumptions. */
-export const BOMB_TOWER = {
-  speed: 8,
-  deathRadius: 2.75,
-  deathDelay: 1,
-  deathDamage: [150, 180],
-} as const;
-export const bombTowerDeathDamage = (level: number) => BOMB_TOWER.deathDamage[level - 1] ?? 180;
+export { BOMB_TOWER } from './bomb-tower-stats';
+export const bombTowerDeathDamage = (level: number) => bombTowerStats(level).deathDamage;
 export interface DeathBomb {
   sourceId: number;
   x: number;

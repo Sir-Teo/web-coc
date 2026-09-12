@@ -2,6 +2,7 @@ import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS } from './xbow-stats';
 import { teslaStats } from './tesla-stats';
+import { bombTowerStats } from './bomb-tower-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
@@ -38,6 +39,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'bombtower') return bombTowerStats(level)?.townhall ?? null;
   if (kind === 'tesla') return teslaStats(level)?.townhall ?? null;
   if (kind === 'darkstorage') return darkStorageStats(level)?.townhall ?? null;
   if (kind === 'xbow') return XBOW_LEVELS[level - 1]?.townhall ?? null;

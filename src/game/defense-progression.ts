@@ -1,13 +1,11 @@
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS, XBOW } from './xbow-stats';
 import { TESLA_LEVELS, TESLA } from './tesla-stats';
+import { BOMB_TOWER_LEVELS, BOMB_TOWER } from './bomb-tower-stats';
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
-  bombtower: [
-    { dps: 24, hp: 650, cost: 700000, seconds: 43200 },
-    { dps: 28, hp: 700, cost: 1000000, seconds: 64800 },
-  ],
+  bombtower: BOMB_TOWER_LEVELS,
   tesla: TESLA_LEVELS,
   airdefense: [
     { dps: 80, hp: 800, cost: 22000, seconds: 3600 },
@@ -79,7 +77,7 @@ export const DEFENSE_PROGRESSION = {
 /** Normal mode; geared-up variants are not yet supported. */
 export const DEFENSE_WEAPONS = {
   xbow: { range: XBOW.groundRange, rate: XBOW.interval },
-  bombtower: { range: 6, rate: 1.1, splash: 1.5 },
+  bombtower: { range: BOMB_TOWER.range, rate: BOMB_TOWER.interval, splash: BOMB_TOWER.splash },
   tesla: { range: TESLA.range, rate: TESLA.interval },
   airdefense: { range: 10, rate: 1 },
   wizardtower: { range: 7, rate: 1.3, splash: 1 },
