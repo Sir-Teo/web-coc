@@ -34,6 +34,8 @@ import { skeletonStats, type SkeletonMode } from './skeleton-stats';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
+import { teslaRevealShake } from './tesla-shake';
+import { CameraShakeLayer } from './camera-shake-layer';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
@@ -163,6 +165,7 @@ export class VillageScene extends Phaser.Scene {
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private teslaPresentation!: TeslaPresentation;
+  private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
@@ -269,6 +272,13 @@ export class VillageScene extends Phaser.Scene {
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
+    this.cameraShake = new CameraShakeLayer(this.cameras.main, () =>
+      teslaRevealShake(
+        this.model.battle,
+        this.model.state.settings.reducedMotion,
+        !!this.model.replay,
+      ),
+    );
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
@@ -277,6 +287,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
+      this.cameraShake.destroy();
     });
     this.drawField();
     this.decorate();
@@ -2402,13 +2413,12 @@ export class VillageScene extends Phaser.Scene {
     const p = iso(x, y),
       c = this.cameras.main,
       rect = this.scale.canvasBounds;
+    // Refresh after programmatic pan/zoom and use the same shaken transform as picking.
+    c.preRender();
+    const projected = c.matrixCombined.transformPoint(p.x, p.y);
     return {
-      x:
-        rect.left +
-        ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
-      y:
-        rect.top +
-        ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
+      x: rect.left + projected.x / this.scale.displayScale.x,
+      y: rect.top + projected.y / this.scale.displayScale.y,
     };
   }
 }
