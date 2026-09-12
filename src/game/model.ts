@@ -2915,23 +2915,64 @@ export function findPath(
   const cost = new Float64Array(size * size).fill(Infinity),
     prev = new Int16Array(size * size).fill(-1),
     closed = new Uint8Array(size * size);
+  // Stable heap preserves the old queue's first-in tie order. A decrease updates
+  // the existing entry rather than making every search rescan the entire queue.
+  const priority = new Float64Array(size * size),
+    heuristic = new Float64Array(size * size).fill(NaN),
+    order = new Uint32Array(size * size),
+    position = new Int16Array(size * size).fill(-1),
+    open: number[] = [];
+  let sequence = 0;
+  const before = (a: number, b: number) =>
+    priority[a] < priority[b] || (priority[a] === priority[b] && order[a] < order[b]);
+  const queue = (node: number) => {
+    if (Number.isNaN(heuristic[node]))
+      heuristic[node] = distanceTo(
+        { x: (node % size) + 0.5, y: Math.floor(node / size) + 0.5 },
+        target,
+      );
+    priority[node] = cost[node] + heuristic[node];
+    let at = position[node];
+    if (at < 0) {
+      at = open.length;
+      open.push(node);
+      order[node] = sequence++;
+    }
+    while (at > 0) {
+      const parent = (at - 1) >> 1;
+      if (!before(node, open[parent])) break;
+      open[at] = open[parent];
+      position[open[at]] = at;
+      at = parent;
+    }
+    open[at] = node;
+    position[node] = at;
+  };
+  const take = () => {
+    const node = open[0],
+      last = open.pop()!;
+    position[node] = -1;
+    if (open.length) {
+      let at = 0;
+      while (at * 2 + 1 < open.length) {
+        let child = at * 2 + 1;
+        if (child + 1 < open.length && before(open[child + 1], open[child])) child++;
+        if (!before(open[child], last)) break;
+        open[at] = open[child];
+        position[open[at]] = at;
+        at = child;
+      }
+      open[at] = last;
+      position[last] = at;
+    }
+    return node;
+  };
   cost[first] = 0;
-  const open = [first];
+  queue(first);
   let goal = -1;
   let approach: { x: number; y: number } | undefined;
   while (open.length) {
-    let best = 0;
-    for (let i = 1; i < open.length; i++) {
-      const a = open[i],
-        c = open[best];
-      if (
-        cost[a] + distanceTo({ x: (a % size) + 0.5, y: Math.floor(a / size) + 0.5 }, target) <
-        cost[c] + distanceTo({ x: (c % size) + 0.5, y: Math.floor(c / size) + 0.5 }, target)
-      )
-        best = i;
-    }
-    const current = open.splice(best, 1)[0];
-    if (closed[current]) continue;
+    const current = take();
     closed[current] = 1;
     const x = current % size,
       y = Math.floor(current / size);
@@ -2977,7 +3018,7 @@ export function findPath(
       if (next < cost[n]) {
         cost[n] = next;
         prev[n] = current;
-        open.push(n);
+        queue(n);
       }
     }
   }
