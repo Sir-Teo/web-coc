@@ -22,6 +22,7 @@
     "test:bomb-tower:production": "node scripts/bomb-tower-production-check.mjs",
     "test:invaders:production": "node scripts/bomb-tower-production-check.mjs --invaders",
     "test:seeking-mine:assets": "node scripts/seeking-mine-assets-check.mjs",
+    "test:wizard-tower:assets": "node scripts/wizard-tower-assets-check.mjs",
     "test:seeking-mine:production": "node scripts/seeking-mine-production-check.mjs",
     "test:tesla:production": "node scripts/tesla-production-check.mjs"
   },

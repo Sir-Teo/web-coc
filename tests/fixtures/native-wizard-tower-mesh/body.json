@@ -1,0 +1,1147 @@
+{
+  "category": "body",
+  "width": 1440,
+  "height": 2880,
+  "cell": 240,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "3b676a9afde3a1b4ffd0420aa37ef9d97c9b927617d26040f2dd1e3fc6d4e395",
+  "cases": [
+    {
+      "export": "d1",
+      "time": 0.0,
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "f510f411fbf12e14393801c7494957cf255d5090b68e6830361c1cc97bc72bdd"
+    },
+    {
+      "export": "d2",
+      "time": 0.0,
+      "x": 240,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8c86343668f722e5783d53a7316c56166928443d1ad9b6ed53865a31d21d0b6f"
+    },
+    {
+      "export": "d3",
+      "time": 0.0,
+      "x": 480,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "73683abacb12b3e6243fa4c8e736183e77e486f1fe4a4316cac81cd489c782a4"
+    },
+    {
+      "export": "d4",
+      "time": 0.0,
+      "x": 720,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "3e09e421178875d4b9fc4cccb8aed42b00d25dd7ce2c37889da452a2161378b7"
+    },
+    {
+      "export": "debris1",
+      "time": 0.0,
+      "x": 960,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "462cdebf50413fde2c176d980b34b8921fe09202e48b1decf7e77dee06d9dba8"
+    },
+    {
+      "export": "debris10",
+      "time": 0.0,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "23c8aa680a2243c8612daf5e3426c7f1eddd4cec1cfbabd36e3fb63ebc566724"
+    },
+    {
+      "export": "debris11",
+      "time": 0.0,
+      "x": 0,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c9651646f9a45d584a90998a87baa401b583bf3fc13e024265f13b045a62c565"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "x": 240,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "19652fac4284f90ce63100dfa906ac85d7ae378eaedd1bf0537b2708f565fe71"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "x": 480,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9de26c4b0193a04816043416e26747fc5bc9f5885b3bce8de3bcf64e83a2e3fe"
+    },
+    {
+      "export": "debris14",
+      "time": 0.0,
+      "x": 720,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8814501636193f2c99341a6d460b0476b3f04eb73e2cb871df76d4873ae76aaa"
+    },
+    {
+      "export": "debris15",
+      "time": 0.0,
+      "x": 960,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4c239253b48f0233421c5c33138cf98fc1e610a477fcdc67fb8c3d15cac74bbf"
+    },
+    {
+      "export": "debris16",
+      "time": 0.0,
+      "x": 1200,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5203f83032e448bd095c5934eaa5f66b8bd447ef83d3462df54dd68802121adb"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "x": 0,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "76bf99824c99a776a3738e0a4eb1283d3fb906fd4bf8da090ddfaa5d535af0b9"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "x": 240,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c17ffcaedb1c2871ee707e3ac5ac12eb3f6bd1009cfb381e6e72a783ba0045c1"
+    },
+    {
+      "export": "debris19",
+      "time": 0.0,
+      "x": 480,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "a0a603af94cdf6513ab5dbbc00f74027a766afff2cee2668719dd316c31d5d2c"
+    },
+    {
+      "export": "debris2",
+      "time": 0.0,
+      "x": 720,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "3034c2ffbf72fa5a1edc83f49185c650f4c867382a0b9b2bb93ef3ce50af3bf6"
+    },
+    {
+      "export": "debris3",
+      "time": 0.0,
+      "x": 960,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4c09b8aabb89eb629168f85293b78c4ee2922f51167ba5d6de7bcbc7b0c68e69"
+    },
+    {
+      "export": "debris4",
+      "time": 0.0,
+      "x": 1200,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "baef7d015b6d37e77fe59374f9709becf9380abdbd9f596878d98c454338e589"
+    },
+    {
+      "export": "debris5",
+      "time": 0.0,
+      "x": 0,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1442e409d23e64afe06c3452277bfd866301b49fd724b5c1c52f74e12f63aad9"
+    },
+    {
+      "export": "debris6",
+      "time": 0.0,
+      "x": 240,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bbe034fe76aa99ccf866d0e7cb794fea6d1092b7544f5d317765db5dc2514422"
+    },
+    {
+      "export": "debris7",
+      "time": 0.0,
+      "x": 480,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e9b5395e6e3dc7640f5d223d191c9982021c279b5adc7e424206f31b5d83684e"
+    },
+    {
+      "export": "debris8",
+      "time": 0.0,
+      "x": 720,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "d3b50f8a20569f3b02be99c6e4646f3c18e15f5f25fe56a5d8a47a3d17053c18"
+    },
+    {
+      "export": "debris9",
+      "time": 0.0,
+      "x": 960,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8cea95e8a8a9f9936c230c5f51f22ac007cea970503b406e34c4ebec8660db57"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystal",
+      "time": 0.0,
+      "x": 1200,
+      "y": 720,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "3f58cf8c4e3dd48b1451f965b8f8763dde8672b97e92f61485b9a83807d11ca0"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystal",
+      "time": 0.03333333333333333,
+      "x": 0,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "3f58cf8c4e3dd48b1451f965b8f8763dde8672b97e92f61485b9a83807d11ca0"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystal",
+      "time": 0.1,
+      "x": 240,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "3f58cf8c4e3dd48b1451f965b8f8763dde8672b97e92f61485b9a83807d11ca0"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystal",
+      "time": 0.16666666666666666,
+      "x": 480,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "3f58cf8c4e3dd48b1451f965b8f8763dde8672b97e92f61485b9a83807d11ca0"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystaldark",
+      "time": 0.0,
+      "x": 720,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "bbc3d0efd1addd9e4b31a036b78664a6410d70365924c39708c1484d7f228e3a"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystaldark",
+      "time": 0.03333333333333333,
+      "x": 960,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "bbc3d0efd1addd9e4b31a036b78664a6410d70365924c39708c1484d7f228e3a"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystaldark",
+      "time": 0.1,
+      "x": 1200,
+      "y": 960,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "bbc3d0efd1addd9e4b31a036b78664a6410d70365924c39708c1484d7f228e3a"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_crystaldark",
+      "time": 0.16666666666666666,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "bbc3d0efd1addd9e4b31a036b78664a6410d70365924c39708c1484d7f228e3a"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_rock",
+      "time": 0.0,
+      "x": 240,
+      "y": 1200,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "362f15ae8b15932e64e2a6dce8743ba206406ba93dbbcde9182d8df119657b51"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_rock",
+      "time": 0.03333333333333333,
+      "x": 480,
+      "y": 1200,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "362f15ae8b15932e64e2a6dce8743ba206406ba93dbbcde9182d8df119657b51"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_rock",
+      "time": 0.1,
+      "x": 720,
+      "y": 1200,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "362f15ae8b15932e64e2a6dce8743ba206406ba93dbbcde9182d8df119657b51"
+    },
+    {
+      "export": "destroyedBuilding_3l_round_pit_rock",
+      "time": 0.16666666666666666,
+      "x": 960,
+      "y": 1200,
+      "root": [
+        1.118421679102826,
+        0.0,
+        100.3364201250621,
+        0.0,
+        1.118421679102826,
+        42.8570839789048
+      ],
+      "empty": false,
+      "rgbaSha256": "362f15ae8b15932e64e2a6dce8743ba206406ba93dbbcde9182d8df119657b51"
+    },
+    {
+      "export": "destroyedBuilding_3m_round_pit_rock",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        1.2941477623088258,
+        0.0,
+        116.9574258133012,
+        0.0,
+        1.2941477623088258,
+        26.021488895088694
+      ],
+      "empty": false,
+      "rgbaSha256": "f948da9fe3fa526b2137c9c7a65a18e4d88a1d70733177bdeb1bbdbd1d8d09fe"
+    },
+    {
+      "export": "destroyedBuilding_3m_round_pit_rock",
+      "time": 0.03333333333333333,
+      "x": 0,
+      "y": 1440,
+      "root": [
+        1.2941477623088258,
+        0.0,
+        116.9574258133012,
+        0.0,
+        1.2941477623088258,
+        26.021488895088694
+      ],
+      "empty": false,
+      "rgbaSha256": "f948da9fe3fa526b2137c9c7a65a18e4d88a1d70733177bdeb1bbdbd1d8d09fe"
+    },
+    {
+      "export": "destroyedBuilding_3m_round_pit_rock",
+      "time": 0.1,
+      "x": 240,
+      "y": 1440,
+      "root": [
+        1.2941477623088258,
+        0.0,
+        116.9574258133012,
+        0.0,
+        1.2941477623088258,
+        26.021488895088694
+      ],
+      "empty": false,
+      "rgbaSha256": "f948da9fe3fa526b2137c9c7a65a18e4d88a1d70733177bdeb1bbdbd1d8d09fe"
+    },
+    {
+      "export": "destroyedBuilding_3m_round_pit_rock",
+      "time": 0.16666666666666666,
+      "x": 480,
+      "y": 1440,
+      "root": [
+        1.2941477623088258,
+        0.0,
+        116.9574258133012,
+        0.0,
+        1.2941477623088258,
+        26.021488895088694
+      ],
+      "empty": false,
+      "rgbaSha256": "f948da9fe3fa526b2137c9c7a65a18e4d88a1d70733177bdeb1bbdbd1d8d09fe"
+    },
+    {
+      "export": "g1",
+      "time": 0.0,
+      "x": 720,
+      "y": 1440,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "354b9a1ef1adf3e0cc1582c772f21edce57566c153a9b0ab00d51270dc20cfe7"
+    },
+    {
+      "export": "g2",
+      "time": 0.0,
+      "x": 960,
+      "y": 1440,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "76b7a5fec5c1fa30452047870f43f37b742ccf13906d2aacda8c59f986c552c4"
+    },
+    {
+      "export": "g3",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1440,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4b046329e7d543e583002e2153ea46ef3f29cddbfaa5bb8e06dfe9287c1743c9"
+    },
+    {
+      "export": "g4",
+      "time": 0.0,
+      "x": 0,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9e696fc66416f0c1d85043df0b888ac5bffb36c7704f427cf4137f273a1e7759"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.0,
+      "x": 240,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        123.25,
+        0.0,
+        2.0,
+        122.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "013c07616dfda34fff3bafcb007c2f10318070816238d6e0558a92e0c78dab9c"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.041666666666666664,
+      "x": 480,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        123.25,
+        0.0,
+        2.0,
+        122.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "013c07616dfda34fff3bafcb007c2f10318070816238d6e0558a92e0c78dab9c"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.20833333333333334,
+      "x": 720,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        121.30000114440918,
+        0.0,
+        2.0,
+        124.55000019073486
+      ],
+      "empty": false,
+      "rgbaSha256": "5d9fac8c3e121c5ba9970975221ef85b122af4580f37d5a3ec5bf6b7a7f91021"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.4166666666666667,
+      "x": 960,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        93.90000057220459,
+        0.0,
+        2.0,
+        144.15000009536743
+      ],
+      "empty": false,
+      "rgbaSha256": "e7b6e469496c60c6ae1824985e845e76f1b53824a6a0ab7429204fd53dbf780b"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1680,
+      "root": [
+        1.0467877644098451,
+        0.0,
+        120.0,
+        0.0,
+        1.0467877644098451,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3f2e597154efdbbea89741923aa45e90e5066768753073415e2fbf84e59e32"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.041666666666666664,
+      "x": 0,
+      "y": 1920,
+      "root": [
+        1.0467877644098451,
+        0.0,
+        120.0,
+        0.0,
+        1.0467877644098451,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3f2e597154efdbbea89741923aa45e90e5066768753073415e2fbf84e59e32"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.5,
+      "x": 240,
+      "y": 1920,
+      "root": [
+        1.0467877644098451,
+        0.0,
+        120.0,
+        0.0,
+        1.0467877644098451,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3f2e597154efdbbea89741923aa45e90e5066768753073415e2fbf84e59e32"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 1.0,
+      "x": 480,
+      "y": 1920,
+      "root": [
+        1.0467877644098451,
+        0.0,
+        120.0,
+        0.0,
+        1.0467877644098451,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3f2e597154efdbbea89741923aa45e90e5066768753073415e2fbf84e59e32"
+    },
+    {
+      "export": "wizard_tower_base",
+      "time": 0.0,
+      "x": 720,
+      "y": 1920,
+      "root": [
+        1.9250347877104113,
+        0.0,
+        140.06848619319604,
+        0.0,
+        1.9250347877104113,
+        -2.4803383680749107
+      ],
+      "empty": false,
+      "rgbaSha256": "f47987b15634fd55aa9a3559344650a7d165d699fb59aed7356f7b602a1a8678"
+    },
+    {
+      "export": "wizard_tower_const",
+      "time": 0.0,
+      "x": 960,
+      "y": 1920,
+      "root": [
+        1.4611872302746385,
+        0.0,
+        124.6392683413246,
+        0.0,
+        1.4611872302746385,
+        58.37442758771941
+      ],
+      "empty": false,
+      "rgbaSha256": "ea1004d9d2821b671db21c2e5a6b50e7d4acb457d3c6bf940258adf5fb0da7cb"
+    },
+    {
+      "export": "wizard_tower_lvl1",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1920,
+      "root": [
+        1.868822949656828,
+        0.0,
+        122.42946840875511,
+        0.0,
+        1.868822949656828,
+        37.95866965846773
+      ],
+      "empty": false,
+      "rgbaSha256": "a55e49fb68aedf5bba14e46c91675cc2fd600e7885f423a5336d93c1e822449a"
+    },
+    {
+      "export": "wizard_tower_lvl10",
+      "time": 0.0,
+      "x": 0,
+      "y": 2160,
+      "root": [
+        1.8456077646113183,
+        0.0,
+        122.9991126174934,
+        0.0,
+        1.8456077646113183,
+        37.03992781252555
+      ],
+      "empty": false,
+      "rgbaSha256": "397ccb36faacbf3355c25c2546df0a965904e43be525d2d5289b5893b6c4bd86"
+    },
+    {
+      "export": "wizard_tower_lvl11",
+      "time": 0.0,
+      "x": 240,
+      "y": 2160,
+      "root": [
+        1.6794509176910932,
+        0.0,
+        121.6374652854085,
+        0.0,
+        1.6794509176910932,
+        41.485669597941396
+      ],
+      "empty": false,
+      "rgbaSha256": "b44b2f258952d99c82ba1d8826bf44fc2111074c92b68db63caeb38afbd7b144"
+    },
+    {
+      "export": "wizard_tower_lvl12",
+      "time": 0.0,
+      "x": 480,
+      "y": 2160,
+      "root": [
+        1.6199377235805545,
+        0.0,
+        115.6261669104181,
+        0.0,
+        1.6199377235805545,
+        49.28971898366599
+      ],
+      "empty": false,
+      "rgbaSha256": "ab5f467c2d0e90597f2a73206253cab4752bb20a5cbfba31231d3d4e9d2209e7"
+    },
+    {
+      "export": "wizard_tower_lvl13",
+      "time": 0.0,
+      "x": 720,
+      "y": 2160,
+      "root": [
+        1.6653322454676114,
+        0.0,
+        119.33386773708679,
+        0.0,
+        1.6653322454676114,
+        50.13931103208603
+      ],
+      "empty": false,
+      "rgbaSha256": "da31a5978b804c5cceae11c0368e193e140b1d3aa7d95d318ea2dd344fcdd338"
+    },
+    {
+      "export": "wizard_tower_lvl14",
+      "time": 0.0,
+      "x": 960,
+      "y": 2160,
+      "root": [
+        1.6230979127846206,
+        0.0,
+        119.35076145404886,
+        0.0,
+        1.6230979127846206,
+        54.54857542863475
+      ],
+      "empty": false,
+      "rgbaSha256": "904ed253628a62c1f564b96eb47875c04cb847d5cb19283bb108a5eb526bf3fc"
+    },
+    {
+      "export": "wizard_tower_lvl15",
+      "time": 0.0,
+      "x": 1200,
+      "y": 2160,
+      "root": [
+        1.6281800391389432,
+        0.0,
+        120.40704500978474,
+        0.0,
+        1.6281800391389432,
+        52.63405088062623
+      ],
+      "empty": false,
+      "rgbaSha256": "0372a77ebea25c6abcb05044982f2dd8fd06cbdacd68c20a223adba5fd6d136b"
+    },
+    {
+      "export": "wizard_tower_lvl16",
+      "time": 0.0,
+      "x": 0,
+      "y": 2400,
+      "root": [
+        1.5344891054512473,
+        0.0,
+        115.35817396817681,
+        0.0,
+        1.5344891054512473,
+        51.523422205835246
+      ],
+      "empty": false,
+      "rgbaSha256": "104c21a6e6085974dd80dc2420604a55763289ae17c1c2cd7e0693b868fa11e0"
+    },
+    {
+      "export": "wizard_tower_lvl17",
+      "time": 0.0,
+      "x": 240,
+      "y": 2400,
+      "root": [
+        1.527165902511212,
+        0.0,
+        116.86930815214934,
+        0.0,
+        1.527165902511212,
+        51.353890060567
+      ],
+      "empty": false,
+      "rgbaSha256": "f7deb7a26a730107759d7d9971b8993139cfcc802da49e6efb77c7750b80c3b4"
+    },
+    {
+      "export": "wizard_tower_lvl18",
+      "time": 0.0,
+      "x": 480,
+      "y": 2400,
+      "root": [
+        1.278426575915478,
+        0.0,
+        118.21020084299418,
+        0.0,
+        1.278426575915478,
+        56.781804845617536
+      ],
+      "empty": false,
+      "rgbaSha256": "2ccd9cdb909f217e784cde93d4ed56ec12b511d4df815544c04de02687870c5f"
+    },
+    {
+      "export": "wizard_tower_lvl19",
+      "time": 0.0,
+      "x": 720,
+      "y": 2400,
+      "root": [
+        1.5294117218070389,
+        0.0,
+        121.41470467582297,
+        0.0,
+        1.5294117218070389,
+        51.864706043223606
+      ],
+      "empty": false,
+      "rgbaSha256": "948755ecaeeb11de1be973e6894fd7cb3e4e549d5182f47bd386b45422dab81d"
+    },
+    {
+      "export": "wizard_tower_lvl20",
+      "time": 0.0,
+      "x": 960,
+      "y": 2400,
+      "root": [
+        1.6475247773655772,
+        0.0,
+        117.73465343112233,
+        0.0,
+        1.6475247773655772,
+        56.19960393923926
+      ],
+      "empty": false,
+      "rgbaSha256": "7b12c66b34b590cd8ae21aec4e6fed38323b0fe9b166b38310ddb9e180b1675e"
+    },
+    {
+      "export": "wizard_tower_lvl21",
+      "time": 0.0,
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        1.5143793397215835,
+        0.0,
+        116.93338241475367,
+        0.0,
+        1.5143793397215835,
+        69.76046656011621
+      ],
+      "empty": false,
+      "rgbaSha256": "195f1ccdaedb301e805fce747e68a339a598f5bcf9cb2aa0989ae3747acbcab9"
+    },
+    {
+      "export": "wizard_tower_lvl4",
+      "time": 0.0,
+      "x": 0,
+      "y": 2640,
+      "root": [
+        1.868822949656828,
+        0.0,
+        123.03683729319235,
+        0.0,
+        1.868822949656828,
+        37.95866965846773
+      ],
+      "empty": false,
+      "rgbaSha256": "6e4a68312c5434a62ec5854bf00606ac88f3e1fac43e43c9eba9b0088cbfdc5d"
+    },
+    {
+      "export": "wizard_tower_lvl7",
+      "time": 0.0,
+      "x": 240,
+      "y": 2640,
+      "root": [
+        1.868822949656828,
+        0.0,
+        122.42946840875511,
+        0.0,
+        1.868822949656828,
+        37.95866965846773
+      ],
+      "empty": false,
+      "rgbaSha256": "8a849cc9020cbff58441fd55f306d3f835e6aa1c43a0ca8d6d82123e696d5039"
+    },
+    {
+      "export": "wizard_tower_lvl8",
+      "time": 0.0,
+      "x": 480,
+      "y": 2640,
+      "root": [
+        1.773231014242951,
+        0.0,
+        122.92583049706693,
+        0.0,
+        1.773231014242951,
+        36.21483288593569
+      ],
+      "empty": false,
+      "rgbaSha256": "6f02304fc59857f9c86e6c36afbfa6247605ab6a1bf63db84e53faa74a56377a"
+    },
+    {
+      "export": "wizard_tower_lvl9",
+      "time": 0.0,
+      "x": 720,
+      "y": 2640,
+      "root": [
+        1.868822949656828,
+        0.0,
+        122.42946840875511,
+        0.0,
+        1.868822949656828,
+        37.95866965846773
+      ],
+      "empty": false,
+      "rgbaSha256": "64e47b1b7dc516439c504e5d7274ea55dfd75412a36b13265c9bc50d1a98776a"
+    },
+    {
+      "export": "wizard_tower_upg",
+      "time": 0.0,
+      "x": 960,
+      "y": 2640,
+      "root": [
+        1.299593914083529,
+        0.0,
+        124.12620968570374,
+        0.0,
+        1.299593914083529,
+        17.884407209375226
+      ],
+      "empty": false,
+      "rgbaSha256": "4c0b60091b2fc90ecfa1f472b5ca17f6e37bf9c89b036b619ece9cf708a23054"
+    }
+  ]
+}

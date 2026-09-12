@@ -1,0 +1,795 @@
+{
+  "category": "effectArt",
+  "width": 1440,
+  "height": 2160,
+  "cell": 240,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "62596ff09a03e7f8ce14546ca80ec23769f317f7df208d7303d623ea8814fba3",
+  "cases": [
+    {
+      "export": "fx_chr_WizardAttack_ArcaneGlow",
+      "time": 0.0,
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        113.34999942779541
+      ],
+      "empty": false,
+      "rgbaSha256": "ecf0515829332379c1b13b31292b65a7374e57058c8277f8db34b848fdda082b"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl1",
+      "time": 0.0,
+      "x": 240,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "0767136e50ead7d565303664b8fd611245174a9577cc4a3c424f3ef76eef5ae2"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl1",
+      "time": 0.041666666666666664,
+      "x": 480,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        118.69999980926514,
+        0.0,
+        2.0,
+        121.30000019073486
+      ],
+      "empty": false,
+      "rgbaSha256": "8e081629b194b30738f92e383763bcd8cb667783f776e1229c8eb24ee8a00bc2"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl1",
+      "time": 0.25,
+      "x": 720,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        121.30000019073486
+      ],
+      "empty": false,
+      "rgbaSha256": "8b7c76c2ac880c02676ef87cc0d9ea36bbde390ba999c7cf189ada5311fa168d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl1",
+      "time": 0.4583333333333333,
+      "x": 960,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        113.49999976158142,
+        0.0,
+        2.0,
+        130.44999980926514
+      ],
+      "empty": false,
+      "rgbaSha256": "56689f59a07536f81aedf2fb18d9d741a1d1e7b5ce485eb2b655d601de7ac449"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl3",
+      "time": 0.0,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "210452e6608c36b4d2c9c3c6c50816a7814c26eca4897c298c7334d7ad76202d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl3",
+      "time": 0.041666666666666664,
+      "x": 0,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        114.60000038146973,
+        0.0,
+        2.0,
+        119.85000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "f512cf2476af832b5eab167c8439dff9d666cc52a246316a0730c30b57a39bdc"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl3",
+      "time": 0.2916666666666667,
+      "x": 240,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        114.60000038146973,
+        0.0,
+        2.0,
+        118.54999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "8b8f62fba109568d25726a2a01df751b71061170f9ddbe27802adc3c83c178e3"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl3",
+      "time": 0.5416666666666666,
+      "x": 480,
+      "y": 240,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "210452e6608c36b4d2c9c3c6c50816a7814c26eca4897c298c7334d7ad76202d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl4",
+      "time": 0.0,
+      "x": 720,
+      "y": 240,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "210452e6608c36b4d2c9c3c6c50816a7814c26eca4897c298c7334d7ad76202d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl4",
+      "time": 0.041666666666666664,
+      "x": 960,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        122.0,
+        0.0,
+        2.0,
+        118.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "92f7016d7a75b8167a9236215b0870c0f4f202a9e78b18ae5c3f1d7d3207155c"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl4",
+      "time": 0.2916666666666667,
+      "x": 1200,
+      "y": 240,
+      "root": [
+        2.0,
+        0.0,
+        122.0,
+        0.0,
+        2.0,
+        116.0
+      ],
+      "empty": false,
+      "rgbaSha256": "0329f419defe563115725ce5bbe8578749e196ed6ba5fd90b7c488a4ff125e56"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Charge_Lvl4",
+      "time": 0.5416666666666666,
+      "x": 0,
+      "y": 480,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "210452e6608c36b4d2c9c3c6c50816a7814c26eca4897c298c7334d7ad76202d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_FireGlow",
+      "time": 0.0,
+      "x": 240,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        113.34999942779541
+      ],
+      "empty": false,
+      "rgbaSha256": "e43efc19042fa7d054dd077f135e91e55d26b343fcd68cba5f117b1acf939664"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl1",
+      "time": 0.0,
+      "x": 480,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        122.65000009536743,
+        0.0,
+        2.0,
+        116.04999995231628
+      ],
+      "empty": false,
+      "rgbaSha256": "4bfa33b9ec534fc23a1098c3613e48f6d56288327200154e9348760d29c55e7a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl1",
+      "time": 0.041666666666666664,
+      "x": 720,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        122.65000009536743,
+        0.0,
+        2.0,
+        116.04999995231628
+      ],
+      "empty": false,
+      "rgbaSha256": "4bfa33b9ec534fc23a1098c3613e48f6d56288327200154e9348760d29c55e7a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl1",
+      "time": 0.20833333333333334,
+      "x": 960,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        123.94999885559082,
+        0.0,
+        2.0,
+        100.4000015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "949fe15bdeb33b3086f265ed3ce5f3af5e9ffb4905a6ac1cf666ff60e02f7c17"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl1",
+      "time": 0.375,
+      "x": 1200,
+      "y": 480,
+      "root": [
+        2.0,
+        0.0,
+        130.45000076293945,
+        0.0,
+        2.0,
+        130.45000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "645e5fba240a321bbf77d65664bcab7144affcc65a9d656f5e45c4d81327596a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl2",
+      "time": 0.0,
+      "x": 0,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        127.25000381469727,
+        0.0,
+        2.0,
+        114.75
+      ],
+      "empty": false,
+      "rgbaSha256": "f5ce161402fd30feafec1cadf2ac99cb07b3fe8e1a296d6085b26a8120eca69a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl2",
+      "time": 0.041666666666666664,
+      "x": 240,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        127.25000381469727,
+        0.0,
+        2.0,
+        114.75
+      ],
+      "empty": false,
+      "rgbaSha256": "f5ce161402fd30feafec1cadf2ac99cb07b3fe8e1a296d6085b26a8120eca69a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl2",
+      "time": 0.20833333333333334,
+      "x": 480,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        129.85000228881836,
+        0.0,
+        2.0,
+        113.45000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "4b2cd348e54aa2c707b9fde2be9a09fa8bae7f15e0c9819b9b521fc15d263f6b"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl2",
+      "time": 0.375,
+      "x": 720,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        131.14999961853027,
+        0.0,
+        2.0,
+        116.0999984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "72d28288e15fe2f3691e0eff01e42ae15dfcc7489d2547e2bcc763655ad14347"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl3",
+      "time": 0.0,
+      "x": 960,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        123.89999961853027,
+        0.0,
+        2.0,
+        112.14999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3fe9ea1e52768af1858973f8f8f5c7e147341961a62f6c5ad4a5f4145d1497"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl3",
+      "time": 0.041666666666666664,
+      "x": 1200,
+      "y": 720,
+      "root": [
+        2.0,
+        0.0,
+        123.89999961853027,
+        0.0,
+        2.0,
+        112.14999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "6a3fe9ea1e52768af1858973f8f8f5c7e147341961a62f6c5ad4a5f4145d1497"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl3",
+      "time": 0.20833333333333334,
+      "x": 0,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        130.45000076293945,
+        0.0,
+        2.0,
+        116.10000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "ca9dc70e79f58ab22c3be4e39f78adba5aa99fa056613b8172833b4f6d13886c"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl3",
+      "time": 0.375,
+      "x": 240,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        138.29999923706055,
+        0.0,
+        2.0,
+        108.25
+      ],
+      "empty": false,
+      "rgbaSha256": "9331d97d4f48a9f7505e3af2f0f5b07e5f779fe107eb9da66456e3307c2cc4c1"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl4",
+      "time": 0.0,
+      "x": 480,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        122.65000009536743,
+        0.0,
+        2.0,
+        116.04999995231628
+      ],
+      "empty": false,
+      "rgbaSha256": "58e72c49a3643e107a40c8f6cd0886f5e14aa736213b245ec239682488ecedf7"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl4",
+      "time": 0.041666666666666664,
+      "x": 720,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        122.65000009536743,
+        0.0,
+        2.0,
+        116.04999995231628
+      ],
+      "empty": false,
+      "rgbaSha256": "58e72c49a3643e107a40c8f6cd0886f5e14aa736213b245ec239682488ecedf7"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl4",
+      "time": 0.25,
+      "x": 960,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        125.25,
+        0.0,
+        2.0,
+        116.0999984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "62764ca6b19ab1a5677be3bad7c95c5219bd6c5a05c98ce4a835cdd4989a62f9"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Impact_Lvl4",
+      "time": 0.4583333333333333,
+      "x": 1200,
+      "y": 960,
+      "root": [
+        2.0,
+        0.0,
+        117.4000015258789,
+        0.0,
+        2.0,
+        46.89999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "055e4c5b7574ac8bba6b100ec2a7f4d09c24e0046cda32707ff64e9b859f2817"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl1",
+      "time": 0.0,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        116.0999995470047,
+        0.0,
+        2.0,
+        105.65000057220459
+      ],
+      "empty": false,
+      "rgbaSha256": "2f7ad9eae9405d3977435d9d97daed4c4fbdc0d98312e082dc859bbcdedc6299"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl1",
+      "time": 0.041666666666666664,
+      "x": 240,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        116.0999995470047,
+        0.0,
+        2.0,
+        105.65000057220459
+      ],
+      "empty": false,
+      "rgbaSha256": "2f7ad9eae9405d3977435d9d97daed4c4fbdc0d98312e082dc859bbcdedc6299"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl1",
+      "time": 0.5,
+      "x": 480,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        118.69999992847443,
+        0.0,
+        2.0,
+        127.79999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "65a6594282fe8b2f7039782413d8124f246fe01b1ca913b1d60d30e33b598223"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl1",
+      "time": 0.9583333333333334,
+      "x": 720,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        118.69999885559082,
+        0.0,
+        2.0,
+        127.85000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "9ebddfe2c8178a471758120c0c579f74b3d044dbaedac359e7fcdfc19cdfe34a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl2",
+      "time": 0.0,
+      "x": 960,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        117.39999985694885,
+        0.0,
+        2.0,
+        142.25669014267623
+      ],
+      "empty": false,
+      "rgbaSha256": "f849d8d9569b7cf3fb51d97924ecaf05b91da9a2236ce14d557002ec908fcc9b"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl2",
+      "time": 0.041666666666666664,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        117.39999985694885,
+        0.0,
+        2.0,
+        141.01616313494742
+      ],
+      "empty": false,
+      "rgbaSha256": "7b7064f2f7ad3280cf62e3667655ec4a7c88ded4ea19c930dbddd474ff0b00db"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl2",
+      "time": 0.5,
+      "x": 0,
+      "y": 1440,
+      "root": [
+        1.9299920723737114,
+        0.0,
+        117.3718004243643,
+        0.0,
+        1.9299920723737114,
+        174.67060809292502
+      ],
+      "empty": false,
+      "rgbaSha256": "2b09f0f1fec13c19f9b342f557e3690e02ea6256b5781eaba8992995781fc727"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl2",
+      "time": 0.9583333333333334,
+      "x": 240,
+      "y": 1440,
+      "root": [
+        1.3632072543170808,
+        0.0,
+        117.88702865830435,
+        0.0,
+        1.3632072543170808,
+        176.9999010691099
+      ],
+      "empty": false,
+      "rgbaSha256": "20c797a03c41b10bf024e1f306be15d2c4caa56e8c9f346d633aa52c3cf56e0d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl3",
+      "time": 0.0,
+      "x": 480,
+      "y": 1440,
+      "root": [
+        2.0,
+        0.0,
+        117.38808602653444,
+        0.0,
+        2.0,
+        163.35000133514404
+      ],
+      "empty": false,
+      "rgbaSha256": "b5e3eaaa043343c3cf8ca3c2861ad96842c90bfe3de450c3b7e6c30db72ea600"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl3",
+      "time": 0.041666666666666664,
+      "x": 720,
+      "y": 1440,
+      "root": [
+        2.0,
+        0.0,
+        117.5,
+        0.0,
+        2.0,
+        151.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "f7db049c51c36f95a352b1cbcc16780d792a96bc1eae29122e4f7a42361ce6c4"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl3",
+      "time": 0.2916666666666667,
+      "x": 960,
+      "y": 1440,
+      "root": [
+        1.6994277432448819,
+        0.0,
+        116.6861162248126,
+        0.0,
+        1.6994277432448819,
+        180.5636883362026
+      ],
+      "empty": false,
+      "rgbaSha256": "ca0f8729ab47ad57e0f6822659fa3743c72979bbfdd896b3072a4431d0ec0b0a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl3",
+      "time": 0.5833333333333334,
+      "x": 1200,
+      "y": 1440,
+      "root": [
+        1.3846572235636485,
+        0.0,
+        117.09221963243954,
+        0.0,
+        1.3846572235636485,
+        178.1704124730182
+      ],
+      "empty": false,
+      "rgbaSha256": "af4b999e86815878dbc2244763acfde4ea2b4d338ac16d1e6660b65b9a40a2ba"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl4",
+      "time": 0.0,
+      "x": 0,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        117.5,
+        0.0,
+        2.0,
+        127.58896356727928
+      ],
+      "empty": false,
+      "rgbaSha256": "8043d479e76e473088e2797a7acf48ef3d6d6448d7f9b5f43f11c5f0c2585a61"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl4",
+      "time": 0.041666666666666664,
+      "x": 240,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        117.5,
+        0.0,
+        2.0,
+        147.24999904632568
+      ],
+      "empty": false,
+      "rgbaSha256": "c4983ab3a69611c4368f98ffc8648f91f066297b226bbe2343ed31ee4e6641fd"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl4",
+      "time": 0.25,
+      "x": 480,
+      "y": 1680,
+      "root": [
+        1.557528264387104,
+        0.0,
+        117.58583107879689,
+        0.0,
+        1.557528264387104,
+        174.26069853458782
+      ],
+      "empty": false,
+      "rgbaSha256": "cd15f5c9c4e247a389c031cf63039677ed42f3493b9506962630fd06df8c15df"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Projectile_Lvl4",
+      "time": 0.4583333333333333,
+      "x": 720,
+      "y": 1680,
+      "root": [
+        1.3846572235636485,
+        0.0,
+        117.09221963243954,
+        0.0,
+        1.3846572235636485,
+        178.1704124730182
+      ],
+      "empty": false,
+      "rgbaSha256": "95526056c5e501e4301c63cf57b9c0c4295761045698362fcce3ab344501d32d"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Shard_Lvl4",
+      "time": 0.0,
+      "x": 960,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        118.65000057220459
+      ],
+      "empty": false,
+      "rgbaSha256": "82df3060365c442aed23890dbd3c330b6c0c95fcc29bffaf1997d079bd65dc3a"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Spark",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1680,
+      "root": [
+        2.0,
+        0.0,
+        124.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "f0910062c6a3a2d483e0b67033fbea63d9ffcc725736f3660839bdb9f17c0539"
+    },
+    {
+      "export": "fx_chr_WizardAttack_Spark_lvl3",
+      "time": 0.0,
+      "x": 0,
+      "y": 1920,
+      "root": [
+        2.0,
+        0.0,
+        120.0,
+        0.0,
+        2.0,
+        120.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6f985a10ac0b6dd4e401f693ced4ac7192901bd2a830b9bd12dc2573225baeba"
+    }
+  ]
+}

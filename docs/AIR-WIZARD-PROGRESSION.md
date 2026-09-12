@@ -4,6 +4,8 @@ Re-audited September 11, 2026 against the modern Home Village wiki tables and ap
 
 Sources: [Air Defense](https://clashofclans.fandom.com/wiki/Air_Defense) and [Wizard Tower](https://clashofclans.fandom.com/wiki/Wizard_Tower).
 
+September 12 source follow-up: the [pinned Wizard Tower client reference](../reference/wizard-tower/README.md) now preserves all seventeen source levels, original bodies, eleven rooftop Wizard families, four projectile tiers, particles and sounds. Its first eight numerical rows agree with the table below. This source-art foundation is verified separately from live integration; gameplay still uses the eight-level table and authored image.
+
 ## Air Defense
 
 | Level | Gold | Time | HP | DPS / damage per rocket |
@@ -46,4 +48,4 @@ Replay version **8** identifies these combat and health changes. Earlier results
 
 Tests cover every playable upgrade, exact-resource boundaries, timers, builders, saved health, counts, every accepted damage tier, range edges, 20/30/60 fps cadence, idle reacquisition, upgrade downtime, air-only rockets, one-tile splash on both layers, destruction during rocket flight, and replay fidelity. Browser checks inspect phone Info values, save/reload paid timers, shop unlocks and older replay messaging. The automatic-hero replay fixture adds a second Cannon to produce the required low-health event under the corrected defense stats.
 
-Per-level artwork remains unfinished: Air Defense has two original tiers and Wizard Tower has one. Projectile speeds, firing animations, troop statistics, campaign layouts and the broader economy still contain local tuning; this audit does not establish complete native combat parity.
+Live per-level artwork remains unfinished: Air Defense has two original tiers and Wizard Tower has one authored image. All seventeen original Wizard Tower bodies and their related art are now retained and source-pixel tested for upcoming integration. Projectile speeds, firing animations, troop statistics, campaign layouts and the broader economy still contain local tuning; this audit does not establish complete native combat parity.
