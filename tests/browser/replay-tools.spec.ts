@@ -107,6 +107,7 @@ for (const mobile of [false, true])
     await page.locator('[data-action="replay-jump:-10"]').click();
     await expect.poll(() => page.evaluate(() => window.__game.model.replay.time)).toBeCloseTo(2.5);
     // Seeking can replace the controls between locator resolution and layout measurement.
+    await expect(range).toBeEnabled();
     let track = await range.boundingBox();
     await expect.poll(async () => (track = await range.boundingBox())).not.toBeNull();
     if (!track) throw new Error('Replay slider has no visible bounds');

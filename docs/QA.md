@@ -1,5 +1,23 @@
 # Verification record
 
+## September 11 — native King progression and default equipment
+
+The King now uses twenty native base-stat and upgrade records, early Town Hall scaling, and fixed level-1 Barbarian Puppet/Rage Vial equipment. Both items activate from TH4. Eight researched Barbarians spawn in two timed waves, with independent boost deadlines; automatic activation occurs on lethal damage. The Hero Hall panel shows equipped totals, attack timing, movement, recovery and item effects. See [KING-COMBAT.md](KING-COMBAT.md) for immutable source URLs/hashes and the native-engine behavior still unverified.
+
+**641 model/asset tests pass across 55 files**, including twenty new King cases. Coverage includes all supported progression records, upgrade payment/deadlines/reload, legacy paid upgrades, early scaling, passive bonuses, fixed recovery, lethal activation/overkill, summon birth times, researched levels, owner death, damage/movement boosts, spell interactions, and exported replay reconstruction. Delayed projectile, destruction-bomb and spell effects cannot affect a summon before its scheduled birth. The final TypeScript check and production build pass.
+
+The **288-battle campaign matrix** passes, retaining a veteran three-star approach to every stage (47 three-star results and one zero-star result across all veteran approaches). The matrix does not deploy heroes; these results validate the existing campaign, not hero-inclusive balance.
+
+**36 distinct browser scenarios pass per engine** in Chromium with Metal and WebKit at 2× density. All five new feature scenarios pass in both engines: native upgrade/stat/save details at 1440px/390px/320px, TH4 touch activation and upgrade gating, timed waves, gold boost tint, pause, reduced motion, repeated replay seeking and cleanup. Existing hero, spell, trap, Skeleton Trap and replay scenarios also pass. Screenshots of the panel, equipment, summon wave and early ability were visually inspected, including the final production captures.
+
+The final Chromium selection passed all 36 cases. WebKit passed 35 initially; the desktop replay-drag fixture attempted to drag before the slider was re-enabled after seeking. After adding an enabled-control wait, both desktop and phone drag cases passed on unchanged game source, completing the 36-case union. An earlier new-feature fixture also needed the renderer's normal sync after a manual seek; that fixture correction preceded the final runs. These are recorded as corrected test runs, not an uninterrupted clean broad WebKit run.
+
+**Production checks pass in both engines without reported browser errors.** The independent hero runner creates a validated save through the model, owns its production preview, and uses shipping UI controls to import, upgrade, deploy, activate, surrender and watch the replay. Both engines reconstruct all eight summons. Chromium also retains the upgraded King and completes combat/replay after an offline reload; WebKit offline behavior was not exercised. General production checks cover boot, menus, artwork, collection, tab handoff and replay. Offline Chromium uses **167 cached files**, cache `crown-clan-c8fa258b6bbb`.
+
+Final runtime source SHA-256 is `d17707c0ff0982e5cb9f2ad510a47346666d17915461ea03b761f46d891cc679` (62 files), unchanged during final browser and production runs. Evidence: `output/playtest/king-verification.json`, `king-source-final.json`, `king-models-final.log`, `king-campaign.json`, `king-build-final.log`, `king-chromium-final.log`, `king-webkit-final.log`, `king-webkit-seek.log`, `king-production-report.json`, `king-hero-production-report.json`, `king-panel-*.png`, `king-equipment-*.png`, `king-puppet-wave-*.png`, `king-early-ability-*.png`, and `production-hero-*.png`.
+
+Combat version is 23; save version remains 4. Equipment selection/upgrading, Blacksmith/ores, defending heroes and later heroes remain unfinished. Existing King artwork is reused and is not pixel matched. Native action timing/targeting/rounding, full content, online systems and physical-device quality remain open; the production-clone goal is incomplete.
+
 ## September 11 — Skeleton Trap WebKit follow-up
 
 All **44 remaining WebKit scenarios pass** at 2× density on committed gameplay source `220b0df`, using the normal 30-second timeout. Together with the 24 scenarios already verified, both Chromium and WebKit now have all **68 distinct passing scenarios** from the Skeleton Trap regression selection. This closes the interrupted coverage recorded below. Runtime source stayed at SHA-256 `4faa04b4de79e585904868b19dc60c5048b8f7894de18127b2b0c09860d85540`; no gameplay changes were made during the run. Machine load had eased before the follow-up.

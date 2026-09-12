@@ -85,9 +85,9 @@ with `no-cache` so a new release is picked up on the next visit.
 
 - Build a **Hero Hall at Town Hall 4** to unlock the Barbarian King. Open **Army → Heroes** for stats and upgrades.
 - The King uses no army housing and returns at full health for each attack. Select his card or press **H**, then tap outside the deployment boundary.
-- At Town Hall 7, use his card or **H** again for **Iron Fist**: healing, rage, and four summoned Barbarians, once per attack. It also activates automatically at low health.
+- From Town Hall 4, use his card or **H** again to activate **Barbarian Puppet and Rage Vial**: fixed health recovery, ten seconds of rage, and eight boosted Barbarians in two waves. Both items activate once per attack, automatically on lethal damage if unused.
 - Dark Elixir Drills and Storage unlock at Town Hall 7. Collect dark elixir to upgrade the King using one builder. Army → Progression shows building unlocks and level caps.
-- This is the first hero implementation; equipment, other heroes, and defending heroes remain unfinished. See [docs/HERO-PROGRESSION.md](docs/HERO-PROGRESSION.md).
+- Equipment selection/upgrades, other heroes, and defending heroes remain unfinished. See the [hero overview](docs/HERO-PROGRESSION.md) and [combat/equipment audit](docs/KING-COMBAT.md).
 
 ### Raids
 
@@ -144,13 +144,14 @@ npm run test:e2e
 npm run build
 # Starts and stops its own production preview on an isolated local port:
 npm run test:production
+npm run test:heroes:production
 # With the preview server running:
 node scripts/production-check.mjs
 ```
 
 Simulation and save tests cover placement collisions, construction, upgrades, builder reservation, caps, training, save validation and version-1 migration, pathfinding, battle completion, deployment, campaign unlocks, research, batch training, the scouting phase, the deployment boundary, air/ground targeting in both directions, walls that stop ground troops and not balloons, spell brewing limits, each spell's effect, aura expiry, Town Hall level and count gating, the timer and gem curves, edit-mode drag/undo/redo (one entry per drag), saved layouts, wall runs, balloon detonation, five-level research, tutorial counters, and a 288-battle matrix across twelve stages, six armies, and four approaches.
 
-Browser tests exercise real menus and pointer input: first-run coaching and its target ring, wall runs, drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, offline reload, hero save import/upgrades, and actual hero deployment/ability controls. Run `node scripts/hero-production-check.mjs` with the development and production-preview servers running for the hero checks.
+Browser tests exercise real menus and pointer input: first-run coaching and its target ring, wall runs, drawer placement by both tap and drag, drag-deploy, double-tap squads, the scouting phase, spell casting, the surrender confirmation, the info sheet's before/after table, edit-mode dragging with undo and layout saving, Town Hall gating in the shop, reload persistence, mobile and landscape layout, battle results, focus handling, camera controls, research, tab handoff, graphics-context loss/recovery, and twenty consecutive raids. Production smoke checks cover Chromium, WebKit, offline reload, hero save import/upgrades, and actual hero deployment/ability controls. Run `npm run test:heroes:production` after building for the hero checks. It creates a validated model fixture and owns an isolated production preview; neither a development server nor a manually started preview is required.
 
 Screenshots and reports are written to `output/playtest/` (not shipped). The specialist tests also cover target preferences, wall breaches, one-time death bombs, mortar blind spots, delayed splash and dodging, target retention, resource loot, specialist research/retraining, ten troop hotkeys, mobile tray scrolling, defense inspection, and older-save import. See `docs/QA.md` for verified coverage and remaining release limits.
 
