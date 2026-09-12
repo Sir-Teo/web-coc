@@ -15,6 +15,8 @@ for (const [name, engine] of [
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...['ground', 'air', 'spent'].map((s) => `/assets/buildings/skeleton-trap-v1/${s}.webp`),
+    ...['ground', 'air'].map((s) => `/assets/characters/skeleton-v1/${s}.webp`),
     ...[1, 2].flatMap((l) =>
       ['base', 'preview'].map((p) => `/assets/buildings/bombtower-v1/level-${l}-${p}.webp`),
     ),

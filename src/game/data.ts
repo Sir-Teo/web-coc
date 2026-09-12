@@ -1,5 +1,7 @@
 import { teslaTexture, teslaAsset } from './tesla-art';
 import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
+import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
+import type { SkeletonMode } from './skeleton-stats';
 import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
@@ -37,6 +39,7 @@ export type BuildingKind =
   | 'airsweeper'
   | 'tesla'
   | 'bombtower'
+  | 'skeletontrap'
   | 'seekingairmine'
   | 'laboratory'
   | 'spellfactory'
@@ -103,6 +106,22 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  skeletontrap: {
+    name: 'Skeleton Trap',
+    description:
+      'Releases defending Skeletons to distract attackers. Switch between ground and air mode before battle.',
+    size: 1,
+    width: 54,
+    hp: 1,
+    cost: 6000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 2,
+    available: [0, 0, 0, 0, 0, 0, 0, 2],
+    build: 0,
+    singleArtwork: true,
+    trap: { trigger: 5, radius: 0, delay: 0.6, damage: 0, targets: 'ground', minHousing: 1 },
+  },
   herohall: {
     name: 'Hero Hall',
     description:
@@ -870,6 +889,7 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
 export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+  if (kind === 'skeletontrap') return skeletonTrapTexture();
   if (kind === 'bombtower') return bombTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
@@ -884,7 +904,8 @@ const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
-export const asset = (kind: string, level = 1) => {
+export const asset = (kind: string, level = 1, skeletonMode: SkeletonMode = 'ground') => {
+  if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode);
   if (kind === 'bombtower') return bombTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);

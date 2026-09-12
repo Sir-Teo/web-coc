@@ -1,6 +1,7 @@
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
+import { damageDefenders, hurtDefender, type Defender } from './defenders';
 
 export type Weapon =
   'arrow' | 'cannonball' | 'rocket' | 'fireball' | 'bomb' | 'towerbomb' | 'arcane' | 'healing';
@@ -10,6 +11,7 @@ export interface CombatProjectile {
   sourceId: number;
   targetId: number;
   targetBuilding: boolean;
+  targetDefender?: boolean;
   fromX: number;
   fromY: number;
   x: number;
@@ -22,12 +24,13 @@ export interface CombatProjectile {
   splash?: number;
 }
 
-// Local tuning in tiles/second. Flight is driven by battle time, including replay speed.
+// Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;
+// other weapons retain local tuning. Flight follows battle time, including replays.
 const SPEED: Record<Weapon, number> = {
   arrow: 18,
   cannonball: 16,
   rocket: 22,
-  fireball: 14,
+  fireball: 5,
   bomb: 10,
   towerbomb: 8,
   arcane: 16,
@@ -53,7 +56,9 @@ export function launchProjectile(
     shot.weapon === 'bomb'
       ? 0.33
       : Math.max(
-          shot.weapon === 'healing' || shot.weapon === 'towerbomb' ? 0.01 : 0.12,
+          shot.weapon === 'healing' || shot.weapon === 'towerbomb' || shot.weapon === 'fireball'
+            ? 0.01
+            : 0.12,
           Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) / SPEED[shot.weapon],
         );
   const projectile: CombatProjectile = {
@@ -81,6 +86,7 @@ export function projectileEffect(p: CombatProjectile, type: 'projectile' | 'impa
     sourceId: p.sourceId,
     targetId: p.targetId,
     targetBuilding: p.targetBuilding,
+    targetDefender: p.targetDefender,
     fromAir: p.fromAir,
     toAir: p.toAir,
     radius: p.splash,
@@ -95,10 +101,18 @@ export function stepProjectiles(
 ) {
   const pending: CombatProjectile[] = [];
   for (const p of [...(battle.projectiles ?? [])].sort((a, b) => a.impact - b.impact)) {
-    const target = p.targetBuilding
-      ? battle.buildings.find((b) => b.id === p.targetId)
-      : battle.units.find((u) => u.id === p.targetId);
-    if (target && target.hp > 0 && p.weapon !== 'healing' && p.weapon !== 'towerbomb') {
+    const target = p.targetDefender
+      ? battle.defenders?.find((d) => d.id === p.targetId)
+      : p.targetBuilding
+        ? battle.buildings.find((b) => b.id === p.targetId)
+        : battle.units.find((u) => u.id === p.targetId);
+    if (
+      target &&
+      target.hp > 0 &&
+      p.weapon !== 'healing' &&
+      p.weapon !== 'towerbomb' &&
+      p.weapon !== 'fireball'
+    ) {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
       p.y = aim.y;
@@ -121,8 +135,25 @@ export function stepProjectiles(
                 healerContribution(battle, unit, p.sourceId) *
                 (unit.hero ? HEALER_HERO_SCALE : 1),
           );
+    } else if (p.targetDefender) {
+      if (p.splash) {
+        damageDefenders(battle, p, p.damage, p.splash, p.toAir ? 'air' : 'ground');
+        if (!p.toAir)
+          for (const b of battle.buildings) {
+            if (b.hp <= 0 || isTrap(b.kind)) continue;
+            const size = BUILDINGS[b.kind].size;
+            if (
+              Math.hypot(
+                Math.max(b.x - p.x, 0, p.x - b.x - size),
+                Math.max(b.y - p.y, 0, p.y - b.y - size),
+              ) <= p.splash
+            )
+              damage(b, p.damage, p.impact);
+          }
+      } else if (target && target.hp > 0) hurtDefender(battle, target as Defender, p.damage);
     } else if (p.targetBuilding) {
       if (target && target.hp > 0) damage(target as Building, p.damage, p.impact);
+      if (p.splash) damageDefenders(battle, p, p.damage, p.splash, 'ground');
       if (p.splash)
         for (const b of battle.buildings) {
           if (b.id === p.targetId || b.hp <= 0 || isTrap(b.kind)) continue;

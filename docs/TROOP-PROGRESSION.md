@@ -50,7 +50,7 @@ The indexed [Giant](https://clashofclans.fandom.com/wiki/Giant), [Wizard](https:
 
 `src/game/troop-progression.ts` now requires records for every supported troop key. `troopStatsAt()` supplies the same values to deployment, combat, research previews and Info. Fractional hits are retained: a level-four Wizard deals 187.5 damage every 1.5 seconds, giving 125 DPS. Unsupported next upgrades return no cost or time; the model's maximum-level guard rejects them.
 
-Wizard splash shrinks from the prototype's three tiles to 0.3 tiles. Collateral damage is full attack damage within that radius, measured from the impact point to the neighboring footprint. The prototype's 35% damage branch is removed. Existing projectile flight timing and target tracking remain local presentation/simulation choices.
+Wizard splash shrinks from the prototype's three tiles to 0.3 tiles. Collateral damage is full attack damage within that radius, measured from the impact point to the neighboring footprint. The prototype's 35% damage branch is removed. The subsequent [defending-unit audit](SKELETON-TRAP.md) changes Wizard fireballs to the native five tiles/s with a fixed landing point (`DontTrackTarget=TRUE`). Other projectile flight details retain local choices.
 
 Balloon death damage now follows the battle's recorded research level and uses a 1.2-tile radius. It formerly dealt a fixed 120 damage within 1.8 tiles. A defeated Balloon resolves its blast once, without a Rage multiplier.
 

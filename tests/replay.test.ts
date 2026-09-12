@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GameModel, makeBuilding, type Battle } from '../src/game/model';
 import { TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 import { validateSave } from '../src/game/save';
@@ -168,7 +168,13 @@ describe('recorded battle playback', () => {
     expect(loaded.replay!.time).toBe(0);
     loaded.setReplaySpeed(4);
     loaded.toggleReplay();
-    loaded.step(0.25);
+    // Check speed conversion independently of the separately tested 8ms work budget.
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
+    try {
+      loaded.step(0.25);
+    } finally {
+      clock.mockRestore();
+    }
     expect(loaded.replay!.time).toBeCloseTo(1);
     const id = loaded.replay!.recordId;
     loaded.startReplay(id);

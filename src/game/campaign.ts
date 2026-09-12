@@ -1,5 +1,6 @@
 import { BUILDINGS, type BuildingKind } from './data';
-export type Blueprint = readonly [BuildingKind, number, number, number?];
+import type { SkeletonMode } from './skeleton-stats';
+export type Blueprint = readonly [BuildingKind, number, number, number?, SkeletonMode?];
 type Ring = readonly [number, number, number, number];
 export interface CampaignLayout {
   buildings: readonly Blueprint[];
@@ -456,6 +457,37 @@ export function campaignBlueprint(index: number): Blueprint[] {
     ...CAMPAIGN_AIR_CONTROL[index],
     ...CAMPAIGN_TESLAS[index],
     ...CAMPAIGN_BOMB_TOWERS[index],
+    ...(
+      [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [
+          ['skeletontrap', 11, 13],
+          ['skeletontrap', 16, 13, undefined, 'air'],
+        ],
+        [
+          ['skeletontrap', 11, 15],
+          ['skeletontrap', 15, 12, undefined, 'air'],
+        ],
+        [
+          ['skeletontrap', 10, 13],
+          ['skeletontrap', 15, 13, undefined, 'air'],
+        ],
+        [
+          ['skeletontrap', 13, 15],
+          ['skeletontrap', 15, 13, undefined, 'air'],
+        ],
+        [
+          ['skeletontrap', 13, 15],
+          ['skeletontrap', 15, 13, undefined, 'air'],
+        ],
+      ] as readonly (readonly Blueprint[])[]
+    )[index],
   ];
   const occupied = new Set<string>();
   for (const [k, x, y] of result)

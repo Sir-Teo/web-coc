@@ -266,7 +266,7 @@ describe('native specialist combat', () => {
     expect(shot).toMatchObject({ damage: 187.5, splash: 0.3 });
     expect(target.hp).toBe(target.maxHp);
     u.cooldown = 100;
-    advance(m, 0.5);
+    advance(m, shot.impact - b.elapsed + 0.05);
     expect(target.maxHp - target.hp).toBe(187.5);
   });
   it('Wizard splash uses the impact point and full damage only within its 0.3-tile footprint radius', () => {

@@ -1,5 +1,12 @@
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import { validDirection } from './air-control-stats';
+import { validSkeletonMode, SKELETON_COFFIN_SECONDS, type SkeletonMode } from './skeleton-stats';
+import {
+  stepDefenders,
+  stepAttackerVsDefenders,
+  damageDefenders,
+  type Defender,
+} from './defenders';
 import { primeDeathBomb, stepDeathBombs, bombTowerDeathDamage, type DeathBomb } from './bomb-tower';
 import {
   stepSweepers,
@@ -119,6 +126,7 @@ export interface Building {
   cooldown: number;
   /** Air Sweeper orientation in 45-degree map increments; absent means zero. */
   direction?: number;
+  skeletonMode?: SkeletonMode;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -130,7 +138,7 @@ export interface SpellQueueItem {
 }
 export interface Layout {
   name: string;
-  slots: { id: number; x: number; y: number; direction?: number }[];
+  slots: { id: number; x: number; y: number; direction?: number; skeletonMode?: SkeletonMode }[];
 }
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
@@ -195,6 +203,7 @@ export interface Unit {
   rageUntil?: number;
   spellRageUntil?: number;
   healTarget?: number;
+  defenderTarget?: number;
   x: number;
   y: number;
   hp: number;
@@ -254,6 +263,7 @@ export interface Battle {
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
+  defenders?: Defender[];
   hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -300,6 +310,8 @@ export type FX = {
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;
+  targetDefender?: boolean;
+  sourceDefender?: boolean;
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
   toAir?: boolean;
@@ -1163,7 +1175,18 @@ export class GameModel {
       x: b.x,
       y: b.y,
       ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
+      ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
     }));
+  }
+  toggleSkeletonMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'skeletontrap' || b.constructing || !validSkeletonMode(b.skeletonMode))
+      return false;
+    if (this.editing) this.recordPositions();
+    b.skeletonMode = b.skeletonMode === 'air' ? 'ground' : 'air';
+    this.changed();
+    return true;
   }
   rotateSweeper() {
     if (this.battle || this.placement || this.wallMove) return false;
@@ -1210,6 +1233,8 @@ export class GameModel {
       b.x = placed[i].x;
       b.y = placed[i].y;
       if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
+      if (b.kind === 'skeletontrap')
+        b.skeletonMode = moved.get(b.id)?.skeletonMode ?? b.skeletonMode ?? 'ground';
     }
     return true;
   }
@@ -1588,6 +1613,14 @@ export class GameModel {
     return true;
   }
   visibleBuilding(building: Building) {
+    if (this.battle && building.kind === 'skeletontrap') {
+      const state = this.battle.traps[building.id];
+      return (
+        !this.battle.finished &&
+        !!state &&
+        this.battle.elapsed - state.activatedAt < SKELETON_COFFIN_SECONDS
+      );
+    }
     return (
       !this.battle ||
       (!concealedTesla(this.battle, building) &&
@@ -1744,6 +1777,10 @@ export class GameModel {
     const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
+      damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
+      for (const enemy of b.defenders ?? [])
+        if (enemy.hp > 0 && Math.hypot(enemy.x - x, enemy.y - y) <= d.radius)
+          enemy.stunnedUntil = b.elapsed + LIGHTNING_STUN;
       for (const v of b.buildings)
         if (
           v.hp > 0 &&
@@ -1801,6 +1838,7 @@ export class GameModel {
     stepSpellAuras(b);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
+    stepDefenders(b, dt, this.onEffect);
     // Concealed defenses cannot influence target selection or navigation.
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     for (const u of b.units) {
@@ -1848,6 +1886,18 @@ export class GameModel {
         stepHealer(b, u, d, dt, this.onEffect);
         continue;
       }
+      if (
+        stepAttackerVsDefenders(
+          b,
+          u,
+          d,
+          dt,
+          knownBuildings,
+          (target, power) => this.damage(target, power),
+          this.onEffect,
+        )
+      )
+        continue;
       let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
         const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
@@ -1884,6 +1934,7 @@ export class GameModel {
               y: Math.max(target.y, Math.min(u.y, target.y + size)),
             };
             this.damage(target, damage);
+            damageDefenders(b, aim, damage, troop.splash ?? 0, 'ground');
             for (const other of b.buildings)
               if (
                 other.id !== target.id &&
@@ -2142,6 +2193,7 @@ export class GameModel {
       for (const v of b.buildings)
         if (v.hp > 0 && distanceTo(u, v) <= (troop.deathRadius ?? 1.5))
           this.damage(v, troop.deathDamage);
+      damageDefenders(b, u, troop.deathDamage, troop.deathRadius ?? 1.5);
     }
     this.refreshBattleScore();
     if (
@@ -2197,6 +2249,7 @@ export class GameModel {
     u.spent = true;
     const radius = TROOPS[u.kind].deathRadius ?? 1.6;
     this.onEffect({ type: 'blast', x: u.x, y: u.y, radius });
+    if (this.battle) damageDefenders(this.battle, u, power, radius);
     for (const building of this.battle?.buildings ?? [])
       if (building.hp > 0 && distanceTo(u, building) <= radius)
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
@@ -2643,7 +2696,7 @@ export function initialSave(): Save {
   };
 }
 export function enemyBase(index: number) {
-  return campaignBlueprint(index).map(([kind, x, y, direction], i) => {
+  return campaignBlueprint(index).map(([kind, x, y, direction, skeletonMode], i) => {
     const b = makeBuilding(
       1000 + i,
       kind,
@@ -2652,13 +2705,14 @@ export function enemyBase(index: number) {
       Math.min(BUILDINGS[kind].maxLevel, 3, 1 + Math.floor(index / 4)),
     );
     if (kind === 'airsweeper') b.direction = direction ?? 0;
+    if (kind === 'skeletontrap') b.skeletonMode = skeletonMode ?? 'ground';
     b.hp *= CAMPAIGN_LAYOUTS[index].health;
     b.maxHp = b.hp;
     return b;
   });
 }
-export function distanceTo(u: { x: number; y: number }, b: Building) {
-  const s = BUILDINGS[b.kind].size;
+export function distanceTo(u: { x: number; y: number }, b: Building | { x: number; y: number }) {
+  const s = 'level' in b ? BUILDINGS[b.kind].size : 0;
   return Math.hypot(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */
@@ -2681,7 +2735,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
 export function findPath(
   start: { x: number; y: number },
-  target: Building,
+  target: Building | { x: number; y: number },
   buildings: Building[],
   range: number,
 ): { x: number; y: number }[] {
@@ -2723,6 +2777,8 @@ export function findPath(
     const x = current % size,
       y = Math.floor(current / size);
     if (distanceTo({ x: x + 0.5, y: y + 0.5 }, target) <= range) {
+      if (!('level' in target) && current === first && distanceTo(start, target) > range)
+        approach = { x: x + 0.5, y: y + 0.5 };
       goal = current;
       break;
     }
@@ -2731,7 +2787,7 @@ export function findPath(
     // or an extra occupied cell. Other ranges retain their original grid route.
     if (range < 0.5 && !blocked[current]) {
       const center = { x: x + 0.5, y: y + 0.5 },
-        s = BUILDINGS[target.kind].size;
+        s = 'level' in target ? BUILDINGS[target.kind].size : 0;
       const tx = Math.max(target.x, Math.min(center.x, target.x + s));
       const ty = Math.max(target.y, Math.min(center.y, target.y + s));
       const dx = center.x - tx,

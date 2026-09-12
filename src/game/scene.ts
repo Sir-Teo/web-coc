@@ -8,6 +8,8 @@ import {
   BOMBER_WIDTH,
 } from './bomb-tower-art';
 import { bomberFrame } from './bomb-tower';
+import { skeletonTrapAsset, skeletonTrapTexture, skeletonAsset } from './skeleton-art';
+import { SKELETON_COFFIN_SECONDS, skeletonStats, type SkeletonMode } from './skeleton-stats';
 import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
 import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
@@ -92,6 +94,7 @@ export class VillageScene extends Phaser.Scene {
   private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
   private detail!: Phaser.GameObjects.Graphics;
+  private defenderMarkers!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
   wallGhosts = new Map<number, Phaser.GameObjects.Image>();
   private wallGhostLinks?: Phaser.GameObjects.Graphics;
@@ -123,6 +126,7 @@ export class VillageScene extends Phaser.Scene {
   private mineFlights = new Map<number, Phaser.GameObjects.Image>();
   private roofBombers = new Map<number, Phaser.GameObjects.Image>();
   private deathBombSprites = new Map<number, Phaser.GameObjects.Image>();
+  private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
   private campViews = new Map<string, Phaser.GameObjects.Image>();
@@ -139,6 +143,13 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const mode of ['ground', 'air', 'spent'] as const)
+      this.load.image(skeletonTrapTexture(mode), skeletonTrapAsset(mode));
+    for (const mode of ['ground', 'air'] as const)
+      this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
+        frameWidth: 128,
+        frameHeight: 128,
+      });
     for (const level of BOMB_TOWER_ART_LEVELS) {
       this.load.image(bombTowerTexture(level), bombTowerAsset(level, 'base'));
       if (level > 1) this.load.image(`bombtower-preview-${level}`, bombTowerAsset(level));
@@ -200,6 +211,7 @@ export class VillageScene extends Phaser.Scene {
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
     this.detail = this.add.graphics().setDepth(5000);
+    this.defenderMarkers = this.add.graphics().setDepth(7600);
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -690,7 +702,7 @@ export class VillageScene extends Phaser.Scene {
       const troops = new Set(this.unitSprites.values());
       for (const object of [...this.children.list]) {
         const display = object as Phaser.GameObjects.Image;
-        if (display.depth >= 7000 && !troops.has(display)) {
+        if (display.depth >= 7000 && !troops.has(display) && object !== this.defenderMarkers) {
           this.tweens.killTweensOf(display);
           display.destroy();
         }
@@ -706,6 +718,8 @@ export class VillageScene extends Phaser.Scene {
       for (const bomb of this.deathBombSprites.values()) bomb.destroy();
       this.roofBombers.clear();
       this.deathBombSprites.clear();
+      for (const sprite of this.defenderSprites.values()) sprite.destroy();
+      this.defenderSprites.clear();
       this.mode = mode;
       if (!keepCamera) this.resetCamera();
     }
@@ -747,7 +761,7 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction)
+      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode)
         .setPosition(p.x, p.y)
         .setDepth(p.y)
         .setCrop();
@@ -851,6 +865,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.placement,
         level,
         this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
+        this.model.state.buildings.find((b) => b.id === this.model.moving)?.skeletonMode,
       );
       this.updateGhost(this.pointerScreen());
       if (this.model.placement === 'bombtower')
@@ -870,8 +885,12 @@ export class VillageScene extends Phaser.Scene {
     kind: BuildingKind,
     level: number,
     direction = 0,
+    skeletonMode: SkeletonMode = 'ground',
   ) {
-    const texture = buildingTexture(kind, level, direction);
+    const texture =
+      kind === 'skeletontrap'
+        ? skeletonTrapTexture(skeletonMode)
+        : buildingTexture(kind, level, direction);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
@@ -881,7 +900,8 @@ export class VillageScene extends Phaser.Scene {
       kind === 'mortar' ||
       kind === 'airsweeper' ||
       kind === 'tesla' ||
-      kind === 'bombtower'
+      kind === 'bombtower' ||
+      kind === 'skeletontrap'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -1241,8 +1261,26 @@ export class VillageScene extends Phaser.Scene {
     }
     this.detail.clear();
     for (const v of this.model.buildings) {
+      if (v.kind === 'skeletontrap')
+        this.sprites.get(v.id)?.setVisible(this.model.visibleBuilding(v));
       if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
       const im = this.sprites.get(v.id)!;
+      if (v.kind === 'skeletontrap') {
+        const state = this.model.battle?.traps[v.id];
+        if (state) {
+          const age = this.model.battle!.elapsed - state.activatedAt,
+            progress = this.model.state.settings.reducedMotion ? 1 : Math.min(1, age / 0.25),
+            p = iso(v.x + 0.5, v.y + 0.5);
+          im.setTexture(
+            skeletonTrapTexture((state.spawned ?? 0) > 0 ? 'spent' : (v.skeletonMode ?? 'ground')),
+          );
+          im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
+          if (progress < 1)
+            im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
+          else im.setCrop();
+          im.setAlpha(Math.min(1, Math.max(0, (SKELETON_COFFIN_SECONDS - age) / 0.4)));
+        }
+      }
       if (v.kind === 'tesla') {
         const progress = this.teslaRise(v.id),
           p = iso(v.x + 1, v.y + 1);
@@ -1349,7 +1387,7 @@ export class VillageScene extends Phaser.Scene {
           }
           continue;
         }
-        if (state.resolved) continue;
+        if (state.resolved || trap.kind === 'skeletontrap') continue;
         const p = iso(state.x, state.y);
         const progress = Math.min(
           1,
@@ -1408,7 +1446,8 @@ export class VillageScene extends Phaser.Scene {
             : 0;
         const target = TROOPS[u.kind].healer
           ? battle.units.find((ally) => ally.id === u.healTarget)
-          : battle.buildings.find((b) => b.id === u.target);
+          : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
+            battle.buildings.find((b) => b.id === u.target));
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
@@ -1455,6 +1494,98 @@ export class VillageScene extends Phaser.Scene {
           this.bar(p.x, p.y - lift - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
       }
     }
+    this.drawDefenders();
+  }
+  private drawDefenders() {
+    const markers = this.defenderMarkers.clear();
+    const battle = this.model.battle,
+      reduced = this.model.state.settings.reducedMotion;
+    const defenders = battle?.defenders ?? [];
+    for (const [id, sprite] of this.defenderSprites)
+      if (!defenders.some((d) => d.id === id)) {
+        sprite.destroy();
+        this.defenderSprites.delete(id);
+      }
+    for (const d of defenders) {
+      const flying = d.mode === 'air',
+        width = flying ? 68 : 40,
+        p = iso(d.x, d.y),
+        stats = skeletonStats(d.mode);
+      let sprite = this.defenderSprites.get(d.id);
+      if (!sprite) {
+        sprite = this.add
+          .image(0, 0, `skeleton-${d.mode}`, 0)
+          .setOrigin(0.5, 0.875)
+          .setDisplaySize(width, width)
+          .setData('defender', d.id);
+        this.defenderSprites.set(d.id, sprite);
+      }
+      const target = battle!.units.find((u) => u.id === d.target && u.hp > 0),
+        waypoint = d.path[0];
+      const heading = d.attacking || flying ? target : (waypoint ?? target);
+      const dx = heading ? heading.x - d.x - (heading.y - d.y) : 0,
+        facing = Math.abs(dx) > 0.03 ? Math.sign(dx) : (sprite.getData('facing') ?? -1);
+      sprite
+        .setData('facing', facing)
+        .setFlipX(facing > 0)
+        .setAngle(0)
+        .setAlpha(1)
+        .setVisible(true)
+        .setDepth(flying ? 7500 : p.y + 1.1)
+        .clearTint();
+      if (d.hp <= 0) {
+        const pose = defeatPose(
+          battle!.finished ? Infinity : battle!.elapsed - (d.defeatedAt ?? battle!.elapsed),
+          flying ? 'air' : 'ground',
+          facing,
+          reduced,
+          AIR_LIFT,
+        );
+        sprite
+          .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
+          .setAngle(pose.angle)
+          .setAlpha(pose.alpha)
+          .setVisible(pose.visible)
+          .setTint(0xa09482);
+        continue;
+      }
+      const moving = !!target && !d.attacking && battle!.elapsed >= d.spawnedAt + 0.5;
+      const phase = stats.rate - d.cooldown;
+      const frame =
+        reduced || battle!.finished
+          ? 1
+          : d.attacking && phase < 0.15
+            ? 5
+            : d.attacking && d.cooldown < 0.14
+              ? 4
+              : moving
+                ? Math.floor(battle!.elapsed / 0.11 + Math.abs(d.id)) % 4
+                : 1;
+      const jumping =
+        !flying &&
+        battle!.buildings.some(
+          (b) =>
+            b.kind === 'wall' && b.hp > 0 && Math.floor(d.x) === b.x && Math.floor(d.y) === b.y,
+        );
+      const lift = flying ? AIR_LIFT : jumping && !reduced ? 9 : 0;
+      sprite
+        .setFrame(frame)
+        .setPosition(p.x, p.y - lift)
+        .setDepth(flying ? 7500 : p.y + 1.1);
+      if (flying) {
+        this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(p.x, p.y, 16, 8);
+      }
+      this.bar(p.x, p.y - lift - width * 0.9, 22, d.hp / d.maxHp, 0xea654d, markers);
+      const sy = p.y - lift - width * 0.9;
+      markers
+        .fillStyle(0xfff0d0)
+        .fillCircle(p.x - 17, sy - 1, 3)
+        .fillRect(p.x - 19, sy + 1, 4, 3);
+      markers
+        .fillStyle(0x594739)
+        .fillCircle(p.x - 18, sy - 1, 0.7)
+        .fillCircle(p.x - 16, sy - 1, 0.7);
+    }
   }
   private drawGrid(g: Phaser.GameObjects.Graphics) {
     for (let x = BUILD_MIN; x <= BUILD_MAX; x++) {
@@ -1467,11 +1598,11 @@ export class VillageScene extends Phaser.Scene {
       g.lineBetween(r.x, r.y, s.x, s.y);
     }
   }
-  bar(x: number, y: number, w: number, p: number, color: number) {
-    this.detail.fillStyle(0x292920, 0.8);
-    this.detail.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 7, 3);
-    this.detail.fillStyle(color);
-    this.detail.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
+  bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
+    graphics.fillStyle(0x292920, 0.8);
+    graphics.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 7, 3);
+    graphics.fillStyle(color);
+    graphics.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
   }
   private animateEffect(config: EffectTween) {
     if (this.model.state.settings.reducedMotion) {
@@ -1796,20 +1927,24 @@ export class VillageScene extends Phaser.Scene {
     const source =
       fx.sourceId == null
         ? undefined
-        : fx.targetBuilding || fx.weapon === 'healing'
-          ? this.unitSprites.get(fx.sourceId)
-          : this.sprites.get(fx.sourceId);
+        : fx.sourceDefender
+          ? this.defenderSprites.get(fx.sourceId)
+          : fx.targetBuilding || fx.targetDefender || fx.weapon === 'healing'
+            ? this.unitSprites.get(fx.sourceId)
+            : this.sprites.get(fx.sourceId);
     const target =
       fx.targetId == null
         ? undefined
-        : fx.targetBuilding
-          ? this.sprites.get(fx.targetId)
-          : this.unitSprites.get(fx.targetId);
+        : fx.targetDefender
+          ? this.defenderSprites.get(fx.targetId)
+          : fx.targetBuilding
+            ? this.sprites.get(fx.targetId)
+            : this.unitSprites.get(fx.targetId);
     const fromY =
       p.y -
       (fx.fromAir
         ? AIR_LIFT + 6
-        : source && !fx.targetBuilding
+        : source && !fx.targetBuilding && !fx.targetDefender && !fx.sourceDefender
           ? (source.getData('intactHeight') ?? source.displayHeight) * 0.7
           : 22);
     const toY =
@@ -1820,7 +1955,7 @@ export class VillageScene extends Phaser.Scene {
           (target
             ? fx.targetBuilding
               ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
-              : target.displayHeight * 0.48
+              : target.displayHeight * (fx.targetDefender && fx.toAir ? 0.24 : 0.48)
             : 15));
     const bodyMuzzle =
       fx.type === 'breath'

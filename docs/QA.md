@@ -1,5 +1,25 @@
 # Verification record
 
+## September 11 — Skeleton Traps and defending units
+
+Skeleton Traps now have two TH8 levels, persistent ground/air modes, timed spawning and separate defending units. Skeletons pursue eligible attackers, jump their own walls and draw retaliation from eligible troops. Projectile and spell allegiance is explicit. Wizard fireballs now use native five-tile/s fixed-point flight. See [SKELETON-TRAP.md](SKELETON-TRAP.md) for immutable client sources, exact values and remaining behavioral approximations.
+
+**621 model/asset tests pass across 54 files** with `npx vitest run --maxWorkers=2`; the final TypeScript check and production build pass. Twenty-nine new simulation/save/replay cases cover mode/layer eligibility, trigger boundaries, sequential spawning after target loss, exact scheduled times across wide frames, spawn idle, cadence, point-target approaches, wall jumping, target priorities, retaliation, projectile tracking and misses, splash allegiance, spell interactions, attack exhaustion, finish guards, saved layouts and portable replay equality/seeking. Three asset cases verify distinct alpha states/poses and clear atlas margins.
+
+The **288-battle campaign matrix** passes with one trap in each mode on stages 8–12. Every stage retains a veteran three-star route. Veteran results are 47 three-star approaches and one zero-star approach (final fortress from the south, 32%). Healer/P.E.K.K.A and Dragon armies each clear all 48 approaches. This checks the authored local campaign, not multiplayer balance.
+
+**All seven new browser scenarios pass in Chromium with Metal and WebKit at 2× density.** They cover Shop gating, every texture, instant touch placement, the two-trap limit, the five-hour upgrade, mode changes/Info/layout/reload at 1440px/390px/320px, coffin states, six poses for each defender mode, ground/air hit anchors, pause stability, marker layering, replay reconstruction, reduced motion and cleanup. The UI audit corrected the Shop category; coffin opening now follows actual spawn state instead of a floating-point time comparison. Visual review caught health markers hidden by airborne sprites; a retained layer above troops now keeps the red bars and skulls visible. Final screenshots were inspected, including the battle close-up.
+
+**Chromium has 68 distinct passing scenarios in this pass. WebKit has 24, including all seven feature cases.** The expanded WebKit rerun is incomplete: during heavy workstation load, two older defeat scenarios last timed out in setup, and the broad batch was stopped with further scenarios unrun. These are recorded as pending coverage, not passes. Chromium's four earlier setup timeouts passed when rerun separately. The final marker change is covered by eleven Chromium cases, all seven WebKit feature cases and both production smoke checks. The source fingerprints and exact scenario unions are in `output/playtest/skeleton-verification.json`.
+
+The initial model run under load exposed two test-harness limits. The 288-battle functional matrix now has a 60-second timeout; it is not a frame-time benchmark. The replay speed test controls monotonic time so speed conversion is independent of the 8ms execution budget, which remains covered separately. Final model validation used two workers. No runtime time budget was relaxed.
+
+The final production build passes Chromium and WebKit with no reported browser errors. All five new WebPs load. Chromium reloads, opens Army and watches a replay offline with **167 cached files**, cache `crown-clan-927fa46e8846`. Save version remains 4; combat version is 22. Original PNGs and exact built-in prompts are preserved in art commit `41b544f`; deterministic rebuilding of the five derivatives (223,482 bytes total) passes. Glow/checkerboard and clipped-frame candidates were rejected before acceptance.
+
+Evidence: `output/playtest/skeleton-verification.json`, `skeleton-source-final.json`, `skeleton-models-final.log`, `skeleton-campaign.json`, `skeleton-build-final.log`, `skeleton-chromium{,-final}.log`, `skeleton-webkit{,-final,-feature}.log`, `skeleton-production-report.json`, `skeleton-info-*.png`, `skeleton-coffins-*.png`, `skeleton-defenders-*.png`, `skeleton-replay-*.png` and the retained source/atlas contact sheets.
+
+Remaining work includes the interrupted broader WebKit coverage, native target/alert scoring, directional animation, Clan Castle troops and defending heroes, higher Town Halls/content, accounts/multiplayer/clans, and physical-device performance/endurance. The full production-clone goal remains open.
+
 ## September 11 — Bomb Tower
 
 Bomb Towers now complete the main TH8 defense roster with native level 1–2 progression, fixed-point ballistic throws and a separate destruction bomb. The death charge waits one second, damages ground troops within 2.75 tiles once, and is canceled when a raid finishes. Two original tower sprites, complete previews, a four-pose roof Bomber and an exposed bomb provide the presentation. See [BOMB-TOWER.md](BOMB-TOWER.md) for immutable primary sources and unresolved native behavior.

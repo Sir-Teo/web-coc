@@ -1,4 +1,5 @@
 import { validDirection } from './air-control-stats';
+import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
@@ -13,7 +14,7 @@ import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL } from './spell-progression';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 21;
+export const REPLAY_VERSION = 22;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -138,6 +139,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !integer(b.x, 0, mapSize - size) ||
       !integer(b.y, 0, mapSize - size) ||
       !validDirection(b.direction) ||
+      !validSkeletonMode(b.skeletonMode) ||
       !integer(b.level, 1, d.maxLevel) ||
       !number(b.maxHp, 1, 1e9) ||
       b.hp !== b.maxHp ||

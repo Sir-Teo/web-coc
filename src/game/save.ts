@@ -1,4 +1,5 @@
 import { validDirection } from './air-control-stats';
+import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
 import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
@@ -265,6 +266,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       b.x + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
       b.y + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
       !validDirection(b.direction) ||
+      !validSkeletonMode(b.skeletonMode) ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
       b.level > BUILDINGS[b.kind].maxLevel ||
@@ -307,6 +309,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
             (v) =>
               !v ||
               !validDirection(v.direction) ||
+              !validSkeletonMode(v.skeletonMode) ||
               !Number.isInteger(v.id) ||
               !Number.isInteger(v.x) ||
               !Number.isInteger(v.y) ||

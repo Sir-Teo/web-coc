@@ -43,6 +43,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
           stored: 0,
           cooldown: 0,
           ...(b.direction !== undefined ? { direction: b.direction } : {}),
+          ...(b.skeletonMode !== undefined ? { skeletonMode: b.skeletonMode } : {}),
           ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
           ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
           ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),

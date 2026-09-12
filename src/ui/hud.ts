@@ -3,6 +3,7 @@ import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
+import { SKELETON_TRAP, skeletonCount, skeletonStats } from '../game/skeleton-stats';
 import {
   MAX_SPELL_LEVEL,
   SPELL_LEVELS,
@@ -92,7 +93,7 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
   const trap = trapStats(kind, level);
-  if (trap) {
+  if (trap && kind !== 'skeletontrap') {
     rows.length = 0;
     rows.push(['Swords', 'Damage', n(trapDamage(kind, level))]);
     rows.push(['Radar', 'Trigger radius', `${trap.trigger} tile${trap.trigger === 1 ? '' : 's'}`]);
@@ -108,6 +109,21 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
     if (!trap.homingSpeed)
       rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
     rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
+  }
+  if (kind === 'skeletontrap') {
+    const skeleton = skeletonStats('ground');
+    rows.length = 0;
+    rows.push(
+      ['Users', 'Skeletons', String(skeletonCount(level))],
+      ['Heart', 'Skeleton hitpoints', String(skeleton.hp)],
+      ['Swords', 'Damage per second', String(skeleton.dps)],
+      ['Swords', 'Damage per hit', String(skeleton.damage)],
+      ['Gauge', 'Attack speed', `${skeleton.rate}s`],
+      ['Radar', 'Trigger radius', `${SKELETON_TRAP.trigger} tiles`],
+      ['Clock3', 'First spawn', `${SKELETON_TRAP.firstSpawn}s`],
+      ['Clock3', 'Between spawns', `${SKELETON_TRAP.spawnInterval}s`],
+      ['Radar', 'Targets', 'Ground or air'],
+    );
   }
   if (kind === 'airsweeper')
     rows.push(
@@ -470,6 +486,9 @@ export class HUD {
         break;
       case 'sweeper-rotate':
         m.rotateSweeper();
+        break;
+      case 'skeleton-mode':
+        m.toggleSkeletonMode();
         break;
       case 'wall-rotate':
         m.rotateWallMove();
@@ -1142,14 +1161,21 @@ export class HUD {
             'game-btn blue',
             'aria-label="Rotate Air Sweeper 45 degrees" title="Rotate clockwise · R"',
           )
-        : '';
+        : b.kind === 'skeletontrap'
+          ? button(
+              'skeleton-mode',
+              `${icon(b.skeletonMode === 'air' ? 'Wind' : 'Swords', 21)}<span>${b.skeletonMode === 'air' ? 'Air' : 'Ground'}</span>`,
+              'game-btn blue',
+              `aria-label="Switch Skeleton Trap to ${b.skeletonMode === 'air' ? 'ground' : 'air'} mode"`,
+            )
+          : '';
     if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
+    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
       b.upgradeEnd
         ? button(
             `finish:${b.id}`,
@@ -1591,7 +1617,7 @@ export class HUD {
         : b.kind === 'spellfactory'
           ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
           : [];
-    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
+    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];

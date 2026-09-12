@@ -1,5 +1,7 @@
 # Art direction and generation record
 
+Skeleton Trap coffin states and ground/air skeleton animation sources are retained under `art/source/skeleton-v1/`, with exact built-in generation prompts. `scripts/skeleton-assets.mjs` builds transparent gameplay atlases and supports deterministic `--check`. See [SKELETON-TRAP.md](SKELETON-TRAP.md).
+
 Bomb Tower art retains two tower bases, a four-pose roof Bomber and an exposed destruction bomb under `art/source/bombtower-v1/`, with exact built-in generation prompts. `scripts/bomb-tower-assets.mjs` builds the two base/preview pairs, actor atlas and charge; `--check` verifies deterministic output. See [BOMB-TOWER.md](BOMB-TOWER.md).
 
 Hidden Tesla sprites for levels 1–6 are retained under `art/source/tesla-v1/` with built-in generation prompts and accepted iterations. `scripts/tesla-assets.mjs` builds six transparent 384×512 sprites and verifies repeat builds with `--check`. See [HIDDEN-TESLA.md](HIDDEN-TESLA.md).

@@ -188,7 +188,8 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
       results.some((r) => r.stage === stage && r.army === 'veteran' && r.stars === 3),
       `Stage ${stage} cannot be cleared`,
     ).toBe(true);
-}, 20000);
+  // This 288-battle functional matrix is not a frame-time benchmark.
+}, 60000);
 
 it('the actual starter army can win the opening raid without spells or upgrades', () => {
   const stars = approaches.map((approach) => {

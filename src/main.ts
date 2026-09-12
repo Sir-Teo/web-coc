@@ -119,10 +119,17 @@ async function boot() {
         hero: model.state.king,
         selectedWalls: model.selectedWalls.map((b) => b.id),
         wallPreview: model.wallPreview,
-        obstacles: model.battle ? [] : model.obstacles.map((o) => ({
-          id: o.id, type: o.kind, x: o.x, y: o.y, size: 2,
-          removalSeconds: o.removeEnd === undefined ? null : Math.max(0, (o.removeEnd - model.clock) / 1000),
-        })),
+        obstacles: model.battle
+          ? []
+          : model.obstacles.map((o) => ({
+              id: o.id,
+              type: o.kind,
+              x: o.x,
+              y: o.y,
+              size: 2,
+              removalSeconds:
+                o.removeEnd === undefined ? null : Math.max(0, (o.removeEnd - model.clock) / 1000),
+            })),
         buildings: model.buildings
           .filter((b) => model.visibleBuilding(b))
           .map((b) => ({
@@ -133,6 +140,7 @@ async function boot() {
             hp: Math.round(b.hp),
             level: b.level,
             upgrading: !!b.upgradeEnd,
+            ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
           })),
         replay: model.replay,
         battle: model.battle
@@ -153,10 +161,23 @@ async function boot() {
                   y: u.y,
                   hp: Math.round(u.hp),
                   target: u.target,
+                  defenderTarget: u.defenderTarget,
                 })),
               shells: model.battle.shells,
               projectiles: model.battle.projectiles ?? [],
-              deathBombs: Object.values(model.battle.deathBombs ?? {}).filter(b => !b.resolved && !b.cancelled),
+              defenders: (model.battle.defenders ?? [])
+                .filter((d) => d.hp > 0)
+                .map((d) => ({
+                  id: d.id,
+                  mode: d.mode,
+                  x: d.x,
+                  y: d.y,
+                  hp: d.hp,
+                  target: d.target,
+                })),
+              deathBombs: Object.values(model.battle.deathBombs ?? {}).filter(
+                (b) => !b.resolved && !b.cancelled,
+              ),
               loot: model.battle.loot,
               finished: model.battle.finished,
             }

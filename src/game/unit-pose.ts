@@ -1,9 +1,14 @@
 import { BUILDINGS, TROOPS } from './data';
 import type { Building, Unit } from './model';
+import type { Defender } from './defenders';
 import { troopArt } from './troop-art';
 
 /** Sprite mirroring follows navigation while walking and the target when striking. */
-export function unitPose(u: Unit, target: Building | Unit | undefined, previousFacing = -1) {
+export function unitPose(
+  u: Unit,
+  target: Building | Unit | Defender | undefined,
+  previousFacing = -1,
+) {
   const center =
     target && target.hp > 0
       ? {

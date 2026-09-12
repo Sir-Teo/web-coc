@@ -190,7 +190,7 @@ describe('destruction charge', () => {
     const shot = launchProjectile(
       b,
       {
-        weapon: 'fireball',
+        weapon: 'arrow',
         sourceId: 10000,
         targetId: tower.id,
         targetBuilding: true,
