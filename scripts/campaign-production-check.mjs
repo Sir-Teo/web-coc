@@ -12,7 +12,14 @@ const modules = await createServer({
   appType: 'custom',
   logLevel: 'error',
 });
-let fixture, expected, pumpkinFile, pumpkinExpected, obsidianFile, obsidianExpected;
+let fixture,
+  expected,
+  pumpkinFile,
+  pumpkinExpected,
+  obsidianFile,
+  obsidianExpected,
+  santaFile,
+  santaExpected;
 try {
   const { GameModel } = await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
@@ -62,6 +69,13 @@ try {
   if (obsidianExpected.defenders.length !== 20)
     throw Error('Obsidian fixture did not spawn twenty defenders');
   obsidianFile = JSON.stringify(makeReplayFile(obsidian.state.raidLog[0].replay));
+  const { santaBattle } = await modules.ssrLoadModule('/tests/fixtures/santa-battle.ts');
+  const santa = santaBattle();
+  for (let i = 0; i < 260; i++) santa.step(0.05);
+  santa.finishBattle();
+  santaExpected = { result: santa.battle.result, hp: santa.battle.units[0].hp };
+  if (santaExpected.hp !== 2100) throw Error('Santa fixture did not land five 180-damage hits');
+  santaFile = JSON.stringify(makeReplayFile(santa.state.raidLog[0].replay));
 } finally {
   await modules.close();
 }
@@ -90,12 +104,15 @@ try {
       });
       const page = await context.newPage(),
         errors = [],
-        assetRequests = [];
+        assetRequests = [],
+        santaAssets = new Set();
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
         if (r.url().endsWith('/assets/buildings/pumpkin-bomb-native.png') && r.ok())
           assetRequests.push(r.url());
+        if (r.url().includes('/assets/effects/santa-native/') && r.ok())
+          santaAssets.add(new URL(r.url()).pathname);
       });
       await page.goto(url);
       await expect(page.locator('.shop-btn')).toBeVisible();
@@ -235,6 +252,62 @@ try {
       const obsidianStart = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
       expect(obsidianStart.battle.defenders).toEqual([]);
       expect(obsidianStart.buildings.some((b) => b.type === 'skeletontrap')).toBe(false);
+      await page.locator('[data-action="replay-exit"]').click();
+      await page.locator('#import-replay-file').setInputFiles({
+        name: 'goblin-picnic.crown-replay.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(santaFile),
+      });
+      await expect(page.locator('.battle-enemy')).toContainText('Goblin Picnic');
+      const santaSlider = page.getByRole('slider', { name: 'Replay position' });
+      await santaSlider.focus();
+      await santaSlider.press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      const santaEnd = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(santaEnd.battle.result).toEqual(santaExpected.result);
+      expect(santaEnd.battle.troops[0].hp).toBe(santaExpected.hp);
+      expect(santaEnd.buildings.find((b) => b.npc === 'santa-trap')).toMatchObject({
+        x: 36,
+        y: 29,
+        hp: 1,
+        level: 1,
+      });
+      await santaSlider.evaluate((slider) => {
+        slider.value = '6.7';
+        slider.dispatchEvent(new Event('input', { bubbles: true }));
+        slider.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      await expect
+        .poll(
+          async () =>
+            (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.time,
+        )
+        .toBeCloseTo(6.7, 8);
+      expect(
+        (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.troops[0].hp,
+      ).toBe(3000);
+      await page.screenshot({ path: `output/playtest/santa-production-${name}.png` });
+      await santaSlider.focus();
+      await santaSlider.press('Home');
+      await expect
+        .poll(
+          async () =>
+            (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.time,
+        )
+        .toBe(0);
+      expect(
+        (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).buildings.some(
+          (b) => b.npc === 'santa-trap',
+        ),
+      ).toBe(false);
+      await santaSlider.focus();
+      await santaSlider.press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      expect(
+        (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.troops[0].hp,
+      ).toBe(2100);
+      expect([...santaAssets].filter((p) => p.endsWith('.ogg'))).toHaveLength(4);
+      expect([...santaAssets].filter((p) => p.endsWith('-0.png'))).toHaveLength(5);
       expect(errors).toEqual([]);
       report[name] = {
         errors,
@@ -262,6 +335,13 @@ try {
           defenders: obsidianExpected.defenders.length,
           concealmentRestored: true,
           result: obsidianEnd.battle.result,
+        },
+        santa: {
+          sharedReplay: true,
+          concealmentRestored: true,
+          hp: santaExpected.hp,
+          assets: [...santaAssets].sort(),
+          result: santaEnd.battle.result,
         },
       };
     } finally {

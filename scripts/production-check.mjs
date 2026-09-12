@@ -9,7 +9,12 @@ await fs.mkdir('output/playtest', { recursive: true });
 const report = {};
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
-  const browser = await engine.launch({ headless: true });
+  const browser = await engine.launch({
+    headless: true,
+    ...(name === 'chromium' && process.platform === 'darwin'
+      ? { args: ['--use-angle=metal'] }
+      : {}),
+  });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 960 },
     deviceScaleFactor: 2,
@@ -17,6 +22,10 @@ for (const [name, engine] of Object.entries(engines)) {
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...['trap', 'sleigh', 'shadow', 'presents', 'particles'].map(
+      (p) => `/assets/effects/santa-native/${p}-0.png`,
+    ),
+    ...['call', 'sleigh', 'drop', 'impact'].map((p) => `/assets/effects/santa-native/${p}.ogg`),
     ...['portrait', 'front-left', 'front-right', 'back-left', 'back-right'].map(
       (pose) => `/assets/characters/king-v1/${pose}.webp`,
     ),
@@ -111,6 +120,18 @@ for (const [name, engine] of Object.entries(engines)) {
   // Exercise the shipping replay UI without development globals or state writes.
   await expect(page.locator('[data-action="research"]')).toBeFocused();
   await page.locator('[data-action="practice"]').click();
+  // Record enough real scouting time to exercise Pause before this short raid ends.
+  await expect
+    .poll(
+      async () => {
+        const [minutes, seconds] = (await page.locator('#battle-timer').innerText())
+          .split(':')
+          .map(Number);
+        return minutes * 60 + seconds;
+      },
+      { timeout: 15000 },
+    )
+    .toBeLessThanOrEqual(24);
   await page.locator('[data-action="troop:swordsman"]').click();
   let deployed = false;
   // Probe clear visible ground through real canvas input. Building footprints

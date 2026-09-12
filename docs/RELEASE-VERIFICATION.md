@@ -4,6 +4,8 @@
 
 The production smoke checks exercise Chromium and WebKit: village boot, collection animation and cleanup, required replacement artwork requests, shop, research, and transfer of save ownership between tabs. Chromium additionally reloads offline and opens the army drawer. Browser errors, console errors, missing required art and failed HTTP responses fail verification. Results go to `output/playtest/production-report.json`.
 
+On macOS, Chromium uses Metal, matching the campaign production runner and Retina browser checks. The practice recording includes six seconds of actual scouting time so the Pause check has a usable interval even when the deployed troop's attack is very short. The campaign runner separately verifies the native Santa replay and requires its five atlas pages and four original Ogg files, including after Chromium's offline reload.
+
 Install the test browsers once with `npx playwright install chromium webkit`. The existing direct command, `node scripts/production-check.mjs`, still works with a preview at `http://127.0.0.1:4173`; `PRODUCTION_BASE_URL` can select another preview origin.
 
 ## GitHub Actions
