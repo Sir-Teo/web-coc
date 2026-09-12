@@ -19,7 +19,7 @@ try {
   const replay = structuredClone(m.state.raidLog[0].replay);
   // A purpose-built NPC combat fixture. This does not assert a playable native campaign.
   replay.initial.buildings = [
-    makeNpcBuilding(1000, 'goblin-townhall', 15, 15),
+    makeNpcBuilding(1000, 'goblin-townhall', 15, 15, 11),
     makeNpcBuilding(1001, 'goblin-hut', 20, 15),
     makeNpcBuilding(1002, 'tutorial-cannon', 10, 10),
   ];
@@ -72,13 +72,11 @@ try {
       await page.locator('#loading').waitFor({ state: 'detached' });
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
       await page.locator('[data-action="battle-log"]').click();
-      await page
-        .locator('#import-replay-file')
-        .setInputFiles({
-          name: 'goblin-fixture.crown-replay.json',
-          mimeType: 'application/json',
-          buffer: Buffer.from(file),
-        });
+      await page.locator('#import-replay-file').setInputFiles({
+        name: 'goblin-fixture.crown-replay.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(file),
+      });
       await expect(page.locator('.battle-enemy')).toContainText('SHARED REPLAY');
       await page.getByRole('slider', { name: 'Replay position' }).focus();
       await page.getByRole('slider', { name: 'Replay position' }).press('End');
@@ -96,6 +94,12 @@ try {
         'goblin-hut',
         'tutorial-cannon',
       ]);
+      expect(exported.replay.initial.buildings[0]).toMatchObject({
+        npc: 'goblin-townhall',
+        level: 11,
+        hp: 6800,
+        maxHp: 6800,
+      });
       await page.screenshot({
         animations: 'disabled',
         path: `output/playtest/goblin-production-${name}.png`,
@@ -115,17 +119,17 @@ try {
         await expect(page.locator('.shop-btn')).toBeVisible();
         const images = await page.evaluate(async () =>
           Promise.all(
-            ['goblin-townhall', 'goblin-hut'].map(async (name) => {
+            ['goblin_townhall_lvl1', 'goblin_hut_lvl1'].map(async (name) => {
               const im = new Image();
-              im.src = `/assets/buildings/${name}-v1.webp`;
+              im.src = `/assets/buildings/goblin-native/${name}.png`;
               await im.decode();
               return [im.naturalWidth, im.naturalHeight];
             }),
           ),
         );
         expect(images).toEqual([
-          [512, 512],
-          [512, 512],
+          [400, 360],
+          [280, 260],
         ]);
         await page.locator('[data-action="battle-log"]').click();
         await page.locator('#import-replay-file').setInputFiles(path);
@@ -137,6 +141,7 @@ try {
         dpr: 2,
         viewport: [390, 844],
         npcExport: true,
+        townHallLevel: exported.replay.initial.buildings[0].level,
         seekResult: expected,
         offline,
       };

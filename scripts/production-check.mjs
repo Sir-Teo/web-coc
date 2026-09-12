@@ -7,6 +7,9 @@ if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
   throw new Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}. Use chromium or webkit.`);
 await fs.mkdir('output/playtest', { recursive: true });
 const report = {};
+const goblinNative = JSON.parse(
+  await fs.readFile('reference/goblin-buildings/native.json', 'utf8'),
+);
 const darkStorageNative = JSON.parse(
   await fs.readFile('reference/dark-storage/native.json', 'utf8'),
 );
@@ -27,6 +30,8 @@ for (const [name, engine] of Object.entries(engines)) {
   const errors = [];
   const requiredArt = new Set([
     ...[
+      ...Object.values(goblinNative.textures),
+      ...Object.values(goblinNative.previews),
       ...Object.values(darkStorageNative.textures),
       ...Object.values(darkStorageNative.previews),
       ...Object.values(xbowNative.textures),
