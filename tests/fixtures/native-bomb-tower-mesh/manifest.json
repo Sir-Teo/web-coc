@@ -1,0 +1,815 @@
+{
+  "width": 2400,
+  "height": 3200,
+  "cell": 400,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "43a7a02cd16f0b14c0455bb58a9d5b997124d2882068e44f40ab65e9f29c72c9",
+  "cases": [
+    {
+      "graph": "body",
+      "export": "bomb_projectile_lvl1",
+      "time": 0,
+      "controls": {},
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        202.75000023841858,
+        0.0,
+        2.0,
+        210.0
+      ],
+      "rgbaSha256": "1c18ce7d7fd2ccd390d3fe94315353ad390cc9162913230b79edd7c9f5fad2ad"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_projectile_lvl2",
+      "time": 0,
+      "controls": {},
+      "x": 400,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        202.00000023841858,
+        0.0,
+        2.0,
+        210.10000038146973
+      ],
+      "rgbaSha256": "3be5a6d375a354e79b13133cc03428ad73be2942d88a47c2d27d826a95a8d9f9"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_projectile_lvl3",
+      "time": 0,
+      "controls": {},
+      "x": 800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        201.1500005722046,
+        0.0,
+        2.0,
+        211.85000038146973
+      ],
+      "rgbaSha256": "fca373e4cea65c9009013e2e3813d62f01a8acd95516782039a0a6533e6762c1"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_bomb_lvl1",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.1500015258789,
+        0.0,
+        2.0,
+        192.06445240974426
+      ],
+      "rgbaSha256": "4c4ba4d0db4a98fd2dfedd9f062a4c8cd22c257d606ddefd5ba6435d80b967da"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_bomb_lvl2",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "x": 1600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        204.70000076293945,
+        0.0,
+        2.0,
+        187.5144523382187
+      ],
+      "rgbaSha256": "8c46f417751597339482b4b693bbe443b1005c3fac284dafa67d704d46f5389b"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_bomb_lvl3",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "x": 2000,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        199.79999923706055,
+        0.0,
+        2.0,
+        170.67930875299498
+      ],
+      "rgbaSha256": "5d770bbf4511b21063f7700d7053318a4eca7d9bfab73a17640718811627d80d"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_bomb_lvl4",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "x": 0,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        201.04999923706055,
+        0.0,
+        2.0,
+        165.67930887220427
+      ],
+      "rgbaSha256": "bde4da27397ac34786612ae6935288e9519d54d1723d40cea81acea71e5fe8e5"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl1",
+      "time": 0,
+      "controls": {},
+      "x": 400,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.64999771118164,
+        0.0,
+        2.0,
+        119.20000171661377
+      ],
+      "rgbaSha256": "a6dc45e2284a4fa3d39058a2c46a505662c33106dafa4a92f2f48ed30ba3441a"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl10",
+      "time": 0,
+      "controls": {},
+      "x": 800,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        199.0999984741211,
+        0.0,
+        2.0,
+        134.8000030517578
+      ],
+      "rgbaSha256": "09c5a9b7c60bccf34e123c0b65e0de366d52d36cba3db7e76e770fabfea1d718"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl11",
+      "time": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        140.15000343322754
+      ],
+      "rgbaSha256": "9417d5577bc4da7fe6867f08fcf4d3f5bf1147e2217ce13ff1d7b93b0835cd65"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl12",
+      "time": 0,
+      "controls": {},
+      "x": 1600,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.6500015258789,
+        0.0,
+        2.0,
+        139.50000190734863
+      ],
+      "rgbaSha256": "a0005c9baf4b4469269bea4fbffdb539ad211eaa4dd80f122b208187a0194c3b"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl13",
+      "time": 0,
+      "controls": {},
+      "x": 2000,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        199.79999923706055,
+        0.0,
+        2.0,
+        141.0
+      ],
+      "rgbaSha256": "61729af467d1d434df5cac3a00c52471e3650ecf176cdbf8074755765c9f0c8e"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl2",
+      "time": 0,
+      "controls": {},
+      "x": 0,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        199.3499984741211,
+        0.0,
+        2.0,
+        117.89999866485596
+      ],
+      "rgbaSha256": "9fc1805caebb51705e9fb8be1ca851d4c032a6931efabaae46603112b2c32ebc"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl3",
+      "time": 0,
+      "controls": {},
+      "x": 400,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        121.14999771118164
+      ],
+      "rgbaSha256": "887558ce719af9b740564cb5d7757a9dd5c00f3e8599168eb4d23f2a893a1930"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl4",
+      "time": 0,
+      "controls": {},
+      "x": 800,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        198.70000076293945,
+        0.0,
+        2.0,
+        121.14999771118164
+      ],
+      "rgbaSha256": "1ee4121e626ff5965d6cb366b4fbd23d8e23c17a27fe8906251b534b4da1c84f"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl5",
+      "time": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.64999771118164,
+        0.0,
+        2.0,
+        121.79999923706055
+      ],
+      "rgbaSha256": "384af32527093bcdd30aa3ae386167c8535985a96af5050e75289d11a13bdb51"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl6",
+      "time": 0,
+      "controls": {},
+      "x": 1600,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        200.8499984741211,
+        0.0,
+        2.0,
+        120.95000076293945
+      ],
+      "rgbaSha256": "b4ba298c04ff0d031d87d6e26b0b5cf3712b826cc8af399eab4c49e307b8ba2b"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl7",
+      "time": 0,
+      "controls": {},
+      "x": 2000,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        196.29999923706055,
+        0.0,
+        2.0,
+        116.99999618530273
+      ],
+      "rgbaSha256": "3e6008a3ef6172d5c69353dbfea6655dee9e6e0206219cbe065ecd978e9c9a5a"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl8",
+      "time": 0,
+      "controls": {},
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        198.9000015258789,
+        0.0,
+        2.0,
+        121.5999984741211
+      ],
+      "rgbaSha256": "0d57046b1fe1674ce037a11fa435882fce97297610f3bb805965d032957563d8"
+    },
+    {
+      "graph": "body",
+      "export": "bomb_tower_lvl9",
+      "time": 0,
+      "controls": {},
+      "x": 400,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        199.5500030517578,
+        0.0,
+        2.0,
+        134.5999984741211
+      ],
+      "rgbaSha256": "411b074b9af7130960ee47c69e4e91167db7867c4dd725e0e825e3a2092dddb8"
+    },
+    {
+      "graph": "body",
+      "export": "destroyedBuilding_3m_base_rock",
+      "time": 0,
+      "controls": {},
+      "x": 800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        205.95663795620203,
+        0.0,
+        2.0,
+        52.795505709946156
+      ],
+      "rgbaSha256": "c09cc727633e22fe81a9c0814852c208affe7cf7e01307992f742ac46b7d8ac4"
+    },
+    {
+      "graph": "body",
+      "export": "mortar_base",
+      "time": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        212.88398295640945,
+        0.0,
+        2.0,
+        68.884765625
+      ],
+      "rgbaSha256": "73e06a34a43da335e1dabc4476cd90f13970ad44296d44ec3494612c215416af"
+    },
+    {
+      "graph": "body",
+      "export": "mortar_const",
+      "time": 0,
+      "controls": {},
+      "x": 1600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        195.70000076293945,
+        0.0,
+        2.0,
+        109.85000038146973
+      ],
+      "rgbaSha256": "d934ea0718a0d39cd62da1f5484099b44ff05928b43bd77b74c0169bf8d3564e"
+    },
+    {
+      "graph": "body",
+      "export": "mortar_upg",
+      "time": 0,
+      "controls": {},
+      "x": 2000,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        199.75,
+        0.0,
+        2.0,
+        43.100000739097595
+      ],
+      "rgbaSha256": "c12f567931ed001a5341ee9063f644b4f7b5dcf572d9e4a21340fc45d2c36151"
+    },
+    {
+      "graph": "body",
+      "export": "simple_shadow_small",
+      "time": 0,
+      "controls": {},
+      "x": 0,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        199.0
+      ],
+      "rgbaSha256": "eb2938c2015efc8996582903357ab77d5cbec5dd43f2aebc94de53d3042a8df6"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_attack1_1",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 400,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        198.94999980926514,
+        0.0,
+        2.0,
+        238.50000190734863
+      ],
+      "rgbaSha256": "5dda3c5397ebff59dd6b642b633ed8fe43f7a41510811d1e2b63b88646a7ab29"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_attack1_2",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 800,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        195.5,
+        0.0,
+        2.0,
+        237.19999885559082
+      ],
+      "rgbaSha256": "4d786aa81a3953b1ceab407dcd71fb5fe59124eb0d970725b40bdea403341340"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_attack1_3",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1200,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        198.3499994277954,
+        0.0,
+        2.0,
+        236.60000038146973
+      ],
+      "rgbaSha256": "6bddbf105d86c05ea139a73b6763ab13afe1fff2cb5da932970d0cbc82cbdfd8"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_idle1_1",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1600,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        197.546532869339,
+        0.0,
+        2.0,
+        216.80000019073486
+      ],
+      "rgbaSha256": "49d45afb9357ab61774d1262030e141651d096b5f3b692be97690e97fb90a8e5"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_idle1_2",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 2000,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        198.155566573143,
+        0.0,
+        2.0,
+        219.51850556954741
+      ],
+      "rgbaSha256": "559ef9fc75309c5a91d2af800a7ea042fb8771f2c50fc3875fc801571ce19723"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton1_idle1_3",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 0,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        205.7555671930313,
+        0.0,
+        2.0,
+        219.51850556954741
+      ],
+      "rgbaSha256": "1bb5cccaae9fcc6fe325c6e3f7ef9f71c589b3f065f021e91c28df66bd39a7c0"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_attack1_1",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 400,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        198.94999980926514,
+        0.0,
+        2.0,
+        239.50000190734863
+      ],
+      "rgbaSha256": "110efd6228adc908c49e32def6c8b5a23816ddb94c69926288258366a6e45839"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_attack1_2",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 800,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        195.5,
+        0.0,
+        2.0,
+        237.19999885559082
+      ],
+      "rgbaSha256": "4d786aa81a3953b1ceab407dcd71fb5fe59124eb0d970725b40bdea403341340"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_attack1_3",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1200,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        198.3499994277954,
+        0.0,
+        2.0,
+        235.60000038146973
+      ],
+      "rgbaSha256": "f3e82f9c54235fc17712445424d78de4757d38808c8559535825fbada9ff5266"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_idle1_1",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1600,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        197.546532869339,
+        0.0,
+        2.0,
+        216.80000019073486
+      ],
+      "rgbaSha256": "d059a4372083d709db59f9eed5315a96178ecdea5d1039d4a624a5fb3f88eded"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_idle1_2",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 2000,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        198.155566573143,
+        0.0,
+        2.0,
+        219.51850556954741
+      ],
+      "rgbaSha256": "d353df4c577f7aee3f75d02d174c042c34838203062c4304cb8d79c96032b4e5"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_idle1_3",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        205.95556700229645,
+        0.0,
+        2.0,
+        219.50737273320556
+      ],
+      "rgbaSha256": "f4e1ae6341b8b61002952cb0bc99925c856d557eec6950243b52696848a9cdd7"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_attack1_1",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 400,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        198.94999980926514,
+        0.0,
+        2.0,
+        241.19999885559082
+      ],
+      "rgbaSha256": "84e3d9ab7122af462076d2607ded5d8d2c53fa1dd600f346e6c0e7b3032e946d"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_attack1_2",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        195.5,
+        0.0,
+        2.0,
+        238.89999961853027
+      ],
+      "rgbaSha256": "150649601905467e22aaccdb2a00e675b7de79f27452401ef49dac302f0ff6b8"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_attack1_3",
+      "time": 0.4583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        198.3499994277954,
+        0.0,
+        2.0,
+        235.60000038146973
+      ],
+      "rgbaSha256": "22c30f5118b42d21a4b4750bade95206b902014383932ed28cabd84b1feacc8d"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_idle1_1",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 1600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        198.09653306007385,
+        0.0,
+        2.0,
+        218.53456903249025
+      ],
+      "rgbaSha256": "95e0ce3b30e5cc2e93276617ff12d54874f872cab872e454f797461f66e2e0ba"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_idle1_2",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 2000,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        198.15556943416595,
+        0.0,
+        2.0,
+        221.67797445505857
+      ],
+      "rgbaSha256": "abd65c4abd3f50d32e77bdd3447d2269d96f06d6e670d91fe9d3ae51c7d1025d"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton4_idle1_3",
+      "time": 1.9583333333333333,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 0,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        205.7555729150772,
+        0.0,
+        2.0,
+        219.5823731571436
+      ],
+      "rgbaSha256": "134307b96ae442da17d16b6d7451913eb6d64af4969035ad019e8d1fe4a7c07e"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_attack1_2",
+      "time": 0.0,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 400,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        197.69999980926514,
+        0.0,
+        2.0,
+        223.39999961853027
+      ],
+      "rgbaSha256": "f08a34dfc1a47243eed25e5665f95d9140df1de3f8ac314f4fd2933322a25ed7"
+    },
+    {
+      "graph": "defender",
+      "export": "b_skeleton2_attack1_2",
+      "time": 0.8333333333333334,
+      "controls": {
+        "ability_on": false
+      },
+      "x": 800,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        197.69999980926514,
+        0.0,
+        2.0,
+        223.39999961853027
+      ],
+      "rgbaSha256": "d3e27f1c9aefa746f2da2bb2048d22b7be0958a2b7f5d534365b2aafa702e499"
+    }
+  ]
+}
