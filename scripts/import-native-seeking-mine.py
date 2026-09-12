@@ -151,7 +151,14 @@ def build():
                   minHousing=int(levels[0]['MinTriggerHousingLimit']), actionFrame=int(levels[0]['ActionFrame']),
                   triggerFps=graph['clips'][str(graph['exports'][levels[0]['ExportNameTriggered']])]['fps'],
                   airTrigger=levels[0]['AirTrigger'] == 'TRUE', groundTrigger=levels[0]['GroundTrigger'] == 'TRUE',
-                  size=int(levels[0]['Width']))
+                  size=int(levels[0]['Width']),
+                  trigger=levels[0]['ExportNameTriggered'], upgrade=levels[0]['ExportNameBuildAnim'],
+                  broken=levels[0]['ExportNameBroken'],
+                  projectiles={name: dict(export=rows[0]['ExportName'], shadow=rows[0]['ShadowExportName'],
+                    speed=int(rows[0]['Speed']), startHeight=int(rows[0]['StartHeight']),
+                    startOffset=int(rows[0]['StartOffset']), scale=int(rows[0]['Scale']),
+                    playOnce=rows[0]['PlayOnce'] == 'TRUE', emitter=rows[0]['ParticleEmitter'])
+                    for name, rows in projectiles.items()})
     metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                     trap=trap, projectiles=projectiles, effects=effects, particles=particles,
                     world=dict(graph=graph, textures=textures),
@@ -162,7 +169,7 @@ def build():
                     reconstruction=dict(nativePlaybackVerified=False, liveIntegration=False,
                         scope='Eight source levels, four setup/projectile families, upgrade/spent/reveal/shadow clips, all referenced particles, original Info portrait and five sounds.',
                         emptyBounds='The Info root contains one explicitly empty TextField named bounds. Its source rectangle and placement remain metadata; it paints no pixels.',
-                        timing='Trigger ActionFrame=7 and original clip=24 fps. Native action-frame and projectile handoff semantics remain unverified; the current simulation still uses 7/30 seconds.'))
+                        timing='Trigger ActionFrame=7 and original clip=24 fps. The local simulation derives a 7/24-second release from these fields; native action-frame and projectile handoff semantics remain unverified.'))
     print(f'World: {len(graph["exports"])} exports, {len(graph["clips"])} clips, {len(graph["shapes"])} shapes, {len(textures)} textures', flush=True)
     print(f'Info: original 360x420 portrait, three embedded ASTC textures, empty bounds retained', flush=True)
     return outputs, dict(native=metadata, runtime=runtime, info=info_runtime, combat=combat,

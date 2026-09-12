@@ -92,7 +92,7 @@ it('keeps exact later levels in saves and practice while enforcing the TH8 purch
   expect(validateSave(invalid.state)).toBe(false);
 });
 
-it('enables the unchanged Invaders layout with exact level-three damage and retains subsequent gates', () => {
+it('enables the unchanged Invaders layout with exact level-three damage', () => {
   expect(nativeCampaignIssues(50)).toEqual([]);
   const buildings = nativeBuildings(50);
   expect(buildings).toHaveLength(272);
@@ -106,5 +106,4 @@ it('enables the unchanged Invaders layout with exact level-three damage and reta
     'both',
     'both',
   ]);
-  expect(nativeCampaignIssues(51)).toEqual(['Seeking Air Mine level 3']);
 });

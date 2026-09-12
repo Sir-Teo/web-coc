@@ -178,6 +178,12 @@ async function boot() {
               shells: model.battle.shells,
               projectiles: model.battle.projectiles ?? [],
               xbows: model.battle.xbows ?? {},
+              seekingMines: Object.entries(model.battle.traps).flatMap(([id, state]) => {
+                const mine = model.battle!.buildings.find((b) => b.id === Number(id));
+                return mine?.kind === 'seekingairmine'
+                  ? [{ sourceId: mine.id, level: mine.level, ...state }]
+                  : [];
+              }),
               defenders: (model.battle.defenders ?? [])
                 .filter((d) => d.hp > 0)
                 .map((d) => ({

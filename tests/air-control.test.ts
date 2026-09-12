@@ -182,7 +182,9 @@ describe('Seeking Air Mine', () => {
       const target = flyer(m, 14, 10.5, kind),
         neighbor = flyer(m, 14.1, 10.5);
       advance(m, 0.3);
-      expect(b.traps[9000].x).toBeCloseTo(10.5 + 3.5 * (0.25 - 7 / 30), 8);
+      expect(b.traps[9000].x).toBe(10.5);
+      advance(m, 0.05);
+      expect(b.traps[9000].x).toBeCloseTo(10.5 + 3.5 * (0.3 - 7 / 24), 8);
       expect(target.hp).toBe(5000);
       target.y += 1;
       advance(m, 2);

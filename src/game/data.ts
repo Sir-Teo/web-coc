@@ -8,6 +8,7 @@ import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
 import type { SkeletonMode } from './skeleton-stats';
 import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
+import { SEEKING_MINE_LEVELS } from './seeking-mine-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
 import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
@@ -439,18 +440,18 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 1,
     width: 44,
     hp: 1,
-    cost: 12000,
+    cost: SEEKING_MINE_LEVELS[0].cost,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 1,
+    maxLevel: SEEKING_MINE_LEVELS.length,
     available: [0, 0, 0, 0, 0, 0, 1, 2],
-    build: 0,
+    build: SEEKING_MINE_LEVELS[0].seconds,
     singleArtwork: true,
     trap: {
-      trigger: 4,
-      radius: 0,
+      trigger: SEEKING_MINE.trigger,
+      radius: SEEKING_MINE.radius,
       delay: SEEKING_MINE.delay,
-      damage: 1500,
+      damage: SEEKING_MINE_LEVELS[0].damage,
       targets: 'air',
       minHousing: SEEKING_MINE.minHousing,
       homingSpeed: SEEKING_MINE.speed,
@@ -996,6 +997,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'seekingairmine' ? 1 : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level)?.hp : undefined) ??
   (kind === 'airsweeper' ? sweeperStats(level).hp : undefined) ??
   facilityProgression(kind, level)?.hp ??

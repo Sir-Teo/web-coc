@@ -33,6 +33,38 @@ test('shop gates both defenses and loads every direction and mine state', async 
   expect(ready).toBe(true);
 });
 
+for (const width of [390, 320])
+  test(`mine Info shows source level two and the TH9 gate at ${width}px`, async ({
+    page,
+    browserName,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { model: m, scene } = window.__game;
+      m.townhall.level = 8;
+      m.state.obstacles = [];
+      m.state.buildings.push(makeBuilding(m.state.nextId++, 'seekingairmine', 6, 10));
+      m.selected = m.state.buildings.at(-1).id;
+      m.changed();
+      scene.sync();
+    });
+    await page.locator('[data-action="info"]').click();
+    await expect(page.locator('.info-hero')).toContainText('LEVEL 1 OF 8');
+    await expect(page.locator('.info-table')).toContainText('Level 2');
+    for (const value of ['1,500', '1,800', '3.5 tiles/s'])
+      await expect(page.locator('.info-table')).toContainText(value);
+    await expect(page.locator('.info-upgrade')).toContainText('Requires Town Hall 9');
+    expect(await page.locator('.info-upgrade button').count()).toBe(0);
+    const bounds = await page.locator('.info-table').boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    await page.screenshot({
+      path: `output/playtest/seeking-mine-th9-gate-${width}-${browserName}.png`,
+      animations: 'disabled',
+    });
+  });
+
 for (const width of [1440, 390, 320])
   test(`rotate, inspect and restore Sweeper at ${width}px`, async ({ page, browserName }) => {
     await page.setViewportSize({ width, height: width === 1440 ? 960 : 844 });

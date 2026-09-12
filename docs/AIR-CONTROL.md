@@ -17,7 +17,7 @@ Supercell public client bundle `18.400.21`, asset hash `7f04bdfdc4124b1f49308423
 | 3 | 850 | 450,000 | 8h | 2.4 tiles |
 | 4 | 900 | 800,000 | 12h | 2.8 tiles |
 
-The local mine supports level 1: 1,500 damage, 12,000 gold, instant placement, four-tile trigger, minimum five housing spaces, single target, 3.5 tiles/s. Healers are eligible.
+The mine now uses all eight original damage/cost/time rows for campaign, retained saves and practice. Home availability remains level 1: 1,500 damage, 12,000 gold, instant placement. Every level uses a four-tile trigger, minimum five housing spaces, a single target and 3.5 tiles/s. Healers are eligible. The focused runtime projection also preserves all four projectile exports, shadow, emitter, start height/offset, scale and play-once fields for presentation integration.
 
 Catalog ceilings/counts were cross-checked against [Sweeper progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/air-sweeper) and [mine progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/seeking-air-mine): one Sweeper from TH6, levels 2/3/4 at TH6/7/8; one mine at TH7 and two at TH8. Mine level 2 requires TH9 and is outside this catalog. The trap CSV's level-one TownHallLevel field is not its unlock gate.
 
@@ -29,7 +29,7 @@ Native fields establish a five-second attack cycle, 0.6-second preparation and 1
 
 The traveling front uses a 60-degree sector capped at five tiles wide, with a 0.3-tile collision tolerance. Pushes resolve over 0.6 seconds. Those collision/easing choices remain local approximations. The CSV also has `ShockwaveArcLength=700`, `ShockwaveExpandRadius=250`, `StartOffset=125` and `CoolDownOverride=4800`; their full interaction with native animation and hitboxes is not reproduced. Frame-by-frame comparison remains necessary before claiming exact combat parity.
 
-Mine activation currently assumes its seven action frames run at 30 fps (7/30 seconds). The newly decoded original `air_trap` clip actually runs at 24 fps, exposing a timing discrepancy to resolve during native integration. The original reveal/projectile clips also begin with empty frames; their native handoff remains unverified. Flight duration depends on distance, never a fixed arrival timer. Loss of its target consumes the mine without splash or retargeting. Native target-loss/retarget behavior still needs direct verification. Ground troops never trigger it. Fresh attacks re-arm home traps; practice cannot consume village defenses.
+Mine activation now divides source action frame 7 by the original `air_trap` clip’s 24 fps, replacing the former 30 fps assumption. This 7/24-second release is a source-based interpretation; native action-frame numbering and executable spawn ordering remain unverified. Combat version 33 expires older playback while keeping saved results readable. The original reveal/projectile clips also begin with empty frames; their native handoff remains unverified. Flight duration depends on distance, never a fixed arrival timer. Loss of its target consumes the mine without splash or retargeting. Native target-loss/retarget behavior still needs direct verification. Ground troops never trigger it. Fresh attacks re-arm home traps; practice cannot consume village defenses.
 
 The later campaign maps introduce a Sweeper from stage 6 and Seeking Air Mines from stage 8, with two mines in the final fortress. Campaign layouts and health/damage multipliers are authored local content; these stages do not claim native campaign or matchmaking balance.
 

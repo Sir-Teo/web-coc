@@ -3,6 +3,7 @@ import type { BuildingKind } from './data';
 import { XBOW_LEVELS } from './xbow-stats';
 import { teslaStats } from './tesla-stats';
 import { bombTowerStats } from './bomb-tower-stats';
+import { seekingMineStats } from './seeking-mine-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
@@ -43,6 +44,8 @@ export const requiredTownHall = (kind: BuildingKind, level: number) => {
   if (kind === 'tesla') return teslaStats(level)?.townhall ?? null;
   if (kind === 'darkstorage') return darkStorageStats(level)?.townhall ?? null;
   if (kind === 'xbow') return XBOW_LEVELS[level - 1]?.townhall ?? null;
+  // Level-one source trap rows use TH1; the actual purchase unlock is TH7.
+  if (kind === 'seekingairmine' && level > 1) return seekingMineStats(level)?.townhall ?? null;
   // Native trap rows retain later requirements even while the home village caps at TH8.
   if (kind === 'skeletontrap' && (level === 3 || level === 4)) return level + 6;
   const index = BUILDING_LEVELS[kind].findIndex((cap) => cap >= level);

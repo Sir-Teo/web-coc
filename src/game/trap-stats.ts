@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import { SEEKING_MINE_LEVELS } from './seeking-mine-stats';
 
 /** Modern Home Village values; source reconciliation is documented in docs/TRAP-PROGRESSION.md. */
 export const TRAP_LEVELS = {
@@ -8,7 +9,7 @@ export const TRAP_LEVELS = {
     { damage: 0, cost: 400000, seconds: 28800 },
     { damage: 0, cost: 1000000, seconds: 43200 },
   ],
-  seekingairmine: [{ damage: 1500, cost: 12000, seconds: 0 }],
+  seekingairmine: SEEKING_MINE_LEVELS,
   bomb: [
     { damage: 20, cost: 400, seconds: 0 },
     { damage: 24, cost: 1000, seconds: 60 },

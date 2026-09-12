@@ -20,12 +20,7 @@ export const SWEEPER = {
   pushSeconds: 0.6,
 } as const;
 
-export const SEEKING_MINE = {
-  speed: 3.5,
-  minHousing: 5,
-  // Seven animation frames; this local timing assumes 30 fps.
-  delay: 7 / 30,
-} as const;
+export { SEEKING_MINE } from './seeking-mine-stats';
 
 export const validDirection = (v: unknown) =>
   v === undefined || (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 8);
