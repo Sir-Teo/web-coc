@@ -1,6 +1,6 @@
 # Air Sweeper and Seeking Air Mine audit
 
-Implemented for the local Town Hall 1–8 catalog. Reviewed 2026-09-11. These are original game assets and a local simulation, with the unresolved native behavior listed below.
+Implemented for the local Town Hall 1–8 catalog. Reviewed 2026-09-12. Live Sweeper/mine presentation still uses authored artwork and a local simulation, with unresolved native behavior listed below. [Original Seeking Air Mine assets](../reference/seeking-mine/README.md) now retain all eight source levels, four animated families, effects, sounds and the original Info portrait; live integration is pending.
 
 ## Primary data
 
@@ -29,7 +29,7 @@ Native fields establish a five-second attack cycle, 0.6-second preparation and 1
 
 The traveling front uses a 60-degree sector capped at five tiles wide, with a 0.3-tile collision tolerance. Pushes resolve over 0.6 seconds. Those collision/easing choices remain local approximations. The CSV also has `ShockwaveArcLength=700`, `ShockwaveExpandRadius=250`, `StartOffset=125` and `CoolDownOverride=4800`; their full interaction with native animation and hitboxes is not reproduced. Frame-by-frame comparison remains necessary before claiming exact combat parity.
 
-Mine activation assumes its seven action frames run at 30 fps (7/30 seconds). Its flight duration depends on distance, never a fixed arrival timer. Loss of its target consumes the mine without splash or retargeting. Native target-loss/retarget behavior still needs direct verification. Ground troops never trigger it. Fresh attacks re-arm home traps; practice cannot consume village defenses.
+Mine activation currently assumes its seven action frames run at 30 fps (7/30 seconds). The newly decoded original `air_trap` clip actually runs at 24 fps, exposing a timing discrepancy to resolve during native integration. The original reveal/projectile clips also begin with empty frames; their native handoff remains unverified. Flight duration depends on distance, never a fixed arrival timer. Loss of its target consumes the mine without splash or retargeting. Native target-loss/retarget behavior still needs direct verification. Ground troops never trigger it. Fresh attacks re-arm home traps; practice cannot consume village defenses.
 
 The later campaign maps introduce a Sweeper from stage 6 and Seeking Air Mines from stage 8, with two mines in the final fortress. Campaign layouts and health/damage multipliers are authored local content; these stages do not claim native campaign or matchmaking balance.
 
@@ -37,6 +37,6 @@ The later campaign maps introduce a Sweeper from stage 6 and Seeking Air Mines f
 
 Select a built Sweeper and use **Rotate** or **R** to turn it 45 degrees. Rotation costs nothing. It is preserved in layout save/restore, layout undo/redo, village persistence, moving previews and replay exports. Older records without orientation use zero; malformed directions are rejected. Replay version 19 expires playback of older combat rules while preserving their results.
 
-`art/source/air-control-v1/` retains accepted original PNGs and prompts. Built-in image generation produced four eight-direction Sweeper sheets and a three-state mine sheet. Generated checkerboard backgrounds were rejected and corrected through the image tool. `scripts/air-control-assets.mjs` creates 32 lossless 384px directional sprites and armed/flying/spent mine sprites, validates alpha and supports reproducible `--check`. No native game textures are redistributed.
+`art/source/air-control-v1/` retains accepted authored PNGs and prompts. Built-in image generation produced four eight-direction Sweeper sheets and a three-state mine sheet. Generated checkerboard backgrounds were rejected and corrected through the image tool. `scripts/air-control-assets.mjs` creates 32 lossless 384px directional sprites and armed/flying/spent mine sprites, validates alpha and supports reproducible `--check`. Those files remain live while the separate `seeking-mine-native` source assets await integration.
 
 Visual design was compared with the [official Air Sweeper announcement](https://x.com/ClashofClans/status/593626016469413889) and the [Sweeper upgrade descriptions](https://clashofclans.fandom.com/wiki/Air_Sweeper?jw_start=%7Bseek_to_second_number%7D&page=1). Original render proportions, directional granularity, bellows animation and per-pixel native correspondence remain areas for further refinement.

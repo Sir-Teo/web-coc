@@ -1,0 +1,1155 @@
+{
+  "width": 2400,
+  "height": 4800,
+  "cell": 400,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "9b1b34969a52776c43c3858da6000c8036464f2390b0be4c3f2a1f4a4d1292d3",
+  "cases": [
+    {
+      "graph": "world",
+      "export": "Hit",
+      "time": 0.0,
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.00000149011612,
+        0.0,
+        2.0,
+        199.99999856948853
+      ],
+      "empty": false,
+      "rgbaSha256": "6c42c3f5961c0009795b0295cbb791b7ebfc63ff6f297282985312b8a60c83e4"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 0.0,
+      "x": 400,
+      "y": 0,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 0.041666666666666664,
+      "x": 800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        205.5,
+        0.0,
+        2.0,
+        153.30000162124634
+      ],
+      "empty": false,
+      "rgbaSha256": "3730d7bec4b953e445eb88065464b758d0477a7c3251c488ef9619393944585c"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 0.25,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        199.3499984741211,
+        0.0,
+        2.0,
+        158.64999866485596
+      ],
+      "empty": false,
+      "rgbaSha256": "41678a868ef188760498f9bb668b4712ec5ffe634e976598fcaa085c3afac9c2"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 0.2916666666666667,
+      "x": 1600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        205.20000076293945,
+        0.0,
+        2.0,
+        160.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "e9e8c0981745b67cd8c838b82835e30aa438a7399f0a609e14ee80a4ced9bcda"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 0.5833333333333334,
+      "x": 2000,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        200.0374994277954,
+        0.0,
+        2.0,
+        194.94999980926514
+      ],
+      "empty": false,
+      "rgbaSha256": "3c6438b71767d41e693d465b862e3c9f2a8a1db2c30702095f95e1589a52e8d8"
+    },
+    {
+      "graph": "world",
+      "export": "air_trap",
+      "time": 3.0833333333333335,
+      "x": 0,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        205.20000076293945,
+        0.0,
+        2.0,
+        160.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "e9e8c0981745b67cd8c838b82835e30aa438a7399f0a609e14ee80a4ced9bcda"
+    },
+    {
+      "graph": "world",
+      "export": "d1",
+      "time": 0.0,
+      "x": 400,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bf122cdfa9bd90cddf80cb2449b189256b71b3de2c0ced257d4c5f7c9ee0afbb"
+    },
+    {
+      "graph": "world",
+      "export": "d2",
+      "time": 0.0,
+      "x": 800,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "63febe2daf18fc85d67d4263b6773b50292cd8413be9c354f83c85e5b4feea86"
+    },
+    {
+      "graph": "world",
+      "export": "d3",
+      "time": 0.0,
+      "x": 1200,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "651883fef4fd2538197358e81e09becbb29a23fe16421e1f820d455dd15d0528"
+    },
+    {
+      "graph": "world",
+      "export": "d4",
+      "time": 0.0,
+      "x": 1600,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1d9b1c6a4f682d659393e7ffa023fb4d8ceb99436e819aa61525707c11be3f4e"
+    },
+    {
+      "graph": "world",
+      "export": "d4_red",
+      "time": 0.0,
+      "x": 2000,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7295a878dc842c813194a88d18f4d7e909a6f632cf2b4e435e89a9ec97923963"
+    },
+    {
+      "graph": "world",
+      "export": "die_force_above",
+      "time": 0.5,
+      "x": 0,
+      "y": 800,
+      "root": [
+        0.7751193022873129,
+        0.0,
+        203.91435262439322,
+        0.0,
+        0.7751193022873129,
+        353.40458838139705
+      ],
+      "empty": false,
+      "rgbaSha256": "75e0e9e33fb2669c8c10780c702ee37e0a88e3a1f44d74727b8793ff2b054ef8"
+    },
+    {
+      "graph": "world",
+      "export": "die_force_above_reverse",
+      "time": 0.5,
+      "x": 400,
+      "y": 800,
+      "root": [
+        0.7751193022873129,
+        0.0,
+        198.41100546727156,
+        0.0,
+        0.7751193022873129,
+        59.53990455817015
+      ],
+      "empty": false,
+      "rgbaSha256": "b95c62fe395eb2e2fbad5b84e70b760110fad4dfb7c4a23c81f4bce2e7cd97ac"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile",
+      "time": 0.0,
+      "x": 800,
+      "y": 800,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile",
+      "time": 0.08333333333333333,
+      "x": 1200,
+      "y": 800,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile",
+      "time": 0.25,
+      "x": 1600,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        197.1203597150743,
+        0.0,
+        2.0,
+        223.33564517833292
+      ],
+      "empty": false,
+      "rgbaSha256": "1f39959f087027ba982b18fd837b38a3ef66d35538d4ae34fa2d31384458bcbd"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile",
+      "time": 1.0,
+      "x": 2000,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        190.95121855661273,
+        0.0,
+        2.0,
+        260.8710456038825
+      ],
+      "empty": false,
+      "rgbaSha256": "4c4dd54042d4a406cad249730e0bc7b9ac475667a9e8858d704ac88d5be5c4ce"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile",
+      "time": 4.958333333333333,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        191.65571060404181,
+        0.0,
+        2.0,
+        258.5389667470008
+      ],
+      "empty": false,
+      "rgbaSha256": "d9fef8fc4a105dc8f5f5653ac28807022a3fc39b08005285989e38b7ab59e618"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl3",
+      "time": 0.0,
+      "x": 400,
+      "y": 1200,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl3",
+      "time": 0.08333333333333333,
+      "x": 800,
+      "y": 1200,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl3",
+      "time": 0.25,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        204.69301658449695,
+        0.0,
+        2.0,
+        215.86967779695988
+      ],
+      "empty": false,
+      "rgbaSha256": "f5c24a798f4c5cc6d0dc7e35dde279be4880b806c940392709e5ca3878d8df7f"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl3",
+      "time": 1.0,
+      "x": 1600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        185.82192227896303,
+        0.0,
+        2.0,
+        251.2098143491894
+      ],
+      "empty": false,
+      "rgbaSha256": "71e4579e4e9a1e2be98c94d8e9c6c0d8b3292fd3f98ea341f0c14abc6a805bf7"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl3",
+      "time": 4.958333333333333,
+      "x": 2000,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        196.8506332412362,
+        0.0,
+        2.0,
+        250.04370231181383
+      ],
+      "empty": false,
+      "rgbaSha256": "5280f011d303042ca01c2abe1ec8390cc7801402bf68fd836bad4125d95686b9"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl5",
+      "time": 0.0,
+      "x": 0,
+      "y": 1600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl5",
+      "time": 0.08333333333333333,
+      "x": 400,
+      "y": 1600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl5",
+      "time": 0.25,
+      "x": 800,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        207.27260656654835,
+        0.0,
+        2.0,
+        213.93691374361515
+      ],
+      "empty": false,
+      "rgbaSha256": "9ced655b39058c204448047e4b121f9d5d05752e1826f7af782474a5665e06b7"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl5",
+      "time": 1.0,
+      "x": 1200,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        185.21923846006393,
+        0.0,
+        2.0,
+        251.11547879315913
+      ],
+      "empty": false,
+      "rgbaSha256": "8a539f091ee4ea3b16e6624fb5bea42c92f9a7d37dc685d69be6ef23108d4fb2"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl5",
+      "time": 4.958333333333333,
+      "x": 1600,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        196.2012702934444,
+        0.0,
+        2.0,
+        247.40625113993883
+      ],
+      "empty": false,
+      "rgbaSha256": "a505284e93c83ac3dc42642341aa42ae8120d17a4ab3f4142fef10c0c40c2963"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl7",
+      "time": 0.0,
+      "x": 2000,
+      "y": 1600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl7",
+      "time": 0.08333333333333333,
+      "x": 0,
+      "y": 2000,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl7",
+      "time": 0.25,
+      "x": 400,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        208.68281262367964,
+        0.0,
+        2.0,
+        208.62119132676162
+      ],
+      "empty": false,
+      "rgbaSha256": "629650511457531ae3d2f145bb14e6b451d5439d45efda4164a4b8c30d7b7fec"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl7",
+      "time": 1.0,
+      "x": 800,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        188.08500973694026,
+        0.0,
+        2.0,
+        240.62206997000612
+      ],
+      "empty": false,
+      "rgbaSha256": "39e4ad57b69da9bf89a8179d02a4c445ebe1ec909c2700dd4bd0ce619a04de8f"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_projectile_lvl7",
+      "time": 4.958333333333333,
+      "x": 1200,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        198.1493667587638,
+        0.0,
+        2.0,
+        238.25830154586583
+      ],
+      "empty": false,
+      "rgbaSha256": "848550a813a2be256b928555fa8a08f88b925a81f07e46d33f3d3950d9f7c801"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup",
+      "time": 0.0,
+      "x": 1600,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        199.7688980102539
+      ],
+      "empty": false,
+      "rgbaSha256": "22d73683dbae9360707c4b5baccaec44b662408f97262de7aa24b1bd5b5ce851"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup",
+      "time": 1.9583333333333333,
+      "x": 2000,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        199.1807632446289
+      ],
+      "empty": false,
+      "rgbaSha256": "25c26c54125168b03adeac3aa04139ff9e9cb46c3605fa652c6c370ee12e907f"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup",
+      "time": 4.125,
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.20615385845304
+      ],
+      "empty": false,
+      "rgbaSha256": "6923b3fa45bc24152180a6622274b8c23e09929b662372588bb6d985190d1805"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup",
+      "time": 8.291666666666666,
+      "x": 400,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        199.81889820098877
+      ],
+      "empty": false,
+      "rgbaSha256": "ad67d2ed776a67e5ab049b7118fd83c67bc46943b8d9cde0f84cc71ea3bda17c"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl3",
+      "time": 0.0,
+      "x": 800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        193.31889820098877
+      ],
+      "empty": false,
+      "rgbaSha256": "79316f10db82fd3509f26d3b99ead9959133ecb5f1346a403ed7e1279b582044"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl3",
+      "time": 1.9583333333333333,
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        192.73076343536377
+      ],
+      "empty": false,
+      "rgbaSha256": "a0fe0a3c329cdf74f43c140c91baddb0c7444277f893077fff66f838a8b72f58"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl3",
+      "time": 4.125,
+      "x": 1600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        193.7561540491879
+      ],
+      "empty": false,
+      "rgbaSha256": "7020dc7c440314eb274e33b72129ed4d26985100ed7acca8768fd76c2da20a1c"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl3",
+      "time": 8.291666666666666,
+      "x": 2000,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        193.36889743804932
+      ],
+      "empty": false,
+      "rgbaSha256": "cd209275397c4d99f21d2c8da221fd9a226ecb0915422e0578c34569ce8daaf9"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl5",
+      "time": 0.0,
+      "x": 0,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        198.04999923706055,
+        0.0,
+        2.0,
+        199.86889743804932
+      ],
+      "empty": false,
+      "rgbaSha256": "c294779daef6df747915306006c6128f3b238fc98c2e6e27d9884f8ef0957bc7"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl5",
+      "time": 1.9583333333333333,
+      "x": 400,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        198.04999923706055,
+        0.0,
+        2.0,
+        199.28076267242432
+      ],
+      "empty": false,
+      "rgbaSha256": "bfccc1ae45147b1e93e3b345c10c670d98cccb555ade95a23a538dc4b945cf69"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl5",
+      "time": 4.125,
+      "x": 800,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        198.04999923706055,
+        0.0,
+        2.0,
+        200.30615328624845
+      ],
+      "empty": false,
+      "rgbaSha256": "69a6830bcfa602b5862038db59a3710b739652b3d10e2cd81b8bc5371e982f40"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl5",
+      "time": 8.291666666666666,
+      "x": 1200,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        198.04999923706055,
+        0.0,
+        2.0,
+        199.91889762878418
+      ],
+      "empty": false,
+      "rgbaSha256": "3fa1ca14b1409852ea272a62cf63ae4f11f600d37dbad3d9775a791bd63362f5"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl7",
+      "time": 0.0,
+      "x": 1600,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        199.3499984741211,
+        0.0,
+        2.0,
+        200.92700023762882
+      ],
+      "empty": false,
+      "rgbaSha256": "5ba352e32a83ee94c69eca74573fbf7b180ee21a9358762b8c23061e2f65ac5b"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl7",
+      "time": 1.9583333333333333,
+      "x": 2000,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        198.92036045715213,
+        0.0,
+        2.0,
+        200.35839673038572
+      ],
+      "empty": false,
+      "rgbaSha256": "2cba6ce365b671dba741e554f12470daecb25611414aaebdf1e119dd026b8d4c"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl7",
+      "time": 4.125,
+      "x": 0,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        199.3499984741211,
+        0.0,
+        2.0,
+        201.31928539834917
+      ],
+      "empty": false,
+      "rgbaSha256": "004297c8109451109fe22c67ef0e1a56f036cebbeeebee695a51ed7875463c59"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_setup_lvl7",
+      "time": 8.291666666666666,
+      "x": 400,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        199.3499984741211,
+        0.0,
+        2.0,
+        200.97700042836368
+      ],
+      "empty": false,
+      "rgbaSha256": "6ac44878e1c4f7afbfd791f53f240cd0a6be257d14333abeee1179b374285484"
+    },
+    {
+      "graph": "world",
+      "export": "evil_airTrap_unarmed",
+      "time": 0.0,
+      "x": 800,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        198.04999923706055,
+        0.0,
+        2.0,
+        155.69999837875366
+      ],
+      "empty": false,
+      "rgbaSha256": "ca7404296b63d5d9e3488477dc3e788f80ae45a229d9a3676df11d53f8abf9ff"
+    },
+    {
+      "graph": "world",
+      "export": "evil_air_trap_upg",
+      "time": 0.0,
+      "x": 1200,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        200.35000228881836,
+        0.0,
+        2.0,
+        148.85000085830688
+      ],
+      "empty": false,
+      "rgbaSha256": "b48147063eea6950ea38d681907de074d428a8022ad359a993c6e89724cf6e4e"
+    },
+    {
+      "graph": "world",
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "x": 1600,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "799e8d09810471e4bac1394f868d69df6b6d2a2f9d6128887d4a967de1ea1035"
+    },
+    {
+      "graph": "world",
+      "export": "g1",
+      "time": 0.0,
+      "x": 2000,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "3752d4eab1272bff43415910abb86ba6b41234c4d0893fc65ccc7ce7e4f84d1b"
+    },
+    {
+      "graph": "world",
+      "export": "g2",
+      "time": 0.0,
+      "x": 0,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2d1b2b0786080cf839c8b4f5bfabaeba2479b2177f025b203f307207c011d144"
+    },
+    {
+      "graph": "world",
+      "export": "g3",
+      "time": 0.0,
+      "x": 400,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "b13cd3793b41b051faebc1cb611bd056d6d24fd790c519b9ddca11d94eb5a066"
+    },
+    {
+      "graph": "world",
+      "export": "g4",
+      "time": 0.0,
+      "x": 800,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7a04533f3564ee3d3b1a98e98ddfcbd53eb44a317d18b9c7abf17a410f120764"
+    },
+    {
+      "graph": "world",
+      "export": "hit_force_above",
+      "time": 0.3333333333333333,
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        1.5776468765830602,
+        0.0,
+        208.04599892011748,
+        0.0,
+        1.5776468765830602,
+        382.20080647102657
+      ],
+      "empty": false,
+      "rgbaSha256": "8de84ef29cdb19c554710b0107b0eb668f5cfd20e856f86ca45487cb2363b828"
+    },
+    {
+      "graph": "world",
+      "export": "s3",
+      "time": 0.0,
+      "x": 1600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "014ecbe8f01cbb6e24d5d877abaaf3b6811d51c7a8e277606b92864e340cc607"
+    },
+    {
+      "graph": "world",
+      "export": "s4",
+      "time": 0.0,
+      "x": 2000,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "a3a2957ae6e5a3085f9269cca0d04940c2317be0a9c5bcaf66b5e8819b9bcc66"
+    },
+    {
+      "graph": "world",
+      "export": "simple_shadow_small",
+      "time": 0.0,
+      "x": 0,
+      "y": 4000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        199.0
+      ],
+      "empty": false,
+      "rgbaSha256": "eb2938c2015efc8996582903357ab77d5cbec5dd43f2aebc94de53d3042a8df6"
+    },
+    {
+      "graph": "world",
+      "export": "smoke00",
+      "time": 0.125,
+      "x": 400,
+      "y": 4000,
+      "root": [
+        2.0,
+        0.0,
+        201.30000114440918,
+        0.0,
+        2.0,
+        204.55000019073486
+      ],
+      "empty": false,
+      "rgbaSha256": "a8c6bfceff19e3292cd1e2a3e13cf56349128d5835fa9561ef8264cee65ad0c6"
+    },
+    {
+      "graph": "world",
+      "export": "spell_range_marker_3",
+      "time": 0.3333333333333333,
+      "x": 800,
+      "y": 4000,
+      "root": [
+        1.8520091216481875,
+        0.0,
+        200.0,
+        0.0,
+        1.8520091216481875,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "3f539cdf91a0981d2875e58cf272e77c4f5a64e1a8f074fefd4c93f15ecf91d3"
+    },
+    {
+      "graph": "world",
+      "export": "fireball3b",
+      "emitter": "AirDefence3_hit2",
+      "particleBlend": 8,
+      "time": 0.5416666666666666,
+      "x": 1200,
+      "y": 4000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "de09eeb22c36011e7ef9015fe86506c8a00e32f857329635d004f1f2c2c38da3"
+    },
+    {
+      "graph": "world",
+      "export": "fireball3b",
+      "emitter": "small_airTrap_fireExplosion3",
+      "particleBlend": 8,
+      "time": 2.0416666666666665,
+      "x": 1600,
+      "y": 4000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "51e59a4f33697ee0bd0b6aa3924e4851c0b3083638740a08571f686f24bf8866"
+    },
+    {
+      "graph": "world",
+      "export": "spell_range_marker_3",
+      "emitter": "large_airTrap_lightFlash",
+      "particleBlend": 8,
+      "time": 0.5,
+      "x": 2000,
+      "y": 4000,
+      "root": [
+        1.8520091216481875,
+        0.0,
+        200.0,
+        0.0,
+        1.8520091216481875,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1c497d112752f936d76779a1c9c3bccf678e6ee1d414cd4e8b042ca294394e96"
+    },
+    {
+      "graph": "info",
+      "export": "evil_airtrap_lvl1_info",
+      "time": 0,
+      "x": 0,
+      "y": 4400,
+      "root": [
+        1.9018087855297157,
+        0.0,
+        195.62583398942184,
+        0.0,
+        1.9018087855297157,
+        229.00258397932816
+      ],
+      "empty": false,
+      "rgbaSha256": "67693e831adda49b96119ff1e2be2be50202b19008dcbc124b77a6e768512d60"
+    }
+  ]
+}
