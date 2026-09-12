@@ -1,5 +1,7 @@
 # Art direction and generation record
 
+Santa Trap source assets now include the original present reveal, sleigh components and affine flight track, three gift variants, smoke/debris, shadow and four unchanged Ogg sounds. Eleven assets total 4,004,922 bytes. The importer preserves complete source evidence and a separate compact runtime reference; combat integration remains outstanding. See [the native Santa reference](../reference/santa-trap/README.md).
+
 Skeleton Trap coffin states and ground/air skeleton animation sources are retained under `art/source/skeleton-v1/`, with exact built-in generation prompts. `scripts/skeleton-assets.mjs` builds transparent gameplay atlases and supports deterministic `--check`. See [SKELETON-TRAP.md](SKELETON-TRAP.md).
 
 Bomb Tower art retains two tower bases, a four-pose roof Bomber and an exposed destruction bomb under `art/source/bombtower-v1/`, with exact built-in generation prompts. `scripts/bomb-tower-assets.mjs` builds the two base/preview pairs, actor atlas and charge; `--check` verifies deterministic output. See [BOMB-TOWER.md](BOMB-TOWER.md).
