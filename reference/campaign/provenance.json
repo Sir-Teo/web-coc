@@ -98,7 +98,9 @@
     "level/npc85.json": "e81274673cf027672b81519bdc6c53d389059f88741de576c844849e46990707",
     "level/npc86.json": "4df305e14f48c9cb4e6438331475891470bb124c14bfe9f64687a813f53a5cc8",
     "level/npc87.json": "b8adae99aaea4a56febdf5c0c236a3307fdb277e9b58cac52160ea5b317e081e",
-    "level/npc88.json": "0d95076b27684819a67b2952074495e814e81b86ab182761ce0c56213f156579"
+    "level/npc88.json": "0d95076b27684819a67b2952074495e814e81b86ab182761ce0c56213f156579",
+    "logic/obstacles.csv": "d79e96e2a973402f1a6b24f5e41c2de9ce2e8143479318a346ba2e299268044f",
+    "logic/decos.csv": "b60242541efc630279e7ca2b9d91b66ef752eb054d15f561e53d389886eb8173"
   },
   "acceptedJsonSuffixes": {
     "level/npc22.json": "help_opened\":false,\"bool_layout_edit_shown_erase\":false}"
@@ -106,6 +108,7 @@
   "outputs": {
     "catalog.json": "469e8ba60d555d3053857ad36f64793102992343603faae2aaf809d5520b373d",
     "layouts.jsonl": "7671fc814545929ac65d64ec58506957549c0a89260409a261a1dba61971dd7d",
-    "npc-buildings.json": "85beddd95769a56b20a419d7c6aa74e38e1d2622af1903a6587b5ffa7eea3607"
+    "npc-buildings.json": "85beddd95769a56b20a419d7c6aa74e38e1d2622af1903a6587b5ffa7eea3607",
+    "runtime.json": "f10671df15523b5d56c82d59189a344d085281bf7e36147456c2002919849996"
   }
 }

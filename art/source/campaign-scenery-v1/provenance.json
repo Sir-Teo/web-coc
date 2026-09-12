@@ -1,0 +1,24 @@
+{
+  "mode": "built-in image_gen",
+  "created": "2026-09-12",
+  "references": [
+    {
+      "url": "https://clash-wiki.com/images/tactics/single_player/02_goblin_forest.jpg",
+      "interpretation": "Historical campaign screenshot, visual reference only; current positions come from pinned client layouts."
+    }
+  ],
+  "prompts": [
+    "prompt.txt"
+  ],
+  "sourceFiles": {
+    "generated.png": "06711499d3e3a7878af7a8f1e8700ba1b892e59edb49648fecda066f2d74715c"
+  },
+  "generatedRecreation": true,
+  "nativePixelIdentityVerified": false,
+  "processing": "Magenta extraction, 4\u00d74 slicing, trim and 256px registration, lossless WebP; scripts/campaign-scenery-assets.mjs.",
+  "limitations": [
+    "Shared silhouettes cover several native export variants.",
+    "Tree species, statues and flag designs are not exact native artwork.",
+    "50% faded opacity is an authored rendering choice; native table supplies only the combat-fade flag."
+  ]
+}

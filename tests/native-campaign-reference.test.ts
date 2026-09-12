@@ -41,7 +41,7 @@ it('keeps all 90 native villages and their source-verified opening, branches and
 
 it('detects reference drift offline against the committed source manifest', () => {
   const provenance = JSON.parse(read('provenance.json'));
-  expect(Object.keys(provenance.sources)).toHaveLength(95);
+  expect(Object.keys(provenance.sources)).toHaveLength(97);
   for (const [file, sha] of Object.entries(provenance.outputs)) {
     expect(createHash('sha256').update(read(file)).digest('hex'), file).toBe(sha);
   }

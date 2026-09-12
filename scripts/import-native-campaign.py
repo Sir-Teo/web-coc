@@ -86,6 +86,7 @@ assert [g[0]['MapInstanceName'] for g in npcs] == [f'npc{i}' for i in range(1, 9
 paths = ['logic/npcs.csv', 'logic/buildings.csv', 'logic/traps.csv',
          'localization/texts.csv', 'localization/texts_patch.csv']
 paths += [g[0]['LevelFile'] for g in npcs]
+paths += ['logic/obstacles.csv', 'logic/decos.csv']
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
     sources = dict(zip(paths, (digest(data) for data in pool.map(read_source, paths))))
 translations = {r['TID']: r['EN'] for path in paths[3:5] for r in table(path) if r.get('EN')}
@@ -117,10 +118,47 @@ building_groups = {g[0]['Name']: g for g in groups(table('logic/buildings.csv'))
 npc_buildings = {name: [{k: row[k] for k in npc_columns if k in row}
                        for row in building_groups[name][:8 if name == 'Town Hall' else 1]]
                  for name in ['Town Hall', 'Goblin Hut', 'Tutorial Cannon']}
+combat = {}
+for path in ['logic/buildings.csv', 'logic/traps.csv']:
+    for group in groups(table(path)):
+        first = group[0]
+        gid = int(first['GlobalID'])
+        if gid not in used:
+            continue
+        combat[gid] = dict(name=first['Name'], size=int(first['Width']),
+                           hp=[int(row.get('Hitpoints', 1)) for row in group],
+                           dps=[int(row.get('DPS', 0)) for row in group])
+scenery = {}
+for path, family in [('logic/obstacles.csv', 8000000), ('logic/decos.csv', 18000000)]:
+    for index, group in enumerate(groups(table(path))):
+        row = group[0]
+        scenery[family + index] = dict(name=row['Name'], size=int(row['Width']),
+                                      export=row['ExportName'], passable=row.get('Passable') == 'TRUE' or row.get('IsFadedAndPassableInCombat') == 'TRUE',
+                                      faded=row.get('IsFadedAndPassableInCombat') == 'TRUE',
+                                      passableEdge=int(row.get('PassableSubtilesAtEdge', 0)))
+used_scenery = {b['data'] for v in layouts for key in ['obstacles', 'decos'] for b in v[key]}
+scenery = {i: s for i, s in scenery.items() if i in used_scenery}
+assert used_scenery == set(scenery)
+def compact_entity(b):
+    return [b['data'], b['x'], b['y'], b.get('lvl', 0) + 1]
+runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], dependencies=s['dependencies'],
+                           alwaysUnlocked=s['nativeRows'][0].get('AlwaysUnlocked') == 'TRUE',
+                           gold=s['gold'], elixir=s['elixir'], darkElixir=s['darkElixir'],
+                           recommendedTownHall=s['recommendedTownHall'],
+                           allianceDefenders=[r for r in s['nativeRows'] if any(k.startswith('Alliance') for k in r)],
+                           buildings=[compact_entity(b) for b in v['buildings']],
+                           traps=[compact_entity(b) for b in v['traps']],
+                           obstacles=[compact_entity(b) for b in v['obstacles']],
+                           decos=[compact_entity(b) for b in v['decos']],
+                           # Keep active mode fields explicit; unsupported modes cannot silently vanish.
+                           activeModes=[b for b in v['buildings'] + v['traps']
+                                        if any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])])
+                      for s, v in zip(stages, layouts)], combat=combat, scenery=scenery)
 outputs = {
     'catalog.json': json.dumps(dict(bundle=BUNDLE, stages=stages, entities=entities), indent=2) + '\n',
     'layouts.jsonl': ''.join(json.dumps(v, separators=(',', ':')) + '\n' for v in layouts),
     'npc-buildings.json': json.dumps(npc_buildings, indent=2) + '\n',
+    'runtime.json': json.dumps(runtime, separators=(',', ':')) + '\n',
 }
 outputs['provenance.json'] = json.dumps(dict(
     clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, retrieved='2026-09-11',
