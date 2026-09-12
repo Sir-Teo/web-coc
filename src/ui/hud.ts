@@ -511,6 +511,12 @@ export class HUD {
       window.removeEventListener('pointercancel', up);
       this.dragging = false;
       this.scene.releaseGhost();
+      if (e.type === 'pointercancel') {
+        this.model.cancel();
+        this.drawerPanel = null;
+        this.render();
+        return;
+      }
       const overDrawer = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest('#drawer, #hud, .modal-backdrop');

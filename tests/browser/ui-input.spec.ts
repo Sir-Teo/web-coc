@@ -1,5 +1,54 @@
 import { test, expect } from '@playwright/test';
 
+test('a cancelled shop drag leaves resources and buildings untouched', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.locator('#loading').waitFor({ state: 'detached' });
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { model: m, scene } = window.__game;
+    m.state.obstacles = [];
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 20, 20, 8),
+      makeBuilding(2, 'builder', 26, 26),
+    ];
+    m.state.gold = 500000;
+    m.changed();
+    scene.sync();
+    scene.cameras.main.centerOn(850, 425);
+  });
+  await page.locator('.shop-btn').click();
+  await page.locator('[data-action="tab:Resources"]').click();
+  await page.locator('[data-drag="goldmine"] .shop-tile-art').hover();
+  await page.mouse.down();
+  await expect.poll(() => page.evaluate(() => window.__game.model.placement)).toBe('goldmine');
+  const drop = await page.evaluate(() => window.__game.scene.screenFor(6.2, 10.2));
+  await page.mouse.move(drop.x, drop.y, { steps: 10 });
+  await page.evaluate(
+    ({ x, y }) =>
+      window.dispatchEvent(
+        new PointerEvent('pointercancel', {
+          pointerId: 1,
+          pointerType: 'mouse',
+          isPrimary: true,
+          clientX: x,
+          clientY: y,
+        }),
+      ),
+    drop,
+  );
+  await page.mouse.up();
+  expect(
+    await page.evaluate(() => ({
+      gold: window.__game.model.state.gold,
+      buildings: window.__game.model.state.buildings.length,
+      placement: window.__game.model.placement,
+    })),
+  ).toEqual({ gold: 500000, buildings: 2, placement: null });
+  await expect.poll(() => page.evaluate(() => !!window.__game.scene.ghost)).toBe(false);
+});
+
 test('a canvas press released onto a DOM control cancels the village gesture', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
@@ -25,7 +74,7 @@ test('a canvas press released onto a DOM control cancels the village gesture', a
   expect(cancelled).toEqual({ held: false, gesture: 'none' });
   await page.locator('[data-action="shop"]').last().click();
   await page.locator('[data-action="tab:Army"]').click();
-  await expect(page.locator('[data-drag="barracks"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Barracks', exact: true })).toBeVisible();
 });
 
 test('a queued redraw cannot detach a pressed Save button or interrupt an army catalog jump', async ({
@@ -52,7 +101,7 @@ test('a queued redraw cannot detach a pressed Save button or interrupt an army c
     .poll(() => page.evaluate(() => window.__game.model.state.armyPresets?.[0]?.name))
     .toBe('Keep this click');
   await page.keyboard.press('Escape');
-  await page.locator('.train-add').click();
+  await expect(page.getByRole('region', { name: 'Army', exact: true })).toBeVisible();
   await page.locator('[data-action="army-jump:spells"]').click();
   await page.evaluate(() => window.__game.model.changed());
   await expect(page.locator('[data-army-category="spells"]').first()).toBeInViewport();
