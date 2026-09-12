@@ -53,6 +53,14 @@ class SceneGraphTests(unittest.TestCase):
         graph['clips']['0']['timeline'] = [0]
         self.assertEqual([list(graph_draws(graph, 0, f))[0][2][0, 2] for f in range(5)], [4, 4, 6, 6, 4])
 
+    def test_hidden_named_control_is_distinct_from_source_frame_zero(self):
+        graph = capture_graph(Reader(), {'weapon': 0})
+        self.assertEqual(len(list(graph_draws(graph, 0, controls={'turret': 0, 'ammo': 0}))), 2)
+        self.assertEqual(len(list(graph_draws(graph, 0, controls={'turret': False, 'ammo': 0}))), 1)
+        graph['clips']['0']['blending'] = [8, 0]
+        # Hidden groups must not be evaluated or approximated as additive leaves.
+        self.assertEqual(len(list(graph_draws(graph, 0, controls={'turret': False}))), 1)
+
     def test_retains_additive_leaf_without_flattening_and_rejects_group_approximation(self):
         graph = capture_graph(Reader(), {'weapon': 0})
         graph['clips']['1']['blending'] = [8]

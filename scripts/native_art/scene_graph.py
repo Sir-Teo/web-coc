@@ -168,6 +168,8 @@ def graph_draws(graph, id_, frame=0, controls=None, matrix=None, color=None, ble
     f = frame % len(c['timeline'])
     for slot, transform, tint in c['frames'][c['timeline'][f]]:
         child, name = c['children'][slot], c['names'][slot]
+        if controls and controls.get(name) is False:
+            continue
         child_key = str(child)
         placed = frame
         while placed > 0 and any(p[0] == slot for p in c['frames'][c['timeline'][(placed - 1) % len(c['timeline'])]]):
