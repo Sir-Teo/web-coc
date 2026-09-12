@@ -357,7 +357,7 @@ it.each([6, 17])(
     m.startReplay(record.id);
     for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
     const after = JSON.parse(JSON.stringify(m.battle));
-    for (const key of ['buildings', 'units', 'revealedTeslas', 'result'])
+    for (const key of ['buildings', 'units', 'revealedTeslas', 'teslas', 'result'])
       expect(after[key]).toEqual(before[key]);
     m.seekReplay(0);
     for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);

@@ -8,7 +8,7 @@ import {
 import { TESLA_ART } from './tesla-art';
 
 export const TESLA_GRAPH = source as unknown as NativeMeshGraph;
-export const TESLA_APPEAR_SOUND = source.sounds['sfx/tesla_appear_01.ogg'];
+export const TESLA_SOUNDS = source.sounds;
 export type TeslaVisualState = 'setup' | 'reveal' | 'constructing' | 'upgrading' | 'ruin';
 
 export function teslaPoses(
@@ -50,7 +50,7 @@ export function teslaPoses(
 }
 
 const bounds = new Map<string, [number, number, number, number]>();
-/** Native foreground extent for picking, bars and the temporary beam registration. */
+/** Native foreground extent for picking and bars. */
 export function teslaBodyBounds(
   level: number,
   state: Exclude<TeslaVisualState, 'reveal'> = 'setup',
@@ -76,4 +76,29 @@ export function teslaBodyBounds(
     bounds.set(key, cached);
   }
   return cached;
+}
+
+const muzzleCache = new Map<string, number>();
+/** Follow the actual reveal geometry instead of an unrelated easing curve. */
+export function teslaMuzzleY(level: number, revealAge = Infinity, reduced = false) {
+  const frame = reduced ? 17 : Math.min(17, Math.max(0, Math.floor(revealAge * 24 + 1e-9)));
+  const key = `${level}:${frame}`;
+  let y = muzzleCache.get(key);
+  if (y !== undefined) return y;
+  const poses = nativeScenePoses(
+    TESLA_GRAPH,
+    source.levels[level - 1].ExportNameTriggered,
+    frame / 24,
+    { idle_electricity: false },
+    [1.2, 0, 0, 0, 1.2, -48],
+  );
+  let top = Infinity;
+  for (const pose of poses) {
+    if ('group' in pose) continue;
+    const vertices = nativeVertices(pose);
+    for (let i = 1; i < vertices.length; i += 4) top = Math.min(top, vertices[i]);
+  }
+  y = Number.isFinite(top) ? Math.min(0, top + 8) : 0;
+  muzzleCache.set(key, y);
+  return y;
 }

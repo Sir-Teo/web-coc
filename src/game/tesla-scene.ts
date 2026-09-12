@@ -5,30 +5,50 @@ import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses } from './native-mesh';
-import { TESLA_GRAPH, TESLA_APPEAR_SOUND, teslaPoses, type TeslaVisualState } from './tesla-poses';
+import {
+  TESLA_GRAPH,
+  TESLA_SOUNDS,
+  teslaPoses,
+  teslaMuzzleY,
+  type TeslaVisualState,
+} from './tesla-poses';
+import { teslaAttackPoses, teslaAttackCues, teslaSample } from './tesla-effect-poses';
+import { TROOPS } from './data';
+import { troopArt } from './troop-art';
+import { KING_ART } from './king-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaAsset, teslaTexture } from './tesla-art';
 
 const APPEAR_SAMPLE = 'tesla-appear';
+const sounds = Object.entries(TESLA_SOUNDS).filter(([path]) => /tesla_(appear|zap)_/.test(path));
+const sample = (path: string) => (path.includes('appear') ? APPEAR_SAMPLE : teslaSample(path));
 export function preloadTeslas(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, TESLA_GRAPH, 'tesla');
   for (const level of TESLA_ART_LEVELS) scene.load.image(teslaTexture(level), teslaAsset(level));
-  scene.load.binary(APPEAR_SAMPLE, '/' + TESLA_APPEAR_SOUND.path);
+  for (const [path, sound] of sounds) scene.load.binary(sample(path), '/' + sound.path);
 }
 
 export class TeslaPresentation {
   readonly towers = new Map<number, NativeSceneView>();
   readonly reveals = new Map<number, NativeMeshView>();
+  readonly attacks = new Map<string, NativeSceneView>();
   private signatures = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
-    audio.samples.register(APPEAR_SAMPLE, scene.cache.binary.get(APPEAR_SAMPLE));
+    for (const [path] of sounds)
+      audio.samples.register(sample(path), scene.cache.binary.get(sample(path)));
   }
   clear() {
-    for (const view of [...this.towers.values(), ...this.reveals.values()]) view.destroy();
+    for (const view of [
+      ...this.towers.values(),
+      ...this.reveals.values(),
+      ...this.attacks.values(),
+    ])
+      view.destroy();
     this.towers.clear();
     this.reveals.clear();
+    this.attacks.clear();
     this.signatures.clear();
   }
   destroy() {
@@ -40,9 +60,11 @@ export class TeslaPresentation {
     elapsed: number,
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
+    airLift = 46,
   ): SampleCue[] {
     const wanted = new Set<number>(),
-      revealing = new Set<number>();
+      revealing = new Set<number>(),
+      attacking = new Set<string>();
     const cues: SampleCue[] = [];
     const revealClip = TESLA_GRAPH.clips[TESLA_GRAPH.exports.tesla_appear_fx];
     const duration = revealClip.timeline.length / revealClip.fps;
@@ -82,6 +104,53 @@ export class TeslaPresentation {
           object.setData('nativeTesla', { id: tower.id, level: tower.level, state });
         this.signatures.set(tower.id, signature);
       }
+      if (battle && !battle.finished)
+        for (const shot of battle.teslas?.[tower.id]?.shots ?? []) {
+          cues.push(...teslaAttackCues(tower.id, tower.level, shot));
+          if (reduced || elapsed - shot.at > 1) continue;
+          const target = battle.units.find((u) => u.id === shot.targetId);
+          const end = iso(target?.x ?? shot.x, target?.y ?? shot.y);
+          const impact = iso(shot.x, shot.y);
+          const lift =
+            (shot.targetHero
+              ? KING_ART.width
+              : TROOPS[shot.targetKind].width * troopArt(shot.targetKind).displayScale) *
+              0.45 +
+            (shot.toAir ? airLift : 0);
+          end.y -= lift;
+          impact.y -= lift;
+          const sourceTime = Math.min(elapsed, battle.teslas?.[tower.id]?.destroyedAt ?? elapsed);
+          const from = {
+            x: p.x,
+            y: p.y + teslaMuzzleY(tower.level, at === undefined ? Infinity : sourceTime - at),
+          };
+          for (const effect of teslaAttackPoses(
+            tower.id,
+            tower.level,
+            shot,
+            elapsed,
+            from,
+            end,
+            impact,
+            p,
+          )) {
+            attacking.add(effect.key);
+            let fx = this.attacks.get(effect.key);
+            if (!fx) {
+              fx = new NativeSceneView(this.scene, 'tesla');
+              this.attacks.set(effect.key, fx);
+            }
+            fx.render(effect.poses, effect.x, effect.y, 8000);
+            for (const object of fx.objects) {
+              object.setData('nativeTeslaEffect', {
+                id: tower.id,
+                shot: shot.index,
+                role: effect.role,
+              });
+              if (effect.role === 'arc') object.setData('teslaZap', { from, to: end });
+            }
+          }
+        }
       if (at !== undefined && battle && !battle.finished) {
         cues.push({
           key: `tesla:${tower.id}:appear`,
@@ -117,6 +186,11 @@ export class TeslaPresentation {
       if (!revealing.has(id)) {
         view.destroy();
         this.reveals.delete(id);
+      }
+    for (const [key, view] of this.attacks)
+      if (!attacking.has(key)) {
+        view.destroy();
+        this.attacks.delete(key);
       }
     return cues;
   }

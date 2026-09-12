@@ -407,6 +407,7 @@ for (const level of [7, 17])
           elapsed: m.battle.elapsed,
           reveal: m.battle.revealedTeslas,
           native: tower ? snapshot(tower) : null,
+          effects: [...scene.teslaPresentation.attacks].map(([key, v]) => [key, snapshot(v)]),
           dust: scene.teslaPresentation.reveals.size,
         };
       };
@@ -451,6 +452,9 @@ for (const level of [7, 17])
     expect(result.dust.dust).toBe(1);
     expect(result.raised.native.groups.length).toBeGreaterThan(0);
     expect(result.raised.dust).toBe(0);
+    expect(result.raised.effects.length).toBeGreaterThan(0);
+    expect(result.start.effects).toEqual([]);
+    expect(result.reduced.effects).toEqual([]);
     expect(result.quiet.native.meshes.length).toBeGreaterThan(0);
     expect(result.quiet.native.groups).toHaveLength(0);
     expect(result.repeated).toEqual(result.raised);
@@ -462,7 +466,13 @@ for (const level of [7, 17])
     await paint(page);
     await page.screenshot({ path: `output/playtest/tesla-native-${level}-${browserName}.png` });
     await expect
-      .poll(() => page.evaluate(() => window.__game.audio.samples.buffers.has('tesla-appear')))
+      .poll(() =>
+        page.evaluate(() =>
+          ['tesla-appear', 'tesla-tesla_zap_01', 'tesla-tesla_zap_03'].every((key) =>
+            window.__game.audio.samples.buffers.has(key),
+          ),
+        ),
+      )
       .toBe(true);
     const sounds = await page.evaluate(async () => {
       const { model: m, scene, audio } = window.__game;
@@ -489,12 +499,96 @@ for (const level of [7, 17])
       scene.sys.pause();
       return { cues, active, stopped: audio.samples.active.size === 0 };
     });
-    expect(sounds.cues).toEqual([
+    expect(sounds.cues.filter((c) => c.sample === 'tesla-appear')).toEqual([
       { key: 'tesla:3:appear', sample: 'tesla-appear', at: 0.05, volume: 0.7, pitch: 1 },
     ]);
-    expect(sounds.active).toHaveLength(1);
-    expect(sounds.active[0]).toMatchObject({ key: 'tesla:3:appear', rate: 2 });
-    expect(sounds.active[0].gain).toBeCloseTo(0.084, 6);
+    const appear = sounds.active.find((a) => a.key === 'tesla:3:appear');
+    expect(appear).toMatchObject({ key: 'tesla:3:appear', rate: 2 });
+    expect(appear.gain).toBeCloseTo(0.084, 6);
+    expect(sounds.active.map((a) => a.key).sort()).toEqual([
+      'tesla:3:appear',
+      'tesla:3:hit:1',
+      'tesla:3:shot:1',
+    ]);
+    const hit = sounds.active.find((a) => a.key === 'tesla:3:hit:1');
+    expect(hit.gain).toBeCloseTo(0.024, 6);
+    expect(hit.rate).toBeGreaterThanOrEqual(1);
+    expect(hit.rate).toBeLessThanOrEqual(1.4);
+    const attack = sounds.active.find((a) => a.key === 'tesla:3:shot:1');
+    expect(attack.gain).toBeCloseTo(0.048, 6);
+    expect(attack.rate).toBeGreaterThanOrEqual(1.8);
+    expect(attack.rate).toBeLessThanOrEqual(2.4);
     expect(sounds.stopped).toBe(true);
     expect(errors).toEqual([]);
   });
+
+test('native Tesla effects retain death positions, expire and release scene listeners', async ({
+  page,
+}) => {
+  const result = await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    const { TROOPS } = await import('/src/game/data.ts');
+    const { troopArt } = await import('/src/game/troop-art.ts');
+    const { model: m, scene, game } = window.__game;
+    const listeners = game.renderer.listenerCount('losewebgl');
+    scene.paused = true;
+    m.startBattle(0, true);
+    const b = m.battle;
+    const tower = makeBuilding(9000, 'tesla', 10, 10, 17);
+    b.buildings = [tower, makeBuilding(9001, 'townhall', 30, 30)];
+    b.started = true;
+    const target = {
+      id: 10000,
+      kind: 'dragon',
+      x: 16,
+      y: 11,
+      hp: 100000,
+      maxHp: 100000,
+      cooldown: 999,
+      target: null,
+      path: [],
+      pathAt: 0,
+      attacking: false,
+      springUntil: 999,
+    };
+    b.units = [target];
+    for (let i = 0; i < 15; i++) m.step(0.05);
+    scene.sync();
+    scene.drawOverlay();
+    const arc = () => scene.children.list.find((o) => o.getData?.('teslaZap'))?.getData('teslaZap');
+    target.x += 0.25;
+    target.hp = 0;
+    m.damage(tower, 9999);
+    scene.sync();
+    scene.drawOverlay();
+    const dead = structuredClone(arc());
+    const expected = iso(target.x, target.y);
+    expected.y -= 46 + TROOPS.dragon.width * troopArt('dragon').displayScale * 0.45;
+    m.step(0.05);
+    scene.drawOverlay();
+    const after = structuredClone(arc());
+    const hasEffects = scene.teslaPresentation.attacks.size > 0;
+    for (let i = 0; i < 30; i++) m.step(0.05);
+    scene.drawOverlay();
+    const expired = scene.teslaPresentation.attacks.size;
+    const tagged = scene.children.list.filter((o) => o.getData?.('nativeTeslaEffect')).length;
+    scene.teslaPresentation.clear();
+    return {
+      dead,
+      after,
+      expected,
+      hasEffects,
+      expired,
+      tagged,
+      listeners,
+      afterListeners: game.renderer.listenerCount('losewebgl'),
+    };
+  });
+  expect(result.dead.to).toEqual(result.expected);
+  expect(result.after).toEqual(result.dead);
+  expect(result.hasEffects).toBe(true);
+  expect(result.expired).toBe(0);
+  expect(result.tagged).toBe(0);
+  expect(result.afterListeners).toBe(result.listeners);
+});

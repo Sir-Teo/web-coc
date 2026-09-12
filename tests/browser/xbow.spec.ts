@@ -279,7 +279,7 @@ test('native X-Bow replays rewind ammunition and meshes, preserve reduced motion
   });
   expect(result.end).toEqual(result.final);
   expect(result.isolated).toBe(true);
-  await expect.poll(() => page.evaluate(() => window.__game.audio.samples.buffers.size)).toBe(12);
+  await expect.poll(() => page.evaluate(() => window.__game.audio.samples.buffers.size)).toBe(14);
   const sounds = await page.evaluate(async () => {
     const { model: m, scene, audio } = window.__game;
     const { iso } = await import('/src/game/scene.ts');

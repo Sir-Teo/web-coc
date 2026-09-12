@@ -67,35 +67,6 @@ export class CombatEffects {
     });
   }
 
-  tesla(from: Point, to: Point, seed: number, reduced: boolean) {
-    const g = this.graphic().setData('teslaZap', { from, to });
-    const dx = to.x - from.x,
-      dy = to.y - from.y,
-      length = Math.hypot(dx, dy) || 1;
-    const points = Array.from({ length: 11 }, (_, i) => {
-      const t = i / 10;
-      const offset = i === 0 || i === 10 ? 0 : Math.sin(seed * 0.71 + i * 19.7) * (reduced ? 2 : 7);
-      return {
-        x: from.x + dx * t - (dy / length) * offset,
-        y: from.y + dy * t + (dx / length) * offset,
-      };
-    });
-    for (const [width, color, alpha] of [
-      [9, 0x488eff, 0.15],
-      [4, 0x67d7ff, 0.8],
-      [1.5, 0xf3fcff, 1],
-    ]) {
-      g.lineStyle(width, color, alpha);
-      g.beginPath();
-      g.moveTo(from.x, from.y);
-      for (const point of points.slice(1)) g.lineTo(point.x, point.y);
-      g.strokePath();
-    }
-    g.fillStyle(0xb9eeff, 0.5).fillCircle(to.x, to.y, 4);
-    g.fillStyle(0xffffff).fillCircle(to.x, to.y, 1.8);
-    this.animate({ targets: g, alpha: 0, duration: 180, onComplete: () => this.remove(g) });
-  }
-
   private weaponGraphic(weapon: Weapon, from: Point) {
     const g = this.graphic().setPosition(from.x, from.y).setData('weapon', weapon);
     const color = COLORS[weapon];

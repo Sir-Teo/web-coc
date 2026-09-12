@@ -34,7 +34,6 @@ import { skeletonStats, type SkeletonMode } from './skeleton-stats';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
-import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
@@ -1527,6 +1526,7 @@ export class VillageScene extends Phaser.Scene {
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       iso,
+      AIR_LIFT,
     );
     this.goblinBuildingPresentation.render(
       this.model.buildings,
@@ -1882,13 +1882,6 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle) this.effectTimeline.add(config, this.model.battle.elapsed);
     else this.tweens.add(config);
   }
-  private teslaRise(id: number) {
-    const b = this.model.battle,
-      at = b?.revealedTeslas?.[id];
-    if (!b || b.finished || at === undefined || this.model.state.settings.reducedMotion) return 1;
-    const t = Math.min(1, Math.max(0, (b.elapsed - at) / TESLA_RISE_SECONDS));
-    return 1 - (1 - t) ** 3;
-  }
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
@@ -1897,25 +1890,7 @@ export class VillageScene extends Phaser.Scene {
       this.audio.play('hit');
       return;
     }
-    if (fx.type === 'tesla-zap') {
-      const tower = this.model.buildings.find((b) => b.id === fx.sourceId);
-      const muzzleY = tower ? teslaBodyBounds(tower.level)[1] + 8 : -100;
-      const progress = this.teslaRise(fx.sourceId!);
-      const to = iso(fx.toX!, fx.toY!);
-      const target = this.unitSprites.get(fx.targetId!);
-      to.y -= (fx.toAir ? AIR_LIFT : 0) + (target ? target.displayHeight * 0.45 : 17);
-      this.combatEffects.tesla(
-        { x: p.x, y: p.y + muzzleY * progress },
-        to,
-        fx.sourceId! + Math.round((this.model.battle?.elapsed ?? 0) * 1000),
-        this.model.state.settings.reducedMotion,
-      );
-      this.audio.play('tesla');
-      return;
-    }
-    if (fx.type === 'tesla-reveal') {
-      return;
-    }
+    if (fx.type === 'tesla-zap' || fx.type === 'tesla-reveal') return;
     if (fx.type === 'gust') {
       this.audio.play('gust');
       return;

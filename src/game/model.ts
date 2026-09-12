@@ -1,3 +1,4 @@
+import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
 import {
   campaignStage,
@@ -330,6 +331,7 @@ export interface Battle {
   gusts?: AirGust[];
   sweepers?: Record<number, SweeperState>;
   xbows?: Record<number, XbowState>;
+  teslas?: Record<number, TeslaAttackState>;
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
@@ -2347,6 +2349,7 @@ export class GameModel {
               (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'tesla') {
           target.hp -= power;
+          recordTeslaShot(b, tower, target);
           this.onEffect({
             type: 'tesla-zap',
             sourceId: tower.id,
@@ -2507,6 +2510,8 @@ export class GameModel {
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
+      const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
+      if (tesla) tesla.destroyedAt = at;
       if (this.battle && b.kind === 'bombtower')
         primeDeathBomb(
           this.battle,
