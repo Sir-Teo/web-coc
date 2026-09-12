@@ -1,5 +1,13 @@
 # Verification record
 
+## September 11 — King battle instructions
+
+The selected King's hint now follows his actual state: deployment boundary, available activation, used ability and defeat. Passive health updates refresh the hint together with the card, so a defeated King no longer retains deployment instructions. The corrected phone screenshot was visually inspected.
+
+Both affected desktop/touch cases pass in Chromium with Metal and WebKit at 2× density. The touch case checks all four hint states, including defeat without a full HUD render. TypeScript/build and the production hero checks pass again in both engines, with Chromium offline upgrade persistence, deployment, activation and replay. No model rules changed; the preceding 641 model/asset tests and 36-case browser selections remain the broader coverage.
+
+Runtime source SHA-256 is `95bce800de258a9a4d79546a8bf3b4455c3d919e64cc217219ffe8c5d41e177e`, unchanged throughout this follow-up's checks. The rebuilt cache is `crown-clan-1580345b760e`, with 167 files. Evidence: `output/playtest/king-hint-verification.json`, `king-hint-source.json`, `king-hint-{build,chromium,webkit,production}.log`, `king-hint-production-report.json`, and the updated `king-early-ability-*.png` and `production-hero-battle-*.png` captures.
+
 ## September 11 — native King progression and default equipment
 
 The King now uses twenty native base-stat and upgrade records, early Town Hall scaling, and fixed level-1 Barbarian Puppet/Rage Vial equipment. Both items activate from TH4. Eight researched Barbarians spawn in two timed waves, with independent boost deadlines; automatic activation occurs on lethal damage. The Hero Hall panel shows equipped totals, attack timing, movement, recovery and item effects. See [KING-COMBAT.md](KING-COMBAT.md) for immutable source URLs/hashes and the native-engine behavior still unverified.

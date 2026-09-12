@@ -1274,7 +1274,7 @@ export class HUD {
  ${
    m.replay
      ? this.replayControls()
-     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates his equipment after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
+     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? this.kingDeploymentHint() : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
          (k) => b.carriedArmy[k] > 0,
        )
          .map((k) =>
@@ -1303,6 +1303,20 @@ export class HUD {
       <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', 'First deployment', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-export', `${icon('Download', 14)} Export replay`, 'replay-link')}</div>
       <div class="replay-buttons">${button('replay-pause', r.paused ? 'Play' : 'Pause', 'game-btn blue', r.complete || r.seeking ? 'disabled' : '')}${button('replay-restart', `${icon('RotateCcw', 17)} Restart`, 'game-btn stone')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', 'Back to log', 'game-btn stone')}</div>
     </section>`;
+  }
+  private kingDeploymentHint() {
+    const battle = this.model.battle,
+      hero = battle?.hero,
+      unit = battle?.units.find((u) => u.id === hero?.unitId);
+    const status =
+      !hero || hero.unitId === null
+        ? 'Tap outside the red boundary to deploy'
+        : unit && unit.hp <= 0
+          ? 'Defeated · Returns next attack'
+          : hero.abilityUsed
+            ? 'Ability used · Fighting'
+            : 'Tap his card or press H to activate';
+    return `Barbarian King · ${status}`;
   }
   private heroCard() {
     const m = this.model,
@@ -1834,6 +1848,10 @@ export class HUD {
       if (heroCard.dataset.heroState !== state) {
         const focused = document.activeElement === heroCard;
         heroCard.outerHTML = this.heroCard();
+        if (m.activeHero) {
+          const hint = document.querySelector('.deploy-label');
+          if (hint) hint.textContent = this.kingDeploymentHint();
+        }
         if (focused)
           document.querySelector<HTMLElement>('.hero-card')?.focus({ preventScroll: true });
       } else {

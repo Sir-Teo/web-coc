@@ -96,12 +96,14 @@ test('TH4 King can activate both default items by touch while permanent upgrades
   await page.locator('[data-action="practice"]').scrollIntoViewIfNeeded();
   await page.locator('[data-action="practice"]').tap();
   await page.getByRole('button', { name: 'Barbarian King, Deploy King', exact: true }).tap();
+  await expect(page.locator('.deploy-label')).toContainText('Tap outside the red boundary to deploy');
   const p = await page.evaluate(() => {
     const scene = window.__game.scene;
     const p = scene.screenFor(12, 15);
     return p;
   });
   await page.touchscreen.tap(p.x, p.y);
+  await expect(page.locator('.deploy-label')).toContainText('Tap his card or press H to activate');
   await page.getByRole('button', { name: 'Barbarian King, Activate ability', exact: true }).tap();
   await expect(
     page.getByRole('button', { name: 'Barbarian King, Ability used', exact: true }),
@@ -114,7 +116,16 @@ test('TH4 King can activate both default items by touch while permanent upgrades
   expect(
     await page.evaluate(() => window.__game.model.battle.units.find((u) => u.hero).maxHp),
   ).toBe(877);
+  await expect(page.locator('.deploy-label')).toHaveText('Barbarian King · Ability used · Fighting');
   await page.screenshot({ path: `output/playtest/king-early-ability-${browserName}.png` });
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    scene.scene.pause();
+    model.battle.units.find((u) => u.hero).hp = 0;
+    // The passive HUD refresh must update both the card and its instructions.
+  });
+  await expect(page.locator('.deploy-label')).toHaveText('Barbarian King · Defeated · Returns next attack');
+  await expect(page.getByRole('button', { name: 'Barbarian King, Defeated', exact: true })).toBeDisabled();
 });
 
 test('Puppet waves and boost colors use battle time, reconstruct on replay seek and clear at home', async ({

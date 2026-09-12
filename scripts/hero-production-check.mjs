@@ -65,13 +65,11 @@ try {
       });
       await page.goto(baseURL);
       await expect(page.locator('.shop-btn')).toBeVisible();
-      await page
-        .locator('#import-file')
-        .setInputFiles({
-          name: 'hero-village.json',
-          mimeType: 'application/json',
-          buffer: Buffer.from(fixture),
-        });
+      await page.locator('#import-file').setInputFiles({
+        name: 'hero-village.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(fixture),
+      });
       await expect(page.locator('#toast')).toContainText('Village restored');
       await page.locator('.train-add').click();
       await page.locator('[data-action="heroes"]').click();
@@ -128,6 +126,9 @@ try {
       await expect(
         page.getByRole('button', { name: 'Barbarian King, Activate ability', exact: true }),
       ).toBeEnabled();
+      await expect(page.locator('.deploy-label')).toContainText(
+        'Tap his card or press H to activate',
+      );
       await page.keyboard.press('h');
       await expect(
         page.getByRole('button', { name: 'Barbarian King, Ability used', exact: true }),
@@ -137,6 +138,9 @@ try {
           page.evaluate(() => JSON.parse(window.render_game_to_text()).battle.hero.summonsSpawned),
         )
         .toBe(8);
+      await expect(page.locator('.deploy-label')).toHaveText(
+        'Barbarian King · Ability used · Fighting',
+      );
       await page.screenshot({
         animations: 'disabled',
         path: `output/playtest/production-hero-battle-${name}.png`,
