@@ -89,8 +89,8 @@ The Goblin and Wall Breaker use original transparent sprites generated with the 
 - `scripts/derived-assets.mjs`: deterministic recolours, masks, and drawn overlays for the air-layer and spell artwork.
 - `scripts/raiding-assets.mjs`: alpha-preserving normalization for the Goblin and Wall Breaker.
 - `scripts/air-magic-assets.mjs`: original Air Defense, Spell Factory, their upgraded variants, and stable-scale Balloon sprite/animation normalization.
-- `npm run assets`: rebuilds every shipping bitmap from the committed source artwork.
-- Wall connections, hit particles, health bars, placement grids, and small resource glyphs are renderer-native geometry. Effects audio is synthesized locally with Web Audio.
+- `npm run assets`: rebuilds generated artwork from committed source sheets. Native client reconstructions use the separate pinned importers below.
+- Wall connections, hit particles, health bars, placement grids, and small resource glyphs are renderer-native geometry. Effects audio combines local Web Audio synthesis with attributed native samples.
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.
 
 Sources stay outside `public/` and `dist/`, so rejected generations and large original PNGs are not downloaded by players.
@@ -106,3 +106,9 @@ The Pumpkin Bomb atlas is reconstructed from Supercell's public client artwork. 
 ## Native Skeleton Traps
 
 Both coffin art tiers now use original SC6/SCTX artwork with complete ground/air trigger timelines. Source facts, per-frame hashes, registration and exact reproduction commands are in [the native Skeleton Trap reference](../reference/skeleton-trap/README.md). The source has 191 timeline frames per tier, packed as 35 unique cells. The generated coffin WebPs are retired; their originals remain in `art/source/skeleton-v1`. `scripts/skeleton-assets.mjs` now rebuilds only the two defending-character atlases.
+
+## Native Santa Trap and X-Bow
+
+The Santa Trap uses native trap, sleigh, present, smoke and debris assets plus four original sound samples. The [Santa reference](../reference/santa-trap/README.md) covers reproduction and the [combat record](SANTA-TRAP.md) explains implemented behavior and remaining approximations.
+
+The [X-Bow reference](../reference/xbow/README.md) preserves all 13 home-village levels, both targeting modes, upgrade variants, 36 directional views per control, projectile animations and seven native sounds. Its source meshes retain their original polygons, transforms, color changes and additive layers. Three lossless texture PNGs preserve the sampled source pixels, with sparse projectile regions packed to reduce GPU memory. X-Bow gameplay integration remains in progress.
