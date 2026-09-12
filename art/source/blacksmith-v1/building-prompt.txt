@@ -1,0 +1,6 @@
+Use case: stylized-concept
+Asset type: transparent isometric village building sprite for a Clash of Clans clone.
+Primary request: recreate the referenced level-one Blacksmith as a clean game sprite viewed from above at the standard Clash of Clans isometric camera, looking down approximately 30 degrees, showing front and right side. Match the reference's teal timber pitched awning roof, chunky grey chimney, tan stone central furnace, dark brown structural posts, grey anvil on its wooden pedestal at the front, leaning metal hammer at front-left, red metal-banded toolbox at right, and flat grey stone paving base. Preserve the compact roofless front workshop silhouette and exact material/color identities. Only change the camera from the low promotional view to the in-game elevated view.
+Style: polished chunky Supercell-style 3D render, crisp readable bevels, restrained wood grain, warm sunlight from upper left, soft ambient occlusion. Sharp silhouette readable at 140 pixels wide.
+Composition: square 1024x1024 canvas, building centered, entire chimney and base fit inside with generous transparent margins; base centered horizontally, bottom of base at 88% canvas height.
+Background: genuine transparent alpha, no colored backdrop, no ground outside the paving, no labels, no letters, no watermark, no additional buildings, no characters.

@@ -1,0 +1,30 @@
+{
+  "mode": "built-in image_gen",
+  "referencePage": "https://supercell.com/en/games/clashofclans/blog/news/introducing-hero-equipment/",
+  "equipmentReferences": [
+    "https://goblinsfarm.com/assets/art/equipment/barbarian-puppet.webp",
+    "https://goblinsfarm.com/assets/art/equipment/rage-vial.webp",
+    "https://goblinsfarm.com/assets/art/equipment/earthquake-boots.webp"
+  ],
+  "outputs": [
+    {
+      "file": "building.png",
+      "sha256": "3546a8363de2029210e0dd0ae2b04c4af054d5be2987c64e191cd13ddf5359d5",
+      "original": "exec-670d592d-1dea-4561-ac5f-be36856c42fe.png",
+      "prompt": "building-prompt.txt"
+    },
+    {
+      "file": "icons-draft.png",
+      "sha256": "ced34caf16eb3b5824156b0beb029a602c3c404f739aa8f4644ed644336a83c0",
+      "original": "exec-0319632c-fd2c-49f8-8256-be7bc70653f3.png",
+      "prompt": "icons-prompt.txt"
+    },
+    {
+      "file": "icons.png",
+      "sha256": "281c477ef7061f8e8f27ccd610123e71e4eab476e42a575d271e9a90ba02533a",
+      "original": "exec-dc29e43b-657c-4cce-895b-262ffa064607.png",
+      "prompt": "icons-matte-prompt.txt"
+    }
+  ],
+  "processing": "Building generated alpha is retained; icons are keyed from the final flat green matte, despoiled, cropped and registered by scripts/blacksmith-assets.mjs. Icons draft had an opaque glow background and is not shipped. No external reference pixels are shipped."
+}
