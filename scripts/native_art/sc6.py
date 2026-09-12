@@ -149,8 +149,10 @@ class SC6:
         require(f.scalar(t, 12) == 0 and f.field(t, 11) is None,
                 'Compressed timelines and scaling grids are unsupported')
         children = f.values(t, 5, 'H')
+        names = f.values(t, 6, 'I')
         blending = f.values(t, 7, 'B')
-        require(not any(blending), 'Only normal blending is supported')
+        require(len(names) in (0, len(children)), 'Child name count differs')
+        require(len(blending) in (0, len(children)), 'Child blend count differs')
         frames, labels = [], []
         start = f.scalar(t, 9)
         for p in f.vector(t, 8, 8):
@@ -168,7 +170,8 @@ class SC6:
         require(len(frames) == f.scalar(t, 3, 'H') and frames and fps > 0,
                 'Invalid timeline frame count or rate')
         result = dict(id=id_, fps=fps, frames=frames, labels=labels, children=children,
-                      bank=f.scalar(t, 10))
+                      names=[self.name(n) for n in names] if names else [''] * len(children),
+                      blending=blending or [0] * len(children), bank=f.scalar(t, 10))
         self._clips[id_] = result
         return result
 
@@ -206,6 +209,27 @@ class SC6:
                         for i in range(count)]
             yield texture, np.array(vertices)
 
+    def instances(self, id_, frame):
+        """Retain each child instance's name, blend, placement and nested phase.
+
+        Named turret/ammo timelines are native engine controls, not ordinary
+        looping animation. Importers can select those instances independently.
+        Parsing blend metadata does not authorize flattening it as normal alpha.
+        """
+        clip = self.clip(id_)
+        f = frame % len(clip['frames'])
+        for child, transform, tint in clip['frames'][f]:
+            placed = frame
+            while placed > 0 and any(e[0] == child for e in clip['frames'][(placed - 1) % len(clip['frames'])]):
+                placed -= 1
+            nested = clip['children'][child]
+            child_frame = frame - placed
+            if nested in self.clips:
+                child_frame = child_frame * self.clip(nested)['fps'] // clip['fps']
+            yield dict(index=child, id=nested, name=clip.get('names', [''] * len(clip['children']))[child],
+                       blend=clip.get('blending', [0] * len(clip['children']))[child], frame=child_frame,
+                       matrix=self.matrix(clip['bank'], transform), color=self.color(clip['bank'], tint))
+
     def draw_list(self, id_, frame, matrix=None, color=None, ancestors=()):
         """Advance nested timelines from their latest continuous placement.
 
@@ -221,19 +245,11 @@ class SC6:
             return
         require(id_ not in self.modifiers, 'Masks are unsupported')
         clip = self.clip(id_)
-        f = frame % len(clip['frames'])
-        for child, transform, tint in clip['frames'][f]:
-            placed = frame
-            # Walk backwards through this occurrence, including a timeline wrap.
-            while placed > 0 and any(e[0] == child for e in clip['frames'][(placed - 1) % len(clip['frames'])]):
-                placed -= 1
-            cmul, cadd = self.color(clip['bank'], tint)
-            nested = clip['children'][child]
-            child_frame = frame - placed
-            if nested in self.clips:
-                child_frame = child_frame * self.clip(nested)['fps'] // clip['fps']
-            yield from self.draw_list(nested, child_frame,
-                                      matrix @ self.matrix(clip['bank'], transform),
+        require(not any(clip.get('blending', [])), 'Only normal blending can be flattened')
+        for instance in self.instances(id_, frame):
+            cmul, cadd = instance['color']
+            yield from self.draw_list(instance['id'], instance['frame'],
+                                      matrix @ instance['matrix'],
                                       (color[0] * cmul, color[0] * cadd + color[1]),
                                       (*ancestors, id_))
 

@@ -73,6 +73,38 @@ class NativeArtTests(unittest.TestCase):
         self.assertEqual(image.getpixel((3, 3)), (0, 0, 0, 0))
         self.assertEqual(image.getchannel('A').getextrema(), (0, 128))
 
+    def test_named_instances_keep_identity_when_they_share_a_display_object(self):
+        reader = object.__new__(SC6)
+        reader.shapes, reader.modifiers, reader.clips = {1: None}, {}, {0: None}
+        clip = dict(frames=[[[0, 0, 65535], [1, 1, 65535]]], children=[1, 1],
+                    names=['turret', 'ammo'], blending=[0, 8], fps=30, bank=0)
+        reader.clip = lambda i: clip
+        reader.matrix = lambda bank, index: np.array([[1, 0, index * 4], [0, 1, 0], [0, 0, 1]])
+        instances = list(reader.instances(0, 4))
+        self.assertEqual([(v['index'], v['id'], v['name'], v['blend'], v['frame']) for v in instances],
+                         [(0, 1, 'turret', 0, 4), (1, 1, 'ammo', 8, 4)])
+        self.assertEqual([v['matrix'][0, 2] for v in instances], [0, 4])
+        # Metadata inspection must never silently reinterpret additive glow as normal alpha.
+        with self.assertRaisesRegex(ValueError, 'normal blending'):
+            list(reader.draw_list(0, 4))
+
+    def test_child_metadata_arrays_must_match_the_instance_count(self):
+        class ClipFields:
+            def __init__(self, names, blends):
+                self.arrays = {5: [10, 11], 6: names, 7: blends}
+            def scalar(self, table, field, format=None):
+                return 0
+            def field(self, table, field):
+                return None
+            def values(self, table, field, format):
+                return self.arrays[field]
+        for names, blends, message in [([0], [0, 0], 'name count'), ([0, 0], [0], 'blend count')]:
+            reader = object.__new__(SC6)
+            reader._clips = {}
+            reader.clips = {0: (ClipFields(names, blends), 0)}
+            with self.assertRaisesRegex(ValueError, message):
+                reader.clip(0)
+
 
 if __name__ == '__main__':
     unittest.main()
