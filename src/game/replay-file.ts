@@ -1,6 +1,7 @@
 import { REPLAY_VERSION, validateReplay, type ReplayData } from './replay';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
 import { EQUIPMENT_KEYS, type KingEquipment } from './equipment';
+import { campaignResources } from './campaign-loot';
 
 export const MAX_REPLAY_FILE_BYTES = 512_000;
 export interface ReplayFile {
@@ -27,10 +28,8 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         ...(s.scenery ? { scenery: s.scenery.map((o) => ({ data: o.data, x: o.x, y: o.y })) } : {}),
         practice: s.practice,
         nextId: s.nextId,
-        ...(s.availableLoot
-          ? { availableLoot: { gold: s.availableLoot.gold, elixir: s.availableLoot.elixir } }
-          : {}),
-        ...(s.lootRoom ? { lootRoom: { gold: s.lootRoom.gold, elixir: s.lootRoom.elixir } } : {}),
+        ...(s.availableLoot ? { availableLoot: campaignResources(s.availableLoot) } : {}),
+        ...(s.lootRoom ? { lootRoom: campaignResources(s.lootRoom) } : {}),
         army: army(s.army),
         spells,
         troopLevels: army(s.troopLevels),

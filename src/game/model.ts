@@ -19,7 +19,14 @@ import {
   validNpcBuilding,
   type NpcBuildingKind,
 } from './npc-buildings';
-import { freshCampaignLoot, type CampaignLoot, type CampaignResources } from './campaign-loot';
+import {
+  freshCampaignLoot,
+  campaignAmount,
+  campaignResourceKeys,
+  campaignResources,
+  type CampaignLoot,
+  type CampaignResources,
+} from './campaign-loot';
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
   defaultEquipment,
@@ -196,6 +203,7 @@ export interface BattleResult {
   lostLoot?: CampaignResources;
   gold: number;
   elixir: number;
+  dark?: number;
   trophies: number;
   stars: number;
   destruction: number;
@@ -334,13 +342,13 @@ export interface Battle {
   finished: boolean;
   destruction: number;
   stars: number;
-  loot: { gold: number; elixir: number };
+  loot: CampaignResources;
   /** Enemy inventory at entry, independent of the home village and future raids. */
   availableLoot?: CampaignResources;
   /** Removed from enemy inventory, including any overflow. */
   lootTaken?: CampaignResources;
   /** Raid-capped storage headroom, preserved in recorded attacks. */
-  lootRoom?: { gold: number; elixir: number };
+  lootRoom?: CampaignResources;
   result?: BattleResult;
   seed: number;
 }
@@ -1786,7 +1794,7 @@ export class GameModel {
       (catalog === 'goblin-v1'
         ? this.state.nativeCampaign?.remaining[index]
         : this.state.campaignLoot?.remaining[index]) ?? campaignStage(index, catalog);
-    return { gold: loot.gold, elixir: loot.elixir };
+    return campaignResources(loot, campaignAmount(campaignStage(index, catalog), 'dark') > 0);
   }
   startCampaign(index: number) {
     this.startBattle(index, false, 'goblin-v1');
@@ -1847,6 +1855,14 @@ export class GameModel {
                 this.campaignLoot(index, catalog).elixir,
                 Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir)),
               ),
+              ...(this.campaignLoot(index, catalog).dark !== undefined
+                ? {
+                    dark: Math.min(
+                      this.campaignLoot(index, catalog).dark!,
+                      Math.max(0, Math.floor(this.resourceCap('dark') - this.state.dark)),
+                    ),
+                  }
+                : {}),
             },
           }
         : {}),
@@ -2433,18 +2449,27 @@ export class GameModel {
     }
     // Each resource building pays out as it is damaged. Storages hold four
     // shares, collectors one, and the Town Hall two of each resource.
-    for (const resource of ['gold', 'elixir'] as const) {
+    const available = b.availableLoot ?? campaignResources(campaignStage(b.index, b.catalog));
+    for (const resource of campaignResourceKeys(available)) {
+      const storage =
+        resource === 'gold'
+          ? 'goldstorage'
+          : resource === 'elixir'
+            ? 'elixirstorage'
+            : 'darkstorage';
       const weight = (v: Building) =>
         b.catalog === 'goblin-v1'
-          ? Number(
-              v.kind === 'townhall' ||
-                v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage'),
-            )
+          ? Number(v.kind === 'townhall' || v.kind === storage)
           : v.kind === 'townhall'
             ? 2
-            : v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage')
+            : v.kind === storage
               ? 4
-              : v.kind === (resource === 'gold' ? 'goldmine' : 'collector')
+              : v.kind ===
+                  (resource === 'gold'
+                    ? 'goldmine'
+                    : resource === 'elixir'
+                      ? 'collector'
+                      : 'darkdrill')
                 ? 1
                 : 0;
       const total = structures.reduce((n, v) => n + weight(v), 0);
@@ -2452,8 +2477,7 @@ export class GameModel {
         ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
         : dead / Math.max(1, structures.length);
       const removed = Math.floor(
-        (b.availableLoot ?? campaignStage(b.index, b.catalog))[resource] *
-          Math.min(1, Math.max(0, taken)),
+        campaignAmount(available, resource) * Math.min(1, Math.max(0, taken)),
       );
       b.lootTaken ??= { gold: 0, elixir: 0 };
       b.lootTaken[resource] = removed;
@@ -2507,12 +2531,15 @@ export class GameModel {
     b.shells = [];
     for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
     const trophies = 0;
-    const overflow = (gold: number, elixir: number) => {
+    const overflow = (gold: number, elixir: number, dark = 0) => {
       const lost = {
         gold: Math.max(0, (b.lootTaken?.gold ?? 0) - gold),
         elixir: Math.max(0, (b.lootTaken?.elixir ?? 0) - elixir),
+        ...(b.loot.dark !== undefined
+          ? { dark: Math.max(0, (b.lootTaken?.dark ?? 0) - dark) }
+          : {}),
       };
-      return lost.gold || lost.elixir ? { lostLoot: lost } : {};
+      return lost.gold || lost.elixir || lost.dark ? { lostLoot: lost } : {};
     };
     // A playback runner reproduces the recorded result without applying a
     // second village's storage limits or producing rewards/history of its own.
@@ -2520,7 +2547,8 @@ export class GameModel {
       b.result = {
         gold: b.loot.gold,
         elixir: b.loot.elixir,
-        ...overflow(b.loot.gold, b.loot.elixir),
+        ...(b.loot.dark !== undefined ? { dark: b.loot.dark } : {}),
+        ...overflow(b.loot.gold, b.loot.elixir, b.loot.dark),
         trophies,
         stars: b.stars,
         destruction: b.destruction,
@@ -2533,9 +2561,13 @@ export class GameModel {
         : Math.max(0, Math.min(b.loot.gold, this.resourceCap('gold') - this.state.gold)),
       elixir = b.practice
         ? 0
-        : Math.max(0, Math.min(b.loot.elixir, this.resourceCap('elixir') - this.state.elixir));
+        : Math.max(0, Math.min(b.loot.elixir, this.resourceCap('elixir') - this.state.elixir)),
+      dark = b.practice
+        ? 0
+        : Math.max(0, Math.min(b.loot.dark ?? 0, this.resourceCap('dark') - this.state.dark));
     this.state.gold += gold;
     this.state.elixir += elixir;
+    this.state.dark += dark;
     if (!b.practice) {
       if (b.catalog === 'goblin-v1') this.state.nativeCampaign ??= freshNativeCampaign();
       else this.state.campaignLoot ??= freshCampaignLoot();
@@ -2543,8 +2575,8 @@ export class GameModel {
         b.catalog === 'goblin-v1'
           ? this.state.nativeCampaign!.remaining[b.index]
           : this.state.campaignLoot!.remaining[b.index];
-      for (const k of ['gold', 'elixir'] as const)
-        remaining[k] = Math.max(0, remaining[k] - (b.lootTaken?.[k] ?? 0));
+      for (const k of campaignResourceKeys(b.loot))
+        remaining[k] = Math.max(0, (remaining[k] ?? 0) - (b.lootTaken?.[k] ?? 0));
       const stars = b.catalog === 'goblin-v1' ? this.state.nativeCampaign!.stars : this.state.stars;
       stars[b.index] = Math.max(stars[b.index] ?? 0, b.stars);
       this.state.stats.raids++;
@@ -2556,7 +2588,8 @@ export class GameModel {
     b.result = {
       gold,
       elixir,
-      ...overflow(gold, elixir),
+      ...(b.loot.dark !== undefined ? { dark } : {}),
+      ...overflow(gold, elixir, dark),
       trophies,
       stars: b.stars,
       destruction: b.destruction,

@@ -1,6 +1,6 @@
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
-import { validCampaignLoot, validCampaignResources } from './campaign-loot';
+import { validCampaignLoot, validCampaignResources, campaignAmount } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
@@ -238,6 +238,11 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
             !validCampaignResources(r.result.lostLoot, campaignStage(r.index, r.catalog))) ||
           !finite(r.result.gold) ||
           !finite(r.result.elixir) ||
+          (r.result.dark !== undefined &&
+            (!Number.isSafeInteger(r.result.dark) ||
+              r.result.dark < 0 ||
+              r.result.dark >
+                (r.practice ? 0 : campaignAmount(campaignStage(r.index, r.catalog), 'dark')))) ||
           !Number.isInteger(r.result.trophies) ||
           r.result.trophies < -10 ||
           r.result.trophies > 24 ||

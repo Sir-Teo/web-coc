@@ -4,6 +4,7 @@ import { GameModel, makeBuilding, makeNpcBuilding } from '../src/game/model';
 import {
   NATIVE_CAMPAIGN,
   nativeBuildings,
+  nativeDefenseModes,
   nativeScenery,
   nativeCampaignIssues,
   nativeUnlocked,
@@ -64,7 +65,11 @@ describe('native campaign adapter and progress isolation', () => {
 
   it('rejects missing campaign mechanics instead of replacing or omitting them', () => {
     expect(nativeCampaignIssues(37)).toEqual([]);
-    expect(nativeCampaignIssues(50)).toContain('X-Bow');
+    expect(nativeCampaignIssues(50)).toEqual([
+      'Town Hall level 9',
+      'Hidden Tesla level 7',
+      'Bomb Tower level 3',
+    ]);
     expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
     for (const index of [50, 74, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
@@ -240,4 +245,36 @@ describe('native campaign adapter and progress isolation', () => {
       expect(validNativeCampaign(value)).toBe(false);
     }
   });
+});
+
+it('preserves current X-Bow and Skeleton Trap modes using exact source placements', () => {
+  let xbows = 0,
+    airTraps = 0;
+  for (const [index, layout] of layouts.entries()) {
+    const { modes } = nativeDefenseModes(NATIVE_CAMPAIGN[index]);
+    for (const original of [...layout.buildings, ...layout.traps]) {
+      const key = `${original.data}:${original.x}:${original.y}:${(original.lvl ?? 0) + 1}`;
+      if (original.data === 1000021) {
+        xbows++;
+        expect(original.ammo).toBe(1500);
+        expect(modes.get(key)?.xbowMode ?? 'ground').toBe(original.attack_mode ? 'both' : 'ground');
+      }
+      if (original.data === 12000008) {
+        if (original.air_mode) airTraps++;
+        expect(modes.get(key)?.skeletonMode ?? 'ground').toBe(original.air_mode ? 'air' : 'ground');
+      }
+    }
+  }
+  expect(xbows).toBe(125);
+  expect(airTraps).toBeGreaterThan(0);
+  const stage = structuredClone(NATIVE_CAMPAIGN[50]);
+  const placement = stage.buildings.find(([id]) => id === 1000021)!;
+  const [data, x, y, level] = placement;
+  const mode = { data, x, y, lvl: level - 1, attack_mode: true, ammo: 1500 };
+  stage.activeModes = [mode, mode];
+  expect([...nativeDefenseModes(stage).issues]).toContain('Unmatched or duplicate defense mode');
+  stage.activeModes = [{ ...mode, x: -1 }];
+  expect([...nativeDefenseModes(stage).issues]).toContain('Unmatched or duplicate defense mode');
+  stage.activeModes = [{ ...mode, ammo: 1400 }];
+  expect([...nativeDefenseModes(stage).issues]).toContain('Alternate defense modes');
 });

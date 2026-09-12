@@ -3007,11 +3007,14 @@ h3 {
   border: 1px solid #ffffff35;
   overflow: hidden;
 }
-.loot-row:first-child .loot-track i {
+.loot-row.gold .loot-track i {
   background: linear-gradient(#ffe073, #e9a611);
 }
-.loot-row:last-child .loot-track i {
+.loot-row.elixir .loot-track i {
   background: linear-gradient(#e39bff, #a637d8);
+}
+.loot-row.dark .loot-track i {
+  background: linear-gradient(90deg, #362544, #9a77bd);
 }
 .loot-track i {
   display: block;

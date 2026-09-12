@@ -6,7 +6,12 @@ import {
 } from './campaign-catalog';
 import { NATIVE_SCENERY, type CampaignScenery } from './native-campaign';
 import { validNpcBuilding } from './npc-buildings';
-import { validCampaignResources, type CampaignResources } from './campaign-loot';
+import {
+  validCampaignResources,
+  campaignResources,
+  campaignAmount,
+  type CampaignResources,
+} from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
@@ -24,7 +29,7 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 31;
+export const REPLAY_VERSION = 32;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -54,7 +59,7 @@ export interface ReplaySetup {
   /** Remaining enemy inventory at entry; never inferred from the viewer's progress. */
   availableLoot?: CampaignResources;
   /** Raid-limited storage headroom, not the player's balance or total capacity. */
-  lootRoom?: { gold: number; elixir: number };
+  lootRoom?: CampaignResources;
 }
 export interface ReplayData {
   version: number;
@@ -106,10 +111,7 @@ export function replayBattle(s: ReplaySetup): Battle {
     ...(!s.practice
       ? {
           availableLoot: {
-            ...(s.availableLoot ?? {
-              gold: campaignStage(s.index, s.catalog).gold,
-              elixir: campaignStage(s.index, s.catalog).elixir,
-            }),
+            ...(s.availableLoot ?? campaignResources(campaignStage(s.index, s.catalog))),
           },
           lootTaken: { gold: 0, elixir: 0 },
         }
@@ -148,21 +150,22 @@ export function validateReplay(value: unknown): value is ReplayData {
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
     (value.version >= 25 &&
       !s.practice &&
-      !validCampaignResources(s.availableLoot, campaignStage(s.index, s.catalog))) ||
+      !validCampaignResources(
+        s.availableLoot,
+        campaignStage(s.index, s.catalog),
+        value.version >= 32 && campaignAmount(campaignStage(s.index, s.catalog), 'dark') > 0,
+      )) ||
     (s.availableLoot !== undefined &&
       !validCampaignResources(s.availableLoot, campaignStage(s.index, s.catalog))) ||
     (value.version >= 4 && !s.practice && !object(s.lootRoom)) ||
     (s.lootRoom !== undefined &&
       (!object(s.lootRoom) ||
-        !integer(
-          s.lootRoom.gold,
-          0,
-          s.availableLoot?.gold ?? campaignStage(s.index, s.catalog).gold,
-        ) ||
-        !integer(
-          s.lootRoom.elixir,
-          0,
-          s.availableLoot?.elixir ?? campaignStage(s.index, s.catalog).elixir,
+        !validCampaignResources(
+          s.lootRoom,
+          s.availableLoot ?? campaignStage(s.index, s.catalog),
+          value.version >= 32 &&
+            !s.practice &&
+            campaignAmount(campaignStage(s.index, s.catalog), 'dark') > 0,
         ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||

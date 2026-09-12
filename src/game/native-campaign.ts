@@ -3,6 +3,7 @@ import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
 import { BUILD_MIN } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
+import { XBOW } from './xbow-stats';
 
 export type NativePlacement = [data: number, x: number, y: number, level: number];
 export interface NativeStage {
@@ -54,6 +55,8 @@ const KINDS: Record<number, BuildingKind> = {
   1000015: 'builder',
   1000018: 'builder',
   1000019: 'tesla',
+  1000021: 'xbow',
+  1000024: 'darkstorage',
   1000028: 'airsweeper',
   1000032: 'bombtower',
   1000060: 'cannon',
@@ -73,14 +76,45 @@ const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
   1000018: 'goblin-hut',
   1000060: 'tutorial-cannon',
 };
+const placementKey = (data: number, x: number, y: number, level: number) =>
+  `${data}:${x}:${y}:${level}`;
+export function nativeDefenseModes(stage: NativeStage) {
+  const modes = new Map<string, Pick<Building, 'xbowMode' | 'skeletonMode'>>();
+  const issues = new Set<string>();
+  const placements = [...stage.buildings, ...stage.traps];
+  for (const raw of stage.activeModes) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      issues.add('Invalid defense mode');
+      continue;
+    }
+    const v = raw as Record<string, unknown>;
+    if (!['data', 'x', 'y', 'lvl'].every((k) => Number.isInteger(v[k]))) {
+      issues.add('Invalid defense mode');
+      continue;
+    }
+    const data = v.data as number,
+      x = v.x as number,
+      y = v.y as number,
+      level = (v.lvl as number) + 1;
+    const key = placementKey(data, x, y, level);
+    if (modes.has(key) || placements.filter((p) => placementKey(...p) === key).length !== 1) {
+      issues.add('Unmatched or duplicate defense mode');
+      continue;
+    }
+    if (data === 1000021 && v.attack_mode === true && v.ammo === XBOW.ammunition)
+      modes.set(key, { xbowMode: 'both' });
+    else if (data === 12000008 && v.air_mode === true) modes.set(key, { skeletonMode: 'air' });
+    else issues.add('Alternate defense modes');
+  }
+  return { modes, issues };
+}
 /** Never substitute a different weapon, clamp a native level or discard a defender. */
 export function nativeCampaignIssues(index: number): string[] {
   const stage = NATIVE_CAMPAIGN[index];
   if (!stage) return ['Unknown village'];
   const issues = new Set<string>();
-  if (stage.darkElixir) issues.add('Dark elixir rewards');
   if (stage.allianceDefenders.length) issues.add('Garrison defenders');
-  if (stage.activeModes.length) issues.add('Alternate defense modes');
+  for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],
@@ -107,6 +141,7 @@ export function nativeBuildings(index: number): Building[] {
   const issues = nativeCampaignIssues(index);
   if (issues.length) throw Error(`Village is not implemented: ${issues.join(', ')}`);
   const s = NATIVE_CAMPAIGN[index];
+  const modes = nativeDefenseModes(s).modes;
   return [...s.buildings, ...s.traps].map(([data, x, y, level], i) => {
     const npc = NPC_IDS[data],
       hp = source.combat[data].hp[level - 1];
@@ -121,6 +156,9 @@ export function nativeBuildings(index: number): Building[] {
       cooldown: 0,
       stored: 0,
       ...(npc ? { npc } : {}),
+      ...(KINDS[data] === 'xbow' ? { xbowMode: 'ground' as const } : {}),
+      ...(KINDS[data] === 'skeletontrap' ? { skeletonMode: 'ground' as const } : {}),
+      ...modes.get(placementKey(data, x, y, level)),
     };
   });
 }
