@@ -1,10 +1,13 @@
+import { SampleAudio } from './sample-audio';
 export class AudioManager {
   context: AudioContext | null = null;
   enabled = true;
+  samples = new SampleAudio(() => this.context);
   private ambient: OscillatorNode[] = [];
   unlock() {
     if (!this.context) this.context = new AudioContext();
     if (this.context.state === 'suspended') void this.context.resume();
+    this.samples.decode();
   }
   play(
     kind:

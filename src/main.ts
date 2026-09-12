@@ -66,6 +66,7 @@ async function boot() {
     void persist();
   }, 1000);
   window.addEventListener('pagehide', () => {
+    audio.samples.stop();
     clearInterval(economyTimer);
     model.tick(Date.now());
     // A raid in progress has already spent its troops; settle it before the state is stored.
@@ -82,6 +83,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => {
     if (!ownsSession) return;
     if (document.hidden) {
+      audio.samples.stop();
       void saveGame(model.state);
       audio.music(false);
     } else {
