@@ -72,7 +72,7 @@ class Flat:
 
 
 class SC6:
-    def __init__(self, data):
+    def __init__(self, data, *, max_decompressed_bytes=100 * 1024 * 1024):
         f = Flat(data)
         require(f.span(0, 2) == b'SC' and f.read(2) == 6 and f.read(6, 'H') == 0,
                 'Expected SC6 with no container flags')
@@ -86,7 +86,7 @@ class SC6:
         require(12 + header_size + compressed_size == len(data), 'Unexpected SC6 trailing data')
         compressed = f.span(12 + header_size, compressed_size)
         size = zstandard.frame_content_size(compressed)
-        require(0 < size <= 100 * 1024 * 1024, 'SC6 decompression exceeds limit')
+        require(0 < size <= max_decompressed_bytes, 'SC6 decompression exceeds limit')
         inner = Flat(zstandard.ZstdDecompressor().decompress(compressed, max_output_size=size))
         self.ds = Flat(inner.span(4, inner.read(0)))
         ds = self.ds.ref(0)
@@ -104,12 +104,18 @@ class SC6:
             chunks.append(Flat(inner.span(at + 4, size)))
             at += 4 + size
         require(at == len(inner.data), 'Unexpected resource chunks')
-        exports, _, shapes, clips, modifiers, textures = chunks
+        exports, textfields, shapes, clips, modifiers, textures = chunks
         eroot = exports.ref(0)
         ids = exports.values(eroot, 0, 'H')
         names = exports.values(eroot, 1, 'I')
         require(len(ids) == len(names), 'Export ID/name count differs')
         self.exports = {self.name(n): i for n, i in zip(names, ids)}
+        self.textfields = {}
+        for p in textfields.vector(textfields.ref(0), 0, 40):
+            id_ = textfields.read(p, 'H')
+            require(id_ not in self.textfields, 'Duplicate text field ID')
+            self.textfields[id_] = (textfields, p)
+        require(len(self.textfields) == h.scalar(root, 5), 'Text field count differs')
         self.shapes, self.clips, self.modifiers = {}, {}, {}
         for collection, target in [(shapes, self.shapes), (clips, self.clips)]:
             for t in collection.tables(collection.ref(0), 0):
@@ -121,10 +127,12 @@ class SC6:
         require(len(self.shapes) == h.scalar(root, 2), 'Shape count differs')
         require(len(self.clips) == h.scalar(root, 3), 'Movie clip count differs')
         self.textures = []
+        self._texture_data = []
         for t in textures.tables(textures.ref(0), 0):
             high = textures.field(t, 1)
             require(high is not None, 'Missing high-resolution texture')
             high = textures.ref(high)
+            self._texture_data.append((textures, high))
             external = textures.field(high, 5)
             self.textures.append(dict(width=textures.scalar(high, 2, 'H'),
                                       height=textures.scalar(high, 3, 'H'),
@@ -140,6 +148,29 @@ class SC6:
     def name(self, index):
         require(0 <= index < len(self.strings), 'Invalid SC6 zero-based string reference')
         return self.strings[index]
+
+    def text_field(self, id_):
+        """Retain SC2 TextField metadata; visible text rendering is not implemented."""
+        require(id_ in self.textfields, 'Unknown text field')
+        f, p = self.textfields[id_]
+        return dict(id=id_, font=self.name(f.read(p + 4)),
+                    bounds=[f.read(p + offset, 'h') for offset in (8, 10, 12, 14)],
+                    fontColor=f.read(p + 16), outlineColor=f.read(p + 20),
+                    text=self.name(f.read(p + 24)), typography=self.name(f.read(p + 28)),
+                    styles=f.read(p + 32, 'B'), align=f.read(p + 33, 'B'),
+                    fontSize=f.read(p + 34, 'B'), outlineAngle=f.read(p + 36, 'i'))
+
+    def embedded_texture(self, index):
+        require(0 <= index < len(self._texture_data), 'Invalid embedded texture index')
+        f, table = self._texture_data[index]
+        require(f.field(table, 5) is None and f.scalar(table, 0, 'B') == 8 and
+                f.scalar(table, 1, 'B') == 0, 'Only embedded Khronos RGBA8 textures are supported')
+        values = f.vector(table, 4, 1)
+        require(values, 'Missing embedded texture payload')
+        image = decode_ktx_astc(f.span(values.start, len(values)))
+        require(image.size == (self.textures[index]['width'], self.textures[index]['height']),
+                'Embedded texture dimensions differ')
+        return image
 
     def clip(self, id_):
         if id_ in self._clips:
@@ -252,6 +283,23 @@ class SC6:
                                       matrix @ instance['matrix'],
                                       (color[0] * cmul, color[0] * cadd + color[1]),
                                       (*ancestors, id_))
+
+
+def decode_ktx_astc(data):
+    """Strict KTX 1 reader for the pinned UI's single-mip ASTC RGBA 4x4 textures."""
+    f = Flat(data)
+    require(f.span(0, 12) == b'\xabKTX 11\xbb\r\n\x1a\n', 'Expected KTX 1 identifier')
+    header = [f.read(12 + i * 4) for i in range(13)]
+    endian, type_, type_size, format_, internal, base, width, height, depth, arrays, faces, mips, metadata = header
+    require((endian, type_, type_size, format_, internal, base) ==
+            (0x04030201, 0, 1, 0, 0x93B0, 0x1908), 'Unsupported KTX pixel format')
+    require(0 < width <= 4096 and 0 < height <= 4096, 'KTX dimensions exceed limit')
+    require((depth, arrays, faces, mips, metadata) == (0, 0, 1, 1, 0),
+            'Unsupported KTX layers, mips or metadata')
+    expected = math.ceil(width / 4) * math.ceil(height / 4) * 16
+    require(f.read(64) == expected and len(data) == 68 + expected, 'KTX payload size differs')
+    decoded = texture2ddecoder.decode_astc(f.span(68, expected), width, height, 4, 4)
+    return Image.frombytes('RGBA', (width, height), decoded, 'raw', 'BGRA')
 
 
 def decode_sctx(data):

@@ -11,9 +11,10 @@ from .bundle import digest
 from .sc6 import require
 
 
-def capture_graph(sc, exports):
+def capture_graph(sc, exports, *, empty_bounds=()):
     shapes, clips, matrices, colors = {}, {}, [], []
     matrix_ids, color_ids = {}, {}
+    bounds = {}
 
     def intern(values, table, indices):
         key = tuple(values)
@@ -25,6 +26,15 @@ def capture_graph(sc, exports):
     def visit(id_, ancestors=()):
         require(id_ not in ancestors and len(ancestors) < 32, 'Recursive display object')
         if str(id_) in shapes or str(id_) in clips:
+            return
+        if id_ in empty_bounds:
+            field = sc.text_field(id_)
+            require(field['text'] == '', 'Visible text cannot be treated as an empty bound')
+            bounds[str(id_)] = field
+            # Empty text fields occupy a layout rectangle but paint no pixels.
+            # Retain their identity, placement and bounds as a nonpainting node.
+            clips[str(id_)] = dict(fps=1, children=[], names=[], blending=[], frames=[[]],
+                                   timeline=[0], labels=[])
             return
         require(id_ not in sc.modifiers, 'Masks are unsupported')
         if id_ in sc.shapes:
@@ -55,8 +65,11 @@ def capture_graph(sc, exports):
 
     for id_ in exports.values():
         visit(id_)
-    return dict(exports=exports, shapes=dict(sorted(shapes.items(), key=lambda p: int(p[0]))),
-                clips=dict(sorted(clips.items(), key=lambda p: int(p[0]))), matrices=matrices, colors=colors)
+    require(set(bounds) == {str(v) for v in empty_bounds}, 'Unused empty bounds declaration')
+    result = dict(exports=exports, shapes=dict(sorted(shapes.items(), key=lambda p: int(p[0]))),
+                  clips=dict(sorted(clips.items(), key=lambda p: int(p[0]))), matrices=matrices, colors=colors)
+    if bounds: result['emptyTextBounds'] = bounds
+    return result
 
 
 def crop_textures(graph, decoded, prefix):

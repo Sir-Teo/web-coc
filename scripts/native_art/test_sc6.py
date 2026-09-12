@@ -1,13 +1,53 @@
 """Small adversarial format and pixel-registration checks; no network needed."""
 import struct
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
-from sc6 import Flat, SC6, decode_sctx, rasterize
+from sc6 import Flat, SC6, decode_sctx, decode_ktx_astc, rasterize
 
 
 class NativeArtTests(unittest.TestCase):
+    def test_embedded_astc_keeps_channel_order_and_non_block_dimensions(self):
+        # One ASTC void-extent block: red, half alpha; NPOT image crops its 4x4 block.
+        block = struct.pack('<Q4H', 0xfffffffffffffdfc, 65535, 0, 0, 32768)
+        header = [0x04030201, 0, 1, 0, 0x93B0, 0x1908, 3, 2, 0, 0, 1, 1, 0]
+        def ktx(values):
+            return b'\xabKTX 11\xbb\r\n\x1a\n' + struct.pack('<13II', *values, 16) + block
+        image = decode_ktx_astc(ktx(header))
+        self.assertEqual(image.size, (3, 2))
+        self.assertEqual(list(image.getdata()), [(255, 0, 0, 128)] * 6)
+        for field, value in [(0, 0x01020304), (4, 0x93B1), (6, 4097), (10, 6), (11, 2), (12, 4)]:
+            malformed = header.copy()
+            malformed[field] = value
+            with self.assertRaises(ValueError):
+                decode_ktx_astc(ktx(malformed))
+        for blob in (ktx(header)[:-1], ktx(header) + b'\0'):
+            with self.assertRaisesRegex(ValueError, 'payload size'):
+                decode_ktx_astc(blob)
+
+    def test_sc6_large_source_requires_explicit_bounded_opt_in(self):
+        # Minimal header sufficient to reach the size gate, without allocating 100 MB.
+        header = bytearray(52)
+        struct.pack_into('<I', header, 0, 40)
+        struct.pack_into('<HH', header, 4, 30, 12)
+        struct.pack_into('<H', header, 4 + 4 + 11 * 2, 8)
+        struct.pack_into('<i', header, 40, 36)
+        struct.pack_into('<I', header, 48, 1)
+        blob = b'SC' + struct.pack('<IHI', 6, 0, len(header)) + header + b'Z'
+        size = 108270988
+        with patch('sc6.zstandard.frame_content_size', return_value=size), \
+             patch('sc6.zstandard.ZstdDecompressor') as decoder:
+            for kwargs in ({}, {'max_decompressed_bytes': size - 1}):
+                with self.assertRaisesRegex(ValueError, 'exceeds limit'):
+                    SC6(blob, **kwargs)
+            decoder.assert_not_called()
+            decoder.return_value.decompress.return_value = bytes(4)
+            with self.assertRaisesRegex(ValueError, 'outside its chunk'):
+                SC6(blob, max_decompressed_bytes=size)
+            decoder.return_value.decompress.assert_called_once_with(b'Z', max_output_size=size)
+
     def test_invalid_pointer_cannot_read_another_chunk(self):
         with self.assertRaisesRegex(ValueError, 'outside its chunk'):
             Flat(struct.pack('<I', 128)).ref(0)

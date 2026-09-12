@@ -33,6 +33,19 @@ class Reader:
 
 
 class SceneGraphTests(unittest.TestCase):
+    def test_empty_layout_bounds_keep_identity_and_visible_text_is_rejected(self):
+        reader = Reader()
+        reader.text_field = lambda id_: dict(id=id_, text='', bounds=[-2, -2, 218, 158])
+        graph = capture_graph(reader, {'picture': 0}, empty_bounds=[1])
+        self.assertEqual(graph['clips']['0']['children'], [1, 1])
+        self.assertEqual(graph['emptyTextBounds']['1']['bounds'], [-2, -2, 218, 158])
+        self.assertEqual(list(graph_draws(graph, 0)), [])
+        reader.text_field = lambda id_: dict(id=id_, text='Visible', bounds=[0, 0, 10, 10])
+        with self.assertRaisesRegex(ValueError, 'Visible text'):
+            capture_graph(reader, {'picture': 0}, empty_bounds=[1])
+        with self.assertRaisesRegex(ValueError, 'Unused empty bounds'):
+            capture_graph(Reader(), {'picture': 0}, empty_bounds=[99])
+
     def test_shared_objects_keep_distinct_names_transforms_and_manual_direction(self):
         graph = capture_graph(Reader(), {'weapon': 0})
         self.assertEqual(graph['clips']['0']['names'], ['turret', 'ammo'])
