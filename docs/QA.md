@@ -1,5 +1,11 @@
 # Verification record
 
+## September 11 — Skeleton Trap WebKit follow-up
+
+All **44 remaining WebKit scenarios pass** at 2× density on committed gameplay source `220b0df`, using the normal 30-second timeout. Together with the 24 scenarios already verified, both Chromium and WebKit now have all **68 distinct passing scenarios** from the Skeleton Trap regression selection. This closes the interrupted coverage recorded below. Runtime source stayed at SHA-256 `4faa04b4de79e585904868b19dc60c5048b8f7894de18127b2b0c09860d85540`; no gameplay changes were made during the run. Machine load had eased before the follow-up.
+
+Evidence: `output/playtest/skeleton-webkit-completion.json`, the exact selection in `skeleton-webkit-pending.json`, and the updated `skeleton-verification.json`. The full game, remaining native behavior and physical-device quality are still incomplete.
+
 ## September 11 — Skeleton Traps and defending units
 
 Skeleton Traps now have two TH8 levels, persistent ground/air modes, timed spawning and separate defending units. Skeletons pursue eligible attackers, jump their own walls and draw retaliation from eligible troops. Projectile and spell allegiance is explicit. Wizard fireballs now use native five-tile/s fixed-point flight. See [SKELETON-TRAP.md](SKELETON-TRAP.md) for immutable client sources, exact values and remaining behavioral approximations.
