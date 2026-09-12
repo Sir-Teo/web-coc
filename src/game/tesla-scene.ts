@@ -12,7 +12,12 @@ import {
   teslaMuzzleY,
   type TeslaVisualState,
 } from './tesla-poses';
-import { teslaAttackPoses, teslaAttackCues, teslaSample } from './tesla-effect-poses';
+import {
+  teslaAttackPoses,
+  teslaAttackCues,
+  teslaRevealPoses,
+  teslaSample,
+} from './tesla-effect-poses';
 import { TROOPS } from './data';
 import { troopArt } from './troop-art';
 import { KING_ART } from './king-art';
@@ -31,6 +36,7 @@ export class TeslaPresentation {
   readonly towers = new Map<number, NativeSceneView>();
   readonly reveals = new Map<number, NativeMeshView>();
   readonly attacks = new Map<string, NativeSceneView>();
+  readonly grass = new Map<string, NativeSceneView>();
   private signatures = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
@@ -44,11 +50,13 @@ export class TeslaPresentation {
       ...this.towers.values(),
       ...this.reveals.values(),
       ...this.attacks.values(),
+      ...this.grass.values(),
     ])
       view.destroy();
     this.towers.clear();
     this.reveals.clear();
     this.attacks.clear();
+    this.grass.clear();
     this.signatures.clear();
   }
   destroy() {
@@ -64,7 +72,8 @@ export class TeslaPresentation {
   ): SampleCue[] {
     const wanted = new Set<number>(),
       revealing = new Set<number>(),
-      attacking = new Set<string>();
+      attacking = new Set<string>(),
+      scattering = new Set<string>();
     const cues: SampleCue[] = [];
     const revealClip = TESLA_GRAPH.clips[TESLA_GRAPH.exports.tesla_appear_fx];
     const duration = revealClip.timeline.length / revealClip.fps;
@@ -159,6 +168,18 @@ export class TeslaPresentation {
           volume: 0.7,
           pitch: 1,
         });
+        if (!reduced)
+          for (const effect of teslaRevealPoses(tower.id, at, elapsed, p)) {
+            scattering.add(effect.key);
+            let grass = this.grass.get(effect.key);
+            if (!grass) {
+              grass = new NativeSceneView(this.scene, 'tesla');
+              this.grass.set(effect.key, grass);
+            }
+            grass.render(effect.poses, effect.x, effect.y, effect.depth!);
+            for (const object of grass.objects)
+              object.setData('nativeTeslaGrass', { id: tower.id });
+          }
         if (!reduced && age < duration) {
           revealing.add(tower.id);
           let reveal = this.reveals.get(tower.id);
@@ -191,6 +212,11 @@ export class TeslaPresentation {
       if (!attacking.has(key)) {
         view.destroy();
         this.attacks.delete(key);
+      }
+    for (const [key, view] of this.grass)
+      if (!scattering.has(key)) {
+        view.destroy();
+        this.grass.delete(key);
       }
     return cues;
   }

@@ -92,8 +92,12 @@ def build():
         dict(export='Hit', time=0),
         dict(export='spark_2', time=0, transform=[10, 0, 200, 0, 10, 200]),
         dict(export='teslatower_lvl10_attack', time=8 / 30),
+        dict(export='g1', time=0, particle=['Grass', 0], transform=[4, 0, 200, 0, 4, 200]),
+        dict(export='g2', time=0, particle=['Grass', 1], transform=[4, 0, 200, 0, 4, 200]),
+        dict(export='g3', time=0, particle=['Grass', 2], transform=[4, 0, 200, 0, 4, 200]),
+        dict(export='g4', time=0, particle=['Grass', 3], transform=[4, 0, 200, 0, 4, 200]),
     ]
-    cell, width, height = 400, 1600, 2000
+    cell, width, height = 400, 1600, 2400
     background = [48 / 255, 65 / 255, 53 / 255]
     sheet = Image.new('RGBA', (width, height))
     for i, case in enumerate(cases):

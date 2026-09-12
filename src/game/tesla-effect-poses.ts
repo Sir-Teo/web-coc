@@ -12,10 +12,12 @@ export const TESLA_EMITTERS = raw.particles as Record<string, Row[]>;
 type Point = { x: number; y: number };
 export interface TeslaEffectPose {
   key: string;
-  role: 'arc' | 'coil' | 'hit';
+  role: 'arc' | 'coil' | 'hit' | 'grass';
   poses: NativeScenePose[];
   x: number;
   y: number;
+  /** Grass sorts by its projected ground position while altitude lifts its artwork. */
+  depth?: number;
 }
 const n = (row: Row, field: string) => Number(row[field] ?? 0);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -102,14 +104,41 @@ export function teslaAttackPoses(
   impact: Point,
   ground: Point = from,
 ): TeslaEffectPose[] {
-  const age = elapsed - shot.at;
-  if (age < 0 || age > 1) return [];
   const config = teslaStats(level);
   const sources: [string, TeslaEffectPose['role']][] = [
     [config.attackEffect, 'arc'],
     ...(config.secondaryEffect ? [[config.secondaryEffect, 'coil'] as [string, 'coil']] : []),
     ['Tesla Hit', 'hit'],
   ];
+  return effectPoses(id, shot, elapsed, sources, from, target, impact, ground);
+}
+
+/** Original emergence grass shares the attack emitter's deterministic source sampling. */
+export function teslaRevealPoses(id: number, at: number, elapsed: number, ground: Point) {
+  return effectPoses(
+    id,
+    { index: 0, at },
+    elapsed,
+    [['Tesla Appear', 'grass']],
+    ground,
+    ground,
+    ground,
+    ground,
+  );
+}
+
+function effectPoses(
+  id: number,
+  shot: Pick<TeslaShot, 'index' | 'at'>,
+  elapsed: number,
+  sources: [string, TeslaEffectPose['role']][],
+  from: Point,
+  target: Point,
+  impact: Point,
+  ground: Point,
+): TeslaEffectPose[] {
+  const age = elapsed - shot.at;
+  if (age < 0 || age > 1) return [];
   const result: TeslaEffectPose[] = [];
   for (const [group, [effect, role]] of sources.entries()) {
     const emitters = TESLA_EFFECTS[effect].filter((r) => r.ParticleEmitter);
@@ -131,7 +160,7 @@ export function teslaAttackPoses(
           ((mix(n(row, 'StartScale'), n(row, 'EndScale'), clamp(t / life)) / 100) *
             mix(n(row, 'ScaleRandomMin'), n(row, 'ScaleRandomMax'), random(2))) /
           100;
-        let root: NativeMatrix, point: Point;
+        let root: NativeMatrix, point: Point, depth: number | undefined;
         if (role === 'arc') {
           // The source arc occupies x=0..128. Stretch its longitudinal axis
           // between endpoints; the source frames provide the electrical shape.
@@ -183,6 +212,7 @@ export function teslaAttackPoses(
             sn = Math.sin(rotation) * s;
           root = [c, -sn, 0, sn, c, 0];
           point = { x: impact.x + (x - y) * 0.32, y: impact.y + (x + y) * 0.16 - z * 0.8 };
+          if (role === 'grass') depth = impact.y + (x + y) * 0.16;
         }
         const poses = particlePoses(exportName, t, life, row, variant, root);
         if (poses.length)
@@ -191,6 +221,7 @@ export function teslaAttackPoses(
             role,
             poses,
             ...point,
+            ...(depth === undefined ? {} : { depth }),
           });
       }
     }

@@ -1,7 +1,11 @@
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import { type TeslaShot } from '../src/game/tesla-attack';
-import { teslaAttackCues, teslaAttackPoses } from '../src/game/tesla-effect-poses';
+import {
+  teslaAttackCues,
+  teslaAttackPoses,
+  teslaRevealPoses,
+} from '../src/game/tesla-effect-poses';
 import { teslaMuzzleY } from '../src/game/tesla-poses';
 import { nativeVertices } from '../src/game/native-mesh';
 
@@ -153,4 +157,29 @@ it('registers the muzzle to native emergence frames and holds the raised height'
     expect(teslaMuzzleY(level, 17 / 24)).toBe(teslaMuzzleY(level));
     expect(teslaMuzzleY(level, 0, true)).toBe(teslaMuzzleY(level));
   }
+});
+
+it('reconstructs a single bounded grass burst with all four original variants', () => {
+  const variants = new Set<string>();
+  for (let id = 1; id <= 40; id++) {
+    const sample = (age: number) => teslaRevealPoses(id, 2, 2 + age, from);
+    expect(sample(-0.01)).toEqual([]);
+    expect(sample(0)).toHaveLength(1);
+    const emitted = sample(0.14);
+    expect(emitted).toHaveLength(3);
+    for (const particle of emitted) {
+      expect(particle.role).toBe('grass');
+      expect(particle.poses).toHaveLength(1);
+      expect(particle.poses[0].blend).toBe(0);
+      expect(Number.isFinite(particle.depth)).toBe(true);
+      variants.add(particle.poses[0].key.split('/')[0]);
+    }
+    const original = structuredClone(emitted);
+    sample(0.5);
+    expect(sample(0.14)).toEqual(original);
+    expect(sample(0.734)).toEqual([]);
+    expect(sample(1e9)).toEqual([]);
+  }
+  // Original wrapper IDs for g1/g2/g3/g4, retained by the native graph sampler.
+  expect(variants).toEqual(new Set(['17941', '17108', '17106', '17938']));
 });

@@ -226,6 +226,11 @@ test('Tesla destroyed while emerging switches to its native damaged export at it
     const before = scene.teslaPresentation.towers
       .get(tower.id)
       .objects[0]?.getData('nativeTesla').state;
+    const grass = () =>
+      [...scene.teslaPresentation.grass.values()].flatMap((v) =>
+        v.objects.map((o) => [o.x, o.y, o.depth, [...o.vertices]]),
+      );
+    const beforeGrass = grass();
     m.damage(tower, 9999);
     // Exercise the per-frame destruction path, without a full scene sync.
     scene.renderRuin(tower, im);
@@ -233,6 +238,8 @@ test('Tesla destroyed while emerging switches to its native damaged export at it
     const view = scene.teslaPresentation.towers.get(tower.id);
     return {
       before,
+      beforeGrass,
+      afterGrass: grass(),
       ruin: view.objects[0].getData('nativeTesla').state,
       native: view.objects.length,
       afterCrop: im.isCropped,
@@ -250,6 +257,8 @@ test('Tesla destroyed while emerging switches to its native damaged export at it
     y: 400,
   });
   expect(result.native).toBeGreaterThan(0);
+  expect(result.beforeGrass).toHaveLength(3);
+  expect(result.afterGrass).toEqual(result.beforeGrass);
   await paint(page);
   await page.screenshot({ path: `output/playtest/tesla-ruin-${browserName}.png` });
 });
@@ -392,6 +401,7 @@ for (const level of [7, 17])
             mesh.texture.key,
             mesh.x,
             mesh.y,
+            mesh.depth,
             mesh.alpha,
             [...mesh.vertices],
           ]),
@@ -408,6 +418,7 @@ for (const level of [7, 17])
           reveal: m.battle.revealedTeslas,
           native: tower ? snapshot(tower) : null,
           effects: [...scene.teslaPresentation.attacks].map(([key, v]) => [key, snapshot(v)]),
+          grass: [...scene.teslaPresentation.grass].map(([key, v]) => [key, snapshot(v)]),
           dust: scene.teslaPresentation.reveals.size,
         };
       };
@@ -429,7 +440,14 @@ for (const level of [7, 17])
       scene.drawOverlay();
       const reduced = view();
       m.state.settings.reducedMotion = false;
-      seek(1e6);
+      const repeatedDust = seek(0.25);
+      scene.drawOverlay(5000);
+      const pausedDust = view();
+      m.state.settings.reducedMotion = true;
+      scene.drawOverlay();
+      const reducedDust = view();
+      m.state.settings.reducedMotion = false;
+      const finished = seek(1e6);
       const end = structuredClone(m.battle);
       const back = seek(0);
       seek(0.85);
@@ -442,6 +460,10 @@ for (const level of [7, 17])
         repeated,
         paused,
         reduced,
+        repeatedDust,
+        pausedDust,
+        reducedDust,
+        finished,
         back,
         final,
         end,
@@ -450,8 +472,14 @@ for (const level of [7, 17])
     }, level);
     expect(result.start.native).toBeNull();
     expect(result.dust.dust).toBe(1);
+    expect(result.dust.grass).toHaveLength(3);
+    expect(result.repeatedDust).toEqual(result.dust);
+    expect(result.pausedDust).toEqual(result.dust);
+    expect(result.reducedDust.grass).toEqual([]);
+    expect(result.finished.grass).toEqual([]);
     expect(result.raised.native.groups.length).toBeGreaterThan(0);
     expect(result.raised.dust).toBe(0);
+    expect(result.raised.grass).toEqual([]);
     expect(result.raised.effects.length).toBeGreaterThan(0);
     expect(result.start.effects).toEqual([]);
     expect(result.reduced.effects).toEqual([]);
@@ -465,6 +493,17 @@ for (const level of [7, 17])
     expect(result.isolated).toBe(true);
     await paint(page);
     await page.screenshot({ path: `output/playtest/tesla-native-${level}-${browserName}.png` });
+    if (level === 17) {
+      await page.evaluate(() => {
+        const { model: m, scene } = window.__game;
+        m.seekReplay(0.25);
+        for (let i = 0; i < 100 && m.replay.seeking; i++) m.step(0.05);
+        scene.sync();
+        scene.drawOverlay();
+      });
+      await paint(page);
+      await page.screenshot({ path: `output/playtest/tesla-grass-${browserName}.png` });
+    }
     await expect
       .poll(() =>
         page.evaluate(() =>
