@@ -17,6 +17,9 @@ import {
   teslaAttackCues,
   teslaRevealPoses,
   teslaSample,
+  teslaHandlingCue,
+  teslaHandlingPoses,
+  type TeslaHandling,
 } from './tesla-effect-poses';
 import { TROOPS } from './data';
 import { troopArt } from './troop-art';
@@ -24,7 +27,7 @@ import { KING_ART } from './king-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaAsset, teslaTexture } from './tesla-art';
 
 const APPEAR_SAMPLE = 'tesla-appear';
-const sounds = Object.entries(TESLA_SOUNDS).filter(([path]) => /tesla_(appear|zap)_/.test(path));
+const sounds = Object.entries(TESLA_SOUNDS);
 const sample = (path: string) => (path.includes('appear') ? APPEAR_SAMPLE : teslaSample(path));
 export function preloadTeslas(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, TESLA_GRAPH, 'tesla');
@@ -38,6 +41,22 @@ export class TeslaPresentation {
   readonly attacks = new Map<string, NativeSceneView>();
   readonly grass = new Map<string, NativeSceneView>();
   private signatures = new Map<number, string>();
+  private homeSequence = 0;
+  private homeEffects: {
+    id: number;
+    index: number;
+    kind: TeslaHandling;
+    at: number;
+    x: number;
+    y: number;
+  }[] = [];
+  handling(id: number, kind: TeslaHandling | 'cancel', at: number, x: number, y: number) {
+    if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((event) => event.id !== id);
+    else {
+      this.homeEffects.push({ id, index: ++this.homeSequence, kind, at, x, y });
+      if (this.homeEffects.length > 16) this.homeEffects.shift();
+    }
+  }
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
@@ -58,6 +77,7 @@ export class TeslaPresentation {
     this.attacks.clear();
     this.grass.clear();
     this.signatures.clear();
+    this.homeEffects = [];
   }
   destroy() {
     this.clear();
@@ -194,6 +214,35 @@ export class TeslaPresentation {
             p.y,
             p.y - 0.01,
           );
+        }
+      }
+    }
+    if (battle) this.homeEffects = [];
+    else {
+      this.homeEffects = this.homeEffects.filter(
+        (event) => elapsed - event.at < 1 && wanted.has(event.id),
+      );
+      for (const event of this.homeEffects) {
+        cues.push(teslaHandlingCue(event.id, event.index, event.kind, event.at));
+        if (reduced) continue;
+        for (const effect of teslaHandlingPoses(
+          event.id,
+          event.index,
+          event.kind,
+          event.at,
+          elapsed,
+          iso(event.x, event.y),
+        )) {
+          const key = `home:${event.index}:${effect.key}`;
+          scattering.add(key);
+          let grass = this.grass.get(key);
+          if (!grass) {
+            grass = new NativeSceneView(this.scene, 'tesla');
+            this.grass.set(key, grass);
+          }
+          grass.render(effect.poses, effect.x, effect.y, effect.depth!);
+          for (const object of grass.objects)
+            object.setData('nativeTeslaGrass', { id: event.id, kind: event.kind });
         }
       }
     }

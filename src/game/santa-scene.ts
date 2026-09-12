@@ -60,6 +60,7 @@ export class SantaPresentation {
     speed: number,
     iso: (x: number, y: number) => { x: number; y: number },
     additionalCues: SampleCue[] = [],
+    homeTime = 0,
   ) {
     const wanted = new Set<string>(),
       cues: SampleCue[] = [...additionalCues];
@@ -119,9 +120,9 @@ export class SantaPresentation {
       }
     this.audio.samples.sync(
       cues,
-      battle?.elapsed ?? 0,
+      battle?.elapsed ?? homeTime,
       speed,
-      !!battle && !battle.finished && playing && !this.scene.sys.isPaused() && this.audio.enabled,
+      !battle?.finished && playing && !this.scene.sys.isPaused() && this.audio.enabled,
     );
   }
 }

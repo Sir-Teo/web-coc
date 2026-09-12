@@ -373,6 +373,9 @@ export type FX = {
     | 'gust'
     | 'tesla-reveal'
     | 'tesla-zap'
+    | 'tesla-pickup'
+    | 'tesla-place'
+    | 'tesla-cancel'
     | 'quake';
   x: number;
   y: number;
@@ -435,6 +438,7 @@ export class GameModel {
   private redoStack: Layout['slots'][] = [];
   /** True once the current drag has recorded its single undo entry. */
   private dragOpen = false;
+  private draggedBuilding: number | null = null;
   onChange = (_passive = false) => {};
   onEffect = (_fx: FX) => {};
   onToast = (_message: string) => {};
@@ -979,6 +983,7 @@ export class GameModel {
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
+    this.cancelTeslaHandling();
     this.selected = null;
     this.moving = null;
     this.placement = kind;
@@ -1000,6 +1005,8 @@ export class GameModel {
       this.selected = b.id;
       this.moving = null;
       this.placement = null;
+      this.notify('');
+      this.teslaHandling(b, 'tesla-place');
       this.changed();
       return true;
     }
@@ -1035,6 +1042,7 @@ export class GameModel {
     this.notify(
       d.build === 0 ? `${d.name} placed.` : `Construction started — ${formatTime(d.build)}.`,
     );
+    this.teslaHandling(b, 'tesla-place');
     return true;
   }
   get selectedWalls(): Building[] {
@@ -1241,14 +1249,28 @@ export class GameModel {
     this.changed();
   }
   move(id: number) {
+    if (this.battle || this.moving === id) return;
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b) return;
+    this.cancelTeslaHandling();
     this.moving = id;
     this.placement = b.kind;
     this.selected = null;
+    this.teslaHandling(b, 'tesla-pickup');
     this.changed();
   }
+  private teslaHandling(b: Building, type: 'tesla-pickup' | 'tesla-place' | 'tesla-cancel') {
+    if (!this.battle && b.kind === 'tesla')
+      this.onEffect({ type, sourceId: b.id, x: b.x + 1, y: b.y + 1 });
+  }
+  private cancelTeslaHandling() {
+    const b = this.state.buildings.find((b) => b.id === this.moving);
+    if (b) this.teslaHandling(b, 'tesla-cancel');
+    this.endDrag(true);
+  }
   cancel() {
+    this.cancelTeslaHandling();
+    if (this.placement) this.notify('');
     this.selected = null;
     this.placement = null;
     this.moving = null;
@@ -1346,13 +1368,21 @@ export class GameModel {
    * tiles would take ten presses of undo to reverse.
    */
   beginDrag() {
+    this.endDrag(true);
     this.dragOpen = false;
+  }
+  endDrag(cancelled = false) {
+    const b = this.state.buildings.find((b) => b.id === this.draggedBuilding);
+    this.draggedBuilding = null;
+    this.dragOpen = false;
+    if (b) this.teslaHandling(b, cancelled ? 'tesla-cancel' : 'tesla-place');
   }
   get canRedo() {
     return this.redoStack.length > 0;
   }
   beginEdit() {
     if (this.battle) return;
+    this.cancelTeslaHandling();
     this.editing = true;
     this.dragOpen = false;
     this.selected = null;
@@ -1364,6 +1394,7 @@ export class GameModel {
     this.changed();
   }
   endEdit() {
+    this.endDrag(true);
     this.wallMove = null;
     this.editing = false;
     this.undoStack = [];
@@ -1373,12 +1404,14 @@ export class GameModel {
   /** Relocates a building during edit mode. Returns false when the ground is taken. */
   dragTo(id: number, x: number, y: number) {
     const b = this.state.buildings.find((v) => v.id === id);
-    if (!b || !this.editing) return false;
+    if (!b || !this.editing || this.battle) return false;
     if (b.x === x && b.y === y) return true;
     if (!this.canPlace(b.kind, x, y, id)) return false;
     if (!this.dragOpen) {
       this.recordPositions();
       this.dragOpen = true;
+      this.draggedBuilding = b.id;
+      this.teslaHandling(b, 'tesla-pickup');
     }
     b.x = x;
     b.y = y;

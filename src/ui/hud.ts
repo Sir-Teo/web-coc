@@ -436,9 +436,9 @@ export class HUD {
   toast(message: string) {
     const el = document.querySelector<HTMLElement>('#toast')!;
     el.textContent = message;
-    el.classList.add('show');
+    el.classList.toggle('show', !!message);
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    if (message) this.toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
   }
   setSaveState(ok: boolean) {
     document.querySelector('#save-state')!.textContent = ok
@@ -525,8 +525,7 @@ export class HUD {
         this.drawerPanel = null;
       } else {
         const g = this.scene.gridAtScreen(e.clientX, e.clientY);
-        if (this.model.place(Math.floor(g.x), Math.floor(g.y))) this.audio.play('build');
-        else this.drawerPanel = null;
+        if (!this.scene.placeBuilding(Math.floor(g.x), Math.floor(g.y))) this.drawerPanel = null;
       }
       this.render();
     };

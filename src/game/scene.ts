@@ -333,6 +333,7 @@ export class VillageScene extends Phaser.Scene {
       if (this.uiBlocked) return;
       const pointers = this.input.manager.pointers.filter((v) => v.isDown);
       if (pointers.length >= 2) {
+        this.model.endDrag(true);
         const dist = Phaser.Math.Distance.Between(
           pointers[0].x / this.scale.displayScale.x,
           pointers[0].y / this.scale.displayScale.y,
@@ -375,6 +376,12 @@ export class VillageScene extends Phaser.Scene {
       this.gesture = 'none';
       const down = this.down;
       this.down = undefined;
+      this.model.endDrag(
+        this.uiBlocked ||
+          !down ||
+          p.downElement !== this.game.canvas ||
+          p.event.type.includes('cancel'),
+      );
       if (
         this.uiBlocked ||
         !down ||
@@ -388,6 +395,7 @@ export class VillageScene extends Phaser.Scene {
     // Phaser sends DOM releases through a separate event. A control can move
     // under a held pointer when a drawer opens or rerenders.
     const cancelGesture = () => {
+      this.model.endDrag(true);
       this.down = undefined;
       this.gesture = 'none';
       this.dragged = false;
@@ -522,6 +530,7 @@ export class VillageScene extends Phaser.Scene {
     this.clampCamera();
   }
   private resizeCamera() {
+    this.model.endDrag(true);
     const c = this.cameras.main;
     // Phaser has resized the viewport, but scroll still refers to its previous size.
     const x = c.scrollX + this.cameraViewport.width / 2;
@@ -619,7 +628,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (this.model.placement) {
-      if (this.model.place(Math.floor(grid.x), Math.floor(grid.y))) this.audio.play('build');
+      this.placeBuilding(Math.floor(grid.x), Math.floor(grid.y));
       return;
     }
     if (this.model.battle) {
@@ -684,6 +693,13 @@ export class VillageScene extends Phaser.Scene {
   }
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));
+  }
+  /** Shared mouse/touch placement feedback; native Tesla sounds come from the model event. */
+  placeBuilding(x: number, y: number) {
+    const kind = this.model.placement;
+    if (!this.model.place(x, y)) return false;
+    if (kind !== 'tesla') this.audio.play('build');
+    return true;
   }
   /** Drives the placement ghost from a DOM drag that Phaser never sees. */
   trackGhost(clientX: number, clientY: number) {
@@ -1556,6 +1572,7 @@ export class VillageScene extends Phaser.Scene {
       this.model.replay?.speed ?? 1,
       iso,
       [...xbowCues, ...teslaCues],
+      this.renderClock / 1000,
     );
     for (const [id, sprite] of this.mineFlights) {
       if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
@@ -1884,6 +1901,18 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    if (fx.type === 'tesla-pickup' || fx.type === 'tesla-place' || fx.type === 'tesla-cancel') {
+      if (this.model.battle) return;
+      this.teslaPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'tesla-pickup' ? 'pickup' : fx.type === 'tesla-place' ? 'place' : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'tesla-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
     const p = iso(fx.x, fx.y);
     if (fx.type === 'quake') {
       this.combatEffects.quake(p, fx.radius ?? 8, this.model.state.settings.reducedMotion);

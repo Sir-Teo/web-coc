@@ -40,9 +40,13 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(xbowNative.previews),
       ...Object.values(teslaNative.textures),
       ...Object.values(teslaNative.previews),
-      ...['tesla_appear_01', 'tesla_zap_01', 'tesla_zap_03'].map(
-        (name) => teslaNative.sounds[`sfx/${name}.ogg`],
-      ),
+      ...[
+        'tesla_appear_01',
+        'tesla_zap_01',
+        'tesla_zap_03',
+        'tesla_pickup_11',
+        'tesla_drop_09',
+      ].map((name) => teslaNative.sounds[`sfx/${name}.ogg`]),
     ].map((v) => '/' + v.path),
     ...['trap', 'sleigh', 'shadow', 'presents', 'particles'].map(
       (p) => `/assets/effects/santa-native/${p}-0.png`,

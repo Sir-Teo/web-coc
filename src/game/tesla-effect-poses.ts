@@ -10,6 +10,24 @@ type Row = Record<string, string>;
 export const TESLA_EFFECTS = raw.effects as Record<string, Row[]>;
 export const TESLA_EMITTERS = raw.particles as Record<string, Row[]>;
 type Point = { x: number; y: number };
+export type TeslaHandling = 'pickup' | 'place';
+const handlingEffect = (kind: TeslaHandling) =>
+  kind === 'pickup' ? 'Tesla Pickup' : 'Tesla Placing';
+export function teslaHandlingCue(
+  id: number,
+  index: number,
+  kind: TeslaHandling,
+  at: number,
+): SampleCue {
+  const row = TESLA_EFFECTS[handlingEffect(kind)][0];
+  return {
+    key: `tesla:home:${id}:${index}`,
+    sample: teslaSample(row.Sound),
+    at: at + n(row, 'SoundDelay') / 1000,
+    volume: n(row, 'Volume') / 100,
+    pitch: n(row, 'MinPitch') / 100,
+  };
+}
 export interface TeslaEffectPose {
   key: string;
   role: 'arc' | 'coil' | 'hit' | 'grass';
@@ -120,6 +138,26 @@ export function teslaRevealPoses(id: number, at: number, elapsed: number, ground
     { index: 0, at },
     elapsed,
     [['Tesla Appear', 'grass']],
+    ground,
+    ground,
+    ground,
+    ground,
+  );
+}
+
+export function teslaHandlingPoses(
+  id: number,
+  index: number,
+  kind: TeslaHandling,
+  at: number,
+  elapsed: number,
+  ground: Point,
+) {
+  return effectPoses(
+    id,
+    { index, at },
+    elapsed,
+    [[handlingEffect(kind), 'grass']],
     ground,
     ground,
     ground,
