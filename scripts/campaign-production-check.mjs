@@ -12,7 +12,7 @@ const modules = await createServer({
   appType: 'custom',
   logLevel: 'error',
 });
-let fixture, expected, pumpkinFile, pumpkinExpected;
+let fixture, expected, pumpkinFile, pumpkinExpected, obsidianFile, obsidianExpected;
 try {
   const { GameModel } = await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
@@ -49,6 +49,19 @@ try {
     npc: pumpkin.battle.buildings.find((b) => b.npc === 'pumpkin-bomb'),
   };
   pumpkinFile = JSON.stringify(makeReplayFile(pumpkin.state.raidLog[0].replay));
+  const { obsidianBattle } = await modules.ssrLoadModule('/tests/fixtures/obsidian-battle.ts');
+  const obsidian = obsidianBattle();
+  for (let i = 0; i < 80; i++) obsidian.step(0.05);
+  obsidian.finishBattle();
+  obsidianExpected = {
+    result: obsidian.battle.result,
+    defenders: obsidian.battle.defenders
+      .filter((d) => d.hp > 0)
+      .map(({ id, mode, x, y, hp, target }) => ({ id, mode, x, y, hp, target })),
+  };
+  if (obsidianExpected.defenders.length !== 20)
+    throw Error('Obsidian fixture did not spawn twenty defenders');
+  obsidianFile = JSON.stringify(makeReplayFile(obsidian.state.raidLog[0].replay));
 } finally {
   await modules.close();
 }
@@ -197,6 +210,31 @@ try {
       await pumpkinSlider.press('End');
       await expect(page.locator('.replay-status')).toContainText('Replay complete');
       expect(assetRequests.length).toBeGreaterThan(0);
+      await page.locator('[data-action="replay-exit"]').click();
+      await page.locator('#import-replay-file').setInputFiles({
+        name: 'obsidian-tower.crown-replay.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(obsidianFile),
+      });
+      await expect(page.locator('.battle-enemy')).toContainText('Obsidian Tower');
+      const obsidianSlider = page.getByRole('slider', { name: 'Replay position' });
+      await obsidianSlider.focus();
+      await obsidianSlider.press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      const obsidianEnd = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(obsidianEnd.battle.result).toEqual(obsidianExpected.result);
+      expect(obsidianEnd.battle.defenders).toEqual(obsidianExpected.defenders);
+      await obsidianSlider.focus();
+      await obsidianSlider.press('Home');
+      await expect
+        .poll(
+          async () =>
+            (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.time,
+        )
+        .toBe(0);
+      const obsidianStart = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(obsidianStart.battle.defenders).toEqual([]);
+      expect(obsidianStart.buildings.some((b) => b.type === 'skeletontrap')).toBe(false);
       expect(errors).toEqual([]);
       report[name] = {
         errors,
@@ -218,6 +256,12 @@ try {
           concealmentRestored: true,
           hp: pumpkinExpected.hp,
           result: pumpkinEnd.battle.result,
+        },
+        obsidian: {
+          sharedReplay: true,
+          defenders: obsidianExpected.defenders.length,
+          concealmentRestored: true,
+          result: obsidianEnd.battle.result,
         },
       };
     } finally {

@@ -131,7 +131,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 6000,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 2,
+    maxLevel: 4,
     available: [0, 0, 0, 0, 0, 0, 0, 2],
     build: 0,
     singleArtwork: true,
@@ -904,7 +904,7 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
 export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
-  if (kind === 'skeletontrap') return skeletonTrapTexture();
+  if (kind === 'skeletontrap') return skeletonTrapTexture('ground', level);
   if (kind === 'bombtower') return bombTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
@@ -920,7 +920,7 @@ const artName = (kind: string) =>
   kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
 export const asset = (kind: string, level = 1, skeletonMode: SkeletonMode = 'ground') => {
-  if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode);
+  if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode, level);
   if (kind === 'bombtower') return bombTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);

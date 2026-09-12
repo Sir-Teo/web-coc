@@ -34,6 +34,8 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  // Native trap rows retain later requirements even while the home village caps at TH8.
+  if (kind === 'skeletontrap' && (level === 3 || level === 4)) return level + 6;
   const index = BUILDING_LEVELS[kind].findIndex((cap) => cap >= level);
   return index < 0 ? null : index + 1;
 };

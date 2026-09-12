@@ -51,9 +51,9 @@ jobs:
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line
 
-      - name: Verify Retina terrain and camera coverage
+      - name: Verify Retina terrain, camera and native trap coverage
         if: matrix.browser == 'webkit' && matrix.shard == 4
-        run: npx playwright test tests/browser/terrain-field.spec.ts tests/browser/village-camera.spec.ts tests/browser/native-campaign.spec.ts --config=playwright.retina.config.ts --browser=webkit
+        run: npx playwright test tests/browser/terrain-field.spec.ts tests/browser/village-camera.spec.ts tests/browser/native-campaign.spec.ts tests/browser/native-skeleton.spec.ts tests/browser/skeleton-trap.spec.ts tests/browser/pumpkin-bomb.spec.ts --config=playwright.retina.config.ts --browser=webkit
 
       - name: Build production bundle
         if: matrix.shard == 1

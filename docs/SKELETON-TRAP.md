@@ -13,19 +13,21 @@ Blank fields inherit the preceding value within a named record. Prices and durat
 
 ## Supported progression and timing
 
-| Trap level | Skeletons | Skeleton level | Gold | Destination duration |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | 2 | 1 | 6,000 | Instant |
-| 2 | 3 | 1 | 250,000 | 5 hours |
+| Trap level | Skeletons | Skeleton level |      Gold | Destination duration |
+| ---------- | --------: | -------------: | --------: | -------------------: |
+| 1          |         2 |              1 |     6,000 |              Instant |
+| 2          |         3 |              1 |   250,000 |              5 hours |
+| 3          |         4 |              1 |   400,000 |              8 hours |
+| 4          |         5 |              1 | 1,000,000 |             12 hours |
 
-Town Hall 8 permits two traps, up to level 2. The 1×1 footprint is passable and does not exclude deployment. Both levels share artwork, as in the client exports. Placement uses no builder time; upgrading requires a builder and disables activation. Ground and air modes persist with village saves, layout slots, undo/redo and replay exports. A mode cannot change during battle or construction.
+Town Hall 8 permits two traps, up to level 2. Levels 3 and 4 require TH9 and TH10 respectively; their combat and artwork are supported for native campaign layouts, while the home village still stops at TH8. The 1×1 footprint is passable and does not exclude deployment. Levels 1–2 share light wooden artwork; levels 3–4 share reinforced dark coffins. Placement uses no builder time; upgrading requires a builder and disables activation. Ground and air modes persist with village saves, layout slots, undo/redo and replay exports. A mode cannot change during battle or construction.
 
 The circular trigger radius is five tiles, with one housing space minimum and the selected ground/air layer. The trap waits 600ms before the first skeleton, then 150ms between spawns. Spawning continues if the triggering attacker dies. Each skeleton waits 500ms after its own spawn before moving or attacking. Processing a wide frame retains the individual scheduled spawn times.
 
-| Skeleton | HP | DPS | Damage per hit | Attack interval | Movement | Range | Targets |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| Ground | 30 | 25 | 17.5 | 0.7s | 3 tiles/s | 0.4 tiles | Ground |
-| Air | 30 | 25 | 17.5 | 0.7s | 2.2 tiles/s | 0 tiles | Air |
+| Skeleton |  HP | DPS | Damage per hit | Attack interval |    Movement |     Range | Targets |
+| -------- | --: | --: | -------------: | --------------: | ----------: | --------: | ------- |
+| Ground   |  30 |  25 |           17.5 |            0.7s |   3 tiles/s | 0.4 tiles | Ground  |
+| Air      |  30 |  25 |           17.5 |            0.7s | 2.2 tiles/s |   0 tiles | Air     |
 
 The air record explicitly specifies zero attack range. Community tables sometimes show 0.4; the implementation uses the primary value. These are trap defenders, distinct from Witch-summoned skeletons and later level-two trap skeletons.
 
@@ -37,7 +39,7 @@ An alerted defender can draw nearby eligible attackers into retaliation. Archers
 
 Projectile allegiance explicitly distinguishes defending units, attacking units and buildings. Wizard fireballs, Balloon bombs and Dragon breath can damage defenders; ground splash can also hit nearby building footprints. Lightning hits both defender layers and stuns surviving defenders. Healing and Rage affect the attacking army only. Balloon and Wall Breaker death damage can kill ground defenders. Defenders never consume the attacking army's housing or keep an exhausted attack alive by themselves. They do not contribute to destruction percentage.
 
-Combat version **22** captures this change and the Wizard projectile correction. The portable replay whitelist includes trap mode. Seeking rebuilds spawn sequences, movement, targets, deaths and sprites from the recorded starting state; it clears old defender sprites and effects. A new attack starts with armed traps and no defenders. Save version remains **4**. Older combat recordings retain their result summaries but cannot play under the new rules.
+Combat version **22** introduced defending units and the Wizard projectile correction. Version **29** adds levels 3–4 and distributes spawn origins around a small circle using the actual skeleton count. Older replay schemas reject snapshots containing the newly supported levels. The portable replay whitelist includes trap mode. Seeking rebuilds spawn sequences, movement, targets, deaths and sprites from the recorded starting state; it clears old defender sprites and effects. A new attack starts with armed traps and no defenders. Save version remains **4**. Older supported combat recordings retain their result summaries but cannot play under the current rules.
 
 ## Wizard flight correction
 
@@ -45,10 +47,12 @@ The Wizard character references `ps_chr_WizardAttack_Projectile`, whose `Speed=5
 
 ## Artwork and fidelity limits
 
-Original generated coffins and skeleton animation sources, exact prompts and provenance live under `art/source/skeleton-v1/`. `scripts/skeleton-assets.mjs` derives three transparent coffin WebPs and two six-frame 128×128 character atlases; `--check` reproduces the shipped derivatives byte for byte. The deployed files are `public/assets/buildings/skeleton-trap-v1/{ground,air,spent}.webp` and `public/assets/characters/skeleton-v1/{ground,air}.webp`. Exact prompts are in [provenance.json](../art/source/skeleton-v1/provenance.json). The built-in `image_gen.imagegen` tool produced the sources. No extracted Supercell artwork is distributed.
+The coffins now use original client artwork reconstructed from pinned `sc/buildings.sc` and `sc/buildings_66.sctx`. The [native reference](../reference/skeleton-trap/README.md) records export IDs, source hashes, all five trap rows, atlas geometry and format limitations. `scripts/import-native-skeleton-trap.py` preserves ground/air setup, unarmed and both trigger timelines at two output pixels per native coordinate unit. Each tier contains 35 unique atlas cells, including the full 43-frame trigger clip at 24 fps. Eight PNGs under `public/assets/buildings/skeleton-trap-native/` replace the three generated coffin WebPs. Reproduction checks compare metadata and decoded RGBA pixels. Source artwork belongs to Supercell.
 
-Ground and air defenders have walking/drifting and attack poses, a persistent red health bar with a skull marker, directional flipping, ground/air layering and defeat feedback. Presentation follows the battle clock, including pause, replay speed and reduced motion. The coffin rises over a locally chosen 0.25 seconds, changes to its open state on first spawn, and disappears by 1.6 seconds. Original PNGs remain outside the production bundle.
+Defending character art remains generated. Original source sheets, superseded coffin sources and exact prompts remain under `art/source/skeleton-v1/`; the built-in `image_gen.imagegen` tool produced them. `scripts/skeleton-assets.mjs` now derives only the two six-frame 128×128 character atlases under `public/assets/characters/skeleton-v1/`. Its `--check` reproduces these shipped derivatives byte for byte. Exact prompts are in [provenance.json](../art/source/skeleton-v1/provenance.json).
 
-Native target-selection scoring, ally-alert propagation, target memory, character collision radii, wind-up/action frames and mixed ground/air splash need further validation. The seven-tile alert currently tests proximity to a defender that has attacked, then locks that target; it does not reproduce a proven native alert graph. Ground paths refresh every 0.3 seconds. Spawn offsets, wall-jump height, hit anchors, sprite scale and animation durations are local interpretations. The six-pose art is not a native directional atlas. Clan Castle troops, defending heroes, online defenses and higher trap levels remain unfinished.
+Ground and air defenders have walking/drifting and attack poses, a persistent red health bar with a skull marker, directional flipping, ground/air layering and defeat feedback. Presentation follows the battle clock, including pause, replay speed and reduced motion. Coffins play the native trigger sequence independently of the explicit spawn delays, then hide at the end of the 43/24-second clip. Reduced motion retains the setup pose until the first spawn, then uses the unarmed pose. The community reference describes the coffin disappearing after deployment; hiding exactly at clip completion is a local interpretation because native removal timing and scorch effects remain unverified. World scale and the measured ground registration are also visual calibration, not a recovered native camera transform.
 
-Two authored traps, one in each mode, appear in campaign stages 8–12. The 288-battle audit is a local playability check, not evidence of multiplayer balance. Validation and captured views are tracked in [QA.md](QA.md).
+Native target-selection scoring, ally-alert propagation, target memory, character collision radii, wind-up/action frames and mixed ground/air splash need further validation. The seven-tile alert currently tests proximity to a defender that has attacked, then locks that target; it does not reproduce a proven native alert graph. Ground paths refresh every 0.3 seconds. Spawn offsets, wall-jump height, hit anchors, sprite scale and character animation durations are local interpretations. The six-pose character art is not a native directional atlas. Clan Castle troops, defending heroes, online defenses and level-five Skeleton Traps with their level-two defenders remain unfinished.
+
+The older authored campaign fixtures retain two traps, one in each mode, in stages 8–12. The native campaign now supports Obsidian Tower's five level-three traps at their original positions, with four skeletons each. Its 20-defender battle and repeated shared-replay seeks reproduce the final state. The 147 native army/layout battles and the older 288-battle authored audit are local playability checks, not evidence of multiplayer balance. Validation and captured views are tracked in [QA.md](QA.md).

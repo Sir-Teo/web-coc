@@ -5,6 +5,8 @@ export const TRAP_LEVELS = {
   skeletontrap: [
     { damage: 0, cost: 6000, seconds: 0 },
     { damage: 0, cost: 250000, seconds: 18000 },
+    { damage: 0, cost: 400000, seconds: 28800 },
+    { damage: 0, cost: 1000000, seconds: 43200 },
   ],
   seekingairmine: [{ damage: 1500, cost: 12000, seconds: 0 }],
   bomb: [

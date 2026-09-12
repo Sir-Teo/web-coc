@@ -20,7 +20,11 @@ for (const [name, engine] of Object.entries(engines)) {
     ...['portrait', 'front-left', 'front-right', 'back-left', 'back-right'].map(
       (pose) => `/assets/characters/king-v1/${pose}.webp`,
     ),
-    ...['ground', 'air', 'spent'].map((s) => `/assets/buildings/skeleton-trap-v1/${s}.webp`),
+    ...[1, 3].flatMap((tier) =>
+      ['ground', 'air', 'spent', 'atlas'].map(
+        (s) => `/assets/buildings/skeleton-trap-native/${tier}-${s}.png`,
+      ),
+    ),
     ...['ground', 'air'].map((s) => `/assets/characters/skeleton-v1/${s}.webp`),
     ...[1, 2].flatMap((l) =>
       ['base', 'preview'].map((p) => `/assets/buildings/bombtower-v1/level-${l}-${p}.webp`),

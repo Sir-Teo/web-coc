@@ -22,6 +22,9 @@ import { startSpellAura } from '../src/game/spell-effects';
 import { validateSave } from '../src/game/save';
 import { validateReplay, REPLAY_VERSION } from '../src/game/replay';
 import { makeReplayFile } from '../src/game/replay-file';
+import { requiredTownHall } from '../src/game/progression';
+import { skeletonCount } from '../src/game/skeleton-stats';
+import { obsidianBattle } from './fixtures/obsidian-battle';
 
 function arena(mode: SkeletonMode = 'ground', level = 2) {
   const m = new GameModel();
@@ -84,6 +87,95 @@ it('uses the TH8 count, level ceiling, instant placement and native upgrade time
     range: 0,
     flying: true,
   });
+});
+it('supports later native levels without granting a TH8 home upgrade past level two', () => {
+  expect([1, 2, 3, 4].map(skeletonCount)).toEqual([2, 3, 4, 5]);
+  expect([requiredTownHall('skeletontrap', 3), requiredTownHall('skeletontrap', 4)]).toEqual([
+    9, 10,
+  ]);
+  expect([upgradeCost('skeletontrap', 2), upgradeSeconds('skeletontrap', 2)]).toEqual([
+    400000, 28800,
+  ]);
+  expect([upgradeCost('skeletontrap', 3), upgradeSeconds('skeletontrap', 3)]).toEqual([
+    1000000, 43200,
+  ]);
+  const m = new GameModel();
+  m.townhall!.level = 8;
+  m.state.gold = 10000000;
+  const t = makeBuilding(m.state.nextId++, 'skeletontrap', 2, 2, 2);
+  m.state.buildings.push(t);
+  m.upgrade(t.id);
+  expect(t.upgradeEnd).toBeUndefined();
+  expect(t.level).toBe(2);
+});
+
+for (const mode of ['ground', 'air'] as const)
+  it.each([3, 4])(
+    `level %i ${mode} trap completes every scheduled spawn once with distinct origins`,
+    (level) => {
+      const { m, b, trap } = arena(mode, level);
+      const trigger = unit(m, mode === 'air' ? 'balloon' : 'giant', 10.5);
+      stepTraps(b, 0.05, m.onEffect);
+      for (let i = 0; i < level + 1; i++) {
+        const at = 0.6 + i * 0.15;
+        b.elapsed = at - 0.0001;
+        stepTraps(b, 0.0001, m.onEffect);
+        expect(b.defenders?.length ?? 0).toBe(i);
+        b.elapsed = at;
+        stepTraps(b, 0.0001, m.onEffect);
+        expect(b.defenders).toHaveLength(i + 1);
+        expect(b.defenders![i]).toMatchObject({ sourceId: trap.id, spawnedAt: at, hp: 30, mode });
+        if (i === 0) trigger.hp = 0;
+      }
+      expect(new Set(b.defenders!.map((d) => `${d.x},${d.y}`)).size).toBe(level + 1);
+      expect(b.traps[trap.id].resolved).toBe(true);
+      stepTraps(b, 3, m.onEffect);
+      expect(b.defenders).toHaveLength(level + 1);
+    },
+  );
+
+it('preserves all twenty Obsidian Tower defenders through native replay and rejects old high-level snapshots', () => {
+  const m = obsidianBattle();
+  for (let i = 0; i < 80; i++) m.step(0.05);
+  m.finishBattle();
+  const before = structuredClone(m.battle),
+    record = m.state.raidLog![0];
+  expect(before!.defenders).toHaveLength(20);
+  const sources = before!.buildings.filter((b) => b.kind === 'skeletontrap');
+  expect(sources).toHaveLength(5);
+  for (const s of sources) {
+    expect(s.level).toBe(3);
+    expect(before!.defenders!.filter((d) => d.sourceId === s.id)).toHaveLength(4);
+  }
+  expect(validateReplay(record.replay)).toBe(true);
+  const old = structuredClone(record.replay!);
+  old.version = 28;
+  expect(validateReplay(old)).toBe(false);
+  const bad = structuredClone(record.replay!);
+  bad.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 5;
+  expect(validateReplay(bad)).toBe(false);
+  m.returnHome();
+  const home = structuredClone(m.state);
+  expect(m.openReplay(JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay)).toBe(
+    true,
+  );
+  const seek = (t: number) => {
+    m.seekReplay(t);
+    for (let i = 0; i < 100 && m.replay!.seeking; i++) m.step(0.05);
+    expect(m.replay!.seeking).toBe(false);
+  };
+  seek(1e6);
+  expect(m.battle).toEqual(before);
+  seek(0.85);
+  expect(m.battle!.defenders).toHaveLength(10);
+  const mid = structuredClone(m.battle);
+  seek(0);
+  expect(m.battle!.defenders ?? []).toHaveLength(0);
+  seek(0.85);
+  expect(m.battle).toEqual(mid);
+  seek(1e6);
+  expect(m.battle).toEqual(before);
+  expect(m.state).toEqual(home);
 });
 describe('activation and sequential spawning', () => {
   it.each(['ground', 'air'] as const)(

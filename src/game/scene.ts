@@ -13,8 +13,15 @@ import {
   BOMBER_WIDTH,
 } from './bomb-tower-art';
 import { bomberFrame } from './bomb-tower';
-import { skeletonTrapAsset, skeletonTrapTexture, skeletonAsset } from './skeleton-art';
-import { SKELETON_COFFIN_SECONDS, skeletonStats, type SkeletonMode } from './skeleton-stats';
+import {
+  SKELETON_ART_TIERS,
+  skeletonTrapArt,
+  skeletonTrapFrame,
+  skeletonTrapAsset,
+  skeletonTrapTexture,
+  skeletonAsset,
+} from './skeleton-art';
+import { skeletonStats, type SkeletonMode } from './skeleton-stats';
 import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
 import { TESLA_RISE_SECONDS } from './hidden-tesla';
 import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
@@ -149,8 +156,16 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
-    for (const mode of ['ground', 'air', 'spent'] as const)
-      this.load.image(skeletonTrapTexture(mode), skeletonTrapAsset(mode));
+    for (const level of SKELETON_ART_TIERS) {
+      const art = skeletonTrapArt(level);
+      this.load.spritesheet(art.texture, art.asset, {
+        frameWidth: art.frameWidth,
+        frameHeight: art.frameHeight,
+        endFrame: art.frames - 1,
+      });
+      for (const mode of ['ground', 'air', 'spent'] as const)
+        this.load.image(skeletonTrapTexture(mode, level), skeletonTrapAsset(mode, level));
+    }
     for (const mode of ['ground', 'air'] as const)
       this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
         frameWidth: 128,
@@ -955,6 +970,14 @@ export class VillageScene extends Phaser.Scene {
     skeletonMode: SkeletonMode = 'ground',
     npc?: NpcBuildingKind,
   ) {
+    if (kind === 'skeletontrap') {
+      const art = skeletonTrapArt(level);
+      return im
+        .setTexture(art.texture, skeletonTrapFrame(level, skeletonMode, undefined, 0))
+        .setOrigin(art.originX, art.originY)
+        .setFlipX(false)
+        .setDisplaySize(art.width, (art.width * art.frameHeight) / art.frameWidth);
+    }
     const npcVisual = npc && npcArt(npc);
     if (npcVisual)
       return im
@@ -962,10 +985,7 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
-    const texture =
-      kind === 'skeletontrap'
-        ? skeletonTrapTexture(skeletonMode)
-        : buildingTexture(kind, level, direction);
+    const texture = buildingTexture(kind, level, direction);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
@@ -975,8 +995,7 @@ export class VillageScene extends Phaser.Scene {
       kind === 'mortar' ||
       kind === 'airsweeper' ||
       kind === 'tesla' ||
-      kind === 'bombtower' ||
-      kind === 'skeletontrap'
+      kind === 'bombtower'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -1342,19 +1361,17 @@ export class VillageScene extends Phaser.Scene {
       const im = this.sprites.get(v.id)!;
       if (v.kind === 'skeletontrap') {
         const state = this.model.battle?.traps[v.id];
-        if (state) {
-          const age = this.model.battle!.elapsed - state.activatedAt,
-            progress = this.model.state.settings.reducedMotion ? 1 : Math.min(1, age / 0.25),
-            p = iso(v.x + 0.5, v.y + 0.5);
-          im.setTexture(
-            skeletonTrapTexture((state.spawned ?? 0) > 0 ? 'spent' : (v.skeletonMode ?? 'ground')),
-          );
-          im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
-          if (progress < 1)
-            im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
-          else im.setCrop();
-          im.setAlpha(Math.min(1, Math.max(0, (SKELETON_COFFIN_SECONDS - age) / 0.4)));
-        }
+        im.setFrame(
+          skeletonTrapFrame(
+            v.level,
+            v.skeletonMode ?? 'ground',
+            state,
+            this.model.battle?.elapsed ?? 0,
+            this.model.state.settings.reducedMotion,
+          ),
+        )
+          .setCrop()
+          .setAlpha(1);
       }
       if (v.kind === 'tesla') {
         const progress = this.teslaRise(v.id),

@@ -16,9 +16,9 @@ test('shop gates Skeleton Traps at TH8 and loads both modes and all poses', asyn
   expect(
     await page.evaluate(() =>
       [
-        'skeletontrap-ground',
-        'skeletontrap-air',
-        'skeletontrap-spent',
+        'skeletontrap-native-1-ground',
+        'skeletontrap-native-1-air',
+        'skeletontrap-native-1-spent',
         'skeleton-ground',
         'skeleton-air',
       ].every((k) => window.__game.scene.textures.exists(k)),
@@ -82,7 +82,7 @@ for (const width of [1440, 390, 320])
           scene.sprites.get(3).texture.key,
         ];
       }),
-    ).toEqual(['air', 'skeletontrap-air']);
+    ).toEqual(['air', 'skeletontrap-native-1']);
   });
 test('touch placement is instant, caps at two, and level 2 takes five hours', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -105,7 +105,7 @@ test('touch placement is instant, caps at two, and level 2 takes five hours', as
   await page.locator('[data-action="build:skeletontrap"]').tap();
   await page.waitForFunction(() => !!window.__game.scene.ghost);
   expect(await page.evaluate(() => window.__game.scene.ghost.texture.key)).toBe(
-    'skeletontrap-ground',
+    'skeletontrap-native-1',
   );
   const p = await page.evaluate(() => window.__game.scene.screenFor(11, 9));
   await page.touchscreen.tap(p.x, p.y);
@@ -188,7 +188,7 @@ test('coffins release ground and air defenders with six poses, body hits and sta
       scene.sprites.get(3).texture.key,
     ];
   });
-  expect(spawn).toEqual([2, 'skeletontrap-spent', 'skeletontrap-spent']);
+  expect(spawn).toEqual([2, 'skeletontrap-native-1', 'skeletontrap-native-1']);
   const result = await page.evaluate(async () => {
     const { projectileEffect, launchProjectile } = await import('/src/game/projectiles.ts');
     const { model: m, scene } = window.__game;

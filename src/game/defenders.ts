@@ -2,7 +2,7 @@ import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
-import { SKELETON_TRAP, skeletonStats, type SkeletonMode } from './skeleton-stats';
+import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
 
 export interface Defender {
   id: number;
@@ -52,7 +52,7 @@ export function spawnSkeleton(battle: Battle, source: Building, at: number, inde
   const mode = source.skeletonMode ?? 'ground',
     stats = skeletonStats(mode);
   // Small deterministic offsets keep the burst legible and inside its passable tile.
-  const angle = (index * Math.PI * 2) / 3;
+  const angle = (index * Math.PI * 2) / skeletonCount(source.level);
   const defender: Defender = {
     id: -(battle.defenders?.length ?? 0) - 1,
     kind: 'skeleton',

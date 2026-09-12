@@ -38,7 +38,7 @@ for (const viewport of [
     await expect(page.locator('.campaign-card').first()).toContainText('Payback');
     await expect(page.locator('[data-action="attack:1"]')).toBeEnabled();
     await expect(page.locator('[data-action="attack:2"]')).toBeDisabled();
-    await expect(page.locator('[data-action="attack:26"]')).toHaveText('Coming soon');
+    await expect(page.locator('[data-action="attack:37"]')).toHaveText('Coming soon');
     await page.screenshot({
       animations: 'disabled',
       path: `output/playtest/native-campaign-map-${viewport.width}-${browserName}.png`,

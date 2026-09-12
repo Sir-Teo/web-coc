@@ -1,23 +1,29 @@
 import { it, expect } from 'vitest';
 import sharp from 'sharp';
 import { createHash } from 'node:crypto';
-import { skeletonAsset, skeletonTrapAsset, skeletonTrapTexture } from '../src/game/skeleton-art';
+import {
+  skeletonAsset,
+  skeletonTrapAsset,
+  skeletonTrapTexture,
+  skeletonTrapArt,
+  skeletonTrapFrame,
+} from '../src/game/skeleton-art';
 import { asset, buildingTexture } from '../src/game/data';
-it('ships three distinct transparent coffin states with clear framing', async () => {
-  const hashes = new Set();
-  for (const mode of ['ground', 'air', 'spent'] as const) {
-    const file = `public${skeletonTrapAsset(mode)}`,
-      m = await sharp(file).metadata();
-    expect([m.width, m.height, m.hasAlpha]).toEqual([256, 256, true]);
-    const data = await sharp(file).raw().toBuffer();
-    for (let y = 0; y < 256; y++)
-      for (let x = 0; x < 256; x++)
-        if (x < 18 || x >= 238 || y < 14 || y >= 234) expect(data[(y * 256 + x) * 4 + 3]).toBe(0);
-    hashes.add(createHash('sha256').update(data).digest('hex'));
-  }
-  expect(hashes.size).toBe(3);
+it('selects the native art tier for each supported level without scaling its footprint', () => {
   expect(asset('skeletontrap', 2, 'air')).toBe(skeletonTrapAsset('air'));
   expect(buildingTexture('skeletontrap', 2)).toBe(skeletonTrapTexture('ground'));
+  expect(asset('skeletontrap', 4, 'air')).toBe(skeletonTrapAsset('air', 3));
+  expect(buildingTexture('skeletontrap', 4)).toBe(skeletonTrapTexture('ground', 3));
+  expect(skeletonTrapArt(2)).toEqual(skeletonTrapArt(1));
+  expect(skeletonTrapArt(4)).toEqual(skeletonTrapArt(3));
+  expect(skeletonTrapArt(1).width).toBe(skeletonTrapArt(3).width);
+  const state = { activatedAt: 0, resolved: false, targetId: 1, x: 1, y: 1 };
+  expect(skeletonTrapFrame(3, 'ground', undefined, 0)).toBe(0);
+  expect(skeletonTrapFrame(3, 'air', undefined, 0)).toBe(1);
+  expect(skeletonTrapFrame(3, 'ground', state, 0)).toBe(3); // Native empty start.
+  expect(skeletonTrapFrame(3, 'ground', state, 19 / 24)).toBe(20);
+  expect(skeletonTrapFrame(3, 'ground', state, 100)).toBe(21);
+  expect(skeletonTrapFrame(3, 'ground', { ...state, spawned: 1 }, 1, true)).toBe(2);
 });
 it.each(['ground', 'air'] as const)(
   '%s has six distinct, fully framed transparent poses',

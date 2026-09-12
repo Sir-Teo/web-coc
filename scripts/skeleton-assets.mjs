@@ -70,9 +70,8 @@ async function fitted(frames, size, maxWidth, maxHeight, baseline) {
     }),
   );
 }
-const traps = await fitted(await cells('traps', 3), 256, 216, 216, 232);
-for (const [i, mode] of ['ground', 'air', 'spent'].entries())
-  await save(`public/assets/buildings/skeleton-trap-v1/${mode}.webp`, sharp(traps[i]));
+// Coffins now come from scripts/import-native-skeleton-trap.py. Original sources
+// remain under art/source/skeleton-v1 for provenance; only character art is derived here.
 for (const mode of ['ground', 'air']) {
   // Separate source strips leave clear space around the wider sword strikes.
   const frames = [
@@ -85,5 +84,5 @@ for (const mode of ['ground', 'air']) {
   );
 }
 console.log(
-  `Skeleton art ${check ? 'verified' : 'built'}: three coffin states and six poses for each ground/air defender.`,
+  `Skeleton character art ${check ? 'verified' : 'built'}: six poses for each ground/air defender.`,
 );

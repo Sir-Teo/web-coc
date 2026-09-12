@@ -100,3 +100,7 @@ Three generated transparent character sheets supply four-frame atlases and match
 ## Native Pumpkin Bomb
 
 The Pumpkin Bomb atlas is reconstructed from Supercell's public client artwork. It contains the original setup sprite and 44 trigger frames with registered positions, animated nested fuse sparks and true alpha. Source hashes, reproduction commands, ownership and remaining playback interpretation limits are in [the native reference](../reference/pumpkin-bomb/README.md). This asset is regenerated separately with `scripts/import-native-pumpkin.py`; it does not require image generation.
+
+## Native Skeleton Traps
+
+Both coffin art tiers now use original SC6/SCTX artwork with complete ground/air trigger timelines. Source facts, per-frame hashes, registration and exact reproduction commands are in [the native Skeleton Trap reference](../reference/skeleton-trap/README.md). The source has 191 timeline frames per tier, packed as 35 unique cells. The generated coffin WebPs are retired; their originals remain in `art/source/skeleton-v1`. `scripts/skeleton-assets.mjs` now rebuilds only the two defending-character atlases.

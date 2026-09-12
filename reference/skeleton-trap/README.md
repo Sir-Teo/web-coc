@@ -6,6 +6,8 @@ The two supported art tiers represent levels 1–2 and levels 3–4. Each includ
 
 The light wooden coffin changes to darker wood, reinforced bands and studs at level 3. Ground setup displays a skull, air setup a wing badge. The lid opens during the native trigger animation. The shared unarmed export has an open lid and cobwebs. Level 5's separate visual exports and level-two spawned skeletons are preserved as source facts but remain unsupported.
 
+Runtime presentation uses a measured ground registration of `(-2, 24)` native units and 1.5 world pixels per native unit. These are visual calibration choices. The full trigger clip plays on the battle clock, then the coffin is hidden after 43/24 seconds. Reduced motion uses setup until the first spawn and then the unarmed export. The [community reference](https://clashofclans.fandom.com/wiki/Skeleton_Trap?page=1) describes the coffin disappearing after deployment and scorch marks fading later; it does not establish the exact removal clock. The native final trigger frame still contains the open coffin, so disappearance at clip completion is an interpretation. Native particles, scorch marks and removal/fade timing remain unverified.
+
 | Trap level | Skeletons | Spawned skeleton level |       Gold | Build/upgrade time |                                   Native TH requirement |
 | ---------- | --------: | ---------------------: | ---------: | -----------------: | ------------------------------------------------------: |
 | 1          |         2 |                      1 |      6,000 |            Instant | 1 in trap row; actual placement gated by townhall count |
