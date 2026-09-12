@@ -1,8 +1,10 @@
 # Single-player campaign rules
 
-Updated September 12, 2026. The campaign screen now lists the native 90 villages from the pinned public client bundle. The runtime enables 44 supported layouts and marks missing mechanics Coming soon. Names, initial loot, buildings, traps, levels, hitpoints and scenery positions come from [reference/campaign](../reference/campaign/README.md). There is no authored health or defense multiplier in native attacks.
+Updated September 12, 2026. The campaign screen now lists the native 90 villages from the pinned public client bundle. The runtime enables 48 supported layouts and marks missing mechanics Coming soon. Names, initial loot, buildings, traps, levels, hitpoints and scenery positions come from [reference/campaign](../reference/campaign/README.md). There is no authored health or defense multiplier in native attacks.
 
-The six unavailable stages in the first 50 are Rat Valley, Brute Force, Bouncy Castle and Full Frontal (Halloween bombs), Obsidian Tower (level-three Skeleton Traps), and Goblin Picnic (Santa Trap). Stages 51–90 need later defenses, levels, modes, Dark Elixir rewards or garrison behavior. The early route currently stops at Rat Valley. Unsupported entities are never replaced, dropped or level-clamped to enable a map. Completing these mechanics remains required for a complete campaign.
+The two unavailable stages in the first 50 are Obsidian Tower (level-three Skeleton Traps) and Goblin Picnic (Santa Trap). Rat Valley, Brute Force, Bouncy Castle and Full Frontal now include their native Pumpkin Bomb placements, damage and reconstructed animation. Stages 51–90 need later defenses, levels, modes, Dark Elixir rewards or garrison behavior. The early route now reaches the level-three Skeleton Trap gap at Obsidian Tower. Unsupported entities are never replaced, dropped or level-clamped to enable a map. Completing these mechanics remains required for a complete campaign.
+
+Pumpkin Bombs deal 25 ground splash damage, trigger within 1.5 tiles and affect a three-tile radius. Their two-second fuse is inferred from native action frame 48 divided by the clip's 24 fps; the 44-frame animation is held at its last frame until damage resolves. Source facts and unverified timing/playback details are retained in [the Pumpkin Bomb reference](../reference/pumpkin-bomb/README.md). The current verification is **847 model tests**, including 144 native battles, eight affected browser cases per engine at DPR 2, and production checks in both engines. See [QA.md](QA.md) for evidence and limits.
 
 ## Timing and results
 
@@ -24,7 +26,7 @@ Native allocation gives equal shares to the Town Hall and matching resource stor
 
 ## Replays and persistence
 
-Combat version 27 adds native catalog identity, scenery and layouts up to 600 entities to the version-25 inventory/headroom snapshot. Playback, seeking and standalone sharing reproduce loot and overflow without reading or changing the viewing village's inventory. Old combat versions remain readable as result records and are not reinterpreted by the new engine.
+Combat version 28 adds the campaign-only Pumpkin Bomb identity and its damage/fuse rules. Version 27 added native catalog identity, scenery and layouts up to 600 entities to the version-25 inventory/headroom snapshot. Playback, seeking and standalone sharing reproduce loot and overflow without reading or changing the viewing village's inventory. Old combat versions remain readable as result records and are not reinterpreted by the new engine.
 
 Idle campaign scouting produces no simulation changes or replay frames. Once combat begins, recordings allow 60,000 steps (50 minutes at the normal fixed 20 Hz), 2,000 actions, 700 carried troops and 100 carried spells. The live attack has no recording-related time limit; exceeding a recording budget keeps the result and marks why its replay is unavailable. Earlier recordings keep their previous 6,000-step/230-second validation limits. Playback and seeking retain the 100-step/8ms-per-update work limits; portable files remain capped at 512 KB. Save validation accepts full battle durations while rejecting malformed inventories and overflow values.
 
@@ -40,18 +42,15 @@ Browser and production checks are in `tests/browser/campaign-rules.spec.ts` and 
 
 Final browser validation passed **31 scenarios per engine** in Chromium and WebKit at DPR 2, plus four settled Chromium capture reruns. Campaign views cover 1440×960, 390×844 and 844×390. The new production check passed in both engines with exact five-minute replay results, saved inventory reload and portable sharing; Chromium also passed these flows after an offline reload. WebKit offline behavior was not checked. The landscape army tray no longer overlaps Surrender, and the control remains at least 44 CSS pixels high.
 
-
 ## Native scenery and targeting
 
 `logic/obstacles.csv` and `logic/decos.csv` identify all used scenery as passable in combat. A base `Passable = FALSE` is overridden by `IsFadedAndPassableInCombat = TRUE`. These objects never create deployment exclusions or pathfinding barriers. Their IDs and positions survive save/replay sharing. Generated visual recreations cover 16 silhouettes; several native variants share artwork. Faded objects render at 50% alpha, an authored approximation. Neither this opacity nor native pixel identity is verified.
 
 The special Tutorial Cannon retains its 1.6 damage every 0.8 seconds but its native BuildingClass is Npc. Defense-preferring troops therefore treat it as an ordinary target. Goblin Huts remain passive; their saved army arrays do not spawn hostile troops.
 
-
 ## Dense-layout pathfinding
 
 The native combat matrix exposed expensive route searches in Chimp in Armor and Choose Wisely. Their resource armies resolved naturally, but each simulation consumed tens of seconds of CPU. A stable binary heap replaces the A* frontier's linear scans and computes each node's distance heuristic once. First-in tie ordering is preserved. A golden route digest covers dense native layouts and both melee/ranged approaches; the same routes survive the optimization. Both slow cases then simulated in under one second on this workstation, and all 132 native army/layout combinations passed. This is local CPU evidence, not a physical-phone performance certification.
-
 
 ## Native verification
 

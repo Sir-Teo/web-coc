@@ -75,17 +75,22 @@ def build():
                              for frame in draws for _, v, m, _ in frame])
     bounds = [math.floor(points[:, 0].min()) - 2, math.floor(points[:, 1].min()) - 2,
               math.ceil(points[:, 0].max()) + 2, math.ceil(points[:, 1].max()) + 2]
-    width, height = bounds[2] - bounds[0], bounds[3] - bounds[1]
+    # The source UV region has more texels than its movie-clip coordinate span.
+    # Rasterize at 2× to retain those texels; runtime world size remains unchanged.
+    density = 2
+    width, height = (bounds[2] - bounds[0]) * density, (bounds[3] - bounds[1]) * density
     columns = 8
     atlas = Image.new('RGBA', (width * columns, height * math.ceil(len(draws) / columns)))
     frames = []
     for i, draw in enumerate(draws):
-        image = rasterize(draw, textures, bounds)
+        scaled = [(i, v, np.diag([density, density, 1]) @ m, c) for i, v, m, c in draw]
+        image = rasterize(scaled, textures, [v * density for v in bounds])
         atlas.paste(image, (i % columns * width, i // columns * height))
         frames.append(dict(index=i, rgbaSha256=digest(image.tobytes()), alphaBounds=image.getbbox()))
     metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=SOURCES,
                     trap=trap, clips=clips, textureIndices=sorted(textures),
                     atlas=dict(path='assets/buildings/pumpkin-bomb-native.png', width=width,
+                               pixelsPerNativeUnit=density,
                                height=height, columns=columns, frames=len(draws), bounds=bounds,
                                rgbaSha256=digest(atlas.tobytes())), frames=frames,
                     reconstruction=dict(sampling='premultiplied bilinear at pixel centers',

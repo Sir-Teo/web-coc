@@ -1,5 +1,7 @@
-import { BUILDINGS, TROOPS, springCapacity, trapDamage, trapStats } from './data';
-import type { Battle, FX, Unit } from './model';
+import { BUILDINGS, TROOPS, springCapacity, trapStats } from './data';
+import type { Battle, Building, FX, Unit } from './model';
+import { PUMPKIN_BOMB } from './pumpkin-bomb';
+import { NPC_BUILDINGS } from './npc-buildings';
 import { SPRING_AIRTIME } from './trap-stats';
 import { SKELETON_TRAP, skeletonCount } from './skeleton-stats';
 import { spawnSkeleton } from './defenders';
@@ -19,10 +21,16 @@ export function springOutcome(housing: number, hp: number, capacity: number, dam
   return { ejected, hp: ejected ? 0 : hp - damage };
 }
 
+/** Resolve campaign identity before archetype, keeping seasonal traps out of the home catalog. */
+export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>) {
+  const base = trapStats(trap.kind, trap.level);
+  return base && trap.npc === 'pumpkin-bomb' ? { ...base, ...PUMPKIN_BOMB } : base;
+}
+
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
   let changed = false;
   for (const trap of battle.buildings) {
-    const d = trapStats(trap.kind, trap.level);
+    const d = battleTrapStats(trap);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
     const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
     let state = battle.traps[trap.id];
@@ -61,7 +69,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         effect({
           type: 'trap',
           ...center,
-          text: BUILDINGS[trap.kind].name,
+          text: trap.npc ? NPC_BUILDINGS[trap.npc].name : BUILDINGS[trap.kind].name,
           color: mode === 'air' ? 0xff746c : 0xffd175,
         });
       changed = true;
@@ -100,7 +108,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       }
       state.x = target.x;
       state.y = target.y;
-      target.hp -= trapDamage(trap.kind, trap.level);
+      target.hp -= d.damage;
       state.resolved = true;
       changed = true;
       effect({ type: 'blast', x: state.x, y: state.y, radius: 0.6, toAir: true, color: 0xff3c46 });
@@ -118,7 +126,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
     state.resolved = true;
     changed = true;
-    const power = trapDamage(trap.kind, trap.level);
+    const power = d.damage;
     if (d.springCapacity) {
       const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
       if (!target) continue;

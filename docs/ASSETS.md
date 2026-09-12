@@ -97,6 +97,6 @@ Sources stay outside `public/` and `dist/`, so rejected generations and large or
 
 Three generated transparent character sheets supply four-frame atlases and matching portraits. See [LATE-TROOPS.md](LATE-TROOPS.md) for source data, provenance, rendering limits and rebuild instructions, and [the complete prompts](../art/source/late-troops-v1/prompts.json). Run `node scripts/late-troop-assets.mjs --check` to verify all six shipping WebPs against their retained source sheets.
 
-# Native Pumpkin Bomb
+## Native Pumpkin Bomb
 
 The Pumpkin Bomb atlas is reconstructed from Supercell's public client artwork. It contains the original setup sprite and 44 trigger frames with registered positions, animated nested fuse sparks and true alpha. Source hashes, reproduction commands, ownership and remaining playback interpretation limits are in [the native reference](../reference/pumpkin-bomb/README.md). This asset is regenerated separately with `scripts/import-native-pumpkin.py`; it does not require image generation.

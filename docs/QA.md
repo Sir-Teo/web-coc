@@ -1,5 +1,19 @@
 # Verification record
 
+## September 12 — native Pumpkin Bomb artwork and campaign combat
+
+Rat Valley, Brute Force, Bouncy Castle and Full Frontal now retain all ten native Pumpkin Bomb placements. This raises supported layouts from 44 to **48 of 90** and makes stages 1–26 reachable through the current progression rules. The next missing mechanic is level-three Skeleton Traps in Obsidian Tower. Replay version 28 preserves the seasonal identity independently of the normal Bomb archetype; home saves and practice reject it.
+
+The source importer reconstructs the original setup sprite and all 44 trigger frames from pinned SC6/SCTX assets. Nested fuse sparks animate, source transforms share one registration, and the final atlas is rasterized at two pixels per native coordinate unit to retain texture detail without enlarging its world footprint. The strict reader's five adversarial/pixel tests pass; the 45-frame atlas and campaign reference reproduce exactly. Source ownership, hashes and interpretation limits are documented in [reference/pumpkin-bomb](../reference/pumpkin-bomb/README.md).
+
+**847 model/asset tests in 67 files pass**, including all 144 supported native army/layout battles. New checks cover exact ground-trigger and splash boundaries, 25 damage, air/dead-target immunity, escaped targets, one-shot resolution, concealment, passability, destruction exclusion, replay export/rewind, malformed identities and older-version rejection. The two-second fuse is explicitly an inference from action frame 48 and 24 fps; the source animation has 44 frames. Native action-counter and nested playback semantics remain unverified.
+
+**Eight final browser cases pass per engine in Chromium and WebKit at DPR 2.** They exercise native Payback/save/replay/scenery flows, Rat Valley at 1440×960, 390×844 and 844×390, all four enabled campaign buttons, decoded texture alpha, fixed registration, clock-driven frames, paused/reduced-motion poses, damage and shared-replay concealment restoration. The initial one-pixel-per-native-unit export passed functionality but visibly discarded texture detail; the denser export passed the final runs on an unchanged runtime. The atlas and phone rendering were reviewed visually. Early test authoring failures were a wrong fixture method name and a Node JSON import attribute; both were corrected before the passing runs.
+
+**General and campaign production checks pass in both engines with no reported browser errors.** They cover actual native asset requests, a shared Rat Valley replay with the Giant's exact 375 remaining HP, rewind to hidden scouting, long Payback replay/overflow and saved inventory reload. Chromium repeats these flows offline with 198 precached files; WebKit offline remains untested. Source SHA-256 is `a641e9ed848e238dc3a0370ac2d7cd0fe8bb942a5b6e8493afd24a25024a1309` across 71 runtime files; cache is `crown-clan-529b162af4b5`. Evidence: `output/playtest/pumpkin-verification.json`, the `pumpkin-*-final.log` files and `pumpkin-native-*` / `pumpkin-replay-*` captures.
+
+Explosion particles, sound, spent opacity and world-scale calibration still use local interpretation. Native GPU pixel identity, remaining campaign mechanics, complete production readiness and physical-device qualification remain unfinished.
+
 ## September 12 — native campaign integration
 
 The campaign screen now lists the pinned native 90-village catalog. Forty-four layouts are mechanically supported, including the full 430-entity Sherbet Towers. The other 46 are explicitly unavailable; Halloween bombs currently block the early route at Rat Valley. Native positions, levels, HP, scenery IDs and combat passability are preserved. Separate native stars and finite-resource records protect prior authored campaign progress. Replay version 27 carries catalog identity, scenery and larger layouts. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md) for exact coverage and unresolved interpretation/art gaps.
@@ -27,7 +41,6 @@ Seven generated artwork files total **446,902 bytes**. The building has preserve
 Final runtime source SHA-256: `8e06b9cc58473b097372118e7c855699e02adc562a42bbed6385478d51ea6919` (65 files). Runtime source and shipped assets stayed fixed throughout final browser/production verification. Evidence: `output/playtest/blacksmith-verification.json`, `blacksmith-source.json`, `blacksmith-evidence.py`, `blacksmith-{models,assets,build,chromium,webkit}-final.log`, `blacksmith-production-report.json`, `blacksmith-{hero,general}-production-report.json`, `blacksmith-panel-*.png`, `blacksmith-purchase-*.png`, `blacksmith-quake-*.png`, and `production-blacksmith-*.png`.
 
 Save version stays 4; combat version is 24, expiring old playback while preserving its result records. Normal ore rewards, later Blacksmith/equipment tiers, other/defending heroes, native animation/timing/rounding, online systems and physical-device checks remain unfinished. The full production-clone goal stays active.
-
 
 ## September 11 — King portrait and four directional animation sets
 
@@ -261,7 +274,6 @@ The production build passes Chromium and WebKit at 2× density without reported 
 
 Evidence: `output/playtest/hud-spacing-baseline.json`, `hud-spacing-after.json`, `hud-layout-chromium.log`, `hud-layout-webkit.log`, `hud-layout-retina-chromium.log`, `hud-layout-retina-webkit.log`, `hud-layout-final-chromium.log`, `hud-layout-final-webkit.log`, `hud-layout-build.log`, `hud-layout-production-report.json`, and `hud-layout-*-320x480-*.png` / `hud-layout-*-568x320-*.png` / `hud-layout-*-844x390-*.png`. The consolidated record is `hud-layout-verification.json`.
 
-
 ## September 11 — native Retina and 3× rendering
 
 The canvas now uses physical display pixels with a 16-million-pixel allocation budget and GPU dimension limits. The former 390×844 buffer stayed at that size even on a 3× screen; it now renders at 1170×2532. A 1440×960 Retina view renders at 2880×1920. Camera framing, gesture tolerances, DOM shop dragging, context anchors and resource flights remain in CSS coordinates. Fractional-density rounding uses separate camera axes. Resize and live display changes preserve world focus and CSS zoom, cancel old gestures, and remap stationary mouse input. See [DISPLAY-DENSITY.md](DISPLAY-DENSITY.md).
@@ -278,7 +290,6 @@ Visual follow-up: at 844×390, Collect covers the center of Zoom out. A DOM hit 
 
 Evidence: `output/playtest/display-unit.json`, `display-chromium.log`, `display-retina.log`, `display-webkit.log`, `display-pinch.log`, `display-restoration-metal.log`, `display-restoration-webkit.log`, `display-build.log`, `display-production-report.json`, `display-retina-performance.json`, `display-phone-performance.json`, `display-phone-camps.png`, `display-landscape-followup.json`, and `display-landscape-followup.png`. The consolidated record is `display-verification.json`.
 
-
 ## September 11 — reduce terrain overdraw and verify Metal rendering
 
 The turf mask now draws only the four corners of its bounding rectangle outside the buildable diamond. It removes two full-viewport stencil inversion draws per frame, while retaining the same repeating texture, tint, alpha, clipping, world detail and troop roster. The matching subtract operation still clears the mask before later world objects render. Gameplay, saves, replay rules and artwork are unchanged.
@@ -293,7 +304,6 @@ The production build passes Chromium and WebKit without reported errors. Chromiu
 
 Evidence: `output/playtest/field-mask-verification.json`, `render-profile-baseline.log`, `render-profile.json`, `render-profile.cpuprofile`, `render-layers-profile.json`, `field-corners-profile.json`, `field-mask-chromium.log`, `field-mask-webkit.log`, `field-mask-metal.log`, `field-mask-build.log`, `field-mask-production-report.json`, `field-mask-performance.json`, and `field-mask-metal-performance.json`.
 
-
 ## September 11 — eight camp level sprites and open gathering areas
 
 All 366 model and asset tests pass across 37 files. Eight original built-in ImageGen sprites replace the camp's two tent-and-wall tiers, with clean alpha, explicit level selection, measured ground origins, untinted materials and matching placement previews. Camps retain 4×4 placement while home troops can gather on their outer tiles and avoid the central fire pit, buildings, walls, trees and rocks. Higher rock-ring camps leave stone debris; cooking-support camps leave wood debris. Health and upgrade bars follow the actual sprite origin. Exact prompts, source files and importer are documented in [CAMP-ART.md](CAMP-ART.md).
@@ -306,7 +316,6 @@ The final production build passes Chromium and WebKit without reported errors, a
 
 Evidence: `output/playtest/camp-art-verification.json`, `camp-art-unit.json`, `camp-art-chromium.log`, `camp-art-webkit.log`, `camp-art-final-chromium.log`, `camp-art-final-webkit.log`, `camp-art-verified-chromium.log`, `camp-art-verified-webkit.log`, `camp-art-final-build.log`, `camp-art-final-production-report.json`, `camp-art-rebuild.log`, `camp-art-performance.json`, `camp-art-final-performance.json`, `camp-level-gallery-webkit.png`, `camp-open-gathering-webkit.png`, `camp-art-info-webkit.png`, and `camp-cutouts-on-grass.png`.
 
-
 ## September 11 — native camp capacity and progression
 
 All 363 unit tests pass across 36 files, including all 144 campaign attacks. Six dedicated camp cases cover native values, count/level ceilings, actual capacity, paid deadlines, old prepared armies and replay health. A further focused six-case run passes after strengthening the old deadline test: a purchased ten-minute upgrade stays unfinished at five minutes and completes at its saved deadline.
@@ -318,7 +327,6 @@ The new TH2 village has one completed level-two camp and 30 spaces. Explicit tab
 Production Chromium and WebKit pass without reported errors. Chromium reloads, opens Army and plays a replay offline with 99 cached files, cache `crown-clan-4e0af935cc71`. The final formatting cleanup builds the identical cache. CI includes the new camp browser cases in its WebKit selection.
 
 Evidence: `output/playtest/camp-progression-verification.json`, `camp-progression-unit.json`, `camp-progression-deadline-unit.json`, `camp-progression-chromium.log`, `camp-progression-webkit.log`, `camp-progression-rerun-chromium.log`, `camp-progression-rerun-webkit.log`, `camp-progression-production-report.json`, `camp-progression-final-build.log`, `camp-progression-info-chromium.png`, and `camp-over-capacity-320-webkit.png`.
-
 
 ## Native army footprints and save recovery — September 11, 2026
 
@@ -589,7 +597,6 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 - Portrait and landscape playback targets are at least 44 CSS pixels; the 320px layout and 844×390 production view were visually reviewed.
 - `npm run test:production` now records a practice attack through the canvas, watches/seeks/restarts/exits the replay in Chromium and WebKit, compares home resources/army, and reopens the saved recording offline in Chromium.
 - Reports and screenshots: `output/playtest/replay-audit-verification.json`, `production-replay-*.png`, and `replay-controls-*.png`.
-
 
 ## Campaign rules — September 11, 2026
 

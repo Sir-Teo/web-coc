@@ -1,10 +1,19 @@
 import type { BuildingKind } from './data';
+import { PUMPKIN_ART } from './pumpkin-bomb';
 
 /** Native campaign identities, independent of the player's upgrade catalog.
  * `kind` is the engine archetype; `npc` retains the exact enemy identity in replays.
- * Source: public client 18.400.21 logic/buildings.csv, pinned in reference/campaign.
+ * Source: public client 18.400.21 building/trap tables, pinned in reference/.
  */
 export const NPC_BUILDINGS = {
+  'pumpkin-bomb': {
+    globalId: 12000003,
+    kind: 'bomb',
+    name: 'Pumpkin Bomb',
+    hp: [1],
+    texture: PUMPKIN_ART.texture,
+    size: 1,
+  },
   'goblin-townhall': {
     globalId: 1000001,
     kind: 'townhall',
@@ -40,16 +49,20 @@ export function validNpcBuilding(value: unknown, kind: BuildingKind, level: numb
 /** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 7 DPS. */
 export const TUTORIAL_CANNON_DAMAGE = 2 * 0.8;
 export const npcAsset = (npc: NpcBuildingKind) =>
-  npc === 'tutorial-cannon'
-    ? '/assets/buildings/cannon.webp'
-    : `/assets/buildings/${NPC_BUILDINGS[npc].texture}.webp`;
+  npc === 'pumpkin-bomb'
+    ? PUMPKIN_ART.asset
+    : npc === 'tutorial-cannon'
+      ? '/assets/buildings/cannon.webp'
+      : `/assets/buildings/${NPC_BUILDINGS[npc].texture}.webp`;
 /** Foundation side corners measured after registration; anchor their center to the tile. */
 export const npcArt = (npc: NpcBuildingKind) =>
-  npc === 'tutorial-cannon'
-    ? undefined
-    : {
-        texture: NPC_BUILDINGS[npc].texture,
-        width: (64 * NPC_BUILDINGS[npc].size * 512) / 430,
-        originX: 0.5,
-        originY: (npc === 'goblin-townhall' ? 288 : 294) / 512,
-      };
+  npc === 'pumpkin-bomb'
+    ? PUMPKIN_ART
+    : npc === 'tutorial-cannon'
+      ? undefined
+      : {
+          texture: NPC_BUILDINGS[npc].texture,
+          width: (64 * NPC_BUILDINGS[npc].size * 512) / 430,
+          originX: 0.5,
+          originY: (npc === 'goblin-townhall' ? 288 : 294) / 512,
+        };

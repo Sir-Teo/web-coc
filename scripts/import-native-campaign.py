@@ -2,7 +2,8 @@
 """Reproduce the campaign reference from pinned, public Supercell client data.
 
 Run from the repository root. --check compares without changing the reference.
-Raw downloads remain in output/; no extracted art or game code is shipped.
+Raw downloads remain in output/; this importer writes data, not executable code.
+Native artwork has a separate, source-attributed extraction pipeline.
 """
 import argparse
 import concurrent.futures

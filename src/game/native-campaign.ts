@@ -60,11 +60,13 @@ const KINDS: Record<number, BuildingKind> = {
   12000000: 'bomb',
   12000001: 'springtrap',
   12000002: 'giantbomb',
+  12000003: 'bomb',
   12000005: 'airbomb',
   12000006: 'seekingairmine',
   12000008: 'skeletontrap',
 };
 const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
+  12000003: 'pumpkin-bomb',
   1000001: 'goblin-townhall',
   1000018: 'goblin-hut',
   1000060: 'tutorial-cannon',

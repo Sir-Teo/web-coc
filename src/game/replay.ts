@@ -23,7 +23,7 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 27;
+export const REPLAY_VERSION = 28;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -207,6 +207,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !integer(b.level, 1, d.maxLevel) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
+      (b.npc === 'pumpkin-bomb' && value.version < 28) ||
       !number(b.maxHp, 1, 1e9) ||
       b.hp !== b.maxHp ||
       b.cooldown !== 0 ||

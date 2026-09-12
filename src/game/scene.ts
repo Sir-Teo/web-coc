@@ -1,6 +1,8 @@
 import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
+import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
+import { battleTrapStats } from './traps';
 import {
   BOMB_TOWER_ART_LEVELS,
   bombTowerTexture,
@@ -173,6 +175,11 @@ export class VillageScene extends Phaser.Scene {
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
     for (const npc of ['goblin-townhall', 'goblin-hut'] as const)
       this.load.image(npcArt(npc)!.texture, npcAsset(npc));
+    this.load.spritesheet(PUMPKIN_ART.texture, PUMPKIN_ART.asset, {
+      frameWidth: PUMPKIN_ART.frameWidth,
+      frameHeight: PUMPKIN_ART.frameHeight,
+      endFrame: 44,
+    });
     this.load.image('king', asset('king'));
     for (const direction of KING_DIRECTIONS)
       this.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
@@ -828,6 +835,14 @@ export class VillageScene extends Phaser.Scene {
         });
       }
       const trap = this.model.battle?.traps[b.id];
+      if (b.npc === 'pumpkin-bomb')
+        im.setFrame(
+          pumpkinFrame(
+            trap,
+            this.model.battle?.elapsed ?? 0,
+            this.model.state.settings.reducedMotion,
+          ),
+        );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
       if (
@@ -1421,8 +1436,16 @@ export class VillageScene extends Phaser.Scene {
     if (battle) {
       for (const trap of battle.finished ? [] : battle.buildings) {
         const state = battle.traps[trap.id];
-        const def = BUILDINGS[trap.kind].trap;
+        const def = battleTrapStats(trap);
         if (!def || !state) continue;
+        if (trap.npc === 'pumpkin-bomb') {
+          this.sprites
+            .get(trap.id)
+            ?.setFrame(
+              pumpkinFrame(state, battle.elapsed, this.model.state.settings.reducedMotion),
+            );
+          continue;
+        }
         if (trap.kind === 'seekingairmine') {
           const launched = battle.elapsed >= state.activatedAt + def.delay;
           const ground = this.sprites.get(trap.id);

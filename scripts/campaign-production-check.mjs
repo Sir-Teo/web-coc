@@ -12,7 +12,7 @@ const modules = await createServer({
   appType: 'custom',
   logLevel: 'error',
 });
-let fixture, expected;
+let fixture, expected, pumpkinFile, pumpkinExpected;
 try {
   const { GameModel } = await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
@@ -38,6 +38,17 @@ try {
   m.returnHome();
   if (!validateSave(m.state)) throw Error('Invalid campaign production fixture');
   fixture = JSON.stringify(m.state);
+  const { pumpkinBattle } = await modules.ssrLoadModule('/tests/fixtures/pumpkin-battle.ts');
+  const { makeReplayFile } = await modules.ssrLoadModule('/src/game/replay-file.ts');
+  const pumpkin = pumpkinBattle();
+  for (let i = 0; i < 80; i++) pumpkin.step(0.05);
+  pumpkin.finishBattle();
+  pumpkinExpected = {
+    result: pumpkin.battle.result,
+    hp: pumpkin.battle.units[0].hp,
+    npc: pumpkin.battle.buildings.find((b) => b.npc === 'pumpkin-bomb'),
+  };
+  pumpkinFile = JSON.stringify(makeReplayFile(pumpkin.state.raidLog[0].replay));
 } finally {
   await modules.close();
 }
@@ -65,10 +76,13 @@ try {
         deviceScaleFactor: 2,
       });
       const page = await context.newPage(),
-        errors = [];
+        errors = [],
+        assetRequests = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
+        if (r.url().endsWith('/assets/buildings/pumpkin-bomb-native.png') && r.ok())
+          assetRequests.push(r.url());
       });
       await page.goto(url);
       await expect(page.locator('.shop-btn')).toBeVisible();
@@ -146,6 +160,43 @@ try {
       expect(
         await page.evaluate(() => JSON.parse(window.render_game_to_text()).battle.result),
       ).toEqual(expected.result);
+      await page.locator('[data-action="replay-exit"]').click();
+      await page.locator('#import-replay-file').setInputFiles({
+        name: 'rat-valley.crown-replay.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(pumpkinFile),
+      });
+      await expect(page.locator('.battle-enemy')).toContainText('Rat Valley');
+      const pumpkinSlider = page.getByRole('slider', { name: 'Replay position' });
+      await pumpkinSlider.focus();
+      await pumpkinSlider.press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      const pumpkinEnd = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(pumpkinEnd.battle.result).toEqual(pumpkinExpected.result);
+      expect(pumpkinEnd.battle.troops[0].hp).toBe(pumpkinExpected.hp);
+      expect(pumpkinEnd.buildings.find((b) => b.npc === 'pumpkin-bomb')).toMatchObject({
+        x: pumpkinExpected.npc.x,
+        y: pumpkinExpected.npc.y,
+        hp: 1,
+        level: 1,
+      });
+      await pumpkinSlider.focus();
+      await pumpkinSlider.press('Home');
+      await expect
+        .poll(
+          async () =>
+            (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).battle.time,
+        )
+        .toBe(0);
+      expect(
+        (await page.evaluate(() => JSON.parse(window.render_game_to_text()))).buildings.some(
+          (b) => b.npc === 'pumpkin-bomb',
+        ),
+      ).toBe(false);
+      await pumpkinSlider.focus();
+      await pumpkinSlider.press('End');
+      await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      expect(assetRequests.length).toBeGreaterThan(0);
       expect(errors).toEqual([]);
       report[name] = {
         errors,
@@ -161,6 +212,13 @@ try {
         offline,
         cache,
         result: expected.result,
+        pumpkin: {
+          assetRequests: assetRequests.length,
+          sharedReplay: true,
+          concealmentRestored: true,
+          hp: pumpkinExpected.hp,
+          result: pumpkinEnd.battle.result,
+        },
       };
     } finally {
       await browser.close();

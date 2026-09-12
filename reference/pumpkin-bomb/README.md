@@ -4,6 +4,8 @@
 
 The shipping PNG contains 45 registered frames: the setup sprite followed by all 44 trigger frames at 24 fps. Native geometry, UV rotation, matrices, color transforms and alpha are reconstructed directly from `sc/buildings.sc` and its external ASTC texture `sc/buildings_66.sctx`. The root clip's labels are `Init` at frame 0 and `Ignite` at frame 19. SC6 string references are zero-based. All frame positions share the original coordinate system; frames are never separately trimmed, stretched or centered.
 
+The atlas is sampled at two output pixels per native coordinate unit. Its 130×152 cells retain source texture detail that would be downsampled at one pixel per native unit; this is a new rasterization from the original UV regions, not enlargement of the first PNG. Runtime display size remains 97.5×114 world pixels at camera zoom 1.
+
 ## Reproduction
 
 Use Python 3.10–3.12 in an isolated environment:
@@ -19,9 +21,13 @@ Omit `--check` to regenerate. Downloads use verified HTTPS and must match pinned
 
 ## Interpretation boundaries
 
-The trap row specifies 25 damage, 1.5-tile ground trigger, 3-tile damage radius, a passable one-tile footprint, and action frame 48. It contains no pushback or minimum housing field. Dividing the action frame by the trigger clip's 24 fps gives **2 seconds**; the clip itself contains only 44 frames. The native action-frame counter and interaction with the `Ignite` label have not been observed in a running client. Runtime timing should remain explicitly identified as an inference until that is verified.
+The trap row specifies 25 damage, 1.5-tile ground trigger, 3-tile damage radius, a passable one-tile footprint, and action frame 48. It contains no pushback or minimum housing field. Dividing the action frame by the trigger clip's 24 fps gives **2 seconds**; the clip itself contains only 44 frames. The native action-frame counter and interaction with the `Ignite` label have not been observed in a running client. The runtime uses the two-second inference and holds the final animation frame until the damage event. This remains an inference until verified.
 
 Nested clips advance from their latest continuous placement and loop at their own frame rate. This produces the source's animated fuse sparks rather than freezing every nested clip at frame zero. Native subclip restart/loop semantics remain unverified. The CPU renderer uses premultiplied bilinear sampling at pixel centers. Native GPU sampling, color space and blend precision have not been compared pixel for pixel. Exporting these assets does not establish that the entire game is visually identical to the original.
+
+The runtime registers the measured ground contact at native coordinate (-3, 26), with 1.5 world pixels per native pixel. This is a visual calibration to the current 64×32 isometric grid, not a recovered native camera transform. Reduced motion displays stable setup/ignited poses; damage timing is unchanged. Spent traps use the source setup export at the existing local spent-trap opacity.
+
+Explosion particles, sound and spent-trap opacity still use the local effects system; this import reconstructs the setup and triggered building exports. The native effect names remain in the source record for a later effects pass.
 
 ## Format research
 
