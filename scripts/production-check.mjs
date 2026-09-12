@@ -1,12 +1,14 @@
 import { chromium, webkit, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 const baseURL = process.env.PRODUCTION_BASE_URL ?? 'http://127.0.0.1:4173';
+const engines = { chromium, webkit };
+const selectedBrowser = process.env.PRODUCTION_BROWSER;
+if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
+  throw new Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}. Use chromium or webkit.`);
 await fs.mkdir('output/playtest', { recursive: true });
 const report = {};
-for (const [name, engine] of [
-  ['chromium', chromium],
-  ['webkit', webkit],
-]) {
+for (const [name, engine] of Object.entries(engines)) {
+  if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 960 },

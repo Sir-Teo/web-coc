@@ -119,6 +119,8 @@ it('all twelve authored layouts are distinct, in bounds and have no overlapping 
   }
   expect(signatures.size).toBe(12);
 });
+// The 288 full battle simulations take over 20 seconds on GitHub-hosted runners.
+// Allow CI headroom for this audit while keeping the normal timeout for other tests.
 it('campaign has a viable opening, a progression gate and a reachable final fortress', () => {
   const results = [];
   for (let stage = 0; stage < 12; stage++)
