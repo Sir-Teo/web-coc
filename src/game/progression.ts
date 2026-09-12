@@ -1,3 +1,4 @@
+import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS } from './xbow-stats';
 
@@ -36,6 +37,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'darkstorage') return darkStorageStats(level)?.townhall ?? null;
   if (kind === 'xbow') return XBOW_LEVELS[level - 1]?.townhall ?? null;
   // Native trap rows retain later requirements even while the home village caps at TH8.
   if (kind === 'skeletontrap' && (level === 3 || level === 4)) return level + 6;

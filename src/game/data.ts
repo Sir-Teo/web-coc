@@ -1,3 +1,5 @@
+import { DARK_STORAGE_LEVELS, darkStorageStats } from './dark-storage-stats';
+import { darkStorageAsset, darkStorageTexture } from './dark-storage-art';
 import { teslaTexture, teslaAsset } from './tesla-art';
 import { XBOW, XBOW_LEVELS, xbowDamage, type XbowMode } from './xbow-stats';
 import { xbowAsset, xbowTexture } from './xbow-art';
@@ -191,16 +193,17 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   },
   darkstorage: {
     name: 'Dark Elixir Storage',
-    description: 'Protects dark elixir for hero upgrades. Every level adds 10,000 capacity.',
+    description:
+      'Protects Dark Elixir for hero upgrades. Upgrade to increase its capacity and durability.',
     size: 3,
-    width: 110,
-    hp: 1500,
-    cost: 30000,
+    width: 240,
+    hp: DARK_STORAGE_LEVELS[0].hp,
+    cost: DARK_STORAGE_LEVELS[0].cost,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 4,
+    maxLevel: DARK_STORAGE_LEVELS.length,
     available: [0, 0, 0, 0, 0, 0, 1, 1],
-    build: 240,
+    build: DARK_STORAGE_LEVELS[0].seconds,
     singleArtwork: true,
   },
   townhall: {
@@ -931,6 +934,7 @@ export const buildingTexture = (
   direction = 0,
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'darkstorage') return darkStorageTexture(level);
   if (kind === 'xbow') return xbowTexture(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapTexture('ground', level);
   if (kind === 'bombtower') return bombTowerTexture(level);
@@ -953,6 +957,7 @@ export const asset = (
   skeletonMode: SkeletonMode = 'ground',
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'darkstorage') return darkStorageAsset(level);
   if (kind === 'xbow') return xbowAsset(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode, level);
   if (kind === 'bombtower') return bombTowerAsset(level);
@@ -979,6 +984,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  (kind === 'darkstorage' ? darkStorageStats(level + 1)?.seconds : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.seconds : undefined) ??
   facilityProgression(kind, level + 1)?.seconds ??
   campProgression(kind, level + 1)?.seconds ??
@@ -990,6 +996,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'darkstorage' ? darkStorageStats(level)?.hp : undefined) ??
   (kind === 'airsweeper' ? sweeperStats(level).hp : undefined) ??
   facilityProgression(kind, level)?.hp ??
   campProgression(kind, level)?.hp ??
@@ -999,6 +1006,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  (kind === 'darkstorage' ? darkStorageStats(level + 1)?.cost : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.cost : undefined) ??
   facilityProgression(kind, level + 1)?.cost ??
   campProgression(kind, level + 1)?.cost ??

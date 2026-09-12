@@ -1,3 +1,4 @@
+import { darkStorageCapacity } from './dark-storage-stats';
 import {
   campaignStage,
   campaignStages,
@@ -737,7 +738,7 @@ export class GameModel {
     if (kind === 'dark')
       return this.state.buildings
         .filter((b) => b.kind === 'darkstorage' && !b.constructing)
-        .reduce((n, b) => n + b.level * 10000, 0);
+        .reduce((n, b) => n + darkStorageCapacity(b.level), 0);
     return (
       100000 +
       this.state.buildings
@@ -767,9 +768,16 @@ export class GameModel {
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
         (facilityProgression(b.kind, b.level) ||
-          ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(
-            b.kind,
-          )) &&
+          [
+            'wall',
+            'cannon',
+            'archertower',
+            'mortar',
+            'airdefense',
+            'wizardtower',
+            'camp',
+            'darkstorage',
+          ].includes(b.kind)) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);

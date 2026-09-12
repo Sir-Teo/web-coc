@@ -149,6 +149,7 @@ test('dark elixir collection updates its own HUD counter and survives reload', a
   await page.evaluate(() => {
     const m = window.__game.model;
     m.state.dark = 0;
+    m.state.elixir = 1000000; // Fund the native storage's 250,000 Elixir construction price.
     for (const kind of ['darkstorage', 'darkdrill'] as const) {
       let point: { x: number; y: number } | undefined;
       for (let y = 2; y < 23 && !point; y++)

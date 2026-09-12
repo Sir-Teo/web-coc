@@ -1,3 +1,5 @@
+import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-scene';
+import { DARK_STORAGE_ART } from './dark-storage-art';
 import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
@@ -154,6 +156,7 @@ export class VillageScene extends Phaser.Scene {
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
   private santaPresentation!: SantaPresentation;
+  private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
@@ -165,6 +168,7 @@ export class VillageScene extends Phaser.Scene {
   preload() {
     preloadSanta(this);
     preloadXbows(this);
+    preloadDarkStorages(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -258,12 +262,14 @@ export class VillageScene extends Phaser.Scene {
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.santaPresentation = new SantaPresentation(this, this.audio);
+    this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.santaPresentation.destroy();
       this.xbowPresentation.destroy();
+      this.darkStoragePresentation.destroy();
     });
     this.drawField();
     this.decorate();
@@ -739,7 +745,9 @@ export class VillageScene extends Phaser.Scene {
         im &&
         wx > im.x - im.displayWidth * 0.42 &&
         wx < im.x + im.displayWidth * 0.42 &&
-        wy > im.y - im.displayHeight * (b.kind === 'xbow' ? im.originY : 0.83) &&
+        wy >
+          im.y -
+            im.displayHeight * (['xbow', 'darkstorage'].includes(b.kind) ? im.originY : 0.83) &&
         wy < im.y + im.displayHeight * 0.06
       )
         return b;
@@ -766,6 +774,7 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.santaPresentation.clear();
       this.xbowPresentation.clear();
+      this.darkStoragePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -875,7 +884,7 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.kind === 'xbow' && b.hp > 0) im.setAlpha(0);
+      if ((b.kind === 'xbow' || b.kind === 'darkstorage') && b.hp > 0) im.setAlpha(0);
       if (b.npc === 'santa-trap')
         im.setFrame(
           santaTrapFrame(
@@ -892,6 +901,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'mortar' &&
         b.kind !== 'camp' &&
         b.kind !== 'xbow' &&
+        b.kind !== 'darkstorage' &&
         b.kind !== 'tesla'
       )
         im.setTint(0xffecc7);
@@ -1016,6 +1026,11 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture = buildingTexture(kind, level, direction, xbowMode);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (kind === 'darkstorage')
+      return im
+        .setOrigin(DARK_STORAGE_ART.originX, DARK_STORAGE_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(DARK_STORAGE_ART.width, DARK_STORAGE_ART.height);
     if (kind === 'xbow')
       return im
         .setOrigin(XBOW_ART.originX, XBOW_ART.originY)
@@ -1436,7 +1451,9 @@ export class VillageScene extends Phaser.Scene {
           progress = (this.model.clock - start) / duration;
         this.bar(
           im.x,
-          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87),
+          im.y -
+            im.displayHeight *
+              (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.87),
           54,
           progress,
           0x82d745,
@@ -1448,13 +1465,22 @@ export class VillageScene extends Phaser.Scene {
       } else if (this.model.battle && v.hp < v.maxHp)
         this.bar(
           im.x,
-          im.y - im.displayHeight * (v.kind === 'camp' || v.kind === 'xbow' ? im.originY : 0.88),
+          im.y -
+            im.displayHeight *
+              (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.88),
           42,
           v.hp / v.maxHp,
           0xea654d,
         );
     }
     const battle = this.model.battle;
+    this.darkStoragePresentation.render(
+      this.model.buildings,
+      battle,
+      this.model.state.dark,
+      this.model.resourceCap('dark'),
+      iso,
+    );
     const xbowCues = this.xbowPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,

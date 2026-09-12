@@ -1,3 +1,4 @@
+import { darkStorageCapacity } from '../game/dark-storage-stats';
 import { campaignStage } from '../game/campaign-catalog';
 import { campaignAmount, campaignResourceKeys, type CampaignResource } from '../game/campaign-loot';
 import {
@@ -208,7 +209,7 @@ function statRows(
   if (kind === 'goldmine' || kind === 'collector')
     rows.push(
       ['Timer', 'Production', `${3 * level} / second`],
-      ['Layers', 'Holds', n(10000 * level)],
+      ['Layers', 'Holds', n(darkStorageCapacity(level))],
     );
   if (kind === 'goldstorage' || kind === 'elixirstorage')
     rows.push(['Layers', 'Adds capacity', `+${n(storageCapacity(level))}`]);
@@ -217,7 +218,8 @@ function statRows(
       ['Timer', 'Production', `${360 * level} / hour`],
       ['Layers', 'Holds', n(2000 * level)],
     );
-  if (kind === 'darkstorage') rows.push(['Layers', 'Dark elixir capacity', n(10000 * level)]);
+  if (kind === 'darkstorage')
+    rows.push(['Layers', 'Dark elixir capacity', n(darkStorageCapacity(level))]);
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
   if (kind === 'blacksmith') {
