@@ -85,8 +85,15 @@ def build():
         dict(export='teslatower_lvl7_attack', time=8 / 30),
         dict(export='tesla_appear_fx', time=9 / 24),
         dict(export='teslatower_lvl17_setup', time=10 / 24),
+        dict(export='lightning_arc_1', time=3 / 24, particle=['Lightning_3', 0], transform=[2, 0, 60, 0, 2, 200]),
+        dict(export='lightning_arc_2', time=7 / 24, particle=['Lightning_3', 1], transform=[-1.7, .6, 300, -.6, -1.7, 230]),
+        dict(export='lightning_arc_3', time=14 / 24, particle=['Lightning_3', 2], transform=[1.5, -1, 60, 1, 1.5, 100]),
+        dict(export='lightning_arc_2', time=19 / 24, particle=['Lightning_4', 3], transform=[.1, -2, 200, 2, .1, 60]),
+        dict(export='Hit', time=0),
+        dict(export='spark_2', time=0, transform=[10, 0, 200, 0, 10, 200]),
+        dict(export='teslatower_lvl10_attack', time=8 / 30),
     ]
-    cell, width, height = 400, 1600, 1200
+    cell, width, height = 400, 1600, 2000
     background = [48 / 255, 65 / 255, 53 / 255]
     sheet = Image.new('RGBA', (width, height))
     for i, case in enumerate(cases):
@@ -94,12 +101,25 @@ def build():
         frame = int(case['time'] * native['graph']['clips'][str(id_)]['fps'] + 1e-9)
         root = np.array([[2, 0, 200], [0, 2, 180], [0, 0, 1]], dtype=float)
         if i == 11: root[:2, :2] = [[1.8, .3], [-.2, 1.9]]
+        if 'transform' in case: root[:2] = np.array(case.pop('transform')).reshape(2, 3)
+        particle = case.pop('particle', None)
+        particle_blend = None
+        if particle:
+            emitter, variant = particle
+            row = native['particles'][emitter][variant]
+            require(row['ParticleExportName'] == case['export'], 'Particle export differs')
+            particle_blend = 8 if row['AdditiveBlend'] == 'TRUE' else 0
         original = nodes(native['graph'], id_, frame, root)
+        if particle_blend is not None:
+            for pose in original: pose['blend'] = particle_blend
         image = Image.fromarray(np.round(compose(original, textures, cell, background) * 255).astype(np.uint8), 'RGBA')
         x, y = i % 4 * cell, i // 4 * cell
         sheet.paste(image, (x, y))
+        poses = nodes(runtime, id_, frame, root)
+        if particle_blend is not None:
+            for pose in poses: pose['blend'] = particle_blend
         case.update(x=x, y=y, root=root[:2].reshape(-1).tolist(), rgbaSha256=digest(image.tobytes()),
-                    poses=nodes(runtime, id_, frame, root))
+                    particleBlend=particle_blend, poses=poses)
     return sheet, dict(width=width, height=height, cell=cell, background='#304135',
                        composition='Isolated premultiplied RGBA8 groups; additive RGB and source-over alpha',
                        nativeEngineCompositingVerified=False, rgbaSha256=digest(sheet.tobytes()), cases=cases)
@@ -120,7 +140,7 @@ def main():
         folder.mkdir(parents=True, exist_ok=True)
         (folder / 'manifest.json').write_text(content)
         image.save(folder / 'reference.png', optimize=True)
-    print(f'{"Verified" if args.check else "Wrote"} 12 independent Tesla GPU source cases')
+    print(f'{"Verified" if args.check else "Wrote"} {len(manifest["cases"])} independent Tesla GPU source cases')
 
 
 if __name__ == '__main__': main()

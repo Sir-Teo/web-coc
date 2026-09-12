@@ -5,12 +5,14 @@ import { expect, it } from 'vitest';
 import native from '../reference/tesla/native.json';
 import runtime from '../reference/tesla/runtime.json';
 import combat from '../reference/tesla/combat.json';
+import effects from '../reference/tesla/effects.json';
 import { nativeMeshPoses, type NativeMeshGraph } from '../src/game/native-mesh';
 
 const graph = runtime as unknown as NativeMeshGraph;
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 it('preserves all 17 Tesla records and the source reveal/weapon boundaries', () => {
+  expect(effects).toEqual({ effects: native.effects, particles: native.particles });
   expect(native.building).toHaveLength(17);
   expect(native.building[0]).toMatchObject({ GlobalID: '1000019', Hidden: 'TRUE', BaseGfx: '-1' });
   expect(combat).toMatchObject({

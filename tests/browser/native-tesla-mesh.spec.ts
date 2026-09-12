@@ -28,7 +28,14 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
     });
     const views = reference.cases.map((c) => {
       const view = new NativeSceneView(scene, 'tesla-test');
-      view.render(nativeScenePoses(graph, c.export, c.time, {}, c.root), c.x, c.y, 0);
+      view.render(
+        nativeScenePoses(graph, c.export, c.time, {}, c.root).map((p) =>
+          c.particleBlend === null ? p : { ...p, blend: c.particleBlend },
+        ),
+        c.x,
+        c.y,
+        0,
+      );
       return view;
     });
     const gl = game.renderer.gl;

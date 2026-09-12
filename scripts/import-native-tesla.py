@@ -152,14 +152,14 @@ def build():
                   size=int(first['Width']))
     print(f'Captured {len(graph["exports"])} Tesla exports, {len(graph["shapes"])} shapes, '
           f'{len(graph["clips"])} clips and {len(groups)} isolated additive groups', flush=True)
-    return outputs, metadata, runtime, combat
+    return outputs, metadata, runtime, combat, dict(effects=effects, particles=particles)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    outputs, metadata, runtime, combat = build()
+    outputs, metadata, runtime, combat, effects = build()
     folder = ROOT / 'public' / PREFIX
     if args.check:
         require({str(p.relative_to(ROOT / 'public')) for p in folder.iterdir() if p.is_file()} == set(outputs), 'Tesla output membership differs')
@@ -174,7 +174,7 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             if isinstance(value, bytes): target.write_bytes(value)
             else: value.save(target, optimize=True)
-    for name, data in [('native', metadata), ('runtime', runtime), ('combat', combat)]:
+    for name, data in [('native', metadata), ('runtime', runtime), ('combat', combat), ('effects', effects)]:
         target = ROOT / 'reference/tesla' / (name + '.json')
         content = json.dumps(data, indent=2) + '\n'
         if args.check: require(target.read_text() == content, f'Tesla metadata differs: {name}')

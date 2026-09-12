@@ -6,6 +6,7 @@ Every input has a SHA-256 pin in `native.json` and is checked against the finger
 
 - `native.json` preserves the 17 original sparse building rows, reveal globals, 12 Tesla effect groups, 12 particle emitter records, original scene graph, texture sampling evidence, sound hashes and preview hashes.
 - `runtime.json` retains all 54 exports, 124 shapes and 65 clips. It changes only UV coordinates to address four tightly packed textures; original source texels and bilinear neighbours are copied without rescaling.
+- `effects.json` projects the twelve raw effect groups and twelve emitter definitions into a runtime-sized file without duplicating the source graph.
 - `combat.json` contains inherited HP, DPS, upgrade costs/times and Town Hall requirements for all 17 levels, plus the 600 ms cadence, 6-tile trigger and 7-tile attack radius.
 - `public/assets/buildings/tesla-native` contains four textures, 17 portraits and five original Ogg files. The graph also includes trapdoors, construction and upgrade scaffolds, the source damaged export, reveal dust, electrical arcs, impact sparks and grass.
 
