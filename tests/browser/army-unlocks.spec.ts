@@ -20,6 +20,8 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
       .filter({ has: page.getByRole('heading', { name: 'Town Hall 2 · Current', exact: true }) }),
   ).toContainText('Giant');
   await page.keyboard.press('Escape');
+  await expect(page.locator('[data-action="progression"]')).toBeFocused();
+  await page.locator('[data-action="close-drawer"]').click();
   const id = await page.evaluate(() => {
     const m = window.__game.model;
     const b = m.state.buildings.find((b) => b.kind === 'barracks');
@@ -74,6 +76,9 @@ test('factory construction and each completed upgrade unlock the next spell', as
   const id = await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall.level = 7;
+    m.state.buildings.find((b) => b.kind === 'elixirstorage').level = 11;
+    m.state.elixir = 1500000;
+    m.state.gems = 1000;
     m.placement = 'spellfactory';
     m.place(21, 23);
     const factory = m.state.buildings.find((b) => b.kind === 'spellfactory');

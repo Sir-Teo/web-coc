@@ -2,6 +2,18 @@ import type { BuildingKind } from './data';
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
+  bombtower: [
+    { dps: 24, hp: 650, cost: 700000, seconds: 43200 },
+    { dps: 28, hp: 700, cost: 1000000, seconds: 64800 },
+  ],
+  tesla: [
+    { dps: 34, hp: 600, cost: 250000, seconds: 7200 },
+    { dps: 40, hp: 630, cost: 350000, seconds: 10800 },
+    { dps: 48, hp: 660, cost: 500000, seconds: 14400 },
+    { dps: 55, hp: 690, cost: 600000, seconds: 21600 },
+    { dps: 64, hp: 730, cost: 800000, seconds: 43200 },
+    { dps: 75, hp: 770, cost: 1200000, seconds: 86400 },
+  ],
   airdefense: [
     { dps: 80, hp: 800, cost: 22000, seconds: 3600 },
     { dps: 110, hp: 850, cost: 90000, seconds: 7200 },
@@ -71,6 +83,8 @@ export const DEFENSE_PROGRESSION = {
 
 /** Normal mode; geared-up variants are not yet supported. */
 export const DEFENSE_WEAPONS = {
+  bombtower: { range: 6, rate: 1.1, splash: 1.5 },
+  tesla: { range: 7, rate: 0.6 },
   airdefense: { range: 10, rate: 1 },
   wizardtower: { range: 7, rate: 1.3, splash: 1 },
   cannon: { range: 9, rate: 0.8 },
@@ -80,7 +94,9 @@ export const DEFENSE_WEAPONS = {
 
 /** Returns a destination's stats when this defense has been audited. */
 export function defenseProgression(kind: BuildingKind, level: number) {
-  return kind === 'cannon' ||
+  return kind === 'bombtower' ||
+    kind === 'tesla' ||
+    kind === 'cannon' ||
     kind === 'archertower' ||
     kind === 'mortar' ||
     kind === 'airdefense' ||

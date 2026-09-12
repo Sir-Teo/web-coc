@@ -17,6 +17,26 @@ for (const [name, engine] of Object.entries(engines)) {
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...['ground', 'air', 'spent'].map((s) => `/assets/buildings/skeleton-trap-v1/${s}.webp`),
+    ...['ground', 'air'].map((s) => `/assets/characters/skeleton-v1/${s}.webp`),
+    ...[1, 2].flatMap((l) =>
+      ['base', 'preview'].map((p) => `/assets/buildings/bombtower-v1/level-${l}-${p}.webp`),
+    ),
+    '/assets/buildings/bombtower-v1/bomber.webp',
+    '/assets/buildings/bombtower-v1/death-bomb.webp',
+    ...Array.from({ length: 6 }, (_, i) => `/assets/buildings/tesla-v1/level-${i + 1}.webp`),
+    ...Array.from({ length: 4 }, (_, l) =>
+      Array.from(
+        { length: 8 },
+        (_, d) => `/assets/buildings/airsweeper-v1/level-${l + 1}-${d}.webp`,
+      ),
+    ).flat(),
+    ...['armed', 'flying', 'spent'].map((s) => `/assets/buildings/seekingairmine-v1/${s}.webp`),
+    ...['healer', 'dragon', 'pekka'].flatMap((kind) => [
+      `/assets/characters/${kind}-v1.webp`,
+      `/assets/characters/walk/${kind}-v1.webp`,
+    ]),
+    ...['lightning', 'heal', 'rage'].map((kind) => `/assets/spells/${kind}-v2.webp`),
     ...Array.from({ length: 8 }, (_, i) => `/assets/buildings/camp-levels-v1/level-${i + 1}.webp`),
     '/assets/environment/terrain-field-v4.webp',
     ...Array.from(
@@ -82,7 +102,7 @@ for (const [name, engine] of Object.entries(engines)) {
   await page.screenshot({ path: `output/playtest/production-research-${name}.png` });
   await page.locator('[data-action="close"]').click();
   // Exercise the shipping replay UI without development globals or state writes.
-  await page.locator('.train-add').click();
+  await expect(page.locator('[data-action="research"]')).toBeFocused();
   await page.locator('[data-action="practice"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
   let deployed = false;

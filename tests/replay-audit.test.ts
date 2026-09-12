@@ -18,9 +18,10 @@ function simpleReplay(): ReplayData {
       index: 11,
       practice: false,
       nextId: 500,
-      buildings: [makeBuilding(1, 'goldstorage', 10, 10)],
+      buildings: [makeBuilding(1, 'goldmine', 10, 10)],
       army: emptyArmy(),
       spells: { ...emptySpells(), lightning: 1 },
+      spellLevels: { lightning: 1, heal: 1, rage: 1 },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as ReturnType<
         typeof emptyArmy
       >,
@@ -42,7 +43,8 @@ describe('replay isolation and input budgets', () => {
     m.state.spells.lightning = 1;
     m.startBattle(0);
     m.activeSpell = 'lightning';
-    expect(m.castSpell(8.5, 11.5)).toBe(true);
+    const mine = m.battle!.buildings.find((b) => b.kind === 'goldmine')!;
+    expect(m.castSpell(mine.x + 1.5, mine.y + 1.5)).toBe(true);
     m.step(0.05);
     m.finishBattle();
     const result = structuredClone(m.battle!.result);

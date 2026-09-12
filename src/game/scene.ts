@@ -1,3 +1,20 @@
+import {
+  BOMB_TOWER_ART_LEVELS,
+  bombTowerTexture,
+  bombTowerAsset,
+  BOMBER_ASSET,
+  DEATH_BOMB_ASSET,
+  BOMB_TOWER_ROOF,
+  BOMBER_WIDTH,
+} from './bomb-tower-art';
+import { bomberFrame } from './bomb-tower';
+import { skeletonTrapAsset, skeletonTrapTexture, skeletonAsset } from './skeleton-art';
+import { SKELETON_COFFIN_SECONDS, skeletonStats, type SkeletonMode } from './skeleton-stats';
+import { TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
+import { TESLA_RISE_SECONDS } from './hidden-tesla';
+import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { SWEEPER, sweeperAngle } from './air-control-stats';
+import { isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
@@ -32,10 +49,18 @@ import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
-const WOOD_RUINS = new Set<BuildingKind>(['barracks', 'builder', 'camp', 'archertower', 'cannon']);
+const WOOD_RUINS = new Set<BuildingKind>([
+  'barracks',
+  'builder',
+  'camp',
+  'archertower',
+  'cannon',
+  'tesla',
+  'bombtower',
+]);
 const SPELL_COLOR: Record<string, number> = {
-  rage: 0xff6a3d,
-  heal: 0x8de35c,
+  rage: 0xcf79ef,
+  heal: 0xffed8a,
   lightning: 0x6fd4ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
@@ -69,6 +94,7 @@ export class VillageScene extends Phaser.Scene {
   private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
   private detail!: Phaser.GameObjects.Graphics;
+  private defenderMarkers!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
   wallGhosts = new Map<number, Phaser.GameObjects.Image>();
   private wallGhostLinks?: Phaser.GameObjects.Graphics;
@@ -97,6 +123,10 @@ export class VillageScene extends Phaser.Scene {
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
+  private mineFlights = new Map<number, Phaser.GameObjects.Image>();
+  private roofBombers = new Map<number, Phaser.GameObjects.Image>();
+  private deathBombSprites = new Map<number, Phaser.GameObjects.Image>();
+  private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
   private campViews = new Map<string, Phaser.GameObjects.Image>();
@@ -113,6 +143,25 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const mode of ['ground', 'air', 'spent'] as const)
+      this.load.image(skeletonTrapTexture(mode), skeletonTrapAsset(mode));
+    for (const mode of ['ground', 'air'] as const)
+      this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
+        frameWidth: 128,
+        frameHeight: 128,
+      });
+    for (const level of BOMB_TOWER_ART_LEVELS) {
+      this.load.image(bombTowerTexture(level), bombTowerAsset(level, 'base'));
+      if (level > 1) this.load.image(`bombtower-preview-${level}`, bombTowerAsset(level));
+    }
+    this.load.spritesheet('roof-bomber', BOMBER_ASSET, { frameWidth: 256, frameHeight: 256 });
+    this.load.image('tower-death-bomb', DEATH_BOMB_ASSET);
+    for (const level of TESLA_ART_LEVELS)
+      if (level > 1) this.load.image(teslaTexture(level), teslaAsset(level));
+    for (const level of SWEEPER_ART_LEVELS)
+      for (let direction = 0; direction < 8; direction++)
+        this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
+    for (const state of ['flying', 'spent']) this.load.image(`mine-${state}`, mineAsset(state));
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
@@ -124,15 +173,24 @@ export class VillageScene extends Phaser.Scene {
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
       this.load.image(k, asset(k));
-      if (k !== 'wall' && k !== 'mortar' && k !== 'camp' && !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork)
+      if (
+        k !== 'wall' &&
+        k !== 'mortar' &&
+        k !== 'camp' &&
+        !BUILDINGS[k as keyof typeof BUILDINGS].singleArtwork
+      )
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of TROOP_KEYS)
-      this.load.spritesheet(`${k}-walk`, walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`), {
-        frameWidth: 128,
-        frameHeight: 128,
-      });
+      this.load.spritesheet(
+        `${k}-walk`,
+        walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`),
+        {
+          frameWidth: 128,
+          frameHeight: 128,
+        },
+      );
     for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     this.load.on('progress', (p: number) => {
       const bar = document.querySelector<HTMLElement>('#load-progress');
@@ -153,6 +211,7 @@ export class VillageScene extends Phaser.Scene {
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
     this.detail = this.add.graphics().setDepth(5000);
+    this.defenderMarkers = this.add.graphics().setDepth(7600);
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -180,9 +239,14 @@ export class VillageScene extends Phaser.Scene {
         grid = uniso(world.x, world.y);
       this.wallDragOffset = undefined;
       const move = this.model.wallMove;
-      if (move && this.model.wallPreview.some((w) =>
-        (Math.floor(grid.x) === w.x && Math.floor(grid.y) === w.y) ||
-        this.wallGhosts.get(w.id)?.getBounds().contains(world.x, world.y)))
+      if (
+        move &&
+        this.model.wallPreview.some(
+          (w) =>
+            (Math.floor(grid.x) === w.x && Math.floor(grid.y) === w.y) ||
+            this.wallGhosts.get(w.id)?.getBounds().contains(world.x, world.y),
+        )
+      )
         this.wallDragOffset = { x: move.x - Math.floor(grid.x), y: move.y - Math.floor(grid.y) };
       const held =
         this.model.editing && !this.model.placement && !move
@@ -237,7 +301,10 @@ export class VillageScene extends Phaser.Scene {
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
         else if (this.gesture === 'drag-wall' && this.wallDragOffset) {
           const grid = this.gridAtPointer(p);
-          this.model.previewWallMove(Math.floor(grid.x) + this.wallDragOffset.x, Math.floor(grid.y) + this.wallDragOffset.y);
+          this.model.previewWallMove(
+            Math.floor(grid.x) + this.wallDragOffset.x,
+            Math.floor(grid.y) + this.wallDragOffset.y,
+          );
         }
       }
       this.updateGhost(p);
@@ -249,9 +316,12 @@ export class VillageScene extends Phaser.Scene {
       const down = this.down;
       this.down = undefined;
       if (
-        this.uiBlocked || !down || p.downElement !== this.game.canvas ||
+        this.uiBlocked ||
+        !down ||
+        p.downElement !== this.game.canvas ||
         p.event.type.includes('cancel')
-      ) return;
+      )
+        return;
       if (this.dragged || gesture !== 'none') return;
       this.tap(p);
     });
@@ -305,8 +375,10 @@ export class VillageScene extends Phaser.Scene {
     // the diamond instead would fill the whole viewport when applying AND
     // removing the mask, even when the camera sees only the field interior.
     const outline = this.add.graphics().fillStyle(0xffffff);
-    const left = center.x - side * 32, right = center.x + side * 32;
-    const top = center.y - side * 16, bottom = center.y + side * 16;
+    const left = center.x - side * 32,
+      right = center.x + side * 32;
+    const top = center.y - side * 16,
+      bottom = center.y + side * 16;
     outline.fillTriangle(left, top, center.x, top, left, center.y);
     outline.fillTriangle(center.x, top, right, top, right, center.y);
     outline.fillTriangle(left, center.y, left, bottom, center.x, bottom);
@@ -343,7 +415,10 @@ export class VillageScene extends Phaser.Scene {
   get minZoom() {
     return Math.min(
       this.baseZoom * 0.78,
-      Math.max(this.scale.canvasBounds.width / WORLD.width, this.scale.canvasBounds.height / WORLD.height) * 0.95,
+      Math.max(
+        this.scale.canvasBounds.width / WORLD.width,
+        this.scale.canvasBounds.height / WORLD.height,
+      ) * 0.95,
     );
   }
   /** Camera zoom in CSS pixels per world pixel, independent of display density. */
@@ -469,12 +544,7 @@ export class VillageScene extends Phaser.Scene {
         return;
       }
       const hit = this.pickBuilding(world.x, world.y, grid);
-      if (
-        hit &&
-        hit.hp > 0 &&
-        BUILDINGS[hit.kind].damage &&
-        this.model.deployBlocked(grid.x, grid.y)
-      ) {
+      if (hit && hit.hp > 0 && isDefense(hit.kind) && this.model.deployBlocked(grid.x, grid.y)) {
         const d = BUILDINGS[hit.kind];
         this.model.selected = hit.id;
         this.model.changed();
@@ -499,11 +569,18 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
-    const obstacle = !hit ? [...this.obstacleSprites.entries()]
-      .sort((a, b) => b[1].depth - a[1].depth)
-      .find(([, im]) => im.visible && world.x > im.x - im.displayWidth * .4
-        && world.x < im.x + im.displayWidth * .4
-        && world.y > im.y - im.displayHeight * .83 && world.y < im.y + im.displayHeight * .06) : undefined;
+    const obstacle = !hit
+      ? [...this.obstacleSprites.entries()]
+          .sort((a, b) => b[1].depth - a[1].depth)
+          .find(
+            ([, im]) =>
+              im.visible &&
+              world.x > im.x - im.displayWidth * 0.4 &&
+              world.x < im.x + im.displayWidth * 0.4 &&
+              world.y > im.y - im.displayHeight * 0.83 &&
+              world.y < im.y + im.displayHeight * 0.06,
+          )
+      : undefined;
     this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
@@ -517,8 +594,8 @@ export class VillageScene extends Phaser.Scene {
   canvasPoint(clientX: number, clientY: number) {
     const rect = this.game.canvas.getBoundingClientRect();
     return {
-      x: (clientX - rect.left) * this.scale.width / rect.width,
-      y: (clientY - rect.top) * this.scale.height / rect.height,
+      x: ((clientX - rect.left) * this.scale.width) / rect.width,
+      y: ((clientY - rect.top) * this.scale.height) / rect.height,
     };
   }
   gridAtScreen(clientX: number, clientY: number) {
@@ -548,7 +625,9 @@ export class VillageScene extends Phaser.Scene {
       b.index +
       ':' +
       b.buildings
-        .filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind))
+        .filter(
+          (v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind) && this.model.visibleBuilding(v),
+        )
         .map((v) => v.id)
         .join(',');
     if (signature === this.boundary.signature) return this.boundary.edges;
@@ -623,7 +702,7 @@ export class VillageScene extends Phaser.Scene {
       const troops = new Set(this.unitSprites.values());
       for (const object of [...this.children.list]) {
         const display = object as Phaser.GameObjects.Image;
-        if (display.depth >= 7000 && !troops.has(display)) {
+        if (display.depth >= 7000 && !troops.has(display) && object !== this.defenderMarkers) {
           this.tweens.killTweensOf(display);
           display.destroy();
         }
@@ -635,22 +714,36 @@ export class VillageScene extends Phaser.Scene {
       this.sprites.clear();
       this.unitSprites.clear();
       this.bubbles.clear();
+      for (const actor of this.roofBombers.values()) actor.destroy();
+      for (const bomb of this.deathBombSprites.values()) bomb.destroy();
+      this.roofBombers.clear();
+      this.deathBombSprites.clear();
+      for (const sprite of this.defenderSprites.values()) sprite.destroy();
+      this.defenderSprites.clear();
       this.mode = mode;
       if (!keepCamera) this.resetCamera();
     }
     const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));
     for (const [id, im] of this.obstacleSprites) {
-      if (!obstacleIds.has(id)) { im.destroy(); this.obstacleSprites.delete(id); }
+      if (!obstacleIds.has(id)) {
+        im.destroy();
+        this.obstacleSprites.delete(id);
+      }
     }
     for (const o of this.model.obstacles) {
-      const d = OBSTACLES[o.kind], p = iso(o.x + d.size / 2, o.y + d.size / 2);
+      const d = OBSTACLES[o.kind],
+        p = iso(o.x + d.size / 2, o.y + d.size / 2);
       let im = this.obstacleSprites.get(o.id);
       if (!im) {
-        im = this.add.image(p.x, p.y, o.kind).setOrigin(.5, .88);
+        im = this.add.image(p.x, p.y, o.kind).setOrigin(0.5, 0.88);
         this.obstacleSprites.set(o.id, im);
       }
-      im.setTexture(o.kind).setPosition(p.x, p.y).setDisplaySize(d.width, d.width * im.height / im.width)
-        .setDepth(p.y).setVisible(!this.model.battle).setAlpha(o.removeEnd ? .65 : 1);
+      im.setTexture(o.kind)
+        .setPosition(p.x, p.y)
+        .setDisplaySize(d.width, (d.width * im.height) / im.width)
+        .setDepth(p.y)
+        .setVisible(!this.model.battle)
+        .setAlpha(o.removeEnd ? 0.65 : 1);
     }
     const ids = new Set(this.model.buildings.map((b) => b.id));
     for (const [id, s] of this.sprites) {
@@ -668,8 +761,13 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level).setPosition(p.x, p.y).setDepth(p.y);
-      im.setVisible(this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id));
+      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode)
+        .setPosition(p.x, p.y)
+        .setDepth(p.y)
+        .setCrop();
+      im.setVisible(
+        this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
+      );
       im.setData('intactHeight', im.displayHeight);
       if (b.kind === 'mortar') {
         const muzzle = mortarMuzzle(b.level);
@@ -680,7 +778,15 @@ export class VillageScene extends Phaser.Scene {
       }
       const trap = this.model.battle?.traps[b.id];
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if (b.level >= TIER3_LEVEL && b.kind !== 'wall' && b.kind !== 'mortar' && b.kind !== 'camp') im.setTint(0xffecc7);
+      if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
+      if (
+        b.level >= TIER3_LEVEL &&
+        b.kind !== 'wall' &&
+        b.kind !== 'mortar' &&
+        b.kind !== 'camp' &&
+        b.kind !== 'tesla'
+      )
+        im.setTint(0xffecc7);
       else im.clearTint();
       if (b.hp <= 0) {
         this.renderRuin(b, im);
@@ -702,8 +808,10 @@ export class VillageScene extends Phaser.Scene {
           .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
             fontFamily: 'Arial',
             fontSize: '24px',
-            color: b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
-            stroke: b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
+            color:
+              b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
+            stroke:
+              b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
             strokeThickness: 1,
           })
           .setOrigin(0.5);
@@ -723,7 +831,9 @@ export class VillageScene extends Phaser.Scene {
         const anchor = `${p.x},${y},${reduced}`;
         if (c.getData('anchor') !== anchor) {
           this.tweens.killTweensOf(c);
-          c.setPosition(p.x, y).setDepth(p.y + 300).setData('anchor', anchor);
+          c.setPosition(p.x, y)
+            .setDepth(p.y + 300)
+            .setData('anchor', anchor);
           if (!reduced)
             this.tweens.add({
               targets: c,
@@ -739,7 +849,10 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     if (this.model.placement) {
-      const level = this.model.moving === null ? 1 : this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
+      const level =
+        this.model.moving === null
+          ? 1
+          : (this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1);
       if (!this.ghost) {
         this.ghost = this.add
           .image(0, 0, buildingTexture(this.model.placement, level))
@@ -747,8 +860,16 @@ export class VillageScene extends Phaser.Scene {
           .setDepth(6001);
       }
       // A paid upgrade can finish while this preview is open, even within one artwork tier.
-      this.styleBuilding(this.ghost, this.model.placement, level);
+      this.styleBuilding(
+        this.ghost,
+        this.model.placement,
+        level,
+        this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
+        this.model.state.buildings.find((b) => b.id === this.model.moving)?.skeletonMode,
+      );
       this.updateGhost(this.pointerScreen());
+      if (this.model.placement === 'bombtower')
+        this.ghost.setTexture(level === 1 ? 'bombtower' : `bombtower-preview-${level}`);
     } else {
       this.ghost?.destroy();
       this.ghost = undefined;
@@ -759,15 +880,35 @@ export class VillageScene extends Phaser.Scene {
     this.syncCampUnits();
     this.lastRevision = this.model.revision;
   }
-  private styleBuilding(im: Phaser.GameObjects.Image, kind: BuildingKind, level: number) {
-    const texture = buildingTexture(kind, level);
+  private styleBuilding(
+    im: Phaser.GameObjects.Image,
+    kind: BuildingKind,
+    level: number,
+    direction = 0,
+    skeletonMode: SkeletonMode = 'ground',
+  ) {
+    const texture =
+      kind === 'skeletontrap'
+        ? skeletonTrapTexture(skeletonMode)
+        : buildingTexture(kind, level, direction);
     if (im.texture.key !== texture) im.setTexture(texture);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
-    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * .035;
-    const width = wall ? wall.height * .75 : camp ? camp.width : BUILDINGS[kind].width * scale;
-    return im.setOrigin(camp?.originX ?? .5, camp?.originY ?? (wall ? .84 : .88)).setFlipX(false)
-      .setDisplaySize(width, wall ? wall.height : width * im.height / im.width);
+    const scale =
+      wall ||
+      camp ||
+      kind === 'mortar' ||
+      kind === 'airsweeper' ||
+      kind === 'tesla' ||
+      kind === 'bombtower' ||
+      kind === 'skeletontrap'
+        ? 1
+        : 1 + Math.min(4, level - 1) * 0.035;
+    const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
+    return im
+      .setOrigin(camp?.originX ?? 0.5, camp?.originY ?? (wall ? 0.84 : 0.88))
+      .setFlipX(false)
+      .setDisplaySize(width, wall ? wall.height : (width * im.height) / im.width);
   }
   private syncCampUnits() {
     if (this.model.battle) {
@@ -777,22 +918,34 @@ export class VillageScene extends Phaser.Scene {
     }
     const { army, buildings } = this.model.state;
     const obstacles = this.model.obstacles;
-    const signature = TROOP_KEYS.map((k) => army[k]).join(',') + '|' +
-      buildings.map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`).join('|') + '|' +
+    const signature =
+      TROOP_KEYS.map((k) => army[k]).join(',') +
+      '|' +
+      buildings
+        .map((b) => `${b.id}:${b.kind}:${b.x}:${b.y}:${b.level}:${!!b.constructing}`)
+        .join('|') +
+      '|' +
       obstacles.map((o) => `${o.id}:${o.kind}:${o.x}:${o.y}`).join('|');
     if (signature !== this.campSignature) {
       this.campSignature = signature;
       this.campActors = campPlan(army, buildings, obstacles);
       const ids = new Set(this.campActors.map((a) => a.id));
       for (const [id, im] of this.campViews)
-        if (!ids.has(id)) { im.destroy(); this.campViews.delete(id); }
+        if (!ids.has(id)) {
+          im.destroy();
+          this.campViews.delete(id);
+        }
       this.ambientUnits = this.campActors.map((actor) => {
         let im = this.campViews.get(actor.id);
         if (!im) {
-          const art = troopArt(actor.kind), size = TROOPS[actor.kind].width * art.displayScale * 0.7;
-          im = this.add.image(0, 0, `${actor.kind}-walk`, art.idleFrame)
-            .setOrigin(0.5, 122 / 128).setDisplaySize(size, size)
-            .setData('campActor', actor.id).setData('kind', actor.kind);
+          const art = troopArt(actor.kind),
+            size = TROOPS[actor.kind].width * art.displayScale * 0.7;
+          im = this.add
+            .image(0, 0, `${actor.kind}-walk`, art.idleFrame)
+            .setOrigin(0.5, 122 / 128)
+            .setDisplaySize(size, size)
+            .setData('campActor', actor.id)
+            .setData('kind', actor.kind);
           this.campViews.set(actor.id, im);
         }
         return im.setData('campId', actor.campId);
@@ -806,17 +959,22 @@ export class VillageScene extends Phaser.Scene {
     const reduced = this.model.state.settings.reducedMotion;
     this.campShadows.fillStyle(0x1f2a16, 0.26);
     for (let i = 0; i < this.campActors.length; i++) {
-      const actor = this.campActors[i], im = this.ambientUnits[i];
+      const actor = this.campActors[i],
+        im = this.ambientUnits[i];
       const pose = campPose(actor, this.campTime);
-      const px = WORLD.ox + (pose.x - pose.y) * 32, py = WORLD.oy + (pose.x + pose.y) * 16;
-      const art = troopArt(actor.kind), flying = !!TROOPS[actor.kind].flying;
+      const px = WORLD.ox + (pose.x - pose.y) * 32,
+        py = WORLD.oy + (pose.x + pose.y) * 16;
+      const art = troopArt(actor.kind),
+        flying = !!TROOPS[actor.kind].flying;
       const previousFacing = im.getData('facing');
       const facing = pose.facing || previousFacing || art.nativeFacing;
       const moving = pose.moving && !reduced;
       const bob = !reduced && flying ? Math.sin(this.campTime * 1.7 + actor.phase) * 2 : 0;
       const depth = flying ? 6500 : py + 1;
-      const frame = moving || flying && !reduced
-        ? Math.floor(this.campTime * 550 / art.frameMs + actor.phase * 4) % 4 : art.idleFrame;
+      const frame =
+        moving || (flying && !reduced)
+          ? Math.floor((this.campTime * 550) / art.frameMs + actor.phase * 4) % 4
+          : art.idleFrame;
       im.setVisible(true).setPosition(px, py - (flying ? AIR_LIFT : 0) + bob);
       if (im.depth !== depth) im.setDepth(depth);
       // Avoid rebuilding identical frame geometry and dispatching data events each frame.
@@ -827,13 +985,20 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
-    const width = (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) * (b.kind === 'wall' ? 0.9 : 0.98);
-    im.setTexture(WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone')
+    const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+    const width =
+      (b.kind === 'camp' ? campArt(b.level).width : BUILDINGS[b.kind].width) *
+      (b.kind === 'wall' ? 0.9 : 0.98);
+    im.setTexture(
+      WOOD_RUINS.has(b.kind) && !(b.kind === 'camp' && b.level >= 7) ? 'ruins-wood' : 'ruins-stone',
+    )
+      .setCrop()
+      .setPosition(p.x, p.y)
       .setOrigin(0.5, 0.58)
       .setFlipX(b.id % 2 === 0)
       .clearTint()
       .setAlpha(1)
-      .setDisplaySize(width, width * im.height / im.width)
+      .setDisplaySize(width, (width * im.height) / im.width)
       .setDepth(im.y - 2);
   }
   private drawRuinGround() {
@@ -857,76 +1022,130 @@ export class VillageScene extends Phaser.Scene {
     this.bubbles.delete(id);
   }
   syncWalls() {
-    const walls = this.model.buildings.filter((b) => b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id));
+    const walls = this.model.buildings.filter(
+      (b) =>
+        b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id),
+    );
     const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y},${b.level}`).join(';');
     if (signature === this.wallSignature) return;
     this.wallSignature = signature;
     for (const g of this.wallViews) g.destroy();
     this.wallViews = [];
     for (const b of walls) {
-      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      for (const [dx, dy] of [
+        [1, 0],
+        [0, 1],
+      ]) {
         const next = walls.find((w) => w.x === b.x + dx && w.y === b.y + dy);
         if (!next) continue;
-        const p = iso(b.x + .5, b.y + .5), q = iso(next.x + .5, next.y + .5);
-        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - .5);
+        const p = iso(b.x + 0.5, b.y + 0.5),
+          q = iso(next.x + 0.5, next.y + 0.5);
+        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
         this.paintWallLink(g, p, q, b.level, next.level);
         this.wallViews.push(g);
       }
     }
   }
   /** Two material halves meet at the seam, including when neighbouring walls differ in level. */
-  private paintWallLink(g: Phaser.GameObjects.Graphics, p: Phaser.Math.Vector2, q: Phaser.Math.Vector2, fromLevel: number, toLevel: number, blocked = false) {
-    const a = wallArt(fromLevel), b = wallArt(toLevel);
+  private paintWallLink(
+    g: Phaser.GameObjects.Graphics,
+    p: Phaser.Math.Vector2,
+    q: Phaser.Math.Vector2,
+    fromLevel: number,
+    toLevel: number,
+    blocked = false,
+  ) {
+    const a = wallArt(fromLevel),
+      b = wallArt(toLevel);
     const mid = new Phaser.Math.Vector2((p.x + q.x) / 2, (p.y + q.y) / 2);
     const midHeight = (a.linkHeight + b.linkHeight) / 2;
-    const halves = [{ p, q: mid, art: a, h0: a.linkHeight, h1: midHeight }, { p: mid, q, art: b, h0: midHeight, h1: b.linkHeight }];
+    const halves = [
+      { p, q: mid, art: a, h0: a.linkHeight, h1: midHeight },
+      { p: mid, q, art: b, h0: midHeight, h1: b.linkHeight },
+    ];
     for (const half of halves) {
       const { p, q, art, h0, h1 } = half;
-      const top0 = new Phaser.Math.Vector2(p.x, p.y - h0), top1 = new Phaser.Math.Vector2(q.x, q.y - h1);
-      const bottom0 = new Phaser.Math.Vector2(p.x, p.y - 2), bottom1 = new Phaser.Math.Vector2(q.x, q.y - 2);
-      const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, mh = (h0 + h1) / 2;
-      const jagged = art.material === 'crystal' || art.material === 'obsidian' || art.material === 'wood';
+      const top0 = new Phaser.Math.Vector2(p.x, p.y - h0),
+        top1 = new Phaser.Math.Vector2(q.x, q.y - h1);
+      const bottom0 = new Phaser.Math.Vector2(p.x, p.y - 2),
+        bottom1 = new Phaser.Math.Vector2(q.x, q.y - 2);
+      const mx = (p.x + q.x) / 2,
+        my = (p.y + q.y) / 2,
+        mh = (h0 + h1) / 2;
+      const jagged =
+        art.material === 'crystal' || art.material === 'obsidian' || art.material === 'wood';
       const peak = new Phaser.Math.Vector2(mx, my - mh - (art.material === 'crystal' ? 5 : 3));
       const pts = jagged ? [bottom0, bottom1, top1, peak, top0] : [bottom0, bottom1, top1, top0];
-      g.fillStyle(blocked ? 0xc94e4e : q.x > p.x ? art.face : art.shade, .98).fillPoints(pts, true);
-      g.lineStyle(1, art.edge, .8).strokePoints(pts, true);
+      g.fillStyle(blocked ? 0xc94e4e : q.x > p.x ? art.face : art.shade, 0.98).fillPoints(
+        pts,
+        true,
+      );
+      g.lineStyle(1, art.edge, 0.8).strokePoints(pts, true);
       if (jagged) {
-        g.fillStyle(blocked ? 0xe77575 : art.top, .45).fillTriangle(mx, my - 2, peak.x, peak.y, top1.x, top1.y);
-        g.lineStyle(1, art.edge, .6).lineBetween(mx, my - 2, peak.x, peak.y);
+        g.fillStyle(blocked ? 0xe77575 : art.top, 0.45).fillTriangle(
+          mx,
+          my - 2,
+          peak.x,
+          peak.y,
+          top1.x,
+          top1.y,
+        );
+        g.lineStyle(1, art.edge, 0.6).lineBetween(mx, my - 2, peak.x, peak.y);
       } else {
         g.lineStyle(3, blocked ? 0xe77575 : art.top, 1).lineBetween(top0.x, top0.y, top1.x, top1.y);
         if (art.material === 'rubble' || art.material === 'stone') {
-          g.lineStyle(1, art.edge, .55).lineBetween(p.x, p.y - h0 / 2, q.x, q.y - h1 / 2);
+          g.lineStyle(1, art.edge, 0.55).lineBetween(p.x, p.y - h0 / 2, q.x, q.y - h1 / 2);
           g.lineBetween(mx, my - 2, mx, my - mh / 2);
         } else {
-          g.lineStyle(1, art.top, .5).lineBetween(mx, my - 3, mx, my - mh + 3);
+          g.lineStyle(1, art.top, 0.5).lineBetween(mx, my - 3, mx, my - mh + 3);
         }
       }
       if (art.material === 'wood') {
-        g.lineStyle(2, 0xd9b76f, .9).lineBetween(p.x, p.y - h0 * .35, q.x, q.y - h1 * .35);
-        g.lineBetween(p.x, p.y - h0 * .7, q.x, q.y - h1 * .7);
+        g.lineStyle(2, 0xd9b76f, 0.9).lineBetween(p.x, p.y - h0 * 0.35, q.x, q.y - h1 * 0.35);
+        g.lineBetween(p.x, p.y - h0 * 0.7, q.x, q.y - h1 * 0.7);
       }
     }
   }
   private syncWallPreview() {
     const preview = this.model.wallPreview;
     const ids = new Set(preview.map((b) => b.id));
-    for (const [id, im] of this.wallGhosts) if (!ids.has(id)) { im.destroy(); this.wallGhosts.delete(id); }
+    for (const [id, im] of this.wallGhosts)
+      if (!ids.has(id)) {
+        im.destroy();
+        this.wallGhosts.delete(id);
+      }
     this.wallGhostLinks?.clear();
-    if (!preview.length) { this.wallGhostLinks?.destroy(); this.wallGhostLinks = undefined; return; }
+    if (!preview.length) {
+      this.wallGhostLinks?.destroy();
+      this.wallGhostLinks = undefined;
+      return;
+    }
     const blocked = !!this.model.wallPlacementIssue;
     const color = blocked ? 0xff7272 : 0xffffff;
-    const g = this.wallGhostLinks ??= this.add.graphics().setDepth(6000);
+    const g = (this.wallGhostLinks ??= this.add.graphics().setDepth(6000));
     for (const w of preview) {
-      const p = iso(w.x + .5, w.y + .5);
+      const p = iso(w.x + 0.5, w.y + 0.5);
       let im = this.wallGhosts.get(w.id);
-      if (!im) { im = this.add.image(0, 0, 'wall').setOrigin(.5, .88); this.wallGhosts.set(w.id, im); }
-      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level, art = wallArt(level);
-      im.setTexture(wallTexture(level)).setOrigin(.5, .84).setPosition(p.x, p.y).setDisplaySize(art.height * .75, art.height).setDepth(6001 + p.y / 10000).setTint(color).setAlpha(.85);
-      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      if (!im) {
+        im = this.add.image(0, 0, 'wall').setOrigin(0.5, 0.88);
+        this.wallGhosts.set(w.id, im);
+      }
+      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level,
+        art = wallArt(level);
+      im.setTexture(wallTexture(level))
+        .setOrigin(0.5, 0.84)
+        .setPosition(p.x, p.y)
+        .setDisplaySize(art.height * 0.75, art.height)
+        .setDepth(6001 + p.y / 10000)
+        .setTint(color)
+        .setAlpha(0.85);
+      for (const [dx, dy] of [
+        [1, 0],
+        [0, 1],
+      ]) {
         const next = preview.find((v) => v.x === w.x + dx && v.y === w.y + dy);
         if (!next) continue;
-        const q = iso(next.x + .5, next.y + .5);
+        const q = iso(next.x + 0.5, next.y + 0.5);
         const nextLevel = this.model.state.buildings.find((b) => b.id === next.id)!.level;
         this.paintWallLink(g, p, q, level, nextLevel, blocked);
       }
@@ -944,7 +1163,11 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     this.ghost.setTint(
       valid
-        ? this.model.placement === 'wall' || this.model.placement === 'mortar' || this.model.placement === 'camp' ? 0xffffff : 0xd9ffb0
+        ? this.model.placement === 'wall' ||
+          this.model.placement === 'mortar' ||
+          this.model.placement === 'camp'
+          ? 0xffffff
+          : 0xd9ffb0
         : 0xff7272,
     );
     return { x, y, size: s, valid };
@@ -953,6 +1176,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
+    this.drawBombTowers();
     const g = this.overlay;
     g.clear();
     const b = this.model.buildings.find((b) => b.id === this.model.selected);
@@ -974,7 +1198,21 @@ export class VillageScene extends Phaser.Scene {
         const range = d.trap?.trigger ?? d.range!;
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
-        g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
+        if (b.kind === 'airsweeper') {
+          const angle = sweeperAngle(b.direction),
+            x = b.x + 1,
+            y = b.y + 1;
+          const arc = (radius: number, reverse = false) =>
+            Array.from({ length: 49 }, (_, i) => {
+              const a = angle + SWEEPER.cone * ((reverse ? 48 - i : i) / 48 - 0.5);
+              return iso(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+            });
+          const points = [...arc(range), ...arc(SWEEPER.minRange, true)];
+          g.fillStyle(0xcaf8ff, 0.1).fillPoints(points, true);
+          g.lineStyle(2, 0xe1fbff, 0.8).strokePoints(points, true);
+          const arrow = iso(x + Math.cos(angle) * 3, y + Math.sin(angle) * 3);
+          g.lineStyle(3, 0xffffff, 0.9).lineBetween(p.x, p.y, arrow.x, arrow.y);
+        } else g.strokeEllipse(p.x, p.y, range * 64 * Math.SQRT2, range * 32 * Math.SQRT2);
         if (d.minRange) {
           g.lineStyle(2, 0xffc56b, 0.75);
           g.strokeEllipse(p.x, p.y, d.minRange * 64 * Math.SQRT2, d.minRange * 32 * Math.SQRT2);
@@ -984,8 +1222,8 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.wallMove) {
       this.drawGrid(g);
       const color = this.model.wallPlacementIssue ? 0xff6464 : 0x8fff73;
-      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, .06);
-      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, .3);
+      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, 0.06);
+      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, 0.3);
     }
     if (this.model.editing && !this.model.placement && !this.model.wallMove) this.drawGrid(g);
     if (this.model.placement) {
@@ -994,7 +1232,7 @@ export class VillageScene extends Phaser.Scene {
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());
       if (preview)
-        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, .28);
+        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, 0.28);
     }
     this.groundMarks.clear();
     const active = this.model.battle;
@@ -1012,7 +1250,9 @@ export class VillageScene extends Phaser.Scene {
         const p = iso(aura.x, aura.y),
           radius = SPELLS[aura.kind].radius,
           color = SPELL_COLOR[aura.kind],
-          pulse = this.model.state.settings.reducedMotion ? 1 : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
+          pulse = this.model.state.settings.reducedMotion
+            ? 1
+            : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
         g.fillStyle(color, 0.17);
         g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
         g.lineStyle(2, color, 0.75);
@@ -1021,26 +1261,133 @@ export class VillageScene extends Phaser.Scene {
     }
     this.detail.clear();
     for (const v of this.model.buildings) {
+      if (v.kind === 'skeletontrap')
+        this.sprites.get(v.id)?.setVisible(this.model.visibleBuilding(v));
       if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
       const im = this.sprites.get(v.id)!;
+      if (v.kind === 'skeletontrap') {
+        const state = this.model.battle?.traps[v.id];
+        if (state) {
+          const age = this.model.battle!.elapsed - state.activatedAt,
+            progress = this.model.state.settings.reducedMotion ? 1 : Math.min(1, age / 0.25),
+            p = iso(v.x + 0.5, v.y + 0.5);
+          im.setTexture(
+            skeletonTrapTexture((state.spawned ?? 0) > 0 ? 'spent' : (v.skeletonMode ?? 'ground')),
+          );
+          im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
+          if (progress < 1)
+            im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
+          else im.setCrop();
+          im.setAlpha(Math.min(1, Math.max(0, (SKELETON_COFFIN_SECONDS - age) / 0.4)));
+        }
+      }
+      if (v.kind === 'tesla') {
+        const progress = this.teslaRise(v.id),
+          p = iso(v.x + 1, v.y + 1);
+        im.setY(p.y + (1 - progress) * im.displayHeight * im.originY);
+        if (progress < 1) im.setCrop(0, 0, im.width, Math.max(1, Math.round(im.height * progress)));
+        else im.setCrop();
+        if (!this.model.state.settings.reducedMotion && progress === 1) {
+          const t = this.model.battle?.elapsed ?? this.renderClock / 1000;
+          if (Math.sin(t * 23 + v.id * 7) > 0.8) {
+            const y = im.y - im.displayHeight * 0.79;
+            this.detail.lineStyle(1.2, 0xb6edff, 0.7);
+            this.detail.lineBetween(im.x - 4, y + 4, im.x + 1, y + 1);
+            this.detail.lineBetween(im.x + 1, y + 1, im.x - 1, y - 2);
+          }
+        }
+      }
+      if (v.kind === 'airsweeper' && v.hp > 0) {
+        const state = this.model.battle?.sweepers?.[v.id];
+        const direction = state
+          ? (Math.round(state.angle / (Math.PI / 4)) + 8) % 8
+          : (v.direction ?? 0);
+        im.setTexture(sweeperTexture(v.level, direction));
+      }
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
           progress = (this.model.clock - start) / duration;
-        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87), 54, progress, 0x82d745);
+        this.bar(
+          im.x,
+          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.87),
+          54,
+          progress,
+          0x82d745,
+        );
         const p = iso(v.x, v.y);
         this.detail.lineStyle(3, 0xe6b356, 0.7);
         this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
         this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
       } else if (this.model.battle && v.hp < v.maxHp)
-        this.bar(im.x, im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88), 42, v.hp / v.maxHp, 0xea654d);
+        this.bar(
+          im.x,
+          im.y - im.displayHeight * (v.kind === 'camp' ? im.originY : 0.88),
+          42,
+          v.hp / v.maxHp,
+          0xea654d,
+        );
     }
     const battle = this.model.battle;
+    for (const [id, sprite] of this.mineFlights) {
+      if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
+        sprite.destroy();
+        this.mineFlights.delete(id);
+      }
+    }
+    if (battle && !battle.finished) {
+      for (const gust of battle.gusts ?? []) {
+        const half = Math.min(
+          SWEEPER.waveCone / 2,
+          Math.asin(Math.min(1, SWEEPER.halfWidth / gust.radius)),
+        );
+        const alpha = 0.9 * Math.min(1, (SWEEPER.range - gust.radius) / 2);
+        for (let trail = 0; trail < 3; trail++) {
+          const radius = Math.max(1, gust.radius - trail * 0.24);
+          const points = Array.from({ length: 21 }, (_, i) => {
+            const a = gust.angle + half * (i / 10 - 1),
+              p = iso(gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius);
+            return new Phaser.Math.Vector2(p.x, p.y - AIR_LIFT);
+          });
+          this.detail.lineStyle(
+            trail ? 2 : 4,
+            trail ? 0x91dbe9 : 0xe4fbff,
+            alpha * (1 - trail * 0.25),
+          );
+          this.detail.strokePoints(points, false);
+        }
+      }
+    }
     if (battle) {
       for (const trap of battle.finished ? [] : battle.buildings) {
         const state = battle.traps[trap.id];
         const def = BUILDINGS[trap.kind].trap;
-        if (!def || !state || state.resolved) continue;
+        if (!def || !state) continue;
+        if (trap.kind === 'seekingairmine') {
+          const launched = battle.elapsed >= state.activatedAt + def.delay;
+          const ground = this.sprites.get(trap.id);
+          if (ground && (state.resolved || launched)) ground.setTexture('mine-spent').setAlpha(1);
+          if (!state.resolved) {
+            let sprite = this.mineFlights.get(trap.id);
+            if (!sprite) {
+              sprite = this.add.image(0, 0, 'mine-flying').setOrigin(0.5, 0.88);
+              sprite.setDisplaySize(38, (38 * sprite.height) / sprite.width);
+              this.mineFlights.set(trap.id, sprite);
+            }
+            const p = iso(state.x, state.y),
+              rise = Math.min(1, (battle.elapsed - state.activatedAt) / def.delay);
+            sprite
+              .setPosition(p.x, p.y - AIR_LIFT * rise)
+              .setDepth(7499)
+              .setAlpha(rise);
+            if (launched) {
+              this.detail.lineStyle(3, 0xd62b44, 0.55);
+              this.detail.lineBetween(p.x, p.y - AIR_LIFT + 4, p.x, p.y - AIR_LIFT + 17);
+            }
+          }
+          continue;
+        }
+        if (state.resolved || trap.kind === 'skeletontrap') continue;
         const p = iso(state.x, state.y);
         const progress = Math.min(
           1,
@@ -1077,11 +1424,14 @@ export class VillageScene extends Phaser.Scene {
             AIR_LIFT,
           );
           const p = iso(u.x, u.y);
-          im.setData('dying', true).setData('defeatedAt', at)
+          im.setData('dying', true)
+            .setData('defeatedAt', at)
             .setTint(u.ejected ? 0xffe9ae : 0xa09482)
             .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
             .setDepth(flying || u.ejected ? 7500 : p.y + 1)
-            .setAngle(pose.angle).setAlpha(pose.alpha).setVisible(pose.visible);
+            .setAngle(pose.angle)
+            .setAlpha(pose.alpha)
+            .setVisible(pose.visible);
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
@@ -1094,7 +1444,10 @@ export class VillageScene extends Phaser.Scene {
           sprung && !this.model.state.settings.reducedMotion
             ? Math.sin(springProgress * Math.PI) * 45
             : 0;
-        const target = battle.buildings.find((b) => b.id === u.target);
+        const target = TROOPS[u.kind].healer
+          ? battle.units.find((ally) => ally.id === u.healTarget)
+          : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
+            battle.buildings.find((b) => b.id === u.target));
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
@@ -1105,17 +1458,18 @@ export class VillageScene extends Phaser.Scene {
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
-        if (u.hero) {
-          const enraged = (battle.hero?.rageUntil ?? 0) > battle.elapsed;
-          if (enraged) im.setTint(0xffbd76);
-          else im.clearTint();
-        }
+        if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
+        else if (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) im.setTint(0xffbd76);
+        else im.clearTint();
         const p = iso(u.x, u.y),
-          motion = sprung || this.model.state.settings.reducedMotion
-            ? 0
-            : flying
-              ? Math.sin(animationTime / 600 + u.id) * 2.2
-              : pose.moving ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob) : 0;
+          motion =
+            sprung || this.model.state.settings.reducedMotion
+              ? 0
+              : flying
+                ? Math.sin(animationTime / 600 + u.id) * 2.2
+                : pose.moving
+                  ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob)
+                  : 0;
         const lift = flying ? AIR_LIFT : springLift;
         // Air troops draw above every rooftop, with a shadow left on the ground.
         im.setPosition(p.x, p.y + motion - lift)
@@ -1125,8 +1479,10 @@ export class VillageScene extends Phaser.Scene {
           this.detail.fillStyle(0x1f2a16, 0.28);
           this.detail.fillEllipse(p.x, p.y, 26, 13);
         }
-        const rate = u.hero && battle.hero
-          ? heroStats(battle.hero.level, battle.hero.townhall).rate : TROOPS[u.kind].rate;
+        const rate =
+          u.hero && battle.hero
+            ? heroStats(battle.hero.level, battle.hero.townhall).rate
+            : TROOPS[u.kind].rate;
         const phase = 1 - Math.max(0, u.cooldown) / rate;
         const impulse =
           u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
@@ -1137,6 +1493,98 @@ export class VillageScene extends Phaser.Scene {
         if (u.hp < u.maxHp)
           this.bar(p.x, p.y - lift - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
       }
+    }
+    this.drawDefenders();
+  }
+  private drawDefenders() {
+    const markers = this.defenderMarkers.clear();
+    const battle = this.model.battle,
+      reduced = this.model.state.settings.reducedMotion;
+    const defenders = battle?.defenders ?? [];
+    for (const [id, sprite] of this.defenderSprites)
+      if (!defenders.some((d) => d.id === id)) {
+        sprite.destroy();
+        this.defenderSprites.delete(id);
+      }
+    for (const d of defenders) {
+      const flying = d.mode === 'air',
+        width = flying ? 68 : 40,
+        p = iso(d.x, d.y),
+        stats = skeletonStats(d.mode);
+      let sprite = this.defenderSprites.get(d.id);
+      if (!sprite) {
+        sprite = this.add
+          .image(0, 0, `skeleton-${d.mode}`, 0)
+          .setOrigin(0.5, 0.875)
+          .setDisplaySize(width, width)
+          .setData('defender', d.id);
+        this.defenderSprites.set(d.id, sprite);
+      }
+      const target = battle!.units.find((u) => u.id === d.target && u.hp > 0),
+        waypoint = d.path[0];
+      const heading = d.attacking || flying ? target : (waypoint ?? target);
+      const dx = heading ? heading.x - d.x - (heading.y - d.y) : 0,
+        facing = Math.abs(dx) > 0.03 ? Math.sign(dx) : (sprite.getData('facing') ?? -1);
+      sprite
+        .setData('facing', facing)
+        .setFlipX(facing > 0)
+        .setAngle(0)
+        .setAlpha(1)
+        .setVisible(true)
+        .setDepth(flying ? 7500 : p.y + 1.1)
+        .clearTint();
+      if (d.hp <= 0) {
+        const pose = defeatPose(
+          battle!.finished ? Infinity : battle!.elapsed - (d.defeatedAt ?? battle!.elapsed),
+          flying ? 'air' : 'ground',
+          facing,
+          reduced,
+          AIR_LIFT,
+        );
+        sprite
+          .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
+          .setAngle(pose.angle)
+          .setAlpha(pose.alpha)
+          .setVisible(pose.visible)
+          .setTint(0xa09482);
+        continue;
+      }
+      const moving = !!target && !d.attacking && battle!.elapsed >= d.spawnedAt + 0.5;
+      const phase = stats.rate - d.cooldown;
+      const frame =
+        reduced || battle!.finished
+          ? 1
+          : d.attacking && phase < 0.15
+            ? 5
+            : d.attacking && d.cooldown < 0.14
+              ? 4
+              : moving
+                ? Math.floor(battle!.elapsed / 0.11 + Math.abs(d.id)) % 4
+                : 1;
+      const jumping =
+        !flying &&
+        battle!.buildings.some(
+          (b) =>
+            b.kind === 'wall' && b.hp > 0 && Math.floor(d.x) === b.x && Math.floor(d.y) === b.y,
+        );
+      const lift = flying ? AIR_LIFT : jumping && !reduced ? 9 : 0;
+      sprite
+        .setFrame(frame)
+        .setPosition(p.x, p.y - lift)
+        .setDepth(flying ? 7500 : p.y + 1.1);
+      if (flying) {
+        this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(p.x, p.y, 16, 8);
+      }
+      this.bar(p.x, p.y - lift - width * 0.9, 22, d.hp / d.maxHp, 0xea654d, markers);
+      const sy = p.y - lift - width * 0.9;
+      markers
+        .fillStyle(0xfff0d0)
+        .fillCircle(p.x - 17, sy - 1, 3)
+        .fillRect(p.x - 19, sy + 1, 4, 3);
+      markers
+        .fillStyle(0x594739)
+        .fillCircle(p.x - 18, sy - 1, 0.7)
+        .fillCircle(p.x - 16, sy - 1, 0.7);
     }
   }
   private drawGrid(g: Phaser.GameObjects.Graphics) {
@@ -1150,11 +1598,11 @@ export class VillageScene extends Phaser.Scene {
       g.lineBetween(r.x, r.y, s.x, s.y);
     }
   }
-  bar(x: number, y: number, w: number, p: number, color: number) {
-    this.detail.fillStyle(0x292920, 0.8);
-    this.detail.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 7, 3);
-    this.detail.fillStyle(color);
-    this.detail.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
+  bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
+    graphics.fillStyle(0x292920, 0.8);
+    graphics.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 7, 3);
+    graphics.fillStyle(color);
+    graphics.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
   }
   private animateEffect(config: EffectTween) {
     if (this.model.state.settings.reducedMotion) {
@@ -1165,9 +1613,41 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle) this.effectTimeline.add(config, this.model.battle.elapsed);
     else this.tweens.add(config);
   }
+  private teslaRise(id: number) {
+    const b = this.model.battle,
+      at = b?.revealedTeslas?.[id];
+    if (!b || b.finished || at === undefined || this.model.state.settings.reducedMotion) return 1;
+    const t = Math.min(1, Math.max(0, (b.elapsed - at) / TESLA_RISE_SECONDS));
+    return 1 - (1 - t) ** 3;
+  }
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'tesla-zap') {
+      const im = this.sprites.get(fx.sourceId!);
+      const height = im?.getData('intactHeight') ?? 139;
+      const progress = this.teslaRise(fx.sourceId!);
+      const to = iso(fx.toX!, fx.toY!);
+      const target = this.unitSprites.get(fx.targetId!);
+      to.y -= (fx.toAir ? AIR_LIFT : 0) + (target ? target.displayHeight * 0.45 : 17);
+      this.combatEffects.tesla(
+        { x: p.x, y: p.y - height * 0.79 * progress },
+        to,
+        fx.sourceId! + Math.round((this.model.battle?.elapsed ?? 0) * 1000),
+        this.model.state.settings.reducedMotion,
+      );
+      this.audio.play('tesla');
+      return;
+    }
+    if (fx.type === 'tesla-reveal') {
+      this.audio.play('build');
+      if (!this.model.state.settings.reducedMotion) this.sparks(p.x, p.y, 0xb5a27d, 7);
+      return;
+    }
+    if (fx.type === 'gust') {
+      this.audio.play('gust');
+      return;
+    }
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.state.settings.reducedMotion;
       const label = this.add
@@ -1249,28 +1729,64 @@ export class VillageScene extends Phaser.Scene {
         duration: 520,
         onComplete: () => ring.destroy(),
       });
-      if (fx.spell === 'lightning')
-        for (let i = 0; i < 3; i++) {
-          const ox = (i - 1) * 26;
-          const bolt = this.add.rectangle(p.x + ox, p.y - 150, 6, 300, color, 0.9).setDepth(7300);
-          this.animateEffect({
-            targets: bolt,
-            alpha: 0,
-            scaleX: 0.2,
-            duration: 260,
-            delay: i * 55,
-            onComplete: () => bolt.destroy(),
-          });
+      if (fx.spell === 'lightning') {
+        const bolt = this.add.graphics().setPosition(p.x, p.y).setDepth(7300);
+        bolt.setData('spell', 'lightning');
+        const paths = [
+          [
+            [-18, -310],
+            [9, -251],
+            [-10, -229],
+            [21, -175],
+            [-6, -146],
+            [12, -93],
+            [-9, -63],
+            [0, 0],
+          ],
+          [
+            [-10, -229],
+            [-42, -199],
+            [-25, -185],
+            [-55, -150],
+          ],
+          [
+            [12, -93],
+            [40, -72],
+            [27, -56],
+            [48, -33],
+          ],
+        ];
+        for (const [width, tint, alpha] of [
+          [11, color, 0.16],
+          [5, color, 0.9],
+          [2, 0xffffff, 1],
+        ]) {
+          bolt.lineStyle(width, tint, alpha);
+          for (const points of paths) {
+            bolt.beginPath().moveTo(points[0][0], points[0][1]);
+            for (const [x, y] of points.slice(1)) bolt.lineTo(x, y);
+            bolt.strokePath();
+          }
         }
+        this.animateEffect({
+          targets: bolt,
+          alpha: 0,
+          duration: 260,
+          onComplete: () => bolt.destroy(),
+        });
+      }
       this.sparks(p.x, p.y - 20, color, 16);
       this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.state.settings.reducedMotion)
         this.cameras.main.shake(140, 0.0022);
       return;
     }
-    if (fx.type === 'blast' && fx.weapon === 'cannonball') {
+    if (fx.type === 'blast' && (fx.weapon === 'cannonball' || fx.weapon === 'towerbomb')) {
       this.combatEffects.groundBlast(
-        p, fx.radius ?? 1.5, this.model.state.settings.reducedMotion, 'mortar',
+        p,
+        fx.radius ?? 1.5,
+        this.model.state.settings.reducedMotion,
+        fx.weapon === 'towerbomb' ? 'towerbomb' : 'mortar',
       );
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
@@ -1303,24 +1819,37 @@ export class VillageScene extends Phaser.Scene {
       this.audio.play('hit');
       return;
     }
+    if (fx.type === 'breath') {
+      const { from, to } = this.projectileAnchors(fx);
+      this.combatEffects.breath(from, to, this.model.state.settings.reducedMotion);
+      this.audio.play('hit');
+      return;
+    }
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
       if (!this.model.state.settings.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
     }
-    if ((fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') && fx.toX !== undefined) {
+    if (
+      (fx.type === 'projectile' || fx.type === 'impact' || fx.type === 'hit') &&
+      fx.toX !== undefined
+    ) {
       const { from, to } = this.projectileAnchors(fx);
       const reduced = this.model.state.settings.reducedMotion;
-      if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
-        this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced);
+      if (fx.type === 'impact' && (fx.weapon === 'bomb' || fx.weapon === 'towerbomb') && fx.radius)
+        this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced, fx.weapon);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
       else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
-      else this.combatEffects.projectile(
-        fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
-        from, to, reduced,
-      );
-      if (Math.random() < 0.2) this.audio.play('hit');
+      else
+        this.combatEffects.projectile(
+          fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
+          from,
+          to,
+          reduced,
+        );
+      if (fx.weapon === 'towerbomb' && fx.type === 'impact') this.audio.play('destroy');
+      else if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
@@ -1353,10 +1882,14 @@ export class VillageScene extends Phaser.Scene {
     const c = this.cameras.main;
     this.resourceFlights.emit(
       {
-        x: canvas.left +
-          ((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width / this.scale.width,
-        y: canvas.top +
-          ((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height / this.scale.height,
+        x:
+          canvas.left +
+          (((sx - c.scrollX - c.width / 2) * c.zoomX + c.width / 2) * canvas.width) /
+            this.scale.width,
+        y:
+          canvas.top +
+          (((sy - c.scrollY - c.height / 2) * c.zoomY + c.height / 2) * canvas.height) /
+            this.scale.height,
       },
       { x: box.left + box.width / 2, y: box.top + box.height / 2 },
       resource,
@@ -1379,23 +1912,39 @@ export class VillageScene extends Phaser.Scene {
   private projectileAnchors(fx: FX) {
     const p = iso(fx.x, fx.y),
       q = iso(fx.toX!, fx.toY!);
+    if (fx.weapon === 'towerbomb') {
+      const source = this.sprites.get(fx.sourceId!);
+      const height = source?.getData('intactHeight') ?? (130 * 512) / 384;
+      const facing = Math.sign(q.x - p.x) || -1;
+      return {
+        from: {
+          x: p.x + facing * BOMBER_WIDTH * 0.2,
+          y: p.y - height * (0.88 - BOMB_TOWER_ROOF.y) - BOMBER_WIDTH * 0.48,
+        },
+        to: { x: q.x, y: q.y },
+      };
+    }
     const source =
       fx.sourceId == null
         ? undefined
-        : fx.targetBuilding
-          ? this.unitSprites.get(fx.sourceId)
-          : this.sprites.get(fx.sourceId);
+        : fx.sourceDefender
+          ? this.defenderSprites.get(fx.sourceId)
+          : fx.targetBuilding || fx.targetDefender || fx.weapon === 'healing'
+            ? this.unitSprites.get(fx.sourceId)
+            : this.sprites.get(fx.sourceId);
     const target =
       fx.targetId == null
         ? undefined
-        : fx.targetBuilding
-          ? this.sprites.get(fx.targetId)
-          : this.unitSprites.get(fx.targetId);
+        : fx.targetDefender
+          ? this.defenderSprites.get(fx.targetId)
+          : fx.targetBuilding
+            ? this.sprites.get(fx.targetId)
+            : this.unitSprites.get(fx.targetId);
     const fromY =
       p.y -
       (fx.fromAir
         ? AIR_LIFT + 6
-        : source && !fx.targetBuilding
+        : source && !fx.targetBuilding && !fx.targetDefender && !fx.sourceDefender
           ? (source.getData('intactHeight') ?? source.displayHeight) * 0.7
           : 22);
     const toY =
@@ -1406,15 +1955,33 @@ export class VillageScene extends Phaser.Scene {
           (target
             ? fx.targetBuilding
               ? (target.getData('intactHeight') ?? target.displayHeight) * 0.38
-              : target.displayHeight * 0.48
+              : target.displayHeight * (fx.targetDefender && fx.toAir ? 0.24 : 0.48)
             : 15));
-    return { from: { x: p.x, y: fromY }, to: { x: q.x, y: toY } };
+    const bodyMuzzle =
+      fx.type === 'breath'
+        ? { forward: 0.32, height: 0.27 }
+        : fx.weapon === 'healing'
+          ? { forward: 0.25, height: 0.37 }
+          : null;
+    const facing = Math.sign(q.x - p.x) || source?.getData('facing') || 1;
+    const from =
+      source && bodyMuzzle
+        ? {
+            x: p.x + facing * source.displayWidth * bodyMuzzle.forward,
+            y: p.y - AIR_LIFT - source.displayHeight * bodyMuzzle.height,
+          }
+        : { x: p.x, y: fromY };
+    return { from, to: { x: q.x, y: toY } };
   }
 
   private mortarMuzzlePoint(sourceId: number, ground: { x: number; y: number }) {
     const source = this.sprites.get(sourceId);
-    return (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ??
-      { x: ground.x, y: ground.y - 28 };
+    return (
+      (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ?? {
+        x: ground.x,
+        y: ground.y - 28,
+      }
+    );
   }
 
   private drawProjectiles() {
@@ -1423,22 +1990,93 @@ export class VillageScene extends Phaser.Scene {
       !b || b.finished || this.model.state.settings.reducedMotion ? [] : (b.projectiles ?? []);
     const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
     const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
-    this.combatEffects.retainProjectiles(new Set([...shots.map((p) => p.id), ...shells.map(shellId)]));
+    this.combatEffects.retainProjectiles(
+      new Set([...shots.map((p) => p.id), ...shells.map(shellId)]),
+    );
     for (const shell of shells) {
       const progress = Phaser.Math.Clamp(
-        (b!.elapsed - shell.launched) / (shell.impact - shell.launched), 0, 1,
+        (b!.elapsed - shell.launched) / (shell.impact - shell.launched),
+        0,
+        1,
       );
       this.combatEffects.poseMortar(
-        shellId(shell), iso(shell.fromX, shell.fromY), iso(shell.x, shell.y),
-        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)), progress,
+        shellId(shell),
+        iso(shell.fromX, shell.fromY),
+        iso(shell.x, shell.y),
+        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)),
+        progress,
       );
     }
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
-      this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
+      if (p.weapon === 'towerbomb')
+        this.combatEffects.poseTowerBomb(p.id, iso(p.fromX, p.fromY), to, from, progress);
+      else this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
   }
+  private drawBombTowers() {
+    const battle = this.model.battle,
+      reduced = this.model.state.settings.reducedMotion;
+    const towers = this.model.buildings.filter(
+      (v) => v.kind === 'bombtower' && v.hp > 0 && this.model.visibleBuilding(v),
+    );
+    const pending = Object.values(battle?.deathBombs ?? {}).filter(
+      (b) => !battle?.finished && !b.resolved && !b.cancelled,
+    );
+    for (const [id, actor] of this.roofBombers)
+      if (!towers.some((v) => v.id === id)) {
+        actor.destroy();
+        this.roofBombers.delete(id);
+      }
+    for (const [id, sprite] of this.deathBombSprites)
+      if (!pending.some((v) => v.sourceId === id)) {
+        sprite.destroy();
+        this.deathBombSprites.delete(id);
+      }
+    for (const tower of towers) {
+      const base = this.sprites.get(tower.id);
+      if (!base) continue;
+      let actor = this.roofBombers.get(tower.id);
+      if (!actor) {
+        actor = this.add
+          .image(0, 0, 'roof-bomber')
+          .setOrigin(0.5, 232 / 256)
+          .setData('bomber', tower.id);
+        this.roofBombers.set(tower.id, actor);
+      }
+      const target = battle?.units.find(
+        (u) => u.id === battle.defenseTargets[tower.id] && u.hp > 0,
+      );
+      actor
+        .setFrame(bomberFrame(tower, battle, reduced))
+        .setDisplaySize(BOMBER_WIDTH, BOMBER_WIDTH)
+        .setPosition(base.x, base.y - base.displayHeight * (base.originY - BOMB_TOWER_ROOF.y))
+        .setDepth(base.depth + 0.1)
+        .setAlpha(base.alpha)
+        .setVisible(!tower.constructing)
+        .setFlipX(!!target && iso(target.x, target.y).x > base.x);
+    }
+    for (const bomb of pending) {
+      let sprite = this.deathBombSprites.get(bomb.sourceId);
+      if (!sprite) {
+        sprite = this.add
+          .image(0, 0, 'tower-death-bomb')
+          .setOrigin(0.5, 0.82)
+          .setData('deathBomb', bomb.sourceId);
+        this.deathBombSprites.set(bomb.sourceId, sprite);
+      }
+      const p = iso(bomb.x, bomb.y),
+        age = Math.max(0, battle!.elapsed - bomb.armedAt);
+      sprite
+        .setPosition(p.x, p.y)
+        .setDisplaySize(32, 32)
+        .setDepth(p.y + 0.5);
+      if (!reduced && Math.sin(age * 34) > 0.35) sprite.setTint(0xffb085);
+      else sprite.clearTint();
+    }
+  }
+
   update(time: number, delta: number) {
     if (this.paused) return;
     this.renderClock = time;
@@ -1480,8 +2118,12 @@ export class VillageScene extends Phaser.Scene {
       c = this.cameras.main,
       rect = this.scale.canvasBounds;
     return {
-      x: rect.left + ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
-      y: rect.top + ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
+      x:
+        rect.left +
+        ((p.x - (c.scrollX + c.width / 2)) * c.zoomX + c.width / 2) / this.scale.displayScale.x,
+      y:
+        rect.top +
+        ((p.y - (c.scrollY + c.height / 2)) * c.zoomY + c.height / 2) / this.scale.displayScale.y,
     };
   }
 }

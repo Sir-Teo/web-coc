@@ -1,14 +1,19 @@
 import { BUILDINGS, TROOPS } from './data';
 import type { Building, Unit } from './model';
+import type { Defender } from './defenders';
 import { troopArt } from './troop-art';
 
 /** Sprite mirroring follows navigation while walking and the target when striking. */
-export function unitPose(u: Unit, target: Building | undefined, previousFacing = -1) {
+export function unitPose(
+  u: Unit,
+  target: Building | Unit | Defender | undefined,
+  previousFacing = -1,
+) {
   const center =
     target && target.hp > 0
       ? {
-          x: target.x + BUILDINGS[target.kind].size / 2,
-          y: target.y + BUILDINGS[target.kind].size / 2,
+          x: target.x + ('level' in target ? BUILDINGS[target.kind].size / 2 : 0),
+          y: target.y + ('level' in target ? BUILDINGS[target.kind].size / 2 : 0),
         }
       : undefined;
   const waypoint = u.path.find((p) => Math.hypot(p.x - u.x, p.y - u.y) > 0.03);

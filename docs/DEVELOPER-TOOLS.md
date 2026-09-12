@@ -58,3 +58,5 @@ The URL must explicitly include `devtools=1`. The toolbox is allowed in Vite dev
 `src/dev/access.ts` owns availability, `controls.ts` owns atomic save mutations, and `panel.ts` owns the optional dialog/console API. The panel loads as a separate chunk only when enabled. No core gameplay rules depend on the toolbox.
 
 Verification: `tests/developer.test.ts`, `tests/browser/developer.spec.ts`, and `scripts/developer-check.mjs`. Run the production script with a built game served on port 4173.
+
+The ten-troop expansion migrates older seven-troop checkpoints before validating them, retaining the checkpoint instead of replacing it with current progress. Max troop research respects each troop’s supported ceiling: level 3 for Healer, Dragon and P.E.K.K.A, level 5 for the earlier roster. Actions and form submissions restore focus to their activating button across Chromium and WebKit, including WebKit pointer clicks that do not automatically focus buttons.

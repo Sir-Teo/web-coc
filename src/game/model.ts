@@ -1,8 +1,45 @@
+import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
+import { validDirection } from './air-control-stats';
+import { validSkeletonMode, SKELETON_COFFIN_SECONDS, type SkeletonMode } from './skeleton-stats';
+import {
+  stepDefenders,
+  stepAttackerVsDefenders,
+  damageDefenders,
+  type Defender,
+} from './defenders';
+import { primeDeathBomb, stepDeathBombs, bombTowerDeathDamage, type DeathBomb } from './bomb-tower';
+import {
+  stepSweepers,
+  stepAirPush,
+  type AirGust,
+  type SweeperState,
+  type AirPush,
+} from './air-sweeper';
+import { isDefense } from './data';
 import { campCapacity } from './camp-stats';
+import { spellFactoryCapacity, facilityProgression } from './facility-progression';
+import {
+  MAX_SPELL_LEVEL,
+  spellProgression,
+  LIGHTNING_STUN,
+  RAGE_HERO_MULTIPLIER,
+  SPELL_SPEED_SCALE,
+} from './spell-progression';
+import { startSpellAura, stepSpellAuras } from './spell-effects';
+import { prepareHealerTargets, stepHealer } from './healing';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
 import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall-selection';
-import { OBSTACLES, OBSTACLE_GEMS, initialObstacles, overlapsObstacle, initialObstacleGrowth, advanceObstacles, type ObstacleGrowth, type Obstacle } from './obstacles';
+import {
+  OBSTACLES,
+  OBSTACLE_GEMS,
+  initialObstacles,
+  overlapsObstacle,
+  initialObstacleGrowth,
+  advanceObstacles,
+  type ObstacleGrowth,
+  type Obstacle,
+} from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
   REPLAY_VERSION,
@@ -26,9 +63,21 @@ import {
   type HeroProgress,
   type BattleHero,
 } from './heroes';
-import { launchProjectile, stepProjectiles, type CombatProjectile, type Weapon } from './projectiles';
+import {
+  launchProjectile,
+  stepProjectiles,
+  type CombatProjectile,
+  type Weapon,
+} from './projectiles';
 import { campaignBlueprint, CAMPAIGN_LAYOUTS } from './campaign';
-import { armySpace, spellSpace, emptyArmy, emptySpells, type ArmyPreset } from './army';
+import {
+  armySpace,
+  spellSpace,
+  emptyArmy,
+  emptySpells,
+  expandArmyRoster,
+  type ArmyPreset,
+} from './army';
 import { stepTraps, type TrapState } from './traps';
 import {
   BUILDINGS,
@@ -37,9 +86,9 @@ import {
   TROOP_KEYS,
   SPELL_KEYS,
   CAMPAIGN,
-  HEAL_PER_SECOND,
-  LIGHTNING_DAMAGE,
-  MAX_TROOP_LEVEL,
+  isSpellKind,
+  spellStatsAt,
+  maxTroopLevel,
   defenseDamage,
   isResourceBuilding,
   isTrap,
@@ -49,6 +98,8 @@ import {
   producedResource,
   researchCost,
   researchSeconds,
+  researchLaboratory,
+  troopStatsAt,
   storageCapacity,
   buildingHp,
   upgradeCost,
@@ -56,6 +107,7 @@ import {
   type BuildingKind,
   type TroopKind,
   type SpellKind,
+  type ResearchKind,
   type Resource,
 } from './data';
 export interface Building {
@@ -72,6 +124,9 @@ export interface Building {
   constructing?: boolean;
   stored: number;
   cooldown: number;
+  /** Air Sweeper orientation in 45-degree map increments; absent means zero. */
+  direction?: number;
+  skeletonMode?: SkeletonMode;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -83,7 +138,7 @@ export interface SpellQueueItem {
 }
 export interface Layout {
   name: string;
-  slots: { id: number; x: number; y: number }[];
+  slots: { id: number; x: number; y: number; direction?: number; skeletonMode?: SkeletonMode }[];
 }
 export type Army = Record<TroopKind, number>;
 export type SpellBook = Record<SpellKind, number>;
@@ -130,7 +185,8 @@ export interface Save {
   tutorial: boolean;
   claimedQuests?: string[];
   troopLevels?: Record<TroopKind, number>;
-  research?: { kind: TroopKind; end: number };
+  spellLevels?: Record<SpellKind, number>;
+  research?: { kind: ResearchKind; end: number };
   lastArmy?: Army;
   lastSpells?: SpellBook;
   layouts?: Layout[];
@@ -145,6 +201,9 @@ export interface Unit {
   hero?: 'king';
   summoned?: boolean;
   rageUntil?: number;
+  spellRageUntil?: number;
+  healTarget?: number;
+  defenderTarget?: number;
   x: number;
   y: number;
   hp: number;
@@ -160,12 +219,15 @@ export interface Unit {
   defeatedAt?: number;
   ejected?: boolean;
   springUntil?: number;
+  airPush?: AirPush;
 }
 export interface Aura {
   kind: SpellKind;
   x: number;
   y: number;
   end: number;
+  start: number;
+  pulses: number;
 }
 export interface MortarShell {
   sourceId: number;
@@ -180,6 +242,7 @@ export interface MortarShell {
 }
 export interface Battle {
   troopLevels?: Army;
+  spellLevels?: SpellBook;
   index: number;
   practice: boolean;
   carriedArmy: Army;
@@ -193,7 +256,14 @@ export interface Battle {
   shells: MortarShell[];
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
+  defenseStuns: Record<number, number>;
   traps: Record<number, TrapState>;
+  gusts?: AirGust[];
+  sweepers?: Record<number, SweeperState>;
+  /** Reveal time in battle seconds. Never persisted in the home village. */
+  revealedTeslas?: Record<number, number>;
+  deathBombs?: Record<number, DeathBomb>;
+  defenders?: Defender[];
   hero?: BattleHero;
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
@@ -220,8 +290,12 @@ export type FX = {
     | 'upgrade'
     | 'spell'
     | 'blast'
+    | 'breath'
     | 'trap'
-    | 'spring';
+    | 'spring'
+    | 'gust'
+    | 'tesla-reveal'
+    | 'tesla-zap';
   x: number;
   y: number;
   toX?: number;
@@ -236,6 +310,8 @@ export type FX = {
   sourceId?: number;
   targetId?: number;
   targetBuilding?: boolean;
+  targetDefender?: boolean;
+  sourceDefender?: boolean;
   /** Marks either end of a projectile as airborne so the scene can lift it. */
   fromAir?: boolean;
   toAir?: boolean;
@@ -287,6 +363,7 @@ export class GameModel {
   clock = Date.now();
   constructor(saved?: Save) {
     this.state = saved ?? initialSave();
+    expandArmyRoster(this.state);
     this.state.dark ??= 0;
     this.tick(Date.now());
   }
@@ -297,17 +374,23 @@ export class GameModel {
   notify(message: string) {
     this.onToast(message);
   }
-  get obstacles() { return this.state.obstacles ?? []; }
+  get obstacles() {
+    return this.state.obstacles ?? [];
+  }
   get selectedObstacle() {
     return !this.battle && this.selected !== null && this.selected < 0
-      ? this.obstacles.find((o) => o.id === -this.selected!) : undefined;
+      ? this.obstacles.find((o) => o.id === -this.selected!)
+      : undefined;
   }
   removeObstacle(id: number) {
     if (this.battle) return false;
     const o = this.obstacles.find((o) => o.id === id);
     if (!o || o.removeEnd) return false;
     const d = OBSTACLES[o.kind];
-    if (this.state[d.resource] < d.cost) { this.notify(`Not enough ${d.resource}.`); return false; }
+    if (this.state[d.resource] < d.cost) {
+      this.notify(`Not enough ${d.resource}.`);
+      return false;
+    }
     this.state[d.resource] -= d.cost;
     o.removeStart = this.clock;
     o.removeEnd = this.clock + d.seconds * 1000;
@@ -332,7 +415,10 @@ export class GameModel {
     const o = this.obstacles.find((o) => o.id === id);
     if (!o?.removeEnd) return false;
     const cost = gemCost((o.removeEnd - this.clock) / 1000);
-    if (this.state.gems < cost) { this.notify('Not enough gems.'); return false; }
+    if (this.state.gems < cost) {
+      this.notify('Not enough gems.');
+      return false;
+    }
     this.state.gems -= cost;
     o.removeEnd = this.clock;
     this.tick(this.clock);
@@ -362,12 +448,18 @@ export class GameModel {
       .reduce((n, b) => n + campCapacity(b.level), 0);
   }
   get spellCapacity() {
+    return spellFactoryCapacity(facilityLevel(this.state.buildings, 'spellfactory'));
+  }
+  get laboratory() {
     return this.state.buildings
-      .filter((b) => b.kind === 'spellfactory' && !b.constructing)
-      .reduce((n, b) => n + b.level * 2, 0);
+      .filter((b) => b.kind === 'laboratory' && !b.constructing)
+      .reduce<Building | undefined>(
+        (best, b) => (!best || b.level > best.level ? b : best),
+        undefined,
+      );
   }
   get armySize() {
-    return TROOP_KEYS.reduce((n, k) => n + this.state.army[k] * TROOPS[k].space, 0);
+    return armySpace(this.state.army);
   }
   get queuedSize() {
     return this.state.queue.reduce((n, q) => n + TROOPS[q.kind].space, 0);
@@ -387,33 +479,52 @@ export class GameModel {
   troopLevel(kind: TroopKind) {
     return this.battle?.troopLevels?.[kind] ?? this.state.troopLevels?.[kind] ?? 1;
   }
-  troopStats(kind: TroopKind) {
-    const d = TROOPS[kind],
-      bonus = 1 + (this.troopLevel(kind) - 1) * 0.3;
-    return {
-      ...d,
-      hp: Math.round(d.hp * bonus),
-      damage: Math.round(d.damage * bonus),
-    };
+  troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
+    return troopStatsAt(kind, level);
   }
-  researchCost(kind: TroopKind) {
-    return researchCost(kind, this.troopLevel(kind));
+  spellLevel(kind: SpellKind) {
+    return this.battle?.spellLevels?.[kind] ?? this.state.spellLevels?.[kind] ?? 1;
   }
-  researchSeconds(kind: TroopKind) {
-    return researchSeconds(kind, this.troopLevel(kind));
+  spellStats(kind: SpellKind, level = this.spellLevel(kind)) {
+    return spellStatsAt(kind, level);
+  }
+  researchLevel(kind: ResearchKind) {
+    return isSpellKind(kind) ? this.spellLevel(kind) : this.troopLevel(kind);
+  }
+  researchCost(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? (spellProgression(kind, this.spellLevel(kind) + 1)?.cost ?? 0)
+      : researchCost(kind, this.troopLevel(kind));
+  }
+  researchSeconds(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? (spellProgression(kind, this.spellLevel(kind) + 1)?.seconds ?? 0)
+      : researchSeconds(kind, this.troopLevel(kind));
+  }
+  researchLaboratory(kind: ResearchKind) {
+    return isSpellKind(kind)
+      ? (spellProgression(kind, this.spellLevel(kind) + 1)?.laboratory ?? Infinity)
+      : researchLaboratory(kind, this.troopLevel(kind));
   }
   researchTroop(kind: TroopKind) {
-    const lab = this.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
-    if (!lab || lab.upgradeEnd) return this.notify('Your laboratory must be ready to research.');
-    if (!this.troopUnlocked(kind))
+    this.research(kind);
+  }
+  research(kind: ResearchKind) {
+    if (this.battle) return;
+    const lab = this.laboratory;
+    if (!lab) return this.notify('Complete a laboratory before starting research.');
+    const spell = isSpellKind(kind);
+    const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
+    if (spell ? !this.spellUnlocked(kind) : !this.troopUnlocked(kind))
       return this.notify(
-        `Unlock ${TROOPS[kind].name} at Barracks level ${TROOP_UNLOCK[kind]} first.`,
+        `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
       );
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.troopLevel(kind) >= MAX_TROOP_LEVEL)
-      return this.notify('This troop is at its maximum level.');
-    if (lab.level <= this.troopLevel(kind))
-      return this.notify(`Upgrade your laboratory to level ${this.troopLevel(kind) + 1}.`);
+    if (this.researchLevel(kind) >= (spell ? MAX_SPELL_LEVEL : maxTroopLevel(kind)))
+      return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
+    const requiredLab = this.researchLaboratory(kind);
+    if (lab.level < requiredLab)
+      return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
     const cost = this.researchCost(kind);
     if (this.state.elixir < cost) return this.notify('Not enough elixir.');
     this.state.elixir -= cost;
@@ -421,7 +532,7 @@ export class GameModel {
       kind,
       end: this.clock + this.researchSeconds(kind) * 1000,
     };
-    this.notify(`Researching level ${this.troopLevel(kind) + 1} ${TROOPS[kind].name}.`);
+    this.notify(`Researching level ${this.researchLevel(kind) + 1} ${name}.`);
     this.changed();
   }
   finishResearch() {
@@ -561,7 +672,11 @@ export class GameModel {
     this.clock = now;
     let changed = false;
     let structural = false;
-    if (!this.state.obstacles || !this.state.obstacleGrowth || this.state.obstacleGemIndex === undefined) {
+    if (
+      !this.state.obstacles ||
+      !this.state.obstacleGrowth ||
+      this.state.obstacleGemIndex === undefined
+    ) {
       this.state.obstacles ??= initialObstacles(this.state.buildings);
       this.state.obstacleGemIndex ??= 0;
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
@@ -572,7 +687,10 @@ export class GameModel {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
       if (
-        ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(b.kind) &&
+        (facilityProgression(b.kind, b.level) ||
+          ['wall', 'cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower', 'camp'].includes(
+            b.kind,
+          )) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
         const hp = buildingHp(b.kind, b.level);
@@ -654,19 +772,36 @@ export class GameModel {
     }
     if (this.state.research && this.state.research.end <= now) {
       const { kind } = this.state.research;
-      this.state.troopLevels ??= {
-        swordsman: 1,
-        archer: 1,
-        giant: 1,
-        wizard: 1,
-        balloon: 1,
-        goblin: 1,
-        wallbreaker: 1,
-      };
-      this.state.troopLevels[kind] = Math.min(MAX_TROOP_LEVEL, this.state.troopLevels[kind] + 1);
+      let name: string, level: number;
+      if (isSpellKind(kind)) {
+        this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
+        level = this.state.spellLevels[kind] = Math.min(
+          MAX_SPELL_LEVEL,
+          this.state.spellLevels[kind] + 1,
+        );
+        name = SPELLS[kind].name;
+      } else {
+        this.state.troopLevels ??= {
+          swordsman: 1,
+          archer: 1,
+          giant: 1,
+          wizard: 1,
+          balloon: 1,
+          goblin: 1,
+          wallbreaker: 1,
+          healer: 1,
+          dragon: 1,
+          pekka: 1,
+        };
+        level = this.state.troopLevels[kind] = Math.min(
+          maxTroopLevel(kind),
+          this.state.troopLevels[kind] + 1,
+        );
+        name = TROOPS[kind].name;
+      }
       delete this.state.research;
       this.state.xp += 30;
-      this.notify(`${TROOPS[kind].name} upgraded to level ${this.state.troopLevels[kind]}!`);
+      this.notify(`${name} upgraded to level ${level}!`);
       structural = true;
       changed = true;
     }
@@ -748,7 +883,9 @@ export class GameModel {
       return this.notify(`Upgrade your Town Hall to unlock the ${d.name.toLowerCase()}.`);
     if (this.countOf(kind) >= limit)
       return this.notify(
-        `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`,
+        d.available.some((count) => count > limit)
+          ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
+          : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );
     if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
@@ -916,9 +1053,12 @@ export class GameModel {
     const anchor = walls.find((b) => b.id === this.selected);
     if (!anchor || !this.wallAxis || walls.length < 2) return false;
     this.wallMove = {
-      anchorId: anchor.id, axis: this.wallAxis,
+      anchorId: anchor.id,
+      axis: this.wallAxis,
       source: walls.map(({ id, x, y }) => ({ id, x, y })),
-      x: anchor.x, y: anchor.y, turns: 0,
+      x: anchor.x,
+      y: anchor.y,
+      turns: 0,
     };
     this.changed();
     return true;
@@ -946,14 +1086,19 @@ export class GameModel {
   }
   confirmWallMove() {
     const issue = this.wallPlacementIssue;
-    if (issue) { this.notify(issue); return false; }
-    const move = this.wallMove!, target = this.wallPreview;
+    if (issue) {
+      this.notify(issue);
+      return false;
+    }
+    const move = this.wallMove!,
+      target = this.wallPreview;
     const changed = target.some((s, i) => s.x !== move.source[i].x || s.y !== move.source[i].y);
     if (changed && this.editing) this.recordPositions();
     // Every destination was validated against the current village before any coordinate changes.
     for (const slot of target) {
       const b = this.state.buildings.find((b) => b.id === slot.id)!;
-      b.x = slot.x; b.y = slot.y;
+      b.x = slot.x;
+      b.y = slot.y;
     }
     this.selected = move.anchorId;
     this.wallGroup = target.map((b) => b.id);
@@ -980,8 +1125,6 @@ export class GameModel {
     }
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b || b.upgradeEnd) return;
-    if (b.kind === 'laboratory' && this.state.research)
-      return this.notify('Finish troop research before upgrading the laboratory.');
     if (b.level >= BUILDINGS[b.kind].maxLevel)
       return this.notify('This building is at its maximum level.');
     if (b.level >= this.maxLevel(b.kind))
@@ -1027,7 +1170,33 @@ export class GameModel {
 
   // ---------------------------------------------------------------- edit mode
   private positions(): Layout['slots'] {
-    return this.state.buildings.map((b) => ({ id: b.id, x: b.x, y: b.y }));
+    return this.state.buildings.map((b) => ({
+      id: b.id,
+      x: b.x,
+      y: b.y,
+      ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
+      ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
+    }));
+  }
+  toggleSkeletonMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'skeletontrap' || b.constructing || !validSkeletonMode(b.skeletonMode))
+      return false;
+    if (this.editing) this.recordPositions();
+    b.skeletonMode = b.skeletonMode === 'air' ? 'ground' : 'air';
+    this.changed();
+    return true;
+  }
+  rotateSweeper() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'airsweeper' || b.constructing || !validDirection(b.direction))
+      return false;
+    if (this.editing) this.recordPositions();
+    b.direction = ((b.direction ?? 0) + 1) % 8;
+    this.changed();
+    return true;
   }
   private recordPositions() {
     this.undoStack.push(this.positions());
@@ -1063,6 +1232,9 @@ export class GameModel {
     for (const [i, b] of this.state.buildings.entries()) {
       b.x = placed[i].x;
       b.y = placed[i].y;
+      if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
+      if (b.kind === 'skeletontrap')
+        b.skeletonMode = moved.get(b.id)?.skeletonMode ?? b.skeletonMode ?? 'ground';
     }
     return true;
   }
@@ -1168,7 +1340,8 @@ export class GameModel {
   loadLayout(slot: number) {
     const layout = this.state.layouts?.[slot];
     if (!layout?.slots.length) return this.notify('That layout slot is still empty.');
-    if (this.layoutOverlapsObstacles(layout.slots)) return this.notify('Clear the obstacles beneath this layout before restoring it.');
+    if (this.layoutOverlapsObstacles(layout.slots))
+      return this.notify('Clear the obstacles beneath this layout before restoring it.');
     const before = this.positions();
     if (!this.applyPositions(layout.slots))
       return this.notify(
@@ -1209,7 +1382,9 @@ export class GameModel {
     )
       return;
     if (!this.troopUnlocked(kind))
-      return this.notify(`${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} Barracks.`);
+      return this.notify(
+        `${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} Barracks.`,
+      );
     if (this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity)
       return this.notify('Army camps are full. Remove troops or upgrade a camp.');
     this.state.army[kind] += count;
@@ -1226,7 +1401,9 @@ export class GameModel {
     )
       return;
     if (!this.spellUnlocked(kind))
-      return this.notify(`${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} Spell Factory.`);
+      return this.notify(
+        `${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} Spell Factory.`,
+      );
     if (
       this.spellHousing + this.queuedSpellHousing + SPELLS[kind].space * count >
       this.spellCapacity
@@ -1259,14 +1436,21 @@ export class GameModel {
     if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
       return 'This army needs more troop or spell housing.';
     const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));
-    if (troop) return `${TROOPS[troop].name} requires a completed level ${TROOP_UNLOCK[troop]} Barracks.`;
-    const spell = SPELL_KEYS.find((k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k));
-    if (spell) return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} Spell Factory.`;
+    if (troop)
+      return `${TROOPS[troop].name} requires a completed level ${TROOP_UNLOCK[troop]} Barracks.`;
+    const spell = SPELL_KEYS.find(
+      (k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k),
+    );
+    if (spell)
+      return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} Spell Factory.`;
     return null;
   }
   private prepareArmy(army: Army, spells: SpellBook) {
     const issue = this.armyPreparationIssue(army, spells);
-    if (issue) { this.notify(issue); return false; }
+    if (issue) {
+      this.notify(issue);
+      return false;
+    }
     const added = TROOP_KEYS.reduce((n, k) => n + Math.max(0, army[k] - this.state.army[k]), 0);
     this.state.army = { ...army };
     this.state.spells = { ...spells };
@@ -1429,7 +1613,19 @@ export class GameModel {
     return true;
   }
   visibleBuilding(building: Building) {
-    return !this.battle || !isTrap(building.kind) || !!this.battle.traps[building.id];
+    if (this.battle && building.kind === 'skeletontrap') {
+      const state = this.battle.traps[building.id];
+      return (
+        !this.battle.finished &&
+        !!state &&
+        this.battle.elapsed - state.activatedAt < SKELETON_COFFIN_SECONDS
+      );
+    }
+    return (
+      !this.battle ||
+      (!concealedTesla(this.battle, building) &&
+        (!isTrap(building.kind) || !!this.battle.traps[building.id]))
+    );
   }
   startBattle(index: number, practice = false) {
     if (this.battle) return;
@@ -1457,14 +1653,21 @@ export class GameModel {
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
+      spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, this.spellLevel(k)])) as SpellBook,
       nextId: this.state.nextId,
       ...(!practice
-        ? { lootRoom: {
-            gold: Math.min(CAMPAIGN[index].gold,
-              Math.max(0, Math.floor(this.resourceCap('gold') - this.state.gold))),
-            elixir: Math.min(CAMPAIGN[index].elixir,
-              Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir))),
-          } }
+        ? {
+            lootRoom: {
+              gold: Math.min(
+                CAMPAIGN[index].gold,
+                Math.max(0, Math.floor(this.resourceCap('gold') - this.state.gold)),
+              ),
+              elixir: Math.min(
+                CAMPAIGN[index].elixir,
+                Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir)),
+              ),
+            },
+          }
         : {}),
       hero: this.heroReady
         ? { level: this.state.king!.level, townhall: this.townhallLevel }
@@ -1489,8 +1692,12 @@ export class GameModel {
     const b = this.battle;
     if (!b) return true;
     if (
-      !Number.isFinite(x) || !Number.isFinite(y) ||
-      x < 1 || y < 1 || x > MAP_SIZE - 1 || y > MAP_SIZE - 1
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      x < 1 ||
+      y < 1 ||
+      x > MAP_SIZE - 1 ||
+      y > MAP_SIZE - 1
     )
       return true;
     return b.buildings.some(
@@ -1498,6 +1705,7 @@ export class GameModel {
         v.hp > 0 &&
         v.kind !== 'wall' &&
         !isTrap(v.kind) &&
+        !concealedTesla(b, v) &&
         x > v.x - 1.5 &&
         x < v.x + BUILDINGS[v.kind].size + 1.5 &&
         y > v.y - 1.5 &&
@@ -1553,23 +1761,42 @@ export class GameModel {
     const b = this.battle,
       k = this.activeSpell;
     if (!b || b.finished || !k || b.spells[k] <= 0) return false;
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > MAP_SIZE || y > MAP_SIZE)
+    if (
+      !Number.isFinite(x) ||
+      !Number.isFinite(y) ||
+      x < 0 ||
+      y < 0 ||
+      x > MAP_SIZE ||
+      y > MAP_SIZE
+    )
       return false;
     this.recordAction({ type: 'spell', kind: k, x, y });
     this.beginFight();
     b.spells[k]--;
     if (!b.practice) this.state.spells[k]--;
-    const d = SPELLS[k];
+    const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
+      damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
+      for (const enemy of b.defenders ?? [])
+        if (enemy.hp > 0 && Math.hypot(enemy.x - x, enemy.y - y) <= d.radius)
+          enemy.stunnedUntil = b.elapsed + LIGHTNING_STUN;
       for (const v of b.buildings)
         if (
           v.hp > 0 &&
-          Math.hypot(v.x + BUILDINGS[v.kind].size / 2 - x, v.y + BUILDINGS[v.kind].size / 2 - y) <=
-            d.radius
-        )
-          this.damage(v, LIGHTNING_DAMAGE);
-    } else b.auras.push({ kind: k, x, y, end: b.elapsed + d.duration });
+          !isTrap(v.kind) &&
+          !concealedTesla(b, v) &&
+          !['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(v.kind) &&
+          distanceTo({ x, y }, v) <= d.radius
+        ) {
+          this.damage(v, d.damage);
+          if (v.hp > 0 && isDefense(v.kind)) {
+            b.defenseStuns[v.id] = b.elapsed + LIGHTNING_STUN;
+            v.cooldown = BUILDINGS[v.kind].rate!;
+            delete b.defenseTargets[v.id];
+          }
+        }
+    } else startSpellAura(b, k, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.changed();
     return true;
@@ -1579,12 +1806,6 @@ export class GameModel {
     if (b.started) return;
     b.started = true;
     b.prep = 0;
-  }
-  private inAura(kind: SpellKind, x: number, y: number) {
-    const b = this.battle;
-    if (!b) return false;
-    const radius = SPELLS[kind].radius;
-    return b.auras.some((a) => a.kind === kind && Math.hypot(a.x - x, a.y - y) <= radius);
   }
   step(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
@@ -1611,21 +1832,27 @@ export class GameModel {
     // A long frame or imported replay delta cannot land a shot after the raid deadline.
     dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
-    stepProjectiles(b, (target, power) => this.damage(target, power), this.onEffect);
-    b.auras = b.auras.filter((a) => a.end > b.elapsed);
+    if (revealTeslas(b, this.onEffect)) this.changed();
+    stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
+    stepDeathBombs(b, this.onEffect);
+    stepSpellAuras(b);
+    prepareHealerTargets(b);
+    stepSweepers(b, dt, this.onEffect);
+    stepDefenders(b, dt, this.onEffect);
+    // Concealed defenses cannot influence target selection or navigation.
+    const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     for (const u of b.units) {
       if (u.hp <= 0) continue;
-      if (this.inAura('heal', u.x, u.y))
-        u.hp = Math.min(u.maxHp, u.hp + HEAL_PER_SECOND * dt * (u.hero ? 0.5 : 1));
+      if (stepAirPush(u, dt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
       }
       const troop = TROOPS[u.kind];
-      const raged =
-        this.inAura('rage', u.x, u.y) ||
-        (u.rageUntil ?? 0) > b.elapsed ||
-        !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
+      const abilityRage =
+        (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
+      const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
+      const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
       u.cooldown -= dt;
       u.pathAt -= dt;
       u.attacking = false;
@@ -1638,19 +1865,49 @@ export class GameModel {
           : this.troopStats(u.kind);
       const d = {
         ...base,
-        damage: raged ? base.damage * 1.7 : base.damage,
-        speed: raged ? base.speed * (u.hero ? HERO_ABILITY.speed : 1.6) : base.speed,
+        heal:
+          base.heal === undefined
+            ? undefined
+            : base.heal * (1 + (spellRage?.damageBoost ?? 0) / 100),
+        damage:
+          base.damage *
+          Math.max(
+            abilityRage ? HERO_ABILITY.damage : 1,
+            1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
+          ),
+        speed:
+          base.speed +
+          Math.max(
+            abilityRage ? base.speed * ((u.hero ? HERO_ABILITY.speed : 1.6) - 1) : 0,
+            ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+          ),
       };
-      let target = b.buildings.find((t) => t.id === u.target && t.hp > 0 && !isTrap(t.kind));
+      if (troop.healer) {
+        stepHealer(b, u, d, dt, this.onEffect);
+        continue;
+      }
+      if (
+        stepAttackerVsDefenders(
+          b,
+          u,
+          d,
+          dt,
+          knownBuildings,
+          (target, power) => this.damage(target, power),
+          this.onEffect,
+        )
+      )
+        continue;
+      let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
-        const alive = b.buildings.filter((v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind));
+        const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
         const preferred = troop.prefersResources
           ? alive.filter((v) => isResourceBuilding(v.kind))
           : troop.prefersDefenses
-            ? alive.filter((v) => BUILDINGS[v.kind].damage)
+            ? alive.filter((v) => isDefense(v.kind))
             : alive;
         target =
-          (troop.wallBreaker ? breachTarget(u, b.buildings) : undefined) ??
+          (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
           (preferred.length ? preferred : alive).sort(
             (a, c) => distanceTo(u, a) - distanceTo(u, c),
           )[0];
@@ -1665,12 +1922,39 @@ export class GameModel {
         if (u.cooldown <= 0) {
           u.cooldown = d.rate;
           if (troop.wallBreaker) {
-            this.detonate(u, d.damage);
+            this.detonate(u, d.damage + (base.deathDamage ?? 0));
             continue;
           }
           const damage =
             d.damage * (troop.prefersResources && isResourceBuilding(target.kind) ? 2 : 1);
-          if (d.range > 2 || troop.flying) {
+          if (u.kind === 'dragon') {
+            const size = BUILDINGS[target.kind].size;
+            const aim = {
+              x: Math.max(target.x, Math.min(u.x, target.x + size)),
+              y: Math.max(target.y, Math.min(u.y, target.y + size)),
+            };
+            this.damage(target, damage);
+            damageDefenders(b, aim, damage, troop.splash ?? 0, 'ground');
+            for (const other of b.buildings)
+              if (
+                other.id !== target.id &&
+                other.hp > 0 &&
+                !isTrap(other.kind) &&
+                distanceTo(aim, other) <= (troop.splash ?? 0)
+              )
+                this.damage(other, damage);
+            this.onEffect({
+              type: 'breath',
+              x: u.x,
+              y: u.y,
+              toX: aim.x,
+              toY: aim.y,
+              fromAir: true,
+              sourceId: u.id,
+              targetId: target.id,
+              targetBuilding: true,
+            });
+          } else if (d.range > 2 || troop.flying) {
             launchProjectile(
               b,
               {
@@ -1685,7 +1969,6 @@ export class GameModel {
                 fromAir: troop.flying,
                 damage,
                 splash: troop.splash,
-                splashScale: u.kind === 'wizard' ? 0.35 : 1,
               },
               this.onEffect,
             );
@@ -1718,7 +2001,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, b.buildings, d.range);
+        u.path = findPath(u, target, knownBuildings, d.range);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -1735,7 +2018,7 @@ export class GameModel {
           if (u.cooldown <= 0) {
             u.cooldown = d.rate;
             if (troop.wallBreaker) {
-              this.detonate(u, d.damage);
+              this.detonate(u, d.damage + (base.deathDamage ?? 0));
               continue;
             }
             if (d.range > 2)
@@ -1750,12 +2033,12 @@ export class GameModel {
                   fromY: u.y,
                   x: wall.x + 0.5,
                   y: wall.y + 0.5,
-                  damage: d.damage * 1.6,
+                  damage: d.damage,
                 },
                 this.onEffect,
               );
             else {
-              this.damage(wall, d.damage * 1.6);
+              this.damage(wall, d.damage);
               this.onEffect({ type: 'hit', x: wall.x + 0.5, y: wall.y + 0.5 });
             }
           }
@@ -1775,7 +2058,8 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, b.buildings);
+    separateUnits(b.units, knownBuildings);
+    if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     // Shells land where the target stood when fired. Air units and troops that
     // have escaped the impact circle take no damage, even if they were targeted.
@@ -1799,9 +2083,12 @@ export class GameModel {
     b.shells = b.shells.filter((shell) => shell.impact > b.elapsed + 1e-9);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
-      if (!d.damage || tower.hp <= 0 || tower.constructing || tower.upgradeEnd) continue;
+      if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
+        continue;
+      const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
+      if (activeDt <= 0) continue;
       const cooling = tower.cooldown > 0;
-      tower.cooldown -= dt;
+      tower.cooldown -= activeDt;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
       const targets = b.units.filter(
@@ -1826,6 +2113,20 @@ export class GameModel {
         const power =
           defenseDamage(tower.kind, tower.level) *
           (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+        if (tower.kind === 'tesla') {
+          target.hp -= power;
+          this.onEffect({
+            type: 'tesla-zap',
+            sourceId: tower.id,
+            targetId: target.id,
+            x: center.x,
+            y: center.y,
+            toX: target.x,
+            toY: target.y,
+            toAir: TROOPS[target.kind].flying,
+          });
+          continue;
+        }
         if (tower.kind === 'mortar') {
           b.shells.push({
             sourceId: tower.id,
@@ -1852,13 +2153,15 @@ export class GameModel {
             splash: d.splash,
             toAir: TROOPS[target.kind].flying,
             weapon:
-              tower.kind === 'airdefense'
-                ? 'rocket'
-                : tower.kind === 'archertower'
-                  ? 'arrow'
-                  : tower.kind === 'wizardtower'
-                    ? 'arcane'
-                    : 'cannonball',
+              tower.kind === 'bombtower'
+                ? 'towerbomb'
+                : tower.kind === 'airdefense'
+                  ? 'rocket'
+                  : tower.kind === 'archertower'
+                    ? 'arrow'
+                    : tower.kind === 'wizardtower'
+                      ? 'arcane'
+                      : 'cannonball',
             sourceId: tower.id,
             targetId: target.id,
             targetBuilding: false,
@@ -1875,11 +2178,10 @@ export class GameModel {
       u.defeatedAt ??= b.elapsed;
       if (u.spent) continue;
       u.spent = true;
-      const troop = TROOPS[u.kind];
+      const troop = this.troopStats(u.kind);
       if (!troop.deathDamage) continue;
       if (troop.wallBreaker) {
-        const bonus = this.troopStats(u.kind).damage / troop.damage;
-        this.detonate(u, troop.deathDamage * bonus);
+        this.detonate(u, troop.deathDamage);
         continue;
       }
       this.onEffect({
@@ -1891,16 +2193,18 @@ export class GameModel {
       for (const v of b.buildings)
         if (v.hp > 0 && distanceTo(u, v) <= (troop.deathRadius ?? 1.5))
           this.damage(v, troop.deathDamage);
+      damageDefenders(b, u, troop.deathDamage, troop.deathRadius ?? 1.5);
     }
     this.refreshBattleScore();
     if (
       b.destruction === 100 ||
       b.elapsed >= BATTLE_SECONDS ||
       (!b.shells.length &&
-        !b.projectiles?.length &&
-        !b.units.some((u) => u.hp > 0) &&
-        !TROOP_KEYS.some((k) => b.remaining[k] > 0) &&
-        !SPELL_KEYS.some((k) => b.spells[k] > 0) &&
+        !b.projectiles?.some((p) => p.weapon !== 'healing') &&
+        !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
+        !b.units.some((u) => u.hp > 0 && !TROOPS[u.kind].healer) &&
+        !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !TROOPS[k].healer) &&
+        !b.spells.lightning &&
         !(b.hero && b.hero.unitId === null))
     )
       this.finishBattle();
@@ -1914,6 +2218,7 @@ export class GameModel {
       Number(b.destruction >= 50) +
       Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
       Number(b.destruction === 100);
+    if (revealTeslas(b, this.onEffect)) this.changed();
     if (b.practice) {
       b.loot = { gold: 0, elixir: 0 };
       return;
@@ -1944,15 +2249,24 @@ export class GameModel {
     u.spent = true;
     const radius = TROOPS[u.kind].deathRadius ?? 1.6;
     this.onEffect({ type: 'blast', x: u.x, y: u.y, radius });
+    if (this.battle) damageDefenders(this.battle, u, power, radius);
     for (const building of this.battle?.buildings ?? [])
       if (building.hp > 0 && distanceTo(u, building) <= radius)
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
-  damage(b: Building, n: number) {
-    if (b.hp <= 0 || isTrap(b.kind)) return;
+  damage(b: Building, n: number, at = this.battle?.elapsed ?? 0) {
+    if (b.hp <= 0 || isTrap(b.kind) || (this.battle && concealedTesla(this.battle, b))) return;
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
+      if (this.battle && b.kind === 'bombtower')
+        primeDeathBomb(
+          this.battle,
+          b,
+          bombTowerDeathDamage(b.level) *
+            (this.battle.practice ? 1 : CAMPAIGN_LAYOUTS[this.battle.index].defense),
+          at,
+        );
       this.onEffect({
         type: 'destroy',
         x: b.x + BUILDINGS[b.kind].size / 2,
@@ -1973,6 +2287,7 @@ export class GameModel {
     b.finished = true;
     b.projectiles = [];
     b.shells = [];
+    for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
     const trophies = b.practice ? 0 : b.stars ? b.stars * 8 : -10;
     // A playback runner reproduces the recorded result without applying a
     // second village's storage limits or producing rewards/history of its own.
@@ -2284,8 +2599,9 @@ export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: 
 export function formatTime(seconds: number) {
   const s = Math.max(0, Math.round(seconds));
   if (s >= 3600) {
-    const h = Math.floor(s / 3600),
-      m = Math.round((s % 3600) / 60);
+    const minutes = Math.round(s / 60),
+      h = Math.floor(minutes / 60),
+      m = minutes % 60;
     return m ? `${h}h ${m}m` : `${h}h`;
   }
   if (s >= 60) {
@@ -2380,15 +2696,23 @@ export function initialSave(): Save {
   };
 }
 export function enemyBase(index: number) {
-  return campaignBlueprint(index).map(([kind, x, y], i) => {
-    const b = makeBuilding(1000 + i, kind, x, y, Math.min(3, 1 + Math.floor(index / 4)));
+  return campaignBlueprint(index).map(([kind, x, y, direction, skeletonMode], i) => {
+    const b = makeBuilding(
+      1000 + i,
+      kind,
+      x,
+      y,
+      Math.min(BUILDINGS[kind].maxLevel, 3, 1 + Math.floor(index / 4)),
+    );
+    if (kind === 'airsweeper') b.direction = direction ?? 0;
+    if (kind === 'skeletontrap') b.skeletonMode = skeletonMode ?? 'ground';
     b.hp *= CAMPAIGN_LAYOUTS[index].health;
     b.maxHp = b.hp;
     return b;
   });
 }
-export function distanceTo(u: { x: number; y: number }, b: Building) {
-  const s = BUILDINGS[b.kind].size;
+export function distanceTo(u: { x: number; y: number }, b: Building | { x: number; y: number }) {
+  const s = 'level' in b ? BUILDINGS[b.kind].size : 0;
   return Math.hypot(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */
@@ -2411,7 +2735,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
 export function findPath(
   start: { x: number; y: number },
-  target: Building,
+  target: Building | { x: number; y: number },
   buildings: Building[],
   range: number,
 ): { x: number; y: number }[] {
@@ -2435,6 +2759,7 @@ export function findPath(
   cost[first] = 0;
   const open = [first];
   let goal = -1;
+  let approach: { x: number; y: number } | undefined;
   while (open.length) {
     let best = 0;
     for (let i = 1; i < open.length; i++) {
@@ -2452,8 +2777,29 @@ export function findPath(
     const x = current % size,
       y = Math.floor(current / size);
     if (distanceTo({ x: x + 0.5, y: y + 0.5 }, target) <= range) {
+      if (!('level' in target) && current === first && distanceTo(start, target) > range)
+        approach = { x: x + 0.5, y: y + 0.5 };
       goal = current;
       break;
+    }
+    // A melee reach below half a tile cannot reach a building from grid centers.
+    // Finish with a short segment inside the final cell, never through a corner
+    // or an extra occupied cell. Other ranges retain their original grid route.
+    if (range < 0.5 && !blocked[current]) {
+      const center = { x: x + 0.5, y: y + 0.5 },
+        s = 'level' in target ? BUILDINGS[target.kind].size : 0;
+      const tx = Math.max(target.x, Math.min(center.x, target.x + s));
+      const ty = Math.max(target.y, Math.min(center.y, target.y + s));
+      const dx = center.x - tx,
+        dy = center.y - ty,
+        distance = Math.hypot(dx, dy);
+      const reach = Math.max(0, range - 1e-6); // Stay inside range despite float rounding.
+      const point = { x: tx + (dx * reach) / distance, y: ty + (dy * reach) / distance };
+      if (Math.floor(point.x) === x && Math.floor(point.y) === y) {
+        approach = point;
+        goal = current;
+        break;
+      }
     }
     for (const [dx, dy] of [
       [1, 0],
@@ -2480,7 +2826,9 @@ export function findPath(
     path.push({ x: (goal % size) + 0.5, y: Math.floor(goal / size) + 0.5 });
     goal = prev[goal];
   }
-  return path.reverse();
+  path.reverse();
+  if (approach) path.push(approach);
+  return path;
 }
 
 /** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */

@@ -57,7 +57,7 @@ test('spell auras hold their pulse while paused and become static with reduced m
 }) => {
   const result = await page.evaluate(() => {
     const { model, scene } = window.__game;
-    model.battle.auras = [{ kind: 'rage', x: 10, y: 10, end: 30 }];
+    model.battle.auras = [{ kind: 'rage', x: 10, y: 10, start: 0, end: 18, pulses: 0 }];
     scene.drawOverlay(0);
     const before = JSON.stringify(scene.overlay.commandBuffer);
     scene.drawOverlay(9999);

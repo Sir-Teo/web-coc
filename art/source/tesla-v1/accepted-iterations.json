@@ -1,0 +1,25 @@
+{
+  "tool": "built-in image_gen",
+  "accepted": {
+    "1": "exec-6c2ce119-9640-4511-b435-991f3196df16.png",
+    "2": "exec-c2a57906-0c7c-496f-a996-a092013f3769.png",
+    "3": "exec-aa56403f-b8f8-4c07-8f87-4914458b5f9e.png",
+    "4": "exec-2e5a8a66-8e46-4c39-bdef-ea9dee18f22d.png",
+    "5": "exec-afcc5890-5635-46e2-8369-49f2d0c3dbb1.png",
+    "6": "exec-61a5376b-dca4-4811-bfe0-a602ace0dea1.png"
+  },
+  "rejected": {
+    "3": [
+      "First pass: unwanted glow",
+      "Second pass: stepped crown and misplaced loops",
+      "Edit pass: baked checkerboard"
+    ],
+    "6": [
+      "First pass: unwanted glow"
+    ]
+  },
+  "finalPrompts": {
+    "3": "Use case: stylized-concept. Single original game sprite of a Hidden Tesla level 3 from Clash of Clans, fully emerged and idle. Actual transparent RGBA background. One tall narrow four-legged wooden lattice tower in warm chunky stylized mobile-game 3D art; diagonal wood braces and open transparent gaps, silver wire coiled up both visible side pillars, gray square stone feet, two open hinged wooden trapdoors at base. Orthographic isometric camera, 30 degrees down, two visible sides equally. At the very top is ONE SMOOTH SILVER CONE tapering in a straight line to a silver ball; cone is NOT a stack of dishes, rings, hats or cones. Cone rests on small flat square wooden platform. FOUR EMPTY SILVER METAL RINGS hang beneath that platform, two on each visible side, suspended by crooked silver arms. All four hanging rings must be lower than the wooden platform. No ring above platform. Metallic surfaces bright silver; only tiny trapdoor hinges are gold. Upper-left diffuse lighting, crisp bevels, cartoon proportions, no rim lighting. Centered, whole object fits with transparent margins. No glow, haze, fog, aura, shadow, ground plane, environment, gradient, text, border, or drawn checkerboard. All pixels outside the object and between lattice pieces are truly transparent. This is a cutout asset to place directly on green terrain.",
+    "6": "Use case: stylized-concept. Asset type: single transparent isometric sprite for a high-quality Clash of Clans-style strategy game. Create one original Hidden Tesla tower in its fully emerged, idle state. Orthographic isometric camera looking down 30 degrees, two sides equally visible. Tall slender wooden lattice tower with four supports and diagonal bracing, square diamond footprint, warm chunky carved wood and softly beveled polished metal, hand-painted mobile-game 3D render, lighting upper left, crisp silhouette readable at 100px. Open wooden trapdoors with gold hinges lie at either side of a small stone foundation. No grass tile, floor plane, backdrop, border, label, text, characters, electricity beam, glow halo, or extra objects. One tower centered with 10% transparent margin; object fully visible, apex near top, base near bottom. Actual transparent RGBA background: transparent empty pixels, never a drawn checkerboard or solid backdrop. LEVEL 6: Reinforced tall wood lattice with GOLD square foot collars above a small gray stone ground base. Golden conducting wire coils climb both front visible wooden uprights. Riveted metal top platform, brilliant GOLD cone ending in small GOLD ball. A clearly distinct large GOLD ring-shaped toroidal Tesla coil surrounds the cone, with detailed golden windings. Four smaller empty SILVER loops hang beneath the platform on crooked GOLD metal arms. Gold wire connects upper cross support to gold arms. Gold trapdoor hinges. Strong gold crown silhouette. HARD REQUIREMENT: clean cutout with alpha=0 everywhere outside the tower; no cast shadow, no rim light, no atmospheric light, no haze, no fog, no glowing background. Narrow electrical tower, cartoon timber-and-metal construction; the empty interior between the four wooden posts is transparent."
+  }
+}

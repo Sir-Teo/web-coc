@@ -130,7 +130,12 @@ export function migrateFootprints(save: Save, version: GridVersion) {
     const slots = new Map(layout.slots.map((s) => [s.id, s]));
     const buildings = original.map((b) => ({ ...b, ...slots.get(b.id) }));
     if (buildings.every((b, i) => b.x === original[i].x && b.y === original[i].y)) {
-      layout.slots = result.buildings.map(({ id, x, y }) => ({ id, x, y }));
+      layout.slots = result.buildings.map(({ id, x, y }) => ({
+        id,
+        x,
+        y,
+        ...(slots.get(id)?.direction === undefined ? {} : { direction: slots.get(id)!.direction }),
+      }));
       continue;
     }
     // Already blocked layouts retain their slots; the normal restore check explains the conflict.
@@ -140,7 +145,12 @@ export function migrateFootprints(save: Save, version: GridVersion) {
       ? buildings.map(spread)
       : arrange(buildings, result.obstacles, version)?.buildings;
     if (migrated && validArrangement(migrated, result.obstacles))
-      layout.slots = migrated.map(({ id, x, y }) => ({ id, x, y }));
+      layout.slots = migrated.map(({ id, x, y, direction }) => ({
+        id,
+        x,
+        y,
+        ...(direction === undefined ? {} : { direction }),
+      }));
   }
   return result.buildings.filter((b, i) => b.x !== original[i].x || b.y !== original[i].y).length;
 }

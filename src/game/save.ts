@@ -1,9 +1,13 @@
+import { validDirection } from './air-control-stats';
+import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
 import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
-import { BUILDINGS, MAX_TROOP_LEVEL, SPELL_KEYS, TROOP_KEYS } from './data';
+import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
+import { expandArmyRoster } from './army';
+import { MAX_SPELL_LEVEL } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 function finite(v: unknown) {
@@ -27,9 +31,12 @@ const QUEST_IDS = [
 export function migrateSave(input: unknown): unknown {
   if (!input || typeof input !== 'object') return input;
   const raw = input as { version?: unknown };
-  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3) return input;
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4)
+    return input;
   const s = structuredClone(input) as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
-  const version: GridVersion = raw.version === 3 ? 3 : 2;
+  const version: GridVersion = raw.version === 4 ? 4 : raw.version === 3 ? 3 : 2;
+  expandArmyRoster(s);
+  if (version === 4) return validateVersion(s, version) ? s : input;
   const record = (value: unknown) =>
     value && typeof value === 'object' ? (value as Record<string, number>) : undefined;
   const army = record(s.army);
@@ -148,7 +155,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (
     s.troopLevels !== undefined &&
     (!armyRecord(s.troopLevels) ||
-      TROOP_KEYS.some((k) => s.troopLevels![k] < 1 || s.troopLevels![k] > MAX_TROOP_LEVEL))
+      TROOP_KEYS.some((k) => s.troopLevels![k] < 1 || s.troopLevels![k] > maxTroopLevel(k)))
   )
     return false;
   if (s.lastArmy !== undefined && !armyRecord(s.lastArmy)) return false;
@@ -231,9 +238,17 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (
     s.research !== undefined &&
     (!s.research ||
-      !TROOP_KEYS.includes(s.research.kind) ||
+      !(isSpellKind(s.research.kind) || TROOP_KEYS.includes(s.research.kind)) ||
       !finite(s.research.end) ||
-      (s.troopLevels?.[s.research.kind] ?? 1) >= MAX_TROOP_LEVEL)
+      (isSpellKind(s.research.kind)
+        ? (s.spellLevels?.[s.research.kind] ?? 1) >= MAX_SPELL_LEVEL
+        : (s.troopLevels?.[s.research.kind] ?? 1) >= maxTroopLevel(s.research.kind)))
+  )
+    return false;
+  if (
+    s.spellLevels !== undefined &&
+    (!spellRecord(s.spellLevels) ||
+      SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > MAX_SPELL_LEVEL))
   )
     return false;
   const ids = new Set<number>();
@@ -250,6 +265,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       b.y < 0 ||
       b.x + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
       b.y + footprintSize(b.kind, BUILDINGS[b.kind].size, version) > gridSize(version) ||
+      !validDirection(b.direction) ||
+      !validSkeletonMode(b.skeletonMode) ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
       b.level > BUILDINGS[b.kind].maxLevel ||
@@ -291,6 +308,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           l.slots.some(
             (v) =>
               !v ||
+              !validDirection(v.direction) ||
+              !validSkeletonMode(v.skeletonMode) ||
               !Number.isInteger(v.id) ||
               !Number.isInteger(v.x) ||
               !Number.isInteger(v.y) ||

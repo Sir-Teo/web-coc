@@ -1,3 +1,9 @@
+import { teslaTexture, teslaAsset } from './tesla-art';
+import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
+import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
+import type { SkeletonMode } from './skeleton-stats';
+import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
+import { SEEKING_MINE, SWEEPER, SWEEPER_LEVELS, sweeperStats } from './air-control-stats';
 import { campArt, campAsset, campTexture } from './camp-art';
 import { CAMP_LEVELS, CAMP_COUNTS, campProgression } from './camp-stats';
 import { defenseProgression, DEFENSE_PROGRESSION, DEFENSE_WEAPONS } from './defense-progression';
@@ -6,6 +12,14 @@ import { mortarAsset, mortarTexture } from './mortar-art';
 import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS, WALL_COUNTS } from './wall-stats';
 import { BUILDING_LEVELS } from './progression';
+import { troopProgression } from './troop-progression';
+import {
+  spellProgression,
+  HEAL_PULSES,
+  SPELL_PULSE_INTERVAL,
+  RAGE_PULSES,
+} from './spell-progression';
+import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
   | 'herohall'
   | 'darkdrill'
@@ -22,6 +36,11 @@ export type BuildingKind =
   | 'builder'
   | 'mortar'
   | 'airdefense'
+  | 'airsweeper'
+  | 'tesla'
+  | 'bombtower'
+  | 'skeletontrap'
+  | 'seekingairmine'
   | 'laboratory'
   | 'spellfactory'
   | 'wizardtower'
@@ -31,8 +50,18 @@ export type BuildingKind =
   | 'springtrap'
   | 'wall';
 export type TroopKind =
-  'swordsman' | 'archer' | 'giant' | 'wizard' | 'balloon' | 'goblin' | 'wallbreaker';
+  | 'swordsman'
+  | 'archer'
+  | 'giant'
+  | 'wizard'
+  | 'balloon'
+  | 'goblin'
+  | 'wallbreaker'
+  | 'healer'
+  | 'dragon'
+  | 'pekka';
 export type SpellKind = 'rage' | 'heal' | 'lightning';
+export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
 export type Targets = 'ground' | 'air' | 'both';
@@ -65,6 +94,8 @@ export interface BuildingDef {
     damage: number;
     targets: 'ground' | 'air';
     springCapacity?: number;
+    minHousing?: number;
+    homingSpeed?: number;
   };
   singleArtwork?: boolean;
 }
@@ -72,7 +103,25 @@ const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export const MAX_TOWNHALL = 8;
 /** Local research roster currently supports five troop levels. */
 export const MAX_TROOP_LEVEL = 5;
+export const maxTroopLevel = (kind: TroopKind) =>
+  kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  skeletontrap: {
+    name: 'Skeleton Trap',
+    description:
+      'Releases defending Skeletons to distract attackers. Switch between ground and air mode before battle.',
+    size: 1,
+    width: 54,
+    hp: 1,
+    cost: 6000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 2,
+    available: [0, 0, 0, 0, 0, 0, 0, 2],
+    build: 0,
+    singleArtwork: true,
+    trap: { trigger: 5, radius: 0, delay: 0.6, damage: 0, targets: 'ground', minHousing: 1 },
+  },
   herohall: {
     name: 'Hero Hall',
     description:
@@ -188,13 +237,13 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description: 'Train your troops here. Prepare troops instantly, ready for your next attack.',
     size: 3,
     width: 134,
-    hp: 850,
-    cost: 4500,
+    hp: FACILITY_LEVELS.barracks[0].hp,
+    cost: FACILITY_LEVELS.barracks[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 10,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
-    build: 120,
+    available: FACILITY_COUNTS.barracks,
+    build: FACILITY_LEVELS.barracks[0].seconds,
   },
   cannon: {
     name: 'Cannon',
@@ -288,31 +337,111 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     ...DEFENSE_WEAPONS.airdefense,
     targets: 'air',
   },
+  airsweeper: {
+    name: 'Air Sweeper',
+    description:
+      'Blows flying enemies backward without dealing damage. Rotate its nozzle to cover an approach; troops behind it and inside its blind spot are safe.',
+    size: 2,
+    width: 94,
+    hp: SWEEPER_LEVELS[0].hp,
+    cost: SWEEPER_LEVELS[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 4,
+    available: [0, 0, 0, 0, 0, 1, 1, 1],
+    build: SWEEPER_LEVELS[0].seconds,
+    range: SWEEPER.range,
+    minRange: SWEEPER.minRange,
+    rate: SWEEPER.rate,
+    targets: 'air',
+    singleArtwork: true,
+  },
+  bombtower: {
+    name: 'Bomb Tower',
+    description:
+      'Throws bombs at nearby ground troops. When destroyed, a larger bomb explodes after one second, damaging enemies still nearby.',
+    size: 3,
+    width: 130,
+    hp: DEFENSE_PROGRESSION.bombtower[0].hp,
+    cost: DEFENSE_PROGRESSION.bombtower[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 2,
+    available: [0, 0, 0, 0, 0, 0, 0, 1],
+    build: DEFENSE_PROGRESSION.bombtower[0].seconds,
+    damage: 26.4,
+    ...DEFENSE_WEAPONS.bombtower,
+    targets: 'ground',
+    singleArtwork: true,
+  },
+  tesla: {
+    name: 'Hidden Tesla',
+    description:
+      'Stays hidden until an enemy comes within 6 tiles or destruction reaches 51%. Fires rapid electrical bolts at ground and air troops.',
+    size: 2,
+    width: 104,
+    hp: DEFENSE_PROGRESSION.tesla[0].hp,
+    cost: DEFENSE_PROGRESSION.tesla[0].cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 6,
+    available: [0, 0, 0, 0, 0, 0, 2, 3],
+    build: DEFENSE_PROGRESSION.tesla[0].seconds,
+    damage: 20.4,
+    ...DEFENSE_WEAPONS.tesla,
+    targets: 'both',
+    singleArtwork: true,
+  },
+  seekingairmine: {
+    name: 'Seeking Air Mine',
+    description:
+      'A hidden homing mine that strikes one air troop for heavy damage. Requires at least 5 housing spaces to trigger, including Balloons, Healers and Dragons.',
+    size: 1,
+    width: 44,
+    hp: 1,
+    cost: 12000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 1,
+    available: [0, 0, 0, 0, 0, 0, 1, 2],
+    build: 0,
+    singleArtwork: true,
+    trap: {
+      trigger: 4,
+      radius: 0,
+      delay: SEEKING_MINE.delay,
+      damage: 1500,
+      targets: 'air',
+      minHousing: SEEKING_MINE.minHousing,
+      homingSpeed: SEEKING_MINE.speed,
+    },
+  },
   laboratory: {
     name: 'Laboratory',
     description: 'Research permanent troop upgrades. Higher levels unlock stronger troops.',
     size: 3,
     width: 122,
-    hp: 950,
-    cost: 15000,
+    hp: FACILITY_LEVELS.laboratory[0].hp,
+    cost: FACILITY_LEVELS.laboratory[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 6,
-    available: [0, 1, 1, 1, 1, 1, 1, 1],
-    build: 180,
+    available: FACILITY_COUNTS.laboratory,
+    build: FACILITY_LEVELS.laboratory[0].seconds,
   },
   spellfactory: {
     name: 'Spell Factory',
-    description: 'Brews battle spells. Each level adds two housing spaces for battle spells.',
+    description:
+      'Prepares spells instantly. Upgrades unlock new spells and increase spell housing.',
     size: 3,
     width: 122,
-    hp: 900,
-    cost: 18000,
+    hp: FACILITY_LEVELS.spellfactory[0].hp,
+    cost: FACILITY_LEVELS.spellfactory[0].cost,
     resource: 'elixir',
     category: 'Army',
     maxLevel: 5,
-    available: [0, 1, 1, 1, 1, 1, 1, 1],
-    build: 240,
+    available: FACILITY_COUNTS.spellfactory,
+    build: FACILITY_LEVELS.spellfactory[0].seconds,
   },
   wizardtower: {
     name: 'Wizard Tower',
@@ -455,7 +584,7 @@ export interface TroopDef {
   space: number;
   time: number;
   width: number;
-  /** Seconds for the first laboratory research. Later levels scale from this. */
+  /** Seconds for the first laboratory research. Each upgrade uses its explicit level record. */
   research: number;
   /** Flying troops ignore walls and pathing, and only air-capable defences hit them. */
   flying?: true;
@@ -466,133 +595,198 @@ export interface TroopDef {
   /** Damage dealt to nearby buildings when this troop is destroyed. */
   deathDamage?: number;
   deathRadius?: number;
+  /** Friendly ground support; never attacks buildings. */
+  healer?: boolean;
+  heal?: number;
 }
 export const TROOPS: Record<TroopKind, TroopDef> = {
   swordsman: {
     name: 'Barbarian',
     role: 'MELEE',
     description: 'Fearless frontline fighters. Best deployed in a group.',
-    hp: 200,
-    damage: 25,
-    speed: 1.45,
-    range: 1,
-    rate: 0.8,
+    hp: troopProgression('swordsman', 1)!.hp,
+    damage: troopProgression('swordsman', 1)!.dps,
+    speed: 2.2,
+    range: 0.4,
+    rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 29,
-    research: 300,
+    research: troopProgression('swordsman', 2)!.seconds,
   },
   archer: {
     name: 'Archer',
     role: 'RANGED',
     description: 'Picks off buildings from behind your frontline.',
-    hp: 100,
-    damage: 21,
-    speed: 1.65,
-    range: 4.8,
+    hp: troopProgression('archer', 1)!.hp,
+    damage: troopProgression('archer', 1)!.dps,
+    speed: 3,
+    range: 3.5,
     rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 26,
-    research: 420,
+    research: troopProgression('archer', 2)!.seconds,
   },
   giant: {
     name: 'Giant',
     role: 'TANK',
     description: 'Soaks up damage and targets defensive buildings first.',
-    hp: 1250,
-    damage: 45,
-    speed: 0.95,
-    range: 1.1,
-    rate: 1.5,
+    hp: troopProgression('giant', 1)!.hp,
+    damage: troopProgression('giant', 1)!.dps * 2,
+    speed: 1.5,
+    range: 1,
+    rate: 2,
     cost: 0,
     space: 5,
     time: 0,
     width: 45,
-    research: 900,
+    research: troopProgression('giant', 2)!.seconds,
     prefersDefenses: true,
   },
   wizard: {
     name: 'Wizard',
     role: 'SPLASH',
-    description: 'Hurls fireballs that damage nearby buildings.',
-    hp: 155,
-    damage: 66,
-    speed: 1.35,
-    range: 4.5,
-    rate: 1.6,
-    splash: 3,
+    description: 'Hurls concentrated fireballs with a small splash radius.',
+    hp: troopProgression('wizard', 1)!.hp,
+    damage: troopProgression('wizard', 1)!.dps * 1.5,
+    speed: 2,
+    range: 3,
+    rate: 1.5,
+    splash: 0.3,
     cost: 0,
     space: 4,
     time: 0,
     width: 30,
-    research: 1200,
+    research: troopProgression('wizard', 2)!.seconds,
   },
   balloon: {
     name: 'Balloon',
     role: 'AIR',
     description:
       'Drifts over walls and drops bombs that blast nearby buildings. Only air-targeting defenses can reach it.',
-    hp: 780,
-    damage: 190,
-    speed: 0.62,
-    range: 0.9,
+    hp: troopProgression('balloon', 1)!.hp,
+    damage: troopProgression('balloon', 1)!.dps * 3,
+    speed: 1.25,
+    range: 0.5,
     rate: 3,
     splash: 1.2,
     cost: 0,
     space: 5,
     time: 0,
     width: 50,
-    research: 1500,
+    research: troopProgression('balloon', 2)!.seconds,
     flying: true,
     prefersDefenses: true,
-    deathDamage: 120,
-    deathRadius: 1.8,
+    deathDamage: troopProgression('balloon', 1)!.deathDamage,
+    deathRadius: 1.2,
   },
   goblin: {
     name: 'Goblin',
     role: 'LOOT',
     description:
-      'Sprints for mines, collectors, storages and the Town Hall. Deals double damage to resources.',
-    hp: 95,
-    damage: 22,
-    speed: 2.7,
-    range: 0.8,
-    rate: 0.8,
+      'Sprints for mines, collectors, drills, storages and the Town Hall. Deals double damage to resources.',
+    hp: troopProgression('goblin', 1)!.hp,
+    damage: troopProgression('goblin', 1)!.dps,
+    speed: 4,
+    range: 0.4,
+    rate: 1,
     cost: 0,
     space: 1,
     time: 0,
     width: 28,
-    research: 480,
+    research: troopProgression('goblin', 2)!.seconds,
     prefersResources: true,
   },
   wallbreaker: {
     name: 'Wall Breaker',
     role: 'BREACH',
     description:
-      'Runs at walls protecting buildings and sacrifices itself in a blast. Bombs deal 40× damage to walls.',
-    hp: 110,
-    damage: 20,
-    speed: 2.25,
-    range: 0.7,
+      'Runs at walls protecting buildings and sacrifices itself in a blast. Its attack and death blast both deal 40× damage to walls.',
+    hp: troopProgression('wallbreaker', 1)!.hp,
+    damage: troopProgression('wallbreaker', 1)!.dps,
+    speed: 3,
+    range: 1,
     rate: 1,
     cost: 0,
     space: 2,
     time: 0,
     width: 28,
-    research: 720,
+    research: troopProgression('wallbreaker', 2)!.seconds,
     wallBreaker: true,
-    deathDamage: 8,
-    deathRadius: 1.6,
+    deathDamage: troopProgression('wallbreaker', 1)!.deathDamage,
+    deathRadius: 2,
+  },
+  healer: {
+    name: 'Healer',
+    role: 'SUPPORT',
+    description:
+      'Flies behind ground troops and restores health to their group. Protect her from air defenses.',
+    hp: troopProgression('healer', 1)!.hp,
+    damage: 0,
+    heal: troopProgression('healer', 1)!.heal! * 0.7,
+    speed: 2,
+    range: 4.5,
+    rate: 0.7,
+    splash: 1.5,
+    cost: 0,
+    space: 14,
+    time: 0,
+    width: 42,
+    research: troopProgression('healer', 2)!.seconds,
+    flying: true,
+    healer: true,
+  },
+  dragon: {
+    name: 'Dragon',
+    role: 'AIR SPLASH',
+    description:
+      'Flies over walls and breathes fire onto nearby buildings. A powerful attacker that needs protection from air defenses.',
+    hp: troopProgression('dragon', 1)!.hp,
+    damage: troopProgression('dragon', 1)!.dps * 1.25,
+    speed: 2,
+    range: 2.5,
+    rate: 1.25,
+    splash: 0.3,
+    cost: 0,
+    space: 20,
+    time: 0,
+    width: 64,
+    research: troopProgression('dragon', 2)!.seconds,
+    flying: true,
+  },
+  pekka: {
+    name: 'P.E.K.K.A',
+    role: 'HEAVY MELEE',
+    description:
+      'A heavily armored warrior with devastating sword strikes. Clear a path through walls to keep her moving.',
+    hp: troopProgression('pekka', 1)!.hp,
+    damage: troopProgression('pekka', 1)!.dps * 1.8,
+    speed: 2,
+    range: 0.8,
+    rate: 1.8,
+    cost: 0,
+    space: 25,
+    time: 0,
+    width: 44,
+    research: troopProgression('pekka', 2)!.seconds,
   },
 };
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
-export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7'];
+export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
 export const SPELL_HOTKEYS = ['8', '9', '0'];
 export const isResourceBuilding = (kind: BuildingKind) =>
-  ['townhall', 'goldmine', 'collector', 'goldstorage', 'elixirstorage'].includes(kind);
+  [
+    'townhall',
+    'goldmine',
+    'collector',
+    'goldstorage',
+    'elixirstorage',
+    'darkdrill',
+    'darkstorage',
+  ].includes(kind);
 /** Which resource a building accumulates over time, if any. */
 export const producedResource = (kind: BuildingKind): Resource | null =>
   kind === 'goldmine'
@@ -622,9 +816,9 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     cost: 0,
     space: 2,
     time: 0,
-    radius: 4.4,
-    duration: 12,
-    effect: '+70% damage, +60% speed',
+    radius: 5,
+    duration: RAGE_PULSES * SPELL_PULSE_INTERVAL,
+    effect: '+130% damage · +2.5 tiles/s',
   },
   heal: {
     name: 'Healing Spell',
@@ -633,27 +827,46 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     cost: 0,
     space: 2,
     time: 0,
-    radius: 4,
-    duration: 12,
-    effect: '55 health per second',
+    radius: 5,
+    duration: HEAL_PULSES * SPELL_PULSE_INTERVAL,
+    effect: '615 total healing',
   },
   lightning: {
     name: 'Lightning Spell',
     role: 'DIRECT',
-    description: 'Calls down bolts that damage every building in a small area.',
+    description:
+      'A focused bolt damages and briefly stuns enemies. Town Halls and resource storages are immune.',
     cost: 0,
     space: 1,
     time: 0,
-    radius: 2.3,
+    radius: 2,
     duration: 0,
-    effect: '480 damage instantly',
+    effect: '150 damage · 0.1s stun',
   },
 };
-export const LIGHTNING_DAMAGE = 480;
-export const HEAL_PER_SECOND = 55;
+export function spellStatsAt(kind: SpellKind, level = 1) {
+  const stats = spellProgression(kind, level) ?? spellProgression(kind, 1);
+  return {
+    ...SPELLS[kind],
+    ...stats,
+    effect:
+      kind === 'lightning'
+        ? `${stats.damage} damage · 0.1s stun`
+        : kind === 'heal'
+          ? `${stats.heal * HEAL_PULSES} total healing`
+          : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+  };
+}
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
+export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
+export const LEGACY_TROOP_KEYS = TROOP_KEYS.filter(
+  (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),
+);
 export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
+export const isSpellKind = (kind: unknown): kind is SpellKind =>
+  typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
+export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
   BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
@@ -675,7 +888,11 @@ export const trapStats = (kind: BuildingKind, level: number) => {
 /** Level at which a structure switches to its distinct late-game artwork. */
 export const TIER3_LEVEL = 5;
 /** Shared by placed buildings and placement previews, including legacy art fallbacks. */
-export const buildingTexture = (kind: BuildingKind, level = 1) => {
+export const buildingTexture = (kind: BuildingKind, level = 1, direction = 0) => {
+  if (kind === 'skeletontrap') return skeletonTrapTexture();
+  if (kind === 'bombtower') return bombTowerTexture(level);
+  if (kind === 'tesla') return teslaTexture(level);
+  if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'wall') return wallTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
   if (kind === 'camp') return campTexture(level);
@@ -684,15 +901,22 @@ export const buildingTexture = (kind: BuildingKind, level = 1) => {
 const ENVIRONMENT = new Set(['wall', 'trees', 'rocks', 'flag']);
 const ORIGINAL_ART = new Set(['airdefense', 'spellfactory', 'balloon']);
 // Keep the persisted swordsman key in armies, research, presets and replay actions.
-const artName = (kind: string) => kind === 'swordsman'
-  ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
+const artName = (kind: string) =>
+  kind === 'swordsman' ? 'barbarian-v1' : `${kind}${ORIGINAL_ART.has(kind) ? '-v2' : ''}`;
 export const walkAsset = (kind: string) => `/assets/characters/walk/${artName(kind)}.webp`;
-export const asset = (kind: string, level = 1) => {
+export const asset = (kind: string, level = 1, skeletonMode: SkeletonMode = 'ground') => {
+  if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode);
+  if (kind === 'bombtower') return bombTowerAsset(level);
+  if (kind === 'tesla') return teslaAsset(level);
+  if (kind === 'airsweeper') return sweeperAsset(level);
+  if (kind === 'seekingairmine') return mineAsset();
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king.webp';
-  if (kind in SPELLS) return `/assets/spells/${kind}.webp`;
+  if (LATE_TROOP_KEYS.includes(kind as (typeof LATE_TROOP_KEYS)[number]))
+    return `/assets/characters/${kind}-v1.webp`;
+  if (kind in SPELLS) return `/assets/spells/${kind}-v2.webp`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
     return `/assets/buildings/tier3/${artName(kind)}.webp`;
   const folder =
@@ -706,6 +930,8 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.seconds : undefined) ??
+  facilityProgression(kind, level + 1)?.seconds ??
   campProgression(kind, level + 1)?.seconds ??
   trapProgression(kind, level + 1)?.seconds ??
   defenseProgression(kind, level + 1)?.seconds ??
@@ -715,6 +941,8 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? sweeperStats(level).hp : undefined) ??
+  facilityProgression(kind, level)?.hp ??
   campProgression(kind, level)?.hp ??
   defenseProgression(kind, level)?.hp ??
   (kind === 'wall'
@@ -722,13 +950,37 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.cost : undefined) ??
+  facilityProgression(kind, level + 1)?.cost ??
   campProgression(kind, level + 1)?.cost ??
   trapProgression(kind, level + 1)?.cost ??
   defenseProgression(kind, level + 1)?.cost ??
   (kind === 'wall'
     ? (WALL_LEVELS[level]?.cost ?? 0)
     : Math.floor(BUILDINGS[kind].cost * Math.pow(1.85, level)));
-export const researchSeconds = (kind: TroopKind, level: number) => TROOPS[kind].research * level;
+/** Shared native current/preview stats for every supported troop level. */
+export const troopStatsAt = (kind: TroopKind, level: number) => {
+  const safeLevel = Math.min(maxTroopLevel(kind), Math.max(1, Math.floor(level) || 1));
+  const d = TROOPS[kind],
+    audited = troopProgression(kind, safeLevel)!;
+  return {
+    ...d,
+    hp: audited.hp,
+    damage: audited.dps * d.rate,
+    heal: audited.heal === undefined ? undefined : audited.heal * d.rate,
+    deathDamage: audited.deathDamage,
+  };
+};
+/** Requirements/cost/duration to move from the current level to the next. */
+export const researchLaboratory = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.laboratory ?? Infinity;
+export const researchLevelForLab = (kind: TroopKind, laboratory: number) => {
+  let level = 1;
+  while (level < maxTroopLevel(kind) && researchLaboratory(kind, level) <= laboratory) level++;
+  return level;
+};
+export const researchSeconds = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.seconds ?? 0;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
   const audited = defenseProgression(kind, level);
@@ -739,18 +991,8 @@ export const defenseDamage = (kind: BuildingKind, level: number) => {
 export const defenseDps = (kind: BuildingKind, level: number) =>
   defenseProgression(kind, level)?.dps ??
   (BUILDINGS[kind].rate ? defenseDamage(kind, level) / BUILDINGS[kind].rate! : 0);
-export const researchCost = (kind: TroopKind, level: number) => {
-  const base = {
-    swordsman: 6000,
-    archer: 8000,
-    giant: 12000,
-    wizard: 15000,
-    balloon: 18000,
-    goblin: 7000,
-    wallbreaker: 10000,
-  };
-  return base[kind] * level;
-};
+export const researchCost = (kind: TroopKind, level: number) =>
+  troopProgression(kind, level + 1)?.cost ?? 0;
 /**
  * Gem prices follow the Clash of Clans shape: a minute is trivial, an hour is
  * cheap, and a multi-hour upgrade is a real decision.

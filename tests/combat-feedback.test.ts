@@ -47,7 +47,9 @@ describe('combat feedback comes from actual attacks', () => {
       toX: kind === 'balloon' ? 10 : 12,
       toY: kind === 'balloon' ? 11 : 12,
     });
-    for (let i = 0; i < 8; i++) m.step(0.05);
+    const impact = m.battle!.projectiles?.[0]?.impact;
+    if (impact !== undefined) while (m.battle!.elapsed < impact + 1e-6) m.step(0.05);
+    else for (let i = 0; i < 8; i++) m.step(0.05);
     expect(target.maxHp - target.hp).toBe(m.troopStats(kind).damage);
     expect(effects.filter((e) => e.sourceId === attacker.id && e.type !== 'impact')).toHaveLength(
       1,

@@ -1,0 +1,14 @@
+{
+  "level2": "Use case: precise-object-edit\nAsset type: game sprite sheet, actual transparent alpha, 4 columns x 2 rows.\nInput image: edit target eight-direction level 1 Air Sweeper sheet.\nPrimary request: Upgrade EVERY sprite to level 2. Enlarge the blue nozzle slightly, add a thick decorative blue ring around its mouth, replace tan rope straps holding nozzle with two smooth pale steel brackets. Keep all wood legs and red bellows.\nInvariants: exact same eight orientations in same cell order, 4x2 grid, identical fixed isometric camera and per-cell anchor. Preserve red accordion bellows, silhouette proportions, toy-like polished game render, directional warm upper-left lighting, transparent gutters. All eight sprites show the same level/materials. Do not rotate, rearrange, crop, add labels, ground, shadows outside objects, borders or background. Keep authentic compact defense silhouette.",
+  "level2Alpha": "Use case: background-extraction. Input image: eight-sprite 4x2 game sheet edit target. Remove ALL the gray/white checkerboard background, including in every gap between the legs and around all eight machines. Return actual PNG alpha transparency. The checkerboard is baked pixels and must be removed, not preserved or redrawn. Keep all eight machines, every color, shape, angle, exact cell layout, and material unchanged. No ground, shadow, labels, grid, or new objects. Do not render a transparency-pattern background.",
+  "level3": "Use case: precise-object-edit. This is the accepted level 2 transparent eight-direction Sweeper atlas. Upgrade all eight sprites to level 3 by adding one additional pale steel brace near the foot of each wooden leg and pale steel horizontal reinforcement strips to sides of wooden upper platform. Keep all wood visible, blue nozzle and blue mouth rim unchanged, red bellows unchanged, all poses and 4x2 layout identical. Return ACTUAL TRANSPARENT alpha, do not draw any checkerboard. Background is empty alpha, not a pattern. No shadow outside objects.",
+  "level4": "level-4-final-prompt.txt",
+  "accepted": {
+    "level1": "exec-113233ce-287b-401a-8fb7-931a19e90954",
+    "level2": "exec-46587a39-bfd4-423b-91bd-cfd407956f7a",
+    "level3": "exec-e19cda02-6dc2-44c5-8d97-124158433fa5",
+    "level4": "exec-66bd9624-87bb-4169-baa7-bd5cc7aa66a2",
+    "mine": "exec-89d20dae-7c44-4920-bbb7-5325421ba5a1"
+  },
+  "note": "Only accepted PNGs ship. Other generated candidates had incorrect nozzle color or baked checkerboards."
+}

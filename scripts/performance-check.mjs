@@ -3,6 +3,9 @@ import fs from 'node:fs/promises';
 import { loadavg, availableParallelism } from 'node:os';
 const hostLoadStart = loadavg();
 const metal = process.argv.includes('--metal');
+const armyProfile =
+  process.argv.find((arg) => arg.startsWith('--army='))?.split('=')[1] ?? 'starter';
+if (!['starter', 'mixed'].includes(armyProfile)) throw Error('Use --army=starter or --army=mixed.');
 const density = Number(
   process.argv.find((arg) => arg.startsWith('--density='))?.split('=')[1] ?? 1,
 );
@@ -185,19 +188,57 @@ if (
     scene.sync();
   }, saved);
 }
-await page.evaluate(() => {
+const battleArmy = await page.evaluate(async (armyProfile) => {
   const m = window.__game.model;
+  if (armyProfile === 'mixed') {
+    const { developedSave } = await import('/tests/fixtures/developed-village.ts');
+    const { maxTroopLevel } = await import('/src/game/data.ts');
+    const { settings, tutorial } = m.state;
+    m.state = developedSave();
+    m.state.settings = settings;
+    m.state.tutorial = tutorial;
+    m.townhall.level = 8;
+    m.state.buildings.find((b) => b.kind === 'laboratory').level = 6;
+    m.state.troopLevels = Object.fromEntries(
+      Object.keys(m.state.army).map((k) => [k, maxTroopLevel(k)]),
+    );
+    m.state.army = {
+      healer: 0,
+      dragon: 0,
+      pekka: 0,
+      swordsman: 20,
+      archer: 20,
+      giant: 16,
+      wizard: 14,
+      balloon: 2,
+      goblin: 10,
+      wallbreaker: 2,
+    };
+    m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    if (m.armySize !== 200 || m.capacity !== 200)
+      throw Error('Expected a native 200-space mixed army.');
+  }
+  const composition = { ...m.state.army },
+    housing = m.armySize;
   m.state.settings.sound = false;
   m.startBattle(0);
   for (const k of ['giant', 'wallbreaker', 'swordsman', 'archer', 'wizard', 'balloon', 'goblin']) {
     m.activeTroop = k;
     let i = 0;
     while (m.battle.remaining[k] > 0) {
-      m.deploy(4 + (i % 3) * 0.3, 10 + (i % 4) * 0.5);
+      if (!m.deploy(4 + (i % 3) * 0.3, 10 + (i % 4) * 0.5))
+        throw Error(`Could not deploy ${k} in the performance scenario.`);
       i++;
     }
   }
-});
+  return {
+    profile: armyProfile,
+    composition,
+    housing,
+    deployed: m.battle.units.length,
+    levels: m.battle.troopLevels,
+  };
+}, armyProfile);
 const battle = await measure();
 const report = {
   environment: `Headless Chromium ${browser.version()} on ${process.platform}, ${width}×${height}, ${density}× pixel ratio; not a physical mobile benchmark`,
@@ -222,6 +263,12 @@ const report = {
   ...(quadComparison ? { quadComparison } : {}),
   ...(fieldComparison ? { fieldComparison } : {}),
   battle,
+  battleArmy: {
+    ...battleArmy,
+    living: await page.evaluate(
+      () => window.__game.model.battle.units.filter((u) => u.hp > 0).length,
+    ),
+  },
 };
 await fs.writeFile('output/playtest/performance.json', JSON.stringify(report, null, 2));
 console.log(report);

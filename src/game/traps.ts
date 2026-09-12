@@ -1,6 +1,8 @@
 import { BUILDINGS, TROOPS, springCapacity, trapDamage, trapStats } from './data';
 import type { Battle, FX, Unit } from './model';
 import { SPRING_AIRTIME } from './trap-stats';
+import { SKELETON_TRAP, skeletonCount } from './skeleton-stats';
+import { spawnSkeleton } from './defenders';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -9,6 +11,7 @@ export interface TrapState {
   targetId: number;
   x: number;
   y: number;
+  spawned?: number;
 }
 
 export function springOutcome(housing: number, hp: number, capacity: number, damage: number) {
@@ -21,6 +24,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   for (const trap of battle.buildings) {
     const d = trapStats(trap.kind, trap.level);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
+    const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
     let state = battle.traps[trap.id];
     if (state?.resolved) continue;
     const center = {
@@ -29,8 +33,9 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     };
     const eligible = (u: Unit) =>
       u.hp > 0 &&
+      (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
-      !!TROOPS[u.kind].flying === (d.targets === 'air');
+      !!TROOPS[u.kind].flying === (mode === 'air');
     if (!state) {
       const nearby = battle.units.filter(
         (u) => eligible(u) && Math.hypot(u.x - center.x, u.y - center.y) <= d.trigger,
@@ -57,9 +62,49 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
           type: 'trap',
           ...center,
           text: BUILDINGS[trap.kind].name,
-          color: d.targets === 'air' ? 0xff746c : 0xffd175,
+          color: mode === 'air' ? 0xff746c : 0xffd175,
         });
       changed = true;
+    }
+    if (trap.kind === 'skeletontrap') {
+      const count = skeletonCount(trap.level);
+      while ((state.spawned ?? 0) < count) {
+        const index = state.spawned ?? 0,
+          at = state.activatedAt + SKELETON_TRAP.firstSpawn + index * SKELETON_TRAP.spawnInterval;
+        if (at > battle.elapsed + 1e-9) break;
+        spawnSkeleton(battle, trap, at, index);
+        state.spawned = index + 1;
+        changed = true;
+      }
+      if (state.spawned === count) state.resolved = true;
+      continue;
+    }
+    if (d.homingSpeed) {
+      // A mine follows one live air target; loss of that target consumes the shot.
+      const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
+      if (!target) {
+        state.resolved = true;
+        changed = true;
+        continue;
+      }
+      const flightDt = Math.min(dt, Math.max(0, battle.elapsed - state.activatedAt - d.delay));
+      if (flightDt <= 0) continue;
+      const x = target.x - state.x,
+        y = target.y - state.y;
+      const distance = Math.hypot(x, y),
+        travel = d.homingSpeed * flightDt;
+      if (distance > travel + 1e-9) {
+        state.x += (x / distance) * travel;
+        state.y += (y / distance) * travel;
+        continue;
+      }
+      state.x = target.x;
+      state.y = target.y;
+      target.hp -= trapDamage(trap.kind, trap.level);
+      state.resolved = true;
+      changed = true;
+      effect({ type: 'blast', x: state.x, y: state.y, radius: 0.6, toAir: true, color: 0xff3c46 });
+      continue;
     }
     if (d.targets === 'air') {
       const target = battle.units.find((u) => u.id === state.targetId);

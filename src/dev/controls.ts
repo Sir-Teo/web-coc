@@ -2,13 +2,13 @@ import { GameModel, makeBuilding, type Save } from '../game/model';
 import {
   BUILDINGS,
   buildingHp,
-  MAX_TROOP_LEVEL,
+  maxTroopLevel,
   SPELL_KEYS,
   TROOP_KEYS,
   type TroopKind,
   type SpellKind,
 } from '../game/data';
-import { validateSave } from '../game/save';
+import { migrateSave, validateSave } from '../game/save';
 
 const balances = ['gold', 'elixir', 'dark', 'gems'] as const;
 type Balance = (typeof balances)[number];
@@ -24,7 +24,8 @@ export class DeveloperControls {
     private model: GameModel,
     checkpoint?: Save,
   ) {
-    this.saved = structuredClone(checkpoint && validateSave(checkpoint) ? checkpoint : model.state);
+    const restored = migrateSave(checkpoint);
+    this.saved = structuredClone(restored && validateSave(restored) ? restored : model.state);
   }
   private edit(change: (draft: GameModel) => void) {
     if (this.model.battle) throw Error('Return home before editing the village.');
@@ -116,7 +117,7 @@ export class DeveloperControls {
   maxResearch() {
     this.edit((m) => {
       m.state.troopLevels = Object.fromEntries(
-        TROOP_KEYS.map((k) => [k, MAX_TROOP_LEVEL]),
+        TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),
       ) as Record<TroopKind, number>;
       delete m.state.research;
     });

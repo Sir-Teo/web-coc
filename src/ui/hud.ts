@@ -1,4 +1,17 @@
+import { sweeperStats } from '../game/air-control-stats';
+import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
+import { spellFactoryCapacity } from '../game/facility-progression';
+import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
+import { SKELETON_TRAP, skeletonCount, skeletonStats } from '../game/skeleton-stats';
+import {
+  MAX_SPELL_LEVEL,
+  SPELL_LEVELS,
+  HEAL_PULSES,
+  HEAL_HERO_MULTIPLIER,
+  SPELL_PULSE_INTERVAL,
+  RAGE_LINGER,
+} from '../game/spell-progression';
 import { OBSTACLES } from '../game/obstacles';
 import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
@@ -12,17 +25,21 @@ import {
   BUILDINGS,
   buildingHp,
   TROOPS,
+  TROOP_KEYS,
   SPELLS,
   TROOP_HOTKEYS,
   SPELL_HOTKEYS,
   CAMPAIGN,
-  MAX_TROOP_LEVEL,
+  maxTroopLevel,
+  researchLaboratory,
+  researchLevelForLab,
   asset,
   defenseDamage,
   defenseDps,
   trapDamage,
   trapStats,
   isTrap,
+  isSpellKind,
   springCapacity,
   unlockTownHall,
   storageCapacity,
@@ -31,6 +48,7 @@ import {
   type BuildingKind,
   type TroopKind,
   type SpellKind,
+  type ResearchKind,
 } from '../game/data';
 import { GameModel, formatTime, BATTLE_SECONDS, type Building } from '../game/model';
 import { VillageScene } from '../game/scene';
@@ -49,6 +67,7 @@ type Panel =
   | 'layouts'
   | 'surrender'
   | 'troop-info'
+  | 'spell-info'
   | 'army-presets'
   | 'battle-log'
   | null;
@@ -72,32 +91,73 @@ const pct = (v: number) => `${Math.max(0, Math.min(100, Number.isNaN(v) ? 0 : v)
 /** The one place that says what a building level actually buys you. */
 function statRows(kind: BuildingKind, level: number): [string, string, string][] {
   const d = BUILDINGS[kind];
-  const rows: [string, string, string][] = [
-    ['Heart', 'Hitpoints', n(buildingHp(kind, level))],
-  ];
+  const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
   const trap = trapStats(kind, level);
-  if (trap) {
+  if (trap && kind !== 'skeletontrap') {
     rows.length = 0;
     rows.push(['Swords', 'Damage', n(trapDamage(kind, level))]);
     rows.push(['Radar', 'Trigger radius', `${trap.trigger} tile${trap.trigger === 1 ? '' : 's'}`]);
     if (trap.springCapacity)
       rows.push(['Users', 'Spring capacity', `${springCapacity(level)} spaces`]);
-    else rows.push(['Target', 'Blast radius', `${trap.radius} tiles`]);
-    rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
+    else if (!trap.homingSpeed) rows.push(['Target', 'Blast radius', `${trap.radius} tiles`]);
+    if (trap.homingSpeed)
+      rows.push(
+        ['Target', 'Damage type', 'Single target'],
+        ['Gauge', 'Flight speed', `${trap.homingSpeed} tiles/s`],
+        ['Users', 'Minimum housing', `${trap.minHousing} spaces`],
+      );
+    if (!trap.homingSpeed)
+      rows.push(['Clock3', 'Fuse / flight', trap.delay ? `${trap.delay}s` : 'Instant']);
     rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
+  if (kind === 'skeletontrap') {
+    const skeleton = skeletonStats('ground');
+    rows.length = 0;
+    rows.push(
+      ['Users', 'Skeletons', String(skeletonCount(level))],
+      ['Heart', 'Skeleton hitpoints', String(skeleton.hp)],
+      ['Swords', 'Damage per second', String(skeleton.dps)],
+      ['Swords', 'Damage per hit', String(skeleton.damage)],
+      ['Gauge', 'Attack speed', `${skeleton.rate}s`],
+      ['Radar', 'Trigger radius', `${SKELETON_TRAP.trigger} tiles`],
+      ['Clock3', 'First spawn', `${SKELETON_TRAP.firstSpawn}s`],
+      ['Clock3', 'Between spawns', `${SKELETON_TRAP.spawnInterval}s`],
+      ['Radar', 'Targets', 'Ground or air'],
+    );
+  }
+  if (kind === 'airsweeper')
+    rows.push(
+      ['Wind', 'Push strength', `${sweeperStats(level).push.toFixed(1)} tiles`],
+      ['Target', 'Range', '1–15 tiles'],
+      ['Gauge', 'Attack speed', '5s'],
+      ['Radar', 'Targets', 'Air only'],
+      ['RotateCw', 'Rotation', '8 directions'],
+    );
   if (d.damage) {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
     rows.push(['Target', 'Range', `${d.minRange ? `${d.minRange}–` : ''}${d.range} tiles`]);
     rows.push(['Gauge', 'Attack speed', `${d.rate}s`]);
-    if (d.splash) rows.push(['Sparkles', 'Splash radius', `${d.splash} tile${d.splash === 1 ? '' : 's'}`]);
+    if (d.splash)
+      rows.push(['Sparkles', 'Splash radius', `${d.splash} tile${d.splash === 1 ? '' : 's'}`]);
     rows.push([
       'Radar',
       'Targets',
       d.targets === 'air' ? 'Air only' : d.targets === 'ground' ? 'Ground only' : 'Ground & air',
     ]);
   }
+  if (kind === 'bombtower')
+    rows.push(
+      ['Swords', 'Death damage', n(bombTowerDeathDamage(level))],
+      ['Target', 'Death blast radius', `${BOMB_TOWER.deathRadius} tiles`],
+      ['Clock3', 'Death fuse', `${BOMB_TOWER.deathDelay}s`],
+    );
+  if (kind === 'tesla')
+    rows.push(
+      ['Radar', 'Reveal radius', '6 tiles'],
+      ['Eye', 'Automatic reveal', '51% destruction'],
+      ['Target', 'Damage type', 'Single target'],
+    );
   if (kind === 'goldmine' || kind === 'collector')
     rows.push(
       ['Timer', 'Production', `${3 * level} / second`],
@@ -114,13 +174,20 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
   if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
-  if (kind === 'spellfactory') rows.push(['Sparkles', 'Spell housing', String(level * 2)]);
-  if (kind === 'laboratory')
+  if (kind === 'spellfactory')
+    rows.push(['Sparkles', 'Spell housing', String(spellFactoryCapacity(level))]);
+  if (kind === 'laboratory') {
     rows.push([
       'FlaskConical',
       'Researches up to',
-      `Troop level ${Math.min(MAX_TROOP_LEVEL, level)}`,
+      `Up to level ${Math.max(...TROOP_KEYS.map((k) => researchLevelForLab(k, level)))} · varies by troop`,
     ]);
+    rows.push([
+      'Sparkles',
+      'Spell research',
+      `Up to level ${Math.max(...SPELL_ORDER.map((k) => SPELL_LEVELS[k].filter((s) => s.laboratory <= level).length))} · varies by spell`,
+    ]);
+  }
   if (kind === 'builder') rows.push(['Hammer', 'Builders', '+1 construction slot']);
   if (kind === 'barracks') rows.push(['Swords', 'Preparation', 'Free and instant']);
   if (kind === 'townhall') rows.push(['LayoutGrid', 'Caps buildings at', `Level ${level + 1}`]);
@@ -168,6 +235,7 @@ export class HUD {
   private drawerPanel: Drawer = null;
   private tab = 'All';
   private inspectedTroop: TroopKind = 'swordsman';
+  private inspectedSpell: SpellKind = 'lightning';
   private presetNames = new Map<number, string>();
   private toastTimer?: ReturnType<typeof setTimeout>;
   private resultShown = false;
@@ -179,6 +247,7 @@ export class HUD {
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
   private focusBefore: HTMLElement | null = null;
+  private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private anchorFrame = 0;
@@ -327,8 +396,13 @@ export class HUD {
     const selected = this.model.selected;
     // Mouse/touch activation does not necessarily focus a button (notably in
     // WebKit). Remember the actual launcher before cancellation can redraw it.
-    if (panel && !this.panel)
+    if (panel && !this.panel) {
       this.focusBefore = this.actionSource ?? (document.activeElement as HTMLElement);
+      const body = document.querySelector('.drawer-body');
+      this.drawerBefore = this.drawerPanel
+        ? { panel: this.drawerPanel, left: body?.scrollLeft ?? 0, top: body?.scrollTop ?? 0 }
+        : null;
+    }
     this.panel = panel;
     if (panel) {
       this.drawerPanel = null;
@@ -337,9 +411,23 @@ export class HUD {
     }
     this.render();
   }
+  private closePanel() {
+    this.panel = null;
+    const previous = this.drawerBefore;
+    this.drawerBefore = null;
+    if (previous && !this.model.battle) this.drawerPanel = previous.panel;
+    this.render();
+    const body = document.querySelector('.drawer-body');
+    if (body && previous) {
+      body.scrollLeft = previous.left;
+      body.scrollTop = previous.top;
+    }
+    this.restoreFocus();
+  }
   private showDrawer(drawer: Drawer) {
     this.drawerPanel = this.drawerPanel === drawer ? null : drawer;
     this.panel = null;
+    this.drawerBefore = null;
     if (this.drawerPanel) this.model.cancel();
     this.render();
   }
@@ -391,13 +479,23 @@ export class HUD {
     const m = this.model;
     switch (verb) {
       case 'close':
-        this.panel = null;
-        this.render();
-        this.restoreFocus();
+        this.closePanel();
         break;
-      case 'wall-move': m.beginWallMove(); break;
-      case 'wall-rotate': m.rotateWallMove(); break;
-      case 'wall-place': if (m.confirmWallMove()) this.audio.play('build'); break;
+      case 'wall-move':
+        m.beginWallMove();
+        break;
+      case 'sweeper-rotate':
+        m.rotateSweeper();
+        break;
+      case 'skeleton-mode':
+        m.toggleSkeletonMode();
+        break;
+      case 'wall-rotate':
+        m.rotateWallMove();
+        break;
+      case 'wall-place':
+        if (m.confirmWallMove()) this.audio.play('build');
+        break;
       case 'wall-row':
         m.selectWallRow();
         break;
@@ -477,11 +575,21 @@ export class HUD {
         this.inspectedTroop = arg as TroopKind;
         this.show('troop-info');
         break;
+      case 'spell-info':
+        this.inspectedSpell = arg as SpellKind;
+        this.show('spell-info');
+        break;
+      case 'research-view':
+        this.show('research');
+        document
+          .querySelector(`[data-research-kind="${arg}"]`)
+          ?.scrollIntoView({ block: 'nearest' });
+        break;
       case 'research':
         this.show('research');
         break;
       case 'research-start':
-        m.researchTroop(arg as TroopKind);
+        m.research(arg as ResearchKind);
         break;
       case 'research-finish':
         m.finishResearch();
@@ -805,9 +913,7 @@ export class HUD {
   private keydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       if (this.panel) {
-        this.panel = null;
-        this.render();
-        this.restoreFocus();
+        this.closePanel();
       } else if (this.drawerPanel) {
         this.drawerPanel = null;
         this.render();
@@ -832,8 +938,18 @@ export class HUD {
     }
     if (this.panel || e.target instanceof HTMLInputElement) return;
     if (this.model.wallMove) {
-      if (e.key.toLowerCase() === 'r') { e.preventDefault(); this.model.rotateWallMove(); }
-      if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); this.action('wall-place'); }
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        this.model.rotateWallMove();
+      }
+      if (e.key === 'Enter' && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        this.action('wall-place');
+      }
+      return;
+    }
+    if (!this.model.battle && e.key.toLowerCase() === 'r' && this.model.rotateSweeper()) {
+      e.preventDefault();
       return;
     }
     if (this.model.replay && e.code === 'Space') {
@@ -846,7 +962,7 @@ export class HUD {
         this.action('hero-select');
         return;
       }
-      const troopIndex = TROOP_HOTKEYS.indexOf(e.key);
+      const troopIndex = TROOP_HOTKEYS.indexOf(e.key.toLowerCase());
       if (troopIndex >= 0) this.action(`troop:${TROOP_ORDER[troopIndex]}`);
       const spellIndex = SPELL_HOTKEYS.indexOf(e.key);
       if (spellIndex >= 0) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
@@ -895,13 +1011,18 @@ export class HUD {
     (document.querySelector('#hud') as HTMLElement).inert = this.scene.uiBlocked;
     (document.querySelector('#context') as HTMLElement).inert = this.scene.uiBlocked;
     (document.querySelector('#drawer') as HTMLElement).inert = this.scene.uiBlocked;
-    const modalMarkup = result
-      ? this.result()
-      : this.panel
-        ? this.modal()
-        : '';
+    const modalMarkup = result ? this.result() : this.panel ? this.modal() : '';
     if (modalMarkup !== this.modalMarkup) {
-      document.querySelector('#modal-root')!.innerHTML = modalMarkup;
+      const root = document.querySelector('#modal-root')!;
+      const updatingOpenDialog =
+        !!this.modalMarkup &&
+        (result ? this.resultShown : this.panel !== null && this.panel === this.lastPanel);
+      root.innerHTML = modalMarkup;
+      // Updating research, settings or results must not fade/shrink an already open dialog.
+      if (updatingOpenDialog)
+        root.querySelectorAll<HTMLElement>('.modal, .modal-backdrop').forEach((el) => {
+          el.style.animation = 'none';
+        });
       this.modalMarkup = modalMarkup;
       document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
     }
@@ -979,7 +1100,11 @@ export class HUD {
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
  <div class="bottom-center">${
    !m.selected && !m.placement && !this.drawerPanel
-     ? `<div class="army-label"><span>${icon('UsersRound', 16)} YOUR ARMY</span><button data-action="army">${m.armySize}/${m.capacity} ${icon('ChevronRight', 14)}</button></div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter((k) => s.army[k] > 0).map((k) => this.troopCard(k, s.army[k], 'army')).join('')}${
+     ? `<div class="army-label"><span>${icon('UsersRound', 16)} YOUR ARMY</span><button data-action="army">${m.armySize}/${m.capacity} ${icon('ChevronRight', 14)}</button></div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
+         (k) => s.army[k] > 0,
+       )
+         .map((k) => this.troopCard(k, s.army[k], 'army'))
+         .join('')}${
          SPELL_ORDER.some((k) => s.spells[k])
            ? SPELL_ORDER.filter((k) => s.spells[k])
                .map((k) => this.spellCard(k, s.spells[k], 'army'))
@@ -1007,10 +1132,10 @@ export class HUD {
   }
   private troopCard(k: TroopKind, count: number, action: string, selected = false) {
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
-    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false"><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
+    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${asset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
   // ------------------------------------------------------- anchored context
@@ -1028,13 +1153,29 @@ export class HUD {
       const d = OBSTACLES[o.kind];
       return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="${asset(o.kind)}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · No builder needed</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
     }
+    const rotate =
+      b.kind === 'airsweeper' && !b.constructing
+        ? button(
+            'sweeper-rotate',
+            `${icon('RotateCw', 21)}<span>Rotate</span>`,
+            'game-btn blue',
+            'aria-label="Rotate Air Sweeper 45 degrees" title="Rotate clockwise · R"',
+          )
+        : b.kind === 'skeletontrap'
+          ? button(
+              'skeleton-mode',
+              `${icon(b.skeletonMode === 'air' ? 'Wind' : 'Swords', 21)}<span>${b.skeletonMode === 'air' ? 'Air' : 'Ground'}</span>`,
+              'game-btn blue',
+              `aria-label="Switch Skeleton Trap to ${b.skeletonMode === 'air' ? 'ground' : 'air'} mode"`,
+            )
+          : '';
     if (m.editing && b.kind !== 'wall')
-      return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div></div>`;
+      return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${
+    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
       b.upgradeEnd
         ? button(
             `finish:${b.id}`,
@@ -1052,7 +1193,8 @@ export class HUD {
   }
 
   private wallMoveContext() {
-    const m = this.model, move = m.wallMove!;
+    const m = this.model,
+      move = m.wallMove!;
     const issue = m.wallPlacementIssue;
     return `<section class="wall-move-toolbar" aria-label="Move wall row">
       <div class="wall-move-heading"><b>Move ${move.source.length} walls</b><span>Tap ground or drag the row · R to rotate</span></div>
@@ -1125,13 +1267,24 @@ export class HUD {
  ${
    m.replay
      ? this.replayControls()
-     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates Iron Fist after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter((k) => b.carriedArmy[k] > 0).map((k) => this.troopCard(k, b.remaining[k], `troop:${k}`, !m.activeHero && !m.activeSpell && m.activeTroop === k)).join('')}${
+     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates Iron Fist after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
+         (k) => b.carriedArmy[k] > 0,
+       )
+         .map((k) =>
+           this.troopCard(
+             k,
+             b.remaining[k],
+             `troop:${k}`,
+             !m.activeHero && !m.activeSpell && m.activeTroop === k,
+           ),
+         )
+         .join('')}${
          SPELL_ORDER.some((k) => b.carried[k])
            ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
                .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
                .join('')}`
            : ''
-       }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`
+       }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, W, E</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`
  }`;
   }
 
@@ -1184,10 +1337,16 @@ export class HUD {
           (k) => k !== 'townhall' && BUILDING_LEVELS[k][i] > (BUILDING_LEVELS[k][i - 1] ?? 0),
         );
         const armyUnlocks = [
-          ...TROOP_ORDER.filter((k) => requiredTownHall('barracks', TROOP_UNLOCK[k]) === th)
-            .map((k) => `<span class="progression-unlock"><img src="${asset(k)}" alt=""><span>${TROOPS[k].name}<small>Barracks ${TROOP_UNLOCK[k]}</small></span></span>`),
-          ...SPELL_ORDER.filter((k) => requiredTownHall('spellfactory', SPELL_UNLOCK[k]) === th)
-            .map((k) => `<span class="progression-unlock"><img src="${asset(k)}" alt=""><span>${SPELLS[k].name}<small>Spell Factory ${SPELL_UNLOCK[k]}</small></span></span>`),
+          ...TROOP_ORDER.filter((k) => requiredTownHall('barracks', TROOP_UNLOCK[k]) === th).map(
+            (k) =>
+              `<span class="progression-unlock"><img src="${asset(k)}" alt=""><span>${TROOPS[k].name}<small>Barracks ${TROOP_UNLOCK[k]}</small></span></span>`,
+          ),
+          ...SPELL_ORDER.filter(
+            (k) => requiredTownHall('spellfactory', SPELL_UNLOCK[k]) === th,
+          ).map(
+            (k) =>
+              `<span class="progression-unlock"><img src="${asset(k)}" alt=""><span>${SPELLS[k].name}<small>Spell Factory ${SPELL_UNLOCK[k]}</small></span></span>`,
+          ),
         ].join('');
         return `<article class="progression-tier ${th === m.townhallLevel ? 'current' : ''}"><h2>Town Hall ${th}${th === m.townhallLevel ? ' · Current' : ''}</h2><div>${changed.map((k) => `<span class="progression-unlock"><img src="${asset(k, BUILDING_LEVELS[k][i])}" alt=""><span>${BUILDINGS[k].name}<small>${(BUILDING_LEVELS[k][i - 1] ?? 0) === 0 ? 'Unlock · ' : ''}Level ${BUILDING_LEVELS[k][i]}</small></span></span>`).join('')}${armyUnlocks}</div></article>`;
       },
@@ -1217,17 +1376,25 @@ export class HUD {
   private army() {
     const m = this.model;
     const upgradingFacilities = (['barracks', 'spellfactory'] as const)
-      .filter((kind) => m.state.buildings.some((b) =>
-        b.kind === kind && !b.constructing && !!b.upgradeEnd))
+      .filter((kind) =>
+        m.state.buildings.some((b) => b.kind === kind && !b.constructing && !!b.upgradeEnd),
+      )
       .map((kind) => BUILDINGS[kind].name);
     const preparationLabel = upgradingFacilities.length
-      ? 'Free &amp; instant during upgrades' : 'Free &amp; instant preparation';
-    const overCapacity = m.armySize + m.queuedSize > m.capacity;
+      ? 'Free &amp; instant during upgrades'
+      : 'Free &amp; instant preparation';
+    const overTroops = m.armySize + m.queuedSize > m.capacity;
+    const overSpells = m.spellHousing + m.queuedSpellHousing > m.spellCapacity;
+    const overCapacity = overTroops || overSpells;
     const preparationNote = overCapacity
-      ? 'Your troops are kept. Deploy or remove troops to make room.'
+      ? overTroops && overSpells
+        ? 'Your army is kept. Deploy or remove troops and spells to make room.'
+        : overSpells
+          ? 'Your army is kept. Deploy or remove spells to make room.'
+          : 'Your troops are kept. Deploy or remove troops to make room.'
       : upgradingFacilities.length
-      ? `${upgradingFacilities.join(' and ')} upgrading`
-      : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
+        ? `${upgradingFacilities.join(' and ')} upgrading`
+        : 'Rage and Healing use 2 spell spaces · Lightning uses 1';
     const troopTile = (k: TroopKind) => {
       const d = m.troopStats(k);
       const unlocked = m.troopUnlocked(k);
@@ -1235,10 +1402,10 @@ export class HUD {
       return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${button(`train:${k}`, unlocked ? `+ Add` : `${icon('LockKeyhole', 13)} Barracks ${TROOP_UNLOCK[k]}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, blocked ? 'disabled' : '')}${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.army[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.army[k]} ready · ${d.space} space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
-      const d = SPELLS[k];
+      const d = m.spellStats(k);
       const unlocked = m.spellUnlocked(k);
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')}</h3><small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${asset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_ORDER.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_ORDER.map(spellTile).join('')}</div><footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`;
   }
@@ -1247,6 +1414,7 @@ export class HUD {
   private modal() {
     const titles: Record<string, string> = {
       'troop-info': TROOPS[this.inspectedTroop].name,
+      'spell-info': SPELLS[this.inspectedSpell].name,
       'army-presets': 'Quick armies',
       'battle-log': 'Battle log',
       heroes: 'Hero Hall',
@@ -1262,6 +1430,7 @@ export class HUD {
     };
     const subtitles: Record<string, string> = {
       'troop-info': 'Know your troops. Plan your attack.',
+      'spell-info': 'Place each spell where it makes the difference.',
       'army-presets': 'Save a composition. Be ready in one tap.',
       'battle-log': 'Your last twenty attacks, kept with your village.',
       heroes: 'A champion for every attack.',
@@ -1286,23 +1455,25 @@ export class HUD {
             ? this.armyPresets()
             : this.panel === 'battle-log'
               ? this.battleLog()
-              : this.panel === 'troop-info'
-                ? this.troopInfo()
-                : this.panel === 'campaign'
-                  ? this.campaign()
-                  : this.panel === 'settings'
-                    ? this.settings()
-                    : this.panel === 'achievements'
-                      ? this.achievements()
-                      : this.panel === 'research'
-                        ? this.research()
-                        : this.panel === 'info'
-                          ? this.info()
-                          : this.panel === 'layouts'
-                            ? this.layoutPanel()
-                            : this.panel === 'surrender'
-                              ? this.surrender()
-                              : this.help();
+              : this.panel === 'spell-info'
+                ? this.spellInfo()
+                : this.panel === 'troop-info'
+                  ? this.troopInfo()
+                  : this.panel === 'campaign'
+                    ? this.campaign()
+                    : this.panel === 'settings'
+                      ? this.settings()
+                      : this.panel === 'achievements'
+                        ? this.achievements()
+                        : this.panel === 'research'
+                          ? this.research()
+                          : this.panel === 'info'
+                            ? this.info()
+                            : this.panel === 'layouts'
+                              ? this.layoutPanel()
+                              : this.panel === 'surrender'
+                                ? this.surrender()
+                                : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -1344,23 +1515,88 @@ export class HUD {
   private troopInfo() {
     const kind = this.inspectedTroop,
       d = this.model.troopStats(kind);
-    const target = d.wallBreaker
-      ? 'Walls (40× damage)'
-      : d.prefersResources
-        ? 'Resources (2× damage)'
-        : d.prefersDefenses
-          ? 'Defenses'
-          : 'Any building';
-    const tactic = d.wallBreaker
-      ? 'Let Giants draw defensive fire first. Wall Breakers seek walls on the way to buildings; their blast opens a gap for the rest of your army.'
-      : d.prefersResources
-        ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
-        : d.flying
-          ? 'Bombs damage nearby buildings when they land. Remove Air Defenses before sending Balloons over the walls.'
+    const target = d.healer
+      ? 'Friendly ground troops'
+      : d.wallBreaker
+        ? 'Walls (40× damage)'
+        : d.prefersResources
+          ? 'Resources (2× damage)'
           : d.prefersDefenses
-            ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
-            : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
-    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats"><div><dt>Unlock requirement</dt><dd>Barracks ${TROOP_UNLOCK[kind]}</dd></div><div><dt>Favorite target</dt><dd>${target}</dd></div><div><dt>Damage per hit</dt><dd>${d.damage}${d.wallBreaker ? ` / ${d.damage * 40} vs walls` : ''}</dd></div><div><dt>Hitpoints</dt><dd>${d.hp}</dd></div><div><dt>Housing space</dt><dd>${d.space}</dd></div><div><dt>Movement</dt><dd>${d.flying ? 'Air · ignores walls' : 'Ground'}</dd></div><div><dt>Attack range</dt><dd>${d.range} tiles</dd></div>${d.splash ? `<div><dt>Attack splash</dt><dd>${d.splash} tiles</dd></div>` : ''}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+            ? 'Defenses'
+            : 'Any building';
+    const tactic = d.healer
+      ? 'Deploy behind a ground army. Healing pulses land where the ally was when cast, restoring nearby ground troops. Heroes receive 55% healing. Additional Healers have diminishing effectiveness; eight or more add no further healing to the same group.'
+      : kind === 'dragon'
+        ? 'Fly over walls and burn clustered buildings. Dragons have no favorite target, so clear outer buildings to guide them toward Air Defenses.'
+        : kind === 'pekka'
+          ? 'Open the walls and funnel this heavy attacker into the base. Support with Healers or spells; P.E.K.K.A has no preferred target or bonus against walls.'
+          : d.wallBreaker
+            ? 'Let Giants draw defensive fire first. Reaching a wall deals both attack and death damage; being defeated on the way deals only death damage. Both deal 40× damage to walls.'
+            : d.prefersResources
+              ? 'Clear a route through the walls, then send Goblins toward storages. Loot is released with each hit, so a quick raid can pay even without a star.'
+              : d.flying
+                ? 'Bombs damage nearby buildings when they land. Remove Air Defenses before sending Balloons over the walls.'
+                : d.prefersDefenses
+                  ? 'Deploy first to draw defensive fire, then send your more fragile troops behind.'
+                  : 'Spread your deployment to avoid mortar splash. Support your frontline with ranged damage and spells.';
+    const rows: [string, string][] = [
+      ['Unlock requirement', `Barracks ${TROOP_UNLOCK[kind]}`],
+      ['Favorite target', target],
+      [
+        d.healer ? 'Healing per second' : 'Damage per second',
+        damageNumber((d.heal ?? d.damage) / d.rate),
+      ],
+      [d.healer ? 'Healing per pulse' : 'Damage per hit', damageNumber(d.heal ?? d.damage)],
+      ['Hitpoints', n(d.hp)],
+      ['Housing space', `${d.space}`],
+      ['Movement', d.flying ? 'Air · ignores walls' : 'Ground'],
+      ['Movement speed', `${d.speed} tiles/s`],
+      [d.healer ? 'Healing range' : 'Attack range', `${d.range} tile${d.range === 1 ? '' : 's'}`],
+      [d.healer ? 'Healing interval' : 'Attack interval', `${d.rate}s`],
+    ];
+    if (d.splash) rows.push([d.healer ? 'Healing radius' : 'Attack splash', `${d.splash} tiles`]);
+    if (d.healer) rows.push(['Hero healing per second', damageNumber((d.heal! / d.rate) * 0.55)]);
+    if (d.deathDamage) {
+      rows.push(['Damage on destruction', damageNumber(d.deathDamage)]);
+      rows.push(['Death blast radius', `${d.deathRadius} tiles`]);
+    }
+    if (d.wallBreaker)
+      rows.push(['Contact damage vs walls', damageNumber((d.damage + (d.deathDamage ?? 0)) * 40)]);
+    return `<div class="modal-body troop-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.troopLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button('army', `${icon('Swords', 18)} Train troops`, 'game-btn green')}</div>`;
+  }
+  private spellInfo() {
+    const kind = this.inspectedSpell,
+      d = this.model.spellStats(kind);
+    const rows: [string, string][] = [
+      ['Unlock requirement', `Spell Factory ${SPELL_UNLOCK[kind]}`],
+      ['Housing space', `${d.space}`],
+      ['Effect radius', `${d.radius} tiles`],
+      ['Targets', kind === 'lightning' ? 'Enemy buildings' : 'Ground and air troops'],
+    ];
+    if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
+    else if (kind === 'heal')
+      rows.push(
+        ['Total troop healing', n(d.heal * HEAL_PULSES)],
+        ['Total hero healing', damageNumber(d.heal * HEAL_PULSES * HEAL_HERO_MULTIPLIER)],
+        ['Healing per pulse', `${d.heal}`],
+        ['Pulses', `${HEAL_PULSES} · every ${SPELL_PULSE_INTERVAL}s`],
+        ['Spell duration', `${damageNumber(d.duration)}s`],
+      );
+    else
+      rows.push(
+        ['Damage increase', `+${d.damageBoost}%`],
+        ['Movement increase', `+${d.speedBoost / 8} tiles/s`],
+        ['Spell duration', `${d.duration}s`],
+        ['Effect lingers', `${RAGE_LINGER}s after the last pulse`],
+        ['Hero effectiveness', '50% of each boost'],
+      );
+    const tactic =
+      kind === 'lightning'
+        ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
+        : kind === 'heal'
+          ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
+          : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
+    return `<div class="modal-body troop-info-body spell-info-body"><div class="troop-info-hero"><img src="${asset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.spellLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button(`research-view:${kind}`, `${icon('FlaskConical', 18)} Research spell`, 'game-btn green')}</div>`;
   }
   private surrender() {
     const b = this.model.battle!;
@@ -1381,7 +1617,7 @@ export class HUD {
         : b.kind === 'spellfactory'
           ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
           : [];
-    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
+    return `<div class="modal-body info-body"><div class="info-hero"><img src="${asset(b.kind, b.level, b.skeletonMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];
@@ -1410,38 +1646,79 @@ export class HUD {
       })
       .join('')}</div>`;
   }
+  private researchCard(kind: ResearchKind) {
+    const m = this.model,
+      spell = isSpellKind(kind);
+    const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
+    const level = m.researchLevel(kind),
+      maximum = isSpellKind(kind) ? MAX_SPELL_LEVEL : maxTroopLevel(kind);
+    const max = level >= maximum,
+      nextLevel = Math.min(level + 1, maximum);
+    const unlocked = spell ? m.spellUnlocked(kind) : m.troopUnlocked(kind);
+    const requiredLab = m.researchLaboratory(kind);
+    const gated = !unlocked || !m.laboratory || m.laboratory.level < requiredLab;
+    const label = max
+      ? '★ Fully researched'
+      : !unlocked
+        ? `Requires ${spell ? `Spell Factory ${SPELL_UNLOCK[kind]}` : `Barracks ${TROOP_UNLOCK[kind]}`}`
+        : gated
+          ? `Requires laboratory ${requiredLab}`
+          : `Research ${elixir} ${n(m.researchCost(kind))}`;
+    let rows: [string, string, string, string][];
+    if (isSpellKind(kind)) {
+      const d = m.spellStats(kind),
+        next = m.spellStats(kind, nextLevel);
+      rows =
+        kind === 'lightning'
+          ? [
+              ['Zap', 'Damage', `${d.damage}`, `${next.damage}`],
+              ['Scan', 'Radius', `${d.radius}`, `${next.radius}`],
+            ]
+          : kind === 'heal'
+            ? [
+                ['Heart', 'Healing', n(d.heal * HEAL_PULSES), n(next.heal * HEAL_PULSES)],
+                ['Scan', 'Radius', `${d.radius}`, `${next.radius}`],
+              ]
+            : [
+                ['Swords', 'Damage', `+${d.damageBoost}%`, `+${next.damageBoost}%`],
+                ['Wind', 'Speed', `+${d.speedBoost / 8}`, `+${next.speedBoost / 8}`],
+              ];
+    } else {
+      const d = m.troopStats(kind),
+        next = m.troopStats(kind, nextLevel);
+      rows = [
+        ['Heart', 'Health', `${d.hp}`, `${next.hp}`],
+        d.healer
+          ? [
+              'HeartPulse',
+              'Healing/s',
+              damageNumber(d.heal! / d.rate),
+              damageNumber(next.heal! / next.rate),
+            ]
+          : ['Swords', 'Damage', `${d.damage}`, `${next.damage}`],
+      ];
+    }
+    return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!m.state.research || m.state.elixir < m.researchCost(kind) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;
+  }
   private research() {
     const m = this.model,
-      lab = m.state.buildings.find((b) => b.kind === 'laboratory' && !b.constructing);
-    const r = m.state.research;
-    return `<div class="modal-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${TROOPS[r.kind].name} research` : 'Make every troop count'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently increases troop health and damage. Upgrade the laboratory to unlock higher levels.'}</p>${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${TROOP_ORDER.map(
-      (k) => {
-        const d = m.troopStats(k),
-          level = m.troopLevel(k),
-          max = level >= MAX_TROOP_LEVEL;
-        const gated = !m.troopUnlocked(k) || !lab || !!lab.upgradeEnd || lab.level <= level;
-        const next = 1 + level * 0.3;
-        const label = max
-          ? '★ Fully researched'
-          : !m.troopUnlocked(k)
-            ? `Requires Barracks ${TROOP_UNLOCK[k]}`
-          : gated
-            ? `Requires laboratory ${level + 1}`
-            : `Research ${elixir} ${n(m.researchCost(k))}`;
-        return `<article class="training-card"><span class="role-tag">LEVEL ${level} OF ${MAX_TROOP_LEVEL}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${asset(k)}" alt=""></div><h3>${d.name}</h3><div class="research-stats"><span>${icon('Heart', 16)} Health <b>${d.hp}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].hp * next)}</em>`}</b></span><span>${icon('Swords', 16)} Damage <b>${d.damage}${max ? '' : ` <em>→ ${Math.round(TROOPS[k].damage * next)}</em>`}</b></span></div>${button(`research-start:${k}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!r || m.state.elixir < m.researchCost(k) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(k))} research · permanent upgrade`}</small></article>`;
-      },
-    ).join(
-      '',
-    )}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
+      lab = m.laboratory,
+      r = m.state.research;
+    const name = r
+      ? isSpellKind(r.kind)
+        ? SPELLS[r.kind].name.replace(' Spell', '')
+        : TROOPS[r.kind].name
+      : '';
+    return `<div class="modal-body research-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
     return `<svg class="campaign-map" viewBox="0 0 30 30" role="img" aria-label="${CAMPAIGN[index].name} base layout"><rect width="30" height="30" rx="3" fill="#637d43"/>${campaignBlueprint(
       index,
     )
-      .filter(([k]) => !isTrap(k))
+      .filter(([k]) => !isTrap(k) && k !== 'tesla')
       .map(
         ([k, x, y]) =>
-          `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : BUILDINGS[k].damage ? '#655666' : '#e0cf97'}"/>`,
+          `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : isDefense(k) ? '#655666' : '#e0cf97'}"/>`,
       )
       .join('')}</svg>`;
   }

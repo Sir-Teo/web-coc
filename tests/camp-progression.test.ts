@@ -147,7 +147,7 @@ it('records native camp health while retaining old snapshots as incompatible sum
   m.startBattle(0, true);
   m.finishBattle();
   const replay = structuredClone(m.state.raidLog![0].replay!);
-  expect(REPLAY_VERSION).toBe(14);
+  expect(replay.version).toBe(REPLAY_VERSION);
   expect(replay.initial.buildings.find((b) => b.kind === 'camp')).toMatchObject({
     hp: 150,
     maxHp: 150,

@@ -66,10 +66,9 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
     launcher.focus();
   });
   launcher.addEventListener('click', open);
-  const run = (fn: () => void, message: string) => {
+  const run = (fn: () => void, message: string, focusTarget: Element | null = document.activeElement) => {
     try {
-      const active = document.activeElement;
-      const focusIndex = Array.from(dialog.querySelectorAll('button, input')).indexOf(active!);
+      const focusIndex = Array.from(dialog.querySelectorAll('button, input')).indexOf(focusTarget!);
       fn();
       render();
       dialog
@@ -82,7 +81,8 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
     }
   };
   dialog.addEventListener('click', (event) => {
-    const action = (event.target as HTMLElement).closest<HTMLElement>('[data-dev]')?.dataset.dev;
+    const control = (event.target as HTMLElement).closest<HTMLElement>('[data-dev]');
+    const action = control?.dataset.dev;
     if (!action) return;
     if (action === 'close') {
       dialog.close();
@@ -122,6 +122,7 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
           : action === 'checkpoint'
             ? 'Checkpoint saved for this tab.'
             : 'Done.',
+        control,
       );
   });
   dialog.addEventListener('submit', (event) => {
@@ -149,7 +150,7 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
           controls.setKingLevel(values.kingLevel);
           break;
       }
-    }, 'Applied.');
+    }, 'Applied.', event.submitter ?? document.activeElement);
   });
   window.addEventListener(
     'keydown',

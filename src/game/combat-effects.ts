@@ -10,7 +10,9 @@ const COLORS: Record<Weapon, number> = {
   rocket: 0xffa94a,
   fireball: 0xff8c32,
   bomb: 0xffb54f,
+  towerbomb: 0xffb54f,
   arcane: 0xcf8dff,
+  healing: 0xffed8a,
 };
 
 /** Short-lived weapon graphics. They never apply damage or mutate the battle. */
@@ -39,10 +41,43 @@ export class CombatEffects {
     this.flights.clear();
   }
 
+  tesla(from: Point, to: Point, seed: number, reduced: boolean) {
+    const g = this.graphic().setData('teslaZap', { from, to });
+    const dx = to.x - from.x,
+      dy = to.y - from.y,
+      length = Math.hypot(dx, dy) || 1;
+    const points = Array.from({ length: 11 }, (_, i) => {
+      const t = i / 10;
+      const offset = i === 0 || i === 10 ? 0 : Math.sin(seed * 0.71 + i * 19.7) * (reduced ? 2 : 7);
+      return {
+        x: from.x + dx * t - (dy / length) * offset,
+        y: from.y + dy * t + (dx / length) * offset,
+      };
+    });
+    for (const [width, color, alpha] of [
+      [9, 0x488eff, 0.15],
+      [4, 0x67d7ff, 0.8],
+      [1.5, 0xf3fcff, 1],
+    ]) {
+      g.lineStyle(width, color, alpha);
+      g.beginPath();
+      g.moveTo(from.x, from.y);
+      for (const point of points.slice(1)) g.lineTo(point.x, point.y);
+      g.strokePath();
+    }
+    g.fillStyle(0xb9eeff, 0.5).fillCircle(to.x, to.y, 4);
+    g.fillStyle(0xffffff).fillCircle(to.x, to.y, 1.8);
+    this.animate({ targets: g, alpha: 0, duration: 180, onComplete: () => this.remove(g) });
+  }
+
   private weaponGraphic(weapon: Weapon, from: Point) {
     const g = this.graphic().setPosition(from.x, from.y).setData('weapon', weapon);
     const color = COLORS[weapon];
-    if (weapon === 'arrow') {
+    if (weapon === 'healing') {
+      g.fillStyle(color, 0.2).fillEllipse(-5, 0, 22, 12);
+      g.fillStyle(color, 0.85).fillCircle(0, 0, 4);
+      g.fillStyle(0xfffff0).fillCircle(0, 0, 2);
+    } else if (weapon === 'arrow') {
       g.lineStyle(2, 0x67442a).lineBetween(-12, 0, 8, 0);
       g.fillStyle(0xdce2d4).fillTriangle(7, -3, 14, 0, 7, 3);
       g.fillStyle(0xffecc3).fillTriangle(-13, -4, -6, 0, -13, 4);
@@ -58,11 +93,11 @@ export class CombatEffects {
       g.fillStyle(color).fillCircle(0, 0, 7);
       g.fillStyle(0xfff4cf).fillCircle(2, -1, 3);
     } else {
-      const radius = weapon === 'bomb' ? 6 : 4;
+      const radius = weapon === 'bomb' || weapon === 'towerbomb' ? 6 : 4;
       g.fillStyle(0x272a2d).fillCircle(0, 0, radius);
       g.lineStyle(1, 0x141619).strokeCircle(0, 0, radius);
       g.fillStyle(0x90918b).fillCircle(-2, -2, 1.5);
-      if (weapon === 'bomb') {
+      if (weapon === 'bomb' || weapon === 'towerbomb') {
         g.lineStyle(2, 0xcda867).lineBetween(0, -6, 3, -9);
         g.fillStyle(0xffd56b).fillCircle(3, -9, 2);
       }
@@ -99,6 +134,28 @@ export class CombatEffects {
     g.fillStyle(0x302b26).fillCircle(0, 0, 5);
     g.lineStyle(1, 0xc59b55).strokeCircle(0, 0, 5);
     g.fillStyle(0xb8b2a3).fillCircle(-1.5, -2, 1.5);
+  }
+
+  /** Fixed-point thrown bomb, with its shadow staying on the ground plane. */
+  poseTowerBomb(id: string, ground: Point, to: Point, muzzle: Point, progress: number) {
+    let g = this.flights.get(id);
+    if (!g) {
+      g = this.graphic().setData('projectileId', id).setData('weapon', 'towerbomb');
+      this.flights.set(id, g);
+    }
+    const x = muzzle.x + (to.x - muzzle.x) * progress;
+    const y = muzzle.y + (to.y - muzzle.y) * progress - Math.sin(progress * Math.PI) * 42;
+    const lift = ground.y + (to.y - ground.y) * progress - y;
+    g.clear().setPosition(x, y).setData('flightProgress', progress);
+    g.fillStyle(0x332b25, 0.22).fillEllipse(0, lift, 13, 6);
+    g.fillStyle(0x20242a).fillCircle(0, 0, 5.5);
+    g.lineStyle(1, 0x131719).strokeCircle(0, 0, 5.5);
+    g.fillStyle(0x858b91).fillCircle(-1.6, -2, 1.5);
+    const angle = -Math.PI / 2 + progress * Math.PI * 2;
+    const fx = Math.cos(angle) * 8,
+      fy = Math.sin(angle) * 8;
+    g.lineStyle(1.6, 0xd2ae66).lineBetween(Math.cos(angle) * 5, Math.sin(angle) * 5, fx, fy);
+    g.fillStyle(0xffd367).fillCircle(fx, fy, 1.7);
   }
 
   retainProjectiles(ids: Set<string>) {
@@ -147,7 +204,12 @@ export class CombatEffects {
     }
   }
 
-  groundBlast(at: Point, radius: number, reduced: boolean, kind: 'bomb' | 'mortar' = 'bomb') {
+  groundBlast(
+    at: Point,
+    radius: number,
+    reduced: boolean,
+    kind: 'bomb' | 'mortar' | 'towerbomb' = 'bomb',
+  ) {
     const g = this.graphic().setDepth(7000).setPosition(at.x, at.y).setData('impact', kind);
     const width = radius * 64 * Math.SQRT2,
       height = width / 2;
@@ -171,12 +233,58 @@ export class CombatEffects {
     });
   }
 
+  breath(from: Point, to: Point, reduced: boolean) {
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const g = this.graphic().setPosition(from.x, from.y).setData('dragonBreath', true);
+    g.setRotation(Math.atan2(to.y - from.y, to.x - from.x));
+    for (const [color, alpha, width, reach] of [
+      [0xf75a24, 0.4, 14, 1],
+      [0xff9d29, 0.95, 9, 0.97],
+      [0xffedbe, 0.95, 4, 0.82],
+    ]) {
+      const plume = [{ x: 0, y: -1 }];
+      for (let i = 1; i <= 9; i++) {
+        const t = i / 10;
+        plume.push({
+          x: length * reach * t,
+          y: -width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.sin(i * 2.7)),
+        });
+      }
+      plume.push({ x: length * reach + width * 0.5, y: 0 });
+      for (let i = 9; i >= 1; i--) {
+        const t = i / 10;
+        plume.push({
+          x: length * reach * t,
+          y: width * (0.15 + t * 0.85) * (0.8 + 0.2 * Math.cos(i * 2.3)),
+        });
+      }
+      g.fillStyle(color, alpha).fillPoints(
+        plume.map((p) => new Phaser.Math.Vector2(p.x, p.y)),
+        true,
+      );
+    }
+    g.fillStyle(0xffc657, 0.75)
+      .fillCircle(length, -4, 5)
+      .fillCircle(length + 3, 4, 4);
+    this.animate({
+      targets: g,
+      alpha: 0,
+      duration: reduced ? 100 : 280,
+      onComplete: () => this.remove(g),
+    });
+  }
+
   impact(weapon: Weapon | 'melee', at: Point, reduced: boolean) {
     const color = weapon === 'melee' ? 0xffe5b7 : COLORS[weapon];
     const explosive =
       weapon === 'bomb' || weapon === 'rocket' || weapon === 'fireball' || weapon === 'arcane';
     const g = this.graphic().setPosition(at.x, at.y).setData('impact', weapon);
-    if (explosive) {
+    if (weapon === 'healing') {
+      g.fillStyle(color, 0.18).fillCircle(0, 0, 13);
+      g.lineStyle(1.5, color, 0.8).strokeEllipse(0, 3, 24, 12);
+      g.fillStyle(0xffffdd, 0.95).fillRoundedRect(-2, -8, 4, 14, 1);
+      g.fillRoundedRect(-7, -3, 14, 4, 1);
+    } else if (explosive) {
       g.fillStyle(color, 0.3).fillCircle(0, 0, 13);
       g.lineStyle(2, color, 0.9).strokeCircle(0, 0, 9);
       g.fillStyle(0xfff1c4).fillCircle(0, 0, 4);

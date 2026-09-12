@@ -2,6 +2,11 @@ import type { BuildingKind } from './data';
 
 /** Modern Home Village values; source reconciliation is documented in docs/TRAP-PROGRESSION.md. */
 export const TRAP_LEVELS = {
+  skeletontrap: [
+    { damage: 0, cost: 6000, seconds: 0 },
+    { damage: 0, cost: 250000, seconds: 18000 },
+  ],
+  seekingairmine: [{ damage: 1500, cost: 12000, seconds: 0 }],
   bomb: [
     { damage: 20, cost: 400, seconds: 0 },
     { damage: 24, cost: 1000, seconds: 60 },
@@ -37,7 +42,12 @@ export const TRAP_LEVELS = {
 } as const;
 
 export function trapProgression(kind: BuildingKind, level: number) {
-  return kind === 'bomb' || kind === 'giantbomb' || kind === 'airbomb' || kind === 'springtrap'
+  return kind === 'skeletontrap' ||
+    kind === 'seekingairmine' ||
+    kind === 'bomb' ||
+    kind === 'giantbomb' ||
+    kind === 'airbomb' ||
+    kind === 'springtrap'
     ? TRAP_LEVELS[kind][level - 1]
     : undefined;
 }

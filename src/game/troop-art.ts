@@ -21,6 +21,9 @@ const profiles: Partial<Record<TroopKind, typeof normal>> = {
   goblin: { ...specialist, frameMs: 100 },
   wallbreaker: { ...specialist, frameMs: 110 },
   balloon: { ...normal, frameMs: 360 },
+  healer: { ...specialist, frameMs: 180, displayScale: 1.6 },
+  dragon: { ...specialist, frameMs: 200, displayScale: 1.6 },
+  pekka: { ...specialist, frameMs: 180, displayScale: 1.5 },
 };
 
 /** Rendering metadata stays separate from troop balance and saved progression. */

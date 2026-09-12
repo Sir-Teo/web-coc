@@ -1,5 +1,13 @@
 # Art direction and generation record
 
+Skeleton Trap coffin states and ground/air skeleton animation sources are retained under `art/source/skeleton-v1/`, with exact built-in generation prompts. `scripts/skeleton-assets.mjs` builds transparent gameplay atlases and supports deterministic `--check`. See [SKELETON-TRAP.md](SKELETON-TRAP.md).
+
+Bomb Tower art retains two tower bases, a four-pose roof Bomber and an exposed destruction bomb under `art/source/bombtower-v1/`, with exact built-in generation prompts. `scripts/bomb-tower-assets.mjs` builds the two base/preview pairs, actor atlas and charge; `--check` verifies deterministic output. See [BOMB-TOWER.md](BOMB-TOWER.md).
+
+Hidden Tesla sprites for levels 1–6 are retained under `art/source/tesla-v1/` with built-in generation prompts and accepted iterations. `scripts/tesla-assets.mjs` builds six transparent 384×512 sprites and verifies repeat builds with `--check`. See [HIDDEN-TESLA.md](HIDDEN-TESLA.md).
+
+Air-control defense art is retained under `art/source/air-control-v1/`: four eight-direction Air Sweeper sheets and armed/flying/spent Seeking Air Mine states. `scripts/air-control-assets.mjs` builds 35 alpha sprites and verifies a repeat build with `--check`. Accepted sprites have real alpha; failed checkerboard candidates were rejected. See [AIR-CONTROL.md](AIR-CONTROL.md).
+
 The prototype Swordsman portrait and walk frames below are superseded by [Barbarian artwork](BARBARIAN-ART.md). Exact built-in generation prompts and retained source renders are in `art/source/barbarian-v1/`.
 
 The original camp atlas tiers described below are superseded by [eight individual Army Camp sprites](CAMP-ART.md), with source renders and exact prompts under `art/source/camp-levels-v1/`.
@@ -84,3 +92,7 @@ The Goblin and Wall Breaker use original transparent sprites generated with the 
 - Lucide supplies interface glyphs; package licenses remain in dependencies. Fonts are distributed with their upstream open font licenses.
 
 Sources stay outside `public/` and `dist/`, so rejected generations and large original PNGs are not downloaded by players.
+
+## Healer, Dragon and P.E.K.K.A
+
+Three generated transparent character sheets supply four-frame atlases and matching portraits. See [LATE-TROOPS.md](LATE-TROOPS.md) for source data, provenance, rendering limits and rebuild instructions, and [the complete prompts](../art/source/late-troops-v1/prompts.json). Run `node scripts/late-troop-assets.mjs --check` to verify all six shipping WebPs against their retained source sheets.

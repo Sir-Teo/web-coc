@@ -34,7 +34,10 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
     [844, 390],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === width, width);
+    await page.waitForFunction(
+      (width) => window.__game.scene.cameras.main.width === Math.floor(width * window.devicePixelRatio),
+      width,
+    );
     const controls = page.getByRole('region', { name: 'Replay playback' });
     for (const control of await controls.locator('button, input').all()) {
       await expect(control).toBeInViewport({ ratio: 1 });

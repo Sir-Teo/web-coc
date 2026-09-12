@@ -69,7 +69,8 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
   await page.locator('[data-action="shop"]').last().click();
   await page.locator('[data-action="tab:Army"]').click();
   await page.waitForTimeout(400);
-  const art = page.locator('[data-drag="barracks"] .shop-tile-art').first();
+  // The village already has its single Barracks; the Laboratory is available at TH5.
+  const art = page.locator('[data-drag="laboratory"] .shop-tile-art').first();
   const box = (await art.boundingBox())!;
   const drop = await page.evaluate(() => window.__game.scene.screenFor(2.5, 4.5));
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -170,7 +171,7 @@ test('mobile portrait preserves playfield and usable menus', async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
-  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(10);
+  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(13);
 });
 test('camera responds to zoom and drag while dialogs block the playfield', async ({ page }) => {
   const before = await page.evaluate(() => window.__game.scene.cameras.main.zoom);
