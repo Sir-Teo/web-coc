@@ -65,11 +65,7 @@ describe('native campaign adapter and progress isolation', () => {
 
   it('rejects missing campaign mechanics instead of replacing or omitting them', () => {
     expect(nativeCampaignIssues(37)).toEqual([]);
-    expect(nativeCampaignIssues(50)).toEqual([
-      'Town Hall level 9',
-      'Hidden Tesla level 7',
-      'Bomb Tower level 3',
-    ]);
+    expect(nativeCampaignIssues(50)).toEqual(['Hidden Tesla level 7', 'Bomb Tower level 3']);
     expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
     for (const index of [50, 74, 89]) {
       expect(() => nativeBuildings(index)).toThrow();

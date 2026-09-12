@@ -1,3 +1,5 @@
+import goblinLevels from '../../reference/goblin-buildings/levels.json';
+import { GOBLIN_BUILDING_ART, goblinBuildingAsset, isGoblinBuilding } from './goblin-building-art';
 import type { BuildingKind } from './data';
 import { PUMPKIN_ART } from './pumpkin-bomb';
 import { SANTA_ART } from './santa-art';
@@ -27,8 +29,8 @@ export const NPC_BUILDINGS = {
     globalId: 1000001,
     kind: 'townhall',
     name: 'Goblin Town Hall',
-    hp: [400, 800, 1600, 2000, 2400, 2800, 3300, 3900],
-    texture: 'goblin-townhall-v1',
+    hp: goblinLevels['goblin-townhall'].levels.map((v) => v.hp),
+    texture: GOBLIN_BUILDING_ART['goblin-townhall'].texture,
     size: 4,
   },
   'goblin-hut': {
@@ -36,7 +38,7 @@ export const NPC_BUILDINGS = {
     kind: 'builder',
     name: 'Goblin Hut',
     hp: [250],
-    texture: 'goblin-hut-v1',
+    texture: GOBLIN_BUILDING_ART['goblin-hut'].texture,
     size: 2,
   },
   'tutorial-cannon': {
@@ -49,6 +51,10 @@ export const NPC_BUILDINGS = {
   },
 } as const;
 export type NpcBuildingKind = keyof typeof NPC_BUILDINGS;
+export const npcMaxLevel = (value: unknown) =>
+  typeof value === 'string' && Object.hasOwn(NPC_BUILDINGS, value)
+    ? NPC_BUILDINGS[value as NpcBuildingKind].hp.length
+    : undefined;
 export function validNpcBuilding(value: unknown, kind: BuildingKind, level: number) {
   if (value === undefined) return true;
   if (typeof value !== 'string' || !Object.hasOwn(NPC_BUILDINGS, value)) return false;
@@ -58,24 +64,19 @@ export function validNpcBuilding(value: unknown, kind: BuildingKind, level: numb
 /** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 7 DPS. */
 export const TUTORIAL_CANNON_DAMAGE = 2 * 0.8;
 export const npcAsset = (npc: NpcBuildingKind) =>
-  npc === 'santa-trap'
-    ? SANTA_ART.asset
-    : npc === 'pumpkin-bomb'
-      ? PUMPKIN_ART.asset
-      : npc === 'tutorial-cannon'
-        ? '/assets/buildings/cannon.webp'
-        : `/assets/buildings/${NPC_BUILDINGS[npc].texture}.webp`;
-/** Foundation side corners measured after registration; anchor their center to the tile. */
+  isGoblinBuilding(npc)
+    ? goblinBuildingAsset(npc)
+    : npc === 'santa-trap'
+      ? SANTA_ART.asset
+      : npc === 'pumpkin-bomb'
+        ? PUMPKIN_ART.asset
+        : '/assets/buildings/cannon.webp';
+/** Registered native Goblin previews share their live clip's anchor and scale. */
 export const npcArt = (npc: NpcBuildingKind) =>
-  npc === 'santa-trap'
-    ? SANTA_ART
-    : npc === 'pumpkin-bomb'
-      ? PUMPKIN_ART
-      : npc === 'tutorial-cannon'
-        ? undefined
-        : {
-            texture: NPC_BUILDINGS[npc].texture,
-            width: (64 * NPC_BUILDINGS[npc].size * 512) / 430,
-            originX: 0.5,
-            originY: (npc === 'goblin-townhall' ? 288 : 294) / 512,
-          };
+  isGoblinBuilding(npc)
+    ? GOBLIN_BUILDING_ART[npc]
+    : npc === 'santa-trap'
+      ? SANTA_ART
+      : npc === 'pumpkin-bomb'
+        ? PUMPKIN_ART
+        : undefined;

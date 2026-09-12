@@ -46,6 +46,21 @@
       "BuildingLevel": "8",
       "Hitpoints": "3900",
       "ExportName": "town_hall_lvl8"
+    },
+    {
+      "BuildingLevel": "9",
+      "Hitpoints": "4600",
+      "ExportName": "town_hall_lvl9"
+    },
+    {
+      "BuildingLevel": "10",
+      "Hitpoints": "5500",
+      "ExportName": "town_hall_lvl10"
+    },
+    {
+      "BuildingLevel": "11",
+      "Hitpoints": "6800",
+      "ExportName": "town_hall_lvl11"
     }
   ],
   "Goblin Hut": [

@@ -63,7 +63,7 @@ for (const viewport of [
       ['tutorial-cannon', 23, 24, 250],
     ]);
     expect(native.scenery).toBe(14);
-    expect(native.textures).toEqual(['goblin-townhall-v1', 'cannon']);
+    expect(native.textures).toEqual(['goblin-townhall-native', 'cannon']);
     await page.screenshot({
       animations: 'disabled',
       path: `output/playtest/native-payback-${viewport.width}-${browserName}.png`,
@@ -147,7 +147,7 @@ test('native scenery and Goblin Huts survive large-map and home transitions', as
         homeFlags: scene.homeDecorations.some((im) => im.visible),
       };
     }),
-  ).toEqual({ texture: 'goblin-hut-v1', hp: 250, homeFlags: false });
+  ).toEqual({ texture: 'goblin-hut-native', hp: 250, homeFlags: false });
   await page.screenshot({ path: `output/playtest/native-forest-${browserName}.png` });
   await page.locator('[data-action="home"]').click();
   await expect.poll(() => page.evaluate(() => window.__game.scene.campaignScenery.length)).toBe(0);

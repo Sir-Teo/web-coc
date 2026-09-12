@@ -117,7 +117,8 @@ npc_columns = ['Name', 'GlobalID', 'BuildingClass', 'SecondaryTargetingClass',
                'ExportName', 'ExportNameNpc']
 building_groups = {g[0]['Name']: g for g in groups(table('logic/buildings.csv'))}
 npc_buildings = {name: [{k: row[k] for k in npc_columns if k in row}
-                       for row in building_groups[name][:8 if name == 'Town Hall' else 1]]
+                       for row in building_groups[name][:max(b.get('lvl', 0) + 1 for v in layouts for b in v['buildings']
+                                  if b['data'] == int(building_groups[name][0]['GlobalID']))]]
                  for name in ['Town Hall', 'Goblin Hut', 'Tutorial Cannon']}
 combat = {}
 for path in ['logic/buildings.csv', 'logic/traps.csv']:

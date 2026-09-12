@@ -1,8 +1,10 @@
+import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-building-scene';
+import { isGoblinBuilding } from './goblin-building-art';
 import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-scene';
 import { DARK_STORAGE_ART } from './dark-storage-art';
 import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
-import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
+import { npcArt, type NpcBuildingKind } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
 import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
@@ -156,6 +158,7 @@ export class VillageScene extends Phaser.Scene {
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
   private santaPresentation!: SantaPresentation;
+  private goblinBuildingPresentation!: GoblinBuildingPresentation;
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private effectTimeline = new EffectTimeline();
@@ -169,6 +172,7 @@ export class VillageScene extends Phaser.Scene {
     preloadSanta(this);
     preloadXbows(this);
     preloadDarkStorages(this);
+    preloadGoblinBuildings(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -201,8 +205,6 @@ export class VillageScene extends Phaser.Scene {
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
     for (const level of CAMP_ART_LEVELS)
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
-    for (const npc of ['goblin-townhall', 'goblin-hut'] as const)
-      this.load.image(npcArt(npc)!.texture, npcAsset(npc));
     this.load.spritesheet(PUMPKIN_ART.texture, PUMPKIN_ART.asset, {
       frameWidth: PUMPKIN_ART.frameWidth,
       frameHeight: PUMPKIN_ART.frameHeight,
@@ -262,6 +264,7 @@ export class VillageScene extends Phaser.Scene {
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.santaPresentation = new SantaPresentation(this, this.audio);
+    this.goblinBuildingPresentation = new GoblinBuildingPresentation(this);
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -270,6 +273,7 @@ export class VillageScene extends Phaser.Scene {
       this.santaPresentation.destroy();
       this.xbowPresentation.destroy();
       this.darkStoragePresentation.destroy();
+      this.goblinBuildingPresentation.destroy();
     });
     this.drawField();
     this.decorate();
@@ -747,7 +751,10 @@ export class VillageScene extends Phaser.Scene {
         wx < im.x + im.displayWidth * 0.42 &&
         wy >
           im.y -
-            im.displayHeight * (['xbow', 'darkstorage'].includes(b.kind) ? im.originY : 0.83) &&
+            im.displayHeight *
+              (['xbow', 'darkstorage'].includes(b.kind) || isGoblinBuilding(b.npc)
+                ? im.originY
+                : 0.83) &&
         wy < im.y + im.displayHeight * 0.06
       )
         return b;
@@ -775,6 +782,7 @@ export class VillageScene extends Phaser.Scene {
       this.santaPresentation.clear();
       this.xbowPresentation.clear();
       this.darkStoragePresentation.clear();
+      this.goblinBuildingPresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -884,7 +892,8 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      if ((b.kind === 'xbow' || b.kind === 'darkstorage') && b.hp > 0) im.setAlpha(0);
+      if ((b.kind === 'xbow' || b.kind === 'darkstorage' || isGoblinBuilding(b.npc)) && b.hp > 0)
+        im.setAlpha(0);
       if (b.npc === 'santa-trap')
         im.setFrame(
           santaTrapFrame(
@@ -1467,13 +1476,21 @@ export class VillageScene extends Phaser.Scene {
           im.x,
           im.y -
             im.displayHeight *
-              (['camp', 'xbow', 'darkstorage'].includes(v.kind) ? im.originY : 0.88),
+              (['camp', 'xbow', 'darkstorage'].includes(v.kind) || isGoblinBuilding(v.npc)
+                ? im.originY
+                : 0.88),
           42,
           v.hp / v.maxHp,
           0xea654d,
         );
     }
     const battle = this.model.battle;
+    this.goblinBuildingPresentation.render(
+      this.model.buildings,
+      battle?.elapsed ?? 0,
+      this.model.state.settings.reducedMotion,
+      iso,
+    );
     this.darkStoragePresentation.render(
       this.model.buildings,
       battle,

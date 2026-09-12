@@ -5,7 +5,7 @@ import {
   type CampaignCatalog,
 } from './campaign-catalog';
 import { NATIVE_SCENERY, type CampaignScenery } from './native-campaign';
-import { validNpcBuilding } from './npc-buildings';
+import { validNpcBuilding, npcMaxLevel } from './npc-buildings';
 import {
   validCampaignResources,
   campaignResources,
@@ -209,7 +209,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
-      !integer(b.level, 1, d.maxLevel) ||
+      !integer(b.level, 1, npcMaxLevel(b.npc) ?? d.maxLevel) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
       (b.npc === 'pumpkin-bomb' && value.version < 28) ||

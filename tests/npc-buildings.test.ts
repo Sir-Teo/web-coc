@@ -13,7 +13,7 @@ function recording(): ReplayData {
   m.finishBattle();
   const replay = structuredClone(m.state.raidLog![0].replay!);
   replay.initial.buildings = [
-    makeNpcBuilding(1000, 'goblin-townhall', 15, 15),
+    makeNpcBuilding(1000, 'goblin-townhall', 15, 15, 11),
     makeNpcBuilding(1001, 'goblin-hut', 20, 20),
     makeNpcBuilding(1002, 'tutorial-cannon', 10, 10),
   ];
@@ -43,7 +43,10 @@ describe('native Goblin building identities', () => {
     expect(source['Goblin Hut'][0].DPS).toBeUndefined();
     expect(validNpcBuilding('goblin-hut', 'cannon', 1)).toBe(false);
     expect(() => makeNpcBuilding(1, 'goblin-hut', 1, 1, 2)).toThrow();
-    expect(() => makeNpcBuilding(1, 'goblin-townhall', 1, 1, 9)).toThrow();
+    expect(
+      [9, 10, 11].map((level) => makeNpcBuilding(1, 'goblin-townhall', 1, 1, level).maxHp),
+    ).toEqual([4600, 5500, 6800]);
+    expect(() => makeNpcBuilding(1, 'goblin-townhall', 1, 1, 12)).toThrow();
   });
 
   it('fires tutorial Cannon projectiles at 1.6 damage every 0.8 seconds, only at ground troops', () => {
