@@ -4838,3 +4838,53 @@ h3 {
   .equipment-locked { font-size: 11px; padding: 9px; gap: 7px; flex-wrap: wrap; }
 }
 .blacksmith-body .eyebrow { color: #766648; text-shadow: none; }
+
+/* Single-player inventory and untimed raid rules. */
+.campaign-rules {
+  margin: 0;
+  padding: 8px 24px;
+  color: #68543b;
+  background: #eee5ca;
+  border-bottom: 1px solid #b9aa8b;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+.campaign-depleted {
+  display: block;
+  color: #6a6d4b;
+  font-size: 11px;
+  margin-top: 5px;
+}
+.battle-enemy .loot-capacity-note {
+  display: block;
+  max-width: 245px;
+  margin-top: 6px;
+  letter-spacing: normal;
+  color: #ffdc95;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.result-modal .loot-overflow-note {
+  color: #ffdc95;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 8px 0 14px;
+}
+@media (max-width: 500px) {
+  .campaign-rules { padding: 8px 12px; font-size: 11px; }
+  .battle-enemy .loot-capacity-note { max-width: 155px; font-size: 10px; }
+}
+
+/* Keep the end-attack control outside a horizontally scrolling army at tablet widths. */
+.battle-bottom > .end-battle {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+@media (min-width: 701px) and (max-width: 1050px) {
+  .battle-bottom > .deploy-tray {
+    position: static;
+    transform: none;
+    width: 0;
+  }
+}

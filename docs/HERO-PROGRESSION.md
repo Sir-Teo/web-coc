@@ -7,11 +7,11 @@ Implemented September 10, 2026. This pass adds the first playable hero and expli
 - Supercell's [May 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/may-update/) moves the Barbarian King and Hero Hall to Town Hall 4. Hero Hall 2 remains a Town Hall 8 unlock. Early King strength scales with Town Hall level.
 - Supercell's [Heroes & Pets support page](https://support.supercell.com/clash-of-clans/en/articles/about-heroes-pets-9.html) describes reusable heroes, Hero Hall requirements, and the early hero progression change. Permanent hero upgrades begin at Town Hall 7; the default equipment effects are available with the early King. This implementation has no recovery timer.
 - Building ceilings for TH1–8 were checked against [Clash Ninja's maximum-level tables](https://www.clash.ninja/guides/max-levels-for-each-th). The catalog remains a subset. Existing building counts, housing, costs, timers, health, and damage are local values, not a verified live-data import.
-- [Hero Equipment](https://supercell.com/en/games/clashofclans/blog/news/introducing-hero-equipment/) separates abilities into equipment. The current default loadout implements level-1 Barbarian Puppet and Rage Vial; there is no equipment inventory, Blacksmith, ore economy, or equipment upgrading yet.
+- [Hero Equipment](https://supercell.com/en/games/clashofclans/blog/news/introducing-hero-equipment/) separates abilities into equipment. The default loadout implements Barbarian Puppet and Rage Vial. The TH8 Blacksmith now supports inventory, loadouts, ore balances and upgrades through level 9; see [BLACKSMITH.md](BLACKSMITH.md). Normal ore rewards remain unfinished.
 
 ## Updated combat reference
 
-The initial combat estimates have been superseded by [KING-COMBAT.md](KING-COMBAT.md): explicit level 1–20 base values and upgrade prices/timers, 50%/75%/100% early Town Hall scaling, native range/movement, and level-1 Barbarian Puppet/Rage Vial effects. The defaults work from TH4; automatic activation is on lethal damage. The equipment inventory, Blacksmith and defending heroes remain unfinished.
+The initial combat estimates have been superseded by [KING-COMBAT.md](KING-COMBAT.md): explicit level 1–20 base values and upgrade prices/timers, 50%/75%/100% early Town Hall scaling, native range/movement, and level-1 Barbarian Puppet/Rage Vial effects. The defaults work from TH4; automatic activation is on lethal damage. The TH8 equipment inventory and Blacksmith are now implemented through level 9; defending heroes and normal ore rewards remain unfinished.
 
 ## Playable behavior
 

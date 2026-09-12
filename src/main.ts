@@ -146,6 +146,12 @@ async function boot() {
         battle: model.battle
           ? {
               time: model.battle.elapsed,
+              timeLimit: model.battle.practice ? 180 : null,
+              scouting: !model.battle.started,
+              availableLoot: model.battle.availableLoot,
+              lootTaken: model.battle.lootTaken,
+              loot: model.battle.loot,
+              result: model.battle.result,
               destruction: model.battle.destruction,
               stars: model.battle.stars,
               remaining: model.battle.remaining,
@@ -178,7 +184,6 @@ async function boot() {
               deathBombs: Object.values(model.battle.deathBombs ?? {}).filter(
                 (b) => !b.resolved && !b.cancelled,
               ),
-              loot: model.battle.loot,
               finished: model.battle.finished,
             }
           : null,

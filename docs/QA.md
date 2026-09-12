@@ -577,3 +577,13 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 - Portrait and landscape playback targets are at least 44 CSS pixels; the 320px layout and 844×390 production view were visually reviewed.
 - `npm run test:production` now records a practice attack through the canvas, watches/seeks/restarts/exits the replay in Chromium and WebKit, compares home resources/army, and reopens the saved recording offline in Chromium.
 - Reports and screenshots: `output/playtest/replay-audit-verification.json`, `production-replay-*.png`, and `replay-controls-*.png`.
+
+
+## Campaign rules — September 11, 2026
+
+- Source reference now preserves all 90 native villages, 17,686 building placements and 95 source hashes; it is separate from the twelve playable authored layouts.
+- Campaign scouting and combat are untimed. Per-village loot persists across attempts and reloads, overflow is reported, and results do not change trophies. Existing saves retain their resources, stars and historical results.
+- The full model/asset suite passes 679 tests in 61 files. The 288-battle matrix resolves naturally, including two attacks beyond three minutes and a 527-second maximum. A focused regression fixes a ranged unit stranded outside attack range despite its cell center being in range.
+- Chromium and WebKit each pass 31 browser scenarios at DPR 2. Settled campaign map, battle and result captures cover desktop, portrait and landscape. Surrender remains outside the scrolling army tray at tablet widths.
+- `npm run test:campaign:production` verifies the built bundle's finite inventory, five-minute replay, portable file sharing and reload in both engines. Chromium repeats reload and sharing offline; WebKit offline remains unchecked.
+- Details and transition/rounding limits: [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Evidence: `output/playtest/campaign-rules-verification.json` and `campaign-*.png`.
