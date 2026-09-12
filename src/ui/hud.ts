@@ -2050,7 +2050,8 @@ export class HUD {
     if (replay) {
       const time = document.querySelector('#replay-time');
       const progress = document.querySelector<HTMLInputElement>('#replay-progress');
-      if (document.activeElement !== progress) {
+      // Pointer scrubbing can continue without keyboard focus (notably Safari).
+      if (!this.replayScrubbing && document.activeElement !== progress) {
         const value = replay.seeking ? replay.seekTarget : replay.time;
         if (time) time.textContent = `${clock(value)} / ${clock(replay.duration)}`;
         if (progress) {

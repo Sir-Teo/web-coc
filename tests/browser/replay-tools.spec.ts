@@ -114,9 +114,13 @@ for (const mobile of [false, true])
     await page.mouse.move(track.x + track.width * 0.15, track.y + track.height / 2);
     await page.mouse.down();
     await range.evaluate((el) => el.setAttribute('data-drag-marker', 'kept'));
+    const draggedValue = await range.inputValue();
+    // Safari pointer interaction need not grant keyboard focus to a range input.
+    await range.evaluate((el) => el.blur());
     await page.evaluate(() => window.__game.model.changed());
     await page.waitForTimeout(80);
     await expect(range).toHaveAttribute('data-drag-marker', 'kept');
+    await expect(range).toHaveValue(draggedValue);
     await page.mouse.move(track.x + track.width * 0.5, track.y + track.height / 2, { steps: 8 });
     await page.mouse.up();
     await expect.poll(() => page.evaluate(() => window.__game.model.replay.seeking)).toBe(false);
