@@ -1,6 +1,6 @@
 # Crown & Clan
 
-A frontend-only isometric village strategy game inspired by the building, training, and raiding loop of Clash of Clans. Original generated artwork, Phaser 4, TypeScript, Vite, and a responsive DOM interface.
+A frontend-only isometric village strategy game inspired by the building, training, and raiding loop of Clash of Clans. Phaser 4, TypeScript, Vite, and a responsive DOM interface. Artwork combines original generated assets with source-attributed native reconstructions documented in [the asset guide](docs/ASSETS.md).
 
 ## Run
 
