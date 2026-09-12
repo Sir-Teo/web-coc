@@ -2,7 +2,7 @@
 
 Source: Supercell's public client **18.400.21**, fingerprint `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. `native.json` preserves source rows, scene graph, export identities and SHA-256 pins. `runtime.json` contains compact rendering and numeric data. Original artwork and audio belong to Supercell; raw downloads stay under ignored `output/native-campaign-source/`.
 
-This is an asset/reference milestone. Santa Trap combat is not integrated and Goblin Picnic remains unavailable. The full game is not production complete.
+The source assets now power the [Santa Trap combat integration](../../docs/SANTA-TRAP.md) in Goblin Picnic. Engine timing and particle interpretations remain explicitly documented; the full game is not production complete.
 
 ## Source facts
 
@@ -27,9 +27,9 @@ The [Goblin Picnic walkthrough](https://clash-wiki.com/tactics/single-player-wal
 
 Clips use 24 fps. The trap trigger has 44 frames: `Init` at frame 0, `Ignite` at frame 19. Setup, open-box preview and trigger share registration; the source spelling `bomp_trap_xmas` is retained.
 
-The 320-frame `xmas_spell` graph stays separate from its three 30-frame components: flying hogs, Santa with presents, and Santa after release. Santa's component changes at frame 120. Frames 111–117 include shear as he tips the sack. Runtime tuples retain the atlas frame, six affine values and alpha; position/rotation alone would lose this detail. Phaser 4.2.1's `Mesh2D` supports these quads; game wiring remains outstanding.
+The 320-frame `xmas_spell` graph stays separate from its three 30-frame components: flying hogs, Santa with presents, and Santa after release. Santa's component changes at frame 120. Frames 111–117 include shear as he tips the sack. Runtime tuples retain the atlas frame, six affine values and alpha; position/rotation alone would lose this detail. The game now renders these quads with Phaser 4.2.1's `Mesh2D`; [combat, presentation and fidelity limits](../../docs/SANTA-TRAP.md) are documented separately.
 
-Component separation reduced the sleigh from about 13 MB to 2.8 MB while retaining native placements, colors and nested phases. Recursive comparison verifies **2040 draw commands across all 320 root frames**. Five atlas pages stay within 4096×4096, rasterized at two output pixels per native unit with polygon cutouts and premultiplied bilinear sampling. GPU pixel identity, native subclip clocks and particle simulation remain unverified.
+Component separation reduced the sleigh from about 13 MB to 2.8 MB while retaining native placements, colors and nested phases. Recursive comparison verifies **2040 draw commands across all 320 root frames**. Five atlas pages stay within 4096×4096, rasterized at two output pixels per native unit with polygon cutouts and premultiplied bilinear sampling. GPU poses are compared against an independent Canvas compositor; exact native subclip clocks and particle simulation remain unverified.
 
 Eleven assets total **4,004,922 bytes**: five atlas PNGs, two registered previews and four unchanged Ogg files. Original volume/pitch fields remain in the effect rows. Large source evidence is separated from compact runtime data. The source character poses and gift colors were visually reviewed.
 
@@ -45,4 +45,4 @@ output/native-art-venv/bin/python scripts/import-native-santa.py --check
 
 Omit `--check` to regenerate. Checks cover source hashes, decoded pixels, sound bytes, both references and the exact shipped file set. Independent atlas tests cover fractional travel, relative movement, deduplication, nested frame rate and reinsertion. Pumpkin and Skeleton imports still reproduce unchanged metadata/pixels.
 
-`tests/native-santa-reference.test.ts` covers identity, independent timing facts, every unique frame, alpha margins, compact shear geometry, preview registration and sound hashes. `tests/browser/native-santa-assets.spec.ts` checks browser image/audio decoding and renders loaded, tipping and empty poses. These validate the asset pipeline, not Santa Trap battle behavior or the completed campaign.
+`tests/native-santa-reference.test.ts` covers identity, independent timing facts, every unique frame, alpha margins, compact shear geometry, preview registration and sound hashes. `tests/browser/native-santa-assets.spec.ts` checks browser image/audio decoding and renders loaded, tipping and empty poses. These validate the asset pipeline. Separate model, renderer, audio, browser and production tests cover the new Goblin Picnic integration; see [the implementation record](../../docs/SANTA-TRAP.md).

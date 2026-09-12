@@ -5,6 +5,7 @@ import { NPC_BUILDINGS } from './npc-buildings';
 import { SPRING_AIRTIME } from './trap-stats';
 import { SKELETON_TRAP, skeletonCount } from './skeleton-stats';
 import { spawnSkeleton } from './defenders';
+import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-trap';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -14,6 +15,7 @@ export interface TrapState {
   x: number;
   y: number;
   spawned?: number;
+  santa?: SantaState;
 }
 
 export function springOutcome(housing: number, hp: number, capacity: number, damage: number) {
@@ -24,10 +26,13 @@ export function springOutcome(housing: number, hp: number, capacity: number, dam
 /** Resolve campaign identity before archetype, keeping seasonal traps out of the home catalog. */
 export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>) {
   const base = trapStats(trap.kind, trap.level);
-  return base && trap.npc === 'pumpkin-bomb' ? { ...base, ...PUMPKIN_BOMB } : base;
+  if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
+  if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
+  return base;
 }
 
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
+  if (battle.finished) return false;
   let changed = false;
   for (const trap of battle.buildings) {
     const d = battleTrapStats(trap);
@@ -64,8 +69,9 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         targetId: target.id,
         ...center,
       };
+      if (trap.npc === 'santa-trap') state.santa = makeSantaState(state, trap.id, battle.seed);
       // Springs resolve immediately and provide their own label and sound below.
-      if (!d.springCapacity)
+      if (!d.springCapacity && trap.npc !== 'santa-trap')
         effect({
           type: 'trap',
           ...center,
@@ -73,6 +79,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
           color: mode === 'air' ? 0xff746c : 0xffd175,
         });
       changed = true;
+    }
+    if (state.santa) {
+      changed = stepSanta(battle, state) || changed;
+      continue;
     }
     if (trap.kind === 'skeletontrap') {
       const count = skeletonCount(trap.level);

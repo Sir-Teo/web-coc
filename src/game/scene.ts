@@ -2,6 +2,8 @@ import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
+import { santaTrapFrame } from './santa-art';
+import { preloadSanta, SantaPresentation } from './santa-scene';
 import { battleTrapStats } from './traps';
 import {
   BOMB_TOWER_ART_LEVELS,
@@ -148,6 +150,7 @@ export class VillageScene extends Phaser.Scene {
   private campTime = 0;
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
+  private santaPresentation!: SantaPresentation;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   constructor(model: GameModel, audio: AudioManager) {
@@ -156,6 +159,7 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    preloadSanta(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -248,9 +252,11 @@ export class VillageScene extends Phaser.Scene {
     this.defenderMarkers = this.add.graphics().setDepth(7600);
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
+    this.santaPresentation = new SantaPresentation(this, this.audio);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
       this.effectTimeline.clear();
+      this.santaPresentation.destroy();
     });
     this.drawField();
     this.decorate();
@@ -384,6 +390,7 @@ export class VillageScene extends Phaser.Scene {
     setTimeout(() => document.querySelector('#loading')?.remove(), 500);
     this.game.canvas.addEventListener('webglcontextlost', () => {
       this.paused = true;
+      this.audio.samples.stop();
       this.model.notify('Graphics paused. Restoring your village…');
     });
     this.game.canvas.addEventListener('webglcontextrestored', () => {
@@ -750,6 +757,7 @@ export class VillageScene extends Phaser.Scene {
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
+      this.santaPresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -859,6 +867,14 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
+      if (b.npc === 'santa-trap')
+        im.setFrame(
+          santaTrapFrame(
+            trap,
+            this.model.battle?.elapsed ?? 0,
+            this.model.state.settings.reducedMotion,
+          ),
+        ).setAlpha(1);
       if (b.kind === 'seekingairmine' && trap?.resolved) im.setTexture('mine-spent').setAlpha(1);
       if (
         !b.npc &&
@@ -1421,6 +1437,13 @@ export class VillageScene extends Phaser.Scene {
         );
     }
     const battle = this.model.battle;
+    this.santaPresentation.render(
+      battle,
+      this.model.state.settings.reducedMotion,
+      !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
+      this.model.replay?.speed ?? 1,
+      iso,
+    );
     for (const [id, sprite] of this.mineFlights) {
       if (!battle || battle.finished || !battle.traps[id] || battle.traps[id].resolved) {
         sprite.destroy();
@@ -1455,6 +1478,15 @@ export class VillageScene extends Phaser.Scene {
         const state = battle.traps[trap.id];
         const def = battleTrapStats(trap);
         if (!def || !state) continue;
+        if (trap.npc === 'santa-trap') {
+          this.sprites
+            .get(trap.id)
+            ?.setFrame(
+              santaTrapFrame(state, battle.elapsed, this.model.state.settings.reducedMotion),
+            )
+            .setAlpha(1);
+          continue;
+        }
         if (trap.npc === 'pumpkin-bomb') {
           this.sprites
             .get(trap.id)

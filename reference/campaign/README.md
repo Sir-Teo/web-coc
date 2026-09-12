@@ -1,6 +1,6 @@
 # Native campaign reference
 
-Extracted September 11, 2026 from Supercell's public client bundle **18.400.21**, fingerprint `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. The campaign screen now uses this native catalog. The runtime adapter enables 49 mechanically supported villages and labels the other stages Coming soon. This catalog contains data, not executable game code. The separate [Pumpkin Bomb reference](../pumpkin-bomb/README.md) documents extracted native artwork.
+Extracted September 11, 2026 from Supercell's public client bundle **18.400.21**, fingerprint `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. The campaign screen now uses this native catalog. The runtime adapter enables the first 50 mechanically supported villages and labels the other stages Coming soon. This catalog contains data, not executable game code. Separate [Pumpkin Bomb](../pumpkin-bomb/README.md) and [Santa Trap](../santa-trap/README.md) references document extracted native artwork and evidence.
 
 - `catalog.json`: all 90 names, loot amounts, dependency references, recommended Town Halls and original nonempty CSV fields, including continuation rows. Building/trap IDs use the explicit native GlobalID, never the table row index.
 - `npc-buildings.json`: focused native stats and visual-export fields for Town Hall levels 1–8, the passive Goblin Hut and the special Tutorial Cannon.

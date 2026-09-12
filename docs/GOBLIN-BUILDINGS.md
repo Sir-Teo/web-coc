@@ -1,6 +1,6 @@
 # Goblin campaign building foundation
 
-Added September 11, 2026. The battle engine and renderer introduced three campaign-only identities: Goblin Town Hall, Goblin Hut and Tutorial Cannon. This was the foundation for the September 12 native campaign integration. The playable UI now uses 49 supported native layouts after the Pumpkin Bomb and higher Skeleton Trap additions; legacy progress remains separate. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md).
+Added September 11, 2026. The battle engine and renderer introduced three campaign-only identities: Goblin Town Hall, Goblin Hut and Tutorial Cannon. This was the foundation for the September 12 native campaign integration. The playable UI now supports the first 50 native layouts after the Pumpkin Bomb, higher Skeleton Trap and Santa Trap additions; legacy progress remains separate. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md).
 
 ## Native interpretation
 
