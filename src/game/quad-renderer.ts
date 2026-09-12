@@ -1,10 +1,9 @@
 import type Phaser from 'phaser';
 
-/** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */
-export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
-  const node = renderer.renderNodes.getNode(
-    'BatchHandlerQuad',
-  ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
+function stableTextureSampling(
+  renderer: Phaser.Renderer.WebGL.WebGLRenderer,
+  node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad,
+) {
   const sampler = node.programManager.getAdditionsByTag('TEXTURE')[0];
   if (sampler) {
     // The engine compares an interpolated float texture ID with exact integers.
@@ -34,6 +33,24 @@ return vec4(0.0);
       },
     });
   }
+}
+
+/** Native polygon meshes share the sprite sampler and need the same slot fix. */
+export function configureNativeTriangleRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  stableTextureSampling(
+    renderer,
+    renderer.renderNodes.getNode(
+      'BatchHandlerTri',
+    ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad,
+  );
+}
+
+/** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */
+export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  const node = renderer.renderNodes.getNode(
+    'BatchHandlerQuad',
+  ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
+  stableTextureSampling(renderer, node);
   if (node.topology === renderer.gl.TRIANGLES) return;
 
   // Phaser 4.2.1 stores each quad as BL, TL, BR, TR. Its default strip uses

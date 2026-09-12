@@ -2,7 +2,7 @@
 
 The home-village X-Bow artwork and sound sources are preserved from Supercell's public client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. `native.json` contains the original building, projectile, effect and particle rows, source scene graph and SHA-256 pins. `runtime.json` retains the scene graph with texture coordinates remapped to the shipped PNGs. Original artwork and audio belong to Supercell.
 
-This is the asset foundation for X-Bow combat. It is not yet connected to the game renderer, targeting, ammunition, shop or replays. The campaign still supports its first 50 layouts. Invaders and subsequent stages also require Dark Elixir rewards and alternate defense modes; importing their weapon art alone does not make them supported.
+This is the asset foundation for X-Bow combat. Its [native GPU renderer](../../docs/NATIVE-MESH-RENDERING.md) is now validated in browser fixtures; targeting, ammunition, village-scene integration, shop and replays remain in progress. The campaign still supports its first 50 layouts. Invaders and subsequent stages also require Dark Elixir rewards and alternate defense modes; importing their weapon art alone does not make them supported.
 
 ## Source facts
 
@@ -53,4 +53,4 @@ The contact-sheet tool compares the original decoded textures with the shipped t
 
 The 18 Python reader/atlas/scene tests and four X-Bow reference tests pass. Image and audio decoding passes in Chromium and WebKit at DPR 2. The production build and both-engine smoke checks pass; Chromium reloads offline with all 224 manifest entries cached. The existing Pumpkin, Skeleton and Santa importers still reproduce unchanged metadata and pixels after the reader extension.
 
-Exact native direction-to-world mapping, engine subclip clocks, recoil, ammunition states, particle projection and GPU composition still require implementation and validation. Source facts and diagnostic playback are kept separate from those remaining fidelity claims.
+Exact native direction-to-world mapping, engine subclip clocks, recoil, ammunition states and particle projection still require implementation and validation. GPU composition now has independent browser reference checks, with measured edge and color-rounding differences documented in the renderer record. Source facts and diagnostic playback are kept separate from the remaining native-engine fidelity claims.
