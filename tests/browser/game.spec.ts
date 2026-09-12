@@ -114,11 +114,11 @@ test('plays an actual battle through results and unlocks the next village', asyn
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/campaign-desktop.png' });
   await page.locator('[data-action="attack:0"]').click();
-  await expect(page.locator('.battle-enemy h2')).toHaveText('Goblin Outpost');
+  await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
   await expect(page.locator('.prep-banner')).toBeVisible();
   expect(await page.evaluate(() => window.__game.model.battle.started)).toBe(false);
   await page.locator('[data-action="troop:giant"]').click();
-  const p = await page.evaluate(() => window.__game.scene.screenFor(4, 11));
+  const p = await page.evaluate(() => window.__game.scene.screenFor(32, 26));
   await page.mouse.click(p.x, p.y);
   expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(1);
   await expect(page.locator('.prep-banner')).toHaveCount(0);

@@ -1,4 +1,19 @@
 import {
+  campaignStage,
+  campaignStages,
+  validCampaignCatalog,
+  type CampaignCatalog,
+} from './campaign-catalog';
+import {
+  freshNativeCampaign,
+  nativeBuildings,
+  nativeCampaignIssues,
+  nativeScenery,
+  nativeUnlocked,
+  type NativeCampaignProgress,
+  type CampaignScenery,
+} from './native-campaign';
+import {
   NPC_BUILDINGS,
   TUTORIAL_CANNON_DAMAGE,
   validNpcBuilding,
@@ -176,6 +191,7 @@ export interface BattleResult {
   destruction: number;
 }
 export interface RaidRecord {
+  catalog?: CampaignCatalog;
   id: number;
   at: number;
   index: number;
@@ -189,6 +205,7 @@ export interface RaidRecord {
   replayUnavailable?: 'limit';
 }
 export interface Save {
+  nativeCampaign?: NativeCampaignProgress;
   version: 4;
   mapUpgrade?: { moved: number };
   dark: number;
@@ -272,6 +289,8 @@ export interface MortarShell {
   radius: number;
 }
 export interface Battle {
+  catalog?: CampaignCatalog;
+  scenery?: CampaignScenery[];
   troopLevels?: Army;
   spellLevels?: SpellBook;
   index: number;
@@ -615,7 +634,10 @@ export class GameModel {
         id: 'valley-explorer',
         title: 'Valley explorer',
         description: 'Earn 12 campaign stars',
-        progress: this.state.stars.reduce((a, b) => a + b, 0),
+        progress: Math.max(
+          this.state.stars.reduce((a, b) => a + b, 0),
+          (this.state.nativeCampaign?.stars ?? []).reduce((a, b) => a + b, 0),
+        ),
         target: 12,
         reward: 40,
         icon: 'Star',
@@ -1737,14 +1759,33 @@ export class GameModel {
         (!isTrap(building.kind) || !!this.battle.traps[building.id]))
     );
   }
-  campaignLoot(index: number): CampaignResources {
-    const loot = this.state.campaignLoot?.remaining[index] ?? CAMPAIGN[index];
+  campaignLoot(index: number, catalog?: CampaignCatalog): CampaignResources {
+    const loot =
+      (catalog === 'goblin-v1'
+        ? this.state.nativeCampaign?.remaining[index]
+        : this.state.campaignLoot?.remaining[index]) ?? campaignStage(index, catalog);
     return { gold: loot.gold, elixir: loot.elixir };
   }
-  startBattle(index: number, practice = false) {
+  startCampaign(index: number) {
+    this.startBattle(index, false, 'goblin-v1');
+  }
+  startBattle(index: number, practice = false, catalog: CampaignCatalog = 'valley-v1') {
     if (this.battle) return;
-    if (!Number.isInteger(index) || index < 0 || index >= CAMPAIGN.length) return;
-    if (!practice && index > 0 && !this.state.stars[index - 1])
+    if (
+      !validCampaignCatalog(catalog) ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= campaignStages(catalog).length ||
+      (practice && catalog !== 'valley-v1')
+    )
+      return;
+    if (!practice && catalog === 'goblin-v1') {
+      const issues = nativeCampaignIssues(index);
+      if (issues.length) return this.notify('This village is still being prepared.');
+      if (!nativeUnlocked(index, this.state.nativeCampaign?.stars ?? []))
+        return this.notify('Earn a star along the path to unlock this village.');
+    }
+    if (!practice && catalog === 'valley-v1' && index > 0 && !this.state.stars[index - 1])
       return this.notify(`Earn a star on ${CAMPAIGN[index - 1].name} to unlock this village.`);
     if (this.armySize === 0 && !this.heroReady)
       return this.notify('Prepare an army or a hero before attacking.');
@@ -1755,6 +1796,7 @@ export class GameModel {
       this.state.lastSpells = { ...this.state.spells };
     }
     const initial = {
+      ...(catalog === 'goblin-v1' ? { catalog, scenery: nativeScenery(index) } : {}),
       index,
       practice,
       buildings: practice
@@ -1763,7 +1805,9 @@ export class GameModel {
             hp: building.maxHp,
             cooldown: 0,
           }))
-        : enemyBase(index),
+        : catalog === 'goblin-v1'
+          ? nativeBuildings(index)
+          : enemyBase(index),
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
@@ -1771,14 +1815,14 @@ export class GameModel {
       nextId: this.state.nextId,
       ...(!practice
         ? {
-            availableLoot: this.campaignLoot(index),
+            availableLoot: this.campaignLoot(index, catalog),
             lootRoom: {
               gold: Math.min(
-                this.campaignLoot(index).gold,
+                this.campaignLoot(index, catalog).gold,
                 Math.max(0, Math.floor(this.resourceCap('gold') - this.state.gold)),
               ),
               elixir: Math.min(
-                this.campaignLoot(index).elixir,
+                this.campaignLoot(index, catalog).elixir,
                 Math.max(0, Math.floor(this.resourceCap('elixir') - this.state.elixir)),
               ),
             },
@@ -2032,7 +2076,7 @@ export class GameModel {
         const preferred = troop.prefersResources
           ? alive.filter((v) => isResourceBuilding(v.kind))
           : troop.prefersDefenses
-            ? alive.filter((v) => isDefense(v.kind))
+            ? alive.filter((v) => isDefense(v.kind) && v.npc !== 'tutorial-cannon')
             : alive;
         target =
           (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
@@ -2243,7 +2287,7 @@ export class GameModel {
           tower.npc === 'tutorial-cannon'
             ? TUTORIAL_CANNON_DAMAGE
             : defenseDamage(tower.kind, tower.level) *
-              (b.practice ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+              (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'tesla') {
           target.hp -= power;
           this.onEffect({
@@ -2358,19 +2402,25 @@ export class GameModel {
     // shares, collectors one, and the Town Hall two of each resource.
     for (const resource of ['gold', 'elixir'] as const) {
       const weight = (v: Building) =>
-        v.kind === 'townhall'
-          ? 2
-          : v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage')
-            ? 4
-            : v.kind === (resource === 'gold' ? 'goldmine' : 'collector')
-              ? 1
-              : 0;
+        b.catalog === 'goblin-v1'
+          ? Number(
+              v.kind === 'townhall' ||
+                v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage'),
+            )
+          : v.kind === 'townhall'
+            ? 2
+            : v.kind === (resource === 'gold' ? 'goldstorage' : 'elixirstorage')
+              ? 4
+              : v.kind === (resource === 'gold' ? 'goldmine' : 'collector')
+                ? 1
+                : 0;
       const total = structures.reduce((n, v) => n + weight(v), 0);
       const taken = total
         ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
         : dead / Math.max(1, structures.length);
       const removed = Math.floor(
-        (b.availableLoot ?? CAMPAIGN[b.index])[resource] * Math.min(1, Math.max(0, taken)),
+        (b.availableLoot ?? campaignStage(b.index, b.catalog))[resource] *
+          Math.min(1, Math.max(0, taken)),
       );
       b.lootTaken ??= { gold: 0, elixir: 0 };
       b.lootTaken[resource] = removed;
@@ -2397,7 +2447,9 @@ export class GameModel {
           this.battle,
           b,
           bombTowerDeathDamage(b.level) *
-            (this.battle.practice ? 1 : CAMPAIGN_LAYOUTS[this.battle.index].defense),
+            (this.battle.practice || this.battle.catalog === 'goblin-v1'
+              ? 1
+              : CAMPAIGN_LAYOUTS[this.battle.index].defense),
           at,
         );
       this.onEffect({
@@ -2452,11 +2504,16 @@ export class GameModel {
     this.state.gold += gold;
     this.state.elixir += elixir;
     if (!b.practice) {
-      this.state.campaignLoot ??= freshCampaignLoot();
-      const remaining = this.state.campaignLoot.remaining[b.index];
+      if (b.catalog === 'goblin-v1') this.state.nativeCampaign ??= freshNativeCampaign();
+      else this.state.campaignLoot ??= freshCampaignLoot();
+      const remaining =
+        b.catalog === 'goblin-v1'
+          ? this.state.nativeCampaign!.remaining[b.index]
+          : this.state.campaignLoot!.remaining[b.index];
       for (const k of ['gold', 'elixir'] as const)
         remaining[k] = Math.max(0, remaining[k] - (b.lootTaken?.[k] ?? 0));
-      this.state.stars[b.index] = Math.max(this.state.stars[b.index] ?? 0, b.stars);
+      const stars = b.catalog === 'goblin-v1' ? this.state.nativeCampaign!.stars : this.state.stars;
+      stars[b.index] = Math.max(stars[b.index] ?? 0, b.stars);
       this.state.stats.raids++;
       this.state.stats.destroyed += b.buildings.filter(
         (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
@@ -2479,6 +2536,7 @@ export class GameModel {
       {
         id: this.state.nextId++,
         at: this.clock,
+        ...(b.catalog ? { catalog: b.catalog } : {}),
         index: b.index,
         practice: b.practice,
         duration: b.elapsed,

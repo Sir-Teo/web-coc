@@ -1,5 +1,17 @@
 # Verification record
 
+## September 12 — native campaign integration
+
+The campaign screen now lists the pinned native 90-village catalog. Forty-four layouts are mechanically supported, including the full 430-entity Sherbet Towers. The other 46 are explicitly unavailable; Halloween bombs currently block the early route at Rat Valley. Native positions, levels, HP, scenery IDs and combat passability are preserved. Separate native stars and finite-resource records protect prior authored campaign progress. Replay version 27 carries catalog identity, scenery and larger layouts. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md) for exact coverage and unresolved interpretation/art gaps.
+
+**825 model tests in 65 files pass**, including 132 native battles, full-layout/replay export checks, malformed progress/history isolation and a deterministic path digest. A stable A* heap fixes severe CPU overhead in two native resource-army scenarios while preserving route ordering. The generated 16-sprite scenery set rebuilds byte-for-byte, and the importer verifies 97 pinned source hashes.
+
+**Twelve final affected browser scenarios pass in Chromium and WebKit at DPR 2.** They cover all 90 thumbnails with concealed Teslas/traps, native Payback wins at 1440×960, 390×844 and 844×390, exact loot/star persistence, overflow, untimed scouting, long/shared replays, Goblin Huts, large-map scenery and home transitions. The Chromium scenery case was rerun after its test was corrected to wait for the renderer. Earlier broader checks passed 31 Chromium scenarios; the WebKit sweep exposed a slider focus race, now covered by the passing final replay tests. A focused regression failed before the fix and passed afterward: live HUD updates must not replace a pointer-held range value merely because it lacks keyboard focus.
+
+**General and native campaign production checks pass in both engines with empty browser-error reports.** They import a native save, reload finite inventory, seek and share a 320-second replay, and confirm exact Payback building/scenery identity. Chromium repeats these flows offline; WebKit offline was not checked. Full-storage overflow reproduces exactly (207 gold, 155 elixir lost; zero credited). The evidence manifest is `output/playtest/native-campaign-verification.json`.
+
+Runtime source is frozen at SHA-256 `5d270cccdd49693171c9e82382e55145ab381d5df763c35ff0b668056e5cf8a2` (70 files), with runtime reference data SHA-256 `f10671df15523b5d56c82d59189a344d085281bf7e36147456c2002919849996`. The build precaches 197 files in `crown-clan-85b043927fbb`. Evidence lives under `output/playtest/native-*`, with the slider regression under `replay-drag-regression-{before,after}.log`.
+
 ## September 11 — Blacksmith, ore upgrades and equipped King combat
 
 The TH8 Blacksmith now supports Barbarian Puppet, Rage Vial and Earthquake Boots through level 9, two distinct equipment slots, three ore balances/caps and native missing-ore gem purchases. Stats, recovery, rage and summon waves come from the selected items and levels. Boots delivers five scheduled percentage-damage pulses, clears walls, damages eligible ground defenders and retains its cast position. [BLACKSMITH.md](BLACKSMITH.md) records immutable native data, field interpretations and remaining gaps.

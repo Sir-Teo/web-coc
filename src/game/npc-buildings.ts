@@ -37,7 +37,7 @@ export function validNpcBuilding(value: unknown, kind: BuildingKind, level: numb
   const d = NPC_BUILDINGS[value as NpcBuildingKind];
   return d.kind === kind && Number.isInteger(level) && level >= 1 && level <= d.hp.length;
 }
-/** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 10 DPS. */
+/** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 7 DPS. */
 export const TUTORIAL_CANNON_DAMAGE = 2 * 0.8;
 export const npcAsset = (npc: NpcBuildingKind) =>
   npc === 'tutorial-cannon'

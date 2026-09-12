@@ -1,3 +1,5 @@
+import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
+import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt, npcAsset, type NpcBuildingKind } from './npc-buildings';
 import {
   BOMB_TOWER_ART_LEVELS,
@@ -177,6 +179,7 @@ export class VillageScene extends Phaser.Scene {
         frameWidth: KING_ART.cell,
         frameHeight: KING_ART.cell,
       });
+    for (const kind of SCENERY_SPRITES) this.load.image(`campaign-${kind}`, sceneryAsset(kind));
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
@@ -405,6 +408,8 @@ export class VillageScene extends Phaser.Scene {
     // Keep stencil application and removal together so later village objects stay unclipped.
     this.ground = this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
   }
+  private campaignScenery: Phaser.GameObjects.Image[] = [];
+  private homeDecorations: Phaser.GameObjects.Image[] = [];
   decorate() {
     const dec: [string, number, number, number][] = [
       ['flag', 9, 24, 34],
@@ -414,6 +419,7 @@ export class VillageScene extends Phaser.Scene {
       const p = iso(x, y),
         im = this.add.image(p.x, p.y, k).setOrigin(0.5, 0.88);
       im.setDisplaySize(w, (w * im.height) / im.width).setDepth(p.y);
+      this.homeDecorations.push(im);
     }
   }
   private updateBaseZoom() {
@@ -443,7 +449,27 @@ export class VillageScene extends Phaser.Scene {
     this.updateBaseZoom();
     this.rememberViewport();
     this.setZoom(this.baseZoom);
-    this.cameras.main.centerOn(896, 570);
+    const battle = this.model.battle;
+    if (battle?.catalog === 'goblin-v1') {
+      const points = battle.buildings
+        .filter((b) => !isTrap(b.kind))
+        .flatMap((b) => {
+          const size = BUILDINGS[b.kind].size;
+          return [
+            iso(b.x, b.y),
+            iso(b.x + size, b.y),
+            iso(b.x, b.y + size),
+            iso(b.x + size, b.y + size),
+          ];
+        });
+      const span = Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x));
+      this.setZoom(Math.min(this.baseZoom, (this.scale.canvasBounds.width - 48) / (span + 64)));
+      const x = (Math.min(...points.map((p) => p.x)) + Math.max(...points.map((p) => p.x))) / 2;
+      const y =
+        (Math.min(...points.map((p) => p.y)) + Math.max(...points.map((p) => p.y))) / 2 - 45;
+      const portrait = this.scale.canvasBounds.width < 700;
+      this.cameras.main.centerOn(x, y - (portrait ? 50 / this.viewZoom : 0));
+    } else this.cameras.main.centerOn(896, 570);
     this.clampCamera();
   }
   private resizeCamera() {
@@ -715,6 +741,22 @@ export class VillageScene extends Phaser.Scene {
           this.tweens.killTweensOf(display);
           display.destroy();
         }
+      }
+      for (const im of this.campaignScenery) im.destroy();
+      this.campaignScenery = [];
+      for (const im of this.homeDecorations)
+        im.setVisible(mode === 'home' || this.model.battle?.catalog !== 'goblin-v1');
+      for (const o of this.model.battle?.scenery ?? []) {
+        const art = sceneryArt(o.data),
+          p = iso(o.x + art.size / 2, o.y + art.size / 2);
+        const im = this.add
+          .image(p.x, p.y, art.texture)
+          .setOrigin(0.5, 225 / 256)
+          .setDisplaySize(art.width, art.width)
+          .setDepth(p.y)
+          .setData('nativeScenery', o.data)
+          .setAlpha(NATIVE_SCENERY[o.data].faded ? 0.5 : 1);
+        this.campaignScenery.push(im);
       }
       this.boundary.signature = '';
       for (const s of this.sprites.values()) s.destroy();

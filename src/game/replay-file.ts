@@ -23,6 +23,8 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
       version: replay.version,
       initial: {
         index: s.index,
+        ...(s.catalog ? { catalog: s.catalog } : {}),
+        ...(s.scenery ? { scenery: s.scenery.map((o) => ({ data: o.data, x: o.x, y: o.y })) } : {}),
         practice: s.practice,
         nextId: s.nextId,
         ...(s.availableLoot

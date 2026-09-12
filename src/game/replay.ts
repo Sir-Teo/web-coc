@@ -1,3 +1,10 @@
+import {
+  campaignStage,
+  campaignStages,
+  validCampaignCatalog,
+  type CampaignCatalog,
+} from './campaign-catalog';
+import { NATIVE_SCENERY, type CampaignScenery } from './native-campaign';
 import { validNpcBuilding } from './npc-buildings';
 import { validCampaignResources, type CampaignResources } from './campaign-loot';
 import { validDirection } from './air-control-stats';
@@ -5,7 +12,6 @@ import { validSkeletonMode } from './skeleton-stats';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
-  CAMPAIGN,
   MAX_TROOP_LEVEL,
   maxTroopLevel,
   SPELL_KEYS,
@@ -17,7 +23,7 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 26;
+export const REPLAY_VERSION = 27;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -33,6 +39,8 @@ export type ReplayAction = { step: number } & (
   | { type: 'end' }
 );
 export interface ReplaySetup {
+  catalog?: CampaignCatalog;
+  scenery?: CampaignScenery[];
   index: number;
   practice: boolean;
   buildings: Building[];
@@ -66,6 +74,8 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup): Battle {
   return {
+    ...(s.catalog ? { catalog: s.catalog } : {}),
+    ...(s.scenery ? { scenery: structuredClone(s.scenery) } : {}),
     index: s.index,
     practice: s.practice,
     buildings: structuredClone(s.buildings),
@@ -96,8 +106,8 @@ export function replayBattle(s: ReplaySetup): Battle {
       ? {
           availableLoot: {
             ...(s.availableLoot ?? {
-              gold: CAMPAIGN[s.index].gold,
-              elixir: CAMPAIGN[s.index].elixir,
+              gold: campaignStage(s.index, s.catalog).gold,
+              elixir: campaignStage(s.index, s.catalog).elixir,
             }),
           },
           lootTaken: { gold: 0, elixir: 0 },
@@ -120,7 +130,10 @@ export function validateReplay(value: unknown): value is ReplayData {
   const s = value.initial;
   const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
   if (
-    !integer(s.index, 0, CAMPAIGN.length - 1) ||
+    !validCampaignCatalog(s.catalog) ||
+    (s.catalog !== undefined && value.version < 27) ||
+    (s.practice && s.catalog === 'goblin-v1') ||
+    !integer(s.index, 0, campaignStages(s.catalog).length - 1) ||
     typeof s.practice !== 'boolean' ||
     !integer(s.nextId, 1, Number.MAX_SAFE_INTEGER - 10000) ||
     !counts(s.army, troopKeys, 0, 9999) ||
@@ -134,14 +147,22 @@ export function validateReplay(value: unknown): value is ReplayData {
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
     (value.version >= 25 &&
       !s.practice &&
-      !validCampaignResources(s.availableLoot, CAMPAIGN[s.index])) ||
+      !validCampaignResources(s.availableLoot, campaignStage(s.index, s.catalog))) ||
     (s.availableLoot !== undefined &&
-      !validCampaignResources(s.availableLoot, CAMPAIGN[s.index])) ||
+      !validCampaignResources(s.availableLoot, campaignStage(s.index, s.catalog))) ||
     (value.version >= 4 && !s.practice && !object(s.lootRoom)) ||
     (s.lootRoom !== undefined &&
       (!object(s.lootRoom) ||
-        !integer(s.lootRoom.gold, 0, s.availableLoot?.gold ?? CAMPAIGN[s.index].gold) ||
-        !integer(s.lootRoom.elixir, 0, s.availableLoot?.elixir ?? CAMPAIGN[s.index].elixir))) ||
+        !integer(
+          s.lootRoom.gold,
+          0,
+          s.availableLoot?.gold ?? campaignStage(s.index, s.catalog).gold,
+        ) ||
+        !integer(
+          s.lootRoom.elixir,
+          0,
+          s.availableLoot?.elixir ?? campaignStage(s.index, s.catalog).elixir,
+        ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
         !integer(s.hero.level, 1, 20) ||
@@ -150,7 +171,23 @@ export function validateReplay(value: unknown): value is ReplayData {
         (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
     !s.buildings.length ||
-    s.buildings.length > 400
+    s.buildings.length > (value.version >= 27 ? 600 : 400)
+  )
+    return false;
+  if (
+    s.scenery !== undefined &&
+    (value.version < 27 ||
+      s.catalog !== 'goblin-v1' ||
+      !Array.isArray(s.scenery) ||
+      s.scenery.length > 600 ||
+      !s.scenery.every(
+        (o: any) =>
+          object(o) &&
+          integer(o.data, 0, 1e9) &&
+          Object.hasOwn(NATIVE_SCENERY, o.data) &&
+          integer(o.x, 0, 48 - NATIVE_SCENERY[o.data].size) &&
+          integer(o.y, 0, 48 - NATIVE_SCENERY[o.data].size),
+      ))
   )
     return false;
   const ids = new Set<number>();

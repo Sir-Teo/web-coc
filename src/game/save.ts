@@ -1,3 +1,5 @@
+import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
+import { validNativeCampaign } from './native-campaign';
 import { validCampaignLoot, validCampaignResources } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
@@ -7,7 +9,7 @@ import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles'
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
-import { BUILDINGS, CAMPAIGN, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
+import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { expandArmyRoster } from './army';
 import { MAX_SPELL_LEVEL } from './spell-progression';
 import { initialSave, type Save } from './model';
@@ -129,6 +131,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       new Set(s.claimedQuests).size !== s.claimedQuests.length)
   )
     return false;
+  if (s.nativeCampaign !== undefined && !validNativeCampaign(s.nativeCampaign)) return false;
   if (s.campaignLoot !== undefined && !validCampaignLoot(s.campaignLoot)) return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;
   if (s.ores !== undefined && !validOres(s.ores)) return false;
@@ -209,7 +212,9 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           !finite(r.at) ||
           !Number.isInteger(r.index) ||
           r.index < 0 ||
-          r.index >= 12 ||
+          !validCampaignCatalog(r.catalog) ||
+          r.index >= campaignStages(r.catalog).length ||
+          (r.practice && r.catalog === 'goblin-v1') ||
           typeof r.practice !== 'boolean' ||
           !finite(r.duration) ||
           r.duration > Number.MAX_SAFE_INTEGER ||
@@ -222,10 +227,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               r.hero.level < 1 ||
               r.hero.level > HERO_MAX_LEVEL ||
               typeof r.hero.abilityUsed !== 'boolean')) ||
-          (r.replay !== undefined && !validateReplay(r.replay)) ||
+          (r.replay !== undefined &&
+            (!validateReplay(r.replay) ||
+              r.index !== r.replay.initial.index ||
+              r.practice !== r.replay.initial.practice ||
+              (r.catalog ?? 'valley-v1') !== (r.replay.initial.catalog ?? 'valley-v1'))) ||
           !r.result ||
           (r.result.lostLoot !== undefined &&
-            !validCampaignResources(r.result.lostLoot, CAMPAIGN[r.index])) ||
+            !validCampaignResources(r.result.lostLoot, campaignStage(r.index, r.catalog))) ||
           !finite(r.result.gold) ||
           !finite(r.result.elixir) ||
           !Number.isInteger(r.result.trophies) ||

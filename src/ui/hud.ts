@@ -1,3 +1,10 @@
+import { campaignStage } from '../game/campaign-catalog';
+import {
+  NATIVE_CAMPAIGN,
+  NATIVE_COMBAT,
+  nativeCampaignIssues,
+  nativeUnlocked,
+} from '../game/native-campaign';
 import { sweeperStats } from '../game/air-control-stats';
 import {
   EQUIPMENT,
@@ -39,7 +46,6 @@ import {
 } from '../game/heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
-import { CAMPAIGN_LAYOUTS, campaignBlueprint } from '../game/campaign';
 import {
   BUILDINGS,
   buildingHp,
@@ -48,7 +54,6 @@ import {
   SPELLS,
   TROOP_HOTKEYS,
   SPELL_HOTKEYS,
-  CAMPAIGN,
   maxTroopLevel,
   researchLaboratory,
   researchLevelForLab,
@@ -756,7 +761,7 @@ export class HUD {
           this.showDrawer('army');
           break;
         }
-        m.startBattle(battle.index, battle.practice);
+        m.startBattle(battle.index, battle.practice, battle.catalog);
         this.resultShown = false;
         this.panel = null;
         this.render();
@@ -837,7 +842,7 @@ export class HUD {
         this.render();
         break;
       case 'attack':
-        m.startBattle(Number(arg));
+        m.startCampaign(Number(arg));
         if (m.battle) {
           this.panel = null;
           this.drawerPanel = null;
@@ -1157,7 +1162,7 @@ export class HUD {
  <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
- <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${s.stars.some((v, i) => !v && (i === 0 || s.stars[i - 1])) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
+ <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !nativeCampaignIssues(i).length) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
@@ -1320,7 +1325,7 @@ export class HUD {
             gold: 0,
             elixir: 0,
           }
-        : { ...CAMPAIGN[b.index], ...b.availableLoot };
+        : { ...campaignStage(b.index, b.catalog), ...b.availableLoot };
     const lootLeft = (k: 'gold' | 'elixir') => Math.max(0, v[k] - (b.lootTaken?.[k] ?? 0));
     const limitedStorage =
       !b.practice &&
@@ -1701,7 +1706,7 @@ export class HUD {
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];
-    return `<div class="modal-body battle-log-body"><div class="replay-import-bar">${button('replay-import', `${icon('Upload', 17)} Open shared replay`, 'game-btn blue')}<small>Watch a replay file without replacing your village.</small></div>${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : CAMPAIGN[r.index].name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.replay?.version === REPLAY_VERSION ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
+    return `<div class="modal-body battle-log-body"><div class="replay-import-bar">${button('replay-import', `${icon('Upload', 17)} Open shared replay`, 'game-btn blue')}<small>Watch a replay file without replacing your village.</small></div>${log.length ? log.map((r) => `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : campaignStage(r.index, r.catalog).name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${r.replay?.version === REPLAY_VERSION ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${r.hero ? `<p class="hero-log">Barbarian King · Level ${r.hero.level} · ${r.hero.abilityUsed ? 'Ability used' : 'Ability unused'}</p>` : ''}${r.practice || r.catalog === 'goblin-v1' ? button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armySize || this.model.heroReady ? '' : 'disabled') : ''}</article>`).join('') : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}</div>`}</div>`;
   }
   private troopInfo() {
     const kind = this.inspectedTroop,
@@ -1903,29 +1908,28 @@ export class HUD {
     return `<div class="modal-body research-body"><div class="research-banner"><img src="${asset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
-    return `<svg class="campaign-map" viewBox="0 0 30 30" role="img" aria-label="${CAMPAIGN[index].name} base layout"><rect width="30" height="30" rx="3" fill="#637d43"/>${campaignBlueprint(
-      index,
-    )
-      .filter(([k]) => !isTrap(k) && k !== 'tesla')
+    const v = NATIVE_CAMPAIGN[index];
+    return `<svg class="campaign-map" viewBox="0 0 48 48" role="img" aria-label="${v.name} base layout"><rect width="48" height="48" rx="3" fill="#637d43"/>${v.buildings
+      .filter(([id]) => id !== 1000019)
       .map(
-        ([k, x, y]) =>
-          `<rect x="${x + 1}" y="${y + 1}" width="${BUILDINGS[k].size - 0.18}" height="${BUILDINGS[k].size - 0.18}" rx=".25" fill="${k === 'wall' ? '#b9ada0' : k === 'townhall' ? '#f3a442' : k === 'airdefense' ? '#5fb6d8' : isDefense(k) ? '#655666' : '#e0cf97'}"/>`,
+        ([id, x, y]) =>
+          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 ? '#f3c346' : '#e0cf97'}"/>`,
       )
       .join('')}</svg>`;
   }
   private campaign() {
-    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}${icon('Map', 23)} <span>12 villages to conquer</span><b>${this.model.state.stars.reduce((a, b) => a + b, 0)} / 36 ${icon('Star', 17)}</b></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${CAMPAIGN.map(
+    const stars = this.model.state.nativeCampaign?.stars ?? [];
+    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armySize || this.model.heroReady ? '' : 'disabled')}${icon('Map', 23)} <span>90 Goblin villages</span><b>${stars.reduce((a, b) => a + b, 0)} / 270 ${icon('Star', 17)}</b></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
-        const loot = this.model.campaignLoot(i);
-        const locked = i > 0 && !this.model.state.stars[i - 1],
-          stars = this.model.state.stars[i] ?? 0;
-        const air = campaignBlueprint(i).some(([k]) => k === 'airdefense');
-        return `<article class="campaign-card ${locked ? 'locked' : ''}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : i + 1}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${v.difficulty}${air ? ' · AIR DEFENSE' : ''}</span><h3>${v.name}</h3><p>${CAMPAIGN_LAYOUTS[i].hint}</p><small class="campaign-recommendation">Suggested army: ${CAMPAIGN_LAYOUTS[i].recommended} spaces${i > 6 ? ' · researched troops' : ''}</small><div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}</div>${loot.gold || loot.elixir ? '' : `<small class="campaign-depleted">Loot depleted${stars < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(stars)}<span>${'★'.repeat(3 - stars)}</span></div>${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked ? 'stone' : 'orange'), locked ? 'disabled' : '')}</div></article>`;
+        const loot = this.model.campaignLoot(i, 'goblin-v1');
+        const pending = nativeCampaignIssues(i).length > 0;
+        const locked = !nativeUnlocked(i, stars),
+          score = stars[i] ?? 0;
+        return `<article class="campaign-card ${locked || pending ? 'locked' : ''}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}</div>${loot.gold || loot.elixir ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
       },
-    ).join(
-      '',
-    )}</div><footer class="modal-footer">${icon('Swords', 18)} ${this.model.armySize} army spaces ready <span>Earn a star to unlock the next village</span></footer>`;
+    ).join('')}</div>`;
   }
+
   private settings() {
     const s = this.model.state.settings;
     return `<div class="modal-body settings-body">${(
@@ -1950,7 +1954,11 @@ export class HUD {
         ['Swords', 'Raids won', n(s.stats.raids)],
         ['Castle', 'Buildings destroyed', n(s.stats.destroyed)],
         ['Coins', 'Resources collected', n(s.stats.collected)],
-        ['Star', 'Campaign stars', `${s.stars.reduce((a, b) => a + b, 0)} / 36`],
+        [
+          'Star',
+          'Campaign stars',
+          `${(s.nativeCampaign?.stars ?? []).reduce((a, b) => a + b, 0)} / 270`,
+        ],
         ['LayoutGrid', 'Town Hall', `Level ${this.model.townhallLevel}`],
         ['Hammer', 'Builders', String(this.model.builders)],
       ] as const
@@ -1969,7 +1977,7 @@ export class HUD {
   private result() {
     const b = this.model.battle!,
       r = b.result!;
-    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : CAMPAIGN[b.index].name}</p>${b.practice ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>' : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold received</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir received</small></div></div>${r.lostLoot ? `<p class="loot-overflow-note">Storages full: ${n(r.lostLoot.gold)} gold and ${n(r.lostLoot.elixir)} elixir could not be stored.</p>` : ''}`}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
+    return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${b.practice ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>' : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold received</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir received</small></div></div>${r.lostLoot ? `<p class="loot-overflow-note">Storages full: ${n(r.lostLoot.gold)} gold and ${n(r.lostLoot.elixir)} elixir could not be stored.</p>` : ''}`}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
   }
   /** Runs the result screen's loot numbers up from zero, once. */
   private countUp() {

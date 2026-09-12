@@ -1,6 +1,6 @@
 # Goblin campaign building foundation
 
-Added September 11, 2026. The battle engine and renderer now support three campaign-only identities: Goblin Town Hall, Goblin Hut and Tutorial Cannon. The twelve authored villages remain the playable campaign; this change prepares the native campaign adapter and does not replace their layouts or progress.
+Added September 11, 2026. The battle engine and renderer now support three campaign-only identities: Goblin Town Hall, Goblin Hut and Tutorial Cannon. This was the foundation for the September 12 native campaign integration. The playable UI now uses 44 supported native layouts; legacy progress remains separate. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md).
 
 ## Native interpretation
 
@@ -16,7 +16,7 @@ Native layout levels are zero-based; `makeNpcBuilding` accepts the engine's one-
 
 The Goblin Hut has neither a weapon nor troop housing in the building table. Its saved `units` arrays are not defending troops. In particular, the five Balloons in Goblin Forest's Hut template must not become five hostile Balloons. Goblin Castle and special boss defenders remain separate future mechanics.
 
-The tutorial weapon shares the normal level-one Cannon visual exports and its 9-tile range / 0.8-second interval. Its native DPS is 2, compared with the normal level-one Cannon's 10. It uses 1.6-damage projectiles and is not multiplied by the authored campaign's difficulty modifier.
+The tutorial weapon shares the normal level-one Cannon visual exports and its 9-tile range / 0.8-second interval. Its native DPS is 2, compared with the normal level-one Cannon's 7. It uses 1.6-damage projectiles and is not multiplied by the authored campaign's difficulty modifier.
 
 ## Persistence and artwork
 

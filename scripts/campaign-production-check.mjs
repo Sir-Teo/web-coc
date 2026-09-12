@@ -2,6 +2,10 @@ import { chromium, webkit, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import fs from 'node:fs/promises';
 
+const selectedBrowser = process.env.PRODUCTION_BROWSER;
+if (selectedBrowser && !['chromium', 'webkit'].includes(selectedBrowser))
+  throw Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}`);
+
 await fs.mkdir('output/playtest', { recursive: true });
 const modules = await createServer({
   server: { middlewareMode: true },
@@ -12,24 +16,23 @@ let fixture, expected;
 try {
   const { GameModel } = await modules.ssrLoadModule('/src/game/model.ts');
   const { developedSave } = await modules.ssrLoadModule('/tests/fixtures/developed-village.ts');
-  const { freshCampaignLoot } = await modules.ssrLoadModule('/src/game/campaign-loot.ts');
+  const { freshNativeCampaign } = await modules.ssrLoadModule('/src/game/native-campaign.ts');
   const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
   const m = new GameModel(developedSave());
   m.state.tutorial = true;
   m.state.settings.sound = false;
-  m.state.spells = { lightning: 1, heal: 0, rage: 0 };
-  m.state.campaignLoot = freshCampaignLoot();
-  m.state.campaignLoot.remaining[0] = { gold: 700, elixir: 300 };
+  m.state.spells = { lightning: 0, heal: 0, rage: 0 };
+  m.state.nativeCampaign = freshNativeCampaign();
+  m.state.nativeCampaign.remaining[0] = { gold: 400, elixir: 300, dark: 0 };
   m.state.gold = m.resourceCap('gold');
   m.state.elixir = m.resourceCap('elixir');
-  m.startBattle(0);
-  const mine = m.battle.buildings.find((b) => b.kind === 'goldmine');
-  m.activeSpell = 'lightning';
-  if (!m.castSpell(mine.x + 1.5, mine.y + 1.5)) throw Error('Fixture spell failed');
+  m.startCampaign(0);
+  m.activeTroop = 'swordsman';
+  if (!m.deploy(32, 26)) throw Error('Fixture deployment failed');
   for (let i = 0; i < 6400; i++) m.step(0.05);
   if (m.battle.finished) throw Error('Campaign ended at a time limit');
   m.finishBattle();
-  expected = { loot: m.state.campaignLoot, result: m.battle.result, trophies: m.state.trophies };
+  expected = { loot: m.state.nativeCampaign, result: m.battle.result, trophies: m.state.trophies };
   if (!m.state.raidLog[0].replay || !m.battle.result.lostLoot?.gold)
     throw Error('Missing fixture recording or overflow');
   m.returnHome();
@@ -49,6 +52,7 @@ try {
     ['chromium', chromium],
     ['webkit', webkit],
   ]) {
+    if (selectedBrowser && selectedBrowser !== name) continue;
     const browser = await engine.launch({
       headless: true,
       ...(name === 'chromium' && process.platform === 'darwin'
@@ -124,6 +128,13 @@ try {
         String(expected.loot.remaining[0].gold),
       );
       await expect(page.locator('.loot-capacity-note')).toBeVisible();
+      const native = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(native.battle.catalog).toBe('goblin-v1');
+      expect(native.battle.scenery).toHaveLength(14);
+      expect(native.buildings.map((b) => [b.npc, b.x, b.y, b.hp])).toEqual([
+        ['goblin-townhall', 30, 20, 400],
+        ['tutorial-cannon', 23, 24, 250],
+      ]);
       await page.screenshot({ path: `output/playtest/campaign-production-${name}.png` });
       await page.locator('[data-action="home"]').click();
       await page.locator('[data-action="battle-log"]').click();
@@ -141,6 +152,9 @@ try {
         viewport: [390, 844],
         dpr: 2,
         importedSave: true,
+        nativeCatalog: native.battle.catalog,
+        nativeBuildings: native.buildings.length,
+        nativeScenery: native.battle.scenery.length,
         depletedInventoryReload: true,
         longReplaySeconds: 320,
         sharedReplay: true,

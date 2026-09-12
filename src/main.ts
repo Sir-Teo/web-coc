@@ -135,6 +135,7 @@ async function boot() {
           .map((b) => ({
             id: b.id,
             type: b.kind,
+            ...(b.npc ? { npc: b.npc } : {}),
             x: b.x,
             y: b.y,
             hp: Math.round(b.hp),
@@ -146,6 +147,8 @@ async function boot() {
         battle: model.battle
           ? {
               time: model.battle.elapsed,
+              catalog: model.battle.catalog,
+              scenery: model.battle.scenery,
               timeLimit: model.battle.practice ? 180 : null,
               scouting: !model.battle.started,
               availableLoot: model.battle.availableLoot,

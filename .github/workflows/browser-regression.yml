@@ -31,12 +31,16 @@ jobs:
 
       # Distribute individual tests, including large spec files, across runners.
       # One browser worker per runner avoids competing for software-rendering CPU.
+      - name: Verify generated campaign scenery
+        if: matrix.browser == 'chromium' && matrix.shard == 1
+        run: node scripts/campaign-scenery-assets.mjs --check
+
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line
 
       - name: Verify Retina terrain and camera coverage
         if: matrix.browser == 'webkit' && matrix.shard == 4
-        run: npx playwright test tests/browser/terrain-field.spec.ts tests/browser/village-camera.spec.ts --config=playwright.retina.config.ts --browser=webkit
+        run: npx playwright test tests/browser/terrain-field.spec.ts tests/browser/village-camera.spec.ts tests/browser/native-campaign.spec.ts --config=playwright.retina.config.ts --browser=webkit
 
       - name: Build production bundle
         if: matrix.shard == 1
@@ -45,6 +49,13 @@ jobs:
         if: matrix.shard == 1
         timeout-minutes: 3
         run: npm run test:production
+        env:
+          PRODUCTION_BROWSER: ${{ matrix.browser }}
+
+      - name: Verify native campaign production flows
+        if: matrix.shard == 1
+        timeout-minutes: 3
+        run: npm run test:campaign:production
         env:
           PRODUCTION_BROWSER: ${{ matrix.browser }}
 

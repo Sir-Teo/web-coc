@@ -1,3 +1,4 @@
+import { freshNativeCampaign } from '../game/native-campaign';
 import { GameModel, makeBuilding, type Save } from '../game/model';
 import {
   BUILDINGS,
@@ -167,6 +168,8 @@ export class DeveloperControls {
   unlockCampaign() {
     this.edit((m) => {
       m.state.stars = m.state.stars.map((s) => Math.max(1, s));
+      m.state.nativeCampaign ??= freshNativeCampaign();
+      m.state.nativeCampaign.stars = m.state.nativeCampaign.stars.map((s) => Math.max(1, s));
     });
   }
   endBattle(victory: boolean) {
