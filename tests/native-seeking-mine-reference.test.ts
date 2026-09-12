@@ -60,9 +60,9 @@ it('retains all eight source levels, four projectile families and actual 24 fps 
 });
 
 it('preserves empty opening frames, the complete reveal and all setup/projectile timelines', () => {
-  expect(Object.keys(world.exports)).toHaveLength(30);
-  expect(Object.keys(world.clips)).toHaveLength(35);
-  expect(Object.keys(world.shapes)).toHaveLength(52);
+  expect(Object.keys(world.exports)).toHaveLength(31);
+  expect(Object.keys(world.clips)).toHaveLength(36);
+  expect(Object.keys(world.shapes)).toHaveLength(53);
   for (const name of new Set(combat.levels.map((v) => v.setup))) {
     expect(graph.clips[graph.exports[name]].timeline).toHaveLength(200);
     expect(graph.clips[graph.exports[name]].fps).toBe(24);
@@ -157,7 +157,7 @@ for (const [name, packed, original] of [
     }
   });
 
-it('ships exactly six texture crops, four world previews, the original Info image and five sounds', async () => {
+it('ships exactly seven texture crops, four world previews, the original Info image and five sounds', async () => {
   const expected = [
     ...Object.values(native.world.textures),
     ...Object.values(native.info.textures),

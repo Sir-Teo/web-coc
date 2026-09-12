@@ -28,6 +28,7 @@ def build():
         if name.startswith('evil_airTrap_setup'): frames = [0, 47, 99, 199]
         elif name.startswith('evil_airTrap_projectile'): frames = [0, 2, 6, 24, 119]
         elif name == 'air_trap': frames = [0, 1, 6, 7, 14, 74]
+        elif name == 'gen_appear_fx': frames = [0, 1, 7, 14, 17]
         else: frames = [int(len(clip['timeline']) * .35)]
         for frame in frames:
             cases.append(dict(graph='world', export=name, time=frame / clip['fps']))

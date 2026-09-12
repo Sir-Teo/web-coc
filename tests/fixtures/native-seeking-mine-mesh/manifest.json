@@ -4,7 +4,7 @@
   "cell": 400,
   "background": "#304135",
   "nativePlaybackVerified": false,
-  "rgbaSha256": "9b1b34969a52776c43c3858da6000c8036464f2390b0be4c3f2a1f4a4d1292d3",
+  "rgbaSha256": "312beea204c1c3a5cc51847b8b642cef378dfb9b0c1ad0a7eeb3ffc899fd319b",
   "cases": [
     {
       "graph": "world",
@@ -977,10 +977,95 @@
     },
     {
       "graph": "world",
-      "export": "hit_force_above",
-      "time": 0.3333333333333333,
+      "export": "gen_appear_fx",
+      "time": 0.0,
       "x": 1200,
       "y": 3600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.03333333333333333,
+      "x": 1600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        197.39999985694885
+      ],
+      "empty": false,
+      "rgbaSha256": "4e99a8608e4da6e06ffcf5cf1d055c8e5c2990faba75e65f997db7ebc518bbc4"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.23333333333333334,
+      "x": 2000,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        202.90000009536743
+      ],
+      "empty": false,
+      "rgbaSha256": "ec4813e909c3ff9efed829f261952734774151fd089c84749691c10664094adc"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.4666666666666667,
+      "x": 0,
+      "y": 4000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        209.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "186667f9601bd38160c9f011f53f23217f9f5a68209c52c0ec2ff442da097f90"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.5666666666666667,
+      "x": 400,
+      "y": 4000,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "hit_force_above",
+      "time": 0.3333333333333333,
+      "x": 800,
+      "y": 4000,
       "root": [
         1.5776468765830602,
         0.0,
@@ -996,8 +1081,8 @@
       "graph": "world",
       "export": "s3",
       "time": 0.0,
-      "x": 1600,
-      "y": 3600,
+      "x": 1200,
+      "y": 4000,
       "root": [
         2.0,
         0.0,
@@ -1013,8 +1098,8 @@
       "graph": "world",
       "export": "s4",
       "time": 0.0,
-      "x": 2000,
-      "y": 3600,
+      "x": 1600,
+      "y": 4000,
       "root": [
         2.0,
         0.0,
@@ -1030,7 +1115,7 @@
       "graph": "world",
       "export": "simple_shadow_small",
       "time": 0.0,
-      "x": 0,
+      "x": 2000,
       "y": 4000,
       "root": [
         2.0,
@@ -1047,8 +1132,8 @@
       "graph": "world",
       "export": "smoke00",
       "time": 0.125,
-      "x": 400,
-      "y": 4000,
+      "x": 0,
+      "y": 4400,
       "root": [
         2.0,
         0.0,
@@ -1064,8 +1149,8 @@
       "graph": "world",
       "export": "spell_range_marker_3",
       "time": 0.3333333333333333,
-      "x": 800,
-      "y": 4000,
+      "x": 400,
+      "y": 4400,
       "root": [
         1.8520091216481875,
         0.0,
@@ -1083,8 +1168,8 @@
       "emitter": "AirDefence3_hit2",
       "particleBlend": 8,
       "time": 0.5416666666666666,
-      "x": 1200,
-      "y": 4000,
+      "x": 800,
+      "y": 4400,
       "root": [
         2.0,
         0.0,
@@ -1102,8 +1187,8 @@
       "emitter": "small_airTrap_fireExplosion3",
       "particleBlend": 8,
       "time": 2.0416666666666665,
-      "x": 1600,
-      "y": 4000,
+      "x": 1200,
+      "y": 4400,
       "root": [
         2.0,
         0.0,
@@ -1121,8 +1206,8 @@
       "emitter": "large_airTrap_lightFlash",
       "particleBlend": 8,
       "time": 0.5,
-      "x": 2000,
-      "y": 4000,
+      "x": 1600,
+      "y": 4400,
       "root": [
         1.8520091216481875,
         0.0,
@@ -1138,7 +1223,7 @@
       "graph": "info",
       "export": "evil_airtrap_lvl1_info",
       "time": 0,
-      "x": 0,
+      "x": 2000,
       "y": 4400,
       "root": [
         1.9018087855297157,

@@ -22,6 +22,7 @@ PINS = {
     'fingerprint.json': 'ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b',
     'sc/buildings.sc': SOURCES['sc/buildings.sc'],
     'sc/buildings_8.sctx': '588eba7d5739a5d9b53d3e14f2ab83bd170cad735363a81dd37bea7bcc0bb3bd',
+    'sc/buildings_18.sctx': 'bd0c3b2eece3e9c43b2b3d61463e5b12ff4d274ae6adcc0ce33ceed63df58ffa',
     'sc/buildings_39.sctx': 'dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16',
     'sc/buildings_66.sctx': SOURCES['sc/buildings_66.sctx'],
     'sc/ui.sc': '200abb4f7e79b0cc78b829e891b644d21653168ec4892dc864cb6d81c30109b0',
@@ -101,10 +102,11 @@ def build():
     names = {v for row in levels for k, v in row.items() if 'ExportName' in k}
     names |= {v for rows in projectiles.values() for row in rows for k, v in row.items() if 'ExportName' in k}
     names |= {r['ParticleExportName'] for rows in particles.values() for r in rows}
+    names |= {r['ExportName'] for rows in effects.values() for r in rows if r.get('ExportName')}
     sc = SC6(source('sc/buildings.sc', PINS))
     graph = capture_graph(sc, {name: sc.exports[name] for name in sorted(names)})
     used = {t for commands in graph['shapes'].values() for t, _ in commands}
-    require(used == {8, 39, 66}, 'Mine source texture membership differs')
+    require(used == {8, 18, 39, 66}, 'Mine source texture membership differs')
     images = {t: decode_sctx(source('sc/' + sc.textures[t]['external'], PINS)) for t in sorted(used)}
     for t, im in images.items():
         require(im.size == (sc.textures[t]['width'], sc.textures[t]['height']), 'Texture dimensions differ')
