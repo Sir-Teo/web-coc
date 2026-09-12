@@ -1,6 +1,6 @@
 # Native X-Bow source reconstruction
 
-The home-village X-Bow artwork and sound sources are preserved from Supercell's public client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. `native.json` contains the original building, projectile, effect and particle rows, source scene graph and SHA-256 pins. `runtime.json` retains the scene graph with texture coordinates remapped to the shipped PNGs. Original artwork and audio belong to Supercell.
+The home-village X-Bow artwork and sound sources are preserved from Supercell's public client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. `native.json` contains the original building, projectile, effect and particle rows, source scene graph and SHA-256 pins. `runtime.json` retains the scene graph with texture coordinates remapped to the shipped PNGs. `combat.json` contains the inherited numeric progression and projectile values without importing the large artwork graph. Original artwork and audio belong to Supercell.
 
 This is the asset foundation for X-Bow combat. Its [native GPU renderer](../../docs/NATIVE-MESH-RENDERING.md) is now validated in browser fixtures; targeting, ammunition, village-scene integration, shop and replays remain in progress. The campaign still supports its first 50 layouts. Invaders and subsequent stages also require Dark Elixir rewards and alternate defense modes; importing their weapon art alone does not make them supported.
 
@@ -23,7 +23,7 @@ The format reference is [SupercellFlash's MovieClip definition](https://github.c
 
 ## Lossless texture handling
 
-The importer copies source texels without resizing or rasterizing new directional poses. Every source UV rectangle retains its bilinear sampling neighbours. Sparse regions are packed with an extruded one-pixel border, preserving the source texture's clamp behavior at its outer edges. UV remapping reverses to within `1e-10` of the original 16-bit coordinates. Every copied region and complete decoded output has an RGBA SHA-256 digest.
+The live renderer textures copy source texels without resizing or rasterizing new directional poses. Every source UV rectangle retains its bilinear sampling neighbours. Sparse regions are packed with an extruded one-pixel border, preserving the source texture's clamp behavior at its outer edges. UV remapping reverses to within `1e-10` of the original 16-bit coordinates. Every copied region and complete decoded output has an RGBA SHA-256 digest.
 
 | Source texture | Shipped dimensions | Treatment |
 | --- | ---: | --- |
@@ -31,7 +31,9 @@ The importer copies source texels without resizing or rasterizing new directiona
 | `buildings_39.sctx` | 64×242 | 13 packed projectile/shadow regions |
 | `buildings_70.sctx` | 2048×3192 | Native dense layout; unused sampling regions cleared |
 
-The projectile texture occupies 15,488 pixels instead of the original 3,083,544. The ten shipped assets total **5,315,645 bytes**: three PNGs and seven original Oggs. No source containers, unrelated CSV data or diagnostic contact sheets enter the production asset directory.
+The projectile texture occupies 15,488 pixels instead of the original 3,083,544. The 36 shipped assets total **7,049,395 bytes**: three source texture PNGs, seven original Oggs and 26 UI preview PNGs. No source containers, unrelated CSV data or diagnostic contact sheets enter the production asset directory.
+
+The 26 static UI previews cover every level and targeting mode at source direction 225. Each uses the same `[-100, -30, 100, 140]` bounds and a 2× raster density, so their position and relative size remain registered. Transparent PNG previews omit additive sparks, which require live composition against the actual background. The live scene graph retains those layers. The importer rejects clipped geometry and verifies every preview pixel.
 
 ## Reproduction and checks
 
@@ -51,6 +53,6 @@ Omit `--check` to regenerate the assets and references. Raw downloads remain in 
 
 The contact-sheet tool compares the original decoded textures with the shipped texture sampling. It rejects viewport clipping and writes five studies under `output/playtest/`: both modes across all levels, eight aiming frames per mode, projectile animation frames and the foundation/shadow exports. All **74 comparisons match exactly**, including the additive projectile layers. These are diagnostic source reconstructions against an opaque background; they are not captures of gameplay.
 
-The 18 Python reader/atlas/scene tests and four X-Bow reference tests pass. Image and audio decoding passes in Chromium and WebKit at DPR 2. The production build and both-engine smoke checks pass; Chromium reloads offline with all 224 manifest entries cached. The existing Pumpkin, Skeleton and Santa importers still reproduce unchanged metadata and pixels after the reader extension.
+The 18 Python reader/atlas/scene tests and four X-Bow reference tests pass. Image and audio decoding passes in Chromium and WebKit at DPR 2. Before the UI previews were added, the production build and both-engine smoke checks passed; Chromium reloaded offline with all 224 manifest entries cached. The next integrated release must rebuild and recheck its expanded manifest. The existing Pumpkin, Skeleton and Santa importers still reproduce unchanged metadata and pixels after the reader extension.
 
 Exact native direction-to-world mapping, engine subclip clocks, recoil, ammunition states and particle projection still require implementation and validation. GPU composition now has independent browser reference checks, with measured edge and color-rounding differences documented in the renderer record. Source facts and diagnostic playback are kept separate from the remaining native-engine fidelity claims.

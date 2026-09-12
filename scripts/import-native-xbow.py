@@ -10,9 +10,10 @@ import io
 import json
 import lzma
 
+import numpy as np
 from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, SOURCES, digest, source
-from native_art.sc6 import SC6, decode_sctx, require
+from native_art.sc6 import SC6, decode_sctx, rasterize, require
 from native_art.scene_graph import capture_graph, crop_textures, graph_draws
 
 PINS = {
@@ -112,9 +113,29 @@ def build():
             path = PREFIX + '/' + original.removeprefix('sfx/')
             outputs[path] = source(original, PINS)
             sounds[original] = dict(path=path, sha256=digest(outputs[path]))
+    # Static DOM portraits keep the native base/turret/ammo at a common origin.
+    # Additive sparks remain live mesh layers; a normal PNG cannot represent
+    # their appearance over every arbitrary HUD background.
+    previews = {}
+    preview_textures = {70: np.array(decoded[70], dtype=float) / 255}
+    bounds = [-100, -30, 100, 140]
+    for level in range(1, 14):
+        for mode in ('ground', 'both'):
+            name = f'rapidfire_turret_lvl{level}' + ('_air' if mode == 'both' else '')
+            commands = []
+            for texture, vertices, matrix, color, blend in graph_draws(graph, sc.exports[name], 0, {'turret': 225, 'ammo': 225}):
+                points = np.column_stack([vertices[:, :2], np.ones(len(vertices))]) @ matrix.T
+                require((points[:, :2] >= bounds[:2]).all() and (points[:, :2] <= bounds[2:]).all(), 'X-Bow preview clips native geometry')
+                if blend == 0:
+                    commands.append((texture, vertices, np.diag([2, 2, 1]) @ matrix, color))
+            image = rasterize(commands, preview_textures, [v * 2 for v in bounds])
+            path = f'{PREFIX}/preview-{level}-{mode}.png'
+            outputs[path] = image
+            previews[f'{level}-{mode}'] = dict(path=path, bounds=bounds, width=image.width, height=image.height,
+                                              direction=225, rgbaSha256=digest(image.tobytes()))
     metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                     building=building, projectiles=selected_projectiles, effects=selected_effects,
-                    particles=selected_particles, graph=graph, textures=textures, directions=directions, sounds=sounds,
+                    particles=selected_particles, graph=graph, textures=textures, directions=directions, sounds=sounds, previews=previews,
                     reconstruction=dict(textureSampling='unscaled source texels with full bilinear neighbours',
                         geometry='original polygon strips, six affine values and multiply/add color transforms',
                         blends='normal=0, add=8; distinct instances and layer order retained',
@@ -152,7 +173,23 @@ def main():
     if args.check:
         shipped = {str(p.relative_to(ROOT / 'public')) for p in (ROOT / 'public' / PREFIX).iterdir() if p.is_file()}
         require(shipped == set(outputs), 'Unexpected or missing native X-Bow assets')
-    for name, value in [('native', metadata), ('runtime', runtime)]:
+    # Combat consumes only audited numeric data, without importing the large art graph.
+    levels, inherited = [], {}
+    projectiles = list(metadata['projectiles'])
+    for row in metadata['building']:
+        inherited.update(row)
+        levels.append(dict(level=int(inherited['BuildingLevel']), townhall=int(inherited['TownHallLevel']),
+                           hp=int(inherited['Hitpoints']), dps=int(inherited['DPS']), cost=int(inherited['BuildCost']),
+                           seconds=sum(int(inherited[k]) * scale for k, scale in
+                                       [('BuildTimeD', 86400), ('BuildTimeH', 3600), ('BuildTimeM', 60), ('BuildTimeS', 1)]),
+                           projectile=projectiles.index(inherited['Projectile']) + 1))
+    first = metadata['building'][0]
+    combat = dict(levels=levels, intervalMs=int(first['AttackSpeed']), ammunition=int(first['AmmoCount']),
+                  groundRange=int(first['AttackRange']), groundAirRange=int(first['AltAttackRange']),
+                  projectiles=[dict(export=metadata['projectiles'][p][0]['ExportName'],
+                                    speed=int(metadata['projectiles'][p][0]['Speed']),
+                                    height=int(metadata['projectiles'][p][0]['StartHeight'])) for p in projectiles])
+    for name, value in [('native', metadata), ('runtime', runtime), ('combat', combat)]:
         target = ROOT / 'reference/xbow' / (name + '.json')
         content = json.dumps(value, indent=2) + '\n'
         if args.check:

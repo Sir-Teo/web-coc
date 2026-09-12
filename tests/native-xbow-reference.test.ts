@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import { expect, it } from 'vitest';
 import native from '../reference/xbow/native.json';
 import runtime from '../reference/xbow/runtime.json';
+import combat from '../reference/xbow/combat.json';
 
 type Clip = {
   fps: number;
@@ -40,6 +41,29 @@ it('retains the home X-Bow identity, cadence, ammunition and both targeting mode
   expect(native.building.map((r) => Number(r.Hitpoints))).toEqual([
     1500, 1900, 2300, 2700, 3100, 3400, 3700, 4000, 4200, 4400, 4600, 4800, 5000,
   ]);
+  expect(combat).toMatchObject({
+    intervalMs: 128,
+    ammunition: 1500,
+    groundRange: 1400,
+    groundAirRange: 1150,
+  });
+  const inherited: Record<string, string> = {};
+  for (const [i, row] of native.building.entries()) {
+    Object.assign(inherited, row);
+    expect(combat.levels[i]).toEqual({
+      level: Number(inherited.BuildingLevel),
+      townhall: Number(inherited.TownHallLevel),
+      hp: Number(inherited.Hitpoints),
+      dps: Number(inherited.DPS),
+      cost: Number(inherited.BuildCost),
+      seconds:
+        Number(inherited.BuildTimeD) * 86400 +
+        Number(inherited.BuildTimeH) * 3600 +
+        Number(inherited.BuildTimeM) * 60 +
+        Number(inherited.BuildTimeS),
+      projectile: Object.keys(native.projectiles).indexOf(inherited.Projectile) + 1,
+    });
+  }
   expect(Object.values(native.projectiles).map((r) => Number(r[0].Speed))).toEqual([
     2300, 2400, 2500, 2500, 2500, 2500, 2500,
   ]);
@@ -159,6 +183,17 @@ it('ships exact source sampling regions and native sound bytes in a bounded asse
     const data = await readFile(`public/${sound.path}`);
     expect(data.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(data)).toBe(sound.sha256);
+  }
+  expect(Object.keys(native.previews)).toHaveLength(26);
+  for (const preview of Object.values(native.previews)) {
+    expected.push(preview.path.split('/').at(-1)!);
+    const { data, info } = await sharp(`public/${preview.path}`)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    expect([info.width, info.height, info.channels]).toEqual([400, 340, 4]);
+    expect(preview.bounds).toEqual([-100, -30, 100, 140]);
+    expect(preview.direction).toBe(225);
+    expect(hash(data)).toBe(preview.rgbaSha256);
   }
   expect((await readdir('public/assets/buildings/xbow-native')).sort()).toEqual(expected.sort());
 });

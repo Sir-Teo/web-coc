@@ -101456,6 +101456,346 @@
       "sha256": "9b155458cd993e03f02fcef0a51a62522ef8d05c49bd0be1a925bb5ae055dc10"
     }
   },
+  "previews": {
+    "1-ground": {
+      "path": "assets/buildings/xbow-native/preview-1-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "576db34a30dadca41b254c19abd61cca45861c6c034bc89fe9ec124c418e760a"
+    },
+    "1-both": {
+      "path": "assets/buildings/xbow-native/preview-1-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "d585049d2b5fabd9c54953ba54d58f60c3aaf89607ade5809252e5b3220284e8"
+    },
+    "2-ground": {
+      "path": "assets/buildings/xbow-native/preview-2-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "1e7510e2c84f5f887119cb706fd66e9f506525d094c1d4bbb1c73e15db52321b"
+    },
+    "2-both": {
+      "path": "assets/buildings/xbow-native/preview-2-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "8b641e75d05124c25b0f7d71e1d497adae5d1d9bde6b2f478c63e95705bd93ae"
+    },
+    "3-ground": {
+      "path": "assets/buildings/xbow-native/preview-3-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "7c2b63270b2a38381b3ee8cb8e7526aee8bd381c0ebfa473bca27dc93d8955df"
+    },
+    "3-both": {
+      "path": "assets/buildings/xbow-native/preview-3-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "d600b80da1ad5b50fe08eeef890c1f86167329c38037bd90a9b97171398f785c"
+    },
+    "4-ground": {
+      "path": "assets/buildings/xbow-native/preview-4-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "ce9615cd7de40135b12008e8be9cb1a3ed023cd742a794e3f2e372f62056682a"
+    },
+    "4-both": {
+      "path": "assets/buildings/xbow-native/preview-4-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "614c5e79cd4b022f386939e9cec33308e156906bd56bf14e4400dfb6e524da17"
+    },
+    "5-ground": {
+      "path": "assets/buildings/xbow-native/preview-5-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "bd6c3eb8b05ecd29738c3974e75d7ec113604394a460832990fcd00a1c3a57df"
+    },
+    "5-both": {
+      "path": "assets/buildings/xbow-native/preview-5-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "4a7b0385f270eafe98c473cf68437f9f8709fd87db6d85750ff5fc8fdbd74bd1"
+    },
+    "6-ground": {
+      "path": "assets/buildings/xbow-native/preview-6-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "782a4bd9bb3e1a87e3af14964ecf0e2a1aa5c021c1a0ff14286fcce273398188"
+    },
+    "6-both": {
+      "path": "assets/buildings/xbow-native/preview-6-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "338a8f70659f5ace2c921bd1f499f3baa533f5a39fe8363756c670de8d69806c"
+    },
+    "7-ground": {
+      "path": "assets/buildings/xbow-native/preview-7-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "c2c939b6463ffe136c4a9695c4761a08a5194d6ecbb4096fea529e853673c226"
+    },
+    "7-both": {
+      "path": "assets/buildings/xbow-native/preview-7-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "6500b342e134e3a1dd223090c522ea3effc039793802f801e13a163856d3bc44"
+    },
+    "8-ground": {
+      "path": "assets/buildings/xbow-native/preview-8-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "8cbcc1ef79c4919422a55036c296d2aa17271cace1449e77d7e5e6665a554299"
+    },
+    "8-both": {
+      "path": "assets/buildings/xbow-native/preview-8-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "c85e6e66ec67202d9d1c99bfb76fdf6793c2ecf56815ca4936e6107075b859e5"
+    },
+    "9-ground": {
+      "path": "assets/buildings/xbow-native/preview-9-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "d85f921b67c6086e984a6fc91833554ac50a244bac4280e56f0ec3d05965de87"
+    },
+    "9-both": {
+      "path": "assets/buildings/xbow-native/preview-9-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "2377c7f55aae1e366b22b2c5ab0ab7b1155688738e4979c98ea8f13c8a20cf7d"
+    },
+    "10-ground": {
+      "path": "assets/buildings/xbow-native/preview-10-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "034840e6e3cc8cc7d652c7f6c1febf21134d9833140b638227cd309bdc83d216"
+    },
+    "10-both": {
+      "path": "assets/buildings/xbow-native/preview-10-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "01d802ace697f15c7559a070db746d5a3c44033e2bec07755da24d8f82bbd7af"
+    },
+    "11-ground": {
+      "path": "assets/buildings/xbow-native/preview-11-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "f6a6fe98e064c69f5c6768139c20bbddc311a79df61a063c75a5f20965be02f3"
+    },
+    "11-both": {
+      "path": "assets/buildings/xbow-native/preview-11-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "7a60d37243753afea0db5b215f7c4168b3e69d2c279f460756ba35e25d2c693e"
+    },
+    "12-ground": {
+      "path": "assets/buildings/xbow-native/preview-12-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "cfcde513b39991b8855a71253ecd5a0f74242e3dddcc7fade676878fc154bb15"
+    },
+    "12-both": {
+      "path": "assets/buildings/xbow-native/preview-12-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "d816b70243675906e85e6bedfb8c904af419c379dc675b3b86b353775540883a"
+    },
+    "13-ground": {
+      "path": "assets/buildings/xbow-native/preview-13-ground.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "d607d05bb2b8b4a3f97c5312f962781d0558dce0430aca83751e09bce36c174e"
+    },
+    "13-both": {
+      "path": "assets/buildings/xbow-native/preview-13-both.png",
+      "bounds": [
+        -100,
+        -30,
+        100,
+        140
+      ],
+      "width": 400,
+      "height": 340,
+      "direction": 225,
+      "rgbaSha256": "6b6984bf84bef96b7ae0b211b4b4c94f28376f17c87dbf366b993e8af24fb8ed"
+    }
+  },
   "reconstruction": {
     "textureSampling": "unscaled source texels with full bilinear neighbours",
     "geometry": "original polygon strips, six affine values and multiply/add color transforms",
