@@ -122,7 +122,7 @@ describe('recorded battle playback', () => {
       makeBuilding(8, 'giantbomb', 1, 14),
       makeBuilding(9, 'springtrap', 3, 13),
       makeBuilding(10, 'airbomb', 2, 13),
-      makeBuilding(11, 'cannon', 6, 15, 10), // Crossfire drives the King into automatic Iron Fist.
+      makeBuilding(11, 'cannon', 6, 15, 10), // Crossfire triggers the King’s automatic equipment activation.
     ];
     m.state.nextId = 12;
     m.state.king = { level: 1 };

@@ -14,7 +14,7 @@ async function unlock(page: Page, th = 7) {
     if (!m.place(2, 26)) throw Error('Hero Hall fixture cannot be placed');
     m.tick(m.state.buildings.at(-1)!.upgradeEnd! + 1);
     m.cancel();
-    m.state.dark = 5000;
+    m.state.dark = 10000;
     m.changed();
   }, th);
 }
@@ -74,7 +74,7 @@ test('hero upgrade charges once, persists through reload, and finishes through t
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-desktop.png' });
   await page.locator('[data-action="hero-upgrade"]').click();
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
-  expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(3500);
+  expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(5000);
   await page.waitForTimeout(400);
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.ready);
@@ -96,12 +96,10 @@ test('deploy King by pointer, activate with H, and start a fresh practice from t
   await page.getByRole('button', { name: 'Barbarian King, Deploy King' }).click();
   const point = await page.evaluate(() => window.__game.scene.screenFor(2.5, 13.5));
   await page.mouse.click(point.x, point.y);
-  await expect(page.getByRole('button', { name: 'Barbarian King, Iron Fist' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Barbarian King, Activate ability' })).toBeEnabled();
   await page.keyboard.press('h');
   await expect(page.getByRole('button', { name: 'Barbarian King, Ability used' })).toBeDisabled();
-  expect(
-    await page.evaluate(() => window.__game.model.battle!.units.filter((u) => u.summoned).length),
-  ).toBe(4);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle!.units.filter((u) => u.summoned).length)).toBe(8);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/hero-battle-desktop.png',

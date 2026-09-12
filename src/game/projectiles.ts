@@ -125,6 +125,7 @@ export function stepProjectiles(
       for (const unit of battle.units)
         if (
           unit.hp > 0 &&
+          (unit.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !TROOPS[unit.kind].flying &&
           Math.hypot(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
         )
@@ -168,11 +169,17 @@ export function stepProjectiles(
       for (const u of battle.units)
         if (
           u.hp > 0 &&
+          (u.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !!TROOPS[u.kind].flying === !!p.toAir &&
           Math.hypot(u.x - p.x, u.y - p.y) <= p.splash
         )
           u.hp -= p.damage;
-    } else if (target && target.hp > 0) target.hp -= p.damage;
+    } else if (
+      target &&
+      target.hp > 0 &&
+      (!('spawnedAt' in target) || (target.spawnedAt ?? 0) <= p.impact + 1e-9)
+    )
+      target.hp -= p.damage;
     emit(projectileEffect(p, 'impact'));
   }
   battle.projectiles = pending;

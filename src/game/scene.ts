@@ -1459,7 +1459,11 @@ export class VillageScene extends Phaser.Scene {
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
         if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
-        else if (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) im.setTint(0xffbd76);
+        else if (
+          (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
+          (u.summoned && (u.rageUntil ?? 0) > battle.elapsed)
+        )
+          im.setTint(0xffbd76);
         else im.clearTint();
         const p = iso(u.x, u.y),
           motion =

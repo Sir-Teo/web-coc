@@ -57,6 +57,7 @@ import {
 import {
   HERO_ABILITY,
   heroStats,
+  heroRecovery,
   heroLevelCap,
   heroUpgradeCost,
   heroUpgradeSeconds,
@@ -200,6 +201,7 @@ export interface Unit {
   kind: TroopKind;
   hero?: 'king';
   summoned?: boolean;
+  spawnedAt?: number;
   rageUntil?: number;
   spellRageUntil?: number;
   healTarget?: number;
@@ -1569,28 +1571,47 @@ export class GameModel {
     const b = this.battle,
       h = b?.hero;
     const u = b?.units.find((u) => u.id === h?.unitId);
-    if (
-      !b ||
-      b.finished ||
-      !h ||
-      !u ||
-      h.abilityUsed ||
-      h.townhall < 7 ||
-      u.spent ||
-      (!automatic && u.hp <= 0)
-    )
+    if (!b || b.finished || !h || !u || h.abilityUsed || u.spent || (!automatic && u.hp <= 0))
       return false;
     if (!automatic) this.recordAction({ type: 'ability' });
     h.abilityUsed = true;
+    h.abilityAt = b.elapsed;
+    h.summonsSpawned = 0;
     h.rageUntil = b.elapsed + HERO_ABILITY.duration;
-    u.hp = Math.min(u.maxHp, u.hp + u.maxHp * HERO_ABILITY.healFraction);
-    for (let i = 0; i < HERO_ABILITY.summons; i++) {
+    u.hp = Math.min(u.maxHp, u.hp + heroRecovery(h.level, h.townhall));
+    this.spawnHeroSummons();
+    this.onEffect({
+      type: 'trap',
+      x: u.x,
+      y: u.y,
+      text: 'RAGE VIAL!',
+      color: 0xffcc4d,
+    });
+    this.changed();
+    return true;
+  }
+  private spawnHeroSummons() {
+    const b = this.battle,
+      h = b?.hero;
+    if (!b || b.finished || h?.abilityAt === undefined) return;
+    const u = b.units.find((unit) => unit.id === h.unitId);
+    if (!u || u.hp <= 0) return;
+    const due = Math.min(
+      HERO_ABILITY.summons,
+      (1 + Math.floor((b.elapsed - h.abilityAt + 1e-9) / HERO_ABILITY.spawnInterval)) *
+        HERO_ABILITY.spawnBatch,
+    );
+    while ((h.summonsSpawned ?? 0) < due) {
+      const spawnedAt =
+        h.abilityAt +
+        Math.floor((h.summonsSpawned ?? 0) / HERO_ABILITY.spawnBatch) * HERO_ABILITY.spawnInterval;
       const stats = this.troopStats('swordsman');
       b.units.push({
         id: this.state.nextId++,
         kind: 'swordsman',
         summoned: true,
-        rageUntil: b.elapsed + HERO_ABILITY.duration,
+        spawnedAt,
+        rageUntil: spawnedAt + HERO_ABILITY.summonDuration,
         x: u.x,
         y: u.y,
         hp: stats.hp,
@@ -1601,16 +1622,9 @@ export class GameModel {
         pathAt: 0,
         attacking: false,
       });
+      h.summonsSpawned = (h.summonsSpawned ?? 0) + 1;
+      this.onEffect({ type: 'spawn', x: u.x, y: u.y });
     }
-    this.onEffect({
-      type: 'trap',
-      x: u.x,
-      y: u.y,
-      text: 'IRON FIST!',
-      color: 0xffcc4d,
-    });
-    this.changed();
-    return true;
   }
   visibleBuilding(building: Building) {
     if (this.battle && building.kind === 'skeletontrap') {
@@ -1832,6 +1846,7 @@ export class GameModel {
     // A long frame or imported replay delta cannot land a shot after the raid deadline.
     dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
+    this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
     stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     stepDeathBombs(b, this.onEffect);
@@ -1843,7 +1858,9 @@ export class GameModel {
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     for (const u of b.units) {
       if (u.hp <= 0) continue;
-      if (stepAirPush(u, dt)) continue;
+      const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
+      if (!unitDt) continue;
+      if (stepAirPush(u, unitDt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
@@ -1853,8 +1870,8 @@ export class GameModel {
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
-      u.cooldown -= dt;
-      u.pathAt -= dt;
+      u.cooldown -= unitDt;
+      u.pathAt -= unitDt;
       u.attacking = false;
       const base =
         u.hero && b.hero
@@ -1872,18 +1889,18 @@ export class GameModel {
         damage:
           base.damage *
           Math.max(
-            abilityRage ? HERO_ABILITY.damage : 1,
+            abilityRage ? (u.hero ? HERO_ABILITY.damage : HERO_ABILITY.summonDamage) : 1,
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
           ),
         speed:
           base.speed +
           Math.max(
-            abilityRage ? base.speed * ((u.hero ? HERO_ABILITY.speed : 1.6) - 1) : 0,
+            abilityRage ? (u.hero ? HERO_ABILITY.speedBoost : HERO_ABILITY.summonSpeedBoost) : 0,
             ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
           ),
       };
       if (troop.healer) {
-        stepHealer(b, u, d, dt, this.onEffect);
+        stepHealer(b, u, d, unitDt, this.onEffect);
         continue;
       }
       if (
@@ -1891,7 +1908,7 @@ export class GameModel {
           b,
           u,
           d,
-          dt,
+          unitDt,
           knownBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
@@ -1995,7 +2012,7 @@ export class GameModel {
         const dx = cx - u.x,
           dy = cy - u.y,
           len = Math.hypot(dx, dy) || 1,
-          move = Math.min(d.speed * dt, len);
+          move = Math.min(d.speed * unitDt, len);
         u.x += (dx / len) * move;
         u.y += (dy / len) * move;
         continue;
@@ -2047,7 +2064,7 @@ export class GameModel {
         const dx = next.x - u.x,
           dy = next.y - u.y,
           len = Math.hypot(dx, dy),
-          move = d.speed * dt;
+          move = d.speed * unitDt;
         if (len <= move) {
           u.x = next.x;
           u.y = next.y;
@@ -2069,6 +2086,7 @@ export class GameModel {
         if (
           u.hp > 0 &&
           !TROOPS[u.kind].flying &&
+          (u.spawnedAt ?? 0) <= shell.impact + 1e-9 &&
           Math.hypot(u.x - shell.x, u.y - shell.y) <= shell.radius
         )
           u.hp -= shell.damage;
@@ -2171,7 +2189,7 @@ export class GameModel {
       }
     }
     const king = b.units.find((u) => u.hero);
-    if (king && !king.spent && king.hp <= king.maxHp * 0.2 && b.hero && !b.hero.abilityUsed)
+    if (king && !king.spent && king.hp <= 0 && b.hero && !b.hero.abilityUsed)
       this.activateHeroAbility(true);
     for (const u of b.units) {
       if (u.hp > 0) continue;

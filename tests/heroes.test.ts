@@ -10,7 +10,7 @@ import {
   trapDamage,
   type BuildingKind,
 } from '../src/game/data';
-import { heroUpgradeCost, HERO_ABILITY } from '../src/game/heroes';
+import { heroUpgradeCost, heroRecovery, HERO_ABILITY } from '../src/game/heroes';
 import { requiredTownHall } from '../src/game/progression';
 import { migrateSave, validateSave } from '../src/game/save';
 import { stepTraps } from '../src/game/traps';
@@ -158,9 +158,11 @@ describe('hero combat', () => {
     const u = m.battle!.units[0];
     u.hp = u.maxHp / 2;
     expect(m.activateHeroAbility()).toBe(true);
-    expect(u.hp).toBeCloseTo(u.maxHp * 0.8);
+    expect(u.hp).toBeCloseTo(u.maxHp / 2 + heroRecovery(1, 7));
+    expect(m.battle!.units.filter((u) => u.summoned)).toHaveLength(HERO_ABILITY.spawnBatch);
+    m.step(0.5);
     expect(m.battle!.units.filter((u) => u.summoned)).toHaveLength(HERO_ABILITY.summons);
-    expect(m.battle!.hero!.rageUntil).toBe(m.battle!.elapsed + HERO_ABILITY.duration);
+    expect(m.battle!.hero!.rageUntil).toBe(HERO_ABILITY.duration);
     expect(m.activateHeroAbility()).toBe(false);
     expect(m.state.army).toEqual(emptyArmy());
     m.finishBattle();
@@ -169,19 +171,23 @@ describe('hero combat', () => {
     expect(validateSave(m.state)).toBe(true);
   });
 
-  it('triggers automatically at low health and keeps the early King ability locked', () => {
+  it('waits until lethal damage for automatic activation and allows the early King ability', () => {
     const m = battle();
     m.deployHero(2, 13);
     const u = m.battle!.units[0];
     u.hp = u.maxHp * 0.1;
     m.step(0.05);
-    expect(m.battle!.hero!.abilityUsed).toBe(true);
-    expect(u.hp).toBeCloseTo(u.maxHp * 0.4);
+    expect(m.battle!.hero!.abilityUsed).toBe(false);
+    u.hp = -10;
     m.step(0.05);
-    expect(m.battle!.units).toHaveLength(5);
+    expect(m.battle!.hero!.abilityUsed).toBe(true);
+    expect(u.hp).toBe(450);
+    expect(m.battle!.units).toHaveLength(6);
+    m.step(0.5);
+    expect(m.battle!.units).toHaveLength(9);
     const early = battle(4);
     early.deployHero(2, 13);
-    expect(early.activateHeroAbility()).toBe(false);
+    expect(early.activateHeroAbility()).toBe(true);
     expect(early.battle!.units[0].maxHp).toBeLessThan(u.maxHp);
   });
 

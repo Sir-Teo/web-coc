@@ -17,7 +17,14 @@ import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../game/army-unlocks';
 import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
 import { REPLAY_VERSION } from '../game/replay';
-import { heroStats, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
+import {
+  heroStats,
+  heroRecovery,
+  heroTownHallScale,
+  KING_EQUIPMENT,
+  heroUpgradeCost,
+  heroUpgradeSeconds,
+} from '../game/heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
 import { CAMPAIGN_LAYOUTS, campaignBlueprint } from '../game/campaign';
@@ -1267,7 +1274,7 @@ export class HUD {
  ${
    m.replay
      ? this.replayControls()
-     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates Iron Fist after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
+     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? 'Barbarian King · Tap to deploy · H activates his equipment after deployment' : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
          (k) => b.carriedArmy[k] > 0,
        )
          .map((k) =>
@@ -1304,16 +1311,14 @@ export class HUD {
     const u = m.battle!.units.find((u) => u.id === h.unitId);
     const defeated = !!u && u.hp <= 0;
     const ready = h.unitId === null;
-    const disabled = defeated || (!ready && (h.abilityUsed || h.townhall < 7));
+    const disabled = defeated || (!ready && h.abilityUsed);
     const label = ready
       ? 'Deploy King'
       : defeated
         ? 'Defeated'
         : h.abilityUsed
           ? 'Ability used'
-          : h.townhall < 7
-            ? 'Fighting'
-            : 'Iron Fist';
+          : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${asset('king')}" alt=""><span class="troop-level">★ ${h.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   private heroes() {
@@ -1325,7 +1330,22 @@ export class HUD {
     const stats = heroStats(king.level, m.townhallLevel),
       next = heroStats(king.level + 1, m.townhallLevel);
     const capped = king.level >= m.heroMaxLevel;
-    return `<div class="modal-body hero-body"><div class="hero-overview"><div class="hero-portrait"><img src="${asset('king')}" alt="Barbarian King"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>Barbarian King</h2><p>Level ${king.level} / ${m.heroMaxLevel} · ${king.upgradeEnd ? 'Upgrading' : 'Ready for battle'}</p><p>Your hero uses no army space and is never lost in battle.</p></div></div><div class="hero-stat-grid"><div>Hitpoints<b>${n(stats.hp)}${capped ? '' : ` → ${n(next.hp)}`}</b></div><div>Damage per hit<b>${n(stats.damage)}${capped ? '' : ` → ${n(next.damage)}`}</b></div></div><article class="hero-ability"><h3>${icon('Zap', 20)} Iron Fist</h3><p>${m.townhallLevel < 7 ? 'Unlocked at Town Hall 7.' : 'Once per attack: recover 30% health, rage for 10 seconds, and summon four Barbarians. Activates automatically when health falls below 20%.'}</p><small>Tap the deployed King card or press H to activate.</small></article><div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : king.level >= 20 ? 'Maximum hero level for Town Hall 8' : 'Upgrade to Town Hall 8 and Hero Hall 2'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>${button('practice', 'Practice with this army', 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}</div>`;
+    const scale = heroTownHallScale(m.townhallLevel);
+    const stat = (label: string, value: number, destination?: number, suffix = '') =>
+      `<div>${label}<b>${damageNumber(value)}${suffix}${destination === undefined || capped ? '' : ` → ${damageNumber(destination)}${suffix}`}</b></div>`;
+    return `<div class="modal-body hero-body">
+      <div class="hero-overview"><div class="hero-portrait"><img src="${asset('king')}" alt="Barbarian King"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>Barbarian King</h2><p>Level ${king.level} / ${m.heroMaxLevel} · ${king.upgradeEnd ? 'Upgrading' : 'Ready for battle'}</p><p>Your hero uses no army space and is never lost in battle.</p></div></div>
+      ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
+      <div class="hero-stat-grid">${stat('Hitpoints', stats.hp, next.hp)}${stat('Damage per second', stats.dps, next.dps)}${stat('Damage per hit', stats.damage, next.damage)}${stat('Attack interval', stats.rate, undefined, 's')}${stat('Attack range', stats.range, undefined, ' tile')}${stat('Movement', stats.speed, undefined, ' tiles/s')}</div>
+      <p class="hero-stats-note">Stats include the equipped items below.</p>
+      <div class="hero-equipment">
+        <article class="hero-ability"><span class="eyebrow">EQUIPPED · LEVEL 1</span><h3>${icon('Users', 20)} Barbarian Puppet</h3><p>+${damageNumber(KING_EQUIPMENT.puppet.hp * scale)} hitpoints</p><p>Summon 8 Barbarians in two quick waves. They deal double damage and move 1.2 tiles/s faster for 20 seconds.</p></article>
+        <article class="hero-ability"><span class="eyebrow">EQUIPPED · LEVEL 1</span><h3>${icon('Zap', 20)} Rage Vial</h3><p>+${damageNumber(KING_EQUIPMENT.vial.dps * scale)} damage per second</p><p>For 10 seconds: +120% damage and +2.25 tiles/s movement. Does not increase attack speed.</p></article>
+      </div>
+      <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : king.level >= 20 ? 'Maximum hero level for Town Hall 8' : 'Upgrade to Town Hall 8 and Hero Hall 2'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
+      ${button('practice', 'Practice with this army', 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}
+    </div>`;
   }
   private progression() {
     const m = this.model;

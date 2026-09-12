@@ -18,7 +18,12 @@ export function stepSpellAuras(battle: Battle) {
       if (at >= aura.end || at > battle.elapsed + 1e-9) break;
       aura.pulses++;
       for (const unit of battle.units) {
-        if (unit.hp <= 0 || Math.hypot(unit.x - aura.x, unit.y - aura.y) > stats.radius) continue;
+        if (
+          unit.hp <= 0 ||
+          (unit.spawnedAt ?? 0) > at + 1e-9 ||
+          Math.hypot(unit.x - aura.x, unit.y - aura.y) > stats.radius
+        )
+          continue;
         if (aura.kind === 'heal')
           unit.hp = Math.min(
             unit.maxHp,

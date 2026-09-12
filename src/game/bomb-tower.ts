@@ -54,6 +54,7 @@ export function stepDeathBombs(battle: Battle, effect: (fx: FX) => void) {
     for (const unit of battle.units)
       if (
         unit.hp > 0 &&
+        (unit.spawnedAt ?? 0) <= bomb.impact + 1e-9 &&
         !TROOPS[unit.kind].flying &&
         Math.hypot(unit.x - bomb.x, unit.y - bomb.y) <= BOMB_TOWER.deathRadius
       )

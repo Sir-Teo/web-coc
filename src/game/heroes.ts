@@ -1,3 +1,5 @@
+import { KING_LEVELS } from './king-progression';
+
 /** Hero state is independent of army housing and survives defeat. */
 export interface HeroProgress {
   level: number;
@@ -10,26 +12,49 @@ export interface BattleHero {
   unitId: number | null;
   abilityUsed: boolean;
   rageUntil: number;
+  abilityAt?: number;
+  summonsSpawned?: number;
 }
-export const HERO_MAX_LEVEL = 20;
+export const HERO_MAX_LEVEL = KING_LEVELS.length;
 export const heroLevelCap = (townhall: number, hall: number) =>
-  townhall < 7 ? 1 : townhall >= 8 && hall >= 2 ? 20 : 10;
-export const heroUpgradeCost = (level: number) => 1000 + level * 500;
-export const heroUpgradeSeconds = (level: number) => 300 * level;
+  KING_LEVELS.filter((level) => level.townhall <= townhall && level.hall <= hall).length;
+export const heroUpgradeCost = (level: number) => KING_LEVELS[level]?.cost ?? 0;
+export const heroUpgradeSeconds = (level: number) => KING_LEVELS[level]?.seconds ?? 0;
+export const heroTownHallScale = (townhall: number) =>
+  townhall <= 4 ? 0.5 : townhall === 5 ? 0.75 : 1;
+export const kingLevel = (level: number) =>
+  KING_LEVELS[Math.max(0, Math.min(HERO_MAX_LEVEL, level) - 1)];
+
+// Default equipment is level 1. Equipment selection/upgrading is a separate system.
+export const KING_EQUIPMENT = {
+  puppet: { hp: 309, recovery: 110 },
+  vial: { dps: 17, recovery: 150 },
+} as const;
 export function heroStats(level: number, townhall: number) {
-  const early = townhall < 7 ? 0.45 + Math.max(0, townhall - 4) * 0.15 : 1;
+  const native = kingLevel(level),
+    scale = heroTownHallScale(townhall);
+  const hp = (native.hp + KING_EQUIPMENT.puppet.hp) * scale;
+  const dps = (native.dps + KING_EQUIPMENT.vial.dps) * scale;
   return {
-    hp: Math.round((1700 + (level - 1) * 85) * early),
-    damage: Math.round((120 + (level - 1) * 6) * early),
-    speed: 1.25,
-    range: 1.15,
+    hp,
+    dps,
+    damage: dps * 1.2,
+    speed: 2,
+    range: 1,
     rate: 1.2,
   };
 }
+export const heroRecovery = (level: number, townhall: number) =>
+  (kingLevel(level).recovery + KING_EQUIPMENT.puppet.recovery + KING_EQUIPMENT.vial.recovery) *
+  heroTownHallScale(townhall);
 export const HERO_ABILITY = {
   duration: 10,
-  damage: 1.7,
-  speed: 1.4,
-  healFraction: 0.3,
-  summons: 4,
-};
+  damage: 2.2,
+  speedBoost: 2.25,
+  summons: 8,
+  spawnBatch: 5,
+  spawnInterval: 0.5,
+  summonDuration: 20,
+  summonDamage: 2,
+  summonSpeedBoost: 1.2,
+} as const;

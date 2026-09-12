@@ -323,9 +323,9 @@ describe('native spell effects', () => {
 
   it('Rage grants half boosts to heroes and uses the stronger spell or ability without adding them', () => {
     for (const [level, ability, damage] of [
-      [1, false, 198],
-      [1, true, 204],
-      [5, true, 222],
+      [1, false, 235.62],
+      [1, true, 314.16],
+      [5, true, 314.16],
     ] as const) {
       const { m, b, u } = arena('rage', level);
       u.hero = 'king';
