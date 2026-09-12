@@ -40,12 +40,13 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Verify native Pumpkin Bomb reconstruction
+      - name: Verify native trap reconstruction
         if: matrix.browser == 'chromium' && matrix.shard == 1
         run: |
           python -m pip install -r scripts/native_art/requirements.txt
           python scripts/native_art/test_sc6.py
           python scripts/import-native-pumpkin.py --check
+          python scripts/import-native-skeleton-trap.py --check
 
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line

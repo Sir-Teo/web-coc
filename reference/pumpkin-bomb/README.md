@@ -17,7 +17,7 @@ output/native-art-venv/bin/python scripts/native_art/test_sc6.py
 output/native-art-venv/bin/python scripts/import-native-pumpkin.py --check
 ```
 
-Omit `--check` to regenerate. Downloads use verified HTTPS and must match pinned hashes before parsing. Checks compare decoded RGBA pixels, individual frame hashes and metadata; PNG compression bytes are not a visual correctness criterion. The importer rejects unsupported reachable masks, blend modes, compressed timelines, non-affine bitmap quads, extra chunks, malformed pointers and unsupported texture formats. It only downloads explicitly pinned sources. It is a focused extractor, not a complete SC player.
+Omit `--check` to regenerate. Downloads use verified HTTPS and must match pinned hashes before parsing. Checks compare decoded RGBA pixels, individual frame hashes and metadata; PNG compression bytes are not a visual correctness criterion. The importer rejects unsupported reachable masks, blend modes, compressed timelines, overlapping polygon interiors, extra chunks, malformed pointers and unsupported texture formats. It only downloads explicitly pinned sources. It is a focused extractor, not a complete SC player. Its triangle-strip extension for Skeleton Traps preserves the established Pumpkin pixel digest.
 
 ## Interpretation boundaries
 

@@ -60,6 +60,19 @@ class NativeArtTests(unittest.TestCase):
         self.assertEqual(result[1], [])
         self.assertEqual([result[f][0][2][0, 2] for f in (0, 2, 3)], [0, 0, 1])
 
+    def test_triangle_strips_retain_cutouts_without_double_alpha_seams(self):
+        # A six-vertex strip covers the left 2×4 and top-right 2×2 of a 4×4 box.
+        vertices = np.array([[0, 4, 0, 65535], [0, 0, 0, 0], [2, 4, 32768, 65535],
+                             [2, 0, 32768, 0], [2, 2, 32768, 32768], [4, 0, 65535, 0]])
+        texture = np.array([[[1, 0, 0, .5]]], dtype=float)
+        image = rasterize([(0, vertices, np.eye(3), (np.ones(4), np.zeros(4)))],
+                          {0: texture}, (0, 0, 4, 4))
+        self.assertEqual(image.getpixel((0, 0)), (255, 0, 0, 128))
+        self.assertEqual(image.getpixel((1, 2)), (255, 0, 0, 128))
+        self.assertEqual(image.getpixel((2, 0)), (255, 0, 0, 128))
+        self.assertEqual(image.getpixel((3, 3)), (0, 0, 0, 0))
+        self.assertEqual(image.getchannel('A').getextrema(), (0, 128))
+
 
 if __name__ == '__main__':
     unittest.main()

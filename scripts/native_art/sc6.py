@@ -200,8 +200,8 @@ class SC6:
         f, t = self.shapes[id_]
         for at in f.vector(t, 1, 16):
             texture, count, offset = (f.read(at + n) for n in (4, 8, 12))
-            require(texture < len(self.textures) and count == 4 and (offset + count) * 12 <= len(self.vertices),
-                    'Only valid four-vertex bitmaps are supported')
+            require(texture < len(self.textures) and 3 <= count <= 255 and (offset + count) * 12 <= len(self.vertices),
+                    'Invalid bitmap triangle strip')
             vertices = [struct.unpack('<ffHH', self.ds.span(self.vertices[(offset + i) * 12], 12))
                         for i in range(count)]
             yield texture, np.array(vertices)
@@ -282,16 +282,33 @@ def rasterize(draws, textures, bounds):
     points = np.stack([xx + .5, yy + .5, np.ones_like(xx)], axis=-1)
     canvas = np.zeros((*xx.shape, 4), dtype=np.float64)
     for index, vertices, matrix, (mul, add) in draws:
-        xy = np.column_stack([vertices[:, :2], np.ones(4)]) @ matrix.T
-        require(np.allclose(xy[0] + xy[3], xy[1] + xy[2], atol=1e-5), 'Non-affine bitmap quad')
+        xy = np.column_stack([vertices[:, :2], np.ones(len(vertices))]) @ matrix.T
         uv = vertices[:, 2:] / 65535
-        require(np.allclose(uv[0] + uv[3], uv[1] + uv[2], atol=2 / 65535), 'Non-affine texture quad')
-        basis = np.column_stack([xy[1] - xy[0], xy[2] - xy[0], xy[0]])
-        if abs(np.linalg.det(basis)) < 1e-10:
-            continue  # Native reveal frames intentionally collapse the sprite.
-        local = points @ np.linalg.inv(basis).T
-        inside = (local[..., :2] >= 0).all(axis=-1) & (local[..., :2] < 1).all(axis=-1)
-        sample = uv[0] + local[..., :1] * (uv[1] - uv[0]) + local[..., 1:2] * (uv[2] - uv[0])
+        if len(vertices) == 4 and np.allclose(xy[0] + xy[3], xy[1] + xy[2], atol=1e-5) and np.allclose(uv[0] + uv[3], uv[1] + uv[2], atol=2 / 65535):
+            # Keep the affine fast path (and its established Pumpkin pixel digest).
+            basis = np.column_stack([xy[1] - xy[0], xy[2] - xy[0], xy[0]])
+            if abs(np.linalg.det(basis)) < 1e-10:
+                continue  # Native reveal frames intentionally collapse the sprite.
+            local = points @ np.linalg.inv(basis).T
+            inside = (local[..., :2] >= 0).all(axis=-1) & (local[..., :2] < 1).all(axis=-1)
+            sample = uv[0] + local[..., :1] * (uv[1] - uv[0]) + local[..., 1:2] * (uv[2] - uv[0])
+        else:
+            # SC advanced shapes are triangle strips, not their bounding rectangles.
+            # Shared edges are sampled once, avoiding double-alpha diagonal seams.
+            inside = np.zeros(xx.shape, dtype=bool)
+            sample = np.zeros((*xx.shape, 2), dtype=float)
+            for i in range(len(vertices) - 2):
+                basis = np.column_stack([xy[i + 1] - xy[i], xy[i + 2] - xy[i], xy[i]])
+                if abs(np.linalg.det(basis)) < 1e-10:
+                    continue
+                local = points @ np.linalg.inv(basis).T
+                cover = (local[..., :2] >= -1e-9).all(axis=-1) & (local[..., :2].sum(axis=-1) <= 1 + 1e-9)
+                interior = (local[..., :2] > 1e-6).all(axis=-1) & (local[..., :2].sum(axis=-1) < 1 - 1e-6)
+                require(not (interior & inside).any(), 'Overlapping bitmap triangles are unsupported')
+                selected = cover & ~inside
+                coordinates = uv[i] + local[..., :1] * (uv[i + 1] - uv[i]) + local[..., 1:2] * (uv[i + 2] - uv[i])
+                sample[selected] = coordinates[selected]
+                inside |= cover
         texture = textures[index]
         h, w, _ = texture.shape
         sample = sample * [w, h] - .5
