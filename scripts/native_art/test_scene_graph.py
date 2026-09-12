@@ -124,6 +124,25 @@ class SceneGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unsupported scene blend'):
             capture_graph(reader, {'weapon': 0})
 
+    def test_packed_regions_preserve_clamping_at_original_texture_edges(self):
+        pixels = np.random.default_rng(908).integers(0, 256, (128, 128, 4), dtype=np.uint8)
+        a = np.array([[0, 0, 0, 0], [0, 5, 0, 3000], [5, 0, 3000, 0], [5, 5, 3000, 3000]])
+        b = a.copy()
+        b[:, 2:] += 62535
+        graph = dict(shapes={'1': [[7, a.reshape(-1).tolist()]], '2': [[7, b.reshape(-1).tolist()]]})
+        outputs, textures, runtime = crop_textures(graph, {7: Image.fromarray(pixels)}, 'edges')
+        t = textures['7']
+        self.assertEqual(t['packing'], 'packed source regions')
+        packed = np.array(outputs[t['path']]) / 255
+        for id_, original in [('1', a), ('2', b)]:
+            vertices = np.array(runtime['shapes'][id_][0][1]).reshape(-1, 4)
+            vertices[:, 2:] *= 65535
+            # Magnify so the first pixel samples across the texture boundary.
+            matrix, color = np.diag([3, 3, 1]), (np.ones(4), np.zeros(4))
+            expected = rasterize([(7, original, matrix, color)], {7: pixels / 255}, (0, 0, 15, 15))
+            actual = rasterize([(7, vertices, matrix, color)], {7: packed}, (0, 0, 15, 15))
+            self.assertEqual(expected.tobytes(), actual.tobytes())
+
 
 if __name__ == '__main__':
     unittest.main()

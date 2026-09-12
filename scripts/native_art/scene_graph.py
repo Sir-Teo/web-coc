@@ -114,6 +114,11 @@ def crop_textures(graph, decoded, prefix):
         for l, t, r, b in sorted(rectangles):
             tile = source.crop((l, t, r, b))
             x, y = placements[(l, t, r, b)]
+            if packing == 'packed source regions':
+                # UVs at an original texture edge sample CLAMP_TO_EDGE. After
+                # packing, preserve that neighbour instead of sampling a gutter.
+                padded = Image.fromarray(np.pad(np.array(tile), ((1, 1), (1, 1), (0, 0)), mode='edge'), 'RGBA')
+                image.paste(padded, (x - 1, y - 1))
             image.paste(tile, (x, y))
             evidence.append(dict(bounds=[l, t, r, b], placement=[x, y], rgbaSha256=digest(tile.tobytes())))
         # Verify actual output pixels after every overlapping paste, not just inputs.
