@@ -3,15 +3,6 @@ import { createServer, preview } from 'vite';
 import fs from 'node:fs/promises';
 
 await fs.mkdir('output/playtest', { recursive: true });
-const native = JSON.parse(await fs.readFile('reference/seeking-mine/native.json', 'utf8'));
-const runtimeAssets = [
-  ...Object.values(native.world.textures),
-  ...Object.values(native.previews),
-  native.info,
-  ...Object.values(native.sounds),
-]
-  .map((asset) => '/' + asset.path)
-  .sort();
 const modules = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -20,47 +11,40 @@ const modules = await createServer({
 const fixtures = [];
 let villageFile;
 try {
+  const { wizardTowerBattle, wizardTowerVillage } = await modules.ssrLoadModule(
+    '/tests/fixtures/wizard-tower-battle.ts',
+  );
   const { seekingMineBattle, seekingMineVillage } = await modules.ssrLoadModule(
     '/tests/fixtures/seeking-mine-battle.ts',
   );
   const { makeReplayFile } = await modules.ssrLoadModule('/src/game/replay-file.ts');
-  const { NATIVE_CAMPAIGN } = await modules.ssrLoadModule('/src/game/native-campaign.ts');
   const { validateSave } = await modules.ssrLoadModule('/src/game/save.ts');
   const village = seekingMineVillage();
-  if (!validateSave(village)) throw Error('Invalid mine fixture village');
+  village.nativeCampaign.stars[56] = 1;
+  expect(validateSave(village)).toBe(true);
   villageFile = JSON.stringify(village);
-  for (const index of [51, 52, 53]) {
-    const m = seekingMineBattle(index);
+  for (const level of [1, 5, 8, 10, 17, null]) {
+    if (level !== null) expect(validateSave(wizardTowerVillage(level))).toBe(true);
+    const m = level === null ? seekingMineBattle(57, village) : wizardTowerBattle(level);
     let flightAt, flight;
-    const mines = m.battle.buildings.filter((b) => b.kind === 'seekingairmine');
     for (let i = 0; i < 6000 && !m.battle.finished; i++) {
       m.step(0.05);
       if (
         flightAt === undefined &&
-        mines.some((mine) => {
-          const state = m.battle.traps[mine.id];
-          return (
-            state &&
-            !state.resolved &&
-            Math.hypot(state.x - mine.x - 0.5, state.y - mine.y - 0.5) > 0.1
-          );
-        })
+        m.battle.projectiles.some((p) => p.weapon === 'arcane') &&
+        m.battle.elapsed >= 0.25
       ) {
         flightAt = m.battle.elapsed;
-        flight = mines
-          .filter((mine) => m.battle.traps[mine.id])
-          .map((mine) => ({
-            sourceId: mine.id,
-            level: mine.level,
-            ...structuredClone(m.battle.traps[mine.id]),
-          }));
+        // The shipping inspection endpoint is JSON; omit undefined optional keys
+        // at this serialization boundary while retaining every numeric value.
+        flight = JSON.parse(JSON.stringify(m.battle.projectiles));
       }
     }
     if (!m.battle.finished || flightAt === undefined)
-      throw Error('Mine fixture did not fly and settle');
+      throw Error('Wizard Tower fixture did not fire and finish');
     fixtures.push({
-      index,
-      name: NATIVE_CAMPAIGN[index].name,
+      label: level === null ? 'graduation' : `level-${level}`,
+      level,
       flightAt,
       flight,
       result: structuredClone(m.battle.result),
@@ -94,13 +78,7 @@ try {
         deviceScaleFactor: 2,
       });
       const page = await context.newPage(),
-        errors = [],
-        requestedMineAssets = new Set();
-      page.on('request', (request) => {
-        const path = new URL(request.url()).pathname;
-        if (path.startsWith('/assets/buildings/seeking-mine-native/'))
-          requestedMineAssets.add(path);
-      });
+        errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
@@ -109,20 +87,15 @@ try {
       await page.locator('[data-action="skip-tutorial"]').click();
       await page.locator('#loading').waitFor({ state: 'detached' });
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
-      expect([...requestedMineAssets].sort()).toEqual(runtimeAssets);
       await page.locator('#import-file').setInputFiles({
-        name: 'mine-village.json',
+        name: 'wizard-tower-village.json',
         mimeType: 'application/json',
         buffer: Buffer.from(villageFile),
       });
       await expect(page.locator('#toast')).toContainText('Village restored');
       await page.locator('.attack-btn').click();
-      for (const fixture of fixtures) {
-        await expect(page.locator(`[data-stage="${fixture.index + 1}"]`)).toContainText(
-          fixture.name,
-        );
-        await expect(page.locator(`[data-action="attack:${fixture.index}"]`)).toBeEnabled();
-      }
+      await expect(page.locator('[data-stage="58"]')).toContainText('Graduation Ceremony');
+      await expect(page.locator('[data-action="attack:57"]')).toBeEnabled();
       await expect(page.locator('[data-action="attack:54"]')).toHaveText('Coming soon');
       await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       const read = () => page.evaluate(() => JSON.parse(window.render_game_to_text()));
@@ -154,16 +127,16 @@ try {
       const stages = [];
       for (const fixture of fixtures) {
         await open({
-          name: 'mine-replay.json',
+          name: 'wizard-tower-replay.json',
           mimeType: 'application/json',
           buffer: Buffer.from(JSON.stringify(fixture.file)),
         });
-        await expect(page.locator('.battle-enemy h2')).toHaveText(fixture.name);
-        expect((await seek(0)).battle.seekingMines).toEqual([]);
+        expect((await seek(0)).battle.projectiles).toEqual([]);
         const flight = await seek(fixture.flightAt);
-        expect(flight.battle.seekingMines).toEqual(fixture.flight);
+        expect(flight.battle.projectiles).toEqual(fixture.flight);
+        await expect(page.locator('#toast')).toHaveCSS('opacity', '0');
         await page.screenshot({
-          path: `output/playtest/seeking-mine-production-${fixture.index}-${name}.png`,
+          path: `output/playtest/wizard-tower-production-${fixture.label}-${name}.png`,
           animations: 'disabled',
         });
         await page.getByRole('slider', { name: 'Replay position' }).press('End');
@@ -171,12 +144,12 @@ try {
         expect((await read()).battle.result).toEqual(fixture.result);
         const download = page.waitForEvent('download');
         await page.locator('[data-action="replay-export"]').click();
-        const path = `output/playtest/seeking-mine-production-${fixture.index}-${name}.crown-replay.json`;
+        const path = `output/playtest/wizard-tower-production-${fixture.label}-${name}.crown-replay.json`;
         await (await download).saveAs(path);
         const exported = JSON.parse(await fs.readFile(path, 'utf8'));
         expect(exported).toEqual(fixture.file);
         expect(exported.replay.version).toBe(34);
-        expect((await seek(0)).battle.seekingMines).toEqual([]);
+        expect((await seek(0)).battle.projectiles).toEqual([]);
         expect((await seek(fixture.flightAt)).battle).toEqual(flight.battle);
         await page.locator('[data-action="replay-exit"]').click();
         await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
@@ -184,12 +157,11 @@ try {
         expect(after.army).toEqual(home.army);
         expect(after.resources).toEqual(home.resources);
         stages.push({
-          index: fixture.index,
-          name: fixture.name,
+          label: fixture.label,
+          level: fixture.level,
           originalEntities: fixture.file.replay.initial.buildings.length,
-          mineCount: fixture.file.replay.initial.buildings.filter(
-            (b) => b.kind === 'seekingairmine',
-          ).length,
+          towerCount: fixture.file.replay.initial.buildings.filter((b) => b.kind === 'wizardtower')
+            .length,
           flightAt: fixture.flightAt,
           flight: fixture.flight,
           result: fixture.result,
@@ -209,9 +181,9 @@ try {
         await expect(page.locator('.shop-btn')).toBeVisible();
         for (const fixture of fixtures) {
           await open(
-            `output/playtest/seeking-mine-production-${fixture.index}-${name}.crown-replay.json`,
+            `output/playtest/wizard-tower-production-${fixture.label}-${name}.crown-replay.json`,
           );
-          expect((await seek(fixture.flightAt)).battle.seekingMines).toEqual(fixture.flight);
+          expect((await seek(fixture.flightAt)).battle.projectiles).toEqual(fixture.flight);
           await page.getByRole('slider', { name: 'Replay position' }).press('End');
           await expect(page.locator('.replay-status')).toContainText('Replay complete');
           expect((await read()).battle.result).toEqual(fixture.result);
@@ -225,7 +197,6 @@ try {
         errors,
         dpr: 2,
         viewport: [390, 844],
-        requestedMineAssets: [...requestedMineAssets].sort(),
         stages,
         portableReplay: true,
         flightRewind: true,
@@ -236,7 +207,7 @@ try {
     }
   }
   await fs.writeFile(
-    'output/playtest/seeking-mine-production-report.json',
+    'output/playtest/wizard-tower-production-report.json',
     JSON.stringify(report, null, 2),
   );
   console.log(JSON.stringify(report, null, 2));

@@ -228,9 +228,11 @@ describe('Wizard Tower', () => {
       const target = unit(m, kind, 15, 11);
       const neighbor = unit(m, kind, 15.8, 11);
       const other = unit(m, kind === 'giant' ? 'balloon' : 'giant', 16, 11);
+      for (const u of [target, neighbor, other]) u.springUntil = 1000;
       m.step(0.05);
       expect(target.hp).toBe(target.maxHp);
-      for (let i = 0; i < 6; i++) m.step(0.05);
+      const impact = m.battle!.projectiles![0].impact;
+      while (m.battle!.elapsed < impact - 1e-9) m.step(Math.min(0.05, impact - m.battle!.elapsed));
       expect(target.hp).toBe(target.maxHp - BUILDINGS.wizardtower.damage!);
       expect(neighbor.hp).toBe(neighbor.maxHp - BUILDINGS.wizardtower.damage!);
       expect(other.hp).toBe(other.maxHp);

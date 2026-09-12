@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { EARTHQUAKE_BOOTS, equipmentBonuses } from './equipment';
 import { targetableBuilding } from './hidden-tesla';
 import { hurtDefender } from './defenders';
@@ -48,7 +49,7 @@ export function stepKingQuakes(
           defender.mode !== 'ground' ||
           defender.spawnedAt > at + 1e-9 ||
           defender.hp <= 0 ||
-          Math.hypot(defender.x - quake.x, defender.y - quake.y) > radius
+          distance2D(defender.x - quake.x, defender.y - quake.y) > radius
         )
           continue;
         hurtDefender(battle, defender, defender.maxHp * quake.troopFraction);

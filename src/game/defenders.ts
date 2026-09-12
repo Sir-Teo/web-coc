@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
@@ -44,7 +45,7 @@ export function damageDefenders(
       enemy.id !== skipId &&
       enemy.hp > 0 &&
       (targets === 'both' || enemy.mode === targets) &&
-      Math.hypot(enemy.x - point.x, enemy.y - point.y) <= radius
+      distance2D(enemy.x - point.x, enemy.y - point.y) <= radius
     )
       hurtDefender(battle, enemy, power);
 }
@@ -82,7 +83,7 @@ function moveAlong(
     const next = unit.path[0],
       dx = next.x - unit.x,
       dy = next.y - unit.y,
-      len = Math.hypot(dx, dy);
+      len = distance2D(dx, dy);
     if (len <= travel) {
       unit.x = next.x;
       unit.y = next.y;
@@ -115,8 +116,8 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       eligible.find((u) => u.id === defender.target) ??
       eligible.sort(
         (a, b) =>
-          Math.hypot(a.x - defender.x, a.y - defender.y) -
-            Math.hypot(b.x - defender.x, b.y - defender.y) || a.id - b.id,
+          distance2D(a.x - defender.x, a.y - defender.y) -
+            distance2D(b.x - defender.x, b.y - defender.y) || a.id - b.id,
       )[0];
     const cooling = defender.cooldown > 0;
     defender.cooldown -= activeDt;
@@ -131,7 +132,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       defender.path = [];
       defender.pathAt = 0;
     }
-    const distance = Math.hypot(target.x - defender.x, target.y - defender.y);
+    const distance = distance2D(target.x - defender.x, target.y - defender.y);
     if (distance <= stats.range + 1e-6) {
       defender.attacking = true;
       if (defender.cooldown <= 0) {
@@ -207,11 +208,11 @@ export function stepAttackerVsDefenders(
           d.hp > 0 &&
           d.alerted &&
           canFight(unit, d) &&
-          Math.hypot(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
+          distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
       )
       .sort(
         (a, b) =>
-          Math.hypot(a.x - unit.x, a.y - unit.y) - Math.hypot(b.x - unit.x, b.y - unit.y) ||
+          distance2D(a.x - unit.x, a.y - unit.y) - distance2D(b.x - unit.x, b.y - unit.y) ||
           b.id - a.id,
       )[0];
     if (!target) {
@@ -227,7 +228,7 @@ export function stepAttackerVsDefenders(
     unit.path = [];
     unit.pathAt = 0;
   }
-  const distance = Math.hypot(unit.x - target.x, unit.y - target.y);
+  const distance = distance2D(unit.x - target.x, unit.y - target.y);
   if (distance <= stats.range + 1e-6) {
     unit.attacking = true;
     if (unit.cooldown <= 0) {

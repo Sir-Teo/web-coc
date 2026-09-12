@@ -1,6 +1,7 @@
+import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
 import { MAP_SIZE } from './grid';
-import { SWEEPER, sweeperAngle, sweeperStats } from './air-control-stats';
+import { SWEEPER, sweeperStats } from './air-control-stats';
 import type { Battle, Building, FX, Unit } from './model';
 
 export interface AirPush {
@@ -12,7 +13,8 @@ export interface AirGust {
   sourceId: number;
   x: number;
   y: number;
-  angle: number;
+  directionX: number;
+  directionY: number;
   radius: number;
   push: number;
   hit: number[];
@@ -21,23 +23,36 @@ export interface AirGust {
 export interface SweeperState {
   targetId: number;
   prepare: number;
-  angle: number;
+  directionX: number;
+  directionY: number;
   firedAt?: number;
 }
 
-export function angleDifference(a: number, b: number) {
-  return Math.atan2(Math.sin(a - b), Math.cos(a - b));
-}
+// Exact cardinal axes and one shared diagonal value avoid platform-specific trig
+// rounding in replay state. Angles are derived only when drawing the nozzle/gust.
+const DIRECTIONS = [
+  [1, 0],
+  [Math.SQRT1_2, Math.SQRT1_2],
+  [0, 1],
+  [-Math.SQRT1_2, Math.SQRT1_2],
+  [-1, 0],
+  [-Math.SQRT1_2, -Math.SQRT1_2],
+  [0, -1],
+  [Math.SQRT1_2, -Math.SQRT1_2],
+] as const;
+// cos(105 degrees / 2 + 1e-9), retaining the original cone's angular tolerance.
+const CONE_COS = 0.6087614282153673;
+const WAVE_COS = Math.sqrt(3) / 2; // cos(60 degrees / 2)
 
 export function inSweeperRange(tower: Building, u: Pick<Unit, 'x' | 'y'>) {
   const x = u.x - tower.x - 1,
     y = u.y - tower.y - 1;
-  const distance = Math.hypot(x, y);
+  const distance = distance2D(x, y);
+  const [directionX, directionY] = DIRECTIONS[tower.direction ?? 0];
   return (
     distance >= SWEEPER.minRange &&
     distance <= SWEEPER.range &&
-    Math.abs(angleDifference(Math.atan2(y, x), sweeperAngle(tower.direction))) <=
-      SWEEPER.cone / 2 + 1e-9
+    x * directionX + y * directionY >= distance * CONE_COS
   );
 }
 
@@ -51,13 +66,12 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
       if (u.hp <= 0 || !TROOPS[u.kind].flying || gust.hit.includes(u.id)) continue;
       const x = u.x - gust.x,
         y = u.y - gust.y,
-        distance = Math.hypot(x, y);
-      const angle = angleDifference(Math.atan2(y, x), gust.angle);
+        distance = distance2D(x, y);
       if (
         distance < Math.max(SWEEPER.minRange, previous - 0.3) ||
         distance > gust.radius + 0.3 ||
-        Math.abs(angle) > SWEEPER.waveCone / 2 ||
-        Math.abs(Math.sin(angle) * distance) > SWEEPER.halfWidth
+        x * gust.directionX + y * gust.directionY < distance * WAVE_COS ||
+        Math.abs(x * gust.directionY - y * gust.directionX) > SWEEPER.halfWidth
       )
         continue;
       gust.hit.push(u.id);
@@ -104,19 +118,25 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
         .filter(eligible)
         .sort(
           (a, c) =>
-            Math.hypot(a.x - tower.x - 1, a.y - tower.y - 1) -
-              Math.hypot(c.x - tower.x - 1, c.y - tower.y - 1) || a.id - c.id,
+            distance2D(a.x - tower.x - 1, a.y - tower.y - 1) -
+              distance2D(c.x - tower.x - 1, c.y - tower.y - 1) || a.id - c.id,
         )[0];
       if (!target) continue;
+      const [directionX, directionY] = DIRECTIONS[tower.direction ?? 0];
       state = states[tower.id] = {
         targetId: target.id,
         prepare: SWEEPER.prepare,
-        angle: sweeperAngle(tower.direction),
+        directionX,
+        directionY,
       };
       b.defenseTargets[tower.id] = target.id;
       continue;
     }
-    state.angle = Math.atan2(target!.y - tower.y - 1, target!.x - tower.x - 1);
+    const dx = target!.x - tower.x - 1,
+      dy = target!.y - tower.y - 1,
+      distance = distance2D(dx, dy);
+    state.directionX = dx / distance;
+    state.directionY = dy / distance;
     state.prepare -= preparationDt;
     if (state.prepare > 1e-9) continue;
     const x = tower.x + BUILDINGS[tower.kind].size / 2,
@@ -125,7 +145,8 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
       sourceId: tower.id,
       x,
       y,
-      angle: state.angle,
+      directionX: state.directionX,
+      directionY: state.directionY,
       radius: SWEEPER.minRange,
       push: sweeperStats(tower.level).push,
       hit: [],
@@ -141,8 +162,8 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
       sourceId: tower.id,
       x,
       y,
-      toX: x + Math.cos(state.angle),
-      toY: y + Math.sin(state.angle),
+      toX: x + state.directionX,
+      toY: y + state.directionY,
     });
   }
 }

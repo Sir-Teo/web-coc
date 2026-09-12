@@ -1,9 +1,11 @@
+import { distance2D } from './distance';
 import { recordBombTowerHit } from './bomb-tower-attack';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
 import { XBOW_PROJECTILES } from './xbow-stats';
+import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
 
 export type Weapon =
   | 'arrow'
@@ -32,7 +34,7 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
-  /** Native X-Bow projectile level and ammunition sequence. */
+  /** Native X-Bow level or Wizard Tower projectile tier; X-Bow ammunition sequence. */
   variant?: number;
   sequence?: number;
   /** Actual position of a tracking X-Bow bolt at the last simulation sample. */
@@ -48,13 +50,18 @@ const SPEED: Record<Weapon, number> = {
   fireball: 5,
   bomb: 10,
   towerbomb: 8,
-  arcane: 16,
+  arcane: WIZARD_TOWER_PROJECTILES[0].speed,
   healing: 12,
   xbowbolt: XBOW_PROJECTILES[0].speed,
 };
 function xbowSpeed(p: Pick<CombatProjectile, 'variant'>) {
   const source = XBOW_PROJECTILES[(p.variant ?? 1) - 1];
   if (!source) throw Error('Unsupported native X-Bow projectile');
+  return source.speed;
+}
+function wizardTowerSpeed(p: Pick<CombatProjectile, 'variant'>) {
+  const source = WIZARD_TOWER_PROJECTILES[(p.variant ?? 1) - 1];
+  if (!source) throw Error('Unsupported native Wizard Tower projectile');
   return source.speed;
 }
 function buildingAim(p: Pick<CombatProjectile, 'weapon' | 'fromX' | 'fromY'>, b: Building) {
@@ -81,11 +88,16 @@ export function launchProjectile(
           shot.weapon === 'healing' ||
             shot.weapon === 'towerbomb' ||
             shot.weapon === 'fireball' ||
+            shot.weapon === 'arcane' ||
             shot.weapon === 'xbowbolt'
             ? 0.01
             : 0.12,
-          Math.hypot(shot.x - shot.fromX, shot.y - shot.fromY) /
-            (shot.weapon === 'xbowbolt' ? xbowSpeed(shot) : SPEED[shot.weapon]),
+          distance2D(shot.x - shot.fromX, shot.y - shot.fromY) /
+            (shot.weapon === 'xbowbolt'
+              ? xbowSpeed(shot)
+              : shot.weapon === 'arcane'
+                ? wizardTowerSpeed(shot)
+                : SPEED[shot.weapon]),
         );
   const projectile: CombatProjectile = {
     ...shot,
@@ -136,7 +148,7 @@ export function stepProjectiles(
       p.x = target.x;
       p.y = target.y;
     }
-    const distance = Math.hypot(p.x - p.flight.x, p.y - p.flight.y);
+    const distance = distance2D(p.x - p.flight.x, p.y - p.flight.y);
     const speed = xbowSpeed(p);
     p.impact = Math.max(p.launched + 0.01, p.flight.at + distance / speed);
     const fraction = distance
@@ -157,6 +169,7 @@ export function stepProjectiles(
       target.hp > 0 &&
       p.weapon !== 'healing' &&
       p.weapon !== 'towerbomb' &&
+      p.weapon !== 'arcane' &&
       p.weapon !== 'fireball'
     ) {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
@@ -174,7 +187,7 @@ export function stepProjectiles(
           unit.hp > 0 &&
           (unit.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !TROOPS[unit.kind].flying &&
-          Math.hypot(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
+          distance2D(unit.x - p.x, unit.y - p.y) <= (p.splash ?? 0)
         )
           unit.hp = Math.min(
             unit.maxHp,
@@ -191,7 +204,7 @@ export function stepProjectiles(
             if (b.hp <= 0 || isTrap(b.kind)) continue;
             const size = BUILDINGS[b.kind].size;
             if (
-              Math.hypot(
+              distance2D(
                 Math.max(b.x - p.x, 0, p.x - b.x - size),
                 Math.max(b.y - p.y, 0, p.y - b.y - size),
               ) <= p.splash
@@ -206,7 +219,7 @@ export function stepProjectiles(
         for (const b of battle.buildings) {
           if (b.id === p.targetId || b.hp <= 0 || isTrap(b.kind)) continue;
           const size = BUILDINGS[b.kind].size;
-          const distance = Math.hypot(
+          const distance = distance2D(
             Math.max(b.x - p.x, 0, p.x - b.x - size),
             Math.max(b.y - p.y, 0, p.y - b.y - size),
           );
@@ -218,7 +231,7 @@ export function stepProjectiles(
           u.hp > 0 &&
           (u.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !!TROOPS[u.kind].flying === !!p.toAir &&
-          Math.hypot(u.x - p.x, u.y - p.y) <= p.splash
+          distance2D(u.x - p.x, u.y - p.y) <= p.splash
         )
           u.hp -= p.damage;
     } else if (

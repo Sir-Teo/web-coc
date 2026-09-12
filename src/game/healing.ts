@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
@@ -8,7 +9,7 @@ export const HEALER_STACK = [1, 1, 0.9, 0.9, 0.7, 0.4, 0.1, 0] as const;
 export const HEALER_HERO_SCALE = 0.55;
 export const HEALER_RADIUS = 1.5;
 const groundAlly = (u: Unit) => u.hp > 0 && !TROOPS[u.kind].flying;
-const distance = (a: Unit, b: Unit) => Math.hypot(a.x - b.x, a.y - b.y);
+const distance = (a: Unit, b: Unit) => distance2D(a.x - b.x, a.y - b.y);
 
 /** Choose before movement so healers in the same update see the same group. */
 export function prepareHealerTargets(battle: Battle) {
@@ -92,7 +93,7 @@ export function healerContribution(battle: Battle, recipient: Unit, sourceId: nu
   for (const shot of battle.projectiles ?? [])
     if (
       shot.weapon === 'healing' &&
-      Math.hypot(shot.x - recipient.x, shot.y - recipient.y) <= HEALER_RADIUS
+      distance2D(shot.x - recipient.x, shot.y - recipient.y) <= HEALER_RADIUS
     )
       sources.add(shot.sourceId);
   const rank = [...sources].sort((a, b) => a - b).indexOf(sourceId);

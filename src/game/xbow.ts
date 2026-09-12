@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
 import { launchProjectile } from './projectiles';
@@ -34,14 +35,14 @@ export function stepXbow(
       u.hp > 0 &&
       (u.spawnedAt ?? 0) <= battle.elapsed &&
       (tower.xbowMode === 'both' || !TROOPS[u.kind].flying) &&
-      Math.hypot(u.x - center.x, u.y - center.y) <= range,
+      distance2D(u.x - center.x, u.y - center.y) <= range,
   );
   const retained = targets.find((u) => u.id === battle.defenseTargets[tower.id]);
   const target =
     retained ??
     targets.sort(
       (a, b) =>
-        Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y),
+        distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y),
     )[0];
   const cooling = tower.cooldown > 0;
   tower.cooldown = Math.max(-dt, tower.cooldown - dt);

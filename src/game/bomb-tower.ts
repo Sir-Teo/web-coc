@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
 import { BOMB_TOWER, bombTowerStats } from './bomb-tower-stats';
@@ -52,7 +53,7 @@ export function stepDeathBombs(battle: Battle, effect: (fx: FX) => void) {
         unit.hp > 0 &&
         (unit.spawnedAt ?? 0) <= bomb.impact + 1e-9 &&
         !TROOPS[unit.kind].flying &&
-        Math.hypot(unit.x - bomb.x, unit.y - bomb.y) <= BOMB_TOWER.deathRadius
+        distance2D(unit.x - bomb.x, unit.y - bomb.y) <= BOMB_TOWER.deathRadius
       )
         unit.hp -= bomb.damage;
     effect({

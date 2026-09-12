@@ -71,6 +71,7 @@ describe('combat feedback comes from actual attacks', () => {
     m.battle!.buildings = [defense];
     m.battle!.started = true;
     const target = addUnit(m, troop, 7, 9);
+    target.springUntil = 1000; // Isolate launch/impact feedback from projectile dodging.
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
@@ -82,7 +83,8 @@ describe('combat feedback comes from actual attacks', () => {
       targetBuilding: false,
       toAir: troop === 'balloon' ? true : undefined,
     });
-    for (let i = 0; i < 8; i++) m.step(0.05);
+    const impact = m.battle!.projectiles!.find((p) => p.sourceId === defense.id)!.impact;
+    while (m.battle!.elapsed < impact - 1e-9) m.step(Math.min(0.05, impact - m.battle!.elapsed));
     expect(target.hp).toBeLessThan(target.maxHp);
   });
 });

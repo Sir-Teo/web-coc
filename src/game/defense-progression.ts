@@ -2,6 +2,7 @@ import type { BuildingKind } from './data';
 import { XBOW_LEVELS, XBOW } from './xbow-stats';
 import { TESLA_LEVELS, TESLA } from './tesla-stats';
 import { BOMB_TOWER_LEVELS, BOMB_TOWER } from './bomb-tower-stats';
+import { WIZARD_TOWER_LEVELS, WIZARD_TOWER } from './wizard-tower-stats';
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
@@ -20,16 +21,7 @@ export const DEFENSE_PROGRESSION = {
     { dps: 360, hp: 1300, cost: 3400000, seconds: 259200 },
     { dps: 400, hp: 1400, cost: 5000000, seconds: 345600 },
   ],
-  wizardtower: [
-    { dps: 11, hp: 620, cost: 100000, seconds: 3600 },
-    { dps: 13, hp: 650, cost: 150000, seconds: 5400 },
-    { dps: 16, hp: 680, cost: 250000, seconds: 14400 },
-    { dps: 20, hp: 730, cost: 400000, seconds: 28800 },
-    { dps: 24, hp: 840, cost: 550000, seconds: 36000 },
-    { dps: 32, hp: 960, cost: 660000, seconds: 43200 },
-    { dps: 40, hp: 1200, cost: 1000000, seconds: 64800 },
-    { dps: 45, hp: 1440, cost: 1100000, seconds: 72000 },
-  ],
+  wizardtower: WIZARD_TOWER_LEVELS,
   cannon: [
     { dps: 7, hp: 300, cost: 250, seconds: 5 },
     { dps: 10, hp: 360, cost: 1000, seconds: 30 },
@@ -80,7 +72,11 @@ export const DEFENSE_WEAPONS = {
   bombtower: { range: BOMB_TOWER.range, rate: BOMB_TOWER.interval, splash: BOMB_TOWER.splash },
   tesla: { range: TESLA.range, rate: TESLA.interval },
   airdefense: { range: 10, rate: 1 },
-  wizardtower: { range: 7, rate: 1.3, splash: 1 },
+  wizardtower: {
+    range: WIZARD_TOWER.range,
+    rate: WIZARD_TOWER.interval,
+    splash: WIZARD_TOWER.splash,
+  },
   cannon: { range: 9, rate: 0.8 },
   mortar: { range: 11, minRange: 4, rate: 5, splash: 1.5 },
   archertower: { range: 10, rate: 0.5 },

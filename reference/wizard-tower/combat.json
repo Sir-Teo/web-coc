@@ -244,5 +244,51 @@
   "radius": 100,
   "size": 3,
   "airTargets": true,
-  "groundTargets": true
+  "groundTargets": true,
+  "projectiles": [
+    {
+      "name": "ps_chr_WizardAttack_TowerProjectile",
+      "export": "fx_chr_WizardAttack_Projectile_Lvl1",
+      "speed": 5.0,
+      "scale": 0.5,
+      "startHeight": 180,
+      "startOffset": 70,
+      "tracksTarget": false,
+      "rotates": true,
+      "playOnce": false
+    },
+    {
+      "name": "ps_chr_WizardAttack_TowerProjectile_lvl2",
+      "export": "fx_chr_WizardAttack_Projectile_Lvl2",
+      "speed": 9.0,
+      "scale": 0.5,
+      "startHeight": 180,
+      "startOffset": 70,
+      "tracksTarget": false,
+      "rotates": true,
+      "playOnce": false
+    },
+    {
+      "name": "ps_chr_WizardAttack_TowerProjectile_lvl3",
+      "export": "fx_chr_WizardAttack_Projectile_Lvl3",
+      "speed": 9.0,
+      "scale": 0.6,
+      "startHeight": 180,
+      "startOffset": 70,
+      "tracksTarget": false,
+      "rotates": true,
+      "playOnce": false
+    },
+    {
+      "name": "ps_chr_WizardAttack_TowerProjectile_lvl4",
+      "export": "fx_chr_WizardAttack_Projectile_Lvl4",
+      "speed": 9.0,
+      "scale": 0.65,
+      "startHeight": 180,
+      "startOffset": 70,
+      "tracksTarget": false,
+      "rotates": true,
+      "playOnce": false
+    }
+  ]
 }

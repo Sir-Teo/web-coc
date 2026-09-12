@@ -113,6 +113,11 @@ describe('directional air displacement', () => {
       expect(inSweeperRange(tower, point(0.9))).toBe(false);
       expect(inSweeperRange(tower, point(15.1))).toBe(false);
       expect(inSweeperRange(tower, point(5, a + SWEEPER.cone / 2 + 0.01))).toBe(false);
+      for (const side of [-1, 1]) {
+        expect(inSweeperRange(tower, point(5, a + (side * SWEEPER.cone) / 2))).toBe(true);
+        expect(inSweeperRange(tower, point(5, a + side * (SWEEPER.cone / 2 + 5e-10)))).toBe(true);
+        expect(inSweeperRange(tower, point(5, a + side * (SWEEPER.cone / 2 + 2e-9)))).toBe(false);
+      }
     },
   );
   it.each([1, 2, 3, 4])(
@@ -146,6 +151,29 @@ describe('directional air displacement', () => {
     advance(m, 4.35, events, false);
     expect(events.filter((e) => e.type === 'gust')).toHaveLength(2);
     expect(b.sweepers![9000].firedAt).toBeCloseTo(5.65, 8);
+  });
+  it('includes both wave width edges and excludes the opposite direction', () => {
+    const { m, b, tower } = arena();
+    tower.hp = 0;
+    const inside = [flyer(m, 16, 13.5), flyer(m, 16, 8.5)];
+    const outside = [flyer(m, 16, 13.501), flyer(m, 16, 8.499), flyer(m, 6, 11)];
+    b.gusts = [
+      {
+        sourceId: tower.id,
+        x: 11,
+        y: 11,
+        directionX: 1,
+        directionY: 0,
+        radius: 5,
+        push: 1.6,
+        hit: [],
+        launched: 0,
+      },
+    ];
+    stepSweepers(b, 0.1, () => {});
+    for (const unit of inside) expect(unit.airPush).toBeDefined();
+    for (const unit of outside) expect(unit.airPush).toBeUndefined();
+    expect(b.gusts[0].hit).toEqual(inside.map((unit) => unit.id));
   });
   it('cancels windup on Lightning stun and resumes with a fresh preparation', () => {
     const { m, b } = arena();

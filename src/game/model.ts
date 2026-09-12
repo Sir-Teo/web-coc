@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import {
   recordBombTowerShot,
   recordBombTowerDestroyed,
@@ -60,6 +61,7 @@ import {
   type Defender,
 } from './defenders';
 import { primeDeathBomb, stepDeathBombs, bombTowerDeathDamage, type DeathBomb } from './bomb-tower';
+import { wizardTowerProjectileTier } from './wizard-tower-stats';
 import {
   stepSweepers,
   stepAirPush,
@@ -2046,7 +2048,7 @@ export class GameModel {
     if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
       for (const enemy of b.defenders ?? [])
-        if (enemy.hp > 0 && Math.hypot(enemy.x - x, enemy.y - y) <= d.radius)
+        if (enemy.hp > 0 && distance2D(enemy.x - x, enemy.y - y) <= d.radius)
           enemy.stunnedUntil = b.elapsed + LIGHTNING_STUN;
       for (const v of b.buildings)
         if (
@@ -2269,7 +2271,7 @@ export class GameModel {
           cy = Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size));
         const dx = cx - u.x,
           dy = cy - u.y,
-          len = Math.hypot(dx, dy) || 1,
+          len = distance2D(dx, dy) || 1,
           move = Math.min(d.speed * unitDt, len);
         u.x += (dx / len) * move;
         u.y += (dy / len) * move;
@@ -2321,7 +2323,7 @@ export class GameModel {
         }
         const dx = next.x - u.x,
           dy = next.y - u.y,
-          len = Math.hypot(dx, dy),
+          len = distance2D(dx, dy),
           move = d.speed * unitDt;
         if (len <= move) {
           u.x = next.x;
@@ -2345,7 +2347,7 @@ export class GameModel {
           u.hp > 0 &&
           !TROOPS[u.kind].flying &&
           (u.spawnedAt ?? 0) <= shell.impact + 1e-9 &&
-          Math.hypot(u.x - shell.x, u.y - shell.y) <= shell.radius
+          distance2D(u.x - shell.x, u.y - shell.y) <= shell.radius
         )
           u.hp -= shell.damage;
       this.onEffect({
@@ -2382,15 +2384,15 @@ export class GameModel {
         (u) =>
           u.hp > 0 &&
           canTarget(d.targets, u.kind) &&
-          Math.hypot(u.x - center.x, u.y - center.y) <= d.range! &&
-          Math.hypot(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
+          distance2D(u.x - center.x, u.y - center.y) <= d.range! &&
+          distance2D(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
       );
       // Keep firing at the same eligible target until it dies or leaves range.
       const target =
         targets.find((u) => u.id === b.defenseTargets[tower.id]) ??
         targets.sort(
           (a, c) =>
-            Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(c.x - center.x, c.y - center.y),
+            distance2D(a.x - center.x, a.y - center.y) - distance2D(c.x - center.x, c.y - center.y),
         )[0];
       if (target) {
         b.defenseTargets[tower.id] = target.id;
@@ -2452,6 +2454,9 @@ export class GameModel {
                     : tower.kind === 'wizardtower'
                       ? 'arcane'
                       : 'cannonball',
+            ...(tower.kind === 'wizardtower'
+              ? { variant: wizardTowerProjectileTier(tower.level) }
+              : {}),
             sourceId: tower.id,
             targetId: target.id,
             targetBuilding: false,
@@ -3068,7 +3073,7 @@ export function enemyBase(index: number) {
 }
 export function distanceTo(u: { x: number; y: number }, b: Building | { x: number; y: number }) {
   const s = 'level' in b ? BUILDINGS[b.kind].size : 0;
-  return Math.hypot(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
+  return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */
 export function breachTarget(u: { x: number; y: number }, buildings: Building[]) {
@@ -3190,7 +3195,7 @@ export function findPath(
       const ty = Math.max(target.y, Math.min(center.y, target.y + s));
       const dx = center.x - tx,
         dy = center.y - ty,
-        distance = Math.hypot(dx, dy);
+        distance = distance2D(dx, dy);
       const reach = Math.max(0, range - 1e-6); // Stay inside range despite float rounding.
       const point = { x: tx + (dx * reach) / distance, y: ty + (dy * reach) / distance };
       if (Math.floor(point.x) === x && Math.floor(point.y) === y) {
@@ -3269,7 +3274,7 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
           const desired = spacing / 2;
           let dx = v.x - u.x,
             dy = v.y - u.y;
-          let distance = Math.hypot(dx, dy);
+          let distance = distance2D(dx, dy);
           if (distance >= desired) continue;
           if (distance < 0.0001) {
             const angle = ((u.id * 127 + v.id * 31) % 628) / 100;
@@ -3277,7 +3282,7 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
             dy = Math.sin(angle);
             distance = 1;
           }
-          const push = Math.min(0.07, (desired - Math.hypot(v.x - u.x, v.y - u.y)) * 0.25),
+          const push = Math.min(0.07, (desired - distance2D(v.x - u.x, v.y - u.y)) * 0.25),
             px = (dx / distance) * push,
             py = (dy / distance) * push;
           if (free(u, u.x - px, u.y - py)) {

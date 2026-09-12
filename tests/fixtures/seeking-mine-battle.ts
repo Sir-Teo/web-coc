@@ -22,8 +22,8 @@ export function seekingMineVillage() {
   return new GameModel(save).state;
 }
 
-export function seekingMineBattle(index = 51) {
-  const m = new GameModel(seekingMineVillage());
+export function seekingMineBattle(index = 51, save = seekingMineVillage()) {
+  const m = new GameModel(save);
   m.startCampaign(index);
   if (!m.battle) throw Error('Seeking Mine fixture village did not open');
   const buildings = m.battle.buildings;

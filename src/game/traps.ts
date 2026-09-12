@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, springCapacity, trapStats } from './data';
 import type { Battle, Building, FX, Unit } from './model';
 import { PUMPKIN_BOMB } from './pumpkin-bomb';
@@ -53,14 +54,14 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       !!TROOPS[u.kind].flying === (mode === 'air');
     if (!state) {
       const nearby = battle.units.filter(
-        (u) => eligible(u) && Math.hypot(u.x - center.x, u.y - center.y) <= d.trigger,
+        (u) => eligible(u) && distance2D(u.x - center.x, u.y - center.y) <= d.trigger,
       );
       nearby.sort(
         (a, b) =>
           (d.springCapacity
             ? (b.hero ? 25 : TROOPS[b.kind].space) - (a.hero ? 25 : TROOPS[a.kind].space)
             : 0) ||
-          Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y) ||
+          distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y) ||
           a.id - b.id,
       );
       const target = nearby[0];
@@ -116,7 +117,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       if (flightDt <= 0) continue;
       const x = target.x - state.x,
         y = target.y - state.y;
-      const distance = Math.hypot(x, y),
+      const distance = distance2D(x, y),
         travel = d.homingSpeed * flightDt;
       const from = { x: state.x, y: state.y },
         start = battle.elapsed - flightDt;
@@ -195,7 +196,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
       for (const u of battle.units)
-        if (eligible(u) && Math.hypot(u.x - state.x, u.y - state.y) <= d.radius) u.hp -= power;
+        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) u.hp -= power;
       effect({
         type: 'blast',
         x: state.x,

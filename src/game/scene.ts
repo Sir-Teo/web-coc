@@ -1529,7 +1529,7 @@ export class VillageScene extends Phaser.Scene {
       if (v.kind === 'airsweeper' && v.hp > 0) {
         const state = this.model.battle?.sweepers?.[v.id];
         const direction = state
-          ? (Math.round(state.angle / (Math.PI / 4)) + 8) % 8
+          ? (Math.round(Math.atan2(state.directionY, state.directionX) / (Math.PI / 4)) + 8) % 8
           : (v.direction ?? 0);
         im.setTexture(sweeperTexture(v.level, direction));
       }
@@ -1627,7 +1627,7 @@ export class VillageScene extends Phaser.Scene {
         for (let trail = 0; trail < 3; trail++) {
           const radius = Math.max(1, gust.radius - trail * 0.24);
           const points = Array.from({ length: 21 }, (_, i) => {
-            const a = gust.angle + half * (i / 10 - 1),
+            const a = Math.atan2(gust.directionY, gust.directionX) + half * (i / 10 - 1),
               p = iso(gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius);
             return new Phaser.Math.Vector2(p.x, p.y - AIR_LIFT);
           });

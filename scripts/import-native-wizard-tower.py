@@ -201,7 +201,12 @@ def build():
                     body=v['ExportName'], defender=v['DefenderCharacter'], defenderZ=int(v['DefenderZ']),
                     projectile=v['Projectile'], attackEffect=v['AttackEffect'], hitEffect=v['HitEffect']) for v in levels],
                   intervalMs=int(first['AttackSpeed']), range=int(first['AttackRange']), radius=int(first['DamageRadius']),
-                  size=int(first['Width']), airTargets=first['AirTargets'] == 'TRUE', groundTargets=first['GroundTargets'] == 'TRUE')
+                  size=int(first['Width']), airTargets=first['AirTargets'] == 'TRUE', groundTargets=first['GroundTargets'] == 'TRUE',
+                  projectiles=[dict(name=name, export=rows[0]['ExportName'], speed=int(rows[0]['Speed']) / 100,
+                                    scale=int(rows[0]['Scale']) / 100, startHeight=int(rows[0]['StartHeight']),
+                                    startOffset=int(rows[0]['StartOffset']), tracksTarget=rows[0]['DontTrackTarget'] != 'TRUE',
+                                    rotates=rows[0]['UseRotate'] == 'TRUE', playOnce=rows[0]['PlayOnce'] == 'TRUE')
+                               for name, rows in projectiles.items()])
     body_runtime['levels'] = [{k: v[k] for k in BODY_FIELDS} for v in levels]
     actor_runtime['animations'] = {name: [r for r in value['rows'] if r['Name'] in ('idle', 'attack')]
                                    for name, value in actor_animations.items()}

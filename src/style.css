@@ -3113,6 +3113,10 @@ h3 {
   object-fit: contain;
   filter: drop-shadow(0 3px 3px #493b2b28);
 }
+.info-hero > div {
+  min-width: 0;
+  max-width: 100%;
+}
 .info-hero h2 {
   font-family: var(--heading);
   font-weight: 400;
@@ -3132,10 +3136,12 @@ h3 {
 }
 .info-levels {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
   margin-top: 9px;
 }
 .info-levels i {
+  flex: 0 0 15px;
   width: 15px;
   height: 6px;
   border-radius: 3px;

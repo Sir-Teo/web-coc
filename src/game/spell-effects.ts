@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { SPELLS, spellStatsAt } from './data';
 import type { Aura, Battle } from './model';
 import {
@@ -21,7 +22,7 @@ export function stepSpellAuras(battle: Battle) {
         if (
           unit.hp <= 0 ||
           (unit.spawnedAt ?? 0) > at + 1e-9 ||
-          Math.hypot(unit.x - aura.x, unit.y - aura.y) > stats.radius
+          distance2D(unit.x - aura.x, unit.y - aura.y) > stats.radius
         )
           continue;
         if (aura.kind === 'heal')

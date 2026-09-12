@@ -495,7 +495,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: DEFENSE_PROGRESSION.wizardtower[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 8,
+    maxLevel: DEFENSE_PROGRESSION.wizardtower.length,
     available: [0, 0, 0, 0, 1, 2, 2, 3],
     build: DEFENSE_PROGRESSION.wizardtower[0].seconds,
     damage: 14.3,

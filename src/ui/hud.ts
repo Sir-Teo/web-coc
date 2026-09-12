@@ -26,6 +26,7 @@ import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
+import { WIZARD_TOWER_PROJECTILES, wizardTowerProjectileTier } from '../game/wizard-tower-stats';
 import { SKELETON_TRAP, skeletonCount, skeletonStats } from '../game/skeleton-stats';
 import {
   MAX_SPELL_LEVEL,
@@ -194,6 +195,12 @@ function statRows(
     ]);
   }
   if (kind === 'xbow') rows.push(['Layers', 'Ammunition', `${n(XBOW.ammunition)} bolts`]);
+  if (kind === 'wizardtower')
+    rows.push([
+      'Gauge',
+      'Flight speed',
+      `${WIZARD_TOWER_PROJECTILES[wizardTowerProjectileTier(level) - 1].speed} tiles/s`,
+    ]);
   if (kind === 'bombtower')
     rows.push(
       ['Swords', 'Death damage', n(bombTowerDeathDamage(level))],

@@ -226,7 +226,7 @@ describe('Town Hall tables', () => {
     expect(maxLevelFor('camp', 5)).toBe(5);
     expect(maxLevelFor('airdefense', 3)).toBe(0);
     expect(requiredTownHall('bomb', 2)).toBe(3);
-    expect(requiredTownHall('wizardtower', 7)).toBeNull();
+    expect(requiredTownHall('wizardtower', 7)).toBe(9);
   });
 
   it('makes every available construction and upgrade affordable within that tier storage', () => {

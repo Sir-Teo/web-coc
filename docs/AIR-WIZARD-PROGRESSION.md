@@ -4,7 +4,7 @@ Re-audited September 11, 2026 against the modern Home Village wiki tables and ap
 
 Sources: [Air Defense](https://clashofclans.fandom.com/wiki/Air_Defense) and [Wizard Tower](https://clashofclans.fandom.com/wiki/Wizard_Tower).
 
-September 12 source follow-up: the [pinned Wizard Tower client reference](../reference/wizard-tower/README.md) now preserves all seventeen source levels, original bodies, eleven rooftop Wizard families, four projectile tiers, particles and sounds. Its first eight numerical rows agree with the table below. This source-art foundation is verified separately from live integration; gameplay still uses the eight-level table and authored image.
+September 12 source follow-up: the [pinned Wizard Tower client reference](../reference/wizard-tower/README.md) now preserves all seventeen source levels, original bodies, eleven rooftop Wizard families, four projectile tiers, particles and sounds. Its first eight numerical rows agree with the table below. Gameplay now uses all seventeen source levels and four projectile tiers. Original artwork is verified separately and retained for upcoming integration; the scene still uses the authored image.
 
 ## Air Defense
 
@@ -33,10 +33,19 @@ Counts at TH1–8: **0, 0, 0, 1, 1, 2, 3, 3**. Level ceilings: **0, 0, 0, 2, 3, 
 | 4 | 400,000 | 8h | 730 | 20 | 26 |
 | 5 | 550,000 | 10h | 840 | 24 | 31.2 |
 | 6 | 660,000 | 12h | 960 | 32 | 41.6 |
-| 7 (legacy) | 1,000,000 | 18h | 1,200 | 40 | 52 |
-| 8 (legacy) | 1,100,000 | 20h | 1,440 | 45 | 58.5 |
+| 7 | 1,000,000 | 18h | 1,200 | 40 | 52 |
+| 8 | 1,100,000 | 20h | 1,440 | 45 | 58.5 |
+| 9 | 1,300,000 | 24h | 1,600 | 50 | 65 |
+| 10 | 2,000,000 | 30h | 1,900 | 62 | 80.6 |
+| 11 | 2,500,000 | 36h | 2,120 | 70 | 91 |
+| 12 | 2,600,000 | 42h | 2,240 | 78 | 101.4 |
+| 13 | 3,000,000 | 48h | 2,500 | 84 | 109.2 |
+| 14 | 4,500,000 | 72h | 2,800 | 90 | 117 |
+| 15 | 5,500,000 | 96h | 3,000 | 95 | 123.5 |
+| 16 | 8,000,000 | 108h | 3,150 | 102 | 132.6 |
+| 17 | 14,000,000 | 132h | 3,300 | 110 | 143 |
 
-Counts at TH1–8: **0, 0, 0, 0, 1, 2, 2, 3**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained.
+Counts at TH1–8: **0, 0, 0, 0, 1, 2, 2, 3**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained. Levels 1–4 use 5-tile/s projectiles; levels 5–17 use 9 tiles/s, across four retained source effect tiers. Each projectile lands where its target stood at launch, so moving troops can leave the splash circle. The source height/offset and action-frame handoff remain unverified. The first 54 native villages and Graduation Ceremony (stage 58) now have supported mechanics; native dependencies and missing Shrink Trap/garrison mechanics still gate progression.
 
 ## Integration and verification
 
@@ -44,8 +53,8 @@ The shared defense table supplies construction, upgrades, health, Info compariso
 
 Existing home buildings retain their layout, levels and paid timestamps. Health reconciliation preserves the saved damage fraction; upgrades complete once and reserve a builder throughout. Excess pieces and levels from older saves remain accepted, while new construction and upgrades use the TH8 limits. Battle snapshots are not reconciled as home buildings.
 
-Replay version **8** identifies these combat and health changes. Earlier results remain readable; playback requiring older rules is unavailable. Campaign multipliers remain scenario tuning and are not evidence of native multiplayer balance. The campaign viability suite remains part of the full unit run.
+Replay version **34** identifies the current source projectile rules (the earlier defense audit used version 8). Earlier results remain readable; playback requiring older rules is unavailable. Campaign multipliers remain scenario tuning and are not evidence of native multiplayer balance. The campaign viability suite remains part of the full unit run.
 
 Tests cover every playable upgrade, exact-resource boundaries, timers, builders, saved health, counts, every accepted damage tier, range edges, 20/30/60 fps cadence, idle reacquisition, upgrade downtime, air-only rockets, one-tile splash on both layers, destruction during rocket flight, and replay fidelity. Browser checks inspect phone Info values, save/reload paid timers, shop unlocks and older replay messaging. The automatic-hero replay fixture adds a second Cannon to produce the required low-health event under the corrected defense stats.
 
-Live per-level artwork remains unfinished: Air Defense has two original tiers and Wizard Tower has one authored image. All seventeen original Wizard Tower bodies and their related art are now retained and source-pixel tested for upcoming integration. Projectile speeds, firing animations, troop statistics, campaign layouts and the broader economy still contain local tuning; this audit does not establish complete native combat parity.
+Live per-level artwork remains unfinished: Air Defense has two original tiers and Wizard Tower has one authored image. All seventeen original Wizard Tower bodies and their related art are now retained and source-pixel tested for upcoming integration. Air Defense projectile speed, firing animations, troop statistics, authored campaign layouts and the broader economy still contain local tuning; this audit does not establish complete native combat parity.

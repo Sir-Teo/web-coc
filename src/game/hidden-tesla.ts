@@ -1,3 +1,4 @@
+import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { TESLA } from './tesla-stats';
@@ -28,7 +29,7 @@ export function revealTeslas(battle: Battle, effect: (fx: FX) => void) {
       y = tower.y + BUILDINGS.tesla.size / 2;
     if (
       battle.destruction <= TESLA_REVEAL_PERCENT &&
-      !battle.units.some((u) => u.hp > 0 && Math.hypot(u.x - x, u.y - y) <= TESLA_TRIGGER)
+      !battle.units.some((u) => u.hp > 0 && distance2D(u.x - x, u.y - y) <= TESLA_TRIGGER)
     )
       continue;
     (battle.revealedTeslas ??= {})[tower.id] = battle.elapsed;
