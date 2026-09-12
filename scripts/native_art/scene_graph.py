@@ -42,7 +42,7 @@ def capture_graph(sc, exports, *, empty_bounds=()):
                                 for texture, vertices in sc.commands(id_)]
             return
         c = sc.clip(id_)
-        require(all(b in (0, 8) for b in c['blending']), 'Unsupported scene blend')
+        require(all(b in (0, 4, 8) for b in c['blending']), 'Unsupported scene blend')
         for child in c['children']:
             visit(child, (*ancestors, id_))
         patterns, pattern_ids, timeline = [], {}, []
@@ -195,8 +195,8 @@ def graph_draws(graph, id_, frame=0, controls=None, matrix=None, color=None, ble
         cm = np.vstack([np.array(graph['matrices'][transform]).reshape(2, 3), [0, 0, 1]])
         ct = np.array(graph['colors'][tint])
         mode = c['blending'][slot]
-        require(mode in (0, 8), 'Unsupported scene blend')
-        if mode == 8 and child_key in graph['clips']:
+        require(mode in (0, 4, 8), 'Unsupported scene blend')
+        if mode in (4, 8) and child_key in graph['clips']:
             require(not graph['clips'][child_key]['children'], 'Additive group requires isolated compositing')
         yield from graph_draws(graph, child, phase, controls, matrix @ cm,
                                (color[0] * ct[:4], color[0] * ct[4:] + color[1]),

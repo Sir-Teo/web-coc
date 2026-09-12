@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { NativeMeshView } from './native-mesh-scene';
+import { nativeBlendMode } from './native-blend';
+import { NativeGroupColor } from './native-group-color';
 import {
   nativeMatrix,
   nativeVertices,
@@ -9,22 +11,6 @@ import {
 } from './native-mesh';
 
 type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.RenderTexture;
-const additiveModes = new WeakMap<Phaser.Renderer.WebGL.WebGLRenderer, number>();
-function additiveMode(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
-  let mode = additiveModes.get(renderer);
-  if (mode === undefined) {
-    const gl = renderer.gl;
-    // Phaser ADD uses DST_ALPHA for the destination, which darkens partially
-    // transparent intermediate buffers. Preserve destination RGB inside groups.
-    // Phaser 4.2.1 addBlendMode returns the preceding index and accepts only
-    // combined factors. Capture the allocated slot and set separate alpha here.
-    mode = renderer.blendModes.length;
-    renderer.addBlendMode([gl.ONE, gl.ONE], gl.FUNC_ADD);
-    renderer.updateBlendMode(mode, [gl.ONE, gl.ONE, gl.ONE, gl.ONE_MINUS_SRC_ALPHA], gl.FUNC_ADD);
-    additiveModes.set(renderer, mode);
-  }
-  return mode;
-}
 
 function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): NativeScenePose[] {
   return poses.map((pose) =>
@@ -63,12 +49,12 @@ export function nativeSceneBounds(
   return left === Infinity ? undefined : [left, top, right, bottom];
 }
 
-/** Retains native polygons and composites additive containers in separate GPU buffers. */
+/** Retains native polygons and composites screen/additive containers in separate GPU buffers. */
 export class NativeSceneView {
   private leaves: NativeMeshView;
   readonly groups = new Map<
     string,
-    { image: Phaser.GameObjects.RenderTexture; content: NativeSceneView }
+    { image: Phaser.GameObjects.RenderTexture; content: NativeSceneView; color?: NativeGroupColor }
   >();
   objects: NativeObject[] = [];
   constructor(
@@ -76,23 +62,17 @@ export class NativeSceneView {
     private prefix: string,
     private detached = false,
   ) {
-    this.leaves = new NativeMeshView(
-      scene,
-      prefix,
-      additiveMode(scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer),
-    );
+    this.leaves = new NativeMeshView(scene, prefix);
     if (!detached)
       scene.game.renderer.on(Phaser.Renderer.Events.LOSE_WEBGL, this.onContextLost, this);
   }
   private onContextLost() {
-    for (const entry of this.groups.values()) {
-      // Phaser 4.2.1 tries deleting stale framebuffer/renderbuffer handles in
-      // the restored context. Lost-context resources are already invalidated;
-      // drop the old handle so its wrapper only recreates the attachments.
-      const texture = entry.image.texture as Phaser.Textures.DynamicTexture;
-      texture.drawingContext.framebuffer.webGLFramebuffer = null;
-      entry.content.onContextLost();
-    }
+    // Phaser 4.2.1 otherwise deletes stale handles in the restored context.
+    // Filters also use pooled framebuffers outside this view's own textures.
+    // Every handle belongs to the lost context and is already invalidated;
+    // retain the wrappers/attachment descriptions so Phaser can recreate them.
+    const renderer = this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+    for (const framebuffer of renderer.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
   }
   get meshes() {
     return this.leaves.meshes;
@@ -132,12 +112,21 @@ export class NativeSceneView {
             image: this.scene.add.renderTexture(0, 0, width, height),
             content: new NativeSceneView(this.scene, this.prefix, true),
           };
-          entry.image
-            .setOrigin(0, 0)
-            .setBlendMode(
-              additiveMode(this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer),
-            );
+          entry.image.setOrigin(0, 0);
           this.groups.set(pose.key, entry);
+        }
+        entry.image.setBlendMode(
+          nativeBlendMode(
+            this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer,
+            pose.blend,
+          ),
+        );
+        const colored =
+          pose.multiply.slice(0, 3).some((v) => v !== 1) || pose.add.some((v) => v !== 0);
+        if (colored && !entry.color) entry.color = new NativeGroupColor(entry.image);
+        if (entry.color) {
+          entry.color.active = colored;
+          entry.color.setColor(pose.multiply, pose.add);
         }
         entry.content.render(
           transformed(pose.group, [density, 0, -left, 0, density, -top]),

@@ -42,31 +42,40 @@ it.each(witness.cases)('matches the independent source composition for $export a
   );
 });
 
-it('keeps normal and additive children inside an additive container, applying parent alpha only once', () => {
-  const changed = structuredClone(graph);
-  const root = changed.clips[changed.exports.teslatower_lvl10_setup];
-  const slot = root.names.indexOf('idle_electricity');
-  const placement = root.frames[0].find((p) => p[0] === slot)!;
-  changed.colors.push([1, 1, 1, 0.4, 0, 0, 0, 0]);
-  placement[2] = changed.colors.length - 1;
-  const poses = nativeScenePoses(changed, 'teslatower_lvl10_setup', 8 / 24);
-  const group = poses.find((p) => 'group' in p)!;
-  expect(group.multiply[3]).toBe(0.4);
-  if ('group' in group) {
-    expect(new Set(group.group.map((p) => p.blend))).toEqual(new Set([0, 8]));
-    const original = nativeScenePoses(graph, 'teslatower_lvl10_setup', 8 / 24).find(
+it.each([4, 8] as const)(
+  'keeps children and color changes isolated inside blend mode %i',
+  (blend) => {
+    const changed = structuredClone(graph);
+    const root = changed.clips[changed.exports.teslatower_lvl10_setup];
+    const slot = root.names.indexOf('idle_electricity');
+    root.blending[slot] = blend;
+    const placement = root.frames[0].find((p) => p[0] === slot)!;
+    changed.colors.push([1, 1, 1, 0.4, 0, 0, 0, 0]);
+    placement[2] = changed.colors.length - 1;
+    const poses = nativeScenePoses(changed, 'teslatower_lvl10_setup', 8 / 24);
+    const group = poses.find((p) => 'group' in p)!;
+    expect(group.blend).toBe(blend);
+    expect(group.multiply[3]).toBe(0.4);
+    if ('group' in group) {
+      expect(new Set(group.group.map((p) => p.blend))).toEqual(new Set([0, 8]));
+      const original = nativeScenePoses(graph, 'teslatower_lvl10_setup', 8 / 24).find(
+        (p) => 'group' in p,
+      )!;
+      expect(group.group).toEqual('group' in original ? original.group : undefined);
+    }
+    expect(() => nativeMeshPoses(changed, 'teslatower_lvl10_setup', 8 / 24)).toThrow(
+      'isolated compositing',
+    );
+    changed.colors.at(-1)![4] = 0.2;
+    const colored = nativeScenePoses(changed, 'teslatower_lvl10_setup', 8 / 24).find(
       (p) => 'group' in p,
     )!;
-    expect(group.group).toEqual('group' in original ? original.group : undefined);
-  }
-  expect(() => nativeMeshPoses(changed, 'teslatower_lvl10_setup', 8 / 24)).toThrow(
-    'isolated compositing',
-  );
-  changed.colors.at(-1)![4] = 0.2;
-  expect(() => nativeScenePoses(changed, 'teslatower_lvl10_setup', 8 / 24)).toThrow(
-    'post-composition filter',
-  );
-});
+    expect(colored.add).toEqual([0.2, 0, 0, 0]);
+    expect('group' in colored && colored.group).toEqual('group' in group && group.group);
+    changed.colors.at(-1)![7] = 0.2;
+    expect(() => nativeScenePoses(changed, 'teslatower_lvl10_setup', 8 / 24)).toThrow('alpha');
+  },
+);
 
 it('keeps every setup/reveal timeline seekable while idle controls can be hidden independently', () => {
   for (const row of raw.levels) {

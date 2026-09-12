@@ -32,10 +32,11 @@ def nodes(graph, id_, frame, matrix, multiply=None, add=None, path=None):
         color = np.array(graph['colors'][tint])
         mul, plus = multiply * color[:4], multiply * color[4:] + add
         mode = clip['blending'][slot]
-        if mode == 8 and child in graph['clips'] and graph['clips'][child]['children']:
-            require((mul[:3] == 1).all() and (plus == 0).all(), 'Unsupported group RGB transform')
+        require(mode in (0, 4, 8), 'Unsupported source blend')
+        if mode in (4, 8) and child in graph['clips'] and graph['clips'][child]['children']:
+            require(plus[3] == 0, 'Unsupported group alpha addition')
             result.append(dict(key=f'{path}/{slot}', group=nodes(graph, int(child), phase, m, path=f'{path}/{slot}'),
-                               multiply=mul.tolist(), add=plus.tolist(), blend=8))
+                               multiply=mul.tolist(), add=plus.tolist(), blend=mode))
         else:
             nested = nodes(graph, int(child), phase, m, mul, plus, f'{path}/{slot}')
             for node in nested:
@@ -50,7 +51,12 @@ def compose(poses, textures, cell, background=None):
         canvas[:, :, :3], canvas[:, :, 3] = background, 1
     for pose in poses:
         if 'group' in pose:
-            rgba = compose(pose['group'], textures, cell) * pose['multiply'][3]
+            rgba = compose(pose['group'], textures, cell)
+            if pose['multiply'][:3] != [1, 1, 1] or pose['add'][:3] != [0, 0, 0]:
+                alpha = rgba[:, :, 3:4]
+                straight = np.divide(rgba[:, :, :3], alpha, out=np.zeros_like(rgba[:, :, :3]), where=alpha > 0)
+                rgba[:, :, :3] = np.clip(straight * pose['multiply'][:3] + pose['add'][:3], 0, 1) * alpha
+            rgba *= pose['multiply'][3]
         else:
             matrix = np.vstack([np.array(pose['matrix']).reshape(2, 3), [0, 0, 1]])
             vertices = np.array(pose['vertices']).reshape(-1, 4)
@@ -61,7 +67,13 @@ def compose(poses, textures, cell, background=None):
                                      textures, [0, 0, cell, cell])) / 255
             rgba[:, :, :3] *= rgba[:, :, 3:4]
         alpha = rgba[:, :, 3:4]
-        canvas[:, :, :3] = np.minimum(1, canvas[:, :, :3] + rgba[:, :, :3]) if pose['blend'] == 8 else rgba[:, :, :3] + canvas[:, :, :3] * (1 - alpha)
+        if pose['blend'] == 8:
+            canvas[:, :, :3] = np.minimum(1, canvas[:, :, :3] + rgba[:, :, :3])
+        elif pose['blend'] == 4:
+            canvas[:, :, :3] = rgba[:, :, :3] + canvas[:, :, :3] * (1 - rgba[:, :, :3])
+        else:
+            require(pose['blend'] == 0, 'Unsupported source blend')
+            canvas[:, :, :3] = rgba[:, :, :3] + canvas[:, :, :3] * (1 - alpha)
         canvas[:, :, 3:4] = alpha + canvas[:, :, 3:4] * (1 - alpha)
     # Match the RGBA8 intermediate framebuffer boundary, not its individual leaves.
     return np.round(np.clip(canvas, 0, 1) * 255) / 255

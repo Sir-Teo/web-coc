@@ -82,6 +82,22 @@ class SceneGraphTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'isolated compositing'):
             list(graph_draws(graph, 0))
 
+    def test_retains_screen_blend_and_requires_isolated_container_composition(self):
+        reader = Reader()
+        original = reader.clip
+        def screen(id_):
+            clip = original(id_)
+            clip['blending'][0] = 4
+            return clip
+        reader.clip = screen
+        graph = capture_graph(reader, {'screen': 0})
+        self.assertEqual(graph['clips']['0']['blending'], [4, 0])
+        self.assertEqual(graph['clips']['1']['blending'], [4])
+        with self.assertRaisesRegex(ValueError, 'isolated compositing'):
+            list(graph_draws(graph, 0))
+        graph['clips']['0']['blending'][0] = 0
+        self.assertEqual([draw[-1] for draw in graph_draws(graph, 0)], [4, 4])
+
     def test_crop_keeps_fractional_bilinear_samples_and_transparent_rgb_exact(self):
         graph = capture_graph(Reader(), {'weapon': 0})
         pixels = np.random.default_rng(438).integers(0, 256, (13, 17, 4), dtype=np.uint8)

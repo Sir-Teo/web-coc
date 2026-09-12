@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { nativeBlendMode } from './native-blend';
 import { configureNativeTriangleRendering } from './quad-renderer';
 import {
   nativeTriangles,
@@ -50,7 +51,6 @@ export class NativeMeshView {
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
-    private additiveBlend = Phaser.BlendModes.ADD,
   ) {
     configureNativeTriangleRendering(scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
   }
@@ -73,7 +73,12 @@ export class NativeMeshView {
         .setPosition(x, y)
         .setDepth(depth + order * 0.0001)
         .setAlpha(alpha * pose.multiply[3])
-        .setBlendMode(pose.blend === 8 ? this.additiveBlend : Phaser.BlendModes.NORMAL)
+        .setBlendMode(
+          nativeBlendMode(
+            this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer,
+            pose.blend,
+          ),
+        )
         .setVisible(true);
     }
     for (const [key, mesh] of this.meshes)

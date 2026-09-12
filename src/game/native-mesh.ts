@@ -18,6 +18,7 @@ export interface NativeMeshGraph {
   textures: Record<string, { path: string; width: number; height: number }>;
 }
 export type NativeMatrix = [number, number, number, number, number, number];
+export type NativeBlend = 0 | 4 | 8;
 export interface NativeMeshPose {
   key: string;
   texture: number;
@@ -25,14 +26,14 @@ export interface NativeMeshPose {
   matrix: NativeMatrix;
   multiply: number[];
   add: number[];
-  blend: 0 | 8;
+  blend: NativeBlend;
 }
 export interface NativeGroupPose {
   key: string;
   group: NativeScenePose[];
   multiply: number[];
   add: number[];
-  blend: 8;
+  blend: 4 | 8;
 }
 export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
@@ -84,7 +85,7 @@ export function nativeMeshPoses(
   return sampleNativeScene(graph, name, seconds, controls, root, false) as NativeMeshPose[];
 }
 
-/** Retains additive container boundaries instead of distributing their blend to leaves. */
+/** Retains screen/additive container boundaries instead of distributing their blend to leaves. */
 export function nativeScenePoses(
   graph: NativeMeshGraph,
   name: string,
@@ -112,7 +113,7 @@ function sampleNativeScene(
     matrix: NativeMatrix,
     multiply: number[],
     add: number[],
-    blend: 0 | 8,
+    blend: NativeBlend,
     path: string,
     ancestors: number[],
     output: NativeScenePose[],
@@ -140,24 +141,21 @@ function sampleNativeScene(
           ? Math.floor((elapsed * nested.fps) / clip.fps)
           : 0;
       const mode = clip.blending[slot];
-      if (mode !== 0 && mode !== 8) throw Error('Unsupported native blend');
+      if (mode !== 0 && mode !== 4 && mode !== 8) throw Error('Unsupported native blend');
       const color = graph.colors[tint];
       if (color[7] !== 0) throw Error('Additive native alpha is unsupported');
       const nextMatrix = nativeMatrix(matrix, graph.matrices[transform]);
       const nextMultiply = multiply.map((v, i) => v * color[i]);
       const nextAdd = add.map((v, i) => multiply[i] * color[i + 4] + v);
-      if (mode === 8 && nested?.children.length) {
-        if (!isolate) throw Error('Additive native group requires isolated compositing');
-        // These would need a post-composition color filter, not per-child tinting.
-        if (nextMultiply.slice(0, 3).some((v) => v !== 1) || nextAdd.some((v) => v !== 0))
-          throw Error('Native group RGB transform requires a post-composition filter');
+      if ((mode === 4 || mode === 8) && nested?.children.length) {
+        if (!isolate) throw Error('Native blend group requires isolated compositing');
         const group: NativeScenePose[] = [];
         output.push({
           key: `${path}/${slot}`,
           group,
           multiply: nextMultiply,
           add: nextAdd,
-          blend: 8,
+          blend: mode,
         });
         walk(
           child,
