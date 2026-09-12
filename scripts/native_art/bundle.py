@@ -18,17 +18,16 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def source(path):
-    require(path in SOURCES, 'Unpinned source requested')
+def source(path, pins=SOURCES):
+    require(path in pins, 'Unpinned source requested')
     target = ROOT / 'output/native-campaign-source' / path
     if not target.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_suffix(target.suffix + '.part')
         subprocess.run(['curl', '--fail', '--silent', '--show-error', '--retry', '2',
                         BASE + path, '-o', str(temporary)], check=True)
-        require(digest(temporary.read_bytes()) == SOURCES[path], f'Source checksum differs: {path}')
+        require(digest(temporary.read_bytes()) == pins[path], f'Source checksum differs: {path}')
         temporary.replace(target)
     data = target.read_bytes()
-    require(digest(data) == SOURCES[path], f'Source checksum differs: {path}')
+    require(digest(data) == pins[path], f'Source checksum differs: {path}')
     return data
-
