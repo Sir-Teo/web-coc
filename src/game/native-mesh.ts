@@ -27,6 +27,14 @@ export interface NativeMeshPose {
   add: number[];
   blend: 0 | 8;
 }
+export interface NativeGroupPose {
+  key: string;
+  group: NativeScenePose[];
+  multiply: number[];
+  add: number[];
+  blend: 8;
+}
+export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
 
 export function nativeMatrix(a: readonly number[], b: readonly number[]): NativeMatrix {
@@ -73,9 +81,31 @@ export function nativeMeshPoses(
   controls: Readonly<Record<string, number | false>> = {},
   root: NativeMatrix = NATIVE_IDENTITY,
 ): NativeMeshPose[] {
+  return sampleNativeScene(graph, name, seconds, controls, root, false) as NativeMeshPose[];
+}
+
+/** Retains additive container boundaries instead of distributing their blend to leaves. */
+export function nativeScenePoses(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  controls: Readonly<Record<string, number | false>> = {},
+  root: NativeMatrix = NATIVE_IDENTITY,
+): NativeScenePose[] {
+  return sampleNativeScene(graph, name, seconds, controls, root, true);
+}
+
+function sampleNativeScene(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  controls: Readonly<Record<string, number | false>>,
+  root: NativeMatrix,
+  isolate: boolean,
+): NativeScenePose[] {
   const id = graph.exports[name];
   if (id === undefined) throw Error(`Unknown native export: ${name}`);
-  const poses: NativeMeshPose[] = [];
+  const poses: NativeScenePose[] = [];
   const walk = (
     id: number,
     frame: number,
@@ -85,12 +115,13 @@ export function nativeMeshPoses(
     blend: 0 | 8,
     path: string,
     ancestors: number[],
+    output: NativeScenePose[],
   ) => {
     if (ancestors.includes(id) || ancestors.length >= 32) throw Error('Recursive native scene');
     const commands = graph.shapes[id];
     if (commands) {
       for (const [index, [texture, vertices]] of commands.entries())
-        poses.push({ key: `${path}:${index}`, texture, vertices, matrix, multiply, add, blend });
+        output.push({ key: `${path}:${index}`, texture, vertices, matrix, multiply, add, blend });
       return;
     }
     const clip = graph.clips[id];
@@ -110,19 +141,47 @@ export function nativeMeshPoses(
           : 0;
       const mode = clip.blending[slot];
       if (mode !== 0 && mode !== 8) throw Error('Unsupported native blend');
-      if (mode === 8 && nested?.children.length)
-        throw Error('Additive native group requires isolated compositing');
       const color = graph.colors[tint];
       if (color[7] !== 0) throw Error('Additive native alpha is unsupported');
+      const nextMatrix = nativeMatrix(matrix, graph.matrices[transform]);
+      const nextMultiply = multiply.map((v, i) => v * color[i]);
+      const nextAdd = add.map((v, i) => multiply[i] * color[i + 4] + v);
+      if (mode === 8 && nested?.children.length) {
+        if (!isolate) throw Error('Additive native group requires isolated compositing');
+        // These would need a post-composition color filter, not per-child tinting.
+        if (nextMultiply.slice(0, 3).some((v) => v !== 1) || nextAdd.some((v) => v !== 0))
+          throw Error('Native group RGB transform requires a post-composition filter');
+        const group: NativeScenePose[] = [];
+        output.push({
+          key: `${path}/${slot}`,
+          group,
+          multiply: nextMultiply,
+          add: nextAdd,
+          blend: 8,
+        });
+        walk(
+          child,
+          phase,
+          nextMatrix,
+          [1, 1, 1, 1],
+          [0, 0, 0, 0],
+          0,
+          `${path}/${slot}`,
+          [...ancestors, id],
+          group,
+        );
+        continue;
+      }
       walk(
         child,
         phase,
-        nativeMatrix(matrix, graph.matrices[transform]),
-        multiply.map((v, i) => v * color[i]),
-        add.map((v, i) => multiply[i] * color[i + 4] + v),
+        nextMatrix,
+        nextMultiply,
+        nextAdd,
         mode || blend,
         `${path}/${slot}`,
         [...ancestors, id],
+        output,
       );
     }
   };
@@ -136,6 +195,7 @@ export function nativeMeshPoses(
     0,
     String(id),
     [],
+    poses,
   );
   return poses;
 }

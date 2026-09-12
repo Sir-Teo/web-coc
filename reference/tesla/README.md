@@ -18,7 +18,7 @@ output/native-art-venv/bin/python -m unittest discover -s scripts/native_art -p 
 npm test -- tests/native-tesla-reference.test.ts
 ```
 
-The 18-frame reveal runs at 24 fps and first places `idle_electricity` at frame 17. Setup exports have one root frame with independent 150–192-frame idle clips. Several levels apply additive blending to the **whole idle group**, which must be isolated before compositing onto the world. Seven such subclips are recorded explicitly; treating their children as independently additive changes overlapping pixels. The shared flat mesh player currently rejects these groups.
+The 18-frame reveal runs at 24 fps and first places `idle_electricity` at frame 17. Setup exports have one root frame with independent 150–192-frame idle clips. Several levels apply additive blending to the **whole idle group**, which must be isolated before compositing onto the world. Seven such subclips are recorded explicitly; treating their children as independently additive changes overlapping pixels. The shared flat mesh player rejects these groups; the [native scene renderer](../../docs/NATIVE-SCENE-RENDERER.md) preserves and composites them separately, with independent source-pixel checks in Chromium and WebKit.
 
 DOM portraits include original normal-blend foreground polygons at density 2. Named idle electricity and additive leaves are omitted because one transparent PNG cannot encode their appearance over arbitrary backgrounds. Complete live effects remain in the graph.
 
