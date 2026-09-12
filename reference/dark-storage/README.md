@@ -11,7 +11,7 @@ The source `sc/buildings_42.sctx` is 1276×1974. Its SHA-1 `3ca0ded35c0ae3e08b53
 
 Each root has one named `resource` child. Its 160 control frames contain nine distinct fill states: frame 0 is empty, 1–19 are the first liquid state, and 20-frame bands continue through the full state at 140–159. Levels 1–10 use child 18909; levels 11–13 use 18921, with foreground glass in their parent. The importer verifies every level at all 160 control frames fits the common source bounds `[-100,-40,100,130]` and uses normal blending.
 
-Reproduce with the pinned Python dependencies in `scripts/native-art-requirements.txt`:
+Reproduce with the pinned Python dependencies in `scripts/native_art/requirements.txt`:
 
 ```sh
 output/native-art-venv/bin/python scripts/import-native-dark-storage.py --check

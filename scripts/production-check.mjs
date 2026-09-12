@@ -7,6 +7,9 @@ if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
   throw new Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}. Use chromium or webkit.`);
 await fs.mkdir('output/playtest', { recursive: true });
 const report = {};
+const darkStorageNative = JSON.parse(
+  await fs.readFile('reference/dark-storage/native.json', 'utf8'),
+);
 const xbowNative = JSON.parse(await fs.readFile('reference/xbow/native.json', 'utf8'));
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
@@ -24,6 +27,8 @@ for (const [name, engine] of Object.entries(engines)) {
   const errors = [];
   const requiredArt = new Set([
     ...[
+      ...Object.values(darkStorageNative.textures),
+      ...Object.values(darkStorageNative.previews),
       ...Object.values(xbowNative.textures),
       ...Object.values(xbowNative.sounds),
       ...Object.values(xbowNative.previews),

@@ -20,7 +20,7 @@ try {
   m.state.obstacles = [];
   m.townhall.level = 7;
   m.state.tutorial = true;
-  m.state.gold = m.state.elixir = 100000;
+  m.state.gold = m.state.elixir = 1000000;
   for (const kind of ['herohall', 'darkstorage', 'darkdrill']) {
     let point;
     for (let y = 2; y < 40 && !point; y++)

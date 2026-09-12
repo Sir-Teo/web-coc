@@ -656,3 +656,12 @@ The visual review also covers the first-run coaching banner (`coach-desktop.png`
 ## Goblin building foundation · September 11
 
 683 model tests pass, plus six NPC rendering scenarios across Chromium/WebKit and five Chromium artwork/replay regressions. Both production engines import, seek and export the new NPC identities; Chromium also reloads their art and opens the recording offline. The playable campaign is still the authored twelve-map catalog. See [GOBLIN-BUILDINGS.md](GOBLIN-BUILDINGS.md) for exact scope and evidence.
+
+
+## September 12: native Dark Elixir Storage and three-resource campaign accounting
+
+[Storage implementation and fidelity limits](DARK-ELIXIR-STORAGE.md) and [campaign rules](CAMPAIGN-RULES.md) describe the finished pass. The full model suite passes 972 cases across 77 files. Twelve affected browser cases pass per engine at DPR 2, plus two settled Chromium Info capture reruns. Fourteen imported assets, thirteen source levels and all 160 control frames per level pass reproducibility checks. Independent original-texture raster references cover 39 level/fill pairs; GPU mean maximum-channel error stays below 0.657/255, with no rendering change after context restoration or forced single-texture batching.
+
+General, hero and Dark Elixir replay production checks pass in Chromium and WebKit with no page/asset errors. Chromium verifies the 264-file `crown-clan-501ab0fbe562` offline cache, hero behavior and standalone three-resource replay export/import/rewind. The production replay uses an explicit supported-entity fixture with a native level-13 storage and source catalog loot; it does not bypass guards on the real campaign layout. Expected result is 700 Dark Elixir received and 550 lost to capacity, with unchanged viewer balances. WebKit offline behavior remains unchecked.
+
+Evidence is indexed by `output/playtest/dark-storage-verification.json`, with logs, source/release hashes, GPU summaries, screenshots and three production reports alongside it. Exact native-client world registration and resource-control thresholds, storage construction/upgrade/effects/ruins, later campaign mechanics and physical-device qualification remain unfinished. First 50 native campaign villages remain playable; later unsupported levels are still reported honestly.
