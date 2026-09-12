@@ -1,10 +1,10 @@
 # Hero and dark elixir artwork
 
-Generated September 10, 2026 with the built-in imagegen tool. Each asset has native alpha and original artwork. Rebuild the trimmed, optimized WebPs with `node scripts/hero-assets.mjs` (also included in `npm run assets`). No runtime image service is used. The King currently has a static full-body sprite with procedural movement, attack feedback, and rage tint; directional animation sets remain unfinished.
+Generated September 10, 2026 with the built-in imagegen tool. Each asset has native alpha and original artwork. Rebuild the trimmed, optimized WebPs with `node scripts/hero-assets.mjs` (also included in `npm run assets`). No runtime image service is used. The original static King described below has been superseded by [KING-ART.md](KING-ART.md), which supplies the current portrait and four directional idle/walk/attack sets. The original files and prompt are retained as provenance.
 
 ## king
 
-Source: `art/source/heroes/king.png`. Shipped: `public/assets/characters/king.webp`.
+Legacy source: `art/source/heroes/king.png`. Legacy derivative: `public/assets/characters/king.webp`; current UI/combat no longer use it.
 
 Prompt: Create a single original full-body hero sprite for a polished isometric fantasy village strategy game: a muscular barbarian king, gold crown, rugged blond beard, royal red cape, leather kilt, heavy iron bracers, carrying a massive broad sword. Proud powerful stance with face and body turned three-quarter toward camera right, viewed from above at 30 degrees, complete feet visible. Hand-painted stylized 3D game artwork with chunky beveled forms, warm upper-left light, crisp silhouette readable at 55 pixels. Center complete character, 12 percent padding, genuinely transparent RGBA background. No ground plane, no text, no labels, no border, no UI. Production sprite, no background.
 

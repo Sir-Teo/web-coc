@@ -913,7 +913,7 @@ export const asset = (kind: string, level = 1, skeletonMode: SkeletonMode = 'gro
   if (kind === 'wall') return wallAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
-  if (kind === 'king') return '/assets/characters/king.webp';
+  if (kind === 'king') return '/assets/characters/king-v1/portrait.webp';
   if (LATE_TROOP_KEYS.includes(kind as (typeof LATE_TROOP_KEYS)[number]))
     return `/assets/characters/${kind}-v1.webp`;
   if (kind in SPELLS) return `/assets/spells/${kind}-v2.webp`;

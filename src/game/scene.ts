@@ -42,6 +42,7 @@ import { CombatEffects } from './combat-effects';
 import { projectileEffect } from './projectiles';
 import { unitPose } from './unit-pose';
 import { troopArt } from './troop-art';
+import { KING_ART, KING_DIRECTIONS, kingAtlas, kingTexture, kingPose } from './king-art';
 import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { configureQuadRendering } from './quad-renderer';
 import { defeatPose } from './unit-defeat';
@@ -168,6 +169,11 @@ export class VillageScene extends Phaser.Scene {
     for (const level of CAMP_ART_LEVELS)
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
     this.load.image('king', asset('king'));
+    for (const direction of KING_DIRECTIONS)
+      this.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
+        frameWidth: KING_ART.cell,
+        frameHeight: KING_ART.cell,
+      });
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
@@ -1405,13 +1411,31 @@ export class VillageScene extends Phaser.Scene {
         if (!im) {
           const d = TROOPS[u.kind];
           im = this.add
-            .image(0, 0, u.hero ? 'king' : `${u.kind}-walk`, 0)
-            .setOrigin(0.5, u.hero ? 1 : 122 / 128);
-          if (u.hero) im.setDisplaySize(52, (52 * im.height) / im.width);
+            .image(0, 0, u.hero ? kingTexture('front-left') : `${u.kind}-walk`, 0)
+            .setOrigin(0.5, u.hero ? KING_ART.baseline / KING_ART.cell : 122 / 128);
+          if (u.hero) im.setDisplaySize(KING_ART.width, KING_ART.width);
           else im.setDisplaySize(d.width * art.displayScale, d.width * art.displayScale);
           this.unitSprites.set(u.id, im);
           const spawn = iso(u.x, u.y);
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
+        }
+        const target = TROOPS[u.kind].healer
+          ? battle.units.find((ally) => ally.id === u.healTarget)
+          : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
+            battle.buildings.find((b) => b.id === u.target));
+        if (u.hero && battle.hero) {
+          const king = kingPose(
+            u,
+            target,
+            u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed,
+            heroStats(battle.hero.level, battle.hero.townhall).rate,
+            this.model.state.settings.reducedMotion,
+            im.getData('kingDirection'),
+          );
+          im.setTexture(kingTexture(king.direction), king.frame)
+            .setFlipX(false)
+            .setData('kingDirection', king.direction)
+            .setData('facing', king.facing);
         }
         if (u.hp <= 0) {
           const flying = !!TROOPS[u.kind].flying;
@@ -1444,12 +1468,8 @@ export class VillageScene extends Phaser.Scene {
           sprung && !this.model.state.settings.reducedMotion
             ? Math.sin(springProgress * Math.PI) * 45
             : 0;
-        const target = TROOPS[u.kind].healer
-          ? battle.units.find((ally) => ally.id === u.healTarget)
-          : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
-            battle.buildings.find((b) => b.id === u.target));
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
-        im.setData('facing', pose.facing).setFlipX(pose.flipX);
+        if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
         const animationTime = battle.elapsed * 1000;
         if (!u.hero)
@@ -1467,12 +1487,12 @@ export class VillageScene extends Phaser.Scene {
         else im.clearTint();
         const p = iso(u.x, u.y),
           motion =
-            sprung || this.model.state.settings.reducedMotion
+            sprung || u.hero || this.model.state.settings.reducedMotion
               ? 0
               : flying
                 ? Math.sin(animationTime / 600 + u.id) * 2.2
                 : pose.moving
-                  ? Math.sin(animationTime / 80 + u.id) * (u.hero ? 1.6 : art.bob)
+                  ? Math.sin(animationTime / 80 + u.id) * art.bob
                   : 0;
         const lift = flying ? AIR_LIFT : springLift;
         // Air troops draw above every rooftop, with a shadow left on the ground.
@@ -1489,13 +1509,19 @@ export class VillageScene extends Phaser.Scene {
             : TROOPS[u.kind].rate;
         const phase = 1 - Math.max(0, u.cooldown) / rate;
         const impulse =
-          u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
+          !u.hero && u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
             ? Math.sin((phase / 0.28) * Math.PI)
             : 0;
         const facing = pose.facing;
         im.setX(p.x + facing * impulse * 4).setAngle(flying ? impulse * 4 : facing * impulse * 9);
         if (u.hp < u.maxHp)
-          this.bar(p.x, p.y - lift - im.displayHeight, 22, u.hp / u.maxHp, 0x8dea68);
+          this.bar(
+            p.x,
+            p.y - lift - (u.hero ? KING_ART.healthHeight : im.displayHeight),
+            22,
+            u.hp / u.maxHp,
+            0x8dea68,
+          );
       }
     }
     this.drawDefenders();

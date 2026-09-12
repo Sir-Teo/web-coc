@@ -157,7 +157,7 @@ Screenshots and reports are written to `output/playtest/` (not shipped). The spe
 
 ## Assets
 
-Hero and dark elixir sprite sources and generation prompts are in [docs/HERO-ASSETS.md](docs/HERO-ASSETS.md). Rebuild them with `node scripts/hero-assets.mjs`.
+Hero Hall and dark elixir sprite sources and generation prompts are in [docs/HERO-ASSETS.md](docs/HERO-ASSETS.md). Rebuild them with `node scripts/hero-assets.mjs`. The updated King portrait and 36 directional idle/walk/attack poses are documented in [docs/KING-ART.md](docs/KING-ART.md); rebuild them with `node scripts/king-assets.mjs`.
 
 Original defense sprites, source paths, and built-in generation prompts are recorded in [docs/DEFENSE-ASSETS.md](docs/DEFENSE-ASSETS.md). Rebuild the five WebP sprites with `node scripts/defense-assets.mjs`.
 

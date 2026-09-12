@@ -1,5 +1,21 @@
 # Verification record
 
+## September 11 — King portrait and four directional animation sets
+
+The King now shares a closer default-character identity across his Hero Hall portrait, battle card and combat sprites. Four authored quarter views preserve the sword hand and armored side without mirroring. Each has idle, four walking poses and four attack poses; the renderer follows navigation/target direction and the battle clock. The old static-image bob and attack tilt are removed for the King. [KING-ART.md](KING-ART.md) records the official visual reference, exact built-in prompts, accepted/rejected source cells, importer and remaining fidelity gaps.
+
+**648 model/asset tests pass across 56 files.** Seven new cases verify 36 distinct transparent frames with safe margins and no retained chroma, the versioned portrait, navigation and target-facing quarters, straight-axis stability, four strides, reduced motion and cooldown-aligned attack poses. The unchanged **288-battle campaign matrix** also passes; it does not deploy heroes and is not a hero-inclusive balance audit. TypeScript, the production build and byte-for-byte rebuilding of all five new derivatives pass.
+
+**38 browser scenarios pass in each of Chromium with Metal and WebKit at 2× density**, in uninterrupted final runs. All six new cases verify actual decoded texture pixels, the portrait/panel at 1440px/390px/320px, all four views and nine poses, equipment-preserving orientation, stable runtime anchors, pause, reduced motion, directional casualty reconstruction, repeated replay seeks and cleanup. Existing King combat/equipment, troop movement/animation, defeat, late-troop and replay scenarios pass as part of the selection. The panel, atlas contact sheet, rear pose, defeat, replay and production battle captures were visually reviewed.
+
+Source review rejected baked checkerboard, repeated strides and swapped sword/gauntlet limbs. The rear-right attack strip was regenerated separately after the sheet correction still swapped its equipment. Import review corrected a Sharp composition/crop ordering error, filtered matte spill, sword-safe source cuts, foot registration and a small incoming blade fragment in a neighboring cell's gutter. These repairs preceded final verification. Nine original outputs and exact prompts are retained in art commit `2b5e12d`; the five runtime files total **1,223,036 bytes**.
+
+**General and hero-specific production checks pass in both engines without reported browser errors.** All five new files are required production requests. Hero save import, upgrades, deployment, equipment activation, both summon waves and replay remain functional. Chromium also reloads, opens Army and watches a replay offline, retaining the upgraded King for offline combat. The offline manifest contains **172 files**, cache `crown-clan-cbfcc3b3f7cb`. WebKit offline behavior was not exercised.
+
+Final runtime source SHA-256 is `2fb7af3e88f95fbe286fbdb14a11951d85ad8c83ca33deb388b87785662792bb` (63 files); it and all five asset hashes stayed unchanged during final browser/production checks. Evidence: `output/playtest/king-art-verification.json`, `king-art-source.json`, `king-art-{models,build,assets,chromium,webkit,production,hero-production}-final.log`, `king-art-campaign.json`, `king-art-production-report.json`, `king-art-hero-production-report.json`, `king-art-contact.png`, `king-art-panel-*.png`, `king-art-{rear-attack,defeat,replay}-*.png` and `production-hero-battle-*.png`.
+
+Save version remains 4 and combat version 23. These four generated views are not pixel-identical native assets; intermediate angles, exact gait/action timing, first-hit windup, skins/level variants and dedicated defeat/ability sequences remain open. Physical-device quality, full content/equipment and online systems remain unfinished. The full production-clone goal is active.
+
 ## September 11 — King battle instructions
 
 The selected King's hint now follows his actual state: deployment boundary, available activation, used ability and defeat. Passive health updates refresh the hint together with the card, so a defeated King no longer retains deployment instructions. The corrected phone screenshot was visually inspected.
