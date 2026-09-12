@@ -7,6 +7,7 @@ if (selectedBrowser !== undefined && !Object.hasOwn(engines, selectedBrowser))
   throw new Error(`Unknown PRODUCTION_BROWSER: ${selectedBrowser}. Use chromium or webkit.`);
 await fs.mkdir('output/playtest', { recursive: true });
 const report = {};
+const xbowNative = JSON.parse(await fs.readFile('reference/xbow/native.json', 'utf8'));
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -22,6 +23,11 @@ for (const [name, engine] of Object.entries(engines)) {
   let page = await context.newPage();
   const errors = [];
   const requiredArt = new Set([
+    ...[
+      ...Object.values(xbowNative.textures),
+      ...Object.values(xbowNative.sounds),
+      ...Object.values(xbowNative.previews),
+    ].map((v) => '/' + v.path),
     ...['trap', 'sleigh', 'shadow', 'presents', 'particles'].map(
       (p) => `/assets/effects/santa-native/${p}-0.png`,
     ),
