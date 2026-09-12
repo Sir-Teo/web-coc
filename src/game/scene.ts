@@ -1653,6 +1653,11 @@ export class VillageScene extends Phaser.Scene {
   effect(fx: FX) {
     if (!this.ready) return;
     const p = iso(fx.x, fx.y);
+    if (fx.type === 'quake') {
+      this.combatEffects.quake(p, fx.radius ?? 8, this.model.state.settings.reducedMotion);
+      this.audio.play('hit');
+      return;
+    }
     if (fx.type === 'tesla-zap') {
       const im = this.sprites.get(fx.sourceId!);
       const height = im?.getData('intactHeight') ?? 139;

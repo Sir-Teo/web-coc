@@ -1,5 +1,22 @@
 # Verification record
 
+## September 11 — Blacksmith, ore upgrades and equipped King combat
+
+The TH8 Blacksmith now supports Barbarian Puppet, Rage Vial and Earthquake Boots through level 9, two distinct equipment slots, three ore balances/caps and native missing-ore gem purchases. Stats, recovery, rage and summon waves come from the selected items and levels. Boots delivers five scheduled percentage-damage pulses, clears walls, damages eligible ground defenders and retains its cast position. [BLACKSMITH.md](BLACKSMITH.md) records immutable native data, field interpretations and remaining gaps.
+
+**666 model/asset tests pass across 59 files**, including 18 new cases. They cover every upgrade price, tiered bonuses, building gates, construction deadlines, instant upgrades with busy builders, exact ore/gem deductions, repeated/stale confirmation, swaps, legacy and malformed saves, all four Boots ability tiers, footprint boundaries, wall/trap/Tesla/air rules, defender birth times, summoned boosts, portable replay snapshots/seeks and asset alpha/matte checks. TypeScript and the production build pass.
+
+**28 browser scenarios pass per engine** in uninterrupted final Chromium/Metal and WebKit runs at 2× density. Six new cases per engine exercise equipment selection, ore payment, gem confirmation/cancellation, saved reloads at 1440×960, 390×844, 320×740 and 844×390, locked/insufficient states, sprite registration and quake pause/fade/cleanup. Existing Hero Hall, King art/combat, and replay import/export/seeking scenarios also pass. Desktop/phone panels, gem confirmation, building placement and quake captures were visually reviewed. The review corrected low-contrast labels and filtered green edge spill.
+
+**General, hero and Blacksmith production checks pass in both engines with empty browser-error reports.** The Blacksmith runner imports a validated fixture using shipping UI, upgrades Puppet from 1→2 using ore and 2→3 with a 340-gem shortfall, equips Boots in place of Vial, reloads, deploys and activates the King, waits for all 16 summons, and watches the replay. The gem balance stays 660 throughout replay. Chromium also performs the reload/combat/replay flow offline; WebKit offline was not tested. The manifest holds **179 files**, cache `crown-clan-0a1a0074eaa9`.
+
+Seven generated artwork files total **446,902 bytes**. The building has preserved generated alpha; equipment and ore icons use a reviewed matte extraction and deterministic registration. Exact built-in imagegen prompts, source/output hashes and saved paths are in [the artwork manifest](../art/source/blacksmith-v1/README.md). CI verifies asset reproduction and includes the new browser and production scenarios.
+
+Final runtime source SHA-256: `8e06b9cc58473b097372118e7c855699e02adc562a42bbed6385478d51ea6919` (65 files). Runtime source and shipped assets stayed fixed throughout final browser/production verification. Evidence: `output/playtest/blacksmith-verification.json`, `blacksmith-source.json`, `blacksmith-evidence.py`, `blacksmith-{models,assets,build,chromium,webkit}-final.log`, `blacksmith-production-report.json`, `blacksmith-{hero,general}-production-report.json`, `blacksmith-panel-*.png`, `blacksmith-purchase-*.png`, `blacksmith-quake-*.png`, and `production-blacksmith-*.png`.
+
+Save version stays 4; combat version is 24, expiring old playback while preserving its result records. Normal ore rewards, later Blacksmith/equipment tiers, other/defending heroes, native animation/timing/rounding, online systems and physical-device checks remain unfinished. The full production-clone goal stays active.
+
+
 ## September 11 — King portrait and four directional animation sets
 
 The King now shares a closer default-character identity across his Hero Hall portrait, battle card and combat sprites. Four authored quarter views preserve the sword hand and armored side without mirroring. Each has idle, four walking poses and four attack poses; the renderer follows navigation/target direction and the battle clock. The old static-image bob and attack tilt are removed for the King. [KING-ART.md](KING-ART.md) records the official visual reference, exact built-in prompts, accepted/rejected source cells, importer and remaining fidelity gaps.

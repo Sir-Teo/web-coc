@@ -25,7 +25,7 @@ TH4–6 retain level 1. TH7/Hero Hall 1 permits level 10; TH8/Hero Hall 2 permit
 
 ## Equipped items
 
-Every attacking King currently carries **level 1 Barbarian Puppet and level 1 Rage Vial**, the native defaults. This implements those two items' effects; it is not a complete equipment inventory or Blacksmith system. Hero upgrades do not silently upgrade equipment.
+A new King starts with **level 1 Barbarian Puppet and level 1 Rage Vial**, the native defaults described below. At TH8 the [Blacksmith](BLACKSMITH.md) now upgrades these items through level 9 and lets the player replace either with Earthquake Boots. Hero upgrades do not silently upgrade equipment. Combat uses the two equipped items and their snapshotted levels.
 
 | Item | Passive bonus before early-TH scaling | Activation |
 | --- | --- | --- |
@@ -46,4 +46,4 @@ A Rage spell and item boost use the stronger damage and movement bonus independe
 
 Combat version **23** records the numerical and ability changes. No new permanent save fields are required; save version remains 4. Replay inputs reconstruct the default loadout, intrinsic recovery, both summon waves and separate boost deadlines. Older recordings retain their result summaries but require their original combat rules for playback.
 
-Hero Hall construction/early appearance, banners and defending heroes, Archer Queen and later heroes, equipment selection/upgrading, ores, Blacksmith, pets, complete directional art, attack action-frame timing, native target scoring, precise damage/activation order and physical-device performance remain unfinished. The subsequent [King art pass](KING-ART.md) replaces the prototype with a matching portrait and four directional idle/walk/attack sets; it does not establish pixel matching. See [QA.md](QA.md) for the actual validation scope.
+Hero Hall construction/early appearance, banners and defending heroes, Archer Queen and later heroes, later equipment/Blacksmith tiers, normal ore reward sources, pets, complete directional art, attack action-frame timing, native target scoring, precise damage/activation order and physical-device performance remain unfinished. The subsequent [King art pass](KING-ART.md) replaces the prototype with a matching portrait and four directional idle/walk/attack sets; it does not establish pixel matching. See [QA.md](QA.md) for the actual validation scope.

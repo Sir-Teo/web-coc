@@ -1,4 +1,17 @@
 import { sweeperStats } from '../game/air-control-stats';
+import {
+  EQUIPMENT,
+  EQUIPMENT_KEYS,
+  EQUIPMENT_MAX_LEVEL,
+  ORES,
+  ORE_KEYS,
+  EARTHQUAKE_BOOTS,
+  equipmentStats,
+  equipmentQuote,
+  validEquipmentKind,
+  type EquipmentKind,
+  type OreKind,
+} from '../game/equipment';
 import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
@@ -21,7 +34,6 @@ import {
   heroStats,
   heroRecovery,
   heroTownHallScale,
-  KING_EQUIPMENT,
   heroUpgradeCost,
   heroUpgradeSeconds,
 } from '../game/heroes';
@@ -63,6 +75,8 @@ import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
+  | 'blacksmith'
+  | 'ore-confirm'
   | 'heroes'
   | 'progression'
   | 'research'
@@ -82,6 +96,8 @@ type Panel =
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
 const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
+  `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
 const time = (seconds: number) => formatTime(seconds);
 const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
@@ -180,6 +196,10 @@ function statRows(kind: BuildingKind, level: number): [string, string, string][]
   if (kind === 'darkstorage') rows.push(['Layers', 'Dark elixir capacity', n(10000 * level)]);
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
+  if (kind === 'blacksmith') {
+    rows.push(['Anvil', 'Common equipment level cap', '9']);
+    for (const k of ORE_KEYS) rows.push(['Gem', `${ORES[k].name} capacity`, n(ORES[k].cap)]);
+  }
   if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
   if (kind === 'spellfactory')
     rows.push(['Sparkles', 'Spell housing', String(spellFactoryCapacity(level))]);
@@ -243,6 +263,8 @@ export class HUD {
   private tab = 'All';
   private inspectedTroop: TroopKind = 'swordsman';
   private inspectedSpell: SpellKind = 'lightning';
+  private inspectedEquipment: EquipmentKind = 'puppet';
+  private orePurchase: { kind: EquipmentKind; level: number; gems: number } | null = null;
   private presetNames = new Map<number, string>();
   private toastTimer?: ReturnType<typeof setTimeout>;
   private resultShown = false;
@@ -485,6 +507,40 @@ export class HUD {
     const [verb, arg] = a.split(':');
     const m = this.model;
     switch (verb) {
+      case 'blacksmith':
+        this.show('blacksmith');
+        break;
+      case 'equipment-view':
+        if (!validEquipmentKind(arg)) break;
+        this.inspectedEquipment = arg;
+        this.show('blacksmith');
+        break;
+      case 'equipment-equip': {
+        const [kind, slot] = arg.split(',');
+        if (validEquipmentKind(kind)) m.equipKing(kind, Number(slot));
+        break;
+      }
+      case 'equipment-upgrade': {
+        const [kind, rawLevel] = arg.split(','),
+          level = Number(rawLevel);
+        if (!validEquipmentKind(kind) || !m.blacksmith || m.kingEquipment.levels[kind] !== level)
+          break;
+        const quote = equipmentQuote(level + 1, m.ores);
+        if (!quote) break;
+        if (quote.gems) {
+          this.orePurchase = { kind, level, gems: quote.gems };
+          this.show('ore-confirm');
+        } else if (m.upgradeEquipment(kind, level)) this.audio.play('build');
+        break;
+      }
+      case 'ore-buy': {
+        const purchase = this.orePurchase;
+        this.orePurchase = null;
+        if (purchase && m.upgradeEquipment(purchase.kind, purchase.level, purchase.gems))
+          this.audio.play('build');
+        this.show('blacksmith');
+        break;
+      }
       case 'close':
         this.closePanel();
         break;
@@ -1196,7 +1252,7 @@ export class HUD {
                 `upgrade:${b.id}`,
                 `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
               )
-    }${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   private wallMoveContext() {
@@ -1341,8 +1397,8 @@ export class HUD {
       hall = m.heroHall;
     if (!king || !hall)
       return `<div class="modal-body hero-body"><div class="hero-portrait"><img src="${asset('king')}" alt="Barbarian King"></div><h2>Meet the Barbarian King</h2><p>Build a Hero Hall at Town Hall 4 to unlock your first hero. He fights without army housing and returns at full health for every attack.</p>${button('shop', 'Open the shop', 'game-btn green')}</div>`;
-    const stats = heroStats(king.level, m.townhallLevel),
-      next = heroStats(king.level + 1, m.townhallLevel);
+    const stats = heroStats(king.level, m.townhallLevel, m.kingEquipment),
+      next = heroStats(king.level + 1, m.townhallLevel, m.kingEquipment);
     const capped = king.level >= m.heroMaxLevel;
     const scale = heroTownHallScale(m.townhallLevel);
     const stat = (label: string, value: number, destination?: number, suffix = '') =>
@@ -1352,14 +1408,102 @@ export class HUD {
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
       <div class="hero-stat-grid">${stat('Hitpoints', stats.hp, next.hp)}${stat('Damage per second', stats.dps, next.dps)}${stat('Damage per hit', stats.damage, next.damage)}${stat('Attack interval', stats.rate, undefined, 's')}${stat('Attack range', stats.range, undefined, ' tile')}${stat('Movement', stats.speed, undefined, ' tiles/s')}</div>
       <p class="hero-stats-note">Stats include the equipped items below.</p>
-      <div class="hero-equipment">
-        <article class="hero-ability"><span class="eyebrow">EQUIPPED · LEVEL 1</span><h3>${icon('Users', 20)} Barbarian Puppet</h3><p>+${damageNumber(KING_EQUIPMENT.puppet.hp * scale)} hitpoints</p><p>Summon 8 Barbarians in two quick waves. They deal double damage and move 1.2 tiles/s faster for 20 seconds.</p></article>
-        <article class="hero-ability"><span class="eyebrow">EQUIPPED · LEVEL 1</span><h3>${icon('Zap', 20)} Rage Vial</h3><p>+${damageNumber(KING_EQUIPMENT.vial.dps * scale)} damage per second</p><p>For 10 seconds: +120% damage and +2.25 tiles/s movement. Does not increase attack speed.</p></article>
-      </div>
-      <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
+      <div class="hero-equipment">${m.kingEquipment.loadout.map((kind) => `<article class="hero-ability">${gearImage(kind, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${m.kingEquipment.levels[kind]}</span><h3>${EQUIPMENT[kind].name}</h3><p>${this.equipmentDescription(kind, m.kingEquipment.levels[kind])}</p>${button(`equipment-view:${kind}`, 'View equipment', 'replay-link')}</article>`).join('')}</div>
+      <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel, m.kingEquipment))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
       <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : king.level >= 20 ? 'Maximum hero level for Town Hall 8' : 'Upgrade to Town Hall 8 and Hero Hall 2'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}
     </div>`;
+  }
+  private equipmentDescription(kind: EquipmentKind, level: number) {
+    const s = equipmentStats(kind, level);
+    if (kind === 'puppet')
+      return `Summons ${s.summons} Barbarians in waves of up to five. For 20 seconds they gain +${damageNumber((s.summonDamage - 1) * 100)}% damage and +${s.summonSpeedBoost} tiles/s movement.`;
+    if (kind === 'vial')
+      return `For 10 seconds: +${damageNumber((s.damage - 1) * 100)}% damage and +${s.speedBoost} tiles/s movement. Does not increase attack speed.`;
+    return `Shakes an 8-tile area, destroying walls and dealing ${damageNumber(s.quakeBuilding * 500)}% of building hitpoints across five pulses. Damages ground defenders too.`;
+  }
+  private equipmentRows(kind: EquipmentKind, level: number): [string, string][] {
+    const s = equipmentStats(kind, level);
+    const rows: [string, string][] = [];
+    if (s.hp) rows.push(['Hitpoint increase', `+${n(s.hp)}`]);
+    if (s.dps) rows.push(['Damage per second', `+${n(s.dps)}`]);
+    if (s.recovery) rows.push(['Hitpoint recovery', n(s.recovery)]);
+    if (kind === 'puppet')
+      rows.push(
+        ['Summoned Barbarians', `${s.summons}`],
+        ['Summon damage boost', `+${damageNumber((s.summonDamage - 1) * 100)}%`],
+        ['Summon movement', `+${s.summonSpeedBoost} tiles/s`],
+        ['Boost duration', '20s'],
+      );
+    if (kind === 'vial')
+      rows.push(
+        ['Damage boost', `+${damageNumber((s.damage - 1) * 100)}%`],
+        ['Movement increase', `+${s.speedBoost} tiles/s`],
+        ['Ability duration', '10s'],
+      );
+    if (kind === 'boots')
+      rows.push(
+        ['Building damage', `${damageNumber(s.quakeBuilding * 500)}%`],
+        ['Ground troop damage', `${damageNumber(s.quakeTroop * 500)}%`],
+        ['Radius', `${EARTHQUAKE_BOOTS.radius} tiles`],
+        ['Walls', 'Destroyed'],
+      );
+    return rows;
+  }
+  private blacksmith() {
+    const m = this.model,
+      gear = m.kingEquipment,
+      kind = this.inspectedEquipment,
+      level = gear.levels[kind],
+      cap = level >= EQUIPMENT_MAX_LEVEL,
+      quote = equipmentQuote(level + 1, m.ores),
+      unlocked = !!m.blacksmith;
+    const rows = this.equipmentRows(kind, level),
+      next = cap ? [] : this.equipmentRows(kind, level + 1);
+    const pending = m.state.buildings.find((b) => b.kind === 'blacksmith' && b.constructing);
+    return `<div class="modal-body blacksmith-body">
+      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(ORES[k].cap)}</small></b></span></div>`).join('')}</div>
+      ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>${pending ? 'Finish building your Blacksmith to equip and upgrade items.' : 'Build a Blacksmith at Town Hall 8 to equip and upgrade items.'} Your default equipment is ready for battle.</span>${pending ? '' : button('shop', 'Shop', 'game-btn green')}</div>`}
+      <div class="king-loadout"><img class="loadout-portrait" src="${asset('king')}" alt="Barbarian King"><div class="loadout-label"><span class="eyebrow">BARBARIAN KING</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${gear.loadout.map((k, slot) => button(`equipment-view:${k}`, `${gearImage(k)}<span>Slot ${slot + 1}<b>${EQUIPMENT[k].name}</b></span><em>${gear.levels[k]}</em>`, 'equipment-slot', `aria-label="Slot ${slot + 1}: ${EQUIPMENT[k].name}, level ${gear.levels[k]}"`)).join('')}</div></div>
+      <div class="equipment-catalog" role="group" aria-label="King equipment">${EQUIPMENT_KEYS.map((k) => button(`equipment-view:${k}`, `<span class="equipment-badge">${gear.loadout.includes(k) ? 'Equipped' : unlocked ? 'Available' : 'Blacksmith 1'}</span>${gearImage(k)}<strong>${EQUIPMENT[k].name}</strong><span class="equipment-level">Level ${gear.levels[k]} / 9</span>`, `equipment-card ${kind === k ? 'selected' : ''}`, `aria-pressed="${kind === k}"`)).join('')}</div>
+      <section class="equipment-detail" aria-label="${EQUIPMENT[kind].name} details"><div class="equipment-detail-heading">${gearImage(kind)}<div><span class="eyebrow">COMMON · ACTIVE ABILITY</span><h2>${EQUIPMENT[kind].name}</h2><p>Level ${level} / 9</p></div></div><p class="equipment-description">${this.equipmentDescription(kind, level)}</p>
+      <table class="equipment-stats"><thead><tr><th>Attribute</th><th>Level ${level}</th><th>${cap ? 'TH8 max' : `Level ${level + 1}`}</th></tr></thead><tbody>${rows.map(([label, value], i) => `<tr><td>${label}</td><td>${value}</td><td class="${next[i]?.[1] !== value ? 'better' : ''}">${next[i]?.[1] ?? '—'}</td></tr>`).join('')}</tbody></table>
+      <div class="equipment-equip">${gear.loadout.includes(kind) ? `<span class="equipped-label">${icon('Check', 18)} Equipped in slot ${gear.loadout.indexOf(kind) + 1}</span>` : gear.loadout.map((k, slot) => button(`equipment-equip:${kind},${slot}`, `Replace ${EQUIPMENT[k].name}`, 'game-btn blue', unlocked && m.state.king ? '' : 'disabled')).join('')}</div>
+      <div class="equipment-upgrade">${
+        cap
+          ? '<p class="max-level">Maximum for Blacksmith 1 · Level 10 requires Blacksmith 3 at Town Hall 10.</p>'
+          : `<div><b>Upgrade to level ${level + 1}</b><p>Instant · No builder needed</p><div class="equipment-cost">${ORE_KEYS.filter(
+              (k) => quote!.cost[k],
+            )
+              .map(
+                (k) =>
+                  `<span class="${quote!.missing[k] ? 'short' : ''}">${gearImage(k)}${n(quote!.cost[k])}<small>${ORES[k].name}</small></span>`,
+              )
+              .join(
+                '',
+              )}</div></div>${button(`equipment-upgrade:${kind},${level}`, `${icon('ArrowBigUp', 20)} Upgrade`, 'game-btn green', unlocked ? '' : 'disabled')}</div>`
+      }
+      </section><p class="ore-source-note">Missing ore can be purchased with gems during an upgrade. Star Bonus, Clan War and Hero Journey rewards are not yet available in this village.</p>
+    </div>`;
+  }
+  private oreConfirm() {
+    const m = this.model,
+      purchase = this.orePurchase;
+    if (!purchase)
+      return `<div class="modal-body">${button('blacksmith', 'Back to equipment')}</div>`;
+    const quote = equipmentQuote(purchase.level + 1, m.ores)!;
+    const stale =
+      m.kingEquipment.levels[purchase.kind] !== purchase.level || quote.gems > purchase.gems;
+    return `<div class="modal-body ore-confirm-body"><div class="equipment-detail-heading">${gearImage(purchase.kind)}<div><h2>${EQUIPMENT[purchase.kind].name}</h2><p>Upgrade to level ${purchase.level + 1}</p></div></div><p>Use your stored ore and buy the missing amount below.</p><div class="missing-ores">${ORE_KEYS.filter(
+      (k) => quote.missing[k],
+    )
+      .map(
+        (k) =>
+          `<div>${gearImage(k)}<span><b>${n(quote.missing[k])}</b> ${ORES[k].name}</span><strong>${gem}${n(quote.missing[k] * ORES[k].gems)}</strong></div>`,
+      )
+      .join(
+        '',
+      )}</div><p class="gem-balance">You have ${gem} <b>${n(m.state.gems)}</b> gems</p>${stale ? '<p>This upgrade has changed. Return to equipment for a new price.</p>' : quote.gems > m.state.gems ? '<p class="ore-insufficient">Not enough gems. Earn more by clearing obstacles and completing achievements.</p>' : ''}<div class="confirm-actions">${button('blacksmith', 'Cancel', 'game-btn stone')}${button('ore-buy', `Buy & upgrade ${gem} ${n(quote.gems)}`, 'game-btn green', stale || quote.gems > m.state.gems || !m.blacksmith ? 'disabled' : '')}</div></div>`;
   }
   private progression() {
     const m = this.model;
@@ -1451,6 +1595,8 @@ export class HUD {
       'spell-info': SPELLS[this.inspectedSpell].name,
       'army-presets': 'Quick armies',
       'battle-log': 'Battle log',
+      blacksmith: 'Hero Equipment',
+      'ore-confirm': 'Missing ore',
       heroes: 'Hero Hall',
       progression: 'Town Hall progression',
       research: 'The laboratory',
@@ -1467,6 +1613,8 @@ export class HUD {
       'spell-info': 'Place each spell where it makes the difference.',
       'army-presets': 'Save a composition. Be ready in one tap.',
       'battle-log': 'Your last twenty attacks, kept with your village.',
+      blacksmith: 'Forge your King’s abilities.',
+      'ore-confirm': 'Complete this upgrade with gems.',
       heroes: 'A champion for every attack.',
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
@@ -1481,34 +1629,38 @@ export class HUD {
         : 'Your loot so far is kept.',
     };
     const content =
-      this.panel === 'heroes'
-        ? this.heroes()
-        : this.panel === 'progression'
-          ? this.progression()
-          : this.panel === 'army-presets'
-            ? this.armyPresets()
-            : this.panel === 'battle-log'
-              ? this.battleLog()
-              : this.panel === 'spell-info'
-                ? this.spellInfo()
-                : this.panel === 'troop-info'
-                  ? this.troopInfo()
-                  : this.panel === 'campaign'
-                    ? this.campaign()
-                    : this.panel === 'settings'
-                      ? this.settings()
-                      : this.panel === 'achievements'
-                        ? this.achievements()
-                        : this.panel === 'research'
-                          ? this.research()
-                          : this.panel === 'info'
-                            ? this.info()
-                            : this.panel === 'layouts'
-                              ? this.layoutPanel()
-                              : this.panel === 'surrender'
-                                ? this.surrender()
-                                : this.help();
-    return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
+      this.panel === 'blacksmith'
+        ? this.blacksmith()
+        : this.panel === 'ore-confirm'
+          ? this.oreConfirm()
+          : this.panel === 'heroes'
+            ? this.heroes()
+            : this.panel === 'progression'
+              ? this.progression()
+              : this.panel === 'army-presets'
+                ? this.armyPresets()
+                : this.panel === 'battle-log'
+                  ? this.battleLog()
+                  : this.panel === 'spell-info'
+                    ? this.spellInfo()
+                    : this.panel === 'troop-info'
+                      ? this.troopInfo()
+                      : this.panel === 'campaign'
+                        ? this.campaign()
+                        : this.panel === 'settings'
+                          ? this.settings()
+                          : this.panel === 'achievements'
+                            ? this.achievements()
+                            : this.panel === 'research'
+                              ? this.research()
+                              : this.panel === 'info'
+                                ? this.info()
+                                : this.panel === 'layouts'
+                                  ? this.layoutPanel()
+                                  : this.panel === 'surrender'
+                                    ? this.surrender()
+                                    : this.help();
+    return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' || this.panel === 'ore-confirm' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
     army: import('../game/model').Army,

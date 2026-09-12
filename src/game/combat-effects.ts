@@ -41,6 +41,31 @@ export class CombatEffects {
     this.flights.clear();
   }
 
+  quake(point: Point, radius: number, reduced: boolean) {
+    const g = this.graphic().setPosition(point.x, point.y).setDepth(24).setData('kingQuake', true);
+    const rx = radius * 32 * Math.SQRT2,
+      ry = rx / 2;
+    g.lineStyle(7, 0x80623c, 0.22).strokeEllipse(0, 0, rx * 2, ry * 2);
+    g.lineStyle(2, 0xffe5a2, 0.7).strokeEllipse(0, 0, rx * 2, ry * 2);
+    for (let i = 0; i < 13; i++) {
+      const angle = (i * Math.PI * 2) / 13,
+        inner = 0.15 + (i % 3) * 0.1;
+      g.lineStyle(2, 0x62482c, 0.65).beginPath();
+      g.moveTo(Math.cos(angle) * rx * inner, Math.sin(angle) * ry * inner);
+      g.lineTo(Math.cos(angle + 0.025) * rx * 0.52, Math.sin(angle + 0.025) * ry * 0.52);
+      g.lineTo(Math.cos(angle - 0.06) * rx * 0.8, Math.sin(angle - 0.06) * ry * 0.8);
+      g.strokePath();
+    }
+    g.setScale(reduced ? 1 : 0.76);
+    this.animate({
+      targets: g,
+      scale: 1,
+      alpha: 0,
+      duration: 380,
+      onComplete: () => this.remove(g),
+    });
+  }
+
   tesla(from: Point, to: Point, seed: number, reduced: boolean) {
     const g = this.graphic().setData('teslaZap', { from, to });
     const dx = to.x - from.x,
