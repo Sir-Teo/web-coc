@@ -62,8 +62,15 @@ test('moving previews preserve artwork and geometry across the building catalog'
         return { requestedLevel, placed, moving: snapshot(scene.ghost) };
       });
     }, kind);
-    for (const { requestedLevel, placed, moving } of comparisons)
-      expect(moving, `${kind} at level ${requestedLevel}`).toEqual(placed);
+    for (const { requestedLevel, placed, moving } of comparisons) {
+      if (kind === 'bombtower') {
+        // Placed towers have a separate animated roof Bomber; previews are composited.
+        const level = Math.min(requestedLevel, 2);
+        expect(placed.texture).toBe(`bombtower-base-${level}`);
+        expect(moving.texture).toBe(level === 1 ? 'bombtower' : `bombtower-preview-${level}`);
+        expect({ ...moving, texture: placed.texture }).toEqual(placed);
+      } else expect(moving, `${kind} at level ${requestedLevel}`).toEqual(placed);
+    }
   }
 });
 
@@ -90,10 +97,18 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
   const point = async (x: number, y: number) =>
     page.evaluate(
       ({ x, y }) => {
-        const c = window.__game.scene.cameras.main;
+        const scene = window.__game.scene,
+          c = scene.cameras.main;
+        const rect = scene.game.canvas.getBoundingClientRect();
         return {
-          x: c.width / 2 + (896 + (x - y) * 32 - c.midPoint.x) * c.zoom,
-          y: c.height / 2 + (112 + (x + y) * 16 - c.midPoint.y) * c.zoom,
+          x:
+            rect.left +
+            ((c.width / 2 + (896 + (x - y) * 32 - c.midPoint.x) * c.zoomX) * rect.width) /
+              scene.scale.gameSize.width,
+          y:
+            rect.top +
+            ((c.height / 2 + (112 + (x + y) * 16 - c.midPoint.y) * c.zoomY) * rect.height) /
+              scene.scale.gameSize.height,
         };
       },
       { x, y },
