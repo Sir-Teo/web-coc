@@ -1,4 +1,18 @@
 import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
+import {
+  defaultEquipment,
+  emptyOres,
+  equipmentBonuses,
+  equipmentQuote,
+  validEquipmentKind,
+  EQUIPMENT,
+  EQUIPMENT_MAX_LEVEL,
+  ORE_KEYS,
+  type KingEquipment,
+  type Ores,
+  type EquipmentKind,
+} from './equipment';
+import { startKingQuake, stepKingQuakes, type KingQuake } from './king-quake';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode, SKELETON_COFFIN_SECONDS, type SkeletonMode } from './skeleton-stats';
 import {
@@ -167,6 +181,8 @@ export interface Save {
   mapUpgrade?: { moved: number };
   dark: number;
   king?: HeroProgress;
+  equipment?: KingEquipment;
+  ores?: Ores;
   gold: number;
   elixir: number;
   gems: number;
@@ -267,6 +283,7 @@ export interface Battle {
   deathBombs?: Record<number, DeathBomb>;
   defenders?: Defender[];
   hero?: BattleHero;
+  kingQuakes?: KingQuake[];
   elapsed: number;
   /** Seconds left to scout before the battle clock starts. */
   prep: number;
@@ -297,7 +314,8 @@ export type FX = {
     | 'spring'
     | 'gust'
     | 'tesla-reveal'
-    | 'tesla-zap';
+    | 'tesla-zap'
+    | 'quake';
   x: number;
   y: number;
   toX?: number;
@@ -1494,6 +1512,64 @@ export class GameModel {
   }
 
   // ------------------------------------------------------------------- battle
+  get blacksmith() {
+    return this.state.buildings.find((b) => b.kind === 'blacksmith' && !b.constructing);
+  }
+  get kingEquipment() {
+    return this.state.equipment ?? defaultEquipment();
+  }
+  get ores() {
+    return this.state.ores ?? emptyOres();
+  }
+  equipKing(kind: EquipmentKind, slot: number) {
+    if (
+      this.battle ||
+      !this.blacksmith ||
+      !this.state.king ||
+      !validEquipmentKind(kind) ||
+      (slot !== 0 && slot !== 1)
+    )
+      return false;
+    const gear = structuredClone(this.kingEquipment);
+    const previous = gear.loadout[slot];
+    if (previous === kind) return false;
+    const other = slot === 0 ? 1 : 0;
+    if (gear.loadout[other] === kind) gear.loadout[other] = previous;
+    gear.loadout[slot] = kind;
+    this.state.equipment = gear;
+    this.changed();
+    return true;
+  }
+  /** An explicit level and gem ceiling make a stale/double-clicked confirmation harmless. */
+  upgradeEquipment(kind: EquipmentKind, expectedLevel: number, maxGems = 0) {
+    if (
+      this.battle ||
+      !this.blacksmith ||
+      !validEquipmentKind(kind) ||
+      !Number.isInteger(maxGems) ||
+      maxGems < 0
+    )
+      return false;
+    const gear = structuredClone(this.kingEquipment),
+      level = gear.levels[kind];
+    if (level !== expectedLevel || level >= EQUIPMENT_MAX_LEVEL) return false;
+    const quote = equipmentQuote(level + 1, this.ores)!;
+    if (quote.gems > maxGems || quote.gems > this.state.gems) {
+      this.notify(
+        quote.gems > this.state.gems ? 'Not enough gems.' : 'More ore is needed for this upgrade.',
+      );
+      return false;
+    }
+    const ores = { ...this.ores };
+    for (const k of ORE_KEYS) ores[k] -= Math.min(ores[k], quote.cost[k]);
+    this.state.ores = ores;
+    this.state.gems -= quote.gems;
+    gear.levels[kind]++;
+    this.state.equipment = gear;
+    this.notify(`${EQUIPMENT[kind].name} upgraded to level ${level + 1}.`);
+    this.changed();
+    return true;
+  }
   get heroHall() {
     return this.state.buildings.find((b) => b.kind === 'herohall' && !b.constructing);
   }
@@ -1546,7 +1622,7 @@ export class GameModel {
     if (!b || b.finished || !h || h.unitId !== null || this.deployBlocked(x, y)) return false;
     this.recordAction({ type: 'hero', x, y });
     this.beginFight();
-    const stats = heroStats(h.level, h.townhall);
+    const stats = heroStats(h.level, h.townhall, h.equipment);
     h.unitId = this.state.nextId++;
     b.units.push({
       id: h.unitId,
@@ -1577,14 +1653,16 @@ export class GameModel {
     h.abilityUsed = true;
     h.abilityAt = b.elapsed;
     h.summonsSpawned = 0;
-    h.rageUntil = b.elapsed + HERO_ABILITY.duration;
-    u.hp = Math.min(u.maxHp, u.hp + heroRecovery(h.level, h.townhall));
+    const gear = equipmentBonuses(h.equipment);
+    h.rageUntil = b.elapsed + gear.duration;
+    u.hp = Math.min(u.maxHp, u.hp + heroRecovery(h.level, h.townhall, h.equipment));
+    startKingQuake(b, u);
     this.spawnHeroSummons();
     this.onEffect({
       type: 'trap',
       x: u.x,
       y: u.y,
-      text: 'RAGE VIAL!',
+      text: gear.duration ? 'RAGE VIAL!' : gear.quakeBuilding ? 'EARTHQUAKE!' : 'BARBARIAN PUPPET!',
       color: 0xffcc4d,
     });
     this.changed();
@@ -1597,7 +1675,7 @@ export class GameModel {
     const u = b.units.find((unit) => unit.id === h.unitId);
     if (!u || u.hp <= 0) return;
     const due = Math.min(
-      HERO_ABILITY.summons,
+      equipmentBonuses(h.equipment).summons,
       (1 + Math.floor((b.elapsed - h.abilityAt + 1e-9) / HERO_ABILITY.spawnInterval)) *
         HERO_ABILITY.spawnBatch,
     );
@@ -1684,7 +1762,11 @@ export class GameModel {
           }
         : {}),
       hero: this.heroReady
-        ? { level: this.state.king!.level, townhall: this.townhallLevel }
+        ? {
+            level: this.state.king!.level,
+            townhall: this.townhallLevel,
+            equipment: structuredClone(this.kingEquipment),
+          }
         : undefined,
     };
     this.battle = replayBattle(initial);
@@ -1851,10 +1933,12 @@ export class GameModel {
     stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     stepDeathBombs(b, this.onEffect);
     stepSpellAuras(b);
+    stepKingQuakes(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
     stepDefenders(b, dt, this.onEffect);
     // Concealed defenses cannot influence target selection or navigation.
+    const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     for (const u of b.units) {
       if (u.hp <= 0) continue;
@@ -1877,7 +1961,7 @@ export class GameModel {
         u.hero && b.hero
           ? {
               ...this.troopStats(u.kind),
-              ...heroStats(b.hero.level, b.hero.townhall),
+              ...heroStats(b.hero.level, b.hero.townhall, b.hero.equipment),
             }
           : this.troopStats(u.kind);
       const d = {
@@ -1889,13 +1973,13 @@ export class GameModel {
         damage:
           base.damage *
           Math.max(
-            abilityRage ? (u.hero ? HERO_ABILITY.damage : HERO_ABILITY.summonDamage) : 1,
+            abilityRage ? (u.hero ? gear.damage : gear.summonDamage) : 1,
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
           ),
         speed:
           base.speed +
           Math.max(
-            abilityRage ? (u.hero ? HERO_ABILITY.speedBoost : HERO_ABILITY.summonSpeedBoost) : 0,
+            abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
             ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
           ),
       };

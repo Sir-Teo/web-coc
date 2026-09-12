@@ -21,6 +21,7 @@ import {
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
+  | 'blacksmith'
   | 'herohall'
   | 'darkdrill'
   | 'darkstorage'
@@ -106,6 +107,20 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  blacksmith: {
+    name: 'Blacksmith',
+    description: 'Upgrade hero equipment with ore and choose two abilities for your King.',
+    size: 3,
+    width: 162,
+    hp: 700,
+    cost: 600000,
+    resource: 'elixir',
+    category: 'Army',
+    maxLevel: 1,
+    available: [0, 0, 0, 0, 0, 0, 0, 1],
+    build: 43200,
+    singleArtwork: true,
+  },
   skeletontrap: {
     name: 'Skeleton Trap',
     description:

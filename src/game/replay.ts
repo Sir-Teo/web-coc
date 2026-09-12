@@ -12,9 +12,10 @@ import {
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL } from './spell-progression';
+import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 23;
+export const REPLAY_VERSION = 24;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 6000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -35,7 +36,7 @@ export interface ReplaySetup {
   buildings: Building[];
   army: Army;
   spells: SpellBook;
-  hero?: { level: number; townhall: number };
+  hero?: { level: number; townhall: number; equipment?: KingEquipment };
   troopLevels: Army;
   spellLevels?: SpellBook;
   nextId: number;
@@ -70,7 +71,9 @@ export function replayBattle(s: ReplaySetup): Battle {
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
     spellLevels: { lightning: 1, heal: 1, rage: 1, ...s.spellLevels },
-    hero: s.hero ? { ...s.hero, unitId: null, abilityUsed: false, rageUntil: 0 } : undefined,
+    hero: s.hero
+      ? { ...structuredClone(s.hero), unitId: null, abilityUsed: false, rageUntil: 0 }
+      : undefined,
     units: [],
     auras: [],
     shells: [],
@@ -120,7 +123,11 @@ export function validateReplay(value: unknown): value is ReplayData {
         !integer(s.lootRoom.gold, 0, CAMPAIGN[s.index].gold) ||
         !integer(s.lootRoom.elixir, 0, CAMPAIGN[s.index].elixir))) ||
     (s.hero !== undefined &&
-      (!object(s.hero) || !integer(s.hero.level, 1, 20) || !integer(s.hero.townhall, 4, 8))) ||
+      (!object(s.hero) ||
+        !integer(s.hero.level, 1, 20) ||
+        !integer(s.hero.townhall, 4, 8) ||
+        (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
+        (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
     !s.buildings.length ||
     s.buildings.length > 400

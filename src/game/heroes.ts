@@ -1,4 +1,5 @@
 import { KING_LEVELS } from './king-progression';
+import { equipmentBonuses, type KingEquipment } from './equipment';
 
 /** Hero state is independent of army housing and survives defeat. */
 export interface HeroProgress {
@@ -9,6 +10,7 @@ export interface HeroProgress {
 export interface BattleHero {
   level: number;
   townhall: number;
+  equipment?: KingEquipment;
   unitId: number | null;
   abilityUsed: boolean;
   rageUntil: number;
@@ -30,11 +32,12 @@ export const KING_EQUIPMENT = {
   puppet: { hp: 309, recovery: 110 },
   vial: { dps: 17, recovery: 150 },
 } as const;
-export function heroStats(level: number, townhall: number) {
+export function heroStats(level: number, townhall: number, equipment?: KingEquipment) {
   const native = kingLevel(level),
-    scale = heroTownHallScale(townhall);
-  const hp = (native.hp + KING_EQUIPMENT.puppet.hp) * scale;
-  const dps = (native.dps + KING_EQUIPMENT.vial.dps) * scale;
+    scale = heroTownHallScale(townhall),
+    gear = equipmentBonuses(equipment);
+  const hp = (native.hp + gear.hp) * scale;
+  const dps = (native.dps + gear.dps) * scale;
   return {
     hp,
     dps,
@@ -44,9 +47,8 @@ export function heroStats(level: number, townhall: number) {
     rate: 1.2,
   };
 }
-export const heroRecovery = (level: number, townhall: number) =>
-  (kingLevel(level).recovery + KING_EQUIPMENT.puppet.recovery + KING_EQUIPMENT.vial.recovery) *
-  heroTownHallScale(townhall);
+export const heroRecovery = (level: number, townhall: number, equipment?: KingEquipment) =>
+  (kingLevel(level).recovery + equipmentBonuses(equipment).recovery) * heroTownHallScale(townhall);
 export const HERO_ABILITY = {
   duration: 10,
   damage: 2.2,

@@ -5,6 +5,7 @@ import { migrateFootprints, validArrangement } from './layout-migration';
 import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
+import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { expandArmyRoster } from './army';
 import { MAX_SPELL_LEVEL } from './spell-progression';
@@ -128,6 +129,15 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   )
     return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;
+  if (s.ores !== undefined && !validOres(s.ores)) return false;
+  if (s.equipment !== undefined) {
+    if (!validEquipment(s.equipment)) return false;
+    const requiresBlacksmith =
+      EQUIPMENT_KEYS.some((k) => s.equipment!.levels[k] > 1) ||
+      s.equipment.loadout.includes('boots');
+    if (requiresBlacksmith && !s.buildings.some((b) => b?.kind === 'blacksmith' && !b.constructing))
+      return false;
+  }
   if (
     s.king !== undefined &&
     (!s.king ||

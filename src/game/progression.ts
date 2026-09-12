@@ -2,6 +2,7 @@ import type { BuildingKind } from './data';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
+  blacksmith: [0, 0, 0, 0, 0, 0, 0, 1],
   townhall: [8, 8, 8, 8, 8, 8, 8, 8],
   goldmine: [1, 4, 6, 8, 10, 10, 11, 12],
   collector: [1, 4, 6, 8, 10, 10, 11, 12],

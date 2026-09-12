@@ -1,5 +1,6 @@
 import { REPLAY_VERSION, validateReplay, type ReplayData } from './replay';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
+import { EQUIPMENT_KEYS, type KingEquipment } from './equipment';
 
 export const MAX_REPLAY_FILE_BYTES = 512_000;
 export interface ReplayFile {
@@ -31,7 +32,20 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         spellLevels: Object.fromEntries(
           SPELL_KEYS.map((k) => [k, s.spellLevels![k]]),
         ) as typeof s.spells,
-        ...(s.hero ? { hero: { level: s.hero.level, townhall: s.hero.townhall } } : {}),
+        ...(s.hero
+          ? {
+              hero: {
+                level: s.hero.level,
+                townhall: s.hero.townhall,
+                equipment: {
+                  levels: Object.fromEntries(
+                    EQUIPMENT_KEYS.map((k) => [k, s.hero!.equipment!.levels[k]]),
+                  ) as KingEquipment['levels'],
+                  loadout: [...s.hero.equipment!.loadout] as KingEquipment['loadout'],
+                },
+              },
+            }
+          : {}),
         buildings: s.buildings.map((b) => ({
           id: b.id,
           kind: b.kind,
