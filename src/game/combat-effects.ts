@@ -133,28 +133,6 @@ export class CombatEffects {
     g.fillStyle(0xb8b2a3).fillCircle(-1.5, -2, 1.5);
   }
 
-  /** Fixed-point thrown bomb, with its shadow staying on the ground plane. */
-  poseTowerBomb(id: string, ground: Point, to: Point, muzzle: Point, progress: number) {
-    let g = this.flights.get(id);
-    if (!g) {
-      g = this.graphic().setData('projectileId', id).setData('weapon', 'towerbomb');
-      this.flights.set(id, g);
-    }
-    const x = muzzle.x + (to.x - muzzle.x) * progress;
-    const y = muzzle.y + (to.y - muzzle.y) * progress - Math.sin(progress * Math.PI) * 42;
-    const lift = ground.y + (to.y - ground.y) * progress - y;
-    g.clear().setPosition(x, y).setData('flightProgress', progress);
-    g.fillStyle(0x332b25, 0.22).fillEllipse(0, lift, 13, 6);
-    g.fillStyle(0x20242a).fillCircle(0, 0, 5.5);
-    g.lineStyle(1, 0x131719).strokeCircle(0, 0, 5.5);
-    g.fillStyle(0x858b91).fillCircle(-1.6, -2, 1.5);
-    const angle = -Math.PI / 2 + progress * Math.PI * 2;
-    const fx = Math.cos(angle) * 8,
-      fy = Math.sin(angle) * 8;
-    g.lineStyle(1.6, 0xd2ae66).lineBetween(Math.cos(angle) * 5, Math.sin(angle) * 5, fx, fy);
-    g.fillStyle(0xffd367).fillCircle(fx, fy, 1.7);
-  }
-
   retainProjectiles(ids: Set<string>) {
     for (const [id, g] of this.flights)
       if (!ids.has(id)) {

@@ -63,13 +63,7 @@ test('moving previews preserve artwork and geometry across the building catalog'
       });
     }, kind);
     for (const { requestedLevel, placed, moving } of comparisons) {
-      if (kind === 'bombtower') {
-        // Placed towers have a separate animated roof Bomber; previews are composited.
-        const level = Math.min(requestedLevel, 2);
-        expect(placed.texture).toBe(`bombtower-base-${level}`);
-        expect(moving.texture).toBe(level === 1 ? 'bombtower' : `bombtower-preview-${level}`);
-        expect({ ...moving, texture: placed.texture }).toEqual(placed);
-      } else expect(moving, `${kind} at level ${requestedLevel}`).toEqual(placed);
+      expect(moving, `${kind} at level ${requestedLevel}`).toEqual(placed);
     }
   }
 });

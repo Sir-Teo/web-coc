@@ -15,6 +15,7 @@ const darkStorageNative = JSON.parse(
 );
 const xbowNative = JSON.parse(await fs.readFile('reference/xbow/native.json', 'utf8'));
 const teslaNative = JSON.parse(await fs.readFile('reference/tesla/native.json', 'utf8'));
+const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native.json', 'utf8'));
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -40,6 +41,9 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(xbowNative.previews),
       ...Object.values(teslaNative.textures),
       ...Object.values(teslaNative.previews),
+      ...Object.values(bombTowerNative.body.textures),
+      ...Object.values(bombTowerNative.defender.textures),
+      ...Object.values(bombTowerNative.previews),
       ...[
         'tesla_appear_01',
         'tesla_zap_01',
@@ -61,11 +65,6 @@ for (const [name, engine] of Object.entries(engines)) {
       ),
     ),
     ...['ground', 'air'].map((s) => `/assets/characters/skeleton-v1/${s}.webp`),
-    ...[1, 2].flatMap((l) =>
-      ['base', 'preview'].map((p) => `/assets/buildings/bombtower-v1/level-${l}-${p}.webp`),
-    ),
-    '/assets/buildings/bombtower-v1/bomber.webp',
-    '/assets/buildings/bombtower-v1/death-bomb.webp',
     ...Array.from({ length: 4 }, (_, l) =>
       Array.from(
         { length: 8 },

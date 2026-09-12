@@ -69,29 +69,3 @@ export function stepDeathBombs(battle: Battle, effect: (fx: FX) => void) {
     });
   }
 }
-
-/** The Bomber is a roof actor; frames follow the weapon's battle-time cooldown. */
-export function bomberFrame(tower: Building, battle: Battle | null, reduced: boolean) {
-  if (
-    !battle ||
-    battle.finished ||
-    reduced ||
-    tower.upgradeEnd ||
-    tower.constructing ||
-    (battle.defenseStuns[tower.id] ?? 0) > battle.elapsed ||
-    battle.defenseTargets[tower.id] === undefined
-  )
-    return 0;
-  const target = battle.units.find((u) => u.id === battle.defenseTargets[tower.id] && u.hp > 0);
-  if (
-    !target ||
-    TROOPS[target.kind].flying ||
-    Math.hypot(target.x - tower.x - 1.5, target.y - tower.y - 1.5) > 6
-  )
-    return 0;
-  const age = 1.1 - tower.cooldown;
-  if (age >= 0 && age < 0.12) return 2;
-  if (age >= 0 && age < 0.27) return 3;
-  if (tower.cooldown > 0 && tower.cooldown < 0.16) return 1;
-  return 0;
-}

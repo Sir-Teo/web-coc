@@ -1,3 +1,4 @@
+import { bomberPose } from '../src/game/bomb-tower-poses';
 import { describe, expect, it } from 'vitest';
 import {
   BUILDINGS,
@@ -12,7 +13,7 @@ import {
   type TroopKind,
 } from '../src/game/data';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
-import { BOMB_TOWER, bomberFrame, stepDeathBombs } from '../src/game/bomb-tower';
+import { BOMB_TOWER, stepDeathBombs } from '../src/game/bomb-tower';
 import { stepProjectiles, launchProjectile } from '../src/game/projectiles';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
@@ -253,20 +254,32 @@ describe('destruction charge', () => {
     expect(b.deathBombs![tower.id].resolved).toBe(true);
   });
 });
-it('drives Bomber poses from cooldown and suppresses throwing under stun and reduced motion', () => {
+it('aligns native frame 11 with actual launches and holds the release direction through target loss', () => {
   const { m, b, tower } = arena();
-  unit(m);
+  const target = unit(m);
   m.step(0.05);
-  expect(bomberFrame(tower, b, false)).toBe(2);
-  tower.cooldown = 0.9;
-  expect(bomberFrame(tower, b, false)).toBe(3);
-  tower.cooldown = 0.4;
-  expect(bomberFrame(tower, b, false)).toBe(0);
+  const at = b.elapsed;
+  const sample = () => bomberPose(tower, b, b.elapsed, false);
+  expect(b.bombTowers![tower.id].shots).toEqual([{ at, x: target.x, y: target.y }]);
+  expect(sample()).toMatchObject({ action: 'attack', time: 11 / 24 });
+  const facing = sample();
+  b.elapsed = at + 9 / 24;
+  target.hp = 0;
+  expect(sample()).toMatchObject({
+    action: 'attack',
+    time: 20 / 24,
+    direction: facing.direction,
+    flip: facing.flip,
+  });
+  b.elapsed = at + 10 / 24;
+  expect(sample().action).toBe('idle');
+  target.hp = 5000;
   tower.cooldown = 0.1;
-  expect(bomberFrame(tower, b, false)).toBe(1);
-  expect(bomberFrame(tower, b, true)).toBe(0);
-  b.defenseStuns[tower.id] = 1;
-  expect(bomberFrame(tower, b, false)).toBe(0);
+  expect(sample().time).toBeCloseTo(11 / 24 - 0.1);
+  expect(sample().action).toBe('attack');
+  expect(bomberPose(tower, b, b.elapsed, true)).toMatchObject({ action: 'idle', time: 0 });
+  b.defenseStuns[tower.id] = b.elapsed + 1;
+  expect(sample().action).toBe('idle');
 });
 it('persists level two and reconstructs projectiles and destruction charges after replay import and seeking', () => {
   const m = new GameModel();
@@ -299,7 +312,7 @@ it('persists level two and reconstructs projectiles and destruction charges afte
   m.startReplay(record.id);
   for (let i = 0; i < 1000 && !m.replay!.complete; i++) m.step(0.1);
   const after = JSON.parse(JSON.stringify(m.battle));
-  for (const key of ['buildings', 'units', 'deathBombs', 'result'])
+  for (const key of ['buildings', 'units', 'deathBombs', 'bombTowers', 'result'])
     expect(after[key]).toEqual(before[key]);
   m.seekReplay(0);
   for (let i = 0; i < 50 && m.replay!.seeking; i++) m.step(0.05);

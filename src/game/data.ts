@@ -3,7 +3,7 @@ import { darkStorageAsset, darkStorageTexture } from './dark-storage-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
 import { XBOW, XBOW_LEVELS, xbowDamage, type XbowMode } from './xbow-stats';
 import { xbowAsset, xbowTexture } from './xbow-art';
-import { bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
+import { BOMB_TOWER_ART, bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
 import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
 import type { SkeletonMode } from './skeleton-stats';
 import { sweeperTexture, sweeperAsset, mineAsset } from './air-control-art';
@@ -401,7 +401,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     description:
       'Throws bombs at nearby ground troops. When destroyed, a larger bomb explodes after one second, damaging enemies still nearby.',
     size: 3,
-    width: 130,
+    width: BOMB_TOWER_ART.width,
     hp: DEFENSE_PROGRESSION.bombtower[0].hp,
     cost: DEFENSE_PROGRESSION.bombtower[0].cost,
     resource: 'gold',

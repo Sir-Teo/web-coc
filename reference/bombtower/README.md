@@ -1,17 +1,17 @@
-# Native Bomb Tower asset foundation
+# Native Bomb Tower presentation reference
 
 Pinned client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`, from the [original public client fingerprint](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/fingerprint.json). `native.json` records SHA-256 checksums for 19 inputs and verifies their SHA-1 membership in that pinned fingerprint.
 
-This is an asset foundation. The live game still uses its existing authored Bomb Tower presentation and supports levels 1–2. These files do not enable level 3 or another campaign village.
+The live game consumes these native bodies, rooftop defender clips, bombs, shadows, scaffolds and rubble. Gameplay remains at levels 1–2; these presentation changes do not enable level 3 or another campaign village.
 
 ## Preserved content
 
 - `native.json`: original sparse building, projectile, effect, emitter and defender animation records; original SC6 graphs; texture sampling footprints and sound hashes.
 - `body.json`: packed, unscaled runtime graph for all 13 bodies, separate foundation, construction/upgrade scaffolds, rubble, three projectiles, four death bombs and projectile shadow. It retains 25 exports, 30 clips and 39 shapes.
 - `defender.json`: packed runtime graph for three defender families, each with three native directional idle and attack exports: 18 exports, 23 clips and 124 shapes. Named `ability_on` controls and additive container boundaries are retained. Idle clips have 101 frames and attacks have 21, both at 24 fps.
-- `combat.json`: all 13 source level records with HP, DPS, death damage, costs, destination timers, projectile/defender/effect selection and common range/timing values. It is not yet consumed by gameplay.
+- `combat.json`: all 13 source level records with HP, DPS, death damage, costs, destination timers, projectile/defender/effect selection and common range/timing values. Presentation uses its source variant selection; numerical gameplay continues to use the supported progression records.
 - `effects.json`: all 13 referenced effects (including spawned effects), 25 emitters and six original sounds. General explosion/grass/smoke particle artwork is not imported in this pass; only the four configured death-bomb particle exports are captured.
-- `public/assets/buildings/bombtower-native`: five losslessly packed texture crops and six unchanged original Ogg files, totaling 1,038,614 bytes. Source polygon geometry and texture sampling texels are preserved without repainting or resizing.
+- `public/assets/buildings/bombtower-native`: five losslessly packed texture crops, thirteen independently rasterized 360×420 source portraits and six unchanged original Ogg files. Source polygon geometry and texture sampling texels are preserved without repainting or resizing.
 
 The animation CSV uses separate named tables with different headers. Its three `BomberTower_lvl*` tables specify `HasDirections=TRUE`, attack `ActionFrame=11`, `StopToLast=TRUE` and an idle scale of 108. The importer parses each table's own header instead of applying the file's first row as a global schema. Native direction selection, mirroring, scale inheritance and the engine's action-frame timing are not yet verified.
 
@@ -30,4 +30,6 @@ The first check recreates every output pixel, original sound byte, remapped UV a
 
 `tests/native-bomb-tower-reference.test.ts` checks source transitions, per-table animation columns, unchanged geometry, UV remapping, every packed texture region and exact asset membership. `tests/browser/native-bomb-tower-mesh.spec.ts` compares original-source witnesses through a single-sample camera framebuffer, matching the CPU reference's pixel-center sampling. Forced single-texture batching and context restoration separately exercise the normal multisampled game canvas. Its polygon-edge antialiasing differs from a pixel-center CPU raster, especially around the small projectile fuses. Witness scale and placement are explicit diagnostic transforms, not a claim about in-village registration.
 
-Live body/defender registration, source direction mapping, animation handoff and launch timing, complete native impact/explosion particles and native audio integration remain pending. Source pixel preservation is separate from native executable equivalence.
+`tests/browser/native-bomb-tower-live.spec.ts` additionally compares all 13 complete live assemblies to the independently rendered portraits at the source sampling density. Body scale 1.2 and ground anchor `(0, 80)` match the live portrait geometry; defender scale 108% places its feet on source roof `(0, 0)`. Ability overlays and additive fuse glow are omitted from background-independent portraits. Live fuse glow uses the original isolated additive group.
+
+[The gameplay presentation notes](../../docs/BOMB-TOWER.md) document local direction/mirror selection, action-frame-11 alignment to recorded launch timestamps, the unchanged ballistic curve, separate death-bomb ground registration and reduced motion. These choices are now implemented and tested locally, but native executable world projection, direction mapping, animation handoff/action-frame semantics and complete particle-engine equivalence remain unverified. Original impact/explosion particle artwork and native audio playback remain pending. Source pixel preservation is separate from native executable equivalence.

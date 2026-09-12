@@ -39126,8 +39126,199 @@
       "sha256": "264513d090ecaecdd13096508c93e21f1e58c15e2d24222118d1f4357a53f726"
     }
   },
+  "previews": {
+    "1": {
+      "path": "assets/buildings/bombtower-native/preview-1.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton1_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "1aab8dc33db384c7bb1b2d550adcced588c8499f1bf60fa47a335a180bd874d9"
+    },
+    "2": {
+      "path": "assets/buildings/bombtower-native/preview-2.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton1_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "c5ddd38c24315b9bbb828f409ee77e961a9b2a1c6eb8e94b99d7df8d0863e1e8"
+    },
+    "3": {
+      "path": "assets/buildings/bombtower-native/preview-3.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton2_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "d3b79e2b427d3bd41e486a59c68b01fd711ef71e3ff37d6f9cd74d98ad934b3b"
+    },
+    "4": {
+      "path": "assets/buildings/bombtower-native/preview-4.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "e5e259750e022decd4b1900580e2c543783fbd1bb2132166948fcc6da5481ccb"
+    },
+    "5": {
+      "path": "assets/buildings/bombtower-native/preview-5.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "ec8426a9b1eecacf67c42ec534cbb5e091d90bba0b8cbd738b49ac3109f1d65c"
+    },
+    "6": {
+      "path": "assets/buildings/bombtower-native/preview-6.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "879815368d3e11c7299ccd65907b1294ddb36db7d9e968b9995f8fccd8941dfd"
+    },
+    "7": {
+      "path": "assets/buildings/bombtower-native/preview-7.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "970610fbf0f42f125b0f237807699a54584e5e6dbfff256de58aeef3db52e482"
+    },
+    "8": {
+      "path": "assets/buildings/bombtower-native/preview-8.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "dfcc833b27d9e72e3512d395a1242d55e5efe948792898936f432cd30893dc97"
+    },
+    "9": {
+      "path": "assets/buildings/bombtower-native/preview-9.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "0adf62ab71512221dbed48542884697adf8fe45e8c6d7bb9b6d428b1e67367bb"
+    },
+    "10": {
+      "path": "assets/buildings/bombtower-native/preview-10.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "52ff40d5644ae2d5024489f2f4de7e7f40862a1de408d207559753951c1baaaa"
+    },
+    "11": {
+      "path": "assets/buildings/bombtower-native/preview-11.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "4503dc0f295cdf86f554f6467f8e3ee313b41928f8db63a7bbf8abe9268814c9"
+    },
+    "12": {
+      "path": "assets/buildings/bombtower-native/preview-12.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "0ad02d2040e1c10a1fcc16158771ca212ff8bb8631276803e014a66ac103058f"
+    },
+    "13": {
+      "path": "assets/buildings/bombtower-native/preview-13.png",
+      "bounds": [
+        -90,
+        -65,
+        90,
+        145
+      ],
+      "width": 360,
+      "height": 420,
+      "defender": "b_skeleton4_idle1_3",
+      "defenderScale": 1.08,
+      "rgbaSha256": "eb068bbda1679bf22a726f023d18be1e99734929399495d61d4a8816a2101f2a"
+    }
+  },
   "reconstruction": {
-    "liveIntegration": false,
+    "liveIntegration": {
+      "body": true,
+      "defender": true,
+      "projectile": true,
+      "deathBomb": true,
+      "impactParticles": false,
+      "audio": false
+    },
     "nativePlaybackVerified": false,
     "directionMappingVerified": false,
     "worldProjectionVerified": false,

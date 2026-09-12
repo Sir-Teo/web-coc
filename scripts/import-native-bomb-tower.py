@@ -2,8 +2,8 @@
 """Preserve native Bomb Tower bodies, rooftop defenders, bombs and original audio.
 
 Requires scripts/native_art/requirements.txt. --check reconstructs every sampling
-pixel, graph and source projection from the pinned public client. This asset
-foundation does not enable additional levels or change the live presentation.
+pixel, graph and source projection from the pinned public client. Live presentation
+consumes the retained source graphs; additional gameplay levels remain gated.
 """
 import argparse
 import csv
@@ -11,6 +11,9 @@ import hashlib
 import io
 import json
 import lzma
+import runpy
+
+import numpy as np
 
 from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, SOURCES, digest, source
@@ -39,6 +42,7 @@ PINS = {
     'sfx/mortar_place_02.ogg': '264513d090ecaecdd13096508c93e21f1e58c15e2d24222118d1f4357a53f726',
 }
 PREFIX = 'assets/buildings/bombtower-native'
+PREVIEW_BOUNDS = [-90, -65, 90, 145]
 
 
 def decoded(path):
@@ -142,6 +146,40 @@ def build():
     outputs, body, body_runtime = capture('sc/buildings.sc', body_names, PREFIX + '/body', {5, 8, 25, 36})
     actor_outputs, actor, actor_runtime = capture('sc/chr_b_skeleton.sc', defender_names, PREFIX + '/defender', {0})
     outputs.update(actor_outputs)
+    # Original normal-blend source polygons for background-independent portraits.
+    # The roof is centered at source (0, 0); the local ground anchor is (0, 80).
+    cpu = runpy.run_path(str(ROOT / 'scripts/native-tesla-gpu-fixtures.py'))
+    pixels = {
+        key: {int(t): np.array(decode_sctx(source(f'sc/{prefix}_{t}.sctx', PINS))) / 255
+              for t in value['textures']}
+        for key, prefix, value in [('body', 'buildings', body), ('defender', 'chr_b_skeleton', actor)]
+    }
+    previews = {}
+    for level in levels:
+        root = np.array([[2, 0, -PREVIEW_BOUNDS[0] * 2], [0, 2, -PREVIEW_BOUNDS[1] * 2], [0, 0, 1]])
+        body_poses = []
+        for field in ['ExportNameBase', 'ExportName']:
+            body_poses += cpu['nodes'](body['graph'], body['graph']['exports'][level[field]], 0, root)
+        row = defender[level['DefenderCharacter']]['rows'][0]
+        actor_name = row['ExportName'] + '_3'
+        actor_root = root @ np.diag([int(row['Scale']) / 100, int(row['Scale']) / 100, 1])
+        actor_poses = cpu['nodes'](actor['graph'], actor['graph']['exports'][actor_name], 0, actor_root)
+        # Slot 1 is the explicitly named ability control in each imported root.
+        clip = actor['graph']['clips'][str(actor['graph']['exports'][actor_name])]
+        ability = clip['names'].index('ability_on')
+        actor_poses = [p for p in actor_poses if not p['key'].startswith(f"{actor['graph']['exports'][actor_name]}/{ability}/") and p['blend'] == 0]
+        cell = 480
+        a = cpu['compose'](body_poses, pixels['body'], cell)
+        b = cpu['compose'](actor_poses, pixels['defender'], cell)
+        combined = b + a * (1 - b[:, :, 3:4])
+        combined[:, :, :3] /= np.where(combined[:, :, 3:4] > 0, combined[:, :, 3:4], 1)
+        image = Image.fromarray(np.round(np.clip(combined, 0, 1) * 255).astype(np.uint8), 'RGBA')
+        image = image.crop((0, 0, (PREVIEW_BOUNDS[2] - PREVIEW_BOUNDS[0]) * 2,
+                            (PREVIEW_BOUNDS[3] - PREVIEW_BOUNDS[1]) * 2))
+        path = f'{PREFIX}/preview-{level["BuildingLevel"]}.png'
+        outputs[path] = image
+        previews[level['BuildingLevel']] = dict(path=path, bounds=PREVIEW_BOUNDS, width=image.width, height=image.height,
+            defender=actor_name, defenderScale=int(row['Scale']) / 100, rgbaSha256=digest(image.tobytes()))
     sounds = {}
     for original in sorted({row['Sound'] for rows in effects.values() for row in rows if row.get('Sound')}):
         path = PREFIX + '/' + original.removeprefix('sfx/')
@@ -158,10 +196,14 @@ def build():
                   deathDelayMs=int(first['DieDamageDelay']), defenderZ=int(first['DefenderZ']),
                   airTargets=first['AirTargets'] == 'TRUE', groundTargets=first['GroundTargets'] == 'TRUE', size=int(first['Width']))
     body_runtime['levels'] = [{key: v[key] for key in exports} for v in levels]
+    body_runtime['projectiles'] = projectiles
+    body_runtime['deathBombs'] = {name: rows[0] for name, rows in particles.items() if name.startswith('Bomb Tower Bomb Appear')}
+    actor_runtime['animations'] = {name: value['rows'] for name, value in defender.items()}
     metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                     building=building, projectiles=projectiles, animations=defender, effects=effects,
-                    particles=particles, body=body, defender=actor, sounds=sounds,
-                    reconstruction=dict(liveIntegration=False, nativePlaybackVerified=False,
+                    particles=particles, body=body, defender=actor, sounds=sounds, previews=previews,
+                    reconstruction=dict(liveIntegration=dict(body=True, defender=True, projectile=True, deathBomb=True,
+                                                             impactParticles=False, audio=False), nativePlaybackVerified=False,
                         directionMappingVerified=False, worldProjectionVerified=False, particleEngineVerified=False,
                         scope='All 13 bodies, foundations/scaffolds/rubble, three directional defender families, three projectiles, four death bombs and six source sounds. Other effect/emitter rows are retained as data; their particle artwork is not yet imported.'))
     return outputs, dict(native=metadata, body=body_runtime, defender=actor_runtime, combat=combat,

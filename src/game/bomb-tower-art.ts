@@ -1,9 +1,18 @@
-export const BOMB_TOWER_ART_LEVELS = [1, 2] as const;
-export const bombTowerTexture = (level = 1) => `bombtower-base-${level}`;
-export const bombTowerAsset = (level = 1, part = 'preview') =>
-  `/assets/buildings/bombtower-v1/level-${level}-${part}.webp`;
-export const BOMBER_ASSET = '/assets/buildings/bombtower-v1/bomber.webp';
-export const DEATH_BOMB_ASSET = '/assets/buildings/bombtower-v1/death-bomb.webp';
-/** Normalized roof center; the actor's feet and throw origin are tied to the platform. */
-export const BOMB_TOWER_ROOF = { x: 0.5, y: 218.5 / 512 };
-export const BOMBER_WIDTH = (130 * 144) / 384;
+import source from '../../reference/bombtower/combat.json';
+
+export const BOMB_TOWER_ART_LEVELS = source.levels.map((v) => v.level);
+export const bombTowerTexture = (level = 1) => (level === 1 ? 'bombtower' : `bombtower-${level}`);
+export const bombTowerAsset = (level = 1) =>
+  `/assets/buildings/bombtower-native/preview-${level}.png`;
+/** Source body coordinates registered to the local 3×3 footprint and drawn roof. */
+export const BOMB_TOWER_ART = {
+  scale: 1.2,
+  anchorX: 0,
+  anchorY: 80,
+  roofX: 0,
+  roofY: 0,
+  width: 216,
+  height: 252,
+  originX: 0.5,
+  originY: 145 / 210,
+};

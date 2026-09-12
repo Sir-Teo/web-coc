@@ -12,16 +12,9 @@ import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import { xbowRange, type XbowMode } from './xbow-stats';
 import { battleTrapStats } from './traps';
-import {
-  BOMB_TOWER_ART_LEVELS,
-  bombTowerTexture,
-  bombTowerAsset,
-  BOMBER_ASSET,
-  DEATH_BOMB_ASSET,
-  BOMB_TOWER_ROOF,
-  BOMBER_WIDTH,
-} from './bomb-tower-art';
-import { bomberFrame } from './bomb-tower';
+import { BOMB_TOWER_ART } from './bomb-tower-art';
+import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
+import { bombTowerBounds, bombTowerMuzzle } from './bomb-tower-poses';
 import {
   SKELETON_ART_TIERS,
   skeletonTrapArt,
@@ -81,7 +74,6 @@ const WOOD_RUINS = new Set<BuildingKind>([
   'archertower',
   'cannon',
   'tesla',
-  'bombtower',
 ]);
 const SPELL_COLOR: Record<string, number> = {
   rage: 0xcf79ef,
@@ -149,8 +141,7 @@ export class VillageScene extends Phaser.Scene {
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private mineFlights = new Map<number, Phaser.GameObjects.Image>();
-  private roofBombers = new Map<number, Phaser.GameObjects.Image>();
-  private deathBombSprites = new Map<number, Phaser.GameObjects.Image>();
+  private bombTowerPresentation!: BombTowerPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
@@ -179,6 +170,7 @@ export class VillageScene extends Phaser.Scene {
     preloadDarkStorages(this);
     preloadGoblinBuildings(this);
     preloadTeslas(this);
+    preloadBombTowers(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -194,12 +186,6 @@ export class VillageScene extends Phaser.Scene {
         frameWidth: 128,
         frameHeight: 128,
       });
-    for (const level of BOMB_TOWER_ART_LEVELS) {
-      this.load.image(bombTowerTexture(level), bombTowerAsset(level, 'base'));
-      if (level > 1) this.load.image(`bombtower-preview-${level}`, bombTowerAsset(level));
-    }
-    this.load.spritesheet('roof-bomber', BOMBER_ASSET, { frameWidth: 256, frameHeight: 256 });
-    this.load.image('tower-death-bomb', DEATH_BOMB_ASSET);
     for (const level of SWEEPER_ART_LEVELS)
       for (let direction = 0; direction < 8; direction++)
         this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
@@ -272,6 +258,7 @@ export class VillageScene extends Phaser.Scene {
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
+    this.bombTowerPresentation = new BombTowerPresentation(this);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () =>
       teslaRevealShake(
         this.model.battle,
@@ -287,6 +274,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
+      this.bombTowerPresentation.destroy();
       this.cameraShake.destroy();
     });
     this.drawField();
@@ -775,8 +763,8 @@ export class VillageScene extends Phaser.Scene {
       .sort((a, b) => b.x + b.y - (a.x + a.y));
     for (const b of sorted) {
       const im = this.sprites.get(b.id);
-      if (im && b.kind === 'tesla') {
-        const bounds = teslaBodyBounds(
+      if (im && (b.kind === 'tesla' || b.kind === 'bombtower')) {
+        const bounds = (b.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
           b.level,
           b.hp <= 0
             ? 'ruin'
@@ -834,6 +822,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.clear();
       this.goblinBuildingPresentation.clear();
       this.teslaPresentation.clear();
+      this.bombTowerPresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -871,10 +860,6 @@ export class VillageScene extends Phaser.Scene {
       this.sprites.clear();
       this.unitSprites.clear();
       this.bubbles.clear();
-      for (const actor of this.roofBombers.values()) actor.destroy();
-      for (const bomb of this.deathBombSprites.values()) bomb.destroy();
-      this.roofBombers.clear();
-      this.deathBombSprites.clear();
       for (const sprite of this.defenderSprites.values()) sprite.destroy();
       this.defenderSprites.clear();
       this.mode = mode;
@@ -925,7 +910,12 @@ export class VillageScene extends Phaser.Scene {
       im.setVisible(
         this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
       );
-      im.setData('intactHeight', im.displayHeight);
+      im.setData(
+        'intactHeight',
+        b.kind === 'bombtower'
+          ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
+          : im.displayHeight,
+      );
       if (b.kind === 'mortar') {
         const muzzle = mortarMuzzle(b.level);
         im.setData('mortarMuzzle', {
@@ -947,6 +937,7 @@ export class VillageScene extends Phaser.Scene {
         (b.kind === 'xbow' ||
           b.kind === 'darkstorage' ||
           b.kind === 'tesla' ||
+          b.kind === 'bombtower' ||
           isGoblinBuilding(b.npc)) &&
         b.hp > 0
       )
@@ -968,7 +959,8 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'camp' &&
         b.kind !== 'xbow' &&
         b.kind !== 'darkstorage' &&
-        b.kind !== 'tesla'
+        b.kind !== 'tesla' &&
+        b.kind !== 'bombtower'
       )
         im.setTint(0xffecc7);
       else im.clearTint();
@@ -1054,8 +1046,6 @@ export class VillageScene extends Phaser.Scene {
         this.model.state.buildings.find((b) => b.id === this.model.moving)?.xbowMode,
       );
       this.updateGhost(this.pointerScreen());
-      if (this.model.placement === 'bombtower')
-        this.ghost.setTexture(level === 1 ? 'bombtower' : `bombtower-preview-${level}`);
     } else {
       this.ghost?.destroy();
       this.ghost = undefined;
@@ -1108,10 +1098,16 @@ export class VillageScene extends Phaser.Scene {
         .setFlipX(false)
         .setDisplaySize(TESLA_ART.width, TESLA_ART.height)
         .setData('nativeTeslaRuin', false);
+    if (kind === 'bombtower')
+      return im
+        .setOrigin(BOMB_TOWER_ART.originX, BOMB_TOWER_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(BOMB_TOWER_ART.width, BOMB_TOWER_ART.height)
+        .setData('nativeBombTowerRuin', false);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
-      wall || camp || kind === 'mortar' || kind === 'airsweeper' || kind === 'bombtower'
+      wall || camp || kind === 'mortar' || kind === 'airsweeper'
         ? 1
         : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
@@ -1196,8 +1192,11 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
-    if (b.kind === 'tesla') {
-      im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeTeslaRuin', true);
+    if (b.kind === 'tesla' || b.kind === 'bombtower') {
+      im.setCrop()
+        .setPosition(p.x, p.y)
+        .setAlpha(0)
+        .setData(b.kind === 'tesla' ? 'nativeTeslaRuin' : 'nativeBombTowerRuin', true);
       return;
     }
     const width =
@@ -1218,7 +1217,7 @@ export class VillageScene extends Phaser.Scene {
   private drawRuinGround() {
     this.ruinGround.clear();
     for (const b of this.model.buildings) {
-      if (b.hp > 0 || isTrap(b.kind) || b.kind === 'tesla') continue;
+      if (b.hp > 0 || isTrap(b.kind) || b.kind === 'tesla' || b.kind === 'bombtower') continue;
       const d = BUILDINGS[b.kind];
       const p = iso(b.x + d.size / 2, b.y + d.size / 2);
       const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
@@ -1506,9 +1505,9 @@ export class VillageScene extends Phaser.Scene {
           progress = (this.model.clock - start) / duration;
         this.bar(
           im.x,
-          v.kind === 'tesla'
+          v.kind === 'tesla' || v.kind === 'bombtower'
             ? im.y +
-                teslaBodyBounds(
+                (v.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
                   v.level,
                   v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
                 )[1] -
@@ -1520,7 +1519,7 @@ export class VillageScene extends Phaser.Scene {
           progress,
           0x82d745,
         );
-        if (v.kind !== 'tesla') {
+        if (v.kind !== 'tesla' && v.kind !== 'bombtower') {
           const p = iso(v.x, v.y);
           this.detail.lineStyle(3, 0xe6b356, 0.7);
           this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
@@ -1529,9 +1528,9 @@ export class VillageScene extends Phaser.Scene {
       } else if (this.model.battle && v.hp < v.maxHp)
         this.bar(
           im.x,
-          v.kind === 'tesla'
+          v.kind === 'tesla' || v.kind === 'bombtower'
             ? im.y +
-                teslaBodyBounds(
+                (v.kind === 'tesla' ? teslaBodyBounds : bombTowerBounds)(
                   v.level,
                   v.constructing ? 'constructing' : v.upgradeEnd ? 'upgrading' : 'setup',
                 )[1] -
@@ -2115,7 +2114,7 @@ export class VillageScene extends Phaser.Scene {
     if (fx.weapon === 'xbowbolt' && (fx.type === 'projectile' || fx.type === 'impact')) return;
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
-      if (!this.model.state.settings.reducedMotion)
+      if (!this.model.state.settings.reducedMotion && fx.weapon !== 'towerbomb')
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
     }
@@ -2200,18 +2199,7 @@ export class VillageScene extends Phaser.Scene {
   private projectileAnchors(fx: FX) {
     const p = iso(fx.x, fx.y),
       q = iso(fx.toX!, fx.toY!);
-    if (fx.weapon === 'towerbomb') {
-      const source = this.sprites.get(fx.sourceId!);
-      const height = source?.getData('intactHeight') ?? (130 * 512) / 384;
-      const facing = Math.sign(q.x - p.x) || -1;
-      return {
-        from: {
-          x: p.x + facing * BOMBER_WIDTH * 0.2,
-          y: p.y - height * (0.88 - BOMB_TOWER_ROOF.y) - BOMBER_WIDTH * 0.48,
-        },
-        to: { x: q.x, y: q.y },
-      };
-    }
+    if (fx.weapon === 'towerbomb') return { from: bombTowerMuzzle(p, q), to: { x: q.x, y: q.y } };
     const source =
       fx.sourceId == null
         ? undefined
@@ -2277,7 +2265,7 @@ export class VillageScene extends Phaser.Scene {
     const shots =
       !b || b.finished || this.model.state.settings.reducedMotion
         ? []
-        : (b.projectiles ?? []).filter((p) => p.weapon !== 'xbowbolt');
+        : (b.projectiles ?? []).filter((p) => p.weapon !== 'xbowbolt' && p.weapon !== 'towerbomb');
     const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
     const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
     this.combatEffects.retainProjectiles(
@@ -2300,71 +2288,17 @@ export class VillageScene extends Phaser.Scene {
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
-      if (p.weapon === 'towerbomb')
-        this.combatEffects.poseTowerBomb(p.id, iso(p.fromX, p.fromY), to, from, progress);
-      else this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
+      this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
   }
   private drawBombTowers() {
-    const battle = this.model.battle,
-      reduced = this.model.state.settings.reducedMotion;
-    const towers = this.model.buildings.filter(
-      (v) => v.kind === 'bombtower' && v.hp > 0 && this.model.visibleBuilding(v),
+    this.bombTowerPresentation.render(
+      this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
+      this.model.battle,
+      this.model.battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
     );
-    const pending = Object.values(battle?.deathBombs ?? {}).filter(
-      (b) => !battle?.finished && !b.resolved && !b.cancelled,
-    );
-    for (const [id, actor] of this.roofBombers)
-      if (!towers.some((v) => v.id === id)) {
-        actor.destroy();
-        this.roofBombers.delete(id);
-      }
-    for (const [id, sprite] of this.deathBombSprites)
-      if (!pending.some((v) => v.sourceId === id)) {
-        sprite.destroy();
-        this.deathBombSprites.delete(id);
-      }
-    for (const tower of towers) {
-      const base = this.sprites.get(tower.id);
-      if (!base) continue;
-      let actor = this.roofBombers.get(tower.id);
-      if (!actor) {
-        actor = this.add
-          .image(0, 0, 'roof-bomber')
-          .setOrigin(0.5, 232 / 256)
-          .setData('bomber', tower.id);
-        this.roofBombers.set(tower.id, actor);
-      }
-      const target = battle?.units.find(
-        (u) => u.id === battle.defenseTargets[tower.id] && u.hp > 0,
-      );
-      actor
-        .setFrame(bomberFrame(tower, battle, reduced))
-        .setDisplaySize(BOMBER_WIDTH, BOMBER_WIDTH)
-        .setPosition(base.x, base.y - base.displayHeight * (base.originY - BOMB_TOWER_ROOF.y))
-        .setDepth(base.depth + 0.1)
-        .setAlpha(base.alpha)
-        .setVisible(!tower.constructing)
-        .setFlipX(!!target && iso(target.x, target.y).x > base.x);
-    }
-    for (const bomb of pending) {
-      let sprite = this.deathBombSprites.get(bomb.sourceId);
-      if (!sprite) {
-        sprite = this.add
-          .image(0, 0, 'tower-death-bomb')
-          .setOrigin(0.5, 0.82)
-          .setData('deathBomb', bomb.sourceId);
-        this.deathBombSprites.set(bomb.sourceId, sprite);
-      }
-      const p = iso(bomb.x, bomb.y),
-        age = Math.max(0, battle!.elapsed - bomb.armedAt);
-      sprite
-        .setPosition(p.x, p.y)
-        .setDisplaySize(32, 32)
-        .setDepth(p.y + 0.5);
-      if (!reduced && Math.sin(age * 34) > 0.35) sprite.setTint(0xffb085);
-      else sprite.clearTint();
-    }
   }
 
   update(time: number, delta: number) {
@@ -2399,7 +2333,9 @@ export class VillageScene extends Phaser.Scene {
           b.hp <= 0 &&
           (b.kind === 'tesla'
             ? !im.getData('nativeTeslaRuin')
-            : !im.texture.key.startsWith('ruins-'))
+            : b.kind === 'bombtower'
+              ? !im.getData('nativeBombTowerRuin')
+              : !im.texture.key.startsWith('ruins-'))
         ) {
           this.renderRuin(b, im);
           this.drawRuinGround();

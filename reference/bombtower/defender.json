@@ -26780,5 +26780,91 @@
       "width": 256,
       "height": 1216
     }
+  },
+  "animations": {
+    "BomberTower_lvl1": [
+      {
+        "Name": "idle",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton1_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "Scale": "108",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "attack",
+        "HasDirections": "TRUE",
+        "ActionFrame": "11",
+        "ExportName": "b_skeleton1_attack1",
+        "Looping": "FALSE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "walk",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton1_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      }
+    ],
+    "BomberTower_lvl2": [
+      {
+        "Name": "idle",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton2_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "Scale": "108",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "attack",
+        "HasDirections": "TRUE",
+        "ActionFrame": "11",
+        "ExportName": "b_skeleton2_attack1",
+        "Looping": "FALSE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "walk",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton2_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      }
+    ],
+    "BomberTower_lvl3": [
+      {
+        "Name": "idle",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton4_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "Scale": "108",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "attack",
+        "HasDirections": "TRUE",
+        "ActionFrame": "11",
+        "ExportName": "b_skeleton4_attack1",
+        "Looping": "FALSE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      },
+      {
+        "Name": "walk",
+        "HasDirections": "TRUE",
+        "ExportName": "b_skeleton4_idle1",
+        "Looping": "TRUE",
+        "StopToLast": "TRUE",
+        "SWF": "sc/chr_b_skeleton.sc"
+      }
+    ]
   }
 }

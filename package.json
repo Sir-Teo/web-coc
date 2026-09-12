@@ -19,6 +19,7 @@
     "test:campaign:production": "node scripts/campaign-production-check.mjs",
     "test:goblin:production": "node scripts/goblin-production-check.mjs",
     "test:dark:production": "node scripts/dark-storage-production-check.mjs",
+    "test:bomb-tower:production": "node scripts/bomb-tower-production-check.mjs",
     "test:tesla:production": "node scripts/tesla-production-check.mjs"
   },
   "dependencies": {

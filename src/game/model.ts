@@ -1,3 +1,4 @@
+import { recordBombTowerShot, type BombTowerAttackState } from './bomb-tower-attack';
 import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
 import {
@@ -332,6 +333,7 @@ export interface Battle {
   sweepers?: Record<number, SweeperState>;
   xbows?: Record<number, XbowState>;
   teslas?: Record<number, TeslaAttackState>;
+  bombTowers?: Record<number, BombTowerAttackState>;
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
@@ -2436,6 +2438,7 @@ export class GameModel {
           },
           this.onEffect,
         );
+        if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, target);
       }
     }
     const king = b.units.find((u) => u.hero);

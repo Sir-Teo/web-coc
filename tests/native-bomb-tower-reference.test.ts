@@ -60,7 +60,14 @@ it('retains all 13 native levels and the level-three weapon/defender transition'
     particles: native.particles,
     sounds: native.sounds,
   });
-  expect(native.reconstruction.liveIntegration).toBe(false);
+  expect(native.reconstruction.liveIntegration).toEqual({
+    body: true,
+    defender: true,
+    projectile: true,
+    deathBomb: true,
+    impactParticles: false,
+    audio: false,
+  });
 });
 
 it('preserves each animation table header, the original three directions and action frame 11', () => {
@@ -161,10 +168,11 @@ for (const [name, packed, original] of [
     }
   });
 
-it('ships only the five verified texture crops and six original sound files', async () => {
+it('ships the verified textures, thirteen source portraits and six original sounds', async () => {
   const expected = [
     ...Object.values(native.body.textures),
     ...Object.values(native.defender.textures),
+    ...Object.values(native.previews),
   ].map((v) => v.path.replace('assets/buildings/bombtower-native/', ''));
   for (const sound of Object.values(native.sounds)) {
     expected.push(sound.path.split('/').at(-1)!);

@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
 });
-test('Bomb Tower shop gate and complete two-level artwork load', async ({ page }) => {
+test('Bomb Tower shop gate and all thirteen native portraits load', async ({ page }) => {
   await page.locator('.shop-btn').tap();
   await page.locator('[data-action="tab:Defenses"]').tap();
   await expect(page.locator('[data-action="build:bombtower"]')).toBeDisabled();
@@ -15,14 +15,9 @@ test('Bomb Tower shop gate and complete two-level artwork load', async ({ page }
   );
   expect(
     await page.evaluate(() =>
-      [
-        'bombtower',
-        'bombtower-base-1',
-        'bombtower-base-2',
-        'bombtower-preview-2',
-        'roof-bomber',
-        'tower-death-bomb',
-      ].every((k) => window.__game.scene.textures.exists(k)),
+      Array.from({ length: 13 }, (_, i) => (i === 0 ? 'bombtower' : `bombtower-${i + 1}`)).every(
+        (k) => window.__game.scene.textures.exists(k),
+      ),
     ),
   ).toBe(true);
 });
@@ -67,16 +62,16 @@ for (const width of [1440, 390, 320])
         const { model: m, scene } = window.__game;
         scene.drawOverlay();
         const base = scene.sprites.get(3),
-          actor = scene.children.list.find((o) => o.getData?.('bomber') === 3);
+          actor = scene.bombTowerPresentation.defenders.get(3)?.objects[0];
         return [
           m.state.buildings.find((b) => b.id === 3).level,
           base.texture.key,
-          actor?.texture.key,
-          actor?.frame.name,
-          actor?.y < base.y,
+          base.alpha,
+          actor?.getData('nativeBomber').action,
+          scene.bombTowerPresentation.defenders.get(3)?.objects.length > 0,
         ];
       }),
-    ).toEqual([2, 'bombtower-base-2', 'roof-bomber', 0, true]);
+    ).toEqual([2, 'bombtower-2', 0, 'idle', true]);
   });
 test('touch placement includes the Bomber, then construction and upgrade use real timers', async ({
   page,
@@ -114,7 +109,7 @@ test('touch placement includes the Bomber, then construction and upgrade use rea
         (t.upgradeEnd - t.upgradeStart) / 1000,
         m.busy,
         m.countOf('bombtower'),
-        scene.roofBombers.get(t.id).visible,
+        scene.bombTowerPresentation.defenders.has(t.id),
       ];
     }),
   ).toEqual([true, 43200, 1, 1, false]);
@@ -136,10 +131,10 @@ test('touch placement includes the Bomber, then construction and upgrade use rea
         t.level,
         t.hp,
         scene.sprites.get(t.id).texture.key,
-        scene.roofBombers.get(t.id).visible,
+        scene.bombTowerPresentation.defenders.has(t.id),
       ];
     }),
-  ).toEqual([true, 64800, 2, 700, 'bombtower-base-2', true]);
+  ).toEqual([true, 64800, 2, 700, 'bombtower-2', true]);
 });
 test('Bomber poses, ballistic shadow and exposed fuse follow battle time through destruction', async ({
   page,
@@ -158,7 +153,7 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
     m.state.nextId = 3;
     m.startBattle(0, true);
     m.battle.started = true;
-    scene.scene.pause();
+    scene.paused = true;
     m.battle.units.push({
       id: 999,
       kind: 'giant',
@@ -182,24 +177,37 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
     const { model: m, scene } = window.__game,
       t = m.battle.buildings.find((b) => b.id === 2),
       frames = [];
-    for (const c of [1.1, 0.9, 0.4, 0.1]) {
-      t.cooldown = c;
+    const at = m.battle.elapsed;
+    const actorPose = () =>
+      scene.bombTowerPresentation.defenders.get(2).objects[0].getData('nativeBomber');
+    for (const age of [0, 3 / 24, 9 / 24, 10 / 24]) {
+      m.battle.elapsed = at + age;
       scene.drawOverlay();
-      frames.push(scene.roofBombers.get(2).frame.name);
+      const pose = actorPose();
+      frames.push([pose.action, Math.floor(pose.time * 24 + 1e-9)]);
     }
+    m.battle.elapsed = at;
     t.cooldown = 10;
     m.step(0.2);
     scene.drawOverlay();
     const shot = m.battle.projectiles[0],
-      g = scene.children.list.find((o) => o.getData?.('projectileId') === shot.id);
+      view = scene.bombTowerPresentation.projectiles.get(shot.id),
+      g = view.objects[0];
     return {
       frames,
-      flight: g.getData('flightProgress'),
+      flight: g.getData('nativeBombProjectile').progress,
       y: g.y,
       landing: 112 + (shot.x + shot.y) * 16,
+      shadow: scene.bombTowerPresentation.shadows.has(shot.id),
     };
   });
-  expect(poses.frames).toEqual([2, 3, 0, 1]);
+  expect(poses.frames.slice(0, 3)).toEqual([
+    ['attack', 11],
+    ['attack', 14],
+    ['attack', 20],
+  ]);
+  expect(poses.frames[3][0]).toBe('idle');
+  expect(poses.shadow).toBe(true);
   expect(poses.flight).toBeGreaterThan(0);
   expect(poses.flight).toBeLessThan(1);
   expect(poses.y).toBeLessThan(poses.landing);
@@ -213,22 +221,23 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
     m.damage(t, 9999);
     scene.sync();
     scene.drawOverlay();
-    const bomb = scene.deathBombSprites.get(2),
-      pose = [bomb.x, bomb.y, bomb.tintTopLeft];
+    const bomb = scene.bombTowerPresentation.bombs.get(2)?.objects[0],
+      pose = [bomb.x, bomb.y, JSON.stringify(bomb.vertices)];
     scene.drawOverlay(999999);
     return {
       before: from,
       after: scene.projectileAnchors(projectileEffect(shot, 'projectile')).from,
-      actor: scene.roofBombers.has(2),
-      ruin: scene.sprites.get(2).texture.key,
+      actor: scene.bombTowerPresentation.defenders.has(2),
+      ruin: scene.bombTowerPresentation.towers.get(2).objects[0].getData('nativeBombTower').state,
       bomb: [bomb.x, bomb.y],
       depth: bomb.depth,
-      poseUnchanged: JSON.stringify(pose) === JSON.stringify([bomb.x, bomb.y, bomb.tintTopLeft]),
+      poseUnchanged:
+        JSON.stringify(pose) === JSON.stringify([bomb.x, bomb.y, JSON.stringify(bomb.vertices)]),
     };
   });
   expect(armed.before).toEqual(armed.after);
   expect(armed.actor).toBe(false);
-  expect(armed.ruin).toBe('ruins-wood');
+  expect(armed.ruin).toBe('ruin');
   expect(armed.bomb).toEqual([768, 416]);
   expect(armed.depth).toBe(416.5);
   expect(armed.poseUnchanged).toBe(true);
@@ -239,12 +248,12 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
     u.x = 7.5;
     m.step(0.999);
     scene.drawOverlay();
-    const visible = scene.deathBombSprites.has(2);
+    const visible = scene.bombTowerPresentation.bombs.has(2);
     m.step(0.001);
     scene.drawOverlay();
     return {
       visible,
-      after: scene.deathBombSprites.has(2),
+      after: scene.bombTowerPresentation.bombs.has(2),
       hp: u.hp,
       blasts: scene.children.list
         .filter((o) => o.getData?.('impact') === 'towerbomb')
@@ -273,7 +282,7 @@ test('replay seeks rebuild the roof actor and pending bomb without duplicates; r
     m.state.army.dragon = 3;
     m.state.army.giant = 2;
     m.startBattle(0, true);
-    scene.scene.pause();
+    scene.paused = true;
     for (const kind of ['giant', 'dragon']) {
       m.activeTroop = kind;
       while (m.battle.remaining[kind]) m.deploy(1, 11);
@@ -284,8 +293,8 @@ test('replay seeks rebuild the roof actor and pending bomb without duplicates; r
     m.returnHome();
     m.startReplay(m.state.raidLog[0].id);
     const counts = () => [
-      scene.children.list.filter((o) => o.getData?.('bomber') === 2).length,
-      scene.children.list.filter((o) => o.getData?.('deathBomb') === 2).length,
+      Number(scene.bombTowerPresentation.defenders.has(2)),
+      Number(scene.bombTowerPresentation.bombs.has(2)),
     ];
     const seek = (t) => {
       m.seekReplay(t);
@@ -299,8 +308,8 @@ test('replay seeks rebuild the roof actor and pending bomb without duplicates; r
     m.state.settings.reducedMotion = true;
     scene.sync();
     scene.drawOverlay();
-    const bomb = scene.deathBombSprites.get(2),
-      tint = bomb?.tintTopLeft;
+    const bomb = scene.bombTowerPresentation.bombs.get(2)?.objects[0],
+      tint = bomb?.alpha;
     const finished = seek(at + 1.2),
       again = seek(0);
     return { start, fuse, tint, finished, again };
@@ -308,7 +317,7 @@ test('replay seeks rebuild the roof actor and pending bomb without duplicates; r
   expect(result).toEqual({
     start: [1, 0],
     fuse: [0, 1],
-    tint: 0xffffff,
+    tint: 1,
     finished: [0, 0],
     again: [1, 0],
   });
