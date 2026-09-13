@@ -1,0 +1,3210 @@
+{
+  "category": "inferno-art-1",
+  "width": 2400,
+  "height": 6000,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "cases": [
+    {
+      "family": "inferno",
+      "export": "d1",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "5d20c7499e8409575ea1ff2156f605025319637ce241d37b133307ac5c60ff9b"
+    },
+    {
+      "family": "inferno",
+      "export": "d2",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "27434171641f2d000800b6edf0a28fd23f806d9b6cce3389f1df2ae674cafbfb"
+    },
+    {
+      "family": "inferno",
+      "export": "d3",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "5544463b843719a9e022d3018d79d30eeeea5a73ffc8b35810c34ea44bf6873c"
+    },
+    {
+      "family": "inferno",
+      "export": "d4",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7daaa36472d57c0b36835ec445eb8f2dd232cd4e4c3ef86602b7dd274b28b009"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_beamup_fx",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.09072297811508,
+        0.0,
+        2.0,
+        149.9675778374076
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a035708d41b608a421b9927d7de89b0cae6502658280f13dc08856e36fd2d980"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_particle1",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        149.95566406846046
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e81ec48ea1ffdf891dc4602a22026ba11f4cc610b47eabd73e7c7bc61cea92f2"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_base",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        170.3291015625,
+        0.0,
+        2.0,
+        63.177734375
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "932e5d53547bb9843a436b83498fff7c93b9fc0df5b0d009a1c39c7157832f33"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_const",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_empty_fx",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        148.0,
+        0.0,
+        2.0,
+        148.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "418e19586081e24087579efe7e6d959ca4f3af3dd4de9bf91bbaaaa0f89238b7"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_load_fx",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        147.11025566235185,
+        0.0,
+        2.0,
+        128.7868180712685
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "5a27fd82ce2925f90a16e627679bfca19c064cce955d574d7e58278f279598ea"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl1",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        1.7359269722872124,
+        0.0,
+        153.38505892036724,
+        0.0,
+        1.7359269722872124,
+        127.56043182839538
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "df607a73b87db13c8f3809979165a2557567a16794047ca87c93c4e4c21665d0"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl10",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        1.845491715085001,
+        0.0,
+        155.3980618586252,
+        0.0,
+        1.845491715085001,
+        149.36561222293952
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "d884cf882b09c78b5abe5e53fd608fe62eda9f457e2636f42232f234161f55dc"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl10_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        1.8431846578785487,
+        0.0,
+        155.39131371805647,
+        0.0,
+        1.8431846578785487,
+        156.26729758406339
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "ff6ee717e5fb23fe5681ccb74df3c95b22dbd81dbbc2150c824eaf82fa4a0f8f"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl10_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        155.8499984741211,
+        0.0,
+        2.0,
+        134.39999771118164
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5c50d407ade72d4e915d86495c046a3b65f5ab5842b1fb54d7b7c3277a70a60"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl10_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        155.8499984741211,
+        0.0,
+        2.0,
+        135.6999969482422
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "dc483e93efce1c58a9314620c0c0f99e247b9c441ba2ed25c5f62d24660c6633"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl11",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 300,
+      "time": 0.0,
+      "root": [
+        1.8418848006117647,
+        0.0,
+        157.781963985208,
+        0.0,
+        1.8418848006117647,
+        149.62874790536986
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9f367376fb256530a8c90402cc03cb2dc5b6b9fb580e64d2d52c3a3eddcaba4d"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl11_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.8349816137394233,
+        0.0,
+        157.752798018039,
+        0.0,
+        1.8349816137394233,
+        155.6430417188468
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c12dc8f96b6bd1827bf612060d038873efa227bd3e337cf3c0dc66d51e54547d"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl11_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.880701754385965,
+        0.0,
+        157.94596562971148,
+        0.0,
+        1.880701754385965,
+        152.44491802014804
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9c7b5753cde57d91388b198e1314352c1a6da5da496347cf86fac012b4feea17"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl11_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.880701754385965,
+        0.0,
+        157.94596562971148,
+        0.0,
+        1.880701754385965,
+        152.44491802014804
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a81b7375e4ea4a9d553618ab63cf7442408dffb84c373bb822ac5e6cc77c2b43"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl12",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.5424460431654676,
+        0.0,
+        158.5605743627754,
+        0.0,
+        1.5424460431654676,
+        132.9174147791142
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7619613b056a00fbeecda0aa0bb913ed3b640659d5d97a373d873736fdbbe1a5"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl12_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.539782908090548,
+        0.0,
+        158.5457939651414,
+        0.0,
+        1.539782908090548,
+        133.17826885157533
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "206d8b03793cfb596c2db31a982f0a28a2683586b6f91e80d652ec7b700a9cf8"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl12_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.5424460431654676,
+        0.0,
+        158.5605743627754,
+        0.0,
+        1.5424460431654676,
+        132.9174147791142
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "d2116db376f5842036644a9652079e2727b9b250733ca4afbf74e997b9b47ef7"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl12_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.5961881927600363,
+        0.0,
+        158.85884325202326,
+        0.0,
+        1.5961881927600363,
+        117.79690442886121
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "3f5ae16723230e92840443e44d38c4c965aafd89a39d4b2b6c8e1bafc2fbe8ff"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl1_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 600,
+      "time": 0.0,
+      "root": [
+        1.7359269722872124,
+        0.0,
+        153.38505892036724,
+        0.0,
+        1.7359269722872124,
+        127.56043182839538
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0c4f98c2f76ae104f05546c6a219c1e988d6b51c0a159e56593df740fdc7c6e0"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl1_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        153.9000015258789,
+        0.0,
+        2.0,
+        128.5
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "47177d9f8ec7d78406e2ea6702eb6ae576666edc748210f9d0cd197fe4e806bc"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl1_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        153.9000015258789,
+        0.0,
+        2.0,
+        131.75
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c780669f4820758f1cf1952ca06bef9db37ddbdd929f877dee204ca797680f32"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl2",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        1.9530858574356638,
+        0.0,
+        151.26950878750569,
+        0.0,
+        1.9530858574356638,
+        141.51628330676382
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b60cf5aa101e60d91e965af08f073585c6ffd390b195ac6fbd89b3e569dec9c8"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl2_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        1.920131445622417,
+        0.0,
+        151.24808836954264,
+        0.0,
+        1.920131445622417,
+        143.92041063107712
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "090be6afaad04b9f9f277b856da8d438ed34b12d93bc822fd7de6c59bec6f46d"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl2_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        151.3000030517578,
+        0.0,
+        2.0,
+        125.9000015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "d051c3073274cb212afd213f6caba53812f979171df6aa6a1efa2c7835a16473"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl2_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        151.3000030517578,
+        0.0,
+        2.0,
+        129.1500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "8c4288884a883079af9799f3dc234ebcfddd5419341205fcd41301fde124492b"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl3",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        1.9530858574356638,
+        0.0,
+        163.96456313562186,
+        0.0,
+        1.9530858574356638,
+        141.51628330676382
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a09aee807f02e72db9f077ae6e0a1a3e0d1ff376b6f378052cc0e38c81347163"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl3_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 900,
+      "time": 0.0,
+      "root": [
+        1.920131445622417,
+        0.0,
+        163.72893910372827,
+        0.0,
+        1.920131445622417,
+        143.92041063107712
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b496c28e1ce1bb4cd31afc65477e60b314be989fdc244119d9dd4fec8a0ee803"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl3_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        164.29999923706055,
+        0.0,
+        2.0,
+        129.1500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "18ced8aa50193c638d8a0370df2078338925fa4296309a515ae24607f61a4dfa"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl3_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        164.29999923706055,
+        0.0,
+        2.0,
+        131.75
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9165fa391ad7305c693a092f5e97ce4d4ae2283dec131ace39bc2e12258e46ac"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl4",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        1.8526300716661799,
+        0.0,
+        158.56841478541773,
+        0.0,
+        1.8526300716661799,
+        143.84852942191455
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "f70c6f3f5b15fa98adf7427c588f490e47b26b37a24db96f4cfcf7db7324ad55"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl4_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        1.8274739676738432,
+        0.0,
+        158.6348151943849,
+        0.0,
+        1.8274739676738432,
+        145.9343361652332
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a1e72c3b9f298d7a9a99273a200c78ff85c0c4620438935f8df3401b12fefce4"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl4_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        159.25,
+        0.0,
+        2.0,
+        123.79999923706055
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "69e988bc9c72fcaeea97d20e46a1da896114c14c6943f68c43edc641f3bf30a3"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl4_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        159.45000076293945,
+        0.0,
+        2.0,
+        126.99999618530273
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "28ad0a9a0b16658a2dfda9cd99ade733f19faa4cc54f9b822c5441ce22079d93"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl5",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        1.7806219646348467,
+        0.0,
+        153.02705597871915,
+        0.0,
+        1.7806219646348467,
+        138.87930716259316
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "46eb4fe76c0b3e01b0c601b3a8f1dc5398a923808784f7c14ebe9ffea9c4adb7"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl5_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 1200,
+      "time": 0.0,
+      "root": [
+        1.757371122630072,
+        0.0,
+        153.16326667996637,
+        0.0,
+        1.757371122630072,
+        140.94998793637663
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5e1201aebce93056d67b382ff626639a38dcb0dc27d6c0a26a75c4d27ca2ab5"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl5_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        153.39999771118164,
+        0.0,
+        2.0,
+        117.95000076293945
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "41c2e6df6ade064dea2b4e866fa291371685d7d677d5b7e5488471c651ae3fbf"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl5_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        153.5999984741211,
+        0.0,
+        2.0,
+        121.14999771118164
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "035b8b53ff60239eb79775600b414ad16fd0c1fea6873789946e94da89aff4af"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl6",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        1.8720416623974352,
+        0.0,
+        157.9093767377564,
+        0.0,
+        1.8720416623974352,
+        145.1881078767213
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9ed6c02fff22b12dc2cb0f05e4fb21c9d5c650a7fb1d7470f9d31e580ead1b67"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl6_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        1.8450881314222347,
+        0.0,
+        157.7954980591042,
+        0.0,
+        1.8450881314222347,
+        147.18671223966024
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b2826a1b9c8c0c2340fa05051ecb81226b0cf277c645081c5234599a628f3c8f"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl6_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        158.45000076293945,
+        0.0,
+        2.0,
+        123.75
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "2ee431892c4ce914213626fa9ded5f3d70885f53a832a4a4b0efecff3f681bf8"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl6_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        158.45000076293945,
+        0.0,
+        2.0,
+        128.89999771118164
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9c6791224372b6b86e3337b395995805df1b23c50465199c5937db90a8d785f2"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl7",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        1.8304859738970596,
+        0.0,
+        155.94907941516544,
+        0.0,
+        1.8304859738970596,
+        142.32038282726765
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fd932cb7fe25a2e0b7b70565f77294c0abf72426131e4521c49159b93886cc38"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl7_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 1500,
+      "time": 0.0,
+      "root": [
+        1.804707554588676,
+        0.0,
+        155.8652995524132,
+        0.0,
+        1.804707554588676,
+        144.31563252107128
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "435d15946027e58e0d35ceebb8317b3fd92d88ea1b9b655daa82ea008749fffe"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl7_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        120.5
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "2d266eb0c98dd66172f5989d074176c6d8b1e58ce41373eec3e440f9c6f715e3"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl7_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        125.64999771118164
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "f6694be6d6dc076070a1ef35dad8b2db56d7675303dd1120b2bfd3326711907a"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl8",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.6738575501334598,
+        0.0,
+        151.6320117499061,
+        0.0,
+        1.6738575501334598,
+        131.51157973694575
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e0f2f607874789b405caa1dfea5e2c1b4d3e5986e4b29058d2244074dc92b990"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl8_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.6522759265898357,
+        0.0,
+        151.61096965871835,
+        0.0,
+        1.6522759265898357,
+        133.47766560883895
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c76e875ff91482db4a3f94f99db553066e368f8932fa32253d4403713e123692"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl8_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.886659637025041,
+        0.0,
+        151.83949386580295,
+        0.0,
+        1.886659637025041,
+        112.12530994583291
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "77d16cc27d4839c1e29b6fb6c5f76b19b4871f4eecf7379082140cf2c681296b"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl8_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.859174500557147,
+        0.0,
+        151.812695847262,
+        0.0,
+        1.859174500557147,
+        114.62920583611907
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "25bbf2945cc04e65b6b9efbcc793cefdbc5337bab74041c76bb3a2e15e0534ec"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl9",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.8539116924209722,
+        0.0,
+        154.68112631615176,
+        0.0,
+        1.8539116924209722,
+        143.56618929911136
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e074c87e61d865ee050feeaa735f6ee171432a40280cc5e4fa07a8b99af625bd"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl9_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 1800,
+      "time": 0.0,
+      "root": [
+        1.8249851155095123,
+        0.0,
+        154.60808672048495,
+        0.0,
+        1.8249851155095123,
+        145.75737750015443
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c17c9fd6ec4f3bed34ab2b93d2be4ce33bb5efd7d81fce7f17410525e0f36caf"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl9_upgrade",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        155.04999923706055,
+        0.0,
+        2.0,
+        126.70000076293945
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a2657ce594fb0416158df0763230feb0a69fdd0386fb70e695610c6ac76db997"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_lvl9_upgrade_multi",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        155.04999923706055,
+        0.0,
+        2.0,
+        127.29999923706055
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "196ebcc04a47d758d9e2f4e6d434424693cde5bdf74e3e2d68aa6e6ed58ed065"
+    },
+    {
+      "family": "inferno",
+      "export": "dark_tower_upg",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_1_light",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.89999771118164,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a8312d719440eae9ae80d5206f2f5077c559224880ac27a047d490c1b0ffc942"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_2_light",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.78535008430481,
+        0.0,
+        2.0,
+        149.19999998807907
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0fa222b55b9e9c18d1a89b078edde8bd0a4cf3eb9bacf9de5aac1784de71a7be"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_3_light",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.27363014221191,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a7d858ef3fa860c11c21ae17a8835177ea11fc363e345c412a9135fd25c474d6"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_lvl3_1_light",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.89999771118164,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "4b41a8e9805ba38d8544b35181b452fa30ec885152f0faada48ca5ff26637f1c"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_lvl3_2_light",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 2100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.78535008430481,
+        0.0,
+        2.0,
+        149.19999998807907
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "28791e5716ea01488a3c0762617af1775457f7b3ed97f8ec0db624b3c7110a2d"
+    },
+    {
+      "family": "inferno",
+      "export": "dbeam_lvl3_3_light",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        101.27363014221191,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "5f83fb0a1592d6163a9ae631c1f991ff2f46272c61aad5b68be6c06a87f21ccd"
+    },
+    {
+      "family": "inferno",
+      "export": "debris1",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "81e8b01e78ce8dcb736ea2243eb9f725d4ce00dfc0dc61a0add3f99ba77f9f22"
+    },
+    {
+      "family": "inferno",
+      "export": "debris10",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "d00e5b257ed159228f90d08ba7507dcc35c0eea0cca93be014327cb11dd45cc8"
+    },
+    {
+      "family": "inferno",
+      "export": "debris11",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "31728f9f7584207a129ee252233bbf7a12e588f9b1bede154e775d20df70de4a"
+    },
+    {
+      "family": "inferno",
+      "export": "debris12",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "family": "inferno",
+      "export": "debris13",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "family": "inferno",
+      "export": "debris14",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7d7ceffeb50843c9384471696d3c81ef03a94f6d4df0e94e2cb92367fb8750d6"
+    },
+    {
+      "family": "inferno",
+      "export": "debris15",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "794fe683fa8259c500ebbcb3a10aed7ab2e430ccd3be9218f3d785fc9f343deb"
+    },
+    {
+      "family": "inferno",
+      "export": "debris16",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "beb26cb44808eef7c75844c786a650bef8475e12745048228590ff6273db57b9"
+    },
+    {
+      "family": "inferno",
+      "export": "debris17",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "family": "inferno",
+      "export": "debris18",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "family": "inferno",
+      "export": "debris19",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9ee6b46a15ea03020df40a8ed5aa4b4050367be47f24dfb5991685bc4e2a201a"
+    },
+    {
+      "family": "inferno",
+      "export": "debris2",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "bdf6e7d7f6a06e1f758ae912552b642c41e61822ecd40f72c899e8134c3f0425"
+    },
+    {
+      "family": "inferno",
+      "export": "debris3",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1c554ff7e96ab9b929d3ce06eea5a0cbbab744ace43248ecf2f43b58ca9c3f65"
+    },
+    {
+      "family": "inferno",
+      "export": "debris4",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "612fd42e50c8a9608262911686190a2782b443c3521515e758fff4e46d4613b2"
+    },
+    {
+      "family": "inferno",
+      "export": "debris5",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 2700,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "25deba23d54553fa8f5a6b20886bd02e47d771a8446afb53b331fe36d18ad5f4"
+    },
+    {
+      "family": "inferno",
+      "export": "debris6",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "43b5ae31bb5d0d94773d22235193ba2b5c6162b74d494557c7cddf5f104f0a55"
+    },
+    {
+      "family": "inferno",
+      "export": "debris7",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c169fd72303a560050753ebf77e0f87ea91754f96079c01c03003637880a26e7"
+    },
+    {
+      "family": "inferno",
+      "export": "debris8",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "81fbaaa321347e169b72223d9791c259f3d14b3e4a8176c41f382a122a91ad16"
+    },
+    {
+      "family": "inferno",
+      "export": "debris9",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "ac18a443a07b13f63dcc09b63dcf44027a84c8d1506a635555edb4d52f3d7a24"
+    },
+    {
+      "family": "inferno",
+      "export": "destroyedBuilding_2l_round_pit_rockwood",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "g1",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "9fc6c1635a41002650318230715b30d091514dbd11a7d0ce7c3fde20c58064cc"
+    },
+    {
+      "family": "inferno",
+      "export": "g2",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "6c04c61fd452e12fb2d9b8fdbbb9f90c53c267d86f367bdb844ca03af5d7f0ed"
+    },
+    {
+      "family": "inferno",
+      "export": "g3",
+      "frame": 0,
+      "controls": {},
+      "x": 2100,
+      "y": 3000,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "8ad82da4eb36358770f730564311dbab5195132abeb3b98b5453db9c7e0d6de4"
+    },
+    {
+      "family": "inferno",
+      "export": "g4",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "4947a80553c35b4579b6f1f8897a37ea8b8147e09ba81b9998959f72111ce38e"
+    },
+    {
+      "family": "inferno",
+      "export": "looping_sparks1",
+      "frame": 0,
+      "controls": {},
+      "x": 300,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        150.97499990463257,
+        0.0,
+        2.0,
+        149.33749961853027
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "ec81d31354e440d96b67477b8a60bf8917e7bb1edfc5bb808506683a95a4a112"
+    },
+    {
+      "family": "inferno",
+      "export": "smoke01",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        153.25,
+        0.0,
+        2.0,
+        152.60000038146973
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c4c85cb3af86b8fbfaeab94b61abce052b0561de5de096f1df5988bada3c271c"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_1319",
+      "frame": 0,
+      "controls": {},
+      "x": 900,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rasterEmpty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_2478",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        151.0,
+        0.0,
+        2.0,
+        108.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a127710712406393fb7fe1142dcb79f247d074e27f480d7b8d47cce6e06dc675"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_2727",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        170.3291015625,
+        0.0,
+        2.0,
+        63.177734375
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "932e5d53547bb9843a436b83498fff7c93b9fc0df5b0d009a1c39c7157832f33"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 3300,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 1,
+      "controls": {},
+      "x": 2100,
+      "y": 3300,
+      "time": 0.03333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 2,
+      "controls": {},
+      "x": 0,
+      "y": 3600,
+      "time": 0.06666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 3,
+      "controls": {},
+      "x": 300,
+      "y": 3600,
+      "time": 0.1,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 4,
+      "controls": {},
+      "x": 600,
+      "y": 3600,
+      "time": 0.13333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 5,
+      "controls": {},
+      "x": 900,
+      "y": 3600,
+      "time": 0.16666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 6,
+      "controls": {},
+      "x": 1200,
+      "y": 3600,
+      "time": 0.2,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 7,
+      "controls": {},
+      "x": 1500,
+      "y": 3600,
+      "time": 0.23333333333333334,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 8,
+      "controls": {},
+      "x": 1800,
+      "y": 3600,
+      "time": 0.26666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 9,
+      "controls": {},
+      "x": 2100,
+      "y": 3600,
+      "time": 0.3,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 10,
+      "controls": {},
+      "x": 0,
+      "y": 3900,
+      "time": 0.3333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 11,
+      "controls": {},
+      "x": 300,
+      "y": 3900,
+      "time": 0.36666666666666664,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 12,
+      "controls": {},
+      "x": 600,
+      "y": 3900,
+      "time": 0.4,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 13,
+      "controls": {},
+      "x": 900,
+      "y": 3900,
+      "time": 0.43333333333333335,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 14,
+      "controls": {},
+      "x": 1200,
+      "y": 3900,
+      "time": 0.4666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 15,
+      "controls": {},
+      "x": 1500,
+      "y": 3900,
+      "time": 0.5,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 16,
+      "controls": {},
+      "x": 1800,
+      "y": 3900,
+      "time": 0.5333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 17,
+      "controls": {},
+      "x": 2100,
+      "y": 3900,
+      "time": 0.5666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 18,
+      "controls": {},
+      "x": 0,
+      "y": 4200,
+      "time": 0.6,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9774",
+      "frame": 19,
+      "controls": {},
+      "x": 300,
+      "y": 4200,
+      "time": 0.6333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        147.69160232692957,
+        0.0,
+        2.0,
+        110.81259803846478
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a238a17c7722055e14c9b228c07666c29ab337e4134d5384d121ea90b342c102"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 0,
+      "controls": {},
+      "x": 600,
+      "y": 4200,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 1,
+      "controls": {},
+      "x": 900,
+      "y": 4200,
+      "time": 0.03333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 2,
+      "controls": {},
+      "x": 1200,
+      "y": 4200,
+      "time": 0.06666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 3,
+      "controls": {},
+      "x": 1500,
+      "y": 4200,
+      "time": 0.1,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 4,
+      "controls": {},
+      "x": 1800,
+      "y": 4200,
+      "time": 0.13333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 5,
+      "controls": {},
+      "x": 2100,
+      "y": 4200,
+      "time": 0.16666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 6,
+      "controls": {},
+      "x": 0,
+      "y": 4500,
+      "time": 0.2,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 7,
+      "controls": {},
+      "x": 300,
+      "y": 4500,
+      "time": 0.23333333333333334,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 8,
+      "controls": {},
+      "x": 600,
+      "y": 4500,
+      "time": 0.26666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 9,
+      "controls": {},
+      "x": 900,
+      "y": 4500,
+      "time": 0.3,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 10,
+      "controls": {},
+      "x": 1200,
+      "y": 4500,
+      "time": 0.3333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 11,
+      "controls": {},
+      "x": 1500,
+      "y": 4500,
+      "time": 0.36666666666666664,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 12,
+      "controls": {},
+      "x": 1800,
+      "y": 4500,
+      "time": 0.4,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 13,
+      "controls": {},
+      "x": 2100,
+      "y": 4500,
+      "time": 0.43333333333333335,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 14,
+      "controls": {},
+      "x": 0,
+      "y": 4800,
+      "time": 0.4666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 15,
+      "controls": {},
+      "x": 300,
+      "y": 4800,
+      "time": 0.5,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 16,
+      "controls": {},
+      "x": 600,
+      "y": 4800,
+      "time": 0.5333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 17,
+      "controls": {},
+      "x": 900,
+      "y": 4800,
+      "time": 0.5666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 18,
+      "controls": {},
+      "x": 1200,
+      "y": 4800,
+      "time": 0.6,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_9775",
+      "frame": 19,
+      "controls": {},
+      "x": 1500,
+      "y": 4800,
+      "time": 0.6333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        152.35000228881836,
+        0.0,
+        2.0,
+        36.849998474121094
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 4800,
+      "time": 0.0,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 1,
+      "controls": {},
+      "x": 2100,
+      "y": 4800,
+      "time": 0.03333333333333333,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 2,
+      "controls": {},
+      "x": 0,
+      "y": 5100,
+      "time": 0.06666666666666667,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 3,
+      "controls": {},
+      "x": 300,
+      "y": 5100,
+      "time": 0.1,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 4,
+      "controls": {},
+      "x": 600,
+      "y": 5100,
+      "time": 0.13333333333333333,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12311",
+      "frame": 5,
+      "controls": {},
+      "x": 900,
+      "y": 5100,
+      "time": 0.16666666666666666,
+      "root": [
+        1.5471548381007463,
+        0.0,
+        141.36275127364692,
+        0.0,
+        1.5471548381007463,
+        56.09238627719958
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7991309299f3d32b432f5800315e375dae94eeea5a16cfb75d73da82425af629"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12917",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 5100,
+      "time": 0.0,
+      "root": [
+        1.5961881927600363,
+        0.0,
+        158.85884325202326,
+        0.0,
+        1.5961881927600363,
+        117.79690442886121
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "3f5ae16723230e92840443e44d38c4c965aafd89a39d4b2b6c8e1bafc2fbe8ff"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12918",
+      "frame": 0,
+      "controls": {},
+      "x": 1500,
+      "y": 5100,
+      "time": 0.0,
+      "root": [
+        1.5424460431654676,
+        0.0,
+        158.5605743627754,
+        0.0,
+        1.5424460431654676,
+        132.9174147791142
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "d2116db376f5842036644a9652079e2727b9b250733ca4afbf74e997b9b47ef7"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 0,
+      "controls": {},
+      "x": 1800,
+      "y": 5100,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        102.0999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e6366ef0866c66b78419d2971fffb630d12417636b8b499bcf6653cc0d1248a6"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 1,
+      "controls": {},
+      "x": 2100,
+      "y": 5100,
+      "time": 0.041666666666666664,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        103.5999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0a877f6148ade19174d744bebbc4fc6bf78a70397914a939eb20383521254ed9"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 2,
+      "controls": {},
+      "x": 0,
+      "y": 5400,
+      "time": 0.08333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        105.0999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "4ff24746289be525d9d667eee684929777c6af9bc0cf0c9328973b61a5bb9062"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 3,
+      "controls": {},
+      "x": 300,
+      "y": 5400,
+      "time": 0.125,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        106.5999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "871a2663e750ffec6d6d1700a05cf68ba40b100d19f919691322058bd1cb047a"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 4,
+      "controls": {},
+      "x": 600,
+      "y": 5400,
+      "time": 0.16666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        171.80000114440918,
+        0.0,
+        2.0,
+        108.0999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1c0ad96cacfc5dad42e81ef671a5e6ade45c6eb977eccfd1d90328b8d88ed41a"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 5,
+      "controls": {},
+      "x": 900,
+      "y": 5400,
+      "time": 0.20833333333333334,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        109.5999984741211
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "bf1dd96acd980a8febaa436c12654c35172513c0faab4df16dfefebc50cea4ee"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 6,
+      "controls": {},
+      "x": 1200,
+      "y": 5400,
+      "time": 0.25,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        111.0
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0cff1a56a447994942346788cafce2da5d853abb5cab3d755a343719294e89fe"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 7,
+      "controls": {},
+      "x": 1500,
+      "y": 5400,
+      "time": 0.2916666666666667,
+      "root": [
+        2.0,
+        0.0,
+        171.89999961853027,
+        0.0,
+        2.0,
+        112.39999771118164
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "467a300daa5ed6ba05435e7be637654b3a6073149d511f2af6d0bda7dcb01b4f"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 8,
+      "controls": {},
+      "x": 1800,
+      "y": 5400,
+      "time": 0.3333333333333333,
+      "root": [
+        1.9888682745825603,
+        0.0,
+        171.77810722733253,
+        0.0,
+        1.9888682745825603,
+        113.90204157501957
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "8756ebb09a9275e2f9159697c52bb418fe80841cdd7cf0d39e8985498d629ea6"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 9,
+      "controls": {},
+      "x": 2100,
+      "y": 5400,
+      "time": 0.375,
+      "root": [
+        1.9297929792979298,
+        0.0,
+        171.13123275523353,
+        0.0,
+        1.9297929792979298,
+        116.32511103893592
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1f0e7ab9ca9671e190ba91140c06a1b45a4901ffe64510b78363c4671de2e57c"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 10,
+      "controls": {},
+      "x": 0,
+      "y": 5700,
+      "time": 0.4166666666666667,
+      "root": [
+        1.8708551483420592,
+        0.0,
+        170.48586351750825,
+        0.0,
+        1.8708551483420592,
+        118.66317626527051
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7d6f4b5ba08545af76022c37c89c7a6c75af477d934847c1971ec3ead29889f4"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 11,
+      "controls": {},
+      "x": 300,
+      "y": 5700,
+      "time": 0.4583333333333333,
+      "root": [
+        1.8115758343895225,
+        0.0,
+        169.8367550410346,
+        0.0,
+        1.8115758343895225,
+        120.83362837526735
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e83bdd3546d9e68f616ef7360193aae18cf3893497e7d4c64ccabd05a107eb45"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 12,
+      "controls": {},
+      "x": 600,
+      "y": 5700,
+      "time": 0.5,
+      "root": [
+        1.7530662305805396,
+        0.0,
+        169.19607489048605,
+        0.0,
+        1.7530662305805396,
+        122.91512707190151
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "eebe54beb21cbff4f108c2b867c409e9611fa1063b0f6f63812fa93186738cdf"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 13,
+      "controls": {},
+      "x": 900,
+      "y": 5700,
+      "time": 0.5416666666666666,
+      "root": [
+        1.6962025316455696,
+        0.0,
+        168.48860856551158,
+        0.0,
+        1.6962025316455696,
+        124.89620220812061
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "86606bb0bc4a65e4efa77841cba76711de16cafa71a6e730e9ae4fe474151111"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 14,
+      "controls": {},
+      "x": 1200,
+      "y": 5700,
+      "time": 0.5833333333333334,
+      "root": [
+        1.6416539050535988,
+        0.0,
+        167.8940285044461,
+        0.0,
+        1.6416539050535988,
+        126.852679312503
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b11c1943c9adc8752acce3a19c4614289829115d2f7322637b2d0796237a387a"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 15,
+      "controls": {},
+      "x": 1500,
+      "y": 5700,
+      "time": 0.625,
+      "root": [
+        1.5893254262416605,
+        0.0,
+        167.32364805545342,
+        0.0,
+        1.5893254262416605,
+        128.5441067457376
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "59c5549b96da6d97975a390ce8da1779f0326d61a0e9fd4ec4845d83800d1d80"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 16,
+      "controls": {},
+      "x": 1800,
+      "y": 5700,
+      "time": 0.6666666666666666,
+      "root": [
+        1.53967684021544,
+        0.0,
+        166.78247843935844,
+        0.0,
+        1.53967684021544,
+        130.2151520158915
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "699a1285d067e0e7f48b62644042a72b083d4d15986869420ea2d61bd4f970b5"
+    },
+    {
+      "family": "inferno",
+      "export": "witness_clip_12920",
+      "frame": 17,
+      "controls": {},
+      "x": 2100,
+      "y": 5700,
+      "time": 0.7083333333333334,
+      "root": [
+        1.492516533240515,
+        0.0,
+        166.2684310663464,
+        0.0,
+        1.492516533240515,
+        131.64204635646672
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "88bc74e811375cc5cbd1797a104c4225b086a387dbc98bbb27248c3366674901"
+    }
+  ]
+}
