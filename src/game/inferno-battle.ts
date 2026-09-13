@@ -1,6 +1,10 @@
-import { infernoDamageStage } from './inferno-weapon';
+import { infernoDamageStage, infernoStats } from './inferno-weapon';
 import type { Battle } from './model';
-import { createInfernoScheduler, type InfernoScheduler } from './inferno-scheduler';
+import {
+  createInfernoScheduler,
+  tickInfernoScheduler,
+  type InfernoScheduler,
+} from './inferno-scheduler';
 import { tickInfernoCombat, type InfernoHit } from './inferno-combat';
 
 export interface InfernoBattleState {
@@ -8,6 +12,9 @@ export interface InfernoBattleState {
   nextTick: number;
   /** Recent pulse records for presentation; old records are deterministically retired. */
   hits: InfernoHit[];
+  ammunition?: number;
+  ammoChargeMs?: number;
+  emptyAt?: number;
   transitions?: { at: number; stage: 1 | 2; x: number; y: number; slot: number }[];
 }
 
@@ -19,6 +26,9 @@ export function stepInfernos(battle: Battle, dt: number) {
       scheduler: createInfernoScheduler(tower.level, tower.infernoMode ?? 'single'),
       nextTick: Math.floor((Math.max(0, battle.elapsed - dt) * 1000) / 64 + 1e-9) + 1,
       hits: [],
+      ...(battle.nativeInfernoAmmo
+        ? { ammunition: infernoStats(tower.level).weapon.ammoCount, ammoChargeMs: 0 }
+        : {}),
     });
     if (
       state.scheduler.mode !== (tower.infernoMode ?? 'single') ||
@@ -30,6 +40,7 @@ export function stepInfernos(battle: Battle, dt: number) {
     while (state.nextTick * 0.064 <= battle.elapsed + 1e-9) {
       const at = state.nextTick * 0.064;
       const enabled =
+        (state.ammunition === undefined || state.ammunition > 0) &&
         tower.hp > 0 &&
         !tower.constructing &&
         !tower.upgradeEnd &&
@@ -52,6 +63,24 @@ export function stepInfernos(battle: Battle, dt: number) {
             slot: index,
           });
       });
+      // One shared 128-ms active-time budget, independent of occupied beam count.
+      // This consumption policy is local; source data specifies capacity and interval only.
+      if (
+        state.ammunition !== undefined &&
+        enabled &&
+        (hits.length > 0 || state.scheduler.slots.some((slot) => slot.targetId !== null))
+      ) {
+        state.ammoChargeMs = (state.ammoChargeMs ?? 0) + 64;
+        const interval = infernoStats(tower.level).weapon.intervalMs;
+        if (state.ammoChargeMs >= interval) {
+          state.ammoChargeMs -= interval;
+          state.ammunition--;
+          if (state.ammunition === 0) {
+            state.emptyAt = at;
+            tickInfernoScheduler(state.scheduler, [], false);
+          }
+        }
+      }
       state.nextTick++;
     }
     if (state.transitions)

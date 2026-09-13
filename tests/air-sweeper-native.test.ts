@@ -171,7 +171,7 @@ it.each([1, 4, 5, 6, 7])(
     expect(m.battle!.airSweepers![6].fired).toBeGreaterThan(0);
     const last = structuredClone(m.battle),
       parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(parsed.version).toBe(42);
+    expect(parsed.version).toBe(43);
     expect(parsed.initial.buildings.find((v) => v.id === 6)!.level).toBe(level);
     const viewer = new GameModel(),
       home = JSON.stringify(viewer.state);

@@ -391,6 +391,7 @@ export interface Battle {
   airSweepers?: Record<number, SweeperHistory>;
   xbows?: Record<number, XbowState>;
   infernos?: Record<number, InfernoBattleState>;
+  nativeInfernoAmmo?: true;
   /** Original Drill destruction presentation, enabled by replay version 40. */
   drillDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
   teslas?: Record<number, TeslaAttackState>;

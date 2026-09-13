@@ -77,7 +77,9 @@ export class InfernoPresentation {
             ? 'constructing'
             : building.upgradeEnd
               ? 'upgrading'
-              : 'active';
+              : battle?.infernos?.[building.id]?.ammunition === 0
+                ? 'empty'
+                : 'active';
       view.render(
         infernoPoses(
           building.level,
@@ -90,7 +92,10 @@ export class InfernoPresentation {
         point.y,
         point.y,
       );
-      for (const object of view.objects) object.setData('nativeInferno', building.id);
+      for (const object of view.objects) {
+        object.setData('nativeInferno', building.id);
+        object.setData('nativeInfernoState', state);
+      }
       const combat = battle?.infernos?.[building.id];
       if (
         state !== 'active' ||
