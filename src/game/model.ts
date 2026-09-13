@@ -828,7 +828,8 @@ export class GameModel {
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
       structural = changed = true;
     }
-    const dt = Math.max(0, Math.min(now - this.state.lastTick, 8 * 3600000)) / 1000;
+    const elapsedHomeSeconds = Math.max(0, now - this.state.lastTick) / 1000;
+    const dt = Math.min(elapsedHomeSeconds, 8 * 3600);
     for (const b of this.state.buildings) {
       // Audited building health is derived from its level. Preserve the damage fraction
       // when loading prototype saves; recorded battle snapshots remain untouched.
@@ -852,9 +853,10 @@ export class GameModel {
         b.maxHp = hp;
         structural = changed = true;
       }
+      const productionInterval = b.kind === 'darkdrill' ? elapsedHomeSeconds : dt;
       const productionSeconds = b.upgradeEnd
-        ? Math.max(0, Math.min(dt, (now - b.upgradeEnd) / 1000))
-        : dt;
+        ? Math.max(0, Math.min(productionInterval, (now - b.upgradeEnd) / 1000))
+        : productionInterval;
       if (b.upgradeEnd && b.upgradeEnd <= now) {
         if (!b.constructing) b.level++;
         b.constructing = false;

@@ -37,3 +37,31 @@ it('preserves legacy overflow through JSON restoration and resumes after space i
   restored.tick(restored.state.lastTick + 3600000);
   expect(restored.state.buildings[0].stored).toBeCloseTo(20);
 });
+
+it('matches hourly updates after a long offline interval and stops at the source capacity', () => {
+  const create = () => {
+    const model = new GameModel();
+    model.state.lastTick = 1000000;
+    model.state.buildings = [makeBuilding(999, 'darkdrill', 10, 10, 3)];
+    return model;
+  };
+  const offline = create(),
+    hourly = create();
+  for (let hour = 1; hour <= 11; hour++) hourly.tick(1000000 + hour * 3600000);
+  offline.tick(1000000 + 11 * 3600000);
+  expect(offline.state.buildings[0].stored).toBe(495);
+  expect(offline.state.buildings[0].stored).toBe(hourly.state.buildings[0].stored);
+  offline.tick(1000000 + 48 * 3600000);
+  expect(offline.state.buildings[0].stored).toBe(540);
+});
+it('excludes unfinished upgrade time from a long offline production interval', () => {
+  const model = new GameModel();
+  const start = 1000000;
+  model.state.lastTick = start;
+  const drill = makeBuilding(999, 'darkdrill', 10, 10, 2);
+  drill.upgradeEnd = start + 3 * 3600000;
+  model.state.buildings = [drill];
+  model.tick(start + 12 * 3600000);
+  expect(drill.level).toBe(3);
+  expect(drill.stored).toBe(405);
+});

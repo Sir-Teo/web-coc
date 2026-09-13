@@ -55,3 +55,10 @@ All 27 model/save/production tests pass, including one-hour production, every ti
 `dark-drill-stats.ts` now exposes validated original base-level records. Initial placement uses the source 180,000 Elixir and four-hour timer; upgrades resolve the destination level's exact source price and duration, including all eleven captured tiers. Production shares this validated lookup. Existing TH1–8 access ceilings remain in force, and HP and native world presentation are still pending.
 
 All 29 construction/production/model/save tests pass. Tests verify the complete cost/time tables and actual placement, a saved construction deadline, exact completion, the level-2 six-hour upgrade, and no duplicate charge. Chromium and WebKit each pass desktop and phone info-menu checks, including the source prices for currently available upgrades. Production build passes. Existing in-progress saved deadlines are retained rather than retroactively rescheduled.
+
+
+## Full elapsed offline Drill production
+
+Drills now use the full nonnegative elapsed home interval instead of the shared eight-hour production cap. Their source reservoir capacity bounds the result. Upgrade/construction time is excluded before production starts, and preserved legacy overflow remains unchanged. Other producers keep their existing timing behavior.
+
+All 31 focused construction/production/model/save tests pass. A level-3 Drill updated once after eleven hours and one updated hourly both contain 495; a longer interval stops at the original 540 capacity. An upgrade completing three hours into a twelve-hour offline interval produces only for the remaining nine hours. Production build passes. This implements continuous source-rate accumulation under the existing home clock; native clock tamper handling and exact native resource quantization remain unverified.
