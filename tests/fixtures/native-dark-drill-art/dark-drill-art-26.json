@@ -1,0 +1,3210 @@
+{
+  "category": "dark-drill-art-26",
+  "width": 2400,
+  "height": 6000,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "cases": [
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 382,
+      "controls": {},
+      "x": 0,
+      "y": 0,
+      "time": 15.916666666666666,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 383,
+      "controls": {},
+      "x": 300,
+      "y": 0,
+      "time": 15.958333333333334,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 384,
+      "controls": {},
+      "x": 600,
+      "y": 0,
+      "time": 16.0,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 385,
+      "controls": {},
+      "x": 900,
+      "y": 0,
+      "time": 16.041666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 386,
+      "controls": {},
+      "x": 1200,
+      "y": 0,
+      "time": 16.083333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 387,
+      "controls": {},
+      "x": 1500,
+      "y": 0,
+      "time": 16.125,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 388,
+      "controls": {},
+      "x": 1800,
+      "y": 0,
+      "time": 16.166666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 389,
+      "controls": {},
+      "x": 2100,
+      "y": 0,
+      "time": 16.208333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 390,
+      "controls": {},
+      "x": 0,
+      "y": 300,
+      "time": 16.25,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 391,
+      "controls": {},
+      "x": 300,
+      "y": 300,
+      "time": 16.291666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 392,
+      "controls": {},
+      "x": 600,
+      "y": 300,
+      "time": 16.333333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 393,
+      "controls": {},
+      "x": 900,
+      "y": 300,
+      "time": 16.375,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 394,
+      "controls": {},
+      "x": 1200,
+      "y": 300,
+      "time": 16.416666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 395,
+      "controls": {},
+      "x": 1500,
+      "y": 300,
+      "time": 16.458333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 396,
+      "controls": {},
+      "x": 1800,
+      "y": 300,
+      "time": 16.5,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 397,
+      "controls": {},
+      "x": 2100,
+      "y": 300,
+      "time": 16.541666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 398,
+      "controls": {},
+      "x": 0,
+      "y": 600,
+      "time": 16.583333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 399,
+      "controls": {},
+      "x": 300,
+      "y": 600,
+      "time": 16.625,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e7dd75bd690662b1f0689b72e8f9148063997ef41d4a322a158aef5f2dbb49cf"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 400,
+      "controls": {},
+      "x": 600,
+      "y": 600,
+      "time": 16.666666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 401,
+      "controls": {},
+      "x": 900,
+      "y": 600,
+      "time": 16.708333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 402,
+      "controls": {},
+      "x": 1200,
+      "y": 600,
+      "time": 16.75,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 403,
+      "controls": {},
+      "x": 1500,
+      "y": 600,
+      "time": 16.791666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 404,
+      "controls": {},
+      "x": 1800,
+      "y": 600,
+      "time": 16.833333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 405,
+      "controls": {},
+      "x": 2100,
+      "y": 600,
+      "time": 16.875,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 406,
+      "controls": {},
+      "x": 0,
+      "y": 900,
+      "time": 16.916666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 407,
+      "controls": {},
+      "x": 300,
+      "y": 900,
+      "time": 16.958333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 408,
+      "controls": {},
+      "x": 600,
+      "y": 900,
+      "time": 17.0,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e66811a417a7ac36ebd4cdf44747ceac4f84cf20455a73bc454119ad5cb0fbea"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 409,
+      "controls": {},
+      "x": 900,
+      "y": 900,
+      "time": 17.041666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 410,
+      "controls": {},
+      "x": 1200,
+      "y": 900,
+      "time": 17.083333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 411,
+      "controls": {},
+      "x": 1500,
+      "y": 900,
+      "time": 17.125,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 412,
+      "controls": {},
+      "x": 1800,
+      "y": 900,
+      "time": 17.166666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 413,
+      "controls": {},
+      "x": 2100,
+      "y": 900,
+      "time": 17.208333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 414,
+      "controls": {},
+      "x": 0,
+      "y": 1200,
+      "time": 17.25,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 415,
+      "controls": {},
+      "x": 300,
+      "y": 1200,
+      "time": 17.291666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 416,
+      "controls": {},
+      "x": 600,
+      "y": 1200,
+      "time": 17.333333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 417,
+      "controls": {},
+      "x": 900,
+      "y": 1200,
+      "time": 17.375,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 418,
+      "controls": {},
+      "x": 1200,
+      "y": 1200,
+      "time": 17.416666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 419,
+      "controls": {},
+      "x": 1500,
+      "y": 1200,
+      "time": 17.458333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 420,
+      "controls": {},
+      "x": 1800,
+      "y": 1200,
+      "time": 17.5,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 421,
+      "controls": {},
+      "x": 2100,
+      "y": 1200,
+      "time": 17.541666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 422,
+      "controls": {},
+      "x": 0,
+      "y": 1500,
+      "time": 17.583333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 423,
+      "controls": {},
+      "x": 300,
+      "y": 1500,
+      "time": 17.625,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 424,
+      "controls": {},
+      "x": 600,
+      "y": 1500,
+      "time": 17.666666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "11563fa93970d11e356d313a0e4b21abf6a9b8655c48c317faa01f8163bf5114"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 425,
+      "controls": {},
+      "x": 900,
+      "y": 1500,
+      "time": 17.708333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 426,
+      "controls": {},
+      "x": 1200,
+      "y": 1500,
+      "time": 17.75,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 427,
+      "controls": {},
+      "x": 1500,
+      "y": 1500,
+      "time": 17.791666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 428,
+      "controls": {},
+      "x": 1800,
+      "y": 1500,
+      "time": 17.833333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 429,
+      "controls": {},
+      "x": 2100,
+      "y": 1500,
+      "time": 17.875,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 430,
+      "controls": {},
+      "x": 0,
+      "y": 1800,
+      "time": 17.916666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 431,
+      "controls": {},
+      "x": 300,
+      "y": 1800,
+      "time": 17.958333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 432,
+      "controls": {},
+      "x": 600,
+      "y": 1800,
+      "time": 18.0,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 433,
+      "controls": {},
+      "x": 900,
+      "y": 1800,
+      "time": 18.041666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 434,
+      "controls": {},
+      "x": 1200,
+      "y": 1800,
+      "time": 18.083333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 435,
+      "controls": {},
+      "x": 1500,
+      "y": 1800,
+      "time": 18.125,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 436,
+      "controls": {},
+      "x": 1800,
+      "y": 1800,
+      "time": 18.166666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 437,
+      "controls": {},
+      "x": 2100,
+      "y": 1800,
+      "time": 18.208333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 438,
+      "controls": {},
+      "x": 0,
+      "y": 2100,
+      "time": 18.25,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 439,
+      "controls": {},
+      "x": 300,
+      "y": 2100,
+      "time": 18.291666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 440,
+      "controls": {},
+      "x": 600,
+      "y": 2100,
+      "time": 18.333333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 441,
+      "controls": {},
+      "x": 900,
+      "y": 2100,
+      "time": 18.375,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 442,
+      "controls": {},
+      "x": 1200,
+      "y": 2100,
+      "time": 18.416666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 443,
+      "controls": {},
+      "x": 1500,
+      "y": 2100,
+      "time": 18.458333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 444,
+      "controls": {},
+      "x": 1800,
+      "y": 2100,
+      "time": 18.5,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 445,
+      "controls": {},
+      "x": 2100,
+      "y": 2100,
+      "time": 18.541666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 446,
+      "controls": {},
+      "x": 0,
+      "y": 2400,
+      "time": 18.583333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 447,
+      "controls": {},
+      "x": 300,
+      "y": 2400,
+      "time": 18.625,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 448,
+      "controls": {},
+      "x": 600,
+      "y": 2400,
+      "time": 18.666666666666668,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18600",
+      "frame": 449,
+      "controls": {},
+      "x": 900,
+      "y": 2400,
+      "time": 18.708333333333332,
+      "root": [
+        2.0,
+        0.0,
+        151.29999923706055,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "acba12e1d370fbaa6bc6c923c84c29dce567398f8f5d0ef3e537a0248ec08c67"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 0,
+      "controls": {},
+      "x": 1200,
+      "y": 2400,
+      "time": 0.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 1,
+      "controls": {},
+      "x": 1500,
+      "y": 2400,
+      "time": 0.041666666666666664,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 2,
+      "controls": {},
+      "x": 1800,
+      "y": 2400,
+      "time": 0.08333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 3,
+      "controls": {},
+      "x": 2100,
+      "y": 2400,
+      "time": 0.125,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 4,
+      "controls": {},
+      "x": 0,
+      "y": 2700,
+      "time": 0.16666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 5,
+      "controls": {},
+      "x": 300,
+      "y": 2700,
+      "time": 0.20833333333333334,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 6,
+      "controls": {},
+      "x": 600,
+      "y": 2700,
+      "time": 0.25,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 7,
+      "controls": {},
+      "x": 900,
+      "y": 2700,
+      "time": 0.2916666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 8,
+      "controls": {},
+      "x": 1200,
+      "y": 2700,
+      "time": 0.3333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "fffaf6f82bb9e50ed27fdfe5a86ec77d81740399e1e07ab2445382795c385bcc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 9,
+      "controls": {},
+      "x": 1500,
+      "y": 2700,
+      "time": 0.375,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 10,
+      "controls": {},
+      "x": 1800,
+      "y": 2700,
+      "time": 0.4166666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 11,
+      "controls": {},
+      "x": 2100,
+      "y": 2700,
+      "time": 0.4583333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 12,
+      "controls": {},
+      "x": 0,
+      "y": 3000,
+      "time": 0.5,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 13,
+      "controls": {},
+      "x": 300,
+      "y": 3000,
+      "time": 0.5416666666666666,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 14,
+      "controls": {},
+      "x": 600,
+      "y": 3000,
+      "time": 0.5833333333333334,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 15,
+      "controls": {},
+      "x": 900,
+      "y": 3000,
+      "time": 0.625,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 16,
+      "controls": {},
+      "x": 1200,
+      "y": 3000,
+      "time": 0.6666666666666666,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 17,
+      "controls": {},
+      "x": 1500,
+      "y": 3000,
+      "time": 0.7083333333333334,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 18,
+      "controls": {},
+      "x": 1800,
+      "y": 3000,
+      "time": 0.75,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 19,
+      "controls": {},
+      "x": 2100,
+      "y": 3000,
+      "time": 0.7916666666666666,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 20,
+      "controls": {},
+      "x": 0,
+      "y": 3300,
+      "time": 0.8333333333333334,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 21,
+      "controls": {},
+      "x": 300,
+      "y": 3300,
+      "time": 0.875,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 22,
+      "controls": {},
+      "x": 600,
+      "y": 3300,
+      "time": 0.9166666666666666,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 23,
+      "controls": {},
+      "x": 900,
+      "y": 3300,
+      "time": 0.9583333333333334,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 24,
+      "controls": {},
+      "x": 1200,
+      "y": 3300,
+      "time": 1.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "b5d69a4d98e239eaf3284c72bb08f8a45cffcef3c55aefd51c686dd358bd4973"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 25,
+      "controls": {},
+      "x": 1500,
+      "y": 3300,
+      "time": 1.0416666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 26,
+      "controls": {},
+      "x": 1800,
+      "y": 3300,
+      "time": 1.0833333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 27,
+      "controls": {},
+      "x": 2100,
+      "y": 3300,
+      "time": 1.125,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 28,
+      "controls": {},
+      "x": 0,
+      "y": 3600,
+      "time": 1.1666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 29,
+      "controls": {},
+      "x": 300,
+      "y": 3600,
+      "time": 1.2083333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 30,
+      "controls": {},
+      "x": 600,
+      "y": 3600,
+      "time": 1.25,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 31,
+      "controls": {},
+      "x": 900,
+      "y": 3600,
+      "time": 1.2916666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 32,
+      "controls": {},
+      "x": 1200,
+      "y": 3600,
+      "time": 1.3333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 33,
+      "controls": {},
+      "x": 1500,
+      "y": 3600,
+      "time": 1.375,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 34,
+      "controls": {},
+      "x": 1800,
+      "y": 3600,
+      "time": 1.4166666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 35,
+      "controls": {},
+      "x": 2100,
+      "y": 3600,
+      "time": 1.4583333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 36,
+      "controls": {},
+      "x": 0,
+      "y": 3900,
+      "time": 1.5,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 37,
+      "controls": {},
+      "x": 300,
+      "y": 3900,
+      "time": 1.5416666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 38,
+      "controls": {},
+      "x": 600,
+      "y": 3900,
+      "time": 1.5833333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 39,
+      "controls": {},
+      "x": 900,
+      "y": 3900,
+      "time": 1.625,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 40,
+      "controls": {},
+      "x": 1200,
+      "y": 3900,
+      "time": 1.6666666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 41,
+      "controls": {},
+      "x": 1500,
+      "y": 3900,
+      "time": 1.7083333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 42,
+      "controls": {},
+      "x": 1800,
+      "y": 3900,
+      "time": 1.75,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 43,
+      "controls": {},
+      "x": 2100,
+      "y": 3900,
+      "time": 1.7916666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 44,
+      "controls": {},
+      "x": 0,
+      "y": 4200,
+      "time": 1.8333333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 45,
+      "controls": {},
+      "x": 300,
+      "y": 4200,
+      "time": 1.875,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 46,
+      "controls": {},
+      "x": 600,
+      "y": 4200,
+      "time": 1.9166666666666667,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 47,
+      "controls": {},
+      "x": 900,
+      "y": 4200,
+      "time": 1.9583333333333333,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 48,
+      "controls": {},
+      "x": 1200,
+      "y": 4200,
+      "time": 2.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 49,
+      "controls": {},
+      "x": 1500,
+      "y": 4200,
+      "time": 2.0416666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1fbaa0d23e920405634d58aa12329a5bf3d37dc18100d579385f7f9da867dffb"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 50,
+      "controls": {},
+      "x": 1800,
+      "y": 4200,
+      "time": 2.0833333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "67fa7281c76322395a2c444404182e9a914651d11be8d0cecf2e65447b852a49"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 51,
+      "controls": {},
+      "x": 2100,
+      "y": 4200,
+      "time": 2.125,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "67fa7281c76322395a2c444404182e9a914651d11be8d0cecf2e65447b852a49"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 52,
+      "controls": {},
+      "x": 0,
+      "y": 4500,
+      "time": 2.1666666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "67fa7281c76322395a2c444404182e9a914651d11be8d0cecf2e65447b852a49"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 53,
+      "controls": {},
+      "x": 300,
+      "y": 4500,
+      "time": 2.2083333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0416a0e71deaeb84488605dafafdd5f2a7b4ae6ab56a8d4bc5b2e1f882cecea4"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 54,
+      "controls": {},
+      "x": 600,
+      "y": 4500,
+      "time": 2.25,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0416a0e71deaeb84488605dafafdd5f2a7b4ae6ab56a8d4bc5b2e1f882cecea4"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 55,
+      "controls": {},
+      "x": 900,
+      "y": 4500,
+      "time": 2.2916666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0416a0e71deaeb84488605dafafdd5f2a7b4ae6ab56a8d4bc5b2e1f882cecea4"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 56,
+      "controls": {},
+      "x": 1200,
+      "y": 4500,
+      "time": 2.3333333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "57ea5045a4b2bcacd8ecd57d459560b02d8aa20444541dee1e27fe4eb874cbf5"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 57,
+      "controls": {},
+      "x": 1500,
+      "y": 4500,
+      "time": 2.375,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "57ea5045a4b2bcacd8ecd57d459560b02d8aa20444541dee1e27fe4eb874cbf5"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 58,
+      "controls": {},
+      "x": 1800,
+      "y": 4500,
+      "time": 2.4166666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "57ea5045a4b2bcacd8ecd57d459560b02d8aa20444541dee1e27fe4eb874cbf5"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 59,
+      "controls": {},
+      "x": 2100,
+      "y": 4500,
+      "time": 2.4583333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1d27b26519de8d0a1a32882dd55ff4a2cda29356a825f93563b655978378dc3f"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 60,
+      "controls": {},
+      "x": 0,
+      "y": 4800,
+      "time": 2.5,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1d27b26519de8d0a1a32882dd55ff4a2cda29356a825f93563b655978378dc3f"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 61,
+      "controls": {},
+      "x": 300,
+      "y": 4800,
+      "time": 2.5416666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "1d27b26519de8d0a1a32882dd55ff4a2cda29356a825f93563b655978378dc3f"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 62,
+      "controls": {},
+      "x": 600,
+      "y": 4800,
+      "time": 2.5833333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e75c460e1c74cb669c50bab1f6a822d39383eddd45799b6625979f75639d66fa"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 63,
+      "controls": {},
+      "x": 900,
+      "y": 4800,
+      "time": 2.625,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e75c460e1c74cb669c50bab1f6a822d39383eddd45799b6625979f75639d66fa"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 64,
+      "controls": {},
+      "x": 1200,
+      "y": 4800,
+      "time": 2.6666666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e75c460e1c74cb669c50bab1f6a822d39383eddd45799b6625979f75639d66fa"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 65,
+      "controls": {},
+      "x": 1500,
+      "y": 4800,
+      "time": 2.7083333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "6cfc21719fe5464080974c2a700ccf5902e1e3431abc1206c5e8b3ebc9727695"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 66,
+      "controls": {},
+      "x": 1800,
+      "y": 4800,
+      "time": 2.75,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "6cfc21719fe5464080974c2a700ccf5902e1e3431abc1206c5e8b3ebc9727695"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 67,
+      "controls": {},
+      "x": 2100,
+      "y": 4800,
+      "time": 2.7916666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "6cfc21719fe5464080974c2a700ccf5902e1e3431abc1206c5e8b3ebc9727695"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 68,
+      "controls": {},
+      "x": 0,
+      "y": 5100,
+      "time": 2.8333333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a436df2dee4257ce4577c138e42968a35d358001bb8718c46493df5205442e74"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 69,
+      "controls": {},
+      "x": 300,
+      "y": 5100,
+      "time": 2.875,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.60000152513385
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e30c99a290f158aa7bc8a2e030f228fa511a402284945f0fb5eae6a6adf5d946"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 70,
+      "controls": {},
+      "x": 600,
+      "y": 5100,
+      "time": 2.9166666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.60000152513385
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "e30c99a290f158aa7bc8a2e030f228fa511a402284945f0fb5eae6a6adf5d946"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 71,
+      "controls": {},
+      "x": 900,
+      "y": 5100,
+      "time": 2.9583333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        67.00000151991844
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "c66f53db815586dec65012802d7d395bbedb8d7dcb1116c4db9dc1782270f98d"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 72,
+      "controls": {},
+      "x": 1200,
+      "y": 5100,
+      "time": 3.0,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        67.45000153779984
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "f6ac98e68f2d169a79ee5cf594394ea3652ffdeedcb72a799d44326afa0bab55"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 73,
+      "controls": {},
+      "x": 1500,
+      "y": 5100,
+      "time": 3.0416666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        67.9000015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "6b2ecab38a8d21c3a9e0c40901b0dccf2fd5a4104d0174432ece74dbbd86f4c8"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 74,
+      "controls": {},
+      "x": 1800,
+      "y": 5100,
+      "time": 3.0833333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        66.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "176f92dfa68295f0a41b2abaee1be1719f1f629aca91009a7e99337fdd772aa9"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 75,
+      "controls": {},
+      "x": 2100,
+      "y": 5100,
+      "time": 3.125,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        65.4000015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "29f8f57d3b4550fe27a3bf963ee15c007bfd3c285ce4380fdd77197322746590"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 76,
+      "controls": {},
+      "x": 0,
+      "y": 5400,
+      "time": 3.1666666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        65.05000150203705
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "3a6fed841e42a0fdeca22375586aeb5b0bf27ac25991e6e472c630404617aadc"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 77,
+      "controls": {},
+      "x": 300,
+      "y": 5400,
+      "time": 3.2083333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        64.6500015258789
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "8ea695ceb2c07f09c27da6ee2cc0e9d4351a656b4d8515f0cc2e3e6793c3c5c0"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 78,
+      "controls": {},
+      "x": 600,
+      "y": 5400,
+      "time": 3.25,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        64.25000143051147
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0942b6b3c80650347a9ef842902e09617c8c8355dd935e11987e7495d20def63"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 79,
+      "controls": {},
+      "x": 900,
+      "y": 5400,
+      "time": 3.2916666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        63.900001525878906
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "3329976ced25f1903c426022320cb2edfcf8c0cb9ab22354cdbc958189a8d324"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 80,
+      "controls": {},
+      "x": 1200,
+      "y": 5400,
+      "time": 3.3333333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        63.500001430511475
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "42bc9fddba42cdc19eb145de0b273a5a635d7478168a8a19c6268fa4500b81ef"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 81,
+      "controls": {},
+      "x": 1500,
+      "y": 5400,
+      "time": 3.375,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        63.10000157356262
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "80f03e3ccbe15f7fc5878f1f26cbfec2406db57bf94ab2e434346bb965199342"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 82,
+      "controls": {},
+      "x": 1800,
+      "y": 5400,
+      "time": 3.4166666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        62.750001430511475
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "8c53e58d7b2ae13d13169947359da6437ab091474e2061b9e14b290abdae7cfa"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 83,
+      "controls": {},
+      "x": 2100,
+      "y": 5400,
+      "time": 3.4583333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        62.35000133514404
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "94d3630ff5379baadf4eb13a99d98e7779c90b9b3aff5f6e61d4b69c97edd25f"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 84,
+      "controls": {},
+      "x": 0,
+      "y": 5700,
+      "time": 3.5,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        61.95000123977661
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "63a5cee8fc8c75e5e9e338c03aa7dbdf83a61bbf92e7e5525c72086cd0bba3ac"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 85,
+      "controls": {},
+      "x": 300,
+      "y": 5700,
+      "time": 3.5416666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        61.60000133514404
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "ac67a3d9dc0aae3f68ded60ae31c1fe6b75aaa6b57cee400c73d74dbaca9d432"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 86,
+      "controls": {},
+      "x": 600,
+      "y": 5700,
+      "time": 3.5833333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        61.20000123977661
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "319a7f1e3af5d723503cf22bef553acffd9c6bffe1d026cf74debff41837ceac"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 87,
+      "controls": {},
+      "x": 900,
+      "y": 5700,
+      "time": 3.625,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        60.80000162124634
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "a436c005700c918a06b8947e92f35ab089da6e9b3d9fd8395cc23203a5764b07"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 88,
+      "controls": {},
+      "x": 1200,
+      "y": 5700,
+      "time": 3.6666666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        60.45000123977661
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "518405948492fff0c5fc133b319954df1567cc1da586e3ddbba1e2442e48c56f"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 89,
+      "controls": {},
+      "x": 1500,
+      "y": 5700,
+      "time": 3.7083333333333335,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        60.05000162124634
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "16b367b8f901c93f98b252965b7e19da232f98220eb3dbe81596bc75adcc0788"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 90,
+      "controls": {},
+      "x": 1800,
+      "y": 5700,
+      "time": 3.75,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        59.650001525878906
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "7df6716aaf3e6557dd25d44265aba7c877e69ac496ea8e0dfaff9a12516573f7"
+    },
+    {
+      "family": "dark-drill",
+      "export": "witness_clip_18603",
+      "frame": 91,
+      "controls": {},
+      "x": 2100,
+      "y": 5700,
+      "time": 3.7916666666666665,
+      "root": [
+        2.0,
+        0.0,
+        156.5,
+        0.0,
+        2.0,
+        59.30000162124634
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "260505a004db945031d4b22e14fa3d8eb19d6c782491d0af4c2f670b01b47935"
+    }
+  ]
+}

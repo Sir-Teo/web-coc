@@ -69,3 +69,24 @@ it('samples every retained clip frame with finite geometry and supported isolate
       check(nativeScenePoses(graph, 'witness', frame / clip.fps));
   }
 });
+it('covers every original export and all retained clip frames with independent pixel witnesses', () => {
+  const index = JSON.parse(
+    readFileSync('tests/fixtures/native-dark-drill-art/index.json', 'utf8'),
+  ) as { category: string; cases: number }[];
+  const cases = index.flatMap(({ category, cases: count }) => {
+    const page = JSON.parse(
+      readFileSync(`tests/fixtures/native-dark-drill-art/${category}.json`, 'utf8'),
+    );
+    expect(page.cases).toHaveLength(count);
+    expect(page.nativePlaybackVerified).toBe(false);
+    return page.cases as { export: string; frame: number; rgbaSha256: string }[];
+  });
+  expect(cases).toHaveLength(5518);
+  for (const name of Object.keys(raw.exports))
+    expect(cases.filter((c) => c.export === name).map((c) => c.frame)).toEqual([0]);
+  for (const [id, clip] of Object.entries(raw.clips))
+    expect(cases.filter((c) => c.export === `witness_clip_${id}`).map((c) => c.frame)).toEqual(
+      clip.timeline.map((_, i) => i),
+    );
+  expect(cases.every((c) => /^[a-f0-9]{64}$/.test(c.rgbaSha256))).toBe(true);
+});
