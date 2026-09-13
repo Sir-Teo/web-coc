@@ -26,7 +26,7 @@ it('supports every original level while preserving the TH8 ceiling and remaining
   expect([4, 5, 6].map((l) => upgradeCost('airsweeper', l))).toEqual([1200000, 1900000, 3400000]);
   expect([4, 5, 6].map((l) => upgradeSeconds('airsweeper', l))).toEqual([86400, 172800, 259200]);
   expect([5, 6, 7].map((l) => requiredTownHall('airsweeper', l))).toEqual([9, 10, 11]);
-  expect(nativeCampaignIssues(55)).toEqual(['Cannon level 15']);
+  expect(nativeCampaignIssues(55)).toEqual([]);
   expect(nativeCampaignIssues(56)).toEqual(['Garrison defenders', 'Clan Castle']);
   for (const level of [4, 5, 6, 7]) {
     const m = new GameModel(airSweeperVillage(level));
@@ -171,7 +171,7 @@ it.each([1, 4, 5, 6, 7])(
     expect(m.battle!.airSweepers![6].fired).toBeGreaterThan(0);
     const last = structuredClone(m.battle),
       parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(parsed.version).toBe(35);
+    expect(parsed.version).toBe(36);
     expect(parsed.initial.buildings.find((v) => v.id === 6)!.level).toBe(level);
     const viewer = new GameModel(),
       home = JSON.stringify(viewer.state);

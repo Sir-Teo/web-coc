@@ -1,3 +1,4 @@
+import { cannonStats } from './cannon-stats';
 import { mortarStats } from './mortar-stats';
 import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
@@ -18,7 +19,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
   goldstorage: [1, 3, 6, 8, 9, 10, 11, 11],
   elixirstorage: [1, 3, 6, 8, 9, 10, 11, 11],
   barracks: [1, 4, 5, 6, 7, 8, 9, 10],
-  cannon: [2, 3, 4, 5, 6, 7, 8, 10],
+  cannon: [1, 3, 4, 5, 6, 7, 8, 10],
   archertower: [0, 2, 3, 4, 6, 7, 8, 10],
   camp: [1, 2, 3, 4, 5, 6, 6, 6],
   builder: [1, 1, 1, 1, 1, 1, 1, 1],
@@ -43,6 +44,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'cannon') return cannonStats(level)?.townhall ?? null;
   if (kind === 'mortar') return mortarStats(level)?.townhall ?? null;
   if (kind === 'airsweeper') return SWEEPER_LEVELS[level - 1]?.townhall ?? null;
   if (kind === 'wizardtower') return wizardTowerStats(level)?.townhall ?? null;

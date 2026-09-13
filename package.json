@@ -32,6 +32,7 @@
     "test:air-sweeper:production": "node scripts/air-sweeper-production-check.mjs",
     "test:mortar:production": "node scripts/mortar-production-check.mjs",
     "test:mortar:assets": "node scripts/mortar-assets-check.mjs",
+    "test:cannon:production": "node scripts/cannon-production-check.mjs",
     "test:cannon:assets": "node scripts/cannon-assets-check.mjs"
   },
   "dependencies": {

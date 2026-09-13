@@ -145,7 +145,7 @@ try {
         await page.locator('.attack-btn').click();
         await expect(page.locator('[data-stage="51"]')).toContainText('Invaders');
         await expect(page.locator('[data-action="attack:50"]')).toBeEnabled();
-        await expect(page.locator('[data-action="attack:54"]')).toHaveText('Coming soon');
+        await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
         await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       }
       await open({

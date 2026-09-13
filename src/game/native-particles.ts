@@ -40,6 +40,10 @@ export function nativeParticleSampler(
     altitudeScale?: number;
     /** Effective duration for an animated descendant inside a static outer clip. */
     timelineDurations?: Readonly<Record<string, number>>;
+    /** Cannon emitters use signed speeds and a radius along their firing cone. */
+    signedSpeed?: boolean;
+    directionalRadius?: boolean;
+    orientTravelToParent?: boolean;
   } = {},
 ) {
   const { reducedEmitters = [], staticEmitters = {}, altitudeScale = 0.8 } = options;
@@ -53,6 +57,7 @@ export function nativeParticleSampler(
     layer: string,
     reduced: boolean,
     parentAngle = 0,
+    parentMapAngle = 0,
   ): NativeParticlePose | undefined {
     const row = rows[0],
       life = mix(n(row, 'MinLife'), n(row, 'MaxLife'), random(0)) / 1000;
@@ -66,15 +71,23 @@ export function nativeParticleSampler(
         mix(n(row, 'ScaleRandomMin'), n(row, 'ScaleRandomMax'), random(2))) /
       100;
     const horizontal =
-      (mix(n(row, 'MinHorizAngle'), n(row, 'MaxHorizAngle'), random(3)) * Math.PI) / 180;
+      (mix(n(row, 'MinHorizAngle'), n(row, 'MaxHorizAngle'), random(3)) * Math.PI) / 180 +
+      (options.orientTravelToParent && row.OrientToParentType === 'HorizontalAngle'
+        ? parentMapAngle
+        : 0);
     const vertical =
       (mix(n(row, 'MinVertAngle'), n(row, 'MaxVertAngle'), random(4)) * Math.PI) / 180;
-    const speed = mix(n(row, 'MinSpeed'), n(row, 'MaxSpeed'), random(5));
+    const rawSpeed = mix(n(row, 'MinSpeed'), n(row, 'MaxSpeed'), random(5));
+    const sign = options.signedSpeed && rawSpeed < 0 ? -1 : 1;
+    const speed = options.signedSpeed ? Math.abs(rawSpeed) : rawSpeed;
     const radius = mix(n(row, 'StartRadiusMin'), n(row, 'StartRadiusMax'), random(6));
-    const radiusAngle = random(7) * Math.PI * 2;
+    const radiusAngle =
+      options.directionalRadius && row.OrientToParentType === 'HorizontalAngle'
+        ? horizontal
+        : random(7) * Math.PI * 2;
     const distance = reduced
       ? 0
-      : nativeParticleTravel(speed, n(row, 'Inertia'), n(row, 'Slowdown'), age);
+      : nativeParticleTravel(speed, n(row, 'Inertia'), n(row, 'Slowdown'), age) * sign;
     const x =
       n(row, 'StartX') +
       Math.cos(radiusAngle) * radius +
@@ -88,7 +101,7 @@ export function nativeParticleSampler(
     const dampedTime =
       n(row, 'Inertia') > 0 ? Math.log1p(n(row, 'Inertia') * age) / n(row, 'Inertia') : age;
     const velocity =
-      Math.max(0, speed - n(row, 'Slowdown') * dampedTime) / (1 + n(row, 'Inertia') * age);
+      (Math.max(0, speed - n(row, 'Slowdown') * dampedTime) / (1 + n(row, 'Inertia') * age)) * sign;
     let z = z0 + Math.sin(vertical) * distance - (gravity * age * age) / 2;
     let verticalSpeed = Math.sin(vertical) * velocity - gravity * age;
     if (row.BounceFromGround === 'TRUE' && z < 0 && gravity > 0) {

@@ -71,7 +71,7 @@ it('preserves eighteen original Mortar levels while preserving home limits and u
   }
   expect(native.reconstruction.liveIntegration).toBe(true);
   expect(native.reconstruction.nativePlaybackVerified).toBe(false);
-  expect(nativeCampaignIssues(55)).toEqual(['Cannon level 15']);
+  expect(nativeCampaignIssues(55)).toEqual([]);
 });
 
 it('retains every turret degree, late terminal frame, optional gear and source state', () => {

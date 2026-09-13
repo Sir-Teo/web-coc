@@ -150274,6 +150274,281 @@
       "rgbaSha256": "6460139244d1b9aab2292b99eba7295f3d83cb56a6bed3437f9bb0a285ae40bf"
     }
   },
+  "icons": {
+    "1": {
+      "path": "assets/buildings/cannon-native/icon-1.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-1.png",
+      "crop": [
+        121,
+        107,
+        273,
+        228
+      ],
+      "width": 152,
+      "height": 121,
+      "rgbaSha256": "b8a614946ec39cb21ed81514ff5c604b24ce77c501b8b36e211a333b2823646b"
+    },
+    "2": {
+      "path": "assets/buildings/cannon-native/icon-2.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-2.png",
+      "crop": [
+        103,
+        102,
+        293,
+        249
+      ],
+      "width": 190,
+      "height": 147,
+      "rgbaSha256": "1ea49c5a2c7554de3fe3450d9647be1fbd8a101e67bbec6c560032a0a5b0d6e5"
+    },
+    "3": {
+      "path": "assets/buildings/cannon-native/icon-3.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-3.png",
+      "crop": [
+        91,
+        97,
+        297,
+        258
+      ],
+      "width": 206,
+      "height": 161,
+      "rgbaSha256": "c692b160d369980ef40aad4d068e86d1e9804ae823cafcedf7c1fcb60fddd203"
+    },
+    "4": {
+      "path": "assets/buildings/cannon-native/icon-4.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-4.png",
+      "crop": [
+        86,
+        90,
+        291,
+        252
+      ],
+      "width": 205,
+      "height": 162,
+      "rgbaSha256": "f47cd82011fa3abb23b94b4455318e9d8fd8aa43f618660a550a6cfca1a14972"
+    },
+    "5": {
+      "path": "assets/buildings/cannon-native/icon-5.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-5.png",
+      "crop": [
+        97,
+        90,
+        291,
+        252
+      ],
+      "width": 194,
+      "height": 162,
+      "rgbaSha256": "984b0296af3e47453f0728d21ea40abb30a3f97dbad69adbce72928412cfde97"
+    },
+    "6": {
+      "path": "assets/buildings/cannon-native/icon-6.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-6.png",
+      "crop": [
+        86,
+        81,
+        314,
+        264
+      ],
+      "width": 228,
+      "height": 183,
+      "rgbaSha256": "7213cbba341006cdfc495390cd6d783653b8050a9cfda78d3773ada577dc3a21"
+    },
+    "7": {
+      "path": "assets/buildings/cannon-native/icon-7.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-7.png",
+      "crop": [
+        77,
+        87,
+        314,
+        267
+      ],
+      "width": 237,
+      "height": 180,
+      "rgbaSha256": "e10467a17a3696a29e77654b0f50fd42778031310f5cd18ca1f8f15ee21a4e12"
+    },
+    "8": {
+      "path": "assets/buildings/cannon-native/icon-8.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-8.png",
+      "crop": [
+        79,
+        87,
+        314,
+        267
+      ],
+      "width": 235,
+      "height": 180,
+      "rgbaSha256": "933abc3f373693d3f35148b4c44d445839e897eab3ae4e97f2a29ad0cfc82246"
+    },
+    "9": {
+      "path": "assets/buildings/cannon-native/icon-9.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-9.png",
+      "crop": [
+        74,
+        82,
+        325,
+        276
+      ],
+      "width": 251,
+      "height": 194,
+      "rgbaSha256": "ff91ce06b2f6d5f22c9e80ffb95a2bd0edc0e1aecd5729941512e2083dd7c8cc"
+    },
+    "10": {
+      "path": "assets/buildings/cannon-native/icon-10.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-10.png",
+      "crop": [
+        59,
+        73,
+        325,
+        276
+      ],
+      "width": 266,
+      "height": 203,
+      "rgbaSha256": "2ba34930c4c27b8181d79bd65eedf47af0c4cc2179a68bb3263f075c4176ba36"
+    },
+    "11": {
+      "path": "assets/buildings/cannon-native/icon-11.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-11.png",
+      "crop": [
+        59,
+        63,
+        329,
+        276
+      ],
+      "width": 270,
+      "height": 213,
+      "rgbaSha256": "ea01e53725a696871cee54653401e9af70aa60f6bf8218b8fcd209edfdf057f5"
+    },
+    "12": {
+      "path": "assets/buildings/cannon-native/icon-12.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-12.png",
+      "crop": [
+        59,
+        54,
+        328,
+        275
+      ],
+      "width": 269,
+      "height": 221,
+      "rgbaSha256": "29627aff36e3146266249f941591aeab3ef7f5d49685be25e871b5186c8143f1"
+    },
+    "13": {
+      "path": "assets/buildings/cannon-native/icon-13.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-13.png",
+      "crop": [
+        59,
+        48,
+        328,
+        275
+      ],
+      "width": 269,
+      "height": 227,
+      "rgbaSha256": "4594b226deb96806565640782b3bc0bf4feb2e8343b090b5d94f95fe3cec7f45"
+    },
+    "14": {
+      "path": "assets/buildings/cannon-native/icon-14.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-14.png",
+      "crop": [
+        59,
+        46,
+        328,
+        270
+      ],
+      "width": 269,
+      "height": 224,
+      "rgbaSha256": "1089485ded92f6cfdca36a7ed98b0fbb468af5b603a18beefe5f80cdadcab04b"
+    },
+    "15": {
+      "path": "assets/buildings/cannon-native/icon-15.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-15.png",
+      "crop": [
+        59,
+        47,
+        324,
+        270
+      ],
+      "width": 265,
+      "height": 223,
+      "rgbaSha256": "b806fa64c8163a977608c42fbb0906336c76a4e2785e4f1d0b19571a3798f106"
+    },
+    "16": {
+      "path": "assets/buildings/cannon-native/icon-16.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-16.png",
+      "crop": [
+        59,
+        47,
+        329,
+        276
+      ],
+      "width": 270,
+      "height": 229,
+      "rgbaSha256": "6ca89d5d3a5bfb0101e42ffc934933b7a3d2b4c71e3a698d27320ee2477073bc"
+    },
+    "17": {
+      "path": "assets/buildings/cannon-native/icon-17.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-17.png",
+      "crop": [
+        59,
+        47,
+        329,
+        276
+      ],
+      "width": 270,
+      "height": 229,
+      "rgbaSha256": "911e1c8229a327dbf2c47e845f9bca6ae47d0047968d0603936c4b559f436c8a"
+    },
+    "18": {
+      "path": "assets/buildings/cannon-native/icon-18.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-18.png",
+      "crop": [
+        59,
+        42,
+        338,
+        281
+      ],
+      "width": 279,
+      "height": 239,
+      "rgbaSha256": "078d1623c19582608070764e9feb1b26d390cb64e70466ba5347a01e9e324773"
+    },
+    "19": {
+      "path": "assets/buildings/cannon-native/icon-19.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-19.png",
+      "crop": [
+        59,
+        38,
+        333,
+        276
+      ],
+      "width": 274,
+      "height": 238,
+      "rgbaSha256": "ef0c545cec185b29d96f6da6cdaa243d4e435855784479e5ba30017153e14a4c"
+    },
+    "20": {
+      "path": "assets/buildings/cannon-native/icon-20.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-20.png",
+      "crop": [
+        9,
+        26,
+        402,
+        321
+      ],
+      "width": 393,
+      "height": 295,
+      "rgbaSha256": "1eee1addac3603ff52c36dd4a0c8c3fa5143fa1161f6d9caf947ad77a2f37b18"
+    },
+    "21": {
+      "path": "assets/buildings/cannon-native/icon-21.png",
+      "sourcePortrait": "assets/buildings/cannon-native/level-21.png",
+      "crop": [
+        9,
+        26,
+        402,
+        321
+      ],
+      "width": 393,
+      "height": 295,
+      "rgbaSha256": "38e02f4a341a2b406a97778c28becc55947793416af1f8369952d2caeec57804"
+    }
+  },
   "sounds": {
     "sfx/building_destroyed_01.ogg": {
       "path": "assets/buildings/cannon-native/building_destroyed_01.ogg",
@@ -150297,12 +150572,12 @@
     }
   },
   "reconstruction": {
-    "liveIntegration": false,
+    "liveIntegration": true,
     "nativePlaybackVerified": false,
     "scope": "Twenty-one original normal bodies, fifteen alternate-mode bodies, exact direction timelines and gear controls, bases/scaffolds/construction/rubble, eleven projectile families, seven effect records and five sounds.",
-    "preview": "Normal body frame zero and turret frame zero with gearup disabled. Conservative common bounds enclose all source placements with eight units of padding at 2x; framing is local.",
+    "preview": "Normal body frame zero and turret frame zero with gearup disabled. Conservative common bounds enclose all source placements with eight units of padding at 2x; framing is local. UI icons crop these same pixels with eight pixels of transparent padding. Additive body effects require a shared backdrop for live pixel comparisons.",
     "turret": "Original direction timelines retained exactly, including irregular transitions and the level-21 terminal frames. Levels 14-15 retain animated parent placements and nested effects. Facing and animation control semantics require native engine corroboration.",
-    "projectile": "Original speed, per-family start height/offset and tracking/rotation flags retained. This source import does not change existing live projectile behavior.",
-    "availability": "Source preservation only. Current home limits, retained-level cap, campaign gates, simulation and replay versions remain unchanged. Geared-up mode is not integrated."
+    "projectile": "Original speed, per-family start height/offset and tracking/rotation flags retained. Version-36 normal Cannons use source speed and continuous tracking; version-34/35 recordings retain their previous physical rules. Screen altitude and particle motion remain local projections.",
+    "availability": "All twenty-one normal levels are retained; home TH8 remains capped at ten. The source TH2 requirement for level two is enforced for new upgrades, while paid deadlines survive. Version-34/35 replay compatibility is retained. Geared-up mode is not integrated."
   }
 }

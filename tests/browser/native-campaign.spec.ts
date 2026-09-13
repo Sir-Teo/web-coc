@@ -40,7 +40,7 @@ for (const viewport of [
     await expect(page.locator('[data-action="attack:2"]')).toBeDisabled();
     for (const index of [51, 52, 53])
       await expect(page.locator(`[data-action="attack:${index}"]`)).not.toHaveText('Coming soon');
-    await expect(page.locator('[data-action="attack:54"]')).toHaveText('Coming soon');
+    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
     await page.screenshot({
       animations: 'disabled',
       path: `output/playtest/native-campaign-map-${viewport.width}-${browserName}.png`,

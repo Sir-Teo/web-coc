@@ -123,7 +123,7 @@ try {
         );
         await expect(page.locator(`[data-action="attack:${fixture.index}"]`)).toBeEnabled();
       }
-      await expect(page.locator('[data-action="attack:54"]')).toHaveText('Coming soon');
+      await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
       await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       const read = () => page.evaluate(() => JSON.parse(window.render_game_to_text()));
       const seek = async (time) => {
@@ -175,7 +175,7 @@ try {
         await (await download).saveAs(path);
         const exported = JSON.parse(await fs.readFile(path, 'utf8'));
         expect(exported).toEqual(fixture.file);
-        expect(exported.replay.version).toBe(35);
+        expect(exported.replay.version).toBe(36);
         expect((await seek(0)).battle.seekingMines).toEqual([]);
         expect((await seek(fixture.flightAt)).battle).toEqual(flight.battle);
         await page.locator('[data-action="replay-exit"]').click();

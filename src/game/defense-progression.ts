@@ -1,3 +1,4 @@
+import { CANNON_LEVELS, CANNON } from './cannon-stats';
 import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS, XBOW } from './xbow-stats';
@@ -23,21 +24,7 @@ export const DEFENSE_PROGRESSION = {
     { dps: 400, hp: 1400, cost: 5000000, seconds: 345600 },
   ],
   wizardtower: WIZARD_TOWER_LEVELS,
-  cannon: [
-    { dps: 7, hp: 300, cost: 250, seconds: 5 },
-    { dps: 10, hp: 360, cost: 1000, seconds: 30 },
-    { dps: 13, hp: 420, cost: 4000, seconds: 120 },
-    { dps: 17, hp: 500, cost: 16000, seconds: 1200 },
-    { dps: 23, hp: 600, cost: 50000, seconds: 1800 },
-    { dps: 30, hp: 660, cost: 60000, seconds: 3600 },
-    { dps: 40, hp: 730, cost: 100000, seconds: 7200 },
-    { dps: 48, hp: 800, cost: 160000, seconds: 10800 },
-    { dps: 56, hp: 880, cost: 250000, seconds: 12600 },
-    { dps: 64, hp: 960, cost: 330000, seconds: 14400 },
-    // Levels 11–12 remain valid in older saves, above the playable TH8 ceiling.
-    { dps: 74, hp: 1060, cost: 500000, seconds: 16200 },
-    { dps: 85, hp: 1160, cost: 600000, seconds: 18000 },
-  ],
+  cannon: CANNON_LEVELS,
   mortar: MORTAR_LEVELS,
   archertower: [
     { dps: 11, hp: 380, cost: 1000, seconds: 15 },
@@ -66,7 +53,7 @@ export const DEFENSE_WEAPONS = {
     rate: WIZARD_TOWER.interval,
     splash: WIZARD_TOWER.splash,
   },
-  cannon: { range: 9, rate: 0.8 },
+  cannon: { range: CANNON.range, rate: CANNON.interval },
   mortar: {
     range: MORTAR.range,
     minRange: MORTAR.minRange,

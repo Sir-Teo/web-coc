@@ -67,16 +67,16 @@ it('preserves all twenty-one Cannon source levels without changing live progress
     airTargets: false,
     groundTargets: true,
   });
-  expect(DEFENSE_PROGRESSION.cannon).toHaveLength(12);
+  expect(DEFENSE_PROGRESSION.cannon).toHaveLength(21);
   for (const [i, row] of combat.levels.entries()) {
     expect(row.level).toBe(i + 1);
     expect(row.body).toBe(rows[i].ExportName);
     expect(row.projectile).toBe(rows[i].Projectile);
-    if (i < 12) expect(row).toMatchObject(DEFENSE_PROGRESSION.cannon[i]);
+    expect(row).toMatchObject(DEFENSE_PROGRESSION.cannon[i]);
   }
-  expect(native.reconstruction.liveIntegration).toBe(false);
+  expect(native.reconstruction.liveIntegration).toBe(true);
   expect(native.reconstruction.nativePlaybackVerified).toBe(false);
-  expect(nativeCampaignIssues(55)).toEqual(['Cannon level 15']);
+  expect(nativeCampaignIssues(55)).toEqual([]);
 });
 
 it('retains irregular turret frames, animated parents, alternate bodies and independently controlled gear', () => {
@@ -249,7 +249,7 @@ it('preserves original polygons, transforms, timelines and exact texture samplin
   }
 }, 30000);
 
-it('ships six exact texture crops, twenty-one registered source portraits and five original Ogg files', async () => {
+it('ships six exact texture crops, twenty-one registered source portraits, exact UI crops and five original Ogg files', async () => {
   const expected = [...Object.values(native.world.textures), ...Object.values(native.previews)].map(
     (v) => v.path.replace('assets/buildings/cannon-native/', ''),
   );
@@ -280,6 +280,24 @@ it('ships six exact texture crops, twenty-one registered source portraits and fi
     expect(opaque, key).toBeGreaterThan(0);
   }
   expect(hashes.size).toBe(21);
+  expect(Object.keys(native.icons)).toHaveLength(21);
+  for (const [level, icon] of Object.entries(native.icons)) {
+    const [left, top, right, bottom] = icon.crop;
+    expect(icon.sourcePortrait).toBe(native.previews[level as keyof typeof native.previews].path);
+    const original = await sharp(`public/${icon.sourcePortrait}`)
+      .extract({ left, top, width: right - left, height: bottom - top })
+      .ensureAlpha()
+      .raw()
+      .toBuffer();
+    const { data, info } = await sharp(`public/${icon.path}`)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    expect([info.width, info.height]).toEqual([icon.width, icon.height]);
+    expect(data.equals(original), `level ${level} icon preserves source pixels`).toBe(true);
+    expect(hash(data)).toBe(icon.rgbaSha256);
+    expected.push(icon.path.split('/').at(-1)!);
+  }
   expect(Object.keys(native.sounds)).toHaveLength(5);
   for (const sound of Object.values(native.sounds)) {
     expected.push(sound.path.split('/').at(-1)!);

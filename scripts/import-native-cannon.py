@@ -200,7 +200,7 @@ def build():
     bounds = conservative_bounds(graph, body_exports)
     width, height = 2 * (bounds[2] - bounds[0]), 2 * (bounds[3] - bounds[1])
     root = np.array([[2, 0, -bounds[0] * 2], [0, 2, -bounds[1] * 2], [0, 0, 1]])
-    previews = {}
+    previews, icons = {}, {}
     for level, row in enumerate(levels, 1):
         controls = {'turret': 0, 'gearup': False}
         preview_poses = poses(graph, row['ExportNameBase'], root=root)
@@ -212,6 +212,14 @@ def build():
         image = Image.fromarray(np.round(np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA').crop((0, 0, width, height))
         path = f'{PREFIX}/level-{level}.png'
         outputs[path] = image
+        alpha_bounds = image.getbbox()
+        require(alpha_bounds is not None, 'Empty Cannon portrait')
+        crop = [alpha_bounds[0] - 8, alpha_bounds[1] - 8, alpha_bounds[2] + 8, alpha_bounds[3] + 8]
+        require(crop[0] >= 0 and crop[1] >= 0 and crop[2] <= width and crop[3] <= height, 'Cannon icon padding exceeds source portrait')
+        icon = image.crop(crop)
+        icon_path = f'{PREFIX}/icon-{level}.png'
+        outputs[icon_path] = icon
+        icons[str(level)] = dict(path=icon_path, sourcePortrait=path, crop=crop, width=icon.width, height=icon.height, rgbaSha256=digest(icon.tobytes()))
         previews[str(level)] = dict(path=path, export=row['ExportName'], baseExport=row['ExportNameBase'],
             controls=controls, bounds=bounds, width=width, height=height, pixelsPerNativeUnit=2, rgbaSha256=digest(image.tobytes()))
     sounds = {}
@@ -221,13 +229,13 @@ def build():
         sounds[original] = dict(path=path, sha256=digest(outputs[path]))
     native = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
         buildings={'Cannon': rows}, projectiles=projectiles, effects=effects, particles=particles,
-        world=dict(source='sc/buildings.sc', graph=graph, textures=textures), previews=previews, sounds=sounds,
-        reconstruction=dict(liveIntegration=False, nativePlaybackVerified=False,
+        world=dict(source='sc/buildings.sc', graph=graph, textures=textures), previews=previews, icons=icons, sounds=sounds,
+        reconstruction=dict(liveIntegration=True, nativePlaybackVerified=False,
             scope='Twenty-one original normal bodies, fifteen alternate-mode bodies, exact direction timelines and gear controls, bases/scaffolds/construction/rubble, eleven projectile families, seven effect records and five sounds.',
-            preview='Normal body frame zero and turret frame zero with gearup disabled. Conservative common bounds enclose all source placements with eight units of padding at 2x; framing is local.',
+            preview='Normal body frame zero and turret frame zero with gearup disabled. Conservative common bounds enclose all source placements with eight units of padding at 2x; framing is local. UI icons crop these same pixels with eight pixels of transparent padding. Additive body effects require a shared backdrop for live pixel comparisons.',
             turret='Original direction timelines retained exactly, including irregular transitions and the level-21 terminal frames. Levels 14-15 retain animated parent placements and nested effects. Facing and animation control semantics require native engine corroboration.',
-            projectile='Original speed, per-family start height/offset and tracking/rotation flags retained. This source import does not change existing live projectile behavior.',
-            availability='Source preservation only. Current home limits, retained-level cap, campaign gates, simulation and replay versions remain unchanged. Geared-up mode is not integrated.'))
+            projectile='Original speed, per-family start height/offset and tracking/rotation flags retained. Version-36 normal Cannons use source speed and continuous tracking; version-34/35 recordings retain their previous physical rules. Screen altitude and particle motion remain local projections.',
+            availability='All twenty-one normal levels are retained; home TH8 remains capped at ten. The source TH2 requirement for level two is enforced for new upgrades, while paid deadlines survive. Version-34/35 replay compatibility is retained. Geared-up mode is not integrated.'))
     first = levels[0]
     combat = dict(levels=[dict(level=int(v['BuildingLevel']), townhall=int(v['TownHallLevel']), hp=int(v['Hitpoints']),
                     dps=int(v['DPS']), cost=int(v['BuildCost']),

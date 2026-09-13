@@ -1,3 +1,4 @@
+import { cannonAsset, cannonTexture } from './cannon-art';
 import { DARK_STORAGE_LEVELS, darkStorageStats } from './dark-storage-stats';
 import { darkStorageAsset, darkStorageTexture } from './dark-storage-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
@@ -297,7 +298,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: DEFENSE_PROGRESSION.cannon[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 12,
+    maxLevel: DEFENSE_PROGRESSION.cannon.length,
     available: [2, 2, 2, 2, 3, 3, 5, 5],
     build: DEFENSE_PROGRESSION.cannon[0].seconds,
     damage: 5.6,
@@ -946,6 +947,7 @@ export const buildingTexture = (
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'seekingairmine') return seekingMineTexture(level);
   if (kind === 'wall') return wallTexture(level);
+  if (kind === 'cannon') return cannonTexture(level);
   if (kind === 'mortar') return mortarTexture(level);
   if (kind === 'camp') return campTexture(level);
   return level >= TIER3_LEVEL && !BUILDINGS[kind].singleArtwork ? `${kind}-tier3` : kind;
@@ -971,6 +973,7 @@ export const asset = (
   if (kind === 'airsweeper') return sweeperAsset(level);
   if (kind === 'seekingairmine') return seekingMineAsset();
   if (kind === 'wall') return wallAsset(level);
+  if (kind === 'cannon') return cannonAsset(level);
   if (kind === 'mortar') return mortarAsset(level);
   if (kind === 'camp') return campAsset(level);
   if (kind === 'king') return '/assets/characters/king-v1/portrait.webp';

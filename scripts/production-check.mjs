@@ -19,6 +19,7 @@ const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native
 const seekingMineNative = JSON.parse(
   await fs.readFile('reference/seeking-mine/native.json', 'utf8'),
 );
+const cannonNative = JSON.parse(await fs.readFile('reference/cannon/native.json', 'utf8'));
 const mortarNative = JSON.parse(await fs.readFile('reference/mortar/native.json', 'utf8'));
 const sweeperNative = JSON.parse(await fs.readFile('reference/air-sweeper/native.json', 'utf8'));
 const wizardTowerNative = JSON.parse(
@@ -95,6 +96,9 @@ for (const [name, engine] of Object.entries(engines)) {
     ...Array.from({ length: 8 }, (_, i) => `/assets/buildings/camp-levels-v1/level-${i + 1}.webp`),
     '/assets/environment/terrain-field-v4.webp',
     ...[
+      ...Object.values(cannonNative.world.textures),
+      ...Object.values(cannonNative.previews),
+      ...Object.values(cannonNative.sounds),
       ...Object.values(mortarNative.world.textures),
       ...Object.values(mortarNative.previews),
       ...Object.values(mortarNative.sounds),

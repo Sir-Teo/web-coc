@@ -1,0 +1,146 @@
+{
+  "width": 3080,
+  "height": 1110,
+  "cellWidth": 440,
+  "cellHeight": 370,
+  "root": [
+    2,
+    0,
+    217,
+    0,
+    2,
+    62
+  ],
+  "background": "#304135",
+  "rgbaSha256": "3b3f9e4bad22116b1dbd1656845a33ba0d90ef6eac9b35df30ac23fa5401c8e1",
+  "cases": [
+    {
+      "level": 1,
+      "x": 0,
+      "y": 0,
+      "rgbaSha256": "193b78fef4b6542b924f90b18f289e95e7f9e660f78c639772dce391da95029b"
+    },
+    {
+      "level": 2,
+      "x": 440,
+      "y": 0,
+      "rgbaSha256": "7f4eea0a228c9f7f71ca7e43cb05e158ffd2dd9e8ee000ba36c5e9fa68985762"
+    },
+    {
+      "level": 3,
+      "x": 880,
+      "y": 0,
+      "rgbaSha256": "173a387fdfd4362b0b76b594540218777341e81a1355d56f51f8978de651ad39"
+    },
+    {
+      "level": 4,
+      "x": 1320,
+      "y": 0,
+      "rgbaSha256": "8ffe1255d1a103025c71bb6955a7cc962b49ec2d5fe61cec57a07586ddc4b1cd"
+    },
+    {
+      "level": 5,
+      "x": 1760,
+      "y": 0,
+      "rgbaSha256": "dda61c5e99804388a029fe1c55af1dd2dd83c1ebce0a4fbf9b57fd42bdb2baef"
+    },
+    {
+      "level": 6,
+      "x": 2200,
+      "y": 0,
+      "rgbaSha256": "4cf6edcbd94146671637fd0307863b2af59ebc43f1558001eeb91529faf632c5"
+    },
+    {
+      "level": 7,
+      "x": 2640,
+      "y": 0,
+      "rgbaSha256": "60245ff70786f0122162f2d2dbc4a8f69bdf542440d57a8d675448c95e751599"
+    },
+    {
+      "level": 8,
+      "x": 0,
+      "y": 370,
+      "rgbaSha256": "185feecaecfcf5c07820d824b8b55e514326458031cbe068fd99385208718fd3"
+    },
+    {
+      "level": 9,
+      "x": 440,
+      "y": 370,
+      "rgbaSha256": "11eea0d3a665629cebb5d86a91da4925d188d4052c9b0aa7895bf549a6bcb71e"
+    },
+    {
+      "level": 10,
+      "x": 880,
+      "y": 370,
+      "rgbaSha256": "e345634d2e4714cd8a15b18ea07ff892714a8a963d7dc33660c6f81c1d116e1f"
+    },
+    {
+      "level": 11,
+      "x": 1320,
+      "y": 370,
+      "rgbaSha256": "4eaed113226faa1ccdf7b3ace30d06031686a33dc0f90df66d39f197b45e5016"
+    },
+    {
+      "level": 12,
+      "x": 1760,
+      "y": 370,
+      "rgbaSha256": "6e97e42817bfaa5baadf2744493007414037c0b70bd0aaa1c7b7ac55532ed02c"
+    },
+    {
+      "level": 13,
+      "x": 2200,
+      "y": 370,
+      "rgbaSha256": "8c8cad40e384ff8cae25660aa3f50c0913dcaf63e381d8e0f657e6cdd1587855"
+    },
+    {
+      "level": 14,
+      "x": 2640,
+      "y": 370,
+      "rgbaSha256": "92d92e507a7bd52ce9dda96163a32896ae1ae5d4e95ac5d5d2325836ccea6278"
+    },
+    {
+      "level": 15,
+      "x": 0,
+      "y": 740,
+      "rgbaSha256": "90c3485421c255343e4e1d0d7893bab01d4246952e7b425457a89b8f57ca90c5"
+    },
+    {
+      "level": 16,
+      "x": 440,
+      "y": 740,
+      "rgbaSha256": "18aa037bac6feaac05c67aacf894d00dea5c3d15a48ee3ea53db80900e2da130"
+    },
+    {
+      "level": 17,
+      "x": 880,
+      "y": 740,
+      "rgbaSha256": "982937b1a534155eea2bfe930d43bae0cda88dc62932bdb34f943eb6ed267413"
+    },
+    {
+      "level": 18,
+      "x": 1320,
+      "y": 740,
+      "rgbaSha256": "c510f93c6ffeeeb1adbc6b4b9d5182b1b5f62af93029a861349b53b7d278c60d"
+    },
+    {
+      "level": 19,
+      "x": 1760,
+      "y": 740,
+      "rgbaSha256": "08aa6beeb154b00e87e6be3660f9767094dfafcfa9944e9dbe39feac52b21106"
+    },
+    {
+      "level": 20,
+      "x": 2200,
+      "y": 740,
+      "rgbaSha256": "3282b9932425a502ac8303abdae444d863fb65823d29940b8fb50aed0527d847"
+    },
+    {
+      "level": 21,
+      "x": 2640,
+      "y": 740,
+      "rgbaSha256": "64ef82b7261007625fb090452e0abb6b760def3d7bda4378aa946f54b6d888b1"
+    }
+  ],
+  "nativePlaybackVerified": false,
+  "scope": "Original full SCTX compositions at source frame zero, including additive body glows; local world registration is explicit."
+}

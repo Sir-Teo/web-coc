@@ -190,14 +190,14 @@ describe.each(['cannon', 'archertower', 'mortar', 'airdefense', 'wizardtower'] a
   },
 );
 
-it('TH1 permits two Cannons through level 2 and gates the third piece and level 3', () => {
+it('TH1 permits two Cannons and requires source Town Hall two for levels two and three', () => {
   const m = new GameModel();
   m.townhall!.level = 1;
   m.state.obstacles = [];
   m.state.buildings = m.state.buildings.filter((b) => b.kind !== 'cannon');
   m.state.gold = 500;
   expect(m.maxCount('cannon')).toBe(2);
-  expect(m.maxLevel('cannon')).toBe(2);
+  expect(m.maxLevel('cannon')).toBe(1);
   m.beginBuild('cannon');
   expect(m.place(2, 2)).toBe(true);
   m.beginBuild('cannon');
@@ -212,15 +212,15 @@ it('TH1 permits two Cannons through level 2 and gates the third piece and level 
   m.cancel();
   const cannon = m.state.buildings.find((b) => b.kind === 'cannon')!;
   m.upgrade(cannon.id);
+  expect(cannon.upgradeEnd).toBeUndefined();
+  expect(m.state.gold).toBe(1000);
+  m.townhall!.level = 2;
+  m.upgrade(cannon.id);
   expect(cannon.upgradeEnd).toBe(m.clock + 30000);
   expect(m.state.gold).toBe(0);
   m.tick(cannon.upgradeEnd!);
   expect([cannon.level, cannon.hp]).toEqual([2, 360]);
   m.state.gold = 4000;
-  m.upgrade(cannon.id);
-  expect(cannon.upgradeEnd).toBeUndefined();
-  expect(m.state.gold).toBe(4000);
-  m.townhall!.level = 2;
   m.upgrade(cannon.id);
   expect(cannon.upgradeEnd).toBe(m.clock + 120000);
   expect(m.state.gold).toBe(0);

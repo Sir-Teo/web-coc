@@ -9,6 +9,7 @@ await fs.mkdir('output/playtest', { recursive: true });
 const assets = [
   ...Object.values(native.world.textures),
   ...Object.values(native.previews),
+  ...Object.values(native.icons),
   ...Object.values(native.sounds),
 ].map((value) => '/' + value.path);
 const expectedHashes = new Map(
@@ -94,7 +95,7 @@ try {
           }
         }, assets);
       const online = await decode();
-      expect(online).toHaveLength(32);
+      expect(online).toHaveLength(53);
       expect(online.filter((v) => v.seconds !== undefined)).toHaveLength(5);
       for (const value of online) {
         expect(value.sha256).toBe(expectedHashes.get(value.path));
@@ -130,7 +131,7 @@ try {
     }
   }
   await fs.writeFile(
-    'output/playtest/native-cannon-assets-report.json',
+    'output/playtest/native-cannon-live-assets-report.json',
     JSON.stringify(report, null, 2),
   );
   console.log(JSON.stringify(report, null, 2));

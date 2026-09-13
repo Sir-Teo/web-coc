@@ -1,3 +1,4 @@
+import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
 import {
   launchMortarShell,
   stepMortarShells,
@@ -350,6 +351,9 @@ export interface Battle {
   /** Only version-34 playback uses the original fixed Mortar flight. */
   legacyMortarFlight?: true;
   mortars?: Record<number, MortarAttackState>;
+  /** Versions 34–35 retain fixed-deadline normal Cannon shots at the previous speed. */
+  legacyCannonFlight?: true;
+  cannons?: Record<number, CannonAttackState>;
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
@@ -390,6 +394,9 @@ export type FX = {
     | 'destroy'
     | 'projectile'
     | 'impact'
+    | 'cannon-pickup'
+    | 'cannon-place'
+    | 'cannon-cancel'
     | 'mortar-fire'
     | 'mortar-pickup'
     | 'mortar-place'
@@ -1312,6 +1319,7 @@ export class GameModel {
         b.kind === 'seekingairmine' ||
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
+        b.kind === 'cannon' ||
         b.kind === 'wizardtower')
     ) {
       const size = BUILDINGS[b.kind].size;
@@ -2462,6 +2470,9 @@ export class GameModel {
                     : tower.kind === 'wizardtower'
                       ? 'arcane'
                       : 'cannonball',
+            ...(tower.kind === 'cannon' && !tower.npc && !b.legacyCannonFlight
+              ? { variant: tower.level }
+              : {}),
             ...(tower.kind === 'wizardtower'
               ? { variant: wizardTowerProjectileTier(tower.level) }
               : {}),
@@ -2471,6 +2482,7 @@ export class GameModel {
           },
           this.onEffect,
         );
+        if (tower.kind === 'cannon' && !tower.npc) recordCannonShot(b, tower, projectile);
         if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);
       }
@@ -2585,6 +2597,7 @@ export class GameModel {
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'airsweeper') recordSweeperDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'mortar') recordMortarDestroyed(this.battle, b, at);
+      if (this.battle && b.kind === 'cannon' && !b.npc) recordCannonDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'bombtower') {
         recordBombTowerDestroyed(this.battle, b, at);
         primeDeathBomb(
@@ -2601,7 +2614,9 @@ export class GameModel {
         type: 'destroy',
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
-        ...(['airsweeper', 'mortar'].includes(b.kind) ? { sourceId: b.id } : {}),
+        ...(['airsweeper', 'mortar'].includes(b.kind) || (b.kind === 'cannon' && !b.npc)
+          ? { sourceId: b.id }
+          : {}),
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',

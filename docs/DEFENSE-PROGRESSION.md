@@ -1,6 +1,6 @@
 # Cannon and Archer Tower progression and combat
 
-The [original Cannon source foundation](../reference/cannon/README.md) now preserves all twenty-one levels and their exact artwork/data. Live integration remains pending; the twelve-level runtime and Town Hall limits below are unchanged.
+The [original Cannon integration](../reference/cannon/README.md) supplies all twenty-one normal levels, source meshes, effects, sounds and tracking projectiles. Its pinned building table supersedes the earlier Town Hall 1 level-two exception; the playable TH8 ceiling remains level 10. The table below lists home levels; the source reference lists all twenty-one.
 
 Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
@@ -21,7 +21,7 @@ Sources: [Cannon](https://clashofclans.fandom.com/wiki/Cannon) and [Archer Tower
 | 9 | 250,000 | 3h 30m | 880 | 400,000 | 5h | 750 |
 | 10 | 330,000 | 4h | 960 | 460,000 | 6h | 810 |
 
-Cannon counts at TH1–8 are **2, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5**. Both defenses end at level 10 in the TH8 catalog. TH1 now permits two Cannons and upgrades through level 2; level 3 requires TH2. Both shop placement and paid upgrades enforce these limits. A new TH2 village starts with two Cannons and one Archer Tower.
+Cannon counts at TH1–8 are **2, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5**. Both defenses end at level 10 in the TH8 catalog. TH1 permits two level-one Cannons; levels two and three require TH2. Previously paid upgrades retain their saved deadlines. Both shop placement and paid upgrades enforce these limits. A new TH2 village starts with two Cannons and one Archer Tower.
 
 ## Shared behavior and compatibility
 
@@ -52,12 +52,12 @@ The current reference tables provide normal-mode damage. The low-level Cannon ch
 
 The Info comparison shows DPS and fractional damage per hit without rounding down. Damage is captured when a shot launches and applied once on impact. Practice uses the table directly; authored campaign defense multipliers still apply to campaign attacks.
 
-Defense cooldowns carry the fraction of a frame past their deadline to avoid losing firing time every shot. Idle defenses never build up a backlog of shots. Simulation launches remain quantized to frames; a long debug step does not simulate every missed shot. Projectile flight speeds are still local tuning. Combat version 10 marks the corrected low-level Cannon health and damage; older results remain readable with an explicit compatibility message.
+Defense cooldowns carry the fraction of a frame past their deadline to avoid losing firing time every shot. Idle defenses never build up a backlog of shots. Simulation launches remain quantized to frames; a long debug step does not simulate every missed shot. Normal Cannon projectiles now follow the pinned source speed of 12 tiles/second, tracking the living target until impact. Replay version 36 records these rules; versions 34/35 retain their old 16-tile/second, fixed-deadline Cannon path. The separate tutorial Cannon retains its own weapon and presentation.
 
 ## Verification and remaining work
 
 Unit tests cover every supported destination with insufficient/exact resources, completion boundaries, current-versus-next health, builder reservations, construction, count gates, extra legacy buildings and running-save restoration. Browser tests exercise Info comparisons, paid upgrades, reload timestamps, completion and shop gates. Existing construction and Lightning tests use explicit fixtures appropriate to the new limits and health.
 
-Normal-mode damage, range and attack intervals now use explicit reference values. Cannon, Archer Tower and Mortar now use native 3×3 footprints with legacy layout migration; see [NATIVE-GRID.md](NATIVE-GRID.md). Full per-level artwork and gear-up behavior remain unfinished. Other building prices, timers, storage capacities, production and army statistics still contain prototype values.
+Normal-mode damage, range and attack intervals now use explicit reference values. Cannon, Archer Tower and Mortar now use native 3×3 footprints with legacy layout migration; see [NATIVE-GRID.md](NATIVE-GRID.md). Cannon levels 1–21 and Mortar levels 1–18 now use original artwork. Archer Tower art and gear-up behavior remain unfinished. Other building prices, timers, storage capacities, production and army statistics still contain prototype values.
 
-Combat regressions cover all twelve accepted damage levels at actual projectile impact, range boundaries, ground/air targeting, target retention, inactive construction/upgrades, idle recovery, and sustained cadence at 20/30/60 simulation frames per second. Browser Info checks cover fractional current/next damage, DPS, range, interval and the older-replay explanation. Existing campaign viability and replay reproduction suites remain required after this rules change.
+Combat regressions cover all twenty-one Cannon and twelve Archer Tower damage levels at actual projectile impact, range boundaries, ground/air targeting, target retention, inactive construction/upgrades, idle recovery, and sustained cadence at 20/30/60 simulation frames per second. Browser Info checks cover fractional current/next damage, DPS, range, interval and the older-replay explanation. Existing campaign viability and replay reproduction suites remain required after this rules change.

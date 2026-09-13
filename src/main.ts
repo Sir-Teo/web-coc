@@ -179,6 +179,8 @@ async function boot() {
               shells: model.battle.shells,
               mortars: model.battle.mortars ?? {},
               legacyMortarFlight: !!model.battle.legacyMortarFlight,
+              cannons: model.battle.cannons ?? {},
+              legacyCannonFlight: !!model.battle.legacyCannonFlight,
               projectiles: model.battle.projectiles ?? [],
               xbows: model.battle.xbows ?? {},
               airSweepers: model.battle.airSweepers ?? {},

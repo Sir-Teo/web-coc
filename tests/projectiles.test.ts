@@ -125,7 +125,9 @@ describe('physical projectile damage', () => {
     expect(shot.targetId).toBe(u.id);
     m.damage(cannon, cannon.hp);
     u.x = 24;
-    land(m);
+    // Tracking changes the arrival deadline as the target moves.
+    for (let i = 0; i < 200 && b.projectiles!.some((p) => p.id === shot.id); i++) m.step(0.05);
+    expect(b.projectiles!.some((p) => p.id === shot.id)).toBe(false);
     expect(u.hp).toBe(u.maxHp - shot.damage);
     expect(hall.hp).toBe(hall.maxHp);
   });
