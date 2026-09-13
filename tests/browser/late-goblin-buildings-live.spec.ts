@@ -106,7 +106,8 @@ async function boot(page: Page) {
         const battle = model.battle,
           late = battle?.late;
         const buildings = model.buildings
-          .filter((b) => scene.lateCampaign.handles(b) || (b.kind === 'builder' && !b.npc))
+          // This family's buildings plus every ordinary Builder's Hut (other late families excluded).
+          .filter((b) => goblin.handles(b) || huts.handles(b) || (b.kind === 'builder' && !b.npc))
           .map((b) => {
             const family = goblin.handles(b) ? goblin : huts.handles(b) ? huts : null;
             const body = family?.bodies.get(b.id),

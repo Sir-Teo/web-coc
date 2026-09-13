@@ -35,10 +35,5 @@ export const LATE_GOBLIN_BUILDING_ART: Record<
   'foreboding-cave': registered('foreboding-cave', 'late-goblin-foreboding-cave'),
   'goblin-boss-th': registered('goblin-th02', 'late-goblin-th02'),
 };
-/** Level-specific portrait: Goblin Hall level 2 displays its weapon export. */
-export const lateGoblinBuildingPortrait = (kind: LateGoblinBuildingKind, level = 1) =>
-  kind === 'goblin-hall' && level === 2
-    ? registered('goblin-th02', 'late-goblin-th02')
-    : LATE_GOBLIN_BUILDING_ART[kind];
 export const isLateGoblinBuilding = (value: unknown): value is LateGoblinBuildingKind =>
   typeof value === 'string' && Object.hasOwn(LATE_GOBLIN_BUILDING_ART, value);
