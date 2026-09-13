@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-archer-tower-characters/index.json' with { type: 'json' };
+import defenders from '../fixtures/native-archer-tower-defenders/index.json' with { type: 'json' };
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [
   ...index.map((v) => ({ ...v, folder: 'native-archer-tower-characters' })),
+  ...defenders.map((v) => ({ ...v, folder: 'native-archer-tower-defenders' })),
 ].flatMap(({ category, folder }) => {
   const source = JSON.parse(readFileSync(`tests/fixtures/${folder}/${category}.json`, 'utf8'));
   const stripHeight = source.cell * 20;
@@ -36,9 +38,12 @@ for (const witness of witnesses)
     await page.locator('#loading').waitFor({ state: 'detached' });
     const report = await page.evaluate(async (reference) => {
       const { scene, game } = window.__game;
-      const { default: drill } = await import('/reference/archer-tower/characters-runtime.json');
+      const { default: drill } =
+        reference.cases[0].family === 'defenders'
+          ? await import('/reference/archer-tower/defenders-runtime.json')
+          : await import('/reference/archer-tower/characters-runtime.json');
       for (const id of Object.keys(drill.clips)) drill.exports[`witness_clip_${id}`] = Number(id);
-      const worlds = { characters: drill };
+      const worlds = { characters: drill, defenders: drill };
 
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
@@ -225,7 +230,7 @@ for (const witness of witnesses)
     expect(report.singleTextureChanges).toBe(0);
     expect(report.contextChanges).toBe(0);
     expect(report.meshes).toBeGreaterThan(0);
-    expect(report.groups).toBe(6);
+    if (witness.cases[0].family === 'characters') expect(report.groups).toBe(6);
     expect(report.cases).toHaveLength(witness.cases.length);
     for (const c of report.cases) {
       if (c.empty || c.rasterEmpty === true) {

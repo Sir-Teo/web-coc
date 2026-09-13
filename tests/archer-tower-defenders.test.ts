@@ -50,3 +50,22 @@ it('samples every captured resident Archer frame including original blend groups
   }
   expect(frames).toBe(2654);
 });
+
+it('includes independent pixel witnesses for every resident export and captured frame', () => {
+  const folder = 'tests/fixtures/native-archer-tower-defenders';
+  const index = JSON.parse(readFileSync(`${folder}/index.json`, 'utf8'));
+  const cases = index.flatMap((entry: { category: string; cases: number }) => {
+    const page = JSON.parse(readFileSync(`${folder}/${entry.category}.json`, 'utf8'));
+    expect(page.cases).toHaveLength(entry.cases);
+    return page.cases as { export: string; frame: number; rgbaSha256: string }[];
+  });
+  expect(cases).toHaveLength(2708);
+  // Earlier sampling tests add a synthetic export to the shared in-memory graph.
+  for (const name of Object.keys(source.graph.exports))
+    expect(cases.filter((c) => c.export === name).map((c) => c.frame)).toEqual([0]);
+  for (const [id, clip] of Object.entries(graph.clips))
+    expect(cases.filter((c) => c.export === `witness_clip_${id}`).map((c) => c.frame)).toEqual(
+      clip.timeline.map((_, i) => i),
+    );
+  expect(cases.every((c) => /^[a-f0-9]{64}$/.test(c.rgbaSha256))).toBe(true);
+});

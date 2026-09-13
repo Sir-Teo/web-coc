@@ -58,3 +58,9 @@ The caller supplies world registration, direction and sampling time. No tower at
 ## Browser state gallery
 
 The three-page browser gallery covers all 21 tiers with normal, alternate (when present), construction, upgrade and ruined bodies, plus all three idle and attack resident directions: 225 populated cells. Chromium and WebKit each pass all three pages, with nonempty native views, adequate actual framebuffer dimensions, zero GL errors and complete view destruction. All three WebKit pages were visually reviewed. Each cell fits its own source geometry for inspection; this does not establish relative world scale or rooftop attachment. The exhaustive resident pixel comparisons are tracked separately.
+
+## Exhaustive resident pixel witnesses
+
+The resident source renderer has completed 2,708 cases: frame zero of all 54 idle/attack exports plus all 2,654 retained clip frames. Seventeen bounded sheets retain independent CPU pixels, source transforms and per-case RGBA hashes. A coverage test verifies every export and frame is represented. Seven focused source/pose/coverage tests pass.
+
+Chromium passes all 17 resident sheets, plus the existing projectile sheet. Worst resident mean channel error is 0.4359244, maximum individual channel error 85, and worst large-error fraction 0.001953761, below the unchanged thresholds. Batching changes, context-restoration changes and GL errors remain zero. This is threshold-based qualification, not pixel identity. WebKit qualification is still running and must be recorded separately when complete. Building-frame source generation also remains in progress.
