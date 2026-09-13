@@ -1,5 +1,6 @@
 import source from '../../reference/archer-tower/native.json';
-import { ARCHER_TOWER_GRAPH } from './archer-tower-art';
+import type { Battle } from './model';
+import { ARCHER_TOWER_GRAPH, archerTowerSource } from './archer-tower-art';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import type { ArcherTowerHandlingEvent } from './archer-tower-sounds';
@@ -45,6 +46,56 @@ export function archerTowerHandlingPoses(
           false,
         );
         if (pose) result.push(pose);
+      }
+    });
+  }
+  return result;
+}
+
+/** Captured hit emitters with the shared local target-height and particle-motion projection. */
+export function archerTowerHitPoses(
+  battle: Battle | null | undefined,
+  reduced: boolean,
+  iso: (x: number, y: number) => { x: number; y: number },
+  airLift = 46,
+): NativeParticlePose[] {
+  if (!battle?.nativeArcherTowers || battle.finished || reduced) return [];
+  const result: NativeParticlePose[] = [];
+  for (const hit of battle.archerTowerHits ?? []) {
+    const effects = (source.effects as unknown as Record<string, Record<string, string>[]>)[
+      archerTowerSource(hit.level).HitEffect
+    ];
+    const point = iso(hit.x, hit.y);
+    const ground = { x: point.x, y: point.y - 16 - (hit.air ? airLift : 0) };
+    effects.forEach((effect, emitterIndex) => {
+      const name = effect.ParticleEmitter;
+      if (!name) return;
+      const rows = emitters[name],
+        row = rows[0];
+      const age = battle.elapsed - hit.at - Number(effect.EmitterDelayMs ?? 0) / 1000;
+      const duration = Number(row.EmissionTime) / 1000,
+        count = Number(row.ParticleCount);
+      if (age < 0 || age >= duration + Number(row.MaxLife) / 1000) return;
+      for (let i = 0; i < count; i++) {
+        const pose = particle(
+          `archer-tower:hit:${hit.id}:${emitterIndex}:${i}`,
+          name,
+          rows,
+          age - (duration * i) / count,
+          ground,
+          (slot) =>
+            visualRandom(
+              hit.sourceId,
+              Math.round(hit.at * 1000000),
+              6300000 + emitterIndex * 1000 + i * 16 + slot,
+            ),
+          effect.IsoLayer ?? effects[0].IsoLayer,
+          false,
+        );
+        if (pose) {
+          pose.depth = hit.air ? 8000 : pose.depth + 16;
+          result.push(pose);
+        }
       }
     });
   }

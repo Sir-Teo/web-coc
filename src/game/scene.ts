@@ -1891,6 +1891,7 @@ export class VillageScene extends Phaser.Scene {
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       battle,
+      AIR_LIFT,
     );
     const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
@@ -2645,6 +2646,11 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.weapon === 'xbowbolt' && (fx.type === 'projectile' || fx.type === 'impact')) return;
+    if (
+      fx.type === 'impact' &&
+      this.model.battle?.archerTowerHits?.some((hit) => hit.id === fx.projectileId)
+    )
+      return;
     if (fx.type === 'projectile' && fx.projectileId) {
       this.drawProjectiles();
       if (!this.model.state.settings.reducedMotion)
@@ -2675,11 +2681,7 @@ export class VillageScene extends Phaser.Scene {
       const nativeGarrison =
         fx.sourceDefender &&
         this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
-      const nativeTowerHit =
-        fx.type === 'impact' &&
-        this.model.battle?.archerTowerHits?.some((hit) => hit.id === fx.projectileId);
-      if (!nativeGarrison && !nativeTowerHit && fx.weapon !== 'healing' && Math.random() < 0.2)
-        this.audio.play('hit');
+      if (!nativeGarrison && fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {

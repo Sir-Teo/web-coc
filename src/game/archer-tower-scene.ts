@@ -7,7 +7,7 @@ import {
   archerTowerHitCues,
   type ArcherTowerHandlingEvent,
 } from './archer-tower-sounds';
-import { archerTowerHandlingPoses } from './archer-tower-effects';
+import { archerTowerHandlingPoses, archerTowerHitPoses } from './archer-tower-effects';
 import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { battleTowerArcherPose } from './archer-tower-facing';
@@ -140,6 +140,7 @@ export class VillageArcherTowers {
     soundTime = seconds,
     reduced = false,
     battle?: Battle | null,
+    airLift = 46,
   ) {
     const wanted = new Set<number>();
     for (const b of buildings) {
@@ -172,12 +173,17 @@ export class VillageArcherTowers {
       }
     this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
     const wantedEffects = new Set<string>();
-    for (const pose of archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso)) {
+    for (const pose of [
+      ...archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso),
+      ...archerTowerHitPoses(battle, reduced, iso, airLift),
+    ]) {
       wantedEffects.add(pose.key);
       let view = this.effects.get(pose.key);
       if (!view)
         this.effects.set(pose.key, (view = new NativeSceneView(this.scene, 'archer-tower-body')));
       view.render(pose.poses, pose.x, pose.y, pose.depth);
+      for (const object of view.objects)
+        object.setData('nativeArcherTowerEffect', { key: pose.key, emitter: pose.emitter });
     }
     for (const [key, view] of this.effects)
       if (!wantedEffects.has(key)) {
