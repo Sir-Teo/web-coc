@@ -1,3 +1,5 @@
+import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
+import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait, infernoBounds } from './inferno-art';
@@ -172,6 +174,7 @@ export class VillageScene extends Phaser.Scene {
   private sweeperPresentation!: SweeperPresentation;
   private mortarPresentation!: MortarPresentation;
   private garrisonPresentation!: GarrisonPresentation;
+  private darkDrillPresentation!: DarkDrillPresentation;
   private infernoPresentation!: InfernoPresentation;
   private castlePresentation!: CastlePresentation;
   private cannonPresentation!: CannonPresentation;
@@ -212,6 +215,7 @@ export class VillageScene extends Phaser.Scene {
     preloadGarrisonTroops(this);
     preloadCastles(this);
     preloadInfernos(this);
+    preloadDarkDrills(this);
     preloadCannons(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
@@ -306,6 +310,7 @@ export class VillageScene extends Phaser.Scene {
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
+    this.darkDrillPresentation = new DarkDrillPresentation(this);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -337,6 +342,7 @@ export class VillageScene extends Phaser.Scene {
       this.garrisonPresentation.clear();
       this.castlePresentation.clear();
       this.infernoPresentation.clear();
+      this.darkDrillPresentation.clear();
       this.cannonPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
@@ -820,6 +826,13 @@ export class VillageScene extends Phaser.Scene {
     return edges;
   }
   private nativeBuildingBounds(b: Building) {
+    if (b.kind === 'darkdrill')
+      return darkDrillBounds(
+        b,
+        this.model.state.settings.reducedMotion
+          ? 0
+          : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+      );
     const sample =
       b.kind === 'inferno'
         ? infernoBounds
@@ -938,6 +951,7 @@ export class VillageScene extends Phaser.Scene {
       this.garrisonPresentation.clear();
       this.castlePresentation.clear();
       this.infernoPresentation.clear();
+      this.darkDrillPresentation.clear();
       this.cannonPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
@@ -1029,22 +1043,25 @@ export class VillageScene extends Phaser.Scene {
       );
       im.setData(
         'intactHeight',
-        b.kind === 'inferno'
-          ? infernoBounds(b.level, 'setup', 0, b.infernoMode)[3] -
+        b.kind === 'darkdrill'
+          ? darkDrillBounds({ ...b, hp: 1, constructing: false, upgradeEnd: undefined }, 0)[3] -
+              darkDrillBounds({ ...b, hp: 1, constructing: false, upgradeEnd: undefined }, 0)[1]
+          : b.kind === 'inferno'
+            ? infernoBounds(b.level, 'setup', 0, b.infernoMode)[3] -
               infernoBounds(b.level, 'setup', 0, b.infernoMode)[1]
-          : b.kind === 'clancastle'
-            ? castleBounds(b.level)[3] - castleBounds(b.level)[1]
-            : b.kind === 'cannon' && !b.npc
-              ? cannonBounds(b.level)[3] - cannonBounds(b.level)[1]
-              : b.kind === 'mortar'
-                ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
-                : b.kind === 'airsweeper'
-                  ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
-                  : b.kind === 'bombtower'
-                    ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-                    : b.kind === 'wizardtower'
-                      ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
-                      : im.displayHeight,
+            : b.kind === 'clancastle'
+              ? castleBounds(b.level)[3] - castleBounds(b.level)[1]
+              : b.kind === 'cannon' && !b.npc
+                ? cannonBounds(b.level)[3] - cannonBounds(b.level)[1]
+                : b.kind === 'mortar'
+                  ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
+                  : b.kind === 'airsweeper'
+                    ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
+                    : b.kind === 'bombtower'
+                      ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
+                      : b.kind === 'wizardtower'
+                        ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
+                        : im.displayHeight,
       );
       const trap = this.model.battle?.traps[b.id];
       if (b.npc === 'pumpkin-bomb')
@@ -1102,7 +1119,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.hp <= 0) {
         this.renderRuin(b, im);
       }
-      if (b.kind === 'clancastle' || b.kind === 'inferno') im.setAlpha(0);
+      if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
       const shouldBubble =
         !this.model.battle &&
         (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
@@ -1138,7 +1155,10 @@ export class VillageScene extends Phaser.Scene {
       }
       if (shouldBubble) {
         const c = this.bubbles.get(b.id)!;
-        const y = p.y - im.displayHeight * 0.86 - 13;
+        const y =
+          b.kind === 'darkdrill'
+            ? p.y + darkDrillBounds(b, 0)[1] - 13
+            : p.y - im.displayHeight * 0.86 - 13;
         const reduced = this.model.state.settings.reducedMotion;
         const anchor = `${p.x},${y},${reduced}`;
         if (c.getData('anchor') !== anchor) {
@@ -1799,6 +1819,11 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
       AIR_LIFT,
+    );
+    this.darkDrillPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
+      iso,
     );
     this.infernoPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),

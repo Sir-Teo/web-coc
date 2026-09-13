@@ -1,3 +1,5 @@
+import type { Building } from './model';
+import { nativeVertices } from './native-mesh';
 import raw from '../../reference/dark-drill/art-runtime.json';
 import { darkDrillStats } from './dark-drill-stats';
 import {
@@ -35,4 +37,39 @@ export function darkDrillPoses(
     ...sample(art.ExportName, state === 'working' ? seconds : 0),
     ...(state === 'upgrading' ? sample(art.ExportNameBuildAnim) : []),
   ];
+}
+
+/** Local world registration shared by the other three-tile native buildings. */
+export const DARK_DRILL_ROOT: NativeMatrix = [1.2, 0, 0, 0, 1.2, -96];
+
+export function darkDrillBuildingPoses(building: Building, seconds: number) {
+  const capacity = darkDrillStats(building.level).production.capacity;
+  const state: DarkDrillArtState =
+    building.hp <= 0
+      ? 'ruin'
+      : building.constructing
+        ? 'constructing'
+        : building.upgradeEnd
+          ? 'upgrading'
+          : building.stored >= capacity
+            ? 'idle'
+            : 'working';
+  // Local linear storage-to-source-frame interpretation, clamped below timeline wrap.
+  const frame = Math.min(99, Math.floor((Math.max(0, building.stored) / capacity) * 100));
+  return darkDrillPoses(building.level, state, seconds, frame, DARK_DRILL_ROOT);
+}
+export function darkDrillBounds(building: Building, seconds: number) {
+  const bounds = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const pose of darkDrillBuildingPoses(building, seconds)) {
+    if ('group' in pose) throw new Error('Unexpected Drill blend group');
+    const v = nativeVertices(pose);
+    for (let i = 0; i < v.length; i += 4) {
+      bounds[0] = Math.min(bounds[0], v[i]);
+      bounds[1] = Math.min(bounds[1], v[i + 1]);
+      bounds[2] = Math.max(bounds[2], v[i]);
+      bounds[3] = Math.max(bounds[3], v[i + 1]);
+    }
+  }
+  if (!bounds.every(Number.isFinite)) throw new Error('Empty Drill bounds');
+  return bounds;
 }
