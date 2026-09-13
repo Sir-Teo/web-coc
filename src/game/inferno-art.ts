@@ -1,4 +1,5 @@
 import raw from '../../reference/inferno/art-runtime.json';
+import portraits from '../../reference/inferno/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import {
   NATIVE_IDENTITY,
@@ -36,3 +37,15 @@ export function infernoPoses(
     ...sample(mode === 'multi' ? art.AlternateExportName : art.ExportName, state === 'empty'),
   ];
 }
+
+export function infernoPortrait(level: number, mode: InfernoMode = 'single') {
+  const portrait = portraits.portraits.find((row) => row.level === level && row.mode === mode);
+  if (!portrait) throw new Error(`Unsupported Inferno portrait: ${level} ${mode}`);
+  return portrait;
+}
+export const infernoTexture = (level: number, mode: InfernoMode = 'single') => {
+  infernoPortrait(level, mode);
+  return `inferno-level-${level}-${mode}`;
+};
+export const infernoAsset = (level: number, mode: InfernoMode = 'single') =>
+  `/${infernoPortrait(level, mode).path}`;
