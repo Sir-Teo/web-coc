@@ -15,3 +15,11 @@ Importer reconstruction and the focused source test pass. This is a definition c
 The building/effect graph contains 80 exports, 84 clips, 102 shapes and 6,078 frames on building textures 8, 18, 25 and 39, using blend mode 0. The projectile graph contains four exports, six clips, eight shapes and 15 frames on character texture 7, using modes 0 and 8. Neither reachable graph includes masks or text fields. Reconstruction passes.
 
 This inventory does not yet contain graph geometry or texture pixels. The tower's separately named resident defender also needs capture: level 15 specifies `DefenderCharacter=Archer7`. That character is not a building export and is not included in these counts. World attachment and attack synchronization remain unverified.
+
+## Exact graph and texture capture
+
+`scripts/import-native-archer-tower-art.py` captures both inventoried scene graphs into separate building and character namespaces. Source evidence retains original polygon strips, UV coordinates, matrices, colors, clip timelines, named children, frame labels and blend modes. Runtime copies remap UVs onto tightly packed texture regions without resizing or simplifying source geometry. The five texture inputs are SHA-256 pinned and checked against the source fingerprint; metadata binds the definition and inventory hashes.
+
+The importer `--check` reconstruction passes for every graph document and every decoded RGBA texture pixel. Three focused tests pass, checking the source bindings, inventory, unchanged geometry and transforms, UV ranges and finite poses across all 6,093 retained frames. Projectile mode-8 groups remain isolated and are traversed in the frame checks. No source blend was flattened or replaced.
+
+This qualifies source preservation, not GPU pixel parity or native executable animation playback. Independent CPU/browser pixel comparisons and runtime presentation are still pending, as is the separately referenced resident Archer character capture.
