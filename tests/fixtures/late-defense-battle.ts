@@ -1,6 +1,18 @@
-import { GameModel, makeBuilding, type Army, type Battle, type Building, type Unit } from '../../src/game/model';
+import {
+  GameModel,
+  makeBuilding,
+  type Army,
+  type Battle,
+  type Building,
+  type Unit,
+} from '../../src/game/model';
 import { nativeLayout, nativeScenery } from '../../src/game/native-campaign';
-import { replayBattle, type ReplayAction, type ReplayData, type ReplaySetup } from '../../src/game/replay';
+import {
+  replayBattle,
+  type ReplayAction,
+  type ReplayData,
+  type ReplaySetup,
+} from '../../src/game/replay';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { emptyArmy, emptySpells } from '../../src/game/army';
@@ -10,7 +22,11 @@ import { stepLateCampaign, type SpellTowerWeapon } from '../../src/game/late-cam
 const maxLevels = () => Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)])) as Army;
 
 /** Ungated inspection of a complete late village with explicit maximum-level research. */
-export function lateSetup(index: number, army: Partial<Army>, buildings = nativeLayout(index)): ReplaySetup {
+export function lateSetup(
+  index: number,
+  army: Partial<Army>,
+  buildings = nativeLayout(index),
+): ReplaySetup {
   const loot = campaignResources(campaignStage(index, 'goblin-v1'));
   return {
     catalog: 'goblin-v1',

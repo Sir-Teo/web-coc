@@ -32,8 +32,8 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // Keep Your Cool (64) and Fireworks Inc. (66) need only the Goblin Freeze and Tornado Traps.
-    expect(playable).toEqual([...Array.from({ length: 61 }, (_, i) => i), 62, 64, 66]);
+    // Late families now complete villages 61–66, Pick Your Poison (68) and Paper Map (70).
+    expect(playable).toEqual([...Array.from({ length: 67 }, (_, i) => i), 68, 70]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];
