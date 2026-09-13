@@ -70,6 +70,8 @@ import { wizardTowerProjectileTier } from './wizard-tower-stats';
 import {
   stepSweepers,
   stepAirPush,
+  recordSweeperDestroyed,
+  type SweeperHistory,
   type AirGust,
   type SweeperState,
   type AirPush,
@@ -344,6 +346,7 @@ export interface Battle {
   traps: Record<number, TrapState>;
   gusts?: AirGust[];
   sweepers?: Record<number, SweeperState>;
+  airSweepers?: Record<number, SweeperHistory>;
   xbows?: Record<number, XbowState>;
   teslas?: Record<number, TeslaAttackState>;
   bombTowers?: Record<number, BombTowerAttackState>;
@@ -387,6 +390,9 @@ export type FX = {
     | 'trap'
     | 'spring'
     | 'gust'
+    | 'airsweeper-pickup'
+    | 'airsweeper-place'
+    | 'airsweeper-cancel'
     | 'tesla-reveal'
     | 'tesla-zap'
     | 'tesla-pickup'
@@ -806,6 +812,7 @@ export class GameModel {
             'mortar',
             'airdefense',
             'wizardtower',
+            'airsweeper',
             'camp',
             'darkstorage',
           ].includes(b.kind)) &&
@@ -1290,6 +1297,7 @@ export class GameModel {
       (b.kind === 'tesla' ||
         b.kind === 'bombtower' ||
         b.kind === 'seekingairmine' ||
+        b.kind === 'airsweeper' ||
         b.kind === 'wizardtower')
     ) {
       const size = BUILDINGS[b.kind].size;
@@ -2592,6 +2600,7 @@ export class GameModel {
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
+      if (this.battle && b.kind === 'airsweeper') recordSweeperDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'bombtower') {
         recordBombTowerDestroyed(this.battle, b, at);
         primeDeathBomb(
@@ -2608,6 +2617,7 @@ export class GameModel {
         type: 'destroy',
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
+        ...(b.kind === 'airsweeper' ? { sourceId: b.id } : {}),
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',

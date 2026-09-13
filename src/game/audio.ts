@@ -9,38 +9,10 @@ export class AudioManager {
     if (this.context.state === 'suspended') void this.context.resume();
     this.samples.decode();
   }
-  play(kind: 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory' | 'gust') {
+  play(kind: 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory') {
     if (!this.enabled) return;
     this.unlock();
     const ctx = this.context!;
-    if (kind === 'gust') {
-      const duration = 0.55,
-        buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-      const noise = ctx.createBufferSource(),
-        filter = ctx.createBiquadFilter(),
-        gain = ctx.createGain();
-      noise.buffer = buffer;
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1300, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + duration);
-      filter.Q.value = 0.65;
-      gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 0.06);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-      noise.onended = () => {
-        noise.disconnect();
-        filter.disconnect();
-        gain.disconnect();
-      };
-      noise.start();
-      noise.stop(ctx.currentTime + duration);
-      return;
-    }
     const settings = {
       click: [600, 0.04, 'sine'],
       collect: [1100, 0.18, 'sine'],

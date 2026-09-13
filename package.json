@@ -28,7 +28,8 @@
     "test:tesla:production": "node scripts/tesla-production-check.mjs",
     "test:shrink-trap:assets": "node scripts/shrink-trap-assets-check.mjs",
     "test:shrink-trap:production": "node scripts/shrink-trap-assets-check.mjs --live",
-    "test:air-sweeper:assets": "node scripts/air-sweeper-assets-check.mjs"
+    "test:air-sweeper:assets": "node scripts/air-sweeper-assets-check.mjs",
+    "test:air-sweeper:production": "node scripts/air-sweeper-production-check.mjs"
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",

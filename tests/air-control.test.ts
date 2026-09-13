@@ -120,7 +120,7 @@ describe('directional air displacement', () => {
       }
     },
   );
-  it.each([1, 2, 3, 4])(
+  it.each([1, 2, 3, 4, 5, 6, 7])(
     'pushes once by level %i strength with no damage and no ground effect',
     (level) => {
       const { m } = arena('airsweeper', level);

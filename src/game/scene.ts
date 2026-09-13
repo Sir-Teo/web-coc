@@ -39,7 +39,9 @@ import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
 import { teslaRevealShake } from './tesla-shake';
 import { CameraShakeLayer } from './camera-shake-layer';
-import { SWEEPER_ART_LEVELS, sweeperTexture, sweeperAsset } from './air-control-art';
+import { SWEEPER_ART } from './air-control-art';
+import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
+import { sweeperBounds } from './air-sweeper-poses';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
@@ -153,6 +155,7 @@ export class VillageScene extends Phaser.Scene {
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
   private wizardTowerPresentation!: WizardTowerPresentation;
+  private sweeperPresentation!: SweeperPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
@@ -184,6 +187,7 @@ export class VillageScene extends Phaser.Scene {
     preloadTeslas(this);
     preloadBombTowers(this);
     preloadWizardTowers(this);
+    preloadSweepers(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
     for (const level of SKELETON_ART_TIERS) {
@@ -201,9 +205,6 @@ export class VillageScene extends Phaser.Scene {
         frameWidth: 128,
         frameHeight: 128,
       });
-    for (const level of SWEEPER_ART_LEVELS)
-      for (let direction = 0; direction < 8; direction++)
-        this.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
     for (const level of MORTAR_ART_LEVELS)
       if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
@@ -275,6 +276,7 @@ export class VillageScene extends Phaser.Scene {
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
+    this.sweeperPresentation = new SweeperPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
       const reduced = this.model.state.settings.reducedMotion,
@@ -295,6 +297,7 @@ export class VillageScene extends Phaser.Scene {
       this.teslaPresentation.destroy();
       this.bombTowerPresentation.destroy();
       this.wizardTowerPresentation.destroy();
+      this.sweeperPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
     });
@@ -722,6 +725,7 @@ export class VillageScene extends Phaser.Scene {
       kind !== 'tesla' &&
       kind !== 'bombtower' &&
       kind !== 'seekingairmine' &&
+      kind !== 'airsweeper' &&
       kind !== 'wizardtower'
     )
       this.audio.play('build');
@@ -775,15 +779,17 @@ export class VillageScene extends Phaser.Scene {
   }
   private nativeBuildingBounds(b: Building) {
     const sample =
-      b.kind === 'tesla'
-        ? teslaBodyBounds
-        : b.kind === 'bombtower'
-          ? bombTowerBounds
-          : b.kind === 'wizardtower'
-            ? wizardTowerBounds
-            : b.kind === 'seekingairmine'
-              ? seekingMineBounds
-              : undefined;
+      b.kind === 'airsweeper'
+        ? sweeperBounds
+        : b.kind === 'tesla'
+          ? teslaBodyBounds
+          : b.kind === 'bombtower'
+            ? bombTowerBounds
+            : b.kind === 'wizardtower'
+              ? wizardTowerBounds
+              : b.kind === 'seekingairmine'
+                ? seekingMineBounds
+                : undefined;
     if (!sample) return;
     const state =
       b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
@@ -868,6 +874,7 @@ export class VillageScene extends Phaser.Scene {
       this.teslaPresentation.clear();
       this.bombTowerPresentation.clear();
       this.wizardTowerPresentation.clear();
+      this.sweeperPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
@@ -958,11 +965,13 @@ export class VillageScene extends Phaser.Scene {
       );
       im.setData(
         'intactHeight',
-        b.kind === 'bombtower'
-          ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-          : b.kind === 'wizardtower'
-            ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
-            : im.displayHeight,
+        b.kind === 'airsweeper'
+          ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
+          : b.kind === 'bombtower'
+            ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
+            : b.kind === 'wizardtower'
+              ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
+              : im.displayHeight,
       );
       if (b.kind === 'mortar') {
         const muzzle = mortarMuzzle(b.level);
@@ -987,6 +996,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'tesla' ||
           b.kind === 'bombtower' ||
           b.kind === 'wizardtower' ||
+          b.kind === 'airsweeper' ||
           b.kind === 'seekingairmine' ||
           b.npc === 'shrink-trap' ||
           isGoblinBuilding(b.npc)) &&
@@ -1012,6 +1022,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'tesla' &&
         b.kind !== 'bombtower' &&
         b.kind !== 'wizardtower' &&
+        b.kind !== 'airsweeper' &&
         b.kind !== 'seekingairmine'
       )
         im.setTint(0xffecc7);
@@ -1161,6 +1172,12 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(SEEKING_MINE_ART.originX, SEEKING_MINE_ART.originY)
         .setFlipX(false)
         .setDisplaySize(SEEKING_MINE_ART.width, SEEKING_MINE_ART.height);
+    if (kind === 'airsweeper')
+      return im
+        .setOrigin(SWEEPER_ART.originX, SWEEPER_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(SWEEPER_ART.width, SWEEPER_ART.height)
+        .setData('nativeSweeperRuin', false);
     if (kind === 'wizardtower')
       return im
         .setOrigin(WIZARD_TOWER_ART.originX, WIZARD_TOWER_ART.originY)
@@ -1169,10 +1186,7 @@ export class VillageScene extends Phaser.Scene {
         .setData('nativeWizardTowerRuin', false);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
-    const scale =
-      wall || camp || kind === 'mortar' || kind === 'airsweeper'
-        ? 1
-        : 1 + Math.min(4, level - 1) * 0.035;
+    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
     return im
       .setOrigin(camp?.originX ?? 0.5, camp?.originY ?? (wall ? 0.84 : 0.88))
@@ -1255,6 +1269,10 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+    if (b.kind === 'airsweeper') {
+      im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeSweeperRuin', true);
+      return;
+    }
     if (b.kind === 'seekingairmine') {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0);
       return;
@@ -1296,7 +1314,8 @@ export class VillageScene extends Phaser.Scene {
         isTrap(b.kind) ||
         b.kind === 'tesla' ||
         b.kind === 'bombtower' ||
-        b.kind === 'wizardtower'
+        b.kind === 'wizardtower' ||
+        b.kind === 'airsweeper'
       )
         continue;
       const d = BUILDINGS[b.kind];
@@ -1460,7 +1479,8 @@ export class VillageScene extends Phaser.Scene {
         ? this.model.placement === 'wall' ||
           this.model.placement === 'mortar' ||
           this.model.placement === 'camp' ||
-          this.model.placement === 'wizardtower'
+          this.model.placement === 'wizardtower' ||
+          this.model.placement === 'airsweeper'
           ? 0xffffff
           : 0xd9ffb0
         : 0xff7272,
@@ -1582,13 +1602,6 @@ export class VillageScene extends Phaser.Scene {
           .setCrop()
           .setAlpha(1);
       }
-      if (v.kind === 'airsweeper' && v.hp > 0) {
-        const state = this.model.battle?.sweepers?.[v.id];
-        const direction = state
-          ? (Math.round(Math.atan2(state.directionY, state.directionX) / (Math.PI / 4)) + 8) % 8
-          : (v.direction ?? 0);
-        im.setTexture(sweeperTexture(v.level, direction));
-      }
       const nativeBounds = this.nativeBuildingBounds(v);
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
@@ -1664,6 +1677,13 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
+    const sweeperCues = this.sweeperPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+    );
     const shrinkCues = this.shrinkTrapPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,
@@ -1676,10 +1696,18 @@ export class VillageScene extends Phaser.Scene {
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues, ...wizardTowerCues, ...shrinkCues],
+      [
+        ...xbowCues,
+        ...teslaCues,
+        ...bombTowerCues,
+        ...mineCues,
+        ...wizardTowerCues,
+        ...shrinkCues,
+        ...sweeperCues,
+      ],
       this.renderClock / 1000,
     );
-    if (battle && !battle.finished) {
+    if (battle && !battle.finished && !this.model.state.settings.reducedMotion) {
       for (const gust of battle.gusts ?? []) {
         const half = Math.min(
           SWEEPER.waveCone / 2,
@@ -2068,6 +2096,33 @@ export class VillageScene extends Phaser.Scene {
       if (fx.type !== 'wizardtower-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
+    if (
+      fx.type === 'airsweeper-pickup' ||
+      fx.type === 'airsweeper-place' ||
+      fx.type === 'airsweeper-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.sweeperPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'airsweeper-pickup'
+          ? 'pickup'
+          : fx.type === 'airsweeper-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'airsweeper-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
+    if (
+      fx.type === 'destroy' &&
+      this.model.buildings.some((b) => b.id === fx.sourceId && b.kind === 'airsweeper')
+    ) {
+      this.lastRevision = -1;
+      return;
+    }
     const p = iso(fx.x, fx.y);
     if (fx.type === 'quake') {
       this.combatEffects.quake(p, fx.radius ?? 8, this.model.state.settings.reducedMotion);
@@ -2075,10 +2130,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'tesla-zap' || fx.type === 'tesla-reveal') return;
-    if (fx.type === 'gust') {
-      this.audio.play('gust');
-      return;
-    }
+    if (fx.type === 'gust') return;
     if (fx.type === 'trap' || fx.type === 'spring') {
       const reduced = this.model.state.settings.reducedMotion;
       const label = this.add
@@ -2483,7 +2535,9 @@ export class VillageScene extends Phaser.Scene {
               ? !im.getData('nativeBombTowerRuin')
               : b.kind === 'wizardtower'
                 ? !im.getData('nativeWizardTowerRuin')
-                : !im.texture.key.startsWith('ruins-'))
+                : b.kind === 'airsweeper'
+                  ? !im.getData('nativeSweeperRuin')
+                  : !im.texture.key.startsWith('ruins-'))
         ) {
           this.renderRuin(b, im);
           this.drawRuinGround();

@@ -5,6 +5,7 @@ import { teslaStats } from './tesla-stats';
 import { bombTowerStats } from './bomb-tower-stats';
 import { seekingMineStats } from './seeking-mine-stats';
 import { wizardTowerStats } from './wizard-tower-stats';
+import { SWEEPER_LEVELS } from './air-control-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
@@ -41,6 +42,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'airsweeper') return SWEEPER_LEVELS[level - 1]?.townhall ?? null;
   if (kind === 'wizardtower') return wizardTowerStats(level)?.townhall ?? null;
   if (kind === 'bombtower') return bombTowerStats(level)?.townhall ?? null;
   if (kind === 'tesla') return teslaStats(level)?.townhall ?? null;

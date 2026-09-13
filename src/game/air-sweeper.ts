@@ -27,6 +27,25 @@ export interface SweeperState {
   directionY: number;
   firedAt?: number;
 }
+export interface SweeperShot {
+  index: number;
+  at: number;
+  x: number;
+  y: number;
+  directionX: number;
+  directionY: number;
+}
+export interface SweeperHistory {
+  fired: number;
+  shots: SweeperShot[];
+  destroyedAt?: number;
+}
+const historyFor = (battle: Battle, id: number) =>
+  ((battle.airSweepers ??= {})[id] ??= { fired: 0, shots: [] });
+
+export function recordSweeperDestroyed(battle: Battle, tower: Building, at: number) {
+  historyFor(battle, tower.id).destroyedAt ??= at;
+}
 
 // Exact cardinal axes and one shared diagonal value avoid platform-specific trig
 // rounding in replay state. Angles are derived only when drawing the nozzle/gust.
@@ -153,6 +172,18 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
       launched: b.elapsed,
     });
     state.firedAt = b.elapsed;
+    // Presentation history survives loss of the target, stun and destruction.
+    // It records actual launches without affecting targeting, clocks or RNG.
+    const history = historyFor(b, tower.id);
+    history.shots.push({
+      index: ++history.fired,
+      at: b.elapsed,
+      x,
+      y,
+      directionX: state.directionX,
+      directionY: state.directionY,
+    });
+    if (history.shots.length > 16) history.shots.shift();
     const overshoot = Math.min(0, state.prepare);
     state.prepare = SWEEPER.prepare;
     // Preparation is part of the five-second cycle.

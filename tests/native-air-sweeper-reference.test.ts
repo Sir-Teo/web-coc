@@ -56,7 +56,7 @@ it('preserves all seven original levels and the distinct cone, timing and projec
     UseRotate: 'TRUE',
     UseTopLayer: 'TRUE',
   });
-  expect(native.reconstruction.liveIntegration).toBe(false);
+  expect(native.reconstruction.liveIntegration).toBe(true);
   expect(native.reconstruction.nativePlaybackVerified).toBe(false);
 });
 

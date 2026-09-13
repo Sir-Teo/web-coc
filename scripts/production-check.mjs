@@ -19,6 +19,7 @@ const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native
 const seekingMineNative = JSON.parse(
   await fs.readFile('reference/seeking-mine/native.json', 'utf8'),
 );
+const sweeperNative = JSON.parse(await fs.readFile('reference/air-sweeper/native.json', 'utf8'));
 const wizardTowerNative = JSON.parse(
   await fs.readFile('reference/wizard-tower/native.json', 'utf8'),
 );
@@ -61,6 +62,9 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(wizardTowerNative.effectArt.textures),
       ...Object.values(wizardTowerNative.previews),
       ...Object.values(wizardTowerNative.sounds),
+      ...Object.values(sweeperNative.world.textures),
+      ...Object.values(sweeperNative.previews),
+      ...Object.values(sweeperNative.sounds),
       ...[
         'tesla_appear_01',
         'tesla_zap_01',
@@ -82,12 +86,6 @@ for (const [name, engine] of Object.entries(engines)) {
       ),
     ),
     ...['ground', 'air'].map((s) => `/assets/characters/skeleton-v1/${s}.webp`),
-    ...Array.from({ length: 4 }, (_, l) =>
-      Array.from(
-        { length: 8 },
-        (_, d) => `/assets/buildings/airsweeper-v1/level-${l + 1}-${d}.webp`,
-      ),
-    ).flat(),
     ...['healer', 'dragon', 'pekka'].flatMap((kind) => [
       `/assets/characters/${kind}-v1.webp`,
       `/assets/characters/walk/${kind}-v1.webp`,

@@ -1,10 +1,17 @@
+import source from '../../reference/air-sweeper/combat.json';
+
 /** Supercell client 18.400.21 tables; interpretation notes in docs/AIR-CONTROL.md. */
-export const SWEEPER_LEVELS = [
-  { hp: 750, cost: 200000, seconds: 14400, push: 1.6 },
-  { hp: 800, cost: 300000, seconds: 21600, push: 2 },
-  { hp: 850, cost: 450000, seconds: 28800, push: 2.4 },
-  { hp: 900, cost: 800000, seconds: 43200, push: 2.8 },
-] as const;
+export const SWEEPER_LEVELS = source.levels.map((row, i) => ({
+  level: i + 1,
+  hp: Number(row.Hitpoints),
+  cost: Number(row.BuildCost),
+  seconds: (Number(row.BuildTimeD) * 24 + Number(row.BuildTimeH)) * 3600,
+  push: Number(row.ShockwavePushStrength) / 100,
+  townhall: Number(row.TownHallLevel),
+  export: row.ExportName,
+  upgrade: row.ExportNameUpgradeAnim,
+  ruin: row.ExportNameDamaged,
+}));
 
 export const SWEEPER = {
   range: 15,
@@ -27,4 +34,8 @@ export const validDirection = (v: unknown) =>
 
 /** Zero points along +x (screen lower-right); each step turns clockwise on the map. */
 export const sweeperAngle = (direction = 0) => (direction * Math.PI) / 4;
-export const sweeperStats = (level: number) => SWEEPER_LEVELS[Math.max(0, Math.min(3, level - 1))];
+export const sweeperStats = (level: number) => {
+  const row = Number.isInteger(level) && SWEEPER_LEVELS[level - 1];
+  if (!row) throw Error(`Unsupported native Air Sweeper level: ${level}`);
+  return row;
+};

@@ -14397,12 +14397,12 @@
     }
   },
   "reconstruction": {
-    "liveIntegration": false,
+    "liveIntegration": true,
     "nativePlaybackVerified": false,
     "scope": "Seven original levels, 360-frame turret/sector controls, all loading labels, construction/upgrade/rubble/base exports, projectile, four effect records and four sounds.",
     "preview": "All body frames and controlled child phases enclosed with eight native units of padding at 2x. Base and body share the unchanged source origin. Framing and direction mapping are local.",
-    "timing": "Source loading labels span 224 idle, 91 loading and 10 attack frames at 30 fps. Their relation to PrepareSpeed=600, AttackSpeed=5000 and CoolDownOverride=4800 is not established by source data alone.",
+    "timing": "Source loading labels span 224 idle, 91 loading and 10 attack frames at 30 fps. Live playback fits loading into the existing 0.6-second preparation and starts the original attack segment at actual launch. Native time scaling and CoolDownOverride=4800 semantics remain unverified; see docs/AIR-CONTROL.md.",
     "projectile": "Air Blaster Ammo1 references dummy_particle. Its original geometry is retained; this does not verify the native traveling shockwave renderer or justify replacing its cone fields.",
-    "availability": "Source TH requirements are retained. Importing levels 5-7 does not change the current TH8 home cap or unlock unsupported campaign stages."
+    "availability": "All seven source levels are supported in retained villages and practice. The TH8 home cap remains level four; later campaign gates retain their unresolved weapons and garrisons."
   }
 }

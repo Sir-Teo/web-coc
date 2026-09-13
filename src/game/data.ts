@@ -390,7 +390,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: SWEEPER_LEVELS[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 4,
+    maxLevel: SWEEPER_LEVELS.length,
     available: [0, 0, 0, 0, 0, 1, 1, 1],
     build: SWEEPER_LEVELS[0].seconds,
     range: SWEEPER.range,
