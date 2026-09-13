@@ -1,3 +1,4 @@
+import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoMode } from './inferno-weapon';
 import {
   campaignStage,
@@ -269,7 +270,12 @@ export function validateReplay(value: unknown): value is ReplayData {
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       ((b.kind === 'inferno' || b.infernoMode !== undefined) && value.version < 39) ||
       (b.kind === 'clancastle' && value.version < 37) ||
-      !integer(b.level, 1, npcMaxLevel(b.npc) ?? d.maxLevel) ||
+      !integer(
+        b.level,
+        1,
+        npcMaxLevel(b.npc) ??
+          (b.kind === 'darkdrill' && value.version >= 40 ? MAX_DARK_DRILL_LEVEL : d.maxLevel),
+      ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
       (b.npc === 'pumpkin-bomb' && value.version < 28) ||

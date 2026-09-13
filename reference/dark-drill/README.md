@@ -131,3 +131,12 @@ Focused tests cover source particle counts, unique identities, serialized recons
 The Drill placement ghost now renders the original native layers rather than the prototype thumbnail. Existing buildings retain their current tier, reservoir and construction/upgrade state in a stationary source-frame preview; new placement uses level one. Valid placement retains original colors, while rejected placement applies the existing red cue through native color multipliers. Preview alpha (72%) and foreground depth retain local UI conventions, not verified native executable values. Cancellation, switching building kinds and scene cleanup destroy the retained preview view.
 
 Chromium and WebKit each pass eleven-tier preview creation, valid/invalid tile checks, hidden legacy thumbnail, new level-one preview, cancellation and switching back to a non-Drill ghost, with zero GL errors. The WebKit preview screenshot was visually reviewed. Eight focused art/handling/effect tests and production build pass. The fixture exposes all captured tiers for rendering qualification; home progression remains capped at level three.
+
+
+## Campaign identity and captured tiers
+
+The campaign adapter now resolves original building ID 1000023 to Dark Elixir Drill. Enemy placement supports all eleven captured base tiers independently of the level-three home progression cap. Each placement retains its original coordinates, tier and campaign-source HP. Replay version 40 accepts those tiers; older versions retain their earlier validation limit. Level twelve remains rejected.
+
+Tests exercise every captured tier through a temporary campaign fixture, battle creation, recording, serialized save validation and replay opening; they also reject an unsupported tier and confirm the home cap. Midnight Oil's resolved Drill blocker disappears, but its missing Inferno Tower and level-15 Archer Tower support still gates the map. Existing playable campaign content is unchanged. This adapter does not interpret mini-level bonuses or unlock incomplete villages.
+
+Validation: the full suite passed 1,465 tests and identified one stale source-capture assertion still listing the now-supported Drill blocker. That assertion was updated; the four-test source/campaign recheck passes. Production build passes. No frozen historical replay fixtures were modified.

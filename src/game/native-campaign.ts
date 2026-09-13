@@ -1,3 +1,4 @@
+import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import raw from '../../reference/campaign/runtime.json';
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
 import { BUILD_MIN } from './grid';
@@ -58,6 +59,7 @@ const KINDS: Record<number, BuildingKind> = {
   1000018: 'builder',
   1000019: 'tesla',
   1000021: 'xbow',
+  1000023: 'darkdrill',
   1000024: 'darkstorage',
   1000028: 'airsweeper',
   1000032: 'bombtower',
@@ -128,7 +130,14 @@ export function nativeCampaignIssues(index: number): string[] {
       issues.add(stats?.name ?? `Building ${id}`);
       continue;
     }
-    if (level > (npc ? NPC_BUILDINGS[npc].hp.length : BUILDINGS[kind].maxLevel)) {
+    if (
+      level >
+      (npc
+        ? NPC_BUILDINGS[npc].hp.length
+        : kind === 'darkdrill'
+          ? MAX_DARK_DRILL_LEVEL
+          : BUILDINGS[kind].maxLevel)
+    ) {
       issues.add(`${stats.name} level ${level}`);
       continue;
     }
