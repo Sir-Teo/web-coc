@@ -1,0 +1,4502 @@
+{
+  "category": "castle-controls",
+  "width": 2400,
+  "height": 6300,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "9d699366cf0fe8d9085ba830017548a68e327d11fa2d1c282bb7dae9afca4d75",
+  "cases": [
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 0,
+      "y": 0,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        92.98684091507509
+      ],
+      "empty": false,
+      "rgbaSha256": "2ff7954fd5c4203fd7735cc2f3f2c2463f80cc52017601a5d87df17fa06a3402"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 300,
+      "y": 0,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        92.98684091507509
+      ],
+      "empty": false,
+      "rgbaSha256": "3a016d4cff3c21ad9eb1aab547b69ffec0d653454f9011464fd61a5347a650fd"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 0,
+      "root": [
+        1.7683934119883447,
+        0.0,
+        148.71790398289164,
+        0.0,
+        1.7683934119883447,
+        61.18244189476822
+      ],
+      "empty": false,
+      "rgbaSha256": "fb8c6b375227896b854fe39229ae58e18b66c1ab9b0674fcdab2780c50867054"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 0,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        148.7932201280395,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "e05d082aa7ad818b8afe42e5514e6e8126b978448cb38a00db3629e0a41a9f6a"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        148.96329561106157,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "fa3644ce3b2f4a4770079113bc89e828ca7cae209667305119eff669179a2f81"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 0,
+      "root": [
+        1.7683934119883447,
+        0.0,
+        148.71790398289164,
+        0.0,
+        1.7683934119883447,
+        61.18244189476822
+      ],
+      "empty": false,
+      "rgbaSha256": "fb8c6b375227896b854fe39229ae58e18b66c1ab9b0674fcdab2780c50867054"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 0,
+      "root": [
+        1.8604647812540964,
+        0.0,
+        155.34885753743526,
+        0.0,
+        1.8604647812540964,
+        56.55815742607949
+      ],
+      "empty": false,
+      "rgbaSha256": "177f96e601211b4f3e083303c261df52a13d8806450af95635dcc3314ef18eed"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 0,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        154.78548515048647,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "53eaf3dfe1b1148e5ed822e1d838172146bbc1ffb940f9fc0b1680b94ed413b7"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 300,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        154.11105088341367,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "c42b6222c287b72b1c853142a122ea1608819ed8f05115a056219d33705093f7"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 300,
+      "root": [
+        1.8604647812540964,
+        0.0,
+        155.34885753743526,
+        0.0,
+        1.8604647812540964,
+        56.55815742607949
+      ],
+      "empty": false,
+      "rgbaSha256": "177f96e601211b4f3e083303c261df52a13d8806450af95635dcc3314ef18eed"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 300,
+      "root": [
+        1.6823601330512612,
+        0.0,
+        154.20587466184975,
+        0.0,
+        1.6823601330512612,
+        65.50346328015459
+      ],
+      "empty": false,
+      "rgbaSha256": "4e2fe332e631c39d2a1e99aed1e0a5a41b69267e33719610c99d75608afa22b8"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 300,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        154.16124947262148,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "aaebf1dcc91defa24103b9c8541473fef43ef77ebf3009ab14f9abebbf3ca89d"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 300,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        153.57479080648412,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "df8b7a4bf66a9a4098783b7083d77d325ba2d8dbaa9e6f527f299ddc96f4358b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 300,
+      "root": [
+        1.6823601330512612,
+        0.0,
+        154.20587466184975,
+        0.0,
+        1.6823601330512612,
+        65.50346328015459
+      ],
+      "empty": false,
+      "rgbaSha256": "ecfee3af59a2fa83d3c3973fa43cafcb532dcc2c25f37a0185113d4f18c47f99"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 300,
+      "root": [
+        1.793841741666905,
+        0.0,
+        145.6050658354339,
+        0.0,
+        1.793841741666905,
+        59.90429955122417
+      ],
+      "empty": false,
+      "rgbaSha256": "cc86e83545998e4f7a75773837454fdac6ad8b83be5644df829a5806e02e1427"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 300,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        145.92193030766794,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "b668ef3cfb0259b2c6e684ed233819f06524f16c90f4266e224c650a2f7f9b9b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 600,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        146.4966661719596,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "d8b073520ced0760f8ffd6439fcd7229bc4993af072f34c83d7b923bab2c965f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 600,
+      "root": [
+        1.793841741666905,
+        0.0,
+        145.6050658354339,
+        0.0,
+        1.793841741666905,
+        59.90429955122417
+      ],
+      "empty": false,
+      "rgbaSha256": "cc86e83545998e4f7a75773837454fdac6ad8b83be5644df829a5806e02e1427"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 600,
+      "root": [
+        1.8953323699289415,
+        0.0,
+        152.93776372736602,
+        0.0,
+        1.8953323699289415,
+        55.64581199844146
+      ],
+      "empty": false,
+      "rgbaSha256": "262a51d605b65be7195ab2659ca7b2f095160637e44e952d2a497990ca572ec3"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 600,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        152.57998915011686,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "11409370115205a2932719648ce4b68b3a9725601039bc056ea627c98f88d879"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 600,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        152.21638273680725,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "e279c9308661eb6ea62ca166d5899251cfaa17ee4c00a2f1a7c3530acdb8e2c1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 600,
+      "root": [
+        1.7663883934622393,
+        0.0,
+        152.7379006622191,
+        0.0,
+        1.7663883934622393,
+        76.714324722501
+      ],
+      "empty": false,
+      "rgbaSha256": "c609e9f1cd203115b9813f353c80d4e2a277514345cd765768a0496c92d5356c"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 600,
+      "root": [
+        1.8953323699289415,
+        0.0,
+        152.93776372736602,
+        0.0,
+        1.8953323699289415,
+        54.80693280483679
+      ],
+      "empty": false,
+      "rgbaSha256": "034a8001f5998774f2d7c7923b3433e71d1ab676e3dd92ee875c5da0da651aed"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 600,
+      "root": [
+        1.6645099484110706,
+        0.0,
+        152.57998915011686,
+        0.0,
+        1.6645099484110706,
+        88.6697600938015
+      ],
+      "empty": false,
+      "rgbaSha256": "456d8ec73b8d30da8460276d2c6c632fe103009bd0b5e1d6e0bb08d77ee515d8"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 900,
+      "root": [
+        1.4299250501635283,
+        0.0,
+        152.21638273680725,
+        0.0,
+        1.4299250501635283,
+        116.19829754520242
+      ],
+      "empty": false,
+      "rgbaSha256": "59fe2d9bfe8175f4c02386498be81aeb09c671aea7018e1f2bd973b16c2c6a4b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 900,
+      "root": [
+        1.8953323699289415,
+        0.0,
+        152.93776372736602,
+        0.0,
+        1.8953323699289415,
+        54.80693280483679
+      ],
+      "empty": false,
+      "rgbaSha256": "034a8001f5998774f2d7c7923b3433e71d1ab676e3dd92ee875c5da0da651aed"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl2",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 600,
+      "y": 900,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        93.99261088604727
+      ],
+      "empty": false,
+      "rgbaSha256": "f9c913e1af934f439c21b9c495dd9ab91f40947c56983ce40ba788fbc7d699c2"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl2",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 900,
+      "y": 900,
+      "root": [
+        1.385837621850562,
+        0.0,
+        163.09615072414505,
+        0.0,
+        1.385837621850562,
+        123.1735397550015
+      ],
+      "empty": false,
+      "rgbaSha256": "9d4271730b62a58468f188c49e81383affea6e9fe44904752366a3855d9bd519"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl3",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1200,
+      "y": 900,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        93.94746788276494
+      ],
+      "empty": false,
+      "rgbaSha256": "abc110caabfdd9274b86480410ae122198e26dc2858f8f752a9ff17eca429b2e"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl3",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1500,
+      "y": 900,
+      "root": [
+        1.3674526510808924,
+        0.0,
+        162.92241294674434,
+        0.0,
+        1.3674526510808924,
+        121.75174086268495
+      ],
+      "empty": false,
+      "rgbaSha256": "264cd9a1ff36283b7972130145d3917857d74b8e46bd8c9eb14dcef4be223a78"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl4",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1800,
+      "y": 900,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        95.45613169319583
+      ],
+      "empty": false,
+      "rgbaSha256": "37c8b55961784052882234c249c74b2559ae744400eafedc1b820eed73fc6363"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl4",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 2100,
+      "y": 900,
+      "root": [
+        1.3811952288672757,
+        0.0,
+        163.0522801600391,
+        0.0,
+        1.3811952288672757,
+        122.81452100626225
+      ],
+      "empty": false,
+      "rgbaSha256": "1113e0000b72a26a24d89599bd132297a2c8cfd29441fde804a5edd4897ed456"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        93.94746788276494
+      ],
+      "empty": false,
+      "rgbaSha256": "c2be014db1db184ebc339b231415ab9069c8ae7d5a12c5b2b411b4666768cfff"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 300,
+      "y": 1200,
+      "root": [
+        1.3674526510808924,
+        0.0,
+        162.92241294674434,
+        0.0,
+        1.3674526510808924,
+        121.75174086268495
+      ],
+      "empty": false,
+      "rgbaSha256": "3e9d90804c1341ae3b5e4fe256525efe7b1291e09498b5cf452b95a1c1ce730a"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 1200,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.8213428386748,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "e29785a674124bb4b672d4cba634d9a7b63f91a8d94d7f29d9418fd8aa55e630"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 1200,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.8213428386748,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "c63b001651c02e79206d8049bc7d197190975918ec86bc8247f2b29f98b87303"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        1.4200750970382252,
+        0.0,
+        148.97043688719674,
+        0.0,
+        1.4200750970382252,
+        115.50808756955193
+      ],
+      "empty": false,
+      "rgbaSha256": "2cb73af8a3cf58e5f7b3b48f3d15cbdccadcac0d874288e9dbb39dc605d7a5a4"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.8213428386748,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "e29785a674124bb4b672d4cba634d9a7b63f91a8d94d7f29d9418fd8aa55e630"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.97545452342908,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "0afb73d67909735d9c8f4f6be39c76165f30abc7de050c756233029221844f3b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.97545452342908,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "95aec6bfccfd293e782d7afad5e9fd7032d6e86e4d01c5c39eb897302f3d5cd6"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 1500,
+      "root": [
+        1.4200750970382252,
+        0.0,
+        150.85206455998664,
+        0.0,
+        1.4200750970382252,
+        115.50808756955193
+      ],
+      "empty": false,
+      "rgbaSha256": "f60d067ba538c7027c80e855b0166004df267dfebacbe6f69d5252530e133a06"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.97545452342908,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "0afb73d67909735d9c8f4f6be39c76165f30abc7de050c756233029221844f3b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        154.06427601663415,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "0d916652261a40ff10de6bc15bc9bfad198ae9feb4dc792e6bbf7947b9368391"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        154.06427601663415,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "221374ac8369f7e3508492df9d177ff3f93f503e6d41013ccbc2bc87aff160ff"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        1.4200750970382252,
+        0.0,
+        153.5501660739692,
+        0.0,
+        1.4200750970382252,
+        115.50808756955193
+      ],
+      "empty": false,
+      "rgbaSha256": "697e70dddbc78c074b2258d51725063741c2725f8e6644f1014e2d7628190b29"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        154.06427601663415,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "3feb9959a876a8fd4c4ae4c602b5b177d8c0a2f5868a411fd59e1ecc67127414"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.1304005358024,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "ee7997097a878572722e5b337e1ab7dba08ea5a8c67559c36ed159684445d3e6"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.1304005358024,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "77454b5a4122a110471fb6938ef878a02e1a801ee5ed804d464de38c7efe3623"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 1800,
+      "root": [
+        1.4200750970382252,
+        0.0,
+        148.36689522007364,
+        0.0,
+        1.4200750970382252,
+        115.50808756955193
+      ],
+      "empty": false,
+      "rgbaSha256": "a5a858b42a298b0a36aa5d97614cd5fae36332c29c947ab7eec4b6cecb8f207a"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 1800,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        148.1304005358024,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "ee7997097a878572722e5b337e1ab7dba08ea5a8c67559c36ed159684445d3e6"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.0,
+      "x": 600,
+      "y": 1800,
+      "root": [
+        1.6182459878328523,
+        0.0,
+        150.9304926776276,
+        0.0,
+        1.6182459878328523,
+        91.99511107438465
+      ],
+      "empty": false,
+      "rgbaSha256": "cfee1c2e3ff978d1c1809b11683b78595b4ac636b1f9fd33e0c83270205fff2f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.75,
+      "x": 900,
+      "y": 1800,
+      "root": [
+        1.3674526510808924,
+        0.0,
+        150.78628631765508,
+        0.0,
+        1.3674526510808924,
+        121.75174086268495
+      ],
+      "empty": false,
+      "rgbaSha256": "22fbd6070f6e26bec966966e5a15ba0d4a32d03f7cfbca4528bc18933e7a1e84"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 2.0833333333333335,
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        1.394128082171067,
+        0.0,
+        150.8016247108837,
+        0.0,
+        1.394128082171067,
+        118.58670092313227
+      ],
+      "empty": false,
+      "rgbaSha256": "55f04eb4fd08252a8ac08ef0a5cef8d0155e3aadbca7b8d3accc1586f15ebce3"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 3.875,
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        1.4381541408046137,
+        0.0,
+        150.8269397281872,
+        0.0,
+        1.4381541408046137,
+        113.36300899908352
+      ],
+      "empty": false,
+      "rgbaSha256": "febc1f3302277f96498a3f360a572dc544cc15088e942e8f56c040b78efa8f51"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.0,
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.93479042965245,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "d243894fd6b76d6a386dbe16ab54848825311abe1ddfba144da97238e351ee15"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.75,
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.93479042965245,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "74409030cf734195d92e0a2e552f7621e63c3957529f96f2a1a9c78e33adcac4"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 2.0833333333333335,
+      "x": 0,
+      "y": 2100,
+      "root": [
+        1.4200750970382252,
+        0.0,
+        150.8165442642283,
+        0.0,
+        1.4200750970382252,
+        115.50808756955193
+      ],
+      "empty": false,
+      "rgbaSha256": "9943dc6875ccbd524c07371dcd69ccda5958b28f99c5644e03482b727c3ab094"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 3.875,
+      "x": 300,
+      "y": 2100,
+      "root": [
+        1.6257203292630966,
+        0.0,
+        150.93479042965245,
+        0.0,
+        1.6257203292630966,
+        91.10828045228124
+      ],
+      "empty": false,
+      "rgbaSha256": "d243894fd6b76d6a386dbe16ab54848825311abe1ddfba144da97238e351ee15"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl6",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 600,
+      "y": 2100,
+      "root": [
+        1.5375788600555462,
+        0.0,
+        163.6844542006535,
+        0.0,
+        1.5375788600555462,
+        92.80206816555304
+      ],
+      "empty": false,
+      "rgbaSha256": "89a27bfc7307bdbcc7d88421268a64059d3dfede0102de4383a1e49eba903b70"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl6",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 900,
+      "y": 2100,
+      "root": [
+        1.3539809023503033,
+        0.0,
+        162.0504320969286,
+        0.0,
+        1.3539809023503033,
+        120.70990524256433
+      ],
+      "empty": false,
+      "rgbaSha256": "93b3595ee26e4d69c321b1ed533b10f9654ce9055c30f3cc282f7ec42546b57f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl7",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        98.16398345778377
+      ],
+      "empty": false,
+      "rgbaSha256": "8a952e24ec96ba0fff2210c56cc3eed43e661baed7c1ee1ba96c2eb2d3ac5461"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl7",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        1.3901507774738664,
+        0.0,
+        163.1369099987158,
+        0.0,
+        1.3901507774738664,
+        123.50709698304561
+      ],
+      "empty": false,
+      "rgbaSha256": "3080a0c0670cb3bdb91a393eb0fe16c843a04f4682fed5d28c19248698431ace"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl8",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        1.491789578200444,
+        0.0,
+        159.28639353873314,
+        0.0,
+        1.491789578200444,
+        93.498472571021
+      ],
+      "empty": false,
+      "rgbaSha256": "bac63c9c5358da25efb42c4efc2301d0300b582a68859a3491a26d2b851d1971"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl8",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        1.329794865339861,
+        0.0,
+        158.27797608039953,
+        0.0,
+        1.329794865339861,
+        118.83948178300113
+      ],
+      "empty": false,
+      "rgbaSha256": "cc0298ea7bdafd3916d4852bf43accb538bd639be131452b61bc073e6e87a946"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl9",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 0,
+      "y": 2400,
+      "root": [
+        1.508584282004408,
+        0.0,
+        160.89952489035724,
+        0.0,
+        1.508584282004408,
+        92.86237319647921
+      ],
+      "empty": false,
+      "rgbaSha256": "a328010736dcb8c2c6cd611506dfd12ddb91508b18262b5e439f2edee94be043"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl9",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 300,
+      "y": 2400,
+      "root": [
+        1.329794865339861,
+        0.0,
+        159.6077709457394,
+        0.0,
+        1.329794865339861,
+        118.83948178300113
+      ],
+      "empty": false,
+      "rgbaSha256": "bac63e844de8dbc7c3efd2c46a0d39258f0e4bb3969fa632072407005c6a392b"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl10",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 600,
+      "y": 2400,
+      "root": [
+        1.547343865478819,
+        0.0,
+        164.62238300135928,
+        0.0,
+        1.547343865478819,
+        100.91051232609541
+      ],
+      "empty": false,
+      "rgbaSha256": "abb5e9db2d5919bb6d1157add2ff4752d0cd20d947ab7470f391cb4e11b5ab5c"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl10",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 900,
+      "y": 2400,
+      "root": [
+        1.4113816907323826,
+        0.0,
+        163.33754190223817,
+        0.0,
+        1.4113816907323826,
+        125.14898640087523
+      ],
+      "empty": false,
+      "rgbaSha256": "3f3de7af816f51aabd1cfec93e137aae1aacc42f2b7323cc3fbd6e5e78628f25"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl11",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        1.5801886223779131,
+        0.0,
+        167.77712200175154,
+        0.0,
+        1.5801886223779131,
+        102.19929115909753
+      ],
+      "empty": false,
+      "rgbaSha256": "d09f56ce0f612c23a5db36828b590827343c8a2b111a7ec64023f36d949d3dc6"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl11",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        1.4113816907323826,
+        0.0,
+        157.44504057221087,
+        0.0,
+        1.4113816907323826,
+        125.14898640087523
+      ],
+      "empty": false,
+      "rgbaSha256": "02e888f9dcb86182b53a11bfc99d6893db596b51c5ae2738711c57a8717a4d22"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl12",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        1.5599534411533762,
+        0.0,
+        168.83643899207703,
+        0.0,
+        1.5599534411533762,
+        104.8393496638348
+      ],
+      "empty": false,
+      "rgbaSha256": "74794f756f5a1f08768ffd35c3bd5ee6756d4de4a9d8510cf7b5633cad688cab"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl12",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        1.394490809308373,
+        0.0,
+        157.35594114692577,
+        0.0,
+        1.394490809308373,
+        123.84273267875747
+      ],
+      "empty": false,
+      "rgbaSha256": "0891cb03e0966375583d4179d05bc8461255d9190d6a26ffd98c1e5a034ae077"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl13",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 0,
+      "y": 2700,
+      "root": [
+        1.4761773367946256,
+        0.0,
+        167.34508370733684,
+        0.0,
+        1.4761773367946256,
+        113.50151760022075
+      ],
+      "empty": false,
+      "rgbaSha256": "59492c7d90aaa6ddb72f3e802c7009ca3e2738c364206cc42c5da3ab753a7801"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl13",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 300,
+      "y": 2700,
+      "root": [
+        1.3897903043408197,
+        0.0,
+        157.33114597604953,
+        0.0,
+        1.3897903043408197,
+        123.47921984863532
+      ],
+      "empty": false,
+      "rgbaSha256": "b731f6c6998321b57e1e515bec7cfefc264c4c6be276dcc4d2943a697e10e0bf"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-half",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 600,
+      "y": 2700,
+      "root": [
+        1.589561033796497,
+        0.0,
+        168.67734214710885,
+        0.0,
+        1.589561033796497,
+        96.23309681909467
+      ],
+      "empty": false,
+      "rgbaSha256": "67a61b40f46bd58781feefb51d1a7fa55dfb1d25e789e19bef34dc690f07df28"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "treasury-full",
+      "base": "alliance_castle_base",
+      "time": 0.75,
+      "x": 900,
+      "y": 2700,
+      "root": [
+        1.385121381540372,
+        0.0,
+        157.30651740115297,
+        0.0,
+        1.385121381540372,
+        123.1181494205583
+      ],
+      "empty": false,
+      "rgbaSha256": "139b8be9903abd0abf4f5e46efb0744d8a7dfea54d57252261015cb9979662c5"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.0,
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        139.46067673864124,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "c0dad96614ac6c205aa1ca4a5f130ec963d88628bdc9cdbf508079c5fc0ff1ae"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 0.75,
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        139.46067673864124,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "2d0e90a320cbe77625cbe35106e3e5a8bb82029859dbdabf05afed42a8cb19a1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 2.0833333333333335,
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        1.43913933141992,
+        0.0,
+        140.68157502500836,
+        0.0,
+        1.43913933141992,
+        116.84396445962395
+      ],
+      "empty": false,
+      "rgbaSha256": "dfe462bc537c7acfed08cb2702e24acc9c88427ba4fc47407ff4016a2f9f4cb0"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackFull",
+      "time": 3.875,
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        139.46067673864124,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "c0dad96614ac6c205aa1ca4a5f130ec963d88628bdc9cdbf508079c5fc0ff1ae"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.0,
+      "x": 0,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        157.60949195832168,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "c4fb65d5dee67f69dfdeaedf8a7b881777a83869f89120989d1273ed5b8994f1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 0.75,
+      "x": 300,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        157.60949195832168,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "cd072dc86cfeff5a6f3e212f6bbd0588d69ca5fe7d88f10d7f779fe0d1450e86"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 2.0833333333333335,
+      "x": 600,
+      "y": 3000,
+      "root": [
+        1.43913933141992,
+        0.0,
+        156.72799174605456,
+        0.0,
+        1.43913933141992,
+        116.84396445962395
+      ],
+      "empty": false,
+      "rgbaSha256": "bc7090611410d6deaadb41e84b9da08f644de1a6127b12d5a066a5511c02b27a"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsBackHalf",
+      "time": 3.875,
+      "x": 900,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        157.60949195832168,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "c4fb65d5dee67f69dfdeaedf8a7b881777a83869f89120989d1273ed5b8994f1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.0,
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        154.06921290273553,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "58cad9751813c47ec0aeaf1099afd07d2b71255afc48c8eb6af7d755d8888c1f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 0.75,
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        154.06921290273553,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "9d6ae8df1c963a7412e8a82cb1127f9d6750e1ed0328969528e8cbeecf9bec08"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 2.0833333333333335,
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        1.43913933141992,
+        0.0,
+        153.5978263690263,
+        0.0,
+        1.43913933141992,
+        116.84396445962395
+      ],
+      "empty": false,
+      "rgbaSha256": "5887eea644ce636c06684ed6c1a2775cd45c30647495039bf89bd068c45a0d59"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontFull",
+      "time": 3.875,
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        154.06921290273553,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "8020d7be4f97b5ac68dbe7edb5c1034d1d9cca6be9d46fb6f50f3289e282aa10"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.0,
+      "x": 0,
+      "y": 3300,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "909cba50922d338854808a4792276bd70f2bc67aa5aea1b66b15cb4491bba434"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 0.75,
+      "x": 300,
+      "y": 3300,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "9d82acd8768cc73dc4c6095766f6fd8a8826e66911b549043c0e6a263c5561f1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 2.0833333333333335,
+      "x": 600,
+      "y": 3300,
+      "root": [
+        1.43913933141992,
+        0.0,
+        150.0,
+        0.0,
+        1.43913933141992,
+        116.84396445962395
+      ],
+      "empty": false,
+      "rgbaSha256": "8ddf7c2f3cc03ec83eb509b88c02c52dba5389c506c215bd46e6432bbbb545ad"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsRoofFull": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsFrontHalf",
+      "time": 3.875,
+      "x": 900,
+      "y": 3300,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "909cba50922d338854808a4792276bd70f2bc67aa5aea1b66b15cb4491bba434"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.0,
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "6b1b6caaa7f8dae606b9f22ce76af156ccd2090122af8a71dde2267513edf4cb"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 0.75,
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        1.385121381540372,
+        0.0,
+        150.0,
+        0.0,
+        1.385121381540372,
+        123.1181494205583
+      ],
+      "empty": false,
+      "rgbaSha256": "17d6b5116f25a2d3444ef328a9d81ef68379891a831cfdf5029f12e93741e06d"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 2.0833333333333335,
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        1.4124975079341986,
+        0.0,
+        150.0,
+        0.0,
+        1.4124975079341986,
+        119.93841229814268
+      ],
+      "empty": false,
+      "rgbaSha256": "e93a964c5c127437472826744381f4516a8a269f9b98868ab7a0affbdaf0bf31"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofFull",
+      "time": 3.875,
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        1.457710222829383,
+        0.0,
+        150.0,
+        0.0,
+        1.457710222829383,
+        114.68695539407787
+      ],
+      "empty": false,
+      "rgbaSha256": "7ed12f4af6dc4d19822cb9ce74da8bc8e1a389ebf9c5476fd2d7436995f5b751"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 0,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.0,
+      "x": 0,
+      "y": 3600,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "16e00f57b22e0fe0ecbaa7c8334b469cafd85c5809b667b42bf9c1975b72ae5c"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 18,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 0.75,
+      "x": 300,
+      "y": 3600,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "c6a29854d8a1fa5a9bdd827bfea634bf8ee449dfb3c07ed655b3fe5ab45f9ab5"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 50,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 2.0833333333333335,
+      "x": 600,
+      "y": 3600,
+      "root": [
+        1.43913933141992,
+        0.0,
+        150.0,
+        0.0,
+        1.43913933141992,
+        116.84396445962395
+      ],
+      "empty": false,
+      "rgbaSha256": "2e647dc562de8c641f51eece01ece10d19587543ff9c8db9858946b006f7521d"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl14",
+      "frame": 93,
+      "controls": {
+        "CoinsBackFull": false,
+        "CoinsBackHalf": false,
+        "CoinsFrontFull": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofFull": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "individual-coin-control",
+      "control": "CoinsRoofHalf",
+      "time": 3.875,
+      "x": 900,
+      "y": 3600,
+      "root": [
+        1.6276950957566618,
+        0.0,
+        150.0,
+        0.0,
+        1.6276950957566618,
+        94.9432121441981
+      ],
+      "empty": false,
+      "rgbaSha256": "16e00f57b22e0fe0ecbaa7c8334b469cafd85c5809b667b42bf9c1975b72ae5c"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 0,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.0,
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        1.6182459878328523,
+        0.0,
+        154.04559027710795,
+        0.0,
+        1.6182459878328523,
+        91.99511107438465
+      ],
+      "empty": false,
+      "rgbaSha256": "dcfeff0ed20da6cbe530a5cf72dafc8a9cb992d6e1384025d825e78521c3cd74"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 1,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.041666666666666664,
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        1.5998164054559258,
+        0.0,
+        153.99951660237875,
+        0.0,
+        1.5998164054559258,
+        94.18178105152828
+      ],
+      "empty": false,
+      "rgbaSha256": "fe517572e6bcda7301cf3ad7f8410f51a2f24be6cedec5906ba4eb6c48668722"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 2,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.08333333333333333,
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        1.5794712642305977,
+        0.0,
+        153.94865405975764,
+        0.0,
+        1.5794712642305977,
+        96.5957320889577
+      ],
+      "empty": false,
+      "rgbaSha256": "4e07a260f96e7d9b1dda70b4ec931b0d1542e8c241267f6c29940897d5ec1284"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 3,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.125,
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        1.558729977466897,
+        0.0,
+        153.89680115933533,
+        0.0,
+        1.558729977466897,
+        99.05668579511948
+      ],
+      "empty": false,
+      "rgbaSha256": "da2b67b6b5575e6692f48c6e002d4327f438325d5756ae47a61e2db0fda49dd4"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 4,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.16666666666666666,
+      "x": 0,
+      "y": 3900,
+      "root": [
+        1.5381538536954862,
+        0.0,
+        153.84536116387352,
+        0.0,
+        1.5381538536954862,
+        101.49804291199405
+      ],
+      "empty": false,
+      "rgbaSha256": "953ce224ab3f18f0a17915adc0fed406fe2b89d15fa6c0aaf41c111fa8938942"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 5,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.20833333333333334,
+      "x": 300,
+      "y": 3900,
+      "root": [
+        1.5194048898433707,
+        0.0,
+        153.7984890403297,
+        0.0,
+        1.5194048898433707,
+        103.72260750165617
+      ],
+      "empty": false,
+      "rgbaSha256": "8ec351caddfc534d5b24f0d0e8681b93dff75c2b21025220284b15a8bf52626f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 6,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.25,
+      "x": 600,
+      "y": 3900,
+      "root": [
+        1.5027909870948104,
+        0.0,
+        153.75695453696636,
+        0.0,
+        1.5027909870948104,
+        105.69384708812368
+      ],
+      "empty": false,
+      "rgbaSha256": "9e3be010a8b8438d017c5e88b5a91f4f34007c420d07ee0019a2a39a7715eb4c"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 7,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.2916666666666667,
+      "x": 900,
+      "y": 3900,
+      "root": [
+        1.487361461335671,
+        0.0,
+        153.7183809580044,
+        0.0,
+        1.487361461335671,
+        107.52456034298918
+      ],
+      "empty": false,
+      "rgbaSha256": "f0decd75cf9471d6fd611ab4aa5689a8c8b457c7941111aa3240f239856bee44"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 8,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.3333333333333333,
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        1.4734597537194876,
+        0.0,
+        153.68362690108714,
+        0.0,
+        1.4734597537194876,
+        109.17399797286163
+      ],
+      "empty": false,
+      "rgbaSha256": "6e9bbd841ed551d02a5b38bfd4987d3d26783a227c452595a066b96aeb88d4b0"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 9,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.375,
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        1.4602131638851303,
+        0.0,
+        153.65051062862818,
+        0.0,
+        1.4602131638851303,
+        110.74570587692082
+      ],
+      "empty": false,
+      "rgbaSha256": "adfdeaf0d0d38f4bb81d05631a9ce662682d3108d5512cbc922c1b0357dcb26e"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 10,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.4166666666666667,
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        1.4475935037403886,
+        0.0,
+        153.61896167082705,
+        0.0,
+        1.4475935037403886,
+        112.2430285723505
+      ],
+      "empty": false,
+      "rgbaSha256": "f25b0c4e2a55c7b1dd83a1574039b1d79d93ab0f31a4e9f66fa903b8241f2cca"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 11,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.4583333333333333,
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        1.435959072629333,
+        0.0,
+        153.58987577057675,
+        0.0,
+        1.435959072629333,
+        113.62345384142999
+      ],
+      "empty": false,
+      "rgbaSha256": "8fbbd8e04196a6113de64ff223e69a6036194908e66c17f149a45af6cf734f80"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 12,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.5,
+      "x": 0,
+      "y": 4200,
+      "root": [
+        1.4245101642649913,
+        0.0,
+        153.56125367436238,
+        0.0,
+        1.4245101642649913,
+        114.98186683632876
+      ],
+      "empty": false,
+      "rgbaSha256": "db254c2b5c2f353320cba4ada46b5e747b454ffd4073a75a259ec4569efabeea"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 13,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.5416666666666666,
+      "x": 300,
+      "y": 4200,
+      "root": [
+        1.4139880020745723,
+        0.0,
+        153.53494842944178,
+        0.0,
+        1.4139880020745723,
+        116.23032139627753
+      ],
+      "empty": false,
+      "rgbaSha256": "379312e9c9c0195a3191a1b1729211aa943a0279a3df4a420f79cb602a9f1e69"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 14,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.5833333333333334,
+      "x": 600,
+      "y": 4200,
+      "root": [
+        1.4039878282111644,
+        0.0,
+        153.5099481473738,
+        0.0,
+        1.4039878282111644,
+        117.41684204042993
+      ],
+      "empty": false,
+      "rgbaSha256": "2eaf2df7bc5fffa525d398838dca7e93e6422b6a12cb856ef15f74893982eaf1"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 15,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.625,
+      "x": 900,
+      "y": 4200,
+      "root": [
+        1.394128082171067,
+        0.0,
+        153.48529893272135,
+        0.0,
+        1.394128082171067,
+        118.58670092313227
+      ],
+      "empty": false,
+      "rgbaSha256": "58eb1da03ca5863db154394520b7978ac51b2deed976487cfe77d5a9b7108960"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 16,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.6666666666666666,
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        1.384763538943579,
+        0.0,
+        153.46188771754422,
+        0.0,
+        1.384763538943579,
+        119.69780399136287
+      ],
+      "empty": false,
+      "rgbaSha256": "94ba304abf9eedfb29bd51cd85c7041547109985d4043113d08012c35f252c71"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 17,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.7083333333333334,
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        1.3758770447011741,
+        0.0,
+        153.43967161753534,
+        0.0,
+        1.3758770447011741,
+        120.75218654678395
+      ],
+      "empty": false,
+      "rgbaSha256": "9aa556a6f3093c90faee44d13ed2776283820c1cca87c450625535b98524d174"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 18,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.75,
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        1.3674526510808924,
+        0.0,
+        153.41861076203068,
+        0.0,
+        1.3674526510808924,
+        121.75174086268495
+      ],
+      "empty": false,
+      "rgbaSha256": "d03669fc67f8a6d8ae21191791bc6e1640367b3c2db924e450f895000db2cdbe"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 19,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.7916666666666666,
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        1.3591307935209005,
+        0.0,
+        153.39780624511218,
+        0.0,
+        1.3591307935209005,
+        122.73912927487615
+      ],
+      "empty": false,
+      "rgbaSha256": "d7b00801f8727cc3649a6a824f6ccfa9ed5de99b96b3c570f8c6bbd7b1e3c11a"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 20,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.8333333333333334,
+      "x": 0,
+      "y": 4500,
+      "root": [
+        1.3512501949808327,
+        0.0,
+        153.37810486901037,
+        0.0,
+        1.3512501949808327,
+        123.67416230368002
+      ],
+      "empty": false,
+      "rgbaSha256": "c6e568b3eea3f7b2976ffb1add6f6116aaf92e0f8a15cd7c5c176c9c13323b77"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 21,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.875,
+      "x": 300,
+      "y": 4500,
+      "root": [
+        1.4001990962938384,
+        0.0,
+        153.50047637539194,
+        0.0,
+        1.4001990962938384,
+        117.8663750882018
+      ],
+      "empty": false,
+      "rgbaSha256": "7216da2df3ebdc36e239869c03ef6d7168bb2f875487daad1713601fb58f9767"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 22,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.9166666666666666,
+      "x": 600,
+      "y": 4500,
+      "root": [
+        1.4474751574384328,
+        0.0,
+        153.61866580687797,
+        0.0,
+        1.4474751574384328,
+        112.25707036125814
+      ],
+      "empty": false,
+      "rgbaSha256": "70b9d3e3c20853d9e84497a5f8ecd08201214991602a5594bf142c9f559d4bd6"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 23,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 0.9583333333333334,
+      "x": 900,
+      "y": 4500,
+      "root": [
+        1.4381541408046137,
+        0.0,
+        153.59536340752086,
+        0.0,
+        1.4381541408046137,
+        113.36300899908352
+      ],
+      "empty": false,
+      "rgbaSha256": "5b2716e60b838ec59ac4886341598e708d6ec84697a01f7b033d16c3aee01339"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 24,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.0,
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        1.4285715563864565,
+        0.0,
+        153.5714070926941,
+        0.0,
+        1.4285715563864565,
+        114.49998265491973
+      ],
+      "empty": false,
+      "rgbaSha256": "7e0273a2dba337958d1b3244f63baa4f45d7271c65e370e4d296c06f183990ab"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 25,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.0416666666666667,
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        1.4191158264198462,
+        0.0,
+        153.54776791206058,
+        0.0,
+        1.4191158264198462,
+        115.62190502988634
+      ],
+      "empty": false,
+      "rgbaSha256": "ab8e97434c2ee01b62227151e88a1d286a70f37468f2b10e90fda1cde1fd214f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 26,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.0833333333333333,
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        1.410155341189824,
+        0.0,
+        153.52536683571165,
+        0.0,
+        1.410155341189824,
+        116.6850666161011
+      ],
+      "empty": false,
+      "rgbaSha256": "fd3bd74e7f4ad6925aef742cb0d94fa611a9894354d43b7fba06bd3fe0c0c1ac"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 27,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.125,
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        1.4009410478070943,
+        0.0,
+        153.50233124285378,
+        0.0,
+        1.4009410478070943,
+        117.77834254002187
+      ],
+      "empty": false,
+      "rgbaSha256": "9bdbfabd8dd7326df5e5d5ae925ea685b2940a1ad29ee164c8495137308bde6f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 28,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.1666666666666667,
+      "x": 0,
+      "y": 4800,
+      "root": [
+        1.3918463895081017,
+        0.0,
+        153.4795947358798,
+        0.0,
+        1.3918463895081017,
+        118.85742376107468
+      ],
+      "empty": false,
+      "rgbaSha256": "f98e9d4961e139e814a6dff9da0c39b0111c7b7560912277458aa1ce2cedde04"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 29,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.2083333333333333,
+      "x": 300,
+      "y": 4800,
+      "root": [
+        1.3832259153876256,
+        0.0,
+        153.4580436821166,
+        0.0,
+        1.3832259153876256,
+        119.88024302862297
+      ],
+      "empty": false,
+      "rgbaSha256": "4484253d360318d3cecce4118b644ec61e7c29c772aca07d72cad356fdee479f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 30,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.25,
+      "x": 600,
+      "y": 4800,
+      "root": [
+        1.3743590819028477,
+        0.0,
+        153.4358767337018,
+        0.0,
+        1.3743590819028477,
+        120.93229283512157
+      ],
+      "empty": false,
+      "rgbaSha256": "0521d19c6d6550904078ff355fe1ce12d05c02050d20b52939689a8441da4236"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 31,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.2916666666666667,
+      "x": 900,
+      "y": 4800,
+      "root": [
+        1.365605201719652,
+        0.0,
+        153.41399216681742,
+        0.0,
+        1.365605201719652,
+        121.97094073221511
+      ],
+      "empty": false,
+      "rgbaSha256": "dac62b1a50901f6ed65cf5a56af4bed735af5d7548bcc00692fb188129cdf9df"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 32,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.3333333333333333,
+      "x": 1200,
+      "y": 4800,
+      "root": [
+        1.3573057466462395,
+        0.0,
+        153.39324365577352,
+        0.0,
+        1.3573057466462395,
+        122.95567108933949
+      ],
+      "empty": false,
+      "rgbaSha256": "b04ba614c5fe6cb1d011aea69a7db45ee70bbe246df2cd26c8ae1aa20b65904f"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 33,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.375,
+      "x": 1500,
+      "y": 4800,
+      "root": [
+        1.3487670838023393,
+        0.0,
+        153.37189712895344,
+        0.0,
+        1.3487670838023393,
+        123.96878344879721
+      ],
+      "empty": false,
+      "rgbaSha256": "e934b67db1b487ce5f19533129eb66ad75db02be179bdcbea61247521cb96f65"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl5",
+      "frame": 34,
+      "controls": {
+        "CoinsBackHalf": false,
+        "CoinsFrontHalf": false,
+        "CoinsRoofHalf": false,
+        "badge": false,
+        "alliance_name": false,
+        "shadow_edit": false
+      },
+      "category": "nested-treasury-glints",
+      "time": 1.4166666666666667,
+      "x": 1800,
+      "y": 4800,
+      "root": [
+        1.3925597215950607,
+        0.0,
+        153.48137805521262,
+        0.0,
+        1.3925597215950607,
+        118.77278690786855
+      ],
+      "empty": false,
+      "rgbaSha256": "7462abd958085080887be11de2f3fd56cfe29f7284d642c24cc6a90e632677a9"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_base",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 2100,
+      "y": 4800,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 0,
+      "y": 5100,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 300,
+      "y": 5100,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 600,
+      "y": 5100,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1_broken",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 900,
+      "y": 5100,
+      "root": [
+        1.8527479928996262,
+        0.0,
+        149.86104248699797,
+        0.0,
+        1.8527479928996262,
+        34.01797847155248
+      ],
+      "empty": false,
+      "rgbaSha256": "d70a1f5df65d990d154d02ce81b15c556ad7328caa28e12ee3aacf7dfb415252"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1_broken",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1200,
+      "y": 5100,
+      "root": [
+        1.8527479928996262,
+        0.0,
+        149.86104248699797,
+        0.0,
+        1.8527479928996262,
+        34.01797847155248
+      ],
+      "empty": false,
+      "rgbaSha256": "d70a1f5df65d990d154d02ce81b15c556ad7328caa28e12ee3aacf7dfb415252"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1_broken",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1500,
+      "y": 5100,
+      "root": [
+        1.8527479928996262,
+        0.0,
+        149.86104248699797,
+        0.0,
+        1.8527479928996262,
+        34.01797847155248
+      ],
+      "empty": false,
+      "rgbaSha256": "d70a1f5df65d990d154d02ce81b15c556ad7328caa28e12ee3aacf7dfb415252"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_lvl1_broken",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1800,
+      "y": 5100,
+      "root": [
+        1.8527479928996262,
+        0.0,
+        149.86104248699797,
+        0.0,
+        1.8527479928996262,
+        34.01797847155248
+      ],
+      "empty": false,
+      "rgbaSha256": "d70a1f5df65d990d154d02ce81b15c556ad7328caa28e12ee3aacf7dfb415252"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_upg",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 2100,
+      "y": 5100,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        150.29303215791077,
+        0.0,
+        1.6744767739153164,
+        1.6832184729264554
+      ],
+      "empty": false,
+      "rgbaSha256": "f976cb809d3eeb5fca09b0c28bd9b9fbe392f584b44b852c9f12bc8858eee9d8"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_upg",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 0,
+      "y": 5400,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        150.29303215791077,
+        0.0,
+        1.6744767739153164,
+        1.6832184729264554
+      ],
+      "empty": false,
+      "rgbaSha256": "f976cb809d3eeb5fca09b0c28bd9b9fbe392f584b44b852c9f12bc8858eee9d8"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_upg",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 300,
+      "y": 5400,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        150.29303215791077,
+        0.0,
+        1.6744767739153164,
+        1.6832184729264554
+      ],
+      "empty": false,
+      "rgbaSha256": "f976cb809d3eeb5fca09b0c28bd9b9fbe392f584b44b852c9f12bc8858eee9d8"
+    },
+    {
+      "family": "castle",
+      "export": "alliance_castle_upg",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 600,
+      "y": 5400,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        150.29303215791077,
+        0.0,
+        1.6744767739153164,
+        1.6832184729264554
+      ],
+      "empty": false,
+      "rgbaSha256": "f976cb809d3eeb5fca09b0c28bd9b9fbe392f584b44b852c9f12bc8858eee9d8"
+    },
+    {
+      "family": "castle",
+      "export": "generic_construction_state3",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 900,
+      "y": 5400,
+      "root": [
+        1.882683546700015,
+        0.0,
+        151.27080995764896,
+        0.0,
+        1.882683546700015,
+        55.536351787499896
+      ],
+      "empty": false,
+      "rgbaSha256": "7731002d821d79d3daa915bb8f3fb88d5c0ca3b9b631979c7fa6317c3a06ae20"
+    },
+    {
+      "family": "castle",
+      "export": "generic_construction_state3",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1200,
+      "y": 5400,
+      "root": [
+        1.882683546700015,
+        0.0,
+        151.27080995764896,
+        0.0,
+        1.882683546700015,
+        55.536351787499896
+      ],
+      "empty": false,
+      "rgbaSha256": "7731002d821d79d3daa915bb8f3fb88d5c0ca3b9b631979c7fa6317c3a06ae20"
+    },
+    {
+      "family": "castle",
+      "export": "generic_construction_state3",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1500,
+      "y": 5400,
+      "root": [
+        1.882683546700015,
+        0.0,
+        151.27080995764896,
+        0.0,
+        1.882683546700015,
+        55.536351787499896
+      ],
+      "empty": false,
+      "rgbaSha256": "7731002d821d79d3daa915bb8f3fb88d5c0ca3b9b631979c7fa6317c3a06ae20"
+    },
+    {
+      "family": "castle",
+      "export": "generic_construction_state3",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1800,
+      "y": 5400,
+      "root": [
+        1.882683546700015,
+        0.0,
+        151.27080995764896,
+        0.0,
+        1.882683546700015,
+        55.536351787499896
+      ],
+      "empty": false,
+      "rgbaSha256": "7731002d821d79d3daa915bb8f3fb88d5c0ca3b9b631979c7fa6317c3a06ae20"
+    },
+    {
+      "family": "castle",
+      "export": "goblin_clancastle_01",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 2100,
+      "y": 5400,
+      "root": [
+        1.7516339869281046,
+        0.0,
+        150.87581699346404,
+        0.0,
+        1.7516339869281046,
+        65.48366013071896
+      ],
+      "empty": false,
+      "rgbaSha256": "c6828d5032099fe478d1de99fe27071de18ae14ed416c9e1524539ba6bf9b153"
+    },
+    {
+      "family": "castle",
+      "export": "goblin_clancastle_01",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 0,
+      "y": 5700,
+      "root": [
+        1.7516339869281046,
+        0.0,
+        150.87581699346404,
+        0.0,
+        1.7516339869281046,
+        65.48366013071896
+      ],
+      "empty": false,
+      "rgbaSha256": "c6828d5032099fe478d1de99fe27071de18ae14ed416c9e1524539ba6bf9b153"
+    },
+    {
+      "family": "castle",
+      "export": "goblin_clancastle_01",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 300,
+      "y": 5700,
+      "root": [
+        1.7516339869281046,
+        0.0,
+        150.87581699346404,
+        0.0,
+        1.7516339869281046,
+        65.48366013071896
+      ],
+      "empty": false,
+      "rgbaSha256": "c6828d5032099fe478d1de99fe27071de18ae14ed416c9e1524539ba6bf9b153"
+    },
+    {
+      "family": "castle",
+      "export": "goblin_clancastle_01",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 600,
+      "y": 5700,
+      "root": [
+        1.7516339869281046,
+        0.0,
+        150.87581699346404,
+        0.0,
+        1.7516339869281046,
+        65.48366013071896
+      ],
+      "empty": false,
+      "rgbaSha256": "c6828d5032099fe478d1de99fe27071de18ae14ed416c9e1524539ba6bf9b153"
+    },
+    {
+      "family": "castle",
+      "export": "npc_alliance_castle_base",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 900,
+      "y": 5700,
+      "root": [
+        1.5030846630002783,
+        0.0,
+        160.3712864682271,
+        0.0,
+        1.5030846630002783,
+        56.88390254691693
+      ],
+      "empty": false,
+      "rgbaSha256": "92f596a029c2371bd3779eb1920b853363ebeb1b22e0c8f5bf9780f2da48dccb"
+    },
+    {
+      "family": "castle",
+      "export": "npc_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1200,
+      "y": 5700,
+      "root": [
+        1.5030846630002783,
+        0.0,
+        160.3712864682271,
+        0.0,
+        1.5030846630002783,
+        56.88390254691693
+      ],
+      "empty": false,
+      "rgbaSha256": "92f596a029c2371bd3779eb1920b853363ebeb1b22e0c8f5bf9780f2da48dccb"
+    },
+    {
+      "family": "castle",
+      "export": "npc_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1500,
+      "y": 5700,
+      "root": [
+        1.603350269539226,
+        0.0,
+        152.12444033039864,
+        0.0,
+        1.603350269539226,
+        50.67244804971179
+      ],
+      "empty": false,
+      "rgbaSha256": "89b32ec91b6dce1774c8163f2c06e54666f8a5e0d8934bdbf8b0217cd819c930"
+    },
+    {
+      "family": "castle",
+      "export": "npc_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 1800,
+      "y": 5700,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "war_alliance_castle_base",
+      "frame": 0,
+      "controls": {},
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 2100,
+      "y": 5700,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "war_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow_edit": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 0,
+      "y": 6000,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    },
+    {
+      "family": "castle",
+      "export": "war_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "shadow": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 300,
+      "y": 6000,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    },
+    {
+      "family": "castle",
+      "export": "war_alliance_castle_base",
+      "frame": 0,
+      "controls": {
+        "base": false
+      },
+      "category": "base-construction-scaffold-ruin",
+      "time": 0.0,
+      "x": 600,
+      "y": 6000,
+      "root": [
+        1.6341463414634145,
+        0.0,
+        172.95976108457984,
+        0.0,
+        1.6341463414634145,
+        56.4859730383245
+      ],
+      "empty": false,
+      "rgbaSha256": "391afc2d91cf8d3cfb7c1985ba6af9192890b3102fd39338405703e383bbd9ce"
+    }
+  ]
+}

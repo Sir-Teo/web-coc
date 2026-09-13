@@ -38,3 +38,25 @@ PYTHONPATH=scripts python scripts/import-native-garrison.py --check
 PYTHONPATH=scripts python -m unittest native_art.test_source_csv
 npx vitest run tests/native-garrison-reference.test.ts
 ```
+
+## Original models and animation foundation
+
+`art.json` records ten additional pinned art inputs and the hashes of the source catalogue it was built from. The `castle.json`, `dragon7.json` and `balloon8.json` graphs preserve **27 exports, 51 clips and 89 shapes**. Six PNG textures copy the original SCTX sampling regions without scaling, recoloring or geometry simplification. Original additive container boundaries remain intact.
+
+The Castle graph includes all fourteen home tiers, Goblin Castle, home/NPC/war bases, scaffolding, construction and ruins. Every home body has a **94-frame, 24-fps** root with **73 distinct placement patterns**. Visual inspection of the source compositions identifies rising **Z sleep markers** in that timeline. A guarding Castle must not simply loop the root as an idle animation. Frame zero is used for the guarding portrait; native state/clock selection remains unverified. Six named full/half treasury controls and both 35-frame nested glint animations are preserved independently. Empty badge and clan-name text fields retain their original metadata and placements.
+
+Dragon 7 retains three original source views, one-frame roots, nested 16-frame wing/glow timelines and the empty `attack_pivot` locator. These are not expanded into invented evenly spaced directions. Balloon 8 retains its 37-frame nested glow animation, 34-frame attack and 11-frame death timeline. The original animation blocks remain separate from raw looping graph sampling: the non-looping attack/death completion rules and `ActionFrame` convention still need explicit runtime handling. The separate Dragon death export, attack/death effects and sounds are not covered by these model graphs.
+
+Nineteen portraits use two pixels per native unit and conservative per-family bounds: Castle `[-105,-100,94,142]`, Dragon `[-72,-152,94,28]`, Balloon `[-60,-188,61,19]`. Nineteen icons crop those exact pixels with eight pixels of transparent padding. Framing is local. Transparent flattened previews cannot reproduce additive light on every background; the browser witnesses compare live meshes and independent original-texture compositions on the same backdrop.
+
+The independent Python witnesses contain **1,380 compositions** across seven source-image pages. They cover every Castle root pattern and terminal frame, combined and individual treasury controls, all nested gold glints, bases/construction/scaffolding/ruins, two Dragon wing cycles in every view, mirrored locator controls, and every Balloon idle-glow/attack/death frame. Browser tests draw thirteen row-aligned strips of at most 2400×6000 pixels and explicitly check the actual framebuffer dimensions. This avoids the game's 16-million-pixel render-budget cap; the larger original Python witness textures remain intact.
+
+All 1,380 compositions pass in Chromium and WebKit at DPR 2, using the production mesh renderer and packed textures. Maximum per-case mean channel error is **0.619167 / 0.834926** on the 0–255 scale. Each engine retains 30 pixels above 16/255, all within 0.001856 pixels of an original polygon edge; no source geometry or thresholds changed. Forced single-texture batching and graphics-context restoration produce zero changed bytes, and all GL checks are zero. The 44 assets total **7,177,180 bytes**, decode and match their byte hashes in both engines, and load identically after a Chromium offline reload. This is model-rendering and delivery verification; it does not enable garrison battles or establish native executable playback parity.
+
+```sh
+PYTHONPATH=scripts python scripts/import-native-garrison-art.py --check
+PYTHONPATH=scripts python scripts/native-garrison-gpu-fixtures.py --check
+npx vitest run tests/native-garrison-art.test.ts
+npm run build
+npm run test:garrison:assets
+```

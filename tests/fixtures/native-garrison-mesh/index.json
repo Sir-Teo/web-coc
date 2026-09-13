@@ -1,0 +1,44 @@
+[
+  {
+    "category": "castle-1",
+    "cases": 240,
+    "width": 2400,
+    "height": 9000
+  },
+  {
+    "category": "castle-2",
+    "cases": 240,
+    "width": 2400,
+    "height": 9000
+  },
+  {
+    "category": "castle-3",
+    "cases": 240,
+    "width": 2400,
+    "height": 9000
+  },
+  {
+    "category": "castle-4",
+    "cases": 240,
+    "width": 2400,
+    "height": 9000
+  },
+  {
+    "category": "castle-5",
+    "cases": 76,
+    "width": 2400,
+    "height": 3000
+  },
+  {
+    "category": "castle-controls",
+    "cases": 163,
+    "width": 2400,
+    "height": 6300
+  },
+  {
+    "category": "troops",
+    "cases": 181,
+    "width": 2400,
+    "height": 6900
+  }
+]

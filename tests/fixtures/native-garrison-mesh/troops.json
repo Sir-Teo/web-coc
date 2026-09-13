@@ -1,0 +1,3640 @@
+{
+  "category": "troops",
+  "width": 2400,
+  "height": 6900,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "a0c4391a429d8c2dfba9bf0180e1f24c7380ee25d6478180c3a6b4a724962c1d",
+  "cases": [
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 0,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.0,
+      "x": 0,
+      "y": 0,
+      "root": [
+        1.7932419235365678,
+        0.0,
+        139.50953270045284,
+        0.0,
+        1.7932419235365678,
+        258.89461307048805
+      ],
+      "empty": false,
+      "rgbaSha256": "327b263724a46e24f98475981fcda4df5d351355204793312589f9f1d064b658"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 1,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.041666666666666664,
+      "x": 300,
+      "y": 0,
+      "root": [
+        1.7932419235365678,
+        0.0,
+        139.57190306312256,
+        0.0,
+        1.7932419235365678,
+        258.89461307048805
+      ],
+      "empty": false,
+      "rgbaSha256": "4960a4d20ac19741d4ed7e6f500158da2d2056b82c7ec79afdfa012e20bf4367"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 2,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.08333333333333333,
+      "x": 600,
+      "y": 0,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        142.98810675137895,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "dc27ebf3d50da38a9fb8e74e08b2443e1e25643376713b3832ea003feeaff77b"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 3,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.125,
+      "x": 900,
+      "y": 0,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        142.98810675137895,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "f82d4cf9394ec8a3e34a3cde8c011e30d247211f9e03464e8b64819d4dccf1dc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 4,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.16666666666666666,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        1.8708551483420592,
+        0.0,
+        138.72810059151308,
+        0.0,
+        1.8708551483420592,
+        257.80802792321117
+      ],
+      "empty": false,
+      "rgbaSha256": "1b0818989f2dd0b1ba34f05e4726afd3c6f2b370b10c429c2ae433ddada4f69f"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 5,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.20833333333333334,
+      "x": 1500,
+      "y": 0,
+      "root": [
+        1.8708551483420592,
+        0.0,
+        138.72810059151308,
+        0.0,
+        1.8708551483420592,
+        257.80802792321117
+      ],
+      "empty": false,
+      "rgbaSha256": "40ffb9c3d6e85984ecb692eb851eb4c28c37fbebd5f810ee20b0854f3195c3e2"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 6,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.25,
+      "x": 1800,
+      "y": 0,
+      "root": [
+        1.8640237074869332,
+        0.0,
+        124.76578048758809,
+        0.0,
+        1.8640237074869332,
+        247.34863527923062
+      ],
+      "empty": false,
+      "rgbaSha256": "f2b4645993bcc1d906c850e89e3ec848cfbdd8ae98d6a88ec049e9a74d98400c"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 7,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.2916666666666667,
+      "x": 2100,
+      "y": 0,
+      "root": [
+        1.8640237074869332,
+        0.0,
+        124.76578048758809,
+        0.0,
+        1.8640237074869332,
+        247.34863527923062
+      ],
+      "empty": false,
+      "rgbaSha256": "fbfb9c60a10d9d7ec22eaa0a3653f2e3df87f64d76aba6be56246db79bfc127a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 8,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.3333333333333333,
+      "x": 0,
+      "y": 300,
+      "root": [
+        1.834360046536696,
+        0.0,
+        131.56468293181186,
+        0.0,
+        1.834360046536696,
+        231.29170881046488
+      ],
+      "empty": false,
+      "rgbaSha256": "d436597b20f81a7c33a54105a8d6dd2fa694f40c4c6fd99c5db1f8249bb95dc4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 9,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.375,
+      "x": 300,
+      "y": 300,
+      "root": [
+        1.834360046536696,
+        0.0,
+        131.56468293181186,
+        0.0,
+        1.834360046536696,
+        232.17449383066054
+      ],
+      "empty": false,
+      "rgbaSha256": "49a5c975f7ff00c7d1f40173f84802a5e80a64c60c2e6ce5421a10a8abf2a346"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 10,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4166666666666667,
+      "x": 600,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        130.62499848008156,
+        0.0,
+        2.0,
+        237.62973829265684
+      ],
+      "empty": false,
+      "rgbaSha256": "27750470478fced87b920049718ab8a61850eeb91d08d3162f0ca281fce559c4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 11,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4583333333333333,
+      "x": 900,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        130.62499848008156,
+        0.0,
+        2.0,
+        238.63222785945982
+      ],
+      "empty": false,
+      "rgbaSha256": "397938842bb1cb0eaa5e4d406631d8a1e03a60bda8947e05d25ef75883655829"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 12,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5,
+      "x": 1200,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        132.97500076889992,
+        0.0,
+        2.0,
+        239.55473665241152
+      ],
+      "empty": false,
+      "rgbaSha256": "f4be070f22500ca5e8c913e077cfa87584e0cdf593405f1c3837a5234a25a2bc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 13,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5416666666666666,
+      "x": 1500,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        132.97500076889992,
+        0.0,
+        2.0,
+        235.9901385307312
+      ],
+      "empty": false,
+      "rgbaSha256": "456634dce9add3b17fa0e8f209fc327e04b9786ef10bf0496f498e15e99a36a4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 14,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5833333333333334,
+      "x": 1800,
+      "y": 300,
+      "root": [
+        1.9416771895384515,
+        0.0,
+        138.32566294092246,
+        0.0,
+        1.9416771895384515,
+        246.16156577465608
+      ],
+      "empty": false,
+      "rgbaSha256": "e57506c7f406c8082c282bc76d6ae256f8d4efcfdfe69d6cb500ca5e70851acc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 15,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.625,
+      "x": 2100,
+      "y": 300,
+      "root": [
+        1.9416771895384515,
+        0.0,
+        138.32566294092246,
+        0.0,
+        1.9416771895384515,
+        246.16156577465608
+      ],
+      "empty": false,
+      "rgbaSha256": "4c2f0060d75cb371f507bde960a27258813269d4dfda8b5c2771e023e62e2f05"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 16,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.6666666666666666,
+      "x": 0,
+      "y": 600,
+      "root": [
+        1.7932419235365678,
+        0.0,
+        139.50953270045284,
+        0.0,
+        1.7932419235365678,
+        258.89461307048805
+      ],
+      "empty": false,
+      "rgbaSha256": "327b263724a46e24f98475981fcda4df5d351355204793312589f9f1d064b658"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 17,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7083333333333334,
+      "x": 300,
+      "y": 600,
+      "root": [
+        1.7932419235365678,
+        0.0,
+        139.57190306312256,
+        0.0,
+        1.7932419235365678,
+        258.89461307048805
+      ],
+      "empty": false,
+      "rgbaSha256": "4960a4d20ac19741d4ed7e6f500158da2d2056b82c7ec79afdfa012e20bf4367"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 18,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.75,
+      "x": 600,
+      "y": 600,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        142.98810675137895,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "dc27ebf3d50da38a9fb8e74e08b2443e1e25643376713b3832ea003feeaff77b"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 19,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7916666666666666,
+      "x": 900,
+      "y": 600,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        142.98810675137895,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "f82d4cf9394ec8a3e34a3cde8c011e30d247211f9e03464e8b64819d4dccf1dc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 20,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.8333333333333334,
+      "x": 1200,
+      "y": 600,
+      "root": [
+        1.8708551483420592,
+        0.0,
+        138.72810059151308,
+        0.0,
+        1.8708551483420592,
+        257.80802792321117
+      ],
+      "empty": false,
+      "rgbaSha256": "1b0818989f2dd0b1ba34f05e4726afd3c6f2b370b10c429c2ae433ddada4f69f"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 21,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.875,
+      "x": 1500,
+      "y": 600,
+      "root": [
+        1.8708551483420592,
+        0.0,
+        138.72810059151308,
+        0.0,
+        1.8708551483420592,
+        257.80802792321117
+      ],
+      "empty": false,
+      "rgbaSha256": "40ffb9c3d6e85984ecb692eb851eb4c28c37fbebd5f810ee20b0854f3195c3e2"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 22,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9166666666666666,
+      "x": 1800,
+      "y": 600,
+      "root": [
+        1.8640237074869332,
+        0.0,
+        124.76578048758809,
+        0.0,
+        1.8640237074869332,
+        247.34863527923062
+      ],
+      "empty": false,
+      "rgbaSha256": "f2b4645993bcc1d906c850e89e3ec848cfbdd8ae98d6a88ec049e9a74d98400c"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 23,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9583333333333334,
+      "x": 2100,
+      "y": 600,
+      "root": [
+        1.8640237074869332,
+        0.0,
+        124.76578048758809,
+        0.0,
+        1.8640237074869332,
+        247.34863527923062
+      ],
+      "empty": false,
+      "rgbaSha256": "fbfb9c60a10d9d7ec22eaa0a3653f2e3df87f64d76aba6be56246db79bfc127a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 24,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0,
+      "x": 0,
+      "y": 900,
+      "root": [
+        1.834360046536696,
+        0.0,
+        131.56468293181186,
+        0.0,
+        1.834360046536696,
+        231.29170881046488
+      ],
+      "empty": false,
+      "rgbaSha256": "d436597b20f81a7c33a54105a8d6dd2fa694f40c4c6fd99c5db1f8249bb95dc4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 25,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0416666666666667,
+      "x": 300,
+      "y": 900,
+      "root": [
+        1.834360046536696,
+        0.0,
+        131.56468293181186,
+        0.0,
+        1.834360046536696,
+        232.17449383066054
+      ],
+      "empty": false,
+      "rgbaSha256": "49a5c975f7ff00c7d1f40173f84802a5e80a64c60c2e6ce5421a10a8abf2a346"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 26,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0833333333333333,
+      "x": 600,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        130.62499848008156,
+        0.0,
+        2.0,
+        237.62973829265684
+      ],
+      "empty": false,
+      "rgbaSha256": "27750470478fced87b920049718ab8a61850eeb91d08d3162f0ca281fce559c4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 27,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.125,
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        130.62499848008156,
+        0.0,
+        2.0,
+        238.63222785945982
+      ],
+      "empty": false,
+      "rgbaSha256": "397938842bb1cb0eaa5e4d406631d8a1e03a60bda8947e05d25ef75883655829"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 28,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.1666666666666667,
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        132.97500076889992,
+        0.0,
+        2.0,
+        239.55473665241152
+      ],
+      "empty": false,
+      "rgbaSha256": "f4be070f22500ca5e8c913e077cfa87584e0cdf593405f1c3837a5234a25a2bc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 29,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2083333333333333,
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        132.97500076889992,
+        0.0,
+        2.0,
+        235.9901385307312
+      ],
+      "empty": false,
+      "rgbaSha256": "456634dce9add3b17fa0e8f209fc327e04b9786ef10bf0496f498e15e99a36a4"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 30,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.25,
+      "x": 1800,
+      "y": 900,
+      "root": [
+        1.9416771895384515,
+        0.0,
+        138.32566294092246,
+        0.0,
+        1.9416771895384515,
+        246.16156577465608
+      ],
+      "empty": false,
+      "rgbaSha256": "e57506c7f406c8082c282bc76d6ae256f8d4efcfdfe69d6cb500ca5e70851acc"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 31,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2916666666666667,
+      "x": 2100,
+      "y": 900,
+      "root": [
+        1.9416771895384515,
+        0.0,
+        138.32566294092246,
+        0.0,
+        1.9416771895384515,
+        246.16156577465608
+      ],
+      "empty": false,
+      "rgbaSha256": "4c2f0060d75cb371f507bde960a27258813269d4dfda8b5c2771e023e62e2f05"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_1",
+      "frame": 15,
+      "controls": {
+        "attack_pivot": false
+      },
+      "mirror": true,
+      "category": "mirrored-locator-control",
+      "time": 0.625,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        -1.9416771895384515,
+        0.0,
+        161.67433705907754,
+        0.0,
+        1.9416771895384515,
+        246.16156577465608
+      ],
+      "empty": false,
+      "rgbaSha256": "6d525cf2b3049ce68554c86ee5dcdcf4d601631987a1c7a5d28994d4839c9150"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 0,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.0,
+      "x": 300,
+      "y": 1200,
+      "root": [
+        1.7307071529922475,
+        0.0,
+        155.85198333444146,
+        0.0,
+        1.7307071529922475,
+        259.77009985810855
+      ],
+      "empty": false,
+      "rgbaSha256": "c5017a2e66a1f3b2d0c629c430e0c3a0d252f79a9419510c2622e8476725ff3c"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 1,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.041666666666666664,
+      "x": 600,
+      "y": 1200,
+      "root": [
+        1.7307071529922475,
+        0.0,
+        156.10048809636396,
+        0.0,
+        1.7307071529922475,
+        259.77009985810855
+      ],
+      "empty": false,
+      "rgbaSha256": "2cc1a14d223215a46114e8eaf69f5f0eabb0502f830b48ce043b44dcfa118301"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 2,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.08333333333333333,
+      "x": 900,
+      "y": 1200,
+      "root": [
+        1.7048346386942903,
+        0.0,
+        156.64561966189657,
+        0.0,
+        1.7048346386942903,
+        260.1323150582799
+      ],
+      "empty": false,
+      "rgbaSha256": "3147c3060b297cf54eb819cd5ec93c007b47248de8652b522d12b51a5b8add89"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 3,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.125,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        1.7048346386942903,
+        0.0,
+        156.92708903783628,
+        0.0,
+        1.7048346386942903,
+        260.1323150582799
+      ],
+      "empty": false,
+      "rgbaSha256": "d2d8984b3c506e945c2c3a088546904bd940ef9537b128c108d8886b4406773e"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 4,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.16666666666666666,
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        1.7218117402680615,
+        0.0,
+        156.69707926413557,
+        0.0,
+        1.7218117402680615,
+        259.89463563624713
+      ],
+      "empty": false,
+      "rgbaSha256": "d51edb325ee27feeaa8ecb78e0e623ef0b69e51acbda47560f39271c26d72b1f"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 5,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.20833333333333334,
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        1.7218117402680615,
+        0.0,
+        156.47473213240298,
+        0.0,
+        1.7218117402680615,
+        259.89463563624713
+      ],
+      "empty": false,
+      "rgbaSha256": "8c0a1dc959a10a81ca567aab6c980b6b0ed8ef881d059253a58b172e490026ea"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 6,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.25,
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        1.850828690274303,
+        0.0,
+        155.79032933072074,
+        0.0,
+        1.850828690274303,
+        258.08839833615974
+      ],
+      "empty": false,
+      "rgbaSha256": "ffc3bc8bfc9677145346367013e842c8320f02b0a8cb3daf06fe15005052bb88"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 7,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.2916666666666667,
+      "x": 0,
+      "y": 1500,
+      "root": [
+        1.850828690274303,
+        0.0,
+        156.20965179007118,
+        0.0,
+        1.850828690274303,
+        258.08839833615974
+      ],
+      "empty": false,
+      "rgbaSha256": "5629188939cef3570815827e8bb24fb455e594068eb31a744aa28c3624205971"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 8,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.3333333333333333,
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.39380179006275,
+        0.0,
+        2.0,
+        239.3000030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "ccb960079f97aa689cc09f729dedcf26a7d74d1d570477bc0aa2d2bd3954acec"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 9,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.375,
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.1718646443951,
+        0.0,
+        2.0,
+        239.3000030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "45106473f686bbc05ab213e6dab74f66de8b3a2fa371c1e16315ddfd813ead63"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 10,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4166666666666667,
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        155.50821866746992,
+        0.0,
+        2.0,
+        219.75
+      ],
+      "empty": false,
+      "rgbaSha256": "bd5f42d08e9107bd7cb377496303385902047b4dbb1c36e9ab6b9c9ac4760fd7"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 11,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4583333333333333,
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        155.7414929503575,
+        0.0,
+        2.0,
+        219.75
+      ],
+      "empty": false,
+      "rgbaSha256": "f866ee519558fd970513db473c3b1199a3679d2dbe00d177cccf2140888c1beb"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 12,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5,
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        156.74337281705812,
+        0.0,
+        2.0,
+        235.1500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "fc62573681327a19b958a050fa3f2c6d7ac8f4bab55f870e7dc698b0bf33c8a0"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 13,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5416666666666666,
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        156.868045527488,
+        0.0,
+        2.0,
+        235.1500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "d27b1e89ab36fb3f61d814b82f46e3dc7ffb5dd7e6c9247a5a04564ac4f3b5e3"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 14,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5833333333333334,
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        156.65150669850632,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "b93a3e9567349def3a0a5a587cb2a62b49dd0d651997d97c2937e79c8196e0db"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 15,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.625,
+      "x": 0,
+      "y": 1800,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        156.424666425852,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "2f74902689afa92297033d1368d1fb3761c9964a1c38aa92d00605b7e73b16c7"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 16,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.6666666666666666,
+      "x": 300,
+      "y": 1800,
+      "root": [
+        1.7307071529922475,
+        0.0,
+        155.85198333444146,
+        0.0,
+        1.7307071529922475,
+        259.77009985810855
+      ],
+      "empty": false,
+      "rgbaSha256": "c5017a2e66a1f3b2d0c629c430e0c3a0d252f79a9419510c2622e8476725ff3c"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 17,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7083333333333334,
+      "x": 600,
+      "y": 1800,
+      "root": [
+        1.7307071529922475,
+        0.0,
+        156.10048809636396,
+        0.0,
+        1.7307071529922475,
+        259.77009985810855
+      ],
+      "empty": false,
+      "rgbaSha256": "2cc1a14d223215a46114e8eaf69f5f0eabb0502f830b48ce043b44dcfa118301"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 18,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.75,
+      "x": 900,
+      "y": 1800,
+      "root": [
+        1.7048346386942903,
+        0.0,
+        156.64561966189657,
+        0.0,
+        1.7048346386942903,
+        260.1323150582799
+      ],
+      "empty": false,
+      "rgbaSha256": "3147c3060b297cf54eb819cd5ec93c007b47248de8652b522d12b51a5b8add89"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 19,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7916666666666666,
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        1.7048346386942903,
+        0.0,
+        156.92708903783628,
+        0.0,
+        1.7048346386942903,
+        260.1323150582799
+      ],
+      "empty": false,
+      "rgbaSha256": "d2d8984b3c506e945c2c3a088546904bd940ef9537b128c108d8886b4406773e"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 20,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.8333333333333334,
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        1.7218117402680615,
+        0.0,
+        156.69707926413557,
+        0.0,
+        1.7218117402680615,
+        259.89463563624713
+      ],
+      "empty": false,
+      "rgbaSha256": "d51edb325ee27feeaa8ecb78e0e623ef0b69e51acbda47560f39271c26d72b1f"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 21,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.875,
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        1.7218117402680615,
+        0.0,
+        156.47473213240298,
+        0.0,
+        1.7218117402680615,
+        259.89463563624713
+      ],
+      "empty": false,
+      "rgbaSha256": "8c0a1dc959a10a81ca567aab6c980b6b0ed8ef881d059253a58b172e490026ea"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 22,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9166666666666666,
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        1.850828690274303,
+        0.0,
+        155.79032933072074,
+        0.0,
+        1.850828690274303,
+        258.08839833615974
+      ],
+      "empty": false,
+      "rgbaSha256": "ffc3bc8bfc9677145346367013e842c8320f02b0a8cb3daf06fe15005052bb88"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 23,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9583333333333334,
+      "x": 0,
+      "y": 2100,
+      "root": [
+        1.850828690274303,
+        0.0,
+        156.20965179007118,
+        0.0,
+        1.850828690274303,
+        258.08839833615974
+      ],
+      "empty": false,
+      "rgbaSha256": "5629188939cef3570815827e8bb24fb455e594068eb31a744aa28c3624205971"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 24,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0,
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.39380179006275,
+        0.0,
+        2.0,
+        239.3000030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "ccb960079f97aa689cc09f729dedcf26a7d74d1d570477bc0aa2d2bd3954acec"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 25,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0416666666666667,
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.1718646443951,
+        0.0,
+        2.0,
+        239.3000030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "45106473f686bbc05ab213e6dab74f66de8b3a2fa371c1e16315ddfd813ead63"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 26,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0833333333333333,
+      "x": 900,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        155.50821866746992,
+        0.0,
+        2.0,
+        219.75
+      ],
+      "empty": false,
+      "rgbaSha256": "bd5f42d08e9107bd7cb377496303385902047b4dbb1c36e9ab6b9c9ac4760fd7"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 27,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.125,
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        155.7414929503575,
+        0.0,
+        2.0,
+        219.75
+      ],
+      "empty": false,
+      "rgbaSha256": "f866ee519558fd970513db473c3b1199a3679d2dbe00d177cccf2140888c1beb"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 28,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.1666666666666667,
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        156.74337281705812,
+        0.0,
+        2.0,
+        235.1500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "fc62573681327a19b958a050fa3f2c6d7ac8f4bab55f870e7dc698b0bf33c8a0"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 29,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2083333333333333,
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        156.868045527488,
+        0.0,
+        2.0,
+        235.1500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "d27b1e89ab36fb3f61d814b82f46e3dc7ffb5dd7e6c9247a5a04564ac4f3b5e3"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 30,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.25,
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        156.65150669850632,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "b93a3e9567349def3a0a5a587cb2a62b49dd0d651997d97c2937e79c8196e0db"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 31,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2916666666666667,
+      "x": 0,
+      "y": 2400,
+      "root": [
+        1.8212707932107464,
+        0.0,
+        156.424666425852,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "2f74902689afa92297033d1368d1fb3761c9964a1c38aa92d00605b7e73b16c7"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_2",
+      "frame": 15,
+      "controls": {
+        "attack_pivot": false
+      },
+      "mirror": true,
+      "category": "mirrored-locator-control",
+      "time": 0.625,
+      "x": 300,
+      "y": 2400,
+      "root": [
+        -1.8212707932107464,
+        0.0,
+        143.575333574148,
+        0.0,
+        1.8212707932107464,
+        258.50220889504953
+      ],
+      "empty": false,
+      "rgbaSha256": "9f9c9dc7c0c440ae3d2e245b9a16f95be057535ad8ce301154ff7132497e1513"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 0,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.0,
+      "x": 600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        138.52499771118164,
+        0.0,
+        2.0,
+        251.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "4b0a508318f4b122e99048d033266dca92ea39291bdb719bffab9d53e93302e1"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 1,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.041666666666666664,
+      "x": 900,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        138.52499771118164,
+        0.0,
+        2.0,
+        251.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "f43439424c4003f7987d9e6a4bf524940fe6ef9d14045f9174f459f58b668823"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 2,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.08333333333333333,
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        143.17499923706055,
+        0.0,
+        2.0,
+        249.0500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "8dcd122781da6f6913a719239b5d09ccea0d6340cd004dfb7511197aea831bec"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 3,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.125,
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        143.17499923706055,
+        0.0,
+        2.0,
+        249.0500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "792cd6cf4b1b5e1b03b64ceccaa6e6a78bbe33b5401744372145d7c4dafd26f6"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 4,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.16666666666666666,
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        138.1750030517578,
+        0.0,
+        2.0,
+        240.5500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "16592686e119b2a10621ecb4314116aaec39290c1570cf1164bf362162c64b66"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 5,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.20833333333333334,
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        138.1750030517578,
+        0.0,
+        2.0,
+        240.5500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "03cce3630851b8550743bc8775715556dae991d33b7ba247fd7b4bb08e472f4a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 6,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.25,
+      "x": 0,
+      "y": 2700,
+      "root": [
+        1.8565985648281578,
+        0.0,
+        125.81780794253012,
+        0.0,
+        1.8565985648281578,
+        222.15788561994128
+      ],
+      "empty": false,
+      "rgbaSha256": "708c06b6a4cc94e90c9d8521333ee729bede5b7c733dd8065c46ccbea5e7ae90"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 7,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.2916666666666667,
+      "x": 300,
+      "y": 2700,
+      "root": [
+        1.8565985648281578,
+        0.0,
+        125.81780794253012,
+        0.0,
+        1.8565985648281578,
+        223.59761454853464
+      ],
+      "empty": false,
+      "rgbaSha256": "2d19e5eca0fc352c3ad86323bb0dc7596e05466e052f9439f335172095647660"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 8,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.3333333333333333,
+      "x": 600,
+      "y": 2700,
+      "root": [
+        1.8444596997326614,
+        0.0,
+        132.20096108315767,
+        0.0,
+        1.8444596997326614,
+        224.59226305070135
+      ],
+      "empty": false,
+      "rgbaSha256": "1fbc4af91b84dbc37b7687524adbd62e28a0f75383cd684a1a32c116727b868a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 9,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.375,
+      "x": 900,
+      "y": 2700,
+      "root": [
+        1.8444596997326614,
+        0.0,
+        132.20096108315767,
+        0.0,
+        1.8444596997326614,
+        228.28608329673978
+      ],
+      "empty": false,
+      "rgbaSha256": "4e020247d1314e2e9f24bfb748457835204a91740969d668c7a0157786613782"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 10,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4166666666666667,
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        132.25000381469727,
+        0.0,
+        2.0,
+        230.6313673458203
+      ],
+      "empty": false,
+      "rgbaSha256": "aa8dca354a19f0346d8df7a97ae9c03405ddef7eb931daff1a689a331b539226"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 11,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.4583333333333333,
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        132.25000381469727,
+        0.0,
+        2.0,
+        230.14421692878705
+      ],
+      "empty": false,
+      "rgbaSha256": "2b46c5fcc3163dfff0d8cda212eae113e6b4d795e753b01e4f58debdf0d5dc4d"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 12,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5,
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        135.9000015258789,
+        0.0,
+        2.0,
+        230.2417583760032
+      ],
+      "empty": false,
+      "rgbaSha256": "55abf1e6f9bd85233a79c4ff19cbc470851f3b92fed5b2ec9d6096ff14a46f61"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 13,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5416666666666666,
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        135.9000015258789,
+        0.0,
+        2.0,
+        230.13082180757556
+      ],
+      "empty": false,
+      "rgbaSha256": "7a9f6a7fa16721052b71294ce44635a4e64a6c715b2b47431a715575b682e5cf"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 14,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.5833333333333334,
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.22500228881836,
+        0.0,
+        2.0,
+        236.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "a706c3df9d826d5ce6cba4963d32ae422562e6e53e7fd2f6c518a5e047c59ca1"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 15,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.625,
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.22500228881836,
+        0.0,
+        2.0,
+        236.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "70b866498e8c5ae56a9fd3237bfd535d73762b2a288669db69f4da3ccddea404"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 16,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.6666666666666666,
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.52499771118164,
+        0.0,
+        2.0,
+        251.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "4b0a508318f4b122e99048d033266dca92ea39291bdb719bffab9d53e93302e1"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 17,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7083333333333334,
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.52499771118164,
+        0.0,
+        2.0,
+        251.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "f43439424c4003f7987d9e6a4bf524940fe6ef9d14045f9174f459f58b668823"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 18,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.75,
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        143.17499923706055,
+        0.0,
+        2.0,
+        249.0500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "8dcd122781da6f6913a719239b5d09ccea0d6340cd004dfb7511197aea831bec"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 19,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.7916666666666666,
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        143.17499923706055,
+        0.0,
+        2.0,
+        249.0500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "792cd6cf4b1b5e1b03b64ceccaa6e6a78bbe33b5401744372145d7c4dafd26f6"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 20,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.8333333333333334,
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.1750030517578,
+        0.0,
+        2.0,
+        240.5500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "16592686e119b2a10621ecb4314116aaec39290c1570cf1164bf362162c64b66"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 21,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.875,
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        138.1750030517578,
+        0.0,
+        2.0,
+        240.5500030517578
+      ],
+      "empty": false,
+      "rgbaSha256": "03cce3630851b8550743bc8775715556dae991d33b7ba247fd7b4bb08e472f4a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 22,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9166666666666666,
+      "x": 0,
+      "y": 3300,
+      "root": [
+        1.8565985648281578,
+        0.0,
+        125.81780794253012,
+        0.0,
+        1.8565985648281578,
+        222.15788561994128
+      ],
+      "empty": false,
+      "rgbaSha256": "708c06b6a4cc94e90c9d8521333ee729bede5b7c733dd8065c46ccbea5e7ae90"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 23,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 0.9583333333333334,
+      "x": 300,
+      "y": 3300,
+      "root": [
+        1.8565985648281578,
+        0.0,
+        125.81780794253012,
+        0.0,
+        1.8565985648281578,
+        223.59761454853464
+      ],
+      "empty": false,
+      "rgbaSha256": "2d19e5eca0fc352c3ad86323bb0dc7596e05466e052f9439f335172095647660"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 24,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0,
+      "x": 600,
+      "y": 3300,
+      "root": [
+        1.8444596997326614,
+        0.0,
+        132.20096108315767,
+        0.0,
+        1.8444596997326614,
+        224.59226305070135
+      ],
+      "empty": false,
+      "rgbaSha256": "1fbc4af91b84dbc37b7687524adbd62e28a0f75383cd684a1a32c116727b868a"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 25,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0416666666666667,
+      "x": 900,
+      "y": 3300,
+      "root": [
+        1.8444596997326614,
+        0.0,
+        132.20096108315767,
+        0.0,
+        1.8444596997326614,
+        228.28608329673978
+      ],
+      "empty": false,
+      "rgbaSha256": "4e020247d1314e2e9f24bfb748457835204a91740969d668c7a0157786613782"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 26,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.0833333333333333,
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        132.25000381469727,
+        0.0,
+        2.0,
+        230.6313673458203
+      ],
+      "empty": false,
+      "rgbaSha256": "aa8dca354a19f0346d8df7a97ae9c03405ddef7eb931daff1a689a331b539226"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 27,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.125,
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        132.25000381469727,
+        0.0,
+        2.0,
+        230.14421692878705
+      ],
+      "empty": false,
+      "rgbaSha256": "2b46c5fcc3163dfff0d8cda212eae113e6b4d795e753b01e4f58debdf0d5dc4d"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 28,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.1666666666666667,
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        135.9000015258789,
+        0.0,
+        2.0,
+        230.2417583760032
+      ],
+      "empty": false,
+      "rgbaSha256": "55abf1e6f9bd85233a79c4ff19cbc470851f3b92fed5b2ec9d6096ff14a46f61"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 29,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2083333333333333,
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        135.9000015258789,
+        0.0,
+        2.0,
+        230.13082180757556
+      ],
+      "empty": false,
+      "rgbaSha256": "7a9f6a7fa16721052b71294ce44635a4e64a6c715b2b47431a715575b682e5cf"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 30,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.25,
+      "x": 0,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        138.22500228881836,
+        0.0,
+        2.0,
+        236.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "a706c3df9d826d5ce6cba4963d32ae422562e6e53e7fd2f6c518a5e047c59ca1"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 31,
+      "controls": {},
+      "category": "nested-wing-and-glow",
+      "time": 1.2916666666666667,
+      "x": 300,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        138.22500228881836,
+        0.0,
+        2.0,
+        236.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "70b866498e8c5ae56a9fd3237bfd535d73762b2a288669db69f4da3ccddea404"
+    },
+    {
+      "family": "dragon7",
+      "export": "dragon7_fly1_3",
+      "frame": 15,
+      "controls": {
+        "attack_pivot": false
+      },
+      "mirror": true,
+      "category": "mirrored-locator-control",
+      "time": 0.625,
+      "x": 600,
+      "y": 3600,
+      "root": [
+        -2.0,
+        0.0,
+        161.77499771118164,
+        0.0,
+        2.0,
+        236.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "2ab9d097131e24e11a2f22a967c1969df33492df376b74290629cb5b3f2b6104"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 0,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.0,
+      "x": 900,
+      "y": 3600,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "83a3b75405f7697a0e33f9ed54f563b339c7044b8324c551f06c2b1a450901de"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 1,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.041666666666666664,
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "992a0136ade79fd2b8f5b606574d613b9c73f7bac8256593691fc4f74c58e786"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 2,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.08333333333333333,
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "b1ad1f3a7b707071b1a8408c783368593176187a3b53c78864f6d9f0cd60efc8"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 3,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.125,
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "519b949eb9c227e8e4b03b6f79dfd954dfc903abb5b982a3cb99155a15b74bcd"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 4,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.16666666666666666,
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "f170f4231770c600bf75fe8d9f316dab3c64d2cec9a6fd4082a3095ab6a367b7"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 5,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.20833333333333334,
+      "x": 0,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "9ad831d67d113de0c991738552c4c01ae9a09146b89b05f1bcd6698ff64ffef4"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 6,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.25,
+      "x": 300,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "1f084d561e68e3a16c165a082afc6c0cc25a454458464ebdc89fcf6e874eb118"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 7,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.2916666666666667,
+      "x": 600,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "bdd05a2e00e7f84379afebebe98682b3d4eb6ee171c167cffe95a3891c103f52"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 8,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.3333333333333333,
+      "x": 900,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "d99adb4424e296e5ce8017887a5d2f91a558ad7dd9fda8cf4b078ea77c3d1a7d"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 9,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.375,
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "0b0563ad990a2dfb351fae446a62192d298837bd51dfd3c46773eaf0343d6e35"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 10,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.4166666666666667,
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "9d8eaa26658710e306c8062a337dcd4bd0decec3c0b445724913257e49b3cedb"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 11,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.4583333333333333,
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "afc37b9a6b80ed8593792af94f8f616fdf0f6a9c32c22924fcd61956297d9681"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 12,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.5,
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "e092044e4a6b75940d139285f850142f0593380bc1f216f3699c04c3c85a2e6e"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 13,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.5416666666666666,
+      "x": 0,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "e0d4d02fba8217a47e642d69c79b9d2c0a667b52ca3f098e32511b50229dd9b8"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 14,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.5833333333333334,
+      "x": 300,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "9239a7cc820745c06a94c3d4ac8aab338f857a2531ee7483c59f0ae1e8c5aa9f"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 15,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.625,
+      "x": 600,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "10452caccc41a7b51e9f2a82c4317c85878e595459086e406b4a443297d1edc6"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 16,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.6666666666666666,
+      "x": 900,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "be51df4e729790ba02289ceae176a2bcff2006c79055d9387c8a13eb7eaa2ea9"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 17,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.7083333333333334,
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "4398ca8c5f1b254d4e54d17622741f01bfb9770750f95b5079c259b2b9f15ebd"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 18,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.75,
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "df54f121eccc3e2d19636377439d565b499fb955b97e3a46fa824f0eb08cd347"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 19,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.7916666666666666,
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "35f138724aa1c4909bc27611efe9d818d263b7a961254661a80fcce6b80a7960"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 20,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.8333333333333334,
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "cac9409e23d101e0e457bf83b2b2799fbabd2a69887873fd7c42eb0fdcb6d451"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 21,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.875,
+      "x": 0,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "5000ebe31c01cc2665b1c00a1bcd5f59359588df70f0bd8b10865fedeaa69681"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 22,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.9166666666666666,
+      "x": 300,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "fbfa8a92f4f037a117187314152137fb7183e88b51049d609a011f9bb576bbd1"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 23,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 0.9583333333333334,
+      "x": 600,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "5afa2b1e5165355dc75c5ba6bdc1e75d3a5530cbb1cca16c3198bfa577851498"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 24,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.0,
+      "x": 900,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "83a2a5075e872b90b6922a0917530dd3b866d39296da1c48f3f3faed4d34bc05"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 25,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.0416666666666667,
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "5c1782dfa694f2f53131724cfcde387b8e241838ccc70f640e01b7e9dc89aaa1"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 26,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.0833333333333333,
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "bd21481b2ee0792e5193e8ae7d53e99454a16d498400570b7560ea9c9930c031"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 27,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.125,
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "8e2ef8656cbbfadba9bef2ec90f23c2ea59cff7b41ad49a43937718ef8e80e4c"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 28,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.1666666666666667,
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "188c5c9329cee77338e57dbc5c3d769b3455e1d91bda8ab41aa1a4d3862dc065"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 29,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.2083333333333333,
+      "x": 0,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "f12787f83122ba0c17eeaeefaf6b2e75d0481d44724df80ddd9dd09e929b3b0f"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 30,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.25,
+      "x": 300,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "dcf443be19c2bfbebbadc47730761a47fe2722cf2154b970fd360a6365e8f591"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 31,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.2916666666666667,
+      "x": 600,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "3795dfa218fd053f764b675ea7cc34c04ce5c9b7016de5016a312908ba9f5314"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 32,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.3333333333333333,
+      "x": 900,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "b6bcc061baa9e01e0b2e63b68c7a4146e07f1d59460c9239580ed321bd3e2504"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 33,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.375,
+      "x": 1200,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "561a5d99da955abda59167956e37705e637bb0984b8d3a7b2d21fb71f53e5a61"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 34,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.4166666666666667,
+      "x": 1500,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "fd71b414b9b1b6a256468636320a675abbfd9d6a1201f0f16723751a44b1b11a"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 35,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.4583333333333333,
+      "x": 1800,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "366c454846dabd485fa8a9bf94d5436a2b69147bd59911667487d4444eacace2"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_idle1",
+      "frame": 36,
+      "controls": {},
+      "category": "balloon-idle",
+      "time": 1.5,
+      "x": 2100,
+      "y": 4800,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "dae271147df0aac45739cd831b34343e40b68b069f5f48110c83b54c0d22752e"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 0,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.0,
+      "x": 0,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "5a20de3d770424076b95bd0e5b77c573599aa05142bfecf02ae4ea14f7bd2f05"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 1,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.041666666666666664,
+      "x": 300,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "da61f29fc0bf6935ae87ecdad20d1de456a7a0549a2092992d1ffa3683c1ef62"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 2,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.08333333333333333,
+      "x": 600,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "15adb80df3a34481850ac65b5e33695ca22dcbea649560b041ab75434ee9d0cb"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 3,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.125,
+      "x": 900,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "462f5807079d3597ae1758b9d3910407ce7a93302035fb4a71482c87f7daf31b"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 4,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.16666666666666666,
+      "x": 1200,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "4e49aaf7bc1fe11b25a737bbb4764581db5a047a77dc07bf2894ec17c341a3a1"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 5,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.20833333333333334,
+      "x": 1500,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "07cee4f5df924e54824e47f15258c1bba92e13e7eef3eb6b9966cfb8e3273bc4"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 6,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.25,
+      "x": 1800,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "2eb1d9bb0b24a59a1211b6aae2ab5e3965723b8614901dbe6b0953458bf87c7b"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 7,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.2916666666666667,
+      "x": 2100,
+      "y": 5100,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "bec05a843ba72d7939658a009109660ff49e8a10349c5b0a05ef827bc736bf38"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 8,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.3333333333333333,
+      "x": 0,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "3051074f902bd740072e93d1487f64fe71d95aec0c78ca253308d4be273e6fc4"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 9,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.375,
+      "x": 300,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "a6882c3b2a768e11f672db6f29d6c4e979be08261cab20caec5bf73aca89ff0a"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 10,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.4166666666666667,
+      "x": 600,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "d6ba9e416637c6b960fe446527a9af953f4e88c05de4f8b7587098eb9ab45a20"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 11,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.4583333333333333,
+      "x": 900,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "11114cfcee59799e7380e4320fa6d34431e37f4780538f0f215a822da1475840"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 12,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.5,
+      "x": 1200,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "8ae0ad5d60bd5f7cac6e0561afc72e9a2025dbc620c972e542217a8ba8a34bff"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 13,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.5416666666666666,
+      "x": 1500,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "fd9e0435318304f7a23d4133ed007c003a235721b236ff67a2e2834d8b1a6590"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 14,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.5833333333333334,
+      "x": 1800,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "f2891886a33601f33e03399f62c43502abc55efe0acc9a8a97f0473c188d0f01"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 15,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.625,
+      "x": 2100,
+      "y": 5400,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "c8cfcfa85cfb6fe5510bd3486ce23117c643e670884722decef94687a29c16f8"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 16,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.6666666666666666,
+      "x": 0,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "813d23ea72c9b8f2a236995a405848ee5a950901db98a22993925894d3fdd567"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 17,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.7083333333333334,
+      "x": 300,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "87b3bfbd0b4bbd92679002ca203aafc309ce9d91b653c99f4a454b632a01f545"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 18,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.75,
+      "x": 600,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "b22b2ddfa9b2dfd5bf362f685af838408bf81c5390f4809590088b117f9fd9b6"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 19,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.7916666666666666,
+      "x": 900,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "ce8a8fbcb67aa7eb682cd52e836ab286f79e632c003e02336c1c44b5c5df8517"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 20,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.8333333333333334,
+      "x": 1200,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "2436e4aa46b5d60e8c9e3dfaa51b528000522a5859cb2c67923945c0be437bb5"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 21,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.875,
+      "x": 1500,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "85cb8cec3d42c42267c5325923cc3ca0d7e5c1a1743cbcb2642b419a3e8a62ac"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 22,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.9166666666666666,
+      "x": 1800,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "6d879516d46dd131c64d34fd9dde108d2717602026be630db485cf981462aac0"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 23,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 0.9583333333333334,
+      "x": 2100,
+      "y": 5700,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "78b25d0efa4422568570fc0458c7afc7e91624f5703f478b5b6c8b7dcfa3fab5"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 24,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.0,
+      "x": 0,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "f30459ed49246dd6199b86b936010c77f14ad42e3b9433c839686a7f81154222"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 25,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.0416666666666667,
+      "x": 300,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "1726774dc9cb93f4040013357f19ab4c28665b9ccd868a53a53631ca879ca359"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 26,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.0833333333333333,
+      "x": 600,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "83016d685d9595d1eb5d07bfe92b52e0c0f5881f0cba354c896ca9883bab2b7c"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 27,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.125,
+      "x": 900,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "121976a0f0165834ad57e52053835eb4dc36c57ccfbfb79519dde7e322ae6c73"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 28,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.1666666666666667,
+      "x": 1200,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "fc920fbcdbd01386dcd2caa0c3758651d7d03c29532de5c0323e793ed92a245d"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 29,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.2083333333333333,
+      "x": 1500,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "2e2e7fa7b9530954769c8851633ee51e8ec78a200ced5df10e87f3a7be306f98"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 30,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.25,
+      "x": 1800,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "e65a960d64abcc0eb905291d3d7350589ea3e5621b518464dcad42e5eccc31b1"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 31,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.2916666666666667,
+      "x": 2100,
+      "y": 6000,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "1f344073ac357fbecc64ca65673d2a9b6b06b60f1a6be6d4eec1bf45446ccf91"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 32,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.3333333333333333,
+      "x": 0,
+      "y": 6300,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "73143d1864d1e6f0b121c3f3f69f9a501af9fd3f177adecc54e657317d7f38ee"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_attack1",
+      "frame": 33,
+      "controls": {},
+      "category": "balloon-attack",
+      "time": 1.375,
+      "x": 300,
+      "y": 6300,
+      "root": [
+        1.7108203666901938,
+        0.0,
+        149.40121221903226,
+        0.0,
+        1.7108203666901938,
+        266.03638614975296
+      ],
+      "empty": false,
+      "rgbaSha256": "edb366e055de07f09116d3b6e5fceba378e05d5fefcbbe32c53937e6a9b52484"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 0,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.0,
+      "x": 600,
+      "y": 6300,
+      "root": [
+        1.7097289508401703,
+        0.0,
+        149.4015942149961,
+        0.0,
+        1.7097289508401703,
+        266.0478460161782
+      ],
+      "empty": false,
+      "rgbaSha256": "75734c0a3ef89b746493ebca4a74d6e6cf01839b6e5d236e6b3026bc16c40914"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 1,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.041666666666666664,
+      "x": 900,
+      "y": 6300,
+      "root": [
+        1.612705107096502,
+        0.0,
+        149.40468437998388,
+        0.0,
+        1.612705107096502,
+        267.0665963754867
+      ],
+      "empty": false,
+      "rgbaSha256": "3897383c016240c217c1a7e08a7e91cdb3970b74f6e54f6a9b1d1a04a7d6fba8"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 2,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.08333333333333333,
+      "x": 1200,
+      "y": 6300,
+      "root": [
+        1.525293837203039,
+        0.0,
+        149.40775635677986,
+        0.0,
+        1.525293837203039,
+        267.9844147093681
+      ],
+      "empty": false,
+      "rgbaSha256": "964d40db787ec7e1a097454ec7c72c5cb97af94f0856ee51709bd0d06ae32f96"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 3,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.125,
+      "x": 1500,
+      "y": 6300,
+      "root": [
+        1.4658341948351143,
+        0.0,
+        148.7279874343761,
+        0.0,
+        1.4658341948351143,
+        268.6087409542313
+      ],
+      "empty": false,
+      "rgbaSha256": "cc89ca3791cd97650d6ec937f1325f6f8f2207dbcf8465bcd4e715319dadfffa"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 4,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.16666666666666666,
+      "x": 1800,
+      "y": 6300,
+      "root": [
+        1.411527568943194,
+        0.0,
+        148.09877934961253,
+        0.0,
+        1.411527568943194,
+        269.1789605260965
+      ],
+      "empty": false,
+      "rgbaSha256": "45e39f64be633ad4a568e5f4b7389e46c3d8dda4634f000b166d793d5be3a894"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 5,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.20833333333333334,
+      "x": 2100,
+      "y": 6300,
+      "root": [
+        1.8828767389534575,
+        0.0,
+        148.18276592053203,
+        0.0,
+        1.8828767389534575,
+        264.22979424098867
+      ],
+      "empty": false,
+      "rgbaSha256": "ba4701551e3e4225690a3605dd5c90f6ae1863ef98564e96ce4f1068c80e5bb2"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 6,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.25,
+      "x": 0,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        148.833300139755,
+        0.0,
+        2.0,
+        223.7555607408285
+      ],
+      "empty": false,
+      "rgbaSha256": "8776dfd9bb788e98c919a6dfb07497dd936227f6501de4054c59b89478bc2338"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 7,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.2916666666666667,
+      "x": 300,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        149.49755804613233,
+        0.0,
+        2.0,
+        176.21874713897705
+      ],
+      "empty": false,
+      "rgbaSha256": "06b9657fb9c6492fd5ae94a880963146af549a4deb1d3bca49b25929eb7f46fe"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 8,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.3333333333333333,
+      "x": 600,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        149.5679682791233,
+        0.0,
+        2.0,
+        185.89257448911667
+      ],
+      "empty": false,
+      "rgbaSha256": "d8596a1833e2fd69748f92a982e5d068dcc86b0a229610662db55692e308b1ae"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 9,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.375,
+      "x": 900,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        149.63906210660934,
+        0.0,
+        2.0,
+        195.5664018392563
+      ],
+      "empty": false,
+      "rgbaSha256": "4633270753fb275b8966e8fa27620a59116c20569dd764e7f52924b220c20dc7"
+    },
+    {
+      "family": "balloon8",
+      "export": "balloon_lvl8_die1",
+      "frame": 10,
+      "controls": {},
+      "category": "balloon-die",
+      "time": 0.4166666666666667,
+      "x": 1200,
+      "y": 6600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    }
+  ]
+}
