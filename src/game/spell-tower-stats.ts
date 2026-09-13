@@ -61,6 +61,9 @@ export const SPELL_TOWER = Object.fromEntries(
   SPELL_TOWER_WEAPON_KEYS.map((key) => [key, spellTowerWeapon(key)]),
 ) as Record<SpellTowerWeapon, ReturnType<typeof spellTowerWeapon>>;
 export const speedPoints = (points: number) => points / SPEED_POINTS_PER_TILE;
+/** Activation range of a placed tower's weapon (Invisibility 4.5 tiles, the others 9). */
+export const spellTowerRange = (tower: { spellTowerWeapon?: SpellTowerWeapon }) =>
+  SPELL_TOWER[tower.spellTowerWeapon ?? 'rage'].range;
 export function spellTowerStats(level: number) {
   const row = SPELL_TOWER_LEVELS[level - 1];
   if (!row) throw Error(`Unsupported native Spell Tower level: ${level}`);

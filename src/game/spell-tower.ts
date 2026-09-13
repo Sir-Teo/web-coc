@@ -1,4 +1,4 @@
-import { BUILDINGS, TROOPS } from './data';
+import { BUILDINGS, TROOPS, type TroopDef } from './data';
 import { distance2D } from './distance';
 import type { LateCombatContext, SpellTowerWeapon } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
@@ -76,6 +76,11 @@ const inside = (dx: number, dy: number, radius: number) =>
   Math.abs(dx) <= radius && Math.abs(dy) <= radius && dx * dx + dy * dy < radius * radius;
 const active = (unit: Unit, at: number) =>
   unit.hp > 0 && !unit.ejected && (unit.spawnedAt ?? 0) <= at;
+/** Characters with a preferred target class receive `SpeedBoost2` (LogicLevel.BoostGameObject). */
+const preferredTarget = (kind: string) => {
+  const troop = (TROOPS as Partial<Record<string, TroopDef>>)[kind];
+  return !!(troop?.prefersDefenses || troop?.prefersResources || troop?.wallBreaker);
+};
 const lastPulseAt = (cast: SpellTowerCast) => {
   const spell = SPELL_TOWER[cast.weapon].spell;
   return cast.deployAt + spell.firstHit + (spell.hits - 1) * spell.interval;
@@ -376,10 +381,8 @@ export function spellTowerMoveScale(battle: Battle, unit: Unit) {
   const status = unit.late?.spellTower;
   if (!status || status.slowUntil <= battle.elapsed) return 1;
   const spell = SPELL_TOWER.poison.spell;
-  const points = TROOPS[unit.kind].prefersDefenses || TROOPS[unit.kind].prefersResources || TROOPS[unit.kind].wallBreaker
-    ? spell.speedBoost2
-    : spell.speedBoost;
-  return 1 + (unit.hero ? Math.trunc(points * SPELL_TOWER_HERO.speed) : points) / 100;
+  if (preferredTarget(unit.kind)) return 1 + spell.speedBoost2 / 100;
+  return 1 + (unit.hero ? Math.trunc(spell.speedBoost * SPELL_TOWER_HERO.speed) : spell.speedBoost) / 100;
 }
 /** Rage on defending units: damage multiplier and added movement speed in tiles per second. */
 export function spellTowerDefenderBoost(
@@ -390,8 +393,8 @@ export function spellTowerDefenderBoost(
   const until = battle.late?.spellTower?.defenderRage[defender.id];
   if (until === undefined || until <= at) return { damage: 1, speed: 0 };
   const spell = SPELL_TOWER.rage.spell;
-  // Balloons retain a preferred target class, which selects `SpeedBoost2`.
-  const points = defender.kind === 'balloon' ? spell.speedBoost2 : spell.speedBoost;
+  // Defending characters keep their data's preferred target class (e.g. Balloons: `SpeedBoost2`).
+  const points = preferredTarget(defender.kind) ? spell.speedBoost2 : spell.speedBoost;
   return { damage: 1 + spell.damageBoost, speed: speedPoints(points) };
 }
 /** Invisibility on defending units: attackers cannot select them while concealed. */
