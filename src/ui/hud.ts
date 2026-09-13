@@ -1,3 +1,4 @@
+import { archerTowerPortrait } from './archer-tower-portrait';
 import { darkDrillProduction } from '../game/dark-drill-production';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
@@ -2188,5 +2189,6 @@ export class HUD {
 
 /** UI framing is independent of world registration; Cannon crops retain original pixels. */
 function hudAsset(...args: Parameters<typeof asset>) {
+  if (args[0] === 'archertower') return archerTowerPortrait(args[1] ?? 1);
   return args[0] === 'cannon' ? cannonIconAsset(args[1] ?? 1) : asset(...args);
 }
