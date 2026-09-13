@@ -76,6 +76,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
           ...(b.infernoMode !== undefined ? { infernoMode: b.infernoMode } : {}),
           ...(b.infernoAmmo !== undefined ? { infernoAmmo: b.infernoAmmo } : {}),
           ...(b.xbowMode !== undefined ? { xbowMode: b.xbowMode } : {}),
+          ...(b.spellTowerWeapon !== undefined ? { spellTowerWeapon: b.spellTowerWeapon } : {}),
           ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
           ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
           ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),

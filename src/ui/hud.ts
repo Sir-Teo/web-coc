@@ -1993,7 +1993,7 @@ export class HUD {
       .filter(([id]) => id !== 1000019)
       .map(
         ([id, x, y]) =>
-          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 ? '#f3c346' : '#e0cf97'}"/>`,
+          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 || id === 1000017 || id === 1000069 ? '#f3c346' : '#e0cf97'}"/>`,
       )
       .join('')}</svg>`;
   }
