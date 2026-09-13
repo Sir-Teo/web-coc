@@ -175,7 +175,8 @@ export function nativeCampaignIssues(index: number): string[] {
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
   const placements = [...stage.buildings, ...stage.traps];
   for (const issue of lateCampaignIssues(placements)) issues.add(issue);
-  for (const issue of lateNativeFields(placements, stage.lateStates ?? []).issues) issues.add(issue);
+  for (const issue of lateNativeFields(placements, stage.lateStates ?? []).issues)
+    issues.add(issue);
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],
@@ -210,7 +211,13 @@ export function nativeCampaignIssues(index: number): string[] {
 export function nativeBuildings(index: number): Building[] {
   const issues = nativeCampaignIssues(index);
   if (issues.length) throw Error(`Village is not implemented: ${issues.join(', ')}`);
+  return nativeLayout(index);
+}
+/** Every source entity with its explicit modes, without the playability gate.
+ * For tests and developer inspection of villages whose remaining families are in progress. */
+export function nativeLayout(index: number): Building[] {
   const s = NATIVE_CAMPAIGN[index];
+  if (!s) throw Error('Unknown village');
   const modes = nativeDefenseModes(s).modes;
   const late = lateNativeFields([...s.buildings, ...s.traps], s.lateStates ?? []).fields;
   return [...s.buildings, ...s.traps].map(([data, x, y, level], i) => {
