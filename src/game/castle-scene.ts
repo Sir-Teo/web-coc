@@ -19,7 +19,8 @@ export class CastlePresentation {
   render(buildings: Building[], iso: (x: number, y: number) => { x: number; y: number }) {
     const wanted = new Set<number>();
     for (const building of buildings) {
-      if (building.kind !== 'clancastle') continue;
+      // The Goblin Castle NPC keeps its own body/foundation/ruin in the late Goblin family.
+      if (building.kind !== 'clancastle' || building.npc === 'goblin-castle') continue;
       wanted.add(building.id);
       let view = this.castles.get(building.id);
       if (!view)
