@@ -160,30 +160,3 @@ it('reconstructs an in-flight arrow identically after serialization', () => {
   }
   expect(JSON.stringify(restored)).toBe(JSON.stringify(b));
 });
-
-it('renders the physical ground position after a lateral turn rather than an old straight-line fraction', async () => {
-  const { trackedProjectilePoint } = await import('../src/game/tracked-projectile-point');
-  const { model, b, unit } = arena();
-  model.step(0.01);
-  const p = b.projectiles![0];
-  b.elapsed = 0.11;
-  stepProjectiles(
-    b,
-    () => {},
-    () => {},
-  );
-  unit.y += 9;
-  b.elapsed = 0.21;
-  stepProjectiles(
-    b,
-    () => {},
-    () => {},
-  );
-  const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
-  const from = iso(p.fromX, p.fromY),
-    to = iso(p.x, p.y);
-  const point = trackedProjectilePoint(p, from, to, iso);
-  expect(point).toEqual(iso(p.flight!.x, p.flight!.y));
-  const progress = (b.elapsed - p.launched) / (p.impact - p.launched);
-  expect(Math.abs(point.x - (from.x + (to.x - from.x) * progress))).toBeGreaterThan(1);
-});

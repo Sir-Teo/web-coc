@@ -1,4 +1,7 @@
-import { trackedProjectilePoint } from './tracked-projectile-point';
+import {
+  ArcherTowerProjectiles,
+  preloadArcherTowerProjectiles,
+} from './archer-tower-projectile-scene';
 import {
   VillageArcherTowers,
   preloadVillageArcherTowers,
@@ -180,6 +183,7 @@ export class VillageScene extends Phaser.Scene {
   private sweeperPresentation!: SweeperPresentation;
   private mortarPresentation!: MortarPresentation;
   private garrisonPresentation!: GarrisonPresentation;
+  private archerTowerProjectiles!: ArcherTowerProjectiles;
   private villageArcherTowers!: VillageArcherTowers;
   private darkDrillPresentation!: DarkDrillPresentation;
   private infernoPresentation!: InfernoPresentation;
@@ -224,6 +228,7 @@ export class VillageScene extends Phaser.Scene {
     preloadInfernos(this);
     preloadDarkDrills(this);
     preloadVillageArcherTowers(this);
+    preloadArcherTowerProjectiles(this);
     preloadCannons(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
@@ -318,6 +323,7 @@ export class VillageScene extends Phaser.Scene {
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
+    this.archerTowerProjectiles = new ArcherTowerProjectiles(this);
     this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
@@ -353,6 +359,7 @@ export class VillageScene extends Phaser.Scene {
       this.infernoPresentation.clear();
       this.darkDrillPresentation.clear();
       this.villageArcherTowers.clear();
+      this.archerTowerProjectiles.clear();
       this.cannonPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
@@ -970,6 +977,7 @@ export class VillageScene extends Phaser.Scene {
       this.infernoPresentation.clear();
       this.darkDrillPresentation.clear();
       this.villageArcherTowers.clear();
+      this.archerTowerProjectiles.clear();
       this.cannonPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
@@ -2775,6 +2783,12 @@ export class VillageScene extends Phaser.Scene {
 
   private drawProjectiles() {
     const b = this.model.battle;
+    this.archerTowerProjectiles.render(
+      b ?? null,
+      this.model.state.settings.reducedMotion,
+      iso,
+      (p) => iso(p.x, p.y).y - this.projectileAnchors(projectileEffect(p, 'projectile')).to.y,
+    );
     const shots =
       !b || b.finished || this.model.state.settings.reducedMotion
         ? []
@@ -2783,6 +2797,7 @@ export class VillageScene extends Phaser.Scene {
               p.weapon !== 'xbowbolt' &&
               p.weapon !== 'towerbomb' &&
               p.weapon !== 'arcane' &&
+              !(p.weapon === 'arrow' && p.variant !== undefined && p.flight) &&
               !(
                 p.weapon === 'cannonball' &&
                 b.buildings.some(
@@ -2793,16 +2808,6 @@ export class VillageScene extends Phaser.Scene {
     this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
-      if (p.weapon === 'arrow' && p.variant !== undefined && p.flight) {
-        this.combatEffects.poseProjectile(
-          p.id,
-          p.weapon,
-          trackedProjectilePoint(p, from, to, iso),
-          to,
-          0,
-        );
-        continue;
-      }
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
       this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
