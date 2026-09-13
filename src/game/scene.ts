@@ -1122,6 +1122,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
       const shouldBubble =
         !this.model.battle &&
+        b.id !== this.model.moving &&
         (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
         b.stored >= 100 &&
         !b.upgradeEnd;
