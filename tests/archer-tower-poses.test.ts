@@ -30,3 +30,16 @@ it('resolves all rooftop variants and directions while holding finished nonloopi
     }
   expect(() => towerArcherPoses(1, 'idle', 1, -1)).toThrow();
 });
+
+it('omits residents from construction and ruins and lowers them with alternate source height', async () => {
+  const { archerTowerComposition } = await import('../src/game/archer-tower-art');
+  for (let level = 1; level <= 21; level++) {
+    expect(archerTowerComposition(level, 'constructing', 0).residents).toEqual([]);
+    expect(archerTowerComposition(level, 'ruin', 0).residents).toEqual([]);
+    expect(archerTowerComposition(level, 'ready', 0).residents.length).toBeGreaterThan(0);
+    if (level >= 7)
+      expect(archerTowerComposition(level, 'ready', 0, true).residents).not.toEqual(
+        archerTowerComposition(level, 'ready', 0).residents,
+      );
+  }
+});

@@ -64,3 +64,25 @@ export function towerArcherPoses(
     row.Looping === 'TRUE' ? seconds : Math.min(seconds, (clip.timeline.length - 1) / clip.fps);
   return nativeScenePoses(TOWER_ARCHER_GRAPH, name, time, {}, root);
 }
+
+/** Local source-coordinate projection: a three-tile platform center at y=60,
+ * with vertical source units projected at 0.5 pixels. Native attachment is unverified.
+ * Keep the projection explicit so visual calibration does not change combat geometry.
+ */
+export function archerTowerComposition(
+  level: number,
+  state: ArcherTowerState,
+  seconds: number,
+  alternate = false,
+) {
+  const row = archerTowerSource(level);
+  const body = archerTowerPoses(level, state, seconds, alternate);
+  const z = Number(alternate ? row.AltDefenderZ : row.DefenderZ);
+  if (!Number.isFinite(z)) throw Error('Missing original rooftop Archer height');
+  if (Number(row.DefenderCount) !== 1) throw Error('Unsupported original rooftop Archer count');
+  const residents =
+    state === 'constructing' || state === 'ruin'
+      ? []
+      : towerArcherPoses(level, 'idle', 3, seconds, [1, 0, 0, 0, 1, 60 - z * 0.5]);
+  return { body, residents };
+}
