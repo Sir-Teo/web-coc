@@ -32,8 +32,8 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // Late families now complete villages 61–66, Pick Your Poison (68) and Paper Map (70).
-    expect(playable).toEqual([...Array.from({ length: 67 }, (_, i) => i), 68, 70]);
+    // Late families now complete villages 61–68, 70–72, 78, 79 and Raging Headache (86).
+    expect(playable).toEqual([...Array.from({ length: 69 }, (_, i) => i), 70, 71, 72, 78, 79, 86]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];
@@ -71,7 +71,9 @@ describe('native campaign adapter and progress isolation', () => {
     expect(nativeCampaignIssues(54)).toEqual([]);
     expect(nativeCampaignIssues(55)).toEqual([]);
     expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
-    for (const index of [67, 74, 89]) {
+    // Builderopolis still needs the Defending Builder of its armed Builder's Huts.
+    expect(nativeCampaignIssues(84)).toEqual(["Armed Builder's Hut"]);
+    for (const index of [74, 84, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
       const m = new GameModel();
       const before = structuredClone(m.state);
