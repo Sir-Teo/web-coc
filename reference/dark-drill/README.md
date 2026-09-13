@@ -62,3 +62,10 @@ All 29 construction/production/model/save tests pass. Tests verify the complete 
 Drills now use the full nonnegative elapsed home interval instead of the shared eight-hour production cap. Their source reservoir capacity bounds the result. Upgrade/construction time is excluded before production starts, and preserved legacy overflow remains unchanged. Other producers keep their existing timing behavior.
 
 All 31 focused construction/production/model/save tests pass. A level-3 Drill updated once after eleven hours and one updated hourly both contain 495; a longer interval stops at the original 540 capacity. An upgrade completing three hours into a twelve-hour offline interval produces only for the remaining nine hours. Production build passes. This implements continuous source-rate accumulation under the existing home clock; native clock tamper handling and exact native resource quantization remain unverified.
+
+
+## Native state composition layer
+
+`dark-drill-art.ts` composes the original base, body, construction, upgrade scaffold and ruined exports for all eleven tiers. Working samples the complete body timeline; idle and upgrading hold its frame-zero idle pose. The named reservoir accepts an explicit integer source frame 0–99 independently of the body clock. No gameplay amount-to-frame mapping is embedded here. Registration is supplied explicitly by the caller. These state choices are local interpretations, not native executable state-machine proof.
+
+Three tests cover all 55 tier/state combinations, finite geometry, working motion, stationary inactive states, distinct reservoir artwork, identical full reservoir frames, explicit registration and invalid-input rejection. Chromium and WebKit each render a 55-case state gallery with zero GL errors and adequate framebuffer height. The WebKit gallery was visually reviewed. Production build passes. This pose layer is not yet connected to live village buildings, and full independent animation pixel qualification is still running.
