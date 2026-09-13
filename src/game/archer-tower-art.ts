@@ -10,6 +10,7 @@ import {
 } from './native-mesh';
 export const ARCHER_TOWER_GRAPH = body as unknown as NativeMeshGraph;
 export const TOWER_ARCHER_GRAPH = actors as unknown as NativeMeshGraph;
+export type TowerArcherFacing = { direction: 1 | 2 | 3; flip: boolean };
 export type ArcherTowerState = 'ready' | 'constructing' | 'upgrading' | 'ruin';
 export const archerTowerSource = (level: number): Record<string, string> => {
   if (!Number.isInteger(level) || level < 1 || level > definitions.levels.length)
@@ -74,6 +75,7 @@ export function archerTowerComposition(
   state: ArcherTowerState,
   seconds: number,
   alternate = false,
+  facing: TowerArcherFacing = { direction: 3, flip: false },
 ) {
   const row = archerTowerSource(level);
   const body = archerTowerPoses(level, state, seconds, alternate);
@@ -83,6 +85,13 @@ export function archerTowerComposition(
   const residents =
     state === 'constructing' || state === 'ruin'
       ? []
-      : towerArcherPoses(level, 'idle', 3, seconds, [1, 0, 0, 0, 1, 60 - z * 0.5]);
+      : towerArcherPoses(level, 'idle', facing.direction, seconds, [
+          facing.flip ? -1 : 1,
+          0,
+          0,
+          0,
+          1,
+          60 - z * 0.5,
+        ]);
   return { body, residents };
 }

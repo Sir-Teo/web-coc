@@ -7,7 +7,8 @@ import {
 } from './archer-tower-sounds';
 import { archerTowerHandlingPoses } from './archer-tower-effects';
 import type Phaser from 'phaser';
-import type { Building } from './model';
+import type { Battle, Building } from './model';
+import { battleTowerArcherFacing } from './archer-tower-facing';
 import { ARCHER_TOWER_GRAPH, TOWER_ARCHER_GRAPH, archerTowerComposition } from './archer-tower-art';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
@@ -24,14 +25,20 @@ const transform = (poses: NativeScenePose[]): NativeScenePose[] =>
       ? { ...p, group: transform(p.group) }
       : { ...p, matrix: nativeMatrix(ROOT, p.matrix) },
   );
-export function villageArcherTowerPoses(b: Building, seconds: number) {
+export function villageArcherTowerPoses(b: Building, seconds: number, battle?: Battle | null) {
   const state =
     b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
-  const poses = archerTowerComposition(b.level, state, seconds);
+  const poses = archerTowerComposition(
+    b.level,
+    state,
+    seconds,
+    false,
+    battleTowerArcherFacing(b, battle),
+  );
   return { body: transform(poses.body), residents: transform(poses.residents) };
 }
-export function villageArcherTowerBounds(b: Building, seconds: number) {
-  const poses = villageArcherTowerPoses(b, seconds),
+export function villageArcherTowerBounds(b: Building, seconds: number, battle?: Battle | null) {
+  const poses = villageArcherTowerPoses(b, seconds, battle),
     bounds = [Infinity, Infinity, -Infinity, -Infinity];
   const pending = [...poses.body, ...poses.residents];
   while (pending.length) {
@@ -119,6 +126,7 @@ export class VillageArcherTowers {
     iso: (x: number, y: number) => { x: number; y: number },
     soundTime = seconds,
     reduced = false,
+    battle?: Battle | null,
   ) {
     const wanted = new Set<number>();
     for (const b of buildings) {
@@ -134,9 +142,11 @@ export class VillageArcherTowers {
           }),
         );
       const p = iso(b.x + 1.5, b.y + 1.5),
-        poses = villageArcherTowerPoses(b, seconds);
+        poses = villageArcherTowerPoses(b, seconds, battle);
       pair.body.render(poses.body, p.x, p.y, p.y);
       pair.resident.render(poses.residents, p.x, p.y, p.y + 0.01);
+      for (const object of pair.resident.objects)
+        object.setData('nativeTowerArcher', { id: b.id, ...battleTowerArcherFacing(b, battle) });
     }
     for (const [id, pair] of this.views)
       if (!wanted.has(id)) {

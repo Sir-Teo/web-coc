@@ -851,6 +851,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.state.settings.reducedMotion
           ? 0
           : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+        this.model.battle,
       );
     if (b.kind === 'darkdrill')
       return darkDrillBounds(
@@ -1888,6 +1889,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
+      battle,
     );
     const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
