@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import math
+from pathlib import Path
 import numpy as np
 from PIL import Image
 from native_art.bundle import ROOT, source, digest
@@ -25,7 +26,7 @@ def points(poses):
         result.extend(np.column_stack([vertices[:, :2], np.ones(len(vertices))]) @ matrix.T)
     return result
 
-def build(family):
+def build(family, check=False):
     metadata = json.loads((ROOT / f'reference/archer-tower/{family}-source.json').read_text())
     graph = metadata['graph']
     pins = metadata['sources']
@@ -42,13 +43,27 @@ def build(family):
         name = 'witness_clip_' + id_
         witness_exports[name] = int(id_)
         cases.extend(dict(family=family, export=name, frame=f, controls={}) for f in range(len(clip['timeline'])))
-    images, documents = {}, {}
+    inputs = [Path(__file__), ROOT / f'reference/archer-tower/{family}-source.json',
+              ROOT / 'scripts/native_art/sc6.py', ROOT / 'scripts/native_art/multiply_scene.py']
+    signature = digest(b''.join(p.read_bytes() for p in inputs) + np.__version__.encode())
+    checkpoint_dir = ROOT / 'output/playtest/archer-source-checkpoints'
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    folder = ROOT / f'tests/fixtures/native-archer-tower-{family}'
+    if not check: folder.mkdir(parents=True, exist_ok=True)
     index = []
     for start in range(0, len(cases), 160):
         batch = cases[start:start + 160]
         category = 'archer-tower-' + family + '-' + str(start // 160 + 1)
         cell, width = 300, 2400
         height = math.ceil(len(batch) / 8) * cell
+        image_path, document_path = folder / (category + '.png'), folder / (category + '.json')
+        checkpoint = checkpoint_dir / (category + '.json')
+        if not check and checkpoint.exists() and image_path.exists() and document_path.exists():
+            saved = json.loads(checkpoint.read_text())
+            if saved == dict(input=signature, image=digest(image_path.read_bytes()), document=digest(document_path.read_bytes())):
+                index.append(dict(category=category,cases=len(batch),width=width,height=height))
+                print(f'Reused {start + len(batch)}/{len(cases)} verified {family} source cases', flush=True)
+                continue
         sheet = Image.new('RGBA', (width, height), (48,65,53,255))
         for i, case in enumerate(batch):
             id_ = witness_exports[case['export']]
@@ -67,26 +82,27 @@ def build(family):
             sheet.paste(Image.fromarray(rgba, 'RGBA'), (x,y))
             case.update(x=x,y=y,time=case['frame']/graph['clips'][str(id_)]['fps'],root=root[:2].reshape(-1).tolist(),
                         empty=not xy,rasterEmpty=bool(np.all(rgba[:,:,:3]==[48,65,53])),rgbaSha256=digest(rgba.tobytes()))
-        folder = f'tests/fixtures/native-archer-tower-{family}/'
-        images[folder+category+'.png'] = sheet
-        documents[folder+category+'.json'] = dict(category=category,width=width,height=height,cell=cell,background='#304135',nativePlaybackVerified=False,cases=batch)
+        document = dict(category=category,width=width,height=height,cell=cell,background='#304135',nativePlaybackVerified=False,cases=batch)
+        text = json.dumps(document, indent=2) + '\n'
+        if check:
+            with Image.open(image_path) as old:
+                require(old.mode == sheet.mode and old.size == sheet.size and old.tobytes() == sheet.tobytes(), 'Source pixels differ: ' + str(image_path))
+            require(document_path.read_text() == text, 'Source document differs: ' + str(document_path))
+        else:
+            temporary = image_path.with_suffix('.png.part')
+            sheet.save(temporary, format='PNG', optimize=True)
+            temporary.replace(image_path)
+            document_path.write_text(text)
+            checkpoint.write_text(json.dumps(dict(input=signature, image=digest(image_path.read_bytes()), document=digest(document_path.read_bytes()))))
+        sheet.close()
         index.append(dict(category=category,cases=len(batch),width=width,height=height))
         print(f'Rendered {start + len(batch)}/{len(cases)} original {family} source cases', flush=True)
-    documents[f'tests/fixtures/native-archer-tower-{family}/index.json'] = index
-    return images, documents
+    index_path = folder / 'index.json'
+    text = json.dumps(index, indent=2) + '\n'
+    if check: require(index_path.read_text() == text, 'Source index differs')
+    else: index_path.write_text(text)
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--check',action='store_true');parser.add_argument('--family',choices=['buildings','characters','defenders'],required=True);args=parser.parse_args()
-    images,documents=build(args.family)
-    for path,im in images.items():
-        target=ROOT/path
-        if args.check:
-            with Image.open(target) as old: require(old.mode==im.mode and old.size==im.size and old.tobytes()==im.tobytes(),'Source pixels differ: '+path)
-        else:
-            target.parent.mkdir(parents=True,exist_ok=True);im.save(target,optimize=True)
-    for path,doc in documents.items():
-        target=ROOT/path;data=json.dumps(doc,indent=2)+'\n'
-        if args.check: require(target.read_text()==data,'Source document differs: '+path)
-        else:
-            target.parent.mkdir(parents=True,exist_ok=True);target.write_text(data)
+    build(args.family, args.check)
     print(('Verified' if args.check else 'Wrote')+' complete Archer Tower artwork witnesses')
