@@ -59,10 +59,31 @@ test('renders released original garrison troops and clamps Balloon death to its 
     battle.elapsed = 3;
     scene.drawOverlay(3000);
     const deathEnd = scene.garrisonPresentation.defenders.get(balloon.id).objects.length;
+    const dragon = battle.defenders.find((d) => d.kind === 'dragon');
+    const aliveView = scene.garrisonPresentation.defenders.get(dragon.id);
+    hurtDefender(battle, dragon, 4000);
+    battle.elapsed = 4;
+    scene.drawOverlay(4000);
+    const ghostView = scene.garrisonPresentation.defenders.get(dragon.id);
+    const ghostObjects = ghostView.objects.length;
+    const switchedToDeath = ghostView !== aliveView;
+    battle.elapsed = 10;
+    scene.drawOverlay(10000);
+    const dragonTerminal = scene.garrisonPresentation.defenders.get(dragon.id).objects.length;
+    dragon.hp = dragon.maxHp;
+    delete dragon.defeatedAt;
+    battle.elapsed = 2;
+    scene.drawOverlay(2000);
+    const restored = scene.garrisonPresentation.defenders.get(dragon.id);
+    const returnedToBody = restored !== ghostView && restored.objects.length > 0;
     const point = iso(19.5, 19.5);
     scene.cameras.main.setZoom(1.3).centerOn(point.x, point.y - 60);
     return {
       count,
+      ghostObjects,
+      switchedToDeath,
+      dragonTerminal,
+      returnedToBody,
       visible,
       deathStart,
       deathEnd,
@@ -71,6 +92,10 @@ test('renders released original garrison troops and clamps Balloon death to its 
     };
   });
   expect(report.count).toBe(4);
+  expect(report.ghostObjects).toBeGreaterThan(0);
+  expect(report.switchedToDeath).toBe(true);
+  expect(report.dragonTerminal).toBe(0);
+  expect(report.returnedToBody).toBe(true);
   expect(report.visible.every((n) => n > 0)).toBe(true);
   expect(report.deathStart).toBeGreaterThan(0);
   expect(report.deathEnd).toBe(0);

@@ -14,6 +14,7 @@ export function preloadGarrisonTroops(scene: Phaser.Scene) {
 }
 export class GarrisonPresentation {
   readonly defenders = new Map<number, NativeSceneView>();
+  private families = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
@@ -24,6 +25,7 @@ export class GarrisonPresentation {
   clear() {
     for (const view of this.defenders.values()) view.destroy();
     this.defenders.clear();
+    this.families.clear();
   }
   render(
     battle: Battle | null,
@@ -35,11 +37,17 @@ export class GarrisonPresentation {
     for (const defender of battle?.defenders ?? []) {
       if (defender.kind === 'skeleton') continue;
       wanted.add(defender.id);
+      const family = defender.kind === 'dragon' && defender.hp <= 0 ? 'dragonDeath' : defender.kind;
+      if (this.families.get(defender.id) !== family) {
+        this.defenders.get(defender.id)?.destroy();
+        this.defenders.delete(defender.id);
+        this.families.set(defender.id, family);
+      }
       let view = this.defenders.get(defender.id);
       if (!view)
         this.defenders.set(
           defender.id,
-          (view = new NativeSceneView(this.scene, `garrison-${defender.kind}`)),
+          (view = new NativeSceneView(this.scene, `garrison-${family}`)),
         );
       const point = iso(defender.x, defender.y);
       view.render(
@@ -54,6 +62,7 @@ export class GarrisonPresentation {
       if (!wanted.has(id)) {
         view.destroy();
         this.defenders.delete(id);
+        this.families.delete(id);
       }
   }
 }

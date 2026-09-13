@@ -1,17 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-garrison-mesh/index.json' with { type: 'json' };
+import deathIndex from '../fixtures/native-dragon-death-mesh/index.json' with { type: 'json' };
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
-const witnesses = index.flatMap(({ category }) => {
-  const source = JSON.parse(
-    readFileSync(`tests/fixtures/native-garrison-mesh/${category}.json`, 'utf8'),
-  );
+const witnesses = [
+  ...index.map((v) => ({ ...v, folder: 'native-garrison-mesh' })),
+  ...deathIndex.map((v) => ({ ...v, folder: 'native-dragon-death-mesh' })),
+].flatMap(({ category, folder }) => {
+  const source = JSON.parse(readFileSync(`tests/fixtures/${folder}/${category}.json`, 'utf8'));
   const stripHeight = source.cell * 20;
   return Array.from({ length: Math.ceil(source.height / stripHeight) }, (_, i) => {
     const sourceY = i * stripHeight;
     return {
       ...source,
+      folder,
       sourceCategory: category,
       sourceY,
       category: source.height > stripHeight ? `${category}-part-${i + 1}` : category,
@@ -38,7 +41,8 @@ for (const witness of witnesses)
       const { default: castle } = await import('/reference/garrison/castle.json');
       const { default: dragon7 } = await import('/reference/garrison/dragon7.json');
       const { default: balloon8 } = await import('/reference/garrison/balloon8.json');
-      const worlds = { castle, dragon7, balloon8 };
+      const { default: death } = await import('/reference/garrison/dragon-death.json');
+      const worlds = { castle, dragon7, balloon8, death };
 
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
@@ -52,7 +56,7 @@ for (const witness of witnesses)
         preloadNativeMeshes(scene, worlds[family], `garrison-test-${family}`);
       scene.load.image(
         'garrison-source-reference',
-        `/tests/fixtures/native-garrison-mesh/${reference.sourceCategory}.png`,
+        `/tests/fixtures/${reference.folder}/${reference.sourceCategory}.png`,
       );
       await new Promise<void>((resolve) => {
         scene.load.once('complete', resolve);
@@ -164,6 +168,7 @@ for (const witness of witnesses)
           mirror: c.mirror,
           colored,
           empty: c.empty,
+          rasterEmpty: c.rasterEmpty,
           meanError: colored ? total / colored : 0,
           largeFraction: colored ? large / colored : 0,
           maximum,
@@ -221,7 +226,7 @@ for (const witness of witnesses)
     if (witness.cases.some((c) => c.family === 'dragon7')) expect(report.groups).toBeGreaterThan(0);
     expect(report.cases).toHaveLength(witness.cases.length);
     for (const c of report.cases) {
-      if (c.empty) {
+      if (c.empty || c.rasterEmpty === true) {
         expect(c.colored).toBe(0);
         expect(c.maximum).toBe(0);
       } else expect(c.colored).toBeGreaterThan(0);
