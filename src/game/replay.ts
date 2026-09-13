@@ -214,6 +214,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
       (b.npc === 'pumpkin-bomb' && value.version < 28) ||
       (b.npc === 'santa-trap' && value.version < 30) ||
+      (b.npc === 'shrink-trap' && value.version < 34) ||
       (b.kind === 'skeletontrap' && b.level > 2 && value.version < 29) ||
       !number(b.maxHp, 1, 1e9) ||
       b.hp !== b.maxHp ||

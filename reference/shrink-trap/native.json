@@ -16446,11 +16446,11 @@
     }
   },
   "reconstruction": {
-    "liveIntegration": false,
+    "liveIntegration": true,
     "nativePlaybackVerified": false,
     "scope": "Both original trap identities, all body/reveal/aura/particle exports, source spell/global fields and four sounds.",
     "preview": "Common bounds enclose all source trap frames with eight native units of padding; framing is local.",
     "health": "ShrinkHitpointsRatio=50 is retained as a source field. Supercell's February 2022 release notes state that Shrink Trap no longer reduces HP.",
-    "timing": "ActionFrame=14, 14 trigger frames at 24 fps, trap duration 20000 ms, spell hit timing and seven-second global are retained without inferring their native handoff."
+    "timing": "ActionFrame=14, 14 trigger frames at 24 fps, trap duration 20000 ms, spell hit timing and seven-second global are retained. The local handoff is documented in docs/SHRINK-TRAP.md; native counter semantics remain unverified."
   }
 }

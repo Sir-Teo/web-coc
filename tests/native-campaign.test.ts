@@ -32,7 +32,7 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    expect(playable).toEqual([...Array.from({ length: 54 }, (_, i) => i), 57]);
+    expect(playable).toEqual([...Array.from({ length: 55 }, (_, i) => i), 57]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];
@@ -67,9 +67,9 @@ describe('native campaign adapter and progress isolation', () => {
     expect(nativeCampaignIssues(37)).toEqual([]);
     expect(nativeCampaignIssues(50)).toEqual([]);
     expect(nativeCampaignIssues(53)).toEqual([]);
-    expect(nativeCampaignIssues(54)).toEqual(['ShrinkTrap_SinglePlayer']);
+    expect(nativeCampaignIssues(54)).toEqual([]);
     expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
-    for (const index of [54, 74, 89]) {
+    for (const index of [55, 74, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
       const m = new GameModel();
       const before = structuredClone(m.state);

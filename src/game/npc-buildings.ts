@@ -3,12 +3,21 @@ import { GOBLIN_BUILDING_ART, goblinBuildingAsset, isGoblinBuilding } from './go
 import type { BuildingKind } from './data';
 import { PUMPKIN_ART } from './pumpkin-bomb';
 import { SANTA_ART } from './santa-art';
+import { SHRINK_ART } from './shrink-trap-art';
 
 /** Native campaign identities, independent of the player's upgrade catalog.
  * `kind` is the engine archetype; `npc` retains the exact enemy identity in replays.
  * Source: public client 18.400.21 building/trap tables, pinned in reference/.
  */
 export const NPC_BUILDINGS = {
+  'shrink-trap': {
+    globalId: 12000017,
+    kind: 'giantbomb',
+    name: 'Shrink Trap',
+    hp: [1],
+    texture: SHRINK_ART.texture,
+    size: 2,
+  },
   'santa-trap': {
     globalId: 12000007,
     kind: 'bomb',
@@ -64,19 +73,23 @@ export function validNpcBuilding(value: unknown, kind: BuildingKind, level: numb
 /** Native DamagePerSecond=2, AttackSpeed=800 ms; the player Cannon has 7 DPS. */
 export const TUTORIAL_CANNON_DAMAGE = 2 * 0.8;
 export const npcAsset = (npc: NpcBuildingKind) =>
-  isGoblinBuilding(npc)
-    ? goblinBuildingAsset(npc)
-    : npc === 'santa-trap'
-      ? SANTA_ART.asset
-      : npc === 'pumpkin-bomb'
-        ? PUMPKIN_ART.asset
-        : '/assets/buildings/cannon.webp';
+  npc === 'shrink-trap'
+    ? SHRINK_ART.asset
+    : isGoblinBuilding(npc)
+      ? goblinBuildingAsset(npc)
+      : npc === 'santa-trap'
+        ? SANTA_ART.asset
+        : npc === 'pumpkin-bomb'
+          ? PUMPKIN_ART.asset
+          : '/assets/buildings/cannon.webp';
 /** Registered native Goblin previews share their live clip's anchor and scale. */
 export const npcArt = (npc: NpcBuildingKind) =>
-  isGoblinBuilding(npc)
-    ? GOBLIN_BUILDING_ART[npc]
-    : npc === 'santa-trap'
-      ? SANTA_ART
-      : npc === 'pumpkin-bomb'
-        ? PUMPKIN_ART
-        : undefined;
+  npc === 'shrink-trap'
+    ? SHRINK_ART
+    : isGoblinBuilding(npc)
+      ? GOBLIN_BUILDING_ART[npc]
+      : npc === 'santa-trap'
+        ? SANTA_ART
+        : npc === 'pumpkin-bomb'
+          ? PUMPKIN_ART
+          : undefined;

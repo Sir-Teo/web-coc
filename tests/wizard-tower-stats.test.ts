@@ -92,5 +92,5 @@ it('keeps exact later levels in saves and practice while enforcing the TH8 purch
 });
 
 it('keeps Magic Practice gated by the original campaign Shrink Trap', () => {
-  expect(nativeCampaignIssues(54)).toEqual(['ShrinkTrap_SinglePlayer']);
+  expect(nativeCampaignIssues(54)).toEqual([]);
 });

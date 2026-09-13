@@ -31,6 +31,14 @@
     "preserveBothTrapAndSpellRadiusFieldsUntilTheirRelationshipIsResolved": true,
     "nativeExecutableVerified": false
   },
+  "localImplementation": {
+    "documentation": "../../docs/SHRINK-TRAP.md",
+    "campaignStageEnabled": 55,
+    "currentAndMaximumHpPreserved": true,
+    "movementAndAttackSpeedMultiplier": 0.5,
+    "overlapRefreshesWithoutCompounding": true,
+    "nativeExecutableVerified": false
+  },
   "remainingQuestions": [
     "How trap ActionFrame 14, the empty final trigger frame, spell charge/hit delays and the 20-second aura combine.",
     "Whether area membership uses the trap's 300-unit radius, the spell's 400-unit radius, or separate stages of both.",

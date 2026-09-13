@@ -15,7 +15,7 @@ test.afterAll(async () => modules?.close());
 
 const cases = [
   ...[1, 5, 8, 10, 17].map((level) => ({ level, index: null })),
-  ...[51, 52, 53, 57].map((index) => ({ level: null, index })),
+  ...[51, 52, 53, 54, 57].map((index) => ({ level: null, index })),
 ];
 
 for (const fixture of cases)
@@ -25,12 +25,15 @@ for (const fixture of cases)
   }) => {
     const wizard = await modules.ssrLoadModule('/tests/fixtures/wizard-tower-battle.ts');
     const mine = await modules.ssrLoadModule('/tests/fixtures/seeking-mine-battle.ts');
+    const shrink = await modules.ssrLoadModule('/tests/fixtures/shrink-trap-battle.ts');
     const village = mine.seekingMineVillage();
     village.nativeCampaign.stars[56] = 1;
     const m =
-      fixture.level === null
-        ? mine.seekingMineBattle(fixture.index, village)
-        : wizard.wizardTowerBattle(fixture.level);
+      fixture.index === 54
+        ? shrink.shrinkTrapBattle()
+        : fixture.level === null
+          ? mine.seekingMineBattle(fixture.index, village)
+          : wizard.wizardTowerBattle(fixture.level);
     const expected: string[] = [];
     for (let step = 0; step <= 6000; step++) {
       expected.push(createHash('sha256').update(JSON.stringify(m.battle)).digest('hex'));
@@ -43,12 +46,15 @@ for (const fixture of cases)
     const actual = await page.evaluate(async (fixture) => {
       const wizard = await import('/tests/fixtures/wizard-tower-battle.ts');
       const mine = await import('/tests/fixtures/seeking-mine-battle.ts');
+      const shrink = await import('/tests/fixtures/shrink-trap-battle.ts');
       const village = mine.seekingMineVillage();
       village.nativeCampaign.stars[56] = 1;
       const m =
-        fixture.level === null
-          ? mine.seekingMineBattle(fixture.index, village)
-          : wizard.wizardTowerBattle(fixture.level);
+        fixture.index === 54
+          ? shrink.shrinkTrapBattle()
+          : fixture.level === null
+            ? mine.seekingMineBattle(fixture.index, village)
+            : wizard.wizardTowerBattle(fixture.level);
       const hashes: string[] = [],
         encoder = new TextEncoder();
       for (let step = 0; step <= 6000; step++) {
@@ -75,7 +81,7 @@ for (const fixture of cases)
     const label = fixture.level === null ? `native-${fixture.index}` : `level-${fixture.level}`;
     await fs.mkdir('output/playtest', { recursive: true });
     await fs.writeFile(
-      `output/playtest/wizard-tower-combat-determinism-${label}-${browserName}.json`,
+      `output/playtest/${fixture.index === 54 ? 'shrink-trap' : 'wizard-tower'}-combat-determinism-${label}-${browserName}.json`,
       JSON.stringify(
         { stepSeconds: 0.05, samples: expected.length, node: expected, browser: actual },
         null,

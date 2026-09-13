@@ -174,6 +174,7 @@ async function boot() {
                   hp: Math.round(u.hp),
                   target: u.target,
                   defenderTarget: u.defenderTarget,
+                  ...(u.shrink ? { shrink: u.shrink } : {}),
                 })),
               shells: model.battle.shells,
               projectiles: model.battle.projectiles ?? [],
@@ -184,6 +185,9 @@ async function boot() {
                   ? [{ sourceId: mine.id, level: mine.level, ...state }]
                   : [];
               }),
+              shrinkTraps: Object.entries(model.battle.traps).flatMap(([id, state]) =>
+                state.shrink ? [{ sourceId: Number(id), ...state }] : [],
+              ),
               defenders: (model.battle.defenders ?? [])
                 .filter((d) => d.hp > 0)
                 .map((d) => ({

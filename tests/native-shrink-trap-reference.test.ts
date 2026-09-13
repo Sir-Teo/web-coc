@@ -41,7 +41,7 @@ it('retains both original trap identities and distinguishes campaign-only placem
   const placements = campaign.stages[54].traps.filter((v) => v[0] === 12000017);
   expect(placements).toHaveLength(8);
   expect(placements.every((v) => v[3] === 1)).toBe(true);
-  expect(native.reconstruction.liveIntegration).toBe(false);
+  expect(native.reconstruction.liveIntegration).toBe(true);
 });
 
 it('retains source timing and legacy health fields without treating them as verified executable behavior', () => {

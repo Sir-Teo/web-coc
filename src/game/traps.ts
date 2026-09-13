@@ -8,6 +8,7 @@ import { SKELETON_TRAP, skeletonCount } from './skeleton-stats';
 import { spawnSkeleton } from './defenders';
 import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-trap';
 import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
+import { SHRINK_TRAP, makeShrinkState, stepShrink, type ShrinkState } from './shrink-trap';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -19,6 +20,7 @@ export interface TrapState {
   spawned?: number;
   santa?: SantaState;
   mine?: SeekingMineFlight;
+  shrink?: ShrinkState;
 }
 
 export function springOutcome(housing: number, hp: number, capacity: number, damage: number) {
@@ -31,6 +33,7 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>) 
   const base = trapStats(trap.kind, trap.level);
   if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
   if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
+  if (base && trap.npc === 'shrink-trap') return { ...base, ...SHRINK_TRAP };
   return base;
 }
 
@@ -49,9 +52,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     };
     const eligible = (u: Unit) =>
       u.hp > 0 &&
+      (trap.npc !== 'shrink-trap' || (!u.ejected && (u.spawnedAt ?? 0) <= battle.elapsed)) &&
       (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
-      !!TROOPS[u.kind].flying === (mode === 'air');
+      (mode === 'both' || !!TROOPS[u.kind].flying === (mode === 'air'));
     if (!state) {
       const nearby = battle.units.filter(
         (u) => eligible(u) && distance2D(u.x - center.x, u.y - center.y) <= d.trigger,
@@ -73,9 +77,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         ...center,
       };
       if (trap.npc === 'santa-trap') state.santa = makeSantaState(state, trap.id, battle.seed);
+      if (trap.npc === 'shrink-trap') state.shrink = makeShrinkState(state);
       if (d.homingSpeed) state.mine = { trail: [], nextTrail: 0 };
       // Springs resolve immediately and provide their own label and sound below.
-      if (!d.springCapacity && trap.npc !== 'santa-trap')
+      if (!d.springCapacity && trap.npc !== 'santa-trap' && trap.npc !== 'shrink-trap')
         effect({
           type: 'trap',
           sourceId: trap.id,
@@ -87,6 +92,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     if (state.santa) {
       changed = stepSanta(battle, state) || changed;
+      continue;
+    }
+    if (state.shrink) {
+      changed = stepShrink(battle, state) || changed;
       continue;
     }
     if (trap.kind === 'skeletontrap') {

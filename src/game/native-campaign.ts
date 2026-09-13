@@ -68,8 +68,10 @@ const KINDS: Record<number, BuildingKind> = {
   12000006: 'seekingairmine',
   12000007: 'bomb',
   12000008: 'skeletontrap',
+  12000017: 'giantbomb',
 };
 const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
+  12000017: 'shrink-trap',
   12000007: 'santa-trap',
   12000003: 'pumpkin-bomb',
   1000001: 'goblin-townhall',

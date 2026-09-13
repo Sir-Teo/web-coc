@@ -146,12 +146,15 @@ def build():
                   traps=traps, spells=spells, globals=globals_, effects=effects, particles=particles,
                   world=dict(source='sc/buildings.sc', graph=graph, textures=textures),
                   previews=previews, sounds=sounds,
-                  reconstruction=dict(liveIntegration=False, nativePlaybackVerified=False,
+                  reconstruction=dict(liveIntegration=True, nativePlaybackVerified=False,
                       scope='Both original trap identities, all body/reveal/aura/particle exports, source spell/global fields and four sounds.',
                       preview='Common bounds enclose all source trap frames with eight native units of padding; framing is local.',
                       health='ShrinkHitpointsRatio=50 is retained as a source field. Supercell\'s February 2022 release notes state that Shrink Trap no longer reduces HP.',
-                      timing='ActionFrame=14, 14 trigger frames at 24 fps, trap duration 20000 ms, spell hit timing and seven-second global are retained without inferring their native handoff.'))
-    return outputs, dict(native=native, runtime=runtime,
+                      timing='ActionFrame=14, 14 trigger frames at 24 fps, trap duration 20000 ms, spell hit timing and seven-second global are retained. The local handoff is documented in docs/SHRINK-TRAP.md; native counter semantics remain unverified.'))
+    combat = dict(trap=trap, spell=spells['ShrinkTrap'][0],
+                  statusDurationSeconds=int(globals_['SHRINK_SPELL_DURATION_SECONDS'][0]['NumberValue']),
+                  triggerFps=graph['clips'][str(graph['exports'][trap['ExportNameTriggered']])]['fps'])
+    return outputs, dict(native=native, runtime=runtime, combat=combat,
                          effects=dict(effects=effects, particles=particles, sounds=sounds))
 
 

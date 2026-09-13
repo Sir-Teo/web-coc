@@ -13,6 +13,8 @@ import { npcArt, type NpcBuildingKind } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
 import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
+import { preloadShrinkTraps, ShrinkTrapPresentation } from './shrink-trap-scene';
+import { isShrunk } from './shrink-trap';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import { xbowRange, type XbowMode } from './xbow-stats';
@@ -161,6 +163,7 @@ export class VillageScene extends Phaser.Scene {
   private resourceFlights = new ResourceFlights();
   private combatEffects!: CombatEffects;
   private santaPresentation!: SantaPresentation;
+  private shrinkTrapPresentation!: ShrinkTrapPresentation;
   private goblinBuildingPresentation!: GoblinBuildingPresentation;
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
@@ -182,6 +185,7 @@ export class VillageScene extends Phaser.Scene {
     preloadBombTowers(this);
     preloadWizardTowers(this);
     preloadSeekingMines(this);
+    preloadShrinkTraps(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
       this.load.spritesheet(art.texture, art.asset, {
@@ -264,6 +268,7 @@ export class VillageScene extends Phaser.Scene {
     this.overlay = this.add.graphics().setDepth(6000);
     this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
     this.santaPresentation = new SantaPresentation(this, this.audio);
+    this.shrinkTrapPresentation = new ShrinkTrapPresentation(this, this.audio);
     this.goblinBuildingPresentation = new GoblinBuildingPresentation(this);
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
@@ -283,6 +288,7 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.santaPresentation.destroy();
+      this.shrinkTrapPresentation.destroy();
       this.xbowPresentation.destroy();
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
@@ -855,6 +861,7 @@ export class VillageScene extends Phaser.Scene {
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
       this.santaPresentation.clear();
+      this.shrinkTrapPresentation.clear();
       this.xbowPresentation.clear();
       this.darkStoragePresentation.clear();
       this.goblinBuildingPresentation.clear();
@@ -981,6 +988,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'bombtower' ||
           b.kind === 'wizardtower' ||
           b.kind === 'seekingairmine' ||
+          b.npc === 'shrink-trap' ||
           isGoblinBuilding(b.npc)) &&
         b.hp > 0
       )
@@ -1656,13 +1664,19 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
+    const shrinkCues = this.shrinkTrapPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      this.model.state.settings.reducedMotion,
+      iso,
+    );
     this.santaPresentation.render(
       battle,
       this.model.state.settings.reducedMotion,
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues, ...wizardTowerCues],
+      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues, ...wizardTowerCues, ...shrinkCues],
       this.renderClock / 1000,
     );
     if (battle && !battle.finished) {
@@ -1693,6 +1707,7 @@ export class VillageScene extends Phaser.Scene {
         const state = battle.traps[trap.id];
         const def = battleTrapStats(trap);
         if (!def || !state) continue;
+        if (trap.npc === 'shrink-trap') continue;
         if (trap.npc === 'santa-trap') {
           this.sprites
             .get(trap.id)
@@ -1737,6 +1752,12 @@ export class VillageScene extends Phaser.Scene {
           const spawn = iso(u.x, u.y);
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
         }
+        const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
+        // Local visual half-scale; health, collision space and projectile speed are unchanged.
+        const shrinkScale = isShrunk(u, statusTime) ? 0.5 : 1;
+        const width =
+          (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
+        im.setDisplaySize(width, width).setData('shrinkScale', shrinkScale);
         const target = TROOPS[u.kind].healer
           ? battle.units.find((ally) => ally.id === u.healTarget)
           : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
@@ -1745,7 +1766,7 @@ export class VillageScene extends Phaser.Scene {
           const king = kingPose(
             u,
             target,
-            u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed,
+            statusTime - (u.shrink?.timeLost ?? 0),
             heroStats(battle.hero.level, battle.hero.townhall).rate,
             this.model.state.settings.reducedMotion,
             im.getData('kingDirection'),
@@ -1789,7 +1810,7 @@ export class VillageScene extends Phaser.Scene {
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
-        const animationTime = battle.elapsed * 1000;
+        const animationTime = (battle.elapsed - (u.shrink?.timeLost ?? 0)) * 1000;
         if (!u.hero)
           im.setFrame(
             sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
@@ -1819,7 +1840,7 @@ export class VillageScene extends Phaser.Scene {
           .setData('springLift', springLift);
         if (flying || sprung) {
           this.detail.fillStyle(0x1f2a16, 0.28);
-          this.detail.fillEllipse(p.x, p.y, 26, 13);
+          this.detail.fillEllipse(p.x, p.y, 26 * shrinkScale, 13 * shrinkScale);
         }
         const rate =
           u.hero && battle.hero
@@ -1835,7 +1856,7 @@ export class VillageScene extends Phaser.Scene {
         if (u.hp < u.maxHp)
           this.bar(
             p.x,
-            p.y - lift - (u.hero ? KING_ART.healthHeight : im.displayHeight),
+            p.y - lift - (u.hero ? KING_ART.healthHeight * shrinkScale : im.displayHeight),
             22,
             u.hp / u.maxHp,
             0x8dea68,

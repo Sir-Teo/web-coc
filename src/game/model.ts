@@ -139,6 +139,7 @@ import {
   type ArmyPreset,
 } from './army';
 import { stepTraps, type TrapState } from './traps';
+import { shrinkStepTime, type ShrinkStatus } from './shrink-trap';
 import {
   BUILDINGS,
   TROOPS,
@@ -300,6 +301,7 @@ export interface Unit {
   ejected?: boolean;
   springUntil?: number;
   airPush?: AirPush;
+  shrink?: ShrinkStatus;
 }
 export interface Aura {
   kind: SpellKind;
@@ -2132,6 +2134,8 @@ export class GameModel {
       if (u.hp <= 0) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
       if (!unitDt) continue;
+      const actionDt = shrinkStepTime(u, b.elapsed, unitDt);
+      if (u.shrink) u.shrink.timeLost += unitDt - actionDt;
       if (stepAirPush(u, unitDt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
@@ -2142,7 +2146,7 @@ export class GameModel {
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
-      u.cooldown -= unitDt;
+      u.cooldown -= actionDt;
       u.pathAt -= unitDt;
       u.attacking = false;
       const base =
@@ -2165,11 +2169,12 @@ export class GameModel {
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
           ),
         speed:
-          base.speed +
-          Math.max(
-            abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
-            ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
-          ),
+          (base.speed +
+            Math.max(
+              abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
+              ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+            )) *
+          (actionDt / unitDt),
       };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);

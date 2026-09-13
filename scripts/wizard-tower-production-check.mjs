@@ -115,7 +115,7 @@ try {
       await page.locator('.attack-btn').click();
       await expect(page.locator('[data-stage="58"]')).toContainText('Graduation Ceremony');
       await expect(page.locator('[data-action="attack:57"]')).toBeEnabled();
-      await expect(page.locator('[data-action="attack:54"]')).toHaveText('Coming soon');
+      await expect(page.locator('[data-action="attack:55"]')).toHaveText('Coming soon');
       await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       const read = () => page.evaluate(() => JSON.parse(window.render_game_to_text()));
       const seek = async (time) => {
