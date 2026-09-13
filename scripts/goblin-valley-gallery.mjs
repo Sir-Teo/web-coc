@@ -13,22 +13,26 @@ const seconds = (process.env.GALLERY_SECONDS ?? '8,30').split(',').map(Number);
 await fs.mkdir(out, { recursive: true });
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({
+  viewport: { width: 1440, height: 960 },
+  deviceScaleFactor: 1,
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 await page.goto(url);
 await page.waitForFunction(() => window.__game?.scene.ready, null, { timeout: 120000 });
 await page.locator('#loading').waitFor({ state: 'detached', timeout: 120000 });
+// Keep the battlefield visible after a staged battle resolves.
+await page.addStyleTag({ content: '.result-backdrop { display: none !important; }' });
 
 const report = [];
 for (let index = first; index <= last; index++) {
   const before = errors.length;
   const staged = await page.evaluate(async (i) => {
     const { model, scene } = window.__game;
-    const { nativeLayout, nativeScenery, NATIVE_CAMPAIGN, nativeCampaignIssues } = await import(
-      '/src/game/native-campaign.ts'
-    );
+    const { nativeLayout, nativeScenery, NATIVE_CAMPAIGN, nativeCampaignIssues } =
+      await import('/src/game/native-campaign.ts');
     const { campaignGarrisonSetup } = await import('/src/game/garrison-campaign.ts');
     const { replayBattle } = await import('/src/game/replay.ts');
     const { campaignResources } = await import('/src/game/campaign-loot.ts');
@@ -37,6 +41,8 @@ for (let index = first; index <= last; index++) {
     const { BUILDINGS, isTrap } = await import('/src/game/data.ts');
     model.battle = null;
     model.replay = null;
+    // Staged captures never settle loot, stars or battle history in this browser profile.
+    model.recordBattles = false;
     const loot = campaignResources(campaignStage(i, 'goblin-v1'));
     const buildings = nativeLayout(i);
     let garrisons;
@@ -45,7 +51,18 @@ for (let index = first; index <= last; index++) {
     } catch {
       garrisons = undefined;
     }
-    const army = { ...emptyArmy(), giant: 12, wizard: 12, archer: 30, swordsman: 30, wallbreaker: 8, balloon: 8, dragon: 3, pekka: 2, healer: 2 };
+    const army = {
+      ...emptyArmy(),
+      giant: 12,
+      wizard: 12,
+      archer: 30,
+      swordsman: 30,
+      wallbreaker: 8,
+      balloon: 8,
+      dragon: 3,
+      pekka: 2,
+      healer: 2,
+    };
     model.battle = replayBattle(
       {
         ...(garrisons ? { garrisons } : {}),
@@ -56,7 +73,19 @@ for (let index = first; index <= last; index++) {
         buildings,
         army,
         spells: emptySpells(),
-        troopLevels: { ...emptyArmy(), swordsman: 5, archer: 5, giant: 5, wizard: 5, balloon: 5, goblin: 5, wallbreaker: 5, healer: 3, dragon: 3, pekka: 3 },
+        troopLevels: {
+          ...emptyArmy(),
+          swordsman: 5,
+          archer: 5,
+          giant: 5,
+          wizard: 5,
+          balloon: 5,
+          goblin: 5,
+          wallbreaker: 5,
+          healer: 3,
+          dragon: 3,
+          pekka: 3,
+        },
         nextId: 100000,
         availableLoot: loot,
         lootRoom: loot,
@@ -108,7 +137,8 @@ for (let index = first; index <= last; index++) {
             model.activeTroop = kind;
             while (b.remaining[kind] > 0) {
               const [x, y] = points[k++ % points.length];
-              if (!model.deploy(Math.min(46.5, Math.max(1.5, x)), Math.min(46.5, Math.max(1.5, y)))) break;
+              if (!model.deploy(Math.min(46.5, Math.max(1.5, x)), Math.min(46.5, Math.max(1.5, y))))
+                break;
             }
           }
         }

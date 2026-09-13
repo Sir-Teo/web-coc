@@ -1630,6 +1630,12 @@ export class HUD {
     const m = this.model;
     const cards = (Object.entries(BUILDINGS) as [BuildingKind, (typeof BUILDINGS)[BuildingKind]][])
       .filter(([k, d]) => k !== 'townhall' && (this.tab === 'All' || d.category === this.tab))
+      // Buildable tiles first in catalog order, then locked ones by their Town Hall requirement.
+      .sort(
+        ([a], [b]) =>
+          Number(m.maxCount(a) === 0) - Number(m.maxCount(b) === 0) ||
+          (m.maxCount(a) === 0 ? unlockTownHall(a) - unlockTownHall(b) : 0),
+      )
       .map(([k, d]) => {
         const count = m.countOf(k),
           limit = m.maxCount(k);
