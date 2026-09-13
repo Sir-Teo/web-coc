@@ -27,12 +27,17 @@ test('live Inferno beams follow six targets and clear on freeze', async ({ page,
     }));
     battle.elapsed = 0.128;
     stepInfernos(battle, 0.128);
+    battle.elapsed = 0.328;
     scene.sync();
     scene.drawOverlay(128);
     const count = scene.infernoPresentation.beams.size;
-    return { count, gl: game.renderer.gl.getError() };
+    return {
+      count,
+      impacts: scene.infernoPresentation.impacts.size,
+      gl: game.renderer.gl.getError(),
+    };
   });
-  expect(report).toEqual({ count: 6, gl: 0 });
+  expect(report).toEqual({ count: 6, impacts: 84, gl: 0 });
   await page.screenshot({ path: `output/playtest/inferno-beams-${browserName}.png` });
   expect(
     await page.evaluate(() => {

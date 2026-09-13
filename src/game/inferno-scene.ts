@@ -1,3 +1,4 @@
+import { infernoImpactPoses } from './inferno-effects';
 import { TROOPS } from './data';
 import { infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
 import { infernoDamageStage } from './inferno-weapon';
@@ -20,10 +21,13 @@ export function preloadInfernos(scene: Phaser.Scene) {
       scene.load.image(infernoTexture(level, mode), infernoAsset(level, mode));
 }
 export class InfernoPresentation {
+  readonly impacts = new Map<string, NativeSceneView>();
   readonly beams = new Map<string, NativeSceneView>();
   readonly views = new Map<number, NativeSceneView>();
   constructor(private scene: Phaser.Scene) {}
   clear() {
+    for (const view of this.impacts.values()) view.destroy();
+    this.impacts.clear();
     for (const view of this.beams.values()) view.destroy();
     this.beams.clear();
     for (const view of this.views.values()) view.destroy();
@@ -33,8 +37,21 @@ export class InfernoPresentation {
     buildings: Building[],
     seconds: number,
     battle: Battle | null,
+    reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    const wantedImpacts = new Set<string>();
+    for (const pose of infernoImpactPoses(battle, reduced, iso)) {
+      wantedImpacts.add(pose.key);
+      let view = this.impacts.get(pose.key);
+      if (!view) this.impacts.set(pose.key, (view = new NativeSceneView(this.scene, 'inferno')));
+      view.render(pose.poses, pose.x, pose.y, pose.depth);
+    }
+    for (const [key, view] of this.impacts)
+      if (!wantedImpacts.has(key)) {
+        view.destroy();
+        this.impacts.delete(key);
+      }
     const wanted = new Set<number>();
     const wantedBeams = new Set<string>();
     for (const building of buildings) {
