@@ -1115,6 +1115,7 @@ export const researchSeconds = (kind: TroopKind, level: number) =>
   troopProgression(kind, level + 1)?.seconds ?? 0;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
+  if (kind === 'inferno') return infernoStats(level).weapon.dps[0] * 0.128;
   if (kind === 'xbow') return xbowDamage(level);
   const audited = defenseProgression(kind, level);
   return audited

@@ -32,7 +32,7 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    expect(playable).toEqual(Array.from({ length: 58 }, (_, i) => i));
+    expect(playable).toEqual([...Array.from({ length: 61 }, (_, i) => i), 62]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];

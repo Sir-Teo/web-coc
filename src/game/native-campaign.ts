@@ -64,6 +64,7 @@ const KINDS: Record<number, BuildingKind> = {
   1000021: 'xbow',
   1000023: 'darkdrill',
   1000024: 'darkstorage',
+  1000027: 'inferno',
   1000028: 'airsweeper',
   1000032: 'bombtower',
   1000060: 'cannon',
@@ -88,8 +89,17 @@ const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
 const placementKey = (data: number, x: number, y: number, level: number) =>
   `${data}:${x}:${y}:${level}`;
 export function nativeDefenseModes(stage: NativeStage) {
-  const modes = new Map<string, Pick<Building, 'xbowMode' | 'skeletonMode'>>();
+  const modes = new Map<
+    string,
+    Pick<Building, 'xbowMode' | 'skeletonMode' | 'infernoMode' | 'infernoAmmo'>
+  >();
   const issues = new Set<string>();
+  let infernos: ReturnType<typeof nativeInfernoStates> = [];
+  try {
+    infernos = nativeInfernoStates(stage);
+  } catch {
+    issues.add('Invalid Inferno state');
+  }
   const placements = [...stage.buildings, ...stage.traps];
   for (const raw of stage.activeModes) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -112,9 +122,25 @@ export function nativeDefenseModes(stage: NativeStage) {
     }
     if (data === 1000021 && v.attack_mode === true && v.ammo === XBOW.ammunition)
       modes.set(key, { xbowMode: 'both' });
+    else if (
+      data === 1000027 &&
+      v.attack_mode === true &&
+      infernos.some(
+        (t) =>
+          t.x === x && t.y === y && t.level === level && t.attackMode && t.ammunition === v.ammo,
+      )
+    )
+      modes.set(key, { infernoMode: 'multi', infernoAmmo: v.ammo as number });
     else if (data === 12000008 && v.air_mode === true) modes.set(key, { skeletonMode: 'air' });
     else issues.add('Alternate defense modes');
   }
+  // Original NormalModeTID is SINGLE_CONFIG; AlternateModeTID is MULTI_CONFIG.
+  // The explicit active bit selects that alternate configuration, never draft/war fields.
+  for (const t of infernos)
+    modes.set(placementKey(1000027, t.x, t.y, t.level), {
+      infernoMode: t.attackMode ? 'multi' : 'single',
+      infernoAmmo: t.ammunition,
+    });
   return { modes, issues };
 }
 /** Never substitute a different weapon, clamp a native level or discard a defender. */
@@ -125,11 +151,6 @@ export function nativeCampaignIssues(index: number): string[] {
   if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
     issues.add('Garrison defenders');
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
-  try {
-    nativeInfernoStates(stage);
-  } catch {
-    issues.add('Invalid Inferno state');
-  }
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],

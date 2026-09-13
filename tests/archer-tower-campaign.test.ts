@@ -55,8 +55,8 @@ it('adapts all captured Archer Tower tiers without expanding home progression', 
   expect(BUILDINGS.archertower.maxLevel).toBe(12);
 });
 
-it('retains the unresolved Inferno gate for Midnight Oil', () => {
+it('admits Midnight Oil with its original Infernos', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Archer Tower level 15');
-  expect(nativeCampaignIssues(58)).toContain('Inferno Tower');
-  expect(() => nativeBuildings(58)).toThrow();
+  expect(nativeCampaignIssues(58)).toEqual([]);
+  expect(nativeBuildings(58).filter((b) => b.kind === 'inferno')).toHaveLength(4);
 });

@@ -54,9 +54,9 @@ it('adapts all captured Drill tiers without expanding home progression', () => {
   }
   expect(BUILDINGS.darkdrill.maxLevel).toBe(3);
 });
-it('removes the resolved Drill blocker while retaining missing Midnight Oil defenses', () => {
+it('admits Midnight Oil with its resolved Drill and defenses', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Dark Elixir Drill');
-  expect(nativeCampaignIssues(58)).toContain('Inferno Tower');
+  expect(nativeCampaignIssues(58)).toEqual([]);
   expect(nativeCampaignIssues(58)).not.toContain('Archer Tower level 15');
-  expect(() => nativeBuildings(58)).toThrow();
+  expect(nativeBuildings(58).filter((b) => b.kind === 'inferno')).toHaveLength(4);
 });

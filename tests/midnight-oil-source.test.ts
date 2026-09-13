@@ -28,7 +28,7 @@ it('matches the independently captured campaign combat values without clamping s
   });
 });
 
-it('keeps mini-levels separate and preserves every effect/emitter reference before campaign integration', () => {
+it('keeps mini-levels separate and preserves every effect/emitter reference through campaign integration', () => {
   for (const source of [infernoSource, drillSource]) {
     expect(source.miniLevels.rows[0].TargetBuilding).toBe(source.name);
     for (const row of source.levels)
@@ -55,5 +55,5 @@ it('keeps mini-levels separate and preserves every effect/emitter reference befo
   expect(NATIVE_CAMPAIGN[58].name).toBe('Midnight Oil');
   expect(NATIVE_CAMPAIGN[58].buildings.filter(([id]) => id === inferno.globalId)).toHaveLength(4);
   expect(NATIVE_CAMPAIGN[58].buildings.filter(([id]) => id === drill.globalId)).toHaveLength(1);
-  expect(nativeCampaignIssues(58)).toEqual(['Inferno Tower']);
+  expect(nativeCampaignIssues(58)).toEqual([]);
 });

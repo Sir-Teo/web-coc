@@ -34,7 +34,7 @@ it('preserves all 182 original Infernos, including explicit false modes and full
   expect(
     nativeInfernoStates(NATIVE_CAMPAIGN[58]).every((v) => !v.attackMode && v.ammunition === 1000),
   ).toBe(true);
-  expect(nativeCampaignIssues(58)).toEqual(['Inferno Tower']);
+  expect(nativeCampaignIssues(58)).toEqual([]);
 });
 it('rejects missing, unmatched, duplicate or invalid state while retaining zero ammunition', () => {
   const fresh = () => structuredClone(NATIVE_CAMPAIGN[58]);
