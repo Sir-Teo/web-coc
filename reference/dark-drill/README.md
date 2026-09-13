@@ -9,3 +9,12 @@ Run `PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-
 The pinned scene file also resolves every building and particle export. `artInventory` records original export IDs, reachable clip/shape counts and required source texture files and dimensions. Texture payload decoding and independent pixel witnesses remain the next asset step.
 
 The Drill inventory resolves 39 building/particle exports, 46 clips and 97 shapes across source textures 8, 25, 39 and 41. These reachable clips use normal blend mode 0. The inventory validates references only; it is not a substitute for decoding the source texture payloads and comparing rendered pixels.
+
+
+## Original artwork capture
+
+`scripts/import-native-dark-drill-art.py` now captures every inventoried export and reachable display object into `art-runtime.json` and preserves the uncropped source graph in `art-source.json`. The graph contains 39 exports, 46 clips, 97 shapes and 5,479 clip frames, with normal blend mode only. Four PNG texture regions retain the exact decoded source texels and remapped UVs. The source-definition SHA-256 is bound into the metadata.
+
+Texture 41 is pinned to SHA-256 `b3382bdda1665f62f476dca4afc8896cd1251d53f2c0b533f2fa2c09dfa94260`; all six source inputs also verify membership against the original fingerprint SHA-1 records. `PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-dark-drill-art.py --check` reconstructs and compares the complete graph documents and decoded texture pixels.
+
+The reconstruction check and three source tests pass, including every tier's art references, source geometry preservation and sampling all 5,479 clip frames with finite transforms. A temporary CPU source-rendered contact sheet of all 39 export frame-zero poses was visually reviewed. Production build passes. Independent frame-by-frame browser pixel qualification, native state composition, UI portraits and live production/loot integration remain pending. These captures do not expand campaign access or establish native executable playback parity.
