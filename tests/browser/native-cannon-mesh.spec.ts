@@ -1,9 +1,27 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-cannon-mesh/index.json' with { type: 'json' };
-const witnesses = index.map(({ category }) =>
-  JSON.parse(readFileSync(`tests/fixtures/native-cannon-mesh/${category}.json`, 'utf8')),
-);
+// displaySize caps the actual framebuffer at 16 million pixels. Render source
+// sheets in row-aligned strips, keeping the original independent PNGs intact.
+const witnesses = index.flatMap(({ category }) => {
+  const source = JSON.parse(
+    readFileSync(`tests/fixtures/native-cannon-mesh/${category}.json`, 'utf8'),
+  );
+  const stripHeight = source.cell * 20;
+  return Array.from({ length: Math.ceil(source.height / stripHeight) }, (_, i) => {
+    const sourceY = i * stripHeight;
+    return {
+      ...source,
+      sourceCategory: category,
+      sourceY,
+      category: source.height > stripHeight ? `${category}-part-${i + 1}` : category,
+      height: Math.min(stripHeight, source.height - sourceY),
+      cases: source.cases
+        .filter((c) => c.y >= sourceY && c.y < sourceY + stripHeight)
+        .map((c) => ({ ...c, sourceY: c.y, y: c.y - sourceY })),
+    };
+  });
+});
 
 for (const witness of witnesses)
   test(`native Cannon ${witness.category} matches original pixels and survives context restoration`, async ({
@@ -30,7 +48,7 @@ for (const witness of witnesses)
       preloadNativeMeshes(scene, world, 'cannon-test-world');
       scene.load.image(
         'cannon-source-reference',
-        `/tests/fixtures/native-cannon-mesh/${reference.category}.png`,
+        `/tests/fixtures/native-cannon-mesh/${reference.sourceCategory}.png`,
       );
       await new Promise<void>((resolve) => {
         scene.load.once('complete', resolve);
@@ -45,6 +63,10 @@ for (const witness of witnesses)
         return view;
       });
       const gl = game.renderer.gl;
+      if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+        throw Error(
+          `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+        );
       const glErrors = [gl.getError()];
       const capture = () =>
         new Promise<Uint8Array>((resolve) =>
@@ -95,7 +117,9 @@ for (const witness of witnesses)
       scene.cameras.main.setForceComposite(true);
       const actual = await capture();
       for (const view of views) for (const object of view.objects) object.setVisible(false);
-      const image = scene.add.image(0, 0, 'cannon-source-reference').setOrigin(0, 0);
+      const image = scene.add
+        .image(0, -reference.sourceY, 'cannon-source-reference')
+        .setOrigin(0, 0);
       const expected = await capture();
       image.destroy();
       for (const view of views) for (const object of view.objects) object.setVisible(true);
@@ -146,6 +170,10 @@ for (const witness of witnesses)
       };
       return {
         cases,
+        sourceCategory: reference.sourceCategory,
+        sourceY: reference.sourceY,
+        framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
+        compared: { width: reference.width, height: reference.height },
         defaultFramebufferSamples,
         singleTextureChanges: changed(single),
         contextChanges: changed(restored),
@@ -176,6 +204,8 @@ for (const witness of witnesses)
       path: `output/playtest/native-cannon-${witness.category}-${browserName}.png`,
       clip: report.clip,
     });
+    expect(report.framebuffer.width).toBeGreaterThanOrEqual(report.compared.width);
+    expect(report.framebuffer.height).toBeGreaterThanOrEqual(report.compared.height);
     expect(report.glError).toBe(0);
     expect(report.glErrors).toEqual([0, 0, 0, 0, 0, 0]);
     expect(report.singleTextureChanges).toBe(0);

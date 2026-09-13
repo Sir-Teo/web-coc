@@ -2,7 +2,27 @@ import { test, expect } from '@playwright/test';
 import body from '../fixtures/native-mortar-mesh/body.json' with { type: 'json' };
 import effects from '../fixtures/native-mortar-mesh/effects.json' with { type: 'json' };
 
-for (const witness of [body, effects])
+// displaySize caps the actual framebuffer at 16 million pixels. Render source
+// sheets in row-aligned strips, keeping the original independent PNGs intact.
+const witnesses = [body, effects].flatMap((source) => {
+  const category = source.category;
+  const stripHeight = source.cell * 20;
+  return Array.from({ length: Math.ceil(source.height / stripHeight) }, (_, i) => {
+    const sourceY = i * stripHeight;
+    return {
+      ...source,
+      sourceCategory: category,
+      sourceY,
+      category: source.height > stripHeight ? `${category}-part-${i + 1}` : category,
+      height: Math.min(stripHeight, source.height - sourceY),
+      cases: source.cases
+        .filter((c) => c.y >= sourceY && c.y < sourceY + stripHeight)
+        .map((c) => ({ ...c, sourceY: c.y, y: c.y - sourceY })),
+    };
+  });
+});
+
+for (const witness of witnesses)
   test(`native Mortar ${witness.category} matches original pixels and survives context restoration`, async ({
     page,
     browserName,
@@ -26,7 +46,7 @@ for (const witness of [body, effects])
       preloadNativeMeshes(scene, world, 'mortar-test-world');
       scene.load.image(
         'mortar-source-reference',
-        `/tests/fixtures/native-mortar-mesh/${reference.category}.png`,
+        `/tests/fixtures/native-mortar-mesh/${reference.sourceCategory}.png`,
       );
       await new Promise<void>((resolve) => {
         scene.load.once('complete', resolve);
@@ -41,6 +61,10 @@ for (const witness of [body, effects])
         return view;
       });
       const gl = game.renderer.gl;
+      if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+        throw Error(
+          `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+        );
       const glErrors = [gl.getError()];
       const capture = () =>
         new Promise<Uint8Array>((resolve) =>
@@ -91,7 +115,9 @@ for (const witness of [body, effects])
       scene.cameras.main.setForceComposite(true);
       const actual = await capture();
       for (const view of views) for (const object of view.objects) object.setVisible(false);
-      const image = scene.add.image(0, 0, 'mortar-source-reference').setOrigin(0, 0);
+      const image = scene.add
+        .image(0, -reference.sourceY, 'mortar-source-reference')
+        .setOrigin(0, 0);
       const expected = await capture();
       image.destroy();
       for (const view of views) for (const object of view.objects) object.setVisible(true);
@@ -142,6 +168,10 @@ for (const witness of [body, effects])
       };
       return {
         cases,
+        sourceCategory: reference.sourceCategory,
+        sourceY: reference.sourceY,
+        framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
+        compared: { width: reference.width, height: reference.height },
         defaultFramebufferSamples,
         singleTextureChanges: changed(single),
         contextChanges: changed(restored),
@@ -172,12 +202,14 @@ for (const witness of [body, effects])
       path: `output/playtest/native-mortar-${witness.category}-${browserName}.png`,
       clip: report.clip,
     });
+    expect(report.framebuffer.width).toBeGreaterThanOrEqual(report.compared.width);
+    expect(report.framebuffer.height).toBeGreaterThanOrEqual(report.compared.height);
     expect(report.glError).toBe(0);
     expect(report.glErrors).toEqual([0, 0, 0, 0, 0, 0]);
     expect(report.singleTextureChanges).toBe(0);
     expect(report.contextChanges).toBe(0);
     expect(report.meshes).toBeGreaterThan(0);
-    if (witness.category === 'body') expect(report.groups).toBe(0);
+    if (witness.sourceCategory === 'body') expect(report.groups).toBe(0);
     else expect(report.groups).toBeGreaterThan(0);
     expect(report.cases).toHaveLength(witness.cases.length);
     for (const c of report.cases) {

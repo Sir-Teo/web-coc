@@ -970,6 +970,8 @@ Frozen evidence is indexed by `output/playtest/native-air-sweeper-live-verificat
 
 ## Original Mortar source foundation — September 12, 2026
 
+> Qualification correction: the September 13 framebuffer-bound verification below supersedes the original large body-sheet browser capture. The original source witnesses and frozen records remain preserved.
+
 The [Mortar source reference](../reference/mortar/README.md) retains **eighteen original levels**, their rotating barrels, separate optional gear-up controls, foundations, construction/scaffold and all six rubble variants. It also retains **thirteen shell families, seven effect records, 24 emitters, 64 ordered particle variants and five original sounds**. Sixteen fingerprint-verified source inputs reproduce **78 exports, 110 clips, 346 shapes and 28 assets / 3,551,318 bytes**. The five lossless source texture crops preserve every referenced sampling region and neighbor; all eighteen normal-mode portraits share registered **346×336** bounds.
 
 Source inspection found eight discrete barrel views across the first fourteen turrets' 360-frame controls. Levels 15–18 retain 361 frames, including their actual final source frame. The separate gear-up child is preserved and explicitly disabled in normal portraits. Repeated hit-effect rows and the yellow trail's alternating additive/non-additive variants remain intact. The source level-one through level-ten HP, DPS, costs and durations agree with the current runtime table.
@@ -1010,6 +1012,8 @@ Five relevant browser scenarios pass per engine, including the actual paid Morta
 
 ## Original Cannon source foundation — September 13, 2026
 
+> Qualification correction: the September 13 framebuffer-bound verification below supersedes the original large direction-sheet browser captures. The original source witnesses and frozen records remain preserved.
+
 The pinned public client **18.400.21** now supplies all **21 normal Cannon bodies and 15 alternate bodies**, exact direction and animation timelines, named turret/gear controls, bases, construction/scaffolds/rubble, eleven projectile families, seven effect records and five original Ogg sounds. Seventeen inputs pass SHA-256 and independent bundle-fingerprint SHA-1 checks. The retained graph has **101 exports, 153 clips and 1,305 shapes**. Six lossless texture packs, twenty-one 410×346 source portraits and five unchanged sounds total **32 assets / 12,251,854 bytes**. See [the source reference](../reference/cannon/README.md).
 
 This commit is a source foundation. Live runtime files remain identical to `fec2015`; the twelve-level Cannon progression, TH8 level-10 ceiling, home count limits, simulation and compatible replay versions **34/35** remain unchanged. High Pressure is still gated by Cannon 15. The original building table lists TH2 for Cannon level 2, while current home rules permit it at TH1; this discrepancy remains explicitly recorded for investigation during live integration.
@@ -1041,3 +1045,13 @@ Validation:
 - The final production build ships **527 cached files**, cache **`crown-clan-9aeaa4ac5795`**. Both browsers import, seek, export and reopen current Cannon and High Pressure replays plus all four historical Cannon files. Chromium also replays offline after reload. All **53 assets** decode and match their filesystem SHA-256 in both engines; Chromium returns identical asset hashes, dimensions and decoded audio metadata offline. The general production checks pass both engines, including offline Army/replay coverage in Chromium.
 
 Live evidence is frozen separately in `output/playtest/native-cannon-live-verification.json` with raw snapshots under `cannon-live-evidence`; prior frozen milestones and immutable historical fixture bytes remain untouched. Local angle mapping, altitude/world registration and particle equations remain explicitly unverified against the native executable. Geared-up mode, garrison/Clan Castle, further original art and content, online systems, physical-device/WebKit-offline qualification and the full production-clone goal remain open.
+
+## Source pixel comparisons bounded by the framebuffer — September 13, 2026
+
+The garrison death-frame check revealed a validation defect: the old source-sheet harness requested readback regions larger than the actual framebuffer. `displaySize` caps the backbuffer at 16 million pixels and 8192 pixels per dimension. At the former viewport sizes, the 9000-pixel Cannon sheets and the 6600-pixel Mortar body sheet were partly outside that buffer. Matching unrendered regions could therefore look like passing comparisons. Their original large-sheet browser results do not establish complete coverage and are explicitly superseded here. Source reconstruction, immutable Python witnesses, small live-assembly comparisons and historical physical replay hashes are unaffected.
+
+The corrected harness renders row-aligned strips of at most **2400×6000 pixels**, keeps the original witness textures intact, translates their visible source region, and checks both dimensions against the measured framebuffer before any readback. Reports retain source page/offset, measured buffer size and compared size. No source geometry, source PNG, runtime file or acceptance threshold changed.
+
+Both Chromium and WebKit pass all **1,529 Cannon compositions in thirteen strips** and all **313 Mortar compositions in three strips**. Every original case is included exactly once. Forced single-texture batching and graphics-context restoration produce zero changed bytes, and all GL checks are zero. Cannon maximum per-case mean error remains **0.663266 / 0.852041**; corrected captures contain **54 / 55** pixels above 16/255, all within 0.000415199 pixels of an original triangle edge. Mortar retains **30 / 30** such pixels, within 0.000003815 pixels of an original triangle edge. The limits remain mean error <1 and outlier fraction <0.003.
+
+Evidence includes `garrison-and-cannon-mesh-{chromium,webkit}-final.log`, `garrison-mortar-and-troops-chromium-final.log`, `garrison-mortar-mesh-webkit-final.log`, the new `native-cannon-*-part-*` and `native-mortar-body-part-*` reports, and `native-foundation-strip-edge-audit.json`. These records are included in the later garrison foundation freeze; earlier frozen manifests and snapshots are not rewritten.
