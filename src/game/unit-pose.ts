@@ -12,8 +12,8 @@ export function unitPose(
   const center =
     target && target.hp > 0
       ? {
-          x: target.x + ('level' in target ? BUILDINGS[target.kind].size / 2 : 0),
-          y: target.y + ('level' in target ? BUILDINGS[target.kind].size / 2 : 0),
+          x: target.x + ('stored' in target ? BUILDINGS[target.kind].size / 2 : 0),
+          y: target.y + ('stored' in target ? BUILDINGS[target.kind].size / 2 : 0),
         }
       : undefined;
   const waypoint = u.path.find((p) => Math.hypot(p.x - u.x, p.y - u.y) > 0.03);

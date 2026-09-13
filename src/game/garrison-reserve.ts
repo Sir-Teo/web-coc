@@ -40,6 +40,8 @@ export function garrisonStats(kind: GarrisonKind, level: number) {
     airTargets: row.airTargets,
     flying: row.flying,
     newTargetDelay: row.newTargetAttackDelayMs / 1000,
+    /** Initial timer charge in the older engine; wait is interval minus that charge. */
+    firstAttackDelay: Math.max(0, (row.intervalMs - row.newTargetAttackDelayMs) / 1000),
     deathDamage: row.deathDamage,
     deathRadius: row.deathRadius / 100,
     deathDelay: row.deathDelayMs / 1000,

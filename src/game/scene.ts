@@ -1993,6 +1993,8 @@ export class VillageScene extends Phaser.Scene {
         this.defenderSprites.delete(id);
       }
     for (const d of defenders) {
+      // Garrison meshes have a separate pending presentation path; never substitute Skeleton art.
+      if (d.kind !== 'skeleton') continue;
       const flying = d.mode === 'air',
         width = flying ? 68 : 40,
         p = iso(d.x, d.y),

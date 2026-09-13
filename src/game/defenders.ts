@@ -1,13 +1,13 @@
 import { distance2D } from './distance';
+import { stepGarrisonDefender, type GarrisonAttack } from './garrison-combat';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
 import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
 
-export interface Defender {
+interface DefenderState {
   id: number;
-  kind: 'skeleton';
   sourceId: number;
   mode: SkeletonMode;
   x: number;
@@ -24,8 +24,17 @@ export interface Defender {
   defeatedAt?: number;
   stunnedUntil?: number;
 }
+export interface GarrisonDefender extends DefenderState {
+  kind: 'dragon' | 'balloon';
+  level: number;
+  attacks: GarrisonAttack[];
+  engaged?: boolean;
+  deathResolved?: boolean;
+}
+export type Defender = (DefenderState & { kind: 'skeleton' }) | GarrisonDefender;
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
   if (defender.hp <= 0) return;
+  if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
   defender.hp = Math.max(0, defender.hp - power);
   if (!defender.hp) {
     defender.defeatedAt = battle.elapsed;
@@ -99,6 +108,10 @@ function moveAlong(
 export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => void) {
   const structures = battle.buildings.filter((b) => b.kind !== 'wall'); // Home defenders jump their own walls.
   for (const defender of battle.defenders ?? []) {
+    if (defender.kind !== 'skeleton') {
+      stepGarrisonDefender(battle, defender, dt, effect);
+      continue;
+    }
     defender.attacking = false;
     if (defender.hp <= 0) continue;
     const activeDt = Math.min(
@@ -199,13 +212,18 @@ export function stepAttackerVsDefenders(
     return false;
   }
   let target = (battle.defenders ?? []).find(
-    (d) => d.id === unit.defenderTarget && d.hp > 0 && canFight(unit, d),
+    (d) =>
+      d.id === unit.defenderTarget &&
+      d.hp > 0 &&
+      (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
+      canFight(unit, d),
   );
   if (!target) {
     target = (battle.defenders ?? [])
       .filter(
         (d) =>
           d.hp > 0 &&
+          (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
           d.alerted &&
           canFight(unit, d) &&
           distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,

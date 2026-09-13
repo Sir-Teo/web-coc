@@ -2092,7 +2092,11 @@ export class GameModel {
     if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
       for (const enemy of b.defenders ?? [])
-        if (enemy.hp > 0 && distance2D(enemy.x - x, enemy.y - y) <= d.radius)
+        if (
+          enemy.hp > 0 &&
+          (enemy.kind === 'skeleton' || enemy.spawnedAt <= b.elapsed) &&
+          distance2D(enemy.x - x, enemy.y - y) <= d.radius
+        )
           enemy.stunnedUntil = b.elapsed + LIGHTNING_STUN;
       for (const v of b.buildings)
         if (
