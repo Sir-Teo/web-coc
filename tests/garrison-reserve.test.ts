@@ -98,7 +98,8 @@ it('preserves reserve progress through JSON serialization without sharing setup 
 it('rejects unresolved source levels, unsupported families and invalid counts atomically', () => {
   for (const troops of [
     [{ kind: 'dragon', level: 3, count: 1 }],
-    [{ kind: 'goblin', level: 7, count: 1 }],
+    [{ kind: 'golem', level: 8, count: 1 }],
+    [{ kind: 'goblin', level: 8, count: 1 }],
     [{ ...roster[0], count: 0 }],
     [{ ...roster[0], count: -1 }],
     [{ ...roster[0], count: 0.5 }],

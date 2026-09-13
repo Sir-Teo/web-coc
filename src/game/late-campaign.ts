@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import type { GarrisonUnitState } from './garrison-status';
 import type { Battle, Building, FX, Unit } from './model';
 import type { NpcBuildingKind } from './npc-buildings';
 import {
@@ -118,6 +119,8 @@ export interface LateUnitState {
   monolith?: MonolithUnitState;
   goblinBuildings?: LateGoblinBuildingsUnitState;
   builderHut?: BuilderHutUnitState;
+  /** Campaign garrison defenders (Headhunter poison); see garrison-status.ts. */
+  garrison?: GarrisonUnitState;
 }
 
 const FAMILIES = [

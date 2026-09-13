@@ -1,6 +1,6 @@
-import catalog from '../../reference/garrison/catalog.json';
+import { garrisonStats, isGarrisonKind, type GarrisonKind } from './garrison-kinds';
 
-export type GarrisonKind = 'dragon' | 'balloon';
+export { garrisonStats, type GarrisonKind } from './garrison-kinds';
 export interface GarrisonTroop {
   kind: GarrisonKind;
   level: number;
@@ -22,47 +22,35 @@ export interface GarrisonTarget {
   ejected?: boolean;
 }
 
-/** Only the two resolved source levels are supported. Never apply home troop caps. */
-export function garrisonStats(kind: GarrisonKind, level: number) {
-  const name = kind === 'dragon' ? 'Dragon' : kind === 'balloon' ? 'Balloon' : undefined;
-  const row = catalog.noFlightZone.find((r) => r.character === name && r.sourceLevel === level);
-  if (!row) throw new Error(`Unsupported garrison troop: ${kind} ${level}`);
-  return {
-    hp: row.hp,
-    housing: row.housing,
-    damage: (row.dps * row.intervalMs) / 1000,
-    rate: row.intervalMs / 1000,
-    speed: row.sourceSpeed / 100,
-    range: row.attackRange / 100,
-    splash: row.damageRadius / 100,
-    selfAsAoeCenter: row.selfAsAoeCenter,
-    groundTargets: row.groundTargets,
-    airTargets: row.airTargets,
-    flying: row.flying,
-    newTargetDelay: row.newTargetAttackDelayMs / 1000,
-    /** Initial timer charge in the older engine; wait is interval minus that charge. */
-    firstAttackDelay: Math.max(0, (row.intervalMs - row.newTargetAttackDelayMs) / 1000),
-    deathDamage: row.deathDamage,
-    deathRadius: row.deathRadius / 100,
-    deathDelay: row.deathDelayMs / 1000,
-  };
-}
-
 /** Explicit replay/input bound, unrelated to a Castle's normal housing capacity. */
 export const MAX_GARRISON_TROOPS = 700;
 export const GARRISON_TRIGGER_RADIUS = 13;
 
-/** Fail atomically: an unsupported member must not silently disappear from a campaign. */
+/** Stable FNV-1a rank; a local deterministic stand-in for the documented random tie order. */
+function tieRank(seed: number, castleId: number, kind: GarrisonKind) {
+  let hash = 2166136261;
+  for (const c of `${seed}:${castleId}:${kind}`) hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+  return hash >>> 0;
+}
+
+/**
+ * Fail atomically: an unsupported member must not silently disappear from a campaign.
+ * Release order follows Supercell's documented rule: increasing housing space, a random
+ * order between different troops of equal housing (seeded from the battle, so replays and
+ * seeks agree), and the lowest level first within one troop type.
+ */
 export function createGarrisonReserve(
   castleId: number,
   troops: readonly GarrisonTroop[],
   mode: 'guard' | 'sleep' = 'guard',
+  seed = 0,
 ): GarrisonReserve {
   if (!Number.isSafeInteger(castleId) || castleId <= 0 || !['guard', 'sleep'].includes(mode))
     throw new Error('Invalid garrison Castle or mode');
   let total = 0;
   const normalized: GarrisonTroop[] = [];
   for (const troop of troops) {
+    if (!troop || !isGarrisonKind(troop.kind)) throw new Error('Unsupported garrison troop');
     garrisonStats(troop.kind, troop.level);
     if (!Number.isSafeInteger(troop.count) || troop.count <= 0)
       throw new Error('Invalid garrison troop count');
@@ -72,10 +60,13 @@ export function createGarrisonReserve(
     if (existing) existing.count += troop.count;
     else normalized.push({ ...troop });
   }
-  // The supported families have different housing sizes. Equal-housing random ordering
-  // must be implemented explicitly before enabling any additional families.
   normalized.sort(
-    (a, b) => garrisonStats(a.kind, a.level).housing - garrisonStats(b.kind, b.level).housing,
+    (a, b) =>
+      garrisonStats(a.kind, a.level).housing - garrisonStats(b.kind, b.level).housing ||
+      (a.kind === b.kind
+        ? a.level - b.level
+        : tieRank(seed, castleId, a.kind) - tieRank(seed, castleId, b.kind) ||
+          (a.kind < b.kind ? -1 : 1)),
   );
   return { castleId, mode, troops: normalized, released: 0 };
 }

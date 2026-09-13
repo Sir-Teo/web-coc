@@ -77,11 +77,12 @@ export function garrisonImpactPoses(
   for (const defender of battle.defenders ?? []) {
     if (defender.kind === 'skeleton' || battle.elapsed < defender.spawnedAt) continue;
     if (defender.kind === 'dragon') {
+      const animation = garrisonStats(defender.kind, defender.level).animation;
       // The source detaches the fire origin after start and destroys it on death.
       if (defender.hp > 0)
         for (const [index, attack] of defender.attacks.entries()) {
           const facing = { x: attack.targetX - attack.x, y: attack.targetY - attack.y };
-          const offset = dragonAttackOffset(facing.x, facing.y);
+          const offset = dragonAttackOffset(facing.x, facing.y, animation);
           effect(
             defender.id,
             index,
@@ -107,6 +108,8 @@ export function garrisonImpactPoses(
         );
       continue;
     }
+    // Original attack/death particles for the version-44 families remain pending.
+    if (defender.kind !== 'balloon') continue;
     for (const [index, attack] of defender.attacks.entries())
       effect(defender.id, index, 'hit', raw.bindings.balloon.hit, attack.at, attack.x, attack.y);
     if (defender.defeatedAt !== undefined && defender.deathResolved)
