@@ -63,60 +63,86 @@ test('eighteen original Mortar levels have distinct untinted artwork and stable 
   expect(errors).toEqual([]);
 });
 
-test('a paid upgrade changes the village and Info artwork without moving the building', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  const id = await page.evaluate(() => {
-    const m = window.__game.model;
-    m.townhall.level = 5;
-    const id = m.state.nextId++;
-    m.state.buildings.push({
-      id,
-      kind: 'mortar',
-      x: 2,
-      y: 2,
-      level: 2,
-      hp: 450,
-      maxHp: 450,
-      stored: 0,
-      cooldown: 0,
+for (const [width, height] of [
+  [320, 844],
+  [390, 844],
+  [844, 390],
+])
+  test(`a paid Mortar upgrade preserves artwork, position and one row of level markers at ${width}px`, async ({
+    page,
+    browserName,
+  }) => {
+    await page.setViewportSize({ width, height });
+    const id = await page.evaluate(() => {
+      const m = window.__game.model;
+      m.townhall.level = 5;
+      const id = m.state.nextId++;
+      m.state.buildings.push({
+        id,
+        kind: 'mortar',
+        x: 2,
+        y: 2,
+        level: 2,
+        hp: 450,
+        maxHp: 450,
+        stored: 0,
+        cooldown: 0,
+      });
+      m.state.obstacles = [];
+      m.state.gold = 100000;
+      m.selected = id;
+      m.changed();
+      return id;
     });
-    m.state.obstacles = [];
-    m.state.gold = 100000;
-    m.selected = id;
-    m.changed();
-    return id;
-  });
-  await expect(page.locator('.context-art')).toHaveAttribute('src', /mortar-native\/level-2.png$/);
-  const before = await page.evaluate((id) => {
-    const im = window.__game.scene.sprites.get(id);
-    return [im.x, im.y, im.displayWidth, im.displayHeight];
-  }, id);
-  await page.locator('[data-action="info"]').click();
-  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-2.png$/);
-  await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
-  await page.evaluate((id) => {
-    const m = window.__game.model;
-    m.tick(m.state.buildings.find((b) => b.id === id).upgradeEnd);
-    m.selected = id;
-    m.changed();
-  }, id);
-  await expect(page.locator('.context-art')).toHaveAttribute('src', /level-3.png$/);
-  expect(
-    await page.evaluate((id) => {
+    await expect(page.locator('.context-art')).toHaveAttribute(
+      'src',
+      /mortar-native\/level-2.png$/,
+    );
+    const before = await page.evaluate((id) => {
       const im = window.__game.scene.sprites.get(id);
       return [im.x, im.y, im.displayWidth, im.displayHeight];
-    }, id),
-  ).toEqual(before);
-  // The Info sheet remains open and updates when the upgrade completes.
-  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-3.png$/);
-  await page.waitForTimeout(150);
-  await page.screenshot({
-    path: `output/playtest/mortar-art-info-${test.info().project.name || 'chromium'}.png`,
-    animations: 'disabled',
+    }, id);
+    await page.locator('[data-action="info"]').click();
+    await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-2.png$/);
+    await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
+    await page.evaluate((id) => {
+      const m = window.__game.model;
+      m.tick(m.state.buildings.find((b) => b.id === id).upgradeEnd);
+      m.selected = id;
+      m.changed();
+    }, id);
+    await expect(page.locator('.context-art')).toHaveAttribute('src', /level-3.png$/);
+    expect(
+      await page.evaluate((id) => {
+        const im = window.__game.scene.sprites.get(id);
+        return [im.x, im.y, im.displayWidth, im.displayHeight];
+      }, id),
+    ).toEqual(before);
+    // The Info sheet remains open and updates when the upgrade completes.
+    await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-3.png$/);
+    const markers = await page.locator('.info-levels').evaluate((el) => {
+      const bounds = el.getBoundingClientRect();
+      const bars = [...el.children].map((v) => v.getBoundingClientRect());
+      return {
+        count: bars.length,
+        filled: el.querySelectorAll('.on').length,
+        rows: new Set(bars.map((r) => r.top)).size,
+        minWidth: Math.min(...bars.map((r) => r.width)),
+        inside: bars.every((r) => r.left >= bounds.left - 0.01 && r.right <= bounds.right + 0.01),
+        equal: Math.max(...bars.map((r) => r.width)) - Math.min(...bars.map((r) => r.width)),
+      };
+    });
+    expect(markers).toMatchObject({ count: 18, filled: 3, rows: 1, inside: true });
+    expect(markers.minWidth).toBeGreaterThan(5);
+    expect(markers.equal).toBeLessThan(0.1);
+    await expect(page.locator('#toast')).not.toHaveClass(/\bshow\b/);
+    await expect(page.locator('#toast')).toHaveCSS('opacity', '0');
+    await page.locator('.info-hero').scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: `output/playtest/mortar-info-markers-${width}-${browserName}.png`,
+      animations: 'disabled',
+    });
   });
-});
 
 test('moving a high-level Mortar preserves its artwork in the placement preview', async ({
   page,

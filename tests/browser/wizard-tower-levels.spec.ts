@@ -57,9 +57,12 @@ for (const width of [390, 320])
           return r.left >= box.left && r.right <= box.right;
         }),
         markers: el.querySelectorAll('.info-levels i').length,
+        rows: new Set(
+          [...el.querySelectorAll('.info-levels i')].map((bar) => bar.getBoundingClientRect().top),
+        ).size,
       };
     });
-    expect(hero).toEqual({ overflow: 0, childrenInside: true, markers: 17 });
+    expect(hero).toEqual({ overflow: 0, childrenInside: true, markers: 17, rows: 1 });
     await page.screenshot({
       path: `output/playtest/wizard-tower-th9-${width}-${browserName}.png`,
       animations: 'disabled',
