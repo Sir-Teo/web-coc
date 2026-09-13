@@ -13,6 +13,7 @@ import {
 import {
   EAGLE_ARTILLERY_READY,
   eagleArtilleryDestroyed,
+  eagleArtilleryHolds,
   eagleArtilleryPending,
   stepEagleArtillery,
   type EagleArtilleryBattleState,
@@ -174,9 +175,11 @@ export const lateCampaignPending = (battle: Battle) =>
 export function lateBuildingDestroyed(context: LateCombatContext, building: Building, at: number) {
   for (const family of FAMILIES) family.destroyed(context, building, at);
 }
-/** Frozen or vortex-held attackers skip their own movement and attacks this step. */
+/** Frozen, vortex-held or Eagle Artillery-pushed attackers skip their own movement and attacks. */
 export const lateUnitHeld = (battle: Battle, unit: Unit) =>
-  freezeTrapHolds(battle, unit) || tornadoTrapHolds(battle, unit);
+  freezeTrapHolds(battle, unit) ||
+  tornadoTrapHolds(battle, unit) ||
+  eagleArtilleryHolds(battle, unit);
 /** Vortex-carried attackers still attack in range, but their own movement speed is zero. */
 export const lateUnitRooted = (battle: Battle, unit: Unit) => tornadoTrapRoots(battle, unit);
 /** Presentation only: frozen attackers are tinted and their animation clocks stop. */
