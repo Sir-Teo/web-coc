@@ -4,6 +4,7 @@ import {
   type ArcherTowerWindup,
 } from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
+import { findSubtilePath, subtileSolid } from './subtile-path';
 import {
   lateActivatedDefense,
   lateBuildingDestroyed,
@@ -427,6 +428,8 @@ export interface Battle {
   garrisons?: GarrisonState[];
   /** Late single-player campaign family state (version 44+). */
   late?: LateBattleState;
+  /** Version 44+ native campaign battles use the client's sub-tile building collision. */
+  nativeSubtiles?: true;
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
   elapsed: number;
@@ -2346,7 +2349,7 @@ export class GameModel {
               )
             : alive;
         target =
-          (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
+          (troop.wallBreaker ? breachTarget(u, knownBuildings, !!b.nativeSubtiles) : undefined) ??
           (preferred.length ? preferred : alive).sort(
             (a, c) => distanceTo(u, a) - distanceTo(u, c),
           )[0];
@@ -2440,7 +2443,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, solidBuildings, d.range);
+        u.path = findPath(u, target, solidBuildings, d.range, !!b.nativeSubtiles);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -2483,6 +2486,38 @@ export class GameModel {
           }
           continue;
         }
+        if (b.nativeSubtiles) {
+          // Half-tile waypoints: carry unused travel past each one, stopping before a wall.
+          let travel = d.speed * unitDt;
+          while (travel > 0 && u.path.length) {
+            const point = u.path[0];
+            if (
+              point !== next &&
+              b.buildings.some(
+                (v) =>
+                  v.kind === 'wall' &&
+                  v.hp > 0 &&
+                  Math.floor(point.x) === v.x &&
+                  Math.floor(point.y) === v.y,
+              )
+            )
+              break;
+            const dx = point.x - u.x,
+              dy = point.y - u.y,
+              len = distance2D(dx, dy);
+            if (len <= travel) {
+              u.x = point.x;
+              u.y = point.y;
+              u.path.shift();
+              travel -= len;
+            } else {
+              u.x += (dx / len) * travel;
+              u.y += (dy / len) * travel;
+              travel = 0;
+            }
+          }
+          continue;
+        }
         const dx = next.x - u.x,
           dy = next.y - u.y,
           len = distance2D(dx, dy),
@@ -2497,7 +2532,7 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, solidBuildings);
+    separateUnits(b.units, solidBuildings, !!b.nativeSubtiles);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     this.stepLate('traps', dt);
@@ -3283,7 +3318,7 @@ export function distanceTo(u: { x: number; y: number }, b: Building | { x: numbe
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */
-export function breachTarget(u: { x: number; y: number }, buildings: Building[]) {
+export function breachTarget(u: { x: number; y: number }, buildings: Building[], subtiles = false) {
   const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
   if (!walls.length) return undefined;
   const structures = buildings
@@ -3291,7 +3326,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
     .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
   const candidates: Building[] = [];
   for (const structure of structures.slice(0, 5)) {
-    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range);
+    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
     const obstruction = path
       .map((p) => walls.find((wall) => wall.x === Math.floor(p.x) && wall.y === Math.floor(p.y)))
       .find((wall) => wall !== undefined);
@@ -3300,12 +3335,15 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
   return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b))[0];
 }
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
+// Version-44 native campaign battles pass `subtiles` for the client's building-edge lanes.
 export function findPath(
   start: { x: number; y: number },
   target: Building | { x: number; y: number },
   buildings: Building[],
   range: number,
+  subtiles = false,
 ): { x: number; y: number }[] {
+  if (subtiles) return findSubtilePath(start, target, buildings, range);
   const size = MAP_SIZE,
     blocked = new Uint8Array(size * size),
     wall = new Uint8Array(size * size);
@@ -3442,14 +3480,17 @@ export function findPath(
 }
 
 /** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */
-export function separateUnits(units: Unit[], buildings: Building[]) {
+export function separateUnits(units: Unit[], buildings: Building[], subtiles = false) {
+  // Version-44 native campaign crowds use the same sub-tile building collision as routes.
+  const lanes = subtiles ? subtileSolid(buildings) : undefined;
   const solid = new Set<number>();
-  for (const b of buildings)
-    if (b.hp > 0 && !isTrap(b.kind)) {
-      const size = BUILDINGS[b.kind].size;
-      for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
-    }
+  if (!lanes)
+    for (const b of buildings)
+      if (b.hp > 0 && !isTrap(b.kind)) {
+        const size = BUILDINGS[b.kind].size;
+        for (let x = b.x; x < b.x + size; x++)
+          for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
+      }
   const buckets = new Map<number, Unit[]>();
   const alive = units.filter((u) => u.hp > 0);
   for (const u of alive) {
@@ -3464,7 +3505,8 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
     y >= 0.1 &&
     x < MAP_SIZE - 0.1 &&
     y < MAP_SIZE - 0.1 &&
-    (!!TROOPS[u.kind].flying || !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x)));
+    (!!TROOPS[u.kind].flying ||
+      (lanes ? !lanes(x, y) : !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x))));
   for (const u of alive) {
     const cx = Math.floor(u.x),
       cy = Math.floor(u.y);

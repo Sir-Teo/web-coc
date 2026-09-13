@@ -118,9 +118,9 @@ describe('late Goblin campaign building combat', () => {
     const data = lateGoblinReplay(
       73,
       [
+        // Exactly three attackers, one flying, so the three distinct arrows include the air layer.
         { step: 0, kind: 'archer', x: 12, y: 22 },
         { step: 0, kind: 'archer', x: 12, y: 23 },
-        { step: 0, kind: 'archer', x: 12, y: 24 },
         { step: 0, kind: 'balloon', x: 13, y: 21 },
       ],
       { buildings: [hall2()], steps: 400, scenery: false },

@@ -1,3 +1,4 @@
+import { groundCollision, type GroundCollision } from './subtile-path';
 import type { LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { BUILDINGS, TROOPS, isTrap } from './data';
@@ -130,7 +131,8 @@ const center = (b: Building) => {
   return { x: native(b.x + half), y: native(b.y + half) };
 };
 const flying = (u: Unit) => !u.hero && !!TROOPS[u.kind].flying;
-const available = (u: Unit, at: number) => u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + 1e-9;
+const available = (u: Unit, at: number) =>
+  u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + 1e-9;
 
 /** Retained engine range for character targets: strict minimum, maximum plus half a tile. */
 function inRange(tower: Building, u: Unit) {
@@ -298,7 +300,10 @@ function subtickGroup(battle: Battle, tower: Building, s: EagleArtilleryTowerSta
     dy = s.reticle[1] - previous[1],
     length = isqrt(dx * dx + dy * dy);
   if (length <= 2 * EAGLE_ARTILLERY.groupRadius && length > 30)
-    s.reticle = [previous[0] + Math.trunc((dx * 30) / length), previous[1] + Math.trunc((dy * 30) / length)];
+    s.reticle = [
+      previous[0] + Math.trunc((dx * 30) / length),
+      previous[1] + Math.trunc((dy * 30) / length),
+    ];
 }
 
 function resetTower(s: EagleArtilleryTowerState, at: number) {
@@ -420,19 +425,12 @@ function tick(
   }
 }
 
-/** Solid tiles for ground pushback, matching the crowd-separation rule. */
+/** Ground collision for pushback, matching the crowd-separation rule. */
 function solidTiles(battle: Battle) {
-  const solid = new Set<number>();
-  for (const b of battle.buildings)
-    if (b.hp > 0 && !isTrap(b.kind)) {
-      const size = BUILDINGS[b.kind].size;
-      for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
-    }
-  return solid;
+  return groundCollision(battle, battle.buildings);
 }
-const passable = (solid: Set<number>, x: number, y: number) =>
-  x >= 0 && y >= 0 && x < MAP_SIZE && y < MAP_SIZE && !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x));
+const passable = (solid: GroundCollision, x: number, y: number) =>
+  x >= 0 && y >= 0 && x < MAP_SIZE && y < MAP_SIZE && !solid.solid(x, y);
 
 /** Stable per-unit jitter in [0, 127], replacing the native object RNG without shared state. */
 function jitter(unitId: number, shell: string, slot: number) {
@@ -505,7 +503,7 @@ function areaDamage(
 }
 
 /** Retained `UpdatePushBack`: quadratic ease; ground pushes stop at solid tiles. */
-function stepPushes(battle: Battle, solid: () => Set<number>) {
+function stepPushes(battle: Battle, solid: () => GroundCollision) {
   for (const u of battle.units) {
     const push = u.late?.eagleArtillery?.push;
     if (!push) continue;
@@ -533,8 +531,7 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
   for (const shell of state.shells) {
     if (shell.arrivedAt === undefined) {
       const tower = battle.buildings.find((b) => b.id === shell.towerId);
-      const target =
-        unitById(battle, shell.targetId);
+      const target = unitById(battle, shell.targetId);
       if (target && available(target, at) && tower && tower.hp > 0 && inRange(tower, target)) {
         shell.x = target.x;
         shell.y = target.y;
@@ -542,7 +539,10 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
       if (at + 1e-9 >= shell.arrivesAt) {
         // TargetReached: the hit spell acts on its first logic step; the shockwave after DamageDelay.
         shell.arrivedAt = at;
-        const later = Math.max(0, Math.ceil((EAGLE_ARTILLERY.damageDelayMs - SUBTICK_MS) / SUBTICK_MS));
+        const later = Math.max(
+          0,
+          Math.ceil((EAGLE_ARTILLERY.damageDelayMs - SUBTICK_MS) / SUBTICK_MS),
+        );
         shell.spellAt = at + (SUBTICK_MS + EAGLE_ARTILLERY.spellHitTimeMs) / 1000;
         shell.shockAt = at + (later * SUBTICK_MS) / 1000;
         state.impacts.push({
@@ -577,8 +577,7 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
       );
     }
     if (at + 1e-9 >= shell.shockAt!) {
-      const target =
-        unitById(battle, shell.targetId);
+      const target = unitById(battle, shell.targetId);
       const x = target && target.hp > 0 ? target.x : impact.x,
         y = target && target.hp > 0 ? target.y : impact.y;
       impact.shockX = x;
@@ -608,7 +607,7 @@ export function stepEagleArtillery(context: LateCombatContext) {
   if (!towers.length && !battle.late.eagleArtillery) return;
   const state = eagleArtilleryState(battle);
   for (const tower of towers) towerState(state, tower);
-  let solid: Set<number> | undefined;
+  let solid: GroundCollision | undefined;
   const solids = () => (solid ??= solidTiles(battle));
   while ((state.nextSubtick * SUBTICK_MS) / 1000 <= battle.elapsed + 1e-9) {
     const at = (state.nextSubtick * SUBTICK_MS) / 1000;

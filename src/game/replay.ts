@@ -114,6 +114,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 44 && s.catalog === 'goblin-v1' ? { nativeSubtiles: true as const } : {}),
     ...(version >= 44 &&
     s.catalog === 'goblin-v1' &&
     s.buildings.some((b) => isLateBuilding(b) || (b.kind === 'builder' && !b.npc && b.level > 1))

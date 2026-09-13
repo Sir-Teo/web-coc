@@ -181,7 +181,13 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       defender.y += ((target.y - defender.y) / distance) * move;
     } else {
       if (!defender.path.length || defender.pathAt <= 0) {
-        defender.path = findPath(defender, target, structures, stats.range);
+        defender.path = findPath(
+          defender,
+          target,
+          structures,
+          stats.range,
+          !!battle.nativeSubtiles,
+        );
         defender.pathAt = 0.3;
       }
       moveAlong(defender, stats.speed, activeDt);
@@ -326,7 +332,13 @@ export function stepAttackerVsDefenders(
   } else {
     if (!unit.path.length || unit.pathAt <= 0) {
       // Defenders are troop points; leveled garrison defenders must not be read as footprints.
-      unit.path = findPath(unit, { x: target.x, y: target.y }, buildings, stats.range);
+      unit.path = findPath(
+        unit,
+        { x: target.x, y: target.y },
+        buildings,
+        stats.range,
+        !!battle.nativeSubtiles,
+      );
       unit.pathAt = 0.3;
     }
     const next = unit.path[0],
