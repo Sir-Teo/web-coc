@@ -1,0 +1,15 @@
+# Original Inferno Tower source definitions
+
+`native.json` and `catalog.json` retain the pinned client 18.400.21 Inferno Tower data from bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. Reproduce with `PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-midnight-oil.py --check`. All six inputs have SHA-256 pins and fingerprint SHA-1 membership verification, including the newly captured `logic/mini_levels.csv` (`548d592770d5e0799a13a9e70da9092da4e282d5293bba852f5e0424c78812d3`).
+
+All 12 base levels preserve raw sparse rows and explicitly inherited level records. The compact catalogue includes original single/multi artwork references, construction/upgrading/ruin/base exports, HP, cost, build time, Town Hall requirements, target layers, 128-ms attack interval, source ranges 900/1000, all three DPS stages, 1,500/5,250-ms switch fields, target counts and ammo fields. The target count changes from five to six at level 8. Original effects include all three beam strengths and the higher-level variants, transition effects, targeting/ammo and handling effects: 15 effect records and 17 referenced emitters. Their original continuation rows remain intact.
+
+The two mini-level records remain separate and raw. This capture does not infer mini-level cumulative bonuses or missing-field inheritance, native ramp threshold arithmetic, target lock/reset behavior, ammo consumption, mode-bit conventions, beam attachment or particle motion. Original scene graphs, sound payloads and live simulation are subsequent work. No executable parity is claimed.
+
+Midnight Oil (zero-based stage 58) has four level-1 Inferno Towers and one level-1 Dark Elixir Drill. Both families and the currently unsupported level-15 Archer Tower tier remain required before enabling that village. Source capture must not substitute a generic weapon or silently omit either family. Unit checks compare all base HP/DPS values with the independently captured campaign combat catalogue and ensure every referenced effect/emitter resolves.
+
+The pinned scene file also resolves every building and particle export. `artInventory` records original export IDs, reachable clip/shape counts and required source texture files and dimensions. Texture payload decoding and independent pixel witnesses remain the next asset step.
+
+The Inferno inventory resolves 91 building/particle exports, 134 clips and 219 shapes across source textures 8, 18, 25, 28 and 39. It contains blend modes 0, 3 and 8. **Twenty-two clips use mode 3, which the current source mesh importer/renderer does not support.** The audit preserves each affected clip ID in `unsupportedBlendClips`; it does not coerce that mode into normal or additive blending. Establishing mode 3 semantics and independent compositing witnesses is required before faithful art integration.
+
+Validation: deterministic `--check` reconstruction passes for both families, all 1,398 unit tests across 132 files pass, and the final source-reference/blend inventory checks pass separately. This is a source-definition and renderer-readiness step; Midnight Oil remains gated by both missing families and Archer Tower level 15.
