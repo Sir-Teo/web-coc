@@ -110,3 +110,10 @@ The importer reconstruction and two handling/model tests pass. Chromium and WebK
 `dark-drill-effects.ts` resolves pickup/placement effects to their original `Grass` emitter and four retained export variants. It preserves the source three-particle count, 200-ms emission window, 200–600-ms lifetimes, explicit normal blending and original scale/fade/motion parameters. Seeds and view keys derive from immutable handling event identity and particle index, so retiring another event does not change surviving particles.
 
 The live presentation reuses native particle views and removes them on expiry, cancellation, reduced motion or scene cleanup. Reduced motion suppresses visual bursts while preserving the independent audio clock. Four focused effect/handling tests pass, including both actions, future/expired events, serialization, event retirement and unique particles. Chromium and WebKit pass live three-particle view creation, cancellation cleanup and reduced-motion suppression with audio cues retained. Production build passes. Motion, damping, source emission spacing and world projection use the existing local particle interpretation; native executable particle behavior remains unverified.
+
+
+## Replay-safe destruction history
+
+Replay version 40 initializes an optional Drill destruction map only when the initial battle contains a Drill. The first fatal hit records the building identity, damage timestamp, tile center and tier; repeated damage cannot overwrite that event. This is the foundation for reconstructing original destruction particles and sound during playback and seeking. Those effects are not connected in this change.
+
+Versions 34–39 retain the absence of this field, including after a Drill dies. Initial recorded building HP remains authoritative. Tests cover nonfatal/fatal/repeated damage, serialization, every compatible older version and battles without Drills. All 1,463 tests across 154 files pass, including historical replay checks, and production build passes. Frozen historical fixtures were not modified.

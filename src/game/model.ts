@@ -370,6 +370,8 @@ export interface Battle {
   airSweepers?: Record<number, SweeperHistory>;
   xbows?: Record<number, XbowState>;
   infernos?: Record<number, InfernoBattleState>;
+  /** Original Drill destruction presentation, enabled by replay version 40. */
+  drillDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
   teslas?: Record<number, TeslaAttackState>;
   bombTowers?: Record<number, BombTowerAttackState>;
   wizardTowers?: Record<number, WizardTowerAttackState>;
@@ -2630,6 +2632,8 @@ export class GameModel {
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
+      if (b.kind === 'darkdrill' && this.battle?.drillDestructions)
+        this.battle.drillDestructions[b.id] ??= { at, x: b.x + 1.5, y: b.y + 1.5, level: b.level };
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);

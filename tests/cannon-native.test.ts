@@ -211,7 +211,7 @@ for (const level of [1, 8, 11, 12, 14, 15, 17, 20, 21])
     expect(m.battle!.finished).toBe(true);
     const end = structuredClone(m.battle),
       record = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(record.version).toBe(39);
+    expect(record.version).toBe(40);
     m.returnHome();
     const home = JSON.stringify(m.state);
     expect(m.openReplay(record)).toBe(true);
