@@ -403,6 +403,9 @@ export type FX = {
     | 'destroy'
     | 'projectile'
     | 'impact'
+    | 'darkdrill-pickup'
+    | 'darkdrill-place'
+    | 'darkdrill-cancel'
     | 'cannon-pickup'
     | 'cannon-place'
     | 'cannon-cancel'
@@ -1326,7 +1329,8 @@ export class GameModel {
   private nativeBuildingHandling(b: Building, action: 'pickup' | 'place' | 'cancel') {
     if (
       !this.battle &&
-      (b.kind === 'tesla' ||
+      (b.kind === 'darkdrill' ||
+        b.kind === 'tesla' ||
         b.kind === 'bombtower' ||
         b.kind === 'seekingairmine' ||
         b.kind === 'airsweeper' ||

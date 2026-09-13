@@ -94,3 +94,12 @@ The largest inspected discrepancy (clip 18582, frame 313) affects seven pixels a
 New Drill buildings and the info table now use the eleven original HP values (800 through 1,600). The existing audited-home migration also includes Drills: it preserves the current damage fraction while replacing prototype max HP. A half-damaged level-3 building therefore becomes 460/920 instead of 675/1,350. New practice battles start at the migrated source maximum. Recorded battle initial states continue to supply their own HP unchanged; no combat-step algorithm or replay version changes in this update.
 
 Tests cover every source HP tier, save migration, new practice health and opening recorded 1,350-HP Drill snapshots under every compatible replay version 34–39. The full unit run passed 1,456 tests and found one outdated hero-production test still expecting the earlier prototype rate; its production/collection/upgrade expectations were corrected to the already-integrated source rates. The focused hero/health recheck passed all 15 tests. Chromium and WebKit each pass desktop/phone info checks for all eleven source HP values, and production build passes. Frozen historical replay fixtures were not changed.
+
+
+## Original sound capture and building handling
+
+`scripts/import-native-dark-drill-sounds.py` preserves three original Ogg files (25,653 bytes), verifies pinned SHA-256 and original fingerprint SHA-1 membership, and binds the source effect definitions. Pickup uses `dark_drill_pickup_02.ogg`; placement uses `dark_drill_place_07.ogg`. Both retain source volume 70%, pitch 100% and zero delay. The destruction sample is captured but not yet connected to a destruction event.
+
+Drill movement, successful placement/new construction and cancellation now use the shared native-handling event route. Dated, uniquely identified cues pass through the existing sample-audio lifecycle; rejected moves do not emit placement sound. Cancellation, scene changes and cleanup remove pending events. Audio uses the elapsed home clock independently of reduced-motion artwork time. Event history is locally bounded to 16 entries and five seconds; native voice allocation and output loudness remain unverified.
+
+The importer reconstruction and two handling/model tests pass. Chromium and WebKit each decode all three samples and pass reduced-motion, cancel and cleanup cue checks. Production build passes. Original handling particles and destruction presentation remain subsequent work.

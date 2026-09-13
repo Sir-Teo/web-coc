@@ -310,7 +310,7 @@ export class VillageScene extends Phaser.Scene {
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
-    this.darkDrillPresentation = new DarkDrillPresentation(this);
+    this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -1820,10 +1820,11 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
-    this.darkDrillPresentation.render(
+    const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
+      battle?.elapsed ?? this.renderClock / 1000,
     );
     this.infernoPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
@@ -1878,6 +1879,7 @@ export class VillageScene extends Phaser.Scene {
         ...shrinkCues,
         ...sweeperCues,
         ...mortarCues,
+        ...drillCues,
         ...cannonCues,
         ...garrisonSoundCues(battle),
         ...infernoSoundCues(battle),
@@ -2229,6 +2231,26 @@ export class VillageScene extends Phaser.Scene {
       this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind === 'seekingairmine'
     )
       return;
+    if (
+      fx.type === 'darkdrill-pickup' ||
+      fx.type === 'darkdrill-place' ||
+      fx.type === 'darkdrill-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.darkDrillPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'darkdrill-pickup'
+          ? 'pickup'
+          : fx.type === 'darkdrill-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'darkdrill-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
     if (fx.type === 'tesla-pickup' || fx.type === 'tesla-place' || fx.type === 'tesla-cancel') {
       if (this.model.battle) return;
       this.teslaPresentation.handling(

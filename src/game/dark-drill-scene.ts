@@ -1,3 +1,10 @@
+import type { AudioManager } from './audio';
+import {
+  DARK_DRILL_SOUNDS,
+  darkDrillSample,
+  darkDrillHandlingCues,
+  type DrillHandlingEvent,
+} from './dark-drill-sounds';
 import type Phaser from 'phaser';
 import type { Building } from './model';
 import { NativeSceneView } from './native-scene-view';
@@ -6,11 +13,29 @@ import { DARK_DRILL_GRAPH, darkDrillBuildingPoses } from './dark-drill-art';
 
 export function preloadDarkDrills(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, DARK_DRILL_GRAPH, 'darkdrill');
+  for (const [path, sound] of Object.entries(DARK_DRILL_SOUNDS))
+    scene.load.binary(darkDrillSample(path), '/' + sound.path);
 }
 export class DarkDrillPresentation {
   readonly drills = new Map<number, NativeSceneView>();
-  constructor(private scene: Phaser.Scene) {}
+  private homeSequence = 0;
+  private homeEvents: DrillHandlingEvent[] = [];
+  constructor(
+    private scene: Phaser.Scene,
+    audio: AudioManager,
+  ) {
+    for (const path of Object.keys(DARK_DRILL_SOUNDS))
+      audio.samples.register(darkDrillSample(path), scene.cache.binary.get(darkDrillSample(path)));
+  }
+  handling(id: number, kind: 'pickup' | 'place' | 'cancel', at: number, x: number, y: number) {
+    if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
+    else {
+      this.homeEvents.push({ id, index: ++this.homeSequence, kind, at, x, y });
+      if (this.homeEvents.length > 16) this.homeEvents.shift();
+    }
+  }
   clear() {
+    this.homeEvents = [];
     for (const view of this.drills.values()) view.destroy();
     this.drills.clear();
   }
@@ -18,6 +43,7 @@ export class DarkDrillPresentation {
     buildings: Building[],
     seconds: number,
     iso: (x: number, y: number) => { x: number; y: number },
+    soundTime = seconds,
   ) {
     const wanted = new Set<number>();
     for (const building of buildings) {
@@ -35,5 +61,7 @@ export class DarkDrillPresentation {
         view.destroy();
         this.drills.delete(id);
       }
+    this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
+    return darkDrillHandlingCues(this.homeEvents);
   }
 }
