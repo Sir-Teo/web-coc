@@ -3,14 +3,24 @@ import type { Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { GARRISON_GRAPHS, garrisonPoses } from './garrison-poses';
+import { GARRISON_SOUNDS, garrisonSample } from './garrison-sounds';
+import type { AudioManager } from './audio';
 
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
+  for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
+    scene.load.binary(garrisonSample(path), '/' + sound.path);
   for (const [kind, graph] of Object.entries(GARRISON_GRAPHS))
     preloadNativeMeshes(scene, graph, `garrison-${kind}`);
 }
 export class GarrisonPresentation {
   readonly defenders = new Map<number, NativeSceneView>();
-  constructor(private scene: Phaser.Scene) {}
+  constructor(
+    private scene: Phaser.Scene,
+    audio: AudioManager,
+  ) {
+    for (const path of Object.keys(GARRISON_SOUNDS))
+      audio.samples.register(garrisonSample(path), scene.cache.binary.get(garrisonSample(path)));
+  }
   clear() {
     for (const view of this.defenders.values()) view.destroy();
     this.defenders.clear();

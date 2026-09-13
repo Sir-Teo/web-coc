@@ -1,4 +1,5 @@
 import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
+import { garrisonSoundCues } from './garrison-sounds';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
 import { CANNON_ART } from './cannon-art';
@@ -295,7 +296,7 @@ export class VillageScene extends Phaser.Scene {
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
     this.mortarPresentation = new MortarPresentation(this, this.audio);
-    this.garrisonPresentation = new GarrisonPresentation(this);
+    this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
@@ -1799,6 +1800,7 @@ export class VillageScene extends Phaser.Scene {
         ...sweeperCues,
         ...mortarCues,
         ...cannonCues,
+        ...garrisonSoundCues(battle),
       ],
       this.renderClock / 1000,
     );
@@ -2462,7 +2464,10 @@ export class VillageScene extends Phaser.Scene {
           to,
           reduced,
         );
-      if (fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
+      const nativeGarrison =
+        fx.sourceDefender &&
+        this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
+      if (!nativeGarrison && fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
