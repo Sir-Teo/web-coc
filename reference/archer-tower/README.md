@@ -31,3 +31,11 @@ This qualifies source preservation, not GPU pixel parity or native executable an
 The animation table, character scene and texture are SHA-256 pinned and fingerprint-membership checked. The metadata binds the building definition hash. `--check` reconstructs all source/runtime documents and compares every decoded texture pixel. Both focused tests pass, checking all tier bindings, the original attack ActionFrame value 5, directional export resolution, timelines/transforms/colors, and finite poses through every frame including isolated groups.
 
 Only idle and attack graphics are captured here; the complete animation records retain other named states as evidence. No combat timing, facing/mirroring, number of resident archers or world attachment is inferred in this capture. CPU/browser pixel qualification and runtime integration remain pending.
+
+## Pixel qualification in progress: projectile discrepancy
+
+The independent CPU witness generator now supports building, projectile and resident-defender families. The projectile sheet includes all four export frame-zero cases and every retained clip frame (19 cases). Reconstruction of that sheet passes. The building reference generation is a separate longer-running job; its output is not yet qualified.
+
+The new browser pixel test currently fails in Chromium and WebKit. It retains the established mean-error <1 and large-pixel-fraction <0.003 thresholds. Texture-batch changes, context restoration changes and GL errors are zero; all six original isolated groups remain present. Several source/GPU edge pixels differ, especially clip 352. Its first Chromium frame has mean error about 0.979 and large-pixel fraction about 0.0202; WebKit also exceeds the mean threshold in some cases. Initial reported outliers cluster along a vertical edge where the CPU darkens pixels that the GPU leaves at background color. The cause remains unproven. Neither source geometry nor thresholds have been changed to conceal this difference.
+
+`projectile-pixel-investigation.json` records the failing measurements. The browser regression remains active and failing until the discrepancy is resolved or characterized with sufficient evidence. This is not a passing pixel-qualification claim.
