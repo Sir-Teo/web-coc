@@ -15,6 +15,8 @@ import {
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
+import { initializeGarrison, type GarrisonSetup } from './garrison-release';
+import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
@@ -29,10 +31,14 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 37;
+export const REPLAY_VERSION = 38;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
-  version === 34 || version === 35 || version === 36 || version === REPLAY_VERSION;
+  version === 34 ||
+  version === 35 ||
+  version === 36 ||
+  version === 37 ||
+  version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -48,6 +54,7 @@ export type ReplayAction = { step: number } & (
   | { type: 'end' }
 );
 export interface ReplaySetup {
+  garrisons?: GarrisonSetup[];
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
   index: number;
@@ -83,6 +90,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(s.garrisons ? { garrisons: s.garrisons.map(initializeGarrison) } : {}),
     ...((version === 34 || version === 35) && s.buildings.some((b) => b.kind === 'cannon' && !b.npc)
       ? { legacyCannonFlight: true as const }
       : {}),
@@ -203,6 +211,39 @@ export function validateReplay(value: unknown): value is ReplayData {
       ))
   )
     return false;
+  if (s.garrisons !== undefined) {
+    if (value.version < 38 || !Array.isArray(s.garrisons) || s.garrisons.length > 20) return false;
+    const castles = new Set<number>();
+    let total = 0;
+    for (const g of s.garrisons) {
+      if (
+        !object(g) ||
+        !integer(g.castleId, 1, Number.MAX_SAFE_INTEGER) ||
+        castles.has(g.castleId) ||
+        !['guard', 'sleep'].includes(g.mode) ||
+        !Array.isArray(g.troops) ||
+        g.troops.length > MAX_GARRISON_TROOPS ||
+        !s.buildings.some((b: any) => object(b) && b.id === g.castleId && b.kind === 'clancastle')
+      )
+        return false;
+      for (const troop of g.troops) {
+        if (
+          !object(troop) ||
+          !integer(troop.level, 1, 100) ||
+          !integer(troop.count, 1, MAX_GARRISON_TROOPS)
+        )
+          return false;
+        total += troop.count;
+      }
+      if (total > MAX_GARRISON_TROOPS) return false;
+      try {
+        createGarrisonReserve(g.castleId, g.troops, g.mode);
+      } catch {
+        return false;
+      }
+      castles.add(g.castleId);
+    }
+  }
   const ids = new Set<number>();
   const gridVersion: GridVersion = value.version < 12 ? 2 : value.version < 13 ? 3 : 4;
   const mapSize = gridSize(gridVersion);

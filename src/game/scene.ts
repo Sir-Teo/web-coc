@@ -1,3 +1,4 @@
+import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
 import { CANNON_ART } from './cannon-art';
@@ -165,6 +166,7 @@ export class VillageScene extends Phaser.Scene {
   private wizardTowerPresentation!: WizardTowerPresentation;
   private sweeperPresentation!: SweeperPresentation;
   private mortarPresentation!: MortarPresentation;
+  private garrisonPresentation!: GarrisonPresentation;
   private castlePresentation!: CastlePresentation;
   private cannonPresentation!: CannonPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
@@ -201,6 +203,7 @@ export class VillageScene extends Phaser.Scene {
     preloadSweepers(this);
     preloadMortars(this);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
+    preloadGarrisonTroops(this);
     preloadCastles(this);
     preloadCannons(this);
     preloadSeekingMines(this);
@@ -292,6 +295,7 @@ export class VillageScene extends Phaser.Scene {
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
     this.mortarPresentation = new MortarPresentation(this, this.audio);
+    this.garrisonPresentation = new GarrisonPresentation(this);
     this.castlePresentation = new CastlePresentation(this);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
@@ -317,6 +321,7 @@ export class VillageScene extends Phaser.Scene {
       this.wizardTowerPresentation.destroy();
       this.sweeperPresentation.destroy();
       this.mortarPresentation.destroy();
+      this.garrisonPresentation.clear();
       this.castlePresentation.clear();
       this.cannonPresentation.destroy();
       this.seekingMinePresentation.destroy();
@@ -903,6 +908,7 @@ export class VillageScene extends Phaser.Scene {
       this.wizardTowerPresentation.clear();
       this.sweeperPresentation.clear();
       this.mortarPresentation.clear();
+      this.garrisonPresentation.clear();
       this.castlePresentation.clear();
       this.cannonPresentation.clear();
       this.seekingMinePresentation.clear();
@@ -1986,6 +1992,7 @@ export class VillageScene extends Phaser.Scene {
     const markers = this.defenderMarkers.clear();
     const battle = this.model.battle,
       reduced = this.model.state.settings.reducedMotion;
+    this.garrisonPresentation.render(battle, reduced, iso, AIR_LIFT);
     const defenders = battle?.defenders ?? [];
     for (const [id, sprite] of this.defenderSprites)
       if (!defenders.some((d) => d.id === id)) {
@@ -1993,8 +2000,21 @@ export class VillageScene extends Phaser.Scene {
         this.defenderSprites.delete(id);
       }
     for (const d of defenders) {
-      // Garrison meshes have a separate pending presentation path; never substitute Skeleton art.
-      if (d.kind !== 'skeleton') continue;
+      if (d.kind !== 'skeleton') {
+        if (battle!.elapsed >= d.spawnedAt && d.hp > 0) {
+          const point = iso(d.x, d.y);
+          this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(point.x, point.y, 24, 12);
+          this.bar(
+            point.x,
+            point.y - AIR_LIFT - (d.kind === 'dragon' ? 94 : 115),
+            28,
+            d.hp / d.maxHp,
+            0xea654d,
+            markers,
+          );
+        }
+        continue;
+      }
       const flying = d.mode === 'air',
         width = flying ? 68 : 40,
         p = iso(d.x, d.y),

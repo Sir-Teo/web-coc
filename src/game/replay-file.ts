@@ -51,6 +51,15 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
               },
             }
           : {}),
+        ...(s.garrisons
+          ? {
+              garrisons: s.garrisons.map((g) => ({
+                castleId: g.castleId,
+                mode: g.mode,
+                troops: g.troops.map((t) => ({ kind: t.kind, level: t.level, count: t.count })),
+              })),
+            }
+          : {}),
         buildings: s.buildings.map((b) => ({
           id: b.id,
           kind: b.kind,

@@ -6,6 +6,7 @@ import {
   type MortarAttackState,
 } from './mortar-attack';
 import { distance2D } from './distance';
+import { stepGarrisonReleases, type GarrisonState } from './garrison-release';
 import {
   recordWizardTowerShot,
   recordWizardTowerDestroyed,
@@ -369,6 +370,7 @@ export interface Battle {
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
   defenders?: Defender[];
+  garrisons?: GarrisonState[];
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
   elapsed: number;
@@ -2162,6 +2164,7 @@ export class GameModel {
     stepKingQuakes(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
+    stepGarrisonReleases(b);
     stepDefenders(b, dt, this.onEffect);
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
