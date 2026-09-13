@@ -150,14 +150,19 @@ const RELEASED = 'battle.defenders?.find((d) => d.kind !== "skeleton" && battle.
 const OUT = (d: string, tiles: number) =>
   `Math.hypot(${d}.x - window.__garrisonCenter.x, ${d}.y - window.__garrisonCenter.y) >= ${tiles}`;
 for (const village of VILLAGES)
-  test(`releases, moves, attacks and loses native garrison troops in ${village.label}`, async ({ page }) => {
+  test(`releases, moves, attacks and loses native garrison troops in ${village.label}`, async ({
+    page,
+    browserName,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     const setup = await open(page, village);
     expect(setup.garrisons[0].troops.length).toBeGreaterThan(0);
     const shot = async (phase: string, zoom: number, castle = false) => {
       await frame(page, zoom, castle);
-      await page.screenshot({ path: `output/playtest/garrison/${village.index}-${village.label}-${phase}.png` });
+      await page.screenshot({
+        path: `output/playtest/garrison/${browserName}/${village.index}-${village.label}-${phase}.png`,
+      });
     };
 
     const released = await advance(
@@ -203,7 +208,9 @@ for (const village of VILLAGES)
       scene.sync();
       scene.drawOverlay(performance.now());
     });
-    await page.screenshot({ path: `output/playtest/garrison/${village.index}-${village.label}-5-village.png` });
+    await page.screenshot({
+      path: `output/playtest/garrison/${browserName}/${village.index}-${village.label}-5-village.png`,
+    });
     expect(attacking.glError).toBe(0);
     expect(errors).toEqual([]);
   });

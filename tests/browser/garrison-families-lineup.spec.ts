@@ -14,6 +14,7 @@ const FAMILIES = [
 /** State-driven lineup on clear ground: art registration, facing, shadows and effects. */
 test('renders every new garrison family in idle, walk, attack and death states on clear ground', async ({
   page,
+  browserName,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -137,7 +138,9 @@ test('renders every new garrison family in idle, walk, attack and death states o
         glError: game.renderer.gl.getError(),
       };
     }, phase);
-    await page.locator('canvas').screenshot({ path: `output/playtest/garrison/lineup-${phase}.png` });
+    await page
+      .locator('canvas')
+      .screenshot({ path: `output/playtest/garrison/${browserName}/lineup-${phase}.png` });
     return report;
   };
   for (const phase of ['idle', 'walk', 'attack'] as const) {
