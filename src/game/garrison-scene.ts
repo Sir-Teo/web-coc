@@ -5,8 +5,10 @@ import { preloadNativeMeshes } from './native-mesh-scene';
 import { GARRISON_GRAPHS, garrisonPoses } from './garrison-poses';
 import { GARRISON_SOUNDS, garrisonSample } from './garrison-sounds';
 import type { AudioManager } from './audio';
+import { GARRISON_EFFECT_GRAPH, garrisonImpactPoses } from './garrison-effects';
 
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
+  preloadNativeMeshes(scene, GARRISON_EFFECT_GRAPH, 'garrison-effects');
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
   for (const [kind, graph] of Object.entries(GARRISON_GRAPHS))
@@ -14,6 +16,7 @@ export function preloadGarrisonTroops(scene: Phaser.Scene) {
 }
 export class GarrisonPresentation {
   readonly defenders = new Map<number, NativeSceneView>();
+  readonly effects = new Map<string, NativeSceneView>();
   private families = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
@@ -26,6 +29,8 @@ export class GarrisonPresentation {
     for (const view of this.defenders.values()) view.destroy();
     this.defenders.clear();
     this.families.clear();
+    for (const view of this.effects.values()) view.destroy();
+    this.effects.clear();
   }
   render(
     battle: Battle | null,
@@ -33,6 +38,20 @@ export class GarrisonPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     lift: number,
   ) {
+    const particles = garrisonImpactPoses(battle, reduced, iso);
+    const effectKeys = new Set(particles.map((p) => p.key));
+    for (const p of particles) {
+      let view = this.effects.get(p.key);
+      if (!view)
+        this.effects.set(p.key, (view = new NativeSceneView(this.scene, 'garrison-effects')));
+      view.render(p.poses, p.x, p.y, p.depth);
+      for (const object of view.objects) object.setData('nativeGarrisonEffect', p.key);
+    }
+    for (const [key, view] of this.effects)
+      if (!effectKeys.has(key)) {
+        view.destroy();
+        this.effects.delete(key);
+      }
     const wanted = new Set<number>();
     for (const defender of battle?.defenders ?? []) {
       if (defender.kind === 'skeleton') continue;

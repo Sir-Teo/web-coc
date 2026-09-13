@@ -2456,8 +2456,12 @@ export class VillageScene extends Phaser.Scene {
       if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
         this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced, fx.weapon);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
-      else if (fx.type === 'hit') this.combatEffects.impact('melee', to, reduced);
-      else
+      else if (fx.type === 'hit') {
+        const originalBalloon =
+          fx.sourceDefender &&
+          this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind === 'balloon');
+        if (!originalBalloon) this.combatEffects.impact('melee', to, reduced);
+      } else
         this.combatEffects.projectile(
           fx.weapon ?? (fx.color === 0xff9c37 ? 'fireball' : 'cannonball'),
           from,
