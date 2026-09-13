@@ -4,13 +4,26 @@ import {
   garrisonLongShots,
   garrisonPoisonOnHit,
   garrisonStats,
+  garrisonStealth,
   garrisonTantrum,
   type GarrisonKind,
   type GarrisonStats,
 } from './garrison-kinds';
 import type { Defender, GarrisonDefender } from './defenders';
 import { findPath, type Battle, type FX, type Unit } from './model';
-import { applyGarrisonPoison } from './garrison-status';
+import { applyGarrisonFrost, applyGarrisonPoison } from './garrison-status';
+import {
+  createDeathBolts,
+  killPendingSummons,
+  spawnSecondaries,
+  startChain,
+  stepAura,
+  stepChain,
+  stepDeathBolts,
+  stepPush,
+  stepSummons,
+  type GarrisonChainJump,
+} from './garrison-abilities';
 // Late campaign Spell Tower Rage (neutral without version 44 late state).
 import { lateDefenderStats } from './late-campaign';
 
@@ -30,6 +43,12 @@ export interface GarrisonAttack {
   hitX?: number;
   hitY?: number;
   hit?: boolean;
+  /** Electro Dragon: chain lightning jumps resolved after this hit. */
+  chain?: GarrisonChainJump[];
+  /** Bowler: the boulder's bounce impact after the first hit. */
+  bounceAt?: number;
+  bounceX?: number;
+  bounceY?: number;
 }
 /** A tracking projectile that resolves once, even if its shooter has died. */
 export interface GarrisonShot {
@@ -47,6 +66,12 @@ export interface GarrisonShot {
   air: boolean;
   damage: number;
   splash: number;
+  /** `DontTrackTarget` rows (Witch) and bounce legs keep a fixed landing point. */
+  fixed?: boolean;
+  /** Remaining bounce points of a Bowler boulder, in order. */
+  bounces?: { x: number; y: number }[];
+  /** 0 for the thrown leg, then one per bounce. */
+  leg?: number;
 }
 /** Kinds resolved before version 44 keep their complete, unbounded attack history. */
 const LEGACY_KINDS: ReadonlySet<GarrisonKind> = new Set(['dragon', 'balloon']);
@@ -82,6 +107,9 @@ export function spawnGarrisonDefender(
     attacking: false,
     attacks: [],
   };
+  // RoyalGhostAbility (`ActiveAfterPlaceCommand`): read as active from the unit's spawn.
+  const stealth = garrisonStealth(stats);
+  if (stealth) defender.stealthUntil = at + stealth.duration;
   (battle.defenders ??= []).push(defender);
   return defender;
 }
@@ -146,6 +174,9 @@ function resolveHit(
   const poison = garrisonPoisonOnHit(stats);
   if (poison && target && target.hp > 0 && (!air || poison.affectsAir))
     applyGarrisonPoison(battle, target, poison, defender.id, at);
+  // Royal Ghost: FrostOnHit slows the struck attacker.
+  if (stats.frost && target && target.hp > 0 && active(target, at))
+    applyGarrisonFrost(battle, target, stats.frost, defender.id, at);
 }
 
 function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) => void) {
@@ -154,7 +185,7 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
   const pending: GarrisonShot[] = [];
   for (const shot of defender.shots) {
     const target = battle.units.find((u) => u.id === shot.targetId && u.hp > 0 && !u.ejected);
-    if (target) {
+    if (target && !shot.fixed) {
       shot.x = target.x;
       shot.y = target.y;
     }
@@ -171,9 +202,12 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
       continue;
     }
     const hit = !!target;
-    resolveHit(battle, defender, stats, target, shot, shot.air, shot.damage, shot.impact);
+    const leg = shot.leg ?? 0;
+    // A bounce leg has no target of its own: its splash resolves at the fixed bounce point.
+    resolveHit(battle, defender, stats, leg ? undefined : target, shot, shot.air, shot.damage, shot.impact);
     const record = defender.attacks.find((a) => a.n === shot.n);
-    if (record) Object.assign(record, { hitAt: shot.impact, hitX: shot.x, hitY: shot.y, hit });
+    if (record && !leg) Object.assign(record, { hitAt: shot.impact, hitX: shot.x, hitY: shot.y, hit });
+    else if (record) Object.assign(record, { bounceAt: shot.impact, bounceX: shot.x, bounceY: shot.y });
     effect({
       type: 'hit',
       sourceDefender: true,
@@ -186,6 +220,22 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
       fromAir: stats.flying,
       toAir: shot.air,
     });
+    const bounce = shot.bounces?.shift();
+    if (bounce) {
+      // The boulder continues from its impact to the next fixed bounce point at the same speed.
+      Object.assign(shot, {
+        leg: leg + 1,
+        fixed: true,
+        targetId: -1,
+        fromX: shot.x,
+        fromY: shot.y,
+        x: bounce.x,
+        y: bounce.y,
+        flight: { x: shot.x, y: shot.y, at: shot.impact },
+        launched: shot.impact,
+      });
+      pending.push(shot);
+    }
   }
   defender.shots = pending;
 }
@@ -207,8 +257,20 @@ export function stepGarrisonDefender(
   if (defender.kind === 'skeleton') return;
   const stats = lateDefenderStats(battle, defender, garrisonStats(defender.kind, defender.level));
   stepShots(battle, defender, effect);
+  // Later families: effects already in progress resolve even if the defender dies or is stunned.
+  if (stats.chain) stepChain(battle, defender, stats);
+  if (defender.bolts) stepDeathBolts(battle, defender, stats);
+  if (stats.aura) stepAura(battle, defender, stats);
   defender.attacking = false;
   if (defender.hp <= 0) {
+    if (defender.defeatedAt !== undefined) {
+      if (stats.secondary) spawnSecondaries(battle, defender, stats, spawnGarrisonDefender);
+      if (stats.summon) killPendingSummons(battle, defender);
+      if (stats.ability && !defender.bolts) {
+        createDeathBolts(battle, defender, stats);
+        if (defender.bolts) stepDeathBolts(battle, defender, stats);
+      }
+    }
     if (
       stats.deathDamage &&
       defender.defeatedAt !== undefined &&
@@ -237,9 +299,21 @@ export function stepGarrisonDefender(
     }
     return;
   }
+  // Secondary troops and summons are pushed out first; summons then wait out SpawnIdle.
+  if (defender.push && battle.elapsed >= defender.spawnedAt && stepPush(defender, battle.elapsed))
+    return;
   const activeDt = Math.min(
     dt,
-    Math.max(0, battle.elapsed - Math.max(defender.spawnedAt, defender.stunnedUntil ?? 0)),
+    Math.max(
+      0,
+      battle.elapsed -
+        Math.max(
+          defender.spawnedAt,
+          defender.stunnedUntil ?? 0,
+          defender.push ? defender.push.at + defender.push.duration : 0,
+          defender.idleUntil ?? 0,
+        ),
+    ),
   );
   if (activeDt <= 0) return;
   const tantrum = garrisonTantrum(stats);
@@ -252,6 +326,21 @@ export function stepGarrisonDefender(
   const raged = !!(tantrum && defender.tantrum);
   // Attack speed boosts advance the attack timer faster, as in the older engine's hit timer.
   const attackDt = raged ? activeDt * tantrum!.attackScale : activeDt;
+  if (stats.split) defender.recovery = Math.max(0, (defender.recovery ?? 0) - attackDt);
+  if (stats.summon) {
+    // The summon check reads the target held going into this step (a 50 ms local offset).
+    stepSummons(battle, defender, stats, attackDt, defender.target !== null, spawnGarrisonDefender);
+    if (battle.elapsed + 1e-9 < defender.summon!.delayUntil) {
+      // Summon attack delay: the Witch drops her target and neither moves nor attacks.
+      defender.target = null;
+      delete defender.engaged;
+      defender.path = [];
+      defender.cooldown = Math.max(0, defender.cooldown - attackDt);
+      return;
+    }
+  }
+  const stealth = garrisonStealth(stats);
+  const concealed = !!stealth && (defender.stealthUntil ?? 0) > battle.elapsed;
   const long = garrisonLongShots(stats);
   const longShot = !!long && (defender.longShots ?? 0) < long.count;
   const range = longShot ? long!.range : stats.range;
@@ -289,10 +378,12 @@ export function stepGarrisonDefender(
   const distance = distance2D(target.x - defender.x, target.y - defender.y);
   if (distance > range + 1e-6) {
     delete defender.engaged;
-    if (stats.flying) {
+    // A concealed Royal Ghost ignores obstacles (walls and buildings) and walks straight.
+    if (stats.flying || (concealed && stealth!.ignoreObstacles)) {
       const travel = Math.min(stats.speed * activeDt, distance - range);
       defender.x += ((target.x - defender.x) / distance) * travel;
       defender.y += ((target.y - defender.y) / distance) * travel;
+      if (!stats.flying) defender.path = [];
     } else {
       if (!defender.path.length || defender.pathAt <= 0) {
         defender.path = findPath(
@@ -309,12 +400,17 @@ export function stepGarrisonDefender(
   }
   if (!defender.engaged) {
     defender.engaged = true;
-    defender.cooldown = Math.max(0, stats.firstAttackDelay - attackDt);
+    // Split timing: any post-hit recovery still running precedes the new target's windup.
+    defender.cooldown = Math.max(
+      0,
+      (stats.split ? (defender.recovery ?? 0) : 0) + stats.firstAttackDelay - attackDt,
+    );
   }
   defender.attacking = true;
   if (!stats.flying) defender.path = [];
   if (defender.cooldown > 1e-9) return;
   defender.cooldown = stats.rate;
+  if (stats.split) defender.recovery = stats.recovery;
   defender.alerted = true;
   const air = !!TROOPS[target.kind].flying;
   const damage = raged ? stats.damage * tantrum!.damageScale : stats.damage;
@@ -350,9 +446,10 @@ export function stepGarrisonDefender(
       air,
       ...(projectile ? { projectile } : {}),
       ...(longShot ? { long: true } : {}),
+      ...(stats.chain ? { chain: [] } : {}),
     });
     if (projectile) {
-      (defender.shots ??= []).push({
+      const shot: GarrisonShot = {
         n,
         projectile,
         speed: longShot ? long!.projectileSpeed : stats.projectileSpeed,
@@ -367,7 +464,22 @@ export function stepGarrisonDefender(
         air,
         damage,
         splash: stats.splash,
-      });
+      };
+      if (stats.projectileFixed) shot.fixed = true;
+      const bounce = stats.bounce;
+      const length = distance2D(target.x - defender.x, target.y - defender.y);
+      if (bounce && bounce.impacts > 1 && length > 0) {
+        // Bounce points continue along the throw from the target's launch position (older
+        // LogicCombatComponent chain shooting); `ProjectileBounces` is read as total impacts.
+        const ux = (target.x - defender.x) / length,
+          uy = (target.y - defender.y) / length;
+        shot.bounces = Array.from({ length: bounce.impacts - 1 }, (_, j) => ({
+          x: target.x + ux * bounce.spacing * (j + 1),
+          y: target.y + uy * bounce.spacing * (j + 1),
+        }));
+        shot.leg = 0;
+      }
+      (defender.shots ??= []).push(shot);
       return;
     }
     resolveHit(
@@ -382,6 +494,7 @@ export function stepGarrisonDefender(
     );
     const record = defender.attacks.at(-1)!;
     Object.assign(record, { hitAt: battle.elapsed, hitX: target.x, hitY: target.y, hit: true });
+    if (stats.chain) startChain(defender, stats, n, target, damage, battle.elapsed);
   }
   effect({
     type: 'hit',

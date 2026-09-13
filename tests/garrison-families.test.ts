@@ -128,7 +128,8 @@ it('resolves every roster level from its pinned VisualLevel row, including the d
     expect(() => garrisonStats(kind, level)).toThrow();
   expect([garrisonTroopVersion('dragon', 7), garrisonTroopVersion('balloon', 8)]).toEqual([38, 38]);
   expect(garrisonTroopVersion('dragon', 5)).toBe(44);
-  expect(garrisonTroopVersion('golem', 8)).toBeUndefined();
+  expect(garrisonTroopVersion('golem', 8)).toBe(44);
+  expect(garrisonTroopVersion('golem', 7)).toBeUndefined();
 });
 
 it('releases increasing housing, seeded order for equal housing and lowest level first', () => {
@@ -165,17 +166,10 @@ it('releases increasing housing, seeded order for equal housing and lowest level
     ).toEqual(['balloon', 'dragon']);
 });
 
-it('names every unsupported campaign member and the bunkerless Besieged roster', () => {
-  expect(campaignGarrisonIssues(56)).toEqual([]);
-  expect(campaignGarrisonIssues(67)).toEqual([]);
-  expect(campaignGarrisonIssues(72)).toEqual([]);
-  expect(campaignGarrisonIssues(77)).toEqual([]);
-  expect(campaignGarrisonIssues(69)).toEqual(['Electro Dragon 3', 'Golem 8', 'Witch 4', 'Bowler 4']);
-  expect(campaignGarrisonIssues(73)).toEqual(['No source bunker', 'Electro Dragon 3']);
-  expect(campaignGarrisonIssues(74)).toEqual(['Golden Dragon 1']);
-  expect(campaignGarrisonIssues(76)).toEqual(['Lava Hound 6']);
-  expect(campaignGarrisonIssues(83)).toEqual(['Electro Titan 2']);
-  expect(campaignGarrisonIssues(89)).toEqual(['MOMMA 1']);
+it('resolves every campaign roster, including the bunkerless Besieged roster as inert', () => {
+  // Every source roster family now has behavior; see tests/garrison-late-families.test.ts.
+  for (const index of [56, 67, 69, 72, 73, 74, 76, 77, 83, 89])
+    expect(campaignGarrisonIssues(index), `village ${index}`).toEqual([]);
 });
 
 it('Goblins path to ground troops, ignore air units and strike once per source interval', () => {

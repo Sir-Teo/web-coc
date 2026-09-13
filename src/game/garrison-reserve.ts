@@ -1,4 +1,9 @@
-import { garrisonStats, isGarrisonKind, type GarrisonKind } from './garrison-kinds';
+import {
+  garrisonStats,
+  isGarrisonKind,
+  isSpawnedGarrisonKind,
+  type GarrisonKind,
+} from './garrison-kinds';
 
 export { garrisonStats, type GarrisonKind } from './garrison-kinds';
 export interface GarrisonTroop {
@@ -50,7 +55,9 @@ export function createGarrisonReserve(
   let total = 0;
   const normalized: GarrisonTroop[] = [];
   for (const troop of troops) {
-    if (!troop || !isGarrisonKind(troop.kind)) throw new Error('Unsupported garrison troop');
+    // Secondary, summoned and trap-spawned units never occupy a bunker.
+    if (!troop || !isGarrisonKind(troop.kind) || isSpawnedGarrisonKind(troop.kind))
+      throw new Error('Unsupported garrison troop');
     garrisonStats(troop.kind, troop.level);
     if (!Number.isSafeInteger(troop.count) || troop.count <= 0)
       throw new Error('Invalid garrison troop count');

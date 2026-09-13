@@ -179,7 +179,8 @@ it('matches campaign bunkers exactly and gates new kinds, levels and bunkers by 
     expect(validateReplay(withTroops(43, troops))).toBe(false);
     expect(validateReplay(withTroops(44, troops))).toBe(true);
   }
-  expect(validateReplay(withTroops(44, [{ kind: 'golem' as never, level: 8, count: 1 }]))).toBe(false);
+  expect(validateReplay(withTroops(44, [{ kind: 'golem', level: 7, count: 1 }]))).toBe(false);
+  expect(validateReplay(withTroops(44, [{ kind: 'unknown' as never, level: 8, count: 1 }]))).toBe(false);
   // A garrison must reference an actual source bunker, never an arbitrary building.
   expect(
     validateReplay({
