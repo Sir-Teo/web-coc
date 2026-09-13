@@ -276,6 +276,20 @@ export function stepProjectiles(
     if (p.weapon === 'cannonball') recordCannonHit(battle, p);
     if (p.weapon === 'towerbomb') recordBombTowerHit(battle, p);
     if (p.weapon === 'arcane') recordWizardTowerHit(battle, p);
+    if (battle.nativeArcherTowers && nativeArcherTower(p)) {
+      battle.archerTowerHits = (battle.archerTowerHits ?? []).filter(
+        (hit) => battle.elapsed - hit.at < 2,
+      );
+      battle.archerTowerHits.push({
+        id: p.id,
+        sourceId: p.sourceId,
+        level: p.variant!,
+        at: p.impact,
+        x: p.x,
+        y: p.y,
+        air: !!p.toAir,
+      });
+    }
     emit(projectileEffect(p, 'impact'));
   }
   battle.projectiles = pending;

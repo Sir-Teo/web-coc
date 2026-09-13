@@ -2675,7 +2675,11 @@ export class VillageScene extends Phaser.Scene {
       const nativeGarrison =
         fx.sourceDefender &&
         this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
-      if (!nativeGarrison && fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
+      const nativeTowerHit =
+        fx.type === 'impact' &&
+        this.model.battle?.archerTowerHits?.some((hit) => hit.id === fx.projectileId);
+      if (!nativeGarrison && !nativeTowerHit && fx.weapon !== 'healing' && Math.random() < 0.2)
+        this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {

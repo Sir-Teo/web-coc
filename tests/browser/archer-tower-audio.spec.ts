@@ -165,3 +165,63 @@ test('native release audio overlaps, deduplicates and stops on pause', async ({ 
   expect(result.overlap).toBeGreaterThanOrEqual(2);
   expect(result).toMatchObject({ duplicate: false, speed: true, paused: 0, decoded: 9 });
 });
+
+test('recorded tower impacts use native cues without synthetic hit audio', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  const result = await page.evaluate(async () => {
+    const { scene } = window.__game;
+    const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    scene.paused = true;
+    const samples = [];
+    const originalPlay = scene.audio.play;
+    const originalRandom = Math.random;
+    const calls = [];
+    try {
+      scene.audio.play = (name) => calls.push(name);
+      Math.random = () => 0;
+      for (const level of [1, 10, 21]) {
+        const model = archerTowerBattle(level);
+        scene.model = model;
+        for (let step = 0; step < 100 && !model.battle.archerTowerHits?.length; step++)
+          model.step(0.05);
+        scene.sync();
+        const hit = model.battle.archerTowerHits[0];
+        calls.length = 0;
+        scene.effect({
+          type: 'impact',
+          projectileId: hit.id,
+          weapon: 'arrow',
+          sourceId: hit.sourceId,
+          x: 19.5,
+          y: 19.5,
+          toX: hit.x,
+          toY: hit.y,
+          toAir: hit.air,
+        });
+        if (calls.includes('hit')) throw Error('Duplicate synthetic impact audio');
+        const cues = scene.villageArcherTowers.render(
+          model.buildings,
+          0,
+          iso,
+          model.battle.elapsed,
+          true,
+          model.battle,
+        );
+        const cue = cues.find((cue) => cue.key === `archer-tower:hit:${hit.id}`);
+        if (!cue) throw Error('Native hit missing from shared presentation cues');
+        samples.push(cue.sample);
+      }
+    } finally {
+      scene.audio.play = originalPlay;
+      Math.random = originalRandom;
+    }
+    return samples;
+  });
+  expect(result).toEqual([
+    'archer-tower-generic_hit_01.ogg',
+    'archer-tower-explosive_arrow_01v2.ogg',
+    'archer-tower-explosive_arrow_01v2.ogg',
+  ]);
+});

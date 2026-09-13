@@ -366,6 +366,15 @@ export interface Battle {
   /** Latest actual release per tower; bounded presentation history for version 41+. */
   archerTowerShots?: Record<number, { at: number; x: number; y: number }>;
   archerTowerReleases?: { id: number; level: number; at: number }[];
+  archerTowerHits?: {
+    id: string;
+    sourceId: number;
+    level: number;
+    at: number;
+    x: number;
+    y: number;
+    air: boolean;
+  }[];
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;

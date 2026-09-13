@@ -54,3 +54,25 @@ export function archerTowerReleaseCues(battle?: Battle | null): SampleCue[] {
     ];
   });
 }
+
+export function archerTowerHitCues(battle?: Battle | null): SampleCue[] {
+  if (!battle?.nativeArcherTowers || battle.finished) return [];
+  return (battle.archerTowerHits ?? []).flatMap((hit) => {
+    if (battle.elapsed - hit.at >= 2) return [];
+    const effect = archerTowerSource(hit.level).HitEffect;
+    const row = (source.effects as unknown as Record<string, Record<string, string>[]>)[effect][0];
+    return [
+      {
+        key: `archer-tower:hit:${hit.id}`,
+        sample: archerTowerSample(row.Sound),
+        at: hit.at + Number(row.SoundDelay) / 1000,
+        volume: Number(row.Volume) / 100,
+        pitch:
+          (Number(row.MinPitch) +
+            (Number(row.MaxPitch) - Number(row.MinPitch)) *
+              visualRandom(hit.sourceId, Math.round(hit.at * 1000000), 6200000)) /
+          100,
+      },
+    ];
+  });
+}

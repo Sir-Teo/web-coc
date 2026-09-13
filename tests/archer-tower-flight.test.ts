@@ -160,3 +160,53 @@ it('reconstructs an in-flight arrow identically after serialization', () => {
   }
   expect(JSON.stringify(restored)).toBe(JSON.stringify(b));
 });
+
+it('records each native impact once after shooter or target death and selects the source tier sound', async () => {
+  const { archerTowerHitCues } = await import('../src/game/archer-tower-sounds');
+  for (let level = 1; level <= 21; level++) {
+    const { model, b, tower, unit } = arena(41, level);
+    model.step(0.01);
+    const p = b.projectiles![0];
+    tower.hp = 0;
+    if (level % 2 === 0) unit.hp = 0;
+    b.elapsed = p.impact + 0.01;
+    stepProjectiles(
+      b,
+      () => {},
+      () => {},
+    );
+    expect(b.archerTowerHits).toEqual([
+      { id: p.id, sourceId: tower.id, level, at: p.impact, x: p.x, y: p.y, air: false },
+    ]);
+    stepProjectiles(
+      b,
+      () => {},
+      () => {},
+    );
+    expect(b.archerTowerHits).toHaveLength(1);
+    const before = JSON.stringify(b);
+    const cues = archerTowerHitCues(b);
+    expect(cues).toHaveLength(1);
+    expect(cues[0]).toMatchObject({
+      at: p.impact,
+      volume: level < 10 ? 0.3 : 0.65,
+      sample:
+        level < 10 ? 'archer-tower-generic_hit_01.ogg' : 'archer-tower-explosive_arrow_01v2.ogg',
+    });
+    expect(cues[0].pitch).toBeGreaterThanOrEqual(level < 10 ? 0.95 : 1);
+    expect(cues[0].pitch).toBeLessThanOrEqual(level < 10 ? 1.05 : 1);
+    expect(archerTowerHitCues(JSON.parse(before))).toEqual(cues);
+    expect(JSON.stringify(b)).toBe(before);
+    b.elapsed += 2;
+    expect(archerTowerHitCues(b)).toEqual([]);
+  }
+  const { model, b } = arena(40);
+  model.step(0.01);
+  b.elapsed = 1;
+  stepProjectiles(
+    b,
+    () => {},
+    () => {},
+  );
+  expect(Object.hasOwn(b, 'archerTowerHits')).toBe(false);
+});
