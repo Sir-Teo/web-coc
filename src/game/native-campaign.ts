@@ -1,3 +1,4 @@
+import { nativeInfernoStates } from './inferno-campaign-state';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import raw from '../../reference/campaign/runtime.json';
@@ -20,6 +21,7 @@ export interface NativeStage {
   recommendedTownHall: number | null;
   allianceDefenders: unknown[];
   activeModes: unknown[];
+  infernoStates?: unknown[];
   buildings: NativePlacement[];
   traps: NativePlacement[];
   obstacles: NativePlacement[];
@@ -123,6 +125,11 @@ export function nativeCampaignIssues(index: number): string[] {
   if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
     issues.add('Garrison defenders');
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
+  try {
+    nativeInfernoStates(stage);
+  } catch {
+    issues.add('Invalid Inferno state');
+  }
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],

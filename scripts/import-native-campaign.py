@@ -152,6 +152,8 @@ runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], dependencies=s['de
                            traps=[compact_entity(b) for b in v['traps']],
                            obstacles=[compact_entity(b) for b in v['obstacles']],
                            decos=[compact_entity(b) for b in v['decos']],
+                           # Inferno false mode flags and ammo are meaningful, not inactive metadata.
+                           infernoStates=[b for b in v['buildings'] if b['data'] == 1000027],
                            # Keep active mode fields explicit; unsupported modes cannot silently vanish.
                            activeModes=[b for b in v['buildings'] + v['traps']
                                         if any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])])
