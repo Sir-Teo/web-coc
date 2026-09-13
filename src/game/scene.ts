@@ -845,10 +845,12 @@ export class VillageScene extends Phaser.Scene {
     return edges;
   }
   private nativeBuildingBounds(b: Building) {
-    if (b.kind === 'archertower' && !this.model.battle)
+    if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
       return villageArcherTowerBounds(
         b,
-        this.model.state.settings.reducedMotion ? 0 : this.renderClock / 1000,
+        this.model.state.settings.reducedMotion
+          ? 0
+          : (this.model.battle?.elapsed ?? this.renderClock / 1000),
       );
     if (b.kind === 'darkdrill')
       return darkDrillBounds(
@@ -1069,7 +1071,7 @@ export class VillageScene extends Phaser.Scene {
       );
       im.setData(
         'intactHeight',
-        b.kind === 'archertower' && !this.model.battle
+        b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers)
           ? villageArcherTowerBounds(
               { ...b, hp: 1, constructing: false, upgradeEnd: undefined },
               0,
@@ -1155,7 +1157,8 @@ export class VillageScene extends Phaser.Scene {
         this.renderRuin(b, im);
       }
       if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
-      if (b.kind === 'archertower' && !this.model.battle) im.setAlpha(0);
+      if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
+        im.setAlpha(0);
       const shouldBubble =
         !this.model.battle &&
         b.id !== this.model.moving &&
@@ -1878,8 +1881,10 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
     );
     const archerTowerCues = this.villageArcherTowers.render(
-      battle ? [] : this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
-      this.model.state.settings.reducedMotion ? 0 : this.renderClock / 1000,
+      battle && !battle.nativeArcherTowers
+        ? []
+        : this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
