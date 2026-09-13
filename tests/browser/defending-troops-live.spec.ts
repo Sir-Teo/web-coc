@@ -218,6 +218,31 @@ const VILLAGES: Village[] = [
       },
     ],
   },
+  {
+    index: 85,
+    label: 'defending-builders',
+    army: { giant: 6, archer: 10, wizard: 4 },
+    offset: [0, 0],
+    anchor: `battle.buildings.find((b) => b.kind === 'builder' && !b.npc && b.x === 32 && b.y === 28)`,
+    moments: [
+      {
+        label: 'builder-walk',
+        condition: `battle.late?.defendingBuilder?.builders.some((v) => v.path.length > 0 && v.target !== null)`,
+        focus: `(() => { const v = battle.late?.defendingBuilder?.builders.find((v) => v.path.length > 0); return v && { x: v.x, y: v.y }; })()`,
+        zoom: 3.2,
+        limit: 20,
+        required: true,
+      },
+      {
+        label: 'builder-repair',
+        condition: `battle.late?.defendingBuilder?.builders.some((v) => v.repairing && v.repairs.some((r) => r.n >= 1 && battle.elapsed - r.at >= 0 && battle.elapsed - r.at < 0.3))`,
+        focus: `(() => { const v = battle.late?.defendingBuilder?.builders.find((v) => v.repairing); return v && { x: v.x, y: v.y }; })()`,
+        zoom: 3.2,
+        limit: 20,
+        required: true,
+      },
+    ],
+  },
 ];
 
 async function open(page: Page, village: Village) {
@@ -338,16 +363,18 @@ async function capture(page: Page, village: Village, moment: Moment) {
           .filter((d) => d.kind !== 'skeleton')
           .map((d) => `${d.kind}:${Math.round(d.hp)}`),
         views: [...garrison.defenders.values()].reduce((n, v) => n + v.objects.length, 0),
+        builders: scene.children.list.filter(
+          (o: { getData?: (key: string) => unknown }) =>
+            o.getData?.('defendingBuilder') !== undefined,
+        ).length,
         glError: game.renderer.gl.getError(),
       };
     },
     { moment },
   );
-  await page
-    .locator('canvas')
-    .screenshot({
-      path: `output/playtest/defending-troops/live-${village.index}-${village.label}-${moment.label}.png`,
-    });
+  await page.locator('canvas').screenshot({
+    path: `output/playtest/defending-troops/live-${village.index}-${village.label}-${moment.label}.png`,
+  });
   return report;
 }
 
@@ -368,10 +395,11 @@ for (const village of VILLAGES)
       const [moment] = remaining.splice(index, 1);
       const report = await capture(page, village, moment);
       console.log(
-        `${village.index} ${moment.label}: met=${report.met} t=${report.elapsed.toFixed(2)} views=${report.views} ${report.defenders.join(' ')}`,
+        `${village.index} ${moment.label}: met=${report.met} t=${report.elapsed.toFixed(2)} views=${report.views} builders=${report.builders} ${report.defenders.join(' ')}`,
       );
       met.add(moment.label);
       expect(report.glError).toBe(0);
+      if (moment.label.startsWith('builder')) expect(report.builders).toBeGreaterThan(0);
     }
     for (const moment of village.moments)
       if (moment.required)

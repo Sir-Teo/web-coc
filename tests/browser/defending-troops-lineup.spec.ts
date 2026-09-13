@@ -209,3 +209,108 @@ test('renders every later garrison family idle, walking, attacking and dying on 
   expect(death.views.some((n) => n > 0)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+/** The wired Defending Builder on open ground: real steps from an armed hut to a damaged Cannon. */
+test('renders a Defending Builder walking, repairing, idle and hidden after his hut falls', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.locator('#loading').waitFor({ state: 'detached' });
+  await page.evaluate(async () => {
+    const { model, scene } = window.__game;
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { replayBattle } = await import('/src/game/replay.ts');
+    const { campaignResources } = await import('/src/game/campaign-loot.ts');
+    const { campaignStage } = await import('/src/game/campaign-catalog.ts');
+    const { emptyArmy, emptySpells } = await import('/src/game/army.ts');
+    const loot = campaignResources(campaignStage(85, 'goblin-v1'));
+    model.battle = replayBattle(
+      {
+        catalog: 'goblin-v1',
+        index: 85,
+        practice: false,
+        buildings: [makeBuilding(1, 'builder', 20, 20, 4), makeBuilding(2, 'cannon', 24, 21, 10)],
+        army: emptyArmy(),
+        spells: { ...emptySpells(), lightning: 1 },
+        troopLevels: Object.fromEntries(Object.keys(emptyArmy()).map((k) => [k, 1])) as never,
+        nextId: 100000,
+        availableLoot: loot,
+        lootRoom: loot,
+      },
+      44,
+    );
+    const battle = model.battle!;
+    battle.started = true;
+    const cannon = battle.buildings[1];
+    cannon.hp = cannon.maxHp - 120;
+    scene.paused = true;
+    scene.sync();
+  });
+  const capture = async (label: string, condition: string) => {
+    const report = await page.evaluate(
+      async ({ condition }) => {
+        const { model, scene, game } = window.__game;
+        const { iso } = await import('/src/game/scene.ts');
+        const battle = model.battle!;
+        const test = new Function('battle', 'builder', `return !!(${condition});`) as (
+          b: unknown,
+          v: unknown,
+        ) => boolean;
+        const builder = () => battle.late?.defendingBuilder?.builders[0];
+        for (let i = 0; i < 400 && !test(battle, builder()); i++) model.step(0.05);
+        const v = builder()!;
+        const point = iso(v.x, v.y);
+        scene.cameras.main.setZoom(3.2).centerOn(point.x, point.y - 30);
+        scene.sync();
+        scene.drawOverlay(performance.now());
+        return {
+          met: test(battle, v),
+          elapsed: battle.elapsed,
+          builder: {
+            x: v.x,
+            y: v.y,
+            target: v.target,
+            repairing: v.repairing,
+            path: v.path.length,
+          },
+          objects: scene.children.list.filter(
+            (o: { getData?: (key: string) => unknown }) =>
+              o.getData?.('defendingBuilder') !== undefined,
+          ).length,
+          glError: game.renderer.gl.getError(),
+        };
+      },
+      { condition },
+    );
+    await page.screenshot({
+      path: `output/playtest/defending-troops/builder-${label}.png`,
+      clip: { x: 420, y: 260, width: 600, height: 480 },
+    });
+    console.log(`builder ${label}: ${JSON.stringify(report)}`);
+    expect(report.met, label).toBe(true);
+    expect(report.glError).toBe(0);
+    return report;
+  };
+  expect(
+    (await capture('walk', `builder && builder.path.length > 0 && battle.elapsed > 0.5`)).objects,
+  ).toBeGreaterThan(0);
+  expect(
+    (await capture('repair', `builder?.repairs.some((r) => battle.elapsed - r.at >= 0.1)`)).objects,
+  ).toBeGreaterThan(0);
+  expect(
+    (
+      await capture(
+        'idle',
+        `builder && builder.target === null && battle.buildings[1].hp === battle.buildings[1].maxHp`,
+      )
+    ).objects,
+  ).toBeGreaterThan(0);
+  await page.evaluate(() => {
+    window.__game.model.battle!.buildings[0].hp = 0;
+  });
+  expect((await capture('hidden', `builder?.hiddenAt !== undefined`)).objects).toBe(0);
+  expect(errors).toEqual([]);
+});
