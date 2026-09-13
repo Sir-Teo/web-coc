@@ -48,3 +48,10 @@ Chromium and WebKit each pass desktop (1440 px) and phone (390 px) checks for al
 Already-earned amounts above the newly applied capacity are preserved through save restoration and remain collectible; new production resumes once collection creates space. This is a local migration policy, not native overflow behavior. The shared home tick's existing eight-hour offline cap remains, and HP, build cost/time and progression still need source-backed integration. Battle/replay combat behavior is unchanged by this home-production update.
 
 All 27 model/save/production tests pass, including one-hour production, every tier's cap, post-upgrade production and legacy overflow restoration. Chromium and WebKit each pass desktop and phone menu checks for all eleven source rates and capacities. The updated phone dialog was visually reviewed and production build passes.
+
+
+## Original construction prices and deadlines
+
+`dark-drill-stats.ts` now exposes validated original base-level records. Initial placement uses the source 180,000 Elixir and four-hour timer; upgrades resolve the destination level's exact source price and duration, including all eleven captured tiers. Production shares this validated lookup. Existing TH1–8 access ceilings remain in force, and HP and native world presentation are still pending.
+
+All 29 construction/production/model/save tests pass. Tests verify the complete cost/time tables and actual placement, a saved construction deadline, exact completion, the level-2 six-hour upgrade, and no duplicate charge. Chromium and WebKit each pass desktop and phone info-menu checks, including the source prices for currently available upgrades. Production build passes. Existing in-progress saved deadlines are retained rather than retroactively rescheduled.

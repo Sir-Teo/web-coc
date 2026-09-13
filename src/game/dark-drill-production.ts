@@ -1,8 +1,7 @@
-import catalog from '../../reference/dark-drill/catalog.json';
+import { darkDrillStats } from './dark-drill-stats';
 
 export function darkDrillProduction(level: number) {
-  const row = catalog.levels.find((row) => row.level === level);
-  if (!row) throw new Error(`Unsupported Dark Elixir Drill level: ${level}`);
+  const row = darkDrillStats(level);
   return {
     perHour: row.production.per100Hours / 100,
     capacity: row.production.capacity,

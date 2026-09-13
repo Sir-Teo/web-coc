@@ -1,3 +1,4 @@
+import { darkDrillStats } from './dark-drill-stats';
 import drillPortraits from '../../reference/dark-drill/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import { infernoAsset, infernoTexture } from './inferno-art';
@@ -226,12 +227,12 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 3,
     width: 110,
     hp: 900,
-    cost: 25000,
+    cost: darkDrillStats(1).cost,
     resource: 'elixir',
     category: 'Resources',
     maxLevel: 3,
     available: [0, 0, 0, 0, 0, 0, 1, 2],
-    build: 180,
+    build: darkDrillStats(1).seconds,
     singleArtwork: true,
   },
   darkstorage: {
@@ -1050,6 +1051,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  (kind === 'darkdrill' ? darkDrillStats(level + 1).seconds : undefined) ??
   (kind === 'clancastle' ? castleStats(level + 1)?.seconds : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.seconds : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.seconds : undefined) ??
@@ -1076,6 +1078,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  (kind === 'darkdrill' ? darkDrillStats(level + 1).cost : undefined) ??
   (kind === 'clancastle' ? castleStats(level + 1)?.cost : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.cost : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.cost : undefined) ??

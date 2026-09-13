@@ -27,6 +27,10 @@ for (const width of [1440, 390])
         `/assets/dark-drill-native/portrait/${level}.png`,
       );
       await page.locator('[data-action="info"]').click();
+      if (level < 3)
+        await expect(page.locator('.info-cost')).toContainText(
+          catalog.levels[level].cost.toLocaleString('en-US'),
+        );
       const production = catalog.levels[level - 1].production;
       await expect(page.locator('.info-table')).toContainText(
         `${production.per100Hours / 100} / hour`,
