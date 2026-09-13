@@ -1522,7 +1522,9 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'wizardtower' ||
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
-        (b.kind === 'cannon' && !b.npc)
+        (b.kind === 'cannon' && !b.npc) ||
+        // Late campaign families draw their own native rubble.
+        this.lateCampaign.handles(b)
       )
         continue;
       const d = BUILDINGS[b.kind];

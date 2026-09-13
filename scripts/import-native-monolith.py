@@ -41,7 +41,7 @@ PINS = {
 PREFIX = 'assets/buildings/monolith-native'
 # Source units around the export origin, at pixel density two. Every level and turret frame fits.
 PREVIEW_BOUNDS = [-90, -100, 90, 130]
-PREVIEW_DIRECTION = 225
+PREVIEW_DIRECTION = 45
 PREVIEW_VARIANT = 3
 BODY_FIELDS = ['ExportName', 'ExportNameBase', 'ExportNameConstruction', 'ExportNameBuildAnim',
                'ExportNameUpgradeAnim', 'ExportNameDamaged']

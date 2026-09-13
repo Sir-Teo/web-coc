@@ -5797,9 +5797,9 @@
       "width": 360,
       "height": 460,
       "pixelsPerNativeUnit": 2,
-      "direction": 225,
+      "direction": 45,
       "variant": 3,
-      "rgbaSha256": "799804bdf2b9275806e03d89806653841d5473e0401db946430d3f9b8eb8f708"
+      "rgbaSha256": "390615649c52e8e65d1d7224eb4b6266a3d570699631732278a7a2e53051af08"
     },
     "2": {
       "path": "assets/buildings/monolith-native/preview-2.png",
@@ -5812,9 +5812,9 @@
       "width": 360,
       "height": 460,
       "pixelsPerNativeUnit": 2,
-      "direction": 225,
+      "direction": 45,
       "variant": 3,
-      "rgbaSha256": "fedc064d3dd59a9aa4b0fd6a233ed3764a3edcde200c70e58f5f479d6a3f1408"
+      "rgbaSha256": "e49e4138be76968923706164e370b1fe9a721941119f23699b20f1f951d50b79"
     },
     "3": {
       "path": "assets/buildings/monolith-native/preview-3.png",
@@ -5827,9 +5827,9 @@
       "width": 360,
       "height": 460,
       "pixelsPerNativeUnit": 2,
-      "direction": 225,
+      "direction": 45,
       "variant": 3,
-      "rgbaSha256": "ab7e18d2d17472d411793e0e88959297827b341d2357e4b80f87de014368bc06"
+      "rgbaSha256": "340761ee5a42dce0723011826f6a049a33be8013ba336696d2b6a1cde189e71b"
     },
     "4": {
       "path": "assets/buildings/monolith-native/preview-4.png",
@@ -5842,9 +5842,9 @@
       "width": 360,
       "height": 460,
       "pixelsPerNativeUnit": 2,
-      "direction": 225,
+      "direction": 45,
       "variant": 3,
-      "rgbaSha256": "ed81f94d8c0ebe3612f78d7ea21da0df467d8d0f8b00553fe8ca597204035b93"
+      "rgbaSha256": "63b318367b7c28fcb6a5e82361c55c5fbc5459cf2fca1f0a723f4953dfef2a5f"
     },
     "5": {
       "path": "assets/buildings/monolith-native/preview-5.png",
@@ -5857,15 +5857,15 @@
       "width": 360,
       "height": 460,
       "pixelsPerNativeUnit": 2,
-      "direction": 225,
+      "direction": 45,
       "variant": 3,
-      "rgbaSha256": "e581ff8dd145723a8aed2f17a7855fff231855125e05ec29a8bb6540d0b6448b"
+      "rgbaSha256": "cde53967f6c36314cc29fda477f1b3907ccfdb664ebccc810f239a0ada3ab89f"
     }
   },
   "reconstruction": {
     "nativePlaybackVerified": false,
     "scope": "All five Monolith bodies and upgrade overlays, shared base/scaffold/ruin, three projectile tiers, every referenced particle export and eight referenced sounds.",
     "controls": "turret selects one of 16 directional attack clips across 360 source frames; d1..d16 select the attack clip phase; projectile_0..2 are the three orb tiers (min, med, max). Direction mapping and orb-tier naming are local interpretations checked against rendered views.",
-    "preview": "Base plus body at turret frame 225 with orb tier 3, frame zero, density two; registration is local."
+    "preview": "Base plus body at turret frame 45 with orb tier 3, frame zero, density two; registration is local."
   }
 }
