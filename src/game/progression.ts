@@ -13,6 +13,12 @@ import { SWEEPER_LEVELS } from './air-control-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
+  // Late single-player campaign entities are never purchasable in the TH1–8 home catalog.
+  eagleartillery: [0, 0, 0, 0, 0, 0, 0, 0],
+  scattershot: [0, 0, 0, 0, 0, 0, 0, 0],
+  monolith: [0, 0, 0, 0, 0, 0, 0, 0],
+  spelltower: [0, 0, 0, 0, 0, 0, 0, 0],
+  tornadotrap: [0, 0, 0, 0, 0, 0, 0, 0],
   inferno: [0, 0, 0, 0, 0, 0, 0, 0],
   clancastle: [0, 0, 0, 0, 0, 0, 0, 0],
   xbow: [0, 0, 0, 0, 0, 0, 0, 0],

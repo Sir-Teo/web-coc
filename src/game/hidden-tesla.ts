@@ -2,6 +2,7 @@ import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { TESLA } from './tesla-stats';
+import { lateBuildingHidden } from './late-campaign';
 
 /** Public client data: 600 hundredths of a tile; destruction threshold 50. */
 export const TESLA_TRIGGER = TESLA.trigger;
@@ -17,7 +18,12 @@ export function concealedTesla(battle: Battle, building: Building) {
 }
 
 export function targetableBuilding(battle: Battle, building: Building) {
-  return building.hp > 0 && !isTrap(building.kind) && !concealedTesla(battle, building);
+  return (
+    building.hp > 0 &&
+    !isTrap(building.kind) &&
+    !concealedTesla(battle, building) &&
+    !lateBuildingHidden(battle, building)
+  );
 }
 
 /** A Tesla stays up for the rest of this attack. Reveal invalidates offensive routes. */

@@ -8,6 +8,7 @@ import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
 import { XBOW } from './xbow-stats';
 import { resolvedCampaignGarrison } from './garrison-campaign';
+import { lateCampaignIssues, lateKey, lateNativeFields } from './late-campaign';
 
 export type NativePlacement = [data: number, x: number, y: number, level: number];
 export interface NativeStage {
@@ -22,6 +23,8 @@ export interface NativeStage {
   allianceDefenders: unknown[];
   activeModes: unknown[];
   infernoStates?: unknown[];
+  /** Late campaign weapon, ammunition and bunker selections. */
+  lateStates?: unknown[];
   buildings: NativePlacement[];
   traps: NativePlacement[];
   obstacles: NativePlacement[];
@@ -47,6 +50,18 @@ export const NATIVE_SCENERY = source.scenery;
 export const NATIVE_COMBAT = source.combat;
 const KINDS: Record<number, BuildingKind> = {
   1000001: 'townhall',
+  1000016: 'builder',
+  1000017: 'townhall',
+  1000031: 'eagleartillery',
+  1000061: 'clancastle',
+  1000062: 'camp',
+  1000067: 'scattershot',
+  1000069: 'townhall',
+  1000072: 'spelltower',
+  1000077: 'monolith',
+  12000016: 'tornadotrap',
+  12000018: 'giantbomb',
+  12000019: 'bomb',
   1000002: 'collector',
   1000003: 'elixirstorage',
   1000004: 'goldmine',
@@ -79,6 +94,13 @@ const KINDS: Record<number, BuildingKind> = {
   12000017: 'giantbomb',
 };
 const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
+  1000016: 'comm-mast',
+  1000017: 'goblin-hall',
+  1000061: 'goblin-castle',
+  1000062: 'foreboding-cave',
+  1000069: 'goblin-boss-th',
+  12000018: 'freeze-trap',
+  12000019: 'ghost-trap',
   12000017: 'shrink-trap',
   12000007: 'santa-trap',
   12000003: 'pumpkin-bomb',
@@ -151,6 +173,9 @@ export function nativeCampaignIssues(index: number): string[] {
   if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
     issues.add('Garrison defenders');
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
+  const placements = [...stage.buildings, ...stage.traps];
+  for (const issue of lateCampaignIssues(placements)) issues.add(issue);
+  for (const issue of lateNativeFields(placements, stage.lateStates ?? []).issues) issues.add(issue);
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],
@@ -187,6 +212,7 @@ export function nativeBuildings(index: number): Building[] {
   if (issues.length) throw Error(`Village is not implemented: ${issues.join(', ')}`);
   const s = NATIVE_CAMPAIGN[index];
   const modes = nativeDefenseModes(s).modes;
+  const late = lateNativeFields([...s.buildings, ...s.traps], s.lateStates ?? []).fields;
   return [...s.buildings, ...s.traps].map(([data, x, y, level], i) => {
     const npc = NPC_IDS[data],
       hp = source.combat[data].hp[level - 1];
@@ -204,6 +230,7 @@ export function nativeBuildings(index: number): Building[] {
       ...(KINDS[data] === 'xbow' ? { xbowMode: 'ground' as const } : {}),
       ...(KINDS[data] === 'skeletontrap' ? { skeletonMode: 'ground' as const } : {}),
       ...modes.get(placementKey(data, x, y, level)),
+      ...late.get(lateKey(data, x, y, level)),
     };
   });
 }

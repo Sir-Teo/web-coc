@@ -9,6 +9,7 @@ import { spawnSkeleton } from './defenders';
 import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-trap';
 import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
 import { SHRINK_TRAP, makeShrinkState, stepShrink, type ShrinkState } from './shrink-trap';
+import { isLateBuilding } from './late-campaign';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -41,6 +42,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   if (battle.finished) return false;
   let changed = false;
   for (const trap of battle.buildings) {
+    // Late campaign traps trigger in their own family phase.
+    if (isLateBuilding(trap)) continue;
     const d = battleTrapStats(trap);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
     const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;

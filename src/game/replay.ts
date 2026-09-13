@@ -1,6 +1,7 @@
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
+import { isLateBuilding, validLateBuilding } from './late-campaign';
 import {
   campaignStage,
   campaignStages,
@@ -34,8 +35,9 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 43;
-/** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
+export const REPLAY_VERSION = 44;
+/** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
+ * Version 44 adds late single-player campaign levels and entities without changing earlier rules. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -46,7 +48,20 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 40 ||
   version === 41 ||
   version === 42 ||
+  version === 43 ||
   version === REPLAY_VERSION;
+/** Ceilings before version 44 added late single-player campaign levels. */
+const PRE_LATE_CAMPAIGN_LEVELS: Readonly<Record<string, number>> = {
+  wall: 12,
+  goldstorage: 11,
+  elixirstorage: 11,
+  goldmine: 12,
+  collector: 12,
+  airdefense: 10,
+  bomb: 8,
+  giantbomb: 5,
+  airbomb: 6,
+};
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -98,6 +113,11 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 44 &&
+    s.catalog === 'goblin-v1' &&
+    s.buildings.some((b) => isLateBuilding(b) || (b.kind === 'builder' && !b.npc && b.level > 1))
+      ? { late: {} }
+      : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')
       ? { nativeInfernoAmmo: true as const }
       : {}),
@@ -280,6 +300,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
+      !validLateBuilding(b as Building, value.version, s.practice) ||
       !validInfernoAmmo(b.infernoAmmo, b.level) ||
       (b.infernoAmmo !== undefined && (b.kind !== 'inferno' || value.version < 43)) ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
@@ -293,7 +314,9 @@ export function validateReplay(value: unknown): value is ReplayData {
             ? MAX_ARCHER_TOWER_LEVEL
             : b.kind === 'darkdrill' && value.version >= 40
               ? MAX_DARK_DRILL_LEVEL
-              : d.maxLevel),
+              : value.version < 44
+                ? (PRE_LATE_CAMPAIGN_LEVELS[b.kind] ?? d.maxLevel)
+                : d.maxLevel),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||

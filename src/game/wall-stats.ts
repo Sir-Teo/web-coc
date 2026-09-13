@@ -13,6 +13,11 @@ export const WALL_LEVELS = [
   { hp: 4000, cost: 200000 },
   { hp: 5000, cost: 500000 },
   { hp: 7000, cost: 1000000 },
+  // Late single-player campaign levels (source rows 13–16); unreachable at home.
+  { hp: 8000, cost: 1500000 },
+  { hp: 9000, cost: 2000000 },
+  { hp: 10000, cost: 3000000 },
+  { hp: 11000, cost: 4000000 },
 ] as const;
 
 /** Maximum wall pieces at TH1 through TH8. Existing extras are never removed. */

@@ -25,6 +25,10 @@ export const DEFENSE_PROGRESSION = {
     { dps: 320, hp: 1210, cost: 2300000, seconds: 216000 },
     { dps: 360, hp: 1300, cost: 3400000, seconds: 259200 },
     { dps: 400, hp: 1400, cost: 5000000, seconds: 345600 },
+    // Late single-player campaign levels; the home catalog remains capped at TH8.
+    { dps: 440, hp: 1500, cost: 5600000, seconds: 388800 },
+    { dps: 500, hp: 1650, cost: 6500000, seconds: 432000 },
+    { dps: 540, hp: 1750, cost: 8000000, seconds: 518400 },
   ],
   wizardtower: WIZARD_TOWER_LEVELS,
   cannon: CANNON_LEVELS,

@@ -8,6 +8,8 @@ import {
   villageArcherTowerBounds,
 } from './archer-tower-scene';
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
+import { LateCampaignPresentation, preloadLateCampaign } from './late-campaign-scene';
+import { hasLateArt, lateArt } from './late-campaign-art';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
@@ -204,6 +206,7 @@ export class VillageScene extends Phaser.Scene {
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private teslaPresentation!: TeslaPresentation;
+  private lateCampaign!: LateCampaignPresentation;
   private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
@@ -213,6 +216,7 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    preloadLateCampaign(this);
     preloadSanta(this);
     preloadXbows(this);
     preloadDarkStorages(this);
@@ -316,6 +320,7 @@ export class VillageScene extends Phaser.Scene {
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
+    this.lateCampaign = new LateCampaignPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
@@ -350,6 +355,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
+      this.lateCampaign.destroy();
       this.bombTowerPresentation.destroy();
       this.wizardTowerPresentation.destroy();
       this.sweeperPresentation.destroy();
@@ -845,6 +851,8 @@ export class VillageScene extends Phaser.Scene {
     return edges;
   }
   private nativeBuildingBounds(b: Building) {
+    const late = this.lateCampaign.bounds(b);
+    if (late) return late;
     if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
       return villageArcherTowerBounds(
         b,
@@ -972,6 +980,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.clear();
       this.goblinBuildingPresentation.clear();
       this.teslaPresentation.clear();
+      this.lateCampaign.clear();
       this.bombTowerPresentation.clear();
       this.wizardTowerPresentation.clear();
       this.sweeperPresentation.clear();
@@ -1064,7 +1073,16 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode, b.npc, b.xbowMode)
+      this.styleBuilding(
+        im,
+        b.kind,
+        b.level,
+        b.direction,
+        b.skeletonMode,
+        b.npc,
+        b.xbowMode,
+        b.spellTowerWeapon,
+      )
         .setPosition(p.x, p.y)
         .setDepth(p.y)
         .setCrop();
@@ -1159,6 +1177,8 @@ export class VillageScene extends Phaser.Scene {
         this.renderRuin(b, im);
       }
       if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
+      // Late campaign families draw their own bodies, foundations and ruins.
+      if (this.lateCampaign.handles(b)) im.setAlpha(0);
       if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
         im.setAlpha(0);
       const shouldBubble =
@@ -1264,6 +1284,7 @@ export class VillageScene extends Phaser.Scene {
     skeletonMode: SkeletonMode = 'ground',
     npc?: NpcBuildingKind,
     xbowMode: XbowMode = 'ground',
+    spellTowerWeapon?: string,
   ) {
     if (kind === 'skeletontrap') {
       const art = skeletonTrapArt(level);
@@ -1288,8 +1309,15 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
-    const texture = buildingTexture(kind, level, direction, xbowMode);
+    const texture = buildingTexture(kind, level, direction, xbowMode, 'single', spellTowerWeapon);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (hasLateArt(kind)) {
+      const art = lateArt(kind);
+      return im
+        .setOrigin(art.originX, art.originY)
+        .setFlipX(false)
+        .setDisplaySize(art.width, art.height);
+    }
     if (kind === 'inferno') {
       const art = infernoPortrait(level);
       return im
@@ -1933,6 +1961,14 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
     );
+    const lateCues = this.lateCampaign.render({
+      buildings: this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      elapsed: battle?.elapsed ?? this.renderClock / 1000,
+      reduced: this.model.state.settings.reducedMotion,
+      iso,
+      airLift: AIR_LIFT,
+    });
     const shrinkCues = this.shrinkTrapPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,
@@ -1959,6 +1995,7 @@ export class VillageScene extends Phaser.Scene {
         ...cannonCues,
         ...garrisonSoundCues(battle),
         ...infernoSoundCues(battle),
+        ...lateCues,
       ],
       this.renderClock / 1000,
     );

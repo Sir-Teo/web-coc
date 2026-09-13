@@ -19,6 +19,10 @@ export const TRAP_LEVELS = {
     { damage: 54, cost: 230000, seconds: 7200 },
     { damage: 72, cost: 330000, seconds: 10800 },
     { damage: 92, cost: 500000, seconds: 14400 },
+    // Late single-player campaign levels (source rows 9–11).
+    { damage: 125, cost: 750000, seconds: 21600 },
+    { damage: 140, cost: 1300000, seconds: 43200 },
+    { damage: 155, cost: 2500000, seconds: 64800 },
   ],
   giantbomb: [
     { damage: 175, radius: 3, cost: 12500, seconds: 0 },
@@ -26,6 +30,10 @@ export const TRAP_LEVELS = {
     { damage: 225, radius: 3.5, cost: 220000, seconds: 10800 },
     { damage: 250, radius: 4, cost: 750000, seconds: 14400 },
     { damage: 275, radius: 4, cost: 900000, seconds: 36000 },
+    // Late single-player campaign levels (source rows 6–8).
+    { damage: 325, radius: 4, cost: 1300000, seconds: 39600 },
+    { damage: 375, radius: 4, cost: 1500000, seconds: 43200 },
+    { damage: 400, radius: 4, cost: 2000000, seconds: 86400 },
   ],
   airbomb: [
     { damage: 100, cost: 4000, seconds: 0 },
@@ -34,6 +42,11 @@ export const TRAP_LEVELS = {
     { damage: 173, cost: 300000, seconds: 14400 },
     { damage: 208, cost: 550000, seconds: 28800 },
     { damage: 232, cost: 800000, seconds: 43200 },
+    // Late single-player campaign levels (source rows 7–10).
+    { damage: 252, cost: 1000000, seconds: 50400 },
+    { damage: 280, cost: 1200000, seconds: 57600 },
+    { damage: 325, cost: 2000000, seconds: 86400 },
+    { damage: 350, cost: 3000000, seconds: 129600 },
   ],
   springtrap: [
     { damage: 0, capacity: 10, cost: 2000, seconds: 0 },

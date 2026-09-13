@@ -1,4 +1,5 @@
 import { darkDrillStats } from './dark-drill-stats';
+import { hasLateArt, lateAsset, lateTexture } from './late-campaign-art';
 import drillPortraits from '../../reference/dark-drill/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import { infernoAsset, infernoTexture } from './inferno-art';
@@ -34,6 +35,11 @@ import {
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
+  | 'eagleartillery'
+  | 'scattershot'
+  | 'monolith'
+  | 'spelltower'
+  | 'tornadotrap'
   | 'inferno'
   | 'clancastle'
   | 'xbow'
@@ -123,6 +129,94 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  // Late single-player campaign defenses. Their weapons are owned by their family modules;
+  // omitting `damage` keeps them out of the ordinary defense loop.
+  eagleartillery: {
+    name: 'Eagle Artillery',
+    description:
+      'Has nearly unlimited range and targets tough enemies with exploding shells, but only activates after many troops are deployed.',
+    size: 4,
+    width: 200,
+    hp: 4000,
+    cost: 5000000,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 7,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 345600,
+    range: 50,
+    minRange: 7,
+    rate: 10,
+    targets: 'both',
+    singleArtwork: true,
+  },
+  scattershot: {
+    name: 'Scattershot',
+    description:
+      'Heaves heavy objects at the closest attacker. The projectile breaks apart on impact and damages troops behind the target.',
+    size: 3,
+    width: 180,
+    hp: 3600,
+    cost: 8000000,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 7,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 432000,
+    range: 10,
+    minRange: 3,
+    rate: 3.228,
+    targets: 'both',
+    singleArtwork: true,
+  },
+  monolith: {
+    name: 'Monolith',
+    description: 'The stronger its target, the more damage the Monolith deals.',
+    size: 3,
+    width: 160,
+    hp: 4747,
+    cost: 200000,
+    resource: 'dark',
+    category: 'Defenses',
+    maxLevel: 5,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 604800,
+    range: 11,
+    rate: 1.5,
+    targets: 'both',
+    singleArtwork: true,
+  },
+  spelltower: {
+    name: 'Spell Tower',
+    description: 'Casts Rage, Poison or Invisibility to help nearby defenses and hinder attackers.',
+    size: 2,
+    width: 120,
+    hp: 2500,
+    cost: 9000000,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 4,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 604800,
+    range: 9,
+    targets: 'both',
+    singleArtwork: true,
+  },
+  tornadotrap: {
+    name: 'Tornado Trap',
+    description: 'Releases a vortex that draws attacking troops in and hinders their charge.',
+    size: 1,
+    width: 52,
+    hp: 1,
+    cost: 1000000,
+    resource: 'gold',
+    category: 'Traps',
+    maxLevel: 3,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 0,
+    singleArtwork: true,
+    trap: { trigger: 3, radius: 3, delay: 0, damage: 0, targets: 'ground' },
+  },
   inferno: {
     name: 'Inferno Tower',
     description: 'Locks onto one target with increasing heat, or attacks several targets at once.',
@@ -273,7 +367,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 1800,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 12,
+    // Levels 13–14 appear only in late native campaign villages.
+    maxLevel: 14,
     available: [2, 3, 4, 5, 6, 7, 7, 7],
     build: 45,
   },
@@ -286,7 +381,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 1800,
     resource: 'gold',
     category: 'Resources',
-    maxLevel: 12,
+    // Levels 13–14 appear only in late native campaign villages.
+    maxLevel: 14,
     available: [2, 3, 4, 5, 6, 7, 7, 7],
     build: 45,
   },
@@ -299,7 +395,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 4000,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 11,
+    // Levels 12–16 appear only in late native campaign villages.
+    maxLevel: 16,
     available: [1, 2, 2, 3, 3, 4, 4, 4],
     build: 90,
   },
@@ -312,7 +409,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 4000,
     resource: 'gold',
     category: 'Resources',
-    maxLevel: 11,
+    // Levels 12–16 appear only in late native campaign villages.
+    maxLevel: 16,
     available: [1, 2, 2, 3, 3, 4, 4, 4],
     build: 90,
   },
@@ -414,7 +512,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: DEFENSE_PROGRESSION.airdefense[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 10,
+    maxLevel: DEFENSE_PROGRESSION.airdefense.length,
     available: [0, 0, 0, 1, 1, 2, 3, 3],
     build: DEFENSE_PROGRESSION.airdefense[0].seconds,
     damage: 80,
@@ -555,7 +653,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: TRAP_LEVELS.bomb[0].cost,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 8,
+    maxLevel: TRAP_LEVELS.bomb.length,
     available: [0, 0, 2, 2, 4, 4, 6, 6],
     build: 0,
     singleArtwork: true,
@@ -577,7 +675,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: TRAP_LEVELS.giantbomb[0].cost,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 5,
+    maxLevel: TRAP_LEVELS.giantbomb.length,
     available: [0, 0, 0, 0, 1, 1, 2, 3],
     build: 0,
     singleArtwork: true,
@@ -599,7 +697,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: TRAP_LEVELS.airbomb[0].cost,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 6,
+    maxLevel: TRAP_LEVELS.airbomb.length,
     available: [0, 0, 0, 2, 2, 2, 2, 4],
     build: 0,
     singleArtwork: true,
@@ -643,7 +741,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: WALL_LEVELS[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 12,
+    maxLevel: WALL_LEVELS.length,
     available: WALL_COUNTS,
     build: 0,
   },
@@ -951,16 +1049,28 @@ export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
 export const isSpellKind = (kind: unknown): kind is SpellKind =>
   typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
-export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
+export const isDefense = (kind: BuildingKind) =>
+  !!BUILDINGS[kind].damage ||
+  kind === 'airsweeper' ||
+  kind === 'eagleartillery' ||
+  kind === 'scattershot' ||
+  kind === 'monolith' ||
+  kind === 'spelltower';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
-  kind === 'inferno'
-    ? 10
-    : kind === 'clancastle'
-      ? CASTLE_LEVELS[0].townhall
-      : kind === 'xbow'
-        ? XBOW_LEVELS[0].townhall
-        : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
+  kind === 'eagleartillery' || kind === 'tornadotrap'
+    ? 11
+    : kind === 'scattershot'
+      ? 13
+      : kind === 'monolith' || kind === 'spelltower'
+        ? 15
+        : kind === 'inferno'
+          ? 10
+          : kind === 'clancastle'
+            ? CASTLE_LEVELS[0].townhall
+            : kind === 'xbow'
+              ? XBOW_LEVELS[0].townhall
+              : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
   trapProgression(kind, level)?.damage ?? 0;
 export const springCapacity = (level: number) =>
@@ -985,7 +1095,9 @@ export const buildingTexture = (
   direction = 0,
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
+  spellTowerWeapon?: string,
 ) => {
+  if (hasLateArt(kind)) return lateTexture(kind, level, spellTowerWeapon);
   if (kind === 'inferno') return infernoTexture(level, infernoMode);
   if (kind === 'clancastle') return castleTexture(level);
   if (kind === 'darkstorage') return darkStorageTexture(level);
@@ -1014,7 +1126,9 @@ export const asset = (
   skeletonMode: SkeletonMode = 'ground',
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
+  spellTowerWeapon?: string,
 ) => {
+  if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);
   if (kind === 'darkdrill') {
     const portrait = drillPortraits.portraits.find((row) => row.level === level);
     if (!portrait) throw new Error(`Unsupported Dark Elixir Drill portrait: ${level}`);

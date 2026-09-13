@@ -4,6 +4,19 @@ import {
   type ArcherTowerWindup,
 } from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
+import {
+  lateBuildingDestroyed,
+  lateBuildingHidden,
+  lateCampaignPending,
+  lateDefenseBoost,
+  lateUnitHeld,
+  lateUnitTimeScale,
+  stepLateCampaign,
+  type LateBattleState,
+  type LatePhase,
+  type LateUnitState,
+  type SpellTowerWeapon,
+} from './late-campaign';
 import { validInfernoMode, type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
@@ -214,6 +227,8 @@ export interface Building {
   infernoMode?: InfernoMode;
   /** Battle setup ammunition; omitted means full capacity. Not a home inventory. */
   infernoAmmo?: number;
+  /** Campaign Spell Tower weapon selected by the source layout. */
+  spellTowerWeapon?: SpellTowerWeapon;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -326,6 +341,8 @@ export interface Unit {
   springUntil?: number;
   airPush?: AirPush;
   shrink?: ShrinkStatus;
+  /** Status applied by late single-player campaign families. */
+  late?: LateUnitState;
 }
 export interface Aura {
   kind: SpellKind;
@@ -404,6 +421,8 @@ export interface Battle {
   deathBombs?: Record<number, DeathBomb>;
   defenders?: Defender[];
   garrisons?: GarrisonState[];
+  /** Late single-player campaign family state (version 44+). */
+  late?: LateBattleState;
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
   elapsed: number;
@@ -2216,8 +2235,10 @@ export class GameModel {
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
     stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
+    this.stepLate('projectiles', dt);
     stepDeathBombs(b, this.onEffect);
     stepSpellAuras(b);
+    this.stepLate('auras', dt);
     stepKingQuakes(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
@@ -2225,18 +2246,27 @@ export class GameModel {
     stepDefenders(b, dt, this.onEffect);
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
-    const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    const knownBuildings = b.buildings.filter(
+      (v) => !concealedTesla(b, v) && !lateBuildingHidden(b, v),
+    );
     for (const u of b.units) {
       if (u.hp <= 0) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
       if (!unitDt) continue;
-      const actionDt = shrinkStepTime(u, b.elapsed, unitDt);
-      if (u.shrink) u.shrink.timeLost += unitDt - actionDt;
+      const shrunkDt = shrinkStepTime(u, b.elapsed, unitDt);
+      if (u.shrink) u.shrink.timeLost += unitDt - shrunkDt;
       if (stepAirPush(u, unitDt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
         continue;
       }
+      if (lateUnitHeld(b, u)) {
+        u.attacking = false;
+        continue;
+      }
+      // Late status effects scale both attack timers and movement, like shrinking does.
+      const lateScale = lateUnitTimeScale(b, u);
+      const actionDt = lateScale === 1 ? shrunkDt : shrunkDt * lateScale;
       const troop = TROOPS[u.kind];
       const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
@@ -2451,6 +2481,7 @@ export class GameModel {
     separateUnits(b.units, knownBuildings);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
+    this.stepLate('traps', dt);
     stepMortarShells(b, this.onEffect);
     stepInfernos(b, dt);
     for (const tower of b.buildings) {
@@ -2484,7 +2515,9 @@ export class GameModel {
         continue;
       }
       const cooling = tower.cooldown > 0;
-      tower.cooldown -= activeDt;
+      // Defensive Rage from late campaign Spell Towers; exactly one without an active cast.
+      const boost = lateDefenseBoost(b, tower);
+      tower.cooldown -= boost.rate === 1 ? activeDt : activeDt * boost.rate;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
       const targets = b.units.filter(
@@ -2506,11 +2539,12 @@ export class GameModel {
         // Carry the fraction of a frame past the deadline, so sustained fire
         // does not lose time every shot. Idle towers never accumulate a burst.
         tower.cooldown = Math.max(0, d.rate! + (cooling ? tower.cooldown : 0));
-        const power =
+        const basePower =
           tower.npc === 'tutorial-cannon'
             ? TUTORIAL_CANNON_DAMAGE
             : defenseDamage(tower.kind, tower.level) *
               (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+        const power = boost.damage === 1 ? basePower : basePower * boost.damage;
         if (tower.kind === 'tesla') {
           target.hp -= power;
           recordTeslaShot(b, tower, target);
@@ -2572,6 +2606,7 @@ export class GameModel {
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);
       }
     }
+    this.stepLate('defenses', dt);
     const king = b.units.find((u) => u.hero);
     if (king && !king.spent && king.hp <= 0 && b.hero && !b.hero.abilityUsed)
       this.activateHeroAbility(true);
@@ -2604,12 +2639,25 @@ export class GameModel {
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
+        !lateCampaignPending(b) &&
         !b.units.some((u) => u.hp > 0 && !TROOPS[u.kind].healer) &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !TROOPS[k].healer) &&
         !b.spells.lightning &&
         !(b.hero && b.hero.unitId === null))
     )
       this.finishBattle();
+  }
+  /** Late campaign families run at fixed points in each simulation step. */
+  private stepLate(phase: LatePhase, dt: number) {
+    const battle = this.battle;
+    if (!battle?.late) return;
+    stepLateCampaign({
+      battle,
+      dt,
+      phase,
+      effect: this.onEffect,
+      damageBuilding: (target, power, at) => this.damage(target, power, at),
+    });
   }
   private refreshBattleScore() {
     const b = this.battle!;
@@ -2688,6 +2736,18 @@ export class GameModel {
         this.battle.drillDestructions[b.id] ??= { at, x: b.x + 1.5, y: b.y + 1.5, level: b.level };
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
+      if (this.battle?.late)
+        lateBuildingDestroyed(
+          {
+            battle: this.battle,
+            dt: 0,
+            phase: 'defenses',
+            effect: this.onEffect,
+            damageBuilding: (target, power, time) => this.damage(target, power, time),
+          },
+          b,
+          at,
+        );
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'airsweeper') recordSweeperDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'mortar') recordMortarDestroyed(this.battle, b, at);
