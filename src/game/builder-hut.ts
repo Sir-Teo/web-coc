@@ -134,7 +134,7 @@ function stepHuts(battle: Battle, dt: number, state: BuilderHutBattleState) {
         s.readyAt = weaponTickTime(s.nextTick - 2 + Math.ceil(weapon.wakeUpMs / WEAPON_TICK_MS));
       }
       if (at < s.readyAt! - 1e-9) continue;
-      const boost = spellTowerDefenseBoost(battle, hut);
+      const boost = spellTowerDefenseBoost(battle, hut, at);
       const candidates = weaponCandidates(battle, from, weapon, at);
       const slots = [s.slot];
       for (const { target } of tickWeaponSlots(

@@ -1,10 +1,13 @@
 import { expect, it, vi } from 'vitest';
 
 // Rage from Spell Towers belongs to another family; this checks the weapons consult its hook.
+const consulted = vi.hoisted(() => [] as (number | undefined)[]);
 vi.mock('../src/game/spell-tower', async (original) => ({
   ...(await original<typeof import('../src/game/spell-tower')>()),
-  spellTowerDefenseBoost: (_: unknown, building: { id: number }) =>
-    building.id === 1000 ? { damage: 2, rate: 2 } : { damage: 1, rate: 1 },
+  spellTowerDefenseBoost: (_: unknown, building: { id: number }, at?: number) => {
+    consulted.push(at);
+    return building.id === 1000 ? { damage: 2, rate: 2 } : { damage: 1, rate: 1 };
+  },
 }));
 
 const { makeBuilding } = await import('../src/game/model');
@@ -41,4 +44,7 @@ it("applies defensive Spell Tower boosts to Builder's Hut damage and hit timers"
   const [near, far] = [15, 27].map((y) => b.units.find((u) => u.y > y - 4 && u.y < y + 4)!);
   expect(near.maxHp - near.hp).toBe(96 * boosted.hits.length);
   expect(far.maxHp - far.hp).toBe(48 * normal.hits.length);
+  // The boost is evaluated at each 64-ms combat tick, not at the end of the 50-ms sample.
+  expect(consulted.length).toBeGreaterThan(0);
+  for (const at of consulted) expect(((at! * 1000) / 64) % 1).toBeCloseTo(0, 6);
 });

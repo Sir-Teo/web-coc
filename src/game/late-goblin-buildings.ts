@@ -112,7 +112,7 @@ function stepWeapons(battle: Battle, dt: number, state: LateGoblinBuildingsBattl
         continue;
       }
       if (s.readyAt === undefined || at < s.readyAt - 1e-9) continue;
-      const boost = spellTowerDefenseBoost(battle, building);
+      const boost = spellTowerDefenseBoost(battle, building, at);
       const candidates = weaponCandidates(battle, from, weapon, at);
       for (const { slot, target } of tickWeaponSlots(
         s.slots,
