@@ -1,3 +1,5 @@
+import { infernoStats } from './inferno-weapon';
+import { infernoAsset, infernoTexture } from './inferno-art';
 import { cannonAsset, cannonTexture } from './cannon-art';
 import { CASTLE_ART, CASTLE_LEVELS, castleAsset, castleTexture, castleStats } from './castle-art';
 import { DARK_STORAGE_LEVELS, darkStorageStats } from './dark-storage-stats';
@@ -30,6 +32,7 @@ import {
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
+  | 'inferno'
   | 'clancastle'
   | 'xbow'
   | 'blacksmith'
@@ -118,6 +121,24 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  inferno: {
+    name: 'Inferno Tower',
+    description: 'Locks onto one target with increasing heat, or attacks several targets at once.',
+    size: 2,
+    width: 180,
+    hp: infernoStats(1).hp,
+    cost: infernoStats(1).cost,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 12,
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: infernoStats(1).seconds,
+    damage: infernoStats(1).weapon.dps[0] * 0.128,
+    range: 9,
+    rate: 0.128,
+    targets: 'both',
+    singleArtwork: true,
+  },
   clancastle: {
     name: 'Clan Castle',
     description: 'Houses defending reinforcements.',
@@ -931,11 +952,13 @@ export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
 export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
-  kind === 'clancastle'
-    ? CASTLE_LEVELS[0].townhall
-    : kind === 'xbow'
-      ? XBOW_LEVELS[0].townhall
-      : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
+  kind === 'inferno'
+    ? 10
+    : kind === 'clancastle'
+      ? CASTLE_LEVELS[0].townhall
+      : kind === 'xbow'
+        ? XBOW_LEVELS[0].townhall
+        : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
   trapProgression(kind, level)?.damage ?? 0;
 export const springCapacity = (level: number) =>
@@ -960,6 +983,7 @@ export const buildingTexture = (
   direction = 0,
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'inferno') return infernoTexture(level);
   if (kind === 'clancastle') return castleTexture(level);
   if (kind === 'darkstorage') return darkStorageTexture(level);
   if (kind === 'xbow') return xbowTexture(level, xbowMode);
@@ -987,6 +1011,7 @@ export const asset = (
   skeletonMode: SkeletonMode = 'ground',
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'inferno') return infernoAsset(level);
   if (kind === 'clancastle') return castleAsset(level);
   if (kind === 'darkstorage') return darkStorageAsset(level);
   if (kind === 'xbow') return xbowAsset(level, xbowMode);
@@ -1030,6 +1055,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'inferno' ? infernoStats(level).hp : undefined) ??
   (kind === 'clancastle' ? castleStats(level)?.hp : undefined) ??
   (kind === 'seekingairmine' ? 1 : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level)?.hp : undefined) ??

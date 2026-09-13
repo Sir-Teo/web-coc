@@ -1,3 +1,4 @@
+import infernoCatalog from '../../reference/inferno/catalog.json';
 import { CANNON_LEVELS, CANNON } from './cannon-stats';
 import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
 import type { BuildingKind } from './data';
@@ -8,6 +9,7 @@ import { WIZARD_TOWER_LEVELS, WIZARD_TOWER } from './wizard-tower-stats';
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
+  inferno: infernoCatalog.levels.map((row) => ({ ...row, dps: row.weapon.dps[0] })),
   bombtower: BOMB_TOWER_LEVELS,
   tesla: TESLA_LEVELS,
   airdefense: [
@@ -44,6 +46,7 @@ export const DEFENSE_PROGRESSION = {
 
 /** Normal mode; geared-up variants are not yet supported. */
 export const DEFENSE_WEAPONS = {
+  inferno: { range: 9, rate: 0.128 },
   xbow: { range: XBOW.groundRange, rate: XBOW.interval },
   bombtower: { range: BOMB_TOWER.range, rate: BOMB_TOWER.interval, splash: BOMB_TOWER.splash },
   tesla: { range: TESLA.range, rate: TESLA.interval },

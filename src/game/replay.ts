@@ -259,6 +259,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
+      b.kind === 'inferno' || // Requires the upcoming versioned Inferno battle-state contract.
       (b.kind === 'clancastle' && value.version < 37) ||
       !integer(b.level, 1, npcMaxLevel(b.npc) ?? d.maxLevel) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||

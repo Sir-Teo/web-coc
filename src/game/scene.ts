@@ -1,3 +1,5 @@
+import { preloadInfernos, InfernoPresentation } from './inferno-scene';
+import { infernoPortrait } from './inferno-art';
 import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
 import { preloadCastles, CastlePresentation } from './castle-scene';
@@ -168,6 +170,7 @@ export class VillageScene extends Phaser.Scene {
   private sweeperPresentation!: SweeperPresentation;
   private mortarPresentation!: MortarPresentation;
   private garrisonPresentation!: GarrisonPresentation;
+  private infernoPresentation!: InfernoPresentation;
   private castlePresentation!: CastlePresentation;
   private cannonPresentation!: CannonPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
@@ -206,6 +209,7 @@ export class VillageScene extends Phaser.Scene {
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     preloadGarrisonTroops(this);
     preloadCastles(this);
+    preloadInfernos(this);
     preloadCannons(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
@@ -298,6 +302,7 @@ export class VillageScene extends Phaser.Scene {
     this.mortarPresentation = new MortarPresentation(this, this.audio);
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
+    this.infernoPresentation = new InfernoPresentation(this);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -324,6 +329,7 @@ export class VillageScene extends Phaser.Scene {
       this.mortarPresentation.destroy();
       this.garrisonPresentation.clear();
       this.castlePresentation.clear();
+      this.infernoPresentation.clear();
       this.cannonPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
@@ -913,6 +919,7 @@ export class VillageScene extends Phaser.Scene {
       this.mortarPresentation.clear();
       this.garrisonPresentation.clear();
       this.castlePresentation.clear();
+      this.infernoPresentation.clear();
       this.cannonPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
@@ -1059,6 +1066,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'mortar' &&
         b.kind !== 'cannon' &&
         b.kind !== 'camp' &&
+        b.kind !== 'inferno' &&
         b.kind !== 'clancastle' &&
         b.kind !== 'xbow' &&
         b.kind !== 'darkstorage' &&
@@ -1073,7 +1081,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.hp <= 0) {
         this.renderRuin(b, im);
       }
-      if (b.kind === 'clancastle') im.setAlpha(0);
+      if (b.kind === 'clancastle' || b.kind === 'inferno') im.setAlpha(0);
       const shouldBubble =
         !this.model.battle &&
         (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
@@ -1197,6 +1205,13 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture = buildingTexture(kind, level, direction, xbowMode);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (kind === 'inferno') {
+      const art = infernoPortrait(level);
+      return im
+        .setOrigin(art.originX, art.originY + 64 / (art.height * 1.2))
+        .setFlipX(false)
+        .setDisplaySize(art.width * 1.2, art.height * 1.2);
+    }
     if (kind === 'clancastle')
       return im
         .setOrigin(CASTLE_ART.originX, CASTLE_ART.originY)
@@ -1756,6 +1771,11 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
       AIR_LIFT,
+    );
+    this.infernoPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
+      iso,
     );
     this.castlePresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),

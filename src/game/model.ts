@@ -1,3 +1,4 @@
+import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
 import {
   launchMortarShell,
@@ -364,6 +365,7 @@ export interface Battle {
   sweepers?: Record<number, SweeperState>;
   airSweepers?: Record<number, SweeperHistory>;
   xbows?: Record<number, XbowState>;
+  infernos?: Record<number, InfernoBattleState>;
   teslas?: Record<number, TeslaAttackState>;
   bombTowers?: Record<number, BombTowerAttackState>;
   wizardTowers?: Record<number, WizardTowerAttackState>;
@@ -2396,7 +2398,9 @@ export class GameModel {
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     stepMortarShells(b, this.onEffect);
+    stepInfernos(b, dt);
     for (const tower of b.buildings) {
+      if (tower.kind === 'inferno') continue;
       const d = BUILDINGS[tower.kind];
       if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
         continue;
