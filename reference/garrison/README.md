@@ -1,6 +1,8 @@
 # Campaign garrisons and Clan Castle source foundation
 
-Pinned public client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. This foundation preserves source data for the next combat integration. Campaign garrisons, the Clan Castle and clan donations are not yet enabled.
+Pinned public client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. Campaign garrisons and clan donations are not yet enabled. The runtime now supports the passive Clan Castle building, including all fourteen source tiers, original guarding/base/construction/scaffold/ruin meshes, resource targeting and Lightning immunity. Home purchase remains unavailable until the original repair and donation flow is implemented.
+
+Replay version 37 introduces the `clancastle` building kind; versions 34–36 remain playable and reject this new kind. The four historical garrison recordings still compare complete states without exclusions. The Castle scene integration is smoke-tested in Chromium and WebKit with all fourteen live tiers and a destroyed Castle. Its local ground registration uses the existing native-building scale of 1.2 and vertical anchor of 80 source units. These live smoke tests complement the original source-mesh pixel witnesses; they do not claim complete Castle combat or pixel parity of the combined live assembly.
 
 `native.json` retains original nonempty level-table fields, complete ordered NPC rows, original Castle placement records, eight global records, and the two No Flight Zone animation blocks. Animation blocks have their own headers and types; empty cells are retained, including unresolved asset references. `catalog.json` contains compact Castle progression, ten campaign rosters and the focused Dragon/Balloon combat fields.
 

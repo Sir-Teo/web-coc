@@ -175,7 +175,7 @@ try {
         await (await download).saveAs(path);
         const exported = JSON.parse(await fs.readFile(path, 'utf8'));
         expect(exported).toEqual(fixture.file);
-        expect(exported.replay.version).toBe(36);
+        expect(exported.replay.version).toBe(37);
         expect((await seek(0)).battle.seekingMines).toEqual([]);
         expect((await seek(fixture.flightAt)).battle).toEqual(flight.battle);
         await page.locator('[data-action="replay-exit"]').click();

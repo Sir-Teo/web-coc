@@ -1,3 +1,5 @@
+import { preloadCastles, CastlePresentation } from './castle-scene';
+import { CASTLE_ART } from './castle-art';
 import { CANNON_ART } from './cannon-art';
 import { preloadCannons, CannonPresentation } from './cannon-scene';
 import { cannonBounds } from './cannon-poses';
@@ -163,6 +165,7 @@ export class VillageScene extends Phaser.Scene {
   private wizardTowerPresentation!: WizardTowerPresentation;
   private sweeperPresentation!: SweeperPresentation;
   private mortarPresentation!: MortarPresentation;
+  private castlePresentation!: CastlePresentation;
   private cannonPresentation!: CannonPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
@@ -198,6 +201,7 @@ export class VillageScene extends Phaser.Scene {
     preloadSweepers(this);
     preloadMortars(this);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
+    preloadCastles(this);
     preloadCannons(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
@@ -288,6 +292,7 @@ export class VillageScene extends Phaser.Scene {
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
     this.mortarPresentation = new MortarPresentation(this, this.audio);
+    this.castlePresentation = new CastlePresentation(this);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -312,6 +317,7 @@ export class VillageScene extends Phaser.Scene {
       this.wizardTowerPresentation.destroy();
       this.sweeperPresentation.destroy();
       this.mortarPresentation.destroy();
+      this.castlePresentation.clear();
       this.cannonPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
@@ -897,6 +903,7 @@ export class VillageScene extends Phaser.Scene {
       this.wizardTowerPresentation.clear();
       this.sweeperPresentation.clear();
       this.mortarPresentation.clear();
+      this.castlePresentation.clear();
       this.cannonPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
@@ -1011,7 +1018,8 @@ export class VillageScene extends Phaser.Scene {
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
       if (
-        (b.kind === 'xbow' ||
+        (b.kind === 'clancastle' ||
+          b.kind === 'xbow' ||
           b.kind === 'darkstorage' ||
           b.kind === 'tesla' ||
           b.kind === 'bombtower' ||
@@ -1040,6 +1048,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'mortar' &&
         b.kind !== 'cannon' &&
         b.kind !== 'camp' &&
+        b.kind !== 'clancastle' &&
         b.kind !== 'xbow' &&
         b.kind !== 'darkstorage' &&
         b.kind !== 'tesla' &&
@@ -1053,6 +1062,7 @@ export class VillageScene extends Phaser.Scene {
       if (b.hp <= 0) {
         this.renderRuin(b, im);
       }
+      if (b.kind === 'clancastle') im.setAlpha(0);
       const shouldBubble =
         !this.model.battle &&
         (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
@@ -1176,6 +1186,11 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture = buildingTexture(kind, level, direction, xbowMode);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (kind === 'clancastle')
+      return im
+        .setOrigin(CASTLE_ART.originX, CASTLE_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(CASTLE_ART.width, CASTLE_ART.height);
     if (kind === 'darkstorage')
       return im
         .setOrigin(DARK_STORAGE_ART.originX, DARK_STORAGE_ART.originY)
@@ -1730,6 +1745,10 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
       AIR_LIFT,
+    );
+    this.castlePresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      iso,
     );
     const cannonCues = this.cannonPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),

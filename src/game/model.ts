@@ -2099,7 +2099,9 @@ export class GameModel {
           v.hp > 0 &&
           !isTrap(v.kind) &&
           !concealedTesla(b, v) &&
-          !['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(v.kind) &&
+          !['townhall', 'clancastle', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(
+            v.kind,
+          ) &&
           distanceTo({ x, y }, v) <= d.radius
         ) {
           this.damage(v, d.damage);

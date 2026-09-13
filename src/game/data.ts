@@ -1,4 +1,5 @@
 import { cannonAsset, cannonTexture } from './cannon-art';
+import { CASTLE_ART, CASTLE_LEVELS, castleAsset, castleTexture, castleStats } from './castle-art';
 import { DARK_STORAGE_LEVELS, darkStorageStats } from './dark-storage-stats';
 import { darkStorageAsset, darkStorageTexture } from './dark-storage-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-art';
@@ -29,6 +30,7 @@ import {
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind =
+  | 'clancastle'
   | 'xbow'
   | 'blacksmith'
   | 'herohall'
@@ -116,6 +118,21 @@ export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
   kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  clancastle: {
+    name: 'Clan Castle',
+    description: 'Houses defending reinforcements.',
+    size: 3,
+    width: CASTLE_ART.width,
+    hp: CASTLE_LEVELS[0].hp,
+    cost: CASTLE_LEVELS[0].cost,
+    resource: 'elixir',
+    category: 'Army',
+    maxLevel: CASTLE_LEVELS.length,
+    // Enemy support first. Home repair and donations require their own complete flow.
+    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    build: 0,
+    singleArtwork: true,
+  },
   xbow: {
     name: 'X-Bow',
     description:
@@ -823,6 +840,7 @@ export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
 export const SPELL_HOTKEYS = ['8', '9', '0'];
 export const isResourceBuilding = (kind: BuildingKind) =>
   [
+    'clancastle',
     'townhall',
     'goldmine',
     'collector',
@@ -913,7 +931,11 @@ export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
 export const isDefense = (kind: BuildingKind) => !!BUILDINGS[kind].damage || kind === 'airsweeper';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 export const unlockTownHall = (kind: BuildingKind) =>
-  kind === 'xbow' ? XBOW_LEVELS[0].townhall : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
+  kind === 'clancastle'
+    ? CASTLE_LEVELS[0].townhall
+    : kind === 'xbow'
+      ? XBOW_LEVELS[0].townhall
+      : BUILDINGS[kind].available.findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
   trapProgression(kind, level)?.damage ?? 0;
 export const springCapacity = (level: number) =>
@@ -938,6 +960,7 @@ export const buildingTexture = (
   direction = 0,
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'clancastle') return castleTexture(level);
   if (kind === 'darkstorage') return darkStorageTexture(level);
   if (kind === 'xbow') return xbowTexture(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapTexture('ground', level);
@@ -964,6 +987,7 @@ export const asset = (
   skeletonMode: SkeletonMode = 'ground',
   xbowMode: XbowMode = 'ground',
 ) => {
+  if (kind === 'clancastle') return castleAsset(level);
   if (kind === 'darkstorage') return darkStorageAsset(level);
   if (kind === 'xbow') return xbowAsset(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode, level);
@@ -993,6 +1017,7 @@ export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  (kind === 'clancastle' ? castleStats(level + 1)?.seconds : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.seconds : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.seconds : undefined) ??
   facilityProgression(kind, level + 1)?.seconds ??
@@ -1005,6 +1030,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'clancastle' ? castleStats(level)?.hp : undefined) ??
   (kind === 'seekingairmine' ? 1 : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level)?.hp : undefined) ??
   (kind === 'airsweeper' ? sweeperStats(level).hp : undefined) ??
@@ -1016,6 +1042,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  (kind === 'clancastle' ? castleStats(level + 1)?.cost : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.cost : undefined) ??
   (kind === 'airsweeper' ? SWEEPER_LEVELS[level]?.cost : undefined) ??
   facilityProgression(kind, level + 1)?.cost ??

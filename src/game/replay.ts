@@ -29,10 +29,10 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 36;
+export const REPLAY_VERSION = 37;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
-  version === 34 || version === 35 || version === REPLAY_VERSION;
+  version === 34 || version === 35 || version === 36 || version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -218,6 +218,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
+      (b.kind === 'clancastle' && value.version < 37) ||
       !integer(b.level, 1, npcMaxLevel(b.npc) ?? d.maxLevel) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||

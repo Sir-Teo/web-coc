@@ -1,4 +1,5 @@
 import { cannonStats } from './cannon-stats';
+import { castleStats } from './castle-art';
 import { mortarStats } from './mortar-stats';
 import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
@@ -11,6 +12,7 @@ import { SWEEPER_LEVELS } from './air-control-stats';
 
 /** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
 export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
+  clancastle: [0, 0, 0, 0, 0, 0, 0, 0],
   xbow: [0, 0, 0, 0, 0, 0, 0, 0],
   blacksmith: [0, 0, 0, 0, 0, 0, 0, 1],
   townhall: [8, 8, 8, 8, 8, 8, 8, 8],
@@ -44,6 +46,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'clancastle') return castleStats(level)?.townhall ?? null;
   if (kind === 'cannon') return cannonStats(level)?.townhall ?? null;
   if (kind === 'mortar') return mortarStats(level)?.townhall ?? null;
   if (kind === 'airsweeper') return SWEEPER_LEVELS[level - 1]?.townhall ?? null;

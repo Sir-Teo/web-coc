@@ -33,7 +33,7 @@ it.each([51, 52, 53])(
     const end = structuredClone(m.battle!);
     const parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
     expect(parsed.initial.buildings).toEqual(nativeBuildings(index));
-    expect(parsed.version).toBe(36);
+    expect(parsed.version).toBe(37);
     const viewer = new GameModel();
     const home = JSON.stringify(viewer.state);
     expect(viewer.openReplay(parsed)).toBe(true);
