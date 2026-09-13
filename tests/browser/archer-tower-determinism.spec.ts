@@ -13,7 +13,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => modules?.close());
 
-const cases = [1, 7, 10, 12];
+const cases = [1, 7, 10, 12, 15, 21];
 
 for (const fixture of cases)
   test(`complete combat state matches Node at every step: Archer Tower ${fixture}`, async ({

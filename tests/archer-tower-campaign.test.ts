@@ -6,24 +6,24 @@ import {
 } from '../src/game/native-campaign';
 import { GameModel } from '../src/game/model';
 import { BUILDINGS } from '../src/game/data';
-import { darkDrillStats } from '../src/game/dark-drill-stats';
+import { archerTowerStats } from '../src/game/archer-tower-stats';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
-it('adapts all captured Drill tiers without expanding home progression', () => {
+it('adapts all captured Archer Tower tiers without expanding home progression', () => {
   const stage = NATIVE_CAMPAIGN[0],
     original = stage.buildings;
   try {
-    for (let level = 1; level <= 11; level++) {
-      stage.buildings = [[1000023, 10, 10, level]];
+    for (let level = 1; level <= 21; level++) {
+      stage.buildings = [[1000009, 10, 10, level]];
       expect(nativeCampaignIssues(0)).toEqual([]);
       expect(nativeBuildings(0)[0]).toMatchObject({
-        kind: 'darkdrill',
+        kind: 'archertower',
         x: 12,
         y: 12,
         level,
-        hp: darkDrillStats(level).hp,
-        maxHp: darkDrillStats(level).hp,
+        hp: archerTowerStats(level).hp,
+        maxHp: archerTowerStats(level).hp,
       });
       const m = new GameModel();
       m.startCampaign(0);
@@ -33,30 +33,30 @@ it('adapts all captured Drill tiers without expanding home progression', () => {
       const replay = m.state.raidLog![0].replay!;
       expect(replay).toBeDefined();
       expect(validateReplay(JSON.parse(JSON.stringify(replay)))).toBe(true);
-      expect(validateReplay({ ...replay, version: 39 })).toBe(level <= 3);
+      expect(validateReplay({ ...replay, version: 41 })).toBe(level <= 12);
       expect(validateSave(JSON.parse(JSON.stringify(m.state)))).toBe(true);
       const viewer = new GameModel();
       expect(viewer.openReplay(JSON.parse(JSON.stringify(replay)))).toBe(true);
       expect(viewer.battle!.buildings[0]).toMatchObject({
-        kind: 'darkdrill',
+        kind: 'archertower',
         level,
-        hp: darkDrillStats(level).hp,
+        hp: archerTowerStats(level).hp,
       });
       const malformed = structuredClone(replay);
-      malformed.initial.buildings[0].level = 12;
+      malformed.initial.buildings[0].level = 22;
       expect(validateReplay(malformed)).toBe(false);
     }
-    stage.buildings = [[1000023, 10, 10, 12]];
-    expect(nativeCampaignIssues(0)).toContain('Dark Elixir Drill level 12');
+    stage.buildings = [[1000009, 10, 10, 22]];
+    expect(nativeCampaignIssues(0)).toContain('Archer Tower level 22');
     expect(() => nativeBuildings(0)).toThrow();
   } finally {
     stage.buildings = original;
   }
-  expect(BUILDINGS.darkdrill.maxLevel).toBe(3);
+  expect(BUILDINGS.archertower.maxLevel).toBe(12);
 });
-it('removes the resolved Drill blocker while retaining missing Midnight Oil defenses', () => {
-  expect(nativeCampaignIssues(58)).not.toContain('Dark Elixir Drill');
-  expect(nativeCampaignIssues(58)).toContain('Inferno Tower');
+
+it('retains the unresolved Inferno gate for Midnight Oil', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Archer Tower level 15');
+  expect(nativeCampaignIssues(58)).toContain('Inferno Tower');
   expect(() => nativeBuildings(58)).toThrow();
 });

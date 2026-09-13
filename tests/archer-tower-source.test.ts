@@ -25,5 +25,5 @@ it('preserves all original Archer Tower tiers and distinct level-15 weapon modes
   for (const row of source.levels)
     for (const key of ['Projectile', 'AltProjectile'] as const)
       expect(source.projectiles).toHaveProperty(row[key]);
-  expect(nativeCampaignIssues(58)).toContain('Archer Tower level 15');
+  expect(nativeCampaignIssues(58)).not.toContain('Archer Tower level 15');
 });

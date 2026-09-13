@@ -55,8 +55,5 @@ it('keeps mini-levels separate and preserves every effect/emitter reference befo
   expect(NATIVE_CAMPAIGN[58].name).toBe('Midnight Oil');
   expect(NATIVE_CAMPAIGN[58].buildings.filter(([id]) => id === inferno.globalId)).toHaveLength(4);
   expect(NATIVE_CAMPAIGN[58].buildings.filter(([id]) => id === drill.globalId)).toHaveLength(1);
-  expect(nativeCampaignIssues(58)).toEqual([
-    'Inferno Tower',
-    'Archer Tower level 15',
-  ]);
+  expect(nativeCampaignIssues(58)).toEqual(['Inferno Tower']);
 });

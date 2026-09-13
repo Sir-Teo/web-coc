@@ -1,3 +1,4 @@
+import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import raw from '../../reference/campaign/runtime.json';
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
@@ -134,9 +135,11 @@ export function nativeCampaignIssues(index: number): string[] {
       level >
       (npc
         ? NPC_BUILDINGS[npc].hp.length
-        : kind === 'darkdrill'
-          ? MAX_DARK_DRILL_LEVEL
-          : BUILDINGS[kind].maxLevel)
+        : kind === 'archertower'
+          ? MAX_ARCHER_TOWER_LEVEL
+          : kind === 'darkdrill'
+            ? MAX_DARK_DRILL_LEVEL
+            : BUILDINGS[kind].maxLevel)
     ) {
       issues.add(`${stats.name} level ${level}`);
       continue;

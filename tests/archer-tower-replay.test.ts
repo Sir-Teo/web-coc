@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { archerTowerBattle } from './fixtures/archer-tower-battle';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-for (const level of [1, 7, 10, 12])
+for (const level of [1, 7, 10, 12, 15, 21])
   it(`reconstructs complete level ${level} tower combat, backward seeks and home isolation`, () => {
     const model = archerTowerBattle(level),
       snapshots = new Map<number, string>();

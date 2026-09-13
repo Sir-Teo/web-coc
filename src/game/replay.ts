@@ -1,3 +1,4 @@
+import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoMode } from './inferno-weapon';
 import {
@@ -282,7 +283,11 @@ export function validateReplay(value: unknown): value is ReplayData {
         b.level,
         1,
         npcMaxLevel(b.npc) ??
-          (b.kind === 'darkdrill' && value.version >= 40 ? MAX_DARK_DRILL_LEVEL : d.maxLevel),
+          (b.kind === 'archertower' && value.version >= 42
+            ? MAX_ARCHER_TOWER_LEVEL
+            : b.kind === 'darkdrill' && value.version >= 40
+              ? MAX_DARK_DRILL_LEVEL
+              : d.maxLevel),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
