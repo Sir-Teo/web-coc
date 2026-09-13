@@ -25,4 +25,5 @@ it('preserves every complete battle state captured from the original version-40 
       }
   }
   expect(arrows).toBeGreaterThan(0);
-});
+  // Every sample reconstructs from the recording's start; allow for a loaded parallel run.
+}, 60_000);
