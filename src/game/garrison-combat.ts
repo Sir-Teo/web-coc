@@ -300,7 +300,7 @@ export function stepGarrisonDefender(
     return;
   }
   // Secondary troops and summons are pushed out first; summons then wait out SpawnIdle.
-  if (defender.push && battle.elapsed >= defender.spawnedAt && stepPush(defender, battle.elapsed))
+  if (defender.push && battle.elapsed >= defender.spawnedAt && stepPush(defender, battle.elapsed, dt))
     return;
   const activeDt = Math.min(
     dt,
@@ -376,11 +376,16 @@ export function stepGarrisonDefender(
     }
   }
   const distance = distance2D(target.x - defender.x, target.y - defender.y);
-  if (distance > range + 1e-6) {
+  // Split-timing families use the older LogicCombatComponent.IsInRange tolerance for character
+  // targets (AttackRange + 256 units, half a tile) and approach to GetAttackDist (range - 1/16
+  // tile, at least 1/16), so a slightly drifting target does not reset a long windup.
+  const reach = stats.split ? range + 0.5 : range;
+  const approach = stats.split ? Math.max(1 / 16, range - 1 / 16) : range;
+  if (distance > reach + 1e-6) {
     delete defender.engaged;
     // A concealed Royal Ghost ignores obstacles (walls and buildings) and walks straight.
     if (stats.flying || (concealed && stealth!.ignoreObstacles)) {
-      const travel = Math.min(stats.speed * activeDt, distance - range);
+      const travel = Math.min(stats.speed * activeDt, distance - approach);
       defender.x += ((target.x - defender.x) / distance) * travel;
       defender.y += ((target.y - defender.y) / distance) * travel;
       if (!stats.flying) defender.path = [];
@@ -390,7 +395,7 @@ export function stepGarrisonDefender(
           defender,
           target,
           battle.buildings.filter((b) => b.kind !== 'wall'),
-          range,
+          approach,
         );
         defender.pathAt = 0.3;
       }

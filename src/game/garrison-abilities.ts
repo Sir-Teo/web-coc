@@ -163,15 +163,18 @@ function makePush(
     limit,
   };
 }
-/** True while a spawned unit is still being pushed out; it does not act meanwhile. */
-export function stepPush(defender: GarrisonDefender, at: number) {
+/**
+ * True while a spawned unit is still being pushed out; it does not act meanwhile. The step that
+ * crosses the push end snaps to the final push position once; afterwards the unit moves freely.
+ */
+export function stepPush(defender: GarrisonDefender, at: number, dt: number) {
   const push = defender.push;
-  if (!push) return false;
+  const end = push ? push.at + push.duration : 0;
+  if (!push || at - dt >= end - EPSILON) return false;
   const fraction = pushFraction(push, at);
   defender.x = push.fromX + (push.toX - push.fromX) * fraction;
   defender.y = push.fromY + (push.toY - push.fromY) * fraction;
-  if (at + EPSILON >= push.at + push.duration) return false;
-  return true;
+  return at + EPSILON < end;
 }
 
 /**

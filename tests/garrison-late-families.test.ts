@@ -335,7 +335,9 @@ it('Lava Hounds attack ground only and burst into thirteen randomized Lava Pups'
   untilAttacks(battle, hound, 1);
   expect(hound.target).toBe(2);
   expect(hound.mode).toBe('air');
-  advance(battle, 0.3);
+  // Split families stay in range up to AttackRange + 0.5 tiles: the Hound fires from 0.75 tiles.
+  expect(Math.hypot(23 - hound.x, 20 - hound.y)).toBeCloseTo(0.75, 9);
+  advance(battle, 0.5);
   expect(hound.attacks[0]).toMatchObject({ projectile: 'hound_projectile', hit: true });
   expect(battle.units.map((u) => 50000 - u.hp)).toEqual([0, 40]);
   kill(battle, hound);
