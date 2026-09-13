@@ -293,7 +293,8 @@ it('Baby Dragons enter Tantrum only without another flying defender nearby', () 
   const run = (withAlly: boolean) => {
     const battle = fixture();
     const baby = spawnGarrisonDefender(battle, 'babydragon', 6, 1, 10, 10, 0);
-    if (withAlly) spawnGarrisonDefender(battle, 'dragon', 5, 1, 12, 12, 0).hp = 3100;
+    // A stunned Dragon still counts as a nearby flying ally but deals no damage of its own.
+    if (withAlly) spawnGarrisonDefender(battle, 'dragon', 5, 1, 12, 12, 0).stunnedUntil = 999;
     battle.units = [unit(1, 'giant', 12.2, 10, { hp: 50000, maxHp: 50000 })];
     const first = untilAttacks(battle, baby, 1);
     const second = untilAttacks(battle, baby, 2);
@@ -311,7 +312,7 @@ it('Baby Dragons enter Tantrum only without another flying defender nearby', () 
   const damage = (r: ReturnType<typeof run>) =>
     r.battle.units[0].maxHp - r.battle.units[0].hp;
   expect(damage(alone) / alone.baby.attacks.filter((a) => a.hit).length).toBe(250);
-  expect(damage(escorted) / escorted.baby.attacks.filter((a) => a.hit).length).toBeGreaterThanOrEqual(125);
+  expect(damage(escorted) / escorted.baby.attacks.filter((a) => a.hit).length).toBe(125);
 });
 
 it('lets ground attackers path to leveled garrison defenders as troop points', () => {

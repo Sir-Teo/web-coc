@@ -147,6 +147,33 @@ it('poses every family by state with source views, mirroring, scale, timing and 
   }
 });
 
+it('derives poses purely from state, including reduced motion and JSON-restored battles', () => {
+  for (const [kind, level] of FAMILIES) {
+    const battle = setup();
+    const { animation } = garrisonStats(kind, level);
+    const states = animationStates(animation);
+    const defender = spawnGarrisonDefender(battle, kind, level, 1, 10, 10, 1);
+    battle.elapsed = 3.37;
+    defender.target = 1;
+    defender.attacking = true;
+    defender.engaged = true;
+    defender.cooldown = 0.2;
+    defender.attackCount = 4;
+    const before = structuredClone(battle);
+    const pose = characterPose(defender, battle);
+    expect(battle, kind).toEqual(before);
+    const restored = JSON.parse(JSON.stringify(battle));
+    expect(characterPose(restored.defenders.at(-1), restored), kind).toEqual(pose);
+    // Reduced motion holds the looping idle/walk/attack row at frame zero; death shows its end.
+    const still = characterPose(defender, battle, true)!;
+    const row = states.attack[0].Looping === 'TRUE' ? states.attack[0] : states.idle[0];
+    expect(still.poses, kind).toEqual(source(animation, row, 2, 0, -1));
+    defender.hp = 0;
+    defender.defeatedAt = 3.3;
+    expect(leaves(characterPose(defender, battle, true)!.poses), kind).toEqual([]);
+  }
+});
+
 it('keeps fixed-view rows unmirrored and reflects directional rows by screen side', () => {
   const battle = setup();
   battle.elapsed = 2;
