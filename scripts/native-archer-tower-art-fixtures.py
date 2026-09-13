@@ -62,7 +62,7 @@ def build(family):
                 scale = min(2, *((cell - 32) / np.maximum(1, high - low)))
                 center = (cell - (high + low) * scale) / 2
                 root = np.array([[scale,0,center[0]],[0,scale,center[1]],[0,0,1]])
-            rgba = np.round(compose(sample(root), textures, cell, [48/255,65/255,53/255])*255).astype(np.uint8)
+            rgba = np.round(compose(sample(root), textures, cell, [48/255,65/255,53/255], screen_space_edges=True)*255).astype(np.uint8)
             x,y = i%8*cell, i//8*cell
             sheet.paste(Image.fromarray(rgba, 'RGBA'), (x,y))
             case.update(x=x,y=y,time=case['frame']/graph['clips'][str(id_)]['fps'],root=root[:2].reshape(-1).tolist(),

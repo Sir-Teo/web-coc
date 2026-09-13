@@ -45,13 +45,13 @@ def nodes(graph, id_, frame, matrix, multiply=None, add=None, path=None):
     return result
 
 
-def compose(poses, textures, cell, background=None):
+def compose(poses, textures, cell, background=None, *, screen_space_edges=False):
     canvas = np.zeros((cell, cell, 4), dtype=float)
     if background is not None:
         canvas[:, :, :3], canvas[:, :, 3] = background, 1
     for pose in poses:
         if 'group' in pose:
-            rgba = compose(pose['group'], textures, cell)
+            rgba = compose(pose['group'], textures, cell, screen_space_edges=screen_space_edges)
             if pose['multiply'][:3] != [1, 1, 1] or pose['add'][:3] != [0, 0, 0]:
                 alpha = rgba[:, :, 3:4]
                 straight = np.divide(rgba[:, :, :3], alpha, out=np.zeros_like(rgba[:, :, :3]), where=alpha > 0)
@@ -64,7 +64,7 @@ def compose(poses, textures, cell, background=None):
             require((xy[:, :2] >= 0).all() and (xy[:, :2] < cell).all(), 'Source fixture clips a polygon')
             rgba = np.array(rasterize([(pose['texture'], vertices, matrix,
                                       (np.array(pose['multiply']), np.array(pose['add'])))],
-                                     textures, [0, 0, cell, cell])) / 255
+                                     textures, [0, 0, cell, cell], screen_space_edges=screen_space_edges)) / 255
             rgba[:, :, :3] *= rgba[:, :, 3:4]
         alpha = rgba[:, :, 3:4]
         if pose['blend'] == 3:

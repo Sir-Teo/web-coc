@@ -334,7 +334,27 @@ def decode_sctx(data):
     return Image.frombytes('RGBA', (width, height), decoded, 'raw', 'BGRA')
 
 
-def rasterize(draws, textures, bounds):
+def screen_edge_coverage(xy, points):
+    """Top/left-inclusive coverage in screen coordinates, independent of UV winding."""
+    covered = np.zeros(points.shape[:2], dtype=bool)
+    for i in range(len(xy) - 2):
+        triangle = xy[[i, i + 1, i + 2], :2].copy()
+        a, b, c = triangle
+        area = np.cross(b - a, c - a)
+        if abs(area) < 1e-10: continue
+        if area < 0: triangle[[1, 2]] = triangle[[2, 1]]
+        inside = np.ones_like(covered)
+        for j in range(3):
+            a, b = triangle[j], triangle[(j + 1) % 3]
+            dx, dy = b - a
+            edge = dx * (points[..., 1] - a[1]) - dy * (points[..., 0] - a[0])
+            inclusive = dy < 0 or (dy == 0 and dx > 0)
+            inside &= (edge > 0) | ((edge == 0) & inclusive)
+        covered |= inside
+    return covered
+
+
+def rasterize(draws, textures, bounds, *, screen_space_edges=False):
     """Rasterize affine bitmap quads with premultiplied bilinear sampling.
 
     Pixel centers and all fractional native transforms are retained. Straight
@@ -373,6 +393,8 @@ def rasterize(draws, textures, bounds):
                 coordinates = uv[i] + local[..., :1] * (uv[i + 1] - uv[i]) + local[..., 1:2] * (uv[i + 2] - uv[i])
                 sample[selected] = coordinates[selected]
                 inside |= cover
+        if screen_space_edges:
+            inside = screen_edge_coverage(xy, points)
         texture = textures[index]
         h, w, _ = texture.shape
         sample = sample * [w, h] - .5
