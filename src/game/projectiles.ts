@@ -1,3 +1,4 @@
+import { archerTowerProjectileRow } from './archer-tower-stats';
 import { cannonProjectileRow } from './cannon-stats';
 import { recordCannonFlight, recordCannonHit } from './cannon-attack';
 import { distance2D } from './distance';
@@ -37,10 +38,10 @@ export interface CombatProjectile {
   impact: number;
   damage: number;
   splash?: number;
-  /** Native Cannon/X-Bow level or Wizard Tower projectile tier; X-Bow ammunition sequence. */
+  /** Native Cannon/Archer Tower/X-Bow level or Wizard Tower projectile tier; X-Bow ammunition sequence. */
   variant?: number;
   sequence?: number;
-  /** Actual position of a tracking Cannon shot or X-Bow bolt at the last simulation sample. */
+  /** Actual position of a tracking Cannon shot, tower arrow or X-Bow bolt at the last simulation sample. */
   flight?: { x: number; y: number; at: number };
 }
 
@@ -59,6 +60,10 @@ const SPEED: Record<Weapon, number> = {
 };
 const nativeCannon = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
   p.weapon === 'cannonball' && p.variant !== undefined;
+const nativeArcherTower = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
+  p.weapon === 'arrow' && p.variant !== undefined;
+const archerTowerSpeed = (p: Pick<CombatProjectile, 'variant'>) =>
+  Number(archerTowerProjectileRow(p.variant!).Speed) / 100;
 const cannonSpeed = (p: Pick<CombatProjectile, 'variant'>) =>
   Number(cannonProjectileRow(p.variant!).Speed) / 100;
 function xbowSpeed(p: Pick<CombatProjectile, 'variant'>) {
@@ -93,6 +98,7 @@ export function launchProjectile(
       ? 0.33
       : Math.max(
           nativeCannon(shot) ||
+            nativeArcherTower(shot) ||
             shot.weapon === 'healing' ||
             shot.weapon === 'towerbomb' ||
             shot.weapon === 'fireball' ||
@@ -103,18 +109,20 @@ export function launchProjectile(
           distance2D(shot.x - shot.fromX, shot.y - shot.fromY) /
             (nativeCannon(shot)
               ? cannonSpeed(shot)
-              : shot.weapon === 'xbowbolt'
-                ? xbowSpeed(shot)
-                : shot.weapon === 'arcane'
-                  ? wizardTowerSpeed(shot)
-                  : SPEED[shot.weapon]),
+              : nativeArcherTower(shot)
+                ? archerTowerSpeed(shot)
+                : shot.weapon === 'xbowbolt'
+                  ? xbowSpeed(shot)
+                  : shot.weapon === 'arcane'
+                    ? wizardTowerSpeed(shot)
+                    : SPEED[shot.weapon]),
         );
   const projectile: CombatProjectile = {
     ...shot,
     id: `${shot.sourceId}:${at}`,
     launched: at,
     impact: at + duration,
-    ...(shot.weapon === 'xbowbolt' || nativeCannon(shot)
+    ...(shot.weapon === 'xbowbolt' || nativeCannon(shot) || nativeArcherTower(shot)
       ? { flight: { x: shot.fromX, y: shot.fromY, at } }
       : {}),
   };
@@ -154,14 +162,19 @@ export function stepProjectiles(
   // Tracking bolts travel a bounded distance each sample. Moving a target does
   // not teleport the bolt or preserve an arrival deadline at its old position.
   for (const p of battle.projectiles ?? []) {
-    if ((p.weapon !== 'xbowbolt' && !nativeCannon(p)) || !p.flight) continue;
+    if ((p.weapon !== 'xbowbolt' && !nativeCannon(p) && !nativeArcherTower(p)) || !p.flight)
+      continue;
     const target = battle.units.find((u) => u.id === p.targetId && u.hp > 0);
     if (target) {
       p.x = target.x;
       p.y = target.y;
     }
     const distance = distance2D(p.x - p.flight.x, p.y - p.flight.y);
-    const speed = nativeCannon(p) ? cannonSpeed(p) : xbowSpeed(p);
+    const speed = nativeCannon(p)
+      ? cannonSpeed(p)
+      : nativeArcherTower(p)
+        ? archerTowerSpeed(p)
+        : xbowSpeed(p);
     p.impact = Math.max(p.launched + 0.01, p.flight.at + distance / speed);
     const fraction = distance
       ? Math.min(1, (Math.max(0, battle.elapsed - p.flight.at) * speed) / distance)

@@ -1,3 +1,4 @@
+import { trackedProjectilePoint } from './tracked-projectile-point';
 import {
   VillageArcherTowers,
   preloadVillageArcherTowers,
@@ -2792,6 +2793,16 @@ export class VillageScene extends Phaser.Scene {
     this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
+      if (p.weapon === 'arrow' && p.variant !== undefined && p.flight) {
+        this.combatEffects.poseProjectile(
+          p.id,
+          p.weapon,
+          trackedProjectilePoint(p, from, to, iso),
+          to,
+          0,
+        );
+        continue;
+      }
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
       this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }

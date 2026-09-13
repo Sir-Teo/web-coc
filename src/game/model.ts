@@ -361,6 +361,8 @@ export interface Battle {
   /** Versions 34–35 retain fixed-deadline normal Cannon shots at the previous speed. */
   legacyCannonFlight?: true;
   cannons?: Record<number, CannonAttackState>;
+  /** Version 41+ tower arrows travel at source speed while tracking the original target. */
+  nativeArcherTowers?: true;
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
@@ -2515,6 +2517,9 @@ export class GameModel {
                       ? 'arcane'
                       : 'cannonball',
             ...(tower.kind === 'cannon' && !tower.npc && !b.legacyCannonFlight
+              ? { variant: tower.level }
+              : {}),
+            ...(tower.kind === 'archertower' && b.nativeArcherTowers
               ? { variant: tower.level }
               : {}),
             ...(tower.kind === 'wizardtower'
