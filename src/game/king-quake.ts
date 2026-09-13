@@ -1,6 +1,6 @@
 import { distance2D } from './distance';
 import { EARTHQUAKE_BOOTS, equipmentBonuses } from './equipment';
-import { targetableBuilding } from './hidden-tesla';
+import { presentBuilding } from './hidden-tesla';
 import { hurtDefender } from './defenders';
 import { distanceTo, type Battle, type Building, type FX, type Unit } from './model';
 
@@ -37,7 +37,8 @@ export function stepKingQuakes(
       if (at > battle.elapsed + 1e-9) break;
       quake.pulses++;
       for (const building of battle.buildings) {
-        if (!targetableBuilding(battle, building) || distanceTo(quake, building) > radius) continue;
+        // Area pulses reach buildings concealed by late campaign Invisibility.
+        if (!presentBuilding(battle, building) || distanceTo(quake, building) > radius) continue;
         damage(
           building,
           building.kind === 'wall' ? building.hp : building.maxHp * quake.buildingFraction,

@@ -6,6 +6,8 @@ import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
+// Late campaign Spell Tower Rage and Invisibility (neutral without version 44 late state).
+import { lateDefenderHidden, lateDefenderStats } from './late-campaign';
 import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
 
 interface DefenderState {
@@ -130,7 +132,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       ),
     );
     if (activeDt <= 0) continue;
-    const stats = skeletonStats(defender.mode),
+    const stats = lateDefenderStats(battle, defender, skeletonStats(defender.mode)),
       eligible = battle.units.filter((u) => u.hp > 0 && !!TROOPS[u.kind].flying === stats.flying);
     const target =
       eligible.find((u) => u.id === defender.target) ??
@@ -225,7 +227,8 @@ export function stepAttackerVsDefenders(
       d.id === unit.defenderTarget &&
       d.hp > 0 &&
       (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-      canFight(unit, d),
+      canFight(unit, d) &&
+      !lateDefenderHidden(battle, d),
   );
   if (!target) {
     target = (battle.defenders ?? [])
@@ -235,6 +238,7 @@ export function stepAttackerVsDefenders(
           (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
           d.alerted &&
           canFight(unit, d) &&
+          !lateDefenderHidden(battle, d) &&
           distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
       )
       .sort(

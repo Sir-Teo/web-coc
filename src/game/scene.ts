@@ -45,6 +45,7 @@ import { isShrunk } from './shrink-trap';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import { xbowRange, type XbowMode } from './xbow-stats';
+import { spellTowerRange } from './spell-tower-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
@@ -738,7 +739,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = hit.id;
         this.model.changed();
         this.model.notify(
-          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'inferno' ? (hit.infernoMode === 'multi' ? 10 : 9) : hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
+          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'inferno' ? (hit.infernoMode === 'multi' ? 10 : 9) : hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : hit.kind === 'spelltower' ? spellTowerRange(hit) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }
@@ -1526,7 +1527,9 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'wizardtower' ||
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
-        (b.kind === 'cannon' && !b.npc)
+        (b.kind === 'cannon' && !b.npc) ||
+        // Late campaign families draw their own native rubble.
+        this.lateCampaign.handles(b)
       )
         continue;
       const d = BUILDINGS[b.kind];
@@ -1755,7 +1758,9 @@ export class VillageScene extends Phaser.Scene {
               : 9
             : b.kind === 'xbow'
               ? xbowRange(b.xbowMode)
-              : (d.trap?.trigger ?? d.range!);
+              : b.kind === 'spelltower'
+                ? spellTowerRange(b) // per-weapon activation range
+                : (d.trap?.trigger ?? d.range!);
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
         if (b.kind === 'airsweeper') {

@@ -11,6 +11,8 @@ import {
 import type { Defender, GarrisonDefender } from './defenders';
 import { findPath, type Battle, type FX, type Unit } from './model';
 import { applyGarrisonPoison } from './garrison-status';
+// Late campaign Spell Tower Rage (neutral without version 44 late state).
+import { lateDefenderStats } from './late-campaign';
 
 export interface GarrisonAttack {
   at: number;
@@ -203,7 +205,7 @@ export function stepGarrisonDefender(
   effect: (fx: FX) => void,
 ) {
   if (defender.kind === 'skeleton') return;
-  const stats = garrisonStats(defender.kind, defender.level);
+  const stats = lateDefenderStats(battle, defender, garrisonStats(defender.kind, defender.level));
   stepShots(battle, defender, effect);
   defender.attacking = false;
   if (defender.hp <= 0) {

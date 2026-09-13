@@ -25,6 +25,12 @@ export function targetableBuilding(battle: Battle, building: Building) {
     !lateBuildingHidden(battle, building)
   );
 }
+/** Late campaign Invisibility only blocks targeting: a concealed defense still fires and area
+ * effects still reach it; a buried Tesla does neither. Identical to `targetableBuilding`
+ * whenever no late campaign state exists. */
+export function presentBuilding(battle: Battle, building: Building) {
+  return building.hp > 0 && !isTrap(building.kind) && !concealedTesla(battle, building);
+}
 
 /** A Tesla stays up for the rest of this attack. Reveal invalidates offensive routes. */
 export function revealTeslas(battle: Battle, effect: (fx: FX) => void) {
