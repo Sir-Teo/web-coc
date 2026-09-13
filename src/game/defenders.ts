@@ -319,7 +319,8 @@ export function stepAttackerVsDefenders(
     unit.y += ((target.y - unit.y) / distance) * move;
   } else {
     if (!unit.path.length || unit.pathAt <= 0) {
-      unit.path = findPath(unit, target, buildings, stats.range);
+      // Defenders are troop points; leveled garrison defenders must not be read as footprints.
+      unit.path = findPath(unit, { x: target.x, y: target.y }, buildings, stats.range);
       unit.pathAt = 0.3;
     }
     const next = unit.path[0],

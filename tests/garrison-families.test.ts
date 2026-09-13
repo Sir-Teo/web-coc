@@ -1,7 +1,11 @@
 import { expect, it } from 'vitest';
 import catalog from '../reference/characters/catalog.json';
 import { GameModel, type Unit } from '../src/game/model';
-import { stepDefenders, type GarrisonDefender } from '../src/game/defenders';
+import {
+  stepAttackerVsDefenders,
+  stepDefenders,
+  type GarrisonDefender,
+} from '../src/game/defenders';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import {
   garrisonLongShots,
@@ -308,6 +312,32 @@ it('Baby Dragons enter Tantrum only without another flying defender nearby', () 
     r.battle.units[0].maxHp - r.battle.units[0].hp;
   expect(damage(alone) / alone.baby.attacks.filter((a) => a.hit).length).toBe(250);
   expect(damage(escorted) / escorted.baby.attacks.filter((a) => a.hit).length).toBeGreaterThanOrEqual(125);
+});
+
+it('lets ground attackers path to leveled garrison defenders as troop points', () => {
+  const battle = fixture();
+  for (const [kind, level] of [
+    ['goblin', 7],
+    ['dragon', 7],
+  ] as const) {
+    const defender = spawnGarrisonDefender(battle, kind, level, 1, 16, 10, 0);
+    defender.alerted = true;
+    const attacker = unit(1, 'archer', 10, 10);
+    battle.units = [attacker];
+    const retaliating = stepAttackerVsDefenders(
+      battle,
+      attacker,
+      { damage: 10, speed: 3, range: 3.5, rate: 1 },
+      0.05,
+      [],
+      () => {},
+      () => {},
+    );
+    expect(retaliating, kind).toBe(true);
+    expect(attacker.defenderTarget, kind).toBe(defender.id);
+    expect(attacker.path.length, kind).toBeGreaterThan(0);
+    defender.hp = 0;
+  }
 });
 
 it('keeps new-family combat, projectiles and poison deterministic through JSON restoration', () => {
