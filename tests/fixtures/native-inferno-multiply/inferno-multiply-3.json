@@ -1,0 +1,30 @@
+{
+  "category": "inferno-multiply-3",
+  "width": 2400,
+  "height": 300,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "cases": [
+    {
+      "family": "inferno",
+      "export": "witness_clip_12958",
+      "frame": 0,
+      "controls": {},
+      "x": 0,
+      "y": 0,
+      "time": 0.0,
+      "root": [
+        1.7359269722872124,
+        0.0,
+        153.38505892036724,
+        0.0,
+        1.7359269722872124,
+        127.56043182839538
+      ],
+      "empty": false,
+      "rasterEmpty": false,
+      "rgbaSha256": "0c4f98c2f76ae104f05546c6a219c1e988d6b51c0a159e56593df740fdc7c6e0"
+    }
+  ]
+}

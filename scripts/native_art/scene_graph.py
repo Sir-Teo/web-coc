@@ -11,7 +11,7 @@ from .bundle import digest
 from .sc6 import require
 
 
-def capture_graph(sc, exports, *, empty_bounds=()):
+def capture_graph(sc, exports, *, empty_bounds=(), allowed_blends=(0, 4, 8)):
     shapes, clips, matrices, colors = {}, {}, [], []
     matrix_ids, color_ids = {}, {}
     bounds = {}
@@ -42,7 +42,7 @@ def capture_graph(sc, exports, *, empty_bounds=()):
                                 for texture, vertices in sc.commands(id_)]
             return
         c = sc.clip(id_)
-        require(all(b in (0, 4, 8) for b in c['blending']), 'Unsupported scene blend')
+        require(all(b in allowed_blends for b in c['blending']), 'Unsupported scene blend')
         for child in c['children']:
             visit(child, (*ancestors, id_))
         patterns, pattern_ids, timeline = [], {}, []

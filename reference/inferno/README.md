@@ -10,7 +10,7 @@ Midnight Oil (zero-based stage 58) has four level-1 Inferno Towers and one level
 
 The pinned scene file also resolves every building and particle export. `artInventory` records original export IDs, reachable clip/shape counts and required source texture files and dimensions. Texture payload decoding and independent pixel witnesses remain the next asset step.
 
-The Inferno inventory resolves 91 building/particle exports, 134 clips and 219 shapes across source textures 8, 18, 25, 28 and 39. It contains blend modes 0, 3 and 8. **Twenty-two clips use mode 3, which the current source mesh importer/renderer does not support.** The audit preserves each affected clip ID in `unsupportedBlendClips`; it does not coerce that mode into normal or additive blending. Establishing mode 3 semantics and independent compositing witnesses is required before faithful art integration.
+The Inferno inventory resolves 91 building/particle exports, 134 clips and 219 shapes across source textures 8, 18, 25, 28 and 39. It contains blend modes 0, 3 and 8. **Twenty-two clips use mode 3, which was unsupported at source-capture time.** The audit preserves each affected clip ID in `unsupportedBlendClips`; it does not coerce that mode into normal or additive blending. Establishing mode 3 semantics and independent compositing witnesses is required before faithful art integration.
 
 Validation: deterministic `--check` reconstruction passes for both families, all 1,398 unit tests across 132 files pass, and the final source-reference/blend inventory checks pass separately. This is a source-definition and renderer-readiness step; Midnight Oil remains gated by both missing families and Archer Tower level 15.
 
@@ -24,4 +24,17 @@ For premultiplied source/destination colors Cs/Cd and alpha As/Ad, the result is
 
 Sixteen GPU cases per engine cover empty, partial and opaque backdrops; transparent, partial and opaque sources; clamped color transforms; and nested isolated groups. Chromium and WebKit match independent numerical expectations within 2/255 per channel. Direct Multiply leaves, forced single-texture batches, context restoration, repeated teardown, framebuffer counts and listener counts also pass. Existing Screen/Additive compositing tests pass, all 1,400 unit tests across 132 files pass, and the production build succeeds with 580 cached files.
 
-The capture-time `unsupportedBlendClips` inventory remains unchanged. The runtime can now compose mode 3; the Python source importer/reference compositor and original Inferno texture/frame witnesses still need corresponding support before Inferno art integration is qualified. No source art is silently relabeled or dropped.
+The capture-time `unsupportedBlendClips` inventory remains unchanged. The runtime can now compose mode 3. The following qualification adds corresponding Python composition and original level-1 frame witnesses. No source art is silently relabeled or dropped.
+
+
+## Original level-1 pixel qualification
+
+`multiply-runtime.json` contains the original `dark_tower_lvl1`, `dark_tower_lvl1_multi` and `dark_tower_base` exports: 10 clips, 20 shapes and two packed source textures. `multiply-source.json` retains the original graph and source pins. The new texture input `buildings_28.sctx` has SHA-256 `4f25555390bd05b262fd4b0eec96bf89cc97db8d2d4e862afb791f0713962f40`; every input also passes fingerprint SHA-1 membership verification.
+
+The independent Python compositor in `scripts/native_art/multiply_scene.py` evaluates premultiplied Multiply directly, including transparent intermediate groups and original color transforms. It does not reproduce the runtime's two GPU passes. Graph capture accepts Multiply only through an explicit opt-in; its historical default and older fixture producers remain unchanged.
+
+Reproduce with `OPENBLAS_NUM_THREADS=1 PYTHONPATH=scripts output/native-art-venv/bin/python scripts/native-inferno-multiply-fixtures.py --check`. The 321 cases cover 100 frames of each complete visible single/multi model cycle, the separate base, and every frame of all reachable clips. Visible 20- and 50-frame descendants combine into a 100-frame cycle; the empty 43-frame locator is checked separately. Test-only clip aliases are absent from the runtime exports.
+
+Chromium and WebKit each pass all 321 source-texture comparisons. Maximum per-case mean channel errors are 0.485713 and 0.901303 respectively, on a 0–255 scale; maximum individual channel errors are 3 and 4. No pixels exceed the 16-channel outlier threshold. Forced single-texture batching and context restoration change zero pixels, with no GL errors. The harness verifies actual framebuffer dimensions before comparing bounded pages. Visual review also compares both modes at three animation phases against their source compositions.
+
+Validation: deterministic source reconstruction, 28 Python tests, all 1,402 unit tests across 133 files, all six browser pages, and the production build pass (582 cached files). This qualifies the level-1 original-art composition under the documented format interpretation. It does not qualify all 12 tiers, live Inferno combat, world registration or native executable playback. Midnight Oil remains gated.
