@@ -58,6 +58,7 @@ describe('audited direct-projectile defense combat', () => {
         expect(defenseDamage(kind, level)).toBe(hits[kind][level - 1]);
         const { m, b, tower, u } = arena(kind, level);
         m.step(0.01);
+        if (kind === 'archertower') m.step(5 / 24);
         const shot = b.projectiles![0];
         expect(shot.sourceId).toBe(tower.id);
         expect(shot.damage).toBe(hits[kind][level - 1]);
@@ -82,6 +83,7 @@ describe('audited direct-projectile defense combat', () => {
       expect(b.projectiles).toHaveLength(0);
       u.x = center + range;
       m.step(0.01);
+      if (kind === 'archertower') m.step(5 / 24);
       expect(b.projectiles![0].targetId).toBe(u.id);
       expect(b.defenseTargets[tower.id]).toBe(u.id);
     });
@@ -110,8 +112,9 @@ describe('audited direct-projectile defense combat', () => {
       expect(b.projectiles).toHaveLength(0);
       u.x = 11;
       m.step(0.01);
+      if (kind === 'archertower') m.step(5 / 24);
       expect(b.projectiles).toHaveLength(1);
-      expect(tower.cooldown).toBe(BUILDINGS[kind].rate);
+      expect(tower.cooldown).toBeCloseTo(BUILDINGS[kind].rate);
       m.step(0.01);
       expect(b.projectiles).toHaveLength(1);
     });
@@ -125,6 +128,7 @@ describe('audited direct-projectile defense combat', () => {
         expect(b.projectiles).toHaveLength(0);
         delete tower[flag];
         m.step(0.01);
+        if (kind === 'archertower') m.step(5 / 24);
         expect(b.projectiles).toHaveLength(1);
       }
     });
@@ -150,6 +154,7 @@ describe('audited direct-projectile defense combat', () => {
     expect(cannon.b.projectiles).toHaveLength(0);
     const archer = arena('archertower', 1, 'balloon');
     archer.m.step(0.05);
+    archer.m.step(5 / 24);
     expect(archer.b.projectiles![0]).toMatchObject({
       targetId: archer.u.id,
       toAir: true,

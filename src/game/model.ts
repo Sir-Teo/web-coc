@@ -1,3 +1,8 @@
+import {
+  stepArcherTower,
+  recordArcherTowerShot,
+  type ArcherTowerWindup,
+} from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
 import { validInfernoMode, type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
@@ -363,6 +368,7 @@ export interface Battle {
   cannons?: Record<number, CannonAttackState>;
   /** Version 41+ tower arrows travel at source speed while tracking the original target. */
   nativeArcherTowers?: true;
+  archerTowerWindups?: Record<number, ArcherTowerWindup>;
   /** Latest actual release per tower; bounded presentation history for version 41+. */
   archerTowerShots?: Record<number, { at: number; x: number; y: number }>;
   archerTowerDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
@@ -2447,6 +2453,18 @@ export class GameModel {
     for (const tower of b.buildings) {
       if (tower.kind === 'inferno') continue;
       const d = BUILDINGS[tower.kind];
+      if (tower.kind === 'archertower' && b.archerTowerWindups) {
+        stepArcherTower(
+          b,
+          tower,
+          dt,
+          targetableBuilding(b, tower),
+          defenseDamage(tower.kind, tower.level) *
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+          this.onEffect,
+        );
+        continue;
+      }
       if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
         continue;
       const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
@@ -2544,17 +2562,8 @@ export class GameModel {
           },
           this.onEffect,
         );
-        if (tower.kind === 'archertower' && b.nativeArcherTowers) {
-          (b.archerTowerShots ??= {})[tower.id] = {
-            at: projectile.launched,
-            x: target.x,
-            y: target.y,
-          };
-          b.archerTowerReleases = (b.archerTowerReleases ?? []).filter(
-            (shot) => projectile.launched - shot.at < 2,
-          );
-          b.archerTowerReleases.push({ id: tower.id, level: tower.level, at: projectile.launched });
-        }
+        if (tower.kind === 'archertower' && b.nativeArcherTowers)
+          recordArcherTowerShot(b, tower, projectile);
         if (tower.kind === 'cannon' && !tower.npc) recordCannonShot(b, tower, projectile);
         if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);

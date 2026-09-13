@@ -75,6 +75,7 @@ describe('combat feedback comes from actual attacks', () => {
     const effects: FX[] = [];
     m.onEffect = (effect) => effects.push(effect);
     m.step(0.05);
+    if (kind === 'archertower') m.step(5 / 24);
     expect(target.hp).toBe(target.maxHp);
     expect(effects.find((e) => e.sourceId === defense.id)).toMatchObject({
       type: 'projectile',

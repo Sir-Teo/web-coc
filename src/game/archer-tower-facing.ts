@@ -53,6 +53,9 @@ export function battleTowerArcherPose(
     (battle.defenseStuns[tower.id] ?? 0) > battle.elapsed
   )
     return idle;
+  const pending = battle.archerTowerWindups?.[tower.id]?.pending;
+  if (pending && battle.elapsed >= pending.startedAt && battle.elapsed < pending.releaseAt)
+    return { ...idle, action: 'attack', time: battle.elapsed - pending.startedAt };
   const shot = battle.archerTowerShots?.[tower.id];
   if (!shot) return idle;
   const age = battle.elapsed - shot.at;

@@ -19,7 +19,7 @@ const setup = (): ReplaySetup => ({
   troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as ReturnType<typeof emptyArmy>,
 });
 it('records the first fatal damage time and location in version 40 battles', () => {
-  expect(REPLAY_VERSION).toBe(41);
+  expect(REPLAY_VERSION).toBe(42);
   const m = new GameModel();
   m.battle = replayBattle(setup(), 40);
   const effects: Effect[] = [];

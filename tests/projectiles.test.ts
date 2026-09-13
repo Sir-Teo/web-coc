@@ -55,9 +55,12 @@ describe('physical projectile damage', () => {
     const cannon = makeBuilding(9002, 'cannon', 1, 10);
     const archer = makeBuilding(9003, 'archertower', 5, 7);
     b.buildings.push(cannon, archer);
+    cannon.cooldown = 0.25; // Align releases after the Archer Tower draw.
+    u.springUntil = 100;
     u.hp = 1;
     u.cooldown = 100;
     m.step(0.05);
+    m.step(5 / 24);
     const shots = b.projectiles!;
     expect(shots.map((p) => p.sourceId)).toEqual([cannon.id, archer.id]);
     expect(shots[1].impact).toBeLessThan(shots[0].impact);
