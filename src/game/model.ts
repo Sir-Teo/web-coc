@@ -10,6 +10,7 @@ import {
   lateCampaignPending,
   lateDefenseBoost,
   lateUnitHeld,
+  lateUnitRooted,
   lateUnitTimeScale,
   stepLateCampaign,
   type LateBattleState,
@@ -2297,13 +2298,15 @@ export class GameModel {
             abilityRage ? (u.hero ? gear.damage : gear.summonDamage) : 1,
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
           ),
-        speed:
-          (base.speed +
-            Math.max(
-              abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
-              ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
-            )) *
-          ((poison.move === 1 ? actionDt : actionDt * poison.move) / unitDt),
+        // A late campaign vortex carries this attacker: it may attack in range but never moves itself.
+        speed: lateUnitRooted(b, u)
+          ? 0
+          : (base.speed +
+              Math.max(
+                abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
+                ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+              )) *
+            ((poison.move === 1 ? actionDt : actionDt * poison.move) / unitDt),
       };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);

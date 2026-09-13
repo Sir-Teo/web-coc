@@ -20,9 +20,11 @@ import {
 } from './eagle-artillery';
 import {
   FREEZE_TRAP_READY,
+  freezeTimeLost,
   freezeTrapDestroyed,
   freezeTrapHolds,
   freezeTrapPending,
+  isFrozen,
   stepFreezeTrap,
   type FreezeTrapBattleState,
   type FreezeTrapUnitState,
@@ -76,6 +78,7 @@ import {
   tornadoTrapDestroyed,
   tornadoTrapHolds,
   tornadoTrapPending,
+  tornadoTrapRoots,
   type TornadoTrapBattleState,
   type TornadoTrapUnitState,
 } from './tornado-trap';
@@ -171,6 +174,11 @@ export function lateBuildingDestroyed(context: LateCombatContext, building: Buil
 /** Frozen or vortex-held attackers skip their own movement and attacks this step. */
 export const lateUnitHeld = (battle: Battle, unit: Unit) =>
   freezeTrapHolds(battle, unit) || tornadoTrapHolds(battle, unit);
+/** Vortex-carried attackers still attack in range, but their own movement speed is zero. */
+export const lateUnitRooted = (battle: Battle, unit: Unit) => tornadoTrapRoots(battle, unit);
+/** Presentation only: frozen attackers are tinted and their animation clocks stop. */
+export const lateUnitFrozen = (unit: Unit, at: number) => isFrozen(unit, at);
+export const lateUnitTimeLost = (unit: Unit, at: number) => freezeTimeLost(unit, at);
 export const lateUnitTimeScale = (battle: Battle, unit: Unit) => spellTowerTimeScale(battle, unit);
 export const lateBuildingHidden = (battle: Battle, building: Building) =>
   spellTowerHidden(battle, building);

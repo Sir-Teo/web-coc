@@ -10,6 +10,8 @@ import {
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
 import { LateCampaignPresentation, preloadLateCampaign } from './late-campaign-scene';
 import { hasLateArt, lateArt } from './late-campaign-art';
+import { isLateBuilding, lateUnitFrozen, lateUnitTimeLost } from './late-campaign';
+import { FROZEN_TINT } from './freeze-trap-poses';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
@@ -2029,7 +2031,8 @@ export class VillageScene extends Phaser.Scene {
         const state = battle.traps[trap.id];
         const def = battleTrapStats(trap);
         if (!def || !state) continue;
-        if (trap.npc === 'shrink-trap') continue;
+        // Late campaign traps draw their own trigger and effect states.
+        if (trap.npc === 'shrink-trap' || isLateBuilding(trap)) continue;
         if (trap.npc === 'santa-trap') {
           this.sprites
             .get(trap.id)
@@ -2088,7 +2091,7 @@ export class VillageScene extends Phaser.Scene {
           const king = kingPose(
             u,
             target,
-            statusTime - (u.shrink?.timeLost ?? 0),
+            statusTime - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, statusTime),
             heroStats(battle.hero.level, battle.hero.townhall).rate,
             this.model.state.settings.reducedMotion,
             im.getData('kingDirection'),
@@ -2112,6 +2115,7 @@ export class VillageScene extends Phaser.Scene {
           im.setData('dying', true)
             .setData('defeatedAt', at)
             .setTint(u.ejected ? 0xffe9ae : 0xa09482)
+            .setTintMode(Phaser.TintModes.MULTIPLY)
             .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
             .setDepth(flying || u.ejected ? 7500 : p.y + 1)
             .setAngle(pose.angle)
@@ -2132,20 +2136,26 @@ export class VillageScene extends Phaser.Scene {
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
-        const animationTime = (battle.elapsed - (u.shrink?.timeLost ?? 0)) * 1000;
+        // Frozen late campaign attackers hold their current frame and hover phase.
+        const animationTime =
+          (battle.elapsed - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, battle.elapsed)) * 1000;
         if (!u.hero)
           im.setFrame(
             sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
-        if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
+        const frozen = lateUnitFrozen(u, battle.elapsed);
+        if (frozen) im.setTint(FROZEN_TINT);
+        else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
         else if (
           (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
           (u.summoned && (u.rageUntil ?? 0) > battle.elapsed)
         )
           im.setTint(0xffbd76);
         else im.clearTint();
+        // Frozen late campaign attackers brighten toward ice; other tints multiply as before.
+        im.setTintMode(frozen ? Phaser.TintModes.SCREEN : Phaser.TintModes.MULTIPLY);
         const p = iso(u.x, u.y),
           motion =
             sprung || u.hero || this.model.state.settings.reducedMotion
