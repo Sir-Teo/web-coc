@@ -80,7 +80,7 @@ import {
   walkAsset,
   type BuildingKind,
 } from './data';
-import { GameModel, type Building, type FX } from './model';
+import { GameModel, makeBuilding, type Building, type FX } from './model';
 import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
@@ -1180,6 +1180,7 @@ export class VillageScene extends Phaser.Scene {
         this.removeBubble(b.id);
       }
     }
+    if (this.model.placement !== 'darkdrill') this.darkDrillPresentation.preview(undefined);
     if (this.model.placement) {
       const level =
         this.model.moving === null
@@ -1609,6 +1610,16 @@ export class VillageScene extends Phaser.Scene {
       screen = iso(x + s / 2, y + s / 2),
       valid = this.model.canPlace(this.model.placement, x, y, this.model.moving ?? undefined);
     this.ghost.setPosition(screen.x, screen.y);
+    if (this.model.placement === 'darkdrill') {
+      this.ghost.setAlpha(0);
+      const building =
+        this.model.state.buildings.find((b) => b.id === this.model.moving) ??
+        makeBuilding(-1, 'darkdrill', x, y, 1);
+      this.darkDrillPresentation.preview(building, screen.x, screen.y, valid);
+    } else {
+      this.ghost.setAlpha(0.72);
+      this.darkDrillPresentation.preview(undefined);
+    }
     this.ghost.setTint(
       valid
         ? this.model.placement === 'wall' ||

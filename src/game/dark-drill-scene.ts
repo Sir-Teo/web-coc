@@ -19,6 +19,27 @@ export function preloadDarkDrills(scene: Phaser.Scene) {
     scene.load.binary(darkDrillSample(path), '/' + sound.path);
 }
 export class DarkDrillPresentation {
+  ghost?: NativeSceneView;
+  preview(building: Building | undefined, x = 0, y = 0, valid = true) {
+    if (!building) {
+      this.ghost?.destroy();
+      this.ghost = undefined;
+      return;
+    }
+    const poses = darkDrillBuildingPoses(building, 0).map((pose) => {
+      if ('group' in pose) throw new Error('Unexpected Drill preview blend group');
+      return valid
+        ? pose
+        : {
+            ...pose,
+            multiply: pose.multiply.map(
+              (value, i) => value * (i === 1 || i === 2 ? 0x72 / 255 : 1),
+            ),
+          };
+    });
+    this.ghost ??= new NativeSceneView(this.scene, 'darkdrill');
+    this.ghost.render(poses, x, y, 6001, 0.72);
+  }
   readonly effects = new Map<string, NativeSceneView>();
   readonly drills = new Map<number, NativeSceneView>();
   private homeSequence = 0;
@@ -38,6 +59,7 @@ export class DarkDrillPresentation {
     }
   }
   clear() {
+    this.preview(undefined);
     this.homeEvents = [];
     for (const view of this.effects.values()) view.destroy();
     this.effects.clear();
