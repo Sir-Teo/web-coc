@@ -80,6 +80,10 @@ describe.each(playable)('native combat: $name', ({ index }) => {
         b.defenders?.every(
           (d) =>
             d.kind === 'skeleton' ||
+            // Ghost Traps release Royal Ghosts; secondary troops and summons have a parent defender.
+            (d.kind === 'royalghost' &&
+              b.buildings.some((v) => v.id === d.sourceId && v.npc === 'ghost-trap')) ||
+            (d.parentId !== undefined && b.defenders!.some((p) => p.id === d.parentId)) ||
             b.garrisons?.some(
               (g) =>
                 g.castleId === d.sourceId &&
