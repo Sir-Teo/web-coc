@@ -1,3 +1,4 @@
+import { ARCHER_TOWER_LEVELS, ARCHER_TOWER } from './archer-tower-stats';
 import infernoCatalog from '../../reference/inferno/catalog.json';
 import { CANNON_LEVELS, CANNON } from './cannon-stats';
 import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
@@ -28,20 +29,7 @@ export const DEFENSE_PROGRESSION = {
   wizardtower: WIZARD_TOWER_LEVELS,
   cannon: CANNON_LEVELS,
   mortar: MORTAR_LEVELS,
-  archertower: [
-    { dps: 11, hp: 380, cost: 1000, seconds: 15 },
-    { dps: 15, hp: 420, cost: 2000, seconds: 120 },
-    { dps: 19, hp: 460, cost: 5000, seconds: 1200 },
-    { dps: 25, hp: 500, cost: 20000, seconds: 3600 },
-    { dps: 30, hp: 540, cost: 70000, seconds: 5400 },
-    { dps: 35, hp: 580, cost: 80000, seconds: 7200 },
-    { dps: 42, hp: 630, cost: 150000, seconds: 10800 },
-    { dps: 48, hp: 690, cost: 200000, seconds: 14400 },
-    { dps: 56, hp: 750, cost: 400000, seconds: 18000 },
-    { dps: 63, hp: 810, cost: 460000, seconds: 21600 },
-    { dps: 70, hp: 890, cost: 600000, seconds: 25200 },
-    { dps: 74, hp: 970, cost: 700000, seconds: 28800 },
-  ],
+  archertower: ARCHER_TOWER_LEVELS,
 } as const;
 
 /** Normal mode; geared-up variants are not yet supported. */
@@ -63,7 +51,7 @@ export const DEFENSE_WEAPONS = {
     rate: MORTAR.interval,
     splash: MORTAR.splash,
   },
-  archertower: { range: 10, rate: 0.5 },
+  archertower: { range: ARCHER_TOWER.range, rate: ARCHER_TOWER.interval },
 } as const;
 
 /** Returns a destination's stats when this defense has been audited. */
