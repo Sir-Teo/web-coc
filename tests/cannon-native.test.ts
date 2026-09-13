@@ -230,7 +230,7 @@ for (const level of [1, 8, 11, 12, 14, 15, 17, 20, 21])
 
 it('opens original High Pressure after its prerequisite and reconstructs all four level-fifteen Cannons', () => {
   expect(nativeCampaignIssues(55)).toEqual([]);
-  expect(nativeCampaignIssues(56)).toContain('Garrison defenders');
+  expect(nativeCampaignIssues(56)).toEqual([]);
   expect(nativeUnlocked(55, [])).toBe(false);
   expect(validateSave(highPressureVillage())).toBe(true);
   const m = highPressureBattle(),

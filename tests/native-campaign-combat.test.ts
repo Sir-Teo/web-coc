@@ -76,7 +76,17 @@ describe.each(playable)('native combat: $name', ({ index }) => {
       ).toBe(true);
       expect(Number.isFinite(b.destruction)).toBe(true);
       expect(b.result?.trophies).toBe(0);
-      expect(b.defenders?.every((d) => d.kind === 'skeleton') ?? true).toBe(true);
+      expect(
+        b.defenders?.every(
+          (d) =>
+            d.kind === 'skeleton' ||
+            b.garrisons?.some(
+              (g) =>
+                g.castleId === d.sourceId &&
+                g.troops.some((t) => t.kind === d.kind && t.level === d.level),
+            ),
+        ) ?? true,
+      ).toBe(true);
     },
     15000,
   );

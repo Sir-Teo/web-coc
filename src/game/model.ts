@@ -7,6 +7,7 @@ import {
 } from './mortar-attack';
 import { distance2D } from './distance';
 import { stepGarrisonReleases, type GarrisonState } from './garrison-release';
+import { campaignGarrisonSetup } from './garrison-campaign';
 import {
   recordWizardTowerShot,
   recordWizardTowerDestroyed,
@@ -1938,19 +1939,19 @@ export class GameModel {
       this.state.lastArmy = { ...this.state.army };
       this.state.lastSpells = { ...this.state.spells };
     }
+    const buildings = practice
+      ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
+      : catalog === 'goblin-v1'
+        ? nativeBuildings(index)
+        : enemyBase(index);
+    const garrisons =
+      !practice && catalog === 'goblin-v1' ? campaignGarrisonSetup(index, buildings) : undefined;
     const initial = {
+      ...(garrisons ? { garrisons } : {}),
       ...(catalog === 'goblin-v1' ? { catalog, scenery: nativeScenery(index) } : {}),
       index,
       practice,
-      buildings: practice
-        ? this.state.buildings.map((building) => ({
-            ...building,
-            hp: building.maxHp,
-            cooldown: 0,
-          }))
-        : catalog === 'goblin-v1'
-          ? nativeBuildings(index)
-          : enemyBase(index),
+      buildings,
       army: { ...this.state.army },
       spells: { ...this.state.spells },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,

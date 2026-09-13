@@ -195,5 +195,5 @@ it('preserves animation block schemas, source action frames and unresolved empty
   expect(native.globals.ENABLE_DEFENDING_ALLIANCE_TROOP_JUMP[0].BooleanValue).toBe('TRUE');
   expect(native.reconstruction.liveIntegration).toBe(false);
   expect(native.reconstruction.nativePlaybackVerified).toBe(false);
-  expect(nativeCampaignIssues(56)).toContain('Garrison defenders');
+  expect(nativeCampaignIssues(56)).toEqual([]);
 });

@@ -27,7 +27,7 @@ it('supports every original level while preserving the TH8 ceiling and remaining
   expect([4, 5, 6].map((l) => upgradeSeconds('airsweeper', l))).toEqual([86400, 172800, 259200]);
   expect([5, 6, 7].map((l) => requiredTownHall('airsweeper', l))).toEqual([9, 10, 11]);
   expect(nativeCampaignIssues(55)).toEqual([]);
-  expect(nativeCampaignIssues(56)).toEqual(['Garrison defenders', 'Clan Castle']);
+  expect(nativeCampaignIssues(56)).toEqual([]);
   for (const level of [4, 5, 6, 7]) {
     const m = new GameModel(airSweeperVillage(level));
     expect(validateSave(m.state)).toBe(true);

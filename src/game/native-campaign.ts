@@ -4,6 +4,7 @@ import { BUILD_MIN } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
 import { XBOW } from './xbow-stats';
+import { resolvedCampaignGarrison } from './garrison-campaign';
 
 export type NativePlacement = [data: number, x: number, y: number, level: number];
 export interface NativeStage {
@@ -52,6 +53,7 @@ const KINDS: Record<number, BuildingKind> = {
   1000011: 'wizardtower',
   1000012: 'airdefense',
   1000013: 'mortar',
+  1000014: 'clancastle',
   1000015: 'builder',
   1000018: 'builder',
   1000019: 'tesla',
@@ -115,7 +117,8 @@ export function nativeCampaignIssues(index: number): string[] {
   const stage = NATIVE_CAMPAIGN[index];
   if (!stage) return ['Unknown village'];
   const issues = new Set<string>();
-  if (stage.allianceDefenders.length) issues.add('Garrison defenders');
+  if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
+    issues.add('Garrison defenders');
   for (const issue of nativeDefenseModes(stage).issues) issues.add(issue);
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
