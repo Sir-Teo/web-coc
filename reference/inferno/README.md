@@ -106,3 +106,10 @@ The `inferno` building kind now uses source HP, upgrade progression, costs, Town
 Validation: the existing 1,422 tests across 138 files pass, plus three new battle/registry tests. The added tests cover dispatch across the 50-ms battle cadence, serialized-state continuation, actual model freeze/thaw damage and absence of generic projectiles. Both Chromium and WebKit pass live 12-tier/ruin rendering tests with zero GL errors, and the live screenshot was reviewed. Production build passes with 611 cached files.
 
 This is a development integration, not campaign enablement. The campaign source ID remains unmapped, and current replay validation rejects Inferno buildings until a versioned mode/state contract is added. Single/multi persistence, visible beams and sounds, ammo, exact selection bounds and full live combat browser validation remain outstanding. Tick damage currently samples unit positions available at the enclosing model step; exact native movement/combat ordering and HP quantization remain unverified. Midnight Oil remains gated by its required families/tiers.
+
+
+## Live selection and marker bounds
+
+`infernoBounds` traverses the exact rendered native poses, including isolated blend groups, and measures transformed vertices. Selection and status-marker placement now use those bounds at the displayed simulation time (frame zero for reduced motion). Projectile height metadata uses intact source geometry. The scene and bounds sampler share `INFERNO_ROOT`, eliminating duplicate registration constants. This remains rectangular hit geometry, not alpha-pixel picking, and local world registration is still unverified against native execution.
+
+Both browsers pass 48 live tier/state cases covering active, constructing, upgrading and ruined Infernos, original bounds equality, intact height metadata, inside selection and outside rejection. The six focused art/battle tests and production build pass (611 cached files). Live single-target presentation remains the currently integrated mode; replay mode support and beam effects are still outstanding.

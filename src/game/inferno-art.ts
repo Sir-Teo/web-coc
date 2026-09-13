@@ -3,6 +3,8 @@ import portraits from '../../reference/inferno/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import {
   NATIVE_IDENTITY,
+  nativeVertices,
+  type NativeScenePose,
   nativeScenePoses,
   type NativeMatrix,
   type NativeMeshGraph,
@@ -49,3 +51,30 @@ export const infernoTexture = (level: number, mode: InfernoMode = 'single') => {
 };
 export const infernoAsset = (level: number, mode: InfernoMode = 'single') =>
   `/${infernoPortrait(level, mode).path}`;
+
+/** Shared local world registration; native executable alignment remains unverified. */
+export const INFERNO_ROOT: NativeMatrix = [1.2, 0, 0, 0, 1.2, -64];
+export function infernoBounds(
+  level: number,
+  state: 'setup' | 'constructing' | 'upgrading' | 'ruin' = 'setup',
+  seconds = 0,
+) {
+  const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+  const visit = (poses: NativeScenePose[]) => {
+    for (const pose of poses) {
+      if ('group' in pose) visit(pose.group);
+      else {
+        const vertices = nativeVertices(pose);
+        for (let i = 0; i < vertices.length; i += 4) {
+          bounds[0] = Math.min(bounds[0], vertices[i]);
+          bounds[1] = Math.min(bounds[1], vertices[i + 1]);
+          bounds[2] = Math.max(bounds[2], vertices[i]);
+          bounds[3] = Math.max(bounds[3], vertices[i + 1]);
+        }
+      }
+    }
+  };
+  visit(infernoPoses(level, 'single', state === 'setup' ? 'active' : state, seconds, INFERNO_ROOT));
+  if (!bounds.every(Number.isFinite)) throw new Error('Empty original Inferno pose');
+  return bounds;
+}
