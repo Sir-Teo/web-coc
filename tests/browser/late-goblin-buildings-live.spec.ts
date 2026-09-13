@@ -289,6 +289,34 @@ test('every late Goblin building and armed hut renders natively in the five vill
   expect(errors).toEqual([]);
 });
 
+test('villages completed by the Goblin buildings start through the campaign', async ({ page }) => {
+  const errors = await boot(page);
+  for (const index of [67, 71, 72, 78, 79, 86]) {
+    const started = await page.evaluate(async (i) => {
+      const { model, scene } = window.__game;
+      const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+      scene.paused = true;
+      if (model.battle) model.returnHome();
+      model.state.nativeCampaign = freshNativeCampaign();
+      model.state.nativeCampaign.stars.fill(1);
+      model.startCampaign(i);
+      return { index: model.battle?.index, late: !!model.battle?.late };
+    }, index);
+    expect(started).toEqual({ index, late: true });
+    await page.evaluate(() => window.__lgb.render(-1));
+    const r = await report(page);
+    const goblin = r.buildings.filter((b) => b.identity !== 'builder');
+    expect(goblin.length, `village ${index}`).toBeGreaterThan(0);
+    for (const b of goblin) {
+      expect(b.handled, `${index} ${b.identity}`).toBe(true);
+      expect(b.bodyObjects, `${index} ${b.identity}`).toBeGreaterThan(0);
+    }
+    expect(r.gl).toBe(0);
+    await shot(page, `${index}-campaign-start`);
+  }
+  expect(errors).toEqual([]);
+});
+
 test('the Goblin Hall weapon wakes, fires tracked arrows and collapses in Besieged', async ({
   page,
 }) => {
