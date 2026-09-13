@@ -53,6 +53,21 @@ test('renders released original garrison troops and clamps Balloon death to its 
     const count = scene.garrisonPresentation.defenders.size;
     const visible = [...scene.garrisonPresentation.defenders.values()].map((v) => v.objects.length);
     const balloon = battle.defenders.find((d) => d.kind === 'balloon');
+    balloon.engaged = true;
+    balloon.cooldown = 0.75;
+    scene.drawOverlay(2000);
+    const windupObjects = scene.garrisonPresentation.defenders.get(balloon.id).objects.length;
+    balloon.attacks.push({
+      at: 2,
+      x: balloon.x,
+      y: balloon.y,
+      targetId: 1,
+      targetX: 12,
+      targetY: 18,
+    });
+    balloon.cooldown = 3;
+    scene.drawOverlay(2000);
+    const actionObjects = scene.garrisonPresentation.defenders.get(balloon.id).objects.length;
     hurtDefender(battle, balloon, 1000);
     scene.drawOverlay(2000);
     const deathStart = scene.garrisonPresentation.defenders.get(balloon.id).objects.length;
@@ -80,6 +95,8 @@ test('renders released original garrison troops and clamps Balloon death to its 
     scene.cameras.main.setZoom(1.3).centerOn(point.x, point.y - 60);
     return {
       count,
+      windupObjects,
+      actionObjects,
       ghostObjects,
       switchedToDeath,
       dragonTerminal,
@@ -92,6 +109,8 @@ test('renders released original garrison troops and clamps Balloon death to its 
     };
   });
   expect(report.count).toBe(4);
+  expect(report.windupObjects).toBeGreaterThan(0);
+  expect(report.actionObjects).toBeGreaterThan(0);
   expect(report.ghostObjects).toBeGreaterThan(0);
   expect(report.switchedToDeath).toBe(true);
   expect(report.dragonTerminal).toBe(0);

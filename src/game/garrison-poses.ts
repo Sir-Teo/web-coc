@@ -12,6 +12,24 @@ export const GARRISON_GRAPHS = {
 };
 const deathClip = GARRISON_GRAPHS.dragonDeath.clips[dragonDeath.exports.barbarian_death_1];
 export const DRAGON_DEATH_LAST_TIME = (deathClip.timeline.length - 1) / deathClip.fps;
+const balloonAttack = GARRISON_GRAPHS.balloon.clips[balloon.exports.balloon_lvl8_attack1];
+/** Local one-based interpretation of source ActionFrame 34 in this 34-frame clip. */
+export const BALLOON_ACTION_TIME = (balloonAttack.timeline.length - 1) / balloonAttack.fps;
+export function balloonAttackPose(defender: GarrisonDefender, elapsed: number, reduced = false) {
+  if (reduced) return null;
+  const last = defender.attacks.at(-1);
+  const since = last ? elapsed - last.at : Infinity;
+  // Retain the action pose for one source frame when the combat timer resets.
+  if (since >= 0 && since < 1 / balloonAttack.fps)
+    return { name: 'balloon_lvl8_attack1', time: BALLOON_ACTION_TIME };
+  if (!defender.engaged || defender.cooldown > BALLOON_ACTION_TIME) return null;
+  // Local alignment: preserve 24-fps sampling and end the windup at the damage event.
+  // The precharged first attack enters partway through the source clip.
+  return {
+    name: 'balloon_lvl8_attack1',
+    time: Math.max(0, BALLOON_ACTION_TIME - defender.cooldown),
+  };
+}
 /** Local world size; all source vertices, colors and nested timelines remain unchanged. */
 export const GARRISON_SCALE = 0.6;
 export function garrisonPoses(defender: GarrisonDefender, battle: Battle, reduced = false) {
@@ -55,11 +73,10 @@ export function garrisonPoses(defender: GarrisonDefender, battle: Battle, reduce
       ? 10 / 24
       : Math.min(10 / 24, Math.max(0, battle.elapsed - (defender.defeatedAt ?? battle.elapsed)));
   } else {
-    const shot = defender.attacks.at(-1);
-    const since = shot ? battle.elapsed - shot.at : Infinity;
-    if (!reduced && since >= 0 && since < 34 / 24) {
-      name = 'balloon_lvl8_attack1';
-      time = since;
+    const attack = balloonAttackPose(defender, battle.elapsed, reduced);
+    if (attack) {
+      name = attack.name;
+      time = attack.time;
     } else name = 'balloon_lvl8_idle1';
   }
   const s = GARRISON_SCALE;
