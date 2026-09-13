@@ -62,10 +62,10 @@ describe('native Santa Trap', () => {
     for (let pass = 0; pass < 90; pass++)
       for (let i = 0; i < 90; i++)
         if (!nativeCampaignIssues(i).length && nativeUnlocked(i, stars)) stars[i] = 1;
-    expect(stars.flatMap((s, i) => (s ? [i] : []))).toEqual([
-      ...Array.from({ length: 61 }, (_, i) => i),
-      62,
-    ]);
+    // Late families open villages 61–66; Pick Your Poison and Paper Map wait behind 67 and 69.
+    expect(stars.flatMap((s, i) => (s ? [i] : []))).toEqual(
+      Array.from({ length: 67 }, (_, i) => i),
+    );
     expect(NATIVE_CAMPAIGN[37].name).toBe('Goblin Picnic');
     expect(battleTrapStats(makeNpcBuilding(1, 'santa-trap', 1, 1))).toMatchObject(SANTA_TRAP);
     expect(trapDamage('bomb', 1)).toBe(20);

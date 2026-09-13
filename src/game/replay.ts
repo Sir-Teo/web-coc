@@ -236,7 +236,8 @@ export function validateReplay(value: unknown): value is ReplayData {
         (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
     !s.buildings.length ||
-    s.buildings.length > (value.version >= 27 ? 600 : 400)
+    // Version 44 admits complete late villages (Underground Workaround has 820 source entities).
+    s.buildings.length > (value.version >= 44 ? 1000 : value.version >= 27 ? 600 : 400)
   )
     return false;
   if (
