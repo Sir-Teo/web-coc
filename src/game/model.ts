@@ -28,6 +28,7 @@ import {
 } from './mortar-attack';
 import { distance2D } from './distance';
 import { stepGarrisonReleases, type GarrisonState } from './garrison-release';
+import { garrisonUnitScales } from './garrison-status';
 import { campaignGarrisonSetup } from './garrison-campaign';
 import {
   recordWizardTowerShot,
@@ -2267,12 +2268,14 @@ export class GameModel {
       // Late status effects scale both attack timers and movement, like shrinking does.
       const lateScale = lateUnitTimeScale(b, u);
       const actionDt = lateScale === 1 ? shrunkDt : shrunkDt * lateScale;
+      // Garrison Headhunter poison slows movement and attack timers by separate source percentages.
+      const poison = garrisonUnitScales(b, u);
       const troop = TROOPS[u.kind];
       const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
-      u.cooldown -= actionDt;
+      u.cooldown -= poison.attack === 1 ? actionDt : actionDt * poison.attack;
       u.pathAt -= unitDt;
       u.attacking = false;
       const base =
@@ -2300,7 +2303,7 @@ export class GameModel {
               abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
               ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
             )) *
-          (actionDt / unitDt),
+          ((poison.move === 1 ? actionDt : actionDt * poison.move) / unitDt),
       };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);

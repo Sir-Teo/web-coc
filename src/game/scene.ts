@@ -16,6 +16,8 @@ import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait, infernoBounds } from './inferno-art';
 import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
+import { garrisonStats } from './garrison-kinds';
+import { characterBarHeight } from './character-poses';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART, castleBounds } from './castle-art';
 import { CANNON_ART } from './cannon-art';
@@ -2200,9 +2202,11 @@ export class VillageScene extends Phaser.Scene {
       if (d.kind !== 'skeleton') {
         if (battle!.elapsed >= d.spawnedAt && d.hp > 0) {
           const point = iso(d.x, d.y);
+          // Garrison families: source-graph bar height; air lift only for flying troops.
+          const stats = garrisonStats(d.kind, d.level);
           this.bar(
             point.x,
-            point.y - AIR_LIFT - (d.kind === 'dragon' ? 94 : 115),
+            point.y - (stats.flying ? AIR_LIFT : 0) - characterBarHeight(stats.animation),
             28,
             d.hp / d.maxHp,
             0xea654d,

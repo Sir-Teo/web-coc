@@ -19,8 +19,9 @@ import {
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
-import { initializeGarrison, type GarrisonSetup } from './garrison-release';
+import { initializeGarrison, isGarrisonBunker, type GarrisonSetup } from './garrison-release';
 import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
+import { garrisonTroopVersion } from './garrison-kinds';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
@@ -130,7 +131,10 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     ...(version >= 40 && s.buildings.some((b) => b.kind === 'darkdrill')
       ? { drillDestructions: {} }
       : {}),
-    ...(s.garrisons ? { garrisons: s.garrisons.map(initializeGarrison) } : {}),
+    // The battle seed orders different garrison troops of equal housing (no effect on older rosters).
+    ...(s.garrisons
+      ? { garrisons: s.garrisons.map((g) => initializeGarrison(g, 1337 + s.index)) }
+      : {}),
     ...((version === 34 || version === 35) && s.buildings.some((b) => b.kind === 'cannon' && !b.npc)
       ? { legacyCannonFlight: true as const }
       : {}),
@@ -263,14 +267,18 @@ export function validateReplay(value: unknown): value is ReplayData {
         !['guard', 'sleep'].includes(g.mode) ||
         !Array.isArray(g.troops) ||
         g.troops.length > MAX_GARRISON_TROOPS ||
-        !s.buildings.some((b: any) => object(b) && b.id === g.castleId && b.kind === 'clancastle')
+        !s.buildings.some(
+          (b: any) => object(b) && b.id === g.castleId && isGarrisonBunker(b as Building),
+        )
       )
         return false;
       for (const troop of g.troops) {
         if (
           !object(troop) ||
           !integer(troop.level, 1, 100) ||
-          !integer(troop.count, 1, MAX_GARRISON_TROOPS)
+          !integer(troop.count, 1, MAX_GARRISON_TROOPS) ||
+          // Dragon 7 and Balloon 8 exist since version 38; other kinds and levels since 44.
+          (garrisonTroopVersion(troop.kind, troop.level) ?? Infinity) > value.version
         )
           return false;
         total += troop.count;

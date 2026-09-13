@@ -1,5 +1,7 @@
 import { distance2D } from './distance';
-import { stepGarrisonDefender, type GarrisonAttack } from './garrison-combat';
+import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
+import type { GarrisonKind } from './garrison-kinds';
+import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
@@ -25,11 +27,16 @@ interface DefenderState {
   stunnedUntil?: number;
 }
 export interface GarrisonDefender extends DefenderState {
-  kind: 'dragon' | 'balloon';
+  kind: GarrisonKind;
   level: number;
   attacks: GarrisonAttack[];
   engaged?: boolean;
   deathResolved?: boolean;
+  /** Version-44 garrison families (see garrison-combat.ts); absent for Dragon/Balloon. */
+  attackCount?: number;
+  shots?: GarrisonShot[];
+  longShots?: number;
+  tantrum?: boolean;
 }
 export type Defender = (DefenderState & { kind: 'skeleton' }) | GarrisonDefender;
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
@@ -177,6 +184,8 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       moveAlong(defender, stats.speed, activeDt);
     }
   }
+  // Campaign garrisons: poison applied by defending Headhunters ticks after every defender acted.
+  if (battle.defenders?.length) stepGarrisonStatus(battle);
 }
 const canFight = (unit: Unit, enemy: Defender) =>
   !TROOPS[unit.kind].healer &&

@@ -1,5 +1,5 @@
-import { TROOPS } from './data';
-import type { Battle } from './model';
+import { BUILDINGS, TROOPS } from './data';
+import type { Battle, Building } from './model';
 import { spawnGarrisonDefender } from './garrison-combat';
 import {
   createGarrisonReserve,
@@ -16,10 +16,18 @@ export interface GarrisonSetup {
 export interface GarrisonState extends GarrisonReserve {
   nextSearch: number;
 }
-export const initializeGarrison = (setup: GarrisonSetup): GarrisonState => ({
-  ...createGarrisonReserve(setup.castleId, setup.troops, setup.mode),
+/** `seed` orders different troops of equal housing; replays derive it from the village. */
+export const initializeGarrison = (setup: GarrisonSetup, seed = 0): GarrisonState => ({
+  ...createGarrisonReserve(setup.castleId, setup.troops, setup.mode, seed),
   nextSearch: 0,
 });
+/**
+ * Source bunkers (`Bunker=TRUE`): home Clan Castles, the campaign Goblin Castle (Clan Castle
+ * archetype) and the 4×4 Foreboding Cave (Army Camp archetype, version 44 identity).
+ */
+export const isGarrisonBunker = (b: Pick<Building, 'kind' | 'npc'>) =>
+  (b.kind === 'clancastle' && (b.npc === undefined || b.npc === 'goblin-castle')) ||
+  (b.kind === 'camp' && b.npc === 'foreboding-cave');
 /** Older-engine 320ms countdown plus the following 64ms search tick; modern parity pending. */
 export const GARRISON_SEARCH_SECONDS = 0.384;
 const searchTime = (index: number) => (index * 384) / 1000;
@@ -29,15 +37,21 @@ const exits = [
   [0, 1],
   [0, -1],
 ] as const;
+/**
+ * The pinned older engine places each exit at the building middle plus
+ * `(widthInTiles << 8) - 128` internal units: half the footprint less a quarter tile
+ * (1.25 tiles for a 3×3 Castle, 1.75 for the 4×4 Foreboding Cave).
+ */
+export const garrisonExitOffset = (size: number) => size / 2 - 0.25;
 
 export function stepGarrisonReleases(battle: Battle) {
   for (const reserve of battle.garrisons ?? []) {
-    const castle = battle.buildings.find(
-      (b) => b.id === reserve.castleId && b.kind === 'clancastle',
-    );
+    const castle = battle.buildings.find((b) => b.id === reserve.castleId && isGarrisonBunker(b));
     if (!castle) continue;
-    const centerX = castle.x + 1.5,
-      centerY = castle.y + 1.5;
+    const size = BUILDINGS[castle.kind].size;
+    const centerX = castle.x + size / 2,
+      centerY = castle.y + size / 2,
+      offset = garrisonExitOffset(size);
     const targets = battle.units.map((unit) => ({ ...unit, flying: !!TROOPS[unit.kind].flying }));
     while (searchTime(reserve.nextSearch) <= battle.elapsed + 1e-9) {
       const at = searchTime(reserve.nextSearch++);
@@ -54,8 +68,8 @@ export function stepGarrisonReleases(battle: Battle) {
         troop.kind,
         troop.level,
         castle.id,
-        centerX + dx * 1.25,
-        centerY + dy * 1.25,
+        centerX + dx * offset,
+        centerY + dy * offset,
         at,
       );
     }

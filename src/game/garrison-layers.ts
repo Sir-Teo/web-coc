@@ -1,30 +1,42 @@
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
 import type { NativeScenePose } from './native-mesh';
-import { GARRISON_GRAPHS, garrisonPoses } from './garrison-poses';
+import { characterPose } from './character-poses';
+import { CHARACTER_ART, COMMON_DEATH_ART } from './character-art';
 
-// Verified original black-alpha shadow shapes: troop files use 0; common death uses 45.
-const shadowVertices = new Set(
-  [
-    ...GARRISON_GRAPHS.dragon.shapes[0],
-    ...GARRISON_GRAPHS.balloon.shapes[0],
-    ...GARRISON_GRAPHS.dragonDeath.shapes[45],
-  ].map(([, vertices]) => vertices),
-);
+// Verified original black-alpha shadow shapes: troop files use 0 (Super Minion 3); common death 45.
+const shadowSets = new Map<string, Set<number[]>>();
+function shadowVertices(prefix: string) {
+  let set = shadowSets.get(prefix);
+  if (set) return set;
+  const art = [...Object.values(CHARACTER_ART), COMMON_DEATH_ART].find((a) => a.prefix === prefix)!;
+  set = new Set(art.shadows.flatMap((id) => art.graph.shapes[id].map(([, vertices]) => vertices)));
+  shadowSets.set(prefix, set);
+  return set;
+}
 
-/** Separate original shadow commands without changing their texels, transforms or timeline. */
-export function garrisonLayers(defender: GarrisonDefender, battle: Battle, reduced = false) {
+/** Original body and ground-shadow commands plus the graph prefix that owns their textures. */
+export function characterLayers(defender: GarrisonDefender, battle: Battle, reduced = false) {
+  const pose = characterPose(defender, battle, reduced);
+  if (!pose) return undefined;
+  const shadows = shadowVertices(pose.prefix);
   const split = (poses: NativeScenePose[]) => {
     const body: NativeScenePose[] = [],
       shadow: NativeScenePose[] = [];
-    for (const pose of poses) {
-      if ('group' in pose) {
-        const nested = split(pose.group);
-        if (nested.body.length) body.push({ ...pose, group: nested.body });
-        if (nested.shadow.length) shadow.push({ ...pose, group: nested.shadow });
-      } else (shadowVertices.has(pose.vertices) ? shadow : body).push(pose);
+    for (const item of poses) {
+      if ('group' in item) {
+        const nested = split(item.group);
+        if (nested.body.length) body.push({ ...item, group: nested.body });
+        if (nested.shadow.length) shadow.push({ ...item, group: nested.shadow });
+      } else (shadows.has(item.vertices) ? shadow : body).push(item);
     }
     return { body, shadow };
   };
-  return split(garrisonPoses(defender, battle, reduced));
+  return { ...split(pose.poses), prefix: pose.prefix };
+}
+
+/** Separate original shadow commands without changing their texels, transforms or timeline. */
+export function garrisonLayers(defender: GarrisonDefender, battle: Battle, reduced = false) {
+  const layers = characterLayers(defender, battle, reduced);
+  return { body: layers?.body ?? [], shadow: layers?.shadow ?? [] };
 }

@@ -45,9 +45,14 @@ it('preserves the original Castle and all 35 housing spaces without unlocking un
       ],
     },
   ]);
-  for (const index of [67, 69, 72, 73, 74, 76, 77, 83, 89]) {
+  // Later rosters resolve only when every member is supported; others stay gated in their entirety.
+  for (const index of [69, 73, 74, 76, 83, 89]) {
     expect(resolvedCampaignGarrison(index)).toBeNull();
     expect(nativeCampaignIssues(index)).toContain('Garrison defenders');
+  }
+  for (const index of [67, 72, 77]) {
+    expect(resolvedCampaignGarrison(index)).not.toBeNull();
+    expect(nativeCampaignIssues(index)).not.toContain('Garrison defenders');
   }
   expect(() => campaignGarrisonSetup(56, [])).toThrow();
 });
