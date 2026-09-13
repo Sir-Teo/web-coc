@@ -1,0 +1,2768 @@
+{
+  "width": 2400,
+  "height": 4800,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "47db1aa7d9f0375394b93e8ebda6cbde49f7481062d29d96d6c1087336c17880",
+  "cases": [
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.99999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "952e8d410f78d5898040108977745df7e32a272563596e3a83b74ee00e0936f6"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.99999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "956a8e31ace305aec851faa1664e6750119150b1969d9c2076703d8d28089fda"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.99999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "ac1bbd141d87349522d1dd487ddeab73ec08eea4d57ad9ff6533978c985bea28"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        87.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "27a2f5aeb342e7af2a4e4960528fec3340c8f1c1854b53c4a1794b5d8eb85e1a"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        98.74999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "aad9c716f220bb2e599a98822166cb99618ed857dc17f4ad57da959fc4900abe"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        103.29999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "79aa5c722871ae367a7699d9b1ebfff966c8539713e2270a68448d0262bc49a4"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        98.74999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "3fa990b8e10ffcb0c5441ac0100b9195025ee5477646d2e40721395043de5492"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        87.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "5843a83124db01d4c4fcbda1437b16053b54fbe8587fdd45d146fea437918718"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "a659a0d1f584fd73958bf4ed5c82ce0f3a2cc735e9121ad32f955c57b493f446"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "3fff29a4dd4d917a7645e9cedf8dfcb0a3a9ab7c8d94c28faab81d6437d73dd8"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "fa95a7da31d44082b3a2f68a37d1e24738eba1bb7775006b06c0c06a6407205d"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "438b610a08ac6f7ce5a4be4a75ab11a9843246cf98eab41a2d1e4ea8ed5bc478"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        101.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "cb038c6396e209cef22d7bc7f72a825118e89763d5777aba398af40fe37ba445"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        106.54999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "baa81f2a7022fa1e4b7b7a5e07beaa360fc455237a7dc17c671b7ba1bc2dc667"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        101.3499984741211
+      ],
+      "empty": false,
+      "rgbaSha256": "5b45b27b76c62875000e41f572f466e8a8114aebe9b4a4026a8571fb3d9646a1"
+    },
+    {
+      "export": "air_mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "4cd85dac391a9647ea8644a716809a356b993700cdcc997d3327f0f488176c71"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "1dcdf84ff02ae9bea30536a547ea334bc77cce5563de23c5e8dd154ce768743a"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "1ec4eb13d6e9827095cdb887eb54d675a353155aa1d36e4d00dab22819f99cff"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "f7466bb53b4a26f3a3c184d1ea59b7f425bd550141f7a8f936a7687e0776f137"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "05eb36dfa03c7bdf06c4ec726fba3bb64641ed618ac0a742d1c5877fd0711399"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        100.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "8f4298b5055f1f52f820ccc06c9cf7647adce2adee63c6ab865a99d29b67084b"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        105.9000015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "46181089501c925fd9649e3cf189956e37b7507f634f7e5408111665d0b88823"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        100.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "3a597f89932b97ed46cb25c69e2073706372f070098444b6ab61251674e123b1"
+    },
+    {
+      "export": "air_mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "a66f26f99a63d7e614d025abe758e028e538c4c96a30d7e2e20de1b0b35bb9e2"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        85.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "c46b64a8e3def98d11dece05b8e5c01c292a71dc3b1cc0f96847313c4214dfa4"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        85.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "d8552e627a0bdc1cf0146336612131132fe430607d09b7dab53a9b1b4e47fc89"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        85.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "591395172060f9097b813c46d4461e8ecd9455ab4d02ce2c032d4e2abb8e9c2c"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        85.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "ee1c818a5af108a5cfde1975ed5308ddfbef86c8c1970222656c1d45ba42258e"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        98.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "ff55c1ddffeae1f7a2c2857ad5a39c6073226aab5590aa9510ebd2abc4a16317"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        103.9000015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "aed9c3e57c931244fdce315ffae962c611870e9fd17046171bd56d64b3678918"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        98.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "6ced7caa0df540340b5b3d054dae4aa31b4622497c5b0ea985cb5de4ce186480"
+    },
+    {
+      "export": "air_mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        85.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "521c5b00327315de2c4ee2f5822fd346069d5f45f01679bc4d9a23aacd894d4d"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        86.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "96e0ca6af7744522c8fb50b8774a3c23fec9415cbbd3b3de8c80c5fddde4d47b"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        86.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "f07978b36b540501e166aa54f9967c0c5f08d13fdba54499340c5f483e6f00c5"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        86.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "07eb3ebab3aeb54182e0f2e58fded034b6935baac2b16d5240ff14ca4318e58b"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        86.95000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "bcfec82aa3936ff7df0c99f83bd00b8c57f895d7292ed43b6be7493bfffea7fc"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        102.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "ab9690dc1c4f23ef88793ef5d75c84960a0c01e0bde65147472d99915f0c6d3b"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        109.10000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "f7fb89743d3caf53d8d77e1f87038ab5b43f9b1e75fec84cf575d89e7e550d0d"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        102.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "8bb3e6802088e995760193e9f8a7fe1a03c0414892dd2c539184983edbbad6fb"
+    },
+    {
+      "export": "air_mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        86.95000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "6f98f53bc7aa1c5fd9f10d35ec7d06d49d89f419d02eb616cd41c2cd75c22d74"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.95000267028809
+      ],
+      "empty": false,
+      "rgbaSha256": "0533cfcf2480df0daf935258dd06fa2df0303cb4f1e5fa8a4fb731905d27911f"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.95000267028809
+      ],
+      "empty": false,
+      "rgbaSha256": "0e38ac71a802aaf350c275015086ea146a7a97da4fa2a73ee2f8875990e8761c"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.95000267028809
+      ],
+      "empty": false,
+      "rgbaSha256": "85faa695678f021f6188719bf0417e4a5bb25a16ab752efd5c05eb5e89596d0c"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        87.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "09b11f80ec096174d4b0a1225adc7350e521d0730a8223e9c7ee53add2fd01ad"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        103.25000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "4f5d00b12fb45de51f735644b97d9d278f051ec65c3aeae79d9d076d8f0cebd0"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        109.75000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "d62971b1c3f2e4efef453d1a8529ad3c2c6b2d18d2005e675e68d9c967615fac"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        103.25000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "f8550209623d40ae18cc78a0a94416c8717d03eff68c751c5cf25e3cbbe6c62a"
+    },
+    {
+      "export": "air_mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        87.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "27370dbe64c57f847721273c5811b3802db27b1f8a86ce39ec6468cbaa2b0191"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 0,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "05e0ee1b890dd800fc10f4d0d53ef705a0a6b6d043738ca63c90782b171a6702"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 300,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "6d3ffc306dbda7f84e706996aa8eba42bf651dc34119fd32773b436d402dc2e3"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 600,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "e67ea72594ca465bae31aff534adcdcb1f79b26f78826400582e63a19aaea121"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 900,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "6e9adad9ad37b3dc8a75aa2f8a9c46b5a613825021fbc584b4fe43f13b4b7be6"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        106.6500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "67365d1e910a295cdd8f721787ed0e761780fdf261b9efb4095fc3cad795e089"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        113.1500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "2d5a5c90e251d12ff398ce10b96a8bc485ed44d621772cf5365009a781d34a03"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        106.6500015258789
+      ],
+      "empty": false,
+      "rgbaSha256": "fe192f3a06df5ee3926f99acbe7affaf35a54ba8c7cdd5861f64c5032d1a125a"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "direction",
+      "base": "windmachine_base",
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.70000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "27ea919db3648a1d65d19a3ff79f22390619e5b54800acf7cb53566748beeeb5"
+    },
+    {
+      "export": "air_mortar_lvl1_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 49,
+        "turret_sector": 0,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 0,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.99999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "5da615f04e2f954fd8871dec47421f59bf3331d034214c2ca8639ef75e7d2544"
+    },
+    {
+      "export": "air_mortar_lvl2_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 98,
+        "turret_sector": 45,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        151.9499969482422,
+        0.0,
+        2.0,
+        88.29999732971191
+      ],
+      "empty": false,
+      "rgbaSha256": "be7019793bd485ce7706ae9c2227ef909fd1ea98dadcd48358ec573baf88b758"
+    },
+    {
+      "export": "air_mortar_lvl3_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 147,
+        "turret_sector": 90,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.6500015258789,
+        0.0,
+        2.0,
+        87.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "6bfb43c6bcf469cf9192d9aa2708088e9f4a8ed206a61a6eade061ad7a548f98"
+    },
+    {
+      "export": "air_mortar_lvl4_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 196,
+        "turret_sector": 135,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 900,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        101.30000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "235ed8e4bc7adfe152ecda0de6b1c1eca17e320a63ae6070c7c547ded41e3a71"
+    },
+    {
+      "export": "air_mortar_lvl5_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 245,
+        "turret_sector": 180,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.64999771118164,
+        0.0,
+        2.0,
+        108.45000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "ccb3a3371f51ac48058501cea2ef5d0d07ef88db0dd2ba99736ea76bb1232245"
+    },
+    {
+      "export": "air_mortar_lvl6_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 294,
+        "turret_sector": 225,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        98.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "f257df19338ad688cd58aaba910fd43573dbc4e34f456655f1c27da08a28afb7"
+    },
+    {
+      "export": "air_mortar_lvl7_upgrade",
+      "time": 0,
+      "controls": {
+        "turret": 343,
+        "turret_sector": 270,
+        "turret_load": 0
+      },
+      "category": "upgrade",
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "2736cd1ff727bbac3b2839394ff5a1efcf9692f5fd67410885437aa085729a2a"
+    },
+    {
+      "export": "air_mortar_const",
+      "time": 0,
+      "controls": {},
+      "category": "construction-base-projectile",
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        155.64999771118164,
+        0.0,
+        2.0,
+        96.14999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "2b51077a19d31d25504700faf0a672b69fca24f7387b303a938024a8d98228de"
+    },
+    {
+      "export": "air_mortar_upg",
+      "time": 0,
+      "controls": {},
+      "category": "construction-base-projectile",
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        150.75,
+        0.0,
+        2.0,
+        33.749996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "71c2fb4b5d87ef999f23eac38d183141617eb4ecb17cb9970e5e0f84df84299d"
+    },
+    {
+      "export": "windmachine_base",
+      "time": 0,
+      "controls": {},
+      "category": "construction-base-projectile",
+      "x": 300,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        162.6759265139699,
+        0.0,
+        2.0,
+        59.217041015625
+      ],
+      "empty": false,
+      "rgbaSha256": "123796497c1da6cc0f0ee4212b4589bbc4fd8ec60eb6d641fbef83e3f9066270"
+    },
+    {
+      "export": "dummy_particle",
+      "time": 0,
+      "controls": {},
+      "category": "construction-base-projectile",
+      "x": 600,
+      "y": 2400,
+      "root": [
+        32.0,
+        0.0,
+        150.2046875488013,
+        0.0,
+        32.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "a5a0ea6e1650e7441b7fc4b3f62177c60cf4fc51f756ca221fa358bb8268ed40"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.0,
+      "controls": {},
+      "category": "rubble",
+      "x": 900,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "2558364286ada800fc2a99868196078c80c5d0ac0aa089e5077afd0fc2ebf5f5"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.03333333333333333,
+      "controls": {},
+      "category": "rubble",
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "e3003406b57e915c2d4400b70def5c20df67c5a729178ecc0acc1d50a1c9454f"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.06666666666666667,
+      "controls": {},
+      "category": "rubble",
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "1417b8055b5875b92bc727d0a8f3c3bd874bcb4e2ab9c940f987240db71ce66b"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.1,
+      "controls": {},
+      "category": "rubble",
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "9871bd9218c68f1603f02e3736a51fcb6865838837687a7bd34df6285bf35d50"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.13333333333333333,
+      "controls": {},
+      "category": "rubble",
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "2f439a923eccf1f953798243fc5b4a69c577c0089192562b0ce1b19f2b3e0a0c"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_wood",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "category": "rubble",
+      "x": 0,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "9be32b974a1c687312c54b6e54bf256be6e1c2dcea6d1eac19006eb3347d8f9c"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.0,
+      "controls": {},
+      "category": "rubble",
+      "x": 300,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "6dc5b62d002c2ada57525a695f34179a13a9bb54379f8fbd6757da4b6c11da49"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.03333333333333333,
+      "controls": {},
+      "category": "rubble",
+      "x": 600,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c12afe4b015f21ec4b059b0961a642077587950e216c8f181cac74866f6ef48b"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.06666666666666667,
+      "controls": {},
+      "category": "rubble",
+      "x": 900,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c23a3d48e87371b790747bef2880120edd2a5eaa80b2fb1cc4529b8b70d4352f"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.1,
+      "controls": {},
+      "category": "rubble",
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c14a45a8db632b4f251417e434b6ac521cc1d12020484f32677c6d5a79ada204"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.13333333333333333,
+      "controls": {},
+      "category": "rubble",
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "b3c8d86eaf0f8150f87e7fb9c2a39b3844530e850aa34d151016405a562bc729"
+    },
+    {
+      "export": "destroyedBuilding_2s_pit_rockwood",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "category": "rubble",
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        142.8369140625,
+        0.0,
+        2.0,
+        38.550392150878906
+      ],
+      "empty": false,
+      "rgbaSha256": "b1fc51c189fc9dfa782a34feeb5ae3f5da75089fcf3af953b7c2945940cae849"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 0
+      },
+      "category": "loading",
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 27
+      },
+      "category": "loading",
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "e08f7271c0063f8af1b23b9d936a896697b98cf0a0917e8505eec7a7204b1e94"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 111
+      },
+      "category": "loading",
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 222
+      },
+      "category": "loading",
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 223
+      },
+      "category": "loading",
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 224
+      },
+      "category": "loading",
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "de455ee96a083e2599f7f53c561c6f0ba9ecc57d2b3bcaa0471a47ae768dc04d"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 225
+      },
+      "category": "loading",
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "de455ee96a083e2599f7f53c561c6f0ba9ecc57d2b3bcaa0471a47ae768dc04d"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 240
+      },
+      "category": "loading",
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "062fa9f7da52febde2e7a36062b13d73fcccdc5d804f17ad437521c83a3d8bea"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 269
+      },
+      "category": "loading",
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "d144bfb027a7bab8cab5011ed05c0096101710c5ba1a1e64c2da984b404bb99a"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 298
+      },
+      "category": "loading",
+      "x": 0,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "4ca29d34984b2b4e3144273a7b88f2075e07b07b5b5292812bceebd6c53eed48"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 313
+      },
+      "category": "loading",
+      "x": 300,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 314
+      },
+      "category": "loading",
+      "x": 600,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 315
+      },
+      "category": "loading",
+      "x": 900,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "a5b00d859f90ad9d23ac0cecab6595889b4bb6e361c27d2778d9776451c62583"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 316
+      },
+      "category": "loading",
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "4ca29d34984b2b4e3144273a7b88f2075e07b07b5b5292812bceebd6c53eed48"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 317
+      },
+      "category": "loading",
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "c6cb8a873885d05ab7b67667684f7211b6294488aa5eef64d7a6b6296594aff2"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 318
+      },
+      "category": "loading",
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "d144bfb027a7bab8cab5011ed05c0096101710c5ba1a1e64c2da984b404bb99a"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 319
+      },
+      "category": "loading",
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "e59d8809903c1b4754c3046c28164c87f361ceb7c6558c1015013484e5edd2a9"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 320
+      },
+      "category": "loading",
+      "x": 0,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "b1242526ddb0d9766750e57d7d7608c1ce04cee2fc7cd3231f38d86a211a49af"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 321
+      },
+      "category": "loading",
+      "x": 300,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "062fa9f7da52febde2e7a36062b13d73fcccdc5d804f17ad437521c83a3d8bea"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 322
+      },
+      "category": "loading",
+      "x": 600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "062fa9f7da52febde2e7a36062b13d73fcccdc5d804f17ad437521c83a3d8bea"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 323
+      },
+      "category": "loading",
+      "x": 900,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "de455ee96a083e2599f7f53c561c6f0ba9ecc57d2b3bcaa0471a47ae768dc04d"
+    },
+    {
+      "export": "air_mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 17,
+        "turret_sector": 315,
+        "turret_load": 324
+      },
+      "category": "loading",
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.35000228881836,
+        0.0,
+        2.0,
+        89.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "de455ee96a083e2599f7f53c561c6f0ba9ecc57d2b3bcaa0471a47ae768dc04d"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "turret_sector": 0,
+        "turret_load": 314
+      },
+      "category": "independent-controls",
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        86.99999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "7dd373e111883c7a192fdfedd011d449258fc2a064ee6a4dec4a5c863381022e"
+    },
+    {
+      "export": "air_mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "turret_sector": false,
+        "turret_load": 320
+      },
+      "category": "independent-controls",
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        152.60000228881836,
+        0.0,
+        2.0,
+        82.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "077f10efd73df337295156da5974a28869b5f3bf4ce96eb89cedf0b5f94b6f3f"
+    },
+    {
+      "export": "debris1",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 0,
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81e8b01e78ce8dcb736ea2243eb9f725d4ce00dfc0dc61a0add3f99ba77f9f22"
+    },
+    {
+      "export": "debris2",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 1,
+      "x": 0,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bdf6e7d7f6a06e1f758ae912552b642c41e61822ecd40f72c899e8134c3f0425"
+    },
+    {
+      "export": "debris3",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 2,
+      "x": 300,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1c554ff7e96ab9b929d3ce06eea5a0cbbab744ace43248ecf2f43b58ca9c3f65"
+    },
+    {
+      "export": "debris4",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 3,
+      "x": 600,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "612fd42e50c8a9608262911686190a2782b443c3521515e758fff4e46d4613b2"
+    },
+    {
+      "export": "debris5",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 4,
+      "x": 900,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "25deba23d54553fa8f5a6b20886bd02e47d771a8446afb53b331fe36d18ad5f4"
+    },
+    {
+      "export": "debris6",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 5,
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "43b5ae31bb5d0d94773d22235193ba2b5c6162b74d494557c7cddf5f104f0a55"
+    },
+    {
+      "export": "debris7",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 6,
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c169fd72303a560050753ebf77e0f87ea91754f96079c01c03003637880a26e7"
+    },
+    {
+      "export": "debris8",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 7,
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81fbaaa321347e169b72223d9791c259f3d14b3e4a8176c41f382a122a91ad16"
+    },
+    {
+      "export": "debris9",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 8,
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "ac18a443a07b13f63dcc09b63dcf44027a84c8d1506a635555edb4d52f3d7a24"
+    },
+    {
+      "export": "debris10",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 9,
+      "x": 0,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "d00e5b257ed159228f90d08ba7507dcc35c0eea0cca93be014327cb11dd45cc8"
+    },
+    {
+      "export": "debris11",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 10,
+      "x": 300,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "31728f9f7584207a129ee252233bbf7a12e588f9b1bede154e775d20df70de4a"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 11,
+      "x": 600,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 12,
+      "x": 900,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "export": "debris14",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 13,
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7d7ceffeb50843c9384471696d3c81ef03a94f6d4df0e94e2cb92367fb8750d6"
+    },
+    {
+      "export": "debris15",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 14,
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "794fe683fa8259c500ebbcb3a10aed7ab2e430ccd3be9218f3d785fc9f343deb"
+    },
+    {
+      "export": "debris16",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 15,
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "beb26cb44808eef7c75844c786a650bef8475e12745048228590ff6273db57b9"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 16,
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 17,
+      "x": 0,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "export": "debris19",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Building Destroyed",
+      "variant": 18,
+      "x": 300,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9ee6b46a15ea03020df40a8ed5aa4b4050367be47f24dfb5991685bc4e2a201a"
+    },
+    {
+      "export": "g1",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Grass",
+      "variant": 0,
+      "x": 600,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9fc6c1635a41002650318230715b30d091514dbd11a7d0ce7c3fde20c58064cc"
+    },
+    {
+      "export": "g2",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Grass",
+      "variant": 1,
+      "x": 900,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6c04c61fd452e12fb2d9b8fdbbb9f90c53c267d86f367bdb844ca03af5d7f0ed"
+    },
+    {
+      "export": "g3",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Grass",
+      "variant": 2,
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8ad82da4eb36358770f730564311dbab5195132abeb3b98b5453db9c7e0d6de4"
+    },
+    {
+      "export": "g4",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Grass",
+      "variant": 3,
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4947a80553c35b4579b6f1f8897a37ea8b8147e09ba81b9998959f72111ce38e"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.125,
+      "controls": {},
+      "category": "particle",
+      "emitter": "Smoke",
+      "variant": 0,
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        153.25,
+        0.0,
+        2.0,
+        152.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "3caa7d0a9c20a0ce05235f77d739939ce026ed3d6c4af4d8267c41b46cc06d3b"
+    },
+    {
+      "export": "soft_smoke1",
+      "time": 0.0,
+      "controls": {},
+      "category": "particle",
+      "emitter": "wind_attack_particle",
+      "variant": 0,
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "312526a0810df66660e5ef11bd28b60d0ec85ddec717c76d7b42e9de44c20762"
+    }
+  ]
+}
