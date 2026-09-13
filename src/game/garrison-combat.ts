@@ -381,8 +381,11 @@ export function stepGarrisonDefender(
   // tile, at least 1/16), so a slightly drifting target does not reset a long windup.
   const reach = stats.split ? range + 0.5 : range;
   const approach = stats.split ? Math.max(1 / 16, range - 1 / 16) : range;
+  // The older hit timer resets on leaving range only while it is still zero: once a split
+  // family's windup runs (engaged, recovery over), it completes on the same target while chasing.
+  const committed = stats.split && !!defender.engaged && (defender.recovery ?? 0) <= 1e-9;
   if (distance > reach + 1e-6) {
-    delete defender.engaged;
+    if (!committed) delete defender.engaged;
     // A concealed Royal Ghost ignores obstacles (walls and buildings) and walks straight.
     if (stats.flying || (concealed && stealth!.ignoreObstacles)) {
       const travel = Math.min(stats.speed * activeDt, distance - approach);
@@ -402,19 +405,20 @@ export function stepGarrisonDefender(
       }
       followPath(defender, stats.speed, activeDt);
     }
-    return;
+    if (!committed || defender.cooldown > 1e-9) return;
+  } else {
+    if (!defender.engaged) {
+      defender.engaged = true;
+      // Split timing: any post-hit recovery still running precedes the new target's windup.
+      defender.cooldown = Math.max(
+        0,
+        (stats.split ? (defender.recovery ?? 0) : 0) + stats.firstAttackDelay - attackDt,
+      );
+    }
+    defender.attacking = true;
+    if (!stats.flying) defender.path = [];
+    if (defender.cooldown > 1e-9) return;
   }
-  if (!defender.engaged) {
-    defender.engaged = true;
-    // Split timing: any post-hit recovery still running precedes the new target's windup.
-    defender.cooldown = Math.max(
-      0,
-      (stats.split ? (defender.recovery ?? 0) : 0) + stats.firstAttackDelay - attackDt,
-    );
-  }
-  defender.attacking = true;
-  if (!stats.flying) defender.path = [];
-  if (defender.cooldown > 1e-9) return;
   defender.cooldown = stats.rate;
   if (stats.split) defender.recovery = stats.recovery;
   defender.alerted = true;
