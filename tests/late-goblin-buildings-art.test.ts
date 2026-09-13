@@ -122,7 +122,10 @@ describe('original late Goblin building art', () => {
         turret: 90,
         ruin: 0,
       });
-    expect(leaves(hut('active'))).toBeGreaterThan(leaves(hut('dormant')));
+    // Root slot 2 is turret_load and slot 3 the aimed turret; they never draw together.
+    const slots = (poses: NativeScenePose[]) => new Set(poses.map((p) => p.key.split('/')[1]));
+    expect([...slots(hut('dormant'))].sort()).toEqual(['0:0', '1:0', '2']);
+    expect([...slots(hut('active'))].sort()).toEqual(['0:0', '1:0', '3']);
     const sleeping = builderHutBodyPoses({
       level: 4,
       state: 'dormant',

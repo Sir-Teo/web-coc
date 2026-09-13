@@ -128,8 +128,11 @@ export function builderHutBodyPoses(pose: BuilderHutPose): NativeScenePose[] {
   // The sign marks an absent builder; campaign builders start at home.
   const controls: Record<string, number | false> = { builder_out: false };
   if (armed) {
-    controls.turret_load = pose.load;
-    controls.turret = pose.state === 'active' ? pose.turret : false;
+    // turret_load's battleidle frame repeats the root body and spring and holds the rest-direction
+    // turret. Once combat starts, the aimed turret child replaces it instead of doubling the roof.
+    const active = pose.state === 'active';
+    controls.turret_load = active ? false : pose.load;
+    controls.turret = active ? pose.turret : false;
   }
   return nativeScenePoses(
     BUILDER_HUT_GRAPH,
