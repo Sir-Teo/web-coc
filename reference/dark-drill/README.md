@@ -18,3 +18,10 @@ The Drill inventory resolves 39 building/particle exports, 46 clips and 97 shape
 Texture 41 is pinned to SHA-256 `b3382bdda1665f62f476dca4afc8896cd1251d53f2c0b533f2fa2c09dfa94260`; all six source inputs also verify membership against the original fingerprint SHA-1 records. `PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-dark-drill-art.py --check` reconstructs and compares the complete graph documents and decoded texture pixels.
 
 The reconstruction check and three source tests pass, including every tier's art references, source geometry preservation and sampling all 5,479 clip frames with finite transforms. A temporary CPU source-rendered contact sheet of all 39 export frame-zero poses was visually reviewed. Production build passes. Independent frame-by-frame browser pixel qualification, native state composition, UI portraits and live production/loot integration remain pending. These captures do not expand campaign access or establish native executable playback parity.
+
+
+## Animation-state evidence
+
+All eleven `darkelixir_pump_lvl*` body clips have 450 frames at 24 fps, with source labels at frame 0 (`idle`), 51 (`start_drill`), 70 (`lower_drill`), 129 (`DRILL`), 279 (`rise_drill`) and 359 (`idle2`). Each contains a named `resource` child: clip 18598 for levels 1–4 and 18578 for levels 5–11. Both resource clips have 100 frames and no labels. These names and frame counts are retained evidence; mapping resource frames to stored amounts and choosing idle/working loop semantics still require integration and verification. The separate base export names its `base` and `shadow` children.
+
+Both resource timelines resolve to four distinct source display lists: frames 0–8, 9–24, 25–49 and 50–99. A separate CPU rendering of frames 0, 25, 50, 75 and 99 for both clips was reviewed and shows the reservoir filling, with the last three samples sharing the same full display. The artwork therefore should not be treated as a continuously animated 100-state liquid surface. The gameplay amount-to-frame conversion remains unverified.
