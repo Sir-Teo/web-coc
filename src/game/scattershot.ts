@@ -11,7 +11,7 @@ import {
 
 /** Scattershot: nearest-target throws, one-tile impact splash and a shard cone behind the target.
  * The campaign gate keeps affected villages unavailable until this is true. */
-export const SCATTERSHOT_READY = false;
+export const SCATTERSHOT_READY = true;
 
 const SUBTICK_MS = 16;
 const TICK_SUBTICKS = 4;

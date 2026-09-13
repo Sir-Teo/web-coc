@@ -32,7 +32,9 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    expect(playable).toEqual([...Array.from({ length: 61 }, (_, i) => i), 62]);
+    // Eagle Artillery completes Underground Workaround, Bowling Alley, Where Eagles Dare,
+    // Pick Your Poison and Paper Map.
+    expect(playable).toEqual([...Array.from({ length: 64 }, (_, i) => i), 65, 68, 70]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];

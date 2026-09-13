@@ -14,7 +14,7 @@ import {
 
 /** Eagle Artillery: activation, group targeting, shell bursts, hit spell, shockwave and pushback.
  * The campaign gate keeps affected villages unavailable until this is true. */
-export const EAGLE_ARTILLERY_READY = false;
+export const EAGLE_ARTILLERY_READY = true;
 
 /** Native logic step (16 ms) and combat tick (every fourth logic step). */
 const SUBTICK_MS = 16;
