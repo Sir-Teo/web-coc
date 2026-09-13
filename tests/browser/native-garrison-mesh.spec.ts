@@ -2,11 +2,13 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-garrison-mesh/index.json' with { type: 'json' };
 import deathIndex from '../fixtures/native-dragon-death-mesh/index.json' with { type: 'json' };
+import particleIndex from '../fixtures/native-garrison-particles-mesh/index.json' with { type: 'json' };
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [
   ...index.map((v) => ({ ...v, folder: 'native-garrison-mesh' })),
   ...deathIndex.map((v) => ({ ...v, folder: 'native-dragon-death-mesh' })),
+  ...particleIndex.map((v) => ({ ...v, folder: 'native-garrison-particles-mesh' })),
 ].flatMap(({ category, folder }) => {
   const source = JSON.parse(readFileSync(`tests/fixtures/${folder}/${category}.json`, 'utf8'));
   const stripHeight = source.cell * 20;
@@ -42,7 +44,11 @@ for (const witness of witnesses)
       const { default: dragon7 } = await import('/reference/garrison/dragon7.json');
       const { default: balloon8 } = await import('/reference/garrison/balloon8.json');
       const { default: death } = await import('/reference/garrison/dragon-death.json');
-      const worlds = { castle, dragon7, balloon8, death };
+      const { default: particles } = await import('/reference/garrison/particle-art.json');
+      // Test-only roots exercise each nested source clip independently.
+      for (const id of Object.keys(particles.clips))
+        particles.exports[`witness_clip_${id}`] = Number(id);
+      const worlds = { castle, dragon7, balloon8, death, particles };
 
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
