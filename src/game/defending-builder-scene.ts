@@ -11,7 +11,11 @@ import { defendingBuilderLayers } from './defending-builder';
 export class DefendingBuilderPresentation {
   private views = new Map<number, { body: NativeSceneView; shadow: NativeSceneView }>();
   constructor(private scene: Phaser.Scene) {}
-  render(battle: Battle | null, reduced: boolean, iso: (x: number, y: number) => { x: number; y: number }) {
+  render(
+    battle: Battle | null,
+    reduced: boolean,
+    iso: (x: number, y: number) => { x: number; y: number },
+  ) {
     const wanted = new Set<number>();
     for (const builder of battle?.late?.defendingBuilders ?? []) {
       const layers = defendingBuilderLayers(builder, battle!, reduced);

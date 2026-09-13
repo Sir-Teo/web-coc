@@ -204,10 +204,21 @@ function stepShots(battle: Battle, defender: GarrisonDefender, effect: (fx: FX) 
     const hit = !!target;
     const leg = shot.leg ?? 0;
     // A bounce leg has no target of its own: its splash resolves at the fixed bounce point.
-    resolveHit(battle, defender, stats, leg ? undefined : target, shot, shot.air, shot.damage, shot.impact);
+    resolveHit(
+      battle,
+      defender,
+      stats,
+      leg ? undefined : target,
+      shot,
+      shot.air,
+      shot.damage,
+      shot.impact,
+    );
     const record = defender.attacks.find((a) => a.n === shot.n);
-    if (record && !leg) Object.assign(record, { hitAt: shot.impact, hitX: shot.x, hitY: shot.y, hit });
-    else if (record) Object.assign(record, { bounceAt: shot.impact, bounceX: shot.x, bounceY: shot.y });
+    if (record && !leg)
+      Object.assign(record, { hitAt: shot.impact, hitX: shot.x, hitY: shot.y, hit });
+    else if (record)
+      Object.assign(record, { bounceAt: shot.impact, bounceX: shot.x, bounceY: shot.y });
     effect({
       type: 'hit',
       sourceDefender: true,
@@ -300,7 +311,11 @@ export function stepGarrisonDefender(
     return;
   }
   // Secondary troops and summons are pushed out first; summons then wait out SpawnIdle.
-  if (defender.push && battle.elapsed >= defender.spawnedAt && stepPush(defender, battle.elapsed, dt))
+  if (
+    defender.push &&
+    battle.elapsed >= defender.spawnedAt &&
+    stepPush(defender, battle.elapsed, dt)
+  )
     return;
   const activeDt = Math.min(
     dt,

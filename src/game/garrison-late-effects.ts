@@ -1,5 +1,11 @@
 import type Phaser from 'phaser';
-import { animationStates, characterFacing, characterLocator, rowExport, rowScale } from './character-poses';
+import {
+  animationStates,
+  characterFacing,
+  characterLocator,
+  rowExport,
+  rowScale,
+} from './character-poses';
 import { garrisonAura, garrisonDeathSpell, garrisonStats } from './garrison-kinds';
 import { visualRandom } from './visual-random';
 import type { GarrisonDefender } from './defenders';
@@ -43,7 +49,12 @@ const CHAIN_COLOR = 0xbfe8ff;
 const SUMMON_COLOR = 0xc67bff;
 
 /** A jagged line with deterministic perpendicular offsets (straight under reduced motion). */
-function jagged(from: { x: number; y: number }, to: { x: number; y: number }, seed: [number, number], reduced: boolean) {
+function jagged(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  seed: [number, number],
+  reduced: boolean,
+) {
   const segments = 6;
   const dx = to.x - from.x,
     dy = to.y - from.y;
@@ -52,7 +63,10 @@ function jagged(from: { x: number; y: number }, to: { x: number; y: number }, se
     ny = dx / length;
   return Array.from({ length: segments + 1 }, (_, i) => {
     const t = i / segments;
-    const jitter = reduced || i === 0 || i === segments ? 0 : (visualRandom(seed[0], seed[1], i) - 0.5) * Math.min(18, length * 0.18);
+    const jitter =
+      reduced || i === 0 || i === segments
+        ? 0
+        : (visualRandom(seed[0], seed[1], i) - 0.5) * Math.min(18, length * 0.18);
     return { x: from.x + dx * t + nx * jitter, y: from.y + dy * t + ny * jitter };
   });
 }
@@ -64,7 +78,13 @@ function ellipse(iso: Iso, radius: number) {
 }
 const fade = (since: number, duration: number) => Math.max(0, 1 - since / duration);
 
-function chainShapes(defender: GarrisonDefender, battle: Battle, reduced: boolean, iso: Iso, lift: number) {
+function chainShapes(
+  defender: GarrisonDefender,
+  battle: Battle,
+  reduced: boolean,
+  iso: Iso,
+  lift: number,
+) {
   const shapes: LateEffectShape[] = [];
   const stats = garrisonStats(defender.kind, defender.level);
   const attackRow = animationStates(stats.animation).attack[0];
@@ -80,13 +100,28 @@ function chainShapes(defender: GarrisonDefender, battle: Battle, reduced: boolea
       const facing = characterFacing(attack.targetX - attack.x, attack.targetY - attack.y);
       const exportName = rowExport(attackRow, facing.view);
       const frame = Math.max(0, Number(attackRow.ActionFrame || 1) - 1);
-      const pivot = characterLocator(stats.animation, exportName, facing.mirror, rowScale(attackRow), 'attack_pivot', frame);
+      const pivot = characterLocator(
+        stats.animation,
+        exportName,
+        facing.mirror,
+        rowScale(attackRow),
+        'attack_pivot',
+        frame,
+      );
       const origin = iso(attack.x, attack.y);
-      const from = { x: origin.x + (pivot?.x ?? 0), y: origin.y + (pivot?.y ?? 0) - (stats.flying ? lift : 0) };
+      const from = {
+        x: origin.x + (pivot?.x ?? 0),
+        y: origin.y + (pivot?.y ?? 0) - (stats.flying ? lift : 0),
+      };
       shapes.push({
         key: `late-chain:${defender.id}:${attack.n}:0`,
         kind: 'bolt',
-        points: jagged(from, elevate(attack.hitX ?? attack.targetX, attack.hitY ?? attack.targetY, attack.air), [defender.id, (attack.n ?? 0) * 8], reduced),
+        points: jagged(
+          from,
+          elevate(attack.hitX ?? attack.targetX, attack.hitY ?? attack.targetY, attack.air),
+          [defender.id, (attack.n ?? 0) * 8],
+          reduced,
+        ),
         color: CHAIN_COLOR,
         width: 3,
         alpha: fade(since, LATE_EFFECT_TIMES.chain),
@@ -100,7 +135,12 @@ function chainShapes(defender: GarrisonDefender, battle: Battle, reduced: boolea
       shapes.push({
         key: `late-chain:${defender.id}:${attack.n}:${index + 1}`,
         kind: 'bolt',
-        points: jagged(elevate(jump.fromX, jump.fromY, previous), elevate(jump.x, jump.y, jump.air), [defender.id, (attack.n ?? 0) * 8 + index + 1], reduced),
+        points: jagged(
+          elevate(jump.fromX, jump.fromY, previous),
+          elevate(jump.x, jump.y, jump.air),
+          [defender.id, (attack.n ?? 0) * 8 + index + 1],
+          reduced,
+        ),
         color: CHAIN_COLOR,
         width: 2.5,
         alpha: fade(jumpSince, LATE_EFFECT_TIMES.chain),
@@ -111,7 +151,12 @@ function chainShapes(defender: GarrisonDefender, battle: Battle, reduced: boolea
   return shapes;
 }
 
-export function garrisonLateEffectShapes(battle: Battle | null, reduced: boolean, iso: Iso, lift: number): LateEffectShape[] {
+export function garrisonLateEffectShapes(
+  battle: Battle | null,
+  reduced: boolean,
+  iso: Iso,
+  lift: number,
+): LateEffectShape[] {
   const shapes: LateEffectShape[] = [];
   if (!battle) return shapes;
   for (const defender of battle.defenders ?? []) {
@@ -127,7 +172,12 @@ export function garrisonLateEffectShapes(battle: Battle | null, reduced: boolean
       shapes.push({
         key: `late-bolt:${defender.id}:${index}`,
         kind: 'bolt',
-        points: jagged({ x: ground.x, y: ground.y - 220 }, ground, [defender.id, 1000 + index], reduced),
+        points: jagged(
+          { x: ground.x, y: ground.y - 220 },
+          ground,
+          [defender.id, 1000 + index],
+          reduced,
+        ),
         color: CHAIN_COLOR,
         width: 4,
         alpha,
@@ -150,7 +200,8 @@ export function garrisonLateEffectShapes(battle: Battle | null, reduced: boolean
     if (aura && defender.hp > 0) {
       const point = iso(defender.x, defender.y);
       const first = defender.spawnedAt + aura.firstHit;
-      const pulses = battle.elapsed < first ? -1 : Math.floor((battle.elapsed - first) / aura.interval + 1e-9);
+      const pulses =
+        battle.elapsed < first ? -1 : Math.floor((battle.elapsed - first) / aura.interval + 1e-9);
       const since = pulses < 0 ? Infinity : battle.elapsed - (first + pulses * aura.interval);
       const pulse = reduced ? 0 : fade(since, LATE_EFFECT_TIMES.pulse);
       shapes.push({
@@ -216,7 +267,12 @@ export class GarrisonLateEffects {
       } else {
         g.setPosition(shape.x, shape.y);
         g.fillStyle(shape.color, shape.fill).fillEllipse(0, 0, shape.rx * 2, shape.ry * 2);
-        g.lineStyle(shape.width, shape.color, shape.alpha).strokeEllipse(0, 0, shape.rx * 2, shape.ry * 2);
+        g.lineStyle(shape.width, shape.color, shape.alpha).strokeEllipse(
+          0,
+          0,
+          shape.rx * 2,
+          shape.ry * 2,
+        );
       }
     }
     for (const [key, g] of this.graphics)

@@ -63,7 +63,9 @@ export function defendingBuilderStats(level: number) {
 export function hutBuilderLevel(hutLevel: number) {
   try {
     const row = defenceTroopLevel('Builders Hut', hutLevel);
-    return row.DefenceTroopCharacter === 'Defending Builder' ? Number(row.DefenceTroopLevel) : undefined;
+    return row.DefenceTroopCharacter === 'Defending Builder'
+      ? Number(row.DefenceTroopLevel)
+      : undefined;
   } catch {
     return undefined;
   }
@@ -106,7 +108,7 @@ const hutCenter = (hut: Building) => {
 export function spawnDefendingBuilder(battle: Battle, hut: Building, at: number): DefendingBuilder {
   const level = hutBuilderLevel(hut.level);
   if (hut.kind !== 'builder' || hut.npc || level === undefined)
-    throw Error('Defending Builders come only from armed Builder\'s Huts');
+    throw Error("Defending Builders come only from armed Builder's Huts");
   if (!battle.late) throw Error('Defending Builders need version-44 late campaign state');
   const list = (battle.late.defendingBuilders ??= []);
   const size = BUILDINGS[hut.kind].size;
@@ -143,7 +145,8 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
         b.hp < b.maxHp &&
         b.kind !== 'wall' &&
         !isTrap(b.kind) &&
-        (isDefense(b.kind) || (b.kind === 'builder' && !b.npc && hutBuilderLevel(b.level) !== undefined)) &&
+        (isDefense(b.kind) ||
+          (b.kind === 'builder' && !b.npc && hutBuilderLevel(b.level) !== undefined)) &&
         distanceTo(center, b) <= DEFENDING_BUILDER_REPAIR_RADIUS + EPSILON,
     )
     .sort(
@@ -154,7 +157,14 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
     );
 }
 
-function walk(builder: DefendingBuilder, battle: Battle, goal: Building | { x: number; y: number }, range: number, speed: number, dt: number) {
+function walk(
+  builder: DefendingBuilder,
+  battle: Battle,
+  goal: Building | { x: number; y: number },
+  range: number,
+  speed: number,
+  dt: number,
+) {
   if (!builder.path.length || builder.pathAt <= 0) {
     // IsJumper: walls never block him; other buildings do.
     builder.path = findPath(
@@ -246,18 +256,34 @@ function stepBuilder(battle: Battle, builder: DefendingBuilder, dt: number) {
   builder.recovery = stats.recovery;
   const amount = Math.min(stats.repair, target.maxHp - target.hp);
   target.hp += amount;
-  builder.repairs.push({ n: builder.repairCount++, at: battle.elapsed, targetId: target.id, amount });
+  builder.repairs.push({
+    n: builder.repairCount++,
+    at: battle.elapsed,
+    targetId: target.id,
+    amount,
+  });
   if (builder.repairs.length > DEFENDING_BUILDER_HISTORY) builder.repairs.shift();
 }
 
 /** State-driven original poses: walk to a target, the looping `attack` (build) row, idle otherwise. */
-export function defendingBuilderPose(builder: DefendingBuilder, battle: Battle, reduced = false): CharacterPose | null {
+export function defendingBuilderPose(
+  builder: DefendingBuilder,
+  battle: Battle,
+  reduced = false,
+): CharacterPose | null {
   if (battle.elapsed < builder.spawnedAt || builder.hiddenAt !== undefined) return null;
   const stats = defendingBuilderStats(builder.level);
   const states = animationStates(stats.animation);
   const art = characterArt(stats.animation);
   const target = battle.buildings.find((b) => b.id === builder.target);
-  const aim = builder.path[0] ?? (target ? { x: target.x + BUILDINGS[target.kind].size / 2, y: target.y + BUILDINGS[target.kind].size / 2 } : undefined);
+  const aim =
+    builder.path[0] ??
+    (target
+      ? {
+          x: target.x + BUILDINGS[target.kind].size / 2,
+          y: target.y + BUILDINGS[target.kind].size / 2,
+        }
+      : undefined);
   const facing = characterFacing(aim ? aim.x - builder.x : 1, aim ? aim.y - builder.y : 0);
   const moving = builder.path.length > 0;
   const row = (builder.repairing ? states.attack : moving ? states.walk : states.idle)[0];
@@ -267,7 +293,14 @@ export function defendingBuilderPose(builder: DefendingBuilder, battle: Battle, 
   return {
     prefix: art.prefix,
     shadows: art.shadows,
-    poses: nativeScenePoses(art.graph, rowExport(row, facing.view), time, {}, [scale * mirror, 0, 0, 0, scale, 0]),
+    poses: nativeScenePoses(art.graph, rowExport(row, facing.view), time, {}, [
+      scale * mirror,
+      0,
+      0,
+      0,
+      scale,
+      0,
+    ]),
   };
 }
 
@@ -277,7 +310,9 @@ export function defendingBuilderLayers(builder: DefendingBuilder, battle: Battle
   if (!pose) return null;
   const graph = characterArt(defendingBuilderStats(builder.level).animation).graph;
   const shadowVertices = new Set(pose.shadows.flatMap((id) => graph.shapes[id].map(([, v]) => v)));
-  const split = (items: NativeScenePose[]): { body: NativeScenePose[]; shadow: NativeScenePose[] } => {
+  const split = (
+    items: NativeScenePose[],
+  ): { body: NativeScenePose[]; shadow: NativeScenePose[] } => {
     const body: NativeScenePose[] = [],
       shadow: NativeScenePose[] = [];
     for (const item of items) {

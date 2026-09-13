@@ -30,7 +30,12 @@ export class GhostTrapPresentation implements LatePresentation {
     if (!this.handles(b)) return undefined;
     const { art } = ghostTrapFrame(undefined, 0, false);
     const height = (art.width * art.frameHeight) / art.frameWidth;
-    return [-art.originX * art.width, -art.originY * height, (1 - art.originX) * art.width, (1 - art.originY) * height];
+    return [
+      -art.originX * art.width,
+      -art.originY * height,
+      (1 - art.originX) * art.width,
+      (1 - art.originY) * height,
+    ];
   }
   render({ buildings, battle, elapsed, reduced, iso }: LateRenderContext): SampleCue[] {
     const wanted = new Set<number>();

@@ -5,7 +5,12 @@ import { replayBattle, validateReplay, type ReplayData } from '../src/game/repla
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { campaignGarrisonSetup } from '../src/game/garrison-campaign';
 import type { GarrisonDefender } from '../src/game/defenders';
-import { liveNativeBattle, nativeReplay, nativeSetup, nearestDeploy } from './fixtures/late-trap-battle';
+import {
+  liveNativeBattle,
+  nativeReplay,
+  nativeSetup,
+  nearestDeploy,
+} from './fixtures/late-trap-battle';
 
 /** Authored recording: the whole army deploys at the legal point nearest a bunker offset. */
 function garrisonRecording(index: number, army: Partial<Army>, steps: number, dx = -9, dy = 0) {
@@ -14,7 +19,9 @@ function garrisonRecording(index: number, army: Partial<Army>, steps: number, dx
   if (garrisons) setup.garrisons = garrisons;
   const probe = new GameModel();
   probe.battle = replayBattle(setup, 44);
-  const bunker = probe.battle.buildings.find((b) => b.npc === 'goblin-castle' || b.npc === 'foreboding-cave');
+  const bunker = probe.battle.buildings.find(
+    (b) => b.npc === 'goblin-castle' || b.npc === 'foreboding-cave',
+  );
   const size = bunker ? BUILDINGS[bunker.kind].size : 0;
   const [x, y] = bunker
     ? nearestDeploy(probe, bunker.x + size / 2 + dx, bunker.y + size / 2 + dy)
@@ -24,10 +31,14 @@ function garrisonRecording(index: number, army: Partial<Army>, steps: number, dx
   );
   return { setup, deployments, data: nativeReplay(setup, deployments, steps) };
 }
-const late = (b: Battle) => (b.defenders ?? []).filter((d) => d.kind !== 'skeleton') as GarrisonDefender[];
+const late = (b: Battle) =>
+  (b.defenders ?? []).filter((d) => d.kind !== 'skeleton') as GarrisonDefender[];
 
 /** Live run with snapshots, then a portable file replayed with backward seeks in two viewers. */
-function expectPortableSeeks(recording: ReturnType<typeof garrisonRecording>, snapshotSteps: number[]) {
+function expectPortableSeeks(
+  recording: ReturnType<typeof garrisonRecording>,
+  snapshotSteps: number[],
+) {
   const { setup, deployments, data } = recording;
   const live = liveNativeBattle(setup, deployments);
   const b = live.battle!;
@@ -61,12 +72,27 @@ function expectPortableSeeks(recording: ReturnType<typeof garrisonRecording>, sn
 }
 
 it('reconstructs The Arena roster mechanics across portable backward seeks', () => {
-  const recording = garrisonRecording(69, { pekka: 8, dragon: 8, giant: 12, wizard: 12, archer: 12 }, 560);
+  const recording = garrisonRecording(
+    69,
+    { pekka: 8, dragon: 8, giant: 12, wizard: 12, archer: 12 },
+    560,
+  );
   const b = expectPortableSeeks(recording, [20, 90, 200, 330, 450, 555]);
   const defenders = late(b);
   const of = (kind: string) => defenders.filter((d) => d.kind === kind);
   expect(new Set(defenders.map((d) => d.kind))).toEqual(
-    new Set(['electrodragon', 'golem', 'golemite', 'dragon', 'pekka', 'valkyrie', 'witch', 'summonedskeleton', 'bowler', 'babydragon']),
+    new Set([
+      'electrodragon',
+      'golem',
+      'golemite',
+      'dragon',
+      'pekka',
+      'valkyrie',
+      'witch',
+      'summonedskeleton',
+      'bowler',
+      'babydragon',
+    ]),
   );
   // Source mechanics observed in the recorded fight.
   expect(of('witch')[0].summon!.events.length).toBeGreaterThanOrEqual(1);
@@ -91,11 +117,21 @@ it('reconstructs Ring of Power, Path to Pain, M.O.M.M.A and the Golden Dragon de
     garrisonRecording(83, { pekka: 10, dragon: 8, wizard: 12, archer: 10 }, 200),
     [30, 120, 195],
   );
-  expect(late(titans).filter((d) => d.kind === 'electrotitan').every((d) => (d.auraHits ?? 0) > 5)).toBe(true);
-  const momma = expectPortableSeeks(garrisonRecording(89, { pekka: 12, dragon: 10, wizard: 12 }, 420), [100, 300, 415]);
+  expect(
+    late(titans)
+      .filter((d) => d.kind === 'electrotitan')
+      .every((d) => (d.auraHits ?? 0) > 5),
+  ).toBe(true);
+  const momma = expectPortableSeeks(
+    garrisonRecording(89, { pekka: 12, dragon: 10, wizard: 12 }, 420),
+    [100, 300, 415],
+  );
   expect(late(momma)[0]).toMatchObject({ kind: 'momma' });
   expect(late(momma)[0].attackCount).toBeGreaterThan(0);
-  const lair = expectPortableSeeks(garrisonRecording(74, { dragon: 10, wizard: 12, pekka: 8 }, 300, 0, -6), [60, 295]);
+  const lair = expectPortableSeeks(
+    garrisonRecording(74, { dragon: 10, wizard: 12, pekka: 8 }, 300, 0, -6),
+    [60, 295],
+  );
   expect(late(lair)[0]).toMatchObject({ kind: 'goldendragon' });
   expect(late(lair)[0].attackCount).toBeGreaterThan(3);
 }, 120000);

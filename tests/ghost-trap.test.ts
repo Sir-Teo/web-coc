@@ -9,7 +9,13 @@ import { garrisonStats } from '../src/game/garrison-kinds';
 import { garrisonDefenderTargetable } from '../src/game/garrison-abilities';
 import { skeletonTrapArt } from '../src/game/skeleton-art';
 import type { GarrisonDefender } from '../src/game/defenders';
-import { lateTrapArena, liveNativeBattle, nativeReplay, nativeSetup, nearestDeploy } from './fixtures/late-trap-battle';
+import {
+  lateTrapArena,
+  liveNativeBattle,
+  nativeReplay,
+  nativeSetup,
+  nearestDeploy,
+} from './fixtures/late-trap-battle';
 
 it('reads the pinned Ghost Trap row and its level-7 Royal Ghost', () => {
   expect(GHOST_TRAP_READY).toBe(true);
@@ -31,14 +37,28 @@ it('reads the pinned Ghost Trap row and its level-7 Royal Ghost', () => {
       broken: 'troop_trap_land_lvl1_unarmed',
     },
   });
-  expect(garrisonStats('royalghost', 7)).toMatchObject({ hp: 300, dps: 720, rate: 1, range: 0.5, speed: 2 });
+  expect(garrisonStats('royalghost', 7)).toMatchObject({
+    hp: 300,
+    dps: 720,
+    rate: 1,
+    range: 0.5,
+    speed: 2,
+  });
   expect(nativeLayout(75).filter((b) => b.npc === 'ghost-trap')).toHaveLength(12);
   expect(nativeLayout(77).filter((b) => b.npc === 'ghost-trap')).toHaveLength(6);
   // Original coffin frames: armed tier 3, trigger clip and broken coffin from tier 1.
   expect(GHOST_TRAP_ART.originX).toBe(skeletonTrapArt(3).originX);
-  expect(ghostTrapFrame(undefined, 0, false)).toMatchObject({ art: { texture: 'skeletontrap-native-3' }, frame: 0 });
-  expect(ghostTrapFrame(1, 1.5, false)).toMatchObject({ art: { texture: 'skeletontrap-native-1' } });
-  expect(ghostTrapFrame(1, 1.5, true)).toMatchObject({ art: { texture: 'skeletontrap-native-1' }, frame: 2 });
+  expect(ghostTrapFrame(undefined, 0, false)).toMatchObject({
+    art: { texture: 'skeletontrap-native-3' },
+    frame: 0,
+  });
+  expect(ghostTrapFrame(1, 1.5, false)).toMatchObject({
+    art: { texture: 'skeletontrap-native-1' },
+  });
+  expect(ghostTrapFrame(1, 1.5, true)).toMatchObject({
+    art: { texture: 'skeletontrap-native-1' },
+    frame: 2,
+  });
 });
 
 it('triggers on ground attackers within five tiles and releases a concealed Royal Ghost', () => {
@@ -59,7 +79,12 @@ it('triggers on ground attackers within five tiles and releases a concealed Roya
   giant.y = 25.45;
   step(1);
   const activatedAt = b.elapsed;
-  expect(b.traps[trap.id]).toMatchObject({ activatedAt, resolved: false, targetId: giant.id, spawned: 0 });
+  expect(b.traps[trap.id]).toMatchObject({
+    activatedAt,
+    resolved: false,
+    targetId: giant.id,
+    spawned: 0,
+  });
   expect(b.late!.ghostTrap!.traps[trap.id]).toEqual({ trapId: trap.id, activatedAt, spawned: [] });
   expect(m.visibleBuilding(trap)).toBe(true);
   step(12);

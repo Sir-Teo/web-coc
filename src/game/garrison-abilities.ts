@@ -94,7 +94,8 @@ export const spawnAngle = (defender: { id: number }, index: number, count: numbe
  * collision: client sub-tiles in version-44 native battles, whole tiles elsewhere.
  */
 export function nearestPassable(collision: GroundCollision, x: number, y: number) {
-  const free = (px: number, py: number) => px >= 0 && py >= 0 && px < MAP_SIZE && py < MAP_SIZE && !collision.solid(px, py);
+  const free = (px: number, py: number) =>
+    px >= 0 && py >= 0 && px < MAP_SIZE && py < MAP_SIZE && !collision.solid(px, py);
   if (free(x, y)) return { x, y };
   let best: { x: number; y: number; d: number } | undefined;
   for (let sy = Math.floor(y * 2) - 6; sy <= Math.floor(y * 2) + 6; sy++)
@@ -225,12 +226,18 @@ function spawnWave(
 }
 
 /** Golem and Lava Hound death: the secondary troop wave, once, at the moment of death. */
-export function spawnSecondaries(battle: Battle, parent: GarrisonDefender, stats: GarrisonStats, spawn: Spawn) {
+export function spawnSecondaries(
+  battle: Battle,
+  parent: GarrisonDefender,
+  stats: GarrisonStats,
+  spawn: Spawn,
+) {
   if (!stats.secondary || parent.split || parent.defeatedAt === undefined) return;
   parent.split = true;
   const kind = spawnedGarrisonKind(stats.secondary.character);
   const level = garrisonSecondaryLevel(stats);
-  if (!kind || level === undefined) throw Error(`Unsupported secondary troop: ${stats.secondary.character}`);
+  if (!kind || level === undefined)
+    throw Error(`Unsupported secondary troop: ${stats.secondary.character}`);
   spawnWave(
     battle,
     parent,
@@ -283,7 +290,9 @@ export function stepSummons(
     ids: [],
     events: [],
   });
-  state.ids = state.ids.filter((id) => (battle.defenders ?? []).some((d) => d.id === id && d.hp > 0));
+  state.ids = state.ids.filter((id) =>
+    (battle.defenders ?? []).some((d) => d.id === id && d.hp > 0),
+  );
   state.timer = Math.max(0, state.timer - dt);
   if (state.timer <= EPSILON) {
     state.timer = source.cooldown;
@@ -298,7 +307,19 @@ export function stepSummons(
   const level = garrisonSummonLevel(stats);
   if (!kind || level === undefined) throw Error(`Unsupported summon: ${source.character}`);
   const count = Math.min(source.count, source.limit - state.ids.length);
-  const wave = spawnWave(battle, witch, kind, level, count, source.distance, false, 0, battle.elapsed, true, spawn);
+  const wave = spawnWave(
+    battle,
+    witch,
+    kind,
+    level,
+    count,
+    source.distance,
+    false,
+    0,
+    battle.elapsed,
+    true,
+    spawn,
+  );
   state.ids.push(...wave.map((d) => d.id));
   state.used = true;
   state.delayUntil = battle.elapsed + source.cooldown / 6;
@@ -318,7 +339,8 @@ export function killPendingSummons(battle: Battle, witch: GarrisonDefender) {
   }
 }
 
-const active = (unit: Unit, at: number) => unit.hp > 0 && !unit.ejected && (unit.spawnedAt ?? 0) <= at;
+const active = (unit: Unit, at: number) =>
+  unit.hp > 0 && !unit.ejected && (unit.spawnedAt ?? 0) <= at;
 const canHit = (unit: Unit, stats: GarrisonStats) =>
   TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets;
 
@@ -349,7 +371,14 @@ export interface GarrisonChain {
  * `ChainAttackDepth` targets were hit. Each jump deals `ChainAttackDamageReductionPercent` less than
  * the previous hit (compounding, per public descriptions). Ties by attacker ID are local.
  */
-export function startChain(defender: GarrisonDefender, stats: GarrisonStats, n: number, target: Unit, damage: number, at: number) {
+export function startChain(
+  defender: GarrisonDefender,
+  stats: GarrisonStats,
+  n: number,
+  target: Unit,
+  damage: number,
+  at: number,
+) {
   if (!stats.chain || stats.chain.depth <= 1) return;
   defender.chain = {
     n,
@@ -372,10 +401,14 @@ export function stepChain(battle: Battle, defender: GarrisonDefender, stats: Gar
     let best: Unit | undefined,
       bestDistance = Infinity;
     for (const unit of battle.units) {
-      if (!active(unit, chain.next) || !canHit(unit, stats) || chain.hit.includes(unit.id)) continue;
+      if (!active(unit, chain.next) || !canHit(unit, stats) || chain.hit.includes(unit.id))
+        continue;
       const d = distance2D(unit.x - from.x, unit.y - from.y);
       if (d > stats.chain.distance + EPSILON) continue;
-      if (d < bestDistance - EPSILON || (Math.abs(d - bestDistance) <= EPSILON && unit.id < best!.id)) {
+      if (
+        d < bestDistance - EPSILON ||
+        (Math.abs(d - bestDistance) <= EPSILON && unit.id < best!.id)
+      ) {
         best = unit;
         bestDistance = d;
       }
@@ -386,7 +419,16 @@ export function stepChain(battle: Battle, defender: GarrisonDefender, stats: Gar
     }
     const air = !!TROOPS[best.kind].flying;
     best.hp = Math.max(0, best.hp - chain.damage);
-    const jump = { targetId: best.id, at: chain.next, fromX: from.x, fromY: from.y, x: best.x, y: best.y, air, damage: chain.damage };
+    const jump = {
+      targetId: best.id,
+      at: chain.next,
+      fromX: from.x,
+      fromY: from.y,
+      x: best.x,
+      y: best.y,
+      air,
+      damage: chain.damage,
+    };
     jumps.push(jump);
     defender.attacks.find((a) => a.n === chain.n)?.chain?.push(jump);
     chain.hit.push(best.id);
@@ -427,8 +469,12 @@ export function spellRandomOffset(seed: number, count: number, radiusTiles: numb
       xEnableSeed = 5 * count + 3,
       yEnableSeed = 11 * count + 32;
     for (let j = 0; j < 100; j++) {
-      x = (sourceObjectRand(seed, count + j) % radius) * (2 * (sourceObjectRand(seed, xEnableSeed) & 1) - 1);
-      y = (sourceObjectRand(seed, yPosSeed) % radius) * (2 * (sourceObjectRand(seed, yEnableSeed) & 1) - 1);
+      x =
+        (sourceObjectRand(seed, count + j) % radius) *
+        (2 * (sourceObjectRand(seed, xEnableSeed) & 1) - 1);
+      y =
+        (sourceObjectRand(seed, yPosSeed) % radius) *
+        (2 * (sourceObjectRand(seed, yEnableSeed) & 1) - 1);
       if (Math.abs(prevY - prevX + x - y) > Math.trunc(radius / 3)) break;
       yPosSeed += 7;
       xEnableSeed += 4;
@@ -443,8 +489,15 @@ export function createDeathBolts(battle: Battle, defender: GarrisonDefender, sta
   if (!spell || defender.bolts || defender.defeatedAt === undefined) return;
   const seed = (Math.imul(battle.seed | 0, 31) + defender.id) | 0;
   defender.bolts = Array.from({ length: spell.hits }, (_, k) => {
-    const offset = spell.randomOnlyGfx ? { x: 0, y: 0 } : spellRandomOffset(seed, k, spell.randomRadius);
-    return { at: defender.defeatedAt! + spell.firstHit + k * spell.interval, x: defender.x + offset.x, y: defender.y + offset.y, done: false };
+    const offset = spell.randomOnlyGfx
+      ? { x: 0, y: 0 }
+      : spellRandomOffset(seed, k, spell.randomRadius);
+    return {
+      at: defender.defeatedAt! + spell.firstHit + k * spell.interval,
+      x: defender.x + offset.x,
+      y: defender.y + offset.y,
+      done: false,
+    };
   });
 }
 /** Resolve due bolts on both layers (AreaDamage target type 2); Heroes use the spell multiplier. */
@@ -458,7 +511,10 @@ export function stepDeathBolts(battle: Battle, defender: GarrisonDefender, stats
     resolved.push(bolt);
     for (const unit of battle.units)
       if (active(unit, bolt.at) && distance2D(unit.x - bolt.x, unit.y - bolt.y) <= spell.radius)
-        unit.hp = Math.max(0, unit.hp - (unit.hero ? spell.damage * spell.heroDamageScale : spell.damage));
+        unit.hp = Math.max(
+          0,
+          unit.hp - (unit.hero ? spell.damage * spell.heroDamageScale : spell.damage),
+        );
   }
   return resolved;
 }
@@ -481,7 +537,10 @@ export function stepAura(battle: Battle, defender: GarrisonDefender, stats: Garr
     pulses++;
     for (const unit of battle.units)
       if (active(unit, at) && distance2D(unit.x - defender.x, unit.y - defender.y) <= aura.radius)
-        unit.hp = Math.max(0, unit.hp - (unit.hero ? aura.damage * aura.heroDamageScale : aura.damage));
+        unit.hp = Math.max(
+          0,
+          unit.hp - (unit.hero ? aura.damage * aura.heroDamageScale : aura.damage),
+        );
   }
   return pulses;
 }

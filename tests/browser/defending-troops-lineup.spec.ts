@@ -16,7 +16,9 @@ const FAMILIES = [
 ] as const;
 
 /** State-driven lineup on clear ground: art registration, facing, shadows, projectiles and deaths. */
-test('renders every later garrison family idle, walking, attacking and dying on clear ground', async ({ page }) => {
+test('renders every later garrison family idle, walking, attacking and dying on clear ground', async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
@@ -85,7 +87,14 @@ test('renders every later garrison family idle, walking, attacking and dying on 
         if (d.kind === 'skeleton') continue;
         const stats = garrisonStats(d.kind, d.level);
         const target = battle.units[i];
-        Object.assign(d, { hp: d.maxHp, target: null, attacking: false, path: [], attacks: [], shots: undefined });
+        Object.assign(d, {
+          hp: d.maxHp,
+          target: null,
+          attacking: false,
+          path: [],
+          attacks: [],
+          shots: undefined,
+        });
         delete d.engaged;
         delete d.defeatedAt;
         d.attackCount = 0;
@@ -100,7 +109,18 @@ test('renders every later garrison family idle, walking, attacking and dying on 
           d.engaged = true;
           const row = animationStates(stats.animation).attack[0];
           // Hold every non-looping attack row just after its source action frame.
-          d.attacks = [{ at: battle.elapsed - 0.02, x: d.x, y: d.y, targetId: target.id, targetX: target.x, targetY: target.y, n: 0, ...(stats.chain ? { chain: [] } : {}) }];
+          d.attacks = [
+            {
+              at: battle.elapsed - 0.02,
+              x: d.x,
+              y: d.y,
+              targetId: target.id,
+              targetX: target.x,
+              targetY: target.y,
+              n: 0,
+              ...(stats.chain ? { chain: [] } : {}),
+            },
+          ];
           d.attackCount = 1;
           d.cooldown = stats.rate - 0.02;
           if (stats.projectile)
@@ -136,16 +156,24 @@ test('renders every later garrison family idle, walking, attacking and dying on 
       scene.sync();
       scene.drawOverlay(performance.now());
       return {
-        views: battle.defenders!.map((d) => scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0),
-        shadows: battle.defenders!.map((d) => scene.garrisonPresentation.shadows.get(d.id)?.objects.length ?? 0),
+        views: battle.defenders!.map(
+          (d) => scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0,
+        ),
+        shadows: battle.defenders!.map(
+          (d) => scene.garrisonPresentation.shadows.get(d.id)?.objects.length ?? 0,
+        ),
         shots: scene.garrisonPresentation.shots.size,
         glError: game.renderer.gl.getError(),
       };
     }, phase);
-    await page.locator('canvas').screenshot({ path: `output/playtest/defending-troops/lineup-${phase}.png` });
+    await page
+      .locator('canvas')
+      .screenshot({ path: `output/playtest/defending-troops/lineup-${phase}.png` });
     if (phase === 'attack' || phase === 'walk') {
       // Close-ups: each family framed at zoom 2.4 with its target Giant.
-      const kinds = await page.evaluate(() => window.__game.model.battle!.defenders!.map((d) => d.kind));
+      const kinds = await page.evaluate(() =>
+        window.__game.model.battle!.defenders!.map((d) => d.kind),
+      );
       for (const [i, kind] of kinds.entries()) {
         await page.evaluate(async (i) => {
           const { model, scene } = window.__game;
@@ -166,8 +194,14 @@ test('renders every later garrison family idle, walking, attacking and dying on 
   };
   for (const phase of ['idle', 'walk', 'attack'] as const) {
     const report = await capture(phase);
-    expect(report.views.every((n) => n > 0), phase).toBe(true);
-    expect(report.shadows.every((n) => n > 0), phase).toBe(true);
+    expect(
+      report.views.every((n) => n > 0),
+      phase,
+    ).toBe(true);
+    expect(
+      report.shadows.every((n) => n > 0),
+      phase,
+    ).toBe(true);
     expect(report.glError).toBe(0);
     if (phase === 'attack') expect(report.shots).toBeGreaterThanOrEqual(4);
   }

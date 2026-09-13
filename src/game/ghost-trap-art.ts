@@ -33,12 +33,21 @@ export function ghostTrapAsset(level: number, variant?: string) {
 }
 /** The atlas frame and registration for a state: armed, the 24-fps trigger clip, or broken. */
 export function ghostTrapFrame(activatedAt: number | undefined, elapsed: number, reduced: boolean) {
-  const pick = (entry: { tier: 1 | 3; clip: 'ground' | 'ground-trigger' | 'spent' }, frame: number) => {
+  const pick = (
+    entry: { tier: 1 | 3; clip: 'ground' | 'ground-trigger' | 'spent' },
+    frame: number,
+  ) => {
     const clip = native.tiers[entry.tier].clips[entry.clip];
-    return { art: skeletonTrapArt(entry.tier), frame: clip.frames[Math.min(clip.count - 1, frame)] };
+    return {
+      art: skeletonTrapArt(entry.tier),
+      frame: clip.frames[Math.min(clip.count - 1, frame)],
+    };
   };
   if (activatedAt === undefined) return pick(GHOST_TRAP_EXPORTS.armed, 0);
   // Reduced motion shows the broken coffin once the trap has fired.
   if (reduced) return pick(GHOST_TRAP_EXPORTS.broken, 0);
-  return pick(GHOST_TRAP_EXPORTS.triggered, Math.max(0, Math.floor((elapsed - activatedAt) * 24 + 1e-9)));
+  return pick(
+    GHOST_TRAP_EXPORTS.triggered,
+    Math.max(0, Math.floor((elapsed - activatedAt) * 24 + 1e-9)),
+  );
 }

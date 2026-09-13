@@ -32,7 +32,11 @@ export function ghostTrapSource() {
     firstSpawn: Number(row.SpawnInitialDelayMs) / 1000,
     interval: Number(row.TimeBetweenSpawnsMs) / 1000,
     actionFrame: Number(row.ActionFrame),
-    exports: { armed: row.ExportName, triggered: row.ExportNameTriggered, broken: row.ExportNameBroken },
+    exports: {
+      armed: row.ExportName,
+      triggered: row.ExportNameTriggered,
+      broken: row.ExportNameBroken,
+    },
   };
 }
 const SOURCE = ghostTrapSource();
@@ -67,17 +71,30 @@ export function stepGhostTrap(context: LateCombatContext) {
   if (battle.finished || phase !== 'traps') return;
   for (const trap of battle.buildings) {
     if (trap.npc !== 'ghost-trap' || trap.constructing || trap.upgradeEnd) continue;
-    const center = { x: trap.x + BUILDINGS[trap.kind].size / 2, y: trap.y + BUILDINGS[trap.kind].size / 2 };
+    const center = {
+      x: trap.x + BUILDINGS[trap.kind].size / 2,
+      y: trap.y + BUILDINGS[trap.kind].size / 2,
+    };
     const state = battle.late!.ghostTrap?.traps[trap.id];
     if (!state && !battle.traps[trap.id]) {
       const nearby = battle.units.filter(
-        (u) => eligible(u, battle.elapsed) && distance2D(u.x - center.x, u.y - center.y) <= SOURCE.trigger,
+        (u) =>
+          eligible(u, battle.elapsed) &&
+          distance2D(u.x - center.x, u.y - center.y) <= SOURCE.trigger,
       );
       if (!nearby.length) continue;
       nearby.sort(
-        (a, b) => distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y) || a.id - b.id,
+        (a, b) =>
+          distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y) ||
+          a.id - b.id,
       );
-      battle.traps[trap.id] = { activatedAt: battle.elapsed, resolved: false, targetId: nearby[0].id, ...center, spawned: 0 };
+      battle.traps[trap.id] = {
+        activatedAt: battle.elapsed,
+        resolved: false,
+        targetId: nearby[0].id,
+        ...center,
+        spawned: 0,
+      };
       (battle.late!.ghostTrap ??= { traps: {} }).traps[trap.id] = {
         trapId: trap.id,
         activatedAt: battle.elapsed,
@@ -114,7 +131,15 @@ function spawnDue(battle: Battle, trap: Building, center: { x: number; y: number
       record.spawned = state.spawned.length;
       continue;
     }
-    const ghost = spawnGarrisonDefender(battle, SOURCE.kind!, SOURCE.level, trap.id, point.x, point.y, at);
+    const ghost = spawnGarrisonDefender(
+      battle,
+      SOURCE.kind!,
+      SOURCE.level,
+      trap.id,
+      point.x,
+      point.y,
+      at,
+    );
     ghost.idleUntil = at + SPAWN_TIME + SPAWN_IDLE;
     state.spawned.push(ghost.id);
     record.spawned = state.spawned.length;
