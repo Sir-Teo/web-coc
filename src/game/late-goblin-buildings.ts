@@ -24,7 +24,7 @@ import {
 /** Communications Mast, Goblin Hall (including its level-2 weapon), Goblin Castle,
  * Foreboding Cave and the Goblin Boss Town Hall with its weapon.
  * The campaign gate keeps affected villages unavailable until this is true. */
-export const LATE_GOBLIN_BUILDINGS_READY = false;
+export const LATE_GOBLIN_BUILDINGS_READY = true;
 
 export interface GoblinShot {
   index: number;

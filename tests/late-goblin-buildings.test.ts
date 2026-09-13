@@ -208,6 +208,36 @@ describe('late Goblin campaign building combat', () => {
     expect(weapon.hits[0].struck).toBeGreaterThan(1);
   });
 
+  it('draws defense-preferring troops to the Goblin Hall only once its weapon is ready', () => {
+    // A nearer Gold Storage wins until the hall's ActivatedCombatAddBuildingClass applies.
+    const storage = makeBuilding(1001, 'goldstorage', 8, 20, 1);
+    const target = (giantStep: number) => {
+      const model = lateGoblinLive(
+        lateGoblinReplay(
+          73,
+          [
+            { step: 0, kind: 'archer', x: 22, y: 17 },
+            { step: giantStep, kind: 'giant', x: 5, y: 21.5 },
+          ],
+          { buildings: [hall2(), storage], steps: 200, scenery: false },
+        ),
+        giantStep + 2,
+      );
+      const b = model.battle!;
+      return {
+        ready: b.late!.goblinBuildings!.weapons[1000].readyAt,
+        elapsed: b.elapsed,
+        target: b.units.find((u) => u.kind === 'giant')!.target,
+      };
+    };
+    const early = target(0);
+    expect(early.ready).toBeUndefined();
+    expect(early.target).toBe(1001);
+    const late = target(120);
+    expect(late.ready).toBeLessThan(late.elapsed - 0.1);
+    expect(late.target).toBe(1000);
+  });
+
   it('removes the Goblin Castle from resource preference', () => {
     const castle = makeNpcBuilding(1000, 'goblin-castle', 12, 12);
     const storage: Building = makeBuilding(1001, 'goldstorage', 30, 30, 1);
