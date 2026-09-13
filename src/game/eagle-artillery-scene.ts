@@ -98,7 +98,7 @@ export class EagleArtilleryPresentation implements LatePresentation {
       const tower = state?.towers[b.id];
       const visual: EagleArtilleryVisualState =
         b.hp <= 0 ? 'ruin' : b.constructing || b.upgradeEnd ? 'upgrading' : 'active';
-      const frame = visual === 'active' ? eagleArtilleryTurretFrame(b.level, tower, reduced ? elapsed : elapsed) : 0;
+      const frame = visual === 'active' ? eagleArtilleryTurretFrame(b.level, tower, elapsed, reduced) : 0;
       let base = this.bases.get(b.id);
       if (!base) this.bases.set(b.id, (base = new NativeMeshView(this.scene, BASE_PREFIX)));
       if (visual === 'ruin') base.clear();

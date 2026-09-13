@@ -3,11 +3,11 @@ import baseRaw from '../../reference/eagle-artillery/base.json';
 import {
   nativeMatrix,
   nativeScenePoses,
+  nativeVertices,
   type NativeMatrix,
   type NativeMeshGraph,
   type NativeScenePose,
 } from './native-mesh';
-import { nativeSceneBounds } from './native-scene-view';
 import { EAGLE_ARTILLERY_ART } from './eagle-artillery-art';
 import {
   EAGLE_ARTILLERY,
@@ -35,15 +35,23 @@ export const eagleArtilleryLabels = (level: number) => {
  * Local presentation schedule over the named `turret_load` states. Activation stages follow the
  * recorded deployed-housing thresholds (25/50/75/100% of WakeUpSpace, 25 frames each); every
  * launch shows `attack_start`/`attack_end`, a completed burst plays `load`, emptiness plays
- * `deactivate` and holds `empty`. Native listener timing is unverified.
+ * `deactivate` and holds `empty`. Native listener timing is unverified. Reduced motion holds each
+ * state's settled frame (dormant stage end, first battle-idle frame, empty) without transitions.
  */
 export function eagleArtilleryTurretFrame(
   level: number,
   tower: EagleArtilleryTowerState | undefined,
   t: number,
+  reduced = false,
 ) {
   const labels = eagleArtilleryLabels(level);
   if (!tower) return labels.idle;
+  if (reduced) {
+    if (tower.emptyAt !== undefined && t + 1e-9 >= tower.emptyAt) return labels.empty;
+    if (tower.awakeAt !== undefined && t + 1e-9 >= tower.awakeAt) return labels.battleidle_start;
+    const reached = tower.stages.filter((at) => at <= t + 1e-9).length;
+    return reached ? 25 * reached : labels.idle;
+  }
   if (tower.emptyAt !== undefined && t + 1e-9 >= tower.emptyAt) {
     const age = (t - tower.emptyAt) * FPS;
     if (age < 2) return labels.attack_start + Math.floor(age);
@@ -116,12 +124,36 @@ export function eagleArtilleryPivot(level: number, frame: number) {
   return { x: matrix[2], y: matrix[5] };
 }
 
+/** Transformed vertex bounds of composed poses (renderer-free, so combat tests can import it). */
+export function eagleArtilleryPoseBounds(poses: readonly NativeScenePose[]): [number, number, number, number] | undefined {
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  const visit = (list: readonly NativeScenePose[]) => {
+    for (const pose of list) {
+      if ('group' in pose) visit(pose.group);
+      else {
+        const v = nativeVertices(pose);
+        for (let i = 0; i < v.length; i += 4) {
+          left = Math.min(left, v[i]);
+          top = Math.min(top, v[i + 1]);
+          right = Math.max(right, v[i]);
+          bottom = Math.max(bottom, v[i + 1]);
+        }
+      }
+    }
+  };
+  visit(poses);
+  return left === Infinity ? undefined : [left, top, right, bottom];
+}
+
 const bounds = new Map<number, [number, number, number, number]>();
 /** Dormant body registration over the ground center (health and upgrade bars). */
 export function eagleArtilleryBounds(level: number) {
   let result = bounds.get(level);
   if (!result) {
-    result = nativeSceneBounds([
+    result = eagleArtilleryPoseBounds([
       ...eagleArtilleryBasePoses(),
       ...eagleArtilleryPoses(level, 'active', eagleArtilleryLabels(level).idle),
     ])!;

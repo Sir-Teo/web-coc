@@ -2,10 +2,11 @@ import raw from '../../reference/scattershot/runtime.json';
 import {
   nativeMatrix,
   nativeScenePoses,
+  nativeVertices,
   type NativeMatrix,
   type NativeMeshGraph,
+  type NativeScenePose,
 } from './native-mesh';
-import { nativeSceneBounds } from './native-scene-view';
 import { SCATTERSHOT_ART, SCATTERSHOT_PREVIEW_TURRET } from './scattershot-art';
 import { SCATTERSHOT, SCATTERSHOT_EXPORTS, scattershotStats } from './scattershot-stats';
 import type { ScattershotProjectile, ScattershotTowerState } from './scattershot';
@@ -67,11 +68,35 @@ export function scattershotPoses(level: number, state: ScattershotVisualState, t
     }),
   ];
 }
+/** Transformed vertex bounds of composed poses (renderer-free, so combat tests can import it). */
+export function scattershotPoseBounds(poses: readonly NativeScenePose[]): [number, number, number, number] | undefined {
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  const visit = (list: readonly NativeScenePose[]) => {
+    for (const pose of list) {
+      if ('group' in pose) visit(pose.group);
+      else {
+        const v = nativeVertices(pose);
+        for (let i = 0; i < v.length; i += 4) {
+          left = Math.min(left, v[i]);
+          top = Math.min(top, v[i + 1]);
+          right = Math.max(right, v[i]);
+          bottom = Math.max(bottom, v[i + 1]);
+        }
+      }
+    }
+  };
+  visit(poses);
+  return left === Infinity ? undefined : [left, top, right, bottom];
+}
+
 const bounds = new Map<number, [number, number, number, number]>();
 export function scattershotBounds(level: number) {
   let result = bounds.get(level);
   if (!result) {
-    result = nativeSceneBounds(scattershotPoses(level, 'active', SCATTERSHOT_PREVIEW_TURRET))!;
+    result = scattershotPoseBounds(scattershotPoses(level, 'active', SCATTERSHOT_PREVIEW_TURRET))!;
     bounds.set(level, result);
   }
   return result;
