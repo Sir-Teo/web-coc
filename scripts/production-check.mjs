@@ -19,6 +19,9 @@ const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native
 const seekingMineNative = JSON.parse(
   await fs.readFile('reference/seeking-mine/native.json', 'utf8'),
 );
+const wizardTowerNative = JSON.parse(
+  await fs.readFile('reference/wizard-tower/native.json', 'utf8'),
+);
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -53,6 +56,11 @@ for (const [name, engine] of Object.entries(engines)) {
       ...Object.values(seekingMineNative.previews),
       ...Object.values(seekingMineNative.sounds),
       seekingMineNative.info,
+      ...Object.values(wizardTowerNative.body.textures),
+      ...Object.values(wizardTowerNative.defender.textures),
+      ...Object.values(wizardTowerNative.effectArt.textures),
+      ...Object.values(wizardTowerNative.previews),
+      ...Object.values(wizardTowerNative.sounds),
       ...[
         'tesla_appear_01',
         'tesla_zap_01',

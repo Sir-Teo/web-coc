@@ -4,6 +4,7 @@ import { TESLA_ART, TESLA_ART_LEVELS, teslaTexture, teslaAsset } from './tesla-a
 import { XBOW, XBOW_LEVELS, xbowDamage, type XbowMode } from './xbow-stats';
 import { xbowAsset, xbowTexture } from './xbow-art';
 import { BOMB_TOWER_ART, bombTowerTexture, bombTowerAsset } from './bomb-tower-art';
+import { WIZARD_TOWER_ART, wizardTowerTexture, wizardTowerAsset } from './wizard-tower-art';
 import { skeletonTrapTexture, skeletonTrapAsset } from './skeleton-art';
 import type { SkeletonMode } from './skeleton-stats';
 import { sweeperTexture, sweeperAsset } from './air-control-art';
@@ -488,9 +489,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   wizardtower: {
     name: 'Wizard Tower',
     description:
-      'A crystal lookout with a splash attack. Hits groups of ground or air troops, one layer at a time.',
+      'A Wizard atop a stone tower. Hits groups of ground or air troops, one layer at a time.',
     size: 3,
-    width: 112,
+    width: WIZARD_TOWER_ART.width,
     hp: DEFENSE_PROGRESSION.wizardtower[0].hp,
     cost: DEFENSE_PROGRESSION.wizardtower[0].cost,
     resource: 'gold',
@@ -940,6 +941,7 @@ export const buildingTexture = (
   if (kind === 'xbow') return xbowTexture(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapTexture('ground', level);
   if (kind === 'bombtower') return bombTowerTexture(level);
+  if (kind === 'wizardtower') return wizardTowerTexture(level);
   if (kind === 'tesla') return teslaTexture(level);
   if (kind === 'airsweeper') return sweeperTexture(level, direction);
   if (kind === 'seekingairmine') return seekingMineTexture(level);
@@ -964,6 +966,7 @@ export const asset = (
   if (kind === 'xbow') return xbowAsset(level, xbowMode);
   if (kind === 'skeletontrap') return skeletonTrapAsset(skeletonMode, level);
   if (kind === 'bombtower') return bombTowerAsset(level);
+  if (kind === 'wizardtower') return wizardTowerAsset(level);
   if (kind === 'tesla') return teslaAsset(level);
   if (kind === 'airsweeper') return sweeperAsset(level);
   if (kind === 'seekingairmine') return seekingMineAsset();

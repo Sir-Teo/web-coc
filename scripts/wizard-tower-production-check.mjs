@@ -1,8 +1,22 @@
 import { chromium, webkit, expect } from '@playwright/test';
 import { createServer, preview } from 'vite';
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 await fs.mkdir('output/playtest', { recursive: true });
+const native = JSON.parse(await fs.readFile('reference/wizard-tower/native.json', 'utf8'));
+const requiredAssets = [
+  ...Object.values(native.body.textures),
+  ...Object.values(native.defender.textures),
+  ...Object.values(native.effectArt.textures),
+  ...Object.values(native.previews),
+  ...Object.values(native.sounds),
+].map((value) => '/' + value.path);
+// Unchanged export from bf2f169, before native presentation was integrated.
+const historicalBytes = await fs.readFile('tests/fixtures/wizard-tower-v34.crown-replay.json');
+const historicalSha256 = createHash('sha256').update(historicalBytes).digest('hex');
+expect(historicalSha256).toBe('582c00d4091e3ababcdda5f87c67d9766ce03f915470178d5d73d1e046ab31e8');
+const historicalReplay = JSON.parse(historicalBytes);
 const modules = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -54,6 +68,7 @@ try {
 } finally {
   await modules.close();
 }
+expect(fixtures.find((fixture) => fixture.level === 10).file).toEqual(historicalReplay);
 
 const server = await preview({
   preview: { host: '127.0.0.1', port: 0, strictPort: true },
@@ -78,14 +93,18 @@ try {
         deviceScaleFactor: 2,
       });
       const page = await context.newPage(),
-        errors = [];
+        errors = [],
+        loaded = new Set();
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('response', (r) => {
         if (r.status() >= 400) errors.push(r.url());
+        if (r.ok()) loaded.add(new URL(r.url()).pathname);
       });
       await page.goto(url);
       await page.locator('[data-action="skip-tutorial"]').click();
       await page.locator('#loading').waitFor({ state: 'detached' });
+      expect(requiredAssets).toHaveLength(31);
+      expect(requiredAssets.filter((path) => !loaded.has(path))).toEqual([]);
       expect(await page.evaluate(() => window.__game)).toBeUndefined();
       await page.locator('#import-file').setInputFiles({
         name: 'wizard-tower-village.json',
@@ -129,7 +148,8 @@ try {
         await open({
           name: 'wizard-tower-replay.json',
           mimeType: 'application/json',
-          buffer: Buffer.from(JSON.stringify(fixture.file)),
+          buffer:
+            fixture.level === 10 ? historicalBytes : Buffer.from(JSON.stringify(fixture.file)),
         });
         expect((await seek(0)).battle.projectiles).toEqual([]);
         const flight = await seek(fixture.flightAt);
@@ -199,6 +219,8 @@ try {
         viewport: [390, 844],
         stages,
         portableReplay: true,
+        originalAssetsLoaded: requiredAssets,
+        historicalReplay: { commit: 'bf2f169', sha256: historicalSha256, level: 10 },
         flightRewind: true,
         offline,
       };

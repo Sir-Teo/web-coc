@@ -1,5 +1,10 @@
 import { distance2D } from './distance';
 import {
+  recordWizardTowerShot,
+  recordWizardTowerDestroyed,
+  type WizardTowerAttackState,
+} from './wizard-tower-attack';
+import {
   recordBombTowerShot,
   recordBombTowerDestroyed,
   type BombTowerAttackState,
@@ -340,6 +345,7 @@ export interface Battle {
   xbows?: Record<number, XbowState>;
   teslas?: Record<number, TeslaAttackState>;
   bombTowers?: Record<number, BombTowerAttackState>;
+  wizardTowers?: Record<number, WizardTowerAttackState>;
   /** Reveal time in battle seconds. Never persisted in the home village. */
   revealedTeslas?: Record<number, number>;
   deathBombs?: Record<number, DeathBomb>;
@@ -387,6 +393,9 @@ export type FX = {
     | 'bombtower-pickup'
     | 'bombtower-place'
     | 'bombtower-cancel'
+    | 'wizardtower-pickup'
+    | 'wizardtower-place'
+    | 'wizardtower-cancel'
     | 'seekingairmine-pickup'
     | 'seekingairmine-place'
     | 'seekingairmine-cancel'
@@ -1276,7 +1285,10 @@ export class GameModel {
   private nativeBuildingHandling(b: Building, action: 'pickup' | 'place' | 'cancel') {
     if (
       !this.battle &&
-      (b.kind === 'tesla' || b.kind === 'bombtower' || b.kind === 'seekingairmine')
+      (b.kind === 'tesla' ||
+        b.kind === 'bombtower' ||
+        b.kind === 'seekingairmine' ||
+        b.kind === 'wizardtower')
     ) {
       const size = BUILDINGS[b.kind].size;
       this.onEffect({
@@ -2464,6 +2476,7 @@ export class GameModel {
           this.onEffect,
         );
         if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
+        if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);
       }
     }
     const king = b.units.find((u) => u.hero);
@@ -2573,6 +2586,7 @@ export class GameModel {
       b.hp = 0;
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
+      if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'bombtower') {
         recordBombTowerDestroyed(this.battle, b, at);
         primeDeathBomb(
@@ -2588,6 +2602,7 @@ export class GameModel {
       this.onEffect({
         type: 'destroy',
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
+        ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',

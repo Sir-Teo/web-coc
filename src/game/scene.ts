@@ -20,6 +20,9 @@ import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
 import { bombTowerBounds, bombTowerMuzzle } from './bomb-tower-poses';
+import { WIZARD_TOWER_ART } from './wizard-tower-art';
+import { preloadWizardTowers, WizardTowerPresentation } from './wizard-tower-scene';
+import { wizardTowerBounds } from './wizard-tower-poses';
 import {
   SKELETON_ART_TIERS,
   skeletonTrapArt,
@@ -147,6 +150,7 @@ export class VillageScene extends Phaser.Scene {
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
+  private wizardTowerPresentation!: WizardTowerPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
@@ -176,6 +180,7 @@ export class VillageScene extends Phaser.Scene {
     preloadGoblinBuildings(this);
     preloadTeslas(this);
     preloadBombTowers(this);
+    preloadWizardTowers(this);
     preloadSeekingMines(this);
     for (const level of SKELETON_ART_TIERS) {
       const art = skeletonTrapArt(level);
@@ -264,6 +269,7 @@ export class VillageScene extends Phaser.Scene {
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
+    this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
       const reduced = this.model.state.settings.reducedMotion,
@@ -282,6 +288,7 @@ export class VillageScene extends Phaser.Scene {
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
       this.bombTowerPresentation.destroy();
+      this.wizardTowerPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
     });
@@ -705,7 +712,12 @@ export class VillageScene extends Phaser.Scene {
   placeBuilding(x: number, y: number) {
     const kind = this.model.placement;
     if (!this.model.place(x, y)) return false;
-    if (kind !== 'tesla' && kind !== 'bombtower' && kind !== 'seekingairmine')
+    if (
+      kind !== 'tesla' &&
+      kind !== 'bombtower' &&
+      kind !== 'seekingairmine' &&
+      kind !== 'wizardtower'
+    )
       this.audio.play('build');
     return true;
   }
@@ -761,9 +773,11 @@ export class VillageScene extends Phaser.Scene {
         ? teslaBodyBounds
         : b.kind === 'bombtower'
           ? bombTowerBounds
-          : b.kind === 'seekingairmine'
-            ? seekingMineBounds
-            : undefined;
+          : b.kind === 'wizardtower'
+            ? wizardTowerBounds
+            : b.kind === 'seekingairmine'
+              ? seekingMineBounds
+              : undefined;
     if (!sample) return;
     const state =
       b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
@@ -846,6 +860,7 @@ export class VillageScene extends Phaser.Scene {
       this.goblinBuildingPresentation.clear();
       this.teslaPresentation.clear();
       this.bombTowerPresentation.clear();
+      this.wizardTowerPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
@@ -938,7 +953,9 @@ export class VillageScene extends Phaser.Scene {
         'intactHeight',
         b.kind === 'bombtower'
           ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-          : im.displayHeight,
+          : b.kind === 'wizardtower'
+            ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
+            : im.displayHeight,
       );
       if (b.kind === 'mortar') {
         const muzzle = mortarMuzzle(b.level);
@@ -962,6 +979,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'darkstorage' ||
           b.kind === 'tesla' ||
           b.kind === 'bombtower' ||
+          b.kind === 'wizardtower' ||
           b.kind === 'seekingairmine' ||
           isGoblinBuilding(b.npc)) &&
         b.hp > 0
@@ -985,6 +1003,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind !== 'darkstorage' &&
         b.kind !== 'tesla' &&
         b.kind !== 'bombtower' &&
+        b.kind !== 'wizardtower' &&
         b.kind !== 'seekingairmine'
       )
         im.setTint(0xffecc7);
@@ -1134,6 +1153,12 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(SEEKING_MINE_ART.originX, SEEKING_MINE_ART.originY)
         .setFlipX(false)
         .setDisplaySize(SEEKING_MINE_ART.width, SEEKING_MINE_ART.height);
+    if (kind === 'wizardtower')
+      return im
+        .setOrigin(WIZARD_TOWER_ART.originX, WIZARD_TOWER_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(WIZARD_TOWER_ART.width, WIZARD_TOWER_ART.height)
+        .setData('nativeWizardTowerRuin', false);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
     const scale =
@@ -1226,11 +1251,18 @@ export class VillageScene extends Phaser.Scene {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0);
       return;
     }
-    if (b.kind === 'tesla' || b.kind === 'bombtower') {
+    if (b.kind === 'tesla' || b.kind === 'bombtower' || b.kind === 'wizardtower') {
       im.setCrop()
         .setPosition(p.x, p.y)
         .setAlpha(0)
-        .setData(b.kind === 'tesla' ? 'nativeTeslaRuin' : 'nativeBombTowerRuin', true);
+        .setData(
+          b.kind === 'tesla'
+            ? 'nativeTeslaRuin'
+            : b.kind === 'wizardtower'
+              ? 'nativeWizardTowerRuin'
+              : 'nativeBombTowerRuin',
+          true,
+        );
       return;
     }
     const width =
@@ -1251,7 +1283,14 @@ export class VillageScene extends Phaser.Scene {
   private drawRuinGround() {
     this.ruinGround.clear();
     for (const b of this.model.buildings) {
-      if (b.hp > 0 || isTrap(b.kind) || b.kind === 'tesla' || b.kind === 'bombtower') continue;
+      if (
+        b.hp > 0 ||
+        isTrap(b.kind) ||
+        b.kind === 'tesla' ||
+        b.kind === 'bombtower' ||
+        b.kind === 'wizardtower'
+      )
+        continue;
       const d = BUILDINGS[b.kind];
       const p = iso(b.x + d.size / 2, b.y + d.size / 2);
       const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
@@ -1412,7 +1451,8 @@ export class VillageScene extends Phaser.Scene {
       valid
         ? this.model.placement === 'wall' ||
           this.model.placement === 'mortar' ||
-          this.model.placement === 'camp'
+          this.model.placement === 'camp' ||
+          this.model.placement === 'wizardtower'
           ? 0xffffff
           : 0xd9ffb0
         : 0xff7272,
@@ -1424,6 +1464,14 @@ export class VillageScene extends Phaser.Scene {
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
     const bombTowerCues = this.drawBombTowers();
+    const wizardTowerCues = this.wizardTowerPresentation.render(
+      this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
+      this.model.battle,
+      this.model.battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+    );
     const g = this.overlay;
     g.clear();
     const b = this.model.buildings.find((b) => b.id === this.model.selected);
@@ -1614,7 +1662,7 @@ export class VillageScene extends Phaser.Scene {
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
-      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues],
+      [...xbowCues, ...teslaCues, ...bombTowerCues, ...mineCues, ...wizardTowerCues],
       this.renderClock / 1000,
     );
     if (battle && !battle.finished) {
@@ -1973,10 +2021,30 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (
-      fx.weapon === 'towerbomb' &&
+      (fx.weapon === 'towerbomb' || fx.weapon === 'arcane') &&
       ['projectile', 'impact', 'blast', 'destroy'].includes(fx.type)
     ) {
       if (fx.type === 'destroy') this.lastRevision = -1;
+      return;
+    }
+    if (
+      fx.type === 'wizardtower-pickup' ||
+      fx.type === 'wizardtower-place' ||
+      fx.type === 'wizardtower-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.wizardTowerPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'wizardtower-pickup'
+          ? 'pickup'
+          : fx.type === 'wizardtower-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'wizardtower-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
     const p = iso(fx.x, fx.y);
@@ -2320,7 +2388,9 @@ export class VillageScene extends Phaser.Scene {
     const shots =
       !b || b.finished || this.model.state.settings.reducedMotion
         ? []
-        : (b.projectiles ?? []).filter((p) => p.weapon !== 'xbowbolt' && p.weapon !== 'towerbomb');
+        : (b.projectiles ?? []).filter(
+            (p) => p.weapon !== 'xbowbolt' && p.weapon !== 'towerbomb' && p.weapon !== 'arcane',
+          );
     const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
     const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
     this.combatEffects.retainProjectiles(
@@ -2390,7 +2460,9 @@ export class VillageScene extends Phaser.Scene {
             ? !im.getData('nativeTeslaRuin')
             : b.kind === 'bombtower'
               ? !im.getData('nativeBombTowerRuin')
-              : !im.texture.key.startsWith('ruins-'))
+              : b.kind === 'wizardtower'
+                ? !im.getData('nativeWizardTowerRuin')
+                : !im.texture.key.startsWith('ruins-'))
         ) {
           this.renderRuin(b, im);
           this.drawRuinGround();

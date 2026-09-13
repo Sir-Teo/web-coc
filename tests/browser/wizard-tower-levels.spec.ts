@@ -19,6 +19,10 @@ for (const width of [390, 320])
     });
     await page.locator('[data-action="info"]').click();
     await expect(page.locator('.info-hero')).toContainText('LEVEL 4 OF 17');
+    await expect(page.locator('.info-hero img')).toHaveAttribute(
+      'src',
+      '/assets/buildings/wizard-tower-native/preview-4.png',
+    );
     for (const value of ['730', '840', '5 tiles/s', '9 tiles/s'])
       await expect(page.locator('.info-table')).toContainText(value);
     await expect(page.locator('.info-upgrade')).toContainText('550,000');
@@ -33,6 +37,10 @@ for (const width of [390, 320])
     });
     await page.locator('[data-action="info"]').click();
     await expect(page.locator('.info-hero')).toContainText('LEVEL 6 OF 17');
+    await expect(page.locator('.info-hero img')).toHaveAttribute(
+      'src',
+      '/assets/buildings/wizard-tower-native/preview-6.png',
+    );
     await expect(page.locator('.info-upgrade')).toContainText('Requires Town Hall 9');
     expect(await page.locator('.info-upgrade button').count()).toBe(0);
     const bounds = await page.locator('.info-table').boundingBox();
@@ -73,6 +81,10 @@ for (const width of [390, 320])
     });
     await page.locator('[data-action="info"]').click();
     await expect(page.locator('.info-hero')).toContainText('LEVEL 17 OF 17');
+    await expect(page.locator('.info-hero img')).toHaveAttribute(
+      'src',
+      '/assets/buildings/wizard-tower-native/preview-17.png',
+    );
     for (const value of ['3,300', '110', '143', '9 tiles/s'])
       await expect(page.locator('.info-table')).toContainText(value);
     expect(
