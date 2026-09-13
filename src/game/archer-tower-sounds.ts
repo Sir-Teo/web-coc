@@ -76,3 +76,21 @@ export function archerTowerHitCues(battle?: Battle | null): SampleCue[] {
     ];
   });
 }
+
+export function archerTowerDestructionCues(battle?: Battle | null): SampleCue[] {
+  if (!battle?.nativeArcherTowers || battle.finished) return [];
+  return Object.entries(battle.archerTowerDestructions ?? {}).map(([id, event]) => {
+    const row = source.effects['Building Destroyed'][0];
+    if (!row.Sound) throw new Error('Missing original Archer Tower destruction sound');
+    return {
+      key: `archer-tower:destroy:${id}`,
+      sample: archerTowerSample(row.Sound),
+      at: event.at + Number(row.SoundDelay) / 1000,
+      volume: Number(row.Volume) / 100,
+      pitch:
+        (Number(row.MinPitch) +
+          (Number(row.MaxPitch) - Number(row.MinPitch)) * visualRandom(Number(id), 0, 6400000)) /
+        100,
+    };
+  });
+}

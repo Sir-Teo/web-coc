@@ -53,7 +53,8 @@ export function archerTowerHandlingPoses(
 }
 
 /** Captured hit emitters with the shared local target-height and particle-motion projection. */
-export function archerTowerHitPoses(
+function archerTowerEventPoses(
+  kind: 'hit' | 'destroy',
   battle: Battle | null | undefined,
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
@@ -61,12 +62,22 @@ export function archerTowerHitPoses(
 ): NativeParticlePose[] {
   if (!battle?.nativeArcherTowers || battle.finished || reduced) return [];
   const result: NativeParticlePose[] = [];
-  for (const hit of battle.archerTowerHits ?? []) {
+  const events =
+    kind === 'hit'
+      ? (battle.archerTowerHits ?? [])
+      : Object.entries(battle.archerTowerDestructions ?? {}).map(([id, event]) => ({
+          ...event,
+          id,
+          sourceId: Number(id),
+          air: false,
+        }));
+  for (const hit of events) {
     const effects = (source.effects as unknown as Record<string, Record<string, string>[]>)[
-      archerTowerSource(hit.level).HitEffect
+      archerTowerSource(hit.level)[kind === 'hit' ? 'HitEffect' : 'DestroyEffect']
     ];
     const point = iso(hit.x, hit.y);
-    const ground = { x: point.x, y: point.y - 16 - (hit.air ? airLift : 0) };
+    const lift = kind === 'hit' ? 16 : 0;
+    const ground = { x: point.x, y: point.y - lift - (hit.air ? airLift : 0) };
     effects.forEach((effect, emitterIndex) => {
       const name = effect.ParticleEmitter;
       if (!name) return;
@@ -78,7 +89,7 @@ export function archerTowerHitPoses(
       if (age < 0 || age >= duration + Number(row.MaxLife) / 1000) return;
       for (let i = 0; i < count; i++) {
         const pose = particle(
-          `archer-tower:hit:${hit.id}:${emitterIndex}:${i}`,
+          `archer-tower:${kind}:${hit.id}:${emitterIndex}:${i}`,
           name,
           rows,
           age - (duration * i) / count,
@@ -87,17 +98,33 @@ export function archerTowerHitPoses(
             visualRandom(
               hit.sourceId,
               Math.round(hit.at * 1000000),
-              6300000 + emitterIndex * 1000 + i * 16 + slot,
+              (kind === 'hit' ? 6300000 : 6400000) + emitterIndex * 1000 + i * 16 + slot,
             ),
           effect.IsoLayer ?? effects[0].IsoLayer,
           false,
         );
         if (pose) {
-          pose.depth = hit.air ? 8000 : pose.depth + 16;
+          pose.depth = hit.air ? 8000 : pose.depth + lift;
           result.push(pose);
         }
       }
     });
   }
   return result;
+}
+
+export function archerTowerHitPoses(
+  battle: Battle | null | undefined,
+  reduced: boolean,
+  iso: (x: number, y: number) => { x: number; y: number },
+  airLift = 46,
+) {
+  return archerTowerEventPoses('hit', battle, reduced, iso, airLift);
+}
+export function archerTowerDestructionPoses(
+  battle: Battle | null | undefined,
+  reduced: boolean,
+  iso: (x: number, y: number) => { x: number; y: number },
+) {
+  return archerTowerEventPoses('destroy', battle, reduced, iso);
 }

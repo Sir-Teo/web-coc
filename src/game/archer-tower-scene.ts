@@ -5,9 +5,14 @@ import {
   archerTowerHandlingCues,
   archerTowerReleaseCues,
   archerTowerHitCues,
+  archerTowerDestructionCues,
   type ArcherTowerHandlingEvent,
 } from './archer-tower-sounds';
-import { archerTowerHandlingPoses, archerTowerHitPoses } from './archer-tower-effects';
+import {
+  archerTowerHandlingPoses,
+  archerTowerHitPoses,
+  archerTowerDestructionPoses,
+} from './archer-tower-effects';
 import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { battleTowerArcherPose } from './archer-tower-facing';
@@ -176,6 +181,7 @@ export class VillageArcherTowers {
     for (const pose of [
       ...archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso),
       ...archerTowerHitPoses(battle, reduced, iso, airLift),
+      ...archerTowerDestructionPoses(battle, reduced, iso),
     ]) {
       wantedEffects.add(pose.key);
       let view = this.effects.get(pose.key);
@@ -194,6 +200,7 @@ export class VillageArcherTowers {
       ...archerTowerHandlingCues(this.homeEvents),
       ...archerTowerReleaseCues(battle),
       ...archerTowerHitCues(battle),
+      ...archerTowerDestructionCues(battle),
     ];
   }
 }

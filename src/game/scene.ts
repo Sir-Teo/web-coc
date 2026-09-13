@@ -2310,7 +2310,8 @@ export class VillageScene extends Phaser.Scene {
     if (
       fx.type === 'destroy' &&
       fx.sourceId !== undefined &&
-      this.model.battle?.drillDestructions?.[fx.sourceId]
+      (this.model.battle?.drillDestructions?.[fx.sourceId] ||
+        this.model.battle?.archerTowerDestructions?.[fx.sourceId])
     ) {
       this.lastRevision = -1;
       return;

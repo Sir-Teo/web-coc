@@ -365,6 +365,7 @@ export interface Battle {
   nativeArcherTowers?: true;
   /** Latest actual release per tower; bounded presentation history for version 41+. */
   archerTowerShots?: Record<number, { at: number; x: number; y: number }>;
+  archerTowerDestructions?: Record<number, { at: number; x: number; y: number; level: number }>;
   archerTowerReleases?: { id: number; level: number; at: number }[];
   archerTowerHits?: {
     id: string;
@@ -2664,6 +2665,13 @@ export class GameModel {
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
+      if (b.kind === 'archertower' && this.battle?.nativeArcherTowers)
+        (this.battle.archerTowerDestructions ??= {})[b.id] ??= {
+          at,
+          x: b.x + 1.5,
+          y: b.y + 1.5,
+          level: b.level,
+        };
       if (b.kind === 'darkdrill' && this.battle?.drillDestructions)
         this.battle.drillDestructions[b.id] ??= { at, x: b.x + 1.5, y: b.y + 1.5, level: b.level };
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
@@ -2686,6 +2694,7 @@ export class GameModel {
       }
       this.onEffect({
         type: 'destroy',
+        ...(b.kind === 'archertower' && this.battle?.nativeArcherTowers ? { sourceId: b.id } : {}),
         ...(b.kind === 'darkdrill' && this.battle?.drillDestructions ? { sourceId: b.id } : {}),
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
