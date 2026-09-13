@@ -124,6 +124,8 @@ TRAP_SPAWNERS = ['Ghost Trap']
 DEFENCE_TROOP_BUILDINGS = ['Builders Hut']
 # Globals the pinned older engine read for these mechanics; absence is recorded as evidence.
 ABSENT_GLOBALS = ['CHAINED_PROJECTILE_BOUNCE_COUNT']
+# Globals the Defending Builder's repairs read: healer slot percentages and the post-damage delay.
+REPAIR_GLOBALS = ['HEAL_STACK_PERCENT', 'ALLOW_REPAIR_AFTER_DAMAGE_TICKS']
 SHARED_PROJECTILE_FILES = {'sc/characters.sc': 'projectiles-characters', 'sc/buildings.sc': 'projectiles-buildings'}
 VIEWS = (1, 2, 3)
 # Economy/UI columns are not needed for combat or presentation; everything else is kept.
@@ -322,6 +324,15 @@ def build():
         needed.update(row['DefenceTroopCharacter'] for row in rows if row.get('DefenceTroopCharacter'))
     globals_table = table('logic/globals.csv')
     require(not any(name in globals_table for name in ABSENT_GLOBALS), 'Expected absent global is present')
+    repair_globals = {}
+    for name in REPAIR_GLOBALS:
+        rows = globals_table[name]
+        if 'NumberArray' in rows[0]:
+            require(all(set(row) <= {'Name', 'NumberArray'} for row in rows), f'Unexpected {name} cells')
+            repair_globals[name] = [int(row['NumberArray']) for row in rows]
+        else:
+            require(len(rows) == 1 and set(rows[0]) == {'Name', 'NumberValue'}, f'Unexpected {name} cells')
+            repair_globals[name] = int(rows[0]['NumberValue'])
     # Summoned, secondary and defensive rows that later garrison families will need.
     for name in list(needed):
         for row in inherited_levels(characters[name]):
@@ -462,7 +473,8 @@ def build():
         projectileGroups=PROJECTILE_GROUPS,
         trapSpawners=trap_spawners,
         defenceTroops=defence_troops,
-        absentGlobals=ABSENT_GLOBALS)
+        absentGlobals=ABSENT_GLOBALS,
+        repairGlobals=repair_globals)
     art = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                fingerprintMembership={path: members[path] for path in PINS if path in members},
                worlds=sources, previews=previews, icons=icons,

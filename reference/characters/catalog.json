@@ -11140,5 +11140,18 @@
   },
   "absentGlobals": [
     "CHAINED_PROJECTILE_BOUNCE_COUNT"
-  ]
+  ],
+  "repairGlobals": {
+    "HEAL_STACK_PERCENT": [
+      100,
+      100,
+      90,
+      90,
+      70,
+      40,
+      10,
+      0
+    ],
+    "ALLOW_REPAIR_AFTER_DAMAGE_TICKS": 0
+  }
 }

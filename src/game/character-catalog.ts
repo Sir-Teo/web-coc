@@ -46,6 +46,7 @@ const catalog = raw as unknown as {
   trapSpawners: Record<string, Record<string, string>[]>;
   defenceTroops: Record<string, Record<string, string>[]>;
   absentGlobals: string[];
+  repairGlobals: { HEAL_STACK_PERCENT: number[]; ALLOW_REPAIR_AFTER_DAMAGE_TICKS: number };
 };
 export const CHARACTER_ROSTERS = catalog.rosters;
 export const CHARACTER_GRAPHS = catalog.graphs;
@@ -55,6 +56,8 @@ export const CHARACTER_GRAPH_ALIASES = catalog.graphAliases;
 export const PROJECTILE_GROUPS = catalog.projectileGroups;
 /** Globals read by the pinned older engine that this client no longer contains. */
 export const ABSENT_GLOBALS = catalog.absentGlobals;
+/** Pinned globals read by Defending Builder repairs (healer slot percentages, post-damage delay). */
+export const REPAIR_GLOBALS = catalog.repairGlobals;
 /** A trap row that spawns characters (Ghost Trap), with explicit level inheritance. */
 export function trapSpawnerLevel(name: string, level: number) {
   const rows = catalog.trapSpawners[name];
