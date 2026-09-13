@@ -1,3 +1,4 @@
+import { darkDrillHandlingPoses } from './dark-drill-effects';
 import type { AudioManager } from './audio';
 import {
   DARK_DRILL_SOUNDS,
@@ -17,6 +18,7 @@ export function preloadDarkDrills(scene: Phaser.Scene) {
     scene.load.binary(darkDrillSample(path), '/' + sound.path);
 }
 export class DarkDrillPresentation {
+  readonly effects = new Map<string, NativeSceneView>();
   readonly drills = new Map<number, NativeSceneView>();
   private homeSequence = 0;
   private homeEvents: DrillHandlingEvent[] = [];
@@ -36,6 +38,8 @@ export class DarkDrillPresentation {
   }
   clear() {
     this.homeEvents = [];
+    for (const view of this.effects.values()) view.destroy();
+    this.effects.clear();
     for (const view of this.drills.values()) view.destroy();
     this.drills.clear();
   }
@@ -44,6 +48,7 @@ export class DarkDrillPresentation {
     seconds: number,
     iso: (x: number, y: number) => { x: number; y: number },
     soundTime = seconds,
+    reduced = false,
   ) {
     const wanted = new Set<number>();
     for (const building of buildings) {
@@ -62,6 +67,18 @@ export class DarkDrillPresentation {
         this.drills.delete(id);
       }
     this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
+    const wantedEffects = new Set<string>();
+    for (const pose of darkDrillHandlingPoses(this.homeEvents, soundTime, reduced, iso)) {
+      wantedEffects.add(pose.key);
+      let view = this.effects.get(pose.key);
+      if (!view) this.effects.set(pose.key, (view = new NativeSceneView(this.scene, 'darkdrill')));
+      view.render(pose.poses, pose.x, pose.y, pose.depth);
+    }
+    for (const [key, view] of this.effects)
+      if (!wantedEffects.has(key)) {
+        view.destroy();
+        this.effects.delete(key);
+      }
     return darkDrillHandlingCues(this.homeEvents);
   }
 }

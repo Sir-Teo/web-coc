@@ -103,3 +103,10 @@ Tests cover every source HP tier, save migration, new practice health and openin
 Drill movement, successful placement/new construction and cancellation now use the shared native-handling event route. Dated, uniquely identified cues pass through the existing sample-audio lifecycle; rejected moves do not emit placement sound. Cancellation, scene changes and cleanup remove pending events. Audio uses the elapsed home clock independently of reduced-motion artwork time. Event history is locally bounded to 16 entries and five seconds; native voice allocation and output loudness remain unverified.
 
 The importer reconstruction and two handling/model tests pass. Chromium and WebKit each decode all three samples and pass reduced-motion, cancel and cleanup cue checks. Production build passes. Original handling particles and destruction presentation remain subsequent work.
+
+
+## Original handling grass particles
+
+`dark-drill-effects.ts` resolves pickup/placement effects to their original `Grass` emitter and four retained export variants. It preserves the source three-particle count, 200-ms emission window, 200–600-ms lifetimes, explicit normal blending and original scale/fade/motion parameters. Seeds and view keys derive from immutable handling event identity and particle index, so retiring another event does not change surviving particles.
+
+The live presentation reuses native particle views and removes them on expiry, cancellation, reduced motion or scene cleanup. Reduced motion suppresses visual bursts while preserving the independent audio clock. Four focused effect/handling tests pass, including both actions, future/expired events, serialization, event retirement and unique particles. Chromium and WebKit pass live three-particle view creation, cancellation cleanup and reduced-motion suppression with audio cues retained. Production build passes. Motion, damping, source emission spacing and world projection use the existing local particle interpretation; native executable particle behavior remains unverified.

@@ -32,14 +32,31 @@ test('handling audio survives reduced motion and cancels pending events', async 
     model.state.settings.reducedMotion = true;
     const view = scene.darkDrillPresentation;
     view.handling(999, 'pickup', 10, 20, 20);
-    const cues = view.render([], 0, iso, 10.1);
+    const cues = view.render([], 0, iso, 10.15);
+    const particles = view.effects.size;
     view.handling(999, 'cancel', 10.2, 20, 20);
     const cancelled = view.render([], 0, iso, 10.2);
+    const cancelledParticles = view.effects.size;
     view.handling(999, 'place', 11, 20, 20);
     const placed = view.render([], 0, iso, 11.1);
+    const reducedCues = view.render([], 0, iso, 11.15, true);
+    const reducedParticles = view.effects.size;
     view.clear();
-    return { cues, cancelled, placed, cleared: view.render([], 0, iso, 11.2) };
+    return {
+      cues,
+      particles,
+      cancelled,
+      cancelledParticles,
+      placed,
+      reducedCues,
+      reducedParticles,
+      cleared: view.render([], 0, iso, 11.2),
+    };
   });
+  expect(result.particles).toBe(3);
+  expect(result.cancelledParticles).toBe(0);
+  expect(result.reducedParticles).toBe(0);
+  expect(result.reducedCues).toHaveLength(1);
   expect(result.cues).toHaveLength(1);
   expect(result.cues[0]).toMatchObject({
     sample: 'dark-drill-dark_drill_pickup_02.ogg',
