@@ -69,3 +69,4 @@ Unit tests cover source values and campaign placements, the label timeline, and 
 - `PitchIncrease=2` on `Goblin Townhall Attack` and effect `IsoLayer` values are retained but not interpreted.
 - Goblin Castle and Foreboding Cave releases, the Madhouse Mega P.E.K.K.A and all defending troops belong to other families.
 - Generic destruction feedback overlaps the original effect, and native particle projection remains unverified.
+- Opening these buildings also opens Flagged for Traps (71), whose Dark Elixir and Elixir Storages are ringed by other buildings. The shared pathfinder blocks whole-tile building footprints, whereas source `BuildingW`/`BuildingH` values are one tile smaller and leave lanes. Resource-first Goblins can therefore stand idle there; the native combat robustness test names this case.
