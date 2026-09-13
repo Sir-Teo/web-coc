@@ -1,0 +1,912 @@
+{
+  "width": 2400,
+  "height": 3600,
+  "cell": 400,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "325693940a0947662773e809b7b47026024ce740da77a1da367bf7c85b6dad4a",
+  "cases": [
+    {
+      "graph": "world",
+      "export": "Shrink_trap_armed",
+      "time": 0.0,
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        196.75,
+        0.0,
+        2.0,
+        134.2000026702881
+      ],
+      "empty": false,
+      "rgbaSha256": "4d064a078636146477041417de4683f14e269c842e1ae9c1eca6064ef14baa96"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.0,
+      "x": 400,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        205.46240212861449,
+        0.0,
+        2.0,
+        135.4796864911914
+      ],
+      "empty": false,
+      "rgbaSha256": "b5d6878feddac6f44dfb8d545be8624cd1664df2c735b1dde894f0a8d45a8022"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.041666666666666664,
+      "x": 800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        208.88505817530677,
+        0.0,
+        2.0,
+        190.35566327068955
+      ],
+      "empty": false,
+      "rgbaSha256": "ea8deb6e2c1943a56bd70b5cb8ddb2a280e769255fc03ea5df76eff58e49fed4"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.08333333333333333,
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        203.9199219244765,
+        0.0,
+        2.0,
+        235.7549317437224
+      ],
+      "empty": false,
+      "rgbaSha256": "68da9bff1bf58835d6e33f6dc4158d166abc0b0f90c35b01c08e88fcd362d6d0"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.125,
+      "x": 1600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        202.22168016061187,
+        0.0,
+        2.0,
+        268.21743040159345
+      ],
+      "empty": false,
+      "rgbaSha256": "9287e8e43691c36c23225ca247f1f675624bc4fb32f5cfa096d7fc8dee2b4c06"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.16666666666666666,
+      "x": 2000,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        201.2961431108415,
+        0.0,
+        2.0,
+        289.2322290800512
+      ],
+      "empty": false,
+      "rgbaSha256": "296460824e60028b42a0093111457f8521422d6847ba01b6d660b64e7e5b2369"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.20833333333333334,
+      "x": 0,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        199.70434622419998,
+        0.0,
+        2.0,
+        303.2326700461563
+      ],
+      "empty": false,
+      "rgbaSha256": "7710c50c691e93e072a32e2acd90306f52585a928b3286975a7f4a27216686fd"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.25,
+      "x": 400,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        198.76245167152956,
+        0.0,
+        2.0,
+        310.98296302207746
+      ],
+      "empty": false,
+      "rgbaSha256": "34fb6a1b64ac8d046c3d618ff0dba970d727f15eedecfa29e4a0c7db7e040b79"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.2916666666666667,
+      "x": 800,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        198.65234424360096,
+        0.0,
+        2.0,
+        313.2572245011106
+      ],
+      "empty": false,
+      "rgbaSha256": "e4f80ef2200aec8f23e4a955e2ce40759a92160c2dd894aa02737e3b0859e832"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.3333333333333333,
+      "x": 1200,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        198.40058641787618,
+        0.0,
+        2.0,
+        307.0350565421395
+      ],
+      "empty": false,
+      "rgbaSha256": "4d8b239dc8059b13b4ce3d4bf837b2ea8526cdcf34198b5da50016ecc249892d"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.375,
+      "x": 1600,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        197.73300803871825,
+        0.0,
+        2.0,
+        290.46279590774793
+      ],
+      "empty": false,
+      "rgbaSha256": "0984d817e3a2c368912d892dd6d75a1de8a0711735ec1d97813f8dd109564cbd"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.4166666666666667,
+      "x": 2000,
+      "y": 400,
+      "root": [
+        2.0,
+        0.0,
+        195.80180689273402,
+        0.0,
+        2.0,
+        265.13476633734535
+      ],
+      "empty": false,
+      "rgbaSha256": "607ece556cda72ceaac9115c1d9cfd75233db1c4b95546756dff7ade9127034e"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.4583333333333333,
+      "x": 0,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        193.7570315329358,
+        0.0,
+        2.0,
+        232.34160235035233
+      ],
+      "empty": false,
+      "rgbaSha256": "fff6778d0e42f10cd1819ef1d8c655929623959490e65c2cf7a6be7e80006ff0"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.5,
+      "x": 400,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        191.5394534333609,
+        0.0,
+        2.0,
+        192.44379879906774
+      ],
+      "empty": false,
+      "rgbaSha256": "a2988454907bc2087ab7c5ec20b1c0a1041bf824e6c52e31f0071a6429e9145a"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_trigger",
+      "time": 0.5416666666666666,
+      "x": 800,
+      "y": 800,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "Shrink_trap_unarmed",
+      "time": 0.0,
+      "x": 1200,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        194.79999923706055,
+        0.0,
+        2.0,
+        134.84999656677246
+      ],
+      "empty": false,
+      "rgbaSha256": "af4f6c2129803aefdbd14c56747d40a3a21e094b172c5de716e4dac53de9eb2f"
+    },
+    {
+      "graph": "world",
+      "export": "confetti1",
+      "time": 0.08333333333333333,
+      "x": 1600,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        195.54999995231628,
+        0.0,
+        2.0,
+        202.94999980926514
+      ],
+      "empty": false,
+      "rgbaSha256": "1f6bb4224888e3edd0b9857d9f198f88b0aba6d2f092661d119ff397216df9fd"
+    },
+    {
+      "graph": "world",
+      "export": "confetti2",
+      "time": 0.08333333333333333,
+      "x": 2000,
+      "y": 800,
+      "root": [
+        2.0,
+        0.0,
+        189.0,
+        0.0,
+        2.0,
+        175.5
+      ],
+      "empty": false,
+      "rgbaSha256": "95bde97658a5510f696169952da40c2ec668ce50e0a39d6b0c1ab21727995f85"
+    },
+    {
+      "graph": "world",
+      "export": "confetti3",
+      "time": 0.08333333333333333,
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        204.64999961853027,
+        0.0,
+        2.0,
+        199.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7f780f3052c0b868731158f5cedb0c9c446fdd01b257c379e943d9d5226139df"
+    },
+    {
+      "graph": "world",
+      "export": "confetti4",
+      "time": 0.08333333333333333,
+      "x": 400,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        219.05000019073486,
+        0.0,
+        2.0,
+        187.30000038444996
+      ],
+      "empty": false,
+      "rgbaSha256": "4d966f8b473e21f4887d9db62d7b3e71f840728e703728969c27ebd91dbfd427"
+    },
+    {
+      "graph": "world",
+      "export": "d1",
+      "time": 0.0,
+      "x": 800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bf122cdfa9bd90cddf80cb2449b189256b71b3de2c0ced257d4c5f7c9ee0afbb"
+    },
+    {
+      "graph": "world",
+      "export": "d2",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "63febe2daf18fc85d67d4263b6773b50292cd8413be9c354f83c85e5b4feea86"
+    },
+    {
+      "graph": "world",
+      "export": "d3",
+      "time": 0.0,
+      "x": 1600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "651883fef4fd2538197358e81e09becbb29a23fe16421e1f820d455dd15d0528"
+    },
+    {
+      "graph": "world",
+      "export": "d4",
+      "time": 0.0,
+      "x": 2000,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1d9b1c6a4f682d659393e7ffa023fb4d8ceb99436e819aa61525707c11be3f4e"
+    },
+    {
+      "graph": "world",
+      "export": "g1",
+      "time": 0.0,
+      "x": 0,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "3752d4eab1272bff43415910abb86ba6b41234c4d0893fc65ccc7ce7e4f84d1b"
+    },
+    {
+      "graph": "world",
+      "export": "g2",
+      "time": 0.0,
+      "x": 400,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2d1b2b0786080cf839c8b4f5bfabaeba2479b2177f025b203f307207c011d144"
+    },
+    {
+      "graph": "world",
+      "export": "g3",
+      "time": 0.0,
+      "x": 800,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "b13cd3793b41b051faebc1cb611bd056d6d24fd790c519b9ddca11d94eb5a066"
+    },
+    {
+      "graph": "world",
+      "export": "g4",
+      "time": 0.0,
+      "x": 1200,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7a04533f3564ee3d3b1a98e98ddfcbd53eb44a317d18b9c7abf17a410f120764"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.0,
+      "x": 1600,
+      "y": 1600,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.03333333333333333,
+      "x": 2000,
+      "y": 1600,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        197.39999985694885
+      ],
+      "empty": false,
+      "rgbaSha256": "4e99a8608e4da6e06ffcf5cf1d055c8e5c2990faba75e65f997db7ebc518bbc4"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.23333333333333334,
+      "x": 0,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        202.90000009536743
+      ],
+      "empty": false,
+      "rgbaSha256": "ec4813e909c3ff9efed829f261952734774151fd089c84749691c10664094adc"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.4666666666666667,
+      "x": 400,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        209.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "186667f9601bd38160c9f011f53f23217f9f5a68209c52c0ec2ff442da097f90"
+    },
+    {
+      "graph": "world",
+      "export": "gen_appear_fx",
+      "time": 0.5666666666666667,
+      "x": 800,
+      "y": 2000,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "s1",
+      "time": 0.0,
+      "x": 1200,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "ac1eed229e2a04f27aff61f1c04be8d06bb47a9f8f2e460aeea3c12702929bf3"
+    },
+    {
+      "graph": "world",
+      "export": "s2",
+      "time": 0.0,
+      "x": 1600,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "84161909aa98390ae05e14cc32c6dd2f20cd2bf361be2c8ae6d05a4f9456cd98"
+    },
+    {
+      "graph": "world",
+      "export": "s3",
+      "time": 0.0,
+      "x": 2000,
+      "y": 2000,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "014ecbe8f01cbb6e24d5d877abaaf3b6811d51c7a8e277606b92864e340cc607"
+    },
+    {
+      "graph": "world",
+      "export": "s4",
+      "time": 0.0,
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.0,
+        0.0,
+        2.0,
+        200.0
+      ],
+      "empty": false,
+      "rgbaSha256": "a3a2957ae6e5a3085f9269cca0d04940c2317be0a9c5bcaf66b5e8819b9bcc66"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_circle",
+      "time": 0.0,
+      "x": 400,
+      "y": 2400,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 0.0,
+      "x": 800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.08569368626922,
+        0.0,
+        2.0,
+        200.16577173676342
+      ],
+      "empty": false,
+      "rgbaSha256": "d314441442ec71c9f2781150939cf8599f070e0265b50d504dcd52145088c30f"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 0.041666666666666664,
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        200.02060592733324,
+        0.0,
+        2.0,
+        200.09262730646878
+      ],
+      "empty": false,
+      "rgbaSha256": "e0ca1fe036af01973ba19cb613d0282b591f0d6fcd982b8dec95e6b9fbc4f056"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 5.0,
+      "x": 1600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "744dd0d8245fe2413361edd6c896e7170e7925385286b68731f48394a3cae7c3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 9.958333333333334,
+      "x": 2000,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "744dd0d8245fe2413361edd6c896e7170e7925385286b68731f48394a3cae7c3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 19.958333333333332,
+      "x": 0,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "744dd0d8245fe2413361edd6c896e7170e7925385286b68731f48394a3cae7c3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 20.0,
+      "x": 400,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "744dd0d8245fe2413361edd6c896e7170e7925385286b68731f48394a3cae7c3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "time": 25.0,
+      "x": 800,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "744dd0d8245fe2413361edd6c896e7170e7925385286b68731f48394a3cae7c3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 0.0,
+      "x": 1200,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        199.84150345623493,
+        0.0,
+        2.0,
+        199.53752418793738
+      ],
+      "empty": false,
+      "rgbaSha256": "b208d541ef99e0dcfb65929aca44f836ee351db94932c05bf4094e9c165bf4e7"
+    },
+    {
+      "graph": "world",
+      "export": "confetti1",
+      "emitter": "Birthday_confetti_explosion",
+      "variant": 0,
+      "particleBlend": 8,
+      "time": 0.08333333333333333,
+      "x": 1600,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        195.54999995231628,
+        0.0,
+        2.0,
+        202.94999980926514
+      ],
+      "empty": false,
+      "rgbaSha256": "00b2b00db62c5764188194fcdad4608a7b267e4f6cec8d6fe7dd594cae879199"
+    },
+    {
+      "graph": "world",
+      "export": "confetti3",
+      "emitter": "Birthday_confetti_explosion",
+      "variant": 2,
+      "particleBlend": 8,
+      "time": 0.08333333333333333,
+      "x": 2000,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        204.64999961853027,
+        0.0,
+        2.0,
+        199.0
+      ],
+      "empty": false,
+      "rgbaSha256": "721f6aa1cc969b5cc3d9a47abde2b768a3ede0158234376c72a801dae0b7d06b"
+    },
+    {
+      "graph": "world",
+      "export": "confetti4",
+      "emitter": "Birthday_confetti_explosion",
+      "variant": 3,
+      "particleBlend": 8,
+      "time": 0.08333333333333333,
+      "x": 0,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        219.05000019073486,
+        0.0,
+        2.0,
+        187.30000038444996
+      ],
+      "empty": false,
+      "rgbaSha256": "7440407f88bff827ed1026d0b845ddbfaa2bdc7657aae84f3bdbacd503d6cb2d"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "emitter": "Shrink_deploy_range",
+      "variant": 0,
+      "particleBlend": 8,
+      "time": 0.0,
+      "x": 400,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        199.84150345623493,
+        0.0,
+        2.0,
+        199.53752418793738
+      ],
+      "empty": false,
+      "rgbaSha256": "760f261d7b41414877b76c559dd7aaf3edc3cefa9408c6e6d3a95a3cb25b3ca3"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_circle",
+      "emitter": "Shrink_deploy_range_anim",
+      "variant": 0,
+      "particleBlend": 8,
+      "time": 0.0,
+      "x": 800,
+      "y": 3200,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "1e15858660350a508ff5999ef0a62f0235916537df26a878c8f685a92fa89af5"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_glow",
+      "emitter": "Shrink_glow",
+      "variant": 0,
+      "particleBlend": 8,
+      "time": 5.0,
+      "x": 1200,
+      "y": 3200,
+      "root": [
+        2.0,
+        0.0,
+        199.04360523167998,
+        0.0,
+        2.0,
+        199.34062629938126
+      ],
+      "empty": false,
+      "rgbaSha256": "43fcb573dccbaa1f27b4b24a0f6d3cd14d2be301fe44711f6e52e32c237435f8"
+    }
+  ]
+}

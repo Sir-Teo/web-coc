@@ -25,7 +25,8 @@
     "test:wizard-tower:assets": "node scripts/wizard-tower-assets-check.mjs",
     "test:wizard-tower:production": "node scripts/wizard-tower-production-check.mjs",
     "test:seeking-mine:production": "node scripts/seeking-mine-production-check.mjs",
-    "test:tesla:production": "node scripts/tesla-production-check.mjs"
+    "test:tesla:production": "node scripts/tesla-production-check.mjs",
+    "test:shrink-trap:assets": "node scripts/shrink-trap-assets-check.mjs"
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",
