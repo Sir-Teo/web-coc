@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { NativeMeshView } from './native-mesh-scene';
-import { nativeBlendMode } from './native-blend';
+import { nativeBlendMode, nativeMultiplyModes } from './native-blend';
 import { NativeGroupColor } from './native-group-color';
 import {
   nativeMatrix,
@@ -10,7 +10,7 @@ import {
   type NativeScenePose,
 } from './native-mesh';
 
-type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.RenderTexture;
+type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.Image;
 
 function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): NativeScenePose[] {
   return poses.map((pose) =>
@@ -49,12 +49,17 @@ export function nativeSceneBounds(
   return left === Infinity ? undefined : [left, top, right, bottom];
 }
 
-/** Retains native polygons and composites screen/additive containers in separate GPU buffers. */
+/** Retains native polygons and composites native blend groups in separate GPU buffers. */
 export class NativeSceneView {
   private leaves: NativeMeshView;
   readonly groups = new Map<
     string,
-    { image: Phaser.GameObjects.RenderTexture; content: NativeSceneView; color?: NativeGroupColor }
+    {
+      image: Phaser.GameObjects.RenderTexture;
+      content: NativeSceneView;
+      color?: NativeGroupColor;
+      multiplyImage?: Phaser.GameObjects.Image;
+    }
   >();
   objects: NativeObject[] = [];
   constructor(
@@ -85,6 +90,41 @@ export class NativeSceneView {
     alpha = 1,
     density = Math.max(1, this.scene.cameras.main.zoomX, this.scene.cameras.main.zoomY),
   ) {
+    // Direct multiply leaves also need isolation before the two destination passes.
+    poses = poses.map((p) =>
+      !('group' in p) && p.blend === 3
+        ? {
+            key: p.key,
+            blend: 3,
+            multiply: p.multiply,
+            add: p.add,
+            group: [{ ...p, blend: 0, multiply: [1, 1, 1, 1], add: [0, 0, 0, 0] }],
+          }
+        : p,
+    );
+    // Color filters must run before the destination passes. Applying a filter to
+    // pass one would preserve the cleared filter buffer's zero alpha. Screen on
+    // a transparent isolated buffer is source-over, so this inner group colors
+    // the composed source once without changing its premultiplied result.
+    poses = poses.map((p) =>
+      'group' in p &&
+      p.blend === 3 &&
+      (p.multiply.slice(0, 3).some((v) => v !== 1) || p.add.some((v) => v !== 0))
+        ? {
+            ...p,
+            multiply: [1, 1, 1, p.multiply[3]],
+            add: [0, 0, 0, 0],
+            group: [
+              {
+                ...p,
+                key: p.key + ':multiply-color',
+                blend: 4,
+                multiply: [...p.multiply.slice(0, 3), 1],
+              },
+            ],
+          }
+        : p,
+    );
     this.leaves.render(
       poses.filter((p): p is NativeMeshPose => !('group' in p)),
       x,
@@ -115,12 +155,16 @@ export class NativeSceneView {
           entry.image.setOrigin(0, 0);
           this.groups.set(pose.key, entry);
         }
+        const renderer = this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
         entry.image.setBlendMode(
-          nativeBlendMode(
-            this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer,
-            pose.blend,
-          ),
+          pose.blend === 3
+            ? nativeMultiplyModes(renderer)[0]
+            : nativeBlendMode(renderer, pose.blend),
         );
+        if (pose.blend !== 3 && entry.multiplyImage) {
+          entry.multiplyImage.destroy();
+          entry.multiplyImage = undefined;
+        }
         const colored =
           pose.multiply.slice(0, 3).some((v) => v !== 1) || pose.add.some((v) => v !== 0);
         if (colored && !entry.color) entry.color = new NativeGroupColor(entry.image);
@@ -143,15 +187,32 @@ export class NativeSceneView {
           .setAlpha(alpha * pose.multiply[3]);
         (entry.image.texture as Phaser.Textures.DynamicTexture).commandBuffer.length = 0;
         entry.image.clear().draw(entry.content.objects).setRenderMode('all', true);
+        if (pose.blend === 3) {
+          if (!entry.multiplyImage)
+            entry.multiplyImage = this.scene.add.image(0, 0, entry.image.texture).setOrigin(0, 0);
+          const second = entry.multiplyImage;
+          second
+            .setFrame(entry.image.frame.name)
+            .setPosition(entry.image.x, entry.image.y)
+            .setScale(1 / density)
+            .setAlpha(alpha * pose.multiply[3])
+            .setBlendMode(nativeMultiplyModes(renderer)[1])
+            .setDepth(depth + order * 0.0001 + 0.00005)
+            .setVisible(true);
+          if (this.detached) second.removeFromDisplayList();
+        }
         object = entry.image;
       } else object = this.meshes.get(pose.key)!;
       object.setDepth(depth + order * 0.0001).setVisible(true);
       if (this.detached) object.removeFromDisplayList();
       this.objects.push(object);
+      if ('group' in pose && pose.blend === 3)
+        this.objects.push(this.groups.get(pose.key)!.multiplyImage!);
     }
     for (const [key, entry] of this.groups)
       if (!wanted.has(key)) {
         entry.content.destroy();
+        entry.multiplyImage?.destroy();
         entry.image.destroy();
         this.groups.delete(key);
       }
@@ -160,6 +221,7 @@ export class NativeSceneView {
     this.leaves.clear();
     for (const entry of this.groups.values()) {
       entry.content.destroy();
+      entry.multiplyImage?.destroy();
       entry.image.destroy();
     }
     this.groups.clear();

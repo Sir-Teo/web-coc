@@ -18,7 +18,7 @@ export interface NativeMeshGraph {
   textures: Record<string, { path: string; width: number; height: number }>;
 }
 export type NativeMatrix = [number, number, number, number, number, number];
-export type NativeBlend = 0 | 4 | 8;
+export type NativeBlend = 0 | 3 | 4 | 8;
 export interface NativeMeshPose {
   key: string;
   texture: number;
@@ -33,7 +33,7 @@ export interface NativeGroupPose {
   group: NativeScenePose[];
   multiply: number[];
   add: number[];
-  blend: 4 | 8;
+  blend: 3 | 4 | 8;
 }
 export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
@@ -141,13 +141,14 @@ function sampleNativeScene(
           ? Math.floor((elapsed * nested.fps) / clip.fps)
           : 0;
       const mode = clip.blending[slot];
-      if (mode !== 0 && mode !== 4 && mode !== 8) throw Error('Unsupported native blend');
+      if (mode !== 0 && mode !== 3 && mode !== 4 && mode !== 8)
+        throw Error('Unsupported native blend');
       const color = graph.colors[tint];
       if (color[7] !== 0) throw Error('Additive native alpha is unsupported');
       const nextMatrix = nativeMatrix(matrix, graph.matrices[transform]);
       const nextMultiply = multiply.map((v, i) => v * color[i]);
       const nextAdd = add.map((v, i) => multiply[i] * color[i + 4] + v);
-      if ((mode === 4 || mode === 8) && nested?.children.length) {
+      if (mode === 3 || ((mode === 4 || mode === 8) && nested?.children.length)) {
         if (!isolate) throw Error('Native blend group requires isolated compositing');
         const group: NativeScenePose[] = [];
         output.push({

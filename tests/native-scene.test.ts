@@ -42,7 +42,7 @@ it.each(witness.cases)('matches the independent source composition for $export a
   );
 });
 
-it.each([4, 8] as const)(
+it.each([3, 4, 8] as const)(
   'keeps children and color changes isolated inside blend mode %i',
   (blend) => {
     const changed = structuredClone(graph);
@@ -89,4 +89,37 @@ it('keeps every setup/reveal timeline seekable while idle controls can be hidden
       nativeMeshPoses(graph, row.ExportName, 8 / 24, { idle_electricity: false }),
     );
   }
+});
+
+it('isolates all commands of a multiply shape before destination composition', () => {
+  const vertices = [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0];
+  const source: NativeMeshGraph = {
+    exports: { test: 2 },
+    shapes: {
+      1: [
+        [0, vertices],
+        [0, vertices],
+      ],
+    },
+    clips: {
+      2: {
+        fps: 24,
+        children: [1],
+        names: [''],
+        blending: [3],
+        frames: [[[0, 0, 0]]],
+        timeline: [0],
+      },
+    },
+    matrices: [[1, 0, 0, 0, 1, 0]],
+    colors: [[1, 1, 1, 0.4, 0, 0, 0, 0]],
+    textures: {},
+  };
+  const poses = nativeScenePoses(source, 'test', 0);
+  expect(poses).toHaveLength(1);
+  const group = poses[0];
+  expect(group.blend).toBe(3);
+  expect(group.multiply[3]).toBe(0.4);
+  expect('group' in group && group.group.map((p) => p.blend)).toEqual([0, 0]);
+  expect(() => nativeMeshPoses(source, 'test', 0)).toThrow('isolated compositing');
 });
