@@ -10,6 +10,17 @@ export const infernoSample = (path: string) => `inferno-${path.split('/').at(-1)
 export function infernoSoundCues(battle: Battle | null): SampleCue[] {
   if (!battle || battle.finished) return [];
   const cues: SampleCue[] = [];
+  for (const [id, state] of Object.entries(battle.infernos ?? {}))
+    for (const event of state.transitions ?? []) {
+      const effect = source.effects[event.stage === 1 ? 'Dark Tower Up 2' : 'Dark Tower Up 3'][0];
+      cues.push({
+        key: `inferno:${id}:transition:${event.at}:${event.slot}`,
+        sample: infernoSample(effect.Sound),
+        at: event.at + Number(effect.SoundDelay) / 1000,
+        volume: Number(effect.Volume) / 100,
+        pitch: Number(effect.MinPitch) / 100,
+      });
+    }
   for (const tower of battle.buildings) {
     if (
       tower.kind !== 'inferno' ||

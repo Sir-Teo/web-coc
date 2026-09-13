@@ -55,5 +55,21 @@ export function infernoImpactPoses(
         }
       });
     }
+  for (const [id, state] of Object.entries(battle.infernos ?? {}))
+    for (const event of state.transitions ?? []) {
+      const name = event.stage === 1 ? 'DarkRay Up2' : 'DarkRay Up3';
+      const tick = Math.round((event.at * 1000) / 64);
+      const pose = particle(
+        `inferno:${id}:transition:${tick}:${event.slot}`,
+        name,
+        emitters[name],
+        battle.elapsed - event.at,
+        iso(event.x, event.y),
+        (slot) => visualRandom(Number(id), tick, 2000000 + event.slot * 16 + slot),
+        'Objects',
+        false,
+      );
+      if (pose) result.push(pose);
+    }
   return result;
 }
