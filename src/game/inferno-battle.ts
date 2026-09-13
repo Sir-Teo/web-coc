@@ -14,10 +14,17 @@ export function stepInfernos(battle: Battle, dt: number) {
     if (tower.kind !== 'inferno') continue;
     const states = (battle.infernos ??= {});
     const state = (states[tower.id] ??= {
-      scheduler: createInfernoScheduler(tower.level, 'single'),
+      scheduler: createInfernoScheduler(tower.level, tower.infernoMode ?? 'single'),
       nextTick: Math.floor((Math.max(0, battle.elapsed - dt) * 1000) / 64 + 1e-9) + 1,
       hits: [],
     });
+    if (
+      state.scheduler.mode !== (tower.infernoMode ?? 'single') ||
+      state.scheduler.level !== tower.level
+    ) {
+      state.scheduler = createInfernoScheduler(tower.level, tower.infernoMode ?? 'single');
+      state.hits = [];
+    }
     while (state.nextTick * 0.064 <= battle.elapsed + 1e-9) {
       const at = state.nextTick * 0.064;
       const enabled =

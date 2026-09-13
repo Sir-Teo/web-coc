@@ -44,7 +44,13 @@ export class InfernoPresentation {
               ? 'upgrading'
               : 'active';
       view.render(
-        infernoPoses(building.level, 'single', state, seconds, INFERNO_ROOT),
+        infernoPoses(
+          building.level,
+          building.infernoMode ?? 'single',
+          state,
+          seconds,
+          INFERNO_ROOT,
+        ),
         point.x,
         point.y,
         point.y,

@@ -113,3 +113,12 @@ This is a development integration, not campaign enablement. The campaign source 
 `infernoBounds` traverses the exact rendered native poses, including isolated blend groups, and measures transformed vertices. Selection and status-marker placement now use those bounds at the displayed simulation time (frame zero for reduced motion). Projectile height metadata uses intact source geometry. The scene and bounds sampler share `INFERNO_ROOT`, eliminating duplicate registration constants. This remains rectangular hit geometry, not alpha-pixel picking, and local world registration is still unverified against native execution.
 
 Both browsers pass 48 live tier/state cases covering active, constructing, upgrading and ruined Infernos, original bounds equality, intact height metadata, inside selection and outside rejection. The six focused art/battle tests and production build pass (611 cached files). Live single-target presentation remains the currently integrated mode; replay mode support and beam effects are still outstanding.
+
+
+## Versioned single/multi persistence
+
+Replay version 39 accepts Inferno buildings and their optional `infernoMode` (`single`/`multi`, absent means single). Versions 34–38 remain playable but reject the newly introduced building/field. Save validation checks modes, portable replay export preserves the field, and saved layout creation/restoration plus browser save snapshots retain it. Modes on unrelated replay/building records are rejected. Older frozen fixtures are unchanged; assertions for newly recorded replay versions advance to 39.
+
+The battle scheduler and live mesh presentation now consume the building's selected mode. A mode or tier change rebuilds scheduler slots and clears recent hit records. Selection bounds use the corresponding mode, and the selected range ring uses 9/10 tiles. Player-facing toggles, thumbnail mode plumbing and complete mode-aware info text remain subsequent UI work.
+
+All 1,427 tests across 140 files pass, including portable mode round-trip, a resumed six-target multi battle, invalid-mode rejection and old-version rejection. Both browsers pass mixed single/multi live tier rendering, and production compilation passes. Campaign source mode-bit interpretation, beam effects and ammo still remain unresolved; this does not enable Midnight Oil.

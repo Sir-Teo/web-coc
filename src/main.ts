@@ -144,6 +144,7 @@ async function boot() {
             level: b.level,
             upgrading: !!b.upgradeEnd,
             ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
+            ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
             ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
           })),
         replay: model.replay,

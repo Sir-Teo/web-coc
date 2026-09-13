@@ -1,6 +1,8 @@
 import catalog from '../../reference/inferno/catalog.json';
 
 export type InfernoMode = 'single' | 'multi';
+export const validInfernoMode = (value: unknown): value is InfernoMode | undefined =>
+  value === undefined || value === 'single' || value === 'multi';
 export type InfernoDamageStage = 0 | 1 | 2;
 
 /** Source base tiers only. Mini-level arithmetic is not inferred or clamped. */

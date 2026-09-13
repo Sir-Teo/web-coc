@@ -107,7 +107,7 @@ it('retains all eight levels through save and practice while enforcing the TH8 h
     restored.finishBattle();
     const replay = restored.state.raidLog[0].replay!;
     const exported = parseReplayFile(JSON.stringify(makeReplayFile(replay)));
-    expect(exported.version).toBe(38);
+    expect(exported.version).toBe(39);
     expect(exported.initial.buildings[1]).toMatchObject({ level, hp: 1 });
   }
 });
@@ -128,7 +128,7 @@ it('preserves all 59 level-three mines across the three newly supported original
 });
 
 it('keeps v32 results readable while refusing playback under the changed release timing', () => {
-  expect(REPLAY_VERSION).toBe(38);
+  expect(REPLAY_VERSION).toBe(39);
   const m = new GameModel();
   m.startBattle(0, true);
   m.deploy(1, 1);

@@ -852,6 +852,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.state.settings.reducedMotion
           ? 0
           : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+        b.infernoMode ?? 'single',
       );
     return sample(b.level, state);
   }
@@ -1625,7 +1626,14 @@ export class VillageScene extends Phaser.Scene {
       const d = BUILDINGS[b.kind];
       diamond(b.x, b.y, d.size, 0xffe8a0);
       if (d.range || d.trap) {
-        const range = b.kind === 'xbow' ? xbowRange(b.xbowMode) : (d.trap?.trigger ?? d.range!);
+        const range =
+          b.kind === 'inferno'
+            ? b.infernoMode === 'multi'
+              ? 10
+              : 9
+            : b.kind === 'xbow'
+              ? xbowRange(b.xbowMode)
+              : (d.trap?.trigger ?? d.range!);
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
         if (b.kind === 'airsweeper') {

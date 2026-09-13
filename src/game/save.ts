@@ -1,3 +1,4 @@
+import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
 import { validCampaignLoot, validCampaignResources, campaignAmount } from './campaign-loot';
@@ -299,6 +300,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
+      !validInfernoMode(b.infernoMode) ||
+      (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||
       b.level > BUILDINGS[b.kind].maxLevel ||
@@ -343,6 +346,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               !validDirection(v.direction) ||
               !validSkeletonMode(v.skeletonMode) ||
               !validXbowMode(v.xbowMode) ||
+              !validInfernoMode(v.infernoMode) ||
               !Number.isInteger(v.id) ||
               !Number.isInteger(v.x) ||
               !Number.isInteger(v.y) ||

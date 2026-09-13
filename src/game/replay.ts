@@ -1,3 +1,4 @@
+import { validInfernoMode } from './inferno-weapon';
 import {
   campaignStage,
   campaignStages,
@@ -31,13 +32,14 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 38;
+export const REPLAY_VERSION = 39;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
   version === 36 ||
   version === 37 ||
+  version === 38 ||
   version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
@@ -259,7 +261,9 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validDirection(b.direction) ||
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
-      b.kind === 'inferno' || // Requires the upcoming versioned Inferno battle-state contract.
+      !validInfernoMode(b.infernoMode) ||
+      (b.infernoMode !== undefined && b.kind !== 'inferno') ||
+      ((b.kind === 'inferno' || b.infernoMode !== undefined) && value.version < 39) ||
       (b.kind === 'clancastle' && value.version < 37) ||
       !integer(b.level, 1, npcMaxLevel(b.npc) ?? d.maxLevel) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||

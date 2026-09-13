@@ -14,9 +14,10 @@ test('live Inferno rendering keeps source tiers, animated poses and original rui
     const { makeBuilding } = await import('/src/game/model.ts');
     scene.model.battle = null;
     scene.model.state.obstacles = [];
-    scene.model.state.buildings = Array.from({ length: 12 }, (_, i) =>
-      makeBuilding(i + 1, 'inferno', 10 + (i % 7) * 4, 16 + Math.floor(i / 7) * 5, i + 1),
-    );
+    scene.model.state.buildings = Array.from({ length: 12 }, (_, i) => ({
+      ...makeBuilding(i + 1, 'inferno', 10 + (i % 7) * 4, 16 + Math.floor(i / 7) * 5, i + 1),
+      infernoMode: i % 2 ? 'multi' : 'single',
+    }));
     scene.sync();
     scene.drawOverlay(0);
     const live = scene.infernoPresentation;

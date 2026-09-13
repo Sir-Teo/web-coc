@@ -1,3 +1,4 @@
+import { type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
 import {
@@ -204,6 +205,7 @@ export interface Building {
   direction?: number;
   skeletonMode?: SkeletonMode;
   xbowMode?: XbowMode;
+  infernoMode?: InfernoMode;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -222,6 +224,7 @@ export interface Layout {
     direction?: number;
     skeletonMode?: SkeletonMode;
     xbowMode?: XbowMode;
+    infernoMode?: InfernoMode;
   }[];
 }
 export type Army = Record<TroopKind, number>;
@@ -1360,6 +1363,7 @@ export class GameModel {
       y: b.y,
       ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
+      ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
       ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
     }));
   }
@@ -1429,6 +1433,8 @@ export class GameModel {
       if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
       if (b.kind === 'skeletontrap')
         b.skeletonMode = moved.get(b.id)?.skeletonMode ?? b.skeletonMode ?? 'ground';
+      if (b.kind === 'inferno')
+        b.infernoMode = moved.get(b.id)?.infernoMode ?? b.infernoMode ?? 'single';
       if (b.kind === 'xbow') b.xbowMode = moved.get(b.id)?.xbowMode ?? b.xbowMode ?? 'ground';
     }
     return true;

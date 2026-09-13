@@ -58,6 +58,7 @@ export function infernoBounds(
   level: number,
   state: 'setup' | 'constructing' | 'upgrading' | 'ruin' = 'setup',
   seconds = 0,
+  mode: InfernoMode = 'single',
 ) {
   const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
   const visit = (poses: NativeScenePose[]) => {
@@ -74,7 +75,7 @@ export function infernoBounds(
       }
     }
   };
-  visit(infernoPoses(level, 'single', state === 'setup' ? 'active' : state, seconds, INFERNO_ROOT));
+  visit(infernoPoses(level, mode, state === 'setup' ? 'active' : state, seconds, INFERNO_ROOT));
   if (!bounds.every(Number.isFinite)) throw new Error('Empty original Inferno pose');
   return bounds;
 }
