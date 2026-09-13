@@ -1,13 +1,14 @@
-import { darkDrillHandlingPoses } from './dark-drill-effects';
+import { darkDrillHandlingPoses, darkDrillDestructionPoses } from './dark-drill-effects';
 import type { AudioManager } from './audio';
 import {
   DARK_DRILL_SOUNDS,
   darkDrillSample,
   darkDrillHandlingCues,
+  darkDrillDestructionCues,
   type DrillHandlingEvent,
 } from './dark-drill-sounds';
 import type Phaser from 'phaser';
-import type { Building } from './model';
+import type { Building, Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { DARK_DRILL_GRAPH, darkDrillBuildingPoses } from './dark-drill-art';
@@ -49,6 +50,7 @@ export class DarkDrillPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     soundTime = seconds,
     reduced = false,
+    destructionHistory?: Battle['drillDestructions'],
   ) {
     const wanted = new Set<number>();
     for (const building of buildings) {
@@ -68,7 +70,10 @@ export class DarkDrillPresentation {
       }
     this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
     const wantedEffects = new Set<string>();
-    for (const pose of darkDrillHandlingPoses(this.homeEvents, soundTime, reduced, iso)) {
+    for (const pose of [
+      ...darkDrillHandlingPoses(this.homeEvents, soundTime, reduced, iso),
+      ...darkDrillDestructionPoses(destructionHistory, soundTime, reduced, iso),
+    ]) {
       wantedEffects.add(pose.key);
       let view = this.effects.get(pose.key);
       if (!view) this.effects.set(pose.key, (view = new NativeSceneView(this.scene, 'darkdrill')));
@@ -79,6 +84,9 @@ export class DarkDrillPresentation {
         view.destroy();
         this.effects.delete(key);
       }
-    return darkDrillHandlingCues(this.homeEvents);
+    return [
+      ...darkDrillHandlingCues(this.homeEvents),
+      ...darkDrillDestructionCues(destructionHistory),
+    ];
   }
 }

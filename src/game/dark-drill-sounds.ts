@@ -1,3 +1,4 @@
+import { visualRandom } from './visual-random';
 import source from '../../reference/dark-drill/sounds.json';
 import type { SampleCue } from './sample-audio';
 export const DARK_DRILL_SOUNDS = source.sounds;
@@ -24,4 +25,22 @@ export function darkDrillHandlingCues(events: readonly DrillHandlingEvent[]): Sa
       pitch: Number(row.MinPitch) / 100,
     };
   });
+}
+
+export function darkDrillDestructionCues(
+  history: import('./model').Battle['drillDestructions'],
+): SampleCue[] {
+  const row = source.effects['Building Destroyed'][0];
+  if (!row.Sound) throw new Error('Missing original Drill destruction sound');
+  const sample = darkDrillSample(row.Sound);
+  return Object.entries(history ?? {}).map(([id, event]) => ({
+    key: `dark-drill:destroy:${id}`,
+    sample,
+    at: event.at + Number(row.SoundDelay) / 1000,
+    volume: Number(row.Volume) / 100,
+    pitch:
+      (Number(row.MinPitch) +
+        visualRandom(Number(id), 0, 6000000) * (Number(row.MaxPitch) - Number(row.MinPitch))) /
+      100,
+  }));
 }

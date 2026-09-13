@@ -2,6 +2,7 @@ import source from '../../reference/dark-drill/native.json';
 import { DARK_DRILL_GRAPH } from './dark-drill-art';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
+import type { Battle } from './model';
 import type { DrillHandlingEvent } from './dark-drill-sounds';
 const emitters = Object.fromEntries(
   Object.entries(source.particles).map(([name, rows]) => [
@@ -18,11 +19,41 @@ export function darkDrillHandlingPoses(
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
 ): NativeParticlePose[] {
+  return drillPoses(events, elapsed, reduced, iso);
+}
+export function darkDrillDestructionPoses(
+  history: Battle['drillDestructions'],
+  elapsed: number,
+  reduced: boolean,
+  iso: (x: number, y: number) => { x: number; y: number },
+): NativeParticlePose[] {
+  return drillPoses(
+    Object.entries(history ?? {}).map(([id, event]) => ({
+      ...event,
+      id: Number(id),
+      index: 0,
+      kind: 'destroy' as const,
+    })),
+    elapsed,
+    reduced,
+    iso,
+  );
+}
+function drillPoses(
+  events: readonly (Omit<DrillHandlingEvent, 'kind'> & { kind: 'pickup' | 'place' | 'destroy' })[],
+  elapsed: number,
+  reduced: boolean,
+  iso: (x: number, y: number) => { x: number; y: number },
+): NativeParticlePose[] {
   if (reduced) return [];
   const result: NativeParticlePose[] = [];
   for (const event of events) {
     const effects = source.effects[
-      event.kind === 'pickup' ? 'Dark Elixir Drill Pickup' : 'Dark Elixir Drill Place'
+      event.kind === 'destroy'
+        ? 'Building Destroyed'
+        : event.kind === 'pickup'
+          ? 'Dark Elixir Drill Pickup'
+          : 'Dark Elixir Drill Place'
     ] as Record<string, string>[];
     effects.forEach((effect, emitterIndex) => {
       const name = effect.ParticleEmitter,
@@ -34,7 +65,7 @@ export function darkDrillHandlingPoses(
       if (age < 0 || age >= duration + Number(row.MaxLife) / 1000) return;
       for (let i = 0; i < count; i++) {
         const pose = particle(
-          `dark-drill:handling:${event.id}:${event.index}:${emitterIndex}:${i}`,
+          `dark-drill:${event.kind === 'destroy' ? 'destroy' : 'handling'}:${event.id}:${event.index}:${emitterIndex}:${i}`,
           name,
           rows,
           age - (duration * i) / count,

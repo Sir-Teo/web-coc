@@ -2654,6 +2654,7 @@ export class GameModel {
       }
       this.onEffect({
         type: 'destroy',
+        ...(b.kind === 'darkdrill' && this.battle?.drillDestructions ? { sourceId: b.id } : {}),
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
         ...(['airsweeper', 'mortar'].includes(b.kind) || (b.kind === 'cannon' && !b.npc)

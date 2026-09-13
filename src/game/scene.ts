@@ -1826,6 +1826,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
+      battle?.drillDestructions,
     );
     this.infernoPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
@@ -2232,6 +2233,14 @@ export class VillageScene extends Phaser.Scene {
       this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind === 'seekingairmine'
     )
       return;
+    if (
+      fx.type === 'destroy' &&
+      fx.sourceId !== undefined &&
+      this.model.battle?.drillDestructions?.[fx.sourceId]
+    ) {
+      this.lastRevision = -1;
+      return;
+    }
     if (
       fx.type === 'darkdrill-pickup' ||
       fx.type === 'darkdrill-place' ||

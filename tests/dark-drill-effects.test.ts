@@ -22,3 +22,30 @@ it('keeps particle poses stable across serialization and event retirement', () =
   expect(darkDrillHandlingPoses([event], 11, false, iso)).toEqual([]);
   expect(darkDrillHandlingPoses([event], 10.15, true, iso)).toEqual([]);
 });
+
+it('reconstructs original destruction debris, smoke and grass after seeking', async () => {
+  const { darkDrillDestructionPoses } = await import('../src/game/dark-drill-effects');
+  const { darkDrillDestructionCues } = await import('../src/game/dark-drill-sounds');
+  const history = { 7: { at: 10, x: 12, y: 14, level: 3 } };
+  const poses = darkDrillDestructionPoses(history, 10.15, false, iso);
+  expect(poses.filter((p) => p.emitter === 'Building Destroyed')).toHaveLength(30);
+  expect(poses.filter((p) => p.emitter === 'Smoke')).toHaveLength(10);
+  expect(poses.filter((p) => p.emitter === 'Grass')).toHaveLength(3);
+  expect(new Set(poses.map((p) => p.key)).size).toBe(43);
+  expect(darkDrillDestructionPoses(JSON.parse(JSON.stringify(history)), 10.15, false, iso)).toEqual(
+    poses,
+  );
+  expect(darkDrillDestructionPoses(history, 9, false, iso)).toEqual([]);
+  expect(darkDrillDestructionPoses(history, 13, false, iso)).toEqual([]);
+  expect(darkDrillDestructionPoses(history, 10.15, true, iso)).toEqual([]);
+  const cue = darkDrillDestructionCues(history)[0];
+  expect(cue).toMatchObject({
+    at: 10,
+    volume: 0.8,
+    sample: 'dark-drill-building_destroyed_01.ogg',
+  });
+  expect(cue.pitch).toBeGreaterThanOrEqual(0.85);
+  expect(cue.pitch).toBeLessThanOrEqual(0.95);
+  expect(darkDrillDestructionCues(JSON.parse(JSON.stringify(history)))[0]).toEqual(cue);
+  expect(darkDrillDestructionCues(undefined)).toEqual([]);
+});
