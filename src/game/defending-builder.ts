@@ -1,4 +1,10 @@
-import { characterLevel, defenceTroopLevel, sourceFlag, sourceNumber } from './character-catalog';
+import {
+  characterLevel,
+  defenceTroopLevel,
+  REPAIR_GLOBALS,
+  sourceFlag,
+  sourceNumber,
+} from './character-catalog';
 import { characterArt } from './character-art';
 import {
   animationStates,
@@ -7,40 +13,57 @@ import {
   rowScale,
   type CharacterPose,
 } from './character-poses';
-import { BUILDINGS, isDefense, isTrap } from './data';
+import { builderHutActivation } from './builder-hut';
+import { BUILDINGS, isTrap } from './data';
 import { distance2D } from './distance';
 import { splitTiming } from './garrison-kinds';
+import { lateBuildingHidden, lateDefenderStats, type LateCombatContext } from './late-campaign';
 import { findPath, distanceTo, type Battle, type Building } from './model';
 import { nativeScenePoses, type NativeScenePose } from './native-mesh';
 
 /**
- * Defending Builder: the character an armed Builder's Hut (source levels 2+) sends out to repair.
- * This module is standalone; the Builder's Hut family wires spawning into its hut logic.
+ * Defending Builder: the character each armed Builder's Hut (source levels 2+) sends out to repair.
  *
  * Source (pinned rows): `Builders Hut` levels 2–4 name `DefenceTroopCharacter=Defending Builder`,
  * `DefenceTroopCount=1` and `DefenceTroopLevel` 1–3 (1-based, as the older
  * LogicDefenceUnitProductionComponent's `SetUpgradeLevel(level - 1)`). The character rows give
  * Speed 250, AttackRange 50, AttackSpeed 750, a negative DPS (-50/-60/-70: HP restored per
- * second), IsJumper, HP 100,000+ and `DeathShowTimeMS=1` with an empty death export.
+ * second), IsJumper, HP 100,000+ and `DeathShowTimeMS=1` with an empty death export. Globals:
+ * `HEAL_STACK_PERCENT` 100,100,90,90,70,40,10,0 and `ALLOW_REPAIR_AFTER_DAMAGE_TICKS` 0.
  *
- * Behavior (public documentation, local where marked):
+ * Engine (older pinned-generation client, see reference/garrison/README.md):
+ * - LogicDefenceUnitProductionComponent.Tick spawns each defence troop on the first battle tick at
+ *   `(GetX(), GetY() + height << 8)`: the building's left edge, vertical middle.
+ * - LogicHitpointComponent.CauseDamage gives each healer one of eight slots per target (held
+ *   1,000 ms after each heal) and scales the heal by `HEAL_STACK_PERCENT[slot]`; a target at 0 HP
+ *   is never healed, and hit points are clamped to the maximum.
+ *
+ * Behavior (public documentation):
  * - [Supercell, Battle Builders](https://supercell.com/en/games/clashofclans/blog/game-updates/battle-builders-2/):
- *   the Builder "will attempt to repair nearby Defenses", cannot be damaged or targeted by
- *   attacking troops, and stops once his own Builder's Hut is destroyed.
+ *   he repairs nearby buildings, cannot be damaged or targeted by attacking troops, stops once his
+ *   own hut is destroyed, and a Lightning Spell resets his repair target.
  * - [House of Clashers, Battle Builder](https://houseofclashers.com/home-village/defenses/battle-builder):
  *   repairs only within 4 tiles of his hut; when the hut collapses he runs back and hides.
- * - [Fandom, Builder's Hut](https://clashofclans.fandom.com/wiki/Builder's_Hut) (search excerpt):
- *   keeps repairing one building until it is fully repaired or destroyed.
- * - Local: the target is the most damaged (lowest hit point fraction) Defense within the radius,
- *   ties by distance to the Builder then building ID; he spawns at the older Guard Post exit
- *   (hut left edge, vertical middle); repairs use the split attack timer (200 ms windup, 550 ms
- *   recovery for healing rows) and never exceed maximum hit points.
+ * - [Fandom, Builder's Hut](https://clashofclans.fandom.com/wiki/Builder's_Hut) (wikitext): he repairs
+ *   any damaged building except Walls while his hut stands, keeps one building until it is
+ *   destroyed or fully repaired, defensive Rage raises repair and speed, Invisibility hides
+ *   buildings from him, and several Builders on one building lose up to 10% (five Builders).
+ * - Local: the most damaged candidate (lowest hit point fraction, then nearest, then ID); the radius
+ *   is measured from the hut center to the building footprint; repairs use the split attack timer
+ *   (200 ms windup, 550 ms recovery for healing rows).
  */
+export const DEFENDING_BUILDER = 'Defending Builder';
 export const DEFENDING_BUILDER_REPAIR_RADIUS = 4;
 export const DEFENDING_BUILDER_HISTORY = 8;
+/** LogicHitpointComponent: eight healer slots, each held 1,000 ms after a heal. */
+export const DEFENDING_BUILDER_HEAL_SLOTS = 8;
+const HEAL_SLOT_SECONDS = 1;
+const HEAL_STACK_PERCENT = REPAIR_GLOBALS.HEAL_STACK_PERCENT;
+if (REPAIR_GLOBALS.ALLOW_REPAIR_AFTER_DAMAGE_TICKS !== 0)
+  throw Error('Repair delays after damage are not modeled');
 
 export function defendingBuilderStats(level: number) {
-  const row = characterLevel('Defending Builder', level);
+  const row = characterLevel(DEFENDING_BUILDER, level);
   if (!row) throw Error(`Unsupported Defending Builder level ${level}`);
   const timing = splitTiming(row);
   return {
@@ -63,7 +86,7 @@ export function defendingBuilderStats(level: number) {
 export function hutBuilderLevel(hutLevel: number) {
   try {
     const row = defenceTroopLevel('Builders Hut', hutLevel);
-    return row.DefenceTroopCharacter === 'Defending Builder'
+    return row.DefenceTroopCharacter === DEFENDING_BUILDER
       ? Number(row.DefenceTroopLevel)
       : undefined;
   } catch {
@@ -76,8 +99,11 @@ export interface DefendingBuilderRepair {
   at: number;
   targetId: number;
   amount: number;
+  /** Healer slot on the target; `HEAL_STACK_PERCENT[slot]` scaled this repair. */
+  slot: number;
 }
 export interface DefendingBuilder {
+  /** Positive; garrison defenders use negative IDs, so Spell Tower defender records never collide. */
   id: number;
   hutId: number;
   level: number;
@@ -97,6 +123,18 @@ export interface DefendingBuilder {
   retreating?: boolean;
   hiddenAt?: number;
 }
+export interface DefendingBuilderHealSlot {
+  id: number;
+  until: number;
+}
+/** Battle-only state, reconstructed from the replay snapshot and simulation clock. */
+export interface DefendingBuilderBattleState {
+  builders: DefendingBuilder[];
+  /** Healer slots per repaired building ID (LogicHitpointComponent healing IDs and times). */
+  slots: Record<number, DefendingBuilderHealSlot[]>;
+  /** Lowest hit points each repaired building reached before a repair: loot is never returned. */
+  lowest: Record<number, number>;
+}
 
 const EPSILON = 1e-9;
 const hutCenter = (hut: Building) => {
@@ -104,16 +142,20 @@ const hutCenter = (hut: Building) => {
   return { x: hut.x + size / 2, y: hut.y + size / 2 };
 };
 
+function builderState(battle: Battle) {
+  if (!battle.late) throw Error('Defending Builders need version-44 late campaign state');
+  return (battle.late.defendingBuilder ??= { builders: [], slots: {}, lowest: {} });
+}
+
 /** Spawn one Defending Builder for `hut` at battle time `at` (needs version-44 late state). */
 export function spawnDefendingBuilder(battle: Battle, hut: Building, at: number): DefendingBuilder {
   const level = hutBuilderLevel(hut.level);
   if (hut.kind !== 'builder' || hut.npc || level === undefined)
     throw Error("Defending Builders come only from armed Builder's Huts");
-  if (!battle.late) throw Error('Defending Builders need version-44 late campaign state');
-  const list = (battle.late.defendingBuilders ??= []);
+  const state = builderState(battle);
   const size = BUILDINGS[hut.kind].size;
   const builder: DefendingBuilder = {
-    id: list.length + 1,
+    id: state.builders.length + 1,
     hutId: hut.id,
     level,
     x: hut.x,
@@ -128,11 +170,19 @@ export function spawnDefendingBuilder(battle: Battle, hut: Building, at: number)
     repairCount: 0,
     repairs: [],
   };
-  list.push(builder);
+  state.builders.push(builder);
   return builder;
 }
 
-/** Damaged Defenses (and armed huts) within the repair radius of the hut, most damaged first. */
+/** Damaged, standing, visible non-Wall buildings are repairable. */
+const repairable = (battle: Battle, b: Building) =>
+  b.hp > 0 &&
+  b.hp < b.maxHp &&
+  b.kind !== 'wall' &&
+  !isTrap(b.kind) &&
+  !lateBuildingHidden(battle, b);
+
+/** Repairable buildings within the repair radius of the hut, most damaged first. */
 export function defendingBuilderCandidates(battle: Battle, builder: DefendingBuilder) {
   const hut = battle.buildings.find((b) => b.id === builder.hutId);
   if (!hut) return [];
@@ -141,13 +191,7 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
   return battle.buildings
     .filter(
       (b) =>
-        b.hp > 0 &&
-        b.hp < b.maxHp &&
-        b.kind !== 'wall' &&
-        !isTrap(b.kind) &&
-        (isDefense(b.kind) ||
-          (b.kind === 'builder' && !b.npc && hutBuilderLevel(b.level) !== undefined)) &&
-        distanceTo(center, b) <= DEFENDING_BUILDER_REPAIR_RADIUS + EPSILON,
+        repairable(battle, b) && distanceTo(center, b) <= DEFENDING_BUILDER_REPAIR_RADIUS + EPSILON,
     )
     .sort(
       (a, b) =>
@@ -156,6 +200,42 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
         a.id - b.id,
     );
 }
+
+/** LogicHitpointComponent.CauseDamage healer slot selection for one heal at `at`. */
+export function defendingBuilderHealSlot(
+  state: DefendingBuilderBattleState,
+  targetId: number,
+  healerId: number,
+  at: number,
+) {
+  const slots = (state.slots[targetId] ??= Array.from(
+    { length: DEFENDING_BUILDER_HEAL_SLOTS },
+    () => ({ id: 0, until: 0 }),
+  ));
+  let previous = -1,
+    free = -1;
+  for (let i = 0; i < DEFENDING_BUILDER_HEAL_SLOTS; i++) {
+    const active = slots[i].until > at + EPSILON;
+    // The component tick clears the IDs of expired slots.
+    if (active && slots[i].id === healerId) previous = i;
+    else if (free === -1 && !active) free = i;
+  }
+  const hold = { id: healerId, until: at + HEAL_SLOT_SECONDS };
+  if (previous !== -1 && free !== -1 && free < previous) {
+    slots[free] = hold;
+    slots[previous] = { id: 0, until: 0 };
+    return free;
+  }
+  if (previous === -1) {
+    if (free === -1) return DEFENDING_BUILDER_HEAL_SLOTS;
+    slots[free] = hold;
+    return free;
+  }
+  slots[previous] = hold;
+  return previous;
+}
+export const healStackPercent = (slot: number) =>
+  HEAL_STACK_PERCENT[Math.min(slot, HEAL_STACK_PERCENT.length - 1)];
 
 function walk(
   builder: DefendingBuilder,
@@ -196,14 +276,27 @@ function walk(
 }
 
 export function stepDefendingBuilders(battle: Battle, dt: number) {
-  for (const builder of battle.late?.defendingBuilders ?? []) stepBuilder(battle, builder, dt);
+  const state = battle.late?.defendingBuilder;
+  if (!state) return;
+  for (const builder of state.builders) stepBuilder(battle, state, builder, dt);
 }
 
-function stepBuilder(battle: Battle, builder: DefendingBuilder, dt: number) {
+function stepBuilder(
+  battle: Battle,
+  state: DefendingBuilderBattleState,
+  builder: DefendingBuilder,
+  dt: number,
+) {
   if (builder.hiddenAt !== undefined) return;
   const activeDt = Math.min(dt, Math.max(0, battle.elapsed - builder.spawnedAt));
   if (activeDt <= 0) return;
   const stats = defendingBuilderStats(builder.level);
+  // Defensive Rage raises the health restored by each repair and his movement speed.
+  const boosted = lateDefenderStats(
+    battle,
+    { id: builder.id, kind: DEFENDING_BUILDER },
+    { damage: stats.repair, speed: stats.speed },
+  );
   builder.repairing = false;
   builder.pathAt -= activeDt;
   builder.cooldown = Math.max(0, builder.cooldown - activeDt);
@@ -223,14 +316,14 @@ function stepBuilder(battle: Battle, builder: DefendingBuilder, dt: number) {
       builder.hiddenAt = battle.elapsed;
       return;
     }
-    walk(builder, battle, hut, stats.range, stats.speed, activeDt);
+    walk(builder, battle, hut, stats.range, boosted.speed, activeDt);
     if (distanceTo(builder, hut) <= stats.range + EPSILON || !builder.path.length)
       builder.hiddenAt = battle.elapsed;
     return;
   }
   let target = battle.buildings.find((b) => b.id === builder.target);
-  // Keep one target until it is fully repaired or destroyed.
-  if (!target || target.hp <= 0 || target.hp >= target.maxHp) {
+  // Keep one target until it is fully repaired, destroyed or hidden.
+  if (!target || !repairable(battle, target)) {
     target = defendingBuilderCandidates(battle, builder)[0];
     if (builder.target !== (target?.id ?? null)) {
       builder.target = target?.id ?? null;
@@ -242,7 +335,7 @@ function stepBuilder(battle: Battle, builder: DefendingBuilder, dt: number) {
   if (!target) return;
   if (distanceTo(builder, target) > stats.range + 1e-6) {
     delete builder.engaged;
-    walk(builder, battle, target, stats.range, stats.speed, activeDt);
+    walk(builder, battle, target, stats.range, boosted.speed, activeDt);
     return;
   }
   builder.path = [];
@@ -254,15 +347,66 @@ function stepBuilder(battle: Battle, builder: DefendingBuilder, dt: number) {
   if (builder.cooldown > EPSILON) return;
   builder.cooldown = stats.rate;
   builder.recovery = stats.recovery;
-  const amount = Math.min(stats.repair, target.maxHp - target.hp);
+  const slot = defendingBuilderHealSlot(state, target.id, builder.id, battle.elapsed);
+  state.lowest[target.id] = Math.min(state.lowest[target.id] ?? target.hp, target.hp);
+  const amount = Math.min(
+    (boosted.damage * healStackPercent(slot)) / 100,
+    target.maxHp - target.hp,
+  );
   target.hp += amount;
   builder.repairs.push({
     n: builder.repairCount++,
     at: battle.elapsed,
     targetId: target.id,
     amount,
+    slot,
   });
   if (builder.repairs.length > DEFENDING_BUILDER_HISTORY) builder.repairs.shift();
+}
+
+/**
+ * Late-family step: each armed campaign Builder's Hut (`builderHutActivation`) sends out its
+ * Builder on the first battle tick, as LogicDefenceUnitProductionComponent does. Campaign
+ * battles start simulating at the first deployment or spell, which is also when the huts wake.
+ */
+export function stepDefendingBuilder(context: LateCombatContext) {
+  const { battle, dt, phase } = context;
+  if (phase !== 'defenses' || !battle.late) return;
+  if (!battle.late.defendingBuilder) {
+    const huts = battle.buildings.filter((b) => builderHutActivation(battle, b));
+    if (!huts.length) return;
+    const at = Math.max(0, battle.elapsed - dt);
+    for (const hut of huts) spawnDefendingBuilder(battle, hut, at);
+  }
+  stepDefendingBuilders(battle, dt);
+}
+/** Builders never hold the battle open. */
+export function defendingBuilderPending(_battle: Battle) {
+  return false;
+}
+/** A destroyed hut is observed on the Builder's next step (he stops, retreats and hides). */
+export function defendingBuilderDestroyed(
+  _context: LateCombatContext,
+  _building: Building,
+  _at: number,
+) {}
+/** Attacker Lightning resets the repair target of every Builder inside the strike. */
+export function defendingBuilderLightning(battle: Battle, x: number, y: number, radius: number) {
+  for (const builder of battle.late?.defendingBuilder?.builders ?? []) {
+    if (builder.hiddenAt !== undefined || builder.retreating) continue;
+    if (builder.spawnedAt > battle.elapsed || distance2D(builder.x - x, builder.y - y) > radius)
+      continue;
+    builder.target = null;
+    builder.repairing = false;
+    delete builder.engaged;
+    builder.path = [];
+    builder.pathAt = 0;
+  }
+}
+/** Hit points that count toward loot: the lowest a repaired building reached. */
+export function defendingBuilderLootHp(battle: Battle, building: Building) {
+  const lowest = battle.late?.defendingBuilder?.lowest[building.id];
+  return lowest === undefined ? building.hp : Math.min(building.hp, lowest);
 }
 
 /** State-driven original poses: walk to a target, the looping `attack` (build) row, idle otherwise. */

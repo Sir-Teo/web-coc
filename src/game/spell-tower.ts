@@ -252,6 +252,13 @@ function applyPulse(battle: Battle, family: SpellTowerBattleState, entry: SpellT
     if (!inside(entry.x - defender.x, entry.y - defender.y, spell.radius)) continue;
     record[defender.id] = Math.max(record[defender.id] ?? 0, until);
   }
+  // Defensive Rage also boosts Defending Builders; their IDs are positive, defenders' negative.
+  if (entry.weapon !== 'rage') return;
+  for (const builder of battle.late?.defendingBuilder?.builders ?? []) {
+    if (builder.hiddenAt !== undefined || builder.spawnedAt > at) continue;
+    if (!inside(entry.x - builder.x, entry.y - builder.y, spell.radius)) continue;
+    record[builder.id] = Math.max(record[builder.id] ?? 0, until);
+  }
 }
 
 function poisonTick(battle: Battle) {

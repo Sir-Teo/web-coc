@@ -1,23 +1,31 @@
 import type Phaser from 'phaser';
-import type { Battle } from './model';
+import type { AudioManager } from './audio';
+import type { Building } from './model';
+import type { LatePresentation, LateRenderContext } from './late-campaign-scene';
+import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
 import { defendingBuilderLayers } from './defending-builder';
 
 /**
- * Defending Builder views for the Builder's Hut family to call each frame: the original worker
- * body and its ground shadow, sorted at the projected ground point like ground garrison troops.
- * The worker graph is preloaded with the other character graphs (garrison-scene.ts).
+ * Defending Builders in the late campaign scene: the original worker body and its ground shadow,
+ * sorted at the projected ground point like ground garrison troops. The worker graph is preloaded
+ * with the other character graphs (garrison-scene.ts). No original repair sounds are imported.
  */
-export class DefendingBuilderPresentation {
+export class DefendingBuilderPresentation implements LatePresentation {
   private views = new Map<number, { body: NativeSceneView; shadow: NativeSceneView }>();
-  constructor(private scene: Phaser.Scene) {}
-  render(
-    battle: Battle | null,
-    reduced: boolean,
-    iso: (x: number, y: number) => { x: number; y: number },
-  ) {
+  constructor(
+    private scene: Phaser.Scene,
+    _audio?: AudioManager,
+  ) {}
+  handles(_building: Building) {
+    return false;
+  }
+  bounds(_building: Building) {
+    return undefined;
+  }
+  render({ battle, reduced, iso }: LateRenderContext): SampleCue[] {
     const wanted = new Set<number>();
-    for (const builder of battle?.late?.defendingBuilders ?? []) {
+    for (const builder of battle?.late?.defendingBuilder?.builders ?? []) {
       const layers = defendingBuilderLayers(builder, battle!, reduced);
       if (!layers) continue;
       wanted.add(builder.id);
@@ -40,6 +48,7 @@ export class DefendingBuilderPresentation {
         views.shadow.destroy();
         this.views.delete(id);
       }
+    return [];
   }
   clear() {
     for (const views of this.views.values()) {
@@ -47,5 +56,8 @@ export class DefendingBuilderPresentation {
       views.shadow.destroy();
     }
     this.views.clear();
+  }
+  destroy() {
+    this.clear();
   }
 }
