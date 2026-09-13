@@ -14,6 +14,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    // Arithmetic-only vortex motion must also agree bit for bit in JavaScriptCore.
+    { name: 'webkit', use: { browserName: 'webkit' }, grep: /matches Node at every step/ },
+  ],
   reporter: 'list',
   outputDir: 'output/test-results/tornado-freeze',
 });
