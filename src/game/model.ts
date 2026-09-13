@@ -5,6 +5,7 @@ import {
 } from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
 import {
+  lateActivatedDefense,
   lateBuildingDestroyed,
   lateBuildingHidden,
   lateCampaignPending,
@@ -2335,10 +2336,14 @@ export class GameModel {
       let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
         const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
+        // Goblin Castle is BuildingClass Npc; active late hall weapons/hut turrets add Defense.
         const preferred = troop.prefersResources
-          ? alive.filter((v) => isResourceBuilding(v.kind))
+          ? alive.filter((v) => isResourceBuilding(v.kind) && v.npc !== 'goblin-castle')
           : troop.prefersDefenses
-            ? alive.filter((v) => isDefense(v.kind) && v.npc !== 'tutorial-cannon')
+            ? alive.filter(
+                (v) =>
+                  (isDefense(v.kind) && v.npc !== 'tutorial-cannon') || lateActivatedDefense(b, v),
+              )
             : alive;
         target =
           (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??

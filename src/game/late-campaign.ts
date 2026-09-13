@@ -4,6 +4,7 @@ import type { Battle, Building, FX, Unit } from './model';
 import type { NpcBuildingKind } from './npc-buildings';
 import {
   BUILDER_HUT_READY,
+  builderHutDefenseClass,
   builderHutDestroyed,
   builderHutPending,
   stepBuilderHut,
@@ -39,6 +40,7 @@ import {
 } from './ghost-trap';
 import {
   LATE_GOBLIN_BUILDINGS_READY,
+  lateGoblinBuildingsDefenseClass,
   lateGoblinBuildingsDestroyed,
   lateGoblinBuildingsPending,
   stepLateGoblinBuildings,
@@ -210,6 +212,11 @@ export function lateDefenderStats<T extends { damage: number; speed: number }>(
 /** Defending units concealed by a defensive Invisibility pulse. */
 export const lateDefenderHidden = (battle: Battle, defender: { id: number }) =>
   spellTowerDefenderHidden(battle, defender);
+/** ActivatedCombatAddBuildingClass=Defense: active hall weapons and woken Builder's Hut turrets
+ * attract defense-targeting troops. Always false without `battle.late`. */
+export const lateActivatedDefense = (battle: Battle, building: Building) =>
+  !!battle.late &&
+  (lateGoblinBuildingsDefenseClass(battle, building) || builderHutDefenseClass(battle, building));
 
 export type SpellTowerWeapon = 'rage' | 'poison' | 'invisibility';
 /** Client weapon GlobalIDs selected by `attack_mode_weapon` on each campaign Spell Tower. */
