@@ -1,5 +1,9 @@
 import type { Battle, Building } from './model';
-import type { TowerArcherFacing } from './archer-tower-art';
+import {
+  towerArcherAttackTiming,
+  type TowerArcherAction,
+  type TowerArcherFacing,
+} from './archer-tower-art';
 import { ARCHER_TOWER } from './archer-tower-stats';
 
 /** Original clips face right. These projected angle sectors are a local interpretation. */
@@ -23,4 +27,40 @@ export function battleTowerArcherFacing(
   const dx = target.x - tower.x - 1.5,
     dy = target.y - tower.y - 1.5;
   return Math.hypot(dx, dy) <= ARCHER_TOWER.range ? towerArcherFacing(dx, dy) : idle;
+}
+
+/** Sample the original release and follow-through from actual launch time.
+ * Pre-release windup is not inferred from cooldown, which can stall under stun.
+ */
+export function battleTowerArcherPose(
+  tower: Building,
+  battle: Battle | null | undefined,
+  seconds: number,
+  reduced = false,
+): TowerArcherFacing & TowerArcherAction {
+  const idle = {
+    ...battleTowerArcherFacing(tower, battle),
+    action: 'idle' as const,
+    time: reduced ? 0 : seconds,
+  };
+  if (
+    !battle?.nativeArcherTowers ||
+    battle.finished ||
+    reduced ||
+    tower.hp <= 0 ||
+    tower.constructing ||
+    tower.upgradeEnd ||
+    (battle.defenseStuns[tower.id] ?? 0) > battle.elapsed
+  )
+    return idle;
+  const shot = battle.archerTowerShots?.[tower.id];
+  if (!shot) return idle;
+  const age = battle.elapsed - shot.at;
+  const timing = towerArcherAttackTiming(tower.level);
+  if (age < 0 || age >= timing.duration - timing.release) return idle;
+  return {
+    ...towerArcherFacing(shot.x - tower.x - 1.5, shot.y - tower.y - 1.5),
+    action: 'attack',
+    time: timing.release + age,
+  };
 }

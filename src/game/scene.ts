@@ -852,6 +852,7 @@ export class VillageScene extends Phaser.Scene {
           ? 0
           : (this.model.battle?.elapsed ?? this.renderClock / 1000),
         this.model.battle,
+        this.model.state.settings.reducedMotion,
       );
     if (b.kind === 'darkdrill')
       return darkDrillBounds(

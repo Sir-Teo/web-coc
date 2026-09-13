@@ -363,6 +363,8 @@ export interface Battle {
   cannons?: Record<number, CannonAttackState>;
   /** Version 41+ tower arrows travel at source speed while tracking the original target. */
   nativeArcherTowers?: true;
+  /** Latest actual release per tower; bounded presentation history for version 41+. */
+  archerTowerShots?: Record<number, { at: number; x: number; y: number }>;
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
@@ -2531,6 +2533,12 @@ export class GameModel {
           },
           this.onEffect,
         );
+        if (tower.kind === 'archertower' && b.nativeArcherTowers)
+          (b.archerTowerShots ??= {})[tower.id] = {
+            at: projectile.launched,
+            x: target.x,
+            y: target.y,
+          };
         if (tower.kind === 'cannon' && !tower.npc) recordCannonShot(b, tower, projectile);
         if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);

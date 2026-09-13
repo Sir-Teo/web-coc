@@ -10,6 +10,7 @@ import {
 } from './native-mesh';
 export const ARCHER_TOWER_GRAPH = body as unknown as NativeMeshGraph;
 export const TOWER_ARCHER_GRAPH = actors as unknown as NativeMeshGraph;
+export type TowerArcherAction = { action: 'idle' | 'attack'; time: number };
 export type TowerArcherFacing = { direction: 1 | 2 | 3; flip: boolean };
 export type ArcherTowerState = 'ready' | 'constructing' | 'upgrading' | 'ruin';
 export const archerTowerSource = (level: number): Record<string, string> => {
@@ -76,6 +77,7 @@ export function archerTowerComposition(
   seconds: number,
   alternate = false,
   facing: TowerArcherFacing = { direction: 3, flip: false },
+  actor: TowerArcherAction = { action: 'idle', time: seconds },
 ) {
   const row = archerTowerSource(level);
   const body = archerTowerPoses(level, state, seconds, alternate);
@@ -85,7 +87,7 @@ export function archerTowerComposition(
   const residents =
     state === 'constructing' || state === 'ruin'
       ? []
-      : towerArcherPoses(level, 'idle', facing.direction, seconds, [
+      : towerArcherPoses(level, actor.action, facing.direction, actor.time, [
           facing.flip ? -1 : 1,
           0,
           0,
@@ -94,4 +96,13 @@ export function archerTowerComposition(
           60 - z * 0.5,
         ]);
   return { body, residents };
+}
+
+/** Captured release marker and duration, taken from the selected resident animation. */
+export function towerArcherAttackTiming(level: number) {
+  const row = (
+    animations.animations as unknown as Record<string, { rows: Record<string, string>[] }>
+  )[archerTowerSource(level).DefenderCharacter].rows.find((row) => row.Name === 'attack')!;
+  const clip = TOWER_ARCHER_GRAPH.clips[TOWER_ARCHER_GRAPH.exports[row.ExportName + '_3']];
+  return { release: Number(row.ActionFrame) / clip.fps, duration: clip.timeline.length / clip.fps };
 }
