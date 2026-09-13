@@ -1,6 +1,13 @@
-import { GameModel, makeBuilding, type Army, type Building, type Unit } from '../../src/game/model';
+import {
+  GameModel,
+  makeBuilding,
+  type Army,
+  type Battle,
+  type Building,
+  type Unit,
+} from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
-import { TROOP_KEYS, maxTroopLevel } from '../../src/game/data';
+import { BUILDINGS, TROOP_KEYS, maxTroopLevel } from '../../src/game/data';
 import { replayBattle, type ReplayData, type ReplaySetup } from '../../src/game/replay';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { campaignStage } from '../../src/game/campaign-catalog';
@@ -79,6 +86,80 @@ export function nearestDeploy(m: GameModel, x: number, y: number) {
     }
   if (!best) throw Error('No legal deployment point');
   return best;
+}
+
+const trapCenter = (b: Battle, id: number) => {
+  const t = b.buildings.find((v) => v.id === id)!;
+  return [t.x + BUILDINGS[t.kind].size / 2, t.y + BUILDINGS[t.kind].size / 2] as const;
+};
+
+/** Real ungated campaign attack: every carried troop deploys at the legal point nearest one trap. */
+export function trapVillageBattle(
+  index: 64 | 66,
+  trap: 'tornadotrap' | 'freeze-trap',
+  army: Partial<Army>,
+  trapIndex = 1,
+) {
+  const m = lateTrapVillage(index, army);
+  const b = m.battle!;
+  const target = b.buildings.filter((v) => v.kind === trap || v.npc === trap)[trapIndex];
+  const [x, y] = nearestDeploy(m, ...trapCenter(b, target.id));
+  for (const kind of Object.keys(army) as (keyof Army)[]) {
+    m.activeTroop = kind;
+    while (b.remaining[kind]) if (!m.deploy(x, y)) throw Error(`Deployment failed: ${kind}`);
+  }
+  return { m, trapId: target.id, point: [x, y] as const };
+}
+export const TORNADO_VILLAGE_ARMY = { giant: 6, swordsman: 12, balloon: 6 };
+export const FREEZE_VILLAGE_ARMY = { giant: 6, swordsman: 12, dragon: 3 };
+/** Cold Flame's corner Goblin Freeze Trap and level-3 Tornado Trap in one deployment. */
+export const COLD_FLAME_ARMY = { pekka: 12, healer: 4, dragon: 6 };
+export function coldFlameReplay(steps = 1200) {
+  const setup = nativeSetup(81, COLD_FLAME_ARMY);
+  const probe = new GameModel();
+  probe.battle = replayBattle(setup, 44);
+  const b = probe.battle;
+  const tornado = b.buildings.find((v) => v.kind === 'tornadotrap' && v.x === 31 && v.y === 31)!;
+  const corner = b.buildings.find((v) => v.npc === 'freeze-trap' && v.x === 35 && v.y === 35)!;
+  const [x, y] = nearestDeploy(probe, ...trapCenter(b, corner.id));
+  const deployments = (Object.entries(COLD_FLAME_ARMY) as [keyof Army, number][]).flatMap(
+    ([kind, count]) =>
+      Array.from({ length: count }, () => [kind, x, y] as [keyof Army, number, number]),
+  );
+  return { setup, deployments, data: nativeReplay(setup, deployments, steps), tornado, corner };
+}
+/** Live stepping with the replay runner's isolated inputs, for gated villages. */
+export function liveNativeBattle(setup: ReplaySetup, deployments: [keyof Army, number, number][]) {
+  const live = new GameModel();
+  live.recordBattles = false;
+  live.state.army = { ...setup.army };
+  live.state.spells = { ...setup.spells };
+  live.state.troopLevels = { ...setup.troopLevels };
+  live.state.nextId = setup.nextId;
+  live.battle = replayBattle(setup, 44);
+  for (const [kind, x, y] of deployments) {
+    live.activeTroop = kind;
+    if (!live.deploy(x, y)) throw Error(`Deployment failed: ${kind}`);
+  }
+  return live;
+}
+
+/** Explicit-setup battle (no save or wall-clock inputs), deployed at the point nearest one trap. */
+export function nativeTrapBattle(
+  index: number,
+  trap: 'tornadotrap' | 'freeze-trap',
+  army: Partial<Army>,
+  trapIndex = 1,
+) {
+  const setup = nativeSetup(index, army);
+  const probe = new GameModel();
+  probe.battle = replayBattle(setup, 44);
+  const target = probe.battle.buildings.filter((v) => v.kind === trap || v.npc === trap)[trapIndex];
+  const [x, y] = nearestDeploy(probe, ...trapCenter(probe.battle, target.id));
+  const deployments = (Object.entries(army) as [keyof Army, number][]).flatMap(([kind, count]) =>
+    Array.from({ length: count }, () => [kind, x, y] as [keyof Army, number, number]),
+  );
+  return { m: liveNativeBattle(setup, deployments), trapId: target.id, point: [x, y] as const };
 }
 
 /** Version-44 setup for a native village that other late families still gate. */

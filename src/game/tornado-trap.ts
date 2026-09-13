@@ -4,7 +4,7 @@ import { MAP_SIZE } from './grid';
 import { concealedTesla } from './hidden-tesla';
 import { lateBuildingHidden, type LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
-import { tornadoDrag, tornadoTrapStats } from './tornado-trap-stats';
+import { tornadoDrag, tornadoTrapStats, type TornadoTrapLevel } from './tornado-trap-stats';
 
 /** Tornado Trap: vortex that draws attackers in (reference/tornado-trap/README.md).
  * The campaign gate keeps affected villages unavailable until this is true. */
@@ -156,22 +156,39 @@ function stepVortices(battle: Battle, dt: number) {
   }
 }
 
-/** Polar integration of one vortex over `time`. Ground units are never carried onto a
- * different solid tile; such a step is cancelled, leaving them stuck until release. */
-function carry(vortex: TornadoVortex, u: Unit, time: number, solid: Set<number>) {
-  const stats = tornadoTrapStats(vortex.level);
-  const dx = u.x - vortex.x,
-    dy = u.y - vortex.y,
+/**
+ * One vortex step for a carried unit, as a turn about the center plus the inward pull.
+ * The turn is a rational (Cayley) rotation by tan(half angle) ≈ half the turned arc, so only
+ * correctly rounded arithmetic and square roots run: replays agree bit for bit across browser
+ * engines, whose sin/cos/atan2 may differ. Ground units are never carried onto a different
+ * solid tile; such a step is cancelled, leaving them stuck until release.
+ */
+export function tornadoCarryPoint(
+  stats: TornadoTrapLevel,
+  center: { x: number; y: number },
+  u: Pick<Unit, 'x' | 'y' | 'kind' | 'hero'>,
+  time: number,
+) {
+  const dx = u.x - center.x,
+    dy = u.y - center.y,
     r = distance2D(dx, dy);
+  if (r <= EPSILON) return { x: u.x, y: u.y };
   const drag = tornadoDrag(stats, u.kind, !!u.hero, r);
   // The inflow settles on the inner radius; units already inside it only turn.
   const radius = r > stats.innerRadius ? Math.max(stats.innerRadius, r - drag.inward * time) : r;
   // Negative source rotation is the clockwise swirl of the original art: +x toward +y on screen.
-  const angle =
-    (r > EPSILON ? Math.atan2(dy, dx) : 0) +
-    (r > EPSILON ? (-Math.sign(stats.rotation) * drag.tangential * time) / r : 0);
-  const x = Math.max(0, Math.min(MAP_SIZE, vortex.x + Math.cos(angle) * radius)),
-    y = Math.max(0, Math.min(MAP_SIZE, vortex.y + Math.sin(angle) * radius));
+  const half = (-Math.sign(stats.rotation) * drag.tangential * time) / r / 2,
+    denominator = 1 + half * half;
+  const cos = (1 - half * half) / denominator,
+    sin = (2 * half) / denominator,
+    scale = radius / r;
+  return {
+    x: Math.max(0, Math.min(MAP_SIZE, center.x + (dx * cos - dy * sin) * scale)),
+    y: Math.max(0, Math.min(MAP_SIZE, center.y + (dx * sin + dy * cos) * scale)),
+  };
+}
+function carry(vortex: TornadoVortex, u: Unit, time: number, solid: Set<number>) {
+  const { x, y } = tornadoCarryPoint(tornadoTrapStats(vortex.level), vortex, u, time);
   if (!TROOPS[u.kind].flying) {
     const from = Math.floor(u.y) * MAP_SIZE + Math.floor(u.x),
       to = Math.floor(y) * MAP_SIZE + Math.floor(x);

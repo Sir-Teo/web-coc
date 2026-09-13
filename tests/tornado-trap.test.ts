@@ -11,6 +11,7 @@ import { stepTraps } from '../src/game/traps';
 import {
   TORNADO_TRAP_READY,
   stepTornadoTrap,
+  tornadoCarryPoint,
   tornadoTrapPending,
   type TornadoVortex,
 } from '../src/game/tornado-trap';
@@ -222,10 +223,17 @@ describe('campaign Tornado Trap', () => {
       const stats = tornadoTrapStats(1),
         r = Math.hypot(dx, dy),
         drag = tornadoDrag(stats, kind, false, r);
-      const radius = Math.max(0.7, r - drag.inward * 0.05),
-        angle = Math.atan2(dy, dx) + (drag.tangential * 0.05) / r;
-      expect(u.x).toBeCloseTo(20.5 + Math.cos(angle) * radius, 12);
-      expect(u.y).toBeCloseTo(20.5 + Math.sin(angle) * radius, 12);
+      const point = tornadoCarryPoint(stats, vortex(b), { kind, x: 20.5 + dx, y: 20.5 + dy }, 0.05);
+      expect([u.x, u.y]).toEqual([point.x, point.y]);
+      // The rational turn keeps the pulled radius and turns by 2·atan(arc / 2r).
+      expect(Math.hypot(u.x - 20.5, u.y - 20.5)).toBeCloseTo(
+        Math.max(0.7, r - drag.inward * 0.05),
+        12,
+      );
+      const raw = Math.atan2(u.y - 20.5, u.x - 20.5) - Math.atan2(dy, dx);
+      const turned = ((raw + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+      expect(turned).toBeCloseTo(2 * Math.atan((drag.tangential * 0.05) / r / 2), 12);
+      expect(Math.abs(turned - (drag.tangential * 0.05) / r)).toBeLessThan(1e-3);
       expect(u.late?.tornadoTrap).toEqual({ until: v.firstHitAt + 0.128 });
       return Math.hypot(u.x - 20.5 - dx, u.y - 20.5 - dy);
     };
