@@ -1,7 +1,7 @@
 import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
 import { preloadCastles, CastlePresentation } from './castle-scene';
-import { CASTLE_ART } from './castle-art';
+import { CASTLE_ART, castleBounds } from './castle-art';
 import { CANNON_ART } from './cannon-art';
 import { preloadCannons, CannonPresentation } from './cannon-scene';
 import { cannonBounds } from './cannon-poses';
@@ -808,21 +808,23 @@ export class VillageScene extends Phaser.Scene {
   }
   private nativeBuildingBounds(b: Building) {
     const sample =
-      b.kind === 'cannon' && !b.npc
-        ? cannonBounds
-        : b.kind === 'mortar'
-          ? mortarBounds
-          : b.kind === 'airsweeper'
-            ? sweeperBounds
-            : b.kind === 'tesla'
-              ? teslaBodyBounds
-              : b.kind === 'bombtower'
-                ? bombTowerBounds
-                : b.kind === 'wizardtower'
-                  ? wizardTowerBounds
-                  : b.kind === 'seekingairmine'
-                    ? seekingMineBounds
-                    : undefined;
+      b.kind === 'clancastle'
+        ? castleBounds
+        : b.kind === 'cannon' && !b.npc
+          ? cannonBounds
+          : b.kind === 'mortar'
+            ? mortarBounds
+            : b.kind === 'airsweeper'
+              ? sweeperBounds
+              : b.kind === 'tesla'
+                ? teslaBodyBounds
+                : b.kind === 'bombtower'
+                  ? bombTowerBounds
+                  : b.kind === 'wizardtower'
+                    ? wizardTowerBounds
+                    : b.kind === 'seekingairmine'
+                      ? seekingMineBounds
+                      : undefined;
     if (!sample) return;
     const state =
       b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
@@ -1002,17 +1004,19 @@ export class VillageScene extends Phaser.Scene {
       );
       im.setData(
         'intactHeight',
-        b.kind === 'cannon' && !b.npc
-          ? cannonBounds(b.level)[3] - cannonBounds(b.level)[1]
-          : b.kind === 'mortar'
-            ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
-            : b.kind === 'airsweeper'
-              ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
-              : b.kind === 'bombtower'
-                ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-                : b.kind === 'wizardtower'
-                  ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
-                  : im.displayHeight,
+        b.kind === 'clancastle'
+          ? castleBounds(b.level)[3] - castleBounds(b.level)[1]
+          : b.kind === 'cannon' && !b.npc
+            ? cannonBounds(b.level)[3] - cannonBounds(b.level)[1]
+            : b.kind === 'mortar'
+              ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
+              : b.kind === 'airsweeper'
+                ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
+                : b.kind === 'bombtower'
+                  ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
+                  : b.kind === 'wizardtower'
+                    ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
+                    : im.displayHeight,
       );
       const trap = this.model.battle?.traps[b.id];
       if (b.npc === 'pumpkin-bomb')

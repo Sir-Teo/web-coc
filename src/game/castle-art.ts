@@ -1,6 +1,12 @@
 import catalog from '../../reference/garrison/catalog.json';
 import raw from '../../reference/garrison/castle.json';
-import { nativeScenePoses, type NativeMeshGraph, type NativeMatrix } from './native-mesh';
+import {
+  nativeScenePoses,
+  nativeVertices,
+  type NativeScenePose,
+  type NativeMeshGraph,
+  type NativeMatrix,
+} from './native-mesh';
 
 export const CASTLE_LEVELS = catalog.castles['Clan Castle'];
 export const castleStats = (level: number) => CASTLE_LEVELS.find((r) => r.level === level);
@@ -40,4 +46,34 @@ export function castlePoses(
     ...sample(state === 'constructing' ? row.construction : row.body),
     ...(state === 'upgrading' ? sample(row.scaffold) : []),
   ];
+}
+
+const boundsCache = new Map<string, [number, number, number, number]>();
+/** Bounds of the exact displayed source pose, including construction/scaffold/ruin variants. */
+export function castleBounds(
+  level: number,
+  state: 'setup' | 'ruin' | 'constructing' | 'upgrading' = 'setup',
+): [number, number, number, number] {
+  const key = `${level}:${state}`;
+  const cached = boundsCache.get(key);
+  if (cached) return cached;
+  const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+  const visit = (poses: NativeScenePose[]) => {
+    for (const pose of poses) {
+      if ('group' in pose) visit(pose.group);
+      else {
+        const vertices = nativeVertices(pose);
+        for (let i = 0; i < vertices.length; i += 4) {
+          bounds[0] = Math.min(bounds[0], vertices[i]);
+          bounds[1] = Math.min(bounds[1], vertices[i + 1]);
+          bounds[2] = Math.max(bounds[2], vertices[i]);
+          bounds[3] = Math.max(bounds[3], vertices[i + 1]);
+        }
+      }
+    }
+  };
+  visit(castlePoses(level, state === 'setup' ? 'guard' : state));
+  if (!bounds.every(Number.isFinite)) throw Error('Empty original Clan Castle pose');
+  boundsCache.set(key, bounds);
+  return bounds;
 }
