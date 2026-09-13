@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import type { DefendingBuilder } from './defending-builder';
 import type { GarrisonUnitState } from './garrison-status';
 import type { Battle, Building, FX, Unit } from './model';
 import type { NpcBuildingKind } from './npc-buildings';
@@ -115,6 +116,8 @@ export interface LateBattleState {
   monolith?: MonolithBattleState;
   goblinBuildings?: LateGoblinBuildingsBattleState;
   builderHut?: BuilderHutBattleState;
+  /** Repairing Defending Builders spawned by armed Builder's Huts (defending-builder.ts). */
+  defendingBuilders?: DefendingBuilder[];
 }
 export interface LateUnitState {
   spellTower?: SpellTowerUnitState;
