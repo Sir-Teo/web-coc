@@ -1,5 +1,7 @@
 # Cannon and Archer Tower progression and combat
 
+The [original Cannon source foundation](../reference/cannon/README.md) now preserves all twenty-one levels and their exact artwork/data. Live integration remains pending; the twelve-level runtime and Town Hall limits below are unchanged.
+
 Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
 Related audits: [Mortar](MORTAR-PROGRESSION.md) and [Air Defense / Wizard Tower](AIR-WIZARD-PROGRESSION.md). All five current tower types now use explicit progression and normal-mode weapon values.

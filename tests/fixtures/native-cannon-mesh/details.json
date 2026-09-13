@@ -1,0 +1,1916 @@
+{
+  "category": "details",
+  "width": 2400,
+  "height": 3600,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "6e3af78a7b132db17f38dbe8417d9784ddce4ab66ed744c34f67965ed37ee081",
+  "cases": [
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        151.30000114440918,
+        0.0,
+        2.0,
+        28.550003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "cf90b975d42e67d0231f1719ce5bd721a4cb87e8672be1b5f048aa178eb8e9bf"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl7_base",
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        168.9000015258789,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "b5735774cbd70ba78d1a8781eb63b9ad801ae3649bd15b2d32839f50de90e831"
+    },
+    {
+      "export": "basic_turret_lvl7_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl7_base",
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        168.9000015258789,
+        0.0,
+        2.0,
+        26.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "376b6200ee78b19418080b37e6d0033271d0c8a046b6addfcc293c978419503f"
+    },
+    {
+      "export": "basic_turret_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl8_base",
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        168.9000015258789,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "1e9c3ddc2c32c02034f48cb484b692dce62681ddbf430f7804dd94b786bfbf3f"
+    },
+    {
+      "export": "basic_turret_lvl8_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl8_base",
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        168.9000015258789,
+        0.0,
+        2.0,
+        26.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "cb46fe214e56ccbf632ad09d12e465c9e1021f366edaedb0b7363644b0e5c7f5"
+    },
+    {
+      "export": "basic_turret_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl9_base",
+      "x": 1500,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        163.04999923706055,
+        0.0,
+        2.0,
+        20.950000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "904ccd64be5101286d44c3d7fd20f65a769f8101c0d2eb69cf24034ed25367f6"
+    },
+    {
+      "export": "basic_turret_lvl9_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl9_base",
+      "x": 1800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        163.04999923706055,
+        0.0,
+        2.0,
+        21.700000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "84c2f3f5e302f13cfd33b41956b530f0071c6975f91635e1954b08b839c7b01f"
+    },
+    {
+      "export": "basic_turret_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl10_base",
+      "x": 2100,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        166.04999923706055,
+        0.0,
+        2.0,
+        20.950000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "436afa7bff868c47cae0d1936197aebbebbd574eb6e27456c0c1f96a0d1e8a10"
+    },
+    {
+      "export": "basic_turret_lvl10_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl10_base",
+      "x": 0,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        166.04999923706055,
+        0.0,
+        2.0,
+        27.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "ca0f2838fbbda6e9194e030c47f2e28f78f3e8543cd4d82b0040751bf77b7b39"
+    },
+    {
+      "export": "basic_turret_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 300,
+      "root": [
+        1.9896065217672656,
+        0.0,
+        165.6184119548477,
+        0.0,
+        1.9896065217672656,
+        22.814404613976862
+      ],
+      "empty": false,
+      "rgbaSha256": "eb2ab3e3a1e8b765257294384adbb3e6fdce84a7592bc4c03cf812dee58f9627"
+    },
+    {
+      "export": "basic_turret_lvl11_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 300,
+      "root": [
+        1.9896065217672656,
+        0.0,
+        165.6184119548477,
+        0.0,
+        1.9896065217672656,
+        31.86711466750525
+      ],
+      "empty": false,
+      "rgbaSha256": "ce2fda9ff867f1a1c9355f8c0af5d4e0ef2b08b5f66a1678206073bd481da815"
+    },
+    {
+      "export": "basic_turret_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 300,
+      "root": [
+        1.9749447199206835,
+        0.0,
+        167.47826152467968,
+        0.0,
+        1.9749447199206835,
+        29.75122566475457
+      ],
+      "empty": false,
+      "rgbaSha256": "5d39da0392e88fb830faa9301cf703d6891257cf0a5f7e60c28b20b5f6fe245f"
+    },
+    {
+      "export": "basic_turret_lvl12_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 300,
+      "root": [
+        1.9749447199206835,
+        0.0,
+        167.47826152467968,
+        0.0,
+        1.9749447199206835,
+        37.45167946803676
+      ],
+      "empty": false,
+      "rgbaSha256": "499ef427583dd6b6484b1c712a57caa3156169932f59e18380f03d565ac93bed"
+    },
+    {
+      "export": "basic_turret_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 300,
+      "root": [
+        1.911554911138369,
+        0.0,
+        171.2182602428362,
+        0.0,
+        1.911554911138369,
+        35.49795308481215
+      ],
+      "empty": false,
+      "rgbaSha256": "ec92ffc7e0859d8fa2484c3b2e293874efd3857b220c112a423bfd7a14012e6a"
+    },
+    {
+      "export": "basic_turret_lvl13_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 300,
+      "root": [
+        1.911554911138369,
+        0.0,
+        171.2182602428362,
+        0.0,
+        1.911554911138369,
+        45.983269311047295
+      ],
+      "empty": false,
+      "rgbaSha256": "b8a804e302c1e1a9f06ccc1b785ab9669228550e794d5354ef411ab8199b6c25"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 300,
+      "root": [
+        1.9343197508175305,
+        0.0,
+        170.16528561592602,
+        0.0,
+        1.9343197508175305,
+        37.223964543727945
+      ],
+      "empty": false,
+      "rgbaSha256": "1e79a3e30e2cc4d1e36c3485766eebd4263f152b2f4bc9d6961e165fe1b52bc4"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 0,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        31.2626953125
+      ],
+      "empty": false,
+      "rgbaSha256": "a5c8eb53b604f1591a2e61e51895aba04a8f6bf05dbb49d08b2a0b593c86f81e"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 0.16666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        32.43583982810378
+      ],
+      "empty": false,
+      "rgbaSha256": "b95da7de24d85223b565c8729b4f029a0ba48a53faf83ac5dfb107ec536b4d00"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 0.3333333333333333,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        31.458983596414328
+      ],
+      "empty": false,
+      "rgbaSha256": "63dda7e867d99747be79ea4cb5c1ff8c7c536946f1b79b439375005d6997da49"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 0.6666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        30.649516105651855
+      ],
+      "empty": false,
+      "rgbaSha256": "ca678112549edd898507cc950639b699167651e992642364fc892d5e2c121d37"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 1.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        30.654900074005127
+      ],
+      "empty": false,
+      "rgbaSha256": "b2e4c1a33290eda6dd6fc6e5f84a0481eb1b22550558805570b0aee258025f9e"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 2.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        26.117462158203125
+      ],
+      "empty": false,
+      "rgbaSha256": "710e89a344fc55d8e74e9de3da47a4a2db0c3cdbaea91a023df6f56cfb974cab"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 3.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        29.32491397857666
+      ],
+      "empty": false,
+      "rgbaSha256": "230c8df57295984ddb217119519ad4b241a8bf88993c7cbf49775f53af0bcba6"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 4.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        34.942355155944824
+      ],
+      "empty": false,
+      "rgbaSha256": "ea55f3e43e7ccb89bbcb7cb4811a02bf38b1782dfd06576d8568ac62ca3a5103"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 8.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        30.287185668945312
+      ],
+      "empty": false,
+      "rgbaSha256": "acaae37ebcfff9122495edf061eae1a6fe37e93017a3fd9d1c62acc9cdd500d9"
+    },
+    {
+      "export": "basic_turret_lvl14",
+      "time": 11.966666666666667,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        32.165061473846436
+      ],
+      "empty": false,
+      "rgbaSha256": "e1119225b07f5ae176b45a556b7bd70420dc0d0a4e63039bf1ef6f22e0ed00e3"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 900,
+      "root": [
+        1.9343197508175305,
+        0.0,
+        170.16528561592602,
+        0.0,
+        1.9343197508175305,
+        47.73927661471647
+      ],
+      "empty": false,
+      "rgbaSha256": "40d60741ff5712d7b61862b95d0370e08ac342ed6984bccae2270b16d2b36ff6"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        31.2626953125
+      ],
+      "empty": false,
+      "rgbaSha256": "a5c8eb53b604f1591a2e61e51895aba04a8f6bf05dbb49d08b2a0b593c86f81e"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 0.16666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        43.47079927101731
+      ],
+      "empty": false,
+      "rgbaSha256": "6ac357a3209bf2eca140ec00c0fd17a8ed35524b595db95703deb01672de49cc"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 0.3333333333333333,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        42.69267350807786
+      ],
+      "empty": false,
+      "rgbaSha256": "b46e588ac30ed7527ac78e91b189d6be91a7571c8446e5dc0947ca4b50e58c45"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 0.6666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        41.06835633888841
+      ],
+      "empty": false,
+      "rgbaSha256": "0c7765816d532efd8018c2ce57be624c1a4bc5a67859140e783ec653ff3c1b79"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 1.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        39.44404298439622
+      ],
+      "empty": false,
+      "rgbaSha256": "2524a940731d2245915e6037ed64dcb4e0e0edd3c2100cc5f9d19803cff5c774"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 2.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        37.11845475807786
+      ],
+      "empty": false,
+      "rgbaSha256": "01974d8101cdb2ef8c092fd37656936a4984a417a4fe877bce94ccd56c983d81"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 3.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        39.26913911476731
+      ],
+      "empty": false,
+      "rgbaSha256": "e53cc2c23f938c788d345ca58eee94f0ea2fc7888f2c909261958d94a1bb0456"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 4.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        39.31835633888841
+      ],
+      "empty": false,
+      "rgbaSha256": "de078c93ac7b730da78b5051bbf7872f3befd17dbe27ca3d0ca2cbac7e1cd32e"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 8.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        36.86972505226731
+      ],
+      "empty": false,
+      "rgbaSha256": "ded16ef1149d300515f7b606afc6b0b7c30c1ad750b76e5acecbcbf13abbc8e7"
+    },
+    {
+      "export": "basic_turret_lvl14_down",
+      "time": 11.966666666666667,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        158.8376938700676,
+        0.0,
+        2.0,
+        39.660057846456766
+      ],
+      "empty": false,
+      "rgbaSha256": "4aafbee07ed4db6fe996b68d093578464d642833bb95955725a1dd5ae596e58b"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        1.95264116575592,
+        0.0,
+        171.6255024004938,
+        0.0,
+        1.95264116575592,
+        37.3989640255009
+      ],
+      "empty": false,
+      "rgbaSha256": "f3abd82d7eab4204e5099034703b63e90c26f9aa1552cfc5abea428d737b194d"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.25,
+        0.0,
+        2.0,
+        34.66269493103027
+      ],
+      "empty": false,
+      "rgbaSha256": "6e400166a15d809dbe3973624f0146154479121dc68f8ac2b8fa11e66677c8d9"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 0.16666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        33.90390586853027
+      ],
+      "empty": false,
+      "rgbaSha256": "f05e71fe02c34c21aba61ff800a3dea58b0855a81ffb14b93c831c70ad27d26c"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 0.3333333333333333,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        33.12705039978027
+      ],
+      "empty": false,
+      "rgbaSha256": "3d7c5344bde74f39f1def6c0dffe5bcd992be8ea6d5f3b04756478993a358dba"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 0.6666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        31.609472274780273
+      ],
+      "empty": false,
+      "rgbaSha256": "22ed6ab7df3cdae4feb5fdea47e3d774eb6cdfa89b99def1d0e2ab0f40dedb2c"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 1.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        30.654900074005127
+      ],
+      "empty": false,
+      "rgbaSha256": "4989161833d6809cad4fa5181c4ba49da957a07334363fa2656745dde5715727"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 2.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        27.309667587280273
+      ],
+      "empty": false,
+      "rgbaSha256": "26a1a373a065c944921f8b81a51a96ad6c1a60b4c97f8858d9406e161052fae9"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 3.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        31.808202743530273
+      ],
+      "empty": false,
+      "rgbaSha256": "9dd73beb22c259f3a3074fff1c49e876db3cdf82bddc160d04e6132b2456e5e7"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 4.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        34.942355155944824
+      ],
+      "empty": false,
+      "rgbaSha256": "f323752cfaf2f3b124e84f591119e06998a29ebac937ec0326ffce67f300514d"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 8.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        31.609472274780273
+      ],
+      "empty": false,
+      "rgbaSha256": "598695fdb1b23ef1e991524f4920a5120381227530e63f00d8b015003d2e1345"
+    },
+    {
+      "export": "basic_turret_lvl15",
+      "time": 11.966666666666667,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        32.165061473846436
+      ],
+      "empty": false,
+      "rgbaSha256": "891966cea23543d74a2f9a59aa22d44838e15190288d640b98943ed292b68142"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 1800,
+      "root": [
+        1.95264116575592,
+        0.0,
+        171.6255024004938,
+        0.0,
+        1.95264116575592,
+        49.098225633411886
+      ],
+      "empty": false,
+      "rgbaSha256": "afd4c975116d51f7f0c4afbf1328c8b6611b6e3f1c25797818a8efaed3250cf5"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 300,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.25,
+        0.0,
+        2.0,
+        34.30000266432762
+      ],
+      "empty": false,
+      "rgbaSha256": "2107fb8fbfe237f55aaa1a34860f54a182eeb7cc3bb62d4e2bec543efab80568"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 0.16666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        46.017481200397015
+      ],
+      "empty": false,
+      "rgbaSha256": "3c2f6c56c69e934e62ea4d5c02a21b89ca0ca96551b8b6a93dfc949de52a7647"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 0.3333333333333333,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        45.23935543745756
+      ],
+      "empty": false,
+      "rgbaSha256": "13d28449347aa427d0ac677a27a6e401655c64980994e406061ccbdc2fd2cfd5"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 0.6666666666666666,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        43.61503826826811
+      ],
+      "empty": false,
+      "rgbaSha256": "5e4547e2519749c00cbdcac278b323f756bbaa01ba0a34e7bad1386c463a1668"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 1.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        41.99072491377592
+      ],
+      "empty": false,
+      "rgbaSha256": "189ddf7fdd1070cfc57da7b77658d68f0996e7857720cf71bc1ed7b9bfa51d96"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 2.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        39.66513668745756
+      ],
+      "empty": false,
+      "rgbaSha256": "57eed04f63f26aa6bf9211777edb933115241afddeaa972f99051f5290d36a30"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 3.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        41.815821044147015
+      ],
+      "empty": false,
+      "rgbaSha256": "91b27c4aff96d68c32c159e98bdb543a75e6e6dc9df11f88d152969405e7cd8f"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 4.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        41.86503826826811
+      ],
+      "empty": false,
+      "rgbaSha256": "08f46a79dc5da50718d09fa7aa7fb59a87203d6b90a2c4b94d52042ed50ffcee"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 8.0,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        39.416406981647015
+      ],
+      "empty": false,
+      "rgbaSha256": "88d762b4da32e388030d0f68e522e93ad0705c073a543c3272a208bc898e1f88"
+    },
+    {
+      "export": "basic_turret_lvl15_down",
+      "time": 11.966666666666667,
+      "controls": {
+        "turret": 137,
+        "gearup": false
+      },
+      "category": "animated-parent",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        160.13769310712814,
+        0.0,
+        2.0,
+        42.20673977583647
+      ],
+      "empty": false,
+      "rgbaSha256": "35b6f660cef83326b827712a7b8082fdd901c4a35f4367bc0c1800570d789b45"
+    },
+    {
+      "export": "basic_turret_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 2100,
+      "root": [
+        1.9245960502692998,
+        0.0,
+        169.39030667481344,
+        0.0,
+        1.9245960502692998,
+        40.838797258677985
+      ],
+      "empty": false,
+      "rgbaSha256": "218afeaf5c541bd94d334ba81513cd36a13252d407b4fafb5a63501afac27572"
+    },
+    {
+      "export": "basic_turret_lvl16_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        1.9245960502692998,
+        0.0,
+        169.39030667481344,
+        0.0,
+        1.9245960502692998,
+        48.65812653094477
+      ],
+      "empty": false,
+      "rgbaSha256": "f4814d2ee3f8dc923b99c038bd2ebb8dcf4cbd1923f6eae09545c2a4b3898cb6"
+    },
+    {
+      "export": "basic_turret_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        1.9245960502692998,
+        0.0,
+        169.39030667481344,
+        0.0,
+        1.9245960502692998,
+        37.16280036733973
+      ],
+      "empty": false,
+      "rgbaSha256": "8e2150e8952900ef3e26bd0c3a735d6b83a891ae88f62de1659ab886adf9ae0f"
+    },
+    {
+      "export": "basic_turret_lvl17_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        1.9245960502692998,
+        0.0,
+        169.39030667481344,
+        0.0,
+        1.9245960502692998,
+        46.820127186377135
+      ],
+      "empty": false,
+      "rgbaSha256": "d879d5b090d414c3b9ec94a12331e57a93c612f6bf5510f11219fafe1ba89cc4"
+    },
+    {
+      "export": "basic_turret_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        1.8636995926417939,
+        0.0,
+        164.53685895544092,
+        0.0,
+        1.8636995926417939,
+        40.68341585821656
+      ],
+      "empty": false,
+      "rgbaSha256": "de9144bb449ece7f49e3f2cfede9032b8cd5b0b9c3c552bc99ba528bc4f61c2a"
+    },
+    {
+      "export": "basic_turret_lvl18_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 0,
+      "y": 2400,
+      "root": [
+        1.8636995926417939,
+        0.0,
+        164.53685895544092,
+        0.0,
+        1.8636995926417939,
+        53.594857697719064
+      ],
+      "empty": false,
+      "rgbaSha256": "94ec7286f8a172eb7bc7b3221617274a64b97c07d3c45547e525e140afbaeb70"
+    },
+    {
+      "export": "basic_turret_lvl19",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 300,
+      "y": 2400,
+      "root": [
+        1.8980169869116712,
+        0.0,
+        167.27195530493222,
+        0.0,
+        1.8980169869116712,
+        42.346335696913144
+      ],
+      "empty": false,
+      "rgbaSha256": "89c087b07d1abb6f8ef8048d757ea4bfe9be819d643b19639c9954d264222693"
+    },
+    {
+      "export": "basic_turret_lvl19_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 600,
+      "y": 2400,
+      "root": [
+        1.8980169869116712,
+        0.0,
+        167.27195530493222,
+        0.0,
+        1.8980169869116712,
+        54.287113874211414
+      ],
+      "empty": false,
+      "rgbaSha256": "038cca4b8f521fc3424d6eb3c68566bc969a41f8271c5f2d6140869a42e683ee"
+    },
+    {
+      "export": "basic_turret_lvl20",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 900,
+      "y": 2400,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        61.93573785502109
+      ],
+      "empty": false,
+      "rgbaSha256": "6543e03ae3a1f56da71fd1b1f4882f887504bb23edb750e7ad015809d049ff66"
+    },
+    {
+      "export": "basic_turret_lvl20_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        61.65108570456961
+      ],
+      "empty": false,
+      "rgbaSha256": "3606f55363ccc138fe81e5ab99508d50c525182a6ffe27bd01da46ee0edce6f0"
+    },
+    {
+      "export": "basic_turret_lvl21",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        61.93573785502109
+      ],
+      "empty": false,
+      "rgbaSha256": "48fc12c1fe01c9f19f0c620a039dfb2c96f5a7fd22c0ce3f6337f3ff7554d5f6"
+    },
+    {
+      "export": "basic_turret_lvl21",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        61.93573785502109
+      ],
+      "empty": false,
+      "rgbaSha256": "ab81f0f04c5e5b2e5cc7346b57c5c6435c079d3e13bfc141a48fd39f7c63ebb8"
+    },
+    {
+      "export": "basic_turret_lvl21_down",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "base": "basic_cannon_lvl11_base",
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        66.50858847775875
+      ],
+      "empty": false,
+      "rgbaSha256": "409a886383525a2b70f6e8cda1850882d42fe82cca1b5eda3affef2e95784b30"
+    },
+    {
+      "export": "basic_turret_lvl21_down",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-control",
+      "x": 0,
+      "y": 2700,
+      "root": [
+        1.4232607310491394,
+        0.0,
+        147.36696981928262,
+        0.0,
+        1.4232607310491394,
+        61.93573785502109
+      ],
+      "empty": false,
+      "rgbaSha256": "ab81f0f04c5e5b2e5cc7346b57c5c6435c079d3e13bfc141a48fd39f7c63ebb8"
+    },
+    {
+      "export": "alliance_castle_upg",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 300,
+      "y": 2700,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        150.29303215791077,
+        0.0,
+        1.6744767739153164,
+        1.6832184729264554
+      ],
+      "empty": false,
+      "rgbaSha256": "f976cb809d3eeb5fca09b0c28bd9b9fbe392f584b44b852c9f12bc8858eee9d8"
+    },
+    {
+      "export": "basic_cannon_lvl10_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 600,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        180.27988132834435,
+        0.0,
+        2.0,
+        13.1357421875
+      ],
+      "empty": false,
+      "rgbaSha256": "d32d94cf7ddb03dbae80c3224f910220f171835828d8dcae61db429dfe021950"
+    },
+    {
+      "export": "basic_cannon_lvl11_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 900,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        180.27988132834435,
+        0.0,
+        2.0,
+        13.1357421875
+      ],
+      "empty": false,
+      "rgbaSha256": "d32d94cf7ddb03dbae80c3224f910220f171835828d8dcae61db429dfe021950"
+    },
+    {
+      "export": "basic_cannon_lvl1_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        167.7507804632187,
+        0.0,
+        2.0,
+        25.01171875
+      ],
+      "empty": false,
+      "rgbaSha256": "3066ac1f204afa7be5ece1ea2bfd0164eaa9f6217435c1f4d26c77b819381b82"
+    },
+    {
+      "export": "basic_cannon_lvl2_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        174.7665518000722,
+        0.0,
+        2.0,
+        18.576416015625
+      ],
+      "empty": false,
+      "rgbaSha256": "f33033c71ef87b14de018c88adfe89dbfecdf24c85dbe10b33014452c97709eb"
+    },
+    {
+      "export": "basic_cannon_lvl3_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        171.63749885559082,
+        0.0,
+        2.0,
+        21.5625
+      ],
+      "empty": false,
+      "rgbaSha256": "c62be14ddb8b2a78de164ea51f94c182740e3bebb796d141bcc999e35f7f8beb"
+    },
+    {
+      "export": "basic_cannon_lvl4_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        176.63749885559082,
+        0.0,
+        2.0,
+        23.5625
+      ],
+      "empty": false,
+      "rgbaSha256": "eac7035134cddd49df153f115cc379fc3c29319222e29bd8500308845005c1c7"
+    },
+    {
+      "export": "basic_cannon_lvl5_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        174.1511220112443,
+        0.0,
+        2.0,
+        13.782470703125
+      ],
+      "empty": false,
+      "rgbaSha256": "9432d8f99f5fa118d07f490ce81ec06faaf829195ef54c8dd8fddf64cae5701c"
+    },
+    {
+      "export": "basic_cannon_lvl6_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        171.1511220112443,
+        0.0,
+        2.0,
+        18.782470703125
+      ],
+      "empty": false,
+      "rgbaSha256": "9432d8f99f5fa118d07f490ce81ec06faaf829195ef54c8dd8fddf64cae5701c"
+    },
+    {
+      "export": "basic_cannon_lvl7_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        172.3251939713955,
+        0.0,
+        2.0,
+        18.3154296875
+      ],
+      "empty": false,
+      "rgbaSha256": "db5e7ab10477ee020f3ebd5752b57c7c6ee361828b84f2c61e9c70a0cbf9093a"
+    },
+    {
+      "export": "basic_cannon_lvl8_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        170.3251939713955,
+        0.0,
+        2.0,
+        20.3154296875
+      ],
+      "empty": false,
+      "rgbaSha256": "db5e7ab10477ee020f3ebd5752b57c7c6ee361828b84f2c61e9c70a0cbf9093a"
+    },
+    {
+      "export": "basic_cannon_lvl9_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        175.3251939713955,
+        0.0,
+        2.0,
+        15.3154296875
+      ],
+      "empty": false,
+      "rgbaSha256": "db5e7ab10477ee020f3ebd5752b57c7c6ee361828b84f2c61e9c70a0cbf9093a"
+    },
+    {
+      "export": "basic_turret_const",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        147.6000007390976,
+        0.0,
+        2.0,
+        92.85000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "ff965120e16745de625d166aa5c36db7f731c448ed09d2764bc21449c3d25b69"
+    },
+    {
+      "export": "basic_turret_upg",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        148.35000228881836,
+        0.0,
+        2.0,
+        9.849998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "11bf2f43d5e40d73d9d03443576b269dce7d55c379cc05baf7f1f83dd1504d0e"
+    },
+    {
+      "export": "destroyedBuilding_3m_pit_rock",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        1.6674596168209872,
+        0.0,
+        146.0797601825227,
+        0.0,
+        1.6674596168209872,
+        28.91230299944118
+      ],
+      "empty": false,
+      "rgbaSha256": "c865c2fb4d678b3313931df76ec69f6c22e18fb1384108f819da4b5f0e711417"
+    },
+    {
+      "export": "destroyedBuilding_3s_base_rock",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 0,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        148.7747073173523,
+        0.0,
+        2.0,
+        11.979004237800837
+      ],
+      "empty": false,
+      "rgbaSha256": "e852923afcb79c5f836b798a947b4249dfbe2c444a3adfa291509c288cc37d45"
+    },
+    {
+      "export": "goldmine_upg",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 300,
+      "y": 3300,
+      "root": [
+        1.6744767739153164,
+        0.0,
+        143.5951250622495,
+        0.0,
+        1.6744767739153164,
+        13.404555890333683
+      ],
+      "empty": false,
+      "rgbaSha256": "bb0bb32e2794b0fe31cb13666c40c06368f7ebaf742d6a666e5ff6eee2bf3c2e"
+    }
+  ]
+}

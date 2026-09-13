@@ -1,0 +1,5771 @@
+{
+  "category": "body-1",
+  "width": 2400,
+  "height": 9000,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "2abcae10dec766f01204c8f9b0bcb6a35c5659b81587367d335f1111aa58a0be",
+  "cases": [
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.63750123977661
+      ],
+      "empty": false,
+      "rgbaSha256": "526f97b8b5ba1ac7082a8f4d11527bb0ef4e183b923c009223e09ec6ea787345"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        33.612502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "a74ea7a365a94ecf5030362ff1b5fc96421e92e7e6edcf4d6dc62e23c83654af"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        33.612502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "979d1c63e70ca8f864c96f6d800b1a560724f4e4d5f2c1f78c96694a5035aa87"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        34.1000018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "d5b51f7084cbd9c4fc70a02b671621ab448c32a4d6a30e740ce1c53bf82737a6"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        34.1000018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "57218682433dfbd2efb21cdc6fa05f6aab6adaed8687500aec30139d63ac3194"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1500,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        34.1000018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "87f3430648ceee4a0f41aeb89aac776e44b03e14feb017fff5cd002d6297a203"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        33.612502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "2e8709a85c25f1ef176178487eb32ec43c639431e3036b372f1de70faceb2636"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 2100,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        33.612502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "b63e7c4493a2fb0c3d17d72596a8d9638edf3ea58de391ce1576a764e473b768"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 0,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.63750123977661
+      ],
+      "empty": false,
+      "rgbaSha256": "41821ca9b0cb09ffee86df133e919c77f35a809b4be6a3c513405be95e9c7386"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 300,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c1f43ba920736d950787146714f3bf73d1daa5deed65604359e59c90c4ae85fa"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 600,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        31.6625018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "188c21b87134e84c24c32ab3a8862e2d7a5e92aaeb068dbe1b0917f100e258fe"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 900,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.687501668930054
+      ],
+      "empty": false,
+      "rgbaSha256": "cd8b7605bce3724287e1d108cc83e55a01cf9f8940952c55d12e589aa16a1f55"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1200,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.20000123977661
+      ],
+      "empty": false,
+      "rgbaSha256": "ba549b52d8022e1c9eb06748690a4793361f8c7d79873084bebd4042450b8233"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1500,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        29.712501525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "5c34fe54c06da3a59176a8eff4048a08c3f8afd4cdc86da149d69c884c04a411"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1800,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.687501668930054
+      ],
+      "empty": false,
+      "rgbaSha256": "eb43457022c12fbc954d814e005475a332828aacf385a8bb222ec29b714094df"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 2100,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "914d3897c9fea6509b02fdd99a5ef42831318d4a7cbc0e283d3ca405ec9660f1"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 0,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        34.1000018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "b73a63310d8e619ebdea3ec97aa54bc374ebdeef0c10618c9081f211042a5ec6"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 300,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        36.050002098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "7e4c28b8e520ae9a72e0374900ddcc6975f2abfe838c38f5151ffaa760764ed0"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 600,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        37.025001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "1745ad481c036f5af589ce099b12223b4b3f3d1deaf9d36d69c93e06940741b5"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 900,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        38.487502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "173567818751ce030c8b9133b58cac4ef66283301310ce588b6e8dd60fac554c"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1200,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        38.9750018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "c5f251df5224fe413f8198d5b52b1950cf235d5a35a5fd900496e8f84f3db86c"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1500,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        39.462501525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "f58b1c477325932bcf9b851238e52f60fd7b419467585cb18b55ced1604a4675"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1800,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        39.462501525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "b9ed087b191112a0d007623fe8c839c48af84ae65bb445c534b67ce7670be4a5"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 2100,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        39.462501525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "36462ff5d0427810a05e8c4e3ff93e56856c96f33272c59ca807c00d6c809a1a"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 0,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        38.9750018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "6b11a293962a0c7c61f0e4ebaa5c9397a4fec29e7b75fbbcc136cd2b67a8a7ad"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 300,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        38.487502098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "949388bf5fc8571c26526605005ab5b35fa6fcbe85e1f153bd682f2f5b00f941"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 600,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        37.025001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c29a4b31723b3a5818399ee0a40c048c9e260a2e4a3269f2dbda7ed3d8f92db7"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        36.050002098083496
+      ],
+      "empty": false,
+      "rgbaSha256": "4b7111ff918e5d13906a4be55da7d613599e8e51cbc55762335e52b906ae9dd1"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        34.1000018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "c5224cca076ba6d6df918662c9a9a0919733e57ed952a0cb9b057c9ab8f6be69"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "75c0bc5dc494d5587daf2dfeebfb87842ec2b551265ff4f934c97ae079216e1f"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1800,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.687501668930054
+      ],
+      "empty": false,
+      "rgbaSha256": "e2861ebeb423ba98201ff9d983ea0a3071ad41b3c86e8e90f7bc1c5971d4d7d0"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 2100,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        29.712501525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "c6975c90bf0b4f6f2004f9271b6c00ac440bcce5aa153965c86cd7068b32fc42"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.20000123977661
+      ],
+      "empty": false,
+      "rgbaSha256": "eecd5824cd8fc353b89e03fad666dd1c6040526b7e4e25f36d6da69f926d8147"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 300,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        30.687501668930054
+      ],
+      "empty": false,
+      "rgbaSha256": "5ebe21cf55621368a36e3469c606c2f7b8be55469eec37a03d2c8c2a93e2c28d"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        31.6625018119812
+      ],
+      "empty": false,
+      "rgbaSha256": "0ae97228832520310e940427aaccefe11334e61df4e655bc46b2641d2e8f3a1c"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 900,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "88aafbb747d59a024c379478806a91b769aca157817030b7729618cfbb2af736"
+    },
+    {
+      "export": "basic_turret_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 1,
+      "mode": "normal",
+      "base": "basic_cannon_lvl1_base",
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        155.13202929496765,
+        0.0,
+        2.0,
+        32.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "88aafbb747d59a024c379478806a91b769aca157817030b7729618cfbb2af736"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.700002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "83413e2c5f536f0682ebd057d107628a1ee6ec3ac76ee15e03ec2d0c8b888b4e"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.000003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "10d5275131ec2cc8cf162375dbd307dab4f9244230ef4a1e148cce9547b2023f"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.000003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "258bbe6cb60dcf80d074376b6f03e08651922391ced7b259520e3c2ef627f962"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 0,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "4ebc745ebcad03d3f41a452a96a9493f13aae4a870ebe98f101df6296c4c9e5c"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "703606dd70512da60c6e2aecd6d828dbcad7a84f9fc30709211a94093185e785"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "06c31cca1de98a9376f275fbf79e3a23cb36584d57ea6118e14c18d386ae11a9"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.000003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "c71ba3332f2520be883c15a84816d5b4da6e02d6911a57769ab4ffa5a064c5cf"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.000003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "7d1076a4e63a1ed3924ec2b4e529a91c600aa4fc265e02f9aaea53c6622272ed"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.700002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "34a21fb122ab3c46ff1825bf815d530cb474b16266f12f53b45d7c586d7e745e"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.050003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "c83c83d06e35ac58e5e98cc56b6b4fc8fbea353f32291753384cc73593ce2f80"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        23.40000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "b6112ffb0da079b7576bf4ebeffa790b5a6bc04267c4f690201b89c7303c7ac7"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 0,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        22.100003242492676
+      ],
+      "empty": false,
+      "rgbaSha256": "6dbdc42d4c2f60c90fbcf77b936919a46bef8cd8d38bc098c5f83b7e537e8601"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 300,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        21.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "b6d2bf931b16fdec592d8915ab066c7f6cee8f81041810e4785a9ea60a9f0dc8"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 600,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        21.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "94d7e8d360541716306b738bf149d702a627988f830eb2003c2e3b64e72230a6"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 900,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        22.100003242492676
+      ],
+      "empty": false,
+      "rgbaSha256": "84ab25842f91097078c1afd7135dd572fceeea56aee6c3dd23e604983c89ca97"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.050003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "b7c7b2baffff7baeb53bdbe4a5fc421a851a2fc432ea2e530ec060cd32a02647"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "175f5c08020c08ea39dc2c94caee7c04377b682b01bcaec947cd14affa11a295"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        29.250003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "bd38692da485dd885571070e7d9743f65a89303774abaa54c4f53c1694cea8eb"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        30.550003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "9de4e31266f72fd4cdd68361f20d0a2e44b2280807361719ef26f9b39386972d"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 0,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        32.500003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "7bf8a418ace4f5ae8f1760c220a8a6d15712de8936923555ee338a7d0913891d"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        33.15000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "41e5165b78d7f97a60d8a130283c7dc9343df76c82f71aeb5ac927b797bc4410"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        33.80000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "aa63ce1949c969119f15e975c65d727544847d7659493c15378e55b5b36da5f8"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 900,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        33.80000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "e1a36995da6e0d326a50015dbc87ca5b6548d57f9ac735e4d58adee174239592"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        33.80000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "f4d8947ba7756e96f223d25aee9a8ecb0911691a00fa3fe6b8ec0a71e8a8d1b1"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        33.15000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "93f53cb0c26cba81fe1e53078e0eae152578dae5bce555a2b3b55c8f78a28e48"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        32.500003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "0b5c30659364f98fbfe7b346f1d1ccd774d01a34d4fd7c1128ef2c3379de90a5"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        30.550003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "d4d0b733bf042097b2d426a2f7747be1466adf5a3636d232b7965abfa55f7fab"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        29.250003814697266
+      ],
+      "empty": false,
+      "rgbaSha256": "18851b013c18e1019f91bb09863bbb9c8b94ea255d48fcc1fbfdf7968cd4b5e0"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 300,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        26.65000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "2c1aff4bea50c0e8ec7a68a7cf42b27bea91146eff16a7b1efe42c17f8534a0b"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.050003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "12e90aa0c2569b397316b57a42c6b645af59d045553a2aea65e7020e16c51ed3"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 900,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        22.100003242492676
+      ],
+      "empty": false,
+      "rgbaSha256": "8ac2139873d10111e9db142ee9fe8859312a3b22a4ebdde5b725293053601331"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        21.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "b0d5e050fb23fc43d0130bc326443514e721294c1811ff73f05a861cf2559e67"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        21.70000457763672
+      ],
+      "empty": false,
+      "rgbaSha256": "3cbcf4e400c35991a9db704511f390280eef6bdf13e3020a397f68c22a0f466c"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        22.100003242492676
+      ],
+      "empty": false,
+      "rgbaSha256": "3fd165f70395e5dca51b4cb40e501144e89bd04b46c5823b893a88557fd831d1"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        23.40000343322754
+      ],
+      "empty": false,
+      "rgbaSha256": "2ac3e21e4629d7d36474cb9f81f4ff794b9ffebea7315871f9d83dd0e528ba40"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 0,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.050003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "197abfc7c79da56882e8d0f7fef3bb5b838a4b938acc87b6f06bce2df18ef4d3"
+    },
+    {
+      "export": "basic_turret_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 2,
+      "mode": "normal",
+      "base": "basic_cannon_lvl2_base",
+      "x": 300,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        154.06303371489048,
+        0.0,
+        2.0,
+        24.050003051757812
+      ],
+      "empty": false,
+      "rgbaSha256": "197abfc7c79da56882e8d0f7fef3bb5b838a4b938acc87b6f06bce2df18ef4d3"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 600,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        22.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "d3ff163831c41bba21f85b65e6ebcc1555dfaba718044d91ef6c961b310627cf"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 900,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        22.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "9ea4015d8a38289fdcab2db19b9be865c0da4e5dbb755e6c39f279305724b902"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "5fca68636a1e341c677cdc4fc5736e7ea0b5ce492ea1e26e6290a3cff602e42c"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "3a87e3ef1b1bc2b247f9cbdb73d126c80e2ebd36e9b27c7006b892cb008374c1"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "1911a1ac08d57437081661672806dfe07470d1bfffe822a5c7058821ab75c937"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "cd5616d2cc4f56ab28294ba9767ace03a415fc55fa803dae2c96b56177891aee"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "945407cd5bdd0f8a3704d8861046264c5a358b0699a69c3f80bfebc7a992ad0d"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        22.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "9c51a800532dea56c499797d78097eec3e760b72c48751385a9b94912f31a596"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        22.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "0632f9488318d21fbc07437afc9c62e7b4427a9f52992dc3dd222e2eb8bfb41b"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        21.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "bc384e101ffddde1721fcd98f3524f2ce40df894b27495c1dff289cad57e6002"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        20.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "de32d817d7288b055251cc32088f3cdd7d08ebd135ff7a2692b91b5ada630cd4"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        19.350000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "023b1f87fb0e40ed9fed5fb3d44a3f9cf719521418336d5cbf931a25694a7179"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        18.049999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "d6304d50716b8ab08605f0cf1b2ec8a309d1ee70db762163d766d535d9f271e2"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        16.100000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "34caef1f2ce08d33ce1e3432f08cdcab6a72dce99c5dac165678fe71591de371"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 0,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        17.399999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "693d3f590e0903fc4b6bd5f27ba0e62ed5d620d4c72e6ec79f4504dcf6ccd143"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 300,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        20.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "c5ef600dbc3dcd6fe48e301ba60cd13e7d6113fd3b7885ba85f15ef11605f828"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 600,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "d93d61973a039bb200f5e0aa28d3ebb34865b00c10f673ea5d5b00b1ac822a64"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 900,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        25.200000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "71b457a87ce49cbb6f0ce60045bf6a47095763f8b9222956ea3598117b0f4ca6"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        27.799999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "32bb4c9565fb9786534b98d651ebebcc1323a99976ad168fe9724ee7ebee08eb"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        29.100000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "ced71b136be3ff144ee6bc419d39542457845a812f53fccc6683680954422000"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        29.75
+      ],
+      "empty": false,
+      "rgbaSha256": "d203f454a2339253b9cf610a59fc03f33b1688054ba31f0cc604413313c2ca8c"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        30.399999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "c40b44ee886e6dba1594a5df5741af8db85a1e16352962fa237031677b099f82"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 0,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        30.399999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "a69b981774f3cc8eef8a39ff7077b63794e2b643b711415d7eb75ddce51f990b"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 300,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        30.399999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "459ff8d4192c044cc28b05bfe47b24e638ff95f7496b91de25dbb4515032a998"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        29.75
+      ],
+      "empty": false,
+      "rgbaSha256": "e3d9463442a46458af99891a4e3803c5f991fab2e5eed40de70c15e454b72e7d"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 900,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        29.100000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "5766c2c55a3eecec7914fac9d4629af032bba0f37e9c5eba6f6050d60ea44db6"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        27.799999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "e31a93ca5e6c8a41507d3a20d5c8102f6a7fe38f19462db59afe6802a41e659e"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        25.200000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "03ce6981aa1c1eeb5541fe1040f63e9f55ccd67863d602cf8b642605775d894c"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        23.25
+      ],
+      "empty": false,
+      "rgbaSha256": "f785ab4a91af4ce27c0cadcade11f094f809c6434860fd8e844ff103eb129660"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        20.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "d600a1b4ecc1773a281616e3510dad190b7a5be82b4cb4ba0ea0f3ebdf0f8fb8"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 0,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        17.399999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "6ed62c074f05f5bbe6e240f70e98b5d03ceba9073d29f7caeb1adf8992f939ad"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 300,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        16.100000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "48505c798946af3a0c799797f78a8ae9a14ecf70f7c3ca978733c3532c9ec4f4"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 600,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        18.049999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "86f907b19ba35dff17301938cd22561c57b92e8181997d69e5c491e6ac507803"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 900,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        19.350000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "8c8aa76e8236dea332423573defd9a9ce41f9fbeaaf504ffe2a11e32d412823f"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        20.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "2749a6115e92e861cbc7d4bc9c4fba84be81ed350a72fb64a3d44317520df207"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        21.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "797fafae1e86f013dde2d14aaeccd1f377932e4526406cbf41f747203303b644"
+    },
+    {
+      "export": "basic_turret_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 3,
+      "mode": "normal",
+      "base": "basic_cannon_lvl3_base",
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        157.98749923706055,
+        0.0,
+        2.0,
+        21.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "797fafae1e86f013dde2d14aaeccd1f377932e4526406cbf41f747203303b644"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        28.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "4a83af2a0f4f65c2ca4933c6d03b4030047d0bdaa50b75bf468cbb97c56dee3b"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 0,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        28.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "e4663370152d0bd08864dfac2b7665abef322beda2009f7dd279380027ba5b4a"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 300,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "6a774aa623222f250ffa03cb8f9fc6ff0b38efe34fb24241a63782a48ed39342"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 600,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "7a4229d0d7ab1ba8d698a0b203e2186759199732205598a643a570a98cf0f31c"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 900,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "999d62d80e4d1856ef29d00d0a4da511caffba599d2351e1c60926dd651dbb08"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "3ea3e1762f4074d8d1f8f9c92fa9d2adf4c6dfa864a1158887ea05af329f6220"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "62605474d3981923ff7bf6e10427edcb97045f309479ae79a924bc7bf8c9eaac"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        28.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "d8c87e19f72bf7a2cb93e7d75b83f148bef822edc93321448566b0e4191050a7"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        28.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "b413fedb01f5e232b1a26f8cbf36d70e9ccb2e884dde8462421c420a7a34679c"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 0,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        27.549999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "35f30fd7da1ce11fb579d0b9fd10e0bca422bbdbad516eb5775399d3310ee968"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 300,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        26.899999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "69e43c1fc2a5efdab2058b7ed424025b32c556fd09376bf111acccd4a0597d94"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 600,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        25.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "b533a865a0baf9274f986a1ec4589ab0f0b39d322312883e4e5e24eb19815da9"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 900,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        24.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "927e4a669893a2c5af5f762c9f909d341c1e9cdc3d117b9d8fd79b3e2df0b0b2"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        22.350000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "b561920b2eb3465f715dde1c10d19065cf2e63f9636d9dc99b74a3f34a4a00b9"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        23.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "3c991eee54da30d909ad74ff621a59b339a25ff6484976b433d05e22ebcbe59b"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        26.899999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "c39b094fe765e35d14712c43f4f2b16dd9e033826f83e52bf65ccbce9d2d2ed3"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "eaa6fe369c005155e56a35ba459f38f0567b1fd97e5e0eae513f505492bc1212"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 0,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        31.450000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "153e1e0a8beb33d8b0a2de2ed0bb791f5842fc9cf292fc43e26cd83e2fedbe53"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 300,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        34.04999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "4e9dea99b4aa8734bb092063cb515c97d0eaf759a3832be24fdb3c17b2eeb786"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 600,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        35.35000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "3c32e5ba94925d23947704b7dd905c994f6cc9155ddbb0ed18c80a335d20228a"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 900,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        36.0
+      ],
+      "empty": false,
+      "rgbaSha256": "f26f4994ec67b2eb3ec02db77f92fc3bf720d5bb889da6b95c73a419afcd5ad6"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1200,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        36.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "e940622b23c1506cf6e145b7c2615c22af17001a5db956d9ce3379e38813d5ab"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1500,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        36.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "e57c871da41520556150978343a069a316900a0d84bb9aa51b71d9bda2970f95"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1800,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        36.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "c8e5e38fc0af1e5bf988b9ba6cdae5841905f61e347ad725fb7a621b0d46bdec"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 2100,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        36.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bd5836cc6d0128288eb99af8037d7bfeb0ac1f498af6fe7fa28185b914fcafed"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 0,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        35.35000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "c7e03c1c5f8049b010b206d7d4eef1f810cab423aadb1d29e311b52a0153f96c"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 300,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        34.04999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "8b8c866ff488809f9637bce02ebf85edbfc1540f83693c856c4888c401fd4eaf"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 600,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        31.450000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "1c17edff5a3a43d646fe2986cf52a6d380d7fda4dfcc2ca4780a5b2ab0952007"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 900,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "af1708775b983da44e00cb1228f2f1156cb155473ceeabe03e2f94ea692fda03"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1200,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        26.899999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "ecd38377d25549dbd5e8414801706ff3b4822d6920863da118261064788409c7"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1500,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        23.649999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "500e27e2d406f99a8bf9eca6bc61c801bc75aee8652fd004c1710e9bdffa346e"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 1800,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        22.350000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "275da58962122e4a2b27f403839057b6958610b6cc4ad9c485e47158314b6d68"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 2100,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        24.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "5a05f60027048126db0da7046633320ef786eeda6ba7d42db29dcec0f4289399"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 0,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        25.600000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "d83d8d054e523d95613de9d03d01a066cb231a6c72c2120b069012369ba279c7"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 300,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        26.899999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "e7f9c6d41ee04800f7bc69a789b4604201a51927171d20ce4e0469a6cfe85f86"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 600,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        27.549999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "0ec91190905d126eadbf0bcb11462917fe29c149aad7dfcba1f8d3fa8f3dc85c"
+    },
+    {
+      "export": "basic_turret_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 4,
+      "mode": "normal",
+      "base": "basic_cannon_lvl4_base",
+      "x": 900,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        163.48749923706055,
+        0.0,
+        2.0,
+        27.549999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "0ec91190905d126eadbf0bcb11462917fe29c149aad7dfcba1f8d3fa8f3dc85c"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1200,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.849998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "6d5d4ae29adad05c50db97c540f5486737d780fa8faeb6d3b500edb4adf2dad2"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1500,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "3e6319300a7f389fd7d8f06418eaa993f01a5da00ccfa53e16ef814adfca0bbc"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1800,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "ecf2dfa9baecf835db078482fe3cb0f189479d957659bd5be26d35f694710699"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 2100,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        30.149999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "015cbea03820969f79dc4ebf951bd206046848454bf36dfe13f40e454b86f720"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 0,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        30.799999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "0b4ed2a53f35868a83bb558836abe09158befe2c8fa656586d2107170633b3d9"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 300,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        30.149999618530273
+      ],
+      "empty": false,
+      "rgbaSha256": "abce0b9078c53f98f8a39811bb702990848897c4fa8f5fbe15f66b5d961dffb0"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 600,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "1ca2c0cbc005c6ffdea65c9a4ce929f0a8c5ff8f0be352bf81ce5717323eeb22"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 900,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        29.5
+      ],
+      "empty": false,
+      "rgbaSha256": "7658e47d6cc7560fe292b2c73be9ab099583c13c525dcb07fc65d2915cb0fbe0"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1200,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.849998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "ce453d2c33f5101dff2cbbedf8ccfca339d88d62805e5244a16dedb03815f4d0"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1500,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.19999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "d2940a9a6461c13c76e0ed643840dc8e50ece8764699d8d1bec118481375f517"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1800,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        27.549999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "3e98e92d3dc1c29841e7a81dca60ce4cde335c3904c98dca296c55038847ee57"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 2100,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        25.599998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "014e89871d00f1f6f71c3ef98c2a6f10a579e4fa4c3728c5cebe9862be00b276"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 0,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        24.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "64b20427335dbb22cab8552566fac798baf9c6a4e1182efe06023cdc8b35e346"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 300,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        22.349998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "848e375be6f0a2c35e09e3165db3440168cc83ec627194c9c32315c8901dcc6f"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 600,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        24.94999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "93a815f17b09332deb18642cabc906e3817200f1abe5590edb66095bba636908"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 900,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.19999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "216a057854768a1918e005877c18a3e0e1885ebf08857fe0e71370f3f8812623"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1200,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        30.799999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "e1c7f9c91342e1c03c67a2f84de327769a0596816e116d30065d123ad444ae4e"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1500,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        33.39999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "497ce262fd7b4a896ef7e5c22b5a03dd0288c3b3ff73052080aeb1dca5c6b0d0"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1800,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        35.349998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "18c8e72be88955ba5f4103cf9503b19d0843eb64b9becdaf2e6f82132bd707d5"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 2100,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        36.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "f6bb781b4c4d284dd8ebcbb72d25f71c2957e167c1e3bd3596c535c8fc288b44"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 0,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        37.95000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "9b30032a62d7e814e14baf981db8457120dc70e76e476c2215a774bbbeb18621"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 300,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        38.599998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "10f7626fecefc982279280bdfd07aa3a28a246b15a25dcff792a88f8435ee84a"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 600,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        38.599998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "1cbf2303b736de7b3fbb4c32f3df16735662ff33469405a26311921d6667f189"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 900,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        38.599998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "779af2bc3cf03b28d9bf4a4fa2dd830c02f184c89d18d472d048420608022375"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1200,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        37.95000076293945
+      ],
+      "empty": false,
+      "rgbaSha256": "a14c92e5eeae3129f3bb016e0e1c0c6969b4908893993ec655842231943df33b"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1500,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        36.64999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "f97b2528d6bcf05c3f2c26818dda9c7c1be6d1054a5c8e67a7c619dd15c95e2b"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1800,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        35.349998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "7242eda70f92d1b9bbcf0a5020df6e375aaf346402cc48c1b75f45951572e6ce"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 2100,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        33.39999961853027
+      ],
+      "empty": false,
+      "rgbaSha256": "b895afb359ea13bdf5719fd1f81b7fdd9fc42ccea69a824da850b20237651e73"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 0,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        30.799999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "510ca5f87a4656772e73760d9d102fa87730abcca2cb267c77f994e168cf0a95"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 300,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.19999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "0a6553f04e28f1b1fd5f29deddb1dffe0df522b4633e4e858fed9f2fe21bc2bb"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 600,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.34291709959507,
+        0.0,
+        2.0,
+        24.94999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "b35ff433276b1af74016112e82bd98775aa57791ee8bf9f6c9769e7a32daa642"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 900,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        22.349998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "7125bc140c2a21ebef52191a0c05b2f3f1c3fbd559d6db35b529b37cd1f031c4"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1200,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        24.299999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "c71f8117018bee5aa535b27694468a7ca9bbc9705694a50d2dbe220264533c1b"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1500,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        25.599998474121094
+      ],
+      "empty": false,
+      "rgbaSha256": "2ad1381d7b6a304580bc79bc120d3f032377ce27071d80053b3e8184e41bedc9"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 1800,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        27.549999237060547
+      ],
+      "empty": false,
+      "rgbaSha256": "8ef1e51a3d2bba69d7d81a5bc88e7a2abcc97b1c8567469442a2773d7798c600"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 2100,
+      "y": 6600,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.19999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "e01361e6e3720745759a549f7d63e0ee309ae5fe568662f0e2402e98624d23c0"
+    },
+    {
+      "export": "basic_turret_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 5,
+      "mode": "normal",
+      "base": "basic_cannon_lvl5_base",
+      "x": 0,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        158.3929193764925,
+        0.0,
+        2.0,
+        28.19999885559082
+      ],
+      "empty": false,
+      "rgbaSha256": "e01361e6e3720745759a549f7d63e0ee309ae5fe568662f0e2402e98624d23c0"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 300,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        27.5
+      ],
+      "empty": false,
+      "rgbaSha256": "f0d62b3bda5cfafdb25d973067fff202837e49de9c21b3e74d2100870d3845d2"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 600,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "75f3ce5320974df92505335b9c13eec61e198eb705a18a1f240eab2e32bdf687"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 900,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "562de9d4b1fa738a282759e5a507c49a809910f0220446f346b177abaf86c380"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1200,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.80000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "68a9e88eeeca3c8212fac5305526e161fbdd1bb79a9d4b7fe7c409c6ad1eac50"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1500,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        29.450000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "951e3f3cf87467103b5614821309ed6543279a8fc97957847fd9ce798874c219"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1800,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.80000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "d29e6e4935d4a208b4f8dd912ed8a6e797097a9a01c4cfe3d95fc85a3a958e74"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 2100,
+      "y": 6900,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "31f0db6dd9b055a57b6b8d89acc8e54260809955a016bd111ae6c1b849142873"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 0,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        28.150001525878906
+      ],
+      "empty": false,
+      "rgbaSha256": "ce07c3e34079a109a9c1a2912caad2a4a32e6701cc2ca37c1e9745b1a1c57fb2"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 300,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        27.5
+      ],
+      "empty": false,
+      "rgbaSha256": "9f135b91c37687ccdf5b08bbf0d8c088e9e22b5448422218a942f2bbc839cab1"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 600,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "5e6f280f9935abd235ba780a4a0962ef52d695da3dbe7ba8d5f92b1431cca787"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 900,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.200000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "e59b8794b1ab0da0dc9bc5a074bd8a6826dd70b1d42df22415d4c7cab6bb08a9"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1200,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "348af778131dbc4663b3594de990483efb304d520d4e754c38c48cc46e191b74"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1500,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "bda6724473e43685f20457f504c4565f6cacec90e9b6361bb8d7835eed039b5b"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1800,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "ceece5dd7723f9a6b2e005ea83853bb19453ef287d8b0d0742c0bf3968bd7567"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 2100,
+      "y": 7200,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "6d830607862533d8a5075f9356d2881dbe800dcaf327b08b464ea63286565b6b"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 0,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "1b04eafabf48c6d3b9bf4027881f8179c183d9ab4ec294a32e4ef5cad7043986"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 300,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        29.450000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "d59c1dfc932a5bf0f7f7282241f7c909f195085a714ca4e7364c6362560a75c5"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 600,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        32.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "ea3dbdb4f59bc05ad3ffcf2408f7ac13fbe8048b4aefb57bccd6df4562588db3"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 900,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        34.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7109dd55cc32adf3165c22e45f9d90acc5770094e2bccfe1e4d24155fa5abb8d"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 190,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1200,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        35.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "c4af51ca701f471ab11c87813ce7cd6a9b0917c03e42cf7c4bdb92630571d994"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 200,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1500,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        36.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "a28354a04a1caa8e76f15a005a4e42c39c911e6ce3b4d3901a256efcfa0f1b2c"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 210,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1800,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        37.25
+      ],
+      "empty": false,
+      "rgbaSha256": "b5f018498e11923f7921214ccd49df020912debf36948a9417eafac40337dbe3"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 220,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 2100,
+      "y": 7500,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        37.25
+      ],
+      "empty": false,
+      "rgbaSha256": "1004ac8f539367bed476c10cf1255e379363c113a7e7aed0a205ef85049ce023"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 230,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 0,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        37.25
+      ],
+      "empty": false,
+      "rgbaSha256": "5bc58f78a916271fe7e2589f99b52fbc4ea5717678528a39f0c1ec7dde3d2acd"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 240,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 300,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        36.60000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "bf4c3dba7b768d27d53eff344504ca26310f1cd73a5b3bba484c1138f31df231"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 250,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 600,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        35.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "32e14b63cb1edba6bbd34aaea81c35a927d282fa9aae448062f6f9e8084b3ba4"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 260,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 900,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        34.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5aabd5f35e1501fd25d1f9ddb9c685722bbc86f9141c35b5619434cbc845d2dc"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1200,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        32.05000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "bbc2486f06425342d13db9d3558d62e6cf0deebd1e4a77e6b54133456913e316"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 280,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1500,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        29.450000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "440cbf6d13c9df485c533af0209fc3dbfb9a089bc24592e1ef5d998bda966a05"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 290,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1800,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "aeffe5a63ff600606ec86db8777dd22783d88e30ff551c855a27902fa9d1c21c"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 300,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 2100,
+      "y": 7800,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "b0b86c897cf761b0c99ad25da4e3acd5f9e0394cf561750e272529722338461e"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 310,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 0,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "7dd8899f3a307e393415f4f786a0f09f3866db7e085af7d9b978b642cd4d0742"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 320,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 300,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "7b62610a26661251635e09ecefab0e7ca1548b627ed5460a307f321846fc8891"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 330,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 600,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        24.950002670288086
+      ],
+      "empty": false,
+      "rgbaSha256": "5bb2ac4cc0ec7709f4ac411e9a81c9358f2062a433bdf06a1edab9e61bce3f93"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 340,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 900,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.200000762939453
+      ],
+      "empty": false,
+      "rgbaSha256": "53aa56dbe9255d49c542825e435983f1fde46d220d0dfaa468fdd1b11d97894e"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 350,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1200,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "72778ad5448207ddc8db733656be7a688b034206fc856a657f42ce8dcd82f995"
+    },
+    {
+      "export": "basic_turret_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 359,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 6,
+      "mode": "normal",
+      "base": "basic_cannon_lvl6_base",
+      "x": 1500,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        151.95000076293945,
+        0.0,
+        2.0,
+        26.850000381469727
+      ],
+      "empty": false,
+      "rgbaSha256": "72778ad5448207ddc8db733656be7a688b034206fc856a657f42ce8dcd82f995"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1800,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        22.999996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "e5ad74c680e4ddf00900545751d76a8d189a7d7d4a1d41436cca181c1e6a2618"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 10,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 2100,
+      "y": 8100,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        23.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "185173718cc9be799966ce5807a1181e0f609cd15b853e0f57704f2a02b9af75"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 20,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 0,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        23.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "c8b5a49ee6110c143269ff59f0113645e5baa357fa4e8d928b69873571396216"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 30,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 300,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        24.299997329711914
+      ],
+      "empty": false,
+      "rgbaSha256": "eb64467c90175d6ffc90ee4285d0db49d6943b0b80e30f12c715cca2a58150ac"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 40,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 600,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        24.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "1ddda5c4e56cca473f5b8b59c4742168dd041cc5afcd2a925eabe13cbf2785d6"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 50,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 900,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        24.299997329711914
+      ],
+      "empty": false,
+      "rgbaSha256": "42d894ab4a07e279b9125db7e18479958d473287cd583603cb929e48977da764"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 60,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1200,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        23.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "342a5cf90335b787bf7f0efc7f156ae9f348147c5db530ed9a40880eabd78bc0"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 70,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1500,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        23.64999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "2d09404b30053b35f35b36d37392910835d2f4eac29caaf6594653cae3f11541"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 80,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1800,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        22.999996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "6bdd5771d9096f891533b11b7d91699abd0cd47f1180dd673f43f126fbf1214a"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 2100,
+      "y": 8400,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        22.34999656677246
+      ],
+      "empty": false,
+      "rgbaSha256": "009c2fe0d38dde5362203423e74538132688ef7deedd69e2c4fcb6709015da22"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 100,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 0,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        21.699996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "2dca82117b03307a35748bfc2aca56ca714bc6068287719c6fa436a4af88f549"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 110,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 300,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "26624e75cc643f4aaaf9304e1f90cf6b67127aab2d863c6c62c261d98607f872"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 120,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 600,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "a6916df0076e1b6290f63c5a5796b0e858181aa769909c156d07568b7c661ceb"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 130,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 900,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "d2d9945a528fcdc48531f3ed0f63c27b3fb2227391630b6f50dde87a4fcd3a36"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 140,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1200,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        20.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "3db35ff8b7bd02ef70b0efced22f7f69f51e9f26c12288c1fd296d6f38a2056a"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 150,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1500,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        22.34999656677246
+      ],
+      "empty": false,
+      "rgbaSha256": "d5042de00a0c1f4a19ad2a95f0bf850b08b9908d2683c73c28a31d7f4385cef3"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 160,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 1800,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        24.949996948242188
+      ],
+      "empty": false,
+      "rgbaSha256": "3ecd03d8a5912fd63c482048bf8df8f60a4bf07fdfef769136ec043417cdc560"
+    },
+    {
+      "export": "basic_turret_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 170,
+        "gearup": false
+      },
+      "category": "direction",
+      "level": 7,
+      "mode": "normal",
+      "base": "basic_cannon_lvl7_base",
+      "x": 2100,
+      "y": 8700,
+      "root": [
+        2.0,
+        0.0,
+        156.84550589323044,
+        0.0,
+        2.0,
+        27.549997329711914
+      ],
+      "empty": false,
+      "rgbaSha256": "265947f6212e90bfbecc109cdd8b16b40c9b40de21a98b20125540cbc96a88a6"
+    }
+  ]
+}
