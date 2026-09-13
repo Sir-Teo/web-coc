@@ -1,3 +1,4 @@
+import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
 import { campaignStage } from '../game/campaign-catalog';
@@ -126,6 +127,7 @@ function statRows(
   kind: BuildingKind,
   level: number,
   xbowMode: XbowMode = 'ground',
+  infernoMode: InfernoMode = 'single',
 ): [string, string, string][] {
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
@@ -170,7 +172,27 @@ function statRows(
       ['Radar', 'Targets', 'Air only'],
       ['RotateCw', 'Rotation', '8 directions'],
     );
-  if (d.damage) {
+  if (kind === 'inferno') {
+    const { weapon } = infernoStats(level);
+    rows.push(['Target', 'Mode', infernoMode === 'multi' ? 'Multi-target' : 'Single-target']);
+    rows.push([
+      'Swords',
+      infernoMode === 'multi' ? 'Damage per second per target' : 'Damage per second',
+      infernoMode === 'multi' ? n(weapon.dps[0]) : weapon.dps.map(n).join(' → '),
+    ]);
+    if (infernoMode === 'single')
+      rows.push(['Clock3', 'Heat increases after', '1.5s / 5.25s on the same target']);
+    rows.push(
+      [
+        'Users',
+        'Simultaneous targets',
+        String(infernoMode === 'multi' ? weapon.alternateTargets : 1),
+      ],
+      ['Target', 'Range', `${infernoMode === 'multi' ? 10 : 9} tiles`],
+      ['Radar', 'Targets', 'Ground & air'],
+    );
+  }
+  if (d.damage && kind !== 'inferno') {
     rows.push(['Swords', 'Damage per second', damageNumber(defenseDps(kind, level))]);
     rows.push(['Swords', 'Damage per hit', damageNumber(defenseDamage(kind, level))]);
     rows.push([
@@ -591,6 +613,9 @@ export class HUD {
         break;
       case 'skeleton-mode':
         m.toggleSkeletonMode();
+        break;
+      case 'inferno-mode':
+        this.model.toggleInfernoMode();
         break;
       case 'xbow-mode':
         this.model.toggleXbowMode();
@@ -1259,35 +1284,42 @@ export class HUD {
       return `<div class="building-context obstacle-context" data-anchor="${-o.id}"><img class="context-art" src="${hudAsset(o.kind)}" alt=""><div class="context-info"><small>OBSTACLE</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · No builder needed</span></div><div class="context-actions">${o.removeEnd ? button(`obstacle-finish:${o.id}`, `<small data-obstacle-time="${o.id}">${time((o.removeEnd - m.clock) / 1000)}</small><span>Finish ${gem} ${m.finishCost({ upgradeEnd: o.removeEnd } as Building)}</span>`) + button(`obstacle-cancel:${o.id}`, `${icon('X', 18)} Cancel`, 'game-btn stone') : button(`obstacle-remove:${o.id}`, `<span>${icon('Axe', 18)} Remove</span><small>${resource(d.resource)} ${n(d.cost)} · ${d.seconds}s</small>`, 'game-btn green', m.state[d.resource] < d.cost ? 'disabled' : '')}</div><button class="context-close" data-action="cancel" aria-label="Close obstacle">${icon('X', 18)}</button></div>`;
     }
     const rotate =
-      b.kind === 'airsweeper' && !b.constructing
+      b.kind === 'inferno' && !b.constructing
         ? button(
-            'sweeper-rotate',
-            `${icon('RotateCw', 21)}<span>Rotate</span>`,
+            'inferno-mode',
+            `${icon('Target', 21)}<span>${b.infernoMode === 'multi' ? 'Multi-target' : 'Single-target'}</span>`,
             'game-btn blue',
-            'aria-label="Rotate Air Sweeper 45 degrees" title="Rotate clockwise · R"',
+            `aria-label="Switch Inferno Tower to ${b.infernoMode === 'multi' ? 'single' : 'multi'}-target mode"`,
           )
-        : b.kind === 'skeletontrap'
+        : b.kind === 'airsweeper' && !b.constructing
           ? button(
-              'skeleton-mode',
-              `${icon(b.skeletonMode === 'air' ? 'Wind' : 'Swords', 21)}<span>${b.skeletonMode === 'air' ? 'Air' : 'Ground'}</span>`,
+              'sweeper-rotate',
+              `${icon('RotateCw', 21)}<span>Rotate</span>`,
               'game-btn blue',
-              `aria-label="Switch Skeleton Trap to ${b.skeletonMode === 'air' ? 'ground' : 'air'} mode"`,
+              'aria-label="Rotate Air Sweeper 45 degrees" title="Rotate clockwise · R"',
             )
-          : b.kind === 'xbow' && !b.constructing
+          : b.kind === 'skeletontrap'
             ? button(
-                'xbow-mode',
-                `${icon(b.xbowMode === 'both' ? 'Wind' : 'Swords', 21)}<span>${b.xbowMode === 'both' ? 'Ground & air' : 'Ground'}</span>`,
+                'skeleton-mode',
+                `${icon(b.skeletonMode === 'air' ? 'Wind' : 'Swords', 21)}<span>${b.skeletonMode === 'air' ? 'Air' : 'Ground'}</span>`,
                 'game-btn blue',
-                `aria-label="Switch X-Bow to ${b.xbowMode === 'both' ? 'ground' : 'ground and air'} mode"`,
+                `aria-label="Switch Skeleton Trap to ${b.skeletonMode === 'air' ? 'ground' : 'air'} mode"`,
               )
-            : '';
+            : b.kind === 'xbow' && !b.constructing
+              ? button(
+                  'xbow-mode',
+                  `${icon(b.xbowMode === 'both' ? 'Wind' : 'Swords', 21)}<span>${b.xbowMode === 'both' ? 'Ground & air' : 'Ground'}</span>`,
+                  'game-btn blue',
+                  `aria-label="Switch X-Bow to ${b.xbowMode === 'both' ? 'ground' : 'ground and air'} mode"`,
+                )
+              : '';
     if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
+    return `<div class="building-context" data-anchor="${b.id}"><img class="context-art" src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode)}" alt=""><div class="context-info"><small>${d.category.toUpperCase()}</small><h2>${d.name}</h2><span>Level ${b.level} <i>·</i> ${d.trap ? `${icon('ShieldCheck', 13)} ${b.upgradeEnd ? 'Inactive' : 'Armed'}` : `${icon('Heart', 13)} ${n(b.maxHp)} HP`}</span></div><div class="context-actions">${button('info', `${icon('Info', 21)}<span>Info</span>`, 'game-btn stone')}${button(`move:${b.id}`, `${icon('Move', 21)}<span>Move</span>`, 'game-btn stone')}${rotate}${
       b.upgradeEnd
         ? button(
             `finish:${b.id}`,
@@ -1851,15 +1883,15 @@ export class HUD {
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    const now = statRows(b.kind, b.level, b.xbowMode);
-    const next = capped ? [] : statRows(b.kind, b.level + 1, b.xbowMode);
+    const now = statRows(b.kind, b.level, b.xbowMode, b.infernoMode);
+    const next = capped ? [] : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode);
     const nextUnlocks =
       b.kind === 'barracks'
         ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
         : b.kind === 'spellfactory'
           ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
           : [];
-    return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
+    return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
    .map(([ic, label, value], i) => {
      const after = next[i]?.[2];

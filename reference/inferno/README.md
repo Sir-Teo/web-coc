@@ -122,3 +122,10 @@ Replay version 39 accepts Inferno buildings and their optional `infernoMode` (`s
 The battle scheduler and live mesh presentation now consume the building's selected mode. A mode or tier change rebuilds scheduler slots and clears recent hit records. Selection bounds use the corresponding mode, and the selected range ring uses 9/10 tiles. Player-facing toggles, thumbnail mode plumbing and complete mode-aware info text remain subsequent UI work.
 
 All 1,427 tests across 140 files pass, including portable mode round-trip, a resumed six-target multi battle, invalid-mode rejection and old-version rejection. Both browsers pass mixed single/multi live tier rendering, and production compilation passes. Campaign source mode-bit interpretation, beam effects and ammo still remain unresolved; this does not enable Midnight Oil.
+
+
+## Player-facing mode controls
+
+The building context now exposes an accessible Single-target/Multi-target toggle. It is blocked during battle, placement and wall movement, and participates in edit undo/redo and saved layouts. Context and info portraits follow the selected mode. The info table displays the three-stage single-target DPS ramp and acquisition thresholds, or multi-target DPS per target and simultaneous target count; both show their corresponding range and flight layers. Hover range and intact mesh height also follow the mode.
+
+Focused mode/edit/layout/save and replay tests pass. Chromium and WebKit each pass desktop (1440px) and phone (390px) UI checks, including both toggle directions, portraits, ranges and source DPS. The completed phone dialog was visually reviewed after disabling its opening animation for capture. Production build passes. Campaign entry, beam/sound presentation and ammo remain outstanding.

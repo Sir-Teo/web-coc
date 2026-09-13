@@ -1,4 +1,4 @@
-import { type InfernoMode } from './inferno-weapon';
+import { validInfernoMode, type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
 import {
@@ -1374,6 +1374,16 @@ export class GameModel {
       return false;
     if (this.editing) this.recordPositions();
     b.skeletonMode = b.skeletonMode === 'air' ? 'ground' : 'air';
+    this.changed();
+    return true;
+  }
+  toggleInfernoMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'inferno' || b.constructing || !validInfernoMode(b.infernoMode))
+      return false;
+    if (this.editing) this.recordPositions();
+    b.infernoMode = b.infernoMode === 'multi' ? 'single' : 'multi';
     this.changed();
     return true;
   }

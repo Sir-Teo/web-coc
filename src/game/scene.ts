@@ -698,7 +698,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = hit.id;
         this.model.changed();
         this.model.notify(
-          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
+          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'inferno' ? (hit.infernoMode === 'multi' ? 10 : 9) : hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }
@@ -1023,7 +1023,8 @@ export class VillageScene extends Phaser.Scene {
       im.setData(
         'intactHeight',
         b.kind === 'inferno'
-          ? infernoBounds(b.level)[3] - infernoBounds(b.level)[1]
+          ? infernoBounds(b.level, 'setup', 0, b.infernoMode)[3] -
+              infernoBounds(b.level, 'setup', 0, b.infernoMode)[1]
           : b.kind === 'clancastle'
             ? castleBounds(b.level)[3] - castleBounds(b.level)[1]
             : b.kind === 'cannon' && !b.npc

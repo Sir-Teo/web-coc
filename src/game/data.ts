@@ -1,4 +1,4 @@
-import { infernoStats } from './inferno-weapon';
+import { infernoStats, type InfernoMode } from './inferno-weapon';
 import { infernoAsset, infernoTexture } from './inferno-art';
 import { cannonAsset, cannonTexture } from './cannon-art';
 import { CASTLE_ART, CASTLE_LEVELS, castleAsset, castleTexture, castleStats } from './castle-art';
@@ -982,8 +982,9 @@ export const buildingTexture = (
   level = 1,
   direction = 0,
   xbowMode: XbowMode = 'ground',
+  infernoMode: InfernoMode = 'single',
 ) => {
-  if (kind === 'inferno') return infernoTexture(level);
+  if (kind === 'inferno') return infernoTexture(level, infernoMode);
   if (kind === 'clancastle') return castleTexture(level);
   if (kind === 'darkstorage') return darkStorageTexture(level);
   if (kind === 'xbow') return xbowTexture(level, xbowMode);
@@ -1010,8 +1011,9 @@ export const asset = (
   level = 1,
   skeletonMode: SkeletonMode = 'ground',
   xbowMode: XbowMode = 'ground',
+  infernoMode: InfernoMode = 'single',
 ) => {
-  if (kind === 'inferno') return infernoAsset(level);
+  if (kind === 'inferno') return infernoAsset(level, infernoMode);
   if (kind === 'clancastle') return castleAsset(level);
   if (kind === 'darkstorage') return darkStorageAsset(level);
   if (kind === 'xbow') return xbowAsset(level, xbowMode);
