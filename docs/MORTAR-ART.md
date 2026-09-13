@@ -1,5 +1,7 @@
 # Mortar artwork, levels 1–6
 
+The [original Mortar source foundation](../reference/mortar/README.md), imported September 12, 2026, now preserves all eighteen native bodies, rotating parts, source shells, particles and sounds. It includes original portraits and independent browser pixel witnesses. Live integration is still pending; this page describes the generated artwork currently used by the game.
+
 Six original sprites replace the two atlas tiers for every playable Mortar level. The visual reference was [CoC Guide's Mortar gallery](https://coc.guide/defense/mortar), inspected September 11, 2026. Its raised barrel, timber carriage, increasingly gold reinforcement and later blue supports inform these recreations. Native reference images were used for inspection, not shipped. These are original generated interpretations, not pixel-exact native assets.
 
 The built-in `image_gen` tool produced each level separately. Exact initial prompts are in `art/source/mortar-levels-v1/prompts.json`; extraction prompts and accepted output provenance are in `generation.json` alongside the six source PNGs. The initial renders incorrectly painted their backgrounds. Levels 1, 2, 3 and 5 received successful alpha extraction edits. Two further extraction attempts for levels 4 and 6 failed, so those levels received a uniform magenta matte edit instead.

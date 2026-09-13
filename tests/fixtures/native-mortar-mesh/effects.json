@@ -1,0 +1,2723 @@
+{
+  "category": "effects",
+  "width": 2400,
+  "height": 5400,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "8651d0e4df77d925b84b92fc3be2ce559180fc2e68fc23713af718a043e44cd0",
+  "cases": [
+    {
+      "export": "bomb_crater",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 0,
+      "root": [
+        1.920458574985493,
+        0.0,
+        151.20028660936595,
+        0.0,
+        1.920458574985493,
+        69.96488600287965
+      ],
+      "empty": false,
+      "rgbaSha256": "dcbdea333235a45ef2f1871a889bf630a6b98b6b0eedd050c8e0134c4fa8d25e"
+    },
+    {
+      "export": "d1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5d20c7499e8409575ea1ff2156f605025319637ce241d37b133307ac5c60ff9b"
+    },
+    {
+      "export": "d2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "27434171641f2d000800b6edf0a28fd23f806d9b6cce3389f1df2ae674cafbfb"
+    },
+    {
+      "export": "d3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5544463b843719a9e022d3018d79d30eeeea5a73ffc8b35810c34ea44bf6873c"
+    },
+    {
+      "export": "d4",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7daaa36472d57c0b36835ec445eb8f2dd232cd4e4c3ef86602b7dd274b28b009"
+    },
+    {
+      "export": "d5",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "0ff807a1dc9a8ccd6e4d72038d5da53a585e7844deaacba013f91e5ba51d479a"
+    },
+    {
+      "export": "d5",
+      "time": 2.1666666666666665,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        158.99384784698486,
+        0.0,
+        2.0,
+        136.5
+      ],
+      "empty": false,
+      "rgbaSha256": "f1b15479873bc101af3cf0cd41cac5f7fc76821876c09950b5f8dedf237ff5ce"
+    },
+    {
+      "export": "d5",
+      "time": 4.291666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "85b9e11d9658da5b2e76f808cbddaabaa8adb865674a41006ceaddb499307c7e"
+    },
+    {
+      "export": "d6",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 300,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    },
+    {
+      "export": "d6",
+      "time": 2.0833333333333335,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        158.60000038146973,
+        0.0,
+        2.0,
+        136.5999994277954
+      ],
+      "empty": false,
+      "rgbaSha256": "db00fa66585b8606d2a8808f6f44f1de5ce01bab9ed8309e3938eede80742b3f"
+    },
+    {
+      "export": "d6",
+      "time": 4.166666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 300,
+      "root": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "empty": true,
+      "rgbaSha256": "cf8533a8b61a440803eda9fff387fcbee3340f488b62a1836f09190f89c425d2"
+    },
+    {
+      "export": "debris1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81e8b01e78ce8dcb736ea2243eb9f725d4ce00dfc0dc61a0add3f99ba77f9f22"
+    },
+    {
+      "export": "debris10",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "d00e5b257ed159228f90d08ba7507dcc35c0eea0cca93be014327cb11dd45cc8"
+    },
+    {
+      "export": "debris11",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "31728f9f7584207a129ee252233bbf7a12e588f9b1bede154e775d20df70de4a"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "export": "debris14",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7d7ceffeb50843c9384471696d3c81ef03a94f6d4df0e94e2cb92367fb8750d6"
+    },
+    {
+      "export": "debris15",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "794fe683fa8259c500ebbcb3a10aed7ab2e430ccd3be9218f3d785fc9f343deb"
+    },
+    {
+      "export": "debris16",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "beb26cb44808eef7c75844c786a650bef8475e12745048228590ff6273db57b9"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "export": "debris19",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9ee6b46a15ea03020df40a8ed5aa4b4050367be47f24dfb5991685bc4e2a201a"
+    },
+    {
+      "export": "debris2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bdf6e7d7f6a06e1f758ae912552b642c41e61822ecd40f72c899e8134c3f0425"
+    },
+    {
+      "export": "debris3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1c554ff7e96ab9b929d3ce06eea5a0cbbab744ace43248ecf2f43b58ca9c3f65"
+    },
+    {
+      "export": "debris4",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "612fd42e50c8a9608262911686190a2782b443c3521515e758fff4e46d4613b2"
+    },
+    {
+      "export": "debris5",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "25deba23d54553fa8f5a6b20886bd02e47d771a8446afb53b331fe36d18ad5f4"
+    },
+    {
+      "export": "debris6",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "43b5ae31bb5d0d94773d22235193ba2b5c6162b74d494557c7cddf5f104f0a55"
+    },
+    {
+      "export": "debris7",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c169fd72303a560050753ebf77e0f87ea91754f96079c01c03003637880a26e7"
+    },
+    {
+      "export": "debris8",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81fbaaa321347e169b72223d9791c259f3d14b3e4a8176c41f382a122a91ad16"
+    },
+    {
+      "export": "debris9",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "ac18a443a07b13f63dcc09b63dcf44027a84c8d1506a635555edb4d52f3d7a24"
+    },
+    {
+      "export": "fireball3b",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "201e804ebb57bdab51428549573e7bb2fdb34aa4dfc2055130b3d166a58e4b81"
+    },
+    {
+      "export": "fireball3b",
+      "time": 1.5416666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c291c758db2d3723e8b30f4b748e8b8c770bbc6def74ed8a7e7f670b9dc9233c"
+    },
+    {
+      "export": "fireball3b",
+      "time": 3.0833333333333335,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "62e57bb9ecda1a7ca3672ead113a1a14f15c5ea6264d6fe54e5552449d18e0c6"
+    },
+    {
+      "export": "firez5",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        146.70000076293945,
+        0.0,
+        2.0,
+        134.25
+      ],
+      "empty": false,
+      "rgbaSha256": "dc92447fe44deb053c2752af8b19c8a19232d35c92deeb754511abf61f120dfc"
+    },
+    {
+      "export": "g1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9fc6c1635a41002650318230715b30d091514dbd11a7d0ce7c3fde20c58064cc"
+    },
+    {
+      "export": "g2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6c04c61fd452e12fb2d9b8fdbbb9f90c53c267d86f367bdb844ca03af5d7f0ed"
+    },
+    {
+      "export": "g3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8ad82da4eb36358770f730564311dbab5195132abeb3b98b5453db9c7e0d6de4"
+    },
+    {
+      "export": "g4",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4947a80553c35b4579b6f1f8897a37ea8b8147e09ba81b9998959f72111ce38e"
+    },
+    {
+      "export": "mortar_ammo1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6524042a89177d80fd1c72a051f7b17a696bcd2ce8553b8acacc1477b91a4218"
+    },
+    {
+      "export": "mortar_ammo10",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        149.8929681777954
+      ],
+      "empty": false,
+      "rgbaSha256": "b1f4fefe6c35ff370a74529a00e511468a1297c7ad18ed4495d34b0260c59b4c"
+    },
+    {
+      "export": "mortar_ammo11",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        149.8929681777954
+      ],
+      "empty": false,
+      "rgbaSha256": "0cd1b4994db927e15cc483b898656f772cabf393cfb0bdb0372d7a10f8a1485d"
+    },
+    {
+      "export": "mortar_ammo2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5ca787ea1e11d79bcac84e41c1c72cf1557348b9fd083dbbccd9ce67fa81a39b"
+    },
+    {
+      "export": "mortar_ammo3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c27bd01cf2ce9ae93c816033f53557910dcc398779d00f572b15811232d9beac"
+    },
+    {
+      "export": "mortar_ammo4",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e14808558615b53af383b13dd36435c1f6031002cd625125e6456e0804779f30"
+    },
+    {
+      "export": "mortar_ammo5",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "a98b815500e4ea3fd3a79b4ab4de68234601b1a39c3abf4119913ffef699695c"
+    },
+    {
+      "export": "mortar_ammo6",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        147.6005859375,
+        0.0,
+        2.0,
+        147.6005859375
+      ],
+      "empty": false,
+      "rgbaSha256": "7374ecde4d54dd21fba44e1cda4489b9b485ed5d03380832586e1b33f48dd4e4"
+    },
+    {
+      "export": "mortar_ammo8",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "59c486a8aa923b47b5b6f4ff86dff9ee64b9507f71f0bd8d9e746866d2da4e6a"
+    },
+    {
+      "export": "mortar_ammo9",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e8779de5cbb3f9869a564e415389483e66fab46903269b7d5e32097c9d53efb2"
+    },
+    {
+      "export": "mortar_projectile_lvl16",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "08f0f0d0c6fa3ec3f349a581dc72250b11be9ed824eca171b2751c448d2e9781"
+    },
+    {
+      "export": "mortar_projectile_lvl16",
+      "time": 0.4583333333333333,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "66dc26cc5992748fcc54d3255004a9d35ff7e17bcd24d27480c0192af0b7a42d"
+    },
+    {
+      "export": "mortar_projectile_lvl16",
+      "time": 0.875,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "0d5a122df66cf928ae20ceedfdde6085569b1b955c37b10f6989e9df62fa5ccd"
+    },
+    {
+      "export": "mortar_projectile_lvl17",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e14f3cd24f795f4a19e329c9be9801dc9220fe5430d2490e71007594ee4c8692"
+    },
+    {
+      "export": "mortar_projectile_lvl17",
+      "time": 0.4583333333333333,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "37111dbf1483de6b7e9638e9522c82b2f85d60443a6becd7f98630144234a739"
+    },
+    {
+      "export": "mortar_projectile_lvl17",
+      "time": 0.875,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "66e2b096269094b3fed589344a909a0d9963ef07d314e075bdb37094e4b7a85d"
+    },
+    {
+      "export": "mortar_projectile_lvl18",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "ab7cec8dc92ba511fe18d83aeffeddd867331b794992dc6c57aa27b7251c2cb2"
+    },
+    {
+      "export": "mortar_projectile_lvl18",
+      "time": 0.4583333333333333,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e1c702ad244cb8e118e878d63e2d0bf9a9e5fb735a2edf390e7e557266e433d8"
+    },
+    {
+      "export": "mortar_projectile_lvl18",
+      "time": 0.875,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9f6832136af587048473ef1d45b2e95588ed128923db3db4d5c56c9918ba17b9"
+    },
+    {
+      "export": "r1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "afde5994c226bbdcf03ac34d104520e8b899c4c91c6c45172d37e705d19aa6f1"
+    },
+    {
+      "export": "s1",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "14f8d21f702bab0bea246949ac3ae3ca22da904aad4c5b123cc8c09f351cb10a"
+    },
+    {
+      "export": "s2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "501eca2f457d7f05353ebb3ae5a5e34dbf5ea61c6ef5e54ffafdb51da9f86202"
+    },
+    {
+      "export": "s3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "42f333870a76e17ed84ba6702656bb9f4acb5002992ee3ce4503adc26c4318e0"
+    },
+    {
+      "export": "s4",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "988cdec2188d54031e97c0dfb36086874db30c7a625cff27e3e4125218072c80"
+    },
+    {
+      "export": "simple_shadow_small",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        149.0
+      ],
+      "empty": false,
+      "rgbaSha256": "95aec775be54946a4806ef5a0e51e64fa414186b7a5e70300345b95b060e41ad"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        153.25,
+        0.0,
+        2.0,
+        152.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "c4c85cb3af86b8fbfaeab94b61abce052b0561de5de096f1df5988bada3c271c"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.20833333333333334,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        151.30000114440918,
+        0.0,
+        2.0,
+        154.55000019073486
+      ],
+      "empty": false,
+      "rgbaSha256": "bce5ef876b3a17af3afd4875c12bbe36715949a35874ce50a3aacffbdc817e8d"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.4166666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        123.90000057220459,
+        0.0,
+        2.0,
+        174.15000009536743
+      ],
+      "empty": false,
+      "rgbaSha256": "30944d5c2d43ffb6219476e0fa3ed99468dccbb28829b98a465486570685f6d6"
+    },
+    {
+      "export": "spark_flame",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        164.70000076293945,
+        0.0,
+        2.0,
+        150.5
+      ],
+      "empty": false,
+      "rgbaSha256": "05ad8b6cb2b77e9a872a701dd1fb63461d5fc3d90b78595dde2e0f8deff85657"
+    },
+    {
+      "export": "spark_flame",
+      "time": 1.6666666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        143.67792892456055,
+        0.0,
+        2.0,
+        151.00996017456055
+      ],
+      "empty": false,
+      "rgbaSha256": "d4be9feaca21f04b5e74b63170c430e47a47ae90e00b63867cc360f9047e74f8"
+    },
+    {
+      "export": "spark_flame",
+      "time": 3.2916666666666665,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        155.11855506896973,
+        0.0,
+        2.0,
+        153.31855487823486
+      ],
+      "empty": false,
+      "rgbaSha256": "8900e9f204d306d416d3e1f0399caa24c1ecdbf9276970cdf3bc0fdf50e0608b"
+    },
+    {
+      "export": "spark_flame2",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        149.60000038146973,
+        0.0,
+        2.0,
+        150.30000114440918
+      ],
+      "empty": false,
+      "rgbaSha256": "05ad8b6cb2b77e9a872a701dd1fb63461d5fc3d90b78595dde2e0f8deff85657"
+    },
+    {
+      "export": "spark_flame2",
+      "time": 1.6666666666666667,
+      "controls": {},
+      "category": "source-effect",
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        141.97793006896973,
+        0.0,
+        2.0,
+        152.00996112823486
+      ],
+      "empty": false,
+      "rgbaSha256": "d4be9feaca21f04b5e74b63170c430e47a47ae90e00b63867cc360f9047e74f8"
+    },
+    {
+      "export": "spark_flame2",
+      "time": 3.2916666666666665,
+      "controls": {},
+      "category": "source-effect",
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        166.61855506896973,
+        0.0,
+        2.0,
+        155.5185546875
+      ],
+      "empty": false,
+      "rgbaSha256": "8900e9f204d306d416d3e1f0399caa24c1ecdbf9276970cdf3bc0fdf50e0608b"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 0,
+      "y": 2700,
+      "root": [
+        1.3487457733742234,
+        0.0,
+        150.0,
+        0.0,
+        1.3487457733742234,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "17fa1234ac412a011d16d04f7820402cc1d7ba096dd1a6a96ac54448936152f8"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.5,
+      "controls": {},
+      "category": "source-effect",
+      "x": 300,
+      "y": 2700,
+      "root": [
+        1.3487457733742234,
+        0.0,
+        150.0,
+        0.0,
+        1.3487457733742234,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "17fa1234ac412a011d16d04f7820402cc1d7ba096dd1a6a96ac54448936152f8"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 1.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 600,
+      "y": 2700,
+      "root": [
+        1.3487457733742234,
+        0.0,
+        150.0,
+        0.0,
+        1.3487457733742234,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "17fa1234ac412a011d16d04f7820402cc1d7ba096dd1a6a96ac54448936152f8"
+    },
+    {
+      "export": "yellow_fireball_trail",
+      "time": 0.0,
+      "controls": {},
+      "category": "source-effect",
+      "x": 900,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        149.97656097635627,
+        0.0,
+        2.0,
+        144.2138664610684
+      ],
+      "empty": false,
+      "rgbaSha256": "f8399eca1a3eff6d4191763ad6fa6228d45a8ef45567467e24d33adf2558c016"
+    },
+    {
+      "export": "debris1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81e8b01e78ce8dcb736ea2243eb9f725d4ce00dfc0dc61a0add3f99ba77f9f22"
+    },
+    {
+      "export": "debris2",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "bdf6e7d7f6a06e1f758ae912552b642c41e61822ecd40f72c899e8134c3f0425"
+    },
+    {
+      "export": "debris3",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "1c554ff7e96ab9b929d3ce06eea5a0cbbab744ace43248ecf2f43b58ca9c3f65"
+    },
+    {
+      "export": "debris4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "612fd42e50c8a9608262911686190a2782b443c3521515e758fff4e46d4613b2"
+    },
+    {
+      "export": "debris5",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 4,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "25deba23d54553fa8f5a6b20886bd02e47d771a8446afb53b331fe36d18ad5f4"
+    },
+    {
+      "export": "debris6",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 5,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "43b5ae31bb5d0d94773d22235193ba2b5c6162b74d494557c7cddf5f104f0a55"
+    },
+    {
+      "export": "debris7",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 6,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "c169fd72303a560050753ebf77e0f87ea91754f96079c01c03003637880a26e7"
+    },
+    {
+      "export": "debris8",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 7,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "81fbaaa321347e169b72223d9791c259f3d14b3e4a8176c41f382a122a91ad16"
+    },
+    {
+      "export": "debris9",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 8,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "ac18a443a07b13f63dcc09b63dcf44027a84c8d1506a635555edb4d52f3d7a24"
+    },
+    {
+      "export": "debris10",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 9,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "d00e5b257ed159228f90d08ba7507dcc35c0eea0cca93be014327cb11dd45cc8"
+    },
+    {
+      "export": "debris11",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 10,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "31728f9f7584207a129ee252233bbf7a12e588f9b1bede154e775d20df70de4a"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 11,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 12,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "export": "debris14",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 13,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7d7ceffeb50843c9384471696d3c81ef03a94f6d4df0e94e2cb92367fb8750d6"
+    },
+    {
+      "export": "debris15",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 14,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "794fe683fa8259c500ebbcb3a10aed7ab2e430ccd3be9218f3d785fc9f343deb"
+    },
+    {
+      "export": "debris16",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 15,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "beb26cb44808eef7c75844c786a650bef8475e12745048228590ff6273db57b9"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 16,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 17,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "export": "debris19",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Building Destroyed",
+      "variant": 18,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9ee6b46a15ea03020df40a8ed5aa4b4050367be47f24dfb5991685bc4e2a201a"
+    },
+    {
+      "export": "d5",
+      "time": 1.5,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Explosion_1_small",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        150.24941420555115,
+        0.0,
+        2.0,
+        145.09999990463257
+      ],
+      "empty": false,
+      "rgbaSha256": "2b2272bb25939c4c3fe13d75dfede966a6d606dc972fa33609aa2de4c8d9d29e"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.3333333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Explosion_flash",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 0,
+      "y": 3600,
+      "root": [
+        1.3487457733742234,
+        0.0,
+        150.0,
+        0.0,
+        1.3487457733742234,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e239b99b9f01422d615e8c70fed99b9181fbaf41eb8373a8e1c7557c3425ed2c"
+    },
+    {
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Fire_balls",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 300,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "68517a0ba5df7040c94afdb79753bcb468fe40e24afbe1288933fd77fe238c33"
+    },
+    {
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Fire_explosion",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "68517a0ba5df7040c94afdb79753bcb468fe40e24afbe1288933fd77fe238c33"
+    },
+    {
+      "export": "g1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Grass",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9fc6c1635a41002650318230715b30d091514dbd11a7d0ce7c3fde20c58064cc"
+    },
+    {
+      "export": "g2",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Grass",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "6c04c61fd452e12fb2d9b8fdbbb9f90c53c267d86f367bdb844ca03af5d7f0ed"
+    },
+    {
+      "export": "g3",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Grass",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "8ad82da4eb36358770f730564311dbab5195132abeb3b98b5453db9c7e0d6de4"
+    },
+    {
+      "export": "g4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Grass",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "4947a80553c35b4579b6f1f8897a37ea8b8147e09ba81b9998959f72111ce38e"
+    },
+    {
+      "export": "s1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "14f8d21f702bab0bea246949ac3ae3ca22da904aad4c5b123cc8c09f351cb10a"
+    },
+    {
+      "export": "s2",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "501eca2f457d7f05353ebb3ae5a5e34dbf5ea61c6ef5e54ffafdb51da9f86202"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.125,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        153.25,
+        0.0,
+        2.0,
+        152.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "3caa7d0a9c20a0ce05235f77d739939ce026ed3d6c4af4d8267c41b46cc06d3b"
+    },
+    {
+      "export": "s1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit_lvl6",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "14f8d21f702bab0bea246949ac3ae3ca22da904aad4c5b123cc8c09f351cb10a"
+    },
+    {
+      "export": "d5",
+      "time": 1.5,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit_lvl6",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.24941420555115,
+        0.0,
+        2.0,
+        145.09999990463257
+      ],
+      "empty": false,
+      "rgbaSha256": "2b2272bb25939c4c3fe13d75dfede966a6d606dc972fa33609aa2de4c8d9d29e"
+    },
+    {
+      "export": "d4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit_lvl6",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7daaa36472d57c0b36835ec445eb8f2dd232cd4e4c3ef86602b7dd274b28b009"
+    },
+    {
+      "export": "spark_flame",
+      "time": 1.1666666666666667,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "MortarHit_lvl8",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        144.48906326293945,
+        0.0,
+        2.0,
+        158.82499980926514
+      ],
+      "empty": false,
+      "rgbaSha256": "7a38c4ddf97261b4465d183e3c571c5e3b85a96c96c991881624407b9051fa16"
+    },
+    {
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Mortar_fireBalls",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "68517a0ba5df7040c94afdb79753bcb468fe40e24afbe1288933fd77fe238c33"
+    },
+    {
+      "export": "d5",
+      "time": 1.5,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Mortar_flash",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        150.24941420555115,
+        0.0,
+        2.0,
+        145.09999990463257
+      ],
+      "empty": false,
+      "rgbaSha256": "2b2272bb25939c4c3fe13d75dfede966a6d606dc972fa33609aa2de4c8d9d29e"
+    },
+    {
+      "export": "spell_range_marker_3",
+      "time": 0.3333333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Mortar_lightFlash",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 0,
+      "y": 4200,
+      "root": [
+        1.3487457733742234,
+        0.0,
+        150.0,
+        0.0,
+        1.3487457733742234,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "e239b99b9f01422d615e8c70fed99b9181fbaf41eb8373a8e1c7557c3425ed2c"
+    },
+    {
+      "export": "d5",
+      "time": 1.5,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Mortar_smoke",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.24941420555115,
+        0.0,
+        2.0,
+        145.09999990463257
+      ],
+      "empty": false,
+      "rgbaSha256": "2b2272bb25939c4c3fe13d75dfede966a6d606dc972fa33609aa2de4c8d9d29e"
+    },
+    {
+      "export": "d6",
+      "time": 1.4583333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Mortar_smoke2",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        148.48554706573486,
+        0.0,
+        2.0,
+        144.24912118911743
+      ],
+      "empty": false,
+      "rgbaSha256": "a3a7595652a65e9fb2319a51584763ecf6e910025997b786504594c08ab3466f"
+    },
+    {
+      "export": "d1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Place",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5d20c7499e8409575ea1ff2156f605025319637ce241d37b133307ac5c60ff9b"
+    },
+    {
+      "export": "d2",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Place",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "27434171641f2d000800b6edf0a28fd23f806d9b6cce3389f1df2ae674cafbfb"
+    },
+    {
+      "export": "d3",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Place",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "5544463b843719a9e022d3018d79d30eeeea5a73ffc8b35810c34ea44bf6873c"
+    },
+    {
+      "export": "d4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Place",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "7daaa36472d57c0b36835ec445eb8f2dd232cd4e4c3ef86602b7dd274b28b009"
+    },
+    {
+      "export": "r1",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Ring",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "afde5994c226bbdcf03ac34d104520e8b899c4c91c6c45172d37e705d19aa6f1"
+    },
+    {
+      "export": "smoke01",
+      "time": 0.125,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Smoke",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        153.25,
+        0.0,
+        2.0,
+        152.60000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "3caa7d0a9c20a0ce05235f77d739939ce026ed3d6c4af4d8267c41b46cc06d3b"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "export": "debris12",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone_explosion",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "adc65b9deb944ffaae3704f53e8e69a1a23ea408f921de90b0f9f9a63627df4a"
+    },
+    {
+      "export": "debris13",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone_explosion",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "9b92fe88c657bf3a2a7472784acdb23dad6a955267c5f86e1dbb4e99ba18dfbb"
+    },
+    {
+      "export": "debris17",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone_explosion",
+      "variant": 2,
+      "particleBlend": 0,
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "265553209c701958f82be27c9f5e1321683cc5b7f9a07bd4a65620b8941da307"
+    },
+    {
+      "export": "debris18",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "Stone_explosion",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "2bff14ab6154e7a3966f734bc37ea39af392e17b42db9809fcfba4064beebffb"
+    },
+    {
+      "export": "bomb_crater",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "bomb_crater_small",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 300,
+      "y": 4800,
+      "root": [
+        1.920458574985493,
+        0.0,
+        151.20028660936595,
+        0.0,
+        1.920458574985493,
+        69.96488600287965
+      ],
+      "empty": false,
+      "rgbaSha256": "dcbdea333235a45ef2f1871a889bf630a6b98b6b0eedd050c8e0134c4fa8d25e"
+    },
+    {
+      "export": "spark_flame2",
+      "time": 1.1666666666666667,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "mortar_lvl8_trail_emitter",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 600,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        138.98906326293945,
+        0.0,
+        2.0,
+        159.5250005722046
+      ],
+      "empty": false,
+      "rgbaSha256": "7a38c4ddf97261b4465d183e3c571c5e3b85a96c96c991881624407b9051fa16"
+    },
+    {
+      "export": "s3",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "mortar_trail",
+      "variant": 0,
+      "particleBlend": 0,
+      "x": 900,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "42f333870a76e17ed84ba6702656bb9f4acb5002992ee3ce4503adc26c4318e0"
+    },
+    {
+      "export": "s4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "mortar_trail",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 1200,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "988cdec2188d54031e97c0dfb36086874db30c7a625cff27e3e4125218072c80"
+    },
+    {
+      "export": "fireball3b",
+      "time": 1.0833333333333333,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "mortar_trail_lvl6",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 1500,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "68517a0ba5df7040c94afdb79753bcb468fe40e24afbe1288933fd77fe238c33"
+    },
+    {
+      "export": "firez5",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "mortar_trail_lvl6",
+      "variant": 1,
+      "particleBlend": 8,
+      "x": 1800,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        146.70000076293945,
+        0.0,
+        2.0,
+        134.25
+      ],
+      "empty": false,
+      "rgbaSha256": "2f55429406ff5820a64b006bc6ca4167d592d323a05429a37a9190f1e5a195bd"
+    },
+    {
+      "export": "yellow_fireball_trail",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "yellow_fireball_trail_emitter",
+      "variant": 0,
+      "particleBlend": 8,
+      "x": 2100,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        149.97656097635627,
+        0.0,
+        2.0,
+        144.2138664610684
+      ],
+      "empty": false,
+      "rgbaSha256": "5313d88796e16871ebf398f7e0872f395ceaa681dd358a51c958bcb0be170a3d"
+    },
+    {
+      "export": "s3",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "yellow_fireball_trail_emitter",
+      "variant": 1,
+      "particleBlend": 0,
+      "x": 0,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "42f333870a76e17ed84ba6702656bb9f4acb5002992ee3ce4503adc26c4318e0"
+    },
+    {
+      "export": "yellow_fireball_trail",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "yellow_fireball_trail_emitter",
+      "variant": 2,
+      "particleBlend": 8,
+      "x": 300,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        149.97656097635627,
+        0.0,
+        2.0,
+        144.2138664610684
+      ],
+      "empty": false,
+      "rgbaSha256": "5313d88796e16871ebf398f7e0872f395ceaa681dd358a51c958bcb0be170a3d"
+    },
+    {
+      "export": "s4",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "yellow_fireball_trail_emitter",
+      "variant": 3,
+      "particleBlend": 0,
+      "x": 600,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        150.0,
+        0.0,
+        2.0,
+        150.0
+      ],
+      "empty": false,
+      "rgbaSha256": "988cdec2188d54031e97c0dfb36086874db30c7a625cff27e3e4125218072c80"
+    },
+    {
+      "export": "yellow_fireball_trail",
+      "time": 0.0,
+      "controls": {},
+      "category": "emitter-variant",
+      "emitter": "yellow_fireball_trail_emitter",
+      "variant": 4,
+      "particleBlend": 8,
+      "x": 900,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        149.97656097635627,
+        0.0,
+        2.0,
+        144.2138664610684
+      ],
+      "empty": false,
+      "rgbaSha256": "5313d88796e16871ebf398f7e0872f395ceaa681dd358a51c958bcb0be170a3d"
+    }
+  ]
+}

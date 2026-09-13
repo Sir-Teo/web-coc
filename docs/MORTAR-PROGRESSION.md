@@ -1,5 +1,7 @@
 # Mortar progression and normal-mode combat
 
+The September 12 [original-client reference](../reference/mortar/README.md) confirms these ten rows and retains all eighteen source levels, thirteen projectile families and their original artwork. This foundation does not yet change live progression or the local shell trajectory described below.
+
 Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
 Source: [Mortar](https://clashofclans.fandom.com/wiki/Mortar).

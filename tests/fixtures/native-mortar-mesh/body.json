@@ -1,0 +1,3761 @@
+{
+  "category": "body",
+  "width": 2400,
+  "height": 6600,
+  "cell": 300,
+  "background": "#304135",
+  "nativePlaybackVerified": false,
+  "rgbaSha256": "e3e257d67349116565a6d1f296eeb323a4b7c20f17577426be73410f17ebc1eb",
+  "cases": [
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        26.927734375
+      ],
+      "empty": false,
+      "rgbaSha256": "f10efa65a965ed41039e91020df186b5064083e6a1789a164ed55a21ddf8e9e7"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        25.627735137939453
+      ],
+      "empty": false,
+      "rgbaSha256": "48f051d7801bec283372d5802ffef8d601bb6ffc570ece9b68d6d9fdf1887d89"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        26.927734375
+      ],
+      "empty": false,
+      "rgbaSha256": "e3f71d5d0c6e019b6309e041743fa69c2cbfcffcd3082a7229348b3a41a9385f"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        28.877735137939453
+      ],
+      "empty": false,
+      "rgbaSha256": "5aced5ab086816bc1929eae0e24593a2c304d218b4c5db06725a4253ea2e45ca"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        31.477733612060547
+      ],
+      "empty": false,
+      "rgbaSha256": "adb64462cd09604f527a98e012d5ffbc37f89fc35be544066d163d82c16b4dac"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        32.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "3c07b6d97b4f76c5eedd1036795dd7ea9bf3b7945bffd55e468ba9e940eba08f"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        31.477733612060547
+      ],
+      "empty": false,
+      "rgbaSha256": "fceb9afd5b54bc60f7e69040fd9e9f512f359bc5ed75c6b4ae4199abfafdc28f"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 0,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        28.877735137939453
+      ],
+      "empty": false,
+      "rgbaSha256": "db5fc71a8c2bc10622d0e443913f1841992f05387d94cc24ae0bfa1277b64b70"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        27.577733993530273
+      ],
+      "empty": false,
+      "rgbaSha256": "48fe3636f3da266fb4540fa644de6cc2f60cc3876adb73d8d6ca19d91c1d3a8c"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        26.277734756469727
+      ],
+      "empty": false,
+      "rgbaSha256": "cf2c38b986c3ebca8b809ed04f1790aa9d681f50dad1fb48f45ff39342829af5"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        27.577733993530273
+      ],
+      "empty": false,
+      "rgbaSha256": "1f71917c7b56899c727fbf3c860f39090cb656a644825564335bff93927b6427"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        29.527734756469727
+      ],
+      "empty": false,
+      "rgbaSha256": "b65ba81b7fcf5739c7ef0a62c87ae0f52571bb7f073c2da6cc5bc827c94b1983"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        32.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "49a7abcb67036ed44fa155a2b217de041a9602bca6f1ff9f9d351ee63073bf3a"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        33.47773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "c243e4e53709de70fb013bf8b1b6d3361c12cda7aca1aad4e4fdcf36b7fee356"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        32.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "14cd81cbad147e56bacf85caea8a33006322b700e636a5faf9e6122461d1747b"
+    },
+    {
+      "export": "mortar_lvl2",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        29.527734756469727
+      ],
+      "empty": false,
+      "rgbaSha256": "200e3ac4df9f190e939043bd9ec1a790e678e61e14447cc2921fa0fb09637dc7"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        32.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "b5ab57880af3061dae846cbf0b0db4700dcbf732d97f13c72bb5052a94227873"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        31.477733612060547
+      ],
+      "empty": false,
+      "rgbaSha256": "ca254f3e3f954f53c0e971a2ea493c3b3e089f7d264f82a11c7d7c7f8f55f3eb"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        32.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "8c4a6fb161e295287f055ef1f3266c75b3d472b9029d61e2cf180db878fc1b04"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        35.427734375
+      ],
+      "empty": false,
+      "rgbaSha256": "ea989e1ac77a46012f9bdea0ef399a66e890e41c367a8d87b41c92bfd6ce0027"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "69da17552cb3aeb6c84372dec9cba50032652c3dff555aa0622c82dcc54e0195"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.327735900878906
+      ],
+      "empty": false,
+      "rgbaSha256": "31443f2b44e9de346b9fd3b94790626a302357b1a82a832ee4a2e679fc680f22"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "c8507239ac85eda6e87638424996e9c2874c060d108bb7b6caaa0cc27c122831"
+    },
+    {
+      "export": "mortar_lvl3",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 600,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        35.427734375
+      ],
+      "empty": false,
+      "rgbaSha256": "80f3284e59f8e9e0c36c74769c00eea889f6e24122a367304ea06bf6b2d30797"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "46b7a9008f382463e660cff2562ed5942befcf7bc2ae3d642645c21140ce65cd"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        33.47773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "cd1085500fdebecb71e6a6cf026baa1351cd90861730e9d2cde90152e3d23940"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "4423dee423f4811021f7fe045697ce9692b870101011c2e1e1792926a77b0de9"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "150c33b5995161d63b5e9cd913a8a95ef911d85c5a773031ec9bf723292ad001"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "84018848055dd677f1e9c03198d886c8899a4b29b2f4243c09d8fcc708706b1c"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        41.927734375
+      ],
+      "empty": false,
+      "rgbaSha256": "45791b3cd401e79c3bb582556989123bd9d9519cf2310202a134ea7a8c994337"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "de323886bbb59d1a690de66543dfe51c19963c3149652198e11e4781ce983d27"
+    },
+    {
+      "export": "mortar_lvl4",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 900,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "afa46600d00ee599d8335a38364cdd9b832e6fbbc17e67b7739b7ee5e66f1e1e"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "9c6cf6676fe0b2721114fae1daf90768675a46810dbd43c6ed901f5a9033f62c"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        33.47773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "f8a1ed70591f617c08a8c9bab54f8bfe23eef681d1897a2e5cc977e88cbbd4f6"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "86323558d271d2660bfa149a2f5c7f5c2125221794eb07f8d561ea74e9c58610"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "e05d89ff2273488895eedb7b783b03053e01a2b9672e2fc391cf127c690e8109"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "1fcc99723561c08c7fd1ff60c9e0d176995c399b79f0f55f759dd7e7217f3060"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        41.927734375
+      ],
+      "empty": false,
+      "rgbaSha256": "706513cd1220de509f5e37ed0e5572069458af4918e33393166c91e4d0783b74"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "343a3dd457ac1e842ce9322fb849b4996e43b402b9a8b6de17eedf74f6641a76"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 1200,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "15fba7ff560283bfb7a784e4db9c93cccddd983d5fbcfdb25f65325f90a8ded0"
+    },
+    {
+      "export": "mortar_lvl5",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 0,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        144.79999923706055,
+        0.0,
+        2.0,
+        38.79999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "76d99cc66c18d7856507bc3852601573f5f2db7c249c3867c51f95eabbf508fb"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "1f3195b6215ff9c2d8b05ab4a250ae44c456adec534aef77184420d9fc2d3fab"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        33.47773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "319a29e84ab66189e260b0162994a7730c8cf44ba5651ced248eac3fa327a5e8"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "4faee3efdd31a10eda7cbe1511accf1df2261e853379dcc91258b47642bd16a9"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "cfb246ced6532ef6b7ccd15fb16ecb714a63a819f32c577f9bc049ce30032f42"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "2545310dc453cd27a5963fd261a20bf215681934133bc2ad84f35cbd6a797f28"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        41.927734375
+      ],
+      "empty": false,
+      "rgbaSha256": "1ce91e43f50be62ca1a86c157707a81d9db42dfafe50a6f92c0490e8702cdad5"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 1500,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "c8f3e4acbbf75d6484474d0bf1a4e872b72d6b4e2100a17ac69673eacf6792ca"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "35de38d464b01e5b8da7ecad16c0e96864bbf28709b005939487b8ee895a9adb"
+    },
+    {
+      "export": "mortar_lvl6",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 300,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        144.79999923706055,
+        0.0,
+        2.0,
+        38.79999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "68c1ee3f70db0849568511fd5258516572d438b5684ba97251f87a7aa0625f48"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "9089734d9bccb9d75c4fb2b3e8fa5643a86aa867916ac8adb43ed47c4fa607c5"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        32.777732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "d504cbc569efe418789083eb344f11abaa176f972ee7bdc1daecf3f44f10591a"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        34.12773513793945
+      ],
+      "empty": false,
+      "rgbaSha256": "b8a9cd5010a622d8fdb047db562729aef4ec33a361c129ca960d69ac6d853220"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "8eac88b0891ec022864f19dfeb4aee5a8655031bd3df1f8c0b7939ff3361aa5d"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "538084afae70fd2975ce95e4f97ceb1e1ef8a9e84ba1f3ae0da0504383b8d9a7"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 1800,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        41.277732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "6f3b63333fa3e9ef99309a1c5976aeb238b5723c7ef49aff109f3b7e8542addc"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        39.97773361206055
+      ],
+      "empty": false,
+      "rgbaSha256": "eb43360d9847494849f115114aa0a3afa10f7514b5d51d497aae3048d46f0312"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        154.4183565378189,
+        0.0,
+        2.0,
+        38.027732849121094
+      ],
+      "empty": false,
+      "rgbaSha256": "1f83744645b01b49cf7977463ba1cc9f96cfe31651684e77520d9507dae4043b"
+    },
+    {
+      "export": "mortar_lvl7",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 600,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        144.79999923706055,
+        0.0,
+        2.0,
+        38.79999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "3d4c2ee33b25613f47be80f0baf2d2a28927d3945f3122870fbdef21cbfb6d52"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        32.29999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "91272dd7ff2e4e98d7def9c3ae065f17b5f7f12abebe5842b7d5be8b388a93e5"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        31.0
+      ],
+      "empty": false,
+      "rgbaSha256": "63584e416c4799abbd90ad55cdde19b0c846eaec29aa96f4ac88fcb1571e8234"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        32.29999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "d8419748db348ffcaa99456339f16cd643cd3a82c53cd2d7af48b279473cd117"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        35.54999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "fce1f96237101e972d92872134c79c869b3bdd2c382ea10772361b85f13f73d7"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 2100,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        38.79999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "37e4415a13498b1fe59d4ad90106333f31919673e5cae37a84eec9d4a95519c8"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        39.44999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "93a959709bbafa008d4b06d29c5c3bf83aff56623e275a6fec0f56ef347de089"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        38.79999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "9a523ec1c26ce58c9a962f9827e1ba2d828f3203b9fa6fcc01619ef9c940671d"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        35.54999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "de621005b45ecab1b53f140600b5f6950463dd3ebd9c943df50156084a2c944b"
+    },
+    {
+      "export": "mortar_lvl8",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 900,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.6999969482422,
+        0.0,
+        2.0,
+        35.54999923706055
+      ],
+      "empty": false,
+      "rgbaSha256": "b6033bb5b9bfafd148034b6bb5ba9d6aed5f55195d0c9a9081bbd94ded1cb8e7"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        48.594385642558336
+      ],
+      "empty": false,
+      "rgbaSha256": "7ea82443018fbcb31bb9c3f1e1ba42cd52e018dfa8f0f23d71d167b0ad7f3586"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        47.10014823824167
+      ],
+      "empty": false,
+      "rgbaSha256": "b82469ced28cfb7740da928550edb717625f1383ed9e90a1445b030015e54ffd"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        48.594385642558336
+      ],
+      "empty": false,
+      "rgbaSha256": "e019855cf3a64f97c41745f2c0790325d579a2d021dd0e1c9efae564053e9a18"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 2400,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        52.329981345683336
+      ],
+      "empty": false,
+      "rgbaSha256": "feafe5c04bcae6c38227c0e5159a75d12270037f6c8c8c10ef58e5e5c2e731cb"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        56.065577048808336
+      ],
+      "empty": false,
+      "rgbaSha256": "0c337be08934ae037e392d6dfe48b143f9b4346fb6d232101944cf1ec8a44fd0"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        56.81269355863333
+      ],
+      "empty": false,
+      "rgbaSha256": "94f99e97144cacdf4375a278234545e238097bb33feb2779925cc6040732702b"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        56.065577048808336
+      ],
+      "empty": false,
+      "rgbaSha256": "8223f49da6a863a8919d32d7f97ad852406f19a771b10d7d39f7801351aaa0ab"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        148.81835806369781,
+        0.0,
+        2.0,
+        52.329981345683336
+      ],
+      "empty": false,
+      "rgbaSha256": "72e5ddfcad8ac994dd025d8827a3a93b3b1a9091538175ef45225af41e896a66"
+    },
+    {
+      "export": "mortar_lvl9",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 1200,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        144.85000228881836,
+        0.0,
+        2.0,
+        52.329981345683336
+      ],
+      "empty": false,
+      "rgbaSha256": "701af490633c2d84539d598620d8069f0a16aaf8340a367fa23cbf2df1745871"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        49.999996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "7b1250dc0475d05ca032ab45c923488a4fb4bdcaada13649e94827302a378757"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        49.34999465942383
+      ],
+      "empty": false,
+      "rgbaSha256": "03b2e95f7aa49962a8377ff631ce0d38ae37c1037397e18f7b305ffc5668668a"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 2700,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        49.999996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "c8ce61578c83646863016a536e503580005571806782f35183580c25bc8841c1"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        51.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "bf58d07c5918e50bb96018b7a5e2b3956113195c0ab4d0584ae3a0d2cae0af10"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        53.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "d7c53e8bfc39d123af5d2c9a6a31a1599974deb234146cb10284b82e9e3750d2"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        54.54999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "959c130a0d589f31a936a17a9518b374abc787601d6f0c5d6af6f7a4f0f9e296"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        53.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "fc14edd66adeeb5df8ea70ebd89777f777f4cedb9cbf6619697165d845345d57"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.86835730075836,
+        0.0,
+        2.0,
+        51.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "7fa9a2d45dc43a62e5a9e52a4d4a60e733da3f063b72dce2174fd9c82173426b"
+    },
+    {
+      "export": "mortar_lvl10",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 1500,
+      "y": 3000,
+      "root": [
+        2.0,
+        0.0,
+        145.1500015258789,
+        0.0,
+        2.0,
+        51.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "12384d67fddc4e62d26453e26d91b74a79cc9f0f7168ae169e3fc1908629ea9b"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 3000,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        44.6612518542218
+      ],
+      "empty": false,
+      "rgbaSha256": "2e98e7b311e90fa5cc0686f52f819c43e284917ed5615d7e85b143ed32e3c1e7"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 3000,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        44.01773356430641
+      ],
+      "empty": false,
+      "rgbaSha256": "ed6d7570be89e98d3b185161c1a7e0a68145bf1a33c3565f6f928915486dc43d"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        44.6612518542218
+      ],
+      "empty": false,
+      "rgbaSha256": "cd128a9ed6b1d325ecc52ed48ac1bc24f49a67141fba79e03a45b14a22bb908b"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        48.52235026376792
+      ],
+      "empty": false,
+      "rgbaSha256": "88298b602add53fbfa7326e4549b87039b73ea6ec5d0cb3152128029f18f919a"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        51.096419646780745
+      ],
+      "empty": false,
+      "rgbaSha256": "6e054be258e2fc378aaa3a3d3525cd3e14e29a5e72a56e48fd823fadab4cd697"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        52.38345244996279
+      ],
+      "empty": false,
+      "rgbaSha256": "ff1c93d770dcd4e43bc90da3aba2e97d481b6589e203fceaaeffb4d828737c32"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        51.096419646780745
+      ],
+      "empty": false,
+      "rgbaSha256": "e89b4d13c898261b34c99cadad54dc06465d84d70b2ab3b1b613bd4c05023071"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        48.52235026376792
+      ],
+      "empty": false,
+      "rgbaSha256": "510e6457d158f7d8312153d16b16573a509545af1566d946d37593193a60aff6"
+    },
+    {
+      "export": "mortar_lvl11",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 1800,
+      "y": 3300,
+      "root": [
+        1.9800516284796745,
+        0.0,
+        145.7923902894807,
+        0.0,
+        1.9800516284796745,
+        48.52235026376792
+      ],
+      "empty": false,
+      "rgbaSha256": "caa27b2052e1b09689870e881876d0d8256065c6d8b398aa635b4c5e3b9b1832"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 3300,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        44.59999465942383
+      ],
+      "empty": false,
+      "rgbaSha256": "11b65467220bd94995735ead0cc497062c916f114d6ebc3b178995cc7071f3a1"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        43.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "a67858cb311f7dc71d24f4dc4b959425102307510a5c7bcd3937b0d33687b3ea"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        44.59999465942383
+      ],
+      "empty": false,
+      "rgbaSha256": "7f564c512d17a33b7121627961bbe7b404e35c61d4f8eb707c7f71c6c745de5a"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        47.19999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "a36bb03b8f81a9d71b38d41889bc28960ccb875babcfab7fac16aabcbfa7992c"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        50.44999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "5d11ab3964bf32e83ed50702c37a90758e533890de2e0d63ef471a3291e52c62"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        51.749996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "f5eb054b42b37788ee5659c1daf517e47d3daf284cf0caf232ba72fc1eb3e7e8"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        50.44999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "d548f9bb8d4002aae8d1af8cfa7cf9db772b4e121905c75eadbc31d2007d2934"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        47.19999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "c20f3ae9d9a3fb6ea391ebe595387d9de9e5e56783cd36634eac834ec49b2d62"
+    },
+    {
+      "export": "mortar_lvl12",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 2100,
+      "y": 3600,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        47.19999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "a5c6ee0e5f346651d96a8b951df899b42d7ba271219f4a3b3ed4bac91f0ec718"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        45.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "43891c0d6f76e552bc302014ac27892f9908796f7dcd9061374c6271e3e19531"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        43.94999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "e2a988ca411d8487565aedad572eb3d89120022d65fe0d41ca0e4406caa1a71d"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        45.249996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "4a71f6e2eebecf2297d57815e89c0b697d79209d43685c574374bd322e156f87"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        48.499996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "3f9ab5b44f9a59a3e4d8d76c6852014fbea1ad40678d8c1aa82b68d4dd7f5c30"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        51.749996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "c6af8a91f8eb8a41b91e6d5c10bfb367140668315845975da1d2899eaaff8d2a"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        52.39999771118164
+      ],
+      "empty": false,
+      "rgbaSha256": "ab055e7d76d0f4bdf86687ab3426e511d6912749672b32f88ff3b67ad8097602"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        51.749996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "ac247309735ce69e218f4624221b65b33746a217c56702afe9b1ec8ea140b381"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 3900,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        48.499996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "aead60f095a133b7dc9d4ce6af81b712f8f4ea50416106330c0d30beed75debe"
+    },
+    {
+      "export": "mortar_lvl13",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 0,
+      "y": 4200,
+      "root": [
+        2.0,
+        0.0,
+        146.10000228881836,
+        0.0,
+        2.0,
+        48.499996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "4023902e96f14236593068d1675e5bb49870d0cf0112e9cfca0fab314fc18ad9"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        50.707497969388584
+      ],
+      "empty": false,
+      "rgbaSha256": "58f42179f6ea67ced496887724b71f3e985f4ecd0b1b99f5809994c55d6c35ab"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        49.04051167124577
+      ],
+      "empty": false,
+      "rgbaSha256": "1d8e8b7ac8a75bf426dda140766a086828d08f4dfa3fedbcad118e48e06b688b"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        50.707497969388584
+      ],
+      "empty": false,
+      "rgbaSha256": "d8547e3a5be16bdc1130d546715dd78ab42014669d6b3f6543d94c623853c60a"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        53.485807379276935
+      ],
+      "empty": false,
+      "rgbaSha256": "8893b944e72924d3942b15da9dfdeea83b8ce3c96469e84434f306dadd980cc3"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        55.70845360276802
+      ],
+      "empty": false,
+      "rgbaSha256": "475449d972478bc6e69e3aee41a64748c79ba152715f5f16fef84343ce7adaa8"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        56.81977671451355
+      ],
+      "empty": false,
+      "rgbaSha256": "f952eb1a5b1fe761d3658001cfb3e98ecaddc4f68f01b1091adbcc7d9a7ea134"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 4200,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        55.70845360276802
+      ],
+      "empty": false,
+      "rgbaSha256": "82f6bed1f5ef0e6f8aa9f02869749a4b34c343a1d31bc24cc3196b42efe0962b"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 4500,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        53.485807379276935
+      ],
+      "empty": false,
+      "rgbaSha256": "207545d1c2965a40e3941c346d8b513d6c5cd451025be7d10f445c52fdf348eb"
+    },
+    {
+      "export": "mortar_lvl14",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 300,
+      "y": 4500,
+      "root": [
+        1.7097288676236044,
+        0.0,
+        145.7684236614708,
+        0.0,
+        1.7097288676236044,
+        53.485807379276935
+      ],
+      "empty": false,
+      "rgbaSha256": "29c28844f8cc9ac474c92b04347262f3dbdf91f4f49e201a1f13bdce1f9d6116"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.79999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "158e411d8f1e2baf2f764251d0383f22b69190adf87234da436cab75ef3dfa15"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        52.499996185302734
+      ],
+      "empty": false,
+      "rgbaSha256": "3db2f918a2e27eb379b92f6df104419f25e54be50459e61939aa01844dabfad4"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.79999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "f61f2a6e5164c4b0da0a65aa13a57bbb8af05d4d2fd38d3a90115dfcef2d2d58"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        57.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "d9de3a6d276a009636a835a89994ae9cc07f9bc6efe245ed8759336acc96eaf6"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        60.29999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "f5b90a5202480fddf809efac98f6d2f102ff363cbc23732534ec0a67ccce906b"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 4500,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        61.59999465942383
+      ],
+      "empty": false,
+      "rgbaSha256": "5427025b0c8b0be3bde7d97cfeb0b48528794febbd012fcacb494bda1532c3a7"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        60.29999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "f0e8a44792d58cb318f43452d4efb777ccc7646e2cb27e35ebd18f8645e68644"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        57.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "f7ed0d380e71e63c3bc5d01d7fc9306974c7143d11e9afcd2991c69c890c965d"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 600,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        57.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "8a6fcd266935271b6a509f86800ecd6e4273248ad62808de66ac2b0b934eebb1"
+    },
+    {
+      "export": "mortar_lvl15",
+      "time": 0,
+      "controls": {
+        "turret": 360,
+        "gearup": false
+      },
+      "category": "last-source-frame",
+      "x": 900,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        57.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "c44e15540700e40b336936fb50711df168cef301374c4a1386bd8607f7befe02"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.54999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "82a62859e51608b967915e6bf6a118860ee9259e4c5ec922557ffb5a33902405"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        48.24999541044235
+      ],
+      "empty": false,
+      "rgbaSha256": "c7150ceb99c615692d0679661b2173165042009012374a41f48567bf8fc28584"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.54999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "c8c3072c485f1321008ad511dbfaa92ad2317a95dc73733ae814aef230a37e11"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 4800,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.44999551773071
+      ],
+      "empty": false,
+      "rgbaSha256": "eef88fccf5415a9463d3f7bab5892da39fd85db287790e837417a324e8c40bd2"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        56.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "c7b77a9c49fcc6712cc1d153fe1af3e9ed513647bd173c129896358c966604f4"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        57.349995613098145
+      ],
+      "empty": false,
+      "rgbaSha256": "ba8c62c1dee666c97b566828912a7f68cd7b1a6aa5a0138b0886013c715352e9"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        56.04999542236328
+      ],
+      "empty": false,
+      "rgbaSha256": "d4043ba1741a9919cb707d6522572983ec2efd5a162ac8a14c0732783e9a4101"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.44999551773071
+      ],
+      "empty": false,
+      "rgbaSha256": "0fe8e55f94cb27fd7e5e2d6d66c5ba03734bb27d28cdebe31b91176109052bc1"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 1200,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.44999551773071
+      ],
+      "empty": false,
+      "rgbaSha256": "ddba6dfaa1b74ed10766483904077038795baf8864034197be094eb70842320b"
+    },
+    {
+      "export": "mortar_lvl16",
+      "time": 0,
+      "controls": {
+        "turret": 360,
+        "gearup": false
+      },
+      "category": "last-source-frame",
+      "x": 1500,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.44999551773071
+      ],
+      "empty": false,
+      "rgbaSha256": "6190a550ee75c1cd92acd4decf6042363b555dbe94dcebf6f08b387f7f82235d"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        45.89999693632126
+      ],
+      "empty": false,
+      "rgbaSha256": "a20810ad50c8aab3599c8defffd77b0ed8acf7076441ec6a53e37bda688d6875"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 5100,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        43.299996852874756
+      ],
+      "empty": false,
+      "rgbaSha256": "9fcd1eaa9b8fbc2d760f13a9ea45c87f4cdf5e8588d10fc944651288c6328b05"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        45.89999693632126
+      ],
+      "empty": false,
+      "rgbaSha256": "74890db7be3687a0383f7109186c62251a1d918d8223265c3ce1ab7e38e22e11"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.1499969959259
+      ],
+      "empty": false,
+      "rgbaSha256": "a4ac349aab7056a1535b4ef1fe5275667b2af455a440d3ccce8ca081b44f5184"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        52.399996757507324
+      ],
+      "empty": false,
+      "rgbaSha256": "ba80995069afb5d6955ddc2290f2a81635449881e7c03c1c42c3c539519e087b"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        53.69999694824219
+      ],
+      "empty": false,
+      "rgbaSha256": "9dd3e8c89d7529215c70b2941a16e8d28fe4704e38d27bcedffdb4cd3c334fb8"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        52.399996757507324
+      ],
+      "empty": false,
+      "rgbaSha256": "8be228bc9b4d1b03f75e671df751726a282928170cc3e85f82ba2e853d2c57e8"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.1499969959259
+      ],
+      "empty": false,
+      "rgbaSha256": "552b2b2a823dd839901c322f6b15cddb541e1f7be2fbc0a97d073d1969a58392"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 1800,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.1499969959259
+      ],
+      "empty": false,
+      "rgbaSha256": "ac3d96d39858497056de2f1f5b579c4dfa81e76b6af29a2e3bfd8137e32f750d"
+    },
+    {
+      "export": "mortar_lvl17",
+      "time": 0,
+      "controls": {
+        "turret": 360,
+        "gearup": false
+      },
+      "category": "last-source-frame",
+      "x": 2100,
+      "y": 5400,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.1499969959259
+      ],
+      "empty": false,
+      "rgbaSha256": "f3d080280f3a87b415e26ce766b3f1eb5bb67438f7b6f3067e9e22afc3938508"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 0,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 0,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        41.65000304579735
+      ],
+      "empty": false,
+      "rgbaSha256": "6136f6b456e877919622a4e77fa99e68f28d450c560ad6338159f4ff171bc7ad"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 45,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 300,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        41.35000305250287
+      ],
+      "empty": false,
+      "rgbaSha256": "787263290eaad3a678c94d241c9a8f39c842de71848e2a8d1182b46f5c5516f1"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 90,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 600,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        41.35000305250287
+      ],
+      "empty": false,
+      "rgbaSha256": "2fd1b1e0dac68e9e44dd3cec6f26151c56926f89bb9e1b7feee9f74f5c37f35f"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 135,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 900,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        44.55000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "7a28cf23a7c996f50f9e3f5e406aaebec8315519f03f7c15a4fcefc2962ad1ee"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 180,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1200,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        47.80000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "cff6117d102da2f46be9d6b38c24986ad196736644729b0bbe8bc7511d1d95c5"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 225,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1500,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        49.100003242492676
+      ],
+      "empty": false,
+      "rgbaSha256": "579051998506349ad400aed0108505f5d0da03c11751eec2ea5dc7d9d2d6748e"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 270,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 1800,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        47.80000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "5bf76d87e676dbb5ecc2397b7b1bc798b6a7aea0d13c5ac13903f1e6f86a4423"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 315,
+        "gearup": false
+      },
+      "category": "direction",
+      "base": "mortar_base",
+      "x": 2100,
+      "y": 5700,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        44.55000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "05ecfbc9be65e60bb1ba0624f41150bc6fc11a18cb45104f31b3ad99248b25aa"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 137,
+        "gearup": 0
+      },
+      "category": "gearup-control",
+      "x": 0,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        44.55000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "535a35a76b319baddfeeea46997d469b7d93524f92849eeb3a507595174edc22"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": 360,
+        "gearup": false
+      },
+      "category": "last-source-frame",
+      "x": 300,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        44.55000305175781
+      ],
+      "empty": false,
+      "rgbaSha256": "dd0fd1499f3384fae8d6408ecb3f13dbeb53829f7c3fc03bef937d7ce899b311"
+    },
+    {
+      "export": "mortar_lvl1",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-controls",
+      "x": 600,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        147.39999771118164,
+        0.0,
+        2.0,
+        23.35000228881836
+      ],
+      "empty": false,
+      "rgbaSha256": "d6df3d5cfa11cf9c9e4fe0389d541baeaeb783f3f76c4e1d07d520599f750731"
+    },
+    {
+      "export": "mortar_lvl18",
+      "time": 0,
+      "controls": {
+        "turret": false,
+        "gearup": false
+      },
+      "category": "disabled-controls",
+      "x": 900,
+      "y": 6000,
+      "root": [
+        2.0,
+        0.0,
+        155.22500610351562,
+        0.0,
+        2.0,
+        41.35000305250287
+      ],
+      "empty": false,
+      "rgbaSha256": "caa4265f0e6592aa344e9b081edbdac0b52874aa2e05b2eb75e6e865aad44d95"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1200,
+      "y": 6000,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.03333333333333333,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1500,
+      "y": 6000,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.06666666666666667,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1800,
+      "y": 6000,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.1,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 2100,
+      "y": 6000,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.13333333333333333,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 0,
+      "y": 6300,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "destroyedBuilding_3s_pit_rock",
+      "time": 0.16666666666666666,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 300,
+      "y": 6300,
+      "root": [
+        1.970531668797234,
+        0.0,
+        146.3599048671438,
+        0.0,
+        1.970531668797234,
+        -8.59855827909675
+      ],
+      "empty": false,
+      "rgbaSha256": "8e5f196ea4111520b61865c99f8a3374a6935208e4cd61b3fb57ffdbadc89a34"
+    },
+    {
+      "export": "mortar_base",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 600,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        162.88398295640945,
+        0.0,
+        2.0,
+        18.884765625
+      ],
+      "empty": false,
+      "rgbaSha256": "30dc53daa06127d07dd929802566bfa670c0aec59202c0c871087cc119863ffe"
+    },
+    {
+      "export": "mortar_const",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 900,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        145.70000076293945,
+        0.0,
+        2.0,
+        59.85000038146973
+      ],
+      "empty": false,
+      "rgbaSha256": "dd306a6c52b126fabcfc3a36eff1a1a86e00e3ac29a1460a7f709c9a13783847"
+    },
+    {
+      "export": "mortar_upg",
+      "time": 0.0,
+      "controls": {},
+      "category": "construction-base-rubble",
+      "x": 1200,
+      "y": 6300,
+      "root": [
+        2.0,
+        0.0,
+        149.75,
+        0.0,
+        2.0,
+        -6.899999260902405
+      ],
+      "empty": false,
+      "rgbaSha256": "9bc2e7514c4e11c6e4c797ebdf007bb109fb58281cc2b1e476ffee402059ba7c"
+    }
+  ]
+}
