@@ -28,6 +28,7 @@ def build():
         if name == 'Shrink_trap_trigger': frames = list(range(14))
         elif name == 'gen_appear_fx': frames = [0, 1, 7, 14, 17]
         elif name == 'shrink_glow': frames = [0, 1, 120, 239, 479, 480, 600]
+        elif name == 'shrink_range': frames = [0, 1, 24, 120, 239, 479, 600, 684]
         else: frames = [int(len(clip['timeline']) * .35)]
         for frame in frames:
             cases.append(dict(graph='world', export=name, time=frame / clip['fps']))
@@ -37,6 +38,7 @@ def build():
             name = row['ParticleExportName']
             clip = graph['clips'][str(graph['exports'][name])]
             frame = min(120, int(len(clip['timeline']) * .35))
+            if name == 'shrink_range': frame = 120
             cases.append(dict(graph='world', export=name, emitter=emitter, variant=i,
                               particleBlend=8, time=frame / clip['fps']))
     cell, columns = 400, 6

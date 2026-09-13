@@ -38,6 +38,8 @@ export function nativeParticleSampler(
     reducedEmitters?: readonly string[];
     staticEmitters?: Readonly<Record<string, number>>;
     altitudeScale?: number;
+    /** Effective duration for an animated descendant inside a static outer clip. */
+    timelineDurations?: Readonly<Record<string, number>>;
   } = {},
 ) {
   const { reducedEmitters = [], staticEmitters = {}, altitudeScale = 0.8 } = options;
@@ -130,7 +132,13 @@ export function nativeParticleSampler(
     const root: NativeMatrix = [c, -sn, 0, sn, c, (staticEmitters[emitter] ?? 0) * scale];
     const clip = graph.clips[graph.exports[name]];
     const seconds =
-      row.ScaleTimeline === 'TRUE' ? (phase * clip.timeline.length) / clip.fps : reduced ? 0 : age;
+      row.ScaleTimeline === 'TRUE'
+        ? options.timelineDurations?.[name] !== undefined
+          ? phase * options.timelineDurations[name]
+          : (phase * clip.timeline.length) / clip.fps
+        : reduced
+          ? 0
+          : age;
     let alpha = n(row, 'Alpha') / 100;
     for (const field of ['ParticleFadeOutTime', 'FadeOutTime']) {
       const fade = n(row, field) / 1000;

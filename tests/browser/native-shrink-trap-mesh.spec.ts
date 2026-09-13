@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import witness from '../fixtures/native-shrink-trap-mesh/manifest.json' with { type: 'json' };
 
-test.use({ viewport: { width: 1250, height: 1900 } });
+test.use({ viewport: { width: 1250, height: 2100 } });
 
 test('native Shrink Trap clips and original particles match source pixels and survive context restoration', async ({
   page,

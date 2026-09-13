@@ -1,10 +1,10 @@
 {
   "width": 2400,
-  "height": 3600,
+  "height": 4000,
   "cell": 400,
   "background": "#304135",
   "nativePlaybackVerified": false,
-  "rgbaSha256": "325693940a0947662773e809b7b47026024ce740da77a1da367bf7c85b6dad4a",
+  "rgbaSha256": "9d172a96b23ebbb6207e0cd8cbbe70200c548111fc8f29ccddb4b063719ae950",
   "cases": [
     {
       "graph": "world",
@@ -790,13 +790,132 @@
     },
     {
       "graph": "world",
+      "export": "shrink_range",
+      "time": 0.041666666666666664,
+      "x": 1600,
+      "y": 2800,
+      "root": [
+        2.0,
+        0.0,
+        200.28461947664618,
+        0.0,
+        2.0,
+        199.52012869901955
+      ],
+      "empty": false,
+      "rgbaSha256": "83b541d8989a658d5de2a97150c3cd35d7506919f3104bcb889571059809c5e9"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 1.0,
+      "x": 2000,
+      "y": 2800,
+      "root": [
+        1.1687570872309783,
+        0.0,
+        196.39993878315045,
+        0.0,
+        1.1687570872309783,
+        199.74686248214988
+      ],
+      "empty": false,
+      "rgbaSha256": "c0f6539401617e4424b55a357985f7ca7a300a08676974fefcd0d2e0c92f0264"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 5.0,
+      "x": 0,
+      "y": 3200,
+      "root": [
+        1.2112996699426624,
+        0.0,
+        199.03761968267415,
+        0.0,
+        1.2112996699426624,
+        203.1185449252146
+      ],
+      "empty": false,
+      "rgbaSha256": "fbef89a1e8cfd838e8920669d64e706e2100b7c3c6fb5faedfa3f713cb1e5d09"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 9.958333333333334,
+      "x": 400,
+      "y": 3200,
+      "root": [
+        1.1888525069887133,
+        0.0,
+        199.96145133638046,
+        0.0,
+        1.1888525069887133,
+        197.29450559332136
+      ],
+      "empty": false,
+      "rgbaSha256": "f2c50540bebab1f1817cef4c4db0692f9acd7a58b108ba32d8295353fc9ae135"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 19.958333333333332,
+      "x": 800,
+      "y": 3200,
+      "root": [
+        1.1734116840915403,
+        0.0,
+        200.33878962519375,
+        0.0,
+        1.1734116840915403,
+        201.21872145994143
+      ],
+      "empty": false,
+      "rgbaSha256": "40a96d1e1d8bfb90cbb0b962fe6e782eed8f3ac5fbb973651261e37d3033b1fb"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 25.0,
+      "x": 1200,
+      "y": 3200,
+      "root": [
+        1.1607229400809576,
+        0.0,
+        200.76181155430675,
+        0.0,
+        1.1607229400809576,
+        199.6799258203777
+      ],
+      "empty": false,
+      "rgbaSha256": "c20d1eeb37a9173f08c5a88551269d3624ba90dd29688a898c832649c41d1aac"
+    },
+    {
+      "graph": "world",
+      "export": "shrink_range",
+      "time": 28.5,
+      "x": 1600,
+      "y": 3200,
+      "root": [
+        1.188117831584596,
+        0.0,
+        198.97084316780516,
+        0.0,
+        1.188117831584596,
+        202.80895762346887
+      ],
+      "empty": false,
+      "rgbaSha256": "e27e3df7e7d0e9d7ceb1f130120d371cc960944474367619544abca50f58a074"
+    },
+    {
+      "graph": "world",
       "export": "confetti1",
       "emitter": "Birthday_confetti_explosion",
       "variant": 0,
       "particleBlend": 8,
       "time": 0.08333333333333333,
-      "x": 1600,
-      "y": 2800,
+      "x": 2000,
+      "y": 3200,
       "root": [
         2.0,
         0.0,
@@ -815,8 +934,8 @@
       "variant": 2,
       "particleBlend": 8,
       "time": 0.08333333333333333,
-      "x": 2000,
-      "y": 2800,
+      "x": 0,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -835,8 +954,8 @@
       "variant": 3,
       "particleBlend": 8,
       "time": 0.08333333333333333,
-      "x": 0,
-      "y": 3200,
+      "x": 400,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
@@ -854,19 +973,19 @@
       "emitter": "Shrink_deploy_range",
       "variant": 0,
       "particleBlend": 8,
-      "time": 0.0,
-      "x": 400,
-      "y": 3200,
+      "time": 5.0,
+      "x": 800,
+      "y": 3600,
       "root": [
-        2.0,
+        1.2112996699426624,
         0.0,
-        199.84150345623493,
+        199.03761968267415,
         0.0,
-        2.0,
-        199.53752418793738
+        1.2112996699426624,
+        203.1185449252146
       ],
       "empty": false,
-      "rgbaSha256": "760f261d7b41414877b76c559dd7aaf3edc3cefa9408c6e6d3a95a3cb25b3ca3"
+      "rgbaSha256": "eb405e1e5e8ffc67ddd14f76d38bb9aff84e6c5c336e13d32cf4f0c818e17b1d"
     },
     {
       "graph": "world",
@@ -875,8 +994,8 @@
       "variant": 0,
       "particleBlend": 8,
       "time": 0.0,
-      "x": 800,
-      "y": 3200,
+      "x": 1200,
+      "y": 3600,
       "root": [
         1.0,
         0.0,
@@ -895,8 +1014,8 @@
       "variant": 0,
       "particleBlend": 8,
       "time": 5.0,
-      "x": 1200,
-      "y": 3200,
+      "x": 1600,
+      "y": 3600,
       "root": [
         2.0,
         0.0,
