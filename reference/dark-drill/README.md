@@ -25,3 +25,10 @@ The reconstruction check and three source tests pass, including every tier's art
 All eleven `darkelixir_pump_lvl*` body clips have 450 frames at 24 fps, with source labels at frame 0 (`idle`), 51 (`start_drill`), 70 (`lower_drill`), 129 (`DRILL`), 279 (`rise_drill`) and 359 (`idle2`). Each contains a named `resource` child: clip 18598 for levels 1–4 and 18578 for levels 5–11. Both resource clips have 100 frames and no labels. These names and frame counts are retained evidence; mapping resource frames to stored amounts and choosing idle/working loop semantics still require integration and verification. The separate base export names its `base` and `shadow` children.
 
 Both resource timelines resolve to four distinct source display lists: frames 0–8, 9–24, 25–49 and 50–99. A separate CPU rendering of frames 0, 25, 50, 75 and 99 for both clips was reviewed and shows the reservoir filling, with the last three samples sharing the same full display. The artwork therefore should not be treated as a continuously animated 100-state liquid surface. The gameplay amount-to-frame conversion remains unverified.
+
+
+## Original UI portraits
+
+`scripts/native-dark-drill-portraits.py` renders each of the eleven original body exports at source frame zero together with its separate base. It preserves native scale, adds two pixels of crop padding, converts the independently composed premultiplied pixels to straight-alpha RGBA and records source-coordinate bounds, normalized origins and RGBA hashes in `portraits.json`. The metadata binds the exact captured art-source document. These are static UI assets; they do not replace the retained animated world geometry.
+
+The `--check` reconstruction reproduces every PNG pixel and registration field. All eleven portraits were visually reviewed together, including tier-specific bases, metalwork and machinery. Production build passes. Menu wiring and live building integration remain subsequent work, and the full animation browser-pixel comparison is still pending.
