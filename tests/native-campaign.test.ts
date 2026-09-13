@@ -70,7 +70,10 @@ describe('native campaign adapter and progress isolation', () => {
     expect(nativeCampaignIssues(53)).toEqual([]);
     expect(nativeCampaignIssues(54)).toEqual([]);
     expect(nativeCampaignIssues(55)).toEqual([]);
-    expect(nativeCampaignIssues(74)).toContain('Garrison defenders');
+    // Every garrison roster now resolves (Dragon's Lair's Golden Dragon included); 74 still waits
+    // on its Foreboding Cave and Goblin Hall bodies.
+    expect(nativeCampaignIssues(74)).not.toContain('Garrison defenders');
+    expect(nativeCampaignIssues(74)).toContain('Foreboding Cave');
     for (const index of [67, 74, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
       const m = new GameModel();
