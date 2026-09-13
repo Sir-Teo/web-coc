@@ -47,9 +47,34 @@ export function preloadVillageArcherTowers(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, TOWER_ARCHER_GRAPH, 'archer-tower-resident');
 }
 export class VillageArcherTowers {
+  ghost?: { body: NativeSceneView; resident: NativeSceneView };
+  preview(building: Building | undefined, x = 0, y = 0, valid = true) {
+    if (!building) {
+      this.ghost?.body.destroy();
+      this.ghost?.resident.destroy();
+      this.ghost = undefined;
+      return;
+    }
+    this.ghost ??= {
+      body: new NativeSceneView(this.scene, 'archer-tower-body'),
+      resident: new NativeSceneView(this.scene, 'archer-tower-resident'),
+    };
+    const poses = villageArcherTowerPoses(building, 0);
+    const tint = (items: NativeScenePose[]) =>
+      valid
+        ? items
+        : items.map((p) => ({
+            ...p,
+            multiply: p.multiply.map((value, i) => value * (i === 1 || i === 2 ? 0x72 / 255 : 1)),
+            add: p.add.map((value, i) => value * (i === 1 || i === 2 ? 0x72 / 255 : 1)),
+          }));
+    this.ghost.body.render(tint(poses.body), x, y, 6001, 0.72);
+    this.ghost.resident.render(tint(poses.residents), x, y, 6001.01, 0.72);
+  }
   readonly views = new Map<number, { body: NativeSceneView; resident: NativeSceneView }>();
   constructor(private scene: Phaser.Scene) {}
   clear() {
+    this.preview(undefined);
     for (const pair of this.views.values()) {
       pair.body.destroy();
       pair.resident.destroy();
