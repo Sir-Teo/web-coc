@@ -195,6 +195,7 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
       g = view.objects[0];
     return {
       frames,
+      facing: actorPose(),
       flight: g.getData('nativeBombProjectile').progress,
       y: g.y,
       landing: 112 + (shot.x + shot.y) * 16,
@@ -207,10 +208,14 @@ test('Bomber poses, ballistic shadow and exposed fuse follow battle time through
     ['attack', 20],
   ]);
   expect(poses.frames[3][0]).toBe('idle');
+  expect(poses.facing).toMatchObject({ action: 'attack', direction: 2, flip: false });
   expect(poses.shadow).toBe(true);
   expect(poses.flight).toBeGreaterThan(0);
   expect(poses.flight).toBeLessThan(1);
   expect(poses.y).toBeLessThan(poses.landing);
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
   await page.screenshot({ path: `output/playtest/bombtower-flight-${browserName}.png` });
   const armed = await page.evaluate(async () => {
     const { projectileEffect } = await import('/src/game/projectiles.ts');

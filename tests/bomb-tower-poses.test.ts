@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import { makeBuilding, GameModel } from '../src/game/model';
 import {
   bomberFacing,
+  bomberPose,
   bomberPoses,
   bombTowerBounds,
   bombTowerPoses,
@@ -30,8 +31,75 @@ it('uses every original body and defender family with distinct construction and 
   expect(() => bombTowerPoses(14, 'setup')).toThrow();
   expect(bomberFacing(-1, -1).direction).toBe(1);
   expect(bomberFacing(1, 1).direction).toBe(3);
-  expect(bomberFacing(1, -1)).toEqual({ direction: 2, flip: true });
-  expect(bomberFacing(-1, 1)).toEqual({ direction: 2, flip: false });
+  expect(bomberFacing(1, -1)).toEqual({ direction: 2, flip: false });
+  expect(bomberFacing(-1, 1)).toEqual({ direction: 2, flip: true });
+});
+
+it('faces the original views toward all six target sectors and keeps the recorded throw direction', () => {
+  const sectors = [
+    { dx: -1, dy: -3, direction: 1, flip: false },
+    { dx: -3, dy: -1, direction: 1, flip: true },
+    { dx: 3, dy: -3, direction: 2, flip: false },
+    { dx: -3, dy: 3, direction: 2, flip: true },
+    { dx: 3, dy: 1, direction: 3, flip: false },
+    { dx: 1, dy: 3, direction: 3, flip: true },
+  ];
+  for (const level of [1, 3, 9])
+    for (const { dx, dy, direction, flip } of sectors) {
+      const m = new GameModel();
+      m.startBattle(0, true);
+      const battle = m.battle!,
+        tower = makeBuilding(7, 'bombtower', 18, 18, level);
+      battle.buildings = [tower];
+      battle.started = true;
+      const target = {
+        id: 90,
+        kind: 'giant' as const,
+        x: 19.5 + dx,
+        y: 19.5 + dy,
+        hp: 5000,
+        maxHp: 5000,
+        cooldown: 99,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+        springUntil: 1000,
+      };
+      battle.units = [target];
+      m.step(0.05);
+      expect(battle.bombTowers![7].fired).toBe(1);
+      const before = JSON.stringify(battle);
+      expect(bomberPose(tower, battle, battle.elapsed, false)).toMatchObject({
+        action: 'attack',
+        direction,
+        flip,
+        time: 11 / 24,
+      });
+      expect(JSON.stringify(battle)).toBe(before);
+      // Motion or death of the target must not turn a throw already in progress.
+      target.x = 19.5 - dx;
+      target.y = 19.5 - dy;
+      expect(bomberPose(tower, battle, 0.2, false)).toMatchObject({
+        action: 'attack',
+        direction,
+        flip,
+      });
+      target.hp = 0;
+      expect(bomberPose(tower, battle, 0.2, false)).toMatchObject({
+        action: 'attack',
+        direction,
+        flip,
+      });
+      target.hp = 5000;
+      tower.cooldown = 0.2;
+      expect(bomberPose(tower, battle, 1, false)).toMatchObject({
+        action: 'attack',
+        direction: 4 - direction,
+        flip: !flip,
+      });
+      expect(bomberPose(tower, battle, 1, true).action).toBe('idle');
+    }
 });
 
 it('retains fixed projectile endpoints, native variant selection and a stationary reduced-motion charge', () => {

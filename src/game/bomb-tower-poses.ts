@@ -45,11 +45,11 @@ export function bombTowerPoses(level: number, state: BombTowerVisualState) {
   ];
 }
 
-/** Local nearest-view mapping for the three original directions and their mirrors. */
+/** Original Bomber views face right; mirror them for targets to the left. */
 export function bomberFacing(dx: number, dy: number) {
   const x = dx - dy,
     y = (dx + dy) / 2;
-  return { direction: y < -Math.abs(x) / 2 ? 1 : y > Math.abs(x) / 2 ? 3 : 2, flip: x > 0 };
+  return { direction: y < -Math.abs(x) / 2 ? 1 : y > Math.abs(x) / 2 ? 3 : 2, flip: x < 0 };
 }
 
 /** Align the source action frame to the existing shot timestamp, without changing combat. */
