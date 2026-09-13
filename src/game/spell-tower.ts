@@ -6,7 +6,7 @@ import { SPELL_TOWER, SPELL_TOWER_HERO, speedPoints } from './spell-tower-stats'
 
 /** Spell Tower: defensive Rage, Poison and Invisibility casts.
  * The campaign gate keeps affected villages unavailable until this is true. */
-export const SPELL_TOWER_READY = false;
+export const SPELL_TOWER_READY = true;
 
 export interface SpellTowerCast {
   /** Stable cast order across every tower in this battle. */

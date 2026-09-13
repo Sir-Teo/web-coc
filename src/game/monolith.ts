@@ -13,7 +13,7 @@ import { spellTowerDefenseBoost } from './spell-tower';
 
 /** Monolith: base damage plus a share of the target's hitpoints.
  * The campaign gate keeps affected villages unavailable until this is true. */
-export const MONOLITH_READY = false;
+export const MONOLITH_READY = true;
 
 export interface MonolithShot {
   index: number;

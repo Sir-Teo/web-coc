@@ -3,6 +3,9 @@ import { BUILDINGS, type TroopKind } from '../src/game/data';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { validateReplay, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
+import { MONOLITH_READY } from '../src/game/monolith';
+import { SPELL_TOWER_READY } from '../src/game/spell-tower';
+import { NATIVE_CAMPAIGN, nativeCampaignIssues, nativeLayout } from '../src/game/native-campaign';
 import { deploySpots, lateBattle, lateReplay, lateSetup } from './fixtures/late-defense-battle';
 
 type Case = [index: number, army: Partial<Record<TroopKind, number>>, anchor: (b: { kind: string; spellTowerWeapon?: string }) => boolean, steps: number];
@@ -27,6 +30,33 @@ function recording([index, army, anchor, steps]: Case): ReplayData {
   );
   return lateReplay(setup, deployments.map(({ step, kind, x, y }) => ({ step, kind, x, y })), steps);
 }
+
+describe('Monolith and Spell Tower campaign gate', () => {
+  it('no longer blocks villages 85-89 on either family, with every placement and weapon kept', () => {
+    expect(MONOLITH_READY).toBe(true);
+    expect(SPELL_TOWER_READY).toBe(true);
+    const counts: Record<number, [monoliths: number, weapons: string[]]> = {
+      85: [7, []],
+      86: [0, Array(8).fill('rage')],
+      87: [0, Array(4).fill('poison')],
+      88: [0, Array(7).fill('invisibility')],
+      89: [2, ['invisibility', 'invisibility', 'poison', 'poison', 'poison', 'poison', 'rage']],
+    };
+    for (const [index, [monoliths, weapons]] of Object.entries(counts).map(([i, v]) => [+i, v] as const)) {
+      const issues = nativeCampaignIssues(index);
+      expect(issues).not.toContain('Monolith');
+      expect(issues).not.toContain('Spell Tower');
+      expect(issues).not.toContain('Unknown Spell Tower weapon');
+      const layout = nativeLayout(index);
+      const source = [...NATIVE_CAMPAIGN[index].buildings, ...NATIVE_CAMPAIGN[index].traps];
+      expect(source.filter(([data]) => data === 1000077).map(([, , , level]) => level)).toEqual(Array(monoliths).fill(2));
+      expect(layout.filter((b) => b.kind === 'monolith').map((b) => b.level)).toEqual(Array(monoliths).fill(2));
+      const towers = layout.filter((b) => b.kind === 'spelltower');
+      expect(towers.every((b) => b.level === 3)).toBe(true);
+      expect(towers.map((b) => b.spellTowerWeapon).sort()).toEqual(weapons);
+    }
+  });
+});
 
 describe('Monolith and Spell Tower replays', () => {
   for (const c of cases)
