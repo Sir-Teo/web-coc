@@ -1,3 +1,4 @@
+import { darkDrillProduction } from '../game/dark-drill-production';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
@@ -245,8 +246,8 @@ function statRows(
     rows.push(['Layers', 'Adds capacity', `+${n(storageCapacity(level))}`]);
   if (kind === 'darkdrill')
     rows.push(
-      ['Timer', 'Production', `${360 * level} / hour`],
-      ['Layers', 'Holds', n(2000 * level)],
+      ['Timer', 'Production', `${n(darkDrillProduction(level).perHour)} / hour`],
+      ['Layers', 'Holds', n(darkDrillProduction(level).capacity)],
     );
   if (kind === 'darkstorage')
     rows.push(['Layers', 'Dark elixir capacity', n(darkStorageCapacity(level))]);

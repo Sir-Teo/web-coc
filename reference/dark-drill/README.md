@@ -39,3 +39,12 @@ The `--check` reconstruction reproduces every PNG pixel and registration field. 
 The shared UI asset lookup now resolves each Drill level to its original portrait, rejecting unsupported portrait tiers instead of substituting a generic image. Context and building-info menus consume this lookup. The scene explicitly retains its existing Drill world texture until the animated native presentation is integrated; the shared preload path would otherwise have replaced the world sprite with a UI thumbnail.
 
 Chromium and WebKit each pass desktop (1440 px) and phone (390 px) checks for all eleven portrait paths, successful image decoding, context selection and info-dialog visibility. The phone level-3 dialog was visually reviewed after its opening animation. Production build passes. Existing production, capacity, HP and progression values shown beside these images still await source-backed integration; this change does not claim their authenticity or expand campaign access.
+
+
+## Source production and reservoir capacity
+
+`dark-drill-production.ts` converts the captured `ResourcePer100Hours` to per-hour production and exposes the original reservoir capacities for all eleven levels. Home ticks and the building-info table now use this source: level 1 produces 20/hour and holds 160, while level 11 produces 200/hour and holds 4,600. Upgrade completion continues to produce only for the elapsed interval after completion, at the new tier's rate.
+
+Already-earned amounts above the newly applied capacity are preserved through save restoration and remain collectible; new production resumes once collection creates space. This is a local migration policy, not native overflow behavior. The shared home tick's existing eight-hour offline cap remains, and HP, build cost/time and progression still need source-backed integration. Battle/replay combat behavior is unchanged by this home-production update.
+
+All 27 model/save/production tests pass, including one-hour production, every tier's cap, post-upgrade production and legacy overflow restoration. Chromium and WebKit each pass desktop and phone menu checks for all eleven source rates and capacities. The updated phone dialog was visually reviewed and production build passes.

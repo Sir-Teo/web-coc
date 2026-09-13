@@ -1,3 +1,4 @@
+import { produceDarkElixir } from './dark-drill-production';
 import { validInfernoMode, type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
@@ -875,10 +876,10 @@ export class GameModel {
         !b.upgradeEnd
       ) {
         const before = b.stored;
-        b.stored = Math.min(
-          (b.kind === 'darkdrill' ? 2000 : 10000) * b.level,
-          b.stored + productionSeconds * (b.kind === 'darkdrill' ? 0.1 : 3) * b.level,
-        );
+        b.stored =
+          b.kind === 'darkdrill'
+            ? produceDarkElixir(b.level, b.stored, productionSeconds)
+            : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
       }
     }

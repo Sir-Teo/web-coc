@@ -1,3 +1,4 @@
+import catalog from '../../reference/dark-drill/catalog.json' with { type: 'json' };
 import { expect, test } from '@playwright/test';
 for (const width of [1440, 390])
   test(`original Drill portraits display in menus at ${width}px`, async ({ page, browserName }) => {
@@ -26,6 +27,13 @@ for (const width of [1440, 390])
         `/assets/dark-drill-native/portrait/${level}.png`,
       );
       await page.locator('[data-action="info"]').click();
+      const production = catalog.levels[level - 1].production;
+      await expect(page.locator('.info-table')).toContainText(
+        `${production.per100Hours / 100} / hour`,
+      );
+      await expect(page.locator('.info-table')).toContainText(
+        production.capacity.toLocaleString('en-US'),
+      );
       const portrait = page.locator('.info-hero img');
       await expect(portrait).toHaveAttribute(
         'src',
