@@ -32,8 +32,9 @@ function clear(m: GameModel) {
 
 describe('native campaign adapter and progress isolation', () => {
   it('preserves every supported village tile, level, entity and native scenery identity', () => {
-    // Late families now complete villages 61–66, Pick Your Poison (68) and Paper Map (70).
-    expect(playable).toEqual([...Array.from({ length: 67 }, (_, i) => i), 68, 70]);
+    // Late families now complete villages 61–79 and Raging Headache (86); the remaining defending
+    // troop families and the Ghost Trap opened The Arena (69) and villages 73–77.
+    expect(playable).toEqual([...Array.from({ length: 80 }, (_, i) => i), 86]);
     for (const i of playable) {
       const b = nativeBuildings(i),
         original = [...layouts[i].buildings, ...layouts[i].traps];
@@ -70,11 +71,11 @@ describe('native campaign adapter and progress isolation', () => {
     expect(nativeCampaignIssues(53)).toEqual([]);
     expect(nativeCampaignIssues(54)).toEqual([]);
     expect(nativeCampaignIssues(55)).toEqual([]);
-    // Every garrison roster now resolves (Dragon's Lair's Golden Dragon included); 74 still waits
-    // on its Foreboding Cave and Goblin Hall bodies.
+    // Every garrison roster now resolves (Dragon's Lair's Golden Dragon included).
     expect(nativeCampaignIssues(74)).not.toContain('Garrison defenders');
-    expect(nativeCampaignIssues(74)).toContain('Foreboding Cave');
-    for (const index of [67, 74, 89]) {
+    // Builderopolis still needs the Defending Builder of its armed Builder's Huts.
+    expect(nativeCampaignIssues(84)).toEqual(["Armed Builder's Hut"]);
+    for (const index of [84, 89]) {
       expect(() => nativeBuildings(index)).toThrow();
       const m = new GameModel();
       const before = structuredClone(m.state);

@@ -1,5 +1,7 @@
-import { BUILDINGS, TROOPS, isTrap } from './data';
+import { TROOPS } from './data';
 import { distance2D } from './distance';
+import { MAP_SIZE } from './grid';
+import { groundCollision, type GroundCollision } from './subtile-path';
 import {
   garrisonAura,
   garrisonDeathSpell,
@@ -86,32 +88,21 @@ const objectId = (defender: { id: number }) => -defender.id;
 export const spawnAngle = (defender: { id: number }, index: number, count: number) =>
   ((59 * objectId(defender)) % 360) + Math.trunc((360 * index) / count);
 
-function blockedAt(battle: Battle, x: number, y: number) {
-  const tx = Math.floor(x),
-    ty = Math.floor(y);
-  return battle.buildings.some(
-    (b) =>
-      b.hp > 0 &&
-      !isTrap(b.kind) &&
-      tx >= b.x &&
-      tx < b.x + BUILDINGS[b.kind].size &&
-      ty >= b.y &&
-      ty < b.y + BUILDINGS[b.kind].size,
-  );
-}
 /**
- * GetNearestPassablePosition within 3 tiles (1536 units): the point itself when its tile is free,
- * otherwise the nearest free tile center (ties by row, then column). Local tile interpretation.
+ * GetNearestPassablePosition within 3 tiles (1536 units): the point itself when free, otherwise
+ * the nearest free half-tile center (ties by row, then column). Collision is the battle's ground
+ * collision: client sub-tiles in version-44 native battles, whole tiles elsewhere.
  */
-function nearestPassable(battle: Battle, x: number, y: number) {
-  if (!blockedAt(battle, x, y)) return { x, y };
+export function nearestPassable(collision: GroundCollision, x: number, y: number) {
+  const free = (px: number, py: number) => px >= 0 && py >= 0 && px < MAP_SIZE && py < MAP_SIZE && !collision.solid(px, py);
+  if (free(x, y)) return { x, y };
   let best: { x: number; y: number; d: number } | undefined;
-  for (let ty = Math.floor(y) - 3; ty <= Math.floor(y) + 3; ty++)
-    for (let tx = Math.floor(x) - 3; tx <= Math.floor(x) + 3; tx++) {
-      const cx = tx + 0.5,
-        cy = ty + 0.5;
+  for (let sy = Math.floor(y * 2) - 6; sy <= Math.floor(y * 2) + 6; sy++)
+    for (let sx = Math.floor(x * 2) - 6; sx <= Math.floor(x * 2) + 6; sx++) {
+      const cx = (sx + 0.5) / 2,
+        cy = (sy + 0.5) / 2;
       const d = distance2D(cx - x, cy - y);
-      if (d > 3 || tx < 0 || ty < 0 || tx >= 48 || ty >= 48 || blockedAt(battle, cx, cy)) continue;
+      if (d > 3 || !free(cx, cy)) continue;
       if (!best || d < best.d - EPSILON) best = { x: cx, y: cy, d };
     }
   return best;
@@ -133,7 +124,7 @@ export function pushFraction(push: GarrisonPush, at: number) {
   return Math.min(push.limit, 1 - (1 - progress) * (1 - progress));
 }
 function makePush(
-  battle: Battle,
+  collision: GroundCollision,
   from: { x: number; y: number },
   vector: { x: number; y: number },
   at: number,
@@ -147,7 +138,9 @@ function makePush(
     const samples = Math.max(1, Math.ceil(length * 32));
     for (let i = 1; i <= samples; i++) {
       const f = i / samples;
-      if (blockedAt(battle, from.x + vector.x * f, from.y + vector.y * f)) {
+      const px = from.x + vector.x * f,
+        py = from.y + vector.y * f;
+      if (px < 0 || py < 0 || px >= MAP_SIZE || py >= MAP_SIZE || collision.solid(px, py)) {
         limit = (i - 1) / samples;
         break;
       }
@@ -199,6 +192,7 @@ function spawnWave(
   const stats = garrisonStats(kind, level);
   const random = sourceRandom(objectId(parent));
   const spawned: GarrisonDefender[] = [];
+  const collision = groundCollision(battle, battle.buildings);
   for (let i = 0; i < count; i++) {
     const angle = spawnAngle(parent, i, count);
     let start: { x: number; y: number } | undefined;
@@ -208,7 +202,7 @@ function spawnWave(
         x: parent.x + Math.trunc((units * sourceCos(angle)) / 1024) / UNITS,
         y: parent.y + Math.trunc((units * sourceSin(angle)) / 1024) / UNITS,
       };
-    } else start = nearestPassable(battle, parent.x, parent.y);
+    } else start = nearestPassable(collision, parent.x, parent.y);
     if (!start) continue;
     const unit = spawn(battle, kind, level, parent.sourceId, start.x, start.y, at);
     unit.parentId = parent.id;
@@ -221,7 +215,7 @@ function spawnWave(
       };
       const speed = stats.pushbackSpeed > 0 ? stats.pushbackSpeed : 1;
       const duration = Math.trunc((2 * units) / (3 * speed)) / 1000;
-      if (duration > 0) unit.push = makePush(battle, start, vector, at, duration, stats.flying);
+      if (duration > 0) unit.push = makePush(collision, start, vector, at, duration, stats.flying);
       // Summons wait out the push (SetSpawnTime), then SpawnIdle (at least 10 ms).
       if (summon) unit.idleUntil = at + duration + Math.max(0.01, stats.spawnIdle);
     }

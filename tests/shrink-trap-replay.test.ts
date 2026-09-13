@@ -14,13 +14,14 @@ it('reconstructs every Magic Practice trap and status across portable playback a
     m.step(0.05);
   }
   expect(m.battle!.finished).toBe(true);
-  // Version 35 resolves source-speed Mortar shells by distance; this fixed army reaches 42%.
-  expect(m.battle!.result!.destruction).toBe(42);
+  // Version 44 native battles route P.E.K.K.As through client sub-tile building lanes;
+  // this fixed army reaches 19% (42% on the former whole-tile grid).
+  expect(m.battle!.result!.destruction).toBe(19);
   expect(
     Object.values(m.battle!.traps)
       .filter((s) => s.shrink)
       .map((s) => s.shrink!.pulses),
-  ).toEqual([75]);
+  ).toEqual([75, 75, 75]);
   expect(m.battle!.units.some((u) => u.shrink && u.shrink.timeLost > 0)).toBe(true);
   const end = JSON.stringify(m.battle),
     file = makeReplayFile(m.state.raidLog[0].replay!);

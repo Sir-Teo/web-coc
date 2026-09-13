@@ -130,6 +130,9 @@ for path in ['logic/buildings.csv', 'logic/traps.csv']:
         combat[gid] = dict(name=first['Name'], size=int(first['Width']),
                            hp=[int(row.get('Hitpoints', 1)) for row in group],
                            dps=[int(row.get('DPS', 0)) for row in group])
+        # Collision width for the client's sub-tile pathfinder (traps have none).
+        if 'BuildingW' in first:
+            combat[gid]['collision'] = int(first['BuildingW'])
 scenery = {}
 for path, family in [('logic/obstacles.csv', 8000000), ('logic/decos.csv', 18000000)]:
     for index, group in enumerate(groups(table(path))):

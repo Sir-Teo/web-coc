@@ -396,6 +396,7 @@ export function stepGarrisonDefender(
           target,
           battle.buildings.filter((b) => b.kind !== 'wall'),
           approach,
+          !!battle.nativeSubtiles,
         );
         defender.pathAt = 0.3;
       }

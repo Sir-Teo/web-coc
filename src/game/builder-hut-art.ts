@@ -1,18 +1,28 @@
-/** Registered armed Builder's Hut preview artwork. Until the original source capture lands,
- * the shared placeholder keeps preloading valid while the village remains gated. */
-export const BUILDER_HUT_ART = {
-  width: 168,
-  height: 156,
-  originX: 0.5,
-  originY: 70 / 130,
-};
+import source from '../../reference/builder-hut/combat.json';
+
+type PreviewKey = keyof typeof source.previews;
+/** Original campaign Builder's Hut previews (2 px per native unit, dormant turret) at world scale 1.2. */
+export function builderHutArt(level: number) {
+  const preview = source.previews[String(level) as PreviewKey];
+  if (!preview) throw Error(`Unsupported campaign Builder's Hut preview: ${level}`);
+  const [left, top, right, bottom] = preview.bounds;
+  return {
+    width: (right - left) * source.worldScale,
+    height: (bottom - top) * source.worldScale,
+    originX: (source.anchor[0] - left) / (right - left),
+    originY: (source.anchor[1] - top) / (bottom - top),
+  };
+}
+/** Level-two armed registration, retained for callers that need one representative portrait. */
+export const BUILDER_HUT_ART = builderHutArt(2);
+export const BUILDER_HUT_ART_LEVELS = Object.keys(source.previews).map(Number);
 export function builderHutTexture(level: number, variant?: string) {
-  void level;
   void variant;
-  return 'builder';
+  return `builder-hut-native-${level}`;
 }
 export function builderHutAsset(level: number, variant?: string) {
-  void level;
   void variant;
-  return '/assets/buildings/goblin-native/goblin_hut_lvl1.png';
+  const preview = source.previews[String(level) as PreviewKey];
+  if (!preview) throw Error(`Unsupported campaign Builder's Hut preview: ${level}`);
+  return '/' + preview.path;
 }

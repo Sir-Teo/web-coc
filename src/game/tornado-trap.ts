@@ -1,3 +1,4 @@
+import { groundCollision, type GroundCollision } from './subtile-path';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import { distance2D } from './distance';
 import { MAP_SIZE } from './grid';
@@ -93,27 +94,18 @@ function triggerTornadoTraps(battle: Battle) {
   }
 }
 
-/** Solid ground tiles: live, known, non-trap footprints (the crowd-separation rule). */
+/** Ground collision for carried troops: live, known, non-trap buildings (crowd-separation rule). */
 function solidTiles(battle: Battle) {
-  const solid = new Set<number>();
-  for (const b of battle.buildings)
-    if (
-      b.hp > 0 &&
-      !isTrap(b.kind) &&
-      !concealedTesla(battle, b) &&
-      !lateBuildingHidden(battle, b)
-    ) {
-      const size = BUILDINGS[b.kind].size;
-      for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
-    }
-  return solid;
+  return groundCollision(
+    battle,
+    battle.buildings.filter((b) => !concealedTesla(battle, b) && !lateBuildingHidden(battle, b)),
+  );
 }
 
 function stepVortices(battle: Battle, dt: number) {
   const vortices = battle.late?.tornadoTrap?.vortices;
   if (!vortices) return;
-  let solid: Set<number> | undefined, units: Map<number, Unit> | undefined;
+  let solid: GroundCollision | undefined, units: Map<number, Unit> | undefined;
   for (const vortex of Object.values(vortices)) {
     const stats = tornadoTrapStats(vortex.level);
     // Each hit damages every live attacker inside the spell radius on both layers and
@@ -187,13 +179,10 @@ export function tornadoCarryPoint(
     y: Math.max(0, Math.min(MAP_SIZE, center.y + (dx * sin + dy * cos) * scale)),
   };
 }
-function carry(vortex: TornadoVortex, u: Unit, time: number, solid: Set<number>) {
+function carry(vortex: TornadoVortex, u: Unit, time: number, solid: GroundCollision) {
   const { x, y } = tornadoCarryPoint(tornadoTrapStats(vortex.level), vortex, u, time);
-  if (!TROOPS[u.kind].flying) {
-    const from = Math.floor(u.y) * MAP_SIZE + Math.floor(u.x),
-      to = Math.floor(y) * MAP_SIZE + Math.floor(x);
-    if (to !== from && solid.has(to)) return;
-  }
+  if (!TROOPS[u.kind].flying && solid.cell(x, y) !== solid.cell(u.x, u.y) && solid.solid(x, y))
+    return;
   u.x = x;
   u.y = y;
 }

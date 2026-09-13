@@ -1,46 +1,39 @@
+import source from '../../reference/late-goblin-buildings/combat.json';
+
 export type LateGoblinBuildingKind =
   'comm-mast' | 'goblin-hall' | 'goblin-castle' | 'foreboding-cave' | 'goblin-boss-th';
-/** Registered previews for the late Goblin campaign buildings. Until the original source
- * capture lands, the shared placeholder keeps preloading valid while villages remain gated. */
+type PreviewKey = keyof typeof source.previews;
+/** Original source previews (2 px per native unit) registered at the local 1.2 world scale. */
+function registered(key: PreviewKey, texture: string) {
+  const { path, bounds, anchor } = source.previews[key];
+  const [left, top, right, bottom] = bounds;
+  return {
+    texture,
+    asset: '/' + path,
+    width: (right - left) * source.worldScale,
+    height: (bottom - top) * source.worldScale,
+    originX: (anchor[0] - left) / (right - left),
+    originY: (anchor[1] - top) / (bottom - top),
+  };
+}
+/** Registered previews: fallback sprites, HUD portraits and selection sizing. The Goblin Hall
+ * preview is level 1; level 2 and the Boss Town Hall share the weapon export `goblin_th02`. */
 export const LATE_GOBLIN_BUILDING_ART: Record<
   LateGoblinBuildingKind,
-  { texture: string; asset: string; width: number; originX: number; originY: number }
+  {
+    texture: string;
+    asset: string;
+    width: number;
+    height: number;
+    originX: number;
+    originY: number;
+  }
 > = {
-  'comm-mast': {
-    texture: 'comm-mast',
-    asset: '/assets/buildings/goblin-native/goblin_hut_lvl1.png',
-    width: 168,
-    originX: 0.5,
-    originY: 70 / 130,
-  },
-  'goblin-hall': {
-    texture: 'goblin-hall',
-    asset: '/assets/buildings/goblin-native/goblin_hut_lvl1.png',
-    width: 240,
-    originX: 0.5,
-    originY: 110 / 180,
-  },
-  'goblin-castle': {
-    texture: 'goblin-castle',
-    asset: '/assets/buildings/goblin-native/goblin_hut_lvl1.png',
-    width: 200,
-    originX: 0.5,
-    originY: 110 / 180,
-  },
-  'foreboding-cave': {
-    texture: 'foreboding-cave',
-    asset: '/assets/buildings/goblin-native/goblin_hut_lvl1.png',
-    width: 240,
-    originX: 0.5,
-    originY: 110 / 180,
-  },
-  'goblin-boss-th': {
-    texture: 'goblin-boss-th',
-    asset: '/assets/buildings/goblin-native/goblin_hut_lvl1.png',
-    width: 240,
-    originX: 0.5,
-    originY: 110 / 180,
-  },
+  'comm-mast': registered('comm-mast', 'late-goblin-comm-mast'),
+  'goblin-hall': registered('goblin-hall-1', 'late-goblin-hall-1'),
+  'goblin-castle': registered('goblin-castle', 'late-goblin-castle'),
+  'foreboding-cave': registered('foreboding-cave', 'late-goblin-foreboding-cave'),
+  'goblin-boss-th': registered('goblin-th02', 'late-goblin-th02'),
 };
 export const isLateGoblinBuilding = (value: unknown): value is LateGoblinBuildingKind =>
   typeof value === 'string' && Object.hasOwn(LATE_GOBLIN_BUILDING_ART, value);

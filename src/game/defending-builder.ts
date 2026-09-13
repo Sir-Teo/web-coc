@@ -157,7 +157,13 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
 function walk(builder: DefendingBuilder, battle: Battle, goal: Building | { x: number; y: number }, range: number, speed: number, dt: number) {
   if (!builder.path.length || builder.pathAt <= 0) {
     // IsJumper: walls never block him; other buildings do.
-    builder.path = findPath(builder, goal, battle.buildings.filter((b) => b.kind !== 'wall'), range);
+    builder.path = findPath(
+      builder,
+      goal,
+      battle.buildings.filter((b) => b.kind !== 'wall'),
+      range,
+      !!battle.nativeSubtiles,
+    );
     builder.pathAt = 0.3;
   }
   let travel = speed * dt;

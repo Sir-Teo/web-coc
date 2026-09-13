@@ -72,7 +72,7 @@ for (const [index, trap, army] of [
   }, 60000);
 
 it('replays Cold Flame freeze and level-3 tornado traps identically to live stepping', () => {
-  // Cold Flame stays gated by other late families; their buildings are inert in this fixture.
+  // Cold Flame stays gated by other late families; unimplemented ones are inert in this fixture.
   const { setup, deployments, data, tornado, corner } = coldFlameReplay();
   expect([tornado.level, corner.level]).toEqual([3, 1]);
   const live = liveNativeBattle(setup, deployments);
@@ -84,6 +84,9 @@ it('replays Cold Flame freeze and level-3 tornado traps identically to live step
     live.step(0.05);
     carried = Math.max(carried, live.battle!.units.filter((u) => u.late?.tornadoTrap).length);
   }
+  // Goblin Hall and armed Builder's Hut weapons now fire here, so troops can outlast the
+  // recording. Its final end action settles the replay; settle live combat the same way.
+  live.finishBattle();
   const lb = live.battle!;
   expect(Object.keys(lb.late?.tornadoTrap?.vortices ?? {})).toContain(String(tornado.id));
   expect(carried).toBeGreaterThan(0);

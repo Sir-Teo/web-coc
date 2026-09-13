@@ -14,8 +14,9 @@ import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
-// Late campaign Spell Tower Rage and Invisibility (neutral without version 44 late state).
-import { lateDefenderHidden, lateDefenderStats } from './late-campaign';
+// Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
+// (all neutral without version 44 late state).
+import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
 import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
 
 interface DefenderState {
@@ -206,7 +207,13 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       defender.y += ((target.y - defender.y) / distance) * move;
     } else {
       if (!defender.path.length || defender.pathAt <= 0) {
-        defender.path = findPath(defender, target, structures, stats.range);
+        defender.path = findPath(
+          defender,
+          target,
+          structures,
+          stats.range,
+          !!battle.nativeSubtiles,
+        );
         defender.pathAt = 0.3;
       }
       moveAlong(defender, stats.speed, activeDt);
@@ -237,8 +244,9 @@ export function stepAttackerVsDefenders(
     (b) =>
       b.hp > 0 &&
       targetableBuilding(battle, b) &&
-      ((troop.prefersDefenses && isDefense(b.kind)) ||
-        (troop.prefersResources && isResourceBuilding(b.kind))),
+      // Late campaign target classes mirror the attacker loop in model.ts.
+      ((troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
+        (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')),
   );
   // Preferred-target troops finish their current building before accepting an alert.
   const committed =
@@ -352,7 +360,13 @@ export function stepAttackerVsDefenders(
   } else {
     if (!unit.path.length || unit.pathAt <= 0) {
       // Defenders are troop points; leveled garrison defenders must not be read as footprints.
-      unit.path = findPath(unit, { x: target.x, y: target.y }, buildings, stats.range);
+      unit.path = findPath(
+        unit,
+        { x: target.x, y: target.y },
+        buildings,
+        stats.range,
+        !!battle.nativeSubtiles,
+      );
       unit.pathAt = 0.3;
     }
     const next = unit.path[0],

@@ -9,12 +9,21 @@ import { attacker, lateBuilding, lateSetup } from './fixtures/late-defense-battl
 /** A version-44 late campaign model: the distant Spell Tower only creates late state. */
 function lateModel(buildings: Building[], version = 44) {
   const model = new GameModel();
-  const setup = lateSetup(86, {}, [...buildings, lateBuilding(900, 'spelltower', 44, 44, 3, 'rage')]);
+  const setup = lateSetup(86, {}, [
+    ...buildings,
+    lateBuilding(900, 'spelltower', 44, 44, 3, 'rage'),
+  ]);
   model.battle = replayBattle(setup, version);
   model.battle.started = true;
   return model;
 }
-function covering(battle: Battle, weapon: SpellTowerCast['weapon'], x: number, y: number, deployAt = -0.5) {
+function covering(
+  battle: Battle,
+  weapon: SpellTowerCast['weapon'],
+  x: number,
+  y: number,
+  deployAt = -0.5,
+) {
   const cast: SpellTowerCast = {
     index: 1,
     sourceId: 900,
@@ -52,14 +61,13 @@ describe('defensive Rage threading', () => {
         const model = lateModel([lateBuilding(1, kind, 20, 20, level)]);
         const b = model.battle!;
         if (raged) covering(b, 'rage', 21.5, 21.5);
-        b.units.push(attacker(7, 'giant', 21.5, 21.5 + 5.2, 1e9, 900, { cooldown: 99, pathAt: 99 }));
+        b.units.push(
+          attacker(7, 'giant', 21.5, 21.5 + 5.2, 1e9, 900, { cooldown: 99, pathAt: 99 }),
+        );
         for (let i = 0; i < 80 && !b.projectiles?.length && !b.shells.length; i++) model.step(0.05);
         return (b.projectiles?.[0]?.damage ?? b.shells[0]?.damage)!;
       });
-      expect(damages[0]).toBeCloseTo(
-        defenseDamage(kind, level),
-        kind === 'xbow' ? 9 : 12,
-      );
+      expect(damages[0]).toBeCloseTo(defenseDamage(kind, level), kind === 'xbow' ? 9 : 12);
       expect(damages[1]).toBeCloseTo(damages[0] * 1.6, 9);
     });
 
@@ -120,9 +128,11 @@ describe('Poison and Invisibility in the live model', () => {
     const travel = [false, true].map((poisoned) => {
       const model = lateModel([lateBuilding(1, 'goldstorage', 30, 30, 10)]);
       const b = model.battle!;
-      const giant = attacker(7, 'giant', 10, 31, 1e9, 900);
+      // A sub-tile center in line with the storage keeps the version-44 route straight.
+      const giant = attacker(7, 'giant', 10.25, 31.25, 1e9, 900);
       b.units.push(giant);
-      if (poisoned) giant.late = { spellTower: { poisonDps: 0, poisonTime: 0, poisonHold: 0, slowUntil: 99 } };
+      if (poisoned)
+        giant.late = { spellTower: { poisonDps: 0, poisonTime: 0, poisonHold: 0, slowUntil: 99 } };
       model.step(0.05);
       const start = giant.x;
       for (let i = 0; i < 10; i++) model.step(0.05);
@@ -137,7 +147,8 @@ describe('Poison and Invisibility in the live model', () => {
       b.units.push(giant);
       model.step(0.05);
       giant.cooldown = 5;
-      if (poisoned) giant.late = { spellTower: { poisonDps: 0, poisonTime: 0, poisonHold: 0, slowUntil: 99 } };
+      if (poisoned)
+        giant.late = { spellTower: { poisonDps: 0, poisonTime: 0, poisonHold: 0, slowUntil: 99 } };
       model.step(0.05);
       return 5 - giant.cooldown;
     });
@@ -159,8 +170,10 @@ describe('Poison and Invisibility in the live model', () => {
     model.step(0.05);
     expect(goblin.target).toBe(2);
     expect(goblin.path.length).toBeGreaterThan(0);
-    // The concealed storage remains an obstacle for the new route.
-    expect(goblin.path.some((p) => p.x > 20 && p.x < 23 && p.y > 20 && p.y < 23)).toBe(false);
+    // The concealed storage's collision core remains an obstacle; its edge lane stays walkable.
+    expect(goblin.path.some((p) => p.x > 20.5 && p.x < 22.5 && p.y > 20.5 && p.y < 22.5)).toBe(
+      false,
+    );
     for (let i = 0; i < 20 && !b.projectiles?.some((p) => p.sourceId === 3); i++) model.step(0.05);
     expect(b.projectiles?.some((p) => p.sourceId === 3)).toBe(true);
   });

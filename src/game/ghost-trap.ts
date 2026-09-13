@@ -1,7 +1,8 @@
 import { trapSpawnerLevel } from './character-catalog';
 import { BUILDINGS, TROOPS } from './data';
 import { distance2D } from './distance';
-import { sourceCos, sourceSin } from './garrison-abilities';
+import { nearestPassable, sourceCos, sourceSin } from './garrison-abilities';
+import { groundCollision } from './subtile-path';
 import { spawnGarrisonDefender } from './garrison-combat';
 import { characterLevel } from './character-catalog';
 import { spawnedGarrisonKind } from './garrison-kinds';
@@ -102,9 +103,18 @@ function spawnDue(battle: Battle, trap: Building, center: { x: number; y: number
     if (at > battle.elapsed + EPSILON) break;
     const remaining = SOURCE.spawns - index;
     const angle = Math.trunc((360 * index) / SOURCE.spawns) + ((59 * remaining) % 360);
-    const x = center.x + Math.trunc((384 * sourceCos(angle)) / 1024) / 512;
-    const y = center.y + Math.trunc((384 * sourceSin(angle)) / 1024) / 512;
-    const ghost = spawnGarrisonDefender(battle, SOURCE.kind!, SOURCE.level, trap.id, x, y, at);
+    const point = nearestPassable(
+      groundCollision(battle, battle.buildings),
+      center.x + Math.trunc((384 * sourceCos(angle)) / 1024) / 512,
+      center.y + Math.trunc((384 * sourceSin(angle)) / 1024) / 512,
+    );
+    if (!point) {
+      // No passable point within three tiles: the older SpawnUnit skips this spawn (ID 0).
+      state.spawned.push(0);
+      record.spawned = state.spawned.length;
+      continue;
+    }
+    const ghost = spawnGarrisonDefender(battle, SOURCE.kind!, SOURCE.level, trap.id, point.x, point.y, at);
     ghost.idleUntil = at + SPAWN_TIME + SPAWN_IDLE;
     state.spawned.push(ghost.id);
     record.spawned = state.spawned.length;
