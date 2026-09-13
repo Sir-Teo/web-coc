@@ -1,5 +1,8 @@
+import { TROOPS } from './data';
+import { infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
+import { infernoDamageStage } from './inferno-weapon';
 import type Phaser from 'phaser';
-import type { Building } from './model';
+import type { Battle, Building } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
@@ -17,18 +20,23 @@ export function preloadInfernos(scene: Phaser.Scene) {
       scene.load.image(infernoTexture(level, mode), infernoAsset(level, mode));
 }
 export class InfernoPresentation {
+  readonly beams = new Map<string, NativeSceneView>();
   readonly views = new Map<number, NativeSceneView>();
   constructor(private scene: Phaser.Scene) {}
   clear() {
+    for (const view of this.beams.values()) view.destroy();
+    this.beams.clear();
     for (const view of this.views.values()) view.destroy();
     this.views.clear();
   }
   render(
     buildings: Building[],
     seconds: number,
+    battle: Battle | null,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
     const wanted = new Set<number>();
+    const wantedBeams = new Set<string>();
     for (const building of buildings) {
       if (building.kind !== 'inferno') continue;
       wanted.add(building.id);
@@ -56,7 +64,36 @@ export class InfernoPresentation {
         point.y,
       );
       for (const object of view.objects) object.setData('nativeInferno', building.id);
+      const combat = battle?.infernos?.[building.id];
+      if (
+        state !== 'active' ||
+        battle?.finished ||
+        !combat ||
+        (battle!.defenseStuns[building.id] ?? 0) >= battle!.elapsed
+      )
+        continue;
+      combat.scheduler.slots.forEach((slot, index) => {
+        const target = battle!.units.find(
+          (unit) => unit.id === slot.targetId && unit.hp > 0 && !unit.ejected,
+        );
+        if (!target) return;
+        const stage = infernoDamageStage(combat.scheduler.mode, slot.lockedMs, building.level);
+        const profile = infernoBeamProfile(building.level, stage);
+        const end = iso(target.x, target.y);
+        const from = { x: point.x, y: point.y - profile.startZ * 1.2 };
+        const to = { x: end.x, y: end.y - (TROOPS[target.kind].flying ? 46 : 0) };
+        const key = `${building.id}:${index}`;
+        wantedBeams.add(key);
+        let beam = this.beams.get(key);
+        if (!beam) this.beams.set(key, (beam = new NativeSceneView(this.scene, 'inferno')));
+        beam.render(infernoBeamPoses(building.level, stage, seconds, from, to), 0, 0, 100000);
+      });
     }
+    for (const [key, view] of this.beams)
+      if (!wantedBeams.has(key)) {
+        view.destroy();
+        this.beams.delete(key);
+      }
     for (const [id, view] of this.views)
       if (!wanted.has(id)) {
         view.destroy();

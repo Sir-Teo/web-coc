@@ -1796,6 +1796,7 @@ export class VillageScene extends Phaser.Scene {
     this.infernoPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
+      battle ?? null,
       iso,
     );
     this.castlePresentation.render(
