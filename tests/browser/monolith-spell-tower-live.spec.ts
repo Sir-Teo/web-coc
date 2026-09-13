@@ -102,6 +102,53 @@ async function capture(page: Page, name: string, focus?: { x: number; y: number 
   await page.screenshot({ path: `${DIR}/${name}.png` });
 }
 
+/** Tap an intact tower through the scene's battle tap handler, then capture its range ring. */
+async function inspectRange(page: Page, tower: { id: number; x: number; y: number }, name: string) {
+  const report = await page.evaluate(({ tower }) => {
+    const { model, scene } = window.__game;
+    const cam = scene.cameras.main,
+      ds = scene.scale.displayScale;
+    cam.setZoom(1.4 * ds.x, 1.4 * ds.y);
+    cam.centerOn(896 + (tower.x - tower.y) * 32, 112 + (tower.x + tower.y) * 16 - 40);
+    // A visible, deploy-blocked point of the tower, nearest its footprint (neighbours may overlap).
+    const target = model.battle.buildings.find((b) => b.id === tower.id),
+      sprite = scene.sprites.get(tower.id);
+    let world: { x: number; y: number } | null = null;
+    for (let dy = 40; dy >= -160 && !world; dy -= 4)
+      for (let dx = 0; Math.abs(dx) <= 80 && !world; dx = dx > 0 ? -dx : -dx + 4) {
+        const point = { x: sprite.x + dx, y: sprite.y + dy };
+        const grid = {
+          x: ((point.x - 896) / 32 + (point.y - 112) / 16) / 2,
+          y: ((point.y - 112) / 16 - (point.x - 896) / 32) / 2,
+        };
+        if (scene.pickBuilding(point.x, point.y, grid) === target && model.deployBlocked(grid.x, grid.y))
+          world = point;
+      }
+    if (!world) throw new Error(`No tappable point on tower ${tower.id}`);
+    const notes: string[] = [];
+    const notify = model.notify,
+      worldPoint = cam.getWorldPoint;
+    model.notify = (message: string) => notes.push(message);
+    cam.getWorldPoint = () => ({ x: world.x, y: world.y });
+    try {
+      scene.tap({ x: 0, y: 0 });
+    } finally {
+      model.notify = notify;
+      cam.getWorldPoint = worldPoint;
+    }
+    scene.sync();
+    scene.drawOverlay(0);
+    return { notes, selected: model.selected, gl: scene.game.renderer.gl.getError() };
+  }, { tower });
+  expect(report.gl).toBe(0);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${DIR}/${name}.png` });
+  await page.evaluate(() => {
+    window.__game.model.selected = null;
+  });
+  return report;
+}
+
 test('Monolithic: Monoliths release tiered orbs at real attackers and leave native rubble', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -143,6 +190,11 @@ for (const [index, weapon, name] of [
       army: weapon === 'invisibility' ? { dragon: 20, wizard: 30 } : { dragon: 20, giant: 24 },
       anchor: { kind: 'spelltower', weapon },
     });
+    const range = await inspectRange(page, tower, `${name}-range`);
+    expect(range.selected).toBe(tower.id);
+    expect(range.notes).toEqual([
+      expect.stringContaining(`Spell Tower · Level 3 · Range ${weapon === 'invisibility' ? 4.5 : 9} tiles`),
+    ]);
     const windup = await advance(
       page,
       `Object.values(b.late?.spellTower?.towers ?? {}).some((t) => t.windup > 1.05 && t.windup < 1.2)`,
