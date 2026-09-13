@@ -2,7 +2,7 @@ import { INFERNO_SOUNDS, infernoSample } from './inferno-sounds';
 import type { AudioManager } from './audio';
 import { infernoImpactPoses } from './inferno-effects';
 import { TROOPS } from './data';
-import { infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
+import { infernoBeamAlpha, infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
 import { infernoDamageStage } from './inferno-weapon';
 import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
@@ -113,7 +113,17 @@ export class InfernoPresentation {
         wantedBeams.add(key);
         let beam = this.beams.get(key);
         if (!beam) this.beams.set(key, (beam = new NativeSceneView(this.scene, 'inferno')));
-        beam.render(infernoBeamPoses(building.level, stage, seconds, from, to), 0, 0, 100000);
+        // The slot clock includes its acquisition tick; interpolate only the render remainder.
+        // Keeping this derived from combat state makes pause/seek independent of view creation.
+        const acquiredAt = (combat.nextTick - 1 - slot.lockedMs / 64) * 0.064;
+        const alpha = infernoBeamAlpha(building.level, stage, battle!.elapsed - acquiredAt);
+        beam.render(
+          infernoBeamPoses(building.level, stage, seconds, from, to),
+          0,
+          0,
+          100000,
+          alpha,
+        );
       });
     }
     for (const [key, view] of this.beams)

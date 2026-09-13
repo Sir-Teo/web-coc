@@ -21,6 +21,13 @@ export function infernoBeamProfile(level: number, stage: InfernoDamageStage) {
   };
 }
 
+/** Linear source-duration acquisition envelope; native easing is not yet verified. */
+export function infernoBeamAlpha(level: number, stage: InfernoDamageStage, age: number) {
+  if (!Number.isFinite(age)) throw new Error('Invalid Inferno beam age');
+  const fadeIn = infernoBeamProfile(level, stage).fadeIn;
+  return age <= 0 ? 0 : fadeIn > 0 ? Math.min(1, age / fadeIn) : 1;
+}
+
 /** Local endpoint mapping: the source beam artwork runs horizontally over ~48 units. */
 export function infernoBeamPoses(
   level: number,

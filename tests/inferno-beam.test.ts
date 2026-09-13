@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { infernoBeamPoses, infernoBeamProfile } from '../src/game/inferno-beam';
+import { infernoBeamAlpha, infernoBeamPoses, infernoBeamProfile } from '../src/game/inferno-beam';
 import { INFERNO_GRAPH } from '../src/game/inferno-art';
 it('resolves every tier and heat stage to retained source beam exports', () => {
   const exports = new Set<string>();
@@ -19,4 +19,22 @@ it('resolves every tier and heat stage to retained source beam exports', () => {
 });
 it('handles coincident endpoints without invalid transforms', () => {
   expect(infernoBeamPoses(1, 0, 0, { x: 1, y: 2 }, { x: 1, y: 2 })).toEqual([]);
+});
+
+it('uses the source acquisition fade for all tiers and heat stages', () => {
+  for (let level = 1; level <= 12; level++)
+    for (const stage of [0, 1, 2] as const) {
+      for (const [age, alpha] of [
+        [-1, 0],
+        [0, 0],
+        [0.032, 0.25],
+        [0.064, 0.5],
+        [0.096, 0.75],
+        [0.128, 1],
+        [1.5, 1],
+        [5.312, 1],
+      ])
+        expect(infernoBeamAlpha(level, stage, age)).toBeCloseTo(alpha, 10);
+    }
+  expect(() => infernoBeamAlpha(1, 0, NaN)).toThrow('Invalid Inferno beam age');
 });
