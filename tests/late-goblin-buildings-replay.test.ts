@@ -18,7 +18,7 @@ const squad = (
   target: string,
   nth = 0,
 ) => Array.from({ length: count }, () => ({ step, kind, ...deployNear(index, target, nth) }));
-const cases: [name: string, index: number, deploys: () => LateDeploy[], portable: boolean][] = [
+const cases: [name: string, index: number, deploys: () => LateDeploy[]][] = [
   [
     "Besieged's Goblin Hall and Communications Masts",
     73,
@@ -27,7 +27,6 @@ const cases: [name: string, index: number, deploys: () => LateDeploy[], portable
       ...squad(4, 0, 'dragon', 73, 'comm-mast', 3),
       ...squad(6, 30, 'balloon', 73, 'goblin-hall'),
     ],
-    true,
   ],
   [
     "Builderopolis' Builder's Huts",
@@ -37,10 +36,8 @@ const cases: [name: string, index: number, deploys: () => LateDeploy[], portable
       ...squad(6, 0, 'balloon', 84, 'builder'),
       ...squad(6, 12, 'pekka', 84, 'builder'),
     ],
-    true,
   ],
   [
-    // Portable files do not yet carry this village's Spell Tower weapon field.
     "M.O.M.M.A's Madhouse Boss Town Hall",
     89,
     () => [
@@ -48,13 +45,12 @@ const cases: [name: string, index: number, deploys: () => LateDeploy[], portable
       ...squad(10, 0, 'giant', 89, 'goblin-boss-th'),
       { step: 20, kind: 'lightning', x: 21, y: 21 },
     ],
-    false,
   ],
 ];
 
 it.each(cases)(
-  'reconstructs %s through replay seeks in both directions',
-  (_, index, deploys, portable) => {
+  'reconstructs %s through portable replay seeks in both directions',
+  (_, index, deploys) => {
     const data = lateGoblinReplay(index, deploys(), { steps: 900 });
     const snapshots = new Map<number, string>();
     const live = lateGoblinLive(data, 0);
@@ -79,11 +75,8 @@ it.each(cases)(
       Object.values(late.builderHut?.huts ?? {}).reduce((n, h) => n + h.fired, 0);
     expect(fired).toBeGreaterThan(0);
     expect(snapshots.size).toBeGreaterThan(4);
-    let record: ReplayData = structuredClone(data);
-    if (portable) {
-      record = parseReplayFile(JSON.stringify(makeReplayFile(data)));
-      expect(record).toEqual(data);
-    }
+    const record: ReplayData = parseReplayFile(JSON.stringify(makeReplayFile(data)));
+    expect(record).toEqual(data);
     const viewer = new GameModel();
     const home = JSON.stringify(viewer.state);
     expect(viewer.openReplay(record)).toBe(true);
