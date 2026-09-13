@@ -1,3 +1,5 @@
+import { INFERNO_SOUNDS, infernoSample } from './inferno-sounds';
+import type { AudioManager } from './audio';
 import { infernoImpactPoses } from './inferno-effects';
 import { TROOPS } from './data';
 import { infernoBeamPoses, infernoBeamProfile } from './inferno-beam';
@@ -15,6 +17,8 @@ import {
 } from './inferno-art';
 
 export function preloadInfernos(scene: Phaser.Scene) {
+  for (const [path, sound] of Object.entries(INFERNO_SOUNDS))
+    scene.load.binary(infernoSample(path), '/' + sound.path);
   preloadNativeMeshes(scene, INFERNO_GRAPH, 'inferno');
   for (let level = 1; level <= 12; level++)
     for (const mode of ['single', 'multi'] as const)
@@ -24,7 +28,13 @@ export class InfernoPresentation {
   readonly impacts = new Map<string, NativeSceneView>();
   readonly beams = new Map<string, NativeSceneView>();
   readonly views = new Map<number, NativeSceneView>();
-  constructor(private scene: Phaser.Scene) {}
+  constructor(
+    private scene: Phaser.Scene,
+    audio: AudioManager,
+  ) {
+    for (const path of Object.keys(INFERNO_SOUNDS))
+      audio.samples.register(infernoSample(path), scene.cache.binary.get(infernoSample(path)));
+  }
   clear() {
     for (const view of this.impacts.values()) view.destroy();
     this.impacts.clear();

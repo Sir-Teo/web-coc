@@ -4,6 +4,7 @@ export interface SampleCue {
   at: number;
   volume: number;
   pitch: number;
+  loop?: boolean;
 }
 
 /** Short native samples synchronized to the simulation clock, including replay seeks. */
@@ -59,7 +60,8 @@ export class SampleAudio {
     for (const cue of cues) {
       const buffer = this.buffers.get(cue.sample),
         age = (elapsed - cue.at) * cue.pitch;
-      if (!buffer || age < 0 || age >= buffer.duration) continue;
+      if (!buffer || age < 0 || (!cue.loop && age >= buffer.duration) || buffer.duration <= 0)
+        continue;
       wanted.add(cue.key);
       // Audio can finish between fixed simulation ticks. Do not replay its final tail.
       if (this.ended.has(cue.key)) continue;
@@ -68,6 +70,7 @@ export class SampleAudio {
         const source = ctx.createBufferSource(),
           gain = ctx.createGain();
         source.buffer = buffer;
+        if (cue.loop) source.loop = true;
         source.connect(gain);
         gain.connect(ctx.destination);
         gain.gain.value = cue.volume * 0.12;
@@ -82,8 +85,11 @@ export class SampleAudio {
           source.disconnect();
           gain.disconnect();
         };
-        source.start(0, age);
-      } else node.source.playbackRate.value = cue.pitch * speed;
+        source.start(0, cue.loop ? age % buffer.duration : age);
+      } else {
+        node.source.playbackRate.value = cue.pitch * speed;
+        if (cue.loop) node.gain.gain.value = cue.volume * 0.12;
+      }
     }
     for (const [key, node] of this.active)
       if (!wanted.has(key)) {

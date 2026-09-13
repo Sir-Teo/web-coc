@@ -1,3 +1,4 @@
+import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait, infernoBounds } from './inferno-art';
 import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
@@ -302,7 +303,7 @@ export class VillageScene extends Phaser.Scene {
     this.mortarPresentation = new MortarPresentation(this, this.audio);
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
-    this.infernoPresentation = new InfernoPresentation(this);
+    this.infernoPresentation = new InfernoPresentation(this, this.audio);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -1848,6 +1849,7 @@ export class VillageScene extends Phaser.Scene {
         ...mortarCues,
         ...cannonCues,
         ...garrisonSoundCues(battle),
+        ...infernoSoundCues(battle),
       ],
       this.renderClock / 1000,
     );

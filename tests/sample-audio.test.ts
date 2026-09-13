@@ -118,3 +118,20 @@ it('does not play old cues when decoding finishes late', async () => {
   samples.sync([cue], 10, 1, true);
   expect(sources).toHaveLength(0);
 });
+
+it('loops native samples past their duration and resumes seeks at a wrapped offset', async () => {
+  const { samples, context, sources, gains, cue, unlock } = audio();
+  await unlock();
+  const loop = { ...cue, loop: true, at: 0, pitch: 1 };
+  samples.sync([loop], 5.25, 1, true);
+  expect(sources[0].loop).toBe(true);
+  expect(sources[0].start).toHaveBeenCalledWith(0, 1.25);
+  context.currentTime = 0.1;
+  samples.sync([{ ...loop, volume: 0.4 }], 5.35, 2, true);
+  expect(sources).toHaveLength(1);
+  expect(sources[0].playbackRate.value).toBe(2);
+  expect(gains[0].gain.value).toBe(0.4 * 0.12);
+  samples.sync([], 5.35, 2, true);
+  expect(sources[0].stop).toHaveBeenCalledOnce();
+  expect(sources[0].disconnect).toHaveBeenCalled();
+});
