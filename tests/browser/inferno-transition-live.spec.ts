@@ -43,6 +43,35 @@ test('single Inferno heat transition renders its original burst', async ({ page,
     };
   });
   expect(report).toEqual({ count: 1, impacts: 1, gl: 0 });
+  const sample = () =>
+    page.evaluate(async () => {
+      const { model, scene } = window.__game;
+      const { iso } = await import('/src/game/scene.ts');
+      const camera = scene.cameras.main;
+      const point = scene.screenFor(19, 19);
+      const rect = scene.scale.canvasBounds;
+      const world = camera.getWorldPoint(
+        (point.x - rect.left) * scene.scale.displayScale.x,
+        (point.y - rect.top) * scene.scale.displayScale.y,
+      );
+      const matrix = [...camera.matrixCombined.matrix];
+      model.state.settings.reducedMotion = true;
+      const still = scene.screenFor(19, 19);
+      model.state.settings.reducedMotion = false;
+      camera.preRender();
+      return {
+        matrix,
+        delta: [point.x - still.x, point.y - still.y],
+        world: [world.x, world.y],
+        expected: [iso(19, 19).x, iso(19, 19).y],
+      };
+    });
+  const first = await sample();
+  expect(Math.hypot(...first.delta)).toBeGreaterThan(0.01);
+  expect(first.world[0]).toBeCloseTo(first.expected[0], 4);
+  expect(first.world[1]).toBeCloseTo(first.expected[1], 4);
+  await page.waitForTimeout(100);
+  expect(await sample()).toEqual(first);
   await page.screenshot({ path: `output/playtest/inferno-transition-${browserName}.png` });
   expect(
     await page.evaluate(() => {

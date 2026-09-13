@@ -60,6 +60,7 @@ import { MORTAR_ART } from './mortar-art';
 import { preloadMortars, MortarPresentation } from './mortar-scene';
 import { mortarBounds } from './mortar-poses';
 import { mortarShake } from './mortar-shake';
+import { infernoShake } from './inferno-shake';
 import { SPRING_AIRTIME } from './trap-stats';
 import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
 import { OBSTACLES } from './obstacles';
@@ -313,7 +314,11 @@ export class VillageScene extends Phaser.Scene {
       const bomb = bombTowerShake(this.model.battle, reduced, replay);
       const mine = seekingMineShake(this.model.battle, reduced, replay);
       const mortar = mortarShake(this.model.battle, reduced, replay);
-      return { x: tesla.x + bomb.x + mine.x + mortar.x, y: tesla.y + bomb.y + mine.y + mortar.y };
+      const inferno = infernoShake(this.model.battle, reduced, replay);
+      return {
+        x: tesla.x + bomb.x + mine.x + mortar.x + inferno.x,
+        y: tesla.y + bomb.y + mine.y + mortar.y + inferno.y,
+      };
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
