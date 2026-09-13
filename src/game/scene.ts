@@ -2005,7 +2005,6 @@ export class VillageScene extends Phaser.Scene {
       if (d.kind !== 'skeleton') {
         if (battle!.elapsed >= d.spawnedAt && d.hp > 0) {
           const point = iso(d.x, d.y);
-          this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(point.x, point.y, 24, 12);
           this.bar(
             point.x,
             point.y - AIR_LIFT - (d.kind === 'dragon' ? 94 : 115),

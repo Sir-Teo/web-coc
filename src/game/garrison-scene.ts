@@ -2,7 +2,8 @@ import type Phaser from 'phaser';
 import type { Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { GARRISON_GRAPHS, garrisonPoses } from './garrison-poses';
+import { GARRISON_GRAPHS } from './garrison-poses';
+import { garrisonLayers } from './garrison-layers';
 import { GARRISON_SOUNDS, garrisonSample } from './garrison-sounds';
 import type { AudioManager } from './audio';
 import { GARRISON_EFFECT_GRAPH, garrisonImpactPoses } from './garrison-effects';
@@ -16,6 +17,7 @@ export function preloadGarrisonTroops(scene: Phaser.Scene) {
 }
 export class GarrisonPresentation {
   readonly defenders = new Map<number, NativeSceneView>();
+  readonly shadows = new Map<number, NativeSceneView>();
   readonly effects = new Map<string, NativeSceneView>();
   private families = new Map<number, string>();
   constructor(
@@ -28,6 +30,8 @@ export class GarrisonPresentation {
   clear() {
     for (const view of this.defenders.values()) view.destroy();
     this.defenders.clear();
+    for (const view of this.shadows.values()) view.destroy();
+    this.shadows.clear();
     this.families.clear();
     for (const view of this.effects.values()) view.destroy();
     this.effects.clear();
@@ -60,6 +64,8 @@ export class GarrisonPresentation {
       if (this.families.get(defender.id) !== family) {
         this.defenders.get(defender.id)?.destroy();
         this.defenders.delete(defender.id);
+        this.shadows.get(defender.id)?.destroy();
+        this.shadows.delete(defender.id);
         this.families.set(defender.id, family);
       }
       let view = this.defenders.get(defender.id);
@@ -69,12 +75,17 @@ export class GarrisonPresentation {
           (view = new NativeSceneView(this.scene, `garrison-${family}`)),
         );
       const point = iso(defender.x, defender.y);
-      view.render(
-        garrisonPoses(defender, battle!, reduced),
-        point.x,
-        point.y - lift,
-        7500 + point.y / 10000,
-      );
+      const layers = garrisonLayers(defender, battle!, reduced);
+      let shadow = this.shadows.get(defender.id);
+      if (!shadow)
+        this.shadows.set(
+          defender.id,
+          (shadow = new NativeSceneView(this.scene, `garrison-${family}`)),
+        );
+      // Original shadow stays on the ground while the body receives the local air lift.
+      shadow.render(layers.shadow, point.x, point.y, -839);
+      for (const object of shadow.objects) object.setData('nativeGarrisonShadow', defender.id);
+      view.render(layers.body, point.x, point.y - lift, 7500 + point.y / 10000);
       for (const object of view.objects) object.setData('nativeGarrisonDefender', defender.id);
     }
     for (const [id, view] of this.defenders)
@@ -82,6 +93,8 @@ export class GarrisonPresentation {
         view.destroy();
         this.defenders.delete(id);
         this.families.delete(id);
+        this.shadows.get(id)?.destroy();
+        this.shadows.delete(id);
       }
   }
 }

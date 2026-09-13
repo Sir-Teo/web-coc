@@ -51,6 +51,16 @@ test('renders released original garrison troops and clamps Balloon death to its 
     scene.sync();
     scene.drawOverlay(2000);
     const count = scene.garrisonPresentation.defenders.size;
+    const groundedShadows = [...scene.garrisonPresentation.shadows].every(([id, view]) => {
+      const defender = battle.defenders.find((d) => d.id === id);
+      const point = iso(defender.x, defender.y);
+      return (
+        view.objects.length > 0 &&
+        view.objects.every(
+          (o) => o.x === point.x && o.y === point.y && o.depth >= -839 && o.depth < -838.99,
+        )
+      );
+    });
     const visible = [...scene.garrisonPresentation.defenders.values()].map((v) => v.objects.length);
     const balloon = battle.defenders.find((d) => d.kind === 'balloon');
     balloon.engaged = true;
@@ -74,6 +84,7 @@ test('renders released original garrison troops and clamps Balloon death to its 
     battle.elapsed = 3;
     scene.drawOverlay(3000);
     const deathEnd = scene.garrisonPresentation.defenders.get(balloon.id).objects.length;
+    const balloonShadowEnd = scene.garrisonPresentation.shadows.get(balloon.id).objects.length;
     const dragon = battle.defenders.find((d) => d.kind === 'dragon');
     const aliveView = scene.garrisonPresentation.defenders.get(dragon.id);
     hurtDefender(battle, dragon, 4000);
@@ -85,6 +96,7 @@ test('renders released original garrison troops and clamps Balloon death to its 
     battle.elapsed = 10;
     scene.drawOverlay(10000);
     const dragonTerminal = scene.garrisonPresentation.defenders.get(dragon.id).objects.length;
+    const dragonShadowEnd = scene.garrisonPresentation.shadows.get(dragon.id).objects.length;
     dragon.hp = dragon.maxHp;
     delete dragon.defeatedAt;
     battle.elapsed = 2;
@@ -95,6 +107,9 @@ test('renders released original garrison troops and clamps Balloon death to its 
     scene.cameras.main.setZoom(1.3).centerOn(point.x, point.y - 60);
     return {
       count,
+      groundedShadows,
+      balloonShadowEnd,
+      dragonShadowEnd,
       windupObjects,
       actionObjects,
       ghostObjects,
@@ -109,6 +124,9 @@ test('renders released original garrison troops and clamps Balloon death to its 
     };
   });
   expect(report.count).toBe(4);
+  expect(report.groundedShadows).toBe(true);
+  expect(report.balloonShadowEnd).toBe(0);
+  expect(report.dragonShadowEnd).toBe(0);
   expect(report.windupObjects).toBeGreaterThan(0);
   expect(report.actionObjects).toBeGreaterThan(0);
   expect(report.ghostObjects).toBeGreaterThan(0);
