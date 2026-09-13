@@ -2,9 +2,11 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-archer-tower-characters/index.json' with { type: 'json' };
 import defenders from '../fixtures/native-archer-tower-defenders/index.json' with { type: 'json' };
+import buildings from '../fixtures/native-archer-tower-buildings/index.json' with { type: 'json' };
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [
+  ...buildings.map((v) => ({ ...v, folder: 'native-archer-tower-buildings' })),
   ...index.map((v) => ({ ...v, folder: 'native-archer-tower-characters' })),
   ...defenders.map((v) => ({ ...v, folder: 'native-archer-tower-defenders' })),
 ].flatMap(({ category, folder }) => {
@@ -39,11 +41,13 @@ for (const witness of witnesses)
     const report = await page.evaluate(async (reference) => {
       const { scene, game } = window.__game;
       const { default: drill } =
-        reference.cases[0].family === 'defenders'
-          ? await import('/reference/archer-tower/defenders-runtime.json')
-          : await import('/reference/archer-tower/characters-runtime.json');
+        reference.cases[0].family === 'buildings'
+          ? await import('/reference/archer-tower/buildings-runtime.json')
+          : reference.cases[0].family === 'defenders'
+            ? await import('/reference/archer-tower/defenders-runtime.json')
+            : await import('/reference/archer-tower/characters-runtime.json');
       for (const id of Object.keys(drill.clips)) drill.exports[`witness_clip_${id}`] = Number(id);
-      const worlds = { characters: drill, defenders: drill };
+      const worlds = { buildings: drill, characters: drill, defenders: drill };
 
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');

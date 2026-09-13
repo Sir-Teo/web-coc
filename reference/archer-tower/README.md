@@ -8,6 +8,10 @@ The capture preserves all 21 raw tier rows and inherited tier records, 10 refere
 
 Importer reconstruction and the focused source test pass. This is a definition capture, not an artwork or combat integration. Original scene graphs, textures, resident archers, projectiles, effects, timings and mode behavior still require implementation and qualification. Midnight Oil remains gated by Archer Tower level 15 and Inferno support. No runtime behavior or home progression changes in this commit.
 
+## Current scope
+
+Original artwork renders in the home village and placement previews for every captured tier, with rooftop residents and source construction, upgrade and ruin states. Independent building/effect, resident and projectile frame comparisons pass in Chromium and WebKit. These checks qualify the retained source graphics within explicit pixel thresholds; native executable playback, resident world attachment, battle timing, projectile flight, alternate-mode gameplay and later-tier campaign support remain separate work. The sections below record the implementation history and supersede their earlier pending statuses as each stage completes.
+
 ## Reachable artwork inventory
 
 `scripts/native-archer-tower-inventory.py` resolves building, alternate, construction, ruin, projectile and particle export references against pinned original scene files, verifying fingerprint membership. Its `--check` mode reconstructs the inventory byte for byte. It records export IDs, reachable shape IDs, clip frame counts, frame labels, named children, blend modes and original texture identities/dimensions, and explicitly records masks and text fields.
@@ -86,3 +90,9 @@ Chromium and WebKit each pass 84 tier/state cases, resident presence/absence, in
 ### Placement preview
 
 Home placement and movement use the original tower and resident graphs, preserving the moved building tier and state. The stationary preview shares the village transform, uses 72% opacity, and tints both graphs red on invalid tiles. Cancellation, changing building types, and scene cleanup retire both views. All 21 tier previews, invalid boundaries, new level-one placement, and switching to a Gold Mine pass Chromium and WebKit; the WebKit screenshot was visually reviewed. This does not change battle artwork, progression, or the locally interpreted resident attachment.
+
+## Building pixel qualification completed
+
+All 6,158 independent cases are retained in 39 bounded sheets: 80 original export frame-zero cases plus all 6,078 retained clip frames. Coverage checks pass for every export and frame, and all saved PNG cells match their independent RGBA hashes. The source artwork importer again passes complete geometry and decoded texture reconstruction. The first browser sheet, including all tower exports and referenced effects, was visually reviewed in both browsers.
+
+Chromium and WebKit pass every case with the unchanged mean-error <1 and large-error fraction <0.003 thresholds. Worst mean error is 0.71655247 in Chromium and 0.85204082 in WebKit. Maximum single-channel difference is 8 in both browsers, with zero large-error pixels in both. Texture-batch changes, context-restoration changes and GL errors are zero. WebKit completed pages 1–23 before the shared server stopped after Chromium finished; pages 24–39 then passed with a WebKit-managed server. `building-pixel-qualification.json` records the source hash, every fixture file hash, metrics and split-run circumstances. This completes the previously pending building-frame qualification without claiming exact pixel identity or native executable parity.

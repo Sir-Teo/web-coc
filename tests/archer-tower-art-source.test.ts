@@ -62,3 +62,27 @@ for (const name of ['buildings', 'characters']) {
     expect(count).toBe(name === 'buildings' ? 6078 : 15);
   });
 }
+
+it('retains an independent pixel case for every original building export and frame', () => {
+  const source = read('buildings-source');
+  const folder = 'tests/fixtures/native-archer-tower-buildings';
+  const index = JSON.parse(readFileSync(`${folder}/index.json`, 'utf8'));
+  expect(index).toHaveLength(39);
+  const cases = index.flatMap((entry: { category: string; cases: number }) => {
+    const page = JSON.parse(readFileSync(`${folder}/${entry.category}.json`, 'utf8'));
+    expect(page.cases).toHaveLength(entry.cases);
+    expect(page.width * page.height).toBeLessThanOrEqual(16000000);
+    return page.cases as { export: string; frame: number; rgbaSha256: string }[];
+  });
+  expect(cases).toHaveLength(6158);
+  for (const name of Object.keys(source.graph.exports))
+    expect(cases.filter((c) => c.export === name).map((c) => c.frame)).toEqual([0]);
+  for (const [id, clip] of Object.entries(source.graph.clips) as [
+    string,
+    { timeline: unknown[] },
+  ][])
+    expect(cases.filter((c) => c.export === `witness_clip_${id}`).map((c) => c.frame)).toEqual(
+      clip.timeline.map((_, i) => i),
+    );
+  expect(cases.every((c) => /^[a-f0-9]{64}$/.test(c.rgbaSha256))).toBe(true);
+});
