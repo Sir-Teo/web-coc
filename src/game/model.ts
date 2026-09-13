@@ -365,6 +365,7 @@ export interface Battle {
   nativeArcherTowers?: true;
   /** Latest actual release per tower; bounded presentation history for version 41+. */
   archerTowerShots?: Record<number, { at: number; x: number; y: number }>;
+  archerTowerReleases?: { id: number; level: number; at: number }[];
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
@@ -2533,12 +2534,17 @@ export class GameModel {
           },
           this.onEffect,
         );
-        if (tower.kind === 'archertower' && b.nativeArcherTowers)
+        if (tower.kind === 'archertower' && b.nativeArcherTowers) {
           (b.archerTowerShots ??= {})[tower.id] = {
             at: projectile.launched,
             x: target.x,
             y: target.y,
           };
+          b.archerTowerReleases = (b.archerTowerReleases ?? []).filter(
+            (shot) => projectile.launched - shot.at < 2,
+          );
+          b.archerTowerReleases.push({ id: tower.id, level: tower.level, at: projectile.launched });
+        }
         if (tower.kind === 'cannon' && !tower.npc) recordCannonShot(b, tower, projectile);
         if (tower.kind === 'bombtower') recordBombTowerShot(b, tower, projectile);
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);

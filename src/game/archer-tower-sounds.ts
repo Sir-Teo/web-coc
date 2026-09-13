@@ -1,3 +1,6 @@
+import type { Battle } from './model';
+import { archerTowerSource } from './archer-tower-art';
+import { visualRandom } from './visual-random';
 import source from '../../reference/archer-tower/sounds.json';
 import type { SampleCue } from './sample-audio';
 export const ARCHER_TOWER_SOUNDS = source.sounds;
@@ -22,5 +25,32 @@ export function archerTowerHandlingCues(events: readonly ArcherTowerHandlingEven
       volume: Number(row.Volume) / 100,
       pitch: Number(row.MinPitch) / 100,
     };
+  });
+}
+
+/** Local deterministic selection among source variants; never consumes combat randomness. */
+export function archerTowerReleaseCues(battle?: Battle | null): SampleCue[] {
+  if (!battle?.nativeArcherTowers || battle.finished) return [];
+  return (battle.archerTowerReleases ?? []).flatMap((shot) => {
+    if (battle.elapsed - shot.at >= 2) return [];
+    const effect = archerTowerSource(shot.level).AttackEffect;
+    const rows = (source.effects as unknown as Record<string, Record<string, string>[]>)[effect];
+    const variants = rows.filter((row) => row.Sound);
+    const seed = Math.round(shot.at * 1000000);
+    const row = variants[Math.floor(visualRandom(shot.id, seed, 6100000) * variants.length)];
+    const inherited = { ...rows[0], ...row };
+    return [
+      {
+        key: `archer-tower:release:${shot.id}:${shot.at}`,
+        sample: archerTowerSample(inherited.Sound),
+        at: shot.at + Number(inherited.SoundDelay) / 1000,
+        volume: Number(inherited.Volume) / 100,
+        pitch:
+          (Number(inherited.MinPitch) +
+            (Number(inherited.MaxPitch) - Number(inherited.MinPitch)) *
+              visualRandom(shot.id, seed, 6100001)) /
+          100,
+      },
+    ];
   });
 }

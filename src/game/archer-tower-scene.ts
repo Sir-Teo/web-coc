@@ -3,6 +3,7 @@ import {
   ARCHER_TOWER_SOUNDS,
   archerTowerSample,
   archerTowerHandlingCues,
+  archerTowerReleaseCues,
   type ArcherTowerHandlingEvent,
 } from './archer-tower-sounds';
 import { archerTowerHandlingPoses } from './archer-tower-effects';
@@ -182,6 +183,6 @@ export class VillageArcherTowers {
         view.destroy();
         this.effects.delete(key);
       }
-    return archerTowerHandlingCues(this.homeEvents);
+    return [...archerTowerHandlingCues(this.homeEvents), ...archerTowerReleaseCues(battle)];
   }
 }

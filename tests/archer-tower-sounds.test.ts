@@ -44,3 +44,29 @@ it('emits pickup, successful placement and cancellation without sounding rejecte
   ]);
   expect(events[1]).toMatchObject({ sourceId: 999, x: 36.5, y: 36.5 });
 });
+
+it('retains overlapping release cues with deterministic source variants and bounded history', async () => {
+  const { archerTowerBattle } = await import('./fixtures/archer-tower-battle');
+  const { archerTowerReleaseCues } = await import('../src/game/archer-tower-sounds');
+  const model = archerTowerBattle();
+  for (let i = 0; i < 80; i++) model.step(0.05);
+  const battle = model.battle!;
+  expect(battle.archerTowerReleases!.length).toBeGreaterThan(1);
+  expect(battle.archerTowerReleases!.length).toBeLessThanOrEqual(5);
+  const before = JSON.stringify(battle);
+  const cues = archerTowerReleaseCues(battle);
+  expect(cues.length).toBeGreaterThan(1);
+  expect(new Set(cues.map((c) => c.key)).size).toBe(cues.length);
+  for (const cue of cues) {
+    expect(cue.volume).toBe(0.5);
+    expect(cue.pitch).toBeGreaterThanOrEqual(0.9);
+    expect(cue.pitch).toBeLessThanOrEqual(1.1);
+    expect(cue.sample).toMatch(/^archer-tower-arrow_hit_07(v2|v3)?\.ogg$/);
+  }
+  expect(archerTowerReleaseCues(JSON.parse(before))).toEqual(cues);
+  expect(JSON.stringify(battle)).toBe(before);
+  battle.elapsed += 2;
+  expect(archerTowerReleaseCues(battle)).toEqual([]);
+  delete battle.nativeArcherTowers;
+  expect(archerTowerReleaseCues(battle)).toEqual([]);
+});

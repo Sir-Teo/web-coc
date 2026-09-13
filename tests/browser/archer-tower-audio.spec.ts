@@ -121,3 +121,47 @@ test('model placement uses native cues without duplicate generic audio', async (
   expect(result.glError).toBe(0);
   await page.screenshot({ path: `output/playtest/archer-tower-handling-${browserName}.png` });
 });
+
+test('native release audio overlaps, deduplicates and stops on pause', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  const result = await page.evaluate(async () => {
+    const { SampleAudio } = await import('/src/game/sample-audio.ts');
+    const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
+    const { ARCHER_TOWER_SOUNDS, archerTowerSample } =
+      await import('/src/game/archer-tower-sounds.ts');
+    const { iso } = await import('/src/game/scene.ts');
+    const { scene } = window.__game;
+    scene.paused = true;
+    const context = new AudioContext();
+    await context.resume();
+    const samples = new SampleAudio(() => context);
+    for (const path of Object.keys(ARCHER_TOWER_SOUNDS))
+      samples.register(archerTowerSample(path), scene.cache.binary.get(archerTowerSample(path)));
+    for (let i = 0; i < 100 && samples.buffers.size < 9; i++)
+      await new Promise((r) => setTimeout(r, 10));
+    const model = archerTowerBattle();
+    for (let i = 0; i < 80; i++) model.step(0.05);
+    const battle = model.battle;
+    const latest = battle.archerTowerReleases.at(-1);
+    battle.elapsed = latest.at + 0.01;
+    const cues = scene.villageArcherTowers.render([], 0, iso, battle.elapsed, true, battle);
+    samples.sync(cues, battle.elapsed, 1, true);
+    const overlap = samples.active.size;
+    const nodes = [...samples.active.values()].map((v) => v.source);
+    samples.sync(cues, battle.elapsed, 1, true);
+    const duplicate = nodes.some((node, i) => node !== [...samples.active.values()][i].source);
+    samples.sync(cues, battle.elapsed, 2, true);
+    const speed = [...samples.active.entries()].every(
+      ([key, value]) =>
+        Math.abs(value.source.playbackRate.value - cues.find((c) => c.key === key).pitch * 2) <
+        0.00001,
+    );
+    samples.sync(cues, battle.elapsed, 1, false);
+    const paused = samples.active.size;
+    await context.close();
+    return { overlap, duplicate, speed, paused, decoded: samples.buffers.size };
+  });
+  expect(result.overlap).toBeGreaterThanOrEqual(2);
+  expect(result).toMatchObject({ duplicate: false, speed: true, paused: 0, decoded: 9 });
+});
