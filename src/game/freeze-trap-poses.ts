@@ -15,8 +15,8 @@ export const FREEZE_SOUNDS = effects.sounds;
 export const freezeSample = (path: string) => `freeze-${path.split('/').at(-1)}`;
 export const FREEZE_APPEAR = 'Bomb Appear';
 export const FREEZE_DEPLOY = ['Freeze deploy lvl1', 'Freeze deploy2 lvl1'] as const;
-/** Presentation tint for frozen attackers; the source has no per-troop freeze art. */
-export const FROZEN_TINT = 0x9fd8ff;
+/** Screen-blended ice tint for frozen attackers (local; the source has no per-troop freeze art). */
+export const FROZEN_TINT = 0x5fa8e8;
 
 const { scale, anchorX, anchorY } = FREEZE_TRAP_ART;
 const bodyRoot: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];

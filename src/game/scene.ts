@@ -2113,6 +2113,7 @@ export class VillageScene extends Phaser.Scene {
           im.setData('dying', true)
             .setData('defeatedAt', at)
             .setTint(u.ejected ? 0xffe9ae : 0xa09482)
+            .setTintMode(Phaser.TintModes.MULTIPLY)
             .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
             .setDepth(flying || u.ejected ? 7500 : p.y + 1)
             .setAngle(pose.angle)
@@ -2142,7 +2143,8 @@ export class VillageScene extends Phaser.Scene {
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
-        if (lateUnitFrozen(u, battle.elapsed)) im.setTint(FROZEN_TINT);
+        const frozen = lateUnitFrozen(u, battle.elapsed);
+        if (frozen) im.setTint(FROZEN_TINT);
         else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
         else if (
           (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
@@ -2150,6 +2152,8 @@ export class VillageScene extends Phaser.Scene {
         )
           im.setTint(0xffbd76);
         else im.clearTint();
+        // Frozen late campaign attackers brighten toward ice; other tints multiply as before.
+        im.setTintMode(frozen ? Phaser.TintModes.SCREEN : Phaser.TintModes.MULTIPLY);
         const p = iso(u.x, u.y),
           motion =
             sprung || u.hero || this.model.state.settings.reducedMotion
