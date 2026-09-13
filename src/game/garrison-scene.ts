@@ -38,7 +38,7 @@ export class GarrisonPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     lift: number,
   ) {
-    const particles = garrisonImpactPoses(battle, reduced, iso);
+    const particles = garrisonImpactPoses(battle, reduced, iso, lift);
     const effectKeys = new Set(particles.map((p) => p.key));
     for (const p of particles) {
       let view = this.effects.get(p.key);

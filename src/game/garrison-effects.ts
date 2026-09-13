@@ -3,7 +3,7 @@ import art from '../../reference/garrison/particle-art.json';
 import type { NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
-import { GARRISON_SCALE } from './garrison-poses';
+import { GARRISON_SCALE, dragonAttackOffset } from './garrison-poses';
 import { garrisonStats } from './garrison-reserve';
 import type { Battle } from './model';
 
@@ -30,6 +30,7 @@ export function garrisonImpactPoses(
   battle: Battle | null,
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
+  lift = 46,
 ): NativeParticlePose[] {
   if (!battle) return [];
   const result: NativeParticlePose[] = [];
@@ -41,8 +42,12 @@ export function garrisonImpactPoses(
     at: number,
     x: number,
     y: number,
+    offset = { x: 0, y: 0 },
+    facing = { x: 1, y: 0 },
   ) => {
     const rows = effects[name];
+    const point = iso(x, y);
+    const origin = { x: point.x + offset.x, y: point.y + offset.y };
     for (const [emitterIndex, effectRow] of rows.entries()) {
       const name = effectRow.ParticleEmitter;
       if (!name) continue;
@@ -58,17 +63,50 @@ export function garrisonImpactPoses(
           name,
           emitter,
           age - (duration * i) / count,
-          iso(x, y),
+          origin,
           (slot) => visualRandom(id, index, 1000000 + emitterIndex * 1000 + i * 16 + slot),
           effectRow.IsoLayer ?? rows[0].IsoLayer,
           reduced,
+          Math.atan2((facing.x + facing.y) * 0.16, (facing.x - facing.y) * 0.32),
+          Math.atan2(facing.y, facing.x),
         );
         if (pose) result.push(pose);
       }
     }
   };
   for (const defender of battle.defenders ?? []) {
-    if (defender.kind !== 'balloon' || battle.elapsed < defender.spawnedAt) continue;
+    if (defender.kind === 'skeleton' || battle.elapsed < defender.spawnedAt) continue;
+    if (defender.kind === 'dragon') {
+      // The source detaches the fire origin after start and destroys it on death.
+      if (defender.hp > 0)
+        for (const [index, attack] of defender.attacks.entries()) {
+          const facing = { x: attack.targetX - attack.x, y: attack.targetY - attack.y };
+          const offset = dragonAttackOffset(facing.x, facing.y);
+          effect(
+            defender.id,
+            index,
+            'attack',
+            raw.bindings.dragon.attack,
+            attack.at,
+            attack.x,
+            attack.y,
+            { x: offset.x, y: offset.y - lift },
+            facing,
+          );
+        }
+      if (defender.defeatedAt !== undefined)
+        effect(
+          defender.id,
+          0,
+          'die',
+          raw.bindings.dragon.die,
+          defender.defeatedAt,
+          defender.x,
+          defender.y,
+          { x: 0, y: -lift },
+        );
+      continue;
+    }
     for (const [index, attack] of defender.attacks.entries())
       effect(defender.id, index, 'hit', raw.bindings.balloon.hit, attack.at, attack.x, attack.y);
     if (defender.defeatedAt !== undefined && defender.deathResolved)

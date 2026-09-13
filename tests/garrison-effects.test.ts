@@ -64,3 +64,37 @@ it('gates the original death blast on damage resolution and its 416-ms delay', (
   expect(garrisonImpactPoses(battle, false, iso)).toEqual([]);
   expect(garrisonImpactPoses(null, false, iso)).toEqual([]);
 });
+
+it('detaches Dragon fire at the recorded mouth position and removes it on death', () => {
+  const model = new GameModel();
+  model.startBattle(0, true);
+  const battle = model.battle!;
+  const dragon = spawnGarrisonDefender(battle, 'dragon', 7, 1, 20, 20, 0);
+  dragon.attacks.push({ at: 1, x: 20, y: 20, targetId: 1, targetX: 22, targetY: 18 });
+  battle.elapsed = 1.3;
+  const fire = garrisonImpactPoses(battle, false, iso);
+  expect(new Set(fire.map((p) => p.emitter))).toEqual(
+    new Set(['dragonFire', 'dragonFireAdd', 'dragonSpark', 'dragonFireAddStart']),
+  );
+  expect(
+    fire
+      .filter((p) => p.emitter === 'dragonFireAdd')
+      .some((p) => 'group' in p.poses[0] && p.poses[0].blend === 8),
+  ).toBe(true);
+  expect(
+    fire.filter((p) => p.emitter === 'dragonFireAdd').some((p) => !('group' in p.poses[0])),
+  ).toBe(true);
+  dragon.x = 25;
+  dragon.y = 25;
+  expect(garrisonImpactPoses(battle, false, iso)).toEqual(fire);
+  expect(garrisonImpactPoses(battle, true, iso)).toEqual([]);
+  const copy = JSON.parse(JSON.stringify(battle));
+  expect(garrisonImpactPoses(copy, false, iso)).toEqual(fire);
+  hurtDefender(battle, dragon, 4000);
+  battle.elapsed = 1.4;
+  expect(new Set(garrisonImpactPoses(battle, false, iso).map((p) => p.emitter))).toEqual(
+    new Set(['SplatBig']),
+  );
+  battle.elapsed = 5;
+  expect(garrisonImpactPoses(battle, false, iso)).toEqual([]);
+});

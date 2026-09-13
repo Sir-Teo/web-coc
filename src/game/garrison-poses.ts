@@ -1,7 +1,12 @@
 import dragon from '../../reference/garrison/dragon7.json';
 import balloon from '../../reference/garrison/balloon8.json';
 import dragonDeath from '../../reference/garrison/dragon-death.json';
-import { nativeScenePoses, type NativeMeshGraph, type NativeMatrix } from './native-mesh';
+import {
+  nativeScenePoses,
+  nativeMatrix,
+  type NativeMeshGraph,
+  type NativeMatrix,
+} from './native-mesh';
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
 
@@ -32,6 +37,29 @@ export function balloonAttackPose(defender: GarrisonDefender, elapsed: number, r
 }
 /** Local world size; all source vertices, colors and nested timelines remain unchanged. */
 export const GARRISON_SCALE = 0.6;
+/** Local direction buckets shared by the original body and its source mouth locator. */
+export function dragonFacing(dx: number, dy: number) {
+  const screenX = dx - dy,
+    screenY = (dx + dy) / 2;
+  const mirror = screenX < 0 ? -1 : 1;
+  const slope = screenY / Math.max(1e-9, Math.abs(screenX));
+  const view = slope < -0.41421356237309503 ? 1 : slope > 0.41421356237309503 ? 3 : 2;
+  return { name: `dragon7_fly1_${view}`, mirror };
+}
+/** The three source roots are static; their empty attack_pivot children retain placement matrices. */
+export function dragonAttackOffset(dx: number, dy: number) {
+  const { name, mirror } = dragonFacing(dx, dy);
+  const graph = GARRISON_GRAPHS.dragon;
+  const clip = graph.clips[graph.exports[name]];
+  const slot = clip.names.indexOf('attack_pivot');
+  const placement = clip.frames[clip.timeline[0]].find((p) => p[0] === slot);
+  if (!placement) throw Error('Missing original Dragon attack locator');
+  const matrix = nativeMatrix(
+    [GARRISON_SCALE * mirror, 0, 0, 0, GARRISON_SCALE, 0],
+    graph.matrices[placement[1]],
+  );
+  return { x: matrix[2], y: matrix[5] };
+}
 export function garrisonPoses(defender: GarrisonDefender, battle: Battle, reduced = false) {
   if (battle.elapsed < defender.spawnedAt) return [];
   const graph = GARRISON_GRAPHS[defender.kind];
@@ -60,13 +88,9 @@ export function garrisonPoses(defender: GarrisonDefender, battle: Battle, reduce
     const last = defender.attacks.at(-1);
     const dx = (target?.x ?? last?.targetX ?? defender.x + 1) - defender.x;
     const dy = (target?.y ?? last?.targetY ?? defender.y) - defender.y;
-    const screenX = dx - dy,
-      screenY = (dx + dy) / 2;
-    mirror = screenX < 0 ? -1 : 1;
-    // Source views point up-right, right and down-right. These angular buckets are local.
-    const slope = screenY / Math.max(1e-9, Math.abs(screenX));
-    const view = slope < -0.41421356237309503 ? 1 : slope > 0.41421356237309503 ? 3 : 2;
-    name = `dragon7_fly1_${view}`;
+    const facing = dragonFacing(dx, dy);
+    mirror = facing.mirror;
+    name = facing.name;
   } else if (defender.hp <= 0) {
     name = 'balloon_lvl8_die1';
     time = reduced
