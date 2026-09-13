@@ -48,3 +48,9 @@ The discrepancy came from the CPU reference's affine fast path: its half-open bo
 The corrected 19-case projectile reference reconstructs exactly. Chromium and WebKit both pass, with worst mean channel error 0.433409 / 0.625 and maximum channel error 2. Large-error fractions, texture-batch changes, context changes and GL errors are zero. The WebKit sheet was visually reviewed. `projectile-pixel-resolution.json` retains the geometry diagnosis and final measurements alongside the initial failure record. These results cover the projectile family, not the whole tower or native executable parity.
 
 The previously running building-reference generation was stopped and restarted with the corrected explicit coverage option; those larger references remain in progress.
+
+## Explicit source pose API
+
+`archer-tower-art.ts` exposes the original building and resident-character graphs. Building poses compose the base with ready, construction, upgrade or ruined artwork for all 21 tiers. Alternate forms require an actual source export (tiers seven and above); missing forms throw instead of falling back. Resident poses resolve the tier's Archer variant and explicit direction 1–3, using the original idle/attack animation rows. Nonlooping attacks hold their last source frame. Some original attacks return to their first pose at the end, so start/end visual inequality is not assumed.
+
+The caller supplies world registration, direction and sampling time. No tower attachment, shot timing, target-facing rule or gearing eligibility is inferred here. Six focused pose/source tests pass across all tiers and directions, and production build passes. Full building and resident CPU reference generation remains in progress; these APIs are not yet wired into live village/battle presentation.
