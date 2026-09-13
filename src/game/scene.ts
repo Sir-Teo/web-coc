@@ -317,7 +317,7 @@ export class VillageScene extends Phaser.Scene {
     this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
-    this.villageArcherTowers = new VillageArcherTowers(this);
+    this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
@@ -777,6 +777,8 @@ export class VillageScene extends Phaser.Scene {
     const kind = this.model.placement;
     if (!this.model.place(x, y)) return false;
     if (
+      kind !== 'archertower' &&
+      kind !== 'darkdrill' &&
       kind !== 'tesla' &&
       kind !== 'bombtower' &&
       kind !== 'seekingairmine' &&
@@ -1866,10 +1868,12 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
-    this.villageArcherTowers.render(
+    const archerTowerCues = this.villageArcherTowers.render(
       battle ? [] : this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       this.model.state.settings.reducedMotion ? 0 : this.renderClock / 1000,
       iso,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
     );
     const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
@@ -1933,6 +1937,7 @@ export class VillageScene extends Phaser.Scene {
         ...sweeperCues,
         ...mortarCues,
         ...drillCues,
+        ...archerTowerCues,
         ...cannonCues,
         ...garrisonSoundCues(battle),
         ...infernoSoundCues(battle),
@@ -2290,6 +2295,26 @@ export class VillageScene extends Phaser.Scene {
       this.model.battle?.drillDestructions?.[fx.sourceId]
     ) {
       this.lastRevision = -1;
+      return;
+    }
+    if (
+      fx.type === 'archertower-pickup' ||
+      fx.type === 'archertower-place' ||
+      fx.type === 'archertower-cancel'
+    ) {
+      if (this.model.battle) return;
+      this.villageArcherTowers.handling(
+        fx.sourceId!,
+        fx.type === 'archertower-pickup'
+          ? 'pickup'
+          : fx.type === 'archertower-place'
+            ? 'place'
+            : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'archertower-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
     if (

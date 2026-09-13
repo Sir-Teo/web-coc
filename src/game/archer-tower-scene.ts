@@ -1,3 +1,11 @@
+import type { AudioManager } from './audio';
+import {
+  ARCHER_TOWER_SOUNDS,
+  archerTowerSample,
+  archerTowerHandlingCues,
+  type ArcherTowerHandlingEvent,
+} from './archer-tower-sounds';
+import { archerTowerHandlingPoses } from './archer-tower-effects';
 import type Phaser from 'phaser';
 import type { Building } from './model';
 import { ARCHER_TOWER_GRAPH, TOWER_ARCHER_GRAPH, archerTowerComposition } from './archer-tower-art';
@@ -45,6 +53,8 @@ export function villageArcherTowerBounds(b: Building, seconds: number) {
 export function preloadVillageArcherTowers(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, ARCHER_TOWER_GRAPH, 'archer-tower-body');
   preloadNativeMeshes(scene, TOWER_ARCHER_GRAPH, 'archer-tower-resident');
+  for (const [path, sound] of Object.entries(ARCHER_TOWER_SOUNDS))
+    scene.load.binary(archerTowerSample(path), '/' + sound.path);
 }
 export class VillageArcherTowers {
   ghost?: { body: NativeSceneView; resident: NativeSceneView };
@@ -72,9 +82,31 @@ export class VillageArcherTowers {
     this.ghost.resident.render(tint(poses.residents), x, y, 6001.01, 0.72);
   }
   readonly views = new Map<number, { body: NativeSceneView; resident: NativeSceneView }>();
-  constructor(private scene: Phaser.Scene) {}
+  readonly effects = new Map<string, NativeSceneView>();
+  private homeSequence = 0;
+  private homeEvents: ArcherTowerHandlingEvent[] = [];
+  constructor(
+    private scene: Phaser.Scene,
+    audio: AudioManager,
+  ) {
+    for (const path of Object.keys(ARCHER_TOWER_SOUNDS))
+      audio.samples.register(
+        archerTowerSample(path),
+        scene.cache.binary.get(archerTowerSample(path)),
+      );
+  }
+  handling(id: number, kind: 'pickup' | 'place' | 'cancel', at: number, x: number, y: number) {
+    if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
+    else {
+      this.homeEvents.push({ id, index: ++this.homeSequence, kind, at, x, y });
+      if (this.homeEvents.length > 16) this.homeEvents.shift();
+    }
+  }
   clear() {
     this.preview(undefined);
+    this.homeEvents = [];
+    for (const view of this.effects.values()) view.destroy();
+    this.effects.clear();
     for (const pair of this.views.values()) {
       pair.body.destroy();
       pair.resident.destroy();
@@ -85,6 +117,8 @@ export class VillageArcherTowers {
     buildings: Building[],
     seconds: number,
     iso: (x: number, y: number) => { x: number; y: number },
+    soundTime = seconds,
+    reduced = false,
   ) {
     const wanted = new Set<number>();
     for (const b of buildings) {
@@ -110,5 +144,20 @@ export class VillageArcherTowers {
         pair.resident.destroy();
         this.views.delete(id);
       }
+    this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
+    const wantedEffects = new Set<string>();
+    for (const pose of archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso)) {
+      wantedEffects.add(pose.key);
+      let view = this.effects.get(pose.key);
+      if (!view)
+        this.effects.set(pose.key, (view = new NativeSceneView(this.scene, 'archer-tower-body')));
+      view.render(pose.poses, pose.x, pose.y, pose.depth);
+    }
+    for (const [key, view] of this.effects)
+      if (!wantedEffects.has(key)) {
+        view.destroy();
+        this.effects.delete(key);
+      }
+    return archerTowerHandlingCues(this.homeEvents);
   }
 }
