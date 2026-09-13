@@ -31,6 +31,9 @@ for (const width of [1440, 390])
         await expect(page.locator('.info-cost')).toContainText(
           catalog.levels[level].cost.toLocaleString('en-US'),
         );
+      await expect(page.locator('.info-table')).toContainText(
+        catalog.levels[level - 1].hp.toLocaleString('en-US'),
+      );
       const production = catalog.levels[level - 1].production;
       await expect(page.locator('.info-table')).toContainText(
         `${production.per100Hours / 100} / hour`,

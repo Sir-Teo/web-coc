@@ -95,7 +95,7 @@ describe('hero progression', () => {
     const drill = makeBuilding(m.state.nextId++, 'darkdrill', 1, 5);
     m.state.buildings.push(drill);
     m.tick(m.clock + 3600000);
-    expect(drill.stored).toBeCloseTo(360);
+    expect(drill.stored).toBeCloseTo(20);
     m.collect(drill.id);
     expect(m.state.dark).toBe(0);
     const storage = makeBuilding(m.state.nextId++, 'darkstorage', 1, 9);
@@ -103,12 +103,12 @@ describe('hero progression', () => {
     m.state.dark = 9990;
     m.collect(drill.id);
     expect(m.state.dark).toBe(10000);
-    expect(drill.stored).toBeCloseTo(350);
+    expect(drill.stored).toBeCloseTo(10);
     drill.upgradeEnd = m.clock + 3600000;
     m.tick(m.clock + 1800000);
-    expect(drill.stored).toBeCloseTo(350);
+    expect(drill.stored).toBeCloseTo(10);
     m.tick(drill.upgradeEnd + 3600000);
-    expect(drill.stored).toBeCloseTo(1070);
+    expect(drill.stored).toBeCloseTo(40);
   });
 
   it('preserves old villages and rejects malformed hero state', () => {

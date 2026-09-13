@@ -226,7 +226,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
       'Extracts dark elixir to upgrade your heroes. Collect regularly to keep the drill working.',
     size: 3,
     width: 110,
-    hp: 900,
+    hp: darkDrillStats(1).hp,
     cost: darkDrillStats(1).cost,
     resource: 'elixir',
     category: 'Resources',
@@ -1065,6 +1065,7 @@ export const storageCapacity = (level: number) =>
   level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  (kind === 'darkdrill' ? darkDrillStats(level).hp : undefined) ??
   (kind === 'inferno' ? infernoStats(level).hp : undefined) ??
   (kind === 'clancastle' ? castleStats(level)?.hp : undefined) ??
   (kind === 'seekingairmine' ? 1 : undefined) ??

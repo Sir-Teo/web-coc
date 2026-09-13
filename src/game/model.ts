@@ -845,6 +845,7 @@ export class GameModel {
             'airsweeper',
             'camp',
             'darkstorage',
+            'darkdrill',
           ].includes(b.kind)) &&
         b.maxHp !== buildingHp(b.kind, b.level)
       ) {
