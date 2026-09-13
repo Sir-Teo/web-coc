@@ -29,7 +29,10 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 34;
+export const REPLAY_VERSION = 35;
+/** Version 34 has a narrowly retained Mortar flight rule; earlier playback stays expired. */
+export const compatibleReplayVersion = (version: unknown) =>
+  version === 34 || version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -78,8 +81,11 @@ export interface ReplayPlayback {
   duration: number;
   complete: boolean;
 }
-export function replayBattle(s: ReplaySetup): Battle {
+export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version === 34 && s.buildings.some((b) => b.kind === 'mortar')
+      ? { legacyMortarFlight: true as const }
+      : {}),
     ...(s.catalog ? { catalog: s.catalog } : {}),
     ...(s.scenery ? { scenery: structuredClone(s.scenery) } : {}),
     index: s.index,

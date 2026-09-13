@@ -1,3 +1,4 @@
+import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS, XBOW } from './xbow-stats';
 import { TESLA_LEVELS, TESLA } from './tesla-stats';
@@ -37,19 +38,7 @@ export const DEFENSE_PROGRESSION = {
     { dps: 74, hp: 1060, cost: 500000, seconds: 16200 },
     { dps: 85, hp: 1160, cost: 600000, seconds: 18000 },
   ],
-  mortar: [
-    { dps: 4, hp: 400, cost: 5000, seconds: 1800 },
-    { dps: 5, hp: 450, cost: 25000, seconds: 3600 },
-    { dps: 6, hp: 500, cost: 90000, seconds: 7200 },
-    { dps: 7, hp: 550, cost: 180000, seconds: 10800 },
-    { dps: 9, hp: 600, cost: 300000, seconds: 21600 },
-    { dps: 11, hp: 650, cost: 500000, seconds: 28800 },
-    // Older saves accept levels 7–10, beyond the playable TH8 catalog.
-    { dps: 15, hp: 700, cost: 900000, seconds: 43200 },
-    { dps: 20, hp: 800, cost: 1200000, seconds: 64800 },
-    { dps: 25, hp: 950, cost: 1600000, seconds: 72000 },
-    { dps: 30, hp: 1100, cost: 1800000, seconds: 86400 },
-  ],
+  mortar: MORTAR_LEVELS,
   archertower: [
     { dps: 11, hp: 380, cost: 1000, seconds: 15 },
     { dps: 15, hp: 420, cost: 2000, seconds: 120 },
@@ -78,7 +67,12 @@ export const DEFENSE_WEAPONS = {
     splash: WIZARD_TOWER.splash,
   },
   cannon: { range: 9, rate: 0.8 },
-  mortar: { range: 11, minRange: 4, rate: 5, splash: 1.5 },
+  mortar: {
+    range: MORTAR.range,
+    minRange: MORTAR.minRange,
+    rate: MORTAR.interval,
+    splash: MORTAR.splash,
+  },
   archertower: { range: 10, rate: 0.5 },
 } as const;
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mortarMuzzle } from '../../src/game/mortar-art';
+import { MORTAR_ART } from '../../src/game/mortar-art';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -8,50 +8,51 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#loading')).toBeHidden();
 });
 
-test('six Mortar levels have distinct untinted artwork and stable scale', async ({ page }) => {
+test('eighteen original Mortar levels have distinct untinted artwork and stable scale', async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     const base = m.state.buildings.find((b) => b.kind === 'cannon');
-    m.state.buildings = Array.from({ length: 6 }, (_, i) => ({
+    m.state.buildings = Array.from({ length: 18 }, (_, i) => ({
       ...base,
       id: 9000 + i,
       kind: 'mortar',
-      x: 6 + (i % 3) * 6,
-      y: 9 + Math.floor(i / 3) * 7,
+      x: 3 + (i % 6) * 5,
+      y: 8 + Math.floor(i / 6) * 6,
       level: i + 1,
     }));
-    m.state.nextId = 9006;
+    m.state.nextId = 9018;
     m.state.obstacles = [];
     m.state.settings.reducedMotion = true;
     m.changed();
-    scene.cameras.main.centerOn(896, 470);
-    scene.zoomBy(1.4);
+    scene.cameras.main.centerOn(1020, 640);
+    scene.zoomBy(1.05);
   });
   await expect
     .poll(() =>
       page.evaluate(() => [...window.__game.scene.sprites.values()].map((im) => im.texture.key)),
     )
-    .toEqual([
-      'mortar',
-      'mortar-level-2',
-      'mortar-level-3',
-      'mortar-level-4',
-      'mortar-level-5',
-      'mortar-level-6',
-    ]);
+    .toEqual(Array.from({ length: 18 }, (_, i) => (i === 0 ? 'mortar' : `mortar-level-${i + 1}`)));
   const geometry = await page.evaluate(() =>
     [...window.__game.scene.sprites.values()].map((im) => ({
       width: im.displayWidth,
       height: im.displayHeight,
       origin: im.originY,
       tint: im.tintTopLeft,
+      alpha: im.alpha,
     })),
   );
   expect(
     geometry.every(
-      (g) => g.width === 104 && g.height === 104 && g.origin === 0.88 && g.tint === 0xffffff,
+      (g) =>
+        g.width === MORTAR_ART.width &&
+        g.height === MORTAR_ART.height &&
+        g.origin === MORTAR_ART.originY &&
+        g.tint === 0xffffff &&
+        g.alpha === 0,
     ),
   ).toBe(true);
   await page.waitForTimeout(150);
@@ -87,16 +88,13 @@ test('a paid upgrade changes the village and Info artwork without moving the bui
     m.changed();
     return id;
   });
-  await expect(page.locator('.context-art')).toHaveAttribute(
-    'src',
-    /mortar-levels-v1\/level-2.webp$/,
-  );
+  await expect(page.locator('.context-art')).toHaveAttribute('src', /mortar-native\/level-2.png$/);
   const before = await page.evaluate((id) => {
     const im = window.__game.scene.sprites.get(id);
     return [im.x, im.y, im.displayWidth, im.displayHeight];
   }, id);
   await page.locator('[data-action="info"]').click();
-  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-2.webp$/);
+  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-2.png$/);
   await page.locator(`.info-upgrade [data-action="upgrade:${id}"]`).click();
   await page.evaluate((id) => {
     const m = window.__game.model;
@@ -104,7 +102,7 @@ test('a paid upgrade changes the village and Info artwork without moving the bui
     m.selected = id;
     m.changed();
   }, id);
-  await expect(page.locator('.context-art')).toHaveAttribute('src', /level-3.webp$/);
+  await expect(page.locator('.context-art')).toHaveAttribute('src', /level-3.png$/);
   expect(
     await page.evaluate((id) => {
       const im = window.__game.scene.sprites.get(id);
@@ -112,7 +110,7 @@ test('a paid upgrade changes the village and Info artwork without moving the bui
     }, id),
   ).toEqual(before);
   // The Info sheet remains open and updates when the upgrade completes.
-  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-3.webp$/);
+  await expect(page.locator('.info-hero img')).toHaveAttribute('src', /level-3.png$/);
   await page.waitForTimeout(150);
   await page.screenshot({
     path: `output/playtest/mortar-art-info-${test.info().project.name || 'chromium'}.png`,
@@ -127,7 +125,7 @@ test('moving a high-level Mortar preserves its artwork in the placement preview'
     const { model: m } = window.__game;
     const b = m.state.buildings.find((b) => b.kind === 'cannon');
     b.kind = 'mortar';
-    b.level = 6;
+    b.level = 18;
     m.selected = b.id;
     m.changed();
     return b.id;
@@ -138,76 +136,61 @@ test('moving a high-level Mortar preserves its artwork in the placement preview'
     .click();
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.ghost?.texture.key))
-    .toBe('mortar-level-6');
+    .toBe('mortar-level-18');
   expect(
     await page.evaluate(() => [
       window.__game.scene.ghost.displayWidth,
       window.__game.scene.ghost.displayHeight,
     ]),
-  ).toEqual([104, 104]);
+  ).toEqual([MORTAR_ART.width, MORTAR_ART.height]);
   await page.keyboard.press('Escape');
   await expect
     .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.texture.key, id))
-    .toBe('mortar-level-6');
+    .toBe('mortar-level-18');
 });
 
-test('all six barrels launch at their measured openings and retain their flight after destruction', async ({
+test('all eighteen original projectiles retain their airborne position after launcher destruction', async ({
   page,
 }) => {
-  for (let level = 1; level <= 6; level++) {
-    const result = await page.evaluate(
-      ({ level, muzzle }) => {
-        const { model: m, scene } = window.__game;
-        scene.paused = true;
-        m.returnHome();
-        const hall = { ...m.townhall, id: 9000, x: 22, y: 22 };
-        const mortar = {
-          ...m.state.buildings.find((b) => b.kind === 'cannon' || b.kind === 'mortar'),
-          id: 9001,
-          kind: 'mortar',
-          x: 10,
-          y: 10,
-          level,
-          hp: 400,
-          maxHp: 400,
-          cooldown: 0,
-        };
-        m.state.buildings = [hall, mortar];
-        m.state.nextId = 9002;
-        m.state.obstacles = [];
-        m.state.settings.reducedMotion = false;
-        for (const k of Object.keys(m.state.army)) m.state.army[k] = k === 'giant' ? 1 : 0;
-        for (const k of Object.keys(m.state.spells)) m.state.spells[k] = 0;
-        m.startBattle(0, true);
-        scene.sync();
-        const im = scene.sprites.get(9001);
-        const expected = {
-          x: im.x + (muzzle.x - im.originX) * im.displayWidth,
-          y: im.y + (muzzle.y - im.originY) * im.displayHeight,
-        };
-        m.activeTroop = 'giant';
-        if (!m.deploy(17, 11)) throw Error('Could not deploy in Mortar anchor fixture');
-        m.step(0.05);
-        scene.drawOverlay(0);
-        const flight = () => scene.children.list.find((g) => g.getData?.('mortarShell'));
-        const flash = scene.children.list.find((g) => g.getData?.('muzzle'));
-        const launch = { x: flight().x, y: flight().y };
-        const flashPoint = { x: flash.x, y: flash.y };
-        m.step(0.3);
-        scene.drawOverlay(0);
-        const before = { x: flight().x, y: flight().y };
-        m.battle.buildings.find((b) => b.id === 9001).hp = 0;
-        scene.sync();
-        scene.drawOverlay(0);
-        const after = { x: flight().x, y: flight().y };
-        return { expected, launch, flashPoint, before, after, anchor: im.getData('mortarMuzzle') };
-      },
-      { level, muzzle: mortarMuzzle(level) },
-    );
-    expect(result.launch).toEqual(result.expected);
-    expect(result.flashPoint).toEqual(result.expected);
-    expect(result.anchor).toEqual(result.expected);
-    expect(result.after).toEqual(result.before);
+  for (let level = 1; level <= 18; level++) {
+    const result = await page.evaluate(async (level) => {
+      const { model: m, scene } = window.__game;
+      const { mortarBattle } = await import('/tests/fixtures/mortar-battle.ts');
+      scene.paused = true;
+      m.returnHome();
+      const fixture = mortarBattle(level);
+      m.battle = fixture.battle;
+      m.state.settings.reducedMotion = false;
+      m.step(0.05);
+      scene.sync();
+      scene.drawOverlay(0);
+      const view = () =>
+        [...scene.mortarPresentation.projectiles.values()]
+          .flatMap((v) => v.objects)
+          .map((o) => ({
+            x: o.x,
+            y: o.y,
+            vertices: o.vertices ? [...o.vertices] : undefined,
+            data: o.getData('nativeMortarProjectile'),
+          }));
+      const launch = view();
+      m.step(0.3);
+      scene.drawOverlay(0);
+      const before = view();
+      m.battle.buildings.find((b) => b.id === 6).hp = 0;
+      scene.sync();
+      scene.drawOverlay(0);
+      return {
+        launch,
+        before,
+        after: view(),
+        ruin: scene.sprites.get(6).getData('nativeMortarRuin'),
+      };
+    }, level);
+    expect(result.launch.length).toBeGreaterThan(0);
+    expect(result.launch.every((o) => o.data.level === level)).toBe(true);
     expect(result.before).not.toEqual(result.launch);
+    expect(result.after).toEqual(result.before);
+    expect(result.ruin).toBe(true);
   }
 });

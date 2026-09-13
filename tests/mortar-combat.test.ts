@@ -29,9 +29,12 @@ function arena(level = 1) {
 
 describe('Mortar normal mode', () => {
   it('uses the accepted level table and applies shell damage only at impact', () => {
-    const hp = [400, 450, 500, 550, 600, 650, 700, 800, 950, 1100];
-    const dps = [4, 5, 6, 7, 9, 11, 15, 20, 25, 30];
-    for (let level = 1; level <= 10; level++) {
+    const hp = [
+      400, 450, 500, 550, 600, 650, 700, 800, 950, 1100, 1300, 1500, 1700, 1950, 2150, 2300, 2450,
+      2550,
+    ];
+    const dps = [4, 5, 6, 7, 9, 11, 15, 20, 25, 30, 35, 38, 42, 48, 54, 60, 66, 72];
+    for (let level = 1; level <= 18; level++) {
       expect(buildingHp('mortar', level)).toBe(hp[level - 1]);
       expect(defenseDps('mortar', level)).toBe(dps[level - 1]);
       expect(defenseDamage('mortar', level)).toBe(dps[level - 1] * 5);
@@ -89,8 +92,9 @@ describe('Mortar normal mode', () => {
     const { m, b, u } = arena();
     m.step(0.05);
     const impact = b.shells[0].impact;
-    m.step(0.575);
-    m.step(0.574);
+    const halfFlight = (impact - b.elapsed) / 2;
+    m.step(halfFlight);
+    m.step(halfFlight - 0.001);
     expect(u.hp).toBe(u.maxHp);
     m.step(0.001);
     expect(b.elapsed).toBeCloseTo(impact, 12);

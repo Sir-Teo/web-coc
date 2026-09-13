@@ -1,51 +1,32 @@
 import { describe, it, expect } from 'vitest';
-import sharp from 'sharp';
-import { createHash } from 'node:crypto';
-import { asset } from '../src/game/data';
-import {
-  MORTAR_ART_LEVELS,
-  mortarAsset,
-  mortarTexture,
-  mortarMuzzle,
-} from '../src/game/mortar-art';
+import { asset, buildingTexture } from '../src/game/data';
+import { MORTAR_ART_LEVELS, MORTAR_ART, mortarAsset, mortarTexture } from '../src/game/mortar-art';
+import { mortarBounds, mortarPoses } from '../src/game/mortar-poses';
 
-describe('Mortar level artwork', () => {
-  it('selects each playable level, with a stable fallback for legacy levels', () => {
-    expect(MORTAR_ART_LEVELS).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(new Set(MORTAR_ART_LEVELS.map(mortarTexture)).size).toBe(6);
-    for (const level of MORTAR_ART_LEVELS) expect(asset('mortar', level)).toBe(mortarAsset(level));
-    expect(asset('mortar', 10)).toBe(mortarAsset(6));
-    expect(mortarTexture(NaN)).toBe('mortar');
-    expect(mortarTexture(0)).toBe('mortar');
+describe('original Mortar artwork', () => {
+  it('selects all eighteen normal levels in the world and interface', () => {
+    expect(MORTAR_ART_LEVELS).toEqual(Array.from({ length: 18 }, (_, i) => i + 1));
+    expect(new Set(MORTAR_ART_LEVELS.map(mortarTexture)).size).toBe(18);
+    for (const level of MORTAR_ART_LEVELS) {
+      expect(asset('mortar', level)).toBe(mortarAsset(level));
+      expect(buildingTexture('mortar', level)).toBe(mortarTexture(level));
+    }
   });
 
-  it('ships six distinct clean cutouts with aligned feet and transparent borders', async () => {
-    const hashes = new Set<string>();
-    for (const level of MORTAR_ART_LEVELS) {
-      const { data, info } = await sharp(`public${mortarAsset(level)}`)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      expect([info.width, info.height, info.channels]).toEqual([384, 384, 4]);
-      const muzzle = mortarMuzzle(level);
-      const mouth = (Math.round(muzzle.y * 384) * 384 + Math.round(muzzle.x * 384)) * 4;
-      expect(data[mouth + 3]).toBe(255);
-      expect(Math.max(data[mouth], data[mouth + 1], data[mouth + 2])).toBeLessThan(80);
-      let visible = 0,
-        bottom = 0;
-      for (let y = 0; y < 384; y++)
-        for (let x = 0; x < 384; x++) {
-          const alpha = data[(y * 384 + x) * 4 + 3];
-          if (x < 8 || x >= 376 || y < 8 || y >= 376) expect(alpha).toBe(0);
-          if (alpha > 128) {
-            visible++;
-            bottom = Math.max(bottom, y);
-          }
+  it('registers original portraits and normal, construction, scaffold and ruin geometry to one footprint', () => {
+    expect(MORTAR_ART.originX * MORTAR_ART.width).toBeCloseTo(84 * MORTAR_ART.scale, 12);
+    expect(MORTAR_ART.originY * MORTAR_ART.height).toBeCloseTo(102 * MORTAR_ART.scale, 12);
+    for (const level of MORTAR_ART_LEVELS)
+      for (const state of ['setup', 'constructing', 'upgrading', 'ruin'] as const) {
+        const bounds = mortarBounds(level, state);
+        expect(bounds.every(Number.isFinite)).toBe(true);
+        expect(bounds[2] - bounds[0]).toBeGreaterThan(50);
+        expect(bounds[3] - bounds[1]).toBeGreaterThan(20);
+        for (let turret = 0; turret < 360; turret += 45) {
+          const poses = mortarPoses(level, { state, turret });
+          expect(poses.length).toBeGreaterThan(0);
+          expect(poses.every((p) => p.blend === 0)).toBe(true);
         }
-      expect(visible).toBeGreaterThan(50000);
-      expect(bottom).toBeGreaterThanOrEqual(362);
-      expect(bottom).toBeLessThanOrEqual(366);
-      hashes.add(createHash('sha256').update(data).digest('hex'));
-    }
-    expect(hashes.size).toBe(6);
+      }
   });
 });

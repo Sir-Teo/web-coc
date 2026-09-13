@@ -1,3 +1,9 @@
+import {
+  launchMortarShell,
+  stepMortarShells,
+  recordMortarDestroyed,
+  type MortarAttackState,
+} from './mortar-attack';
 import { distance2D } from './distance';
 import {
   recordWizardTowerShot,
@@ -104,6 +110,7 @@ import {
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
 import {
   REPLAY_VERSION,
+  compatibleReplayVersion,
   REPLAY_LIMIT,
   MAX_REPLAY_STEPS,
   MAX_REPLAY_ACTIONS,
@@ -340,6 +347,9 @@ export interface Battle {
   carried: SpellBook;
   auras: Aura[];
   shells: MortarShell[];
+  /** Only version-34 playback uses the original fixed Mortar flight. */
+  legacyMortarFlight?: true;
+  mortars?: Record<number, MortarAttackState>;
   projectiles?: CombatProjectile[];
   defenseTargets: Record<number, number>;
   defenseStuns: Record<number, number>;
@@ -381,6 +391,9 @@ export type FX = {
     | 'projectile'
     | 'impact'
     | 'mortar-fire'
+    | 'mortar-pickup'
+    | 'mortar-place'
+    | 'mortar-cancel'
     | 'collect'
     | 'spawn'
     | 'upgrade'
@@ -1298,6 +1311,7 @@ export class GameModel {
         b.kind === 'bombtower' ||
         b.kind === 'seekingairmine' ||
         b.kind === 'airsweeper' ||
+        b.kind === 'mortar' ||
         b.kind === 'wizardtower')
     ) {
       const size = BUILDINGS[b.kind].size;
@@ -2363,27 +2377,7 @@ export class GameModel {
     separateUnits(b.units, knownBuildings);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
-    // Shells land where the target stood when fired. Air units and troops that
-    // have escaped the impact circle take no damage, even if they were targeted.
-    for (const shell of b.shells) {
-      if (shell.impact > b.elapsed + 1e-9) continue;
-      for (const u of b.units)
-        if (
-          u.hp > 0 &&
-          !TROOPS[u.kind].flying &&
-          (u.spawnedAt ?? 0) <= shell.impact + 1e-9 &&
-          distance2D(u.x - shell.x, u.y - shell.y) <= shell.radius
-        )
-          u.hp -= shell.damage;
-      this.onEffect({
-        type: 'blast',
-        x: shell.x,
-        y: shell.y,
-        radius: shell.radius,
-        weapon: 'cannonball',
-      });
-    }
-    b.shells = b.shells.filter((shell) => shell.impact > b.elapsed + 1e-9);
+    stepMortarShells(b, this.onEffect);
     for (const tower of b.buildings) {
       const d = BUILDINGS[tower.kind];
       if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
@@ -2445,18 +2439,7 @@ export class GameModel {
           continue;
         }
         if (tower.kind === 'mortar') {
-          b.shells.push({
-            sourceId: tower.id,
-            fromX: center.x,
-            fromY: center.y,
-            x: target.x,
-            y: target.y,
-            launched: b.elapsed,
-            impact: b.elapsed + 1.15,
-            damage: power,
-            radius: d.splash!,
-          });
-          this.onEffect({ type: 'mortar-fire', sourceId: tower.id, x: center.x, y: center.y });
+          launchMortarShell(b, tower, target, power, this.onEffect);
           continue;
         }
         const projectile = launchProjectile(
@@ -2601,6 +2584,7 @@ export class GameModel {
       if (tesla) tesla.destroyedAt = at;
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'airsweeper') recordSweeperDestroyed(this.battle, b, at);
+      if (this.battle && b.kind === 'mortar') recordMortarDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'bombtower') {
         recordBombTowerDestroyed(this.battle, b, at);
         primeDeathBomb(
@@ -2617,7 +2601,7 @@ export class GameModel {
         type: 'destroy',
         ...(b.kind === 'bombtower' ? { sourceId: b.id, weapon: 'towerbomb' as const } : {}),
         ...(b.kind === 'wizardtower' ? { sourceId: b.id, weapon: 'arcane' as const } : {}),
-        ...(b.kind === 'airsweeper' ? { sourceId: b.id } : {}),
+        ...(['airsweeper', 'mortar'].includes(b.kind) ? { sourceId: b.id } : {}),
         x: b.x + BUILDINGS[b.kind].size / 2,
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',
@@ -2776,7 +2760,7 @@ export class GameModel {
     const record = this.state.raidLog?.find((r) => r.id === recordId);
     if (
       !record?.replay ||
-      record.replay.version !== REPLAY_VERSION ||
+      !compatibleReplayVersion(record.replay.version) ||
       !validateReplay(record.replay)
     ) {
       this.notify('This attack has no compatible replay. New attacks record automatically.');
@@ -2789,7 +2773,7 @@ export class GameModel {
     if (
       (this.battle && !this.battle.finished && !this.replay) ||
       !validateReplay(data) ||
-      data.version !== REPLAY_VERSION
+      !compatibleReplayVersion(data.version)
     )
       return false;
     this.cancel();
@@ -2823,7 +2807,7 @@ export class GameModel {
     runner.state.spells = { ...data.initial.spells };
     runner.state.troopLevels = { ...data.initial.troopLevels };
     runner.state.nextId = data.initial.nextId;
-    runner.battle = replayBattle(data.initial);
+    runner.battle = replayBattle(data.initial, data.version);
     runner.onEffect = (fx) => {
       if (!this.replay?.seeking) this.onEffect(fx);
     };

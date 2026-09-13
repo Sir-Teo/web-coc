@@ -357,7 +357,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: DEFENSE_PROGRESSION.mortar[0].cost,
     resource: 'gold',
     category: 'Defenses',
-    maxLevel: 10,
+    maxLevel: DEFENSE_PROGRESSION.mortar.length,
     available: [0, 0, 1, 1, 1, 2, 3, 4],
     build: DEFENSE_PROGRESSION.mortar[0].seconds,
     damage: 20,

@@ -177,6 +177,8 @@ async function boot() {
                   ...(u.shrink ? { shrink: u.shrink } : {}),
                 })),
               shells: model.battle.shells,
+              mortars: model.battle.mortars ?? {},
+              legacyMortarFlight: !!model.battle.legacyMortarFlight,
               projectiles: model.battle.projectiles ?? [],
               xbows: model.battle.xbows ?? {},
               airSweepers: model.battle.airSweepers ?? {},

@@ -68,7 +68,13 @@ try {
 } finally {
   await modules.close();
 }
-expect(fixtures.find((fixture) => fixture.level === 10).file).toEqual(historicalReplay);
+const currentLevelTen = fixtures.find((fixture) => fixture.level === 10);
+// This fixture has no Mortar: only the newly recorded rules version changes.
+expect({
+  ...currentLevelTen.file,
+  replay: { ...currentLevelTen.file.replay, version: 34 },
+}).toEqual(historicalReplay);
+fixtures.push({ ...currentLevelTen, label: 'historical-v34', file: historicalReplay });
 
 const server = await preview({
   preview: { host: '127.0.0.1', port: 0, strictPort: true },
@@ -149,7 +155,9 @@ try {
           name: 'wizard-tower-replay.json',
           mimeType: 'application/json',
           buffer:
-            fixture.level === 10 ? historicalBytes : Buffer.from(JSON.stringify(fixture.file)),
+            fixture.label === 'historical-v34'
+              ? historicalBytes
+              : Buffer.from(JSON.stringify(fixture.file)),
         });
         expect((await seek(0)).battle.projectiles).toEqual([]);
         const flight = await seek(fixture.flightAt);
@@ -168,7 +176,7 @@ try {
         await (await download).saveAs(path);
         const exported = JSON.parse(await fs.readFile(path, 'utf8'));
         expect(exported).toEqual(fixture.file);
-        expect(exported.replay.version).toBe(34);
+        expect(exported.replay.version).toBe(fixture.file.replay.version);
         expect((await seek(0)).battle.projectiles).toEqual([]);
         expect((await seek(fixture.flightAt)).battle).toEqual(flight.battle);
         await page.locator('[data-action="replay-exit"]').click();

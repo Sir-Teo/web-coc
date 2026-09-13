@@ -19,6 +19,7 @@ const bombTowerNative = JSON.parse(await fs.readFile('reference/bombtower/native
 const seekingMineNative = JSON.parse(
   await fs.readFile('reference/seeking-mine/native.json', 'utf8'),
 );
+const mortarNative = JSON.parse(await fs.readFile('reference/mortar/native.json', 'utf8'));
 const sweeperNative = JSON.parse(await fs.readFile('reference/air-sweeper/native.json', 'utf8'));
 const wizardTowerNative = JSON.parse(
   await fs.readFile('reference/wizard-tower/native.json', 'utf8'),
@@ -93,10 +94,11 @@ for (const [name, engine] of Object.entries(engines)) {
     ...['lightning', 'heal', 'rage'].map((kind) => `/assets/spells/${kind}-v2.webp`),
     ...Array.from({ length: 8 }, (_, i) => `/assets/buildings/camp-levels-v1/level-${i + 1}.webp`),
     '/assets/environment/terrain-field-v4.webp',
-    ...Array.from(
-      { length: 6 },
-      (_, i) => `/assets/buildings/mortar-levels-v1/level-${i + 1}.webp`,
-    ),
+    ...[
+      ...Object.values(mortarNative.world.textures),
+      ...Object.values(mortarNative.previews),
+      ...Object.values(mortarNative.sounds),
+    ].map((value) => '/' + value.path),
     '/assets/buildings/airdefense-v2.webp',
     '/assets/buildings/tier3/airdefense-v2.webp',
     '/assets/buildings/spellfactory-v2.webp',

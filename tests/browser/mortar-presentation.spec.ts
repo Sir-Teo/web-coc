@@ -37,15 +37,24 @@ async function prepare(page, reduced = false) {
 async function read(page) {
   return page.evaluate(() => {
     const { model: m, scene } = window.__game;
-    const shell = scene.children.list.find((g) => g.getData?.('mortarShell'));
-    const flashes = scene.children.list.filter((g) => g.getData?.('muzzle'));
+    const shell = scene.children.list.find((g) => g.getData?.('nativeMortarProjectile'));
+    const flashes = scene.children.list.filter(
+      (g) => g.getData?.('nativeMortarEffect')?.emitter === 'Mortar_flash',
+    );
     return {
       shells: m.battle.shells.length,
       hp: m.battle.units[0].hp,
       maxHp: m.battle.units[0].maxHp,
-      pose: shell ? { x: shell.x, y: shell.y, progress: shell.getData('flightProgress') } : null,
-      flashes: flashes.map((g) => ({ x: g.x, y: g.y, alpha: g.alpha })),
-      impacts: scene.children.list.filter((g) => g.getData?.('impact') === 'mortar').length,
+      flight: m.battle.mortars[9001].shots[0].impact - m.battle.mortars[9001].shots[0].launched,
+      pose: shell
+        ? { x: shell.x, y: shell.y, progress: shell.getData('nativeMortarProjectile').t }
+        : null,
+      flashes: flashes
+        .map((g) => ({ x: g.x, y: g.y, alpha: g.alpha }))
+        .sort((a, b) => a.x - b.x || a.y - b.y || a.alpha - b.alpha),
+      impacts: scene.children.list.filter((g) =>
+        g.getData?.('nativeMortarEffect')?.key.includes(':hit:'),
+      ).length,
     };
   });
 }
@@ -57,7 +66,7 @@ async function advance(page, seconds) {
   }, seconds);
 }
 
-test('Mortar flashes at its muzzle, follows a paused arc, and bursts on the ground at impact', async ({
+test('original Mortar effects and shell follow paused battle time and resolve on the ground at impact', async ({
   page,
 }) => {
   await prepare(page);
@@ -65,16 +74,15 @@ test('Mortar flashes at its muzzle, follows a paused arc, and bursts on the grou
   expect(first.shells).toBe(1);
   expect(first.hp).toBe(first.maxHp);
   expect(first.pose).not.toBeNull();
-  expect(first.flashes).toHaveLength(1);
-  expect(first.pose!.x).toBeCloseTo(first.flashes[0].x);
-  expect(first.pose!.y).toBeCloseTo(first.flashes[0].y);
+  // The original flash emits over 220 ms, so more particles appear after the launch instant.
+  expect(first.impacts).toBe(0);
   await page.waitForTimeout(450);
   expect(await read(page)).toEqual(first);
-  await advance(page, 0.575);
+  await advance(page, first.flight / 2);
   const middle = await read(page);
   expect(middle.pose!.progress).toBeCloseTo(0.5);
   expect(middle.pose!.y).toBeLessThan(first.pose!.y);
-  expect(middle.flashes).toHaveLength(0);
+  expect(middle.flashes.length).toBeGreaterThan(0);
   expect(middle.hp).toBe(first.hp);
   // Allow the canvas renderer to present the manually advanced, paused pose.
   await page.waitForTimeout(100);
@@ -82,21 +90,21 @@ test('Mortar flashes at its muzzle, follows a paused arc, and bursts on the grou
     path: `output/playtest/mortar-arc-${test.info().project.name}.png`,
     animations: 'disabled',
   });
-  await advance(page, 0.574);
+  await advance(page, first.flight / 2 - 0.001);
   expect((await read(page)).hp).toBe(first.hp);
   await advance(page, 0.001);
   const impact = await read(page);
   expect(impact.pose).toBeNull();
   expect(impact.shells).toBe(0);
   expect(impact.hp).toBe(first.hp - 20);
-  expect(impact.impacts).toBe(1);
+  expect(impact.impacts).toBeGreaterThan(0);
   // Allow the canvas renderer to present the manually advanced, paused pose.
   await page.waitForTimeout(100);
   await page.screenshot({
     path: `output/playtest/mortar-impact-${test.info().project.name}.png`,
     animations: 'disabled',
   });
-  await advance(page, 0.3);
+  await advance(page, 3);
   expect((await read(page)).impacts).toBe(0);
 });
 
@@ -119,10 +127,10 @@ for (const fromStart of [true, false]) {
     expect(first.pose).toBeNull();
     expect(first.flashes).toHaveLength(0);
     expect(first.hp).toBe(first.maxHp);
-    await advance(page, 1.15);
+    await advance(page, first.flight);
     expect((await read(page)).hp).toBe(first.hp - 20);
-    expect((await read(page)).impacts).toBe(1);
-    await advance(page, 0.2);
+    expect((await read(page)).impacts).toBeGreaterThan(0);
+    await advance(page, 0.31);
     expect((await read(page)).impacts).toBe(0);
   });
 }
@@ -144,7 +152,7 @@ test('seeking reconstructs the correct airborne shell and leaving playback clear
   });
   const later = await read(page);
   expect(later.pose).not.toBeNull();
-  expect(later.flashes).toHaveLength(0);
+  expect(later.impacts).toBe(0);
   const before = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.seekReplay(0.4);
@@ -157,7 +165,7 @@ test('seeking reconstructs the correct airborne shell and leaving playback clear
   const earlier = await read(page);
   expect(earlier.pose).not.toBeNull();
   expect(earlier.pose).not.toEqual(later.pose);
-  expect(earlier.flashes).toHaveLength(0);
+  expect(earlier.flashes.length).toBeGreaterThan(0);
   await page.waitForTimeout(350);
   expect(await read(page)).toEqual(earlier);
   await page.evaluate(() => {
@@ -171,9 +179,9 @@ test('seeking reconstructs the correct airborne shell and leaving playback clear
       () =>
         window.__game.scene.children.list.filter(
           (g) =>
-            g.getData?.('mortarShell') ||
-            g.getData?.('muzzle') ||
-            g.getData?.('impact') === 'mortar',
+            g.getData?.('nativeMortarProjectile') ||
+            g.getData?.('nativeMortarEffect')?.emitter === 'Mortar_flash' ||
+            g.getData?.('nativeMortarEffect')?.key.includes(':hit:'),
         ).length,
     ),
   ).toBe(0);

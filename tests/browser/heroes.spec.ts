@@ -53,10 +53,24 @@ test('Hero Hall, dark buildings, and King art load with accurate unlock labels',
   await page.locator('[data-action="progression"]').click();
   await expect(page.locator('.progression-tier')).toHaveCount(8);
   await expect(page.locator('.progression-tier.current')).toContainText('Town Hall 2');
-  const th5 = page.locator('.progression-tier').filter({ has: page.getByRole('heading', { name: 'Town Hall 5', exact: true }) });
-  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Wall/ }).locator('img')).toHaveAttribute('src', /walls-v1\/level-5.webp$/);
-  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Mortar/ }).locator('img')).toHaveAttribute('src', /mortar-levels-v1\/level-3.webp$/);
-  await expect(th5.locator('.progression-unlock').filter({ hasText: /^Archer Tower/ }).locator('img')).toHaveAttribute('src', /tier3\/archertower.webp$/);
+  const th5 = page
+    .locator('.progression-tier')
+    .filter({ has: page.getByRole('heading', { name: 'Town Hall 5', exact: true }) });
+  await expect(
+    th5.locator('.progression-unlock').filter({ hasText: /^Wall/ }).locator('img'),
+  ).toHaveAttribute('src', /walls-v1\/level-5.webp$/);
+  await expect(
+    th5
+      .locator('.progression-unlock')
+      .filter({ hasText: /^Mortar/ })
+      .locator('img'),
+  ).toHaveAttribute('src', /mortar-native\/level-3.png$/);
+  await expect(
+    th5
+      .locator('.progression-unlock')
+      .filter({ hasText: /^Archer Tower/ })
+      .locator('img'),
+  ).toHaveAttribute('src', /tier3\/archertower.webp$/);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/progression-desktop.png',
@@ -96,10 +110,16 @@ test('deploy King by pointer, activate with H, and start a fresh practice from t
   await page.getByRole('button', { name: 'Barbarian King, Deploy King' }).click();
   const point = await page.evaluate(() => window.__game.scene.screenFor(2.5, 13.5));
   await page.mouse.click(point.x, point.y);
-  await expect(page.getByRole('button', { name: 'Barbarian King, Activate ability' })).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'Barbarian King, Activate ability' }),
+  ).toBeEnabled();
   await page.keyboard.press('h');
   await expect(page.getByRole('button', { name: 'Barbarian King, Ability used' })).toBeDisabled();
-  await expect.poll(() => page.evaluate(() => window.__game.model.battle!.units.filter((u) => u.summoned).length)).toBe(8);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__game.model.battle!.units.filter((u) => u.summoned).length),
+    )
+    .toBe(8);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/hero-battle-desktop.png',

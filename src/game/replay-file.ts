@@ -1,4 +1,4 @@
-import { REPLAY_VERSION, validateReplay, type ReplayData } from './replay';
+import { compatibleReplayVersion, validateReplay, type ReplayData } from './replay';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
 import { EQUIPMENT_KEYS, type KingEquipment } from './equipment';
 import { campaignResources } from './campaign-loot';
@@ -12,7 +12,8 @@ export interface ReplayFile {
 /** Only combat data travels; never serialize a village or unknown imported fields. */
 export function makeReplayFile(replay: ReplayData): ReplayFile {
   if (!validateReplay(replay)) throw Error('This recording is invalid.');
-  if (replay.version !== REPLAY_VERSION) throw Error('This replay needs a different game version.');
+  if (!compatibleReplayVersion(replay.version))
+    throw Error('This replay needs a different game version.');
   const s = replay.initial;
   const army = (v: typeof s.army) =>
     Object.fromEntries(TROOP_KEYS.map((k) => [k, v[k]])) as typeof v;

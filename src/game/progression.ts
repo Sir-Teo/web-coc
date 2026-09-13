@@ -1,3 +1,4 @@
+import { mortarStats } from './mortar-stats';
 import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
 import { XBOW_LEVELS } from './xbow-stats';
@@ -42,6 +43,7 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
 };
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'mortar') return mortarStats(level)?.townhall ?? null;
   if (kind === 'airsweeper') return SWEEPER_LEVELS[level - 1]?.townhall ?? null;
   if (kind === 'wizardtower') return wizardTowerStats(level)?.townhall ?? null;
   if (kind === 'bombtower') return bombTowerStats(level)?.townhall ?? null;

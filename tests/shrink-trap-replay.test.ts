@@ -14,7 +14,8 @@ it('reconstructs every Magic Practice trap and status across portable playback a
     m.step(0.05);
   }
   expect(m.battle!.finished).toBe(true);
-  expect(m.battle!.result!.destruction).toBe(33);
+  // Version 35 resolves source-speed Mortar shells by distance; this fixed army reaches 42%.
+  expect(m.battle!.result!.destruction).toBe(42);
   expect(
     Object.values(m.battle!.traps)
       .filter((s) => s.shrink)

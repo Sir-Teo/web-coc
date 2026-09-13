@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 import native from '../reference/mortar/native.json';
 import packed from '../reference/mortar/runtime.json';
 import combat from '../reference/mortar/combat.json';
+import projectiles from '../reference/mortar/projectiles.json';
 import effects from '../reference/mortar/effects.json';
 import bodyWitness from './fixtures/native-mortar-mesh/body.json';
 import effectWitness from './fixtures/native-mortar-mesh/effects.json';
@@ -14,7 +15,7 @@ import { nativeCampaignIssues } from '../src/game/native-campaign';
 
 const hash = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 
-it('preserves eighteen original Mortar levels without changing current gameplay availability', () => {
+it('preserves eighteen original Mortar levels while preserving home limits and unsupported campaign gates', () => {
   expect(Object.keys(native.sources)).toHaveLength(16);
   expect(native.clientVersion).toBe('18.400.21');
   const rows = native.buildings.Mortar;
@@ -66,11 +67,11 @@ it('preserves eighteen original Mortar levels without changing current gameplay 
     expect(row.body).toBe(rows[i].ExportName);
     expect(row.projectile).toBe(rows[i].Projectile);
     expect(row.hitEffect).toBe(rows[i].HitEffect);
-    if (i < 10) expect(row).toMatchObject(DEFENSE_PROGRESSION.mortar[i]);
+    expect(row).toMatchObject(DEFENSE_PROGRESSION.mortar[i]);
   }
-  expect(native.reconstruction.liveIntegration).toBe(false);
+  expect(native.reconstruction.liveIntegration).toBe(true);
   expect(native.reconstruction.nativePlaybackVerified).toBe(false);
-  expect(nativeCampaignIssues(55)).toEqual(['Mortar level 11', 'Cannon level 15']);
+  expect(nativeCampaignIssues(55)).toEqual(['Cannon level 15']);
 });
 
 it('retains every turret degree, late terminal frame, optional gear and source state', () => {
@@ -115,6 +116,7 @@ it('retains every turret degree, late terminal frame, optional gear and source s
 });
 
 it('preserves thirteen ballistic shell families, repeated emitters and per-variant blending', () => {
+  expect(projectiles).toEqual(native.projectiles);
   expect(Object.keys(native.projectiles)).toHaveLength(13);
   for (const rows of Object.values(native.projectiles)) {
     expect(rows[0]).toMatchObject({

@@ -46,7 +46,10 @@ import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
-import { MORTAR_ART_LEVELS, mortarTexture, mortarMuzzle } from './mortar-art';
+import { MORTAR_ART } from './mortar-art';
+import { preloadMortars, MortarPresentation } from './mortar-scene';
+import { mortarBounds } from './mortar-poses';
+import { mortarShake } from './mortar-shake';
 import { SPRING_AIRTIME } from './trap-stats';
 import { WALL_ART_LEVELS, wallArt, wallTexture } from './wall-art';
 import { OBSTACLES } from './obstacles';
@@ -156,6 +159,7 @@ export class VillageScene extends Phaser.Scene {
   private bombTowerPresentation!: BombTowerPresentation;
   private wizardTowerPresentation!: WizardTowerPresentation;
   private sweeperPresentation!: SweeperPresentation;
+  private mortarPresentation!: MortarPresentation;
   private defenderSprites = new Map<number, Phaser.GameObjects.Image>();
   private ambientUnits: Phaser.GameObjects.Image[] = [];
   private campActors: CampActor[] = [];
@@ -188,6 +192,7 @@ export class VillageScene extends Phaser.Scene {
     preloadBombTowers(this);
     preloadWizardTowers(this);
     preloadSweepers(this);
+    preloadMortars(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
     for (const level of SKELETON_ART_TIERS) {
@@ -206,8 +211,6 @@ export class VillageScene extends Phaser.Scene {
         frameHeight: 128,
       });
     for (const level of WALL_ART_LEVELS) this.load.image(wallTexture(level), asset('wall', level));
-    for (const level of MORTAR_ART_LEVELS)
-      if (level > 1) this.load.image(mortarTexture(level), asset('mortar', level));
     for (const level of CAMP_ART_LEVELS)
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
     this.load.spritesheet(PUMPKIN_ART.texture, PUMPKIN_ART.asset, {
@@ -226,7 +229,7 @@ export class VillageScene extends Phaser.Scene {
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
-      this.load.image(k, asset(k));
+      if (k !== 'mortar') this.load.image(k, asset(k));
       if (
         k !== 'wall' &&
         k !== 'mortar' &&
@@ -277,6 +280,7 @@ export class VillageScene extends Phaser.Scene {
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
+    this.mortarPresentation = new MortarPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
       const reduced = this.model.state.settings.reducedMotion,
@@ -284,7 +288,8 @@ export class VillageScene extends Phaser.Scene {
       const tesla = teslaRevealShake(this.model.battle, reduced, replay);
       const bomb = bombTowerShake(this.model.battle, reduced, replay);
       const mine = seekingMineShake(this.model.battle, reduced, replay);
-      return { x: tesla.x + bomb.x + mine.x, y: tesla.y + bomb.y + mine.y };
+      const mortar = mortarShake(this.model.battle, reduced, replay);
+      return { x: tesla.x + bomb.x + mine.x + mortar.x, y: tesla.y + bomb.y + mine.y + mortar.y };
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
@@ -298,6 +303,7 @@ export class VillageScene extends Phaser.Scene {
       this.bombTowerPresentation.destroy();
       this.wizardTowerPresentation.destroy();
       this.sweeperPresentation.destroy();
+      this.mortarPresentation.destroy();
       this.seekingMinePresentation.destroy();
       this.cameraShake.destroy();
     });
@@ -726,6 +732,7 @@ export class VillageScene extends Phaser.Scene {
       kind !== 'bombtower' &&
       kind !== 'seekingairmine' &&
       kind !== 'airsweeper' &&
+      kind !== 'mortar' &&
       kind !== 'wizardtower'
     )
       this.audio.play('build');
@@ -779,17 +786,19 @@ export class VillageScene extends Phaser.Scene {
   }
   private nativeBuildingBounds(b: Building) {
     const sample =
-      b.kind === 'airsweeper'
-        ? sweeperBounds
-        : b.kind === 'tesla'
-          ? teslaBodyBounds
-          : b.kind === 'bombtower'
-            ? bombTowerBounds
-            : b.kind === 'wizardtower'
-              ? wizardTowerBounds
-              : b.kind === 'seekingairmine'
-                ? seekingMineBounds
-                : undefined;
+      b.kind === 'mortar'
+        ? mortarBounds
+        : b.kind === 'airsweeper'
+          ? sweeperBounds
+          : b.kind === 'tesla'
+            ? teslaBodyBounds
+            : b.kind === 'bombtower'
+              ? bombTowerBounds
+              : b.kind === 'wizardtower'
+                ? wizardTowerBounds
+                : b.kind === 'seekingairmine'
+                  ? seekingMineBounds
+                  : undefined;
     if (!sample) return;
     const state =
       b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
@@ -875,6 +884,7 @@ export class VillageScene extends Phaser.Scene {
       this.bombTowerPresentation.clear();
       this.wizardTowerPresentation.clear();
       this.sweeperPresentation.clear();
+      this.mortarPresentation.clear();
       this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
@@ -965,21 +975,16 @@ export class VillageScene extends Phaser.Scene {
       );
       im.setData(
         'intactHeight',
-        b.kind === 'airsweeper'
-          ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
-          : b.kind === 'bombtower'
-            ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-            : b.kind === 'wizardtower'
-              ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
-              : im.displayHeight,
+        b.kind === 'mortar'
+          ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
+          : b.kind === 'airsweeper'
+            ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
+            : b.kind === 'bombtower'
+              ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
+              : b.kind === 'wizardtower'
+                ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
+                : im.displayHeight,
       );
-      if (b.kind === 'mortar') {
-        const muzzle = mortarMuzzle(b.level);
-        im.setData('mortarMuzzle', {
-          x: im.x + (muzzle.x - im.originX) * im.displayWidth,
-          y: im.y + (muzzle.y - im.originY) * im.displayHeight,
-        });
-      }
       const trap = this.model.battle?.traps[b.id];
       if (b.npc === 'pumpkin-bomb')
         im.setFrame(
@@ -997,6 +1002,7 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'bombtower' ||
           b.kind === 'wizardtower' ||
           b.kind === 'airsweeper' ||
+          b.kind === 'mortar' ||
           b.kind === 'seekingairmine' ||
           b.npc === 'shrink-trap' ||
           isGoblinBuilding(b.npc)) &&
@@ -1172,6 +1178,12 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(SEEKING_MINE_ART.originX, SEEKING_MINE_ART.originY)
         .setFlipX(false)
         .setDisplaySize(SEEKING_MINE_ART.width, SEEKING_MINE_ART.height);
+    if (kind === 'mortar')
+      return im
+        .setOrigin(MORTAR_ART.originX, MORTAR_ART.originY)
+        .setFlipX(false)
+        .setDisplaySize(MORTAR_ART.width, MORTAR_ART.height)
+        .setData('nativeMortarRuin', false);
     if (kind === 'airsweeper')
       return im
         .setOrigin(SWEEPER_ART.originX, SWEEPER_ART.originY)
@@ -1186,7 +1198,7 @@ export class VillageScene extends Phaser.Scene {
         .setData('nativeWizardTowerRuin', false);
     const wall = kind === 'wall' ? wallArt(level) : undefined;
     const camp = kind === 'camp' ? campArt(level) : undefined;
-    const scale = wall || camp || kind === 'mortar' ? 1 : 1 + Math.min(4, level - 1) * 0.035;
+    const scale = wall || camp ? 1 : 1 + Math.min(4, level - 1) * 0.035;
     const width = wall ? wall.height * 0.75 : camp ? camp.width : BUILDINGS[kind].width * scale;
     return im
       .setOrigin(camp?.originX ?? 0.5, camp?.originY ?? (wall ? 0.84 : 0.88))
@@ -1269,6 +1281,10 @@ export class VillageScene extends Phaser.Scene {
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
     const p = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+    if (b.kind === 'mortar') {
+      im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeMortarRuin', true);
+      return;
+    }
     if (b.kind === 'airsweeper') {
       im.setCrop().setPosition(p.x, p.y).setAlpha(0).setData('nativeSweeperRuin', true);
       return;
@@ -1315,7 +1331,8 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'tesla' ||
         b.kind === 'bombtower' ||
         b.kind === 'wizardtower' ||
-        b.kind === 'airsweeper'
+        b.kind === 'airsweeper' ||
+        b.kind === 'mortar'
       )
         continue;
       const d = BUILDINGS[b.kind];
@@ -1677,6 +1694,13 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
+    const mortarCues = this.mortarPresentation.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+    );
     const sweeperCues = this.sweeperPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,
@@ -1704,6 +1728,7 @@ export class VillageScene extends Phaser.Scene {
         ...wizardTowerCues,
         ...shrinkCues,
         ...sweeperCues,
+        ...mortarCues,
       ],
       this.renderClock / 1000,
     );
@@ -2116,9 +2141,23 @@ export class VillageScene extends Phaser.Scene {
       if (fx.type !== 'airsweeper-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
+    if (fx.type === 'mortar-pickup' || fx.type === 'mortar-place' || fx.type === 'mortar-cancel') {
+      if (this.model.battle) return;
+      this.mortarPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'mortar-pickup' ? 'pickup' : fx.type === 'mortar-place' ? 'place' : 'cancel',
+        this.renderClock / 1000,
+        fx.x,
+        fx.y,
+      );
+      if (fx.type !== 'mortar-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
     if (
       fx.type === 'destroy' &&
-      this.model.buildings.some((b) => b.id === fx.sourceId && b.kind === 'airsweeper')
+      this.model.buildings.some(
+        (b) => b.id === fx.sourceId && (b.kind === 'airsweeper' || b.kind === 'mortar'),
+      )
     ) {
       this.lastRevision = -1;
       return;
@@ -2264,17 +2303,7 @@ export class VillageScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.0022);
       return;
     }
-    if (fx.type === 'blast' && fx.weapon === 'cannonball') {
-      this.combatEffects.groundBlast(
-        p,
-        fx.radius ?? 1.5,
-        this.model.state.settings.reducedMotion,
-        'mortar',
-      );
-      this.audio.play('destroy');
-      if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
-      return;
-    }
+    if (fx.type === 'blast' && fx.weapon === 'cannonball') return;
     if (fx.type === 'blast') {
       const radius = (fx.radius ?? 1.5) * 64;
       const lift = fx.toAir ? AIR_LIFT : 0;
@@ -2296,12 +2325,7 @@ export class VillageScene extends Phaser.Scene {
       if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
       return;
     }
-    if (fx.type === 'mortar-fire') {
-      if (!this.model.state.settings.reducedMotion)
-        this.combatEffects.muzzle('cannonball', this.mortarMuzzlePoint(fx.sourceId!, p));
-      this.audio.play('hit');
-      return;
-    }
+    if (fx.type === 'mortar-fire') return;
     if (fx.type === 'breath') {
       const { from, to } = this.projectileAnchors(fx);
       this.combatEffects.breath(from, to, this.model.state.settings.reducedMotion);
@@ -2446,16 +2470,6 @@ export class VillageScene extends Phaser.Scene {
     return { from, to: { x: q.x, y: toY } };
   }
 
-  private mortarMuzzlePoint(sourceId: number, ground: { x: number; y: number }) {
-    const source = this.sprites.get(sourceId);
-    return (
-      (source?.getData('mortarMuzzle') as { x: number; y: number } | undefined) ?? {
-        x: ground.x,
-        y: ground.y - 28,
-      }
-    );
-  }
-
   private drawProjectiles() {
     const b = this.model.battle;
     const shots =
@@ -2464,25 +2478,7 @@ export class VillageScene extends Phaser.Scene {
         : (b.projectiles ?? []).filter(
             (p) => p.weapon !== 'xbowbolt' && p.weapon !== 'towerbomb' && p.weapon !== 'arcane',
           );
-    const shells = !b || b.finished || this.model.state.settings.reducedMotion ? [] : b.shells;
-    const shellId = (s: (typeof shells)[number]) => `mortar:${s.sourceId}:${s.launched}`;
-    this.combatEffects.retainProjectiles(
-      new Set([...shots.map((p) => p.id), ...shells.map(shellId)]),
-    );
-    for (const shell of shells) {
-      const progress = Phaser.Math.Clamp(
-        (b!.elapsed - shell.launched) / (shell.impact - shell.launched),
-        0,
-        1,
-      );
-      this.combatEffects.poseMortar(
-        shellId(shell),
-        iso(shell.fromX, shell.fromY),
-        iso(shell.x, shell.y),
-        this.mortarMuzzlePoint(shell.sourceId, iso(shell.fromX, shell.fromY)),
-        progress,
-      );
-    }
+    this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
     for (const p of shots) {
       const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
       const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
@@ -2537,7 +2533,9 @@ export class VillageScene extends Phaser.Scene {
                 ? !im.getData('nativeWizardTowerRuin')
                 : b.kind === 'airsweeper'
                   ? !im.getData('nativeSweeperRuin')
-                  : !im.texture.key.startsWith('ruins-'))
+                  : b.kind === 'mortar'
+                    ? !im.getData('nativeMortarRuin')
+                    : !im.texture.key.startsWith('ruins-'))
         ) {
           this.renderRuin(b, im);
           this.drawRuinGround();

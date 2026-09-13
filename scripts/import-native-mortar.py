@@ -169,12 +169,12 @@ def build():
     native = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
         buildings={'Mortar': rows}, projectiles=projectiles, effects=effects, particles=particles,
         world=dict(source='sc/buildings.sc', graph=graph, textures=textures), previews=previews, sounds=sounds,
-        reconstruction=dict(liveIntegration=False, nativePlaybackVerified=False,
+        reconstruction=dict(liveIntegration=True, nativePlaybackVerified=False,
             scope='Eighteen original bodies, all turret frames and gearup controls, construction/scaffold/base/rubble, thirteen projectile families, seven effect records and five sounds.',
             preview='Normal-mode turret frame zero with gearup disabled. All directional and gearup geometry is retained. Common bounds enclose source bodies, base, construction and rubble with eight native units of padding at 2x; framing is local.',
-            turret='Levels 1-14 retain 360 source frames and levels 15-18 retain 361. Each turret has eight distinct placement patterns at 24 fps. Degree boundaries, recoil and gearing semantics require native engine corroboration.',
-            projectile='Original speed, start height/offset, ballistic and nontracking flags are retained. The current 1.15-second authored shell trajectory is not native-verified.',
-            availability='Packaging all source levels does not change home TH8 limits or unlock unsupported campaign stages. Geared-up mode remains unsupported.'))
+            turret='Levels 1-14 retain 360 source frames and levels 15-18 retain 361. Each turret has eight distinct placement patterns at 24 fps. Live normal mode uses eight nearest map-direction sectors; that mapping is local. No source recoil animation is present. Geared-up simulation remains unsupported.',
+            projectile='Original speed, start height/offset, ballistic and nontracking flags are retained. New battles use ground distance divided by source speed; version-34 recordings retain fixed 1.15-second flight. Visual arc, height conversion and particle physics remain local and are not native-engine-verified.',
+            availability='All eighteen normal levels render and simulate. Home TH8 limits remain level six and four Mortars; unsupported campaign stages stay gated. Geared-up mode remains unsupported.'))
     first = levels[0]
     combat = dict(levels=[dict(level=int(v['BuildingLevel']), townhall=int(v['TownHallLevel']), hp=int(v['Hitpoints']),
                     dps=int(v['DPS']), cost=int(v['BuildCost']),
@@ -183,7 +183,7 @@ def build():
                   building=first, intervalMs=int(first['AttackSpeed']), attackRange=int(first['AttackRange']),
                   minAttackRange=int(first['MinAttackRange']), damageRadius=int(first['DamageRadius']),
                   airTargets=first['AirTargets'] == 'TRUE', groundTargets=first['GroundTargets'] == 'TRUE', size=int(first['Width']))
-    return outputs, dict(native=native, runtime=runtime, combat=combat,
+    return outputs, dict(native=native, runtime=runtime, combat=combat, projectiles=projectiles,
                          effects=dict(effects=effects, particles=particles, sounds=sounds))
 
 
