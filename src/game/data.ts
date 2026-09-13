@@ -1,3 +1,4 @@
+import drillPortraits from '../../reference/dark-drill/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import { infernoAsset, infernoTexture } from './inferno-art';
 import { cannonAsset, cannonTexture } from './cannon-art';
@@ -1013,6 +1014,11 @@ export const asset = (
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
 ) => {
+  if (kind === 'darkdrill') {
+    const portrait = drillPortraits.portraits.find((row) => row.level === level);
+    if (!portrait) throw new Error(`Unsupported Dark Elixir Drill portrait: ${level}`);
+    return '/' + portrait.path;
+  }
   if (kind === 'inferno') return infernoAsset(level, infernoMode);
   if (kind === 'clancastle') return castleAsset(level);
   if (kind === 'darkstorage') return darkStorageAsset(level);

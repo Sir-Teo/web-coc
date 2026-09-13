@@ -32,3 +32,10 @@ Both resource timelines resolve to four distinct source display lists: frames 0â
 `scripts/native-dark-drill-portraits.py` renders each of the eleven original body exports at source frame zero together with its separate base. It preserves native scale, adds two pixels of crop padding, converts the independently composed premultiplied pixels to straight-alpha RGBA and records source-coordinate bounds, normalized origins and RGBA hashes in `portraits.json`. The metadata binds the exact captured art-source document. These are static UI assets; they do not replace the retained animated world geometry.
 
 The `--check` reconstruction reproduces every PNG pixel and registration field. All eleven portraits were visually reviewed together, including tier-specific bases, metalwork and machinery. Production build passes. Menu wiring and live building integration remain subsequent work, and the full animation browser-pixel comparison is still pending.
+
+
+## Menu portrait integration
+
+The shared UI asset lookup now resolves each Drill level to its original portrait, rejecting unsupported portrait tiers instead of substituting a generic image. Context and building-info menus consume this lookup. The scene explicitly retains its existing Drill world texture until the animated native presentation is integrated; the shared preload path would otherwise have replaced the world sprite with a UI thumbnail.
+
+Chromium and WebKit each pass desktop (1440 px) and phone (390 px) checks for all eleven portrait paths, successful image decoding, context selection and info-dialog visibility. The phone level-3 dialog was visually reviewed after its opening animation. Production build passes. Existing production, capacity, HP and progression values shown beside these images still await source-backed integration; this change does not claim their authenticity or expand campaign access.

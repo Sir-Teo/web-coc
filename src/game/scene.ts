@@ -249,7 +249,8 @@ export class VillageScene extends Phaser.Scene {
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
-      if (k !== 'mortar' && k !== 'cannon') this.load.image(k, asset(k));
+      if (k !== 'mortar' && k !== 'cannon')
+        this.load.image(k, k === 'darkdrill' ? '/assets/buildings/darkdrill.webp' : asset(k));
       if (
         k !== 'wall' &&
         k !== 'mortar' &&
