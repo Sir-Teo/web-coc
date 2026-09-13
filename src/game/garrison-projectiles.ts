@@ -1,6 +1,6 @@
 import { projectileRow, sourceFlag, sourceNumber } from './character-catalog';
-import { PROJECTILE_ART } from './character-art';
-import { CHARACTER_SCALE } from './character-poses';
+import { projectileArt } from './character-art';
+import { CHARACTER_SCALE, characterFacing } from './character-poses';
 import { garrisonStats } from './garrison-kinds';
 import { distance2D } from './distance';
 import { nativeScenePoses, type NativeScenePose } from './native-mesh';
@@ -35,20 +35,22 @@ export function garrisonShotPose(
 ): GarrisonShotPose | null {
   if (elapsed < shot.launched) return null;
   const row = projectileRow(shot.projectile);
-  const art = PROJECTILE_ART[row.SWF];
-  if (!art) throw Error(`Missing native projectile art: ${shot.projectile}`);
+  const art = projectileArt(shot.projectile, row.SWF);
   const travelled = distance2D(shot.flight.x - shot.fromX, shot.flight.y - shot.fromY);
   const dx = shot.x - shot.flight.x,
     dy = shot.y - shot.flight.y;
   const remaining = distance2D(dx, dy);
   const progress = travelled + remaining ? travelled / (travelled + remaining) : 1;
-  const offset = (sourceNumber(row, 'StartOffset') / 100) * (1 - progress);
+  // Bounce legs (Bowler) leave the struck point: no launch offset, starting at body height.
+  const bounced = (shot.leg ?? 0) > 0;
+  const offset = bounced ? 0 : (sourceNumber(row, 'StartOffset') / 100) * (1 - progress);
   const ground = iso(
     shot.flight.x + (dx / (remaining || 1)) * offset,
     shot.flight.y + (dy / (remaining || 1)) * offset,
   );
-  const fromHeight =
-    sourceNumber(row, 'StartHeight') * CHARACTER_SCALE + (shooterFlying ? lift : 0);
+  const fromHeight = bounced
+    ? TARGET_HEIGHT
+    : sourceNumber(row, 'StartHeight') * CHARACTER_SCALE + (shooterFlying ? lift : 0);
   const toHeight = TARGET_HEIGHT + (shot.air ? lift : 0);
   const arc =
     4 * sourceNumber(row, 'BallisticHeight') * CHARACTER_SCALE * progress * (1 - progress);
@@ -63,7 +65,13 @@ export function garrisonShotPose(
   const scale = (sourceNumber(row, 'Scale') / 100 || 1) * CHARACTER_SCALE;
   const c = Math.cos(rotation) * scale,
     s = Math.sin(rotation) * scale;
-  const clip = art.graph.clips[art.graph.exports[row.ExportName]];
+  // DirectionCount rows (the Bowler boulder) name three views; the flight direction picks one
+  // with horizontal reflection, like character facing (local buckets).
+  const directional = sourceNumber(row, 'DirectionCount') > 0;
+  const facing = characterFacing(shot.x - shot.fromX, shot.y - shot.fromY);
+  const exportName = directional ? `${row.ExportName}_${facing.view}` : row.ExportName;
+  const mirror = directional ? facing.mirror : 1;
+  const clip = art.graph.clips[art.graph.exports[exportName]];
   const time = sourceFlag(row, 'ScaleTimeline')
     ? (progress * (clip.timeline.length - 1)) / clip.fps
     : elapsed - shot.launched;
@@ -73,10 +81,10 @@ export function garrisonShotPose(
     x,
     y,
     depth: 7700 + ground.y / 10000,
-    poses: nativeScenePoses(art.graph, row.ExportName, time, {}, [c, -s, 0, s, c, 0]),
+    poses: nativeScenePoses(art.graph, exportName, time, {}, [c * mirror, -s, 0, s * mirror, c, 0]),
   };
   if (row.ShadowExportName) {
-    const shadowArt = PROJECTILE_ART[row.ShadowSWF];
+    const shadowArt = projectileArt(shot.projectile, row.ShadowSWF);
     // The original projectile shadow stays on the ground beneath the flight.
     pose.shadow = {
       prefix: shadowArt.prefix,

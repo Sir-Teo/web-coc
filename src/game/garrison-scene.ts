@@ -2,20 +2,34 @@ import type Phaser from 'phaser';
 import type { Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { CHARACTER_ART, COMMON_DEATH_ART, PROJECTILE_ART } from './character-art';
+import {
+  CHARACTER_ART,
+  COMMON_DEATH_ART,
+  PROJECTILE_ART,
+  PROJECTILE_GROUP_ART,
+} from './character-art';
 import { characterLayers } from './garrison-layers';
 import { GARRISON_SOUNDS, garrisonSample } from './garrison-sounds';
 import type { AudioManager } from './audio';
 import { GARRISON_EFFECT_GRAPH, garrisonImpactPoses } from './garrison-effects';
 import { garrisonShotPoses } from './garrison-projectiles';
 import { garrisonStats } from './garrison-kinds';
+import { GarrisonLateEffects } from './garrison-late-effects';
+
+/** Local alpha for concealed defenders (no source transparency value is known). */
+export const GARRISON_CONCEALED_ALPHA = 0.55;
 
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, GARRISON_EFFECT_GRAPH, 'garrison-effects');
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
   // Original character graphs (No Flight Zone foundation keys first) and projectile files.
-  for (const art of [...Object.values(CHARACTER_ART), COMMON_DEATH_ART, ...Object.values(PROJECTILE_ART)])
+  for (const art of [
+    ...Object.values(CHARACTER_ART),
+    COMMON_DEATH_ART,
+    ...Object.values(PROJECTILE_ART),
+    ...Object.values(PROJECTILE_GROUP_ART),
+  ])
     preloadNativeMeshes(scene, art.graph, art.prefix);
 }
 export class GarrisonPresentation {
@@ -24,14 +38,18 @@ export class GarrisonPresentation {
   readonly effects = new Map<string, NativeSceneView>();
   readonly shots = new Map<string, NativeSceneView>();
   private families = new Map<number, string>();
+  /** Later families: local chain lightning, death bolts, aura pulses and summon glows. */
+  private late: GarrisonLateEffects;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
     for (const path of Object.keys(GARRISON_SOUNDS))
       audio.samples.register(garrisonSample(path), scene.cache.binary.get(garrisonSample(path)));
+    this.late = new GarrisonLateEffects(scene);
   }
   clear() {
+    this.late.clear();
     for (const view of this.defenders.values()) view.destroy();
     this.defenders.clear();
     for (const view of this.shadows.values()) view.destroy();
@@ -63,6 +81,7 @@ export class GarrisonPresentation {
         this.effects.delete(key);
       }
     this.renderShots(battle, reduced, iso, lift);
+    this.late.render(battle, reduced, iso, lift);
     const wanted = new Set<number>();
     for (const defender of battle?.defenders ?? []) {
       if (defender.kind === 'skeleton') continue;
@@ -95,6 +114,8 @@ export class GarrisonPresentation {
         point.x,
         point.y - (flying ? lift : 0),
         flying ? 7500 + point.y / 10000 : point.y + 1.1,
+        // A concealed Royal Ghost is drawn translucent (local presentation of its stealth).
+        (defender.stealthUntil ?? 0) > battle!.elapsed ? GARRISON_CONCEALED_ALPHA : 1,
       );
       for (const object of view.objects) object.setData('nativeGarrisonDefender', defender.id);
     }

@@ -3,6 +3,7 @@ import type { AudioManager } from './audio';
 import type { Battle, Building } from './model';
 import type { SampleCue } from './sample-audio';
 import { BuilderHutPresentation, preloadBuilderHut } from './builder-hut-scene';
+import { DefendingBuilderPresentation } from './defending-builder-scene';
 import { EagleArtilleryPresentation, preloadEagleArtillery } from './eagle-artillery-scene';
 import { FreezeTrapPresentation, preloadFreezeTrap } from './freeze-trap-scene';
 import { GhostTrapPresentation, preloadGhostTrap } from './ghost-trap-scene';
@@ -60,6 +61,7 @@ export class LateCampaignPresentation {
       new MonolithPresentation(scene, audio),
       new LateGoblinBuildingsPresentation(scene, audio),
       new BuilderHutPresentation(scene, audio),
+      new DefendingBuilderPresentation(scene, audio),
     ];
   }
   handles(building: Building) {

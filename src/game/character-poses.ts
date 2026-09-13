@@ -109,6 +109,36 @@ export function characterAttackTime(
   return { row: windup.row, time: Math.max(0, windup.actionTime - defender.cooldown) };
 }
 
+/**
+ * Later-family state rows: a summoned unit plays its non-looping `spawn` row while it is pushed
+ * out and waits out SpawnIdle (Skeleton), clamped to the last frame; a Witch plays `attack2`
+ * (summon) from the recorded summon event through its clip. Starting the summon row at the
+ * event is a local alignment (its ActionFrame 22 is 0.7 s into a 30-fps clip).
+ */
+function spawnOrSummonRow(
+  defender: GarrisonDefender,
+  elapsed: number,
+  animation: string,
+  states: Record<string, Row[]>,
+  view: number,
+  reduced: boolean,
+) {
+  const spawn = states.spawn?.[0];
+  if (spawn && defender.idleUntil !== undefined && elapsed < defender.idleUntil) {
+    const clip = clipFor(animation, spawn, view);
+    const last = (clip.timeline.length - 1) / clip.fps;
+    return { row: spawn, time: reduced ? last : Math.min(last, Math.max(0, elapsed - defender.spawnedAt)) };
+  }
+  const summon = states.attack2?.[0];
+  const event = defender.summon?.events.at(-1);
+  if (summon && event && !reduced) {
+    const clip = clipFor(animation, summon, view);
+    const since = elapsed - event.at;
+    if (since >= 0 && since < clip.timeline.length / clip.fps) return { row: summon, time: since };
+  }
+  return null;
+}
+
 export interface CharacterPose {
   /** Graph texture prefix and graph for the scene view. */
   prefix: string;
@@ -140,7 +170,12 @@ export function characterPose(
   if (defender.hp <= 0) {
     const row = states.die[0];
     const death = row.SWF ? art : COMMON_DEATH_ART;
-    const clip = clipFor(animation, row, 1);
+    // Directional die rows in the character's own file (Electro Dragon) keep the last facing.
+    const directional = !!row.SWF && row.HasDirections === 'TRUE';
+    const dieFacing = directional
+      ? (({ dx, dy }) => characterFacing(dx, dy))(heading(defender, battle, stats.flying))
+      : { view: 1 as const, mirror: 1 as const };
+    const clip = clipFor(animation, row, dieFacing.view);
     const last = (clip.timeline.length - 1) / clip.fps;
     // Terminal source frames are empty; living poses return after backward reconstruction.
     const time = reduced
@@ -150,31 +185,37 @@ export function characterPose(
     return {
       prefix: death.prefix,
       shadows: death.shadows,
-      poses: nativeScenePoses(death.graph, row.SWF ? rowExport(row, 1) : DEATH_EXPORT, time, {}, [
-        scale,
-        0,
-        0,
-        0,
-        scale,
-        0,
-      ]),
+      poses: nativeScenePoses(
+        death.graph,
+        row.SWF ? rowExport(row, dieFacing.view) : DEATH_EXPORT,
+        time,
+        {},
+        [scale * dieFacing.mirror, 0, 0, 0, scale, 0],
+      ),
     };
   }
   const age = Math.max(0, battle.elapsed - defender.spawnedAt);
   const { dx, dy } = heading(defender, battle, stats.flying);
   const facing = characterFacing(dx, dy);
-  const attack = characterAttackTime(defender, battle.elapsed, animation, facing.view, reduced);
+  const special = spawnOrSummonRow(defender, battle.elapsed, animation, states, facing.view, reduced);
+  const attack = special
+    ? null
+    : characterAttackTime(defender, battle.elapsed, animation, facing.view, reduced);
   const target = battle.units.find((u) => u.id === defender.target && u.hp > 0);
+  // A concealed Royal Ghost walks straight to its target without a path.
+  const concealed = (defender.stealthUntil ?? 0) > battle.elapsed;
   const moving =
-    !defender.attacking && !!target && (stats.flying || defender.path.length > 0);
-  const row = attack
-    ? attack.row
-    : (defender.attacking && states.attack?.[0].Looping === 'TRUE'
-        ? states.attack
-        : moving
-          ? states.walk
-          : states.idle)[0];
-  const time = attack ? attack.time : reduced ? 0 : age;
+    !defender.attacking && !!target && (stats.flying || defender.path.length > 0 || concealed);
+  const row = special
+    ? special.row
+    : attack
+      ? attack.row
+      : (defender.attacking && states.attack?.[0].Looping === 'TRUE'
+          ? states.attack
+          : moving
+            ? states.walk
+            : states.idle)[0];
+  const time = special ? special.time : attack ? attack.time : reduced ? 0 : age;
   const mirror = row.HasDirections === 'TRUE' ? facing.mirror : 1;
   const scale = rowScale(row);
   const root: NativeMatrix = [scale * mirror, 0, 0, 0, scale, 0];

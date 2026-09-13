@@ -1,4 +1,12 @@
 import type { BuildingKind } from './data';
+import {
+  defendingBuilderDestroyed,
+  defendingBuilderLightning,
+  defendingBuilderLootHp,
+  defendingBuilderPending,
+  stepDefendingBuilder,
+  type DefendingBuilderBattleState,
+} from './defending-builder';
 import type { GarrisonUnitState } from './garrison-status';
 import type { Battle, Building, FX, Unit } from './model';
 import type { NpcBuildingKind } from './npc-buildings';
@@ -117,6 +125,8 @@ export interface LateBattleState {
   monolith?: MonolithBattleState;
   goblinBuildings?: LateGoblinBuildingsBattleState;
   builderHut?: BuilderHutBattleState;
+  /** Repairing Defending Builders sent out by armed Builder's Huts (defending-builder.ts). */
+  defendingBuilder?: DefendingBuilderBattleState;
 }
 export interface LateUnitState {
   spellTower?: SpellTowerUnitState;
@@ -146,6 +156,11 @@ const FAMILIES = [
     destroyed: lateGoblinBuildingsDestroyed,
   },
   { step: stepBuilderHut, pending: builderHutPending, destroyed: builderHutDestroyed },
+  {
+    step: stepDefendingBuilder,
+    pending: defendingBuilderPending,
+    destroyed: defendingBuilderDestroyed,
+  },
 ] as const;
 
 export const LATE_DEFENSE_KINDS: ReadonlySet<BuildingKind> = new Set([
@@ -215,6 +230,12 @@ export function lateDefenderStats<T extends { damage: number; speed: number }>(
 /** Defending units concealed by a defensive Invisibility pulse. */
 export const lateDefenderHidden = (battle: Battle, defender: { id: number }) =>
   spellTowerDefenderHidden(battle, defender);
+/** An attacker's Lightning strike: Defending Builders inside it reset their repair target. */
+export const lateLightningStrike = (battle: Battle, x: number, y: number, radius: number) =>
+  defendingBuilderLightning(battle, x, y, radius);
+/** Hit points that count toward loot; repairs never return stolen resources. */
+export const lateLootHitpoints = (battle: Battle, building: Building) =>
+  defendingBuilderLootHp(battle, building);
 /** ActivatedCombatAddBuildingClass=Defense: active hall weapons and woken Builder's Hut turrets
  * attract defense-targeting troops. Always false without `battle.late`. */
 export const lateActivatedDefense = (battle: Battle, building: Building) =>

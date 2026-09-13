@@ -49,6 +49,32 @@ PINS = {
     'sc/characters_7.sctx': 'e90c58ec5665bb886b64b2d2518fdf3aac08f229ba25dd913a2d89cc3e86c039',
     'sc/buildings.sc': 'f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed',
     'sc/buildings_39.sctx': 'dd27d9612fe135c3be364840eeabe45b53a229b24192246b56a08fa0606fdb16',
+    # Remaining defending families, the Ghost Trap's Royal Ghost and the Defending Builder.
+    'logic/traps.csv': '757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c',
+    'logic/globals.csv': '16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087',
+    'sc/chr_electro_dragon.sc': '7ea186f126e53981d7ed9ab816ac8eb5e0eaec48e66b3d204ca17ba5a4ad5fca',
+    'sc/chr_electro_dragon_0.sctx': '6117167427d5ce6a6c2f59480412d91ac45beeae76586ab507a8a8ad78871adc',
+    'sc/chr_electro_dragon_1.sctx': '1da851e78819c190ba1ca49bf828108f5f3bd39562ace7852d81c0689c94063c',
+    'sc/chr_golem.sc': '0e2fb6935e7cee3a2dcd36ccd0d3a5e74ee618978fef71e94d732815f4819abc',
+    'sc/chr_golem_0.sctx': 'e9ea7073b3a88336d6ca0f719d06be487e372e55115fe256d622f0e595703c40',
+    'sc/chr_witch.sc': 'f9bbd8cbd8f1cafe34857e452780f4984c9395828d382c43b1d3d5cc1146142e',
+    'sc/chr_witch_0.sctx': '2872edd72e19a03a9259e46bd8cecef8e103232f241d82891f59b785d12bfa97',
+    'sc/chr_skeleton.sc': '08ad67f9ba5d5d89f97883e05e1c0b423d8cbcb6e7f8031a0a3e7b70a0bae268',
+    'sc/chr_skeleton_0.sctx': '96ee254c9d9f6735c29b90ddb403d015999dcc36f063b66fdd3001a7a37d21c5',
+    'sc/chr_skeleton_1.sctx': 'be8c000338c47c9ffd224b35f379c9c80f97eaf87268fac06f050d9db6d0eb24',
+    'sc/chr_bowler.sc': '0efb03fbcfdb45cccdb118eaf771427bc54c62a5f154a1d10500f1f8e387178c',
+    'sc/chr_bowler_0.sctx': '15bfaad87cac69010e7b4bc480ad663abba125f2c4537b915981a77e52b01186',
+    'sc/chr_lava_hound.sc': 'ddc9037df98e63dfa6b2743bd3a4349b027aec50f8ac69408e6b16c3f6d3d9d4',
+    'sc/chr_lava_hound_0.sctx': '0446b6b5f8d6732d4f0a1c16b96d6cc48b9bf8697e1d4038e9ee4ef7131ec86d',
+    'sc/chr_lava_hound_1.sctx': 'a401a14aa108dd0274961d70ae8f542e64b3090f74d1600165095891eae83652',
+    'sc/chr_electro_titan.sc': '1ccaeaf2c73f59f927c5285340ec728f25a4e3e80719084bec8a5e0883bf6566',
+    'sc/chr_electro_titan_0.sctx': 'c03c2b8d0312642c2091528abcdc12802bd7335a11a14303ef37bee73848e83a',
+    'sc/chr_royale_ghost.sc': '631197637f845d22021a48c041074f3ef50951b100916ec2ac0a5bca36db202c',
+    'sc/chr_royale_ghost_0.sctx': '08a9c99e02529b087800b62bc9de88d7d80cc316984fde94b514255c4c1b70f2',
+    'sc/chr_worker.sc': 'b2e3e50390a1994fa6dec0a490392591e584aec81b49d3a1006b41e184a34cab',
+    'sc/chr_worker_0.sctx': '6f01598f31076c26bdee9554497b45d97f5620e44d51bb3eb5d10e3b4756e0d7',
+    # The Bowler's trollBoulder_lvl3 views and shadow sample this shared buildings texture.
+    'sc/buildings_6.sctx': '68d97a39c2bfbcf94f820f4091c078a9516f41dafe27744e7de26e30864d1ffc',
     # Public layout files are absent from this client fingerprint; they carry SHA-256 pins only.
     'level/npc55.json': '1ea0d18c26f39093b1449a7bf1df9c019b8fb640807ac95758eadad3d7f2bc16',
     'level/npc66.json': 'e8a2e3cd40ef3f82e64164dd8c15fc4f943e235c37e995c0bfe89e5aa3aa28ce',
@@ -73,10 +99,33 @@ FAMILIES = {
     'headhunter': dict(swf='sc/chr_headhunter.sc', animations=['HeadHunter_lvl3']),
     'super_minion': dict(swf='sc/chr_super_minion.sc', animations=['SuperMinion']),
     'baby_dragon': dict(swf='sc/chr_baby_dragon.sc', animations=['Baby Dragon 6']),
+    # Remaining roster families, their secondary/summoned troops, the Ghost Trap's Royal Ghost and
+    # the Builder's Hut Defending Builder. GolemSmall_lvl6 (Golemite) names exactly the Golem_lvl6
+    # exports at a different Scale, so it reuses that graph instead of duplicating its texture.
+    'electro_dragon': dict(swf='sc/chr_electro_dragon.sc', animations=['ElectroDragon_lvl3']),
+    'golem': dict(swf='sc/chr_golem.sc', animations=['Golem_lvl6'], aliases={'GolemSmall_lvl6': 'Golem_lvl6'}),
+    'witch': dict(swf='sc/chr_witch.sc', animations=['Necromancer_lvl2']),
+    'skeleton': dict(swf='sc/chr_skeleton.sc', animations=['Skeleton']),
+    'bowler': dict(swf='sc/chr_bowler.sc', animations=['Troll_lvl3']),
+    'lava_hound': dict(swf='sc/chr_lava_hound.sc', animations=['ADSeeker_lvl6', 'TinyBaby_lvl1']),
+    'electro_titan': dict(swf='sc/chr_electro_titan.sc', animations=['ElectroTitan_lvl2']),
+    'royale_ghost': dict(swf='sc/chr_royale_ghost.sc', animations=['Prototype_Ghost']),
+    'worker': dict(swf='sc/chr_worker.sc', animations=['Defending Builder']),
 }
 # Projectile exports live in the character files above or in shared original files.
 PROJECTILES = ['Arrow_small_darkElixirFire2', 'Headhunter_Card_lvl3', 'super_gargoyle_projectile',
                'super_gargoyle_projectile_big', 'babydragon_projectile_lvl3']
+# Later projectiles form their own graphs, so the earlier per-file projectile graphs stay intact.
+# Rows with DirectionCount name three original views (`_1`..`_3`).
+PROJECTILE_GROUPS = {'witch': ['Witch_projectile'], 'bowler': ['trollBoulder_lvl3'],
+                     'lava-hound': ['hound_projectile', 'tinyhound_projectile']}
+# Rows that spawn characters outside rosters: the Ghost Trap and armed Builder's Huts.
+TRAP_SPAWNERS = ['Ghost Trap']
+DEFENCE_TROOP_BUILDINGS = ['Builders Hut']
+# Globals the pinned older engine read for these mechanics; absence is recorded as evidence.
+ABSENT_GLOBALS = ['CHAINED_PROJECTILE_BOUNCE_COUNT']
+# Globals the Defending Builder's repairs read: healer slot percentages and the post-damage delay.
+REPAIR_GLOBALS = ['HEAL_STACK_PERCENT', 'ALLOW_REPAIR_AFTER_DAMAGE_TICKS']
 SHARED_PROJECTILE_FILES = {'sc/characters.sc': 'projectiles-characters', 'sc/buildings.sc': 'projectiles-buildings'}
 VIEWS = (1, 2, 3)
 # Economy/UI columns are not needed for combat or presentation; everything else is kept.
@@ -109,7 +158,9 @@ def block_exports(block, swf):
     for row in block['rows']:
         if row.get('SWF') != swf:
             # The common death export has an empty SWF and is imported by the garrison foundation.
-            require(row.get('SWF') == '' and row['ExportName'] == 'barbarian_death_1',
+            # The Defending Builder's die row names `temp_dummya4`, an empty one-frame clip in the
+            # common sc/characters.sc (its row also sets DeathShowTimeMS=1): nothing to capture.
+            require(row.get('SWF') == '' and row['ExportName'] in ('barbarian_death_1', 'temp_dummya4'),
                     f'Unexpected animation file {row.get("SWF")} for {row["ExportName"]}')
             continue
         names = ([f'{row["ExportName"]}_{v}' for v in VIEWS] if row['HasDirections'] == 'TRUE'
@@ -253,6 +304,35 @@ def build():
         rosters.append(dict(stage=stage, stageIndex=stage - 1, npc=first['Name'], layout=first['LevelFile'],
                             bunkers=bunkers, members=members))
     require([r['stageIndex'] for r in rosters] == [56, 67, 69, 72, 73, 74, 76, 77, 83, 89], 'Garrison stages differ')
+    # Characters spawned outside rosters: Ghost Trap spawns and armed Builder's Hut defence troops.
+    traps = table('logic/traps.csv')
+    trap_spawners = {}
+    for name in TRAP_SPAWNERS:
+        rows = inherited_levels(traps[name])
+        trap_spawners[name] = [{k: v for k, v in row.items() if k not in OMIT_COLUMNS and not k.startswith('Build')}
+                               for row in traps[name]]
+        for row in rows:
+            for key in ('SpawnedCharGround', 'SpawnedCharAir'):
+                if row.get(key):
+                    needed.add(row[key])
+    defence_troops = {}
+    for name in DEFENCE_TROOP_BUILDINGS:
+        rows = inherited_levels(buildings[name])
+        defence_troops[name] = [{k: row[k] for k in ('GlobalID', 'BuildingLevel', 'DefenceTroopCharacter', 'DefenceTroopLevel',
+                                                     'DefenceTroopCount', 'WakeUpSpace', 'WakeUpSpeed') if row.get(k)}
+                                for row in rows]
+        needed.update(row['DefenceTroopCharacter'] for row in rows if row.get('DefenceTroopCharacter'))
+    globals_table = table('logic/globals.csv')
+    require(not any(name in globals_table for name in ABSENT_GLOBALS), 'Expected absent global is present')
+    repair_globals = {}
+    for name in REPAIR_GLOBALS:
+        rows = globals_table[name]
+        if 'NumberArray' in rows[0]:
+            require(all(set(row) <= {'Name', 'NumberArray'} for row in rows), f'Unexpected {name} cells')
+            repair_globals[name] = [int(row['NumberArray']) for row in rows]
+        else:
+            require(len(rows) == 1 and set(rows[0]) == {'Name', 'NumberValue'}, f'Unexpected {name} cells')
+            repair_globals[name] = int(rows[0]['NumberValue'])
     # Summoned, secondary and defensive rows that later garrison families will need.
     for name in list(needed):
         for row in inherited_levels(characters[name]):
@@ -264,12 +344,18 @@ def build():
     used_animations, used_projectiles, used_abilities, used_spells = {}, {}, {}, {}
     # One graph per animation block keeps each roster's runtime texture compact; projectile
     # exports are grouped by their original file.
-    specs = []
+    specs, aliases = [], {}
     for family, spec in FAMILIES.items():
         for animation in spec['animations']:
             key = block_named(blocks, animation)
             used_animations[key] = blocks[key]
             specs.append((f'{family}/{slug(key)}', spec['swf'], block_exports(blocks[key], spec['swf']), key))
+        for alias, target in spec.get('aliases', {}).items():
+            key, target = block_named(blocks, alias), block_named(blocks, target)
+            require(set(block_exports(blocks[key], spec['swf'])) == set(block_exports(blocks[target], spec['swf'])),
+                    f'Alias {alias} does not name the same exports as {target}')
+            used_animations[key] = blocks[key]
+            aliases[key] = next(k for k, _, _, a in specs if a == target)
     projectile_exports = {}
     for name in PROJECTILES:
         row = projectiles[name][0]
@@ -279,14 +365,30 @@ def build():
             projectile_exports.setdefault(row['ShadowSWF'], []).append(row['ShadowExportName'])
     for swf, names in sorted(projectile_exports.items()):
         specs.append((f'projectiles/{slug(swf.split("/")[-1][:-3])}', swf, sorted(set(names)), None))
+    for group, members_ in PROJECTILE_GROUPS.items():
+        names, swfs = [], set()
+        for name in members_:
+            row = projectiles[name][0]
+            used_projectiles[name] = projectiles[name]
+            views = VIEWS if int(row.get('DirectionCount') or 0) else (None,)
+            names.extend(row['ExportName'] if v is None else f'{row["ExportName"]}_{v}' for v in views)
+            swfs.add(row['SWF'])
+            if row.get('ShadowExportName'):
+                require(row['ShadowSWF'] == row['SWF'], 'Projectile shadow in another file')
+                names.append(row['ShadowExportName'])
+        require(len(swfs) == 1, f'Projectile group spans files: {group}')
+        specs.append((f'projectiles/{group}', swfs.pop(), sorted(set(names)), None))
     for name in sorted(needed):
         for row in inherited_levels(characters[name]):
             ability = row.get('SpecialAbilities')
             if ability and ability in abilities:
                 used_abilities[ability] = abilities[ability]
                 for level in inherited_levels(abilities[ability]):
-                    if level.get('PoisonOnHitSpell'):
-                        used_spells[level['PoisonOnHitSpell']] = spells[level['PoisonOnHitSpell']]
+                    for key in ('PoisonOnHitSpell', 'SelfSpell'):
+                        if level.get(key):
+                            used_spells[level[key]] = spells[level[key]]
+            if row.get('AuraSpell'):
+                used_spells[row['AuraSpell']] = spells[row['AuraSpell']]
     files, decoded = {}, {}
     for key, swf, names, animation in specs:
         if swf not in files:
@@ -294,7 +396,9 @@ def build():
         sc = files[swf]
         wanted = {name: sc.exports[name] for name in names}
         empty = reachable_text_fields(sc, wanted.values())
-        graph = capture_graph(sc, wanted, empty_bounds=empty)
+        # Projectile shadows may use the original multiply (3) blend, which the renderer supports.
+        graph = capture_graph(sc, wanted, empty_bounds=empty,
+                              **({} if animation else dict(allowed_blends=(0, 3, 4, 8))))
         used = sorted({t for commands in graph['shapes'].values() for t, _ in commands})
         for t in used:
             path = 'sc/' + sc.textures[t]['external']
@@ -363,7 +467,14 @@ def build():
         spells={name: used_spells[name] for name in sorted(used_spells)},
         graphs={key: dict(swf=swf, animation=animation, exports=names) for key, swf, names, animation in specs},
         sharedDeath=dict(export='barbarian_death_1', graph='reference/garrison/dragon-death.json',
-                         resolution='Die rows have an empty SWF; the common sc/characters.sc export is imported by the garrison foundation.'))
+                         resolution='Die rows have an empty SWF; the common sc/characters.sc export is imported by the garrison foundation.'),
+        # Blocks that name exactly another captured block's exports (at their own Scale).
+        graphAliases=dict(sorted(aliases.items())),
+        projectileGroups=PROJECTILE_GROUPS,
+        trapSpawners=trap_spawners,
+        defenceTroops=defence_troops,
+        absentGlobals=ABSENT_GLOBALS,
+        repairGlobals=repair_globals)
     art = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS,
                fingerprintMembership={path: members[path] for path in PINS if path in members},
                worlds=sources, previews=previews, icons=icons,

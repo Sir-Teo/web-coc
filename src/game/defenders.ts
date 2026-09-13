@@ -1,5 +1,13 @@
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
+// Later garrison families: spawning summons and concealed Royal Ghosts cannot be selected.
+import {
+  garrisonDefenderTargetable,
+  type GarrisonBolt,
+  type GarrisonChain,
+  type GarrisonPush,
+  type GarrisonSummonState,
+} from './garrison-abilities';
 import type { GarrisonKind } from './garrison-kinds';
 import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
@@ -40,6 +48,24 @@ export interface GarrisonDefender extends DefenderState {
   shots?: GarrisonShot[];
   longShots?: number;
   tantrum?: boolean;
+  /** Later families (see garrison-abilities.ts): split-timer recovery still to run. */
+  recovery?: number;
+  /** Secondary troops and summons: push-out from their spawn point, then summon SpawnIdle. */
+  push?: GarrisonPush;
+  idleUntil?: number;
+  /** The Golem, Lava Hound or Witch this unit came from. */
+  parentId?: number;
+  /** Golem and Lava Hound: the secondary wave has spawned. */
+  split?: boolean;
+  /** Electro Dragon: the chain lightning in progress and the death bolts. */
+  chain?: GarrisonChain;
+  bolts?: GarrisonBolt[];
+  /** Witch summon cycle. */
+  summon?: GarrisonSummonState;
+  /** Electro Titan: aura pulses already applied. */
+  auraHits?: number;
+  /** Royal Ghost: concealed and ignoring obstacles until this battle time. */
+  stealthUntil?: number;
 }
 export type Defender = (DefenderState & { kind: 'skeleton' }) | GarrisonDefender;
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
@@ -236,7 +262,8 @@ export function stepAttackerVsDefenders(
       d.hp > 0 &&
       (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
       canFight(unit, d) &&
-      !lateDefenderHidden(battle, d),
+      !lateDefenderHidden(battle, d) &&
+      garrisonDefenderTargetable(battle, d),
   );
   if (!target) {
     target = (battle.defenders ?? [])
@@ -247,6 +274,7 @@ export function stepAttackerVsDefenders(
           d.alerted &&
           canFight(unit, d) &&
           !lateDefenderHidden(battle, d) &&
+          garrisonDefenderTargetable(battle, d) &&
           distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
       )
       .sort(

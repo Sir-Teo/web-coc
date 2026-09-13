@@ -11,6 +11,8 @@ import {
   lateBuildingHidden,
   lateCampaignPending,
   lateDefenseBoost,
+  lateLightningStrike,
+  lateLootHitpoints,
   lateUnitHeld,
   lateUnitRooted,
   lateUnitMoveScale,
@@ -2176,6 +2178,7 @@ export class GameModel {
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
+      lateLightningStrike(b, x, y, d.radius);
       for (const enemy of b.defenders ?? [])
         if (
           enemy.hp > 0 &&
@@ -2757,7 +2760,10 @@ export class GameModel {
                 : 0;
       const total = structures.reduce((n, v) => n + weight(v), 0);
       const taken = total
-        ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
+        ? structures.reduce(
+            (n, v) => n + weight(v) * (1 - Math.max(0, lateLootHitpoints(b, v)) / v.maxHp),
+            0,
+          ) / total
         : dead / Math.max(1, structures.length);
       const removed = Math.floor(
         campaignAmount(available, resource) * Math.min(1, Math.max(0, taken)),

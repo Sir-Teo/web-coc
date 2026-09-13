@@ -175,11 +175,28 @@ it('matches campaign bunkers exactly and gates new kinds, levels and bunkers by 
     [{ kind: 'goblin', level: 7, count: 1 }],
     [{ kind: 'dragon', level: 5, count: 1 }],
     [{ kind: 'superminion', level: 9, count: 1 }],
+    // The remaining roster families are version-44 only as well.
+    [{ kind: 'electrodragon', level: 3, count: 1 }],
+    [{ kind: 'golem', level: 8, count: 1 }],
+    [{ kind: 'witch', level: 4, count: 1 }],
+    [{ kind: 'bowler', level: 4, count: 1 }],
+    [{ kind: 'lavahound', level: 6, count: 1 }],
+    [{ kind: 'electrotitan', level: 2, count: 1 }],
+    [{ kind: 'goldendragon', level: 1, count: 1 }],
+    [{ kind: 'momma', level: 1, count: 1 }],
   ] as GarrisonSetup['troops'][]) {
     expect(validateReplay(withTroops(43, troops))).toBe(false);
     expect(validateReplay(withTroops(44, troops))).toBe(true);
   }
-  expect(validateReplay(withTroops(44, [{ kind: 'golem' as never, level: 8, count: 1 }]))).toBe(false);
+  // Spawned-only kinds never occupy a bunker, in any version.
+  for (const kind of ['golemite', 'lavapup', 'summonedskeleton', 'royalghost'] as const)
+    expect(
+      validateReplay(
+        withTroops(44, [{ kind, level: { golemite: 8, lavapup: 1, summonedskeleton: 1, royalghost: 7 }[kind], count: 1 }]),
+      ),
+    ).toBe(false);
+  expect(validateReplay(withTroops(44, [{ kind: 'golem', level: 7, count: 1 }]))).toBe(false);
+  expect(validateReplay(withTroops(44, [{ kind: 'unknown' as never, level: 8, count: 1 }]))).toBe(false);
   // A garrison must reference an actual source bunker, never an arbitrary building.
   expect(
     validateReplay({

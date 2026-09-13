@@ -16,6 +16,36 @@ export interface GarrisonUnitState {
     attackScale: number;
     sourceId: number;
   };
+  /** Royal Ghost `FrostOnHit`: movement and attack timers slowed until `until`. */
+  frost?: {
+    from: number;
+    until: number;
+    scale: number;
+    sourceId: number;
+  };
+}
+
+/**
+ * Royal Ghost hits slow the struck attacker by `FrostOnHitPercent` for `FrostOnHitTime`; each hit
+ * refreshes the duration. Local interpretation: movement and attack timers share the scale, and
+ * a simultaneous poison and frost do not stack (the stronger slow applies).
+ */
+export function applyGarrisonFrost(
+  battle: Battle,
+  unit: Unit,
+  frost: { duration: number; scale: number },
+  sourceId: number,
+  at: number,
+) {
+  void battle;
+  const state = ((unit.late ??= {}).garrison ??= {});
+  const current = state.frost && state.frost.until >= at ? state.frost : undefined;
+  state.frost = {
+    from: current ? current.from : at,
+    until: Math.max(current ? current.until : at, at + frost.duration),
+    scale: frost.scale,
+    sourceId,
+  };
 }
 
 /**
@@ -47,6 +77,8 @@ export function applyGarrisonPoison(
 /** Apply poison damage through the current battle time, once per interval. */
 export function stepGarrisonStatus(battle: Battle) {
   for (const unit of battle.units) {
+    const frost = unit.late?.garrison?.frost;
+    if (frost && battle.elapsed >= frost.until) delete unit.late!.garrison!.frost;
     const poison = unit.late?.garrison?.poison;
     if (!poison) continue;
     const end = Math.min(battle.elapsed, poison.until);
@@ -61,6 +93,15 @@ const NEUTRAL = Object.freeze({ move: 1, attack: 1 });
 /** Movement and attack-timer scales for an attacker; neutral without an active poison. */
 export function garrisonUnitScales(battle: Battle, unit: Unit): { move: number; attack: number } {
   const poison = unit.late?.garrison?.poison;
-  if (!poison || battle.elapsed >= poison.until) return NEUTRAL;
-  return { move: poison.moveScale, attack: poison.attackScale };
+  const frost = unit.late?.garrison?.frost;
+  const frozen = !!frost && battle.elapsed < frost.until;
+  if (!poison || battle.elapsed >= poison.until) {
+    if (!frozen) return NEUTRAL;
+    return { move: frost!.scale, attack: frost!.scale };
+  }
+  if (!frozen) return { move: poison.moveScale, attack: poison.attackScale };
+  return {
+    move: Math.min(poison.moveScale, frost!.scale),
+    attack: Math.min(poison.attackScale, frost!.scale),
+  };
 }

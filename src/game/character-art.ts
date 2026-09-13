@@ -13,7 +13,22 @@ import arrows from '../../reference/characters/projectiles/characters.json';
 import cards from '../../reference/characters/projectiles/chr-headhunter.json';
 import rockets from '../../reference/characters/projectiles/chr-super-minion.json';
 import fireballs from '../../reference/characters/projectiles/buildings.json';
-import { CHARACTER_GRAPHS } from './character-catalog';
+import electroDragon3 from '../../reference/characters/electro_dragon/electrodragon-lvl3.json';
+import golem6 from '../../reference/characters/golem/golem-lvl6.json';
+import witch2 from '../../reference/characters/witch/necromancer-lvl2.json';
+import skeleton from '../../reference/characters/skeleton/skeleton.json';
+import bowler3 from '../../reference/characters/bowler/troll-lvl3.json';
+import lavaHound6 from '../../reference/characters/lava_hound/adseeker-lvl6.json';
+import lavaPup from '../../reference/characters/lava_hound/tinybaby-lvl1.json';
+import electroTitan2 from '../../reference/characters/electro_titan/electrotitan-lvl2.json';
+import goldenDragon from '../../reference/characters/dragon/golden-dragon.json';
+import momma from '../../reference/characters/pekka/momma.json';
+import royalGhost from '../../reference/characters/royale_ghost/prototype-ghost.json';
+import defendingBuilder from '../../reference/characters/worker/defending-builder.json';
+import witchShots from '../../reference/characters/projectiles/witch.json';
+import boulders from '../../reference/characters/projectiles/bowler.json';
+import houndShots from '../../reference/characters/projectiles/lava-hound.json';
+import { CHARACTER_GRAPHS, CHARACTER_GRAPH_ALIASES, PROJECTILE_GROUPS } from './character-catalog';
 import type { NativeMeshGraph } from './native-mesh';
 
 export type CharacterGraph = NativeMeshGraph & { shadowShapes?: number[] };
@@ -46,6 +61,19 @@ export const CHARACTER_ART: Record<string, CharacterGraphEntry> = {
   HeadHunter_lvl3: entry(headhunter3, 'character-headhunter-lvl3'),
   SuperMinion: entry(superMinion, 'character-superminion'),
   'Baby Dragon 6': entry(babyDragon6, 'character-baby-dragon-6'),
+  // Remaining garrison families, their spawned troops, the Royal Ghost and the Defending Builder.
+  ElectroDragon_lvl3: entry(electroDragon3, 'character-electrodragon-lvl3'),
+  Golem_lvl6: entry(golem6, 'character-golem-lvl6'),
+  Necromancer_lvl2: entry(witch2, 'character-necromancer-lvl2'),
+  Skeleton: entry(skeleton, 'character-skeleton'),
+  Troll_lvl3: entry(bowler3, 'character-troll-lvl3'),
+  ADSeeker_lvl6: entry(lavaHound6, 'character-adseeker-lvl6'),
+  TinyBaby_lvl1: entry(lavaPup, 'character-tinybaby-lvl1'),
+  ElectroTitan_lvl2: entry(electroTitan2, 'character-electrotitan-lvl2'),
+  'Golden Dragon': entry(goldenDragon, 'character-golden-dragon'),
+  MOMMA: entry(momma, 'character-momma'),
+  Prototype_Ghost: entry(royalGhost, 'character-prototype-ghost'),
+  'Defending Builder': entry(defendingBuilder, 'character-defending-builder'),
 };
 export const COMMON_DEATH_ART = entry(commonDeath, 'garrison-dragonDeath', [45]);
 /** Projectile exports grouped by their original file. */
@@ -55,16 +83,38 @@ export const PROJECTILE_ART: Record<string, CharacterGraphEntry> = {
   'sc/chr_super_minion.sc': entry(rockets, 'character-projectiles-super-minion'),
   'sc/buildings.sc': entry(fireballs, 'character-projectiles-buildings'),
 };
-export function characterArt(animation: string) {
-  const key = Object.keys(CHARACTER_ART).find(
+/** Later projectile rows keep their own graphs (Witch bolt, Bowler boulder, Lava Hound shots). */
+export const PROJECTILE_GROUP_ART: Record<string, CharacterGraphEntry> = {
+  witch: entry(witchShots, 'character-projectiles-witch'),
+  bowler: entry(boulders, 'character-projectiles-bowler'),
+  'lava-hound': entry(houndShots, 'character-projectiles-lava-hound'),
+};
+/** The graph holding a projectile row's export: its later group, else its original file. */
+export function projectileArt(name: string, swf: string) {
+  const group = Object.entries(PROJECTILE_GROUPS).find(([, names]) => names.includes(name))?.[0];
+  const art = group ? PROJECTILE_GROUP_ART[group] : PROJECTILE_ART[swf];
+  if (!art) throw Error(`Missing native projectile art: ${name}`);
+  return art;
+}
+/** Resolve graph aliases (GolemSmall_lvl6 names exactly the Golem_lvl6 exports). */
+const aliasTarget = (animation: string) => {
+  const alias = Object.keys(CHARACTER_GRAPH_ALIASES).find(
     (name) => name.replaceAll(' ', '') === animation.replaceAll(' ', ''),
+  );
+  return alias ? CHARACTER_GRAPHS[CHARACTER_GRAPH_ALIASES[alias]].animation! : animation;
+};
+export function characterArt(animation: string) {
+  const target = aliasTarget(animation);
+  const key = Object.keys(CHARACTER_ART).find(
+    (name) => name.replaceAll(' ', '') === target.replaceAll(' ', ''),
   );
   if (!key) throw Error(`Missing native character art: ${animation}`);
   return CHARACTER_ART[key];
 }
 /** Imported previews (idle frame zero, two pixels per native unit) and their padded icons. */
 export function characterPreview(animation: string) {
-  const key = Object.entries(CHARACTER_GRAPHS).find(([, g]) => g.animation === animation)?.[0];
+  const target = aliasTarget(animation);
+  const key = Object.entries(CHARACTER_GRAPHS).find(([, g]) => g.animation === target)?.[0];
   return key
     ? {
         preview: `/assets/characters-native/${key}/preview.png`,

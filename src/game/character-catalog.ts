@@ -41,9 +41,37 @@ const catalog = raw as unknown as {
   rosters: CatalogRoster[];
   bunkers: Record<string, { name: string; rows: Record<string, string>[] }>;
   graphs: Record<string, { swf: string; animation: string | null; exports: string[] }>;
+  graphAliases: Record<string, string>;
+  projectileGroups: Record<string, string[]>;
+  trapSpawners: Record<string, Record<string, string>[]>;
+  defenceTroops: Record<string, Record<string, string>[]>;
+  absentGlobals: string[];
+  repairGlobals: { HEAL_STACK_PERCENT: number[]; ALLOW_REPAIR_AFTER_DAMAGE_TICKS: number };
 };
 export const CHARACTER_ROSTERS = catalog.rosters;
 export const CHARACTER_GRAPHS = catalog.graphs;
+/** Animation blocks that name exactly another captured block's exports (Golemite: Golem graph). */
+export const CHARACTER_GRAPH_ALIASES = catalog.graphAliases;
+/** Later projectile rows grouped into their own graphs (`projectiles/<group>`). */
+export const PROJECTILE_GROUPS = catalog.projectileGroups;
+/** Globals read by the pinned older engine that this client no longer contains. */
+export const ABSENT_GLOBALS = catalog.absentGlobals;
+/** Pinned globals read by Defending Builder repairs (healer slot percentages, post-damage delay). */
+export const REPAIR_GLOBALS = catalog.repairGlobals;
+/** A trap row that spawns characters (Ghost Trap), with explicit level inheritance. */
+export function trapSpawnerLevel(name: string, level: number) {
+  const rows = catalog.trapSpawners[name];
+  if (!rows || !Number.isSafeInteger(level) || level < 1 || level > rows.length)
+    throw Error(`Missing native trap spawner ${name} ${level}`);
+  return Object.assign({}, ...rows.slice(0, level)) as Record<string, string>;
+}
+/** Per-level `DefenceTroop*` fields of a building (Builder's Hut), already inherited. */
+export function defenceTroopLevel(building: string, level: number) {
+  const rows = catalog.defenceTroops[building];
+  const row = rows?.find((r) => Number(r.BuildingLevel) === level);
+  if (!row) throw Error(`Missing native defence troop row ${building} ${level}`);
+  return row;
+}
 /** Bunker buildings (source `Bunker=TRUE`) keyed by GlobalID. */
 export const BUNKER_BUILDINGS = catalog.bunkers;
 
@@ -67,6 +95,12 @@ export function characterLevel(name: string, visualLevel: number): SourceRow | u
   if (!rows || !Number.isSafeInteger(visualLevel)) return undefined;
   const matches = rows.filter((row) => sourceNumber(row, 'VisualLevel') === visualLevel);
   return matches.length === 1 ? matches[0] : undefined;
+}
+/** Every inherited source row of a captured character, in table order. */
+export function characterRows(name: string): readonly SourceRow[] {
+  const rows = catalog.characters[name];
+  if (!rows) throw Error(`Missing native character: ${name}`);
+  return rows;
 }
 /** Explicit `DefensiveTroop` substitution at the same VisualLevel (for example Super Minion). */
 export function defendingCharacterLevel(name: string, visualLevel: number) {

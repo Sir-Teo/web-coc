@@ -350,7 +350,7 @@
           "swf": [
             "sc/chr_electro_dragon.sc"
           ],
-          "graph": null
+          "graph": "electro_dragon/electrodragon-lvl3"
         },
         {
           "character": "Golem",
@@ -362,7 +362,7 @@
           "swf": [
             "sc/chr_golem.sc"
           ],
-          "graph": null
+          "graph": "golem/golem-lvl6"
         },
         {
           "character": "Dragon",
@@ -410,7 +410,7 @@
           "swf": [
             "sc/chr_witch.sc"
           ],
-          "graph": null
+          "graph": "witch/necromancer-lvl2"
         },
         {
           "character": "Bowler",
@@ -422,7 +422,7 @@
           "swf": [
             "sc/chr_bowler.sc"
           ],
-          "graph": null
+          "graph": "bowler/troll-lvl3"
         },
         {
           "character": "Baby Dragon",
@@ -486,7 +486,7 @@
           "swf": [
             "sc/chr_electro_dragon.sc"
           ],
-          "graph": null
+          "graph": "electro_dragon/electrodragon-lvl3"
         }
       ]
     },
@@ -548,7 +548,7 @@
           "swf": [
             "sc/chr_lava_hound.sc"
           ],
-          "graph": null
+          "graph": "lava_hound/adseeker-lvl6"
         },
         {
           "character": "Headhunter",
@@ -646,7 +646,7 @@
           "swf": [
             "sc/chr_electro_titan.sc"
           ],
-          "graph": null
+          "graph": "electro_titan/electrotitan-lvl2"
         }
       ]
     },
@@ -2275,6 +2275,155 @@
         "TriggersTraps": "TRUE",
         "ChainShootingDistance": "400",
         "PreAttackEffect": "trollAttack"
+      }
+    ],
+    "Defending Builder": [
+      {
+        "row": 1,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "1",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "100000",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-50",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 2,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "2",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "100500",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-60",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 3,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "3",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "101000",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-70",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 4,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "4",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "101500",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-80",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 5,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "5",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "101600",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-85",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 6,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "6",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "101700",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-90",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
+      },
+      {
+        "row": 7,
+        "Name": "Defending Builder",
+        "GlobalID": "4000088",
+        "VisualLevel": "7",
+        "HousingSpace": "1",
+        "Speed": "250",
+        "Hitpoints": "101800",
+        "AttackRange": "50",
+        "AttackSpeed": "750",
+        "DPS": "-95",
+        "DeathShowTimeMS": "1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "Animation": "Defending Builder",
+        "IsJumper": "TRUE",
+        "DisableProduction": "TRUE",
+        "TargetedEffectOffset": "-50",
+        "DefaultSkin": "DefaultBuilderSkin"
       }
     ],
     "Defensive Lava Hound": [
@@ -6051,6 +6200,489 @@
         "TriggersTraps": "TRUE"
       }
     ],
+    "Royal Ghost": [
+      {
+        "row": 1,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "1",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "130",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "235",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "6",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 2,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "2",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "160",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "315",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "7",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 3,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "3",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "190",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "395",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "8",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 4,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "4",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "215",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "475",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "9",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 5,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "5",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "240",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "555",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "10",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 6,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "6",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "265",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "635",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "11",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 7,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "7",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "300",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "720",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "12",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 8,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "8",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "325",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "800",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "13",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 9,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "9",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "350",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "880",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "14",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 10,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "10",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "380",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "965",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "15",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 11,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "11",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "410",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "1050",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "16",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 12,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "12",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "445",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "1135",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "17",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      },
+      {
+        "row": 13,
+        "Name": "Royal Ghost",
+        "GlobalID": "4000047",
+        "VisualLevel": "13",
+        "HousingSpace": "8",
+        "Speed": "200",
+        "Hitpoints": "480",
+        "AttackRange": "50",
+        "AttackSpeed": "1000",
+        "DPS": "1220",
+        "PreferedTargetDamageMod": "1",
+        "DeployEffect": "Ghost_deploy",
+        "AttackEffect": "Ghost_sword",
+        "HitEffect": "IceWizard Hit1",
+        "IsFlying": "FALSE",
+        "AirTargets": "FALSE",
+        "GroundTargets": "TRUE",
+        "DieEffect": "Ghost_sword_vo",
+        "Animation": "Prototype_Ghost",
+        "IsJumper": "FALSE",
+        "MovementOffsetSpeed": "0",
+        "TombStone": "TombStone",
+        "TargetedEffectOffset": "-50",
+        "FriendlyGroupWeight": "100",
+        "EnemyGroupWeight": "100",
+        "NewTargetAttackDelay": "2400",
+        "TriggersTraps": "TRUE",
+        "VillageType": "0",
+        "EnabledByCalendar": "TRUE",
+        "UpgradeLevelByTH": "18",
+        "UnlockByTH": "6",
+        "FrostOnHitTime": "4000",
+        "FrostOnHitPercent": "50",
+        "SpecialAbilities": "RoyalGhostAbility",
+        "SpecialAbilitiesLevel": "1"
+      }
+    ],
     "Skeleton": [
       {
         "row": 1,
@@ -7467,6 +8099,80 @@
         }
       ]
     },
+    "Defending Builder": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "VariationWeight",
+        "ActionFrame",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "VariationWeight": "",
+          "ActionFrame": "",
+          "ExportName": "worker_battle_walk1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_worker.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "worker_battle_idle3",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_worker.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "10",
+          "ExportName": "worker_battle_build1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_worker.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "worker_battle_idle3",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_worker.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "temp_dummya4",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": ""
+        }
+      ]
+    },
     "Dragon5": {
       "columns": [
         "Name",
@@ -7956,6 +8662,80 @@
           "Looping": "FALSE",
           "StopToLast": "TRUE",
           "Scale": "200",
+          "SWF": ""
+        }
+      ]
+    },
+    "GolemSmall_lvl6": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "ActionFrame",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "Scale",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "int",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "ActionFrame": "",
+          "ExportName": "golem_lvl6_walk1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "75",
+          "SWF": "sc/chr_golem.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "ActionFrame": "",
+          "ExportName": "golem_lvl6_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "75",
+          "SWF": "sc/chr_golem.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "ActionFrame": "11",
+          "ExportName": "golem_lvl6_attack1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "75",
+          "SWF": "sc/chr_golem.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "TRUE",
+          "ActionFrame": "",
+          "ExportName": "golem_lvl6_attack1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "75",
+          "SWF": "sc/chr_golem.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "ActionFrame": "",
+          "ExportName": "barbarian_death_1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "",
           "SWF": ""
         }
       ]
@@ -8493,6 +9273,172 @@
         }
       ]
     },
+    "Prototype_Ghost": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "VariationWeight",
+        "ActionFrame",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "Scale",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "int",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "ghost_blue_run1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_royale_ghost.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "ghost_blue_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_royale_ghost.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "17",
+          "ExportName": "ghost_blue_attack1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_royale_ghost.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "ghost_blue_idle1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_royale_ghost.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "barbarian_death_1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": ""
+        },
+        {
+          "Name": "spawn",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "ghost_blue_idle1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
+          "SWF": "sc/chr_royale_ghost.sc"
+        }
+      ]
+    },
+    "Skeleton": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "VariationWeight",
+        "ActionFrame",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "VariationWeight": "",
+          "ActionFrame": "",
+          "ExportName": "skele_warrior1_run1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_skeleton.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ActionFrame": "",
+          "ExportName": "skele_warrior1_idle1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_skeleton.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "VariationWeight": "",
+          "ActionFrame": "8",
+          "ExportName": "skele_warrior1_attack1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_skeleton.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "VariationWeight": "",
+          "ActionFrame": "",
+          "ExportName": "barbarian_death_1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": ""
+        },
+        {
+          "Name": "spawn",
+          "HasDirections": "FALSE",
+          "VariationWeight": "",
+          "ActionFrame": "",
+          "ExportName": "skele_warrior1_spawn1_3",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "SWF": "sc/chr_skeleton.sc"
+        }
+      ]
+    },
     "SuperMinion": {
       "columns": [
         "Name",
@@ -8570,6 +9516,80 @@
           "Looping": "TRUE",
           "StopToLast": "TRUE",
           "Scale": "120",
+          "SWF": ""
+        }
+      ]
+    },
+    "TinyBaby_lvl1": {
+      "columns": [
+        "Name",
+        "HasDirections",
+        "VariationWeight",
+        "ExportName",
+        "Looping",
+        "StopToLast",
+        "Scale",
+        "SWF"
+      ],
+      "types": [
+        "String",
+        "boolean",
+        "int",
+        "String",
+        "boolean",
+        "boolean",
+        "int",
+        "String"
+      ],
+      "rows": [
+        {
+          "Name": "walk",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ExportName": "tinybaby_lvl1_fly",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "70",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "idle",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ExportName": "tinybaby_lvl1_fly",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "70",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "attack",
+          "HasDirections": "TRUE",
+          "VariationWeight": "1",
+          "ExportName": "tinybaby_lvl1_fly",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "70",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "celebrate",
+          "HasDirections": "FALSE",
+          "VariationWeight": "4",
+          "ExportName": "tinybaby_lvl1_fly_1",
+          "Looping": "FALSE",
+          "StopToLast": "TRUE",
+          "Scale": "70",
+          "SWF": "sc/chr_lava_hound.sc"
+        },
+        {
+          "Name": "die",
+          "HasDirections": "FALSE",
+          "VariationWeight": "1",
+          "ExportName": "barbarian_death_1",
+          "Looping": "TRUE",
+          "StopToLast": "TRUE",
+          "Scale": "100",
           "SWF": ""
         }
       ]
@@ -8830,6 +9850,56 @@
         "SpellsBoostedByParent": "TRUE"
       }
     ],
+    "Witch_projectile": [
+      {
+        "Name": "Witch_projectile",
+        "SWF": "sc/buildings.sc",
+        "ExportName": "witch_projectile",
+        "ScaleTimeline": "FALSE",
+        "DirectionCount": "0",
+        "ParticleEmitter": "witch_trail_emitter",
+        "RotateEmitter": "FALSE",
+        "RotateEffect": "FALSE",
+        "Speed": "500",
+        "StartHeight": "25",
+        "StartOffset": "50",
+        "IsBallistic": "FALSE",
+        "RandomHitPositionOnCharacters": "FALSE",
+        "SmallRandomHitPositionOnBuildings": "FALSE",
+        "UseRotate": "TRUE",
+        "DirectionFrame": "FALSE",
+        "PlayOnce": "FALSE",
+        "UseTopLayer": "FALSE",
+        "Scale": "100",
+        "HitSpellLevel": "0",
+        "HitSpellInheritAffectType": "FALSE",
+        "DontTrackTarget": "TRUE",
+        "BallisticHeight": "0",
+        "TrajectoryStyle": "0",
+        "FixedTravelTime": "0",
+        "MaxTravelTime": "0",
+        "DamageDelay": "0",
+        "TargetPosRandomRadius": "0",
+        "SlowdownDefencePercent": "0",
+        "UseNormalizeLenghtFix": "FALSE",
+        "MaxBounceDistance": "0",
+        "StopToTargetTime": "0",
+        "SmoothDamage": "FALSE",
+        "StartOffsetFromGunBone": "FALSE",
+        "PenetratingHitBoxWidth": "0",
+        "MaxHitBuildings": "0",
+        "MaxHitObjects": "0",
+        "ReturningProjectile": "FALSE",
+        "RetargetRadius": "0",
+        "RetargetTimer": "0",
+        "UseParentAnimation3D": "FALSE",
+        "DepthBiasFront": "0",
+        "DepthBiasBack": "0",
+        "PullTarget": "FALSE",
+        "ProjectileEffectOffset": "0",
+        "SpellsBoostedByParent": "TRUE"
+      }
+    ],
     "babydragon_projectile_lvl3": [
       {
         "Name": "babydragon_projectile_lvl3",
@@ -8855,6 +9925,55 @@
         "HitSpellInheritAffectType": "FALSE",
         "DontTrackTarget": "FALSE",
         "BallisticHeight": "45",
+        "TrajectoryStyle": "0",
+        "FixedTravelTime": "0",
+        "MaxTravelTime": "0",
+        "DamageDelay": "0",
+        "TargetPosRandomRadius": "0",
+        "SlowdownDefencePercent": "0",
+        "UseNormalizeLenghtFix": "FALSE",
+        "MaxBounceDistance": "0",
+        "StopToTargetTime": "0",
+        "SmoothDamage": "FALSE",
+        "StartOffsetFromGunBone": "FALSE",
+        "PenetratingHitBoxWidth": "0",
+        "MaxHitBuildings": "0",
+        "MaxHitObjects": "0",
+        "ReturningProjectile": "FALSE",
+        "RetargetRadius": "0",
+        "RetargetTimer": "0",
+        "UseParentAnimation3D": "FALSE",
+        "DepthBiasFront": "0",
+        "DepthBiasBack": "0",
+        "PullTarget": "FALSE",
+        "ProjectileEffectOffset": "0",
+        "SpellsBoostedByParent": "TRUE"
+      }
+    ],
+    "hound_projectile": [
+      {
+        "Name": "hound_projectile",
+        "SWF": "sc/characters.sc",
+        "ExportName": "lavahound_projectile",
+        "ScaleTimeline": "FALSE",
+        "DirectionCount": "0",
+        "RotateEmitter": "FALSE",
+        "RotateEffect": "FALSE",
+        "Speed": "200",
+        "StartHeight": "150",
+        "StartOffset": "5",
+        "IsBallistic": "FALSE",
+        "RandomHitPositionOnCharacters": "FALSE",
+        "SmallRandomHitPositionOnBuildings": "FALSE",
+        "UseRotate": "TRUE",
+        "DirectionFrame": "FALSE",
+        "PlayOnce": "FALSE",
+        "UseTopLayer": "TRUE",
+        "Scale": "100",
+        "HitSpellLevel": "0",
+        "HitSpellInheritAffectType": "FALSE",
+        "DontTrackTarget": "FALSE",
+        "BallisticHeight": "0",
         "TrajectoryStyle": "0",
         "FixedTravelTime": "0",
         "MaxTravelTime": "0",
@@ -8983,6 +10102,109 @@
         "ProjectileEffectOffset": "0",
         "SpellsBoostedByParent": "TRUE"
       }
+    ],
+    "tinyhound_projectile": [
+      {
+        "Name": "tinyhound_projectile",
+        "SWF": "sc/characters.sc",
+        "ExportName": "tiny_lavahound_projectile",
+        "ScaleTimeline": "FALSE",
+        "DirectionCount": "0",
+        "RotateEmitter": "FALSE",
+        "RotateEffect": "FALSE",
+        "Speed": "300",
+        "StartHeight": "150",
+        "StartOffset": "5",
+        "IsBallistic": "FALSE",
+        "RandomHitPositionOnCharacters": "FALSE",
+        "SmallRandomHitPositionOnBuildings": "FALSE",
+        "UseRotate": "TRUE",
+        "DirectionFrame": "FALSE",
+        "PlayOnce": "FALSE",
+        "UseTopLayer": "TRUE",
+        "Scale": "100",
+        "HitSpellLevel": "0",
+        "HitSpellInheritAffectType": "FALSE",
+        "DontTrackTarget": "FALSE",
+        "BallisticHeight": "0",
+        "TrajectoryStyle": "0",
+        "FixedTravelTime": "0",
+        "MaxTravelTime": "0",
+        "DamageDelay": "0",
+        "TargetPosRandomRadius": "0",
+        "SlowdownDefencePercent": "0",
+        "UseNormalizeLenghtFix": "FALSE",
+        "MaxBounceDistance": "0",
+        "StopToTargetTime": "0",
+        "SmoothDamage": "FALSE",
+        "StartOffsetFromGunBone": "FALSE",
+        "PenetratingHitBoxWidth": "0",
+        "MaxHitBuildings": "0",
+        "MaxHitObjects": "0",
+        "ReturningProjectile": "FALSE",
+        "RetargetRadius": "0",
+        "RetargetTimer": "0",
+        "UseParentAnimation3D": "FALSE",
+        "DepthBiasFront": "0",
+        "DepthBiasBack": "0",
+        "PullTarget": "FALSE",
+        "ProjectileEffectOffset": "0",
+        "SpellsBoostedByParent": "TRUE"
+      }
+    ],
+    "trollBoulder_lvl3": [
+      {
+        "Name": "trollBoulder_lvl3",
+        "SWF": "sc/buildings.sc",
+        "ExportName": "trollBoulder_lvl3",
+        "ScaleTimeline": "FALSE",
+        "DirectionCount": "6",
+        "ParticleEmitter": "trollBoulder_dust_emitter_lvl2",
+        "RotateEmitter": "FALSE",
+        "RotateEffect": "FALSE",
+        "Speed": "475",
+        "StartHeight": "75",
+        "StartOffset": "40",
+        "IsBallistic": "TRUE",
+        "ShadowSWF": "sc/buildings.sc",
+        "ShadowExportName": "shadow_trollBoulder",
+        "RandomHitPositionOnCharacters": "FALSE",
+        "SmallRandomHitPositionOnBuildings": "FALSE",
+        "UseRotate": "FALSE",
+        "DirectionFrame": "FALSE",
+        "PlayOnce": "FALSE",
+        "UseTopLayer": "TRUE",
+        "Scale": "100",
+        "HitSpellLevel": "0",
+        "HitSpellInheritAffectType": "FALSE",
+        "DontTrackTarget": "FALSE",
+        "BallisticHeight": "100",
+        "TrajectoryStyle": "3",
+        "FixedTravelTime": "0",
+        "MaxTravelTime": "0",
+        "DamageDelay": "0",
+        "DestroyedEffect": "trollBoulder_destroyed",
+        "BounceEffect": "trollBoulder_bounce",
+        "TargetPosRandomRadius": "0",
+        "SlowdownDefencePercent": "0",
+        "UseNormalizeLenghtFix": "FALSE",
+        "MaxBounceDistance": "0",
+        "StopToTargetTime": "0",
+        "SmoothDamage": "FALSE",
+        "StartOffsetFromGunBone": "FALSE",
+        "PenetratingHitBoxWidth": "0",
+        "MaxHitBuildings": "0",
+        "MaxHitObjects": "0",
+        "ReturningProjectile": "FALSE",
+        "RetargetRadius": "0",
+        "RetargetTimer": "0",
+        "UseParentAnimation3D": "FALSE",
+        "DepthBiasFront": "0",
+        "DepthBiasBack": "0",
+        "PullTarget": "FALSE",
+        "ProjectileEffectOffset": "0",
+        "SpellsBoostedByParent": "TRUE"
+      }
     ]
   },
   "specialAbilities": {
@@ -9069,6 +10291,20 @@
         "PoisonOnHitSpellLevel": "8"
       }
     ],
+    "RoyalGhostAbility": [
+      {
+        "Name": "RoyalGhostAbility",
+        "Level": "1",
+        "TID": "TID_ROYAL_GHOST_ABILITY_NAME",
+        "InfoTID": "TID_ROYAL_GHOST_ABILITY_HELP",
+        "InfoScreenAttribute1": "10",
+        "IgnoreObstacles": "TRUE",
+        "IsInvisible": "TRUE",
+        "ActiveAfterPlaceCommand": "TRUE",
+        "MaxActivations": "1",
+        "DeactivateAfterTime": "10000"
+      }
+    ],
     "SuperMinionSpecialProjectiles": [
       {
         "Name": "SuperMinionSpecialProjectiles",
@@ -9099,6 +10335,154 @@
     ]
   },
   "spells": {
+    "Electro Titan Aura": [
+      {
+        "Name": "Electro Titan Aura",
+        "GlobalID": "26000033",
+        "Level": "1",
+        "DisableProduction": "TRUE",
+        "HitTimeMS": "400",
+        "Damage": "30",
+        "Radius": "350",
+        "NumberOfHits": "4000",
+        "RandomRadius": "0",
+        "TimeBetweenHitsMS": "400",
+        "DeployEffect": "E_titanAreaDamage",
+        "StrengthWeight": "0",
+        "TargetInfoString": "TID_INFO_TARGET_TYPE_GROUND_AND_AIR",
+        "HeroDamageMultiplier": "25",
+        "ScaleDeployEffects": "TRUE",
+        "ImmunityWalls": "TRUE"
+      },
+      {
+        "Level": "2",
+        "Damage": "40",
+        "DeployEffect": "E_titanAreaDamage"
+      },
+      {
+        "Level": "3",
+        "Damage": "50",
+        "DeployEffect": "E_titanAreaDamage"
+      },
+      {
+        "Level": "4",
+        "Damage": "55",
+        "DeployEffect": "E_titanAreaDamage"
+      },
+      {
+        "Level": "5",
+        "Damage": "60",
+        "DeployEffect": "E_titanAreaDamage"
+      }
+    ],
+    "ElectroDragonDie": [
+      {
+        "Name": "ElectroDragonDie",
+        "GlobalID": "26000024",
+        "Level": "1",
+        "DisableProduction": "TRUE",
+        "DeployTimeMS": "800",
+        "ChargingTimeMS": "1000",
+        "HitTimeMS": "1100",
+        "Damage": "50",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400",
+        "DeployEffect": "Lightning area",
+        "ChargingEffect": "Lightning Spell",
+        "HitEffect": "Lightning Spell Hit",
+        "RandomRadiusAffectsOnlyGfx": "FALSE"
+      },
+      {
+        "Level": "2",
+        "Damage": "55",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "3",
+        "Damage": "60",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "4",
+        "Damage": "65",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "5",
+        "Damage": "75",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "6",
+        "Damage": "85",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "7",
+        "Damage": "95",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "8",
+        "Damage": "105",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "9",
+        "Damage": "115",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "10",
+        "Damage": "125",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "11",
+        "Damage": "135",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      },
+      {
+        "Level": "12",
+        "Damage": "145",
+        "Radius": "200",
+        "NumberOfHits": "6",
+        "RandomRadius": "250",
+        "TimeBetweenHitsMS": "400"
+      }
+    ],
     "Poison": [
       {
         "Name": "Poison",
@@ -9423,6 +10807,151 @@
         "baby_dragon_lvl5_attack1_3"
       ]
     },
+    "electro_dragon/electrodragon-lvl3": {
+      "swf": "sc/chr_electro_dragon.sc",
+      "animation": "ElectroDragon_lvl3",
+      "exports": [
+        "electro_dragon_fly1_1",
+        "electro_dragon_fly1_2",
+        "electro_dragon_fly1_3",
+        "electro_dragon_attack1_1",
+        "electro_dragon_attack1_2",
+        "electro_dragon_attack1_3",
+        "electro_dragon_die1_1",
+        "electro_dragon_die1_2",
+        "electro_dragon_die1_3"
+      ]
+    },
+    "golem/golem-lvl6": {
+      "swf": "sc/chr_golem.sc",
+      "animation": "Golem_lvl6",
+      "exports": [
+        "golem_lvl6_walk1_1",
+        "golem_lvl6_walk1_2",
+        "golem_lvl6_walk1_3",
+        "golem_lvl6_idle1_1",
+        "golem_lvl6_idle1_2",
+        "golem_lvl6_idle1_3",
+        "golem_lvl6_attack1_1",
+        "golem_lvl6_attack1_2",
+        "golem_lvl6_attack1_3"
+      ]
+    },
+    "witch/necromancer-lvl2": {
+      "swf": "sc/chr_witch.sc",
+      "animation": "Necromancer_lvl2",
+      "exports": [
+        "necromancer_lvl2_run_1",
+        "necromancer_lvl2_run_2",
+        "necromancer_lvl2_run_3",
+        "necromancer_lvl2_idle1_1",
+        "necromancer_lvl2_idle1_2",
+        "necromancer_lvl2_idle1_3",
+        "necromancer_lvl2_attack1_1",
+        "necromancer_lvl2_attack1_2",
+        "necromancer_lvl2_attack1_3",
+        "necromancer_lvl2_summon_1",
+        "necromancer_lvl2_summon_2",
+        "necromancer_lvl2_summon_3"
+      ]
+    },
+    "skeleton/skeleton": {
+      "swf": "sc/chr_skeleton.sc",
+      "animation": "Skeleton",
+      "exports": [
+        "skele_warrior1_run1_1",
+        "skele_warrior1_run1_2",
+        "skele_warrior1_run1_3",
+        "skele_warrior1_idle1_1",
+        "skele_warrior1_idle1_2",
+        "skele_warrior1_idle1_3",
+        "skele_warrior1_attack1_1",
+        "skele_warrior1_attack1_2",
+        "skele_warrior1_attack1_3",
+        "skele_warrior1_spawn1_3"
+      ]
+    },
+    "bowler/troll-lvl3": {
+      "swf": "sc/chr_bowler.sc",
+      "animation": "Troll_lvl3",
+      "exports": [
+        "troll_lvl3_walk1_1",
+        "troll_lvl3_walk1_2",
+        "troll_lvl3_walk1_3",
+        "troll_lvl3_idle1_1",
+        "troll_lvl3_idle1_2",
+        "troll_lvl3_idle1_3",
+        "troll_lvl3_attack1_1",
+        "troll_lvl3_attack1_2",
+        "troll_lvl3_attack1_3"
+      ]
+    },
+    "lava_hound/adseeker-lvl6": {
+      "swf": "sc/chr_lava_hound.sc",
+      "animation": "ADSeeker_lvl6",
+      "exports": [
+        "Stone_Gargoyle6_fly_1",
+        "Stone_Gargoyle6_fly_2",
+        "Stone_Gargoyle6_fly_3"
+      ]
+    },
+    "lava_hound/tinybaby-lvl1": {
+      "swf": "sc/chr_lava_hound.sc",
+      "animation": "TinyBaby_lvl1",
+      "exports": [
+        "tinybaby_lvl1_fly_1",
+        "tinybaby_lvl1_fly_2",
+        "tinybaby_lvl1_fly_3"
+      ]
+    },
+    "electro_titan/electrotitan-lvl2": {
+      "swf": "sc/chr_electro_titan.sc",
+      "animation": "ElectroTitan_lvl2",
+      "exports": [
+        "Titan2_walk1_1",
+        "Titan2_walk1_2",
+        "Titan2_walk1_3",
+        "Titan2_idle1_1",
+        "Titan2_idle1_2",
+        "Titan2_idle1_3",
+        "Titan2_attack1_1",
+        "Titan2_attack1_2",
+        "Titan2_attack1_3",
+        "Titan2_cheer1_1",
+        "Titan2_cheer1_2",
+        "Titan2_cheer1_3"
+      ]
+    },
+    "royale_ghost/prototype-ghost": {
+      "swf": "sc/chr_royale_ghost.sc",
+      "animation": "Prototype_Ghost",
+      "exports": [
+        "ghost_blue_run1_1",
+        "ghost_blue_run1_2",
+        "ghost_blue_run1_3",
+        "ghost_blue_idle1_1",
+        "ghost_blue_idle1_2",
+        "ghost_blue_idle1_3",
+        "ghost_blue_attack1_1",
+        "ghost_blue_attack1_2",
+        "ghost_blue_attack1_3"
+      ]
+    },
+    "worker/defending-builder": {
+      "swf": "sc/chr_worker.sc",
+      "animation": "Defending Builder",
+      "exports": [
+        "worker_battle_walk1_1",
+        "worker_battle_walk1_2",
+        "worker_battle_walk1_3",
+        "worker_battle_idle3_1",
+        "worker_battle_idle3_2",
+        "worker_battle_idle3_3",
+        "worker_battle_build1_1",
+        "worker_battle_build1_2",
+        "worker_battle_build1_3"
+      ]
+    },
     "projectiles/buildings": {
       "swf": "sc/buildings.sc",
       "animation": null,
@@ -9452,11 +10981,177 @@
         "minion_rocket",
         "minion_rocket_big"
       ]
+    },
+    "projectiles/witch": {
+      "swf": "sc/buildings.sc",
+      "animation": null,
+      "exports": [
+        "witch_projectile"
+      ]
+    },
+    "projectiles/bowler": {
+      "swf": "sc/buildings.sc",
+      "animation": null,
+      "exports": [
+        "shadow_trollBoulder",
+        "trollBoulder_lvl3_1",
+        "trollBoulder_lvl3_2",
+        "trollBoulder_lvl3_3"
+      ]
+    },
+    "projectiles/lava-hound": {
+      "swf": "sc/characters.sc",
+      "animation": null,
+      "exports": [
+        "lavahound_projectile",
+        "tiny_lavahound_projectile"
+      ]
     }
   },
   "sharedDeath": {
     "export": "barbarian_death_1",
     "graph": "reference/garrison/dragon-death.json",
     "resolution": "Die rows have an empty SWF; the common sc/characters.sc export is imported by the garrison foundation."
+  },
+  "graphAliases": {
+    "GolemSmall_lvl6": "golem/golem-lvl6"
+  },
+  "projectileGroups": {
+    "witch": [
+      "Witch_projectile"
+    ],
+    "bowler": [
+      "trollBoulder_lvl3"
+    ],
+    "lava-hound": [
+      "hound_projectile",
+      "tinyhound_projectile"
+    ]
+  },
+  "trapSpawners": {
+    "Ghost Trap": [
+      {
+        "Name": "Ghost Trap",
+        "GlobalID": "12000019",
+        "Level": "1",
+        "SWF": "sc/buildings.sc",
+        "ExportName": "troop_trap_land_lvl3_setup",
+        "ExportNameBuildAnim": "bomb_upg",
+        "ExportNameBuildAnimAir": "bomb_upg",
+        "ExportNameBroken": "troop_trap_land_lvl1_unarmed",
+        "Damage": "0",
+        "DamageRadius": "0",
+        "TriggerRadius": "500",
+        "Width": "1",
+        "Height": "1",
+        "Passable": "TRUE",
+        "TownHallLevel": "9999",
+        "EjectVictims": "FALSE",
+        "MinTriggerHousingLimit": "1",
+        "ExportNameTriggered": "troop_trap_land_lvl1",
+        "ActionFrame": "37",
+        "PickUpEffect": "Skeleton Trap Pick Up",
+        "PlacingEffect": "Skeleton Trap Placing",
+        "AppearEffect": "Skeleton Trap",
+        "ToggleAttackModeEffect": "Skeleton Trap Target",
+        "AirTrigger": "FALSE",
+        "GroundTrigger": "TRUE",
+        "SpawnedCharGround": "Royal Ghost",
+        "NumSpawns": "1",
+        "SpawnInitialDelayMs": "600",
+        "TimeBetweenSpawnsMs": "150",
+        "SpawnLvl": "7",
+        "Disabled": "TRUE",
+        "HintPriority": "75"
+      }
+    ]
+  },
+  "defenceTroops": {
+    "Builders Hut": [
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "2",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "1",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "3",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "2",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "4",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "3",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "5",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "4",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "6",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "5",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "7",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "6",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      },
+      {
+        "GlobalID": "1000015",
+        "BuildingLevel": "8",
+        "DefenceTroopCharacter": "Defending Builder",
+        "DefenceTroopLevel": "7",
+        "DefenceTroopCount": "1",
+        "WakeUpSpace": "1",
+        "WakeUpSpeed": "1600"
+      }
+    ]
+  },
+  "absentGlobals": [
+    "CHAINED_PROJECTILE_BOUNCE_COUNT"
+  ],
+  "repairGlobals": {
+    "HEAL_STACK_PERCENT": [
+      100,
+      100,
+      90,
+      90,
+      70,
+      40,
+      10,
+      0
+    ],
+    "ALLOW_REPAIR_AFTER_DAMAGE_TICKS": 0
   }
 }
