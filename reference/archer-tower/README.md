@@ -23,3 +23,11 @@ This inventory does not yet contain graph geometry or texture pixels. The tower'
 The importer `--check` reconstruction passes for every graph document and every decoded RGBA texture pixel. Three focused tests pass, checking the source bindings, inventory, unchanged geometry and transforms, UV ranges and finite poses across all 6,093 retained frames. Projectile mode-8 groups remain isolated and are traversed in the frame checks. No source blend was flattened or replaced.
 
 This qualifies source preservation, not GPU pixel parity or native executable animation playback. Independent CPU/browser pixel comparisons and runtime presentation are still pending, as is the separately referenced resident Archer character capture.
+
+## Resident Archer source capture
+
+`scripts/import-native-archer-tower-defenders.py` preserves the nine animation blocks named by all 21 tower tiers, together with every original building field beginning with `Defender`. Level 15 maps to Archer7. Idle and attack each resolve to three exact directional exports, totaling 54 exports, 54 clips and 2,654 frames. Their original character texture is retained as exact cropped pixels. Source modes 0 and 8 are preserved; mode-8 groups are not flattened.
+
+The animation table, character scene and texture are SHA-256 pinned and fingerprint-membership checked. The metadata binds the building definition hash. `--check` reconstructs all source/runtime documents and compares every decoded texture pixel. Both focused tests pass, checking all tier bindings, the original attack ActionFrame value 5, directional export resolution, timelines/transforms/colors, and finite poses through every frame including isolated groups.
+
+Only idle and attack graphics are captured here; the complete animation records retain other named states as evidence. No combat timing, facing/mirroring, number of resident archers or world attachment is inferred in this capture. CPU/browser pixel qualification and runtime integration remain pending.
