@@ -65,3 +65,36 @@ it('rejects unsupported old contracts, invalid modes and mode fields on other ki
   wrong.initial.buildings[0] = { ...makeBuilding(1, 'cannon', 10, 10), infernoMode: 'multi' };
   expect(validateReplay(wrong)).toBe(false);
 });
+it('preserves explicit zero, partial and full starting ammunition in version 43 only', () => {
+  for (const level of [1, 8, 12])
+    for (const ammo of [0, 1, 499, 1000]) {
+      const data = replay();
+      data.initial.buildings[0].level = level;
+      data.initial.buildings[0].infernoAmmo = ammo;
+      expect(validateReplay(data)).toBe(true);
+      const restored = parseReplayFile(JSON.stringify(makeReplayFile(data)));
+      expect(restored.initial.buildings[0].infernoAmmo).toBe(ammo);
+      const battle = replayBattle(restored.initial, restored.version);
+      battle.elapsed = 0.064;
+      stepInfernos(battle, 0.064);
+      expect(battle.infernos![1].ammunition).toBe(ammo);
+      expect(battle.infernos![1].emptyAt).toBeUndefined();
+      for (const version of [39, 40, 41, 42])
+        expect(validateReplay({ ...data, version })).toBe(false);
+    }
+});
+it('rejects malformed ammunition, non-Inferno values and malformed tiers without throwing', () => {
+  for (const ammo of [-1, 1001, 0.5, '0', null, NaN, Infinity, {}, true]) {
+    const data = replay();
+    (data.initial.buildings[0] as any).infernoAmmo = ammo;
+    expect(validateReplay(data)).toBe(false);
+  }
+  const wrong = replay();
+  wrong.initial.buildings[0] = { ...makeBuilding(1, 'cannon', 10, 10), infernoAmmo: 0 };
+  expect(validateReplay(wrong)).toBe(false);
+  for (const level of [0, 13, NaN, null, '1']) {
+    const data = replay();
+    Object.assign(data.initial.buildings[0], { level, infernoAmmo: 0 });
+    expect(validateReplay(data)).toBe(false);
+  }
+});

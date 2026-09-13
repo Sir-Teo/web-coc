@@ -1,6 +1,6 @@
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
-import { validInfernoMode } from './inferno-weapon';
+import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
 import {
   campaignStage,
   campaignStages,
@@ -280,6 +280,8 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
+      !validInfernoAmmo(b.infernoAmmo, b.level) ||
+      (b.infernoAmmo !== undefined && (b.kind !== 'inferno' || value.version < 43)) ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       ((b.kind === 'inferno' || b.infernoMode !== undefined) && value.version < 39) ||
       (b.kind === 'clancastle' && value.version < 37) ||

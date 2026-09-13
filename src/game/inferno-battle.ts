@@ -27,7 +27,10 @@ export function stepInfernos(battle: Battle, dt: number) {
       nextTick: Math.floor((Math.max(0, battle.elapsed - dt) * 1000) / 64 + 1e-9) + 1,
       hits: [],
       ...(battle.nativeInfernoAmmo
-        ? { ammunition: infernoStats(tower.level).weapon.ammoCount, ammoChargeMs: 0 }
+        ? {
+            ammunition: tower.infernoAmmo ?? infernoStats(tower.level).weapon.ammoCount,
+            ammoChargeMs: 0,
+          }
         : {}),
     });
     if (

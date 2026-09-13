@@ -76,3 +76,18 @@ export function reconcileInfernoLocks(
   }
   return locks;
 }
+
+/** Strict optional battle setup value; malformed tiers never throw during import validation. */
+export function validInfernoAmmo(value: unknown, level: unknown): value is number | undefined {
+  if (value === undefined) return true;
+  return (
+    typeof level === 'number' &&
+    Number.isInteger(level) &&
+    level >= 1 &&
+    level <= catalog.levels.length &&
+    typeof value === 'number' &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= catalog.levels[level - 1].weapon.ammoCount
+  );
+}

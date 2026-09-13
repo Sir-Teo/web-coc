@@ -15,6 +15,10 @@ it('toggles Inferno modes through edit undo, redo and saved layouts', () => {
   expect(model.toggleInfernoMode()).toBe(true);
   expect(tower.infernoMode).toBe('multi');
   expect(validateSave(model.state)).toBe(true);
+  tower.infernoAmmo = 0;
+  expect(validateSave(model.state)).toBe(false);
+  delete tower.infernoAmmo;
+  expect(validateSave(model.state)).toBe(true);
   model.beginEdit();
   model.selected = 3;
   model.saveLayout(0);

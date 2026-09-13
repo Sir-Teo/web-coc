@@ -212,6 +212,8 @@ export interface Building {
   skeletonMode?: SkeletonMode;
   xbowMode?: XbowMode;
   infernoMode?: InfernoMode;
+  /** Battle setup ammunition; omitted means full capacity. Not a home inventory. */
+  infernoAmmo?: number;
 }
 export interface QueueItem {
   kind: TroopKind;

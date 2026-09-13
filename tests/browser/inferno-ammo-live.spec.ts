@@ -94,3 +94,33 @@ test('exhausted Inferno restores empty native artwork and silences its beams', a
   }
   await page.screenshot({ path: `output/playtest/inferno-ammo-empty-${browserName}.png` });
 });
+test('explicit empty setup renders before the first combat tick', async ({ page, browserName }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.locator('#loading').waitFor({ state: 'detached' });
+  const report = await page.evaluate(async () => {
+    const { model, scene, game } = window.__game;
+    const { makeBuilding } = await import('/src/game/model.ts');
+    model.startBattle(0, true);
+    scene.paused = true;
+    const b = model.battle;
+    b.nativeInfernoAmmo = true;
+    b.buildings = [
+      { ...makeBuilding(1, 'inferno', 18, 18, 8), infernoMode: 'multi', infernoAmmo: 0 },
+    ];
+    scene.sync();
+    scene.drawOverlay(0);
+    return {
+      states: scene.infernoPresentation.views
+        .get(1)
+        .objects.map((o) => o.getData('nativeInfernoState')),
+      beams: scene.infernoPresentation.beams.size,
+      initialized: !!b.infernos,
+      gl: game.renderer.gl.getError(),
+    };
+  });
+  expect(report).toMatchObject({ beams: 0, initialized: false, gl: 0 });
+  expect(report.states.length).toBeGreaterThan(0);
+  expect(report.states.every((s) => s === 'empty')).toBe(true);
+  await page.screenshot({ path: `output/playtest/inferno-initial-empty-${browserName}.png` });
+});

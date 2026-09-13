@@ -301,6 +301,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
+      b.infernoAmmo !== undefined ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       !Number.isInteger(b.level) ||
       b.level < 1 ||

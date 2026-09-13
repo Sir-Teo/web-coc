@@ -77,3 +77,17 @@ it('charges active time once with staggered replacement targets and preserves re
   ).toBe(true);
   expect(copy.infernos[6].ammunition).toBe(0);
 });
+it('uses explicit starting ammunition before acquiring targets', () => {
+  for (const ammo of [0, 1, 7]) {
+    const { b, tick } = arena('multi');
+    b.buildings.find((t) => t.kind === 'inferno')!.infernoAmmo = ammo;
+    const hp = b.units.map((u) => u.hp);
+    for (let i = 0; i < Math.max(1, ammo * 2); i++) tick();
+    expect(b.infernos![6].ammunition).toBe(0);
+    expect(b.infernos![6].scheduler.slots.every((s) => s.targetId === null)).toBe(true);
+    if (ammo === 0) {
+      expect(b.units.map((u) => u.hp)).toEqual(hp);
+      expect(b.infernos![6].emptyAt).toBeUndefined();
+    } else expect(b.infernos![6].emptyAt).toBe(ammo * 0.128);
+  }
+});

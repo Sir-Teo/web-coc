@@ -37,3 +37,25 @@ for (const [level, mode] of [
     model.returnHome();
     expect(JSON.stringify(model.state)).toBe(home);
   });
+for (const ammo of [0, 1])
+  it(`reconstructs a portable replay with ${ammo} initial ammunition across backward seeks`, () => {
+    const model = infernoBattle(8, 'multi');
+    while (!model.battle!.finished) model.step(0.05);
+    const data = structuredClone(model.state.raidLog[0].replay!);
+    data.initial.buildings.find((b) => b.kind === 'inferno')!.infernoAmmo = ammo;
+    const record = parseReplayFile(JSON.stringify(makeReplayFile(data)));
+    model.returnHome();
+    const home = JSON.stringify(model.state);
+    expect(model.openReplay(record)).toBe(true);
+    const seek = (time: number) => {
+      model.seekReplay(time);
+      while (model.replay!.seeking) model.step(0.05);
+      return JSON.stringify(model.battle);
+    };
+    const snapshots = [0, 0.05, 0.2, 1, 5, 15].map((t) => [t, seek(t)] as const);
+    expect(model.battle!.infernos![6].ammunition).toBe(0);
+    expect(model.battle!.infernos![6].scheduler.slots.every((s) => s.targetId === null)).toBe(true);
+    for (const [time, state] of snapshots.reverse()) expect(seek(time)).toBe(state);
+    model.returnHome();
+    expect(JSON.stringify(model.state)).toBe(home);
+  });

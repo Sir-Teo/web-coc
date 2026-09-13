@@ -77,7 +77,8 @@ export class InfernoPresentation {
             ? 'constructing'
             : building.upgradeEnd
               ? 'upgrading'
-              : battle?.infernos?.[building.id]?.ammunition === 0
+              : (battle?.infernos?.[building.id]?.ammunition ??
+                    (battle?.nativeInfernoAmmo ? building.infernoAmmo : undefined)) === 0
                 ? 'empty'
                 : 'active';
       view.render(
