@@ -29,6 +29,8 @@ The Dragon attack block declares `ActionFrame=2`; Balloon declares `ActionFrame=
 
 The globals retain `CLAN_CASTLE_RADIUS=13`, `BUNKER_SEARCH_TIME=320`, `CASTLE_DEFENDER_SEARCH_RADIUS=9` and `ALLIANCE_ALERT_RADIUS=700`, plus target-validity, defender-jumping, replay separation and obstacle-deployment flags. `BUNKER_SEARCH_TIME` is not automatically treated as a troop release interval.
 
+Before runtime integration, `tests/fixtures/garrison-historical-witness.json` freezes 2,404 complete battle states from commit `bf79ae6b6e3dede4458a19e93c78374e3ff28def` (replay version 36). Four portable recordings cover ground and air Skeleton defenders, attacker retaliation, Obsidian and source-speed level-21 Cannon flight. Hashes include presentation histories, with no excluded fields. The scenario input is separately hashed; it was authored for this capture and is not represented as part of the archived commit. `tests/garrison-historical.test.ts` checks the immutable recordings and every state against the current player.
+
 Supercell documents that guarding defenders deploy only for targets they can attack, leave in increasing housing-space order, and use random ordering for different troops of equal housing; same-kind troops leave from lowest level upward. Surviving troops return after defense. These behavioral constraints come from [Clan Castle Troops & Spells](https://support.supercell.com/clash-of-clans/en/articles/clan-castle-troops-and-spells-2.html), separate from the pinned client tables. In particular, Balloons must remain inside against an air-only attack.
 
 Reproduce or verify without modifying existing campaign artifacts:

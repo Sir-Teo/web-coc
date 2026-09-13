@@ -1,0 +1,2179 @@
+{
+  "format": "crown-clan-replay",
+  "version": 1,
+  "replay": {
+    "version": 36,
+    "initial": {
+      "index": 26,
+      "catalog": "goblin-v1",
+      "scenery": [
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 26
+        },
+        {
+          "data": 8000003,
+          "x": 37,
+          "y": 29
+        },
+        {
+          "data": 8000006,
+          "x": 6,
+          "y": 18
+        },
+        {
+          "data": 8000011,
+          "x": 22,
+          "y": 35
+        },
+        {
+          "data": 8000000,
+          "x": 8,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 22,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 28
+        },
+        {
+          "data": 8000000,
+          "x": 36,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 10,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 38,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 32,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 38
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 28
+        },
+        {
+          "data": 8000000,
+          "x": 14,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 30,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 28,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 36
+        },
+        {
+          "data": 8000000,
+          "x": 18,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 16,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 20,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 24
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 32
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 30
+        },
+        {
+          "data": 8000000,
+          "x": 26,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 34,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 12,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 30
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 34
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 32
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 20
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 36
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 38
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 34
+        },
+        {
+          "data": 8000000,
+          "x": 24,
+          "y": 40
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 22
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 16
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 14
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 12
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 10
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 8
+        },
+        {
+          "data": 8000000,
+          "x": 6,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 8,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 10,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 12,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 14,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 16,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 18,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 20,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 22,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 24,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 26,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 28,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 30,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 32,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 34,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 36,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 38,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 6
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 8
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 10
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 12
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 14
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 16
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 18
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 20
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 22
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 24
+        },
+        {
+          "data": 8000000,
+          "x": 40,
+          "y": 26
+        },
+        {
+          "data": 8000000,
+          "x": 10,
+          "y": 27
+        },
+        {
+          "data": 8000000,
+          "x": 9,
+          "y": 12
+        },
+        {
+          "data": 8000000,
+          "x": 12,
+          "y": 30
+        },
+        {
+          "data": 8000000,
+          "x": 12,
+          "y": 17
+        },
+        {
+          "data": 8000020,
+          "x": 29,
+          "y": 36
+        },
+        {
+          "data": 8000020,
+          "x": 18,
+          "y": 35
+        },
+        {
+          "data": 8000020,
+          "x": 19,
+          "y": 9
+        },
+        {
+          "data": 8000020,
+          "x": 34,
+          "y": 10
+        },
+        {
+          "data": 8000020,
+          "x": 35,
+          "y": 17
+        },
+        {
+          "data": 8000031,
+          "x": 37,
+          "y": 37
+        }
+      ],
+      "practice": false,
+      "nextId": 42,
+      "availableLoot": {
+        "gold": 20000,
+        "elixir": 80000
+      },
+      "lootRoom": {
+        "gold": 20000,
+        "elixir": 80000
+      },
+      "army": {
+        "swordsman": 0,
+        "archer": 0,
+        "giant": 1,
+        "wizard": 0,
+        "balloon": 0,
+        "goblin": 0,
+        "wallbreaker": 0,
+        "healer": 0,
+        "dragon": 0,
+        "pekka": 0
+      },
+      "spells": {
+        "rage": 0,
+        "heal": 0,
+        "lightning": 0
+      },
+      "troopLevels": {
+        "swordsman": 1,
+        "archer": 1,
+        "giant": 1,
+        "wizard": 1,
+        "balloon": 1,
+        "goblin": 1,
+        "wallbreaker": 1,
+        "healer": 1,
+        "dragon": 1,
+        "pekka": 1
+      },
+      "spellLevels": {
+        "rage": 1,
+        "heal": 1,
+        "lightning": 1
+      },
+      "buildings": [
+        {
+          "id": 1000,
+          "kind": "townhall",
+          "npc": "goblin-townhall",
+          "x": 17,
+          "y": 20,
+          "level": 4,
+          "hp": 2000,
+          "maxHp": 2000,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1001,
+          "kind": "wall",
+          "x": 16,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1002,
+          "kind": "wall",
+          "x": 28,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1003,
+          "kind": "wall",
+          "x": 27,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1004,
+          "kind": "wall",
+          "x": 28,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1005,
+          "kind": "wall",
+          "x": 23,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1006,
+          "kind": "wall",
+          "x": 33,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1007,
+          "kind": "wall",
+          "x": 23,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1008,
+          "kind": "wall",
+          "x": 21,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1009,
+          "kind": "wall",
+          "x": 22,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1010,
+          "kind": "wall",
+          "x": 31,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1011,
+          "kind": "wall",
+          "x": 30,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1012,
+          "kind": "wall",
+          "x": 16,
+          "y": 24,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1013,
+          "kind": "wall",
+          "x": 16,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1014,
+          "kind": "wall",
+          "x": 33,
+          "y": 28,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1015,
+          "kind": "wall",
+          "x": 26,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1016,
+          "kind": "wall",
+          "x": 16,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1017,
+          "kind": "wall",
+          "x": 16,
+          "y": 23,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1018,
+          "kind": "wall",
+          "x": 16,
+          "y": 20,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1019,
+          "kind": "wall",
+          "x": 16,
+          "y": 22,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1020,
+          "kind": "wall",
+          "x": 16,
+          "y": 19,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1021,
+          "kind": "wall",
+          "x": 16,
+          "y": 18,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1022,
+          "kind": "wall",
+          "x": 22,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1023,
+          "kind": "wall",
+          "x": 28,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1024,
+          "kind": "wall",
+          "x": 29,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1025,
+          "kind": "wall",
+          "x": 19,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1026,
+          "kind": "wall",
+          "x": 16,
+          "y": 26,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1027,
+          "kind": "wall",
+          "x": 16,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1028,
+          "kind": "wall",
+          "x": 23,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1029,
+          "kind": "wall",
+          "x": 22,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1030,
+          "kind": "wall",
+          "x": 26,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1031,
+          "kind": "wall",
+          "x": 18,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1032,
+          "kind": "wall",
+          "x": 16,
+          "y": 16,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1033,
+          "kind": "wall",
+          "x": 18,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1034,
+          "kind": "wall",
+          "x": 32,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1035,
+          "kind": "wall",
+          "x": 16,
+          "y": 28,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1036,
+          "kind": "wall",
+          "x": 20,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1037,
+          "kind": "wall",
+          "x": 16,
+          "y": 21,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1038,
+          "kind": "wall",
+          "x": 16,
+          "y": 25,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1039,
+          "kind": "wall",
+          "x": 21,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1040,
+          "kind": "wall",
+          "x": 20,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1041,
+          "kind": "wall",
+          "x": 21,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1042,
+          "kind": "wall",
+          "x": 27,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1043,
+          "kind": "wall",
+          "x": 26,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1044,
+          "kind": "wall",
+          "x": 26,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1045,
+          "kind": "wall",
+          "x": 27,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1046,
+          "kind": "wall",
+          "x": 19,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1047,
+          "kind": "wall",
+          "x": 21,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1048,
+          "kind": "wall",
+          "x": 21,
+          "y": 26,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1049,
+          "kind": "wall",
+          "x": 21,
+          "y": 25,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1050,
+          "kind": "wall",
+          "x": 21,
+          "y": 24,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1051,
+          "kind": "wall",
+          "x": 21,
+          "y": 23,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1052,
+          "kind": "wall",
+          "x": 21,
+          "y": 22,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1053,
+          "kind": "wall",
+          "x": 21,
+          "y": 21,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1054,
+          "kind": "wall",
+          "x": 21,
+          "y": 20,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1055,
+          "kind": "wall",
+          "x": 21,
+          "y": 19,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1056,
+          "kind": "wall",
+          "x": 21,
+          "y": 18,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1057,
+          "kind": "wall",
+          "x": 22,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1058,
+          "kind": "wall",
+          "x": 23,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1059,
+          "kind": "wall",
+          "x": 17,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1060,
+          "kind": "wall",
+          "x": 33,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1061,
+          "kind": "wall",
+          "x": 33,
+          "y": 26,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1062,
+          "kind": "wall",
+          "x": 33,
+          "y": 25,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1063,
+          "kind": "wall",
+          "x": 33,
+          "y": 23,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1064,
+          "kind": "wall",
+          "x": 33,
+          "y": 22,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1065,
+          "kind": "wall",
+          "x": 33,
+          "y": 21,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1066,
+          "kind": "wall",
+          "x": 33,
+          "y": 19,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1067,
+          "kind": "wall",
+          "x": 33,
+          "y": 18,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1068,
+          "kind": "wall",
+          "x": 33,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1069,
+          "kind": "wall",
+          "x": 33,
+          "y": 16,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1070,
+          "kind": "wall",
+          "x": 27,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1071,
+          "kind": "wall",
+          "x": 28,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1072,
+          "kind": "wall",
+          "x": 29,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1073,
+          "kind": "wall",
+          "x": 30,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1074,
+          "kind": "wall",
+          "x": 31,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1075,
+          "kind": "wall",
+          "x": 32,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1076,
+          "kind": "wall",
+          "x": 33,
+          "y": 15,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1077,
+          "kind": "wall",
+          "x": 28,
+          "y": 26,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1078,
+          "kind": "wall",
+          "x": 28,
+          "y": 25,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1079,
+          "kind": "wall",
+          "x": 28,
+          "y": 24,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1080,
+          "kind": "wall",
+          "x": 28,
+          "y": 23,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1081,
+          "kind": "wall",
+          "x": 28,
+          "y": 22,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1082,
+          "kind": "wall",
+          "x": 28,
+          "y": 21,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1083,
+          "kind": "wall",
+          "x": 28,
+          "y": 20,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1084,
+          "kind": "wall",
+          "x": 28,
+          "y": 19,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1085,
+          "kind": "wall",
+          "x": 28,
+          "y": 18,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1086,
+          "kind": "wall",
+          "x": 17,
+          "y": 29,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1087,
+          "kind": "goldstorage",
+          "x": 22,
+          "y": 24,
+          "level": 3,
+          "hp": 450,
+          "maxHp": 450,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1088,
+          "kind": "wall",
+          "x": 24,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1089,
+          "kind": "wall",
+          "x": 25,
+          "y": 17,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1090,
+          "kind": "goldstorage",
+          "x": 22,
+          "y": 18,
+          "level": 5,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1091,
+          "kind": "wall",
+          "x": 24,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1092,
+          "kind": "wall",
+          "x": 25,
+          "y": 27,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1093,
+          "kind": "archertower",
+          "x": 17,
+          "y": 16,
+          "level": 8,
+          "hp": 690,
+          "maxHp": 690,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1094,
+          "kind": "archertower",
+          "x": 17,
+          "y": 25,
+          "level": 8,
+          "hp": 690,
+          "maxHp": 690,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1095,
+          "kind": "archertower",
+          "x": 30,
+          "y": 26,
+          "level": 8,
+          "hp": 690,
+          "maxHp": 690,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1096,
+          "kind": "archertower",
+          "x": 30,
+          "y": 16,
+          "level": 8,
+          "hp": 690,
+          "maxHp": 690,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1097,
+          "kind": "builder",
+          "npc": "goblin-hut",
+          "x": 29,
+          "y": 23,
+          "level": 1,
+          "hp": 250,
+          "maxHp": 250,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1098,
+          "kind": "builder",
+          "npc": "goblin-hut",
+          "x": 29,
+          "y": 19,
+          "level": 1,
+          "hp": 250,
+          "maxHp": 250,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1099,
+          "kind": "wall",
+          "x": 32,
+          "y": 25,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1100,
+          "kind": "wall",
+          "x": 32,
+          "y": 24,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1101,
+          "kind": "wall",
+          "x": 32,
+          "y": 23,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1102,
+          "kind": "wall",
+          "x": 32,
+          "y": 22,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1103,
+          "kind": "wall",
+          "x": 32,
+          "y": 21,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1104,
+          "kind": "wall",
+          "x": 32,
+          "y": 20,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1105,
+          "kind": "wall",
+          "x": 32,
+          "y": 19,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1106,
+          "kind": "wall",
+          "x": 19,
+          "y": 30,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1107,
+          "kind": "wall",
+          "x": 19,
+          "y": 31,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1108,
+          "kind": "wall",
+          "x": 19,
+          "y": 32,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1109,
+          "kind": "wall",
+          "x": 19,
+          "y": 33,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1110,
+          "kind": "wall",
+          "x": 20,
+          "y": 33,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1111,
+          "kind": "wall",
+          "x": 21,
+          "y": 33,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1112,
+          "kind": "wall",
+          "x": 22,
+          "y": 33,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1113,
+          "kind": "wall",
+          "x": 23,
+          "y": 30,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1114,
+          "kind": "wall",
+          "x": 23,
+          "y": 31,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1115,
+          "kind": "wall",
+          "x": 23,
+          "y": 32,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1116,
+          "kind": "wall",
+          "x": 23,
+          "y": 33,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1117,
+          "kind": "wall",
+          "x": 26,
+          "y": 14,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1118,
+          "kind": "wall",
+          "x": 26,
+          "y": 13,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1119,
+          "kind": "wall",
+          "x": 26,
+          "y": 12,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1120,
+          "kind": "wall",
+          "x": 26,
+          "y": 11,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1121,
+          "kind": "wall",
+          "x": 27,
+          "y": 11,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1122,
+          "kind": "wall",
+          "x": 28,
+          "y": 11,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1123,
+          "kind": "wall",
+          "x": 29,
+          "y": 11,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1124,
+          "kind": "wall",
+          "x": 30,
+          "y": 11,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1125,
+          "kind": "wall",
+          "x": 30,
+          "y": 12,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1126,
+          "kind": "wall",
+          "x": 30,
+          "y": 13,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1127,
+          "kind": "wall",
+          "x": 30,
+          "y": 14,
+          "level": 4,
+          "hp": 800,
+          "maxHp": 800,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1128,
+          "kind": "airdefense",
+          "x": 20,
+          "y": 30,
+          "level": 6,
+          "hp": 1050,
+          "maxHp": 1050,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1129,
+          "kind": "airdefense",
+          "x": 27,
+          "y": 12,
+          "level": 5,
+          "hp": 1000,
+          "maxHp": 1000,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1130,
+          "kind": "wizardtower",
+          "x": 22,
+          "y": 21,
+          "level": 2,
+          "hp": 650,
+          "maxHp": 650,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1131,
+          "kind": "wizardtower",
+          "x": 25,
+          "y": 21,
+          "level": 2,
+          "hp": 650,
+          "maxHp": 650,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1132,
+          "kind": "elixirstorage",
+          "x": 25,
+          "y": 24,
+          "level": 7,
+          "hp": 1250,
+          "maxHp": 1250,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1133,
+          "kind": "elixirstorage",
+          "x": 25,
+          "y": 18,
+          "level": 7,
+          "hp": 1250,
+          "maxHp": 1250,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1134,
+          "kind": "bomb",
+          "x": 24,
+          "y": 29,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1135,
+          "kind": "bomb",
+          "x": 33,
+          "y": 20,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1136,
+          "kind": "bomb",
+          "x": 25,
+          "y": 29,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1137,
+          "kind": "bomb",
+          "x": 33,
+          "y": 24,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1138,
+          "kind": "springtrap",
+          "x": 24,
+          "y": 16,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1139,
+          "kind": "springtrap",
+          "x": 25,
+          "y": 16,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1140,
+          "kind": "springtrap",
+          "x": 24,
+          "y": 28,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1141,
+          "kind": "springtrap",
+          "x": 25,
+          "y": 28,
+          "level": 1,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0
+        },
+        {
+          "id": 1142,
+          "kind": "skeletontrap",
+          "x": 38,
+          "y": 39,
+          "level": 3,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0,
+          "skeletonMode": "ground"
+        },
+        {
+          "id": 1143,
+          "kind": "skeletontrap",
+          "x": 39,
+          "y": 38,
+          "level": 3,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0,
+          "skeletonMode": "ground"
+        },
+        {
+          "id": 1144,
+          "kind": "skeletontrap",
+          "x": 39,
+          "y": 39,
+          "level": 3,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0,
+          "skeletonMode": "ground"
+        },
+        {
+          "id": 1145,
+          "kind": "skeletontrap",
+          "x": 37,
+          "y": 39,
+          "level": 3,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0,
+          "skeletonMode": "ground"
+        },
+        {
+          "id": 1146,
+          "kind": "skeletontrap",
+          "x": 39,
+          "y": 37,
+          "level": 3,
+          "hp": 1,
+          "maxHp": 1,
+          "stored": 0,
+          "cooldown": 0,
+          "skeletonMode": "ground"
+        }
+      ]
+    },
+    "steps": [
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05,
+      0.05
+    ],
+    "actions": [
+      {
+        "step": 0,
+        "type": "troop",
+        "kind": "giant",
+        "x": 41,
+        "y": 41
+      },
+      {
+        "step": 80,
+        "type": "end"
+      }
+    ]
+  }
+}
