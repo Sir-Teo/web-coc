@@ -111,6 +111,18 @@ export interface EagleArtilleryUnitState {
 }
 
 const isArtillery = (b: Building) => b.kind === 'eagleartillery';
+/** Attackers are only ever appended, so an incrementally extended id index stays exact. */
+const indexes = new WeakMap<Unit[], Map<number, Unit>>();
+function unitById(battle: Battle, id: number | null) {
+  if (id === null) return undefined;
+  let index = indexes.get(battle.units);
+  if (!index) indexes.set(battle.units, (index = new Map()));
+  if (index.size !== battle.units.length) {
+    index.clear();
+    for (const u of battle.units) index.set(u.id, u);
+  }
+  return index.get(id);
+}
 const native = (tiles: number) => Math.floor((tiles + NATIVE_OFFSET) * NATIVE_TILE);
 const tiles = (units: number) => units / NATIVE_TILE - NATIVE_OFFSET;
 const center = (b: Building) => {
@@ -256,7 +268,7 @@ function selectTarget(battle: Battle, tower: Building, s: EagleArtilleryTowerSta
     weight = 0,
     distance = 0;
   for (const id of s.group) {
-    const u = battle.units.find((unit) => unit.id === id);
+    const u = unitById(battle, id);
     if (!u || u.hp <= 0) continue;
     const w = eagleArtilleryGroupWeight(u.kind, !!u.hero),
       dx = native(u.x) - c.x,
@@ -311,7 +323,8 @@ function hit(
   at: number,
 ) {
   if (s.ammunition <= 0) return;
-  const target = battle.units.find((u) => u.id === s.targetId && u.hp > 0);
+  const candidate = unitById(battle, s.targetId);
+  const target = candidate && candidate.hp > 0 ? candidate : undefined;
   if (!target && !s.reticle) return;
   // Spell Tower Rage scales defense damage; neutral without an active cast.
   const boost = spellTowerDefenseBoost(battle, tower);
@@ -370,7 +383,10 @@ function tick(
   s.searchMs = Math.max(s.searchMs - 64, 0);
   s.cooldownMs = Math.max(s.cooldownMs - step, 0);
   // Characters stay members after leaving range; only removed (defeated) units leave the group.
-  s.group = s.group.filter((id) => battle.units.some((u) => u.id === id && available(u, at)));
+  s.group = s.group.filter((id) => {
+    const u = unitById(battle, id);
+    return !!u && available(u, at);
+  });
   if (s.targetId !== null && !s.group.includes(s.targetId)) s.targetId = null;
   if (s.group.length || s.burstMs > 0 || s.hitMs >= EAGLE_ARTILLERY.chargeMs) {
     if (s.cooldownMs !== 0) return;
@@ -518,7 +534,7 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
     if (shell.arrivedAt === undefined) {
       const tower = battle.buildings.find((b) => b.id === shell.towerId);
       const target =
-        shell.targetId === null ? undefined : battle.units.find((u) => u.id === shell.targetId);
+        unitById(battle, shell.targetId);
       if (target && available(target, at) && tower && tower.hp > 0 && inRange(tower, target)) {
         shell.x = target.x;
         shell.y = target.y;
@@ -562,7 +578,7 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
     }
     if (at + 1e-9 >= shell.shockAt!) {
       const target =
-        shell.targetId === null ? undefined : battle.units.find((u) => u.id === shell.targetId);
+        unitById(battle, shell.targetId);
       const x = target && target.hp > 0 ? target.x : impact.x,
         y = target && target.hp > 0 ? target.y : impact.y;
       impact.shockX = x;

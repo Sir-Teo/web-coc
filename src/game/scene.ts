@@ -1522,7 +1522,10 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'wizardtower' ||
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
-        (b.kind === 'cannon' && !b.npc)
+        (b.kind === 'cannon' && !b.npc) ||
+        // Eagle Artillery and Scattershot presentations draw their own original rubble.
+        b.kind === 'eagleartillery' ||
+        b.kind === 'scattershot'
       )
         continue;
       const d = BUILDINGS[b.kind];
