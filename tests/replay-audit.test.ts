@@ -101,12 +101,19 @@ describe('replay isolation and input budgets', () => {
     expect(validateReplay(data)).toBe(true);
     const m = new GameModel();
     m.openReplay(data);
-    m.step(1);
-    expect(m.replay!.time).toBeCloseTo(MAX_REPLAY_STEPS_PER_UPDATE * 0.000001, 9);
-    expect(m.replay!.complete).toBe(false);
-    for (let i = 0; i < 60 && !m.replay!.complete; i++) m.step(0.05);
-    expect(m.replay!.complete).toBe(true);
-    expect(m.replay!.time).toBeCloseTo(0.006, 9);
+    // Isolate the step-count cap from host scheduling. The next test exercises
+    // the independent wall-clock budget with an explicitly advancing clock.
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
+    try {
+      m.step(1);
+      expect(m.replay!.time).toBeCloseTo(MAX_REPLAY_STEPS_PER_UPDATE * 0.000001, 9);
+      expect(m.replay!.complete).toBe(false);
+      for (let i = 0; i < 60 && !m.replay!.complete; i++) m.step(0.05);
+      expect(m.replay!.complete).toBe(true);
+      expect(m.replay!.time).toBeCloseTo(0.006, 9);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it('yields playback and seeking when the frame work budget is exhausted', () => {
