@@ -60,9 +60,12 @@ import {
 } from './scattershot';
 import {
   SPELL_TOWER_READY,
+  spellTowerDefenderBoost,
+  spellTowerDefenderHidden,
   spellTowerDefenseBoost,
   spellTowerDestroyed,
   spellTowerHidden,
+  spellTowerMoveScale,
   spellTowerPending,
   spellTowerTimeScale,
   stepSpellTower,
@@ -168,11 +171,34 @@ export function lateBuildingDestroyed(context: LateCombatContext, building: Buil
 /** Frozen or vortex-held attackers skip their own movement and attacks this step. */
 export const lateUnitHeld = (battle: Battle, unit: Unit) =>
   freezeTrapHolds(battle, unit) || tornadoTrapHolds(battle, unit);
+/** Attack-timer progress (Poison `AttackSpeedBoost`). */
 export const lateUnitTimeScale = (battle: Battle, unit: Unit) => spellTowerTimeScale(battle, unit);
+/** Movement progress (Poison `SpeedBoost`), separate from attack timers. */
+export const lateUnitMoveScale = (battle: Battle, unit: Unit) => spellTowerMoveScale(battle, unit);
 export const lateBuildingHidden = (battle: Battle, building: Building) =>
   spellTowerHidden(battle, building);
-export const lateDefenseBoost = (battle: Battle, building: Building) =>
-  spellTowerDefenseBoost(battle, building);
+/** Defensive Rage for buildings; `at` defaults to the current battle time. */
+export const lateDefenseBoost = (battle: Battle, building: Building, at?: number) =>
+  spellTowerDefenseBoost(battle, building, at);
+/** Defensive Rage for defending units: damage multiplier and added tiles per second. */
+export const lateDefenderBoost = (battle: Battle, defender: { id: number; kind: string }) =>
+  spellTowerDefenderBoost(battle, defender);
+/** A defending unit's stats with defensive Rage applied to primary damage and movement.
+ * Returns `stats` itself without version 44 late state or an active boost. */
+export function lateDefenderStats<T extends { damage: number; speed: number }>(
+  battle: Battle,
+  defender: { id: number; kind: string },
+  stats: T,
+): T {
+  if (!battle.late) return stats;
+  const rage = spellTowerDefenderBoost(battle, defender);
+  return rage.damage === 1 && rage.speed === 0
+    ? stats
+    : { ...stats, damage: stats.damage * rage.damage, speed: stats.speed + rage.speed };
+}
+/** Defending units concealed by a defensive Invisibility pulse. */
+export const lateDefenderHidden = (battle: Battle, defender: { id: number }) =>
+  spellTowerDefenderHidden(battle, defender);
 
 export type SpellTowerWeapon = 'rage' | 'poison' | 'invisibility';
 /** Client weapon GlobalIDs selected by `attack_mode_weapon` on each campaign Spell Tower. */

@@ -1,4 +1,5 @@
 import { infernoDamageStage, infernoStats } from './inferno-weapon';
+import { lateDefenseBoost } from './late-campaign';
 import type { Battle } from './model';
 import {
   createInfernoScheduler,
@@ -51,7 +52,15 @@ export function stepInfernos(battle: Battle, dt: number) {
       const previous = state.scheduler.slots.map((slot) =>
         infernoDamageStage(state.scheduler.mode, slot.lockedMs, tower.level),
       );
-      const hits = tickInfernoCombat(state.scheduler, tower, battle.units, at, enabled);
+      const hits = tickInfernoCombat(
+        state.scheduler,
+        tower,
+        battle.units,
+        at,
+        enabled,
+        // Defensive Rage exists only in version 44 late campaign battles.
+        battle.late ? lateDefenseBoost(battle, tower, at).damage : 1,
+      );
       state.hits.push(...hits);
       state.scheduler.slots.forEach((slot, index) => {
         const stage =

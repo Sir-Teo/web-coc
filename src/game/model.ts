@@ -10,6 +10,7 @@ import {
   lateCampaignPending,
   lateDefenseBoost,
   lateUnitHeld,
+  lateUnitMoveScale,
   lateUnitTimeScale,
   stepLateCampaign,
   type LateBattleState,
@@ -70,7 +71,7 @@ import {
   type CampaignLoot,
   type CampaignResources,
 } from './campaign-loot';
-import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
+import { concealedTesla, presentBuilding, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
   defaultEquipment,
   emptyOres,
@@ -2249,6 +2250,9 @@ export class GameModel {
     const knownBuildings = b.buildings.filter(
       (v) => !concealedTesla(b, v) && !lateBuildingHidden(b, v),
     );
+    // Late campaign Invisibility conceals targets, not obstacles: routes and crowd separation
+    // still collide with concealed buildings. Without `late` this is the same list as before.
+    const solidBuildings = b.late ? b.buildings.filter((v) => !concealedTesla(b, v)) : knownBuildings;
     for (const u of b.units) {
       if (u.hp <= 0) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
@@ -2264,9 +2268,11 @@ export class GameModel {
         u.attacking = false;
         continue;
       }
-      // Late status effects scale both attack timers and movement, like shrinking does.
+      // Late status effects scale attack timers and movement separately (Poison: 25% / 35%).
       const lateScale = lateUnitTimeScale(b, u);
       const actionDt = lateScale === 1 ? shrunkDt : shrunkDt * lateScale;
+      const lateMove = lateUnitMoveScale(b, u);
+      const moveDt = lateMove === 1 ? shrunkDt : shrunkDt * lateMove;
       const troop = TROOPS[u.kind];
       const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
@@ -2300,7 +2306,7 @@ export class GameModel {
               abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
               ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
             )) *
-          (actionDt / unitDt),
+          (moveDt / unitDt),
       };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);
@@ -2312,7 +2318,7 @@ export class GameModel {
           u,
           d,
           unitDt,
-          knownBuildings,
+          solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
         )
@@ -2421,7 +2427,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, knownBuildings, d.range);
+        u.path = findPath(u, target, solidBuildings, d.range);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -2478,7 +2484,7 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, knownBuildings);
+    separateUnits(b.units, solidBuildings);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     this.stepLate('traps', dt);
@@ -2492,14 +2498,16 @@ export class GameModel {
           b,
           tower,
           dt,
-          targetableBuilding(b, tower),
+          presentBuilding(b, tower),
           defenseDamage(tower.kind, tower.level) *
-            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
+            // Defensive Rage (version 44 late campaign only; exactly one otherwise).
+            (b.late ? lateDefenseBoost(b, tower).damage : 1),
           this.onEffect,
         );
         continue;
       }
-      if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
+      if (!d.damage || !presentBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
         continue;
       const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
       if (activeDt <= 0) continue;
@@ -2509,7 +2517,8 @@ export class GameModel {
           tower,
           activeDt,
           defenseDamage(tower.kind, tower.level) *
-            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
+            (b.late ? lateDefenseBoost(b, tower).damage : 1),
           this.onEffect,
         );
         continue;

@@ -31,6 +31,8 @@ export function tickInfernoCombat(
   units: readonly Unit[],
   at: number,
   enabled = true,
+  /** Late campaign defensive Rage multiplier at this tick; exactly one elsewhere. */
+  damageScale = 1,
 ): InfernoHit[] {
   if (!Number.isFinite(at) || at < 0) throw new Error('Invalid Inferno combat time');
   const stats = infernoStats(state.level);
@@ -59,7 +61,8 @@ export function tickInfernoCombat(
     enabled,
   )) {
     const target = byId.get(pulse.targetId)!;
-    const damage = (pulse.dps * pulse.intervalMs) / 1000;
+    const unscaled = (pulse.dps * pulse.intervalMs) / 1000;
+    const damage = damageScale === 1 ? unscaled : unscaled * damageScale;
     const killed = target.hp <= damage;
     target.hp = Math.max(0, target.hp - damage);
     if (killed) {
