@@ -1,18 +1,25 @@
-/** Registered Goblin Freeze Trap preview artwork. Until the original source capture lands,
- * the shared placeholder keeps preloading valid while the village remains gated. */
+/**
+ * Original armed-body preview with shared source bounds [-58,-84,63,88] at 2 px per native unit.
+ * Registration is a local calibration shared with the Shrink Trap compartment: 1.2 screen pixels
+ * per native unit and ground contact (0,50) on the 2×2 footprint.
+ */
 export const FREEZE_TRAP_ART = {
-  width: 168,
-  height: 156,
-  originX: 0.5,
-  originY: 70 / 130,
+  scale: 1.2,
+  anchorX: 0,
+  anchorY: 50,
+  bounds: [-58, -84, 63, 88] as const,
+  width: 121 * 1.2,
+  height: 172 * 1.2,
+  originX: 58 / 121,
+  originY: (50 + 84) / 172,
 };
 export function freezeTrapTexture(level: number, variant?: string) {
   void level;
   void variant;
-  return 'freeze-trap';
+  return 'freeze-trap-preview';
 }
 export function freezeTrapAsset(level: number, variant?: string) {
   void level;
   void variant;
-  return '/assets/buildings/goblin-native/goblin_hut_lvl1.png';
+  return '/assets/buildings/freeze-trap-native/armed.png';
 }
