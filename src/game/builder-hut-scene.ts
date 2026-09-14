@@ -7,7 +7,7 @@ import { BUILDINGS } from './data';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
 import type { NativeParticlePose } from './native-particles';
-import { campaignBuilderHut } from './builder-hut';
+import { armedBuilderHut } from './builder-hut';
 import { builderHutAsset, builderHutTexture, BUILDER_HUT_ART_LEVELS } from './builder-hut-art';
 import {
   BUILDER_HUT_GRAPH,
@@ -60,7 +60,7 @@ export class BuilderHutPresentation implements LatePresentation {
   }
   /** True once this family renders the building itself (the fallback sprite is hidden). */
   handles(b: Building) {
-    return campaignBuilderHut(this.battle(), b);
+    return armedBuilderHut(this.battle(), b);
   }
   bounds(b: Building): readonly [number, number, number, number] | undefined {
     return this.handles(b) ? builderHutBounds(b) : undefined;
@@ -105,7 +105,7 @@ export class BuilderHutPresentation implements LatePresentation {
       }
     };
     for (const b of context.buildings) {
-      if (!campaignBuilderHut(battle, b)) continue;
+      if (!armedBuilderHut(battle, b)) continue;
       wanted.add(b.id);
       const size = BUILDINGS.builder.size,
         p = iso(b.x + size / 2, b.y + size / 2);

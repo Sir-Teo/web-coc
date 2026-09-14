@@ -38,11 +38,13 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 46;
+export const REPLAY_VERSION = 47;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
  * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
  * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
- * Version 46 carries the catalog to Town Hall 18, again with no combat rule change. */
+ * Version 46 carries the catalog to Town Hall 18, again with no combat rule change.
+ * Version 47 adds the fifth Skeleton Trap tier, whose coffin releases level 2 skeletons,
+ * and arms the home Builder's Hut with the turret campaign huts already carried. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -56,7 +58,10 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 43 ||
   version === 44 ||
   version === 45 ||
+  version === 46 ||
   version === REPLAY_VERSION;
+/** Ceilings before version 47 reconstructed the fifth coffin tier and armed the home hut. */
+const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4, builder: 4 };
 /** Ceilings before version 46 carried the home catalog to Town Hall 18. */
 const PRE_TOWNHALL_18_LEVELS: Readonly<Record<string, number>> = {
   townhall: 9,
@@ -149,10 +154,11 @@ export interface ReplayPlayback {
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
     ...(version >= 44 && s.catalog === 'goblin-v1' ? { nativeSubtiles: true as const } : {}),
-    // Late families step wherever they stand: campaign villages from version 44, including
-    // their armed Builder's Huts, and late home defenses and traps from version 46.
+    // Late families step wherever they stand: campaign villages from version 44, late home
+    // defenses and traps from version 46, and an armed Builder's Hut anywhere from version 47.
     ...((version >= 44 && s.catalog === 'goblin-v1' && s.buildings.some(isLateCampaignBuilding)) ||
-    (version >= 46 && s.buildings.some(isLateBuilding))
+    (version >= 46 && s.buildings.some(isLateBuilding)) ||
+    (version >= 47 && s.buildings.some(isLateCampaignBuilding))
       ? { late: {} }
       : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')
@@ -370,6 +376,7 @@ export function validateReplay(value: unknown): value is ReplayData {
               : ((value.version < 44 ? PRE_LATE_CAMPAIGN_LEVELS[b.kind] : undefined) ??
                 (value.version < 45 ? PRE_TOWNHALL_9_LEVELS[b.kind] : undefined) ??
                 (value.version < 46 ? PRE_TOWNHALL_18_LEVELS[b.kind] : undefined) ??
+                (value.version < 47 ? PRE_VERSION_47_LEVELS[b.kind] : undefined) ??
                 d.maxLevel)),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||

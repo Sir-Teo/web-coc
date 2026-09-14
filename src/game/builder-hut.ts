@@ -60,12 +60,9 @@ export type BuilderHutUnitState = Record<string, never>;
 
 const HISTORY_SECONDS = 5;
 /** Only campaign Builder's Huts in version-44 goblin-v1 battles are armed; home huts stay passive. */
-export const campaignBuilderHut = (battle: Battle | null | undefined, b: Building) =>
-  !!battle?.late &&
-  battle.catalog === 'goblin-v1' &&
-  !battle.practice &&
-  b.kind === 'builder' &&
-  !b.npc;
+/** A Builder's Hut whose level carries the nail turret, wherever the battle is fought. */
+export const armedBuilderHut = (battle: Battle | null | undefined, b: Building) =>
+  !!battle?.late && b.kind === 'builder' && !b.npc && b.level > 1;
 const center = (b: Building) => ({
   x: b.x + BUILDINGS.builder.size / 2,
   y: b.y + BUILDINGS.builder.size / 2,
@@ -97,7 +94,7 @@ export function deployedHousingSpace(battle: Battle) {
 
 function stateFor(battle: Battle) {
   if (!battle.late) return undefined;
-  if (!battle.late.builderHut && !battle.buildings.some((b) => campaignBuilderHut(battle, b)))
+  if (!battle.late.builderHut && !battle.buildings.some((b) => armedBuilderHut(battle, b)))
     return undefined;
   return (battle.late.builderHut ??= { huts: {}, projectiles: [], destroyed: {} });
 }
@@ -105,7 +102,7 @@ function stateFor(battle: Battle) {
 function stepHuts(battle: Battle, dt: number, state: BuilderHutBattleState) {
   let deployed: number | undefined;
   for (const hut of battle.buildings) {
-    if (!campaignBuilderHut(battle, hut)) continue;
+    if (!armedBuilderHut(battle, hut)) continue;
     const weapon = builderHutWeapon(hut.level);
     if (!weapon) continue;
     const s = (state.huts[hut.id] ??= {
@@ -203,7 +200,7 @@ export function builderHutPending(battle: Battle) {
   return (battle.late?.builderHut?.projectiles.length ?? 0) > 0;
 }
 export function builderHutDestroyed(context: LateCombatContext, building: Building, at: number) {
-  if (!campaignBuilderHut(context.battle, building)) return;
+  if (!armedBuilderHut(context.battle, building)) return;
   const state = stateFor(context.battle);
   if (!state) return;
   state.destroyed[building.id] ??= at;
@@ -224,7 +221,7 @@ export function builderHutDefenseClass(battle: Battle, building: Building) {
  * battle seconds and reconstruct identically in replays. The character itself is not implemented.
  */
 export function builderHutActivation(battle: Battle | null | undefined, building: Building) {
-  if (!battle || !campaignBuilderHut(battle, building) || !builderHutWeapon(building.level))
+  if (!battle || !armedBuilderHut(battle, building) || !builderHutWeapon(building.level))
     return undefined;
   const hut = battle.late?.builderHut?.huts[building.id];
   return {

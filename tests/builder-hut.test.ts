@@ -4,7 +4,7 @@ import { NATIVE_COMBAT, nativeLayout } from '../src/game/native-campaign';
 import {
   builderHutActivation,
   builderHutDefenseClass,
-  campaignBuilderHut,
+  armedBuilderHut,
   deployedHousingSpace,
 } from '../src/game/builder-hut';
 import { BUILDER_HUT_LEVELS, builderHutWeapon } from '../src/game/builder-hut-stats';
@@ -123,7 +123,7 @@ describe("armed Builder's Hut combat", () => {
     });
   });
 
-  it('keeps level-one campaign huts, home huts and version-43 battles passive', () => {
+  it('keeps level-one huts and version-43 battles passive, and arms the home hut', () => {
     const data = lateGoblinReplay(84, [{ step: 0, kind: 'giant', x: 16, y: 21 }], {
       buildings: [hut(1000, 20, 20, 1), hut(1001, 23, 20, 4)],
       steps: 120,
@@ -136,12 +136,18 @@ describe("armed Builder's Hut combat", () => {
     expect(old.battle!.late).toBeUndefined();
     const giant = old.battle!.units.find((u) => u.kind === 'giant')!;
     expect(giant.hp).toBe(giant.maxHp);
+    // A home hut carries the same turret from version 47; only level one stays passive.
     const home = new GameModel();
     home.state.buildings.push(hut(9000, 30, 30, 4));
     home.state.army.giant = 1;
     home.startBattle(0, true);
-    expect(home.battle!.late).toBeUndefined();
-    expect(campaignBuilderHut(home.battle, home.state.buildings.at(-1)!)).toBe(false);
+    expect(home.battle!.late).toBeDefined();
+    expect(armedBuilderHut(home.battle, home.state.buildings.at(-1)!)).toBe(true);
+    const passive = new GameModel();
+    passive.state.buildings.push(hut(9001, 30, 30, 1));
+    passive.state.army.giant = 1;
+    passive.startBattle(0, true);
+    expect(armedBuilderHut(passive.battle, passive.state.buildings.at(-1)!)).toBe(false);
   });
 });
 
