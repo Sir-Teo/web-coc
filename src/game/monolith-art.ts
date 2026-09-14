@@ -1,4 +1,4 @@
-import source from '../../reference/monolith/combat.json';
+import source from '../../reference/monolith/combat.json' with { type: 'json' };
 
 export const MONOLITH_ART_LEVELS = source.levels.map((row) => row.level);
 /** Source preview bounds [-90,-100,90,130] at scale 1.2, registered to the local 3×3 center.

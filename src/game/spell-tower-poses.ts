@@ -1,4 +1,4 @@
-import runtime from '../../reference/spell-tower/runtime.json';
+import runtime from '../../reference/spell-tower/runtime.json' with { type: 'json' };
 import type { SpellTowerWeapon } from './late-campaign';
 import type { Building } from './model';
 import {

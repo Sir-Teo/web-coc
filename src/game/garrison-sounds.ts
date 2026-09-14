@@ -1,4 +1,4 @@
-import source from '../../reference/garrison/sounds.json';
+import source from '../../reference/garrison/sounds.json' with { type: 'json' };
 import type { Battle } from './model';
 import type { SampleCue } from './sample-audio';
 import { garrisonStats } from './garrison-reserve';

@@ -1,4 +1,4 @@
-import raw from '../../reference/scattershot/runtime.json';
+import raw from '../../reference/scattershot/runtime.json' with { type: 'json' };
 import {
   nativeMatrix,
   nativeScenePoses,

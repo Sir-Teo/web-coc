@@ -1,4 +1,4 @@
-import runtime from '../../reference/monolith/runtime.json';
+import runtime from '../../reference/monolith/runtime.json' with { type: 'json' };
 import type { Battle, Building } from './model';
 import {
   nativeScenePoses,

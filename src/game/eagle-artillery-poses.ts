@@ -1,5 +1,5 @@
-import raw from '../../reference/eagle-artillery/runtime.json';
-import baseRaw from '../../reference/eagle-artillery/base.json';
+import raw from '../../reference/eagle-artillery/runtime.json' with { type: 'json' };
+import baseRaw from '../../reference/eagle-artillery/base.json' with { type: 'json' };
 import {
   nativeMatrix,
   nativeScenePoses,

@@ -1,4 +1,4 @@
-import raw from '../../reference/eagle-artillery/effects.json';
+import raw from '../../reference/eagle-artillery/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { EAGLE_ARTILLERY_GRAPH } from './eagle-artillery-poses';
