@@ -107,7 +107,7 @@ it('reconstructs The Arena roster mechanics across portable backward seeks', () 
 
 it('reconstructs Ring of Power, Path to Pain, M.O.M.M.A and the Golden Dragon deterministically', () => {
   const ring = expectPortableSeeks(
-    garrisonRecording(76, { pekka: 10, dragon: 10, wizard: 12, archer: 12, healer: 4 }, 420),
+    garrisonRecording(76, { pekka: 10, dragon: 12, wizard: 12, archer: 12, healer: 4 }, 420),
     [40, 180, 415],
   );
   const hound = late(ring).find((d) => d.kind === 'lavahound')!;

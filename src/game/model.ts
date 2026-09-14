@@ -2494,17 +2494,29 @@ export class GameModel {
           let travel = d.speed * unitDt;
           while (travel > 0 && u.path.length) {
             const point = u.path[0];
-            if (
-              point !== next &&
-              b.buildings.some(
-                (v) =>
-                  v.kind === 'wall' &&
-                  v.hp > 0 &&
-                  Math.floor(point.x) === v.x &&
-                  Math.floor(point.y) === v.y,
-              )
-            )
-              break;
+            const walled = b.buildings.some(
+              (v) =>
+                v.kind === 'wall' &&
+                v.hp > 0 &&
+                Math.floor(point.x) === v.x &&
+                Math.floor(point.y) === v.y,
+            );
+            if (point !== next && walled) break;
+            // Crowd separation can push a unit past a half-tile waypoint. Walking back to it
+            // stalls whole crowds, so a non-wall waypoint the unit already passed along the
+            // following leg is dropped while the unit stays within half a sub-tile of that leg.
+            const after = u.path[1];
+            if (after && !walled) {
+              const lx = after.x - point.x,
+                ly = after.y - point.y,
+                leg = distance2D(lx, ly) || 1,
+                ahead = ((u.x - point.x) * lx + (u.y - point.y) * ly) / leg,
+                aside = Math.abs((u.x - point.x) * ly - (u.y - point.y) * lx) / leg;
+              if (ahead > 0 && aside <= 0.25) {
+                u.path.shift();
+                continue;
+              }
+            }
             const dx = point.x - u.x,
               dy = point.y - u.y,
               len = distance2D(dx, dy);

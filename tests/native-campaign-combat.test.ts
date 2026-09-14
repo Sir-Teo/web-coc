@@ -56,7 +56,9 @@ describe.each(playable)('native combat: $name', ({ index }) => {
           ).toBe(true);
         }
       }
-      for (let step = 0; step < 12000 && !b.finished; step++) m.step(0.05);
+      // Campaign raids have no timer: a lone survivor chipping maximum-level walls out of every
+      // remaining defense's reach can need over ten minutes. The cap only guards against stalls.
+      for (let step = 0; step < 24000 && !b.finished; step++) m.step(0.05);
       if (performance.now() - began > 1000)
         console.log(
           JSON.stringify({

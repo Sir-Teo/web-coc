@@ -4,7 +4,7 @@ import { BUILDINGS, isTrap } from '../src/game/data';
 import { NATIVE_CAMPAIGN, NATIVE_COMBAT, nativeLayout } from '../src/game/native-campaign';
 import { groundCollision, passableSubtilesAtEdge, subtileSolid } from '../src/game/subtile-path';
 import { replayBattle } from '../src/game/replay';
-import { lateSetup } from './fixtures/late-defense-battle';
+import { lateBattle, lateSetup } from './fixtures/late-defense-battle';
 
 const ring = (): Building[] => {
   // A storage completely surrounded by touching 3×3 buildings: no free whole tile reaches it.
@@ -84,6 +84,39 @@ describe('client sub-tile building collision', () => {
     const target = makeBuilding(99, 'goldmine', 18, 18, 1);
     const route = findPath({ x: 10.25, y: 19.25 }, target, line, 0.4, true);
     expect(route.some((p) => Math.floor(p.x) === 15)).toBe(true);
+  });
+
+  it('walks open ground straight when the client sight line is clear', () => {
+    const storage = makeBuilding(1, 'goldstorage', 30, 20, 10);
+    // Legacy routes step tile by tile; a clear sub-tile sight line is a single straight walk.
+    expect(findPath({ x: 10.25, y: 10.25 }, storage, [storage], 1).length).toBeGreaterThan(1);
+    const direct = findPath({ x: 10.25, y: 10.25 }, storage, [storage], 1, true);
+    expect(direct).toHaveLength(1);
+    expect(
+      Math.hypot(Math.max(30 - direct[0].x, 0), Math.max(20 - direct[0].y, 0)),
+    ).toBeLessThanOrEqual(1);
+    // A collision core on the line restores the searched sub-tile route around it.
+    const blocker = makeBuilding(2, 'cannon', 19, 14, 1);
+    const around = findPath({ x: 10.25, y: 10.25 }, storage, [storage, blocker], 1, true);
+    expect(around.length).toBeGreaterThan(1);
+    const solid = subtileSolid([storage, blocker]);
+    for (const p of around) expect(solid(p.x, p.y)).toBe(false);
+  });
+
+  it('keeps crowds at troop speed when separation pushes them past half-tile waypoints', () => {
+    const progress = (count: number) => {
+      const model = lateBattle(
+        lateSetup(85, { giant: count }, [makeBuilding(1, 'goldstorage', 40, 20, 10)]),
+      );
+      model.activeTroop = 'giant';
+      for (let i = 0; i < count; i++) expect(model.deploy(6, 21.5)).toBe(true);
+      for (let i = 0; i < 60; i++) model.step(0.05);
+      return Math.max(...model.battle!.units.map((u) => u.x)) - 6;
+    };
+    const alone = progress(1);
+    expect(alone).toBeCloseTo(4.5, 1);
+    // Eight giants dropped on one point spread out, but the front of the crowd keeps pace.
+    expect(progress(8)).toBeGreaterThanOrEqual(alone * 0.95);
   });
 
   it('enables sub-tile collision only for version-44 native campaign battles', () => {

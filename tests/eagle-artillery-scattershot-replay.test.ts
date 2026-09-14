@@ -194,8 +194,9 @@ describe('Eagle Artillery and Scattershot replays', () => {
       { giant: 20, archer: 30, balloon: 10, wizard: 5 },
       { lightning: 4 },
       [
-        // 200 housing at once wakes both Eagle Artilleries while the army still stands.
-        ...troopLine('giant', 20, 2, 14, 0.5, 0),
+        // 200 housing at once wakes both Eagle Artilleries while the army still stands. A tight
+        // Giant column keeps troops inside the Scattershot shard cone behind each impact.
+        ...troopLine('giant', 20, 2, 16, 0.25, 0),
         ...troopLine('archer', 30, 46, 10, 0.5, 0),
         ...troopLine('balloon', 10, 20, 46, 0, 0).map((d, i) => ({ ...d, x: 18 + i })),
         ...troopLine('wizard', 5, 20, 2, 0, 0).map((d, i) => ({ ...d, x: 20 + i })),

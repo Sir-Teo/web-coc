@@ -205,7 +205,15 @@ describe('late Goblin campaign building combat', () => {
     expect(weapon.shots.every((s) => !s.toAir)).toBe(true);
     const balloon = b.units.find((u) => u.kind === 'balloon')!;
     expect(balloon.hp).toBe(balloon.maxHp);
-    expect(weapon.hits[0].struck).toBeGreaterThan(1);
+    // Straight sub-tile routes spread the Giants along the hall face; once they stand attacking
+    // there, one bomb's one-tile splash strikes several of them.
+    let splash = weapon.hits[0].struck;
+    for (let i = 0; i < 120 && splash < 2; i++) {
+      model.step(0.05);
+      splash = Math.max(splash, ...weapon.hits.map((h) => h.struck));
+    }
+    expect(splash).toBeGreaterThan(1);
+    expect(weapon.shots.every((s) => !s.toAir)).toBe(true);
   });
 
   it('draws defense-preferring troops to the Goblin Hall only once its weapon is ready', () => {

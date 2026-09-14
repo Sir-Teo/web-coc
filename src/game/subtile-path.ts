@@ -69,10 +69,43 @@ const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: n
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 };
 
+/** `LogicPathFinderNew.IsLineOfSightClearImpl`: a 4-connected sub-tile walk; walls collide. */
+function sightLine(xA: number, yA: number, xB: number, yB: number) {
+  const directionX = xB > xA ? 1 : -1,
+    directionY = yB > yA ? 1 : -1,
+    distanceX = Math.abs(xB - xA),
+    distanceY = Math.abs(yB - yA);
+  let direction = distanceX - distanceY;
+  for (let i = distanceX + distanceY, x = xA, y = yA; i >= 0; i--) {
+    if (x < 0 || y < 0 || x >= SIZE || y >= SIZE || blocked[y * SIZE + x] || wall[y * SIZE + x])
+      return false;
+    if (direction > 0) {
+      direction -= distanceY * 2;
+      x += directionX;
+    } else {
+      direction += distanceX * 2;
+      y += directionY;
+    }
+  }
+  return true;
+}
+
+/** `LogicPathFinderNew.IsLineOfSightClear`: the sight line and both lines one sub-tile over. */
+function lineOfSight(xA: number, yA: number, xB: number, yB: number) {
+  const directionX = Math.sign(xB - xA),
+    directionY = Math.sign(yB - yA);
+  return (
+    sightLine(xA, yA, xB, yB) &&
+    sightLine(xA + directionX, yA, xB, yB - directionY) &&
+    sightLine(xA, yA + directionY, xB - directionX, yB)
+  );
+}
+
 /**
  * The legacy A* (stable heap, first-in ties, wall break-through cost, in-range goal and short
  * melee approach) on sub-tiles. Costs stay in tile units: a step is half a tile and crossing a
- * wall tile costs the same seven tiles as before.
+ * wall tile costs the same seven tiles as before. When the client's sight-line test between the
+ * start and goal sub-tiles is clear, the route is the goal point alone.
  */
 export function findSubtilePath(
   start: { x: number; y: number },
@@ -186,6 +219,10 @@ export function findSubtilePath(
     }
   }
   if (goal < 0) return [];
+  // `LogicPathFinderNew.FindPath`: a clear sight line replaces the searched route with a single
+  // straight walk to its end point, so open ground is crossed directly rather than in steps.
+  if (goal !== first && lineOfSight(sx, sy, goal % SIZE, Math.floor(goal / SIZE)))
+    return [approach ?? center(goal)];
   const path = [];
   while (goal !== first && goal >= 0) {
     path.push(center(goal));
