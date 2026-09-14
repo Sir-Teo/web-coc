@@ -1,4 +1,4 @@
-import catalog from '../../reference/townhall/catalog.json';
+import catalog from '../../reference/townhall/catalog.json' with { type: 'json' };
 import type { BuildingKind } from './data';
 
 /**
@@ -32,6 +32,10 @@ export const TOWNHALL_TIERS = catalog.townHalls;
 export const TOWNHALL_GATES = catalog.gates as Readonly<Record<string, readonly number[]>>;
 const LEVELS = catalog.levels as unknown as Readonly<Record<string, readonly SourceLevel[]>>;
 export const KING_SOURCE = catalog.heroes.barbarianKing;
+/** Gem price of the 2nd through 5th Builder's Hut; the first ships with the village. */
+export const WORKER_GEMS = catalog.workers as readonly number[];
+/** What the original grants a new village. Its gems were already this game's allowance. */
+export const STARTING_GRANT = catalog.starting;
 
 /** Original record name for every home kind the tier tables name. */
 export const SOURCE_NAME: Partial<Record<BuildingKind, string>> = {

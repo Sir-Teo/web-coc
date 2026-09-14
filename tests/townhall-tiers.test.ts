@@ -7,7 +7,9 @@ import {
   MAX_TOWNHALL,
   maxCountFor,
   maxLevelFor,
+  buildPrice,
   storageCapacity,
+  townHallCapacity,
   unlockTownHall,
   upgradeCost,
   upgradeSeconds,
@@ -80,12 +82,7 @@ describe('Town Hall tier catalog', () => {
         expect(withheld.level, `${name} gap`).toBeLessThan(sourceCeiling(name, MAX_TOWNHALL));
       }
     }
-    expect(Object.keys(WITHHELD).sort()).toEqual([
-      'blacksmith',
-      'builder',
-      'clancastle',
-      'skeletontrap',
-    ]);
+    expect(Object.keys(WITHHELD).sort()).toEqual(['blacksmith', 'builder', 'clancastle']);
   });
 
   it('reports the original Town Hall requirement for the levels each tier adds', () => {
@@ -108,6 +105,7 @@ describe('Town Hall tier catalog', () => {
       ['seekingairmine', 2, 9],
       ['skeletontrap', 3, 9],
       ['skeletontrap', 4, 10],
+      ['skeletontrap', 5, 18],
       ['bomb', 6, 9],
       ['bomb', 14, 18],
       ['airbomb', 4, 9],
@@ -129,7 +127,6 @@ describe('Town Hall tier catalog', () => {
       expect(requiredTownHall(kind, level), `${kind} ${level}`).toBe(townhall);
     expect(unlockTownHall('xbow')).toBe(9);
     // A withheld level reports no requirement at all, because it is never reachable.
-    expect(requiredTownHall('skeletontrap', 5)).toBeNull();
     expect(requiredTownHall('blacksmith', 2)).toBeNull();
     // The Town Hall's own ceiling is the catalog maximum from the first tier onwards.
     for (const th of TIERS) expect(maxLevelFor('townhall', th)).toBe(MAX_TOWNHALL);
@@ -155,12 +152,17 @@ describe('Town Hall tier catalog', () => {
     for (const th of TIERS)
       for (const resource of ['gold', 'elixir'] as const) {
         const store = resource === 'gold' ? 'goldstorage' : 'elixirstorage';
-        const capacity = 100000 + maxCountFor(store, th) * storageCapacity(maxLevelFor(store, th));
+        // The original counts the Town Hall's own store toward the cap, stores on top of it.
+        const capacity =
+          townHallCapacity(th, resource) +
+          maxCountFor(store, th) * storageCapacity(maxLevelFor(store, th));
         for (const kind of BUILDING_KEYS) {
           if (BUILDINGS[kind].resource !== resource || !maxCountFor(kind, th)) continue;
-          expect(BUILDINGS[kind].cost, `${kind} construction at TH${th}`).toBeLessThanOrEqual(
-            capacity,
-          );
+          // A village always has exactly one Town Hall, so its level-1 price is never charged,
+          // and a Builder's Hut is bought with gems, which no storage caps.
+          const price = buildPrice(kind, 1);
+          if (kind !== 'townhall' && price.resource !== 'gems')
+            expect(price.cost, `${kind} construction at TH${th}`).toBeLessThanOrEqual(capacity);
           const ceiling =
             kind === 'townhall' ? Math.min(MAX_TOWNHALL, th + 1) : maxLevelFor(kind, th);
           for (let level = kind === 'townhall' ? th : 1; level < ceiling; level++)
@@ -353,17 +355,24 @@ describe('Town Hall tier village', () => {
     raise(ninth, 'laboratory', 7);
     const old = record(ninth);
     expect(old.version).toBe(REPLAY_VERSION);
-    expect(REPLAY_VERSION).toBe(46);
+    expect(REPLAY_VERSION).toBe(47);
     expect(validateReplay(old)).toBe(true);
     expect(validateReplay({ ...old, version: 45 })).toBe(true);
     expect(validateReplay({ ...old, version: 44 })).toBe(false);
+
+    // The fifth coffin tier is version 47's own: no earlier recording may hold one.
+    const coffins = village();
+    raise(coffins, 'skeletontrap', 5);
+    const fifth = record(coffins);
+    expect(validateReplay(fifth)).toBe(true);
+    expect(validateReplay({ ...fifth, version: 46 })).toBe(false);
 
     // A later tier does not: its Town Hall alone is above every earlier ceiling.
     const latest = village();
     raise(latest, 'laboratory', 16);
     const current = record(latest);
     expect(validateReplay(current)).toBe(true);
-    for (const version of [43, 44, 45])
+    for (const version of [43, 44, 45, 46])
       expect(validateReplay({ ...current, version }), `version ${version}`).toBe(false);
   });
 });

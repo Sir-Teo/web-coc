@@ -1,6 +1,6 @@
 import { darkDrillStats, MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { hasLateArt, lateAsset, lateTexture } from './late-campaign-art';
-import drillPortraits from '../../reference/dark-drill/portraits.json';
+import drillPortraits from '../../reference/dark-drill/portraits.json' with { type: 'json' };
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import { infernoAsset, infernoTexture } from './inferno-art';
 import { cannonAsset, cannonTexture } from './cannon-art';
@@ -35,7 +35,8 @@ import {
   RAGE_PULSES,
 } from './spell-progression';
 import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
-import { sourceLevel, sourceLevels } from './townhall-catalog';
+import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
+import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 /** Original level-one construction rows for the buildings that had no source table. */
 const sourceBuild = (kind: BuildingKind) => sourceLevel(kind, 1)!;
 /** Original row counts for the buildings whose ceiling is simply the end of their table. */
@@ -45,6 +46,7 @@ const SOURCE_ROWS = {
   goldstorage: sourceLevels('goldstorage')!.length,
   elixirstorage: sourceLevels('elixirstorage')!.length,
   herohall: sourceLevels('herohall')!.length,
+  builder: sourceLevels('builder')!.length,
 };
 const SOURCE_BUILD = {
   goldmine: sourceBuild('goldmine'),
@@ -105,6 +107,8 @@ export type TroopKind =
 export type SpellKind = 'rage' | 'heal' | 'lightning';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
+/** What a purchase is paid in. Gems buy Builder's Huts and nothing else is priced in them. */
+export type Payment = Resource | 'gems';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
 export type Targets = 'ground' | 'air' | 'both';
 export interface BuildingDef {
@@ -300,7 +304,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 6000,
     resource: 'gold',
     category: 'Traps',
-    maxLevel: 4,
+    maxLevel: SKELETON_TRAP_LEVELS,
     build: 0,
     singleArtwork: true,
     trap: { trigger: 5, radius: 0, delay: 0.6, damage: 0, targets: 'ground', minHousing: 1 },
@@ -475,10 +479,12 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     size: 2,
     width: 92,
     hp: 500,
-    cost: 12000,
+    // Huts are sold for gems, dearer each time: buildPrice quotes the next one. This price
+    // is never charged, and `resource` names the gold the hut's own upgrades are bought with.
+    cost: 0,
     resource: 'gold',
     category: 'Army',
-    maxLevel: 4,
+    maxLevel: SOURCE_ROWS.builder,
     build: 30,
   },
   mortar: {
@@ -1126,6 +1132,18 @@ export const asset = (
     kind in TROOPS ? 'characters' : ENVIRONMENT.has(kind) ? 'environment' : 'buildings';
   return `/assets/${folder}/${artName(kind)}.webp`;
 };
+/**
+ * What one more of a building costs, given how many the village already has. Every building
+ * but the Builder's Hut charges a flat price; the original sells huts for gems, dearer each
+ * time, and hands the second one over free.
+ */
+export const buildPrice = (
+  kind: BuildingKind,
+  owned: number,
+): { resource: Payment; cost: number } =>
+  kind === 'builder'
+    ? { resource: 'gems', cost: WORKER_GEMS[Math.min(WORKER_GEMS.length, Math.max(1, owned)) - 1] }
+    : { resource: BUILDINGS[kind].resource, cost: BUILDINGS[kind].cost };
 /** Explicit catalog ceilings; old villages retain existing buildings above them. */
 export const maxLevelFor = (kind: BuildingKind, townhall: number) =>
   Math.min(
@@ -1147,9 +1165,22 @@ export const upgradeSeconds = (kind: BuildingKind, level: number) =>
   // Every remaining home building takes its original destination duration.
   sourceLevel(kind, level + 1)?.seconds ??
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
-/** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
+/** One store's original allowance. Gold and Elixir Storage share a table level for level. */
 export const storageCapacity = (level: number) =>
-  level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
+  sourceLevel('goldstorage', Math.max(1, level))?.storedGold ??
+  sourceLevel('goldstorage', SOURCE_ROWS.goldstorage)!.storedGold!;
+/** The Town Hall's own store, which the original counts toward every resource cap. */
+export const townHallCapacity = (level: number, resource: Resource) => {
+  const row = sourceLevel('townhall', Math.min(MAX_TOWNHALL, Math.max(1, level)));
+  if (!row) return 0;
+  return (
+    (resource === 'gold'
+      ? row.storedGold
+      : resource === 'elixir'
+        ? row.storedElixir
+        : row.storedDark) ?? 0
+  );
+};
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
   (kind === 'darkdrill' ? darkDrillStats(level).hp : undefined) ??
@@ -1163,7 +1194,9 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
   defenseProgression(kind, level)?.hp ??
   (kind === 'wall'
     ? WALL_LEVELS[Math.min(WALL_LEVELS.length, Math.max(1, level)) - 1].hp
-    : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
+    : // Every remaining home building takes its original hitpoints. The local curve it
+      // replaces only still covers a level no original table reaches.
+      (sourceLevel(kind, level)?.hp ?? BUILDINGS[kind].hp * (1 + (level - 1) * 0.25)));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
   (kind === 'darkdrill' ? darkDrillStats(level + 1).cost : undefined) ??

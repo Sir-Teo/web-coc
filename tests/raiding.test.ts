@@ -210,7 +210,10 @@ describe('resource raids and save compatibility', () => {
   it('pays gold as storage is damaged, without requiring destruction or a star', () => {
     const storage = makeBuilding(1000, 'goldstorage', 10, 10);
     const collector = makeBuilding(1001, 'collector', 20, 20);
-    const m = arena([storage, collector]);
+    // Loot is capped by the room left in the raider's own stores, so empty them first.
+    const m = arena([storage, collector], (model) => {
+      model.state.gold = model.state.elixir = 0;
+    });
     m.damage(storage, storage.maxHp / 2);
     m.finishBattle();
     expect(m.battle!.result!.gold).toBe(CAMPAIGN[0].gold / 2);
@@ -221,13 +224,25 @@ describe('resource raids and save compatibility', () => {
     m.finishBattle();
     expect(m.state.gold).toBe(gold);
   });
-  it('pays exactly the advertised loot on a full clear', () => {
+  it('pays exactly the advertised loot on a full clear, up to the room left at home', () => {
     const m = new GameModel();
+    m.state.gold = m.state.elixir = 0;
+    m.townhall!.level = 6;
     m.startBattle(0);
     for (const b of m.battle!.buildings) m.damage(b, b.hp);
     m.finishBattle();
     expect(m.battle!.loot).toEqual({ gold: CAMPAIGN[0].gold, elixir: CAMPAIGN[0].elixir });
     expect(m.battle!.stars).toBe(3);
+
+    // A raider with no room takes nothing, however completely the village falls.
+    const full = new GameModel();
+    full.state.gold = full.resourceCap('gold');
+    full.state.elixir = full.resourceCap('elixir');
+    full.startBattle(0);
+    for (const b of full.battle!.buildings) full.damage(b, b.hp);
+    full.finishBattle();
+    expect(full.battle!.loot).toEqual({ gold: 0, elixir: 0 });
+    expect(full.battle!.stars).toBe(3);
   });
   it('opens an older version-2 save without granting troops or changing progress', () => {
     const old = structuredClone(initialSave());

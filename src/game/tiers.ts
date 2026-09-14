@@ -17,8 +17,6 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
   collector: [2, 3, 4, 5, 6, 7, 7, 7, 7],
   goldstorage: [1, 2, 2, 3, 3, 4, 4, 4, 4],
   elixirstorage: [1, 2, 2, 3, 3, 4, 4, 4, 4],
-  // The original sells all five huts for gems from the first tier; this game earns them.
-  builder: [2, 2, 3, 3, 4, 4, 5, 5, 5],
 };
 
 /**
@@ -29,8 +27,6 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
 export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {
   clancastle: { level: 0, why: 'home Clan Castle progression is unimplemented' },
   blacksmith: { level: 1, why: 'Blacksmith 2+ unlocks no equipment before Blacksmith 3' },
-  builder: { level: 1, why: 'the armed hut’s turret fights only in campaign battles' },
-  skeletontrap: { level: 4, why: 'only four coffin tiers spawn reconstructed defenders' },
 };
 
 const HOME_KINDS = Object.keys(SOURCE_NAME) as BuildingKind[];

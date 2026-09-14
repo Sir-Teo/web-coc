@@ -100,10 +100,11 @@ it('upgrades using native destination values and keeps the home Town Hall limit'
   m.upgrade(storage.id);
   expect(m.state.elixir).toBe(500000);
   expect(storage.upgradeEnd! - m.clock).toBe(57600000);
-  expect(m.resourceCap('dark')).toBe(10000);
+  // A Town Hall 7 holds 2,500 dark of its own on top of whatever its stores hold.
+  expect(m.resourceCap('dark')).toBe(2500 + 10000);
   m.tick(storage.upgradeEnd!);
   expect(storage.level).toBe(2);
-  expect(m.resourceCap('dark')).toBe(17500);
+  expect(m.resourceCap('dark')).toBe(2500 + 17500);
   m.state.elixir = 2000000;
   m.upgrade(storage.id);
   expect(storage.upgradeEnd).toBeUndefined();

@@ -48,6 +48,7 @@ import {
 } from './bomb-tower-attack';
 import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
+import { STARTING_GRANT } from './townhall-catalog';
 import {
   campaignStage,
   campaignStages,
@@ -204,7 +205,9 @@ import {
   researchSeconds,
   researchLaboratory,
   troopStatsAt,
+  buildPrice,
   storageCapacity,
+  townHallCapacity,
   buildingHp,
   upgradeCost,
   upgradeSeconds,
@@ -865,12 +868,17 @@ export class GameModel {
     );
   }
   resourceCap(kind: Resource) {
+    // The original counts the Town Hall's own store toward every cap, stores on top of it.
+    const hall = townHallCapacity(this.townhall?.level ?? 1, kind);
     if (kind === 'dark')
-      return this.state.buildings
-        .filter((b) => b.kind === 'darkstorage' && !b.constructing)
-        .reduce((n, b) => n + darkStorageCapacity(b.level), 0);
+      return (
+        hall +
+        this.state.buildings
+          .filter((b) => b.kind === 'darkstorage' && !b.constructing)
+          .reduce((n, b) => n + darkStorageCapacity(b.level), 0)
+      );
     return (
-      100000 +
+      hall +
       this.state.buildings
         .filter(
           (b) => b.kind === (kind === 'gold' ? 'goldstorage' : 'elixirstorage') && !b.constructing,
@@ -1108,7 +1116,9 @@ export class GameModel {
           ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
           : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );
-    if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
+    const price = buildPrice(kind, this.countOf(kind));
+    if (this.state[price.resource] < price.cost)
+      return this.notify(`Not enough ${price.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
     this.cancelNativeHandling();
@@ -1138,15 +1148,16 @@ export class GameModel {
       this.changed();
       return true;
     }
+    const price = buildPrice(kind, this.countOf(kind));
     if (
-      this.state[d.resource] < d.cost ||
+      this.state[price.resource] < price.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
       (!isTrap(kind) && this.busy >= this.builders)
     ) {
       this.notify('Unable to build. Check your resources and builders.');
       return false;
     }
-    this.state[d.resource] -= d.cost;
+    this.state[price.resource] -= price.cost;
     const b = makeBuilding(this.state.nextId++, kind, x, y, 1);
     // A home Spell Tower always carries a weapon; the original picks one on placement too.
     if (kind === 'spelltower') b.spellTowerWeapon = 'rage';
@@ -3306,9 +3317,11 @@ export function initialSave(): Save {
   return {
     version: 4,
     dark: 0,
-    gold: 205000,
-    elixir: 165000,
-    gems: 250,
+    // The original's own opening grant. Storage now holds the original allowance, which a
+    // prototype-sized purse would overflow several times over before the first battle.
+    gold: STARTING_GRANT.gold,
+    elixir: STARTING_GRANT.elixir,
+    gems: STARTING_GRANT.gems,
     trophies: 1248,
     xp: 1850,
     buildings,

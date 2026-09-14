@@ -25,6 +25,7 @@ PINS = {
     'logic/traps.csv': '757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c',
     'logic/heroes.csv': '658c9721fb0fd5488b69ca3555ef5597d521f28dde95af051a2a98ccbdd65197',
     'logic/special_abilities.csv': 'c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb',
+    'logic/globals.csv': '16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087',
 }
 REFERENCE = ROOT / 'reference/townhall'
 # The Home Village entities this game implements. Names are the original record names.
@@ -61,6 +62,11 @@ OPTIONAL = (
 RESOURCES = {'Gold': 'gold', 'Elixir': 'elixir', 'DarkElixir': 'dark', 'Diamonds': 'gems'}
 # King records the local Hero Hall reaches; Hero Hall 12 at Town Hall 18 permits all 110.
 KING_LEVELS = 110
+# Gem price of the 2nd through 5th Builder's Hut. The first hut ships with the village and
+# the second is free, so the source charges only for the last three.
+WORKERS = ('WORKER_COST_2ND', 'WORKER_COST_3RD', 'WORKER_COST_4TH', 'WORKER_COST_5TH')
+# What a new village is granted. The gems here are already this game's opening allowance.
+STARTING = {'gold': 'STARTING_GOLD', 'elixir': 'STARTING_ELIXIR', 'gems': 'STARTING_DIAMONDS'}
 
 
 def require(condition, message):
@@ -120,6 +126,13 @@ def records(path):
     return result
 
 
+def globals_table():
+    """The client's flat Name/NumberValue sheet, which carries no continuation rows."""
+    decoded = rows('logic/globals.csv')
+    headers = decoded[0]
+    return {row[0]: dict(zip(headers, row)) for row in decoded[2:] if row and row[0]}
+
+
 def seconds(row):
     return (int(row.get('BuildTimeD', 0)) * 24 + int(row.get('BuildTimeH', 0))) * 3600 + \
         int(row.get('BuildTimeM', 0)) * 60 + int(row.get('BuildTimeS', 0))
@@ -147,6 +160,7 @@ def build():
     traps = records('logic/traps.csv')
     heroes = records('logic/heroes.csv')
     abilities = records('logic/special_abilities.csv')
+    settings = globals_table()
 
     missing = [name for name in BUILDINGS if name not in buildings]
     require(not missing, f'Absent source buildings: {missing}')
@@ -209,17 +223,28 @@ def build():
             hall=int(row['RequiredHeroTavernLevel']),
         ))
 
+    missing = [name for name in WORKERS if name not in settings]
+    require(not missing, f'Absent worker costs: {missing}')
+    workers = [int(settings[name]['NumberValue']) for name in WORKERS]
+    require(workers == sorted(workers), 'Worker gem costs fall as huts are bought')
+    missing = [name for name in STARTING.values() if name not in settings]
+    require(not missing, f'Absent starting grant: {missing}')
+    starting = {key: int(settings[name]['NumberValue']) for key, name in STARTING.items()}
+
     return dict(
         clientVersion='18.400.21',
         bundle=BUNDLE,
         baseUrl=BASE,
         sources=dict(sorted(PINS.items())),
         scope='Home Village tier counts and level gates for the entities this game implements, '
-              'with the Barbarian King records a Hero Hall unlocks.',
+              'with the Barbarian King records a Hero Hall unlocks, the gem price of each hut '
+              'and what a new village is granted.',
         townHalls=tiers,
         gates=gates,
         levels=tabled,
         heroes=dict(barbarianKing=king),
+        workers=workers,
+        starting=starting,
     )
 
 
@@ -238,7 +263,8 @@ def main():
               f'{len(catalog["gates"])} gated entities, '
               f'{sum(len(rows) for rows in catalog["levels"].values())} level rows across '
               f'{len(catalog["levels"])} tabled entities and '
-              f'{len(catalog["heroes"]["barbarianKing"])} King records.')
+              f'{len(catalog["heroes"]["barbarianKing"])} King records, '
+              f'{len(catalog["workers"])} hut prices and the opening grant.')
         return
     REFERENCE.mkdir(parents=True, exist_ok=True)
     target.write_text(text)

@@ -31,7 +31,12 @@ import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
 import { WIZARD_TOWER_PROJECTILES, wizardTowerProjectileTier } from '../game/wizard-tower-stats';
-import { SKELETON_TRAP, skeletonCount, skeletonStats } from '../game/skeleton-stats';
+import {
+  SKELETON_TRAP,
+  skeletonCount,
+  skeletonSpawnLevel,
+  skeletonStats,
+} from '../game/skeleton-stats';
 import {
   MAX_SPELL_LEVEL,
   SPELL_LEVELS,
@@ -57,6 +62,7 @@ import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
 import {
   BUILDINGS,
+  buildPrice,
   buildingHp,
   TROOPS,
   TROOP_KEYS,
@@ -156,7 +162,7 @@ function statRows(
     rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
   if (kind === 'skeletontrap') {
-    const skeleton = skeletonStats('ground');
+    const skeleton = skeletonStats('ground', skeletonSpawnLevel(level));
     rows.length = 0;
     rows.push(
       ['Users', 'Skeletons', String(skeletonCount(level))],
@@ -1662,8 +1668,10 @@ export class HUD {
           limit = m.maxCount(k);
         const locked = limit === 0;
         const full = !locked && count >= limit;
-        const afford = m.state[d.resource] >= d.cost;
-        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : d.cost === 0 ? 'Free' : `${resource(d.resource)} ${n(d.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
+        // A Builder's Hut is priced per hut in gems, so the tile quotes the next one.
+        const price = buildPrice(k, count);
+        const afford = m.state[price.resource] >= price.cost;
+        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : price.cost === 0 ? 'Free' : `${resource(price.resource)} ${n(price.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
       })
       .join('');
     return `<div class="drawer-body shop-strip">${cards}</div><footer class="drawer-foot">${icon('Hammer', 16)} ${m.builders - m.busy} of ${m.builders} builders free <span>Drag a building onto the village, or tap to pick it up</span></footer>`;
