@@ -97,6 +97,7 @@ const spellTowerLabel = (weapon = 'rage') => weapon[0].toUpperCase() + weapon.sl
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
+import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
   | 'blacksmith'
@@ -107,6 +108,7 @@ type Panel =
   | 'campaign'
   | 'settings'
   | 'achievements'
+  | 'star-bonus'
   | 'help'
   | 'info'
   | 'layouts'
@@ -857,6 +859,9 @@ export class HUD {
       case 'settings':
         this.show('settings');
         break;
+      case 'star-bonus':
+        this.model.collectStarBonus();
+        return;
       case 'achievements':
         this.show('achievements');
         break;
@@ -1240,7 +1245,7 @@ export class HUD {
     if (m.editing) return this.editHUD();
     const free = m.builders - m.busy;
     return `
- <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league}</span></button></div></header>
+ <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
  <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !nativeCampaignIssues(i).length) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
@@ -2066,9 +2071,32 @@ export class HUD {
         '',
       )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
   }
+  /** The league's own daily bonus, which is where ore comes from. */
+  private starBonusCard() {
+    const m = this.model,
+      bonus = m.starBonus,
+      reward = starBonusReward(m.state.trophies),
+      waiting = Math.max(0, bonus.readyAt - m.clock);
+    const parts = (['gold', 'elixir', 'dark'] as const)
+      .filter((k) => reward[k] > 0)
+      .map((k) => `<span>${resource(k)} ${n(reward[k])}</span>`)
+      .concat(
+        ORE_KEYS.filter((k) => reward[k] > 0).map(
+          (k) => `<span>${gearImage(k)} ${n(reward[k])}</span>`,
+        ),
+      )
+      .join('');
+    const short = Math.max(0, STAR_BONUS_STARS - bonus.stars);
+    const status = short
+      ? `${short} more ${short === 1 ? 'star' : 'stars'}`
+      : waiting
+        ? `Ready in ${time(waiting / 1000)}`
+        : 'Ready to collect';
+    return `<div class="star-bonus"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
+  }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div><div class="profile-stats">${(
+    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div>${this.starBonusCard()}<div class="profile-stats">${(
       [
         ['Swords', 'Raids won', n(s.stats.raids)],
         ['Castle', 'Buildings destroyed', n(s.stats.destroyed)],

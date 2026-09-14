@@ -11,6 +11,7 @@ import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles'
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
+import { validStarBonus } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { expandArmyRoster } from './army';
 import { maxSpellLevelFor } from './spell-progression';
@@ -137,6 +138,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.campaignLoot !== undefined && !validCampaignLoot(s.campaignLoot)) return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;
   if (s.ores !== undefined && !validOres(s.ores)) return false;
+  if (s.starBonus !== undefined && !validStarBonus(s.starBonus)) return false;
   if (s.equipment !== undefined) {
     if (!validEquipment(s.equipment)) return false;
     const requiresBlacksmith =

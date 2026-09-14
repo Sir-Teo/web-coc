@@ -48,6 +48,14 @@ import {
 } from './bomb-tower-attack';
 import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
+import {
+  emptyStarBonus,
+  leagueFor,
+  STAR_BONUS_COOLDOWN,
+  STAR_BONUS_STARS,
+  starBonusReward,
+  type StarBonus,
+} from './leagues';
 import { STARTING_GRANT } from './townhall-catalog';
 import {
   campaignStage,
@@ -301,6 +309,8 @@ export interface Save {
   king?: HeroProgress;
   equipment?: KingEquipment;
   ores?: Ores;
+  /** Stars banked toward the daily Star Bonus, and when it may next be taken. */
+  starBonus?: StarBonus;
   gold: number;
   elixir: number;
   gems: number;
@@ -853,13 +863,7 @@ export class GameModel {
   get chiefLevel() {
     return Math.max(1, Math.floor(this.state.xp / 100));
   }
-  get league() {
-    return this.state.trophies >= 1800
-      ? 'Gold League I'
-      : this.state.trophies >= 1000
-        ? 'Silver League II'
-        : 'Bronze League I';
-  }
+
   get builders() {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
@@ -1828,6 +1832,45 @@ export class GameModel {
   /** What this village's forge can hold. A village with no forge still keeps what it has. */
   get oreCapacity() {
     return oreCapacity(this.blacksmith?.level ?? 1);
+  }
+  get starBonus() {
+    return this.state.starBonus ?? emptyStarBonus();
+  }
+  /** The pinned league this village's trophies fall in; its bands are contiguous. */
+  get league() {
+    return leagueFor(this.state.trophies);
+  }
+  /** Whether the daily bonus is both paid for and off cooldown. */
+  get starBonusReady() {
+    const bonus = this.starBonus;
+    return bonus.stars >= STAR_BONUS_STARS && this.clock >= bonus.readyAt;
+  }
+  /** The league's own reward, clamped to the room each store has left. */
+  collectStarBonus() {
+    if (this.battle || !this.starBonusReady) return false;
+    const reward = starBonusReward(this.state.trophies);
+    const bonus = (this.state.starBonus ??= emptyStarBonus());
+    const taken: Partial<Record<string, number>> = {};
+    for (const k of ['gold', 'elixir', 'dark'] as const) {
+      const room = Math.max(0, this.resourceCap(k) - this.state[k]);
+      const amount = Math.min(reward[k], room);
+      if (amount > 0) this.state[k] += amount;
+      taken[k] = amount;
+    }
+    const ores = { ...this.ores },
+      capacity = this.oreCapacity;
+    for (const k of ORE_KEYS) {
+      const amount = Math.min(reward[k], Math.max(0, capacity[k] - ores[k]));
+      ores[k] += amount;
+      taken[k] = amount;
+    }
+    this.state.ores = ores;
+    bonus.stars -= STAR_BONUS_STARS;
+    bonus.readyAt = this.clock + STAR_BONUS_COOLDOWN;
+    this.state.stats.collected = (this.state.stats.collected ?? 0) + 1;
+    this.notify(`${this.league.name} Star Bonus collected.`);
+    this.changed();
+    return taken;
   }
   /** Highest equipment level this village's forge opens; every item shares the gate. */
   get equipmentCeiling() {
@@ -2970,6 +3013,11 @@ export class GameModel {
         (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
       ).length;
       this.state.xp += b.stars * 15;
+      // Stars bank toward the daily bonus and are allowed to overflow past its price.
+      if (b.stars > 0) {
+        const bonus = (this.state.starBonus ??= emptyStarBonus());
+        bonus.stars += b.stars;
+      }
     }
     b.result = {
       gold,
