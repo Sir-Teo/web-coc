@@ -1,6 +1,6 @@
 # Blacksmith and King equipment
 
-Numeric audit: September 12, 2026 UTC; native client 18.400.21. This work implements Blacksmith level 1 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 9. The local content ceiling is now Town Hall 9, which the original client would allow to build Blacksmith 2; that level is deliberately withheld because equipment level 10 needs Blacksmith 3 at Town Hall 10, so it would unlock nothing. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
+Numeric audit: September 12, 2026 UTC; native client 18.400.21. This work implements Blacksmith level 1 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 9. The local content ceiling is Town Hall 18, which the original client would allow to build Blacksmith 10; every level above the first is deliberately withheld because equipment stops at level 9, which needs only Blacksmith 1, so nothing above it would unlock anything. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
 
 ## Primary references
 
@@ -17,7 +17,7 @@ Native numeric files are from the immutable Supercell client bundle `7f04bdfdc41
 | [globals.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/globals.csv) | `16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087` | Common ore gem anchors 1/10/100; Glowy 5; Starry 35 gems each |
 | [resources.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/resources.csv) | `15f321776bb2ae323bef624a7d7f0235d3f5f40420a6a78e1586b33e972a19d0` | Ore identity and native UI hue families |
 
-The signed CSV decoding procedure is recorded in [KING-COMBAT.md](KING-COMBAT.md). Blank cells inherit within a named record. Equipment costs on a current row buy the **next** level; Blacksmith requirements describe the current row. Equipment levels 1–9 require Blacksmith 1; level 10 requires Blacksmith 3 (TH10). The home Blacksmith is deliberately held at level 1, since nothing above it is implemented; see [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
+The signed CSV decoding procedure is recorded in [KING-COMBAT.md](KING-COMBAT.md). Blank cells inherit within a named record. Equipment costs on a current row buy the **next** level; Blacksmith requirements describe the current row. Equipment levels 1–9 require Blacksmith 1; level 10 requires Blacksmith 3 (TH10). The home Blacksmith is deliberately held at level 1, since nothing above it is implemented. Closing that gap means equipment levels 10–18, whose four further ability tiers and Starry Ore costs are not implemented here; the source gates them at Blacksmith 3, 5 and 7. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
 
 Blacksmith 1 occupies 3×3 tiles, costs 600,000 Elixir, takes 12 hours, has 700 HP, and holds 10,000 Shiny / 1,000 Glowy / 200 Starry Ore. One is available at TH8.
 

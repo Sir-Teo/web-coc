@@ -1122,4 +1122,27 @@ The new `tests/browser/townhall-tiers.spec.ts` covers what had never been seen i
 
 **The wider browser suite cannot be certified on this host.** A 43-test selection across the progression, shop, wall, trap, X-Bow and army specs gives **22 passed / 21 failed here, against 24 passed / 19 failed on the unmodified tree**. Nearly every failure is a bare 30-second interaction timeout — mouse drags, double taps, phone-viewport clicks — not a value mismatch. The failure sets overlap on 18 tests; three fail only on this branch and one fails only on `main`, and all four are bare timeouts, so the difference is this host's flakiness rather than a regression. `tests/browser/camp-progression.spec.ts` loads no tests at all under this Node version, on both trees, because a source module imports JSON without an import attribute. Neither the shape of these results nor their causes is a verdict on the suite itself; it is a verdict on running it here.
 
-Hitpoints and storage capacity remain this game's own values, the troop and spell rosters still stop at five levels each, and the Archer Queen, the later hero roster, Dark Barracks, siege machines and the Town Hall's own Giga weapons remain unimplemented. Production smoke checks, campaign audits, physical-device qualification, WebKit and offline reload remain unrun for this ladder, and the full production-clone goal is open.
+The troop and spell rosters still stop at five levels each, and the Archer Queen, the later hero roster, Dark Barracks, siege machines and the Town Hall's own Giga weapons remain unimplemented. Production smoke checks, campaign audits, physical-device qualification, WebKit and offline reload remain unrun for this ladder, and the full production-clone goal is open.
+
+## Closing the tier gaps — September 14, 2026
+
+Five of the gaps the ladder left open are now closed, and one silent test-infrastructure defect with them.
+
+**Every browser spec was failing to load.** `tests/browser/camp-progression.spec.ts` loading no tests turned out not to be one spec's problem: Playwright loads specs under Node rather than Vite, and 137 of the repo's 142 source JSON imports carried no `with { type: 'json' }` attribute, so the first one Node reached aborted the whole run. Listing the suite returned **0 tests in 0 files**. With the attribute added throughout it returns **687 tests across 165 files**. Every browser result recorded before this date was therefore a subset of the suite, not the suite.
+
+**Hitpoints.** The eight buildings that never had a source table — the Town Hall, both resource buildings, both storages, the Builder's Hut, the Hero Hall and the Blacksmith — now read their pinned rows instead of a local curve. Recorded battles are unaffected: a recording carries each building's own `maxHp` and the replay restores it rather than deriving it.
+
+**Storage.** `storageCapacity` is the original per-level allowance and the Town Hall counts its own store toward every cap, as the original does; the flat 100,000 base is gone. This is what makes the ladder close rather than merely what limits it — at Town Hall 16 a 26,000,000 elixir cap carries a 24,000,000 Spell Factory 9, and without the hall's own 4,000,000 the tier does not fit. The consequences are real and were followed rather than papered over: the opening grant is now the original's own 750 gold and 750 elixir (its 250 gems already matched), because a prototype-sized purse overflows the faithful cap several times over, and raid loot is capped by the room left at home, which now actually binds.
+
+**Builder's Huts** are sold as the original sells them: five available from Town Hall 1, priced in gems from the pinned `WORKER_COST_*` globals — the second free, then 500, 1,000 and 2,000 — rather than 12,000 gold each, tier by tier. That removes one of the six count divergences below Town Hall 9. The armed hut also fights at home now, from Town Hall 14 to level 8, with the turret, Defending Builders and repair behaviour that campaign huts already carried.
+
+**The fifth Skeleton Trap tier** is reconstructed, not stubbed. `scripts/import-native-skeleton-trap.py` now builds three art tiers from the pinned `sc/buildings.sc`: 38 unique atlas cells for the level-5 coffin beside 35 for each of the others, verified pixel for pixel by `--check`. Its level 2 skeletons — 45 hitpoints, 30 DPS — come from a newly pinned `logic/characters.csv`, and the level 1 values it also captures match the constants they replace exactly.
+
+Validation:
+
+- Recording version **47** carries the fifth coffin tier and the armed home hut; version 46 recordings are rejected for either.
+- A real defect was caught by the archived-state suites: adding `spawnLevel` to every spawned skeleton changed the canonical battle hash of v36 recordings. The field is now written only when it is not the default, and the archived states hash identically again.
+- The heavy determinism suites were failing on their own inline 20–30 second caps while doing 40–50 seconds of genuine work. Those caps are raised to the 180 seconds the repo already uses for its other replay suites, and `vitest.config.ts` sets the same default.
+- `reference/townhall/catalog.json` now also carries the worker gem prices and the starting grant, still reproduced byte for byte by `scripts/import-native-townhall.py --check` against six signed sources.
+
+Still open: the home Clan Castle, which needs donations, clans and a reinforcement roster; the Blacksmith above level 1, which needs equipment levels 10–18 and their four further ability tiers; the troop and spell rosters beyond five levels; and the Archer Queen, later hero roster, Dark Barracks, siege machines and Giga weapons.
