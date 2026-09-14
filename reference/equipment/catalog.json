@@ -1,0 +1,1000 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "baseUrl": "https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/",
+  "sources": {
+    "logic/buildings.csv": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1",
+    "logic/character_items.csv": "66e644c62331a026aec3795980d9a37af95e2120d67dfbad380c729f3645ebad",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d"
+  },
+  "scope": "Every Blacksmith level, every level of the three King items this game implements, and the seven tiers of the abilities they carry.",
+  "blacksmith": [
+    {
+      "level": 1,
+      "townhall": 8,
+      "cost": 600000,
+      "seconds": 43200,
+      "hp": 700,
+      "shiny": 10000,
+      "glowy": 1000,
+      "starry": 200
+    },
+    {
+      "level": 2,
+      "townhall": 9,
+      "cost": 1200000,
+      "seconds": 86400,
+      "hp": 800,
+      "shiny": 15000,
+      "glowy": 1500,
+      "starry": 300
+    },
+    {
+      "level": 3,
+      "townhall": 10,
+      "cost": 2300000,
+      "seconds": 172800,
+      "hp": 900,
+      "shiny": 20000,
+      "glowy": 2000,
+      "starry": 400
+    },
+    {
+      "level": 4,
+      "townhall": 11,
+      "cost": 3000000,
+      "seconds": 259200,
+      "hp": 1000,
+      "shiny": 25000,
+      "glowy": 2500,
+      "starry": 500
+    },
+    {
+      "level": 5,
+      "townhall": 12,
+      "cost": 5000000,
+      "seconds": 345600,
+      "hp": 1100,
+      "shiny": 30000,
+      "glowy": 3000,
+      "starry": 600
+    },
+    {
+      "level": 6,
+      "townhall": 13,
+      "cost": 6200000,
+      "seconds": 388800,
+      "hp": 1200,
+      "shiny": 35000,
+      "glowy": 3500,
+      "starry": 700
+    },
+    {
+      "level": 7,
+      "townhall": 14,
+      "cost": 9200000,
+      "seconds": 432000,
+      "hp": 1300,
+      "shiny": 40000,
+      "glowy": 4000,
+      "starry": 800
+    },
+    {
+      "level": 8,
+      "townhall": 15,
+      "cost": 10000000,
+      "seconds": 518400,
+      "hp": 1400,
+      "shiny": 45000,
+      "glowy": 4500,
+      "starry": 900
+    },
+    {
+      "level": 9,
+      "townhall": 16,
+      "cost": 11000000,
+      "seconds": 604800,
+      "hp": 1500,
+      "shiny": 50000,
+      "glowy": 5000,
+      "starry": 1000
+    },
+    {
+      "level": 10,
+      "townhall": 17,
+      "cost": 18000000,
+      "seconds": 864000,
+      "hp": 1600,
+      "shiny": 50000,
+      "glowy": 5000,
+      "starry": 1000
+    }
+  ],
+  "items": {
+    "puppet": [
+      {
+        "level": 1,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 309,
+        "dps": 0,
+        "recovery": 110,
+        "cost": {
+          "shiny": 0,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 2,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 385,
+        "dps": 0,
+        "recovery": 165,
+        "cost": {
+          "shiny": 120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 3,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 467,
+        "dps": 0,
+        "recovery": 220,
+        "cost": {
+          "shiny": 240,
+          "glowy": 20,
+          "starry": 0
+        }
+      },
+      {
+        "level": 4,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 564,
+        "dps": 0,
+        "recovery": 275,
+        "cost": {
+          "shiny": 400,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 5,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 649,
+        "dps": 0,
+        "recovery": 330,
+        "cost": {
+          "shiny": 600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 6,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 734,
+        "dps": 0,
+        "recovery": 385,
+        "cost": {
+          "shiny": 840,
+          "glowy": 100,
+          "starry": 0
+        }
+      },
+      {
+        "level": 7,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 836,
+        "dps": 0,
+        "recovery": 440,
+        "cost": {
+          "shiny": 1120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 8,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 940,
+        "dps": 0,
+        "recovery": 495,
+        "cost": {
+          "shiny": 1440,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 9,
+        "blacksmith": 1,
+        "ability": 4,
+        "hp": 1045,
+        "dps": 0,
+        "recovery": 572,
+        "cost": {
+          "shiny": 1800,
+          "glowy": 200,
+          "starry": 0
+        }
+      },
+      {
+        "level": 10,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 1155,
+        "dps": 0,
+        "recovery": 660,
+        "cost": {
+          "shiny": 1900,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 11,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 1265,
+        "dps": 0,
+        "recovery": 748,
+        "cost": {
+          "shiny": 2000,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 12,
+        "blacksmith": 3,
+        "ability": 5,
+        "hp": 1445,
+        "dps": 0,
+        "recovery": 847,
+        "cost": {
+          "shiny": 2100,
+          "glowy": 400,
+          "starry": 0
+        }
+      },
+      {
+        "level": 13,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 1755,
+        "dps": 0,
+        "recovery": 946,
+        "cost": {
+          "shiny": 2200,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 14,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 2087,
+        "dps": 0,
+        "recovery": 1034,
+        "cost": {
+          "shiny": 2300,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 15,
+        "blacksmith": 5,
+        "ability": 6,
+        "hp": 2444,
+        "dps": 0,
+        "recovery": 1166,
+        "cost": {
+          "shiny": 2400,
+          "glowy": 600,
+          "starry": 0
+        }
+      },
+      {
+        "level": 16,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 2703,
+        "dps": 0,
+        "recovery": 1243,
+        "cost": {
+          "shiny": 2500,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 17,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 3093,
+        "dps": 0,
+        "recovery": 1320,
+        "cost": {
+          "shiny": 2600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 18,
+        "blacksmith": 7,
+        "ability": 7,
+        "hp": 3366,
+        "dps": 0,
+        "recovery": 1386,
+        "cost": {
+          "shiny": 2700,
+          "glowy": 600,
+          "starry": 0
+        }
+      }
+    ],
+    "vial": [
+      {
+        "level": 1,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 0,
+        "dps": 17,
+        "recovery": 150,
+        "cost": {
+          "shiny": 0,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 2,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 0,
+        "dps": 22,
+        "recovery": 225,
+        "cost": {
+          "shiny": 120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 3,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 0,
+        "dps": 27,
+        "recovery": 300,
+        "cost": {
+          "shiny": 240,
+          "glowy": 20,
+          "starry": 0
+        }
+      },
+      {
+        "level": 4,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 0,
+        "dps": 32,
+        "recovery": 375,
+        "cost": {
+          "shiny": 400,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 5,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 0,
+        "dps": 37,
+        "recovery": 450,
+        "cost": {
+          "shiny": 600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 6,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 0,
+        "dps": 42,
+        "recovery": 525,
+        "cost": {
+          "shiny": 840,
+          "glowy": 100,
+          "starry": 0
+        }
+      },
+      {
+        "level": 7,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 0,
+        "dps": 48,
+        "recovery": 600,
+        "cost": {
+          "shiny": 1120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 8,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 0,
+        "dps": 54,
+        "recovery": 675,
+        "cost": {
+          "shiny": 1440,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 9,
+        "blacksmith": 1,
+        "ability": 4,
+        "hp": 0,
+        "dps": 60,
+        "recovery": 780,
+        "cost": {
+          "shiny": 1800,
+          "glowy": 200,
+          "starry": 0
+        }
+      },
+      {
+        "level": 10,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 0,
+        "dps": 66,
+        "recovery": 900,
+        "cost": {
+          "shiny": 1900,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 11,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 0,
+        "dps": 72,
+        "recovery": 1020,
+        "cost": {
+          "shiny": 2000,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 12,
+        "blacksmith": 3,
+        "ability": 5,
+        "hp": 0,
+        "dps": 79,
+        "recovery": 1155,
+        "cost": {
+          "shiny": 2100,
+          "glowy": 400,
+          "starry": 0
+        }
+      },
+      {
+        "level": 13,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 0,
+        "dps": 86,
+        "recovery": 1290,
+        "cost": {
+          "shiny": 2200,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 14,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 0,
+        "dps": 94,
+        "recovery": 1410,
+        "cost": {
+          "shiny": 2300,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 15,
+        "blacksmith": 5,
+        "ability": 6,
+        "hp": 0,
+        "dps": 104,
+        "recovery": 1590,
+        "cost": {
+          "shiny": 2400,
+          "glowy": 600,
+          "starry": 0
+        }
+      },
+      {
+        "level": 16,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 0,
+        "dps": 112,
+        "recovery": 1695,
+        "cost": {
+          "shiny": 2500,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 17,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 0,
+        "dps": 120,
+        "recovery": 1800,
+        "cost": {
+          "shiny": 2600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 18,
+        "blacksmith": 7,
+        "ability": 7,
+        "hp": 0,
+        "dps": 128,
+        "recovery": 1890,
+        "cost": {
+          "shiny": 2700,
+          "glowy": 600,
+          "starry": 0
+        }
+      }
+    ],
+    "boots": [
+      {
+        "level": 1,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 209,
+        "dps": 13,
+        "recovery": 0,
+        "cost": {
+          "shiny": 0,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 2,
+        "blacksmith": 1,
+        "ability": 1,
+        "hp": 244,
+        "dps": 15,
+        "recovery": 0,
+        "cost": {
+          "shiny": 120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 3,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 278,
+        "dps": 17,
+        "recovery": 0,
+        "cost": {
+          "shiny": 240,
+          "glowy": 20,
+          "starry": 0
+        }
+      },
+      {
+        "level": 4,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 313,
+        "dps": 19,
+        "recovery": 0,
+        "cost": {
+          "shiny": 400,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 5,
+        "blacksmith": 1,
+        "ability": 2,
+        "hp": 348,
+        "dps": 21,
+        "recovery": 0,
+        "cost": {
+          "shiny": 600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 6,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 383,
+        "dps": 23,
+        "recovery": 0,
+        "cost": {
+          "shiny": 840,
+          "glowy": 100,
+          "starry": 0
+        }
+      },
+      {
+        "level": 7,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 418,
+        "dps": 26,
+        "recovery": 0,
+        "cost": {
+          "shiny": 1120,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 8,
+        "blacksmith": 1,
+        "ability": 3,
+        "hp": 452,
+        "dps": 28,
+        "recovery": 0,
+        "cost": {
+          "shiny": 1440,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 9,
+        "blacksmith": 1,
+        "ability": 4,
+        "hp": 522,
+        "dps": 32,
+        "recovery": 0,
+        "cost": {
+          "shiny": 1800,
+          "glowy": 200,
+          "starry": 0
+        }
+      },
+      {
+        "level": 10,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 677,
+        "dps": 40,
+        "recovery": 0,
+        "cost": {
+          "shiny": 1900,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 11,
+        "blacksmith": 3,
+        "ability": 4,
+        "hp": 831,
+        "dps": 48,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2000,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 12,
+        "blacksmith": 3,
+        "ability": 5,
+        "hp": 986,
+        "dps": 55,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2100,
+          "glowy": 400,
+          "starry": 0
+        }
+      },
+      {
+        "level": 13,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 1200,
+        "dps": 63,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2200,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 14,
+        "blacksmith": 5,
+        "ability": 5,
+        "hp": 1500,
+        "dps": 71,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2300,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 15,
+        "blacksmith": 5,
+        "ability": 6,
+        "hp": 1800,
+        "dps": 79,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2400,
+          "glowy": 600,
+          "starry": 0
+        }
+      },
+      {
+        "level": 16,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 2100,
+        "dps": 86,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2500,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 17,
+        "blacksmith": 7,
+        "ability": 6,
+        "hp": 2300,
+        "dps": 94,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2600,
+          "glowy": 0,
+          "starry": 0
+        }
+      },
+      {
+        "level": 18,
+        "blacksmith": 7,
+        "ability": 7,
+        "hp": 2500,
+        "dps": 102,
+        "recovery": 0,
+        "cost": {
+          "shiny": 2700,
+          "glowy": 600,
+          "starry": 0
+        }
+      }
+    ]
+  },
+  "abilities": {
+    "summon": [
+      {
+        "level": 1,
+        "count": 8,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 2.0,
+        "boostSpeed": 1.2,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 2,
+        "count": 16,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 2.2,
+        "boostSpeed": 1.6,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 3,
+        "count": 20,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 2.4,
+        "boostSpeed": 2.0,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 4,
+        "count": 30,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 2.6,
+        "boostSpeed": 2.4,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 5,
+        "count": 36,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 2.8,
+        "boostSpeed": 2.8,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 6,
+        "count": 40,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 3.0,
+        "boostSpeed": 3.2,
+        "boostSeconds": 20.0
+      },
+      {
+        "level": 7,
+        "count": 44,
+        "perHit": 5,
+        "delay": 0.5,
+        "seconds": 15.0,
+        "boostDamage": 3.2,
+        "boostSpeed": 3.6,
+        "boostSeconds": 20.0
+      }
+    ],
+    "rage": [
+      {
+        "level": 1,
+        "damage": 2.2,
+        "speed": 2.25,
+        "seconds": 10.0
+      },
+      {
+        "level": 2,
+        "damage": 2.3,
+        "speed": 2.8,
+        "seconds": 10.0
+      },
+      {
+        "level": 3,
+        "damage": 2.35,
+        "speed": 3.2,
+        "seconds": 10.0
+      },
+      {
+        "level": 4,
+        "damage": 2.4,
+        "speed": 3.6,
+        "seconds": 10.0
+      },
+      {
+        "level": 5,
+        "damage": 2.45,
+        "speed": 4.0,
+        "seconds": 10.0
+      },
+      {
+        "level": 6,
+        "damage": 2.5,
+        "speed": 4.4,
+        "seconds": 10.0
+      },
+      {
+        "level": 7,
+        "damage": 2.55,
+        "speed": 4.8,
+        "seconds": 10.0
+      }
+    ],
+    "quake": [
+      {
+        "level": 1,
+        "building": 0.02,
+        "troop": 0.01,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 2,
+        "building": 0.04,
+        "troop": 0.012,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 3,
+        "building": 0.06,
+        "troop": 0.014,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 4,
+        "building": 0.068,
+        "troop": 0.014,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 5,
+        "building": 0.072,
+        "troop": 0.016,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 6,
+        "building": 0.076,
+        "troop": 0.018,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      },
+      {
+        "level": 7,
+        "building": 0.08,
+        "troop": 0.02,
+        "radius": 8.0,
+        "pulses": 5,
+        "interval": 0.4
+      }
+    ]
+  }
+}

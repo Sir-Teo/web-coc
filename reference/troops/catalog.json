@@ -1,0 +1,1752 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "baseUrl": "https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/",
+  "sources": {
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d"
+  },
+  "scope": "Every original level of the ten troops and three spells this game implements.",
+  "troops": {
+    "swordsman": [
+      {
+        "level": 1,
+        "hp": 45,
+        "dps": 9,
+        "housing": 1,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 54,
+        "dps": 12,
+        "housing": 1,
+        "laboratory": 1,
+        "cost": 10000,
+        "seconds": 1800,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 65,
+        "dps": 15,
+        "housing": 1,
+        "laboratory": 3,
+        "cost": 50000,
+        "seconds": 5400,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 85,
+        "dps": 18,
+        "housing": 1,
+        "laboratory": 5,
+        "cost": 130000,
+        "seconds": 9000,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 105,
+        "dps": 23,
+        "housing": 1,
+        "laboratory": 6,
+        "cost": 300000,
+        "seconds": 16200,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 125,
+        "dps": 26,
+        "housing": 1,
+        "laboratory": 7,
+        "cost": 800000,
+        "seconds": 30600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 160,
+        "dps": 30,
+        "housing": 1,
+        "laboratory": 8,
+        "cost": 1000000,
+        "seconds": 45000,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 205,
+        "dps": 34,
+        "housing": 1,
+        "laboratory": 9,
+        "cost": 1500000,
+        "seconds": 88200,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 230,
+        "dps": 38,
+        "housing": 1,
+        "laboratory": 10,
+        "cost": 2500000,
+        "seconds": 131400,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 250,
+        "dps": 42,
+        "housing": 1,
+        "laboratory": 12,
+        "cost": 4300000,
+        "seconds": 174600,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 270,
+        "dps": 45,
+        "housing": 1,
+        "laboratory": 13,
+        "cost": 6000000,
+        "seconds": 261000,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 290,
+        "dps": 48,
+        "housing": 1,
+        "laboratory": 14,
+        "cost": 8000000,
+        "seconds": 347400,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 310,
+        "dps": 51,
+        "housing": 1,
+        "laboratory": 16,
+        "cost": 24000000,
+        "seconds": 1081800,
+        "resource": "elixir"
+      }
+    ],
+    "archer": [
+      {
+        "level": 1,
+        "hp": 22,
+        "dps": 8,
+        "housing": 1,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 26,
+        "dps": 10,
+        "housing": 1,
+        "laboratory": 1,
+        "cost": 20000,
+        "seconds": 3600,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 29,
+        "dps": 13,
+        "housing": 1,
+        "laboratory": 3,
+        "cost": 80000,
+        "seconds": 7200,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 33,
+        "dps": 16,
+        "housing": 1,
+        "laboratory": 5,
+        "cost": 200000,
+        "seconds": 10800,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 40,
+        "dps": 20,
+        "housing": 1,
+        "laboratory": 6,
+        "cost": 500000,
+        "seconds": 28800,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 44,
+        "dps": 22,
+        "housing": 1,
+        "laboratory": 7,
+        "cost": 1000000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 48,
+        "dps": 25,
+        "housing": 1,
+        "laboratory": 8,
+        "cost": 1500000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 52,
+        "dps": 28,
+        "housing": 1,
+        "laboratory": 9,
+        "cost": 2300000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 56,
+        "dps": 31,
+        "housing": 1,
+        "laboratory": 10,
+        "cost": 3000000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 60,
+        "dps": 34,
+        "housing": 1,
+        "laboratory": 12,
+        "cost": 4500000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 64,
+        "dps": 37,
+        "housing": 1,
+        "laboratory": 13,
+        "cost": 6500000,
+        "seconds": 345600,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 68,
+        "dps": 40,
+        "housing": 1,
+        "laboratory": 14,
+        "cost": 9000000,
+        "seconds": 388800,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 72,
+        "dps": 43,
+        "housing": 1,
+        "laboratory": 15,
+        "cost": 14000000,
+        "seconds": 777600,
+        "resource": "elixir"
+      },
+      {
+        "level": 14,
+        "hp": 76,
+        "dps": 46,
+        "housing": 1,
+        "laboratory": 16,
+        "cost": 25000000,
+        "seconds": 1166400,
+        "resource": "elixir"
+      }
+    ],
+    "giant": [
+      {
+        "level": 1,
+        "hp": 400,
+        "dps": 12,
+        "housing": 5,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 500,
+        "dps": 15,
+        "housing": 5,
+        "laboratory": 2,
+        "cost": 40000,
+        "seconds": 7200,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 600,
+        "dps": 20,
+        "housing": 5,
+        "laboratory": 4,
+        "cost": 150000,
+        "seconds": 14400,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 700,
+        "dps": 24,
+        "housing": 5,
+        "laboratory": 5,
+        "cost": 400000,
+        "seconds": 21600,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 900,
+        "dps": 31,
+        "housing": 5,
+        "laboratory": 6,
+        "cost": 800000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 1100,
+        "dps": 43,
+        "housing": 5,
+        "laboratory": 7,
+        "cost": 1500000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 1300,
+        "dps": 55,
+        "housing": 5,
+        "laboratory": 8,
+        "cost": 2300000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 1500,
+        "dps": 62,
+        "housing": 5,
+        "laboratory": 9,
+        "cost": 2600000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 1850,
+        "dps": 70,
+        "housing": 5,
+        "laboratory": 10,
+        "cost": 3400000,
+        "seconds": 194400,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 2000,
+        "dps": 78,
+        "housing": 5,
+        "laboratory": 11,
+        "cost": 5000000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 2200,
+        "dps": 86,
+        "housing": 5,
+        "laboratory": 13,
+        "cost": 7500000,
+        "seconds": 345600,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 2400,
+        "dps": 94,
+        "housing": 5,
+        "laboratory": 14,
+        "cost": 10000000,
+        "seconds": 432000,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 2700,
+        "dps": 104,
+        "housing": 5,
+        "laboratory": 15,
+        "cost": 15000000,
+        "seconds": 820800,
+        "resource": "elixir"
+      },
+      {
+        "level": 14,
+        "hp": 3000,
+        "dps": 114,
+        "housing": 5,
+        "laboratory": 16,
+        "cost": 25000000,
+        "seconds": 1166400,
+        "resource": "elixir"
+      }
+    ],
+    "wizard": [
+      {
+        "level": 1,
+        "hp": 75,
+        "dps": 50,
+        "housing": 4,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 90,
+        "dps": 70,
+        "housing": 4,
+        "laboratory": 3,
+        "cost": 120000,
+        "seconds": 14400,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 108,
+        "dps": 90,
+        "housing": 4,
+        "laboratory": 4,
+        "cost": 300000,
+        "seconds": 18000,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 135,
+        "dps": 125,
+        "housing": 4,
+        "laboratory": 5,
+        "cost": 600000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 165,
+        "dps": 170,
+        "housing": 4,
+        "laboratory": 6,
+        "cost": 1200000,
+        "seconds": 64800,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 180,
+        "dps": 185,
+        "housing": 4,
+        "laboratory": 7,
+        "cost": 2000000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 195,
+        "dps": 200,
+        "housing": 4,
+        "laboratory": 8,
+        "cost": 2500000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 210,
+        "dps": 215,
+        "housing": 4,
+        "laboratory": 9,
+        "cost": 3100000,
+        "seconds": 194400,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 230,
+        "dps": 230,
+        "housing": 4,
+        "laboratory": 10,
+        "cost": 4000000,
+        "seconds": 216000,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 250,
+        "dps": 245,
+        "housing": 4,
+        "laboratory": 11,
+        "cost": 5500000,
+        "seconds": 302400,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 270,
+        "dps": 260,
+        "housing": 4,
+        "laboratory": 13,
+        "cost": 10000000,
+        "seconds": 475200,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 290,
+        "dps": 275,
+        "housing": 4,
+        "laboratory": 14,
+        "cost": 11500000,
+        "seconds": 604800,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 310,
+        "dps": 290,
+        "housing": 4,
+        "laboratory": 15,
+        "cost": 16000000,
+        "seconds": 907200,
+        "resource": "elixir"
+      },
+      {
+        "level": 14,
+        "hp": 330,
+        "dps": 310,
+        "housing": 4,
+        "laboratory": 16,
+        "cost": 27000000,
+        "seconds": 1209600,
+        "resource": "elixir"
+      }
+    ],
+    "balloon": [
+      {
+        "level": 1,
+        "hp": 150,
+        "dps": 25,
+        "housing": 5,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir",
+        "deathDamage": 25
+      },
+      {
+        "level": 2,
+        "hp": 180,
+        "dps": 32,
+        "housing": 5,
+        "laboratory": 2,
+        "cost": 100000,
+        "seconds": 14400,
+        "resource": "elixir",
+        "deathDamage": 32
+      },
+      {
+        "level": 3,
+        "hp": 216,
+        "dps": 48,
+        "housing": 5,
+        "laboratory": 4,
+        "cost": 400000,
+        "seconds": 21600,
+        "resource": "elixir",
+        "deathDamage": 48
+      },
+      {
+        "level": 4,
+        "hp": 280,
+        "dps": 72,
+        "housing": 5,
+        "laboratory": 5,
+        "cost": 720000,
+        "seconds": 64800,
+        "resource": "elixir",
+        "deathDamage": 72
+      },
+      {
+        "level": 5,
+        "hp": 390,
+        "dps": 108,
+        "housing": 5,
+        "laboratory": 6,
+        "cost": 1300000,
+        "seconds": 86400,
+        "resource": "elixir",
+        "deathDamage": 108
+      },
+      {
+        "level": 6,
+        "hp": 545,
+        "dps": 162,
+        "housing": 5,
+        "laboratory": 7,
+        "cost": 2750000,
+        "seconds": 259200,
+        "resource": "elixir",
+        "deathDamage": 162
+      },
+      {
+        "level": 7,
+        "hp": 690,
+        "dps": 198,
+        "housing": 5,
+        "laboratory": 9,
+        "cost": 4400000,
+        "seconds": 280800,
+        "resource": "elixir",
+        "deathDamage": 214
+      },
+      {
+        "level": 8,
+        "hp": 840,
+        "dps": 236,
+        "housing": 5,
+        "laboratory": 10,
+        "cost": 5000000,
+        "seconds": 302400,
+        "resource": "elixir",
+        "deathDamage": 268
+      },
+      {
+        "level": 9,
+        "hp": 940,
+        "dps": 256,
+        "housing": 5,
+        "laboratory": 11,
+        "cost": 7000000,
+        "seconds": 388800,
+        "resource": "elixir",
+        "deathDamage": 322
+      },
+      {
+        "level": 10,
+        "hp": 1040,
+        "dps": 276,
+        "housing": 5,
+        "laboratory": 12,
+        "cost": 10000000,
+        "seconds": 604800,
+        "resource": "elixir",
+        "deathDamage": 352
+      },
+      {
+        "level": 11,
+        "hp": 1140,
+        "dps": 290,
+        "housing": 5,
+        "laboratory": 14,
+        "cost": 14000000,
+        "seconds": 734400,
+        "resource": "elixir",
+        "deathDamage": 375
+      },
+      {
+        "level": 12,
+        "hp": 1240,
+        "dps": 304,
+        "housing": 5,
+        "laboratory": 15,
+        "cost": 17500000,
+        "seconds": 950400,
+        "resource": "elixir",
+        "deathDamage": 398
+      },
+      {
+        "level": 13,
+        "hp": 1360,
+        "dps": 326,
+        "housing": 5,
+        "laboratory": 16,
+        "cost": 28000000,
+        "seconds": 1274400,
+        "resource": "elixir",
+        "deathDamage": 425
+      }
+    ],
+    "goblin": [
+      {
+        "level": 1,
+        "hp": 25,
+        "dps": 11,
+        "housing": 1,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 30,
+        "dps": 14,
+        "housing": 1,
+        "laboratory": 1,
+        "cost": 45000,
+        "seconds": 7200,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 36,
+        "dps": 19,
+        "housing": 1,
+        "laboratory": 3,
+        "cost": 100000,
+        "seconds": 10800,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 50,
+        "dps": 24,
+        "housing": 1,
+        "laboratory": 5,
+        "cost": 500000,
+        "seconds": 21600,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 65,
+        "dps": 32,
+        "housing": 1,
+        "laboratory": 6,
+        "cost": 700000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 80,
+        "dps": 42,
+        "housing": 1,
+        "laboratory": 7,
+        "cost": 1600000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 105,
+        "dps": 52,
+        "housing": 1,
+        "laboratory": 8,
+        "cost": 2200000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 126,
+        "dps": 62,
+        "housing": 1,
+        "laboratory": 10,
+        "cost": 3700000,
+        "seconds": 194400,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 146,
+        "dps": 72,
+        "housing": 1,
+        "laboratory": 13,
+        "cost": 8000000,
+        "seconds": 432000,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 166,
+        "dps": 82,
+        "housing": 1,
+        "laboratory": 16,
+        "cost": 26000000,
+        "seconds": 1209600,
+        "resource": "elixir"
+      }
+    ],
+    "wallbreaker": [
+      {
+        "level": 1,
+        "hp": 20,
+        "dps": 10,
+        "housing": 2,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir",
+        "deathDamage": 6
+      },
+      {
+        "level": 2,
+        "hp": 24,
+        "dps": 20,
+        "housing": 2,
+        "laboratory": 2,
+        "cost": 80000,
+        "seconds": 10800,
+        "resource": "elixir",
+        "deathDamage": 9
+      },
+      {
+        "level": 3,
+        "hp": 29,
+        "dps": 25,
+        "housing": 2,
+        "laboratory": 4,
+        "cost": 200000,
+        "seconds": 14400,
+        "resource": "elixir",
+        "deathDamage": 13
+      },
+      {
+        "level": 4,
+        "hp": 35,
+        "dps": 30,
+        "housing": 2,
+        "laboratory": 5,
+        "cost": 450000,
+        "seconds": 43200,
+        "resource": "elixir",
+        "deathDamage": 16
+      },
+      {
+        "level": 5,
+        "hp": 53,
+        "dps": 43,
+        "housing": 2,
+        "laboratory": 6,
+        "cost": 1000000,
+        "seconds": 57600,
+        "resource": "elixir",
+        "deathDamage": 23
+      },
+      {
+        "level": 6,
+        "hp": 72,
+        "dps": 55,
+        "housing": 2,
+        "laboratory": 8,
+        "cost": 2400000,
+        "seconds": 86400,
+        "resource": "elixir",
+        "deathDamage": 30
+      },
+      {
+        "level": 7,
+        "hp": 82,
+        "dps": 66,
+        "housing": 2,
+        "laboratory": 9,
+        "cost": 2800000,
+        "seconds": 129600,
+        "resource": "elixir",
+        "deathDamage": 36
+      },
+      {
+        "level": 8,
+        "hp": 92,
+        "dps": 75,
+        "housing": 2,
+        "laboratory": 10,
+        "cost": 3800000,
+        "seconds": 216000,
+        "resource": "elixir",
+        "deathDamage": 42
+      },
+      {
+        "level": 9,
+        "hp": 112,
+        "dps": 86,
+        "housing": 2,
+        "laboratory": 11,
+        "cost": 5200000,
+        "seconds": 259200,
+        "resource": "elixir",
+        "deathDamage": 48
+      },
+      {
+        "level": 10,
+        "hp": 130,
+        "dps": 94,
+        "housing": 2,
+        "laboratory": 12,
+        "cost": 6500000,
+        "seconds": 432000,
+        "resource": "elixir",
+        "deathDamage": 54
+      },
+      {
+        "level": 11,
+        "hp": 140,
+        "dps": 102,
+        "housing": 2,
+        "laboratory": 13,
+        "cost": 9500000,
+        "seconds": 475200,
+        "resource": "elixir",
+        "deathDamage": 60
+      },
+      {
+        "level": 12,
+        "hp": 150,
+        "dps": 110,
+        "housing": 2,
+        "laboratory": 14,
+        "cost": 11000000,
+        "seconds": 518400,
+        "resource": "elixir",
+        "deathDamage": 66
+      },
+      {
+        "level": 13,
+        "hp": 160,
+        "dps": 118,
+        "housing": 2,
+        "laboratory": 15,
+        "cost": 15500000,
+        "seconds": 864000,
+        "resource": "elixir",
+        "deathDamage": 72
+      },
+      {
+        "level": 14,
+        "hp": 170,
+        "dps": 126,
+        "housing": 2,
+        "laboratory": 16,
+        "cost": 26000000,
+        "seconds": 1209600,
+        "resource": "elixir",
+        "deathDamage": 78
+      }
+    ],
+    "healer": [
+      {
+        "level": 1,
+        "hp": 500,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir",
+        "heal": 36
+      },
+      {
+        "level": 2,
+        "hp": 700,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 5,
+        "cost": 450000,
+        "seconds": 43200,
+        "resource": "elixir",
+        "heal": 48
+      },
+      {
+        "level": 3,
+        "hp": 900,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 6,
+        "cost": 900000,
+        "seconds": 86400,
+        "resource": "elixir",
+        "heal": 60
+      },
+      {
+        "level": 4,
+        "hp": 1200,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 7,
+        "cost": 2500000,
+        "seconds": 172800,
+        "resource": "elixir",
+        "heal": 66
+      },
+      {
+        "level": 5,
+        "hp": 1500,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 9,
+        "cost": 4000000,
+        "seconds": 259200,
+        "resource": "elixir",
+        "heal": 72
+      },
+      {
+        "level": 6,
+        "hp": 1600,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 11,
+        "cost": 6000000,
+        "seconds": 388800,
+        "resource": "elixir",
+        "heal": 72
+      },
+      {
+        "level": 7,
+        "hp": 1700,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 12,
+        "cost": 9500000,
+        "seconds": 561600,
+        "resource": "elixir",
+        "heal": 72
+      },
+      {
+        "level": 8,
+        "hp": 1800,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 13,
+        "cost": 11000000,
+        "seconds": 604800,
+        "resource": "elixir",
+        "heal": 76
+      },
+      {
+        "level": 9,
+        "hp": 1900,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 14,
+        "cost": 13000000,
+        "seconds": 626400,
+        "resource": "elixir",
+        "heal": 80
+      },
+      {
+        "level": 10,
+        "hp": 2000,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 15,
+        "cost": 17000000,
+        "seconds": 950400,
+        "resource": "elixir",
+        "heal": 80
+      },
+      {
+        "level": 11,
+        "hp": 2100,
+        "dps": 0,
+        "housing": 14,
+        "laboratory": 16,
+        "cost": 28500000,
+        "seconds": 1296000,
+        "resource": "elixir",
+        "heal": 82
+      }
+    ],
+    "dragon": [
+      {
+        "level": 1,
+        "hp": 1900,
+        "dps": 140,
+        "housing": 20,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 2100,
+        "dps": 160,
+        "housing": 20,
+        "laboratory": 5,
+        "cost": 1000000,
+        "seconds": 64800,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 2300,
+        "dps": 180,
+        "housing": 20,
+        "laboratory": 6,
+        "cost": 2000000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 2700,
+        "dps": 210,
+        "housing": 20,
+        "laboratory": 7,
+        "cost": 3000000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 3100,
+        "dps": 240,
+        "housing": 20,
+        "laboratory": 8,
+        "cost": 3800000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 3400,
+        "dps": 270,
+        "housing": 20,
+        "laboratory": 9,
+        "cost": 4900000,
+        "seconds": 345600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 3900,
+        "dps": 310,
+        "housing": 20,
+        "laboratory": 10,
+        "cost": 5000000,
+        "seconds": 388800,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 4200,
+        "dps": 330,
+        "housing": 20,
+        "laboratory": 11,
+        "cost": 7500000,
+        "seconds": 432000,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 4500,
+        "dps": 350,
+        "housing": 20,
+        "laboratory": 12,
+        "cost": 10500000,
+        "seconds": 604800,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 4900,
+        "dps": 370,
+        "housing": 20,
+        "laboratory": 13,
+        "cost": 12000000,
+        "seconds": 648000,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 5300,
+        "dps": 390,
+        "housing": 20,
+        "laboratory": 14,
+        "cost": 14000000,
+        "seconds": 734400,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 5700,
+        "dps": 410,
+        "housing": 20,
+        "laboratory": 15,
+        "cost": 18500000,
+        "seconds": 864000,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 6000,
+        "dps": 430,
+        "housing": 20,
+        "laboratory": 16,
+        "cost": 28500000,
+        "seconds": 1296000,
+        "resource": "elixir"
+      }
+    ],
+    "pekka": [
+      {
+        "level": 1,
+        "hp": 3000,
+        "dps": 260,
+        "housing": 25,
+        "laboratory": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "hp": 3500,
+        "dps": 290,
+        "housing": 25,
+        "laboratory": 6,
+        "cost": 600000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "hp": 4000,
+        "dps": 320,
+        "housing": 25,
+        "laboratory": 6,
+        "cost": 1300000,
+        "seconds": 64800,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "hp": 4500,
+        "dps": 360,
+        "housing": 25,
+        "laboratory": 7,
+        "cost": 2000000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "hp": 5000,
+        "dps": 410,
+        "housing": 25,
+        "laboratory": 8,
+        "cost": 2100000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "hp": 5500,
+        "dps": 470,
+        "housing": 25,
+        "laboratory": 8,
+        "cost": 2500000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "hp": 5900,
+        "dps": 540,
+        "housing": 25,
+        "laboratory": 9,
+        "cost": 4500000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "hp": 6300,
+        "dps": 610,
+        "housing": 25,
+        "laboratory": 10,
+        "cost": 5000000,
+        "seconds": 302400,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "hp": 6700,
+        "dps": 680,
+        "housing": 25,
+        "laboratory": 11,
+        "cost": 5800000,
+        "seconds": 345600,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "hp": 7200,
+        "dps": 750,
+        "housing": 25,
+        "laboratory": 13,
+        "cost": 10500000,
+        "seconds": 475200,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "hp": 7700,
+        "dps": 810,
+        "housing": 25,
+        "laboratory": 14,
+        "cost": 12000000,
+        "seconds": 604800,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "hp": 8200,
+        "dps": 870,
+        "housing": 25,
+        "laboratory": 15,
+        "cost": 16000000,
+        "seconds": 864000,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "hp": 8800,
+        "dps": 940,
+        "housing": 25,
+        "laboratory": 16,
+        "cost": 28000000,
+        "seconds": 1252800,
+        "resource": "elixir"
+      }
+    ]
+  },
+  "spells": {
+    "lightning": [
+      {
+        "level": 1,
+        "housing": 1,
+        "laboratory": 0,
+        "damage": 150,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "housing": 1,
+        "laboratory": 1,
+        "damage": 180,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 50000,
+        "seconds": 7200,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "housing": 1,
+        "laboratory": 2,
+        "damage": 210,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 100000,
+        "seconds": 14400,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "housing": 1,
+        "laboratory": 3,
+        "damage": 240,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 200000,
+        "seconds": 21600,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "housing": 1,
+        "laboratory": 6,
+        "damage": 270,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 600000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "housing": 1,
+        "laboratory": 7,
+        "damage": 320,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 1500000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "housing": 1,
+        "laboratory": 8,
+        "damage": 400,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 2500000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "housing": 1,
+        "laboratory": 9,
+        "damage": 480,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 4200000,
+        "seconds": 302400,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "housing": 1,
+        "laboratory": 10,
+        "damage": 560,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 6300000,
+        "seconds": 432000,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "housing": 1,
+        "laboratory": 13,
+        "damage": 600,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 10000000,
+        "seconds": 518400,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "housing": 1,
+        "laboratory": 14,
+        "damage": 640,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 13500000,
+        "seconds": 604800,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "housing": 1,
+        "laboratory": 15,
+        "damage": 680,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 18500000,
+        "seconds": 864000,
+        "resource": "elixir"
+      },
+      {
+        "level": 13,
+        "housing": 1,
+        "laboratory": 16,
+        "damage": 720,
+        "heal": 0,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 27000000,
+        "seconds": 1209600,
+        "resource": "elixir"
+      }
+    ],
+    "heal": [
+      {
+        "level": 1,
+        "housing": 2,
+        "laboratory": 0,
+        "damage": 0,
+        "heal": 15,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "housing": 2,
+        "laboratory": 2,
+        "damage": 0,
+        "heal": 20,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 75000,
+        "seconds": 10800,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "housing": 2,
+        "laboratory": 4,
+        "damage": 0,
+        "heal": 25,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 150000,
+        "seconds": 21600,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "housing": 2,
+        "laboratory": 5,
+        "damage": 0,
+        "heal": 30,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 300000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "housing": 2,
+        "laboratory": 6,
+        "damage": 0,
+        "heal": 35,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 900000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "housing": 2,
+        "laboratory": 7,
+        "damage": 0,
+        "heal": 40,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 1800000,
+        "seconds": 129600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "housing": 2,
+        "laboratory": 8,
+        "damage": 0,
+        "heal": 45,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 3000000,
+        "seconds": 259200,
+        "resource": "elixir"
+      },
+      {
+        "level": 8,
+        "housing": 2,
+        "laboratory": 11,
+        "damage": 0,
+        "heal": 50,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 6000000,
+        "seconds": 432000,
+        "resource": "elixir"
+      },
+      {
+        "level": 9,
+        "housing": 2,
+        "laboratory": 13,
+        "damage": 0,
+        "heal": 55,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 11000000,
+        "seconds": 561600,
+        "resource": "elixir"
+      },
+      {
+        "level": 10,
+        "housing": 2,
+        "laboratory": 14,
+        "damage": 0,
+        "heal": 60,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 14000000,
+        "seconds": 604800,
+        "resource": "elixir"
+      },
+      {
+        "level": 11,
+        "housing": 2,
+        "laboratory": 15,
+        "damage": 0,
+        "heal": 67,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 19000000,
+        "seconds": 907200,
+        "resource": "elixir"
+      },
+      {
+        "level": 12,
+        "housing": 2,
+        "laboratory": 16,
+        "damage": 0,
+        "heal": 75,
+        "damageBoost": 0,
+        "speedBoost": 0,
+        "cost": 29000000,
+        "seconds": 1296000,
+        "resource": "elixir"
+      }
+    ],
+    "rage": [
+      {
+        "level": 1,
+        "housing": 2,
+        "laboratory": 0,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 130,
+        "speedBoost": 20,
+        "cost": 0,
+        "seconds": 0,
+        "resource": "elixir"
+      },
+      {
+        "level": 2,
+        "housing": 2,
+        "laboratory": 3,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 140,
+        "speedBoost": 22,
+        "cost": 400000,
+        "seconds": 21600,
+        "resource": "elixir"
+      },
+      {
+        "level": 3,
+        "housing": 2,
+        "laboratory": 4,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 150,
+        "speedBoost": 24,
+        "cost": 800000,
+        "seconds": 43200,
+        "resource": "elixir"
+      },
+      {
+        "level": 4,
+        "housing": 2,
+        "laboratory": 5,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 160,
+        "speedBoost": 26,
+        "cost": 1000000,
+        "seconds": 86400,
+        "resource": "elixir"
+      },
+      {
+        "level": 5,
+        "housing": 2,
+        "laboratory": 6,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 170,
+        "speedBoost": 28,
+        "cost": 2000000,
+        "seconds": 172800,
+        "resource": "elixir"
+      },
+      {
+        "level": 6,
+        "housing": 2,
+        "laboratory": 10,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 180,
+        "speedBoost": 30,
+        "cost": 5000000,
+        "seconds": 345600,
+        "resource": "elixir"
+      },
+      {
+        "level": 7,
+        "housing": 2,
+        "laboratory": 16,
+        "damage": 0,
+        "heal": 0,
+        "damageBoost": 190,
+        "speedBoost": 32,
+        "cost": 26000000,
+        "seconds": 1209600,
+        "resource": "elixir"
+      }
+    ]
+  }
+}
