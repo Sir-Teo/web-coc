@@ -1,5 +1,6 @@
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
 import {
   BUILDINGS,
@@ -238,7 +239,7 @@ describe('spells', () => {
 
 describe('town hall gating and stretched timers', () => {
   it('uses building-specific Town Hall level caps', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     expect(m.townhallLevel).toBe(2);
     const cannon = m.state.buildings.find((b) => b.kind === 'cannon' && b.level === 2)!;
     expect(m.maxLevel('cannon')).toBe(3);

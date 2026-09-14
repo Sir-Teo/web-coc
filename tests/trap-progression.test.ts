@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import {
   BUILDINGS,
   maxCountFor,
@@ -125,7 +126,7 @@ for (const kind of kinds)
     it('enforces Town Hall gates and counts, while retaining old above-cap traps and paid construction', () => {
       expect(Array.from({ length: 8 }, (_, i) => maxCountFor(kind, i + 1))).toEqual(e.counts);
       expect(maxLevelFor(kind, 8)).toBe(e.cap);
-      const m = new GameModel();
+      const m = fundedVillage();
       m.state.obstacles = [];
       m.townhall!.level = e.unlock - 1;
       m.beginBuild(kind);

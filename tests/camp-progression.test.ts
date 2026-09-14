@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import {
   BUILDINGS,
   buildingHp,
@@ -52,7 +53,7 @@ it('starts with one completed level-2 camp and follows native TH1–8 housing ce
 });
 
 it('charges once, keeps capacity while upgrading, and adds only the earned spaces after reload', () => {
-  const m = new GameModel();
+  const m = fundedVillage();
   m.townhall!.level = 3;
   const camp = m.state.buildings.find((b) => b.kind === 'camp')!;
   const elixir = m.state.elixir;

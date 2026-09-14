@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { TROOP_KEYS, SPELL_KEYS, maxLevelFor, maxCountFor } from '../src/game/data';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../src/game/army-unlocks';
@@ -15,8 +16,7 @@ describe('army unlock progression', () => {
       expect(b.level, b.kind).toBeLessThanOrEqual(maxLevelFor(b.kind, 2));
       expect(m.countOf(b.kind), b.kind).toBeLessThanOrEqual(maxCountFor(b.kind, 2));
     }
-    for (const kind of TROOP_KEYS)
-      if (m.state.army[kind]) expect(m.troopUnlocked(kind)).toBe(true);
+    for (const kind of TROOP_KEYS) if (m.state.army[kind]) expect(m.troopUnlocked(kind)).toBe(true);
     expect(m.state.buildings.some((b) => b.kind === 'spellfactory')).toBe(false);
   });
 
@@ -46,13 +46,15 @@ describe('army unlock progression', () => {
       m.clearArmy();
       for (const kind of SPELL_KEYS) {
         m.brew(kind);
-        expect(m.state.spells[kind], `${kind} at ${level}`).toBe(Number(level >= SPELL_UNLOCK[kind]));
+        expect(m.state.spells[kind], `${kind} at ${level}`).toBe(
+          Number(level >= SPELL_UNLOCK[kind]),
+        );
       }
     }
   });
 
   it('retains old unlocks during upgrades and grants the next one only on completion', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     m.clearArmy();
     const b = m.state.buildings.find((b) => b.kind === 'barracks')!;
     m.upgrade(b.id);

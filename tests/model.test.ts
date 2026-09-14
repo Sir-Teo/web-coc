@@ -1,5 +1,6 @@
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding, findPath, distanceTo } from '../src/game/model';
 import { BUILDINGS, TROOP_KEYS, TROOPS } from '../src/game/data';
 import { validateSave } from '../src/game/save';
@@ -27,7 +28,7 @@ describe('village progression', () => {
     expect(b.level).toBe(1);
   });
   it('reserves builders, upgrades once and charges gems to finish', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     const b = m.state.buildings.find((b) => b.kind === 'townhall')!;
     m.upgrade(b.id);
     expect(m.busy).toBe(1);

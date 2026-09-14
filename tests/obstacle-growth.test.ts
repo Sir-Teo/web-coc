@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 import {
@@ -15,7 +16,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 function village() {
-  const m = new GameModel();
+  const m = fundedVillage();
   m.state.obstacleGrowth!.seed = 1234;
   return m;
 }
