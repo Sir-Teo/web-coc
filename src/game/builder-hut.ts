@@ -59,10 +59,13 @@ export interface BuilderHutBattleState {
 export type BuilderHutUnitState = Record<string, never>;
 
 const HISTORY_SECONDS = 5;
-/** Only campaign Builder's Huts in version-44 goblin-v1 battles are armed; home huts stay passive. */
-/** A Builder's Hut whose level carries the nail turret, wherever the battle is fought. */
-export const armedBuilderHut = (battle: Battle | null | undefined, b: Building) =>
-  !!battle?.late && b.kind === 'builder' && !b.npc && b.level > 1;
+/** A Builder's Hut that fights. Campaign huts have since version 44; home huts since 47. */
+export const armedBuilderHut = (battle: Battle | null | undefined, b: Building) => {
+  if (!battle?.late || b.kind !== 'builder' || b.npc) return false;
+  // A campaign hut joins the battle at any level, as it always has, and a level-one hut is
+  // then left passive by its own empty weapon row. A home hut joins only once it is armed.
+  return (battle.catalog === 'goblin-v1' && !battle.practice) || b.level > 1;
+};
 const center = (b: Building) => ({
   x: b.x + BUILDINGS.builder.size / 2,
   y: b.y + BUILDINGS.builder.size / 2,

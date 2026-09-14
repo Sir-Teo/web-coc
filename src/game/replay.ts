@@ -60,8 +60,8 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 45 ||
   version === 46 ||
   version === REPLAY_VERSION;
-/** Ceilings before version 47 reconstructed the fifth coffin tier and armed the home hut. */
-const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4, builder: 4 };
+/** Ceilings before version 47 reconstructed the fifth coffin tier. */
+const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4 };
 /** Ceilings before version 46 carried the home catalog to Town Hall 18. */
 const PRE_TOWNHALL_18_LEVELS: Readonly<Record<string, number>> = {
   townhall: 9,

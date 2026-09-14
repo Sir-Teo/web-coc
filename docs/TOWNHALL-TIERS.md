@@ -29,22 +29,23 @@ Town Hall 9 unlocks the X-Bow and Hero Hall 3; see the per-tier highlights below
 | 11 | **Eagle Artillery 1×2** and **Tornado Trap 1×2**, X-Bow 4×5, Wizard Tower 5×10, Cannon 7×15, Air Sweeper 7, Wall 300×12 |
 | 12 | Inferno Tower 3×6, Hidden Tesla 5×10, Air Bomb 6×6, Spring Trap 8×7, Cannon 17, Mortar 12 |
 | 13 | **Scattershot 2×1**, Seeking Air Mine 7×4, Bomb 7×9, Spring Trap 9×8, Cannon 19, Wizard Tower 13 |
-| 14 | **Builder's Hut 2** — the first armed hut — Bomb 8×10, Giant Bomb 7×8, Air Bomb 7×9, Wall 325×15, Air Defense 12 |
+| 14 | **Builder's Hut 2–4**, the first armed huts — Bomb 8×10, Giant Bomb 7×8, Air Bomb 7×9, Wall 325×15, Air Defense 12 |
 | 15 | **Monolith 1×1** and **Spell Tower 2×1**, Cannon 21 and Archer Tower 21 — the last of both — Spell Factory 8, Army Camp 12 |
 | 16 | Gold Mine and Elixir Collector 17, Spell Factory 9, Dark Elixir Drill 11 |
 | 17 | Archer Tower ×9, Seeking Air Mine 9×7, Giant Bomb 8×11, Barracks 19 |
-| 18 | Wizard Tower ×6, Air Bomb 8×13, Wall 19, Laboratory 16, Hero Hall 12, King 110, **Skeleton Trap 5** and Builder's Hut 8 |
+| 18 | Wizard Tower ×6, Air Bomb 8×13, Wall 19, Laboratory 16, Hero Hall 12, King 110 and **Skeleton Trap 5** |
 
 Army housing rises from 220 at Town Hall 9 to **352** at Town Hall 18 (four Army Camps at level 14). Spell housing reaches 10. The Barbarian King reaches **level 110** behind a Hero Hall 12; both the Town Hall and the Hero Hall have to permit a level, so neither alone raises the ceiling.
 
 ## What this game withholds
 
-Two entities stop below what the original tier permits. Each is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so a gap can neither close nor widen unnoticed.
+Three entities stop below what the original tier permits. Each is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so a gap can neither close nor widen unnoticed.
 
 | Entity | Original | Here | Why |
 | --- | --- | --- | --- |
 | Clan Castle | 1 from TH1, level 14 | none | the home Castle needs donations, clans and a reinforcement roster |
 | Blacksmith | level 10 | level 1 | equipment stops at level 9, which needs only Blacksmith 1, and ore has no income yet |
+| Builder's Hut | level 8 | level 4 | only four hut tiers have reconstructed artwork and a turret |
 
 Neither gap is a missing table. The Clan Castle's 14 levels are pinned and its artwork is reconstructed — campaign Castles already release their garrisons — but a home Castle needs donations, clans and a reinforcement roster before it holds anything. The Blacksmith's own 10 levels are pinned too, and so are equipment levels 10 to 18 and their four further ability tiers; what is missing is ore income. Ore is obtainable here only by covering a shortfall with gems, so levels 10 to 18 would cost roughly 29,500 gems of ore per item against the two gems an obstacle yields. Raising either ceiling would add levels nothing could reach.
 
@@ -68,7 +69,7 @@ The Inferno Tower, Eagle Artillery, Scattershot, Monolith, Spell Tower and Torna
 
 A home Spell Tower is placed carrying the Rage spell and its context panel cycles through the three original weapons — Rage, Poison and Invisibility — the way the X-Bow cycles its targeting mode. The choice survives saves, edit undo/redo and layout presets, and travels in recordings.
 
-The armed Builder's Hut now fights at home too. From Town Hall 14 a hut buys the nail turret the campaign huts already carried, up to level 8 at Town Hall 18, and its turret, Defending Builders and repair behaviour step in home and practice battles exactly as they do in the campaign. A level-one hut stays passive, as it does in the original.
+The armed Builder's Hut now fights at home too. From Town Hall 14 a hut buys the nail turret the campaign huts already carried, and its turret, Defending Builders and repair behaviour step in home and practice battles exactly as they do in the campaign. A level-one hut stays passive, as it does in the original. The home hut stops at level 4 with the campaign huts, since those are the tiers whose artwork and weapon this game reconstructs.
 
 The campaign keeps one thing the home village does not. A campaign-only identity — Goblin Halls, the Goblin Castle, the Foreboding Cave and the rest — is still never a home building.
 

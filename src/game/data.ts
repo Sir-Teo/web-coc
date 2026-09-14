@@ -37,6 +37,7 @@ import {
 import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
+import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
 /** Original level-one construction rows for the buildings that had no source table. */
 const sourceBuild = (kind: BuildingKind) => sourceLevel(kind, 1)!;
 /** Original row counts for the buildings whose ceiling is simply the end of their table. */
@@ -46,7 +47,6 @@ const SOURCE_ROWS = {
   goldstorage: sourceLevels('goldstorage')!.length,
   elixirstorage: sourceLevels('elixirstorage')!.length,
   herohall: sourceLevels('herohall')!.length,
-  builder: sourceLevels('builder')!.length,
 };
 const SOURCE_BUILD = {
   goldmine: sourceBuild('goldmine'),
@@ -484,7 +484,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 0,
     resource: 'gold',
     category: 'Army',
-    maxLevel: SOURCE_ROWS.builder,
+    maxLevel: BUILDER_HUT_LEVELS.length,
     build: 30,
   },
   mortar: {
