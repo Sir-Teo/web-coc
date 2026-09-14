@@ -293,6 +293,8 @@ describe('Town Hall tier village', () => {
     };
     for (const [kind, [x, y]] of Object.entries(spots) as [BuildingKind, [number, number]][]) {
       expect(maxCountFor(kind, MAX_TOWNHALL), kind).toBeGreaterThan(0);
+      // Long build times let trees regrow between placements; this village stays cleared.
+      m.state.obstacles = [];
       m.beginBuild(kind);
       expect(m.placement, kind).toBe(kind);
       expect(m.place(x, y), kind).toBe(true);
@@ -333,6 +335,7 @@ describe('Town Hall tier village', () => {
       return JSON.parse(JSON.stringify(m.state.raidLog![0].replay!));
     };
     const raise = (m: GameModel, kind: BuildingKind, level: number) => {
+      m.state.obstacles = [];
       m.beginBuild(kind);
       expect(m.place(30, 30)).toBe(true);
       const built = m.state.buildings.at(-1)!;

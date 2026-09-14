@@ -21,7 +21,7 @@ September 12 source follow-up: the [pinned Wizard Tower client reference](../ref
 | 9 (legacy) | 3,400,000 | 3d | 1,300 | 360 |
 | 10 (legacy) | 5,000,000 | 4d | 1,400 | 400 |
 
-Counts at TH1–9: **0, 0, 0, 1, 1, 2, 3, 3, 4**. Level ceilings: **0, 0, 0, 2, 3, 4, 5, 6, 7**. Fires every **1 second**, has **10-tile range**, and hits a single airborne target. The existing 3×3 footprint is retained.
+Counts at TH1–18: **0, 0, 0, 1, 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4**. Level ceilings: **0, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16**. Fires every **1 second**, has **10-tile range**, and hits a single airborne target. The existing 3×3 footprint is retained.
 
 ## Wizard Tower
 
@@ -45,7 +45,7 @@ Counts at TH1–9: **0, 0, 0, 1, 1, 2, 3, 3, 4**. Level ceilings: **0, 0, 0, 2, 
 | 16 | 8,000,000 | 108h | 3,150 | 102 | 132.6 |
 | 17 | 14,000,000 | 132h | 3,300 | 110 | 143 |
 
-Counts at TH1–9: **0, 0, 0, 0, 1, 2, 2, 3, 4**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6, 7**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained. Levels 1–4 use 5-tile/s projectiles; levels 5–17 use 9 tiles/s, across four retained source effect tiers. Each projectile lands where its target stood at launch, so moving troops can leave the splash circle. The source height/offset and action-frame handoff remain unverified. The first 55 native villages and Graduation Ceremony (stage 58) now have supported mechanics; native dependencies and remaining defense/garrison mechanics still gate progression.
+Counts at TH1–18: **0, 0, 0, 0, 1, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6, 7, 9, 10, 11, 13, 14, 15, 16, 17, 17**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained. Levels 1–4 use 5-tile/s projectiles; levels 5–17 use 9 tiles/s, across four retained source effect tiers. Each projectile lands where its target stood at launch, so moving troops can leave the splash circle. The source height/offset and action-frame handoff remain unverified. The first 55 native villages and Graduation Ceremony (stage 58) now have supported mechanics; native dependencies and remaining defense/garrison mechanics still gate progression.
 
 ## Integration and verification
 
