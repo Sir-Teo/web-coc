@@ -39,15 +39,14 @@ Army housing rises from 220 at Town Hall 9 to **352** at Town Hall 18 (four Army
 
 ## What this game withholds
 
-Three entities stop below what the original tier permits. Each is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so a gap can neither close nor widen unnoticed.
+Two entities stop below what the original tier permits. Each is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so a gap can neither close nor widen unnoticed.
 
 | Entity | Original | Here | Why |
 | --- | --- | --- | --- |
 | Clan Castle | 1 from TH1, level 14 | none | the home Castle needs donations, clans and a reinforcement roster |
-| Blacksmith | level 10 | level 1 | equipment stops at level 9, which needs only Blacksmith 1, and ore has no income yet |
 | Builder's Hut | level 8 | level 4 | only four hut tiers have reconstructed artwork and a turret |
 
-Neither gap is a missing table. The Clan Castle's 14 levels are pinned and its artwork is reconstructed — campaign Castles already release their garrisons — but a home Castle needs donations, clans and a reinforcement roster before it holds anything. The Blacksmith's own 10 levels are pinned too, and so are equipment levels 10 to 18 and their four further ability tiers; what is missing is ore income. Ore is obtainable here only by covering a shortfall with gems, so levels 10 to 18 would cost roughly 29,500 gems of ore per item against the two gems an obstacle yields. Raising either ceiling would add levels nothing could reach.
+The Clan Castle's 14 levels are pinned and its artwork reconstructed — campaign Castles already release their garrisons — but a home Castle needs donations, clans and a reinforcement roster before it holds anything.
 
 Nothing outside this game's building catalog is silently treated as absent, either: Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop, the Town Hall's own Giga weapons and the later hero roster are simply not modelled, so the tiers that would unlock them add nothing.
 

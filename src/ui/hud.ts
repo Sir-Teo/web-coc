@@ -16,7 +16,8 @@ import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
 import {
   EQUIPMENT,
   EQUIPMENT_KEYS,
-  EQUIPMENT_MAX_LEVEL,
+  EQUIPMENT_LEVELS,
+  oreCapacity,
   ORES,
   ORE_KEYS,
   EARTHQUAKE_BOOTS,
@@ -265,8 +266,11 @@ function statRows(
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
   if (kind === 'blacksmith') {
-    rows.push(['Anvil', 'Common equipment level cap', '9']);
-    for (const k of ORE_KEYS) rows.push(['Gem', `${ORES[k].name} capacity`, n(ORES[k].cap)]);
+    // Each forge level opens its own band of equipment levels and stores more ore.
+    const reach = EQUIPMENT_LEVELS.filter((row) => row.blacksmith <= level).length;
+    const capacity = oreCapacity(level);
+    rows.push(['Anvil', 'Equipment level cap', String(reach)]);
+    for (const k of ORE_KEYS) rows.push(['Gem', `${ORES[k].name} capacity`, n(capacity[k])]);
   }
   if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
   if (kind === 'spellfactory')
@@ -1572,14 +1576,14 @@ export class HUD {
       gear = m.kingEquipment,
       kind = this.inspectedEquipment,
       level = gear.levels[kind],
-      cap = level >= EQUIPMENT_MAX_LEVEL,
+      cap = level >= m.equipmentCeiling,
       quote = equipmentQuote(level + 1, m.ores),
       unlocked = !!m.blacksmith;
     const rows = this.equipmentRows(kind, level),
       next = cap ? [] : this.equipmentRows(kind, level + 1);
     const pending = m.state.buildings.find((b) => b.kind === 'blacksmith' && b.constructing);
     return `<div class="modal-body blacksmith-body">
-      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(ORES[k].cap)}</small></b></span></div>`).join('')}</div>
+      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
       ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>${pending ? 'Finish building your Blacksmith to equip and upgrade items.' : 'Build a Blacksmith at Town Hall 8 to equip and upgrade items.'} Your default equipment is ready for battle.</span>${pending ? '' : button('shop', 'Shop', 'game-btn green')}</div>`}
       <div class="king-loadout"><img class="loadout-portrait" src="${hudAsset('king')}" alt="Barbarian King"><div class="loadout-label"><span class="eyebrow">BARBARIAN KING</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${gear.loadout.map((k, slot) => button(`equipment-view:${k}`, `${gearImage(k)}<span>Slot ${slot + 1}<b>${EQUIPMENT[k].name}</b></span><em>${gear.levels[k]}</em>`, 'equipment-slot', `aria-label="Slot ${slot + 1}: ${EQUIPMENT[k].name}, level ${gear.levels[k]}"`)).join('')}</div></div>
       <div class="equipment-catalog" role="group" aria-label="King equipment">${EQUIPMENT_KEYS.map((k) => button(`equipment-view:${k}`, `<span class="equipment-badge">${gear.loadout.includes(k) ? 'Equipped' : unlocked ? 'Available' : 'Blacksmith 1'}</span>${gearImage(k)}<strong>${EQUIPMENT[k].name}</strong><span class="equipment-level">Level ${gear.levels[k]} / 9</span>`, `equipment-card ${kind === k ? 'selected' : ''}`, `aria-pressed="${kind === k}"`)).join('')}</div>

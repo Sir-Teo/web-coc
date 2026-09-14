@@ -38,6 +38,7 @@ import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
+import { BLACKSMITH_MAX_LEVEL } from './equipment';
 /** Original level-one construction rows for the buildings that had no source table. */
 const sourceBuild = (kind: BuildingKind) => sourceLevel(kind, 1)!;
 /** Original row counts for the buildings whose ceiling is simply the end of their table. */
@@ -289,7 +290,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 600000,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 1,
+    maxLevel: BLACKSMITH_MAX_LEVEL,
     build: 43200,
     singleArtwork: true,
   },

@@ -26,7 +26,6 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
  */
 export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {
   clancastle: { level: 0, why: 'home Clan Castle progression is unimplemented' },
-  blacksmith: { level: 1, why: 'Blacksmith 2+ unlocks no equipment before Blacksmith 3' },
   builder: { level: 4, why: 'only four hut tiers have reconstructed artwork and a turret' },
 };
 

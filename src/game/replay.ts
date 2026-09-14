@@ -35,7 +35,12 @@ import {
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
-import { validEquipment, type KingEquipment } from './equipment';
+import {
+  EQUIPMENT_LEVEL_BEFORE_47,
+  EQUIPMENT_MAX_LEVEL,
+  validEquipment,
+  type KingEquipment,
+} from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
 export const REPLAY_VERSION = 47;
@@ -243,6 +248,7 @@ export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
   const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
+  const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
   if (
     !validCampaignCatalog(s.catalog) ||
     (s.catalog !== undefined && value.version < 27) ||
@@ -301,8 +307,9 @@ export function validateReplay(value: unknown): value is ReplayData {
           4,
           value.version < 45 ? 8 : value.version < 46 ? 9 : MAX_TOWNHALL,
         ) ||
-        (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
-        (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
+        // Equipment reached level 18 in version 47; every earlier recording stops at nine.
+        (value.version >= 24 && !validEquipment(s.hero.equipment, equipmentCeiling)) ||
+        (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment, equipmentCeiling)))) ||
     !Array.isArray(s.buildings) ||
     !s.buildings.length ||
     // Version 44 admits complete late villages (Underground Workaround has 820 source entities).

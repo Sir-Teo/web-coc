@@ -8,6 +8,8 @@ import {
   validEquipment,
   validOres,
   emptyOres,
+  EQUIPMENT_MAX_LEVEL,
+  ORE_CAP,
 } from '../src/game/equipment';
 
 describe('native TH8 King equipment', () => {
@@ -22,7 +24,25 @@ describe('native TH8 King equipment', () => {
       { shiny: 1440, glowy: 0, starry: 0 },
       { shiny: 1800, glowy: 200, starry: 0 },
     ]);
-    for (const level of [0, 1, 10, 1.5, NaN, Infinity]) expect(equipmentCost(level)).toBeNull();
+    // Levels 10 to 18, which Blacksmith 3, 5 and 7 open. Glowy still lands every third level.
+    expect(
+      Array.from({ length: 9 }, (_, i) => equipmentCost(i + 10)).map((c) => [c!.shiny, c!.glowy]),
+    ).toEqual([
+      [1900, 0],
+      [2000, 0],
+      [2100, 400],
+      [2200, 0],
+      [2300, 0],
+      [2400, 600],
+      [2500, 0],
+      [2600, 0],
+      [2700, 600],
+    ]);
+    // These three items never charge Starry Ore, at any level.
+    for (let level = 2; level <= EQUIPMENT_MAX_LEVEL; level++)
+      expect(equipmentCost(level)!.starry, `level ${level}`).toBe(0);
+    for (const level of [0, 1, EQUIPMENT_MAX_LEVEL + 1, 1.5, NaN, Infinity])
+      expect(equipmentCost(level)).toBeNull();
   });
   it('quotes only the shortfall at native 1/5/35 gem rates', () => {
     expect(equipmentQuote(3, { shiny: 230, glowy: 18, starry: 200 })).toEqual({
@@ -72,18 +92,20 @@ describe('native TH8 King equipment', () => {
       [],
       {},
       { levels: { puppet: 1, vial: 1, boots: 1 }, loadout: ['puppet', 'puppet'] },
-      { ...defaultEquipment(), levels: { puppet: 1, vial: 1, boots: 10 } },
+      { ...defaultEquipment(), levels: { puppet: 1, vial: 1, boots: EQUIPMENT_MAX_LEVEL + 1 } },
       { ...defaultEquipment(), loadout: ['puppet', ['vial']] },
     ])
       expect(validEquipment(value)).toBe(false);
+    // A level 10 forge stores 50,000 / 5,000 / 1,000, which is what bounds a saved balance.
     expect(validOres({ shiny: 10000, glowy: 1000, starry: 200 })).toBe(true);
+    expect(validOres(ORE_CAP)).toBe(true);
     for (const value of [
       null,
       [],
       {},
       { shiny: -1, glowy: 0, starry: 0 },
       { shiny: 0.5, glowy: 0, starry: 0 },
-      { shiny: 10001, glowy: 0, starry: 0 },
+      { shiny: ORE_CAP.shiny + 1, glowy: 0, starry: 0 },
       { shiny: 1, glowy: Infinity, starry: 0 },
     ])
       expect(validOres(value)).toBe(false);

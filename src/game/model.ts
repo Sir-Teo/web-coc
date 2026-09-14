@@ -82,11 +82,14 @@ import { concealedTesla, presentBuilding, targetableBuilding, revealTeslas } fro
 import {
   defaultEquipment,
   emptyOres,
+  oreCapacity,
   equipmentBonuses,
   equipmentQuote,
   validEquipmentKind,
   EQUIPMENT,
   EQUIPMENT_MAX_LEVEL,
+  EQUIPMENT_LEVELS,
+  equipmentBlacksmith,
   ORE_KEYS,
   type KingEquipment,
   type Ores,
@@ -1822,6 +1825,15 @@ export class GameModel {
   get ores() {
     return this.state.ores ?? emptyOres();
   }
+  /** What this village's forge can hold. A village with no forge still keeps what it has. */
+  get oreCapacity() {
+    return oreCapacity(this.blacksmith?.level ?? 1);
+  }
+  /** Highest equipment level this village's forge opens; every item shares the gate. */
+  get equipmentCeiling() {
+    const forge = this.blacksmith?.level ?? 0;
+    return forge ? EQUIPMENT_LEVELS.filter((row) => row.blacksmith <= forge).length : 0;
+  }
   equipKing(kind: EquipmentKind, slot: number) {
     if (
       this.battle ||
@@ -1854,6 +1866,10 @@ export class GameModel {
     const gear = structuredClone(this.kingEquipment),
       level = gear.levels[kind];
     if (level !== expectedLevel || level >= EQUIPMENT_MAX_LEVEL) return false;
+    if (level + 1 > this.equipmentCeiling) {
+      this.notify(`Upgrade the Blacksmith to level ${equipmentBlacksmith(level + 1)} first.`);
+      return false;
+    }
     const quote = equipmentQuote(level + 1, this.ores)!;
     if (quote.gems > maxGems || quote.gems > this.state.gems) {
       this.notify(
