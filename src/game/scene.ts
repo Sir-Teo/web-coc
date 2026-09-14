@@ -2324,7 +2324,7 @@ export class VillageScene extends Phaser.Scene {
       const flying = d.mode === 'air',
         width = flying ? 68 : 40,
         p = iso(d.x, d.y),
-        stats = skeletonStats(d.mode);
+        stats = skeletonStats(d.mode, d.spawnLevel);
       let sprite = this.defenderSprites.get(d.id);
       if (!sprite) {
         sprite = this.add

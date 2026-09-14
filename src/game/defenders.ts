@@ -17,7 +17,13 @@ import { targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
 import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
-import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
+import {
+  SKELETON_TRAP,
+  skeletonCount,
+  skeletonSpawnLevel,
+  skeletonStats,
+  type SkeletonMode,
+} from './skeleton-stats';
 
 interface DefenderState {
   id: number;
@@ -67,7 +73,13 @@ export interface GarrisonDefender extends DefenderState {
   /** Royal Ghost: concealed and ignoring obstacles until this battle time. */
   stealthUntil?: number;
 }
-export type Defender = (DefenderState & { kind: 'skeleton' }) | GarrisonDefender;
+export type Defender =
+  | (DefenderState & {
+      kind: 'skeleton';
+      /** Skeleton level this coffin releases; absent on recordings made before tier 5. */
+      spawnLevel?: number;
+    })
+  | GarrisonDefender;
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
   if (defender.hp <= 0) return;
   if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
@@ -96,7 +108,8 @@ export function damageDefenders(
 }
 export function spawnSkeleton(battle: Battle, source: Building, at: number, index: number) {
   const mode = source.skeletonMode ?? 'ground',
-    stats = skeletonStats(mode);
+    spawnLevel = skeletonSpawnLevel(source.level),
+    stats = skeletonStats(mode, spawnLevel);
   // Small deterministic offsets keep the burst legible and inside its passable tile.
   const angle = (index * Math.PI * 2) / skeletonCount(source.level);
   const defender: Defender = {
@@ -104,6 +117,9 @@ export function spawnSkeleton(battle: Battle, source: Building, at: number, inde
     kind: 'skeleton',
     sourceId: source.id,
     mode,
+    // Only the fifth coffin tier releases anything but the level 1 skeleton; leaving the
+    // default off keeps every archived battle state byte-identical.
+    ...(spawnLevel > 1 ? { spawnLevel } : {}),
     x: source.x + 0.5 + Math.cos(angle) * 0.18,
     y: source.y + 0.5 + Math.sin(angle) * 0.18,
     hp: stats.hp,
@@ -159,7 +175,11 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       ),
     );
     if (activeDt <= 0) continue;
-    const stats = lateDefenderStats(battle, defender, skeletonStats(defender.mode)),
+    const stats = lateDefenderStats(
+        battle,
+        defender,
+        skeletonStats(defender.mode, defender.spawnLevel),
+      ),
       eligible = battle.units.filter((u) => u.hp > 0 && !!TROOPS[u.kind].flying === stats.flying);
     const target =
       eligible.find((u) => u.id === defender.target) ??

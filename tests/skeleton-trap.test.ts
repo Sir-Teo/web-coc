@@ -152,8 +152,13 @@ it('preserves all twenty Obsidian Tower defenders through native replay and reje
   old.version = 28;
   expect(validateReplay(old)).toBe(false);
   const bad = structuredClone(record.replay!);
-  bad.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 5;
+  bad.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 6;
   expect(validateReplay(bad)).toBe(false);
+  // The fifth coffin tier arrived with version 47, so no earlier recording may hold one.
+  const fifth = structuredClone(record.replay!);
+  fifth.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 5;
+  expect(validateReplay(fifth)).toBe(true);
+  expect(validateReplay({ ...fifth, version: 46 })).toBe(false);
   m.returnHome();
   const home = structuredClone(m.state);
   expect(m.openReplay(JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay)).toBe(

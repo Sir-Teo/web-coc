@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reconstruct the native level 1–4 Skeleton Trap art and preserve its source rows.
+"""Reconstruct the native level 1–5 Skeleton Trap art and preserve its source rows.
 
 Uses scripts/native_art/requirements.txt. --check compares metadata and pixels.
 """
@@ -14,7 +14,40 @@ import struct
 import numpy as np
 from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, SOURCES, digest, source
+
+# The trap's own spawned characters. Level 5 releases the level 2 skeleton; every other
+# tier releases the level 1. Blank cells inherit within a named record.
+SPAWNED = {'logic/characters.csv':
+          '5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89'}
+SPAWNED_NAMES = ('Trap Skeleton', 'Trap Air Skeleton')
 from native_art.sc6 import SC6, decode_sctx, rasterize, require
+
+
+def spawned():
+    """Hitpoints and damage of each spawned skeleton level, straight from the source."""
+    raw = source('logic/characters.csv', SPAWNED)[68:]
+    text = lzma.decompress(raw[:9] + b'\0' * 4 + raw[9:]).decode('utf-8-sig')
+    decoded = list(csv.reader(io.StringIO(text)))
+    headers, name, records = decoded[0], None, {}
+    for row in decoded[2:]:
+        if not any(row):
+            continue
+        if row[0]:
+            name = row[0]
+            records[name] = []
+        if name in SPAWNED_NAMES:
+            inherited = dict(records[name][-1]) if records[name] else {}
+            inherited.update({k: v for k, v in zip(headers, row) if v})
+            records[name].append(inherited)
+    result = {}
+    for key in SPAWNED_NAMES:
+        require(key in records and len(records[key]) >= 2, f'Absent spawned character: {key}')
+        result['air' if 'Air' in key else 'ground'] = [
+            dict(level=index + 1, hp=int(row['Hitpoints']), dps=int(row['DPS']),
+                 speed=int(row['Speed']) / 100, range=int(row['AttackRange']) / 100,
+                 rate=int(row['AttackSpeed']) / 1000)
+            for index, row in enumerate(records[key])]
+    return result
 
 
 def build():
@@ -31,13 +64,14 @@ def build():
     texture = decode_sctx(source('sc/buildings_66.sctx'))
     require(texture.size == (sc.textures[66]['width'], sc.textures[66]['height']), 'Texture dimensions differ')
     textures = {66: np.array(texture, dtype=np.float64) / 255}
-    metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=SOURCES,
-                    rows=selected, supportedLevels=[1, 2, 3, 4], tiers={},
+    metadata = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=SOURCES | SPAWNED,
+                    rows=selected, supportedLevels=[1, 2, 3, 4, 5], tiers={},
+                    spawned=spawned(),
                     reconstruction=dict(sampling='premultiplied bilinear at pixel centers',
                                         nestedTimelines='elapsed frames since continuous placement; loop subclips',
                                         nativePlaybackVerified=False))
     outputs = {}
-    for tier in (1, 3):
+    for tier in (1, 3, 5):
         row = selected[tier - 1]
         names = {state: row[key] for state, key in [('ground', 'ExportName'), ('air', 'ExportNameAir'),
                   ('spent', 'ExportNameBroken'), ('ground-trigger', 'ExportNameTriggered'), ('air-trigger', 'ExportNameTriggeredAir')]}
