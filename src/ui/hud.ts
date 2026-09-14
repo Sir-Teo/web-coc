@@ -38,7 +38,7 @@ import {
   skeletonStats,
 } from '../game/skeleton-stats';
 import {
-  MAX_SPELL_LEVEL,
+  maxSpellLevelFor,
   SPELL_LEVELS,
   HEAL_PULSES,
   HEAL_HERO_MULTIPLIER,
@@ -1962,7 +1962,7 @@ export class HUD {
       spell = isSpellKind(kind);
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     const level = m.researchLevel(kind),
-      maximum = isSpellKind(kind) ? MAX_SPELL_LEVEL : maxTroopLevel(kind);
+      maximum = isSpellKind(kind) ? maxSpellLevelFor(kind) : maxTroopLevel(kind);
     const max = level >= maximum,
       nextLevel = Math.min(level + 1, maximum);
     const unlocked = spell ? m.spellUnlocked(kind) : m.troopUnlocked(kind);

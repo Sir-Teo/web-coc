@@ -1,6 +1,8 @@
 # Home Village spell progression
 
-Audited September 11, 2026. Lightning, Healing and Rage now support levels 1–5, covering their upgrades through TH8. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+Audited September 11, 2026; extended September 14, 2026. Lightning, Healing and Rage now run to their own original ceilings — thirteen, twelve and seven levels — read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+
+The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
 
 ## Sources
 

@@ -13,7 +13,7 @@ import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { expandArmyRoster } from './army';
-import { MAX_SPELL_LEVEL } from './spell-progression';
+import { maxSpellLevelFor } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 function finite(v: unknown) {
@@ -272,14 +272,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !(isSpellKind(s.research.kind) || TROOP_KEYS.includes(s.research.kind)) ||
       !finite(s.research.end) ||
       (isSpellKind(s.research.kind)
-        ? (s.spellLevels?.[s.research.kind] ?? 1) >= MAX_SPELL_LEVEL
+        ? (s.spellLevels?.[s.research.kind] ?? 1) >= maxSpellLevelFor(s.research.kind)
         : (s.troopLevels?.[s.research.kind] ?? 1) >= maxTroopLevel(s.research.kind)))
   )
     return false;
   if (
     s.spellLevels !== undefined &&
     (!spellRecord(s.spellLevels) ||
-      SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > MAX_SPELL_LEVEL))
+      SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > maxSpellLevelFor(k)))
   )
     return false;
   const ids = new Set<number>();

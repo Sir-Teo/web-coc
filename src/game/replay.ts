@@ -34,7 +34,7 @@ import {
   LEGACY_TROOP_KEYS,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
-import { MAX_SPELL_LEVEL } from './spell-progression';
+import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
@@ -60,6 +60,14 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 45 ||
   version === 46 ||
   version === REPLAY_VERSION;
+/** Roster ceilings before version 47 took every troop and spell to its own original last level. */
+const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
+  TROOP_KEYS.map((kind) => [
+    kind,
+    kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : 5,
+  ]),
+);
+const PRE_ROSTER_SPELL_LEVEL = 5;
 /** Ceilings before version 47 reconstructed the fifth coffin tier. */
 const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4 };
 /** Ceilings before version 46 carried the home catalog to Town Hall 18. */
@@ -245,9 +253,20 @@ export function validateReplay(value: unknown): value is ReplayData {
     !counts(s.army, troopKeys, 0, 9999) ||
     !counts(s.spells, SPELL_KEYS, 0, 999) ||
     !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
-    (value.version >= 18 && TROOP_KEYS.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
+    // The roster reached each troop's own original ceiling in version 47; before that every
+    // troop stopped at five and the Healer, Dragon and P.E.K.K.A at three.
+    (value.version >= 18 &&
+      TROOP_KEYS.some(
+        (k) =>
+          s.troopLevels[k] > (value.version < 47 ? PRE_ROSTER_TROOP_LEVELS[k] : maxTroopLevel(k)),
+      )) ||
     (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
-    (s.spellLevels !== undefined && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
+    (s.spellLevels !== undefined &&
+      SPELL_KEYS.some(
+        (k) =>
+          s.spellLevels![k] < 1 ||
+          s.spellLevels![k] > (value.version < 47 ? PRE_ROSTER_SPELL_LEVEL : maxSpellLevelFor(k)),
+      )) ||
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||

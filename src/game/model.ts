@@ -121,7 +121,7 @@ const SPELL_TOWER_CYCLE = ['rage', 'poison', 'invisibility'] as const;
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import {
-  MAX_SPELL_LEVEL,
+  maxSpellLevelFor,
   spellProgression,
   LIGHTNING_STUN,
   RAGE_HERO_MULTIPLIER,
@@ -730,7 +730,7 @@ export class GameModel {
         `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
       );
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.researchLevel(kind) >= (spell ? MAX_SPELL_LEVEL : maxTroopLevel(kind)))
+    if (this.researchLevel(kind) >= (spell ? maxSpellLevelFor(kind) : maxTroopLevel(kind)))
       return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
     const requiredLab = this.researchLaboratory(kind);
     if (lab.level < requiredLab)
@@ -1005,7 +1005,7 @@ export class GameModel {
       if (isSpellKind(kind)) {
         this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
         level = this.state.spellLevels[kind] = Math.min(
-          MAX_SPELL_LEVEL,
+          maxSpellLevelFor(kind),
           this.state.spellLevels[kind] + 1,
         );
         name = SPELLS[kind].name;

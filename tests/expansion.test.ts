@@ -5,6 +5,8 @@ import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '.
 import {
   BUILDINGS,
   MAX_TROOP_LEVEL,
+  TROOP_KEYS,
+  maxTroopLevel,
   researchLaboratory,
   SPELLS,
   TROOPS,
@@ -449,21 +451,28 @@ describe('second-pass behaviour', () => {
     expect([b.x, b.y]).toEqual([from.x, from.y]);
     expect(m.canUndo).toBe(false);
   });
-  it('research runs to five levels behind the required laboratory', () => {
+  it('research runs to every original level behind the required laboratory', () => {
     const m = new GameModel(developedSave());
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
-    m.state.elixir = 999999;
-    for (let level = 1; level < MAX_TROOP_LEVEL; level++) {
+    const ceiling = maxTroopLevel('swordsman');
+    for (let level = 1; level < ceiling; level++) {
+      // Late research costs more than any one tier's storage; the purse is not the subject.
+      m.state.elixir = 999_999_999;
       lab.level = researchLaboratory('swordsman', level);
       m.researchTroop('swordsman');
       m.tick(m.state.research!.end + 1000);
       expect(m.troopLevel('swordsman')).toBe(level + 1);
     }
-    expect(m.troopLevel('swordsman')).toBe(MAX_TROOP_LEVEL);
+    expect(m.troopLevel('swordsman')).toBe(ceiling);
     lab.level = BUILDINGS.laboratory.maxLevel;
     m.researchTroop('swordsman');
     expect(m.state.research).toBeUndefined();
-    expect(BUILDINGS.laboratory.maxLevel).toBeGreaterThanOrEqual(MAX_TROOP_LEVEL);
+    // The last Laboratory reaches the last level of every troop, which is what makes it worth
+    // building: the roster no longer runs out far below it.
+    for (const kind of TROOP_KEYS)
+      expect(researchLaboratory(kind, maxTroopLevel(kind) - 1), kind).toBeLessThanOrEqual(
+        BUILDINGS.laboratory.maxLevel,
+      );
     expect(validateSave(m.state)).toBe(true);
   });
   it('counts what the tutorial asks for and carries a spell book into battle', () => {

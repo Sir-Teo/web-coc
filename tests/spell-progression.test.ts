@@ -5,6 +5,7 @@ import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { stepSpellAuras } from '../src/game/spell-effects';
+import { maxSpellLevelFor } from '../src/game/spell-progression';
 import { emptyArmy } from '../src/game/army';
 import { developedSave } from './fixtures/developed-village';
 
@@ -150,7 +151,8 @@ describe('spell research', () => {
     expect(loaded.state.research).toEqual(original.research);
     expect(loaded.state.spells).toEqual(original.spells);
     const good = developed().state;
-    for (const invalid of [0, 6, -1, 1.5, NaN, '2', null]) {
+    // The Healing spell now runs to its own original ceiling, so 6 is a real level.
+    for (const invalid of [0, maxSpellLevelFor('heal') + 1, -1, 1.5, NaN, '2', null]) {
       const bad = structuredClone(good);
       (bad.spellLevels as any).heal = invalid;
       expect(validateSave(bad)).toBe(false);
@@ -158,7 +160,7 @@ describe('spell research', () => {
     const partial = structuredClone(good);
     delete (partial.spellLevels as any).rage;
     expect(validateSave(partial)).toBe(false);
-    good.spellLevels!.rage = 5;
+    good.spellLevels!.rage = maxSpellLevelFor('rage');
     good.research = { kind: 'rage', end: good.lastTick + 600000 };
     expect(validateSave(good)).toBe(false);
     delete good.research;
@@ -397,7 +399,11 @@ describe('native spell effects', () => {
     const malformed = structuredClone(data);
     delete malformed.initial.spellLevels;
     expect(validateReplay(malformed)).toBe(false);
-    data.initial.spellLevels!.rage = 6;
+    // Rage reaches seven, and a version-46 recording may hold none of the new levels.
+    data.initial.spellLevels!.rage = maxSpellLevelFor('rage');
+    expect(validateReplay(data)).toBe(true);
+    expect(validateReplay({ ...data, version: 46 })).toBe(false);
+    data.initial.spellLevels!.rage = maxSpellLevelFor('rage') + 1;
     expect(validateReplay(data)).toBe(false);
   });
 });

@@ -27,7 +27,7 @@ import { mortarAsset, mortarTexture } from './mortar-art';
 import { TRAP_LEVELS, trapProgression } from './trap-stats';
 import { WALL_LEVELS } from './wall-stats';
 import { BUILDING_COUNTS, BUILDING_LEVELS, MAX_TOWNHALL } from './tiers';
-import { troopProgression } from './troop-progression';
+import { maxTroopLevelFor, troopProgression } from './troop-progression';
 import {
   spellProgression,
   HEAL_PULSES,
@@ -144,10 +144,9 @@ export interface BuildingDef {
   singleArtwork?: boolean;
 }
 export { MAX_TOWNHALL, BUILDING_COUNTS } from './tiers';
-/** Local research roster currently supports five troop levels. */
-export const MAX_TROOP_LEVEL = 5;
-export const maxTroopLevel = (kind: TroopKind) =>
-  kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
+/** The research roster runs to each troop's own original ceiling. */
+export { MAX_TROOP_LEVEL } from './troop-progression';
+export const maxTroopLevel = maxTroopLevelFor;
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   // Late single-player campaign defenses. Their weapons are owned by their family modules;
   // omitting `damage` keeps them out of the ordinary defense loop.
