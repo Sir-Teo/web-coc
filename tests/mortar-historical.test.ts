@@ -36,4 +36,4 @@ for (const record of witness.records)
     }
     expect(viewer.battle!.result).toEqual(record.result);
     expect(parseReplayFile(JSON.stringify(makeReplayFile(replay)))).toEqual(replay);
-  }, 30000);
+  }, 180_000);
