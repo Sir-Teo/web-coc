@@ -49,6 +49,7 @@ jobs:
           python scripts/import-native-pumpkin.py --check
           python scripts/import-native-skeleton-trap.py --check
           python scripts/import-native-santa.py --check
+          python scripts/import-native-townhall.py --check
 
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line
