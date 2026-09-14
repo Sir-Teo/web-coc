@@ -8,6 +8,7 @@ import { lateCampaignIssues } from '../src/game/late-campaign';
 import {
   NATIVE_CAMPAIGN,
   freshNativeCampaign,
+  nativeBuildings,
   nativeCampaignIssues,
   nativeLayout,
 } from '../src/game/native-campaign';
@@ -246,9 +247,12 @@ describe('Eagle Artillery and Scattershot replays', () => {
         expect(seen[key as keyof Observed], key).toBeGreaterThanOrEqual(value);
       verifyPlayback(replayData(setup, [...deployments], steps), snapshots, model.battle!);
     }, 180_000);
-  it('uses the ungated native layouts only for villages still waiting on other families', () => {
-    // Go to Bat (75) opened with the Ghost Trap; 80 and 85 still wait on armed Builder's Huts.
-    for (const index of [80, 85]) expect(nativeCampaignIssues(index).length).toBeGreaterThan(0);
+  it('opens the late Scattershot villages with their complete source layouts', () => {
+    // Every family these villages contain is implemented, so the gated layout is the full source.
+    for (const index of [75, 80, 85]) {
+      expect(nativeCampaignIssues(index)).toEqual([]);
+      expect(nativeBuildings(index)).toEqual(nativeLayout(index));
+    }
     expect(
       nativeLayout(80)
         .filter((b) => b.kind === 'eagleartillery')

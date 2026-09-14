@@ -57,8 +57,8 @@ describe("armed Builder's Hut source", () => {
       .filter((b) => b.kind === 'builder' && !b.npc)
       .forEach((b) => levels.set(b.level, (levels.get(b.level) ?? new Set()).add(b.id)));
     expect([...levels.keys()].sort()).toEqual([1, 2, 3, 4]);
-    // The Defending Builder remains required before these villages can open.
-    expect(lateCampaignIssues([[1000015, 0, 0, 2]])).toEqual(["Armed Builder's Hut"]);
+    // With the turret and its Defending Builder implemented, armed tiers no longer gate villages.
+    expect(lateCampaignIssues([[1000015, 0, 0, 2]])).toEqual([]);
     expect(lateCampaignIssues([[1000015, 0, 0, 1]])).toEqual([]);
   });
 

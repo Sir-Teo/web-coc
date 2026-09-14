@@ -2,7 +2,7 @@
 
 Pinned client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. The [late Goblin building importer](../late-goblin-buildings/README.md) also captures this family from the same 27 SHA-256 pins, each checked for SHA-1 membership in the original [fingerprint.json](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/fingerprint.json). Original artwork and audio belong to Supercell.
 
-The nail turret is complete for campaign Builder's Huts in version-44 `goblin-v1` battles (`battle.late.builderHut`). Home huts, practice battles and every version-43 or older recording stay passive and keep their ordinary sprite. `BUILDER_HUT_READY` stays **false**: each armed hut also has a `Defending Builder`, which is not implemented here. Levels 2–4 therefore still gate villages 80–85 and 87–89.
+The nail turret is complete for campaign Builder's Huts in version-44 `goblin-v1` battles (`battle.late.builderHut`). Home huts, practice battles and every version-43 or older recording stay passive and keep their ordinary sprite. Each armed hut also sends out a `Defending Builder`, implemented in `src/game/defending-builder.ts` (see `reference/garrison/README.md`). With both halves in place `BUILDER_HUT_READY` is **true**, so levels 2–4 no longer gate villages 80–85 and 87–89.
 
 ## Source records
 
@@ -25,7 +25,7 @@ Supercell's [Battle Builders announcement](https://supercell.com/en/games/clasho
 
 **Combat.** The turret uses the shared late Goblin weapon scheduler: one slot, 64-ms ticks, a 400-ms hit timer reset on acquisition, nearest eligible attacker within 7 tiles of the footprint centre with ID ties, and `spellTowerDefenseBoost` at each tick time on rate and damage. Nails travel 18 tiles/s, track their target and do nothing if it is gone on arrival. From `readyAt`, active huts count as Defense targets for Giants, Balloons and other defense-preferring troops, in both the ordinary attacker loop and the garrison-aware target check. Level 1 never wakes. Destroyed huts clear their slot, but nails already in flight still resolve.
 
-**Defending Builder hook.** `builderHutActivation(battle, hut)` returns the armed level, `wakeAt`, `readyAt` and `destroyedAt` in battle seconds. Every value is reconstructed identically by replay seeks. The character, its repair behaviour and its art are left to the next agent.
+**Defending Builder hook.** `builderHutActivation(battle, hut)` returns the armed level, `wakeAt`, `readyAt` and `destroyedAt` in battle seconds. Every value is reconstructed identically by replay seeks. The Defending Builder family consumes it for spawning, repairs and hiding when the hut falls.
 
 ## Artwork and live presentation
 
@@ -46,7 +46,6 @@ Presentation follows battle state and `context.elapsed`:
 
 `tests/builder-hut.test.ts` covers source tiers and references, battle-log housing, the wake tick and first shot, ground and air hits, the Defense class timing and activation hook, passive level-1, home and version-43 huts, and pose reconstruction. `tests/late-goblin-buildings-boost.test.ts` checks Spell Tower rate and damage boosts on the turret. `tests/late-goblin-buildings-art.test.ts` checks texture, preview and sound integrity and the exclusive `turret_load`/`turret` slots. The Builderopolis replay test and `tests/browser/late-goblin-buildings-live.spec.ts` check waking, aimed nails, ruins and backward seeks live.
 
-- The Defending Builder is missing, so `BUILDER_HUT_READY` stays false.
 - Wake-up and first-shot timing, target selection, range measurement, facing registration, launch height and nail arc are local interpretations.
 - Dormant sleep markers in campaign battles are an interpretation of home idle art.
 - Generic destruction sparks and sound still overlap the original `Building Destroyed` effect.

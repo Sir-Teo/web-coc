@@ -16,9 +16,9 @@ import {
   type WeaponSlot,
 } from './late-goblin-weapon';
 
-/** Armed Builder's Huts: nail turret and repairing Defending Builder.
- * The turret is complete; the campaign gate stays closed until the Defending Builder lands. */
-export const BUILDER_HUT_READY = false;
+/** Armed Builder's Huts: nail turret here, repairing Defending Builder in defending-builder.ts.
+ * Both halves are complete, so campaign huts at source levels 2–4 no longer gate villages. */
+export const BUILDER_HUT_READY = true;
 
 export interface BuilderHutShot {
   index: number;

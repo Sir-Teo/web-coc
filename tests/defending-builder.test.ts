@@ -71,8 +71,8 @@ it("reads the pinned Defending Builder rows, armed Builder's Hut levels and repa
   });
   // The Healer family's stacking table is the same pinned global.
   expect(REPAIR_GLOBALS.HEAL_STACK_PERCENT.map((p) => p / 100)).toEqual([...HEALER_STACK]);
-  // The Builder's Hut family owns the gate.
-  expect(BUILDER_HUT_READY).toBe(false);
+  // With the turret and its Builder both implemented, armed huts no longer gate villages.
+  expect(BUILDER_HUT_READY).toBe(true);
 });
 
 it('sends one Builder from each armed campaign hut on the first battle tick', () => {
