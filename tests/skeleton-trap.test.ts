@@ -56,11 +56,11 @@ function unit(m: GameModel, kind: TroopKind = 'swordsman', x = 14, y = 10.5) {
   return u;
 }
 it('uses the TH8 count, level ceiling, instant placement and native upgrade timer', () => {
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('skeletontrap', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 0, 2,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('skeletontrap', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 0, 2, 2,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('skeletontrap', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 0, 2,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('skeletontrap', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 0, 2, 3,
   ]);
   expect(BUILDINGS.skeletontrap).toMatchObject({
     size: 1,

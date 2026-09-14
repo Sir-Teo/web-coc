@@ -3,6 +3,7 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import {
   BUILDINGS,
   buildingHp,
+  MAX_TOWNHALL,
   maxCountFor,
   maxLevelFor,
   upgradeCost,
@@ -26,6 +27,7 @@ const levels = {
     [575, 600000, 43200],
     [650, 1000000, 86400],
     [730, 1400000, 129600],
+    [810, 2600000, 172800],
   ],
   laboratory: [
     [500, 5000, 60],
@@ -34,11 +36,13 @@ const levels = {
     [650, 100000, 14400],
     [700, 200000, 28800],
     [750, 400000, 57600],
+    [830, 800000, 86400],
   ],
   spellfactory: [
     [425, 150000, 21600],
     [470, 300000, 43200],
     [520, 600000, 86400],
+    [600, 1200000, 172800],
   ],
 } as const;
 
@@ -48,7 +52,7 @@ describe('native army facility progression', () => {
       const level = index + 1;
       it(`purchases ${kind} level ${level} at its exact price and completes once at its saved deadline`, () => {
         const m = new GameModel();
-        m.townhall!.level = 8;
+        m.townhall!.level = MAX_TOWNHALL;
         m.state.obstacles = [];
         m.state.buildings = m.state.buildings.filter((b) => b.kind !== kind);
         m.state.elixir = cost;
@@ -85,19 +89,19 @@ describe('native army facility progression', () => {
       });
     });
 
-  it('enforces a single facility, matching construction and upgrade gates at all eight Town Hall tiers', () => {
+  it('enforces a single facility, matching construction and upgrade gates at all nine Town Hall tiers', () => {
     const counts = {
-      barracks: [1, 1, 1, 1, 1, 1, 1, 1],
-      laboratory: [0, 0, 1, 1, 1, 1, 1, 1],
-      spellfactory: [0, 0, 0, 0, 1, 1, 1, 1],
+      barracks: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      laboratory: [0, 0, 1, 1, 1, 1, 1, 1, 1],
+      spellfactory: [0, 0, 0, 0, 1, 1, 1, 1, 1],
     };
     const caps = {
-      barracks: [1, 4, 5, 6, 7, 8, 9, 10],
-      laboratory: [0, 0, 1, 2, 3, 4, 5, 6],
-      spellfactory: [0, 0, 0, 0, 1, 2, 3, 3],
+      barracks: [1, 4, 5, 6, 7, 8, 9, 10, 11],
+      laboratory: [0, 0, 1, 2, 3, 4, 5, 6, 7],
+      spellfactory: [0, 0, 0, 0, 1, 2, 3, 3, 4],
     };
     for (const kind of ['barracks', 'laboratory', 'spellfactory'] as const)
-      for (let th = 1; th <= 8; th++) {
+      for (let th = 1; th <= MAX_TOWNHALL; th++) {
         const m = new GameModel();
         m.state.obstacles = [];
         m.townhall!.level = th;

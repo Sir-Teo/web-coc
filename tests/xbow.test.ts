@@ -86,6 +86,9 @@ it('uses all 13 native levels without rounding fractional shot damage or unlocki
     expect(maxLevelFor('xbow', th)).toBe(0);
   }
   expect(unlockTownHall('xbow')).toBe(9);
+  // Town Hall 9 buys two X-Bows and the three levels the source table gates there.
+  expect(maxCountFor('xbow', 9)).toBe(2);
+  expect(maxLevelFor('xbow', 9)).toBe(3);
 });
 
 it.each(['ground', 'both'] as const)(

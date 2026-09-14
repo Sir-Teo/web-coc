@@ -5,12 +5,12 @@ import {
   nativeBuildings,
 } from '../src/game/native-campaign';
 import { GameModel } from '../src/game/model';
-import { BUILDINGS } from '../src/game/data';
+import { BUILDINGS, MAX_TOWNHALL, maxLevelFor } from '../src/game/data';
 import { darkDrillStats } from '../src/game/dark-drill-stats';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
-it('adapts all captured Drill tiers without expanding home progression', () => {
+it('adapts all captured Drill tiers above the Town Hall 9 home ceiling', () => {
   const stage = NATIVE_CAMPAIGN[0],
     original = stage.buildings;
   try {
@@ -33,7 +33,9 @@ it('adapts all captured Drill tiers without expanding home progression', () => {
       const replay = m.state.raidLog![0].replay!;
       expect(replay).toBeDefined();
       expect(validateReplay(JSON.parse(JSON.stringify(replay)))).toBe(true);
+      // Version 39 predates both the campaign tiers and the Town Hall 9 ceiling.
       expect(validateReplay({ ...replay, version: 39 })).toBe(level <= 3);
+      expect(validateReplay({ ...replay, version: 44 })).toBe(true);
       expect(validateSave(JSON.parse(JSON.stringify(m.state)))).toBe(true);
       const viewer = new GameModel();
       expect(viewer.openReplay(JSON.parse(JSON.stringify(replay)))).toBe(true);
@@ -52,7 +54,9 @@ it('adapts all captured Drill tiers without expanding home progression', () => {
   } finally {
     stage.buildings = original;
   }
-  expect(BUILDINGS.darkdrill.maxLevel).toBe(3);
+  // Town Hall 9 buys levels 4-6; the remaining captured tiers stay campaign-only.
+  expect(BUILDINGS.darkdrill.maxLevel).toBe(6);
+  expect(maxLevelFor('darkdrill', MAX_TOWNHALL)).toBe(6);
 });
 it('admits Midnight Oil with its resolved Drill and defenses', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Dark Elixir Drill');

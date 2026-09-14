@@ -99,7 +99,7 @@ export interface BuildingDef {
   category: 'Army' | 'Resources' | 'Defenses' | 'Traps';
   /** Highest level this building can ever reach, before the Town Hall gate. */
   maxLevel: number;
-  /** Maximum count allowed at Town Hall level 1..8, indexed from zero. */
+  /** Maximum count allowed at Town Hall level 1..9, indexed from zero. */
   available: readonly number[];
   /** Seconds to build the first level. Later levels scale from this. */
   build: number;
@@ -122,8 +122,8 @@ export interface BuildingDef {
   };
   singleArtwork?: boolean;
 }
-const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
-export const MAX_TOWNHALL = 8;
+const ALWAYS = (n: number) => Object.freeze(Array<number>(9).fill(n));
+export const MAX_TOWNHALL = 9;
 /** Local research roster currently supports five troop levels. */
 export const MAX_TROOP_LEVEL = 5;
 export const maxTroopLevel = (kind: TroopKind) =>
@@ -142,7 +142,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 7,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 345600,
     range: 50,
     minRange: 7,
@@ -161,7 +161,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 7,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 432000,
     range: 10,
     minRange: 3,
@@ -179,7 +179,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'dark',
     category: 'Defenses',
     maxLevel: 5,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 604800,
     range: 11,
     rate: 1.5,
@@ -196,7 +196,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 4,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 604800,
     range: 9,
     targets: 'both',
@@ -212,7 +212,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: 3,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 0,
     singleArtwork: true,
     trap: { trigger: 3, radius: 3, delay: 0, damage: 0, targets: 'ground' },
@@ -227,7 +227,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: infernoStats(1).seconds,
     damage: infernoStats(1).weapon.dps[0] * 0.128,
     range: 9,
@@ -246,7 +246,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     category: 'Army',
     maxLevel: CASTLE_LEVELS.length,
     // Enemy support first. Home repair and donations require their own complete flow.
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 0],
     build: 0,
     singleArtwork: true,
   },
@@ -261,7 +261,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: XBOW_LEVELS.length,
-    available: [0, 0, 0, 0, 0, 0, 0, 0],
+    available: [0, 0, 0, 0, 0, 0, 0, 0, 2],
     build: XBOW_LEVELS[0].seconds,
     damage: xbowDamage(1),
     range: XBOW.groundRange,
@@ -279,7 +279,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'elixir',
     category: 'Army',
     maxLevel: 1,
-    available: [0, 0, 0, 0, 0, 0, 0, 1],
+    available: [0, 0, 0, 0, 0, 0, 0, 1, 1],
     build: 43200,
     singleArtwork: true,
   },
@@ -294,7 +294,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: 4,
-    available: [0, 0, 0, 0, 0, 0, 0, 2],
+    available: [0, 0, 0, 0, 0, 0, 0, 2, 2],
     build: 0,
     singleArtwork: true,
     trap: { trigger: 5, radius: 0, delay: 0.6, damage: 0, targets: 'ground', minHousing: 1 },
@@ -309,8 +309,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: 20000,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 2,
-    available: [0, 0, 0, 1, 1, 1, 1, 1],
+    // Each hall tier raises the King's ceiling: 10 at hall 1, 20 at hall 2, 30 at hall 3.
+    maxLevel: 3,
+    available: [0, 0, 0, 1, 1, 1, 1, 1, 1],
     build: 180,
     singleArtwork: true,
   },
@@ -324,8 +325,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: darkDrillStats(1).cost,
     resource: 'elixir',
     category: 'Resources',
-    maxLevel: 3,
-    available: [0, 0, 0, 0, 0, 0, 1, 2],
+    // Source levels 4-6 arrive together at Town Hall 9; level 7 belongs to Town Hall 10.
+    maxLevel: 6,
+    available: [0, 0, 0, 0, 0, 0, 1, 2, 3],
     build: darkDrillStats(1).seconds,
     singleArtwork: true,
   },
@@ -340,7 +342,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'elixir',
     category: 'Resources',
     maxLevel: DARK_STORAGE_LEVELS.length,
-    available: [0, 0, 0, 0, 0, 0, 1, 1],
+    available: [0, 0, 0, 0, 0, 0, 1, 1, 1],
     build: DARK_STORAGE_LEVELS[0].seconds,
     singleArtwork: true,
   },
@@ -369,7 +371,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     category: 'Resources',
     // Levels 13–14 appear only in late native campaign villages.
     maxLevel: 14,
-    available: [2, 3, 4, 5, 6, 7, 7, 7],
+    available: [2, 3, 4, 5, 6, 7, 7, 7, 7],
     build: 45,
   },
   collector: {
@@ -383,7 +385,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     category: 'Resources',
     // Levels 13–14 appear only in late native campaign villages.
     maxLevel: 14,
-    available: [2, 3, 4, 5, 6, 7, 7, 7],
+    available: [2, 3, 4, 5, 6, 7, 7, 7, 7],
     build: 45,
   },
   goldstorage: {
@@ -397,7 +399,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     category: 'Resources',
     // Levels 12–16 appear only in late native campaign villages.
     maxLevel: 16,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
+    available: [1, 2, 2, 3, 3, 4, 4, 4, 4],
     build: 90,
   },
   elixirstorage: {
@@ -411,7 +413,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     category: 'Resources',
     // Levels 12–16 appear only in late native campaign villages.
     maxLevel: 16,
-    available: [1, 2, 2, 3, 3, 4, 4, 4],
+    available: [1, 2, 2, 3, 3, 4, 4, 4, 4],
     build: 90,
   },
   barracks: {
@@ -423,7 +425,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: FACILITY_LEVELS.barracks[0].cost,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 10,
+    maxLevel: FACILITY_LEVELS.barracks.length,
     available: FACILITY_COUNTS.barracks,
     build: FACILITY_LEVELS.barracks[0].seconds,
   },
@@ -437,7 +439,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: DEFENSE_PROGRESSION.cannon.length,
-    available: [2, 2, 2, 2, 3, 3, 5, 5],
+    available: [2, 2, 2, 2, 3, 3, 5, 5, 5],
     build: DEFENSE_PROGRESSION.cannon[0].seconds,
     damage: 5.6,
     ...DEFENSE_WEAPONS.cannon,
@@ -453,7 +455,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: 12,
-    available: [0, 1, 1, 2, 3, 3, 4, 5],
+    available: [0, 1, 1, 2, 3, 3, 4, 5, 6],
     build: DEFENSE_PROGRESSION.archertower[0].seconds,
     damage: 5.5,
     ...DEFENSE_WEAPONS.archertower,
@@ -483,7 +485,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Army',
     maxLevel: 4,
-    available: [2, 2, 3, 3, 4, 4, 5, 5],
+    available: [2, 2, 3, 3, 4, 4, 5, 5, 5],
     build: 30,
   },
   mortar: {
@@ -497,7 +499,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: DEFENSE_PROGRESSION.mortar.length,
-    available: [0, 0, 1, 1, 1, 2, 3, 4],
+    available: [0, 0, 1, 1, 1, 2, 3, 4, 4],
     build: DEFENSE_PROGRESSION.mortar[0].seconds,
     damage: 20,
     ...DEFENSE_WEAPONS.mortar,
@@ -513,7 +515,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: DEFENSE_PROGRESSION.airdefense.length,
-    available: [0, 0, 0, 1, 1, 2, 3, 3],
+    available: [0, 0, 0, 1, 1, 2, 3, 3, 4],
     build: DEFENSE_PROGRESSION.airdefense[0].seconds,
     damage: 80,
     ...DEFENSE_WEAPONS.airdefense,
@@ -530,7 +532,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: SWEEPER_LEVELS.length,
-    available: [0, 0, 0, 0, 0, 1, 1, 1],
+    available: [0, 0, 0, 0, 0, 1, 1, 1, 2],
     build: SWEEPER_LEVELS[0].seconds,
     range: SWEEPER.range,
     minRange: SWEEPER.minRange,
@@ -549,7 +551,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: DEFENSE_PROGRESSION.bombtower.length,
-    available: [0, 0, 0, 0, 0, 0, 0, 1],
+    available: [0, 0, 0, 0, 0, 0, 0, 1, 1],
     build: DEFENSE_PROGRESSION.bombtower[0].seconds,
     damage: 26.4,
     ...DEFENSE_WEAPONS.bombtower,
@@ -567,7 +569,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: TESLA_ART_LEVELS.length,
-    available: [0, 0, 0, 0, 0, 0, 2, 3],
+    available: [0, 0, 0, 0, 0, 0, 2, 3, 4],
     build: DEFENSE_PROGRESSION.tesla[0].seconds,
     damage: 20.4,
     ...DEFENSE_WEAPONS.tesla,
@@ -585,7 +587,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: SEEKING_MINE_LEVELS.length,
-    available: [0, 0, 0, 0, 0, 0, 1, 2],
+    available: [0, 0, 0, 0, 0, 0, 1, 2, 4],
     build: SEEKING_MINE_LEVELS[0].seconds,
     singleArtwork: true,
     trap: {
@@ -607,7 +609,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     cost: FACILITY_LEVELS.laboratory[0].cost,
     resource: 'elixir',
     category: 'Army',
-    maxLevel: 6,
+    maxLevel: FACILITY_LEVELS.laboratory.length,
     available: FACILITY_COUNTS.laboratory,
     build: FACILITY_LEVELS.laboratory[0].seconds,
   },
@@ -636,7 +638,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Defenses',
     maxLevel: DEFENSE_PROGRESSION.wizardtower.length,
-    available: [0, 0, 0, 0, 1, 2, 2, 3],
+    available: [0, 0, 0, 0, 1, 2, 2, 3, 4],
     build: DEFENSE_PROGRESSION.wizardtower[0].seconds,
     damage: 14.3,
     ...DEFENSE_WEAPONS.wizardtower,
@@ -654,7 +656,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: TRAP_LEVELS.bomb.length,
-    available: [0, 0, 2, 2, 4, 4, 6, 6],
+    available: [0, 0, 2, 2, 4, 4, 6, 6, 6],
     build: 0,
     singleArtwork: true,
     trap: {
@@ -676,7 +678,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: TRAP_LEVELS.giantbomb.length,
-    available: [0, 0, 0, 0, 1, 1, 2, 3],
+    available: [0, 0, 0, 0, 1, 1, 2, 3, 4],
     build: 0,
     singleArtwork: true,
     trap: {
@@ -698,7 +700,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: TRAP_LEVELS.airbomb.length,
-    available: [0, 0, 0, 2, 2, 2, 2, 4],
+    available: [0, 0, 0, 2, 2, 2, 2, 4, 4],
     build: 0,
     singleArtwork: true,
     trap: {
@@ -720,7 +722,7 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Traps',
     maxLevel: 5,
-    available: [0, 0, 0, 2, 2, 4, 4, 6],
+    available: [0, 0, 0, 2, 2, 4, 4, 6, 6],
     build: 0,
     singleArtwork: true,
     trap: {
@@ -1160,7 +1162,10 @@ export const asset = (
 };
 /** Explicit catalog ceilings; old villages retain existing buildings above them. */
 export const maxLevelFor = (kind: BuildingKind, townhall: number) =>
-  Math.min(BUILDINGS[kind].maxLevel, BUILDING_LEVELS[kind][Math.min(8, Math.max(1, townhall)) - 1]);
+  Math.min(
+    BUILDINGS[kind].maxLevel,
+    BUILDING_LEVELS[kind][Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1],
+  );
 export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */

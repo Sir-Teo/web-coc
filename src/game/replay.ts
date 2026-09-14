@@ -1,4 +1,5 @@
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
+import { HERO_MAX_LEVEL } from './heroes';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
 import { isLateCampaignBuilding, validLateBuilding } from './late-campaign';
@@ -25,6 +26,7 @@ import { garrisonTroopVersion } from './garrison-kinds';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
+  MAX_TOWNHALL,
   MAX_TROOP_LEVEL,
   maxTroopLevel,
   SPELL_KEYS,
@@ -36,9 +38,10 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 44;
+export const REPLAY_VERSION = 45;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
- * Version 44 adds late single-player campaign levels and entities without changing earlier rules. */
+ * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
+ * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -50,7 +53,15 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 41 ||
   version === 42 ||
   version === 43 ||
+  version === 44 ||
   version === REPLAY_VERSION;
+/** Ceilings before version 45 raised the home catalog to Town Hall 9. */
+const PRE_TOWNHALL_9_LEVELS: Readonly<Record<string, number>> = {
+  barracks: 10,
+  laboratory: 6,
+  herohall: 2,
+  darkdrill: 3,
+};
 /** Ceilings before version 44 added late single-player campaign levels. */
 const PRE_LATE_CAMPAIGN_LEVELS: Readonly<Record<string, number>> = {
   wall: 12,
@@ -229,8 +240,8 @@ export function validateReplay(value: unknown): value is ReplayData {
         ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
-        !integer(s.hero.level, 1, 20) ||
-        !integer(s.hero.townhall, 4, 8) ||
+        !integer(s.hero.level, 1, value.version < 45 ? 20 : HERO_MAX_LEVEL) ||
+        !integer(s.hero.townhall, 4, value.version < 45 ? 8 : MAX_TOWNHALL) ||
         (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
         (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
@@ -322,9 +333,9 @@ export function validateReplay(value: unknown): value is ReplayData {
             ? MAX_ARCHER_TOWER_LEVEL
             : b.kind === 'darkdrill' && value.version >= 40
               ? MAX_DARK_DRILL_LEVEL
-              : value.version < 44
-                ? (PRE_LATE_CAMPAIGN_LEVELS[b.kind] ?? d.maxLevel)
-                : d.maxLevel),
+              : ((value.version < 44 ? PRE_LATE_CAMPAIGN_LEVELS[b.kind] : undefined) ??
+                (value.version < 45 ? PRE_TOWNHALL_9_LEVELS[b.kind] : undefined) ??
+                d.maxLevel)),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||

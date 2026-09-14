@@ -49,11 +49,11 @@ function unit(m: GameModel, x = 16, y = 11.5, kind: TroopKind = 'swordsman') {
   return u;
 }
 it('uses native TH8 availability, both levels and destination upgrade values', () => {
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('bombtower', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 0, 1,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('bombtower', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 0, 1, 1,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('bombtower', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 0, 2,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('bombtower', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 0, 2, 3,
   ]);
   expect([1, 2].map((l) => buildingHp('bombtower', l))).toEqual([650, 700]);
   expect([1, 2].map((l) => defenseDps('bombtower', l))).toEqual([24, 28]);

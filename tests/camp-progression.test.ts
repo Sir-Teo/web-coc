@@ -36,8 +36,8 @@ it('starts with one completed level-2 camp and follows native TH1–8 housing ce
   expect(m.state.buildings.find((b) => b.kind === 'camp')!.level).toBe(2);
   expect(m.capacity).toBe(30);
   expect(m.armySize).toBeLessThanOrEqual(30);
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('camp', i + 1))).toEqual([
-    1, 1, 2, 2, 3, 3, 4, 4,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('camp', i + 1))).toEqual([
+    1, 1, 2, 2, 3, 3, 4, 4, 4,
   ]);
   expect(
     Array.from(

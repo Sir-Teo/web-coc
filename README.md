@@ -22,13 +22,13 @@ No backend servers. No microtransactions. No sign-ups or tracking. Just pure bro
 - **Fluid Isometric Grid:** Smooth panning (WASD / drag) and zooming with responsive touch and mouse controls.
 - **Intuitive Base Builder:** Drag buildings from the bottom drawer or tap to place. Continuous wall placement automatically re-arms as you lay defenses.
 - **Full Edit Mode:** Move existing buildings freely with **Undo / Redo** (`Ctrl/⌘ + Z`) and switch between three saved layout presets.
-- **Deep Progression:** Town Hall tiers 1–8 gate 23 unique building types, defenses, resource collectors, and the Hero Hall.
+- **Deep Progression:** Town Hall tiers 1–9 gate 30 buildable types — defenses, resource collectors, traps, walls, the Hero Hall and the Town Hall 9 X-Bow.
 - **Offline Economy:** Collectors steadily accumulate resources up to 8 hours while away.
 
 ### ⚔️ Tactical Combat & Deterministic Raids
 - **10 Distinct Troops:** Barbarians, Archers, Giants, Goblins, Wall Breakers, Balloons, Wizards, Healers, Dragons, and P.E.K.K.A.
 - **Spell Factory:** Brew **Lightning**, **Healing**, and **Rage** spells to turn the tide of battle.
-- **Barbarian King:** Summon your royal hero with the **Barbarian Puppet & Rage Vial** abilities for burst recovery and raging reinforcements.
+- **Barbarian King:** Summon your royal hero with the **Barbarian Puppet & Rage Vial** abilities for burst recovery and raging reinforcements. He upgrades to level 30 behind a Town Hall 9 Hero Hall.
 - **Smart AI & Pathing:** Dynamic A* pathfinding for ground units, straight-line flight for air troops, wall-breaching logic, and targeted defense priorities.
 - **Responsive Deployment:** Tap single units, hold and drag to deploy lines of troops, or double-tap to commit squads of five.
 - **All 90 Campaign Villages:** Raid the complete native Goblin Map, from Payback to M.O.M.M.A's Madhouse, with Eagle Artillery, Scattershots, Monoliths, Spell Towers, Tornado and Freeze Traps, Goblin Halls, armed Builder's Huts and Clan Castle defenders.
@@ -149,6 +149,7 @@ Looking for implementation details, formulas, or art generation prompts? Explore
 - [Developer Tools API](docs/DEVELOPER-TOOLS.md)
 - [Hero & Ability Progression](docs/HERO-PROGRESSION.md)
 - [Defense & Trap Progression](docs/DEFENSE-PROGRESSION.md)
+- [The Town Hall 9 Tier](docs/TOWNHALL-9.md)
 
 ---
 

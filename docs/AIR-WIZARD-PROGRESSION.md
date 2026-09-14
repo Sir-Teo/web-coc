@@ -21,7 +21,7 @@ September 12 source follow-up: the [pinned Wizard Tower client reference](../ref
 | 9 (legacy) | 3,400,000 | 3d | 1,300 | 360 |
 | 10 (legacy) | 5,000,000 | 4d | 1,400 | 400 |
 
-Counts at TH1–8: **0, 0, 0, 1, 1, 2, 3, 3**. Level ceilings: **0, 0, 0, 2, 3, 4, 5, 6**. Fires every **1 second**, has **10-tile range**, and hits a single airborne target. The existing 3×3 footprint is retained.
+Counts at TH1–9: **0, 0, 0, 1, 1, 2, 3, 3, 4**. Level ceilings: **0, 0, 0, 2, 3, 4, 5, 6, 7**. Fires every **1 second**, has **10-tile range**, and hits a single airborne target. The existing 3×3 footprint is retained.
 
 ## Wizard Tower
 
@@ -45,13 +45,13 @@ Counts at TH1–8: **0, 0, 0, 1, 1, 2, 3, 3**. Level ceilings: **0, 0, 0, 2, 3, 
 | 16 | 8,000,000 | 108h | 3,150 | 102 | 132.6 |
 | 17 | 14,000,000 | 132h | 3,300 | 110 | 143 |
 
-Counts at TH1–8: **0, 0, 0, 0, 1, 2, 2, 3**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained. Levels 1–4 use 5-tile/s projectiles; levels 5–17 use 9 tiles/s, across four retained source effect tiers. Each projectile lands where its target stood at launch, so moving troops can leave the splash circle. The source height/offset and action-frame handoff remain unverified. The first 55 native villages and Graduation Ceremony (stage 58) now have supported mechanics; native dependencies and remaining defense/garrison mechanics still gate progression.
+Counts at TH1–9: **0, 0, 0, 0, 1, 2, 2, 3, 4**. Level ceilings: **0, 0, 0, 0, 2, 3, 4, 6, 7**. Fires every **1.3 seconds**, with **7-tile range** and a **1-tile splash radius**. The radius and single-layer splash behavior are also documented by the [Wizard Tower wiki](https://clashofclans.fandom.com/wiki/Wizard_Tower). It can select ground or air targets; each blast affects the chosen layer. The existing 3×3 footprint is retained. Levels 1–4 use 5-tile/s projectiles; levels 5–17 use 9 tiles/s, across four retained source effect tiers. Each projectile lands where its target stood at launch, so moving troops can leave the splash circle. The source height/offset and action-frame handoff remain unverified. The first 55 native villages and Graduation Ceremony (stage 58) now have supported mechanics; native dependencies and remaining defense/garrison mechanics still gate progression.
 
 ## Integration and verification
 
 The shared defense table supplies construction, upgrades, health, Info comparisons and actual projectile damage. Firing cadence carries frame overshoot, and impact resolves through the battle-time projectile lifecycle. Air Defense rockets remain single-target even beside another Balloon. Wizard Tower splash includes the one-tile boundary and excludes units beyond it or on the other layer.
 
-Existing home buildings retain their layout, levels and paid timestamps. Health reconciliation preserves the saved damage fraction; upgrades complete once and reserve a builder throughout. Excess pieces and levels from older saves remain accepted, while new construction and upgrades use the TH8 limits. Battle snapshots are not reconciled as home buildings.
+Existing home buildings retain their layout, levels and paid timestamps. Health reconciliation preserves the saved damage fraction; upgrades complete once and reserve a builder throughout. Excess pieces and levels from older saves remain accepted, while new construction and upgrades use the current tier's limits. Battle snapshots are not reconciled as home buildings.
 
 Replay version **34** identifies the current source projectile rules (the earlier defense audit used version 8). Earlier results remain readable; playback requiring older rules is unavailable. Campaign multipliers remain scenario tuning and are not evidence of native multiplayer balance. The campaign viability suite remains part of the full unit run.
 

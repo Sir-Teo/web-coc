@@ -20,4 +20,15 @@ export const KING_LEVELS = [
   { hp: 2198, dps: 143, recovery: 375, cost: 14000, seconds: 86400, townhall: 8, hall: 2 },
   { hp: 2253, dps: 145, recovery: 375, cost: 14500, seconds: 86400, townhall: 8, hall: 2 },
   { hp: 2309, dps: 148, recovery: 450, cost: 15000, seconds: 86400, townhall: 8, hall: 2 },
+  // Hero Hall 3 at Town Hall 9. Recovery follows ability levels 5, 6 and 7.
+  { hp: 2367, dps: 151, recovery: 450, cost: 17000, seconds: 86400, townhall: 9, hall: 3 },
+  { hp: 2427, dps: 154, recovery: 450, cost: 19000, seconds: 86400, townhall: 9, hall: 3 },
+  { hp: 2487, dps: 157, recovery: 450, cost: 21000, seconds: 86400, townhall: 9, hall: 3 },
+  { hp: 2549, dps: 161, recovery: 450, cost: 23000, seconds: 86400, townhall: 9, hall: 3 },
+  { hp: 2613, dps: 164, recovery: 525, cost: 25000, seconds: 86400, townhall: 9, hall: 3 },
+  { hp: 2678, dps: 167, recovery: 525, cost: 27000, seconds: 172800, townhall: 9, hall: 3 },
+  { hp: 2746, dps: 170, recovery: 525, cost: 29000, seconds: 172800, townhall: 9, hall: 3 },
+  { hp: 2814, dps: 173, recovery: 525, cost: 31000, seconds: 172800, townhall: 9, hall: 3 },
+  { hp: 2885, dps: 177, recovery: 525, cost: 33000, seconds: 172800, townhall: 9, hall: 3 },
+  { hp: 2956, dps: 181, recovery: 625, cost: 35000, seconds: 172800, townhall: 9, hall: 3 },
 ] as const;

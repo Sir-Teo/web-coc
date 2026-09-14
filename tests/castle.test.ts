@@ -4,6 +4,7 @@ import {
   buildingHp,
   isDefense,
   isResourceBuilding,
+  MAX_TOWNHALL,
   maxCountFor,
   upgradeCost,
   upgradeSeconds,
@@ -24,7 +25,7 @@ it('uses every original Castle tier without inventing home purchase availability
     for (const state of ['guard', 'ruin', 'constructing', 'upgrading'] as const)
       expect(castlePoses(row.level, state).length).toBeGreaterThan(0);
   }
-  for (let th = 1; th <= 8; th++) expect(maxCountFor('clancastle', th)).toBe(0);
+  for (let th = 1; th <= MAX_TOWNHALL; th++) expect(maxCountFor('clancastle', th)).toBe(0);
   expect(isResourceBuilding('clancastle')).toBe(true);
   expect(isDefense('clancastle')).toBe(false);
   expect(() => castlePoses(15)).toThrow();

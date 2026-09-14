@@ -1,6 +1,6 @@
 # Hidden Tesla audit
 
-The game uses native Tesla polygons, texture pixels, attack/impact clips and original reveal/zap audio for all 17 source levels. Home Village purchases retain the existing Town Hall 7–8 ceilings: two towers up to level 3 at TH7, three up to level 6 at TH8. Higher levels are supported entities in campaign data and portable replays. The playable native campaign remains its first 50 villages; Invaders still requires the unsupported Bomb Tower level 3.
+The game uses native Tesla polygons, texture pixels, attack/impact clips and original reveal/zap audio for all 17 source levels. Home Village purchases retain the existing Town Hall 7–9 ceilings: two towers up to level 3 at TH7, three up to level 6 at TH8 and four up to level 7 at TH9. Higher levels are supported entities in campaign data and portable replays. The playable native campaign remains its first 50 villages; Invaders still requires the unsupported Bomb Tower level 3.
 
 ## Pinned source and combat values
 

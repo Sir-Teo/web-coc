@@ -51,11 +51,11 @@ function unit(m: GameModel, x = 16, y = 11, kind: TroopKind = 'swordsman') {
 }
 
 it('uses native TH7–8 counts, ceilings, damage, HP, costs and destination timers', () => {
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('tesla', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 2, 3,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('tesla', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 2, 3, 4,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('tesla', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 3, 6,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('tesla', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 3, 6, 7,
   ]);
   expect([1, 2, 3, 4, 5, 6].map((l) => buildingHp('tesla', l))).toEqual([
     600, 630, 660, 690, 730, 770,

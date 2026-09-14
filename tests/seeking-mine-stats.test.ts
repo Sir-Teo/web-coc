@@ -79,8 +79,8 @@ for (const [index, row] of original.entries())
 
 it('retains all eight levels through save and practice while enforcing the TH8 home ceiling', () => {
   expect(BUILDINGS.seekingairmine.maxLevel).toBe(8);
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('seekingairmine', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 1, 1,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('seekingairmine', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 1, 1, 2,
   ]);
   expect(SEEKING_MINE).toEqual({ speed: 3.5, minHousing: 5, trigger: 4, radius: 0, delay: 7 / 24 });
   for (let level = 1; level <= 8; level++) {
@@ -107,7 +107,7 @@ it('retains all eight levels through save and practice while enforcing the TH8 h
     restored.finishBattle();
     const replay = restored.state.raidLog[0].replay!;
     const exported = parseReplayFile(JSON.stringify(makeReplayFile(replay)));
-    expect(exported.version).toBe(44);
+    expect(exported.version).toBe(45);
     expect(exported.initial.buildings[1]).toMatchObject({ level, hp: 1 });
   }
 });
@@ -128,7 +128,7 @@ it('preserves all 59 level-three mines across the three newly supported original
 });
 
 it('keeps v32 results readable while refusing playback under the changed release timing', () => {
-  expect(REPLAY_VERSION).toBe(44);
+  expect(REPLAY_VERSION).toBe(45);
   const m = new GameModel();
   m.startBattle(0, true);
   m.deploy(1, 1);

@@ -54,11 +54,14 @@ function advance(m: GameModel, seconds: number, effects: FX[] = [], push = true)
 }
 
 it('uses the native TH6–8 Sweeper progression and TH7–8 mine counts', () => {
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('airsweeper', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 2, 3, 4,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('airsweeper', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 2, 3, 4, 5,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('seekingairmine', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 1, 2,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('airsweeper', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 1, 1, 1, 2,
+  ]);
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('seekingairmine', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 1, 2, 4,
   ]);
   expect([1, 2, 3, 4].map((l) => buildingHp('airsweeper', l))).toEqual([750, 800, 850, 900]);
   expect([1, 2, 3].map((l) => upgradeCost('airsweeper', l))).toEqual([300000, 450000, 800000]);

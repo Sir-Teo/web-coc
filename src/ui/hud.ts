@@ -48,6 +48,7 @@ import { compatibleReplayVersion } from '../game/replay';
 import {
   heroStats,
   heroRecovery,
+  heroNextRequirement,
   heroTownHallScale,
   heroUpgradeCost,
   heroUpgradeSeconds,
@@ -74,6 +75,7 @@ import {
   isSpellKind,
   springCapacity,
   unlockTownHall,
+  MAX_TOWNHALL,
   storageCapacity,
   upgradeSeconds,
   upgradeCost as costFor,
@@ -1490,6 +1492,13 @@ export class HUD {
     const stats = heroStats(king.level, m.townhallLevel, m.kingEquipment),
       next = heroStats(king.level + 1, m.townhallLevel, m.kingEquipment);
     const capped = king.level >= m.heroMaxLevel;
+    const required = heroNextRequirement(king.level);
+    const missing = !required
+      ? []
+      : [
+          ...(required.townhall > m.townhallLevel ? [`Town Hall ${required.townhall}`] : []),
+          ...(required.hall > hall.level ? [`Hero Hall ${required.hall}`] : []),
+        ];
     const scale = heroTownHallScale(m.townhallLevel);
     const stat = (label: string, value: number, destination?: number, suffix = '') =>
       `<div>${label}<b>${damageNumber(value)}${suffix}${destination === undefined || capped ? '' : ` → ${damageNumber(destination)}${suffix}`}</b></div>`;
@@ -1500,7 +1509,7 @@ export class HUD {
       <p class="hero-stats-note">Stats include the equipped items below.</p>
       <div class="hero-equipment">${m.kingEquipment.loadout.map((kind) => `<article class="hero-ability">${gearImage(kind, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${m.kingEquipment.levels[kind]}</span><h3>${EQUIPMENT[kind].name}</h3><p>${this.equipmentDescription(kind, m.kingEquipment.levels[kind])}</p>${button(`equipment-view:${kind}`, 'View equipment', 'replay-link')}</article>`).join('')}</div>
       <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel, m.kingEquipment))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : king.level >= 20 ? 'Maximum hero level for Town Hall 8' : 'Upgrade to Town Hall 8 and Hero Hall 2'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}
     </div>`;
   }
@@ -1598,7 +1607,7 @@ export class HUD {
   private progression() {
     const m = this.model;
     return `<div class="modal-body progression-body"><p>Current Town Hall: <b>${m.townhallLevel}</b>. Upgrade your Town Hall to unlock buildings and raise their level limits.</p>${Array.from(
-      { length: 8 },
+      { length: MAX_TOWNHALL },
       (_, i) => {
         const th = i + 1;
         const changed = (Object.keys(BUILDINGS) as BuildingKind[]).filter(

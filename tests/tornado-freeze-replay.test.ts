@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { TROOPS } from '../src/game/data';
 import { GameModel, type Battle } from '../src/game/model';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import type { ReplayData } from '../src/game/replay';
+import { REPLAY_VERSION, type ReplayData } from '../src/game/replay';
 import { nativeCampaignIssues } from '../src/game/native-campaign';
 import {
   FREEZE_VILLAGE_ARMY,
@@ -27,9 +27,10 @@ function expectPortableSeeks(
   data: ReplayData,
   snapshots: Map<number, string>,
   end: string,
+  version = REPLAY_VERSION,
 ) {
   const record = parseReplayFile(JSON.stringify(makeReplayFile(data)));
-  expect(record.version).toBe(44);
+  expect(record.version).toBe(version);
   expect(m.openReplay(record)).toBe(true);
   const seek = seeker(m);
   for (const [step, snapshot] of [...snapshots].reverse()) {
@@ -97,7 +98,8 @@ it('replays Cold Flame freeze and level-3 tornado traps identically to live step
   ).toBe(true);
   const m = new GameModel();
   const home = JSON.stringify(m.state);
-  expectPortableSeeks(m, data, snapshots, JSON.stringify(lb));
+  // Cold Flame is a hand-built version-44 recording, not a freshly recorded battle.
+  expectPortableSeeks(m, data, snapshots, JSON.stringify(lb), 44);
   m.returnHome();
   expect(JSON.stringify(m.state)).toBe(home);
 }, 60000);

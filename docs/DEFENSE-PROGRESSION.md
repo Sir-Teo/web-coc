@@ -1,6 +1,6 @@
 # Cannon and Archer Tower progression and combat
 
-The [original Cannon integration](../reference/cannon/README.md) supplies all twenty-one normal levels, source meshes, effects, sounds and tracking projectiles. Its pinned building table supersedes the earlier Town Hall 1 level-two exception; the playable TH8 ceiling remains level 10. The table below lists home levels; the source reference lists all twenty-one.
+The [original Cannon integration](../reference/cannon/README.md) supplies all twenty-one normal levels, source meshes, effects, sounds and tracking projectiles. Its pinned building table supersedes the earlier Town Hall 1 level-two exception; the playable ceiling is level 10 at TH8 and level 11 at TH9. The table below lists home levels; the source reference lists all twenty-one.
 
 Re-audited September 11, 2026 against the modern Home Village wiki tables and applicable Supercell release notes. This supersedes the earlier CoC Guide-only audit. See [source reconciliation](DEFENSE-SOURCE-AUDIT.md) for discrepancies, dates and remaining gaps. Prices are undiscounted gold; times apply to reaching the listed level.
 
@@ -21,7 +21,7 @@ Sources: [Cannon](https://clashofclans.fandom.com/wiki/Cannon) and [Archer Tower
 | 9 | 250,000 | 3h 30m | 880 | 400,000 | 5h | 750 |
 | 10 | 330,000 | 4h | 960 | 460,000 | 6h | 810 |
 
-Cannon counts at TH1–8 are **2, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5**. Both defenses end at level 10 in the TH8 catalog. TH1 permits two level-one Cannons; levels two and three require TH2. Previously paid upgrades retain their saved deadlines. Both shop placement and paid upgrades enforce these limits. A new TH2 village starts with two Cannons and one Archer Tower.
+Cannon counts at TH1–9 are **2, 2, 2, 2, 3, 3, 5, 5, 5**. Archer Tower counts are **0, 1, 1, 2, 3, 3, 4, 5, 6**. Both defenses end at level 10 at TH8 and level 11 at TH9. TH1 permits two level-one Cannons; levels two and three require TH2. Previously paid upgrades retain their saved deadlines. Both shop placement and paid upgrades enforce these limits. A new TH2 village starts with two Cannons and one Archer Tower.
 
 ## Shared behavior and compatibility
 
@@ -29,7 +29,7 @@ Cannon counts at TH1–8 are **2, 2, 2, 2, 3, 3, 5, 5**. Archer Tower counts are
 
 Only a new village receives the reduced starter count. Loading or importing an older village retains all building IDs, positions and levels, including excess pieces. Both starting construction and committing a placement enforce the current count. Building health is reconciled on home ticks, preserving any saved damage fraction. Existing paid upgrade timestamps are kept, so a table update does not restart a timer or charge again. The completion uses the new destination health.
 
-Legacy levels 11–12 cost 500,000/600,000 gold and take 4h 30m/5h for Cannons, or 600,000/700,000 gold and 7h/8h for Archer Towers. They remain accepted with explicit health values: Cannon 1,060/1,160 and Archer Tower 890/970. They cannot be newly reached in the TH8 catalog. Battle snapshots retain their stored health; practice uses the home maximum, while campaign layouts continue to apply their scenario health multiplier.
+Legacy levels 11–12 cost 500,000/600,000 gold and take 4h 30m/5h for Cannons, or 600,000/700,000 gold and 7h/8h for Archer Towers. They remain accepted with explicit health values: Cannon 1,060/1,160 and Archer Tower 890/970. They cannot be newly reached in the TH1–9 catalog. Battle snapshots retain their stored health; practice uses the home maximum, while campaign layouts continue to apply their scenario health multiplier.
 
 ## Normal-mode combat
 

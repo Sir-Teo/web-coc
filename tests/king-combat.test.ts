@@ -9,6 +9,7 @@ import {
   heroUpgradeSeconds,
 } from '../src/game/heroes';
 import { KING_LEVELS } from '../src/game/king-progression';
+import catalog from '../reference/townhall/catalog.json';
 import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { REPLAY_VERSION } from '../src/game/replay';
@@ -42,27 +43,39 @@ function arena(th = 7, level = 1) {
 }
 
 describe('native King progression and default equipment', () => {
-  it('uses all twenty base-health/DPS records and destination upgrade costs', () => {
+  it('uses all thirty base-health/DPS records and destination upgrade costs', () => {
     expect(KING_LEVELS.map((l) => l.hp)).toEqual([
       1445, 1481, 1518, 1556, 1595, 1635, 1675, 1717, 1760, 1805, 1850, 1896, 1943, 1992, 2042,
-      2093, 2145, 2198, 2253, 2309,
+      2093, 2145, 2198, 2253, 2309, 2367, 2427, 2487, 2549, 2613, 2678, 2746, 2814, 2885, 2956,
     ]);
     expect(KING_LEVELS.map((l) => l.dps)).toEqual([
       102, 104, 105, 108, 110, 112, 115, 116, 119, 122, 124, 127, 129, 132, 134, 137, 139, 143, 145,
-      148,
+      148, 151, 154, 157, 161, 164, 167, 170, 173, 177, 181,
     ]);
-    expect(Array.from({ length: 19 }, (_, i) => heroUpgradeCost(i + 1))).toEqual([
+    expect(KING_LEVELS.map((l) => l.recovery).slice(19)).toEqual([
+      450, 450, 450, 450, 450, 525, 525, 525, 525, 525, 625,
+    ]);
+    expect(Array.from({ length: 29 }, (_, i) => heroUpgradeCost(i + 1))).toEqual([
       5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 10000, 10500, 11000, 11500, 12000, 12500,
-      13000, 13500, 14000, 14500, 15000,
+      13000, 13500, 14000, 14500, 15000, 17000, 19000, 21000, 23000, 25000, 27000, 29000, 31000,
+      33000, 35000,
     ]);
-    expect(Array.from({ length: 19 }, (_, i) => heroUpgradeSeconds(i + 1) / 3600)).toEqual([
-      2, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+    expect(Array.from({ length: 29 }, (_, i) => heroUpgradeSeconds(i + 1) / 3600)).toEqual([
+      2, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
+      48, 48, 48, 48, 48,
     ]);
-    expect(Array.from({ length: 8 }, (_, i) => heroLevelCap(i + 1, 1))).toEqual([
-      0, 0, 0, 1, 1, 1, 10, 10,
+    expect(Array.from({ length: 9 }, (_, i) => heroLevelCap(i + 1, 1))).toEqual([
+      0, 0, 0, 1, 1, 1, 10, 10, 10,
     ]);
     expect(heroLevelCap(8, 2)).toBe(20);
+    expect(heroLevelCap(9, 2)).toBe(20);
+    expect(heroLevelCap(9, 3)).toBe(30);
+    expect(heroLevelCap(8, 3)).toBe(20);
     expect(heroLevelCap(8, 0)).toBe(0);
+    // Every King record reproduces the pinned client table it was transcribed from.
+    expect(KING_LEVELS.map((l, i) => ({ level: i + 1, ...l }))).toEqual(
+      catalog.heroes.barbarianKing,
+    );
   });
   it.each([
     [4, 877, 59.5, 71.4, 230],

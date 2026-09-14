@@ -19,7 +19,7 @@ The wall-piece limits at Town Halls 1–8 are 0, 25, 50, 75, 100, 125, 175 and 2
 
 ## Persistence and combat
 
-Existing villages retain every piece, ID, coordinate and level, including pieces above the current Town Hall allowance. Extra pieces block additional purchases until a later Town Hall provides enough capacity. They remain movable and upgradeable within the normal level rules. The legacy save validator still accepts wall levels through 12; their explicit health values are retained for compatibility, while upgrades beyond the playable TH8 catalog remain locked.
+Existing villages retain every piece, ID, coordinate and level, including pieces above the current Town Hall allowance. Extra pieces block additional purchases until a later Town Hall provides enough capacity. They remain movable and upgradeable within the normal level rules. The legacy save validator still accepts wall levels through 12; their explicit health values are retained for compatibility, while upgrades beyond the playable TH1–9 catalog remain locked. Town Hall 9 permits 250 pieces and both of the levels the source gates there, so the playable ceiling is level 10.
 
 `buildingHp` supplies construction, completed upgrades, developer controls and Info comparisons. Home-village ticks also reconcile stored wall health with that table, preserving the saved damage fraction. This covers normal loading and importing a backup without destroying the village or restarting pending work. Pending legacy wall timers complete normally with the destination health and no additional resource charge. Replay snapshots retain their recorded health. Practice battles use the reconciled maximum health; campaign villages still apply their existing scenario difficulty multiplier.
 

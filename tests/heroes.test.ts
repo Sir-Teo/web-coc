@@ -3,6 +3,7 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import {
   BUILDINGS,
+  MAX_TOWNHALL,
   maxCountFor,
   maxLevelFor,
   storageCapacity,
@@ -10,7 +11,7 @@ import {
   trapDamage,
   type BuildingKind,
 } from '../src/game/data';
-import { heroUpgradeCost, heroRecovery, HERO_ABILITY } from '../src/game/heroes';
+import { heroUpgradeCost, heroRecovery, HERO_ABILITY, HERO_MAX_LEVEL } from '../src/game/heroes';
 import { requiredTownHall } from '../src/game/progression';
 import { migrateSave, validateSave } from '../src/game/save';
 import { stepTraps } from '../src/game/traps';
@@ -123,7 +124,7 @@ describe('hero progression', () => {
     expect(validateSave(migrated)).toBe(true);
     const s = village().state;
     for (const king of [
-      { level: 21 },
+      { level: HERO_MAX_LEVEL + 1 },
       { level: 0 },
       { level: 1, upgradeStart: 10 },
       { level: 1, upgradeStart: 20, upgradeEnd: 10 },
@@ -230,7 +231,7 @@ describe('Town Hall tables', () => {
   });
 
   it('makes every available construction and upgrade affordable within that tier storage', () => {
-    for (let th = 1; th <= 8; th++) {
+    for (let th = 1; th <= MAX_TOWNHALL; th++) {
       const capacity =
         100000 + maxCountFor('goldstorage', th) * storageCapacity(maxLevelFor('goldstorage', th));
       for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
@@ -238,7 +239,7 @@ describe('Town Hall tables', () => {
         expect(BUILDINGS[kind].cost, `${kind} construction at TH${th}`).toBeLessThanOrEqual(
           capacity,
         );
-        const cap = kind === 'townhall' ? Math.min(8, th + 1) : maxLevelFor(kind, th);
+        const cap = kind === 'townhall' ? Math.min(MAX_TOWNHALL, th + 1) : maxLevelFor(kind, th);
         for (let level = kind === 'townhall' ? th : 1; level < cap; level++)
           expect(upgradeCost(kind, level), `${kind} ${level + 1} at TH${th}`).toBeLessThanOrEqual(
             capacity,
