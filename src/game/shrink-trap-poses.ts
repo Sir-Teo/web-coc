@@ -1,5 +1,5 @@
-import graph from '../../reference/shrink-trap/runtime.json';
-import effects from '../../reference/shrink-trap/effects.json';
+import graph from '../../reference/shrink-trap/runtime.json' with { type: 'json' };
+import effects from '../../reference/shrink-trap/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMeshGraph, type NativeMatrix } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { SHRINK_ART } from './shrink-trap-art';

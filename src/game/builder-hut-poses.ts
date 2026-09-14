@@ -1,4 +1,4 @@
-import runtime from '../../reference/builder-hut/runtime.json';
+import runtime from '../../reference/builder-hut/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   type NativeMatrix,

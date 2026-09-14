@@ -1,4 +1,4 @@
-import source from '../../reference/scattershot/combat.json';
+import source from '../../reference/scattershot/combat.json' with { type: 'json' };
 
 export const SCATTERSHOT_LEVELS = source.levels;
 export const MAX_SCATTERSHOT_LEVEL = source.levels.length;

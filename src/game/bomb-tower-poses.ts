@@ -1,6 +1,6 @@
-import body from '../../reference/bombtower/body.json';
-import defender from '../../reference/bombtower/defender.json';
-import combat from '../../reference/bombtower/combat.json';
+import body from '../../reference/bombtower/body.json' with { type: 'json' };
+import defender from '../../reference/bombtower/defender.json' with { type: 'json' };
+import combat from '../../reference/bombtower/combat.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

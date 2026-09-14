@@ -1,7 +1,7 @@
 import { nativeInfernoStates } from './inferno-campaign-state';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
-import raw from '../../reference/campaign/runtime.json';
+import raw from '../../reference/campaign/runtime.json' with { type: 'json' };
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
 import { BUILD_MIN } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';

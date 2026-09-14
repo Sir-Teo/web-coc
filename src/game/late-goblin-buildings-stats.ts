@@ -1,4 +1,4 @@
-import source from '../../reference/late-goblin-buildings/combat.json';
+import source from '../../reference/late-goblin-buildings/combat.json' with { type: 'json' };
 import type { Building } from './model';
 import type { WeaponProfile } from './late-goblin-weapon';
 

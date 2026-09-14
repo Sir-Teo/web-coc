@@ -1,5 +1,5 @@
-import raw from '../../reference/air-sweeper/runtime.json';
-import source from '../../reference/air-sweeper/combat.json';
+import raw from '../../reference/air-sweeper/runtime.json' with { type: 'json' };
+import source from '../../reference/air-sweeper/combat.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

@@ -1,4 +1,4 @@
-import source from '../../reference/eagle-artillery/combat.json';
+import source from '../../reference/eagle-artillery/combat.json' with { type: 'json' };
 import { SPELL_KEYS, TROOP_KEYS, type SpellKind, type TroopKind } from './data';
 import type { Battle } from './model';
 

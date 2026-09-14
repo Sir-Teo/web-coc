@@ -1,4 +1,4 @@
-import source from '../../reference/tornado-trap/combat.json';
+import source from '../../reference/tornado-trap/combat.json' with { type: 'json' };
 import { TROOPS, type TroopKind } from './data';
 
 const n = (value: string | undefined) => {

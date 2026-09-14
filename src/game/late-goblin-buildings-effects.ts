@@ -1,4 +1,4 @@
-import raw from '../../reference/late-goblin-buildings/effects.json';
+import raw from '../../reference/late-goblin-buildings/effects.json' with { type: 'json' };
 import type { NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';

@@ -1,4 +1,4 @@
-import source from '../../reference/inferno/native.json';
+import source from '../../reference/inferno/native.json' with { type: 'json' };
 import { INFERNO_GRAPH } from './inferno-art';
 import { nativeScenePoses, type NativeMatrix } from './native-mesh';
 import { infernoStats, type InfernoDamageStage } from './inferno-weapon';

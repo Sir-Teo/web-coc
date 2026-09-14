@@ -1,4 +1,4 @@
-import raw from '../../reference/wizard-tower/effects.json';
+import raw from '../../reference/wizard-tower/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { WIZARD_TOWER_ART } from './wizard-tower-art';

@@ -1,5 +1,5 @@
-import graph from '../../reference/freeze-trap/runtime.json';
-import effects from '../../reference/freeze-trap/effects.json';
+import graph from '../../reference/freeze-trap/runtime.json' with { type: 'json' };
+import effects from '../../reference/freeze-trap/effects.json' with { type: 'json' };
 import { FREEZE_TRAP_ART } from './freeze-trap-art';
 import type { FreezeCast } from './freeze-trap';
 import { nativeScenePoses, type NativeMatrix, type NativeMeshGraph } from './native-mesh';

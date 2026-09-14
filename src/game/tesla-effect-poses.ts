@@ -1,4 +1,4 @@
-import raw from '../../reference/tesla/effects.json';
+import raw from '../../reference/tesla/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { TESLA_GRAPH } from './tesla-poses';
 import { TESLA_ART } from './tesla-art';

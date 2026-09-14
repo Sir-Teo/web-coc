@@ -1,4 +1,4 @@
-import source from '../../reference/spell-tower/combat.json';
+import source from '../../reference/spell-tower/combat.json' with { type: 'json' };
 
 export const SPELL_TOWER_ART_LEVELS = source.levels.map((row) => row.level);
 export const SPELL_TOWER_ART_WEAPONS = ['rage', 'poison', 'invisibility'] as const;

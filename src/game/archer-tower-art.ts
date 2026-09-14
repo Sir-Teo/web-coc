@@ -1,7 +1,7 @@
-import definitions from '../../reference/archer-tower/native.json';
-import body from '../../reference/archer-tower/buildings-runtime.json';
-import actors from '../../reference/archer-tower/defenders-runtime.json';
-import animations from '../../reference/archer-tower/defenders-source.json';
+import definitions from '../../reference/archer-tower/native.json' with { type: 'json' };
+import body from '../../reference/archer-tower/buildings-runtime.json' with { type: 'json' };
+import actors from '../../reference/archer-tower/defenders-runtime.json' with { type: 'json' };
+import animations from '../../reference/archer-tower/defenders-source.json' with { type: 'json' };
 import {
   nativeScenePoses,
   NATIVE_IDENTITY,

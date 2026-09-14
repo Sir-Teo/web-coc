@@ -1,5 +1,5 @@
-import source from '../../reference/seeking-mine/runtime.json';
-import combat from '../../reference/seeking-mine/combat.json';
+import source from '../../reference/seeking-mine/runtime.json' with { type: 'json' };
+import combat from '../../reference/seeking-mine/combat.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

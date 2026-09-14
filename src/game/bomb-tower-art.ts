@@ -1,4 +1,4 @@
-import source from '../../reference/bombtower/combat.json';
+import source from '../../reference/bombtower/combat.json' with { type: 'json' };
 
 export const BOMB_TOWER_ART_LEVELS = source.levels.map((v) => v.level);
 export const bombTowerTexture = (level = 1) => (level === 1 ? 'bombtower' : `bombtower-${level}`);

@@ -1,4 +1,4 @@
-import native from '../../reference/skeleton-trap/native.json';
+import native from '../../reference/skeleton-trap/native.json' with { type: 'json' };
 import { skeletonTrapArt, skeletonTrapAsset, skeletonTrapTexture } from './skeleton-art';
 
 /**

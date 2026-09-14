@@ -1,6 +1,6 @@
-import graph from '../../reference/tornado-trap/runtime.json';
-import vfxGraph from '../../reference/tornado-trap/vfx-runtime.json';
-import effects from '../../reference/tornado-trap/effects.json';
+import graph from '../../reference/tornado-trap/runtime.json' with { type: 'json' };
+import vfxGraph from '../../reference/tornado-trap/vfx-runtime.json' with { type: 'json' };
+import effects from '../../reference/tornado-trap/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import type { SampleCue } from './sample-audio';

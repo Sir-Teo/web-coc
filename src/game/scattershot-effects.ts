@@ -1,4 +1,4 @@
-import raw from '../../reference/scattershot/effects.json';
+import raw from '../../reference/scattershot/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { SCATTERSHOT_GRAPH } from './scattershot-poses';

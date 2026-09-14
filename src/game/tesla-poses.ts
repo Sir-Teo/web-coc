@@ -1,4 +1,4 @@
-import source from '../../reference/tesla/runtime.json';
+import source from '../../reference/tesla/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

@@ -1,4 +1,4 @@
-import source from '../../reference/goblin-buildings/runtime.json';
+import source from '../../reference/goblin-buildings/runtime.json' with { type: 'json' };
 import { nativeMeshPoses, type NativeMeshGraph } from './native-mesh';
 import { GOBLIN_BUILDING_ART, type GoblinBuildingKind } from './goblin-building-art';
 

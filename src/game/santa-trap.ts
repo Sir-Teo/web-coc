@@ -1,5 +1,5 @@
 import { distance2D } from './distance';
-import native from '../../reference/santa-trap/runtime.json';
+import native from '../../reference/santa-trap/runtime.json' with { type: 'json' };
 import type { Battle } from './model';
 import type { TrapState } from './traps';
 

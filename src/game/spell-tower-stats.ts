@@ -1,4 +1,4 @@
-import source from '../../reference/spell-tower/combat.json';
+import source from '../../reference/spell-tower/combat.json' with { type: 'json' };
 import type { SpellTowerWeapon } from './late-campaign';
 
 export const SPELL_TOWER_LEVELS = source.levels;

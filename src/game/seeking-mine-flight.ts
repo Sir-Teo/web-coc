@@ -1,4 +1,4 @@
-import source from '../../reference/seeking-mine/effects.json';
+import source from '../../reference/seeking-mine/effects.json' with { type: 'json' };
 
 const row = source.particles.large_airTrap_redSmoke[0];
 export const SEEKING_MINE_TRAIL = {

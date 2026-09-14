@@ -1,6 +1,6 @@
-import raw from '../../reference/bombtower/effects.json';
-import art from '../../reference/bombtower/particle_art.json';
-import combat from '../../reference/bombtower/combat.json';
+import raw from '../../reference/bombtower/effects.json' with { type: 'json' };
+import art from '../../reference/bombtower/particle_art.json' with { type: 'json' };
+import combat from '../../reference/bombtower/combat.json' with { type: 'json' };
 import type { NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 export { nativeParticleTravel as bombParticleTravel } from './native-particles';

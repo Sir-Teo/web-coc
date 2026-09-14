@@ -1,4 +1,4 @@
-import raw from '../../reference/cannon/effects.json';
+import raw from '../../reference/cannon/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { CANNON_GRAPH, cannonFlightPoint } from './cannon-poses';

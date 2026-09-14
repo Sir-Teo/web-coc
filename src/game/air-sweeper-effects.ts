@@ -1,4 +1,4 @@
-import raw from '../../reference/air-sweeper/effects.json';
+import raw from '../../reference/air-sweeper/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { SWEEPER_GRAPH } from './air-sweeper-poses';

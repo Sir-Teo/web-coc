@@ -1,4 +1,4 @@
-import native from '../../reference/pumpkin-bomb/native.json';
+import native from '../../reference/pumpkin-bomb/native.json' with { type: 'json' };
 import type { TrapState } from './traps';
 
 const clip = native.clips.bomp_trap_halloween;

@@ -1,4 +1,4 @@
-import source from '../../reference/late-goblin-buildings/combat.json';
+import source from '../../reference/late-goblin-buildings/combat.json' with { type: 'json' };
 
 export type LateGoblinBuildingKind =
   'comm-mast' | 'goblin-hall' | 'goblin-castle' | 'foreboding-cave' | 'goblin-boss-th';

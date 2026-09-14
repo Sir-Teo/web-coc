@@ -1,4 +1,4 @@
-import levels from '../../reference/dark-storage/levels.json';
+import levels from '../../reference/dark-storage/levels.json' with { type: 'json' };
 
 /** Undiscounted source values from the pinned 18.400.21 client bundle. */
 export const DARK_STORAGE_LEVELS = levels;

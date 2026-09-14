@@ -1,4 +1,4 @@
-import source from '../../reference/inferno/sounds.json';
+import source from '../../reference/inferno/sounds.json' with { type: 'json' };
 import { infernoBeamProfile } from './inferno-beam';
 import { infernoDamageStage, infernoStats } from './inferno-weapon';
 import type { SampleCue } from './sample-audio';

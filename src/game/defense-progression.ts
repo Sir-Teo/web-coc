@@ -1,5 +1,5 @@
 import { ARCHER_TOWER_LEVELS, ARCHER_TOWER } from './archer-tower-stats';
-import infernoCatalog from '../../reference/inferno/catalog.json';
+import infernoCatalog from '../../reference/inferno/catalog.json' with { type: 'json' };
 import { CANNON_LEVELS, CANNON } from './cannon-stats';
 import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
 import type { BuildingKind } from './data';

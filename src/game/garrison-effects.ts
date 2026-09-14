@@ -1,5 +1,5 @@
-import raw from '../../reference/garrison/particles.json';
-import art from '../../reference/garrison/particle-art.json';
+import raw from '../../reference/garrison/particles.json' with { type: 'json' };
+import art from '../../reference/garrison/particle-art.json' with { type: 'json' };
 import type { NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';

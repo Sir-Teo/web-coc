@@ -1,4 +1,4 @@
-import goblinLevels from '../../reference/goblin-buildings/levels.json';
+import goblinLevels from '../../reference/goblin-buildings/levels.json' with { type: 'json' };
 import { GOBLIN_BUILDING_ART, goblinBuildingAsset, isGoblinBuilding } from './goblin-building-art';
 import type { BuildingKind } from './data';
 import { PUMPKIN_ART } from './pumpkin-bomb';

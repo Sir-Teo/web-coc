@@ -1,4 +1,4 @@
-import source from '../../reference/tesla/combat.json';
+import source from '../../reference/tesla/combat.json' with { type: 'json' };
 
 export const TESLA_LEVELS = source.levels;
 export const TESLA = {

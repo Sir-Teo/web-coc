@@ -1,4 +1,4 @@
-import source from '../../reference/freeze-trap/combat.json';
+import source from '../../reference/freeze-trap/combat.json' with { type: 'json' };
 
 const n = (value: string | undefined) => {
   const result = Number(value);

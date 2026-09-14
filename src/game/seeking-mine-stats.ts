@@ -1,4 +1,4 @@
-import source from '../../reference/seeking-mine/combat.json';
+import source from '../../reference/seeking-mine/combat.json' with { type: 'json' };
 
 /** Eight pinned levels; home availability and upgrade ceilings are separate. */
 export const SEEKING_MINE_LEVELS = source.levels;

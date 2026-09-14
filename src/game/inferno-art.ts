@@ -1,5 +1,5 @@
-import raw from '../../reference/inferno/art-runtime.json';
-import portraits from '../../reference/inferno/portraits.json';
+import raw from '../../reference/inferno/art-runtime.json' with { type: 'json' };
+import portraits from '../../reference/inferno/portraits.json' with { type: 'json' };
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import {
   NATIVE_IDENTITY,

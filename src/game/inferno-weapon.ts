@@ -1,4 +1,4 @@
-import catalog from '../../reference/inferno/catalog.json';
+import catalog from '../../reference/inferno/catalog.json' with { type: 'json' };
 
 export type InfernoMode = 'single' | 'multi';
 export const validInfernoMode = (value: unknown): value is InfernoMode | undefined =>

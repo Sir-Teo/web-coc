@@ -1,4 +1,4 @@
-import source from '../../reference/air-sweeper/combat.json';
+import source from '../../reference/air-sweeper/combat.json' with { type: 'json' };
 
 /** Supercell client 18.400.21 tables; interpretation notes in docs/AIR-CONTROL.md. */
 export const SWEEPER_LEVELS = source.levels.map((row, i) => ({

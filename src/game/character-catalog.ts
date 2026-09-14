@@ -1,4 +1,4 @@
-import raw from '../../reference/characters/catalog.json';
+import raw from '../../reference/characters/catalog.json' with { type: 'json' };
 
 /** Source cells are retained as strings; parse each field explicitly where it is used. */
 export type SourceRow = Readonly<Record<string, string | number>>;

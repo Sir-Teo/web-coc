@@ -1,5 +1,5 @@
-import catalog from '../../reference/garrison/catalog.json';
-import raw from '../../reference/garrison/castle.json';
+import catalog from '../../reference/garrison/catalog.json' with { type: 'json' };
+import raw from '../../reference/garrison/castle.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

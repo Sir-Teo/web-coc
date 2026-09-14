@@ -1,5 +1,5 @@
-import runtime from '../../reference/late-goblin-buildings/runtime.json';
-import characters from '../../reference/late-goblin-buildings/characters-runtime.json';
+import runtime from '../../reference/late-goblin-buildings/runtime.json' with { type: 'json' };
+import characters from '../../reference/late-goblin-buildings/characters-runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

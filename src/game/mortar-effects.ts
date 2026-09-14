@@ -1,4 +1,4 @@
-import raw from '../../reference/mortar/effects.json';
+import raw from '../../reference/mortar/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import { MORTAR_GRAPH, mortarProjectilePose } from './mortar-poses';

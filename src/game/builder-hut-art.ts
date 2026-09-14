@@ -1,4 +1,4 @@
-import source from '../../reference/builder-hut/combat.json';
+import source from '../../reference/builder-hut/combat.json' with { type: 'json' };
 
 type PreviewKey = keyof typeof source.previews;
 /** Original campaign Builder's Hut previews (2 px per native unit, dormant turret) at world scale 1.2. */

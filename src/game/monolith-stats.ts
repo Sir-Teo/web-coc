@@ -1,4 +1,4 @@
-import source from '../../reference/monolith/combat.json';
+import source from '../../reference/monolith/combat.json' with { type: 'json' };
 
 export const MONOLITH_LEVELS = source.levels;
 export const MONOLITH_PROJECTILES = source.projectiles;

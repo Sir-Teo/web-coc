@@ -1,6 +1,6 @@
 import type { Building } from './model';
 import { nativeVertices } from './native-mesh';
-import raw from '../../reference/dark-drill/art-runtime.json';
+import raw from '../../reference/dark-drill/art-runtime.json' with { type: 'json' };
 import { darkDrillStats } from './dark-drill-stats';
 import {
   NATIVE_IDENTITY,

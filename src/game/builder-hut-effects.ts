@@ -1,4 +1,4 @@
-import raw from '../../reference/builder-hut/effects.json';
+import raw from '../../reference/builder-hut/effects.json' with { type: 'json' };
 import { nativeEffectPlayer } from './late-goblin-buildings-effects';
 import { BUILDER_HUT_GRAPH } from './builder-hut-poses';
 

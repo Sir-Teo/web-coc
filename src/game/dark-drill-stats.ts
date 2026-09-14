@@ -1,4 +1,4 @@
-import catalog from '../../reference/dark-drill/catalog.json';
+import catalog from '../../reference/dark-drill/catalog.json' with { type: 'json' };
 
 export const MAX_DARK_DRILL_LEVEL = Math.max(...catalog.levels.map((row) => row.level));
 
