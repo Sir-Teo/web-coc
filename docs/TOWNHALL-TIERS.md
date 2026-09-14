@@ -80,4 +80,4 @@ The one value correction in this pass is the Bomb's level-4 build time, which wa
 
 `tests/king-combat.test.ts` compares all 110 King records to the pinned catalog. The Air Sweeper, Bomb Tower, Cannon, Archer Tower, Hidden Tesla, Dark Elixir Storage, Skeleton Trap, Seeking Air Mine, Army Camp, Wall, trap and army-facility suites each derive their expectations from the same reference.
 
-Browser coverage and production smoke checks were not re-run for this ladder; they remain part of the standing verification work, as do physical-device qualification and the full production-clone goal.
+`tests/browser/townhall-tiers.spec.ts` checks the same ladder in Chromium: all eighteen progression cards and the families each unlocks, the late families' shop tiles both locked and counted, and a Town Hall 18 village building a Spell Tower and cycling its three weapons. The wider browser suite could not be certified on the host that ran it; see [QA.md](QA.md). Production smoke checks, physical-device qualification and the full production-clone goal remain open.
