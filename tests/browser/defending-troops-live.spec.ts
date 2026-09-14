@@ -104,7 +104,8 @@ const VILLAGES: Village[] = [
   {
     index: 76,
     label: 'ring-of-power',
-    army: { pekka: 10, dragon: 10, wizard: 12, archer: 12, healer: 4 },
+    // Matches the portable Ring of Power recording: twelve Dragons bring the Lava Hound down.
+    army: { pekka: 10, dragon: 12, wizard: 12, archer: 12, healer: 4 },
     offset: [-9, 0],
     moments: [
       {
