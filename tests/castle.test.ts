@@ -6,6 +6,7 @@ import {
   isResourceBuilding,
   MAX_TOWNHALL,
   maxCountFor,
+  maxLevelFor,
   upgradeCost,
   upgradeSeconds,
 } from '../src/game/data';
@@ -14,7 +15,7 @@ import { GameModel, makeBuilding } from '../src/game/model';
 import { validateReplay, REPLAY_VERSION } from '../src/game/replay';
 import { wizardTowerVillage } from './fixtures/wizard-tower-battle';
 
-it('uses every original Castle tier without inventing home purchase availability', () => {
+it('uses every original Castle tier and opens it at the original Town Hall', () => {
   for (const row of CASTLE_LEVELS) {
     expect(buildingHp('clancastle', row.level)).toBe(row.hp);
     expect(requiredTownHall('clancastle', row.level)).toBe(row.townhall);
@@ -25,7 +26,11 @@ it('uses every original Castle tier without inventing home purchase availability
     for (const state of ['guard', 'ruin', 'constructing', 'upgrading'] as const)
       expect(castlePoses(row.level, state).length).toBeGreaterThan(0);
   }
-  for (let th = 1; th <= MAX_TOWNHALL; th++) expect(maxCountFor('clancastle', th)).toBe(0);
+  // One Castle from Town Hall 3, which is where the source gates its first level even though
+  // it counts one from Town Hall 1. Reinforcements still need a clan and are not implemented.
+  for (let th = 1; th <= MAX_TOWNHALL; th++)
+    expect(maxCountFor('clancastle', th), `TH${th}`).toBe(th >= CASTLE_LEVELS[0].townhall ? 1 : 0);
+  expect(maxLevelFor('clancastle', MAX_TOWNHALL)).toBe(CASTLE_LEVELS.length);
   expect(isResourceBuilding('clancastle')).toBe(true);
   expect(isDefense('clancastle')).toBe(false);
   expect(() => castlePoses(15)).toThrow();

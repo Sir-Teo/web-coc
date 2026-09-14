@@ -4,7 +4,7 @@ import { DeveloperControls } from '../src/dev/controls';
 import { developerToolsEnabled } from '../src/dev/access';
 import { GameModel } from '../src/game/model';
 import { validateSave } from '../src/game/save';
-import { LATE_TROOP_KEYS } from '../src/game/data';
+import { LATE_TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 
 it('retains a seven-troop developer checkpoint after the roster expands', () => {
   const m = new GameModel();
@@ -104,7 +104,8 @@ it('sets Town Hall, maxes existing buildings, unlocks and levels the King consis
   expect(m.countOf('herohall')).toBe(1);
   expect(m.heroHall!.level).toBe(2);
   expect(m.state.king!.level).toBe(20);
-  expect(m.troopLevel('giant')).toBe(5);
+  // The developer tool maxes research outright, so a troop lands on its own last level.
+  expect(m.troopLevel('giant')).toBe(maxTroopLevel('giant'));
   expect(validateSave(m.state)).toBe(true);
 });
 it('fills supported capacities and unlocks campaign without lowering existing stars', () => {
