@@ -1145,6 +1145,29 @@ Validation:
 - The heavy determinism suites were failing on their own inline 20–30 second caps while doing 40–50 seconds of genuine work. Those caps are raised to the 180 seconds the repo already uses for its other replay suites, and `vitest.config.ts` sets the same default.
 - `reference/townhall/catalog.json` now also carries the worker gem prices and the starting grant, still reproduced byte for byte by `scripts/import-native-townhall.py --check` against six signed sources.
 
-Still open, and in both remaining withheld cases the blocker is a system rather than a table. The home Clan Castle's 14 levels are pinned and its artwork reconstructed — campaign Castles already release garrisons — but a home Castle needs donations, clans and a reinforcement roster before it holds anything. The Blacksmith's levels, equipment levels 10 to 18 and ability tiers 5 to 7 are all complete in the pinned sources; ore income is not, and at the missing-ore gem rate those nine levels cost roughly 29,500 gems per item against the 40 a full obstacle cycle yields. Raising either ceiling would add levels nothing could reach.
+## Closing the rest of the ladder — September 14, 2026
 
-Also open: the troop and spell rosters beyond five levels, and the Archer Queen, later hero roster, Dark Barracks, siege machines and Giga weapons.
+The gaps left open above are closed, each from the pinned client rather than by transcription. Four new references join the two that existed, every one reproduced byte for byte by its own `--check`.
+
+**The rosters.** Troops ran to five levels — three for the Healer, Dragon and P.E.K.K.A — and spells to five, so Laboratory 16 was reachable but raised no research ceiling at all. `reference/troops` now carries **129 troop levels and 32 spell levels** from `characters.csv` and `spells.csv`. The extension is additive: every value for the levels already shipped reproduces the previous records exactly, so no combat value and no recorded battle changed. The Laboratory's last level now reaches the last level of every troop.
+
+**Equipment and the forge.** The Blacksmith was held at level 1 because equipment stopped at 9, which needs only Blacksmith 1. `reference/equipment` carries all **10 forge levels, 54 item levels and 7 ability tiers**. Equipment runs to 18, gated at Blacksmith 3, 5 and 7, and an upgrade past what the built forge allows is refused naming the level it needs. Ability tiers went from four to seven: the Puppet summons 36/40/44 Barbarians at the new tiers, the Vial reaches +155% damage and 4.8 tiles/s, the Boots 8% of a building's maximum health per pulse. Each forge level stores more ore, 10,000/1,000/200 rising to 50,000/5,000/1,000.
+
+**Ore income**, which is what actually gated the forge. The original's answer is in the tables: `leagues.csv` gives all **23 leagues** a trophy band and a daily Star Bonus including Common, Rare and Epic Ore, and `globals.csv` gives the five stars it costs and the 1,440-minute cooldown. Stars now bank from every attack and overflow past the price, as the source allows; collecting pays the league's reward clamped to the room each store and the forge have left. A starting village sits in Silver1 and takes 275 Shiny and 11 Glowy Ore a day. This also replaced an invented league: the profile used to guess one of three names from three hand-written thresholds.
+
+**The Clan Castle** is buildable from Town Hall 3 through all 14 original levels. Reading its tier needed one rule the ladder lacked — a tier that permits no *level* of a building permits none of it — because the source counts one Castle from Town Hall 1 but gates its first level at Town Hall 3. A sweep of all 37 gated entities across all 18 tiers finds that the only place the rule applies. What it does not do is hold reinforcements, which need donations and have no original answer for a village with no clan.
+
+Two value corrections came out of sourcing, neither findable by re-reading a transcription:
+
+- The Barbarian's research carries a trailing 30 minutes at every level, dropped from levels 3 to 5: they take 1h30, 2h30 and 4h30. Every other value across ten troops and three spells matched exactly.
+- The league shown on the profile was this game's own invention.
+
+Validation:
+
+- Recording version **47** carries the new roster, equipment and coffin ceilings; version 46 rejects all of them. Two version-44 fixtures asked for "max troop levels" and so began asking for levels their own version may not hold; both now read the same `PRE_ROSTER_TROOP_LEVELS` the validator uses, so the fixture and the rule cannot drift apart.
+- `tests/star-bonus.test.ts` adds **3 cases**: contiguous trophy bands with no gap, the Silver1 reward by value, banking and overflow, the day-long wait, and ore clamped to the forge.
+- The importers are `import-native-troops.py`, `import-native-equipment.py` and `import-native-leagues.py`, each with `--check`.
+
+`WITHHELD` in `src/game/tiers.ts` now holds one entry: the Builder's Hut above level 4, and it is short of **artwork** rather than of data. All eight source tiers exist in `sc/buildings.sc`; tiers 5 to 7 (`worker_building_armed_lvl4` through `lvl6`) share the rig the reconstructed tiers already use, while tier 8 (`lvl7`) has a different clip layout — an extra child shifts the turret, which carries 39 frames rather than 360. Its Defending Builder levels 4 to 7 all exist. That is the whole of what remains on the withheld list.
+
+Also open: the Archer Queen, the later hero roster, Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop and the Town Hall's own Giga weapons — new systems rather than gaps in pinned data — and Clan Castle reinforcements, which need a clan.
