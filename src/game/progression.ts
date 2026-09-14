@@ -4,6 +4,7 @@ import { castleStats } from './castle-art';
 import { mortarStats } from './mortar-stats';
 import { darkStorageStats } from './dark-storage-stats';
 import type { BuildingKind } from './data';
+import { BUILDING_LEVELS } from './tiers';
 import { XBOW_LEVELS } from './xbow-stats';
 import { teslaStats } from './tesla-stats';
 import { bombTowerStats } from './bomb-tower-stats';
@@ -11,48 +12,8 @@ import { seekingMineStats } from './seeking-mine-stats';
 import { wizardTowerStats } from './wizard-tower-stats';
 import { SWEEPER_LEVELS } from './air-control-stats';
 
-/** TH1..TH9 upgrade ceilings. Source audit: docs/TOWNHALL-9.md and docs/HERO-PROGRESSION.md. */
-export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
-  // Late single-player campaign entities are never purchasable in the TH1–9 home catalog.
-  eagleartillery: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  scattershot: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  monolith: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  spelltower: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  tornadotrap: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  inferno: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  clancastle: [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  xbow: [0, 0, 0, 0, 0, 0, 0, 0, 3],
-  blacksmith: [0, 0, 0, 0, 0, 0, 0, 1, 1],
-  // The Town Hall's own ceiling is the catalog maximum at every tier.
-  townhall: [9, 9, 9, 9, 9, 9, 9, 9, 9],
-  goldmine: [1, 4, 6, 8, 10, 10, 11, 12, 12],
-  collector: [1, 4, 6, 8, 10, 10, 11, 12, 12],
-  goldstorage: [1, 3, 6, 8, 9, 10, 11, 11, 11],
-  elixirstorage: [1, 3, 6, 8, 9, 10, 11, 11, 11],
-  barracks: [1, 4, 5, 6, 7, 8, 9, 10, 11],
-  cannon: [1, 3, 4, 5, 6, 7, 8, 10, 11],
-  archertower: [0, 2, 3, 4, 6, 7, 8, 10, 11],
-  camp: [1, 2, 3, 4, 5, 6, 6, 6, 7],
-  builder: [1, 1, 1, 1, 1, 1, 1, 1, 1],
-  mortar: [0, 0, 1, 2, 3, 4, 5, 6, 7],
-  airsweeper: [0, 0, 0, 0, 0, 2, 3, 4, 5],
-  tesla: [0, 0, 0, 0, 0, 0, 3, 6, 7],
-  bombtower: [0, 0, 0, 0, 0, 0, 0, 2, 3],
-  skeletontrap: [0, 0, 0, 0, 0, 0, 0, 2, 3],
-  seekingairmine: [0, 0, 0, 0, 0, 0, 1, 1, 2],
-  airdefense: [0, 0, 0, 2, 3, 4, 5, 6, 7],
-  laboratory: [0, 0, 1, 2, 3, 4, 5, 6, 7],
-  spellfactory: [0, 0, 0, 0, 1, 2, 3, 3, 4],
-  wizardtower: [0, 0, 0, 0, 2, 3, 4, 6, 7],
-  bomb: [0, 0, 2, 2, 3, 3, 4, 5, 6],
-  giantbomb: [0, 0, 0, 0, 0, 2, 2, 3, 3],
-  airbomb: [0, 0, 0, 0, 2, 2, 3, 3, 4],
-  springtrap: [0, 0, 0, 1, 1, 1, 2, 3, 4],
-  wall: [0, 2, 3, 4, 5, 6, 7, 8, 10],
-  herohall: [0, 0, 0, 1, 1, 1, 1, 2, 3],
-  darkdrill: [0, 0, 0, 0, 0, 0, 3, 3, 6],
-  darkstorage: [0, 0, 0, 0, 0, 0, 2, 4, 6],
-};
+/** Derived from the pinned tier tables; see src/game/tiers.ts and docs/TOWNHALL-TIERS.md. */
+export { BUILDING_LEVELS } from './tiers';
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
   if (kind === 'inferno')

@@ -10,7 +10,7 @@ The home-village X-Bow uses the pinned client 18.400.21 values and artwork docum
 - The seven native bolt tiers travel at 23, 24 or 25 tiles/s. A bolt tracks its original target by advancing its position a bounded distance each sample; movement changes its expected arrival time. It keeps flying after its launcher dies and cannot transfer damage to a replacement for a dead target.
 - Ammunition, shot clocks, aim and recent sound cues belong to the battle. They are rebuilt when replaying or seeking and never become persistent home ammunition. The targeting mode survives village saves, edit undo/redo, layout restoration and canonical replay export/import. Invalid modes are rejected. Replay version 31 separates these rules from earlier recordings; their saved results remain readable.
 
-The home village now reaches Town Hall 9, where the shop sells **two X-Bows** and the source gates levels 1–3; see [TOWNHALL-9.md](TOWNHALL-9.md). A newly built X-Bow stores no mode and defends the ground layer until it is switched. Level 4 keeps its Town Hall 10 requirement. The renderer and combat support later levels for imported/replayed battles and native campaign adaptation. Dark Elixir rewards and active-mode adaptation are separate work.
+The X-Bow unlocks at Town Hall 9, where the shop sells **two** and the source gates levels 1–3; the ladder reaches four X-Bows at level 13 by Town Hall 18. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md). A newly built X-Bow stores no mode and defends the ground layer until it is switched. The renderer and combat support later levels for imported/replayed battles and native campaign adaptation. Dark Elixir rewards and active-mode adaptation are separate work.
 
 ## Presentation
 

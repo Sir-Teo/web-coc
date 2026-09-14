@@ -1,6 +1,6 @@
 # Blacksmith and King equipment
 
-Numeric audit: September 12, 2026 UTC; native client 18.400.21. This work implements Blacksmith level 1 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 9. The local content ceiling is now Town Hall 9, which the original client would allow to build Blacksmith 2; that level is deliberately withheld because equipment level 10 needs Blacksmith 3 at Town Hall 10, so it would unlock nothing. See [TOWNHALL-9.md](TOWNHALL-9.md).
+Numeric audit: September 12, 2026 UTC; native client 18.400.21. This work implements Blacksmith level 1 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 9. The local content ceiling is now Town Hall 9, which the original client would allow to build Blacksmith 2; that level is deliberately withheld because equipment level 10 needs Blacksmith 3 at Town Hall 10, so it would unlock nothing. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
 
 ## Primary references
 

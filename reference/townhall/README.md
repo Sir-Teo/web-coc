@@ -2,7 +2,7 @@
 
 Pinned public client 18.400.21, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`, downloaded from `https://game-assets.clashofclans.com/`. This reference holds the tier tables the Home Village progression is built from. It contains no artwork; the buildings it gates own their own art and combat references.
 
-- `catalog.json`: 18 Town Hall tiers with their original hitpoints, gold price, build duration and permitted count of every entity this game implements; the Town Hall each individual building and trap level requires; and the Barbarian King records through level 30.
+- `catalog.json`: 18 Town Hall tiers with their original hitpoints, gold price, build duration and permitted count of every entity this game implements; the Town Hall each individual building and trap level requires; the complete per-level rows of the entities no other reference owns; and all 110 Barbarian King records.
 
 | Source | SHA-256 |
 | --- | --- |
@@ -33,4 +33,4 @@ This re-downloads the pinned tables, verifies their SHA-256 values and requires 
 
 ## Scope
 
-Counted and gated names are restricted to the entities this game implements. Buildings the game has no model for — Dark Barracks, Siege Workshop, Pet House, the Builder Base roster and later defenses — are deliberately absent and are not silently treated as zero-count content. The catalog records what the original client permits; which of it the home village actually offers is a separate decision recorded in [TOWNHALL-9.md](../../docs/TOWNHALL-9.md) and `src/game/progression.ts`. Gold Mine, Elixir Collector, storage, Builder's Hut and Hero Hall counts and economy in this game remain local values that diverge from these rows below Town Hall 9; the Town Hall's own hitpoints, price and duration are recorded here but the running game still uses its established local curve.
+Counted and gated names are restricted to the entities this game implements. Buildings the game has no model for — Dark Barracks, Siege Workshop, Pet House, the Builder Base roster and later defenses — are deliberately absent and are not silently treated as zero-count content. The catalog records what the original client permits; which of it the home village actually offers is a separate decision recorded in [TOWNHALL-TIERS.md](../../docs/TOWNHALL-TIERS.md) and `src/game/progression.ts`. The counts this game hands out differently below Town Hall 9, and the hitpoints it keeps on a local curve, are listed in that document. Prices, durations and every per-level row here drive the running game.

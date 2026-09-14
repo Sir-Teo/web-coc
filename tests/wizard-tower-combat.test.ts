@@ -110,7 +110,7 @@ for (const level of [1, 5, 8, 10])
   );
 
 it('retains v33 results while expiring playback under the corrected projectile rules', () => {
-  expect(REPLAY_VERSION).toBe(45);
+  expect(REPLAY_VERSION).toBe(46);
   const m = new GameModel();
   m.startBattle(0, true);
   m.deploy(1, 1);

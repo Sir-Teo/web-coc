@@ -1,34 +1,20 @@
-/** Native base stats and destination-level upgrade prices. See docs/KING-COMBAT.md. */
-export const KING_LEVELS = [
-  { hp: 1445, dps: 102, recovery: 200, cost: 0, seconds: 0, townhall: 4, hall: 1 },
-  { hp: 1481, dps: 104, recovery: 200, cost: 5000, seconds: 7200, townhall: 7, hall: 1 },
-  { hp: 1518, dps: 105, recovery: 200, cost: 5500, seconds: 14400, townhall: 7, hall: 1 },
-  { hp: 1556, dps: 108, recovery: 200, cost: 6000, seconds: 28800, townhall: 7, hall: 1 },
-  { hp: 1595, dps: 110, recovery: 250, cost: 6500, seconds: 36000, townhall: 7, hall: 1 },
-  { hp: 1635, dps: 112, recovery: 250, cost: 7000, seconds: 43200, townhall: 7, hall: 1 },
-  { hp: 1675, dps: 115, recovery: 250, cost: 7500, seconds: 50400, townhall: 7, hall: 1 },
-  { hp: 1717, dps: 116, recovery: 250, cost: 8000, seconds: 57600, townhall: 7, hall: 1 },
-  { hp: 1760, dps: 119, recovery: 250, cost: 8500, seconds: 64800, townhall: 7, hall: 1 },
-  { hp: 1805, dps: 122, recovery: 310, cost: 10000, seconds: 72000, townhall: 7, hall: 1 },
-  { hp: 1850, dps: 124, recovery: 310, cost: 10500, seconds: 79200, townhall: 8, hall: 2 },
-  { hp: 1896, dps: 127, recovery: 310, cost: 11000, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 1943, dps: 129, recovery: 310, cost: 11500, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 1992, dps: 132, recovery: 310, cost: 12000, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2042, dps: 134, recovery: 375, cost: 12500, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2093, dps: 137, recovery: 375, cost: 13000, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2145, dps: 139, recovery: 375, cost: 13500, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2198, dps: 143, recovery: 375, cost: 14000, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2253, dps: 145, recovery: 375, cost: 14500, seconds: 86400, townhall: 8, hall: 2 },
-  { hp: 2309, dps: 148, recovery: 450, cost: 15000, seconds: 86400, townhall: 8, hall: 2 },
-  // Hero Hall 3 at Town Hall 9. Recovery follows ability levels 5, 6 and 7.
-  { hp: 2367, dps: 151, recovery: 450, cost: 17000, seconds: 86400, townhall: 9, hall: 3 },
-  { hp: 2427, dps: 154, recovery: 450, cost: 19000, seconds: 86400, townhall: 9, hall: 3 },
-  { hp: 2487, dps: 157, recovery: 450, cost: 21000, seconds: 86400, townhall: 9, hall: 3 },
-  { hp: 2549, dps: 161, recovery: 450, cost: 23000, seconds: 86400, townhall: 9, hall: 3 },
-  { hp: 2613, dps: 164, recovery: 525, cost: 25000, seconds: 86400, townhall: 9, hall: 3 },
-  { hp: 2678, dps: 167, recovery: 525, cost: 27000, seconds: 172800, townhall: 9, hall: 3 },
-  { hp: 2746, dps: 170, recovery: 525, cost: 29000, seconds: 172800, townhall: 9, hall: 3 },
-  { hp: 2814, dps: 173, recovery: 525, cost: 31000, seconds: 172800, townhall: 9, hall: 3 },
-  { hp: 2885, dps: 177, recovery: 525, cost: 33000, seconds: 172800, townhall: 9, hall: 3 },
-  { hp: 2956, dps: 181, recovery: 625, cost: 35000, seconds: 172800, townhall: 9, hall: 3 },
-] as const;
+import { KING_SOURCE } from './townhall-catalog';
+
+/**
+ * Native base stats and destination-level upgrade prices. See docs/KING-COMBAT.md.
+ *
+ * The original table stores each upgrade's price and duration on the row below its
+ * destination, and joins activation recovery through the ability table; both are resolved
+ * in reference/townhall before they reach here.
+ */
+export const KING_LEVELS = KING_SOURCE.map(
+  ({ hp, dps, recovery, cost, seconds, townhall, hall }) => ({
+    hp,
+    dps,
+    recovery,
+    cost,
+    seconds,
+    townhall,
+    hall,
+  }),
+);

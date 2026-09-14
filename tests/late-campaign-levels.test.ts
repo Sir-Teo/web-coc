@@ -28,8 +28,9 @@ const replay = (kind: 'wall' | 'airdefense' | 'bomb', level: number, version = R
 describe('late single-player campaign levels', () => {
   it('uses the pinned source hitpoints and damage for every added level', () => {
     // Campaign placements read hitpoints from the pinned combat table.
-    expect(BUILDINGS.wall.maxLevel).toBe(16);
-    expect(WALL_LEVELS.slice(12).map((row) => row.hp)).toEqual(
+    // The home catalog now carries every original wall level; 13-16 are the campaign rows.
+    expect(BUILDINGS.wall.maxLevel).toBe(19);
+    expect(WALL_LEVELS.slice(12, 16).map((row) => row.hp)).toEqual(
       NATIVE_COMBAT[1000010].hp.slice(12, 16),
     );
     for (const level of [11, 12, 13]) {
@@ -44,13 +45,14 @@ describe('late single-player campaign levels', () => {
     expect([7, 8, 9, 10].map((level) => trapStats('airbomb', level)!.damage)).toEqual([
       252, 280, 325, 350,
     ]);
-    expect(BUILDINGS.goldstorage.maxLevel).toBe(16);
-    expect(BUILDINGS.elixirstorage.maxLevel).toBe(16);
-    expect(BUILDINGS.goldmine.maxLevel).toBe(14);
-    expect(BUILDINGS.collector.maxLevel).toBe(14);
+    expect(BUILDINGS.goldstorage.maxLevel).toBe(19);
+    expect(BUILDINGS.elixirstorage.maxLevel).toBe(19);
+    expect(BUILDINGS.goldmine.maxLevel).toBe(17);
+    expect(BUILDINGS.collector.maxLevel).toBe(17);
   });
 
   it('accepts added levels only in version 44 recordings', () => {
+    // `added` is the version 44-45 ceiling; the home catalog reaches further from version 46.
     for (const [kind, previous, added] of [
       ['wall', 12, 16],
       ['airdefense', 10, 13],
@@ -58,8 +60,10 @@ describe('late single-player campaign levels', () => {
     ] as const) {
       expect(validateReplay(replay(kind, previous, 43))).toBe(true);
       expect(validateReplay(replay(kind, previous + 1, 43))).toBe(false);
-      expect(validateReplay(replay(kind, added))).toBe(true);
-      expect(validateReplay(replay(kind, added + 1))).toBe(false);
+      expect(validateReplay(replay(kind, added, 45))).toBe(true);
+      expect(validateReplay(replay(kind, added + 1, 45))).toBe(false);
+      expect(validateReplay(replay(kind, added + 1))).toBe(true);
+      expect(validateReplay(replay(kind, BUILDINGS[kind].maxLevel + 1))).toBe(false);
     }
   });
 });

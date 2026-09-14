@@ -10,7 +10,7 @@ import { archerTowerStats } from '../src/game/archer-tower-stats';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
-it('adapts all captured Archer Tower tiers without expanding home progression', () => {
+it('adapts all captured Archer Tower tiers alongside home progression', () => {
   const stage = NATIVE_CAMPAIGN[0],
     original = stage.buildings;
   try {
@@ -52,7 +52,8 @@ it('adapts all captured Archer Tower tiers without expanding home progression', 
   } finally {
     stage.buildings = original;
   }
-  expect(BUILDINGS.archertower.maxLevel).toBe(12);
+  // The home catalog now reaches every original tier; Town Hall 15 buys the last of them.
+  expect(BUILDINGS.archertower.maxLevel).toBe(21);
 });
 
 it('admits Midnight Oil with its original Infernos', () => {

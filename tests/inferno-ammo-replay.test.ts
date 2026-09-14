@@ -22,7 +22,7 @@ for (const [level, mode] of [
     expect(model.battle!.finished).toBe(true);
     const final = structuredClone(model.battle);
     const record = parseReplayFile(JSON.stringify(makeReplayFile(model.state.raidLog[0].replay!)));
-    expect(record.version).toBe(45);
+    expect(record.version).toBe(46);
     model.returnHome();
     const home = JSON.stringify(model.state);
     expect(model.openReplay(record)).toBe(true);

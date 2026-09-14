@@ -114,6 +114,7 @@ import {
   type AirPush,
 } from './air-sweeper';
 import { isDefense } from './data';
+import { BUILDING_COUNTS } from './tiers';
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import {
@@ -1100,7 +1101,7 @@ export class GameModel {
       return this.notify(`Upgrade your Town Hall to unlock the ${d.name.toLowerCase()}.`);
     if (this.countOf(kind) >= limit)
       return this.notify(
-        d.available.some((count) => count > limit)
+        BUILDING_COUNTS[kind].some((count) => count > limit)
           ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
           : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );

@@ -38,10 +38,11 @@ import { MAX_SPELL_LEVEL } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 45;
+export const REPLAY_VERSION = 46;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
  * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
- * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule. */
+ * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
+ * Version 46 carries the catalog to Town Hall 18, again with no combat rule change. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -54,7 +55,29 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 42 ||
   version === 43 ||
   version === 44 ||
+  version === 45 ||
   version === REPLAY_VERSION;
+/** Ceilings before version 46 carried the home catalog to Town Hall 18. */
+const PRE_TOWNHALL_18_LEVELS: Readonly<Record<string, number>> = {
+  townhall: 9,
+  herohall: 3,
+  darkdrill: 6,
+  goldmine: 14,
+  collector: 14,
+  goldstorage: 16,
+  elixirstorage: 16,
+  archertower: 12,
+  camp: 8,
+  barracks: 11,
+  laboratory: 7,
+  spellfactory: 5,
+  airdefense: 13,
+  wall: 16,
+  bomb: 11,
+  giantbomb: 8,
+  airbomb: 10,
+  springtrap: 5,
+};
 /** Ceilings before version 45 raised the home catalog to Town Hall 9. */
 const PRE_TOWNHALL_9_LEVELS: Readonly<Record<string, number>> = {
   barracks: 10,
@@ -240,8 +263,16 @@ export function validateReplay(value: unknown): value is ReplayData {
         ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
-        !integer(s.hero.level, 1, value.version < 45 ? 20 : HERO_MAX_LEVEL) ||
-        !integer(s.hero.townhall, 4, value.version < 45 ? 8 : MAX_TOWNHALL) ||
+        !integer(
+          s.hero.level,
+          1,
+          value.version < 45 ? 20 : value.version < 46 ? 30 : HERO_MAX_LEVEL,
+        ) ||
+        !integer(
+          s.hero.townhall,
+          4,
+          value.version < 45 ? 8 : value.version < 46 ? 9 : MAX_TOWNHALL,
+        ) ||
         (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
         (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
@@ -335,6 +366,7 @@ export function validateReplay(value: unknown): value is ReplayData {
               ? MAX_DARK_DRILL_LEVEL
               : ((value.version < 44 ? PRE_LATE_CAMPAIGN_LEVELS[b.kind] : undefined) ??
                 (value.version < 45 ? PRE_TOWNHALL_9_LEVELS[b.kind] : undefined) ??
+                (value.version < 46 ? PRE_TOWNHALL_18_LEVELS[b.kind] : undefined) ??
                 d.maxLevel)),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||

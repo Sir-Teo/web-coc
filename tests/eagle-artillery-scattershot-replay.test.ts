@@ -49,7 +49,7 @@ function observe(battle: Battle, seen: Observed) {
 /** Seek a portable recording backward through every snapshot and forward to its end. */
 function verifyPlayback(data: ReplayData, snapshots: Map<number, string>, final: Battle) {
   const record = parseReplayFile(JSON.stringify(makeReplayFile(data)));
-  expect(record.version).toBe(45);
+  expect(record.version).toBe(46);
   const viewer = new GameModel();
   const home = JSON.stringify(viewer.state);
   expect(viewer.openReplay(record)).toBe(true);
@@ -264,6 +264,6 @@ describe('Eagle Artillery and Scattershot replays', () => {
         .filter((b) => b.kind === 'scattershot')
         .map((b) => b.level),
     ).toEqual([3, 3, 3, 3]);
-    expect(REPLAY_VERSION).toBe(45);
+    expect(REPLAY_VERSION).toBe(46);
   });
 });

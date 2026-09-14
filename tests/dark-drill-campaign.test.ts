@@ -10,7 +10,7 @@ import { darkDrillStats } from '../src/game/dark-drill-stats';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
-it('adapts all captured Drill tiers above the Town Hall 9 home ceiling', () => {
+it('adapts all captured Drill tiers alongside home progression', () => {
   const stage = NATIVE_CAMPAIGN[0],
     original = stage.buildings;
   try {
@@ -54,9 +54,10 @@ it('adapts all captured Drill tiers above the Town Hall 9 home ceiling', () => {
   } finally {
     stage.buildings = original;
   }
-  // Town Hall 9 buys levels 4-6; the remaining captured tiers stay campaign-only.
-  expect(BUILDINGS.darkdrill.maxLevel).toBe(6);
-  expect(maxLevelFor('darkdrill', MAX_TOWNHALL)).toBe(6);
+  // Town Hall 9 buys levels 4-6 and the ladder reaches every captured tier by Town Hall 16.
+  expect(BUILDINGS.darkdrill.maxLevel).toBe(11);
+  expect(maxLevelFor('darkdrill', 9)).toBe(6);
+  expect(maxLevelFor('darkdrill', MAX_TOWNHALL)).toBe(11);
 });
 it('admits Midnight Oil with its resolved Drill and defenses', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Dark Elixir Drill');

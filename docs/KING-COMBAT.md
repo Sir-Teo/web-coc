@@ -15,11 +15,11 @@ The signed files have a 68-byte signature header followed by the client LZMA pay
 
 ## Base progression
 
-`src/game/king-progression.ts` contains all thirty supported base-health, DPS, recovery and upgrade records. Heroes use **two tiles/s movement**, **one-tile melee range**, and a **1.2-second attack interval**. Damage per hit is DPS × 1.2. The King attacks ground targets only and uses no army housing.
+`src/game/king-progression.ts` carries all 110 original base-health, DPS, recovery and upgrade records, read from [reference/townhall](../reference/townhall/README.md). Heroes use **two tiles/s movement**, **one-tile melee range**, and a **1.2-second attack interval**. Damage per hit is DPS × 1.2. The King attacks ground targets only and uses no army housing.
 
 `heroes.csv` stores the next upgrade's price and duration on the current-level row. The implementation converts these to destination-level records: level 2 costs **5,000 dark elixir / 2 hours**, level 10 costs **10,000 / 20 hours**, level 11 costs **10,500 / 22 hours**, and level 20 costs **15,000 / 24 hours**. [The community King table](https://clashofclans.fandom.com/wiki/Barbarian_King?page=2) corroborates this offset; reading those fields as destination-level values would misprice every upgrade.
 
-TH4–6 retain level 1. TH7/Hero Hall 1 permits level 10; TH8/Hero Hall 2 permits level 20; TH9/Hero Hall 3 permits level 30. Both requirements must be met. Missing halls permit no hero levels. Already paid legacy upgrades keep their original cost and deadline, complete once, and do not charge again. New upgrades use the corrected table.
+TH4–6 retain level 1. TH7/Hero Hall 1 permits level 10; TH8/Hero Hall 2 permits level 20; TH9/Hero Hall 3 permits level 30, and each later hall raises it to 110 at TH18/Hero Hall 12. Both requirements must be met. Missing halls permit no hero levels. Already paid legacy upgrades keep their original cost and deadline, complete once, and do not charge again. New upgrades use the corrected table.
 
 `ScaleByTH=TRUE` and `ScaleByTHPercent` specify **50% at TH4, 75% at TH5, and 100% from TH6**. Health, damage and recovery include that scaling; movement, range and the equipment's percentage/flat movement boosts do not. Fractional health and damage are retained by the simulation; exact native integer/fixed-point rounding is not proven.
 

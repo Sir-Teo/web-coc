@@ -33,13 +33,34 @@ BUILDINGS = [
     'Gold Mine', 'Barracks', 'Builders Hut', 'Laboratory', 'Spell Factory', 'Wall',
     'Hero Hall', 'Blacksmith', 'Clan Castle', 'Cannon', 'Archer Tower', 'Mortar',
     'Air Defense', 'Wizard Tower', 'Hidden Tesla', 'Bomb Tower', 'X-Bow', 'Air Sweeper',
-    'Dark Elixir Drill', 'Dark Elixir Storage', 'Inferno Tower',
+    'Dark Elixir Drill', 'Dark Elixir Storage', 'Inferno Tower', 'Eagle Artillery', 'Scattershot',
+    'Monolith', 'Spell Tower',
 ]
-TRAPS = ['Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Seeking Air Mine', 'Skeleton Trap']
+TRAPS = [
+    'Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Seeking Air Mine', 'Skeleton Trap',
+    'Tornado Trap',
+]
 # Counted columns in townhall_levels.csv. The Town Hall itself is never one of them.
 COUNTED = [name for name in BUILDINGS if name != 'Town Hall'] + TRAPS
-# King records the local Hero Hall reaches. Hero Hall 3 is the Town Hall 9 tier.
-KING_LEVELS = 30
+# Entities whose per-level rows this reference owns. The rest already have their own pinned
+# family reference (Cannon, Mortar, Tesla, X-Bow, the drill and so on) and are not duplicated.
+TABLED = [
+    'Town Hall', 'Army Camp', 'Elixir Storage', 'Gold Storage', 'Elixir Collector', 'Gold Mine',
+    'Barracks', 'Builders Hut', 'Laboratory', 'Spell Factory', 'Wall', 'Hero Hall', 'Blacksmith',
+    'Air Defense', 'Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Skeleton Trap',
+    'Eagle Artillery', 'Scattershot', 'Monolith', 'Spell Tower', 'Tornado Trap',
+]
+# Optional numeric columns, with the divisor that converts source units to tiles.
+OPTIONAL = (
+    ('DPS', 'dps', 1), ('HousingSpace', 'housing', 1), ('UnitProduction', 'production', 1),
+    ('MaxStoredGold', 'storedGold', 1), ('MaxStoredElixir', 'storedElixir', 1),
+    ('MaxStoredDarkElixir', 'storedDark', 1), ('Damage', 'damage', 1),
+    ('DamageRadius', 'radius', 100), ('TriggerRadius', 'trigger', 100),
+    ('EjectHousingLimit', 'eject', 1),
+)
+RESOURCES = {'Gold': 'gold', 'Elixir': 'elixir', 'DarkElixir': 'dark', 'Diamonds': 'gems'}
+# King records the local Hero Hall reaches; Hero Hall 12 at Town Hall 18 permits all 110.
+KING_LEVELS = 110
 
 
 def require(condition, message):
@@ -104,6 +125,22 @@ def seconds(row):
         int(row.get('BuildTimeM', 0)) * 60 + int(row.get('BuildTimeS', 0))
 
 
+def level_row(name, row, level):
+    """One destination-level record. Traps carry no hitpoints and are never damageable."""
+    resource = row['BuildResource']
+    require(resource in RESOURCES, f'Unknown {name} resource: {resource}')
+    record = dict(level=level, townhall=int(row['TownHallLevel']), cost=int(row['BuildCost']),
+                  resource=RESOURCES[resource], seconds=seconds(row))
+    if 'Hitpoints' in row:
+        record['hp'] = int(row['Hitpoints'])
+    for column, key, divisor in OPTIONAL:
+        value = row.get(column)
+        if value in (None, ''):
+            continue
+        record[key] = int(value) if divisor == 1 else int(value) / divisor
+    return record
+
+
 def build():
     halls = records('logic/townhall_levels.csv')
     buildings = records('logic/buildings.csv')
@@ -137,15 +174,20 @@ def build():
             require(tier['counts'][name] >= previous['counts'][name],
                     f'{name} count falls at Town Hall {tier["level"]}')
 
-    gates = {}
+    gates, tabled = {}, {}
     for name in BUILDINGS + TRAPS:
         table = buildings.get(name) or traps[name]
         key = 'BuildingLevel' if name in buildings else 'Level'
-        levels = []
+        levels, rows = [], []
         for index, row in enumerate(table):
             require(int(row[key]) == index + 1, f'Unexpected {name} level order')
             levels.append(int(row['TownHallLevel']))
+            rows.append(level_row(name, row, index + 1))
         gates[name] = levels
+        if name in TABLED:
+            tabled[name] = rows
+    missing = [name for name in TABLED if name not in tabled]
+    require(not missing, f'Absent tabled entities: {missing}')
 
     recovery = {int(row['Level']): int(row['HealOnActivation'])
                 for row in abilities['BarbarianKingAbilityHeal']}
@@ -176,6 +218,7 @@ def build():
               'with the Barbarian King records a Hero Hall unlocks.',
         townHalls=tiers,
         gates=gates,
+        levels=tabled,
         heroes=dict(barbarianKing=king),
     )
 
@@ -192,7 +235,9 @@ def main():
         require(target.exists(), 'Missing reference/townhall/catalog.json')
         require(target.read_text() == text, 'Committed Town Hall catalog differs from the source')
         print(f'Town Hall catalog reproduces {len(catalog["townHalls"])} tiers, '
-              f'{len(catalog["gates"])} gated entities and '
+              f'{len(catalog["gates"])} gated entities, '
+              f'{sum(len(rows) for rows in catalog["levels"].values())} level rows across '
+              f'{len(catalog["levels"])} tabled entities and '
               f'{len(catalog["heroes"]["barbarianKing"])} King records.')
         return
     REFERENCE.mkdir(parents=True, exist_ok=True)
