@@ -15,9 +15,9 @@ npx vitest run tests/native-tornado-freeze-reference.test.ts tests/tornado-trap.
 The Tornado Trap is the real `BuildingKind` `tornadotrap` (1×1, passable, one hit point, immune to
 damage, concealed until triggered). It appears in four villages: **Fireworks Inc.** (index 66, four
 level-1 traps), **Ring of Power** (76, one level-1), **Cold Flame** (81, two level-3) and **Corner
-Case** (82, four level-3). `TORNADO_TRAP_READY` is true. Fireworks Inc. now needs no other gated
-mechanic; its original map prerequisite (index 65) remains gated, so it is not yet reachable in normal
-progression. The other three villages keep gates for other families.
+Case** (82, four level-3). `TORNADO_TRAP_READY` is true. With every late family implemented, all four
+villages are playable and reachable along their original map prerequisites (see
+[CAMPAIGN-RULES.md](../../docs/CAMPAIGN-RULES.md#late-goblin-map-villages-6290)).
 
 ## Source facts
 

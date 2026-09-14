@@ -2,7 +2,7 @@
 
 Pinned client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. [`scripts/import-native-late-goblin-buildings.py`](../../scripts/import-native-late-goblin-buildings.py) verifies each of its **27 SHA-256 input pins** and each input's SHA-1 membership in the original [fingerprint.json](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/fingerprint.json). The same importer also produces the [armed Builder's Hut reference](../builder-hut/README.md). `--check` regenerates every record, texel, preview, sound and reference byte and compares the shipped file set. Original artwork and audio belong to Supercell.
 
-This family covers the Communications Mast, Goblin Hall levels 1–2 with the `GoblinTh02` weapon, the Goblin Castle and Foreboding Cave bodies, and the Goblin Boss Town Hall with the `GoblinBossTH` weapon. Castle and Cave troop releases belong to the garrison family. Combat exists only in version-44 `goblin-v1` battles (`battle.late.goblinBuildings`); version 43 and earlier recordings reject these identities. `LATE_GOBLIN_BUILDINGS_READY` is true, but affected villages remain gated until their other families are complete.
+This family covers the Communications Mast, Goblin Hall levels 1–2 with the `GoblinTh02` weapon, the Goblin Castle and Foreboding Cave bodies, and the Goblin Boss Town Hall with the `GoblinBossTH` weapon. Castle and Cave troop releases belong to the garrison family. Combat exists only in version-44 `goblin-v1` battles (`battle.late.goblinBuildings`); version 43 and earlier recordings reject these identities. `LATE_GOBLIN_BUILDINGS_READY` is true, and with every other late family complete all affected villages are playable.
 
 ## Source records
 

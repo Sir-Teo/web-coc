@@ -75,7 +75,7 @@ Public descriptions confirm the interpretation: range 3–10 tiles, 3.228 s, gro
 
 ## Replays and campaign gate
 
-Replay version 44 accepts Scattershots only in campaign recordings; versions ≤ 43 and practice replays reject them. `SCATTERSHOT_READY` is set, but every Scattershot village still waits for other late families (for example Go to Bat needs the Communications Mast and Ghost Trap).
+Replay version 44 accepts Scattershots only in campaign recordings; versions ≤ 43 and practice replays reject them. `SCATTERSHOT_READY` is set, and with every other late family complete all Scattershot villages are playable.
 
 ## Verification
 

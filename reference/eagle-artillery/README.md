@@ -85,7 +85,7 @@ Public descriptions are used only to confirm the interpretation: activation "set
 
 ## Replays and campaign gate
 
-Replay version 44 accepts Eagle Artillery only in campaign recordings; versions ≤ 43 and practice replays reject it. The complete 820-entity Underground Workaround (village 61) exceeded the 600-building replay bound, so version 44 now admits up to 1,000 buildings; older versions keep 600/400. `EAGLE_ARTILLERY_READY` enables villages 61, 63, 65, 68 and 70; other Eagle Artillery villages remain gated by their other families.
+Replay version 44 accepts Eagle Artillery only in campaign recordings; versions ≤ 43 and practice replays reject it. The complete 820-entity Underground Workaround (village 61) exceeded the 600-building replay bound, so version 44 now admits up to 1,000 buildings; older versions keep 600/400. `EAGLE_ARTILLERY_READY` is true, and with every other late family complete all Eagle Artillery villages are playable.
 
 ## Verification
 

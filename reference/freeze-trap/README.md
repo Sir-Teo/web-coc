@@ -15,9 +15,9 @@ npx vitest run tests/native-tornado-freeze-reference.test.ts tests/freeze-trap.t
 The Goblin Freeze Trap is the campaign NPC identity `freeze-trap` on the passable 2×2 `giantbomb`
 archetype, with one hit point; it is never offered in the shop and home saves reject it. It appears in
 **Keep Your Cool** (index 64, twelve traps) and **Cold Flame** (81, ten traps), all level 1.
-`FREEZE_TRAP_READY` is true. Keep Your Cool now needs no other gated mechanic; its original map
-prerequisite (index 63) remains gated, so it is not yet reachable in normal progression. Cold Flame keeps
-gates for other families.
+`FREEZE_TRAP_READY` is true. With every late family implemented, both villages are playable and
+reachable along their original map prerequisites (see
+[CAMPAIGN-RULES.md](../../docs/CAMPAIGN-RULES.md#late-goblin-map-villages-6290)).
 
 ## Source facts
 
