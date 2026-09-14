@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 const FAMILIES = [
   ['goblin', 7],
   ['archer', 9],
@@ -82,7 +85,14 @@ test('renders every new garrison family in idle, walk, attack and death states o
         if (d.kind === 'skeleton') continue;
         const stats = garrisonStats(d.kind, d.level);
         const target = battle.units[i];
-        Object.assign(d, { hp: d.maxHp, target: null, attacking: false, path: [], attacks: [], shots: undefined });
+        Object.assign(d, {
+          hp: d.maxHp,
+          target: null,
+          attacking: false,
+          path: [],
+          attacks: [],
+          shots: undefined,
+        });
         delete d.engaged;
         delete d.defeatedAt;
         d.attackCount = 0;
@@ -97,7 +107,17 @@ test('renders every new garrison family in idle, walk, attack and death states o
           d.engaged = true;
           // The damage event: every non-looping attack row is at its source action frame.
           d.cooldown = 0;
-          d.attacks = [{ at: battle.elapsed, x: d.x, y: d.y, targetId: target.id, targetX: target.x, targetY: target.y, n: 0 }];
+          d.attacks = [
+            {
+              at: battle.elapsed,
+              x: d.x,
+              y: d.y,
+              targetId: target.id,
+              targetX: target.x,
+              targetY: target.y,
+              n: 0,
+            },
+          ];
           d.attackCount = 1;
           d.cooldown = stats.rate;
           if (stats.projectile)
@@ -132,8 +152,12 @@ test('renders every new garrison family in idle, walk, attack and death states o
       scene.sync();
       scene.drawOverlay(performance.now());
       return {
-        views: battle.defenders!.map((d) => scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0),
-        shadows: battle.defenders!.map((d) => scene.garrisonPresentation.shadows.get(d.id)?.objects.length ?? 0),
+        views: battle.defenders!.map(
+          (d) => scene.garrisonPresentation.defenders.get(d.id)?.objects.length ?? 0,
+        ),
+        shadows: battle.defenders!.map(
+          (d) => scene.garrisonPresentation.shadows.get(d.id)?.objects.length ?? 0,
+        ),
         shots: scene.garrisonPresentation.shots.size,
         glError: game.renderer.gl.getError(),
       };
@@ -145,8 +169,14 @@ test('renders every new garrison family in idle, walk, attack and death states o
   };
   for (const phase of ['idle', 'walk', 'attack'] as const) {
     const report = await capture(phase);
-    expect(report.views.every((n) => n > 0), phase).toBe(true);
-    expect(report.shadows.every((n) => n > 0), phase).toBe(true);
+    expect(
+      report.views.every((n) => n > 0),
+      phase,
+    ).toBe(true);
+    expect(
+      report.shadows.every((n) => n > 0),
+      phase,
+    ).toBe(true);
     expect(report.glError).toBe(0);
     if (phase === 'attack') expect(report.shots).toBeGreaterThanOrEqual(4);
   }

@@ -56,7 +56,7 @@ Late campaign buildings skip the generic ruin-ground ellipse because their origi
 PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-late-goblin-buildings.py --check
 npx vitest run tests/late-goblin-buildings.test.ts tests/late-goblin-buildings-replay.test.ts tests/late-goblin-buildings-boost.test.ts tests/late-goblin-buildings-art.test.ts tests/builder-hut.test.ts
 npx vite --host 127.0.0.1 --port 5314 --strictPort &
-npx playwright test -c playwright.late-goblin-buildings.config.ts
+npx playwright test tests/browser/late-goblin-buildings-live.spec.ts
 ```
 
 Unit tests cover source values and campaign placements, the label timeline, and the passive Goblin Hall 1. They also cover activation by damage and by destruction, Boss start-of-combat readiness, three distinct tracked arrows, ground-only Boss splash, and pending in-flight projectiles. Target-class tests show Defense preference starting only at `readyAt` and the Goblin Castle leaving resource preference. Version-43 rejection, texture/preview/sound integrity and the activation geometry are checked as well. Spell Tower boosts share the scheduler and are tested on the hut turret. Replay tests record real deployments in Besieged (73), Builderopolis (84) and M.O.M.M.A's Madhouse (89). Each round-trips through a portable file, then checks backward and forward seeks against live snapshots. The browser spec renders all five verification villages (67, 73, 74, 84, 89), then checks activation, arrows, bombs, ruins and backward-seek presentation. Screenshots are written under `output/playtest/late-goblin-buildings/`.

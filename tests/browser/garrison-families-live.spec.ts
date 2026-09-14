@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 type Village = {
   index: number;
   label: string;
@@ -66,11 +69,17 @@ async function open(page: Page, village: Village) {
     scene.paused = true;
     scene.sync();
     const center = { x: castle.x + 1.5, y: castle.y + 1.5 };
-    const sites = Array.from({ length: 48 * 48 }, (_, i) => ({ x: (i % 48) + 0.5, y: Math.floor(i / 48) + 0.5 }))
+    const sites = Array.from({ length: 48 * 48 }, (_, i) => ({
+      x: (i % 48) + 0.5,
+      y: Math.floor(i / 48) + 0.5,
+    }))
       .filter((p) => !model.deployBlocked(p.x, p.y))
       // Fights in the open: legal grass 8-12 tiles out, inside the 13-tile trigger radius.
       .filter((p) => Math.hypot(p.x - center.x, p.y - center.y) >= 8)
-      .sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
+      .sort(
+        (a, b) =>
+          Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y),
+      );
     let site = 0;
     model.activeHero = false;
     for (const [kind, count] of Object.entries(v.army))
@@ -86,7 +95,8 @@ async function open(page: Page, village: Village) {
     if (v.hero && !model.deployHero(sites[1].x, sites[1].y)) throw Error('King deployment failed');
     // Inspection fixture only: late villages' own defenses otherwise erase this low-level local
     // army within seconds. Durable attackers let the source-stat garrison fights play out.
-    for (const unit of model.battle!.units) unit.hp = unit.maxHp = unit.hero ? unit.maxHp * 4 : 4000;
+    for (const unit of model.battle!.units)
+      unit.hp = unit.maxHp = unit.hero ? unit.maxHp * 4 : 4000;
     (window as unknown as { __garrisonCenter: typeof center }).__garrisonCenter = center;
     return { castle: castle.id, garrisons };
   }, village);
@@ -98,7 +108,9 @@ async function advance(page: Page, condition: string, limit: number, focus: stri
     async ({ condition, limit, focus }) => {
       const { model, scene, game } = window.__game;
       const test = new Function('battle', `return (${condition});`) as (b: never) => boolean;
-      const pick = new Function('battle', `return (${focus});`) as (b: never) => { id: number } | undefined;
+      const pick = new Function('battle', `return (${focus});`) as (
+        b: never,
+      ) => { id: number } | undefined;
       const battle = model.battle!;
       const until = battle.elapsed + limit;
       while (!test(battle as never) && battle.elapsed < until && !battle.finished) model.step(0.05);
@@ -145,7 +157,8 @@ async function frame(page: Page, zoom: number, castle = false) {
   );
 }
 
-const RELEASED = 'battle.defenders?.find((d) => d.kind !== "skeleton" && battle.elapsed >= d.spawnedAt)';
+const RELEASED =
+  'battle.defenders?.find((d) => d.kind !== "skeleton" && battle.elapsed >= d.spawnedAt)';
 /** Distance from the bunker center recorded when the village was opened. */
 const OUT = (d: string, tiles: number) =>
   `Math.hypot(${d}.x - window.__garrisonCenter.x, ${d}.y - window.__garrisonCenter.y) >= ${tiles}`;

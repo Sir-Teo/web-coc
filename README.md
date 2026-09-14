@@ -31,7 +31,7 @@ No backend servers. No microtransactions. No sign-ups or tracking. Just pure bro
 - **Barbarian King:** Summon your royal hero with the **Barbarian Puppet & Rage Vial** abilities for burst recovery and raging reinforcements.
 - **Smart AI & Pathing:** Dynamic A* pathfinding for ground units, straight-line flight for air troops, wall-breaching logic, and targeted defense priorities.
 - **Responsive Deployment:** Tap single units, hold and drag to deploy lines of troops, or double-tap to commit squads of five.
-- **50+ Campaign Villages:** Raid through native handcrafted goblin maps featuring Seeking Air Mines, Skeleton Traps, Hidden Teslas, and Bomb Towers.
+- **All 90 Campaign Villages:** Raid the complete native Goblin Map, from Payback to M.O.M.M.A's Madhouse, with Eagle Artillery, Scattershots, Monoliths, Spell Towers, Tornado and Freeze Traps, Goblin Halls, armed Builder's Huts and Clan Castle defenders.
 - **Safe Practice Mode:** Attack a clone of your own village anytime to test defense layouts with zero troop costs.
 
 ### 📼 Interactive Replay Engine

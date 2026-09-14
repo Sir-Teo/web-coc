@@ -93,7 +93,7 @@ Replay version 44 accepts Eagle Artillery only in campaign recordings; versions 
 - `tests/eagle-artillery-scattershot-rage.test.ts`: Rage damage and rate hook.
 - `tests/eagle-artillery-scattershot-replay.test.ts`: gates, version-44-only validation, the 820-entity recording, and live-versus-replay reconstruction with backward seeks for villages 65 (recorded through the campaign), 80 and 85.
 - `tests/eagle-artillery-scattershot-art.test.ts`: all seven levels' dormant/activation/awake/attack/load/empty/upgrade/ruin compositions, beams, schedule, effects and sound hashes.
-- `tests/browser/eagle-artillery-scattershot-live.spec.ts` (`npx playwright test -c playwright.eagle-artillery.config.ts`, development server on port 5311): real deployments in villages 65, 80 and 85 with screenshots in `output/playtest/eagle-artillery/`, and replay seeks whose rendered objects equal the live ones.
+- `tests/browser/eagle-artillery-scattershot-live.spec.ts` (`npx playwright test tests/browser/eagle-artillery-scattershot-live.spec.ts` with the standard config): real deployments in villages 65, 80 and 85 with screenshots in `output/playtest/eagle-artillery/`, and replay seeks whose rendered objects equal the live ones.
 
 ## Limits
 

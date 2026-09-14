@@ -40,7 +40,9 @@ for (const viewport of [
     await expect(page.locator('[data-action="attack:2"]')).toBeDisabled();
     for (const index of [51, 52, 53])
       await expect(page.locator(`[data-action="attack:${index}"]`)).not.toHaveText('Coming soon');
-    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+    // All 90 villages are playable; later cards are closed only by their prerequisites.
+    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Locked');
+    await expect(page.getByText('This village is coming soon.')).toHaveCount(0);
     await page.screenshot({
       animations: 'disabled',
       path: `output/playtest/native-campaign-map-${viewport.width}-${browserName}.png`,

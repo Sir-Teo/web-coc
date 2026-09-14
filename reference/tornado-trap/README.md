@@ -136,8 +136,8 @@ their source rows only.
 - `tests/tornado-freeze-replay.test.ts`: real deployments in Fireworks Inc. and the level-3 traps in
   Cold Flame reconstruct identically across portable files and backward seeks, without touching the
   home village. `tests/native-campaign-combat.test.ts` now also resolves three armies in Fireworks Inc.
-- `tests/browser/tornado-freeze-traps.spec.ts` (`playwright.tornado-freeze.config.ts`, dev server on
-  port 5313): real ground and air deployments in Fireworks Inc. and Cold Flame, isolated level-1/3
+- `tests/browser/tornado-freeze-traps.spec.ts` (standard `playwright.config.ts` and its development
+  server): real ground and air deployments in Fireworks Inc. and Cold Flame, isolated level-1/3
   states, reduced motion, armed bodies, replay seeks, and complete battle state hashes equal to Node at
   every step in Chromium and WebKit. Screenshots: `fireworks-{trigger,deploy,vortex,village-vortex,spent}`,
   `cold-flame-{vortex,late-whirl,spent,replay-seek}`, `isolated-tornado-{1-reveal,1-deploy,1-vortex,1-spent,3-vortex,3-late-whirl,3-spent,1-reduced}`,

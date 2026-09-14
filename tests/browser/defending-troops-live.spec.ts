@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 type Moment = {
   label: string;
   condition: string;

@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 /**
  * Live Eagle Artillery and Scattershot presentation in original campaign villages, driven by real
  * deployments through the game model. Screenshots are written for visual review.
@@ -20,7 +23,12 @@ async function open(page: Page) {
 }
 
 /** Village setup: the playable campaign flow when available, otherwise the ungated native layout. */
-async function battle(page: Page, index: number, army: Record<string, number>, spells: Record<string, number> = {}) {
+async function battle(
+  page: Page,
+  index: number,
+  army: Record<string, number>,
+  spells: Record<string, number> = {},
+) {
   return page.evaluate(
     async ({ index, army, spells }) => {
       const { model, scene } = window.__game;
@@ -76,7 +84,12 @@ async function battle(page: Page, index: number, army: Record<string, number>, s
 
 type Deploy = { kind: string; count: number; x: number; y: number; dx?: number; dy?: number };
 /** Deploys through GameModel.deploy/castSpell, then advances the fixed 50 ms battle step. */
-async function advance(page: Page, seconds: number, deploy: Deploy[] = [], cast: [number, number][] = []) {
+async function advance(
+  page: Page,
+  seconds: number,
+  deploy: Deploy[] = [],
+  cast: [number, number][] = [],
+) {
   return page.evaluate(
     async ({ seconds, deploy, cast }) => {
       const { model, scene } = window.__game;
@@ -84,7 +97,8 @@ async function advance(page: Page, seconds: number, deploy: Deploy[] = [], cast:
       for (const d of deploy) {
         model.activeTroop = d.kind;
         for (let i = 0; i < d.count; i++)
-          if (!model.deploy(d.x + i * (d.dx ?? 0), d.y + i * (d.dy ?? 0.4))) throw Error(`deploy ${d.kind}`);
+          if (!model.deploy(d.x + i * (d.dx ?? 0), d.y + i * (d.dy ?? 0.4)))
+            throw Error(`deploy ${d.kind}`);
       }
       for (const [x, y] of cast) {
         model.activeSpell = 'lightning';
@@ -102,16 +116,54 @@ async function advance(page: Page, seconds: number, deploy: Deploy[] = [], cast:
         eagles: Object.fromEntries(
           Object.entries(ea?.towers ?? {}).map(([id, t]) => [
             id,
-            { stages: t.stages.length, awakeAt: t.awakeAt, fired: t.fired, ammunition: t.ammunition, emptyAt: t.emptyAt, reticle: t.reticle, launches: t.volleys.flatMap((v) => v.launches) },
+            {
+              stages: t.stages.length,
+              awakeAt: t.awakeAt,
+              fired: t.fired,
+              ammunition: t.ammunition,
+              emptyAt: t.emptyAt,
+              reticle: t.reticle,
+              launches: t.volleys.flatMap((v) => v.launches),
+            },
           ]),
         ),
-        shells: ea?.shells.map((s) => ({ id: s.id, towerId: s.towerId, x: s.x, y: s.y, launchedAt: s.launchedAt, arrivesAt: s.arrivesAt })) ?? [],
-        eagleImpacts: ea?.impacts.map((i) => ({ id: i.id, towerId: i.towerId, x: i.x, y: i.y, at: i.at, hits: i.hits })) ?? [],
+        shells:
+          ea?.shells.map((s) => ({
+            id: s.id,
+            towerId: s.towerId,
+            x: s.x,
+            y: s.y,
+            launchedAt: s.launchedAt,
+            arrivesAt: s.arrivesAt,
+          })) ?? [],
+        eagleImpacts:
+          ea?.impacts.map((i) => ({
+            id: i.id,
+            towerId: i.towerId,
+            x: i.x,
+            y: i.y,
+            at: i.at,
+            hits: i.hits,
+          })) ?? [],
         scatter: Object.fromEntries(
-          Object.entries(ss?.towers ?? {}).map(([id, t]) => [id, { fired: t.fired, targetId: t.targetId, shots: t.shots.map((s) => s.at) }]),
+          Object.entries(ss?.towers ?? {}).map(([id, t]) => [
+            id,
+            { fired: t.fired, targetId: t.targetId, shots: t.shots.map((s) => s.at) },
+          ]),
         ),
-        projectiles: ss?.projectiles.map((p) => ({ id: p.id, towerId: p.towerId, x: p.x, y: p.y })) ?? [],
-        scatterImpacts: ss?.impacts.map((i) => ({ id: i.id, towerId: i.towerId, x: i.x, y: i.y, at: i.at, spellAt: i.spellAt, primary: i.primaryHits, shards: i.shardHits })) ?? [],
+        projectiles:
+          ss?.projectiles.map((p) => ({ id: p.id, towerId: p.towerId, x: p.x, y: p.y })) ?? [],
+        scatterImpacts:
+          ss?.impacts.map((i) => ({
+            id: i.id,
+            towerId: i.towerId,
+            x: i.x,
+            y: i.y,
+            at: i.at,
+            spellAt: i.spellAt,
+            primary: i.primaryHits,
+            shards: i.shardHits,
+          })) ?? [],
       };
     },
     { seconds, deploy, cast },
@@ -147,12 +199,21 @@ async function presentation(page: Page, key: 'eagleArtillery' | 'scattershot') {
     const { scene, game } = window.__game;
     const rows = scene.children.list
       .filter((o) => o.getData?.(key) !== undefined && o.visible)
-      .map((o) => JSON.stringify([o.getData(key), Math.round(o.x * 10) / 10, Math.round(o.y * 10) / 10, o.depth]));
+      .map((o) =>
+        JSON.stringify([
+          o.getData(key),
+          Math.round(o.x * 10) / 10,
+          Math.round(o.y * 10) / 10,
+          o.depth,
+        ]),
+      );
     return { rows: [...new Set(rows)].sort(), gl: game.renderer.gl.getError() };
   }, key);
 }
 
-test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay seeks', async ({ page }) => {
+test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay seeks', async ({
+  page,
+}) => {
   const errors = await open(page);
   const setup = await battle(page, 65, { giant: 40, archer: 40, wizard: 10 });
   expect(setup.playable).toBe(true);
@@ -161,7 +222,9 @@ test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay se
   const watched = eagles.find((d) => d.x === 16 && d.y === 22)!;
   await focus(page, watched.x + 2, watched.y + 2, 2);
   let rows = await presentation(page, 'eagleArtillery');
-  expect(rows.rows.some((r) => r.includes('"state":"active"') && r.includes('"awake":false'))).toBe(true);
+  expect(rows.rows.some((r) => r.includes('"state":"active"') && r.includes('"awake":false'))).toBe(
+    true,
+  );
   await page.screenshot({ path: `${EA}/65-dormant.png` });
 
   // 150 housing: three of four activation stages light up while the tower stays dormant.
@@ -200,7 +263,9 @@ test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay se
   const impactAt = state.elapsed;
   await focus(page, impact.x, impact.y, 1.6, 40);
   const liveImpact = await presentation(page, 'eagleArtillery');
-  expect(liveImpact.rows.some((r) => r.includes('Artillery Hit') || r.includes('Ancient Hit'))).toBe(true);
+  expect(
+    liveImpact.rows.some((r) => r.includes('Artillery Hit') || r.includes('Ancient Hit')),
+  ).toBe(true);
   await page.screenshot({ path: `${EA}/65-impact.png` });
   await advance(page, 0.5);
   await page.screenshot({ path: `${EA}/65-shockwave.png` });
@@ -290,18 +355,28 @@ test('Go to Bat (75): Scattershot idle, throw, impact cone and ruin', async ({ p
   expect(errors).toEqual([]);
 });
 
-test('Titanic (80): level-5 Eagle Artillery and level-3 Scattershots in one attack', async ({ page }) => {
+test('Titanic (80): level-5 Eagle Artillery and level-3 Scattershots in one attack', async ({
+  page,
+}) => {
   const errors = await open(page);
   const setup = await battle(page, 80, { giant: 20, dragon: 5, archer: 30 }, { lightning: 2 });
   const eagles = setup.defenses.filter((d) => d.kind === 'eagleartillery');
   const scatter = setup.defenses.filter((d) => d.kind === 'scattershot');
   expect(eagles.map((d) => d.level)).toEqual([5, 5]);
   expect(scatter.map((d) => d.level)).toEqual([3, 3, 3, 3]);
-  await advance(page, 0.05, [
-    { kind: 'giant', count: 20, x: 2, y: 20, dy: 0.4 },
-    { kind: 'dragon', count: 5, x: 2.5, y: 22, dy: 0.8 },
-    { kind: 'archer', count: 30, x: 3, y: 19, dy: 0.3 },
-  ], [[10, 24], [12, 24]]);
+  await advance(
+    page,
+    0.05,
+    [
+      { kind: 'giant', count: 20, x: 2, y: 20, dy: 0.4 },
+      { kind: 'dragon', count: 5, x: 2.5, y: 22, dy: 0.8 },
+      { kind: 'archer', count: 30, x: 3, y: 19, dy: 0.3 },
+    ],
+    [
+      [10, 24],
+      [12, 24],
+    ],
+  );
   let state = await until(page, (s) => Object.values(s.eagles).some((t) => t.fired >= 1), 12);
   const firing = eagles.find((d) => state.eagles[d.id].fired >= 1)!;
   await focus(page, firing.x + 2, firing.y + 2, 1.6, 90);
@@ -312,7 +387,9 @@ test('Titanic (80): level-5 Eagle Artillery and level-3 Scattershots in one atta
   const thrower = scatter.find((d) => d.id === impact.towerId)!;
   await advance(page, 0.1);
   await focus(page, (thrower.x + 1.5 + impact.x) / 2, (thrower.y + 1.5 + impact.y) / 2, 1.4, 50);
-  expect((await presentation(page, 'scattershot')).rows.some((r) => r.includes('"cone"'))).toBe(true);
+  expect((await presentation(page, 'scattershot')).rows.some((r) => r.includes('"cone"'))).toBe(
+    true,
+  );
   await page.screenshot({ path: `${SS}/80-impact.png` });
   await page.evaluate(() => window.__game.scene.resetCamera());
   await advance(page, 0);
@@ -351,7 +428,9 @@ test('Monolithic (85): level-5 Eagle Artillery awake, empty and ruined', async (
   await advance(page, 1.2);
   await focus(page, watched.x + 2, watched.y + 2, 2);
   const empty = await presentation(page, 'eagleArtillery');
-  expect(empty.rows.some((r) => r.includes(`"id":${watched.id}`) && r.includes('"ammunition":0'))).toBe(true);
+  expect(
+    empty.rows.some((r) => r.includes(`"id":${watched.id}`) && r.includes('"ammunition":0')),
+  ).toBe(true);
   await page.screenshot({ path: `${EA}/85-empty.png` });
   await page.evaluate((id) => {
     const { model } = window.__game;
@@ -361,7 +440,9 @@ test('Monolithic (85): level-5 Eagle Artillery awake, empty and ruined', async (
   await advance(page, 0.4);
   await focus(page, other.x + 2, other.y + 2, 2, 40);
   const ruin = await presentation(page, 'eagleArtillery');
-  expect(ruin.rows.some((r) => r.includes(`"id":${other.id}`) && r.includes('"state":"ruin"'))).toBe(true);
+  expect(
+    ruin.rows.some((r) => r.includes(`"id":${other.id}`) && r.includes('"state":"ruin"')),
+  ).toBe(true);
   await page.screenshot({ path: `${EA}/85-ruin.png` });
   expect(errors).toEqual([]);
 });

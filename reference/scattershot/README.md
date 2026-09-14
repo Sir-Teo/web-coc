@@ -83,7 +83,7 @@ Replay version 44 accepts Scattershots only in campaign recordings; versions ≤
 - `tests/eagle-artillery-scattershot-rage.test.ts`: Rage damage and rate hook.
 - `tests/eagle-artillery-scattershot-replay.test.ts`: version-44-only validation and live-versus-replay reconstruction with backward seeks for villages 75 and 80.
 - `tests/eagle-artillery-scattershot-art.test.ts`: all 24 × 15 throw frames at levels 1 and 7, every level's aimed bands, upgrade and ruin, cone rotation and end, effects and sound hashes.
-- `tests/browser/eagle-artillery-scattershot-live.spec.ts` (`npx playwright test -c playwright.eagle-artillery.config.ts`, development server on port 5311): real deployments in villages 75 and 80 with screenshots in `output/playtest/scattershot/`.
+- `tests/browser/eagle-artillery-scattershot-live.spec.ts` (`npx playwright test tests/browser/eagle-artillery-scattershot-live.spec.ts` with the standard config): real deployments in villages 75 and 80 with screenshots in `output/playtest/scattershot/`.
 
 ## Limits
 

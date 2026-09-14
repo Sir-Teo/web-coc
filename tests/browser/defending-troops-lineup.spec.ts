@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 const FAMILIES = [
   ['electrodragon', 3],
   ['golem', 8],

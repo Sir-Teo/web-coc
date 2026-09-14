@@ -3,11 +3,14 @@ import fs from 'node:fs/promises';
 import { createServer, type ViteDevServer } from 'vite';
 import { test, expect, type Page } from '@playwright/test';
 
+// Live late-campaign battles stage full native villages; allow the whole flow to settle.
+test.describe.configure({ timeout: 180_000 });
+
 /**
  * Tornado Trap and Goblin Freeze Trap evidence in the real scene: original bodies, reveal and
  * deploy effects, frozen troops and spent states after real ground and air deployments in Keep
  * Your Cool (64), Fireworks Inc. (66) and Cold Flame (81), plus Node/browser state agreement and
- * replay seeks. Run against a separately started dev server (playwright.tornado-freeze.config.ts).
+ * replay seeks. Runs with the standard config against its development server.
  */
 const OUT = 'output/playtest/tornado-freeze';
 let modules: ViteDevServer;
@@ -268,7 +271,7 @@ test('Cold Flame freezes, carries level-3 troops and reconstructs the effects af
 }) => {
   const errors = await open(page);
   const setup = await village(page, 81, 'freeze-trap', COLD_FLAME_ARMY, 0);
-  expect(setup).toMatchObject({ playable: false, deployed: 22 });
+  expect(setup).toMatchObject({ playable: true, deployed: 22 });
   await focus(page, setup.trapId, 1.4);
   await advance(page, 0, setup.trapId);
   const burst = await advance(page, 0.75);

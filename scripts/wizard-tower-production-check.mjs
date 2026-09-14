@@ -121,7 +121,8 @@ try {
       await page.locator('.attack-btn').click();
       await expect(page.locator('[data-stage="58"]')).toContainText('Graduation Ceremony');
       await expect(page.locator('[data-action="attack:57"]')).toBeEnabled();
-      await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+      // Every native village is playable; none is held back as coming soon.
+      await expect(page.getByText('This village is coming soon.')).toHaveCount(0);
       await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       const read = () => page.evaluate(() => JSON.parse(window.render_game_to_text()));
       const seek = async (time) => {

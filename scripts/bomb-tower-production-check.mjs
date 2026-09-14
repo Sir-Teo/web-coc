@@ -145,7 +145,8 @@ try {
         await page.locator('.attack-btn').click();
         await expect(page.locator('[data-stage="51"]')).toContainText('Invaders');
         await expect(page.locator('[data-action="attack:50"]')).toBeEnabled();
-        await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+        // Every native village is playable; none is held back as coming soon.
+        await expect(page.getByText('This village is coming soon.')).toHaveCount(0);
         await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
       }
       await open({

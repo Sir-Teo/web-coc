@@ -28,7 +28,8 @@ for (const width of [1440, 390])
     await expect(card).toContainText('300,000');
     await expect(card).toContainText('2,000');
     await expect(page.locator('[data-action="attack:50"]')).toBeEnabled();
-    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Locked');
+    await expect(page.getByText('This village is coming soon.')).toHaveCount(0);
     await page.locator('[data-action="attack:50"]').click();
     await expect(page.locator('.battle-enemy h2')).toHaveText('Invaders');
     await expect(page.locator('#battle-timer')).toHaveText('∞');
