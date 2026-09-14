@@ -66,10 +66,14 @@ describe('Town Hall tier catalog', () => {
       expect(name, kind).toBeTruthy();
       const withheld = WITHHELD[kind];
       for (const th of TIERS) {
-        // The Town Hall is never a counted column: a village always has exactly one.
+        // The Town Hall is never a counted column: a village always has exactly one. And a
+        // tier that permits no level of a building permits none of it, which is how the
+        // Clan Castle is counted from Town Hall 1 but has nothing to place until Town Hall 3.
         if (name !== 'Town Hall' && !(withheld?.level === 0))
           if (!LOCAL_COUNTS.has(kind) || th > 9)
-            expect(maxCountFor(kind, th), `${name} count TH${th}`).toBe(sourceCount(name, th));
+            expect(maxCountFor(kind, th), `${name} count TH${th}`).toBe(
+              sourceCeiling(name, th) === 0 ? 0 : sourceCount(name, th),
+            );
         if (maxCountFor(kind, th) === 0) continue;
         const source = name === 'Town Hall' ? MAX_TOWNHALL : sourceCeiling(name, th);
         expect(maxLevelFor(kind, th), `${name} level TH${th}`).toBe(
@@ -82,7 +86,8 @@ describe('Town Hall tier catalog', () => {
         expect(withheld.level, `${name} gap`).toBeLessThan(sourceCeiling(name, MAX_TOWNHALL));
       }
     }
-    expect(Object.keys(WITHHELD).sort()).toEqual(['blacksmith', 'builder', 'clancastle']);
+    // Only the Builder's Hut still stops short, and for artwork rather than for data.
+    expect(Object.keys(WITHHELD).sort()).toEqual(['builder']);
   });
 
   it('reports the original Town Hall requirement for the levels each tier adds', () => {
@@ -127,7 +132,14 @@ describe('Town Hall tier catalog', () => {
       expect(requiredTownHall(kind, level), `${kind} ${level}`).toBe(townhall);
     expect(unlockTownHall('xbow')).toBe(9);
     // A withheld level reports no requirement at all, because it is never reachable.
-    expect(requiredTownHall('blacksmith', 2)).toBeNull();
+    expect(requiredTownHall('builder', 5)).toBeNull();
+    // The Blacksmith and the Clan Castle now report theirs: both reach their own last level.
+    expect(requiredTownHall('blacksmith', 2)).toBe(9);
+    expect(unlockTownHall('clancastle')).toBe(3);
+    expect(requiredTownHall('clancastle', 14)).toBe(18);
+    expect(maxLevelFor('clancastle', 2)).toBe(0);
+    expect(maxCountFor('clancastle', 2)).toBe(0);
+    expect(maxCountFor('clancastle', 3)).toBe(1);
     // The Town Hall's own ceiling is the catalog maximum from the first tier onwards.
     for (const th of TIERS) expect(maxLevelFor('townhall', th)).toBe(MAX_TOWNHALL);
   });

@@ -39,14 +39,15 @@ Army housing rises from 220 at Town Hall 9 to **352** at Town Hall 18 (four Army
 
 ## What this game withholds
 
-Two entities stop below what the original tier permits. Each is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so a gap can neither close nor widen unnoticed.
+One entity stops below what the original tier permits, and it is short of artwork rather than of data. It is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so the gap can neither close nor widen unnoticed.
 
 | Entity | Original | Here | Why |
 | --- | --- | --- | --- |
-| Clan Castle | 1 from TH1, level 14 | none | the home Castle needs donations, clans and a reinforcement roster |
 | Builder's Hut | level 8 | level 4 | only four hut tiers have reconstructed artwork and a turret |
 
-The Clan Castle's 14 levels are pinned and its artwork reconstructed — campaign Castles already release their garrisons — but a home Castle needs donations, clans and a reinforcement roster before it holds anything.
+The Clan Castle was the last of the others. It is buildable from Town Hall 3 and upgrades through all 14 original levels, with original hitpoints, prices, durations and reconstructed artwork, and it is damaged, destroyed and counted like any other building. What it does **not** do is hold reinforcements: in the original a home Castle is filled by clanmates' donations, and there is no original answer for a village with no clan. The roster the garrison system fields is a *defender* roster with its own fixed levels, not the player's trained army, so loading it from the barracks would be this game's invention rather than the client's. An empty Clan Castle is an ordinary state in the original; the donation system behind reinforcements is a social feature, not missing content.
+
+Reading the Castle's tier needed one rule the ladder did not have. A tier that permits none of a building already forced a zero ceiling; the reverse now holds too, because the source counts one Clan Castle from Town Hall 1 but gates its first level at Town Hall 3.
 
 Nothing outside this game's building catalog is silently treated as absent, either: Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop, the Town Hall's own Giga weapons and the later hero roster are simply not modelled, so the tiers that would unlock them add nothing.
 

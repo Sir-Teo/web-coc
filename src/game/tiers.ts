@@ -25,7 +25,6 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
  * so it can neither close nor widen unnoticed.
  */
 export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {
-  clancastle: { level: 0, why: 'home Clan Castle progression is unimplemented' },
   builder: { level: 4, why: 'only four hut tiers have reconstructed artwork and a turret' },
 };
 
@@ -48,7 +47,9 @@ function tierColumns(kind: BuildingKind) {
       ? 0
       : Math.min(withheld?.level ?? Number.MAX_SAFE_INTEGER, sourceCeiling(name, townhall)),
   );
-  return { counts, levels };
+  // And the reverse: a tier that permits no level of a building permits none of it. The
+  // Clan Castle is counted from Town Hall 1 but has no level until Town Hall 3.
+  return { counts: counts.map((count, index) => (levels[index] === 0 ? 0 : count)), levels };
 }
 
 /** Maximum count of each building at Town Hall 1..MAX_TOWNHALL, indexed from zero. */
