@@ -594,8 +594,10 @@ export class VillageScene extends Phaser.Scene {
   }
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
+    if (this.lateAssetsReady) return false;
     const battle = this.model.battle;
-    if (this.lateAssetsReady || !battle) return false;
+    // A home village that owns a late family needs the same art outside battle.
+    if (!battle) return this.model.state.buildings.some(isLateCampaignBuilding);
     if (this.lateBattle.battle !== battle)
       this.lateBattle = { battle, needed: battle.buildings.some(isLateCampaignBuilding) };
     return this.lateBattle.needed;

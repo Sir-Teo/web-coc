@@ -1033,20 +1033,11 @@ export const isDefense = (kind: BuildingKind) =>
   kind === 'monolith' ||
   kind === 'spelltower';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
+/** First tier that permits one. A withheld building still shows its original requirement. */
 export const unlockTownHall = (kind: BuildingKind) =>
-  kind === 'eagleartillery' || kind === 'tornadotrap'
-    ? 11
-    : kind === 'scattershot'
-      ? 13
-      : kind === 'monolith' || kind === 'spelltower'
-        ? 15
-        : kind === 'inferno'
-          ? 10
-          : kind === 'clancastle'
-            ? CASTLE_LEVELS[0].townhall
-            : kind === 'xbow'
-              ? XBOW_LEVELS[0].townhall
-              : BUILDING_COUNTS[kind].findIndex((n) => n > 0) + 1;
+  kind === 'clancastle'
+    ? CASTLE_LEVELS[0].townhall
+    : BUILDING_COUNTS[kind].findIndex((n) => n > 0) + 1;
 export const trapDamage = (kind: BuildingKind, level: number) =>
   trapProgression(kind, level)?.damage ?? 0;
 export const springCapacity = (level: number) =>

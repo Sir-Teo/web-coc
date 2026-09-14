@@ -84,13 +84,7 @@ describe('Town Hall tier catalog', () => {
       'blacksmith',
       'builder',
       'clancastle',
-      'eagleartillery',
-      'inferno',
-      'monolith',
-      'scattershot',
       'skeletontrap',
-      'spelltower',
-      'tornadotrap',
     ]);
   });
 
@@ -285,6 +279,49 @@ describe('Town Hall tier village', () => {
     m.tick(king.upgradeEnd!);
     expect(king.level).toBe(21);
     expect(validateSave(JSON.parse(JSON.stringify(m.state)))).toBe(true);
+  });
+
+  it('builds, fights and records every late family in the home village', () => {
+    const m = village();
+    const spots: Record<string, [number, number]> = {
+      inferno: [24, 30],
+      eagleartillery: [28, 30],
+      scattershot: [34, 30],
+      monolith: [24, 34],
+      spelltower: [28, 34],
+      tornadotrap: [32, 34],
+    };
+    for (const [kind, [x, y]] of Object.entries(spots) as [BuildingKind, [number, number]][]) {
+      expect(maxCountFor(kind, MAX_TOWNHALL), kind).toBeGreaterThan(0);
+      m.beginBuild(kind);
+      expect(m.placement, kind).toBe(kind);
+      expect(m.place(x, y), kind).toBe(true);
+      const built = m.state.buildings.at(-1)!;
+      m.tick(built.upgradeEnd ?? m.clock + 1);
+      // Traps are placed armed; the rest finish construction first.
+      expect(built).toMatchObject({ kind, level: 1 });
+      expect(built.constructing ?? false).toBe(false);
+    }
+    // A home Spell Tower always carries a weapon, and cycles through all three.
+    const tower = m.state.buildings.find((b) => b.kind === 'spelltower')!;
+    expect(tower.spellTowerWeapon).toBe('rage');
+    m.selected = tower.id;
+    for (const weapon of ['poison', 'invisibility', 'rage']) {
+      expect(m.cycleSpellTowerWeapon()).toBe(true);
+      expect(tower.spellTowerWeapon).toBe(weapon);
+    }
+    expect(validateSave(JSON.parse(JSON.stringify(m.state)))).toBe(true);
+
+    // Practice steps late-family state, which campaign battles alone used to carry.
+    m.startBattle(0, true);
+    expect(m.battle!.late).toEqual({});
+    m.deploy(1, 1);
+    for (let step = 0; step < 40; step++) m.step(0.05);
+    m.finishBattle();
+    const replay = JSON.parse(JSON.stringify(m.state.raidLog![0].replay!));
+    expect(validateReplay(replay)).toBe(true);
+    // Earlier recordings never held a late family outside a campaign village.
+    expect(validateReplay({ ...replay, version: 45 })).toBe(false);
   });
 
   it('records later-tier battles at version 46 and refuses them in earlier recordings', () => {

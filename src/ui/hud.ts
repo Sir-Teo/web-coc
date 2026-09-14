@@ -85,6 +85,8 @@ import {
   type ResearchKind,
 } from '../game/data';
 import { GameModel, formatTime, BATTLE_SECONDS, type Building } from '../game/model';
+/** Title-cased weapon name for the Spell Tower selector. */
+const spellTowerLabel = (weapon = 'rage') => weapon[0].toUpperCase() + weapon.slice(1);
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
@@ -620,6 +622,9 @@ export class HUD {
         break;
       case 'inferno-mode':
         this.model.toggleInfernoMode();
+        break;
+      case 'spell-tower-weapon':
+        this.model.cycleSpellTowerWeapon();
         break;
       case 'xbow-mode':
         this.model.toggleXbowMode();
@@ -1316,7 +1321,14 @@ export class HUD {
                   'game-btn blue',
                   `aria-label="Switch X-Bow to ${b.xbowMode === 'both' ? 'ground' : 'ground and air'} mode"`,
                 )
-              : '';
+              : b.kind === 'spelltower' && !b.constructing
+                ? button(
+                    'spell-tower-weapon',
+                    `${icon('Sparkles', 21)}<span>${spellTowerLabel(b.spellTowerWeapon)}</span>`,
+                    'game-btn blue',
+                    `aria-label="Switch Spell Tower to its next spell"`,
+                  )
+                : '';
     if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);

@@ -2,7 +2,7 @@ import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { HERO_MAX_LEVEL } from './heroes';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
-import { isLateCampaignBuilding, validLateBuilding } from './late-campaign';
+import { isLateBuilding, isLateCampaignBuilding, validLateBuilding } from './late-campaign';
 import {
   campaignStage,
   campaignStages,
@@ -149,7 +149,10 @@ export interface ReplayPlayback {
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
     ...(version >= 44 && s.catalog === 'goblin-v1' ? { nativeSubtiles: true as const } : {}),
-    ...(version >= 44 && s.catalog === 'goblin-v1' && s.buildings.some(isLateCampaignBuilding)
+    // Late families step wherever they stand: campaign villages from version 44, including
+    // their armed Builder's Huts, and late home defenses and traps from version 46.
+    ...((version >= 44 && s.catalog === 'goblin-v1' && s.buildings.some(isLateCampaignBuilding)) ||
+    (version >= 46 && s.buildings.some(isLateBuilding))
       ? { late: {} }
       : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')

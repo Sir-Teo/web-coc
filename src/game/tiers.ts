@@ -29,15 +29,8 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
 export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {
   clancastle: { level: 0, why: 'home Clan Castle progression is unimplemented' },
   blacksmith: { level: 1, why: 'Blacksmith 2+ unlocks no equipment before Blacksmith 3' },
-  builder: { level: 4, why: 'only four original Builder’s Hut rows are reconstructed' },
+  builder: { level: 1, why: 'the armed hut’s turret fights only in campaign battles' },
   skeletontrap: { level: 4, why: 'only four coffin tiers spawn reconstructed defenders' },
-  // The late families fight only in campaign battles until home late combat is wired up.
-  inferno: { level: 0, why: 'late family combat is campaign-only' },
-  eagleartillery: { level: 0, why: 'late family combat is campaign-only' },
-  scattershot: { level: 0, why: 'late family combat is campaign-only' },
-  monolith: { level: 0, why: 'late family combat is campaign-only' },
-  spelltower: { level: 0, why: 'late family combat is campaign-only' },
-  tornadotrap: { level: 0, why: 'late family combat is campaign-only' },
 };
 
 const HOME_KINDS = Object.keys(SOURCE_NAME) as BuildingKind[];

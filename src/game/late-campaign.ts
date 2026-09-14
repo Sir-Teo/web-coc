@@ -330,7 +330,7 @@ export function lateNativeFields(
   return { fields, issues };
 }
 
-/** Late kinds, identities and fields exist only in version 44+ campaign recordings. */
+/** Late kinds exist in version 44+ campaign recordings, and at home from version 46. */
 export function validLateBuilding(
   b: Pick<Building, 'kind' | 'npc' | 'spellTowerWeapon'>,
   version: number,
@@ -340,5 +340,7 @@ export function validLateBuilding(
   if (b.spellTowerWeapon !== undefined && b.kind !== 'spelltower') return false;
   if (b.kind === 'spelltower' && b.spellTowerWeapon === undefined) return false;
   if (!isLateBuilding(b)) return true;
-  return version >= 44 && !practice;
+  // A campaign-only identity is still never a home building: only real kinds are buildable.
+  if (b.npc !== undefined) return version >= 44 && !practice;
+  return version >= 46 || (version >= 44 && !practice);
 }

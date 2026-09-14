@@ -54,7 +54,8 @@ export const DEFENSE_WEAPONS = {
 /** Returns a destination's stats when this defense has been audited. */
 export function defenseProgression(kind: BuildingKind, level: number) {
   if (kind === 'xbow') return XBOW_LEVELS[level - 1];
-  return kind === 'bombtower' ||
+  return kind === 'inferno' ||
+    kind === 'bombtower' ||
     kind === 'tesla' ||
     kind === 'cannon' ||
     kind === 'archertower' ||

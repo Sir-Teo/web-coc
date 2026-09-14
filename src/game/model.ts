@@ -115,6 +115,8 @@ import {
 } from './air-sweeper';
 import { isDefense } from './data';
 import { BUILDING_COUNTS } from './tiers';
+/** Weapon order for the home Spell Tower selector. */
+const SPELL_TOWER_CYCLE = ['rage', 'poison', 'invisibility'] as const;
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import {
@@ -255,6 +257,7 @@ export interface Layout {
     direction?: number;
     skeletonMode?: SkeletonMode;
     xbowMode?: XbowMode;
+    spellTowerWeapon?: SpellTowerWeapon;
     infernoMode?: InfernoMode;
   }[];
 }
@@ -1145,6 +1148,8 @@ export class GameModel {
     }
     this.state[d.resource] -= d.cost;
     const b = makeBuilding(this.state.nextId++, kind, x, y, 1);
+    // A home Spell Tower always carries a weapon; the original picks one on placement too.
+    if (kind === 'spelltower') b.spellTowerWeapon = 'rage';
     if (d.build > 0) {
       b.constructing = true;
       b.upgradeStart = this.clock;
@@ -1432,6 +1437,7 @@ export class GameModel {
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
       ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
       ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
+      ...(b.kind === 'spelltower' ? { spellTowerWeapon: b.spellTowerWeapon ?? 'rage' } : {}),
     }));
   }
   toggleSkeletonMode() {
@@ -1460,6 +1466,19 @@ export class GameModel {
     if (!b || b.kind !== 'xbow' || b.constructing || !validXbowMode(b.xbowMode)) return false;
     if (this.editing) this.recordPositions();
     b.xbowMode = b.xbowMode === 'both' ? 'ground' : 'both';
+    this.changed();
+    return true;
+  }
+  /** Cycles the three original Spell Tower weapons, like the X-Bow's targeting mode. */
+  cycleSpellTowerWeapon() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'spelltower' || b.constructing) return false;
+    if (this.editing) this.recordPositions();
+    b.spellTowerWeapon =
+      SPELL_TOWER_CYCLE[
+        (SPELL_TOWER_CYCLE.indexOf(b.spellTowerWeapon ?? 'rage') + 1) % SPELL_TOWER_CYCLE.length
+      ];
     this.changed();
     return true;
   }
@@ -1513,6 +1532,8 @@ export class GameModel {
       if (b.kind === 'inferno')
         b.infernoMode = moved.get(b.id)?.infernoMode ?? b.infernoMode ?? 'single';
       if (b.kind === 'xbow') b.xbowMode = moved.get(b.id)?.xbowMode ?? b.xbowMode ?? 'ground';
+      if (b.kind === 'spelltower')
+        b.spellTowerWeapon = moved.get(b.id)?.spellTowerWeapon ?? b.spellTowerWeapon ?? 'rage';
     }
     return true;
   }
