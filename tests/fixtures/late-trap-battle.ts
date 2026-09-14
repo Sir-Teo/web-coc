@@ -8,14 +8,22 @@ import {
 } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { BUILDINGS, TROOP_KEYS, maxTroopLevel } from '../../src/game/data';
-import { replayBattle, type ReplayData, type ReplaySetup } from '../../src/game/replay';
+import {
+  PRE_ROSTER_TROOP_LEVELS,
+  replayBattle,
+  type ReplayData,
+  type ReplaySetup,
+} from '../../src/game/replay';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { freshNativeCampaign, nativeLayout, nativeScenery } from '../../src/game/native-campaign';
 import { developedSave } from './developed-village';
 
+/** The strongest army these version-44 recordings may carry: the roster's pre-47 ceiling. */
 export const maxTroopLevels = () =>
-  Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)])) as Army;
+  Object.fromEntries(
+    TROOP_KEYS.map((k) => [k, Math.min(maxTroopLevel(k), PRE_ROSTER_TROOP_LEVELS[k])]),
+  ) as Army;
 
 /** A version-44 Goblin Map battle holding only the given entities, started for direct stepping. */
 export function lateTrapArena(buildings: Building[], index = 66) {

@@ -8,6 +8,7 @@ import {
 } from '../../src/game/model';
 import { nativeLayout, nativeScenery } from '../../src/game/native-campaign';
 import {
+  PRE_ROSTER_TROOP_LEVELS,
   replayBattle,
   type ReplayAction,
   type ReplayData,
@@ -19,7 +20,11 @@ import { emptyArmy, emptySpells } from '../../src/game/army';
 import { TROOP_KEYS, maxTroopLevel, type BuildingKind, type TroopKind } from '../../src/game/data';
 import { stepLateCampaign, type SpellTowerWeapon } from '../../src/game/late-campaign';
 
-const maxLevels = () => Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)])) as Army;
+/** The strongest army these version-44 recordings may carry: the roster's pre-47 ceiling. */
+const maxLevels = () =>
+  Object.fromEntries(
+    TROOP_KEYS.map((k) => [k, Math.min(maxTroopLevel(k), PRE_ROSTER_TROOP_LEVELS[k])]),
+  ) as Army;
 
 /** Ungated inspection of a complete late village with explicit maximum-level research. */
 export function lateSetup(

@@ -66,7 +66,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 46 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
-const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
+export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
   TROOP_KEYS.map((kind) => [
     kind,
     kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : 5,
