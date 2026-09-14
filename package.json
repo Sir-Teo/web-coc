@@ -17,6 +17,7 @@
     "deploy": "npm run build && npx -y firebase-tools deploy --only hosting:coc-teozeng --project personal-website-3bc37",
     "test:blacksmith:production": "node scripts/blacksmith-production-check.mjs",
     "test:campaign:production": "node scripts/campaign-production-check.mjs",
+    "test:late-campaign:production": "node scripts/late-campaign-production-check.mjs",
     "test:goblin:production": "node scripts/goblin-production-check.mjs",
     "test:dark:production": "node scripts/dark-storage-production-check.mjs",
     "test:bomb-tower:production": "node scripts/bomb-tower-production-check.mjs",

@@ -1,7 +1,6 @@
 // Captures every native campaign village for visual review: scouting and live combat.
 // Usage (with a dev server running): node scripts/goblin-valley-gallery.mjs [first] [last]
 //   GALLERY_URL=http://127.0.0.1:5173 GALLERY_OUT=output/playtest/goblin-valley
-// Gated villages are staged from their complete source layout without enabling the gate.
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
 
@@ -93,6 +92,8 @@ for (let index = first; index <= last; index++) {
       44,
     );
     scene.paused = true;
+    // Late campaign art loads on first use; capture only once it can render.
+    await scene.loadLateAssets();
     model.changed();
     scene.sync();
     scene.resetCamera();

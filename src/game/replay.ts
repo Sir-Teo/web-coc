@@ -1,7 +1,7 @@
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
-import { isLateBuilding, validLateBuilding } from './late-campaign';
+import { isLateCampaignBuilding, validLateBuilding } from './late-campaign';
 import {
   campaignStage,
   campaignStages,
@@ -115,9 +115,7 @@ export interface ReplayPlayback {
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
     ...(version >= 44 && s.catalog === 'goblin-v1' ? { nativeSubtiles: true as const } : {}),
-    ...(version >= 44 &&
-    s.catalog === 'goblin-v1' &&
-    s.buildings.some((b) => isLateBuilding(b) || (b.kind === 'builder' && !b.npc && b.level > 1))
+    ...(version >= 44 && s.catalog === 'goblin-v1' && s.buildings.some(isLateCampaignBuilding)
       ? { late: {} }
       : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')

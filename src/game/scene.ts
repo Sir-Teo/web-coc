@@ -8,15 +8,24 @@ import {
   villageArcherTowerBounds,
 } from './archer-tower-scene';
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
-import { LateCampaignPresentation, preloadLateCampaign } from './late-campaign-scene';
+import type { LateCampaignPresentation } from './late-campaign-scene';
 import { hasLateArt, lateArt } from './late-campaign-art';
-import { isLateBuilding, lateUnitFrozen, lateUnitTimeLost } from './late-campaign';
-import { FROZEN_TINT } from './freeze-trap-poses';
+import {
+  isLateBuilding,
+  isLateCampaignBuilding,
+  lateUnitFrozen,
+  lateUnitTimeLost,
+} from './late-campaign';
+import { FROZEN_TINT } from './freeze-trap-art';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait, infernoBounds } from './inferno-art';
-import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
+import {
+  preloadGarrisonTroops,
+  preloadLateGarrisonTroops,
+  GarrisonPresentation,
+} from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
@@ -111,6 +120,15 @@ import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
+const LOADING_LATE_ART = 'Loading village art…';
+/** Stands in for the late campaign presentation until its art has loaded. */
+const INERT_LATE_CAMPAIGN = {
+  handles: () => false,
+  bounds: () => undefined,
+  render: () => [],
+  clear: () => {},
+  destroy: () => {},
+};
 const WOOD_RUINS = new Set<BuildingKind>([
   'barracks',
   'builder',
@@ -211,7 +229,17 @@ export class VillageScene extends Phaser.Scene {
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private teslaPresentation!: TeslaPresentation;
-  private lateCampaign!: LateCampaignPresentation;
+  /** Inert until the late campaign art loads; see `loadLateAssets`. */
+  private lateCampaign: Pick<
+    LateCampaignPresentation,
+    'handles' | 'bounds' | 'render' | 'clear' | 'destroy'
+  > = INERT_LATE_CAMPAIGN;
+  private lateAssets?: Promise<void>;
+  lateAssetsReady = false;
+  private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
+    battle: null,
+    needed: false,
+  };
   private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
@@ -221,7 +249,6 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
-    preloadLateCampaign(this);
     preloadSanta(this);
     preloadXbows(this);
     preloadDarkStorages(this);
@@ -275,6 +302,8 @@ export class VillageScene extends Phaser.Scene {
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
+      // Late campaign kinds render from their own per-level art, loaded with the late families.
+      if (hasLateArt(k)) continue;
       if (k !== 'mortar' && k !== 'cannon')
         this.load.image(k, k === 'darkdrill' ? '/assets/buildings/darkdrill.webp' : asset(k));
       if (
@@ -325,7 +354,6 @@ export class VillageScene extends Phaser.Scene {
     this.darkStoragePresentation = new DarkStoragePresentation(this);
     this.xbowPresentation = new XbowPresentation(this, this.audio);
     this.teslaPresentation = new TeslaPresentation(this, this.audio);
-    this.lateCampaign = new LateCampaignPresentation(this, this.audio);
     this.bombTowerPresentation = new BombTowerPresentation(this, this.audio);
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
@@ -522,6 +550,56 @@ export class VillageScene extends Phaser.Scene {
       this.paused = false;
     });
   }
+  /**
+   * The late Goblin Map families and their defending characters (about 40 MB) load the first
+   * time a battle or replay needs them rather than at boot. Resolves once they can render.
+   */
+  loadLateAssets(): Promise<void> {
+    if (this.lateAssets) return this.lateAssets;
+    const slow = setTimeout(() => this.model.notify(LOADING_LATE_ART), 400);
+    const settle = () => {
+      clearTimeout(slow);
+      // Withdraw a loading notice that is still showing; later messages stay.
+      if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
+    };
+    // The presentation code and its source graphs are a separate chunk, fetched with the art.
+    this.lateAssets = import('./late-campaign-scene').then(
+      ({ LateCampaignPresentation, preloadLateCampaign }) =>
+        new Promise<void>((resolve) => {
+          let failed = false;
+          const failure = () => (failed = true);
+          this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+          this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+            settle();
+            this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+            if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
+            this.lateCampaign = new LateCampaignPresentation(this, this.audio);
+            this.lateAssetsReady = true;
+            // Restyle every building so late bodies replace the hidden fallback sprites.
+            this.lastRevision = -1;
+            resolve();
+          });
+          preloadLateCampaign(this);
+          preloadLateGarrisonTroops(this);
+          this.load.start();
+        }),
+      () => {
+        settle();
+        this.model.notify('Village art could not load. Check your connection and try again.');
+        // The waiting battle can still return home; a later sync retries after a pause.
+        setTimeout(() => (this.lateAssets = undefined), 5000);
+      },
+    );
+    return this.lateAssets;
+  }
+  /** True while the current battle waits for late campaign art; its clock and input hold. */
+  private lateAssetsPending() {
+    const battle = this.model.battle;
+    if (this.lateAssetsReady || !battle) return false;
+    if (this.lateBattle.battle !== battle)
+      this.lateBattle = { battle, needed: battle.buildings.some(isLateCampaignBuilding) };
+    return this.lateBattle.needed;
+  }
   private drawField() {
     // One tiny repeating texture avoids tessellating 968 static diamonds every frame.
     if (!this.textures.exists('field-checks')) {
@@ -685,7 +763,8 @@ export class VillageScene extends Phaser.Scene {
       !this.model.replay &&
       !b.finished &&
       !this.model.placement &&
-      !this.model.activeSpell
+      !this.model.activeSpell &&
+      !this.lateAssetsPending()
     ) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
@@ -729,6 +808,10 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (this.model.battle) {
+      if (this.lateAssetsPending()) {
+        this.model.notify(LOADING_LATE_ART);
+        return;
+      }
       if (this.model.activeSpell) {
         if (this.model.castSpell(grid.x, grid.y)) this.audio.play('deploy');
         return;
@@ -969,6 +1052,7 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sync() {
+    if (this.lateAssetsPending()) void this.loadLateAssets();
     const reduced = this.model.state.settings.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -1182,8 +1266,13 @@ export class VillageScene extends Phaser.Scene {
         this.renderRuin(b, im);
       }
       if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
-      // Late campaign families draw their own bodies, foundations and ruins.
-      if (this.lateCampaign.handles(b)) im.setAlpha(0);
+      // Late campaign families draw their own bodies, foundations and ruins; until their art has
+      // loaded, the fallback sprites have no texture to show either.
+      if (
+        this.lateCampaign.handles(b) ||
+        (!this.lateAssetsReady && this.model.battle && isLateCampaignBuilding(b))
+      )
+        im.setAlpha(0);
       if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
         im.setAlpha(0);
       const shouldBubble =
@@ -2911,7 +3000,8 @@ export class VillageScene extends Phaser.Scene {
         this.clampCamera();
       }
     }
-    this.tick += dt;
+    // A battle waiting for late campaign art keeps its clock, replay and deployments on hold.
+    this.tick = this.lateAssetsPending() ? 0 : this.tick + dt;
     while (this.tick >= 0.05) {
       this.model.step(0.05);
       this.tick -= 0.05;

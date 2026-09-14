@@ -19,14 +19,24 @@ import { GarrisonLateEffects } from './garrison-late-effects';
 /** Local alpha for concealed defenders (no source transparency value is known). */
 export const GARRISON_CONCEALED_ALPHA = 0.55;
 
+/** No Flight Zone's Dragon 7 and Balloon 8 are the only defenders outside the late villages. */
+const BOOT_CHARACTERS = new Set(['Dragon7', 'Balloon Goblin8']);
+
+/** Boot-time garrison art: effects, sounds, the No Flight Zone troops and the shared death. */
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, GARRISON_EFFECT_GRAPH, 'garrison-effects');
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
-  // Original character graphs (No Flight Zone foundation keys first) and projectile files.
+  for (const name of BOOT_CHARACTERS)
+    preloadNativeMeshes(scene, CHARACTER_ART[name].graph, CHARACTER_ART[name].prefix);
+  preloadNativeMeshes(scene, COMMON_DEATH_ART.graph, COMMON_DEATH_ART.prefix);
+}
+/** Every later defending character and projectile file, loaded with the late campaign art. */
+export function preloadLateGarrisonTroops(scene: Phaser.Scene) {
   for (const art of [
-    ...Object.values(CHARACTER_ART),
-    COMMON_DEATH_ART,
+    ...Object.entries(CHARACTER_ART).flatMap(([name, art]) =>
+      BOOT_CHARACTERS.has(name) ? [] : [art],
+    ),
     ...Object.values(PROJECTILE_ART),
     ...Object.values(PROJECTILE_GROUP_ART),
   ])

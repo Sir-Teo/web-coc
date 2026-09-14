@@ -26,6 +26,8 @@ test('renders every later garrison family idle, walking, attacking and dying on 
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  // Late campaign art loads on first use; these checks render it directly.
+  await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.evaluate(async (families) => {
     const { model, scene } = window.__game;
@@ -221,6 +223,8 @@ test('renders a Defending Builder walking, repairing, idle and hidden after his 
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  // Late campaign art loads on first use; these checks render it directly.
+  await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.evaluate(async () => {
     const { model, scene } = window.__game;

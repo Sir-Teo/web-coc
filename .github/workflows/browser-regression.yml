@@ -74,6 +74,13 @@ jobs:
         env:
           PRODUCTION_BROWSER: ${{ matrix.browser }}
 
+      - name: Verify deferred late campaign loading
+        if: matrix.shard == 1
+        timeout-minutes: 3
+        run: npm run test:late-campaign:production
+        env:
+          PRODUCTION_BROWSER: ${{ matrix.browser }}
+
       - name: Preserve browser evidence
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7

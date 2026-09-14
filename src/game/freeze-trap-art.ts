@@ -13,6 +13,8 @@ export const FREEZE_TRAP_ART = {
   originX: 58 / 121,
   originY: (50 + 84) / 172,
 };
+/** Screen-blended ice tint for frozen attackers (local; the source has no per-troop freeze art). */
+export const FROZEN_TINT = 0x5fa8e8;
 export function freezeTrapTexture(level: number, variant?: string) {
   void level;
   void variant;

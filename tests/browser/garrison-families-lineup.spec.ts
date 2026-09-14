@@ -23,6 +23,8 @@ test('renders every new garrison family in idle, walk, attack and death states o
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  // Late campaign art loads on first use; these checks render it directly.
+  await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.evaluate(async (families) => {
     const { model, scene } = window.__game;

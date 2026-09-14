@@ -183,6 +183,9 @@ export const isLateKind = (kind: BuildingKind) =>
   LATE_DEFENSE_KINDS.has(kind) || LATE_TRAP_KINDS.has(kind);
 export const isLateBuilding = (b: Pick<Building, 'kind' | 'npc'>) =>
   isLateKind(b.kind) || (b.npc !== undefined && LATE_NPC_BUILDINGS.has(b.npc));
+/** A late family building, or a campaign Builder's Hut whose level carries the nail turret. */
+export const isLateCampaignBuilding = (b: Pick<Building, 'kind' | 'npc' | 'level'>) =>
+  isLateBuilding(b) || (b.kind === 'builder' && !b.npc && b.level > 1);
 
 export function stepLateCampaign(context: LateCombatContext) {
   for (const family of FAMILIES) family.step(context);

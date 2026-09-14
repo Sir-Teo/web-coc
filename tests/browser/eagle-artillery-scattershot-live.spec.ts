@@ -18,6 +18,8 @@ async function open(page: Page) {
   });
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.ready);
+  // Late campaign art loads on first use; these checks render it directly.
+  await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });
   return errors;
 }
