@@ -10,7 +10,9 @@ const reference = {
     hp: [45, 54, 65, 85, 105],
     damage: [9, 12, 15, 18, 23],
     cost: [10000, 50000, 130000, 300000],
-    seconds: [1800, 3600, 7200, 14400],
+    // The source carries a trailing 30 minutes on every Barbarian research, which the
+    // earlier transcription dropped from levels 3 to 5: 1h30, 2h30 and 4h30, not 1h/2h/4h.
+    seconds: [1800, 5400, 9000, 16200],
     speed: 2.2,
     range: 0.4,
   },
@@ -25,7 +27,7 @@ const reference = {
 };
 describe('Home Village starter troop progression', () => {
   for (const kind of ['swordsman', 'archer'] as const) {
-    it(`${kind} uses the five researched levels in deployment and previews`, () => {
+    it(`${kind} uses its first five researched levels in deployment and previews`, () => {
       const m = new GameModel(developedSave()),
         r = reference[kind];
       m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as typeof m.state.army;

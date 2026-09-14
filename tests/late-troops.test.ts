@@ -3,6 +3,7 @@ import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import {
   LATE_TROOP_KEYS,
+  maxTroopLevel,
   TROOP_KEYS,
   troopStatsAt,
   researchLevelForLab,
@@ -103,7 +104,7 @@ describe('TH6–8 Barracks progression', () => {
     },
   };
   for (const kind of LATE_TROOP_KEYS) {
-    it(`${kind} has the three supported native levels, unlock and paid research deadlines`, () => {
+    it(`${kind} has its first three native levels, unlock and paid research deadlines`, () => {
       const m = new GameModel(developedSave());
       m.townhall!.level = 8;
       m.state.troopLevels = Object.fromEntries(
@@ -133,8 +134,11 @@ describe('TH6–8 Barracks progression', () => {
         if (kind === 'healer')
           expect(d.heal! / d.rate).toBeCloseTo(reference.healer.heal[level - 1]);
         if (level === 3) {
-          expect(m.troopStats(kind, 99)).toEqual(d);
+          // Level three is the last a Laboratory 6 reaches; the roster runs on above it.
           expect(researchLevelForLab(kind, 6)).toBe(3);
+          m.state.troopLevels![kind] = maxTroopLevel(kind);
+          expect(m.troopStats(kind, 99)).toEqual(m.troopStats(kind));
+          m.state.troopLevels![kind] = level;
           m.researchTroop(kind);
           expect(m.state.research).toBeUndefined();
           continue;
@@ -333,15 +337,19 @@ describe('roster save and replay compatibility', () => {
     }
   });
 
-  it.each(LATE_TROOP_KEYS)('rejects unsupported %s levels in both saves and current replays', (kind) => {
+  it.each(LATE_TROOP_KEYS)('rejects %s levels above its own ceiling, and new levels in old recordings', (kind) => {
     const m = new GameModel();
     m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as typeof m.state.army;
     m.startBattle(0, true);
     m.finishBattle();
     const replay = structuredClone(m.state.raidLog![0].replay!);
+    // Four is a real level now; only a version-46 recording still refuses it.
     replay.initial.troopLevels[kind] = 4;
+    expect(validateReplay(replay)).toBe(true);
+    expect(validateReplay({ ...replay, version: 46 })).toBe(false);
+    replay.initial.troopLevels[kind] = maxTroopLevel(kind) + 1;
     expect(validateReplay(replay)).toBe(false);
-    m.state.troopLevels[kind] = 4;
+    m.state.troopLevels[kind] = maxTroopLevel(kind) + 1;
     expect(validateSave(migrateSave(m.state))).toBe(false);
   });
   it('extends old version-four armies, presets, research and logs without mutating legacy recordings', () => {
