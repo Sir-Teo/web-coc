@@ -1,7 +1,12 @@
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Building } from '../src/game/model';
 import { nativeLayout, nativeScenery } from '../src/game/native-campaign';
-import { replayBattle, validateReplay, type ReplayData, type ReplaySetup } from '../src/game/replay';
+import {
+  replayBattle,
+  validateReplay,
+  type ReplayData,
+  type ReplaySetup,
+} from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { campaignResources } from '../src/game/campaign-loot';
 import { campaignStage } from '../src/game/campaign-catalog';
@@ -46,7 +51,7 @@ function campaignSetup(index: number, bunker: (b: Building) => boolean, troops =
       dragon: 1,
       pekka: 1,
     },
-    spellLevels: { rage: 1, heal: 1, lightning: 1 },
+    spellLevels: { rage: 1, heal: 1, lightning: 1, freeze: 1 },
     nextId: 100000,
     availableLoot: loot,
     lootRoom: loot,
@@ -61,16 +66,37 @@ function recording(index: number, bunker: (b: Building) => boolean, steps = 500)
   const probe = new GameModel();
   probe.battle = replayBattle(initial, 44);
   const center = { x: castle.x + 1.5, y: castle.y + 1.5 };
-  const sites = Array.from({ length: 48 * 48 }, (_, i) => ({ x: (i % 48) + 0.5, y: Math.floor(i / 48) + 0.5 }))
+  const sites = Array.from({ length: 48 * 48 }, (_, i) => ({
+    x: (i % 48) + 0.5,
+    y: Math.floor(i / 48) + 0.5,
+  }))
     .filter((p) => !probe.deployBlocked(p.x, p.y))
-    .sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
-  const kinds = ['giant', 'giant', 'archer', 'archer', 'archer', 'dragon', 'giant', 'archer'] as const;
+    .sort(
+      (a, b) =>
+        Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y),
+    );
+  const kinds = [
+    'giant',
+    'giant',
+    'archer',
+    'archer',
+    'archer',
+    'dragon',
+    'giant',
+    'archer',
+  ] as const;
   return {
     version: 44,
     initial,
     steps: Array(steps).fill(0.05),
     actions: [
-      ...kinds.map((kind, i) => ({ step: i * 4, type: 'troop' as const, kind, x: sites[i].x, y: sites[i].y })),
+      ...kinds.map((kind, i) => ({
+        step: i * 4,
+        type: 'troop' as const,
+        kind,
+        x: sites[i].x,
+        y: sites[i].y,
+      })),
       { step: steps, type: 'end' as const },
     ],
   };
@@ -133,12 +159,12 @@ it('releases the Foreboding Cave roster from its 4×4 footprint', () => {
     [2, 3.75],
     [2, 0.25],
   ]);
-  expect(validateReplay({ ...recording(74, (b) => b.npc === 'foreboding-cave', 60), initial })).toBe(
-    true,
-  );
-  expect(validateReplay({ ...recording(74, (b) => b.npc === 'foreboding-cave', 60), version: 43 })).toBe(
-    false,
-  );
+  expect(
+    validateReplay({ ...recording(74, (b) => b.npc === 'foreboding-cave', 60), initial }),
+  ).toBe(true);
+  expect(
+    validateReplay({ ...recording(74, (b) => b.npc === 'foreboding-cave', 60), version: 43 }),
+  ).toBe(false);
 });
 
 it('matches campaign bunkers exactly and gates new kinds, levels and bunkers by replay version', () => {
@@ -192,18 +218,28 @@ it('matches campaign bunkers exactly and gates new kinds, levels and bunkers by 
   for (const kind of ['golemite', 'lavapup', 'summonedskeleton', 'royalghost'] as const)
     expect(
       validateReplay(
-        withTroops(44, [{ kind, level: { golemite: 8, lavapup: 1, summonedskeleton: 1, royalghost: 7 }[kind], count: 1 }]),
+        withTroops(44, [
+          {
+            kind,
+            level: { golemite: 8, lavapup: 1, summonedskeleton: 1, royalghost: 7 }[kind],
+            count: 1,
+          },
+        ]),
       ),
     ).toBe(false);
   expect(validateReplay(withTroops(44, [{ kind: 'golem', level: 7, count: 1 }]))).toBe(false);
-  expect(validateReplay(withTroops(44, [{ kind: 'unknown' as never, level: 8, count: 1 }]))).toBe(false);
+  expect(validateReplay(withTroops(44, [{ kind: 'unknown' as never, level: 8, count: 1 }]))).toBe(
+    false,
+  );
   // A garrison must reference an actual source bunker, never an arbitrary building.
   expect(
     validateReplay({
       ...withTroops(44, [{ kind: 'goblin', level: 7, count: 1 }]),
       initial: {
         ...withTroops(44, []).initial,
-        garrisons: [{ castleId: 1, mode: 'guard', troops: [{ kind: 'goblin', level: 7, count: 1 }] }],
+        garrisons: [
+          { castleId: 1, mode: 'guard', troops: [{ kind: 'goblin', level: 7, count: 1 }] },
+        ],
       },
     }),
   ).toBe(false);

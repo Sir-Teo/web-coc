@@ -17,6 +17,9 @@ The supported roster now unlocks through completed army facilities. One shared t
 | 1 | Lightning | 5 |
 | 2 | Healing | 6 |
 | 3 | Rage | 7 |
+| 4 | Freeze | 8 |
+
+Every gate in that table is now read from the source's own `SpellForgeLevel` rather than written here: `SPELL_UNLOCK` is derived from the [pinned spell roster](../reference/troops/README.md), so a gate cannot drift from the client. The three original rows reproduce exactly what was hand-checked below.
 
 The troop sequence and early Barracks caps were checked against [ClashDaddy's Barracks table](https://clashdaddy.com/barracks-max-levels-and-upgrade-cost-clash-of-clans). Its article is dated December 2023; its later roster and historical prices are not adopted here. The spell sequence and Town Hall requirements were checked against [CoC Guide's Spell Factory table](https://coc.guide/army/spell-forge). Sources inspected September 11, 2026. [Facility upgrade behavior](FACILITY-UPGRADES.md) separately documents the official production changes.
 

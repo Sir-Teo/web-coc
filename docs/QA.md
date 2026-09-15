@@ -1171,3 +1171,30 @@ Validation:
 `WITHHELD` in `src/game/tiers.ts` now holds one entry: the Builder's Hut above level 4, and it is short of **artwork** rather than of data. All eight source tiers exist in `sc/buildings.sc`; tiers 5 to 7 (`worker_building_armed_lvl4` through `lvl6`) share the rig the reconstructed tiers already use, while tier 8 (`lvl7`) has a different clip layout — an extra child shifts the turret, which carries 39 frames rather than 360. Its Defending Builder levels 4 to 7 all exist. That is the whole of what remains on the withheld list.
 
 Also open: the Archer Queen, the later hero roster, Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop and the Town Hall's own Giga weapons — new systems rather than gaps in pinned data — and Clan Castle reinforcements, which need a clan.
+
+## September 15, 2026 — the whole roster pinned, and the Freeze Spell
+
+The catalogs held only what the game already played, so they could not say what was missing. They now carry everything the home village can produce or own, straight from the pinned client, and [CONTENT-INVENTORY.md](CONTENT-INVENTORY.md) counts pinning and implementing apart because they are different work.
+
+| Area | Pinned | Implemented | Source |
+| --- | --- | --- | --- |
+| Troops | 90 | 10 | 90 |
+| Spells | 23 | 4 | 23 |
+| Heroes | 6 | 1 | 6 |
+| Buildings | 44 | 30 | 44 |
+| Traps | 13 | 7 | 13 |
+| Hero equipment | 61 | 3 | 61 |
+
+Three corrections came out of counting rather than remembering:
+
+- Buildings were being measured against all 73 home records in `buildings.csv`, which also holds hero altars, troop and spell cages, the goblin campaign's own buildings, tutorial props, Town Hall teasers and placeholders. A village owns **44** buildings and **13** traps; the tier table settles it, because it carries one count column per ownable entity.
+- A Super troop's rows begin at the level of the troop it upgrades, so its displayed level is the row's own `VisualLevel`, not its position. Super Barbarian starts at five.
+- An item's rarity sets its ceiling: common equipment reaches 18, Epic reaches 27.
+
+**The Freeze Spell** is the first new spell since the original three, at recording version **48**. Everything about it is read from the source: its Spell Factory 4 gate is `SpellForgeLevel`, its 3.5-tile radius and its 2.5-second hold are its own columns, and it deals no damage at any of its eight levels. `SPELL_UNLOCK` for all four spells is now derived from that column rather than written down.
+
+Two of its source columns are deliberately not modelled and are named rather than hidden: `FreezeOuterTimeMS` needs an outer radius the table does not give, and `RandomRadius` scatters where a cast lands.
+
+One near-miss worth recording. Inserting the new spell **before** `lightning` in the `SPELLS` object changed `SPELL_KEYS` order, and an archived battle state is compared as JSON — so every historical replay hash changed at step 0. The spell is appended instead, the pre-48 book is written out in its original key order, and `tests/freeze-spell.test.ts` asserts both. A second near-miss: its first hotkey, `7`, was already the Wizard's, and both lists are matched against the same key press; the test now rejects any shared key.
+
+Still open: the five later heroes, whose artwork is 3D (`sc3d/*.glb` in Supercell's `FLA2` container) rather than the 2D sprite sheets every other unit uses, so there is no sheet to extract; the 80 troops and 19 spells that are pinned but unplayed; the 14 buildings and 6 traps a village can own that this game does not build; and Clan Castle reinforcements, which need a clan.

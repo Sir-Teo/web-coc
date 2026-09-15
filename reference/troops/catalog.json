@@ -20,6 +20,7 @@
     "wizard": "Wizard"
   },
   "spells": {
+    "freeze": "Freeze",
     "heal": "Healing",
     "lightning": "Lightning",
     "rage": "Rage"
@@ -10219,6 +10220,11 @@
     "Lightning": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [
+        "storages",
+        "townHallAndCastle"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10230,7 +10236,14 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 2,
@@ -10242,7 +10255,14 @@
           "speedBoost": 0,
           "cost": 50000,
           "seconds": 7200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 3,
@@ -10254,7 +10274,14 @@
           "speedBoost": 0,
           "cost": 100000,
           "seconds": 14400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 4,
@@ -10266,7 +10293,14 @@
           "speedBoost": 0,
           "cost": 200000,
           "seconds": 21600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 5,
@@ -10278,7 +10312,14 @@
           "speedBoost": 0,
           "cost": 600000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 6,
@@ -10290,7 +10331,14 @@
           "speedBoost": 0,
           "cost": 1500000,
           "seconds": 129600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 7,
@@ -10302,7 +10350,14 @@
           "speedBoost": 0,
           "cost": 2500000,
           "seconds": 259200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 8,
@@ -10314,7 +10369,14 @@
           "speedBoost": 0,
           "cost": 4200000,
           "seconds": 302400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 9,
@@ -10326,7 +10388,14 @@
           "speedBoost": 0,
           "cost": 6300000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 10,
@@ -10338,7 +10407,14 @@
           "speedBoost": 0,
           "cost": 10000000,
           "seconds": 518400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 11,
@@ -10350,7 +10426,14 @@
           "speedBoost": 0,
           "cost": 13500000,
           "seconds": 604800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 12,
@@ -10362,7 +10445,14 @@
           "speedBoost": 0,
           "cost": 18500000,
           "seconds": 864000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         },
         {
           "level": 13,
@@ -10374,13 +10464,24 @@
           "speedBoost": 0,
           "cost": 27000000,
           "seconds": 1209600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "freeze": 0.1
+          }
         }
       ]
     },
     "Healing": {
       "building": "Spell Factory",
       "forge": 2,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10392,7 +10493,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 2,
@@ -10404,7 +10511,13 @@
           "speedBoost": 0,
           "cost": 75000,
           "seconds": 10800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 3,
@@ -10416,7 +10529,13 @@
           "speedBoost": 0,
           "cost": 150000,
           "seconds": 21600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 4,
@@ -10428,7 +10547,13 @@
           "speedBoost": 0,
           "cost": 300000,
           "seconds": 43200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 5,
@@ -10440,7 +10565,13 @@
           "speedBoost": 0,
           "cost": 900000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 6,
@@ -10452,7 +10583,13 @@
           "speedBoost": 0,
           "cost": 1800000,
           "seconds": 129600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 7,
@@ -10464,7 +10601,13 @@
           "speedBoost": 0,
           "cost": 3000000,
           "seconds": 259200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 8,
@@ -10476,7 +10619,13 @@
           "speedBoost": 0,
           "cost": 6000000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 9,
@@ -10488,7 +10637,13 @@
           "speedBoost": 0,
           "cost": 11000000,
           "seconds": 561600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 10,
@@ -10500,7 +10655,13 @@
           "speedBoost": 0,
           "cost": 14000000,
           "seconds": 604800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 11,
@@ -10512,7 +10673,13 @@
           "speedBoost": 0,
           "cost": 19000000,
           "seconds": 907200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 12,
@@ -10524,13 +10691,24 @@
           "speedBoost": 0,
           "cost": 29000000,
           "seconds": 1296000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 41,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         }
       ]
     },
     "Rage": {
       "building": "Spell Factory",
       "forge": 3,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10542,7 +10720,17 @@
           "speedBoost": 20,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 20,
+            "speedBoost2": 10,
+            "damageBoost": 130
+          }
         },
         {
           "level": 2,
@@ -10554,7 +10742,17 @@
           "speedBoost": 22,
           "cost": 400000,
           "seconds": 21600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 22,
+            "speedBoost2": 11,
+            "damageBoost": 140
+          }
         },
         {
           "level": 3,
@@ -10566,7 +10764,17 @@
           "speedBoost": 24,
           "cost": 800000,
           "seconds": 43200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 24,
+            "speedBoost2": 12,
+            "damageBoost": 150
+          }
         },
         {
           "level": 4,
@@ -10578,7 +10786,17 @@
           "speedBoost": 26,
           "cost": 1000000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 26,
+            "speedBoost2": 13,
+            "damageBoost": 160
+          }
         },
         {
           "level": 5,
@@ -10590,7 +10808,17 @@
           "speedBoost": 28,
           "cost": 2000000,
           "seconds": 172800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 28,
+            "speedBoost2": 14,
+            "damageBoost": 170
+          }
         },
         {
           "level": 6,
@@ -10602,7 +10830,17 @@
           "speedBoost": 30,
           "cost": 5000000,
           "seconds": 345600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 30,
+            "speedBoost2": 15,
+            "damageBoost": 180
+          }
         },
         {
           "level": 7,
@@ -10614,13 +10852,28 @@
           "speedBoost": 32,
           "cost": 26000000,
           "seconds": 1209600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 32,
+            "speedBoost2": 16,
+            "damageBoost": 190
+          }
         }
       ]
     },
     "Jump": {
       "building": "Spell Factory",
       "forge": 4,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10632,7 +10885,14 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 81,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "jump": 0.4
+          }
         },
         {
           "level": 2,
@@ -10644,7 +10904,14 @@
           "speedBoost": 0,
           "cost": 1000000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 161,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "jump": 0.4
+          }
         },
         {
           "level": 3,
@@ -10656,7 +10923,14 @@
           "speedBoost": 0,
           "cost": 2000000,
           "seconds": 172800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 241,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "jump": 0.4
+          }
         },
         {
           "level": 4,
@@ -10668,7 +10942,14 @@
           "speedBoost": 0,
           "cost": 5000000,
           "seconds": 345600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 321,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "jump": 0.4
+          }
         },
         {
           "level": 5,
@@ -10680,13 +10961,22 @@
           "speedBoost": 0,
           "cost": 8000000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 401,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "jump": 0.4
+          }
         }
       ]
     },
     "Freeze": {
       "building": "Spell Factory",
       "forge": 4,
+      "preferredTarget": "",
+      "immune": [],
       "levels": [
         {
           "level": 1,
@@ -10698,7 +10988,15 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 2.5,
+            "freezeOuter": 2.25
+          }
         },
         {
           "level": 2,
@@ -10710,7 +11008,15 @@
           "speedBoost": 0,
           "cost": 1200000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 3.0,
+            "freezeOuter": 2.7
+          }
         },
         {
           "level": 3,
@@ -10722,7 +11028,15 @@
           "speedBoost": 0,
           "cost": 1700000,
           "seconds": 129600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 3.5,
+            "freezeOuter": 3.15
+          }
         },
         {
           "level": 4,
@@ -10734,7 +11048,15 @@
           "speedBoost": 0,
           "cost": 3000000,
           "seconds": 172800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 4.0,
+            "freezeOuter": 3.6
+          }
         },
         {
           "level": 5,
@@ -10746,7 +11068,15 @@
           "speedBoost": 0,
           "cost": 4200000,
           "seconds": 216000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 4.5,
+            "freezeOuter": 4.05
+          }
         },
         {
           "level": 6,
@@ -10758,7 +11088,15 @@
           "speedBoost": 0,
           "cost": 6000000,
           "seconds": 302400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 5.0,
+            "freezeOuter": 4.5
+          }
         },
         {
           "level": 7,
@@ -10770,7 +11108,15 @@
           "speedBoost": 0,
           "cost": 7000000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 5.5,
+            "freezeOuter": 4.95
+          }
         },
         {
           "level": 8,
@@ -10782,13 +11128,26 @@
           "speedBoost": 0,
           "cost": 28000000,
           "seconds": 1339200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 6.0,
+            "freezeOuter": 5.4
+          }
         }
       ]
     },
     "Clone": {
       "building": "Spell Factory",
       "forge": 5,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10800,7 +11159,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 2,
@@ -10812,7 +11177,13 @@
           "speedBoost": 0,
           "cost": 1500000,
           "seconds": 86400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 3,
@@ -10824,7 +11195,13 @@
           "speedBoost": 0,
           "cost": 2500000,
           "seconds": 172800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 4,
@@ -10836,7 +11213,13 @@
           "speedBoost": 0,
           "cost": 3000000,
           "seconds": 194400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 5,
@@ -10848,7 +11231,13 @@
           "speedBoost": 0,
           "cost": 4000000,
           "seconds": 216000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 6,
@@ -10860,7 +11249,13 @@
           "speedBoost": 0,
           "cost": 5000000,
           "seconds": 345600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 7,
@@ -10872,7 +11267,13 @@
           "speedBoost": 0,
           "cost": 8000000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 8,
@@ -10884,7 +11285,13 @@
           "speedBoost": 0,
           "cost": 9000000,
           "seconds": 604800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 9,
@@ -10896,13 +11303,24 @@
           "speedBoost": 0,
           "cost": 26000000,
           "seconds": 1166400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 60,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         }
       ]
     },
     "Invisibility": {
       "building": "Spell Factory",
       "forge": 6,
+      "preferredTarget": "",
+      "immune": [
+        "walls",
+        "siegeMachines"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10914,7 +11332,14 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 14,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "invisibility": 0.6
+          }
         },
         {
           "level": 2,
@@ -10926,7 +11351,14 @@
           "speedBoost": 0,
           "cost": 5000000,
           "seconds": 259200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 15,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "invisibility": 0.6
+          }
         },
         {
           "level": 3,
@@ -10938,7 +11370,14 @@
           "speedBoost": 0,
           "cost": 6000000,
           "seconds": 345600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 16,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "invisibility": 0.6
+          }
         },
         {
           "level": 4,
@@ -10950,13 +11389,25 @@
           "speedBoost": 0,
           "cost": 7000000,
           "seconds": 432000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 17,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "invisibility": 0.6
+          }
         }
       ]
     },
     "Recall": {
       "building": "Spell Factory",
       "forge": 7,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -10968,7 +11419,16 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 2,
@@ -10980,7 +11440,16 @@
           "speedBoost": 0,
           "cost": 7500000,
           "seconds": 604800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 3,
@@ -10992,7 +11461,16 @@
           "speedBoost": 0,
           "cost": 8000000,
           "seconds": 648000,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 4,
@@ -11004,7 +11482,16 @@
           "speedBoost": 0,
           "cost": 9000000,
           "seconds": 691200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 5,
@@ -11016,7 +11503,16 @@
           "speedBoost": 0,
           "cost": 13000000,
           "seconds": 777600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 6,
@@ -11028,7 +11524,16 @@
           "speedBoost": 0,
           "cost": 19000000,
           "seconds": 950400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 7,
@@ -11040,13 +11545,30 @@
           "speedBoost": 0,
           "cost": 29000000,
           "seconds": 1382400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         }
       ]
     },
     "Revive": {
       "building": "Spell Factory",
       "forge": 8,
+      "preferredTarget": "",
+      "immune": [
+        "walls",
+        "townHallAndCastle",
+        "otherBuildings",
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11058,7 +11580,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8
+          }
         },
         {
           "level": 2,
@@ -11070,7 +11598,13 @@
           "speedBoost": 0,
           "cost": 18000000,
           "seconds": 604800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8
+          }
         },
         {
           "level": 3,
@@ -11082,7 +11616,13 @@
           "speedBoost": 0,
           "cost": 19000000,
           "seconds": 691200,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8
+          }
         },
         {
           "level": 4,
@@ -11094,7 +11634,13 @@
           "speedBoost": 0,
           "cost": 20000000,
           "seconds": 993600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8
+          }
         },
         {
           "level": 5,
@@ -11106,13 +11652,26 @@
           "speedBoost": 0,
           "cost": 29500000,
           "seconds": 1382400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8
+          }
         }
       ]
     },
     "Totem Spell": {
       "building": "Spell Factory",
       "forge": 9,
+      "preferredTarget": "",
+      "immune": [
+        "storages",
+        "walls",
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11124,7 +11683,14 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "freeze": 0.2
+          }
         },
         {
           "level": 2,
@@ -11136,7 +11702,14 @@
           "speedBoost": 0,
           "cost": 21000000,
           "seconds": 1036800,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "freeze": 0.2
+          }
         },
         {
           "level": 3,
@@ -11148,7 +11721,14 @@
           "speedBoost": 0,
           "cost": 22000000,
           "seconds": 1209600,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "freeze": 0.2
+          }
         },
         {
           "level": 4,
@@ -11160,13 +11740,28 @@
           "speedBoost": 0,
           "cost": 23000000,
           "seconds": 1382400,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "freeze": 0.2
+          }
         }
       ]
     },
     "Poison": {
       "building": "Dark Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [
+        "storages",
+        "walls",
+        "townHallAndCastle",
+        "otherBuildings",
+        "siegeMachines"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11178,7 +11773,18 @@
           "speedBoost": -26,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -26,
+            "speedBoost2": -26,
+            "attackSpeedBoost": -35,
+            "poisonDps": 90
+          }
         },
         {
           "level": 2,
@@ -11190,7 +11796,18 @@
           "speedBoost": -30,
           "cost": 5000,
           "seconds": 21600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -30,
+            "speedBoost2": -30,
+            "attackSpeedBoost": -40,
+            "poisonDps": 115
+          }
         },
         {
           "level": 3,
@@ -11202,7 +11819,18 @@
           "speedBoost": -34,
           "cost": 10000,
           "seconds": 64800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -34,
+            "speedBoost2": -34,
+            "attackSpeedBoost": -45,
+            "poisonDps": 145
+          }
         },
         {
           "level": 4,
@@ -11214,7 +11842,18 @@
           "speedBoost": -38,
           "cost": 21500,
           "seconds": 172800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -38,
+            "speedBoost2": -38,
+            "attackSpeedBoost": -50,
+            "poisonDps": 180
+          }
         },
         {
           "level": 5,
@@ -11226,7 +11865,18 @@
           "speedBoost": -40,
           "cost": 35000,
           "seconds": 259200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -40,
+            "speedBoost2": -40,
+            "attackSpeedBoost": -55,
+            "poisonDps": 220
+          }
         },
         {
           "level": 6,
@@ -11238,7 +11888,18 @@
           "speedBoost": -42,
           "cost": 55000,
           "seconds": 345600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -42,
+            "speedBoost2": -42,
+            "attackSpeedBoost": -60,
+            "poisonDps": 260
+          }
         },
         {
           "level": 7,
@@ -11250,7 +11911,18 @@
           "speedBoost": -44,
           "cost": 77500,
           "seconds": 432000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -44,
+            "speedBoost2": -44,
+            "attackSpeedBoost": -65,
+            "poisonDps": 280
+          }
         },
         {
           "level": 8,
@@ -11262,7 +11934,18 @@
           "speedBoost": -46,
           "cost": 100000,
           "seconds": 561600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -46,
+            "speedBoost2": -46,
+            "attackSpeedBoost": -68,
+            "poisonDps": 300
+          }
         },
         {
           "level": 9,
@@ -11274,7 +11957,18 @@
           "speedBoost": -48,
           "cost": 135000,
           "seconds": 604800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -48,
+            "speedBoost2": -48,
+            "attackSpeedBoost": -70,
+            "poisonDps": 320
+          }
         },
         {
           "level": 10,
@@ -11286,7 +11980,18 @@
           "speedBoost": -50,
           "cost": 175000,
           "seconds": 691200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -50,
+            "speedBoost2": -50,
+            "attackSpeedBoost": -72,
+            "poisonDps": 340
+          }
         },
         {
           "level": 11,
@@ -11298,7 +12003,18 @@
           "speedBoost": -51,
           "cost": 230000,
           "seconds": 835200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -51,
+            "speedBoost2": -51,
+            "attackSpeedBoost": -73,
+            "poisonDps": 360
+          }
         },
         {
           "level": 12,
@@ -11310,13 +12026,28 @@
           "speedBoost": -52,
           "cost": 350000,
           "seconds": 1252800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 40,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "boost": 0.5,
+            "speedBoost": -52,
+            "speedBoost2": -52,
+            "attackSpeedBoost": -74,
+            "poisonDps": 380
+          }
         }
       ]
     },
     "Earthquake": {
       "building": "Dark Spell Factory",
       "forge": 2,
+      "preferredTarget": "Wall",
+      "immune": [
+        "storages"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11328,7 +12059,16 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.029,
+            "troopDamage": 0.0,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 2,
@@ -11340,7 +12080,16 @@
           "speedBoost": 0,
           "cost": 6000,
           "seconds": 43200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 3.8,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.034,
+            "troopDamage": 0.0,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 3,
@@ -11352,7 +12101,16 @@
           "speedBoost": 0,
           "cost": 12000,
           "seconds": 86400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.1,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.042,
+            "troopDamage": 0.0,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 4,
@@ -11364,7 +12122,16 @@
           "speedBoost": 0,
           "cost": 25500,
           "seconds": 259200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.4,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.05,
+            "troopDamage": 0.0,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 5,
@@ -11376,7 +12143,16 @@
           "speedBoost": 0,
           "cost": 42000,
           "seconds": 302400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.7,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.058,
+            "troopDamage": 0.0,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 6,
@@ -11388,7 +12164,16 @@
           "speedBoost": 0,
           "cost": 120000,
           "seconds": 691200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.7,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.058,
+            "troopDamage": 0.01,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 7,
@@ -11400,7 +12185,16 @@
           "speedBoost": 0,
           "cost": 200000,
           "seconds": 777600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.7,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.058,
+            "troopDamage": 0.02,
+            "preferredDamage": 5
+          }
         },
         {
           "level": 8,
@@ -11412,13 +12206,27 @@
           "speedBoost": 0,
           "cost": 330000,
           "seconds": 1166400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.7,
+            "pulses": 5,
+            "interval": 0.4,
+            "deploy": 0.8,
+            "buildingDamage": 0.058,
+            "troopDamage": 0.029,
+            "preferredDamage": 5
+          }
         }
       ]
     },
     "Haste": {
       "building": "Dark Spell Factory",
       "forge": 3,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11430,7 +12238,16 @@
           "speedBoost": 28,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 41,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 28,
+            "speedBoost2": 14
+          }
         },
         {
           "level": 2,
@@ -11442,7 +12259,16 @@
           "speedBoost": 34,
           "cost": 8000,
           "seconds": 86400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 61,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 34,
+            "speedBoost2": 17
+          }
         },
         {
           "level": 3,
@@ -11454,7 +12280,16 @@
           "speedBoost": 40,
           "cost": 17000,
           "seconds": 172800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 81,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 40,
+            "speedBoost2": 20
+          }
         },
         {
           "level": 4,
@@ -11466,7 +12301,16 @@
           "speedBoost": 46,
           "cost": 30000,
           "seconds": 259200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 101,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 46,
+            "speedBoost2": 23
+          }
         },
         {
           "level": 5,
@@ -11478,7 +12322,16 @@
           "speedBoost": 52,
           "cost": 38500,
           "seconds": 345600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 121,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 52,
+            "speedBoost2": 26
+          }
         },
         {
           "level": 6,
@@ -11490,7 +12343,16 @@
           "speedBoost": 56,
           "cost": 200000,
           "seconds": 777600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 4.0,
+            "pulses": 121,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 56,
+            "speedBoost2": 28
+          }
         },
         {
           "level": 7,
@@ -11502,13 +12364,24 @@
           "speedBoost": 56,
           "cost": 320000,
           "seconds": 1080000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 121,
+            "interval": 0.25,
+            "deploy": 0.8,
+            "boost": 1.0,
+            "speedBoost": 56,
+            "speedBoost2": 28
+          }
         }
       ]
     },
     "Skeleton Spell": {
       "building": "Dark Spell Factory",
       "forge": 4,
+      "preferredTarget": "",
+      "immune": [],
       "levels": [
         {
           "level": 1,
@@ -11520,7 +12393,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 2,
@@ -11532,7 +12411,13 @@
           "speedBoost": 0,
           "cost": 11000,
           "seconds": 43200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 3,
@@ -11544,7 +12429,13 @@
           "speedBoost": 0,
           "cost": 17000,
           "seconds": 86400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 4,
@@ -11556,7 +12447,13 @@
           "speedBoost": 0,
           "cost": 25000,
           "seconds": 172800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 5,
@@ -11568,7 +12465,13 @@
           "speedBoost": 0,
           "cost": 40000,
           "seconds": 216000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 6,
@@ -11580,7 +12483,13 @@
           "speedBoost": 0,
           "cost": 50000,
           "seconds": 259200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 7,
@@ -11592,7 +12501,13 @@
           "speedBoost": 0,
           "cost": 75000,
           "seconds": 345600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         },
         {
           "level": 8,
@@ -11604,13 +12519,21 @@
           "speedBoost": 0,
           "cost": 135000,
           "seconds": 518400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8
+          }
         }
       ]
     },
     "Bat Spell": {
       "building": "Dark Spell Factory",
       "forge": 5,
+      "preferredTarget": "",
+      "immune": [],
       "levels": [
         {
           "level": 1,
@@ -11622,7 +12545,16 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 2,
@@ -11634,7 +12566,16 @@
           "speedBoost": 0,
           "cost": 13000,
           "seconds": 64800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 3,
@@ -11646,7 +12587,16 @@
           "speedBoost": 0,
           "cost": 25500,
           "seconds": 129600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 4,
@@ -11658,7 +12608,16 @@
           "speedBoost": 0,
           "cost": 35000,
           "seconds": 194400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 5,
@@ -11670,7 +12629,16 @@
           "speedBoost": 0,
           "cost": 47500,
           "seconds": 345600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 6,
@@ -11682,7 +12650,16 @@
           "speedBoost": 0,
           "cost": 140000,
           "seconds": 604800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 7,
@@ -11694,7 +12671,16 @@
           "speedBoost": 0,
           "cost": 220000,
           "seconds": 734400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 8,
@@ -11706,13 +12692,28 @@
           "speedBoost": 0,
           "cost": 300000,
           "seconds": 1123200,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 2.25,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         }
       ]
     },
     "Overgrowth": {
       "building": "Dark Spell Factory",
       "forge": 6,
+      "preferredTarget": "",
+      "immune": [
+        "walls",
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11724,7 +12725,16 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 22.0,
+            "freezeOuter": 22.0,
+            "invisibility": 22.0
+          }
         },
         {
           "level": 2,
@@ -11736,7 +12746,16 @@
           "speedBoost": 0,
           "cost": 62500,
           "seconds": 432000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 23.0,
+            "freezeOuter": 23.0,
+            "invisibility": 23.0
+          }
         },
         {
           "level": 3,
@@ -11748,7 +12767,16 @@
           "speedBoost": 0,
           "cost": 125000,
           "seconds": 734400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 24.0,
+            "freezeOuter": 24.0,
+            "invisibility": 24.0
+          }
         },
         {
           "level": 4,
@@ -11760,7 +12788,16 @@
           "speedBoost": 0,
           "cost": 175000,
           "seconds": 864000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 25.0,
+            "freezeOuter": 25.0,
+            "invisibility": 25.0
+          }
         },
         {
           "level": 5,
@@ -11772,13 +12809,27 @@
           "speedBoost": 0,
           "cost": 360000,
           "seconds": 1382400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 26.0,
+            "freezeOuter": 26.0,
+            "invisibility": 26.0
+          }
         }
       ]
     },
     "Ice Block": {
       "building": "Dark Spell Factory",
       "forge": 7,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines",
+        "totems"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11790,7 +12841,15 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         },
         {
           "level": 2,
@@ -11802,7 +12861,15 @@
           "speedBoost": 0,
           "cost": 140000,
           "seconds": 864000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         },
         {
           "level": 3,
@@ -11814,7 +12881,15 @@
           "speedBoost": 0,
           "cost": 200000,
           "seconds": 950400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         },
         {
           "level": 4,
@@ -11826,7 +12901,15 @@
           "speedBoost": 0,
           "cost": 280000,
           "seconds": 1036800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         },
         {
           "level": 5,
@@ -11838,7 +12921,15 @@
           "speedBoost": 0,
           "cost": 320000,
           "seconds": 1209600,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         },
         {
           "level": 6,
@@ -11850,13 +12941,26 @@
           "speedBoost": 0,
           "cost": 380000,
           "seconds": 1382400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 5.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 7.0,
+            "freezeOuter": 7.0
+          }
         }
       ]
     },
     "Santas Surprise": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [
+        "storages",
+        "townHallAndCastle"
+      ],
       "levels": [
         {
           "level": 1,
@@ -11868,7 +12972,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 2,
@@ -11880,7 +12990,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 3,
@@ -11892,7 +13008,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 4,
@@ -11904,7 +13026,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 5,
@@ -11916,7 +13044,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 6,
@@ -11928,7 +13062,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 7,
@@ -11940,7 +13080,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 8,
@@ -11952,7 +13098,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 9,
@@ -11964,7 +13116,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 10,
@@ -11976,7 +13134,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 11,
@@ -11988,7 +13152,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 12,
@@ -12000,7 +13170,13 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         },
         {
           "level": 13,
@@ -12012,13 +13188,21 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 1.5,
+            "pulses": 5,
+            "interval": 0.1,
+            "deploy": 0.0
+          }
         }
       ]
     },
     "Birthday2017": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [],
       "levels": [
         {
           "level": 1,
@@ -12030,13 +13214,22 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 2.5,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.0,
+            "speedBoost2": 0
+          }
         }
       ]
     },
     "BagOfFrostmites": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [],
       "levels": [
         {
           "level": 1,
@@ -12048,7 +13241,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 1.5,
+            "freezeOuter": 1.0,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 2,
@@ -12060,7 +13264,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 1.7,
+            "freezeOuter": 1.2,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 3,
@@ -12072,7 +13287,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 1.9,
+            "freezeOuter": 1.4,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 4,
@@ -12084,7 +13310,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 2.1,
+            "freezeOuter": 1.6,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 5,
@@ -12096,7 +13333,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 2.3,
+            "freezeOuter": 1.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 6,
@@ -12108,7 +13356,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 2.5,
+            "freezeOuter": 2.0,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 7,
@@ -12120,7 +13379,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 2.7,
+            "freezeOuter": 2.2,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 8,
@@ -12132,7 +13402,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 2.9,
+            "freezeOuter": 2.4,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 9,
@@ -12144,7 +13425,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 3.1,
+            "freezeOuter": 2.6,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 10,
@@ -12156,7 +13448,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 3.3,
+            "freezeOuter": 2.8,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 11,
@@ -12168,7 +13471,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 3.5,
+            "freezeOuter": 3.0,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 12,
@@ -12180,7 +13494,18 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 3.7,
+            "freezeOuter": 3.2,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 13,
@@ -12192,13 +13517,29 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 3.5,
+            "pulses": 1,
+            "interval": 0.3,
+            "deploy": 0.3,
+            "freeze": 3.9,
+            "freezeOuter": 3.4,
+            "boost": 0.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         }
       ]
     },
     "Yellow Card": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [
+        "walls",
+        "siegeMachines"
+      ],
       "levels": [
         {
           "level": 1,
@@ -12210,13 +13551,27 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 0.0,
+            "pulses": 1,
+            "interval": 0.0,
+            "deploy": 0.8,
+            "freeze": 15.0,
+            "freezeOuter": 15.0,
+            "invisibility": 15.0
+          }
         }
       ]
     },
     "Debris Explosion 2": {
       "building": "Spell Factory",
       "forge": 1,
+      "preferredTarget": "",
+      "immune": [
+        "storages",
+        "townHallAndCastle"
+      ],
       "levels": [
         {
           "level": 1,
@@ -12228,13 +13583,23 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 20.0,
+            "pulses": 1,
+            "interval": 0.4,
+            "deploy": 0.8
+          }
         }
       ]
     },
     "AngrySpell": {
       "building": "Dark Spell Factory",
       "forge": 8,
+      "preferredTarget": "",
+      "immune": [
+        "siegeMachines"
+      ],
       "levels": [
         {
           "level": 1,
@@ -12246,7 +13611,16 @@
           "speedBoost": 0,
           "cost": 0,
           "seconds": 0,
-          "resource": "elixir"
+          "resource": "elixir",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 50,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 25.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 2,
@@ -12258,7 +13632,16 @@
           "speedBoost": 0,
           "cost": 150000,
           "seconds": 806400,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 50,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 25.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 3,
@@ -12270,7 +13653,16 @@
           "speedBoost": 0,
           "cost": 250000,
           "seconds": 1036800,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 50,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 25.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         },
         {
           "level": 4,
@@ -12282,7 +13674,16 @@
           "speedBoost": 0,
           "cost": 400000,
           "seconds": 1296000,
-          "resource": "dark"
+          "resource": "dark",
+          "mechanics": {
+            "radius": 6.0,
+            "pulses": 50,
+            "interval": 0.1,
+            "deploy": 0.8,
+            "boost": 25.0,
+            "speedBoost": 0,
+            "speedBoost2": 0
+          }
         }
       ]
     }

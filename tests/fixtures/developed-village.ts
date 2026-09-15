@@ -29,7 +29,7 @@ export function developedSave() {
     dragon: 0,
     pekka: 0,
   };
-  save.spells = { rage: 1, heal: 1, lightning: 0 };
+  save.spells = { rage: 1, heal: 1, lightning: 0, freeze: 0 };
   // A veteran village has been collecting for a while. Storage caps income, never a balance
   // already held, so this purse is spendable without moving a single building.
   save.gold = 205000;

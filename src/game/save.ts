@@ -13,7 +13,7 @@ import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { validStarBonus } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
-import { expandArmyRoster } from './army';
+import { emptySpells, expandArmyRoster } from './army';
 import { maxSpellLevelFor } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
@@ -62,7 +62,7 @@ export function migrateSave(input: unknown): unknown {
     if (levels && !(kind in levels)) levels[kind] = 1;
   }
   if (s.version === 1) {
-    s.spells ??= { rage: 0, heal: 0, lightning: 0 };
+    s.spells ??= emptySpells();
     s.spellQueue ??= [];
   }
   if (version === 2) s.dark ??= 0;

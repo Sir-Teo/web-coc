@@ -149,7 +149,7 @@ describe('native army facility progression', () => {
       { hp: 720, cost: 2000000, seconds: 259200, capacity: 10 },
     ]);
     const old = developedSave();
-    old.spells = { rage: 2, heal: 2, lightning: 0 };
+    old.spells = { rage: 2, heal: 2, lightning: 0, freeze: 0 };
     old.spellQueue = [{ kind: 'lightning', end: old.lastTick + 50000 }];
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 32, 30, 2));
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 36, 30, 5));
@@ -162,7 +162,7 @@ describe('native army facility progression', () => {
     expect(m.spellHousing).toBe(9);
     expect(m.countOf('spellfactory')).toBe(3);
     m.brew('lightning');
-    expect(m.state.spells).toEqual({ rage: 2, heal: 2, lightning: 1 });
+    expect(m.state.spells).toEqual({ rage: 2, heal: 2, lightning: 1, freeze: 0 });
     const loaded = new GameModel(JSON.parse(JSON.stringify(m.state)));
     expect(loaded.state.spells).toEqual(m.state.spells);
     loaded.startBattle(0);

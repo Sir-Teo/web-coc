@@ -8,7 +8,12 @@ import { SPELL_TOWER_READY } from '../src/game/spell-tower';
 import { NATIVE_CAMPAIGN, nativeCampaignIssues, nativeLayout } from '../src/game/native-campaign';
 import { deploySpots, lateBattle, lateReplay, lateSetup } from './fixtures/late-defense-battle';
 
-type Case = [index: number, army: Partial<Record<TroopKind, number>>, anchor: (b: { kind: string; spellTowerWeapon?: string }) => boolean, steps: number];
+type Case = [
+  index: number,
+  army: Partial<Record<TroopKind, number>>,
+  anchor: (b: { kind: string; spellTowerWeapon?: string }) => boolean,
+  steps: number,
+];
 const cases: Case[] = [
   [85, { dragon: 8, giant: 16 }, (b) => b.kind === 'monolith', 900],
   [86, { dragon: 8, giant: 16 }, (b) => b.kind === 'spelltower', 900],
@@ -28,7 +33,11 @@ function recording([index, army, anchor, steps]: Case): ReplayData {
   const deployments = Object.entries(army).flatMap(([kind, n]) =>
     Array.from({ length: n ?? 0 }, () => ({ step: 0, kind: kind as TroopKind, ...spots[s++] })),
   );
-  return lateReplay(setup, deployments.map(({ step, kind, x, y }) => ({ step, kind, x, y })), steps);
+  return lateReplay(
+    setup,
+    deployments.map(({ step, kind, x, y }) => ({ step, kind, x, y })),
+    steps,
+  );
 }
 
 describe('Monolith and Spell Tower campaign gate', () => {
@@ -42,15 +51,21 @@ describe('Monolith and Spell Tower campaign gate', () => {
       88: [0, Array(7).fill('invisibility')],
       89: [2, ['invisibility', 'invisibility', 'poison', 'poison', 'poison', 'poison', 'rage']],
     };
-    for (const [index, [monoliths, weapons]] of Object.entries(counts).map(([i, v]) => [+i, v] as const)) {
+    for (const [index, [monoliths, weapons]] of Object.entries(counts).map(
+      ([i, v]) => [+i, v] as const,
+    )) {
       const issues = nativeCampaignIssues(index);
       expect(issues).not.toContain('Monolith');
       expect(issues).not.toContain('Spell Tower');
       expect(issues).not.toContain('Unknown Spell Tower weapon');
       const layout = nativeLayout(index);
       const source = [...NATIVE_CAMPAIGN[index].buildings, ...NATIVE_CAMPAIGN[index].traps];
-      expect(source.filter(([data]) => data === 1000077).map(([, , , level]) => level)).toEqual(Array(monoliths).fill(2));
-      expect(layout.filter((b) => b.kind === 'monolith').map((b) => b.level)).toEqual(Array(monoliths).fill(2));
+      expect(source.filter(([data]) => data === 1000077).map(([, , , level]) => level)).toEqual(
+        Array(monoliths).fill(2),
+      );
+      expect(layout.filter((b) => b.kind === 'monolith').map((b) => b.level)).toEqual(
+        Array(monoliths).fill(2),
+      );
       const towers = layout.filter((b) => b.kind === 'spelltower');
       expect(towers.every((b) => b.level === 3)).toBe(true);
       expect(towers.map((b) => b.spellTowerWeapon).sort()).toEqual(weapons);
@@ -81,7 +96,9 @@ describe('Monolith and Spell Tower replays', () => {
         (n: number, t) => n + (t as { fired: number }).fired,
         0,
       );
-      const weapons = new Set((late.spellTower?.casts ?? []).map((cast: { weapon: string }) => cast.weapon));
+      const weapons = new Set(
+        (late.spellTower?.casts ?? []).map((cast: { weapon: string }) => cast.weapon),
+      );
       const expected = { 86: 'rage', 87: 'poison', 88: 'invisibility', 89: 'poison' }[c[0] as 86];
       if (c[0] === 85) expect(fired).toBeGreaterThan(0);
       else expect(weapons.has(expected)).toBe(true);
@@ -103,8 +120,9 @@ describe('Monolith and Spell Tower replays', () => {
     misplaced.initial.buildings.find((b) => b.kind === 'wall')!.spellTowerWeapon = 'rage';
     expect(validateReplay(misplaced)).toBe(false);
     const unknown = structuredClone(data);
-    (unknown.initial.buildings.find((b) => b.kind === 'spelltower') as { spellTowerWeapon: string }).spellTowerWeapon =
-      'earthquake';
+    (
+      unknown.initial.buildings.find((b) => b.kind === 'spelltower') as { spellTowerWeapon: string }
+    ).spellTowerWeapon = 'earthquake';
     expect(validateReplay(unknown)).toBe(false);
     // A home practice copy can never carry a campaign-only late defense.
     const practice: ReplayData = {
@@ -116,7 +134,7 @@ describe('Monolith and Spell Tower replays', () => {
         buildings: [makeBuilding(1, 'townhall', 10, 10, 8), makeBuilding(2, 'monolith', 20, 20, 2)],
         army: data.initial.army,
         spells: data.initial.spells,
-        spellLevels: { heal: 1, rage: 1, lightning: 1 },
+        spellLevels: { heal: 1, rage: 1, lightning: 1, freeze: 1 },
         troopLevels: data.initial.troopLevels,
       },
       steps: [],

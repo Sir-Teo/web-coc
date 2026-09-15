@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { GameModel, makeBuilding, type Unit } from '../src/game/model';
+import { GameModel, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
 import { BUILDINGS, SPELL_KEYS, type SpellKind } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { stepSpellAuras } from '../src/game/spell-effects';
 import { maxSpellLevelFor } from '../src/game/spell-progression';
-import { emptyArmy } from '../src/game/army';
+import { defaultSpellLevels, emptyArmy } from '../src/game/army';
 import { developedSave } from './fixtures/developed-village';
 
 // Independent transcription from Supercell's immutable spells.csv and current wiki tables.
@@ -14,19 +14,26 @@ const reference = {
   lightning: { cost: [50000, 100000, 200000, 600000], hours: [2, 4, 6, 24], lab: [1, 2, 3, 6] },
   heal: { cost: [75000, 150000, 300000, 900000], hours: [3, 6, 12, 24], lab: [2, 4, 5, 6] },
   rage: { cost: [400000, 800000, 1000000, 2000000], hours: [6, 12, 24, 48], lab: [3, 4, 5, 6] },
+  freeze: {
+    cost: [1200000, 1700000, 3000000, 4200000],
+    hours: [24, 36, 48, 60],
+    lab: [7, 8, 8, 8],
+  },
 };
 function developed() {
   const m = new GameModel(developedSave());
   m.townhall!.level = 8;
   m.laboratory!.level = 6;
-  m.state.spellLevels = { lightning: 1, heal: 1, rage: 1 };
+  // Research is gated on the Spell Factory that offers the spell; the Freeze Spell needs 4.
+  for (const b of m.state.buildings) if (b.kind === 'spellfactory') b.level = 4;
+  m.state.spellLevels = defaultSpellLevels();
   m.state.elixir = 5000000;
   return m;
 }
 function arena(kind: SpellKind, level = 1, troop: Unit['kind'] = 'giant') {
   const m = developed();
   m.state.spellLevels![kind] = level;
-  m.state.spells = { lightning: 2, heal: 2, rage: 2 };
+  m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 2])) as SpellBook;
   m.startBattle(0, true);
   const b = m.battle!;
   b.started = true;
@@ -150,6 +157,12 @@ describe('spell research', () => {
     expect(loaded.spellLevel('lightning')).toBe(1);
     expect(loaded.state.research).toEqual(original.research);
     expect(loaded.state.spells).toEqual(original.spells);
+    // A save written before the Freeze Spell existed has no field for it. Loading gains the
+    // field at zero and keeps every count the village already held.
+    const legacy = JSON.parse(JSON.stringify(original)) as typeof original;
+    delete (legacy.spells as Partial<Record<string, number>>).freeze;
+    expect(Object.hasOwn(legacy.spells, 'freeze')).toBe(false);
+    expect(new GameModel(legacy).state.spells).toEqual({ ...legacy.spells, freeze: 0 });
     const good = developed().state;
     // The Healing spell now runs to its own original ceiling, so 6 is a real level.
     for (const invalid of [0, maxSpellLevelFor('heal') + 1, -1, 1.5, NaN, '2', null]) {
@@ -351,8 +364,8 @@ describe('native spell effects', () => {
 
   it('spell levels are frozen in battle, exported and replayed independently of home research', () => {
     const m = developed();
-    m.state.spellLevels = { lightning: 4, heal: 3, rage: 2 };
-    m.state.spells = { lightning: 1, heal: 1, rage: 1 };
+    m.state.spellLevels = { lightning: 4, heal: 3, rage: 2, freeze: 1 };
+    m.state.spells = { lightning: 1, heal: 1, rage: 1, freeze: 1 };
     m.startBattle(0, true);
     const b = m.battle!;
     m.deploy(1, 13);
@@ -373,7 +386,7 @@ describe('native spell effects', () => {
       record = m.state.raidLog![0];
     expect(record.replay!.version).toBe(REPLAY_VERSION);
     const data = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
-    expect(data.initial.spellLevels).toEqual({ lightning: 4, heal: 3, rage: 2 });
+    expect(data.initial.spellLevels).toEqual({ lightning: 4, heal: 3, rage: 2, freeze: 1 });
     const viewer = new GameModel();
     viewer.state.research = { kind: 'heal', end: viewer.clock + 1000 };
     expect(viewer.openReplay(data)).toBe(true);

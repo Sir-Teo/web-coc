@@ -26,7 +26,7 @@ describe.each(playable)('native combat: $name', ({ index }) => {
       m.state.nativeCampaign = freshNativeCampaign();
       m.state.nativeCampaign.stars.fill(1);
       m.state.army = { ...emptyArmy(), ...units };
-      m.state.spells = { lightning: 0, heal: 0, rage: 0 };
+      m.state.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0 };
       m.state.king = undefined;
       m.state.troopLevels = Object.fromEntries(
         TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),

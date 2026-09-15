@@ -1,4 +1,4 @@
-import { emptyArmy, emptySpells } from '../../src/game/army';
+import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { BUILDINGS, TROOP_KEYS, maxTroopLevel, type TroopKind } from '../../src/game/data';
@@ -52,7 +52,7 @@ export function lateGoblinReplay(
       army,
       spells,
       troopLevels: troopLevels(),
-      spellLevels: { lightning: 1, heal: 1, rage: 1 },
+      spellLevels: defaultSpellLevels(),
       nextId: 100000,
       availableLoot: loot,
       lootRoom: loot,

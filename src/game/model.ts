@@ -135,6 +135,7 @@ import {
   maxSpellLevelFor,
   spellProgression,
   LIGHTNING_STUN,
+  freezeSeconds,
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
@@ -190,6 +191,7 @@ import {
   spellSpace,
   emptyArmy,
   emptySpells,
+  defaultSpellLevels,
   expandArmyRoster,
   type ArmyPreset,
 } from './army';
@@ -1013,7 +1015,7 @@ export class GameModel {
       const { kind } = this.state.research;
       let name: string, level: number;
       if (isSpellKind(kind)) {
-        this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
+        this.state.spellLevels ??= defaultSpellLevels();
         level = this.state.spellLevels[kind] = Math.min(
           maxSpellLevelFor(kind),
           this.state.spellLevels[kind] + 1,
@@ -2297,6 +2299,29 @@ export class GameModel {
             v.cooldown = BUILDINGS[v.kind].rate!;
             delete b.defenseTargets[v.id];
           }
+        }
+    } else if (k === 'freeze') {
+      // Cold, not damage: defences stop mid-reload and defenders stop mid-step. The source
+      // states a shorter `FreezeOuterTimeMS` for the edge of the burst, which needs an outer
+      // radius the table does not give, so the whole radius takes the inner time.
+      const until = b.elapsed + freezeSeconds(this.spellLevel('freeze'));
+      for (const enemy of b.defenders ?? [])
+        if (
+          enemy.hp > 0 &&
+          (enemy.kind === 'skeleton' || enemy.spawnedAt <= b.elapsed) &&
+          distance2D(enemy.x - x, enemy.y - y) <= d.radius
+        )
+          enemy.stunnedUntil = Math.max(enemy.stunnedUntil ?? 0, until);
+      for (const v of b.buildings)
+        if (
+          v.hp > 0 &&
+          isDefense(v.kind) &&
+          !concealedTesla(b, v) &&
+          distanceTo({ x, y }, v) <= d.radius
+        ) {
+          b.defenseStuns[v.id] = Math.max(b.defenseStuns[v.id] ?? 0, until);
+          v.cooldown = BUILDINGS[v.kind].rate!;
+          delete b.defenseTargets[v.id];
         }
     } else startSpellAura(b, k, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;

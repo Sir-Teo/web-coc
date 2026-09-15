@@ -42,6 +42,7 @@ import {
   maxSpellLevelFor,
   SPELL_LEVELS,
   HEAL_PULSES,
+  freezeSeconds,
   HEAL_HERO_MULTIPLIER,
   SPELL_PULSE_INTERVAL,
   RAGE_LINGER,
@@ -1891,9 +1892,21 @@ export class HUD {
       ['Unlock requirement', `Spell Factory ${SPELL_UNLOCK[kind]}`],
       ['Housing space', `${d.space}`],
       ['Effect radius', `${d.radius} tiles`],
-      ['Targets', kind === 'lightning' ? 'Enemy buildings' : 'Ground and air troops'],
+      [
+        'Targets',
+        kind === 'lightning'
+          ? 'Enemy buildings'
+          : kind === 'freeze'
+            ? 'Defences and defending troops'
+            : 'Ground and air troops',
+      ],
     ];
     if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
+    else if (kind === 'freeze')
+      rows.push(
+        ['Damage', 'None'],
+        ['Freeze duration', `${freezeSeconds(this.model.spellLevel(kind))}s`],
+      );
     else if (kind === 'heal')
       rows.push(
         ['Total troop healing', n(d.heal * HEAL_PULSES)],
@@ -1911,11 +1924,13 @@ export class HUD {
         ['Hero effectiveness', '50% of each boost'],
       );
     const tactic =
-      kind === 'lightning'
-        ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
-        : kind === 'heal'
-          ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
-          : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
+      kind === 'freeze'
+        ? 'Cast it over the defences that are firing, not the ones ahead. Frozen defences stop mid-reload and pick a target again when they thaw, and frozen defenders stop where they stand. It deals no damage, so it buys time rather than destruction.'
+        : kind === 'lightning'
+          ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
+          : kind === 'heal'
+            ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
+            : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
     return `<div class="modal-body troop-info-body spell-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.spellLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button(`research-view:${kind}`, `${icon('FlaskConical', 18)} Research spell`, 'game-btn green')}</div>`;
   }
   private surrender() {

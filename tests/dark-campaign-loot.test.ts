@@ -36,7 +36,7 @@ function fixtureRecord(m: GameModel, index = 50): ReplayData {
       troopLevels: Object.fromEntries(Object.keys(emptyArmy()).map((k) => [k, 1])) as ReturnType<
         typeof emptyArmy
       >,
-      spellLevels: { lightning: 1, heal: 1, rage: 1 },
+      spellLevels: { lightning: 1, heal: 1, rage: 1, freeze: 1 },
       nextId: m.state.nextId,
       availableLoot,
       lootRoom: {

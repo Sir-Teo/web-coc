@@ -32,9 +32,11 @@ import {
   SPELL_KEYS,
   TROOP_KEYS,
   LEGACY_TROOP_KEYS,
+  type SpellKind,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
+import { defaultSpellLevels } from './army';
 import {
   EQUIPMENT_LEVEL_BEFORE_47,
   EQUIPMENT_MAX_LEVEL,
@@ -43,13 +45,14 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 47;
+export const REPLAY_VERSION = 48;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
  * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
  * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
  * Version 46 carries the catalog to Town Hall 18, again with no combat rule change.
  * Version 47 adds the fifth Skeleton Trap tier, whose coffin releases level 2 skeletons,
- * and arms the home Builder's Hut with the turret campaign huts already carried. */
+ * and arms the home Builder's Hut with the turret campaign huts already carried.
+ * Version 48 adds the Freeze Spell, which no earlier recording may carry or cast. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -64,6 +67,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 44 ||
   version === 45 ||
   version === 46 ||
+  version === 47 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -73,6 +77,17 @@ export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.
   ]),
 );
 const PRE_ROSTER_SPELL_LEVEL = 5;
+/** Spells added at version 48, which no earlier recording carries, casts or researches. */
+const VERSION_48_SPELLS = ['freeze'] as const;
+const PRE_VERSION_48_SPELL_KEYS: readonly SpellKind[] = SPELL_KEYS.filter(
+  (k) => !VERSION_48_SPELLS.includes(k as (typeof VERSION_48_SPELLS)[number]),
+);
+/**
+ * The book every recording before version 48 was replayed with, written out in the order
+ * those recordings hashed it. An archived battle state is compared as JSON, so the key order
+ * is part of the result and cannot be rebuilt from today's key list.
+ */
+const PRE_VERSION_48_SPELL_LEVELS = { lightning: 1, heal: 1, rage: 1 } as unknown as SpellBook;
 /** Ceilings before version 47 reconstructed the fifth coffin tier. */
 const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4 };
 /** Ceilings before version 46 carried the home catalog to Town Hall 18. */
@@ -206,7 +221,12 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
-    spellLevels: { lightning: 1, heal: 1, rage: 1, ...s.spellLevels },
+    // The Freeze Spell is version 48's own; an earlier recording has no level for it, and
+    // adding one would change every archived battle state.
+    spellLevels: {
+      ...(version >= 48 ? defaultSpellLevels() : PRE_VERSION_48_SPELL_LEVELS),
+      ...s.spellLevels,
+    },
     hero: s.hero
       ? { ...structuredClone(s.hero), unitId: null, abilityUsed: false, rageUntil: 0 }
       : undefined,
@@ -248,6 +268,9 @@ export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
   const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
+  // A recording older than version 48 has no field for the spells that version added, so it
+  // is checked against the book it was written with rather than today's.
+  const spellKeys = value.version >= 48 ? SPELL_KEYS : PRE_VERSION_48_SPELL_KEYS;
   const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
   if (
     !validCampaignCatalog(s.catalog) ||
@@ -257,7 +280,7 @@ export function validateReplay(value: unknown): value is ReplayData {
     typeof s.practice !== 'boolean' ||
     !integer(s.nextId, 1, Number.MAX_SAFE_INTEGER - 10000) ||
     !counts(s.army, troopKeys, 0, 9999) ||
-    !counts(s.spells, SPELL_KEYS, 0, 999) ||
+    !counts(s.spells, spellKeys, 0, 999) ||
     !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
     // The roster reached each troop's own original ceiling in version 47; before that every
     // troop stopped at five and the Healer, Dragon and P.E.K.K.A at three.
@@ -266,16 +289,16 @@ export function validateReplay(value: unknown): value is ReplayData {
         (k) =>
           s.troopLevels[k] > (value.version < 47 ? PRE_ROSTER_TROOP_LEVELS[k] : maxTroopLevel(k)),
       )) ||
-    (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
+    (value.version >= 17 && !counts(s.spellLevels, spellKeys, 1, MAX_SPELL_LEVEL)) ||
     (s.spellLevels !== undefined &&
-      SPELL_KEYS.some(
+      spellKeys.some(
         (k) =>
           s.spellLevels![k] < 1 ||
           s.spellLevels![k] > (value.version < 47 ? PRE_ROSTER_SPELL_LEVEL : maxSpellLevelFor(k)),
       )) ||
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
-        SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
+        spellKeys.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
     (value.version >= 25 &&
       !s.practice &&
       !validCampaignResources(
@@ -443,7 +466,7 @@ export function validateReplay(value: unknown): value is ReplayData {
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
-      if (a.type === 'spell' && !SPELL_KEYS.includes(a.kind)) return false;
+      if (a.type === 'spell' && !spellKeys.includes(a.kind)) return false;
       if (a.type === 'hero' && !s.hero) return false;
     } else return false;
   }

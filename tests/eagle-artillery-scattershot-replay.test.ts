@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Battle } from '../src/game/model';
-import { emptyArmy } from '../src/game/army';
+import { emptyArmy, emptySpells } from '../src/game/army';
 import { TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 import { REPLAY_VERSION, replayBattle, validateReplay, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -49,7 +49,7 @@ function observe(battle: Battle, seen: Observed) {
 /** Seek a portable recording backward through every snapshot and forward to its end. */
 function verifyPlayback(data: ReplayData, snapshots: Map<number, string>, final: Battle) {
   const record = parseReplayFile(JSON.stringify(makeReplayFile(data)));
-  expect(record.version).toBe(47);
+  expect(record.version).toBe(48);
   const viewer = new GameModel();
   const home = JSON.stringify(viewer.state);
   expect(viewer.openReplay(record)).toBe(true);
@@ -139,7 +139,7 @@ describe('Eagle Artillery and Scattershot replays', () => {
     m.state.nativeCampaign = freshNativeCampaign();
     m.state.nativeCampaign.stars.fill(1);
     m.state.army = { ...emptyArmy(), giant: 24, archer: 40, wizard: 12, balloon: 6 };
-    m.state.spells = { rage: 0, heal: 0, lightning: 2 };
+    m.state.spells = { ...emptySpells(), lightning: 2 };
     m.state.king = undefined;
     m.state.troopLevels = Object.fromEntries(
       TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),
@@ -264,6 +264,6 @@ describe('Eagle Artillery and Scattershot replays', () => {
         .filter((b) => b.kind === 'scattershot')
         .map((b) => b.level),
     ).toEqual([3, 3, 3, 3]);
-    expect(REPLAY_VERSION).toBe(47);
+    expect(REPLAY_VERSION).toBe(48);
   });
 });

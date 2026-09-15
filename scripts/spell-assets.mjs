@@ -37,6 +37,12 @@ const glyphs = {
     '<path d="M118 128 h20 v22 h22 v20 h-22 v22 h-20 v-22 h-22 v-20 h22 z"/>',
   ],
   lightning: ['#6fd4ff', '#1d5d97', '<path d="M144 116 l-40 54 h22 l-6 42 l42 -58 h-22 z"/>'],
+  // Paler and colder than the Lightning vial, so the two read apart in the tray at a glance.
+  freeze: [
+    '#e2f6ff',
+    '#4f96c8',
+    '<path d="M124 116 h8 v20 l16 -10 l4 7 l-20 12 l20 12 l-4 7 l-16 -10 v20 h-8 v-20 l-16 10 l-4 -7 l20 -12 l-20 -12 l4 -7 l16 10 z"/>',
+  ],
 };
 for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
   const output = `${SPELLS}/${name}-v2.webp`;
@@ -48,4 +54,4 @@ for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
     if (!(await fs.readFile(output)).equals(bytes)) throw Error(`${output} needs regeneration.`);
   } else await fs.writeFile(output, bytes);
 }
-console.log('Verified three spell vials with blue, yellow and purple native palettes.');
+console.log(`Verified ${Object.keys(glyphs).length} spell vials against their native palettes.`);

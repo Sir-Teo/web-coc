@@ -36,7 +36,7 @@ it('keeps recorded legacy health unchanged in every compatible replay version', 
         buildings: [{ ...makeBuilding(1, 'darkdrill', 10, 10, 3), hp: 1350, maxHp: 1350 }],
         army: emptyArmy(),
         spells: emptySpells(),
-        spellLevels: { heal: 1, rage: 1, lightning: 1 },
+        spellLevels: { heal: 1, rage: 1, lightning: 1, freeze: 1 },
         troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as ReturnType<
           typeof emptyArmy
         >,

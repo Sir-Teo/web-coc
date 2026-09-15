@@ -15,7 +15,7 @@ export function seekingMineVillage() {
   for (const kind of ['balloon', 'dragon'] as const)
     save.troopLevels[kind] = researchLevelForLab(kind, 6);
   save.king = undefined;
-  save.spells = { lightning: 0, heal: 0, rage: 0 };
+  save.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0 };
   save.nativeCampaign = freshNativeCampaign();
   save.nativeCampaign.stars.fill(1, 0, 53);
   save.tutorial = true;

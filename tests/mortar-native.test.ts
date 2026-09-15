@@ -212,7 +212,7 @@ for (const level of [1, 6, 8, 11, 16, 17, 18])
     expect(m.battle!.mortars?.[6]?.fired).toBeGreaterThan(0);
     const end = JSON.stringify(m.battle),
       replay = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(replay.version).toBe(47);
+    expect(replay.version).toBe(48);
     m.returnHome();
     const home = JSON.stringify(m.state);
     expect(m.openReplay(replay)).toBe(true);

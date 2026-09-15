@@ -43,6 +43,27 @@ export const troopProgression = (kind: TroopKind, level: number) => TROOP_LEVELS
 export const maxTroopLevelFor = (kind: TroopKind) => TROOP_LEVELS[kind].length;
 export const MAX_TROOP_LEVEL = Math.max(...Object.values(TROOP_LEVELS).map((r) => r.length));
 
+/** Mechanical columns a spell carries, in tiles and seconds. Absent means the source has
+ * no such column for that spell, which is different from a column that is zero. */
+export interface SpellMechanics {
+  radius?: number;
+  pulses?: number;
+  interval?: number;
+  deploy?: number;
+  buildingDamage?: number;
+  troopDamage?: number;
+  preferredDamage?: number;
+  freeze?: number;
+  freezeOuter?: number;
+  boost?: number;
+  speedBoost?: number;
+  speedBoost2?: number;
+  attackSpeedBoost?: number;
+  damageBoost?: number;
+  poisonDps?: number;
+  invisibility?: number;
+  jump?: number;
+}
 export interface SpellLevel {
   level: number;
   housing: number;
@@ -54,10 +75,15 @@ export interface SpellLevel {
   cost: number;
   seconds: number;
   resource: 'gold' | 'elixir' | 'dark';
+  mechanics?: SpellMechanics;
 }
 export interface SpellRosterEntry {
   /** Spell Factory or Dark Spell Factory. */
   building: string;
+  /** The Earthquake alone names one: it hits Walls five times as hard. */
+  preferredTarget: string;
+  /** What this spell cannot touch, read from the source rather than assumed. */
+  immune: readonly string[];
   /** Factory level that unlocks it. */
   forge: number;
   levels: readonly SpellLevel[];

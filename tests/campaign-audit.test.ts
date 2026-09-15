@@ -130,7 +130,7 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
         m.state.stars.fill(1);
         m.state.army = { ...emptyArmy(), ...army.units };
         // Compare troop compositions without spell assistance.
-        m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+        m.state.spells = { rage: 0, heal: 0, lightning: 0, freeze: 0 };
         m.state.troopLevels = Object.fromEntries(
           TROOP_KEYS.map((k) => [k, Math.min(army.level, maxTroopLevel(k))]),
         ) as Record<TroopKind, number>;

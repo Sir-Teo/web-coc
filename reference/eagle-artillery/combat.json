@@ -205,6 +205,10 @@
       "lightning": {
         "source": "Lightning",
         "housingSpace": 1
+      },
+      "freeze": {
+        "source": "Freeze",
+        "housingSpace": 1
       }
     },
     "globals": {

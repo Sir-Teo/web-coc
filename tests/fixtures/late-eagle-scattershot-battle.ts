@@ -5,7 +5,7 @@ import {
   type Building,
   type SpellBook,
 } from '../../src/game/model';
-import { emptyArmy, emptySpells } from '../../src/game/army';
+import { defaultSpellLevels, emptyArmy, emptySpells } from '../../src/game/army';
 import { campaignResources } from '../../src/game/campaign-loot';
 import { campaignStage } from '../../src/game/campaign-catalog';
 import { nativeLayout, nativeScenery } from '../../src/game/native-campaign';
@@ -37,7 +37,7 @@ export function lateSetup(
     army: { ...emptyArmy(), ...army },
     spells: { ...emptySpells(), ...spells },
     troopLevels: troopLevels(),
-    spellLevels: { rage: 1, heal: 1, lightning: 1 },
+    spellLevels: defaultSpellLevels(),
     nextId: 100000,
     availableLoot: loot,
     lootRoom: loot,

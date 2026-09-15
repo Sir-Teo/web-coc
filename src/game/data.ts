@@ -33,6 +33,8 @@ import {
   HEAL_PULSES,
   SPELL_PULSE_INTERVAL,
   RAGE_PULSES,
+  FREEZE_RADIUS,
+  freezeSeconds,
 } from './spell-progression';
 import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
@@ -105,7 +107,7 @@ export type TroopKind =
   | 'healer'
   | 'dragon'
   | 'pekka';
-export type SpellKind = 'rage' | 'heal' | 'lightning';
+export type SpellKind = 'rage' | 'heal' | 'lightning' | 'freeze';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** What a purchase is paid in. Gems buy Builder's Huts and nothing else is priced in them. */
@@ -940,7 +942,8 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
 };
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
 export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
-export const SPELL_HOTKEYS = ['8', '9', '0'];
+// The two lists share one keyboard and are compared lowercase, so no key may appear in both.
+export const SPELL_HOTKEYS = ['8', '9', '0', 'r'];
 export const isResourceBuilding = (kind: BuildingKind) =>
   [
     'clancastle',
@@ -1008,6 +1011,20 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     duration: 0,
     effect: '150 damage · 0.1s stun',
   },
+  // Appended, not inserted: SPELL_KEYS follows this object's own order, and an archived
+  // battle's spell book is hashed with its keys in that order.
+  freeze: {
+    name: 'Freeze Spell',
+    role: 'CONTROL',
+    description:
+      'A burst of cold that stops defences and defending troops where they stand. It deals no damage.',
+    cost: 0,
+    space: 1,
+    radius: FREEZE_RADIUS,
+    time: 0,
+    duration: 0,
+    effect: '2.5s freeze',
+  },
 };
 export function spellStatsAt(kind: SpellKind, level = 1) {
   const stats = spellProgression(kind, level) ?? spellProgression(kind, 1);
@@ -1017,9 +1034,11 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
     effect:
       kind === 'lightning'
         ? `${stats.damage} damage · 0.1s stun`
-        : kind === 'heal'
-          ? `${stats.heal * HEAL_PULSES} total healing`
-          : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+        : kind === 'freeze'
+          ? `${freezeSeconds(level)}s freeze`
+          : kind === 'heal'
+            ? `${stats.heal * HEAL_PULSES} total healing`
+            : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];

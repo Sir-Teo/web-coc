@@ -1,8 +1,18 @@
 # Home Village spell progression
 
-Audited September 11, 2026; extended September 14, 2026. Lightning, Healing and Rage now run to their own original ceilings — thirteen, twelve and seven levels — read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+Audited September 11, 2026; extended September 14, 2026 and again September 15, 2026. Four spells are now cast: Lightning, Healing, Rage and the **Freeze Spell**, each running to its own original ceiling — thirteen, twelve, seven and eight levels — read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
 
 The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
+
+## The Freeze Spell
+
+Added September 15, 2026, as **recording version 48**: no earlier recording may carry or cast one, and every archived battle before it stays byte-identical. The Spell Factory offers it at level 4, its own `SpellForgeLevel`, and it runs to level 8.
+
+It deals no damage. Within its 3.5-tile radius every defence stops mid-reload and picks a target again when it thaws, and every defending troop stops where it stands. Its hold comes straight from the source's `FreezeTimeMS`: 2.5 seconds at level 1, rising with research. A second cast may only extend a freeze already running, never cut it short.
+
+Two source columns are deliberately not modelled, and the gap is here rather than hidden. `FreezeOuterTimeMS` states a shorter hold for the edge of the burst, which needs an outer radius the table does not give; the whole radius takes the inner time. `RandomRadius` scatters where the burst actually lands, which this game does not reproduce — a cast lands where it is aimed.
+
+The spell key order matters and is load-bearing: an archived battle state is compared as JSON, so `SPELL_KEYS` follows the `SPELLS` object's own order and the Freeze Spell is **appended**, never inserted. `tests/freeze-spell.test.ts` asserts that order.
 
 ## Sources
 

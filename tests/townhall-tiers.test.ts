@@ -376,7 +376,7 @@ describe('Town Hall tier village', () => {
     raise(ninth, 'laboratory', 7);
     const old = record(ninth);
     expect(old.version).toBe(REPLAY_VERSION);
-    expect(REPLAY_VERSION).toBe(47);
+    expect(REPLAY_VERSION).toBe(48);
     expect(validateReplay(old)).toBe(true);
     expect(validateReplay({ ...old, version: 45 })).toBe(true);
     expect(validateReplay({ ...old, version: 44 })).toBe(false);

@@ -39,7 +39,7 @@ TROOPS = {
     'balloon': 'Balloon', 'goblin': 'Goblin', 'wallbreaker': 'Wall Breaker',
     'healer': 'Healer', 'dragon': 'Dragon', 'pekka': 'PEKKA',
 }
-SPELLS = {'lightning': 'Lightning', 'heal': 'Healing', 'rage': 'Rage'}
+SPELLS = {'lightning': 'Lightning', 'heal': 'Healing', 'rage': 'Rage', 'freeze': 'Freeze'}
 RESOURCES = {'Elixir': 'elixir', 'DarkElixir': 'dark', 'Gold': 'gold'}
 
 
@@ -142,6 +142,40 @@ def troop_levels(name, table):
     return rows
 
 
+# Mechanical columns a spell may carry, with the divisor that converts source units. Radii
+# and speeds are hundredths of a tile, durations are milliseconds, and permil damage is a
+# thousandth of the target's maximum hitpoints. A spell records only the columns it has, so
+# a reader can tell "this spell does not freeze" from "this spell freezes for zero seconds".
+MECHANICS = (
+    ('Radius', 'radius', 100),
+    ('NumberOfHits', 'pulses', 1),
+    ('TimeBetweenHitsMS', 'interval', 1000),
+    ('DeployTimeMS', 'deploy', 1000),
+    ('BuildingDamagePermil', 'buildingDamage', 1000),
+    ('TroopDamagePermil', 'troopDamage', 1000),
+    ('PreferredTargetDamageMod', 'preferredDamage', 1),
+    ('FreezeTimeMS', 'freeze', 1000),
+    ('FreezeOuterTimeMS', 'freezeOuter', 1000),
+    ('BoostTimeMS', 'boost', 1000),
+    ('SpeedBoost', 'speedBoost', 1),
+    ('SpeedBoost2', 'speedBoost2', 1),
+    ('AttackSpeedBoost', 'attackSpeedBoost', 1),
+    ('DamageBoostPercent', 'damageBoost', 1),
+    ('PoisonDPS', 'poisonDps', 1),
+    ('InvisibilityTime', 'invisibility', 1000),
+    ('JumpBoostMS', 'jump', 1000),
+)
+# Flags that say what a spell cannot touch, kept so immunity is read rather than assumed.
+IMMUNITIES = (
+    ('ImmunityStorages', 'storages'),
+    ('ImmunityWalls', 'walls'),
+    ('ImmunityTH_CC', 'townHallAndCastle'),
+    ('ImmunityOtherBuildings', 'otherBuildings'),
+    ('ImmunitySiegeMachines', 'siegeMachines'),
+    ('ImmunityTotems', 'totems'),
+)
+
+
 def spell_levels(name, table):
     rows = []
     for index, row in enumerate(table):
@@ -149,13 +183,21 @@ def spell_levels(name, table):
         # The Healing spell carries its healing as a negative damage rate, as the Healer
         # does; every other spell leaves the healing column at zero.
         damage = number(row, 'Damage')
-        rows.append(dict(level=index + 1, housing=number(row, 'HousingSpace'),
-                         laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
-                         damage=max(0, damage),
-                         heal=max(0, -damage),
-                         damageBoost=number(row, 'DamageBoostPercent'),
-                         speedBoost=number(row, 'SpeedBoost'),
-                         **paid(table, index + 1)))
+        record = dict(level=index + 1, housing=number(row, 'HousingSpace'),
+                      laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
+                      damage=max(0, damage),
+                      heal=max(0, -damage),
+                      damageBoost=number(row, 'DamageBoostPercent'),
+                      speedBoost=number(row, 'SpeedBoost'),
+                      **paid(table, index + 1))
+        mechanics = {}
+        for column, key, divisor in MECHANICS:
+            if row.get(column) not in (None, ''):
+                value = int(row[column]) / divisor
+                mechanics[key] = value if divisor != 1 else int(row[column])
+        if mechanics:
+            record['mechanics'] = mechanics
+        rows.append(record)
     return rows
 
 
@@ -185,9 +227,13 @@ def build():
             continue
         building = table[0].get('ProductionBuilding')
         require(building, f'Producible spell without a production building: {name}')
+        immune = [key for column, key in IMMUNITIES if table[0].get(column) == 'TRUE']
         spellRoster[name] = dict(
             building=building,
             forge=number(table[0], 'SpellForgeLevel'),
+            # The Earthquake spell alone prefers a target: it hits Walls five times as hard.
+            preferredTarget=table[0].get('PreferredTarget', ''),
+            immune=immune,
             levels=spell_levels(name, table),
         )
 
