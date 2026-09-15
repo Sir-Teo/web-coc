@@ -28,13 +28,15 @@ import {
   SPELL_KEYS,
   TROOP_KEYS,
   LEGACY_TROOP_KEYS,
+  PRE_EXPANSION_TROOP_KEYS,
+  LEGACY_BUILDING_MAX_LEVEL,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
-import { MAX_SPELL_LEVEL } from './spell-progression';
+import { MAX_SPELL_LEVEL, maxSpellLevel } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 43;
+export const REPLAY_VERSION = 44;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
@@ -46,6 +48,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 40 ||
   version === 41 ||
   version === 42 ||
+  version === 43 ||
   version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
@@ -168,7 +171,12 @@ const counts = (v: unknown, keys: readonly string[], min: number, max: number) =
 export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
-  const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
+  const troopKeys =
+    value.version >= 44
+      ? TROOP_KEYS
+      : value.version >= 18
+        ? PRE_EXPANSION_TROOP_KEYS
+        : LEGACY_TROOP_KEYS;
   if (
     !validCampaignCatalog(s.catalog) ||
     (s.catalog !== undefined && value.version < 27) ||
@@ -179,9 +187,11 @@ export function validateReplay(value: unknown): value is ReplayData {
     !counts(s.army, troopKeys, 0, 9999) ||
     !counts(s.spells, SPELL_KEYS, 0, 999) ||
     !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
-    (value.version >= 18 && TROOP_KEYS.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
+    (value.version >= 18 && troopKeys.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
     (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
-    (s.spellLevels !== undefined && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
+    (s.spellLevels !== undefined &&
+      (!counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL) ||
+        SPELL_KEYS.some((k) => s.spellLevels[k] > maxSpellLevel(k)))) ||
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
@@ -206,8 +216,8 @@ export function validateReplay(value: unknown): value is ReplayData {
         ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
-        !integer(s.hero.level, 1, 20) ||
-        !integer(s.hero.townhall, 4, 8) ||
+        !integer(s.hero.level, 1, value.version >= 44 ? 110 : 20) ||
+        !integer(s.hero.townhall, 4, 18) ||
         (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
         (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
     !Array.isArray(s.buildings) ||
@@ -293,7 +303,9 @@ export function validateReplay(value: unknown): value is ReplayData {
             ? MAX_ARCHER_TOWER_LEVEL
             : b.kind === 'darkdrill' && value.version >= 40
               ? MAX_DARK_DRILL_LEVEL
-              : d.maxLevel),
+              : value.version < 44
+                ? (LEGACY_BUILDING_MAX_LEVEL[b.kind] ?? 0)
+                : d.maxLevel),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||

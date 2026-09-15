@@ -2,6 +2,10 @@
 
 A frontend-only isometric village strategy game inspired by the building, training, and raiding loop of Clash of Clans. Phaser 4, TypeScript, Vite, and a responsive DOM interface. Artwork combines original generated assets with source-attributed native reconstructions documented in [the asset guide](docs/ASSETS.md).
 
+## TH8–18 asset library
+
+Open `/asset-catalog.html` to browse the complete official asset collection through Town Hall 18: 823 transparent portraits, searchable by level and category. The runtime also includes original building and troop animation packs with lazy loading. Source provenance, rebuild commands and gameplay boundaries are in [the full-client reference](reference/full-client/README.md).
+
 ## Run
 
 Requires Node 22.12+ (developed with Node 26).

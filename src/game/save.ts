@@ -1,3 +1,4 @@
+import { maxSpellLevel } from './spell-progression';
 import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
@@ -272,14 +273,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !(isSpellKind(s.research.kind) || TROOP_KEYS.includes(s.research.kind)) ||
       !finite(s.research.end) ||
       (isSpellKind(s.research.kind)
-        ? (s.spellLevels?.[s.research.kind] ?? 1) >= MAX_SPELL_LEVEL
+        ? (s.spellLevels?.[s.research.kind] ?? 1) >= maxSpellLevel(s.research.kind)
         : (s.troopLevels?.[s.research.kind] ?? 1) >= maxTroopLevel(s.research.kind)))
   )
     return false;
   if (
     s.spellLevels !== undefined &&
     (!spellRecord(s.spellLevels) ||
-      SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > MAX_SPELL_LEVEL))
+      SPELL_KEYS.some((k) => s.spellLevels![k] < 1 || s.spellLevels![k] > maxSpellLevel(k)))
   )
     return false;
   const ids = new Set<number>();

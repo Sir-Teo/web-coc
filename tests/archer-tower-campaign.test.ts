@@ -52,7 +52,7 @@ it('adapts all captured Archer Tower tiers without expanding home progression', 
   } finally {
     stage.buildings = original;
   }
-  expect(BUILDINGS.archertower.maxLevel).toBe(12);
+  expect(BUILDINGS.archertower.maxLevel).toBe(21);
 });
 
 it('admits Midnight Oil with its original Infernos', () => {

@@ -1,3 +1,6 @@
+import { EXTRA_TROOPS, type ExtraTroopKind } from './extra-troops';
+import { EXTRA_BUILDINGS, type ExtraBuildingKind } from './extra-buildings';
+import nativeProgression from '../../reference/full-client/progression.json';
 import { darkDrillStats } from './dark-drill-stats';
 import drillPortraits from '../../reference/dark-drill/portraits.json';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
@@ -33,7 +36,8 @@ import {
   RAGE_PULSES,
 } from './spell-progression';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
-export type BuildingKind =
+export type BuildingKind = LegacyBuildingKind | ExtraBuildingKind;
+export type LegacyBuildingKind =
   | 'inferno'
   | 'clancastle'
   | 'xbow'
@@ -66,7 +70,8 @@ export type BuildingKind =
   | 'airbomb'
   | 'springtrap'
   | 'wall';
-export type TroopKind =
+export type TroopKind = LegacyTroopKind | ExtraTroopKind;
+export type LegacyTroopKind =
   | 'swordsman'
   | 'archer'
   | 'giant'
@@ -93,7 +98,7 @@ export interface BuildingDef {
   category: 'Army' | 'Resources' | 'Defenses' | 'Traps';
   /** Highest level this building can ever reach, before the Town Hall gate. */
   maxLevel: number;
-  /** Maximum count allowed at Town Hall level 1..8, indexed from zero. */
+  /** Maximum count allowed at Town Hall level 1..18, indexed from zero. */
   available: readonly number[];
   /** Seconds to build the first level. Later levels scale from this. */
   build: number;
@@ -117,12 +122,17 @@ export interface BuildingDef {
   singleArtwork?: boolean;
 }
 const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
-export const MAX_TOWNHALL = 8;
-/** Local research roster currently supports five troop levels. */
-export const MAX_TROOP_LEVEL = 5;
-export const maxTroopLevel = (kind: TroopKind) =>
-  kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : MAX_TROOP_LEVEL;
-export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+export const MAX_TOWNHALL = 18;
+export const extendedBuildingStats = (kind: BuildingKind, level: number) => {
+  const row = nativeProgression.buildings[kind].levels[level - 1];
+  return row && (row.townhall > 8 || (kind === 'townhall' && level > 8)) ? row : undefined;
+};
+/** Each troop uses its own ceiling from the pinned client. */
+export const MAX_TROOP_LEVEL = Math.max(
+  ...Object.values(nativeProgression.troops).map((rows) => rows.length),
+);
+export const maxTroopLevel = (kind: TroopKind) => nativeProgression.troops[kind].length;
+const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
   inferno: {
     name: 'Inferno Tower',
     description: 'Locks onto one target with increasing heat, or attacks several targets at once.',
@@ -648,10 +658,20 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
     build: 0,
   },
 };
+export const LEGACY_BUILDING_MAX_LEVEL = Object.fromEntries(
+  Object.entries(BASE_BUILDINGS).map(([kind, def]) => [kind, def.maxLevel]),
+);
+export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
+  ...BASE_BUILDINGS,
+  ...EXTRA_BUILDINGS,
+};
 for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
-  BUILDINGS[kind].available = BUILDINGS[kind].available.map((count, i) =>
-    BUILDING_LEVELS[kind][i] ? count : 0,
-  );
+  const native = nativeProgression.buildings[kind];
+  BUILDINGS[kind].maxLevel = kind === 'townhall' ? 18 : native.levels.length;
+  BUILDINGS[kind].available = [
+    ...BUILDINGS[kind].available.slice(0, 8),
+    ...native.counts.slice(8),
+  ].map((count, i) => (BUILDING_LEVELS[kind][i] ? count : 0));
 }
 export interface TroopDef {
   name: string;
@@ -680,10 +700,11 @@ export interface TroopDef {
   deathDamage?: number;
   deathRadius?: number;
   /** Friendly ground support; never attacks buildings. */
+  wallJumper?: boolean;
   healer?: boolean;
   heal?: number;
 }
-export const TROOPS: Record<TroopKind, TroopDef> = {
+const BASE_TROOPS: Record<LegacyTroopKind, TroopDef> = {
   swordsman: {
     name: 'Barbarian',
     role: 'MELEE',
@@ -942,9 +963,11 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
           : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
+export const TROOPS: Record<TroopKind, TroopDef> = { ...BASE_TROOPS, ...EXTRA_TROOPS };
+export const PRE_EXPANSION_TROOP_KEYS = Object.keys(BASE_TROOPS) as LegacyTroopKind[];
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
 export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
-export const LEGACY_TROOP_KEYS = TROOP_KEYS.filter(
+export const LEGACY_TROOP_KEYS = PRE_EXPANSION_TROOP_KEYS.filter(
   (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),
 );
 export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
@@ -1015,6 +1038,33 @@ export const asset = (
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
 ) => {
+  if (kind in EXTRA_TROOPS)
+    return `/assets/catalog-native/roster/troop-${nativeProgression.troopDefs[kind as ExtraTroopKind].Name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+  if (
+    kind in EXTRA_BUILDINGS ||
+    (level > 8 &&
+      [
+        'townhall',
+        'goldmine',
+        'collector',
+        'goldstorage',
+        'elixirstorage',
+        'barracks',
+        'laboratory',
+        'spellfactory',
+        'herohall',
+        'blacksmith',
+        'builder',
+        'camp',
+        'airdefense',
+        'bomb',
+        'giantbomb',
+        'airbomb',
+        'springtrap',
+        'wall',
+      ].includes(kind))
+  )
+    return `/assets/catalog-native/${nativeProgression.buildings[kind as BuildingKind].name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}/level-${level}.png`;
   if (kind === 'darkdrill') {
     const portrait = drillPortraits.portraits.find((row) => row.level === level);
     if (!portrait) throw new Error(`Unsupported Dark Elixir Drill portrait: ${level}`);
@@ -1046,11 +1096,15 @@ export const asset = (
 };
 /** Explicit catalog ceilings; old villages retain existing buildings above them. */
 export const maxLevelFor = (kind: BuildingKind, townhall: number) =>
-  Math.min(BUILDINGS[kind].maxLevel, BUILDING_LEVELS[kind][Math.min(8, Math.max(1, townhall)) - 1]);
+  Math.min(
+    BUILDINGS[kind].maxLevel,
+    BUILDING_LEVELS[kind][Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1],
+  );
 export const maxCountFor = (kind: BuildingKind, townhall: number) =>
   BUILDINGS[kind].available[Math.min(MAX_TOWNHALL, Math.max(1, townhall)) - 1];
 /** Seconds to take a building from `level` to `level + 1`. */
 export const upgradeSeconds = (kind: BuildingKind, level: number) =>
+  extendedBuildingStats(kind, level + 1)?.seconds ??
   (kind === 'darkdrill' ? darkDrillStats(level + 1).seconds : undefined) ??
   (kind === 'clancastle' ? castleStats(level + 1)?.seconds : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.seconds : undefined) ??
@@ -1062,9 +1116,14 @@ export const upgradeSeconds = (kind: BuildingKind, level: number) =>
   Math.round(BUILDINGS[kind].build * Math.pow(2.1, level - 1));
 /** Local economy: preserve early saves; higher storage tiers fund the expanded catalog. */
 export const storageCapacity = (level: number) =>
-  level <= 5 ? level * 60000 : Math.floor(300000 * Math.pow(1.5, level - 5));
+  level > 11
+    ? (nativeProgression.buildings.goldstorage.levels[level - 1]?.goldCapacity ?? 0)
+    : level <= 5
+      ? level * 60000
+      : Math.floor(300000 * Math.pow(1.5, level - 5));
 /** Hitpoints shared by construction, upgrades, restored villages and the Info panel. */
 export const buildingHp = (kind: BuildingKind, level: number) =>
+  extendedBuildingStats(kind, level)?.hp ??
   (kind === 'darkdrill' ? darkDrillStats(level).hp : undefined) ??
   (kind === 'inferno' ? infernoStats(level).hp : undefined) ??
   (kind === 'clancastle' ? castleStats(level)?.hp : undefined) ??
@@ -1079,6 +1138,7 @@ export const buildingHp = (kind: BuildingKind, level: number) =>
     : BUILDINGS[kind].hp * (1 + (level - 1) * 0.25));
 /** Cost of the destination level; audited buildings use undiscounted Home Village tables. */
 export const upgradeCost = (kind: BuildingKind, level: number) =>
+  extendedBuildingStats(kind, level + 1)?.cost ??
   (kind === 'darkdrill' ? darkDrillStats(level + 1).cost : undefined) ??
   (kind === 'clancastle' ? castleStats(level + 1)?.cost : undefined) ??
   (kind === 'darkstorage' ? darkStorageStats(level + 1)?.cost : undefined) ??
@@ -1115,6 +1175,13 @@ export const researchSeconds = (kind: TroopKind, level: number) =>
   troopProgression(kind, level + 1)?.seconds ?? 0;
 /** Audited normal-mode damage per hit; other defenses retain their prototype scaling. */
 export const defenseDamage = (kind: BuildingKind, level: number) => {
+  const native = extendedBuildingStats(kind, level);
+  if (
+    native &&
+    ((kind === 'airdefense' && level > 10) || kind in EXTRA_BUILDINGS) &&
+    native.dps > 0
+  )
+    return native.dps * (native.rate || BUILDINGS[kind].rate || 1);
   if (kind === 'inferno') return infernoStats(level).weapon.dps[0] * 0.128;
   if (kind === 'xbow') return xbowDamage(level);
   const audited = defenseProgression(kind, level);
@@ -1123,6 +1190,7 @@ export const defenseDamage = (kind: BuildingKind, level: number) => {
     : (BUILDINGS[kind].damage ?? 0) * (1 + (level - 1) * 0.12);
 };
 export const defenseDps = (kind: BuildingKind, level: number) =>
+  (kind === 'airdefense' && level > 10 ? extendedBuildingStats(kind, level)?.dps : undefined) ??
   defenseProgression(kind, level)?.dps ??
   (BUILDINGS[kind].rate ? defenseDamage(kind, level) / BUILDINGS[kind].rate! : 0);
 export const researchCost = (kind: TroopKind, level: number) =>

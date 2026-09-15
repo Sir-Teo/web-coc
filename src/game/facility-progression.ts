@@ -1,3 +1,4 @@
+import native from '../../reference/full-client/progression.json';
 import type { BuildingKind } from './data';
 
 /** Undiscounted Home Village army facilities. Sources: docs/FACILITY-PROGRESSION.md. */
@@ -46,4 +47,4 @@ export function facilityProgression(kind: BuildingKind, level: number) {
 
 /** No completed factory means no housing; imported extra factories do not stack. */
 export const spellFactoryCapacity = (level: number) =>
-  FACILITY_LEVELS.spellfactory[level - 1]?.capacity ?? 0;
+  native.buildings.spellfactory.levels[level - 1]?.capacity ?? 0;

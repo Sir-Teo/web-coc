@@ -20,7 +20,7 @@ describe('wall level artwork', () => {
     ]);
     expect(wallArt(6).face).not.toBe(wallArt(7).face);
     expect(asset('wall', 8)).toBe(wallAsset(8));
-    expect(asset('wall', 12)).toBe(wallAsset(8));
+    expect(asset('wall', 12)).toBe('/assets/catalog-native/wall/level-12.png');
     expect(wallArt(NaN).level).toBe(1);
     expect(wallArt(-2).level).toBe(1);
     expect(BUILDINGS.wall.name).toBe('Wall');

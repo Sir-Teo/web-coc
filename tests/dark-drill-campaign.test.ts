@@ -52,7 +52,7 @@ it('adapts all captured Drill tiers without expanding home progression', () => {
   } finally {
     stage.buildings = original;
   }
-  expect(BUILDINGS.darkdrill.maxLevel).toBe(3);
+  expect(BUILDINGS.darkdrill.maxLevel).toBe(11);
 });
 it('admits Midnight Oil with its resolved Drill and defenses', () => {
   expect(nativeCampaignIssues(58)).not.toContain('Dark Elixir Drill');

@@ -286,19 +286,20 @@ class SC6:
 
 
 def decode_ktx_astc(data):
-    """Strict KTX 1 reader for the pinned UI's single-mip ASTC RGBA 4x4 textures."""
+    """Strict KTX 1 reader for the pinned UI's single-mip ASTC RGBA 4x4 and 6x6 textures."""
     f = Flat(data)
     require(f.span(0, 12) == b'\xabKTX 11\xbb\r\n\x1a\n', 'Expected KTX 1 identifier')
     header = [f.read(12 + i * 4) for i in range(13)]
     endian, type_, type_size, format_, internal, base, width, height, depth, arrays, faces, mips, metadata = header
-    require((endian, type_, type_size, format_, internal, base) ==
-            (0x04030201, 0, 1, 0, 0x93B0, 0x1908), 'Unsupported KTX pixel format')
+    require((endian, type_, type_size, format_, base) ==
+            (0x04030201, 0, 1, 0, 0x1908) and internal in (0x93B0, 0x93B4), 'Unsupported KTX pixel format')
+    block = 4 if internal == 0x93B0 else 6
     require(0 < width <= 4096 and 0 < height <= 4096, 'KTX dimensions exceed limit')
     require((depth, arrays, faces, mips, metadata) == (0, 0, 1, 1, 0),
             'Unsupported KTX layers, mips or metadata')
-    expected = math.ceil(width / 4) * math.ceil(height / 4) * 16
+    expected = math.ceil(width / block) * math.ceil(height / block) * 16
     require(f.read(64) == expected and len(data) == 68 + expected, 'KTX payload size differs')
-    decoded = texture2ddecoder.decode_astc(f.span(68, expected), width, height, 4, 4)
+    decoded = texture2ddecoder.decode_astc(f.span(68, expected), width, height, block, block)
     return Image.frombytes('RGBA', (width, height), decoded, 'raw', 'BGRA')
 
 

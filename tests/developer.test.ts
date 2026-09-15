@@ -104,7 +104,7 @@ it('sets Town Hall, maxes existing buildings, unlocks and levels the King consis
   expect(m.countOf('herohall')).toBe(1);
   expect(m.heroHall!.level).toBe(2);
   expect(m.state.king!.level).toBe(20);
-  expect(m.troopLevel('giant')).toBe(5);
+  expect(m.troopLevel('giant')).toBe(14);
   expect(validateSave(m.state)).toBe(true);
 });
 it('fills supported capacities and unlocks campaign without lowering existing stars', () => {

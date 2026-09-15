@@ -1,4 +1,5 @@
-import type { TroopKind } from './data';
+import native from '../../reference/full-client/progression.json';
+import type { TroopKind, LegacyTroopKind } from './data';
 
 /** Undiscounted Home Village values; each row describes its destination level.
  * Sources and conversion notes: docs/TROOP-PROGRESSION.md.
@@ -12,7 +13,7 @@ interface TroopLevel {
   deathDamage?: number;
   heal?: number;
 }
-export const TROOP_LEVELS: Readonly<Record<TroopKind, readonly TroopLevel[]>> = {
+const BASE_TROOP_LEVELS: Record<LegacyTroopKind, readonly TroopLevel[]> = {
   healer: [
     { hp: 500, dps: 0, heal: 36, cost: 0, seconds: 0, laboratory: 0 },
     { hp: 700, dps: 0, heal: 48, cost: 450000, seconds: 43200, laboratory: 5 },
@@ -78,4 +79,20 @@ export const TROOP_LEVELS: Readonly<Record<TroopKind, readonly TroopLevel[]>> = 
     { hp: 53, dps: 43, deathDamage: 23, cost: 1000000, seconds: 57600, laboratory: 6 },
   ],
 };
+export const TROOP_LEVELS = { ...native.troops, ...BASE_TROOP_LEVELS } as Record<
+  TroopKind,
+  readonly TroopLevel[]
+>;
+for (const kind of Object.keys(TROOP_LEVELS) as TroopKind[]) {
+  TROOP_LEVELS[kind] = [
+    ...TROOP_LEVELS[kind],
+    ...native.troops[kind]
+      .slice(TROOP_LEVELS[kind].length)
+      .map((row) => ({
+        ...row,
+        heal: row.heal || undefined,
+        deathDamage: row.deathDamage || undefined,
+      })),
+  ];
+}
 export const troopProgression = (kind: TroopKind, level: number) => TROOP_LEVELS[kind][level - 1];

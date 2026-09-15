@@ -1,3 +1,4 @@
+import nativeProgression from '../../reference/full-client/progression.json';
 import { infernoStats } from './inferno-weapon';
 import { cannonStats } from './cannon-stats';
 import { castleStats } from './castle-art';
@@ -11,8 +12,8 @@ import { seekingMineStats } from './seeking-mine-stats';
 import { wizardTowerStats } from './wizard-tower-stats';
 import { SWEEPER_LEVELS } from './air-control-stats';
 
-/** TH1..TH8 upgrade ceilings. Source audit: docs/HERO-PROGRESSION.md. */
-export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
+/** TH1–8 compatibility ceilings followed by pinned TH9–18 progression. */
+const BASE_BUILDING_LEVELS = {
   inferno: [0, 0, 0, 0, 0, 0, 0, 0],
   clancastle: [0, 0, 0, 0, 0, 0, 0, 0],
   xbow: [0, 0, 0, 0, 0, 0, 0, 0],
@@ -47,7 +48,36 @@ export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = {
   darkstorage: [0, 0, 0, 0, 0, 0, 2, 4],
 };
 
+export const BUILDING_LEVELS: Record<BuildingKind, readonly number[]> = Object.fromEntries(
+  Object.entries(nativeProgression.buildings).map(([kind, family]) => [
+    kind,
+    kind in BASE_BUILDING_LEVELS
+      ? BASE_BUILDING_LEVELS[kind as keyof typeof BASE_BUILDING_LEVELS]
+      : Array.from({ length: 8 }, (_, i) =>
+          Math.max(
+            0,
+            ...family.levels.filter((row) => row.townhall <= i + 1).map((row) => row.level),
+          ),
+        ),
+  ]),
+) as unknown as Record<BuildingKind, readonly number[]>;
+for (const kind of Object.keys(BUILDING_LEVELS) as BuildingKind[]) {
+  const native = nativeProgression.buildings[kind];
+  BUILDING_LEVELS[kind] = [
+    ...(kind === 'townhall' ? Array(8).fill(18) : BUILDING_LEVELS[kind]),
+    ...Array.from({ length: 10 }, (_, i) => {
+      const th = i + 9;
+      return kind === 'townhall'
+        ? 18
+        : Math.max(0, ...native.levels.filter((r) => r.townhall <= th).map((r) => r.level));
+    }),
+  ];
+}
+
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
+  if (kind === 'townhall') return level >= 1 && level <= 18 ? Math.max(1, level - 1) : null;
+  const native = nativeProgression.buildings[kind].levels[level - 1];
+  if (native && native.townhall > 8) return native.townhall;
   if (kind === 'inferno')
     return Number.isInteger(level) && level >= 1 && level <= 12
       ? infernoStats(level).townhall

@@ -1,3 +1,4 @@
+import { troopFacility } from '../src/game/army-unlocks';
 import { describe, it, expect } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { TROOP_KEYS, SPELL_KEYS, maxLevelFor, maxCountFor } from '../src/game/data';
@@ -15,8 +16,7 @@ describe('army unlock progression', () => {
       expect(b.level, b.kind).toBeLessThanOrEqual(maxLevelFor(b.kind, 2));
       expect(m.countOf(b.kind), b.kind).toBeLessThanOrEqual(maxCountFor(b.kind, 2));
     }
-    for (const kind of TROOP_KEYS)
-      if (m.state.army[kind]) expect(m.troopUnlocked(kind)).toBe(true);
+    for (const kind of TROOP_KEYS) if (m.state.army[kind]) expect(m.troopUnlocked(kind)).toBe(true);
     expect(m.state.buildings.some((b) => b.kind === 'spellfactory')).toBe(false);
   });
 
@@ -28,7 +28,9 @@ describe('army unlock progression', () => {
       m.clearArmy();
       for (const kind of TROOP_KEYS) {
         m.train(kind);
-        expect(m.state.army[kind], `${kind} at ${level}`).toBe(Number(level >= TROOP_UNLOCK[kind]));
+        expect(m.state.army[kind], `${kind} at ${level}`).toBe(
+          Number(troopFacility(kind) === 'barracks' && level >= TROOP_UNLOCK[kind]),
+        );
       }
     }
     barracks.constructing = true;
@@ -46,7 +48,9 @@ describe('army unlock progression', () => {
       m.clearArmy();
       for (const kind of SPELL_KEYS) {
         m.brew(kind);
-        expect(m.state.spells[kind], `${kind} at ${level}`).toBe(Number(level >= SPELL_UNLOCK[kind]));
+        expect(m.state.spells[kind], `${kind} at ${level}`).toBe(
+          Number(level >= SPELL_UNLOCK[kind]),
+        );
       }
     }
   });

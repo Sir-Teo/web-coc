@@ -1,3 +1,4 @@
+import native from '../../reference/full-client/progression.json';
 import type { BuildingKind } from './data';
 
 /** Undiscounted Home Village values; sources: docs/CAMP-PROGRESSION.md. */
@@ -14,6 +15,8 @@ export const CAMP_LEVELS = [
 ] as const;
 export const CAMP_COUNTS = [1, 1, 2, 2, 3, 3, 4, 4] as const;
 export const campCapacity = (level: number) =>
-  CAMP_LEVELS[Math.min(CAMP_LEVELS.length, Math.max(1, level)) - 1].capacity;
+  level > 8
+    ? (native.buildings.camp.levels[level - 1]?.capacity ?? 0)
+    : CAMP_LEVELS[Math.min(CAMP_LEVELS.length, Math.max(1, level)) - 1].capacity;
 export const campProgression = (kind: BuildingKind, level: number) =>
   kind === 'camp' ? CAMP_LEVELS[Math.min(CAMP_LEVELS.length, Math.max(1, level)) - 1] : undefined;

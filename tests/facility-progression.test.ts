@@ -1,3 +1,4 @@
+import { emptyArmy } from '../src/game/army';
 import { describe, expect, it } from 'vitest';
 import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import {
@@ -195,7 +196,7 @@ describe('native army facility progression', () => {
     restored.tick(before.lastTick + 600000);
     expect(restored.state.buildings.find((b) => b.kind === 'laboratory')!.level).toBe(2);
     expect(restored.state.elixir).toBe(before.elixir);
-    expect(restored.state.army).toEqual(before.army);
+    expect(restored.state.army).toEqual({ ...emptyArmy(), ...before.army });
     expect(restored.state.spells).toEqual(before.spells);
     expect(validateSave(restored.state)).toBe(true);
   });

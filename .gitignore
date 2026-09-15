@@ -5,3 +5,4 @@ output/
 *.local
 .firebase/
 __pycache__/
+art/source/native-client-*/files/

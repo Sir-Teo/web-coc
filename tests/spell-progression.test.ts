@@ -150,7 +150,7 @@ describe('spell research', () => {
     expect(loaded.state.research).toEqual(original.research);
     expect(loaded.state.spells).toEqual(original.spells);
     const good = developed().state;
-    for (const invalid of [0, 6, -1, 1.5, NaN, '2', null]) {
+    for (const invalid of [0, 99, -1, 1.5, NaN, '2', null]) {
       const bad = structuredClone(good);
       (bad.spellLevels as any).heal = invalid;
       expect(validateSave(bad)).toBe(false);
@@ -158,7 +158,7 @@ describe('spell research', () => {
     const partial = structuredClone(good);
     delete (partial.spellLevels as any).rage;
     expect(validateSave(partial)).toBe(false);
-    good.spellLevels!.rage = 5;
+    good.spellLevels!.rage = 7;
     good.research = { kind: 'rage', end: good.lastTick + 600000 };
     expect(validateSave(good)).toBe(false);
     delete good.research;
@@ -397,7 +397,7 @@ describe('native spell effects', () => {
     const malformed = structuredClone(data);
     delete malformed.initial.spellLevels;
     expect(validateReplay(malformed)).toBe(false);
-    data.initial.spellLevels!.rage = 6;
+    data.initial.spellLevels!.rage = 99;
     expect(validateReplay(data)).toBe(false);
   });
 });

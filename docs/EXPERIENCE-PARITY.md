@@ -2,6 +2,12 @@
 
 Updated September 11, 2026. This is an implementation inventory, not a claim of complete live-game parity. The current build is a local village-and-campaign game. A working menu or similar-looking sprite does not count as implementing the corresponding CoC system.
 
+## September 15 asset and progression expansion
+
+The [complete pinned official asset library](../reference/full-client/README.md) is present: 9,075 archived files, 552 building/trap portraits, 271 roster icons, plus runtime timelines for 348 building levels and 305 troop levels. The asset catalog covers all Town Hall levels through 18. The village exposes TH18 upgrade ceilings, 46 building kinds, 32 trainable troop kinds, full per-type research tables and King levels through 110. High-level gold/elixir storage and collector artwork is source-specific; Dark Spell Factory housing is included. Old TH1–8 economy and combat tables remain compatibility baselines.
+
+Native animations are connected to the current village and battle renderer. The generic combat model handles the expanded troop/defense definitions, but it does not reproduce every special ability, merged-defense rule, Town Hall weapon, siege mechanic, additional hero, pet or equipment system. Their archived artwork and catalog entries do not imply that those gameplay systems are complete. The older sections below document the specialized systems and their historical audits.
+
 ## Baseline
 
 The target is the modern Home Village loop, with original generated artwork. Two verified rules changed the direction of this pass:

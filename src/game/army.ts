@@ -1,4 +1,5 @@
 import { TROOPS, SPELLS, TROOP_KEYS, SPELL_KEYS, LATE_TROOP_KEYS } from './data';
+import { EXTRA_TROOP_KINDS } from './extra-troops';
 import type { Army, SpellBook, Save } from './model';
 
 export interface ArmyPreset {
@@ -18,7 +19,8 @@ export function expandArmyRoster(save: Partial<Save>) {
   const expand = (value: unknown, initial: number) => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return;
     const record = value as Record<string, unknown>;
-    for (const kind of LATE_TROOP_KEYS) if (!Object.hasOwn(record, kind)) record[kind] = initial;
+    for (const kind of [...LATE_TROOP_KEYS, ...EXTRA_TROOP_KINDS])
+      if (!Object.hasOwn(record, kind)) record[kind] = initial;
   };
   expand(save.army, 0);
   expand(save.lastArmy, 0);

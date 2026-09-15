@@ -123,7 +123,7 @@ describe('hero progression', () => {
     expect(validateSave(migrated)).toBe(true);
     const s = village().state;
     for (const king of [
-      { level: 21 },
+      { level: 111 },
       { level: 0 },
       { level: 1, upgradeStart: 10 },
       { level: 1, upgradeStart: 20, upgradeEnd: 10 },

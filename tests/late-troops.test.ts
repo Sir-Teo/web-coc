@@ -1,3 +1,4 @@
+import { maxTroopLevel } from '../src/game/data';
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
@@ -133,7 +134,7 @@ describe('TH6–8 Barracks progression', () => {
         if (kind === 'healer')
           expect(d.heal! / d.rate).toBeCloseTo(reference.healer.heal[level - 1]);
         if (level === 3) {
-          expect(m.troopStats(kind, 99)).toEqual(d);
+          expect(m.troopStats(kind, 99)).toEqual(m.troopStats(kind, maxTroopLevel(kind)));
           expect(researchLevelForLab(kind, 6)).toBe(3);
           m.researchTroop(kind);
           expect(m.state.research).toBeUndefined();
@@ -161,15 +162,23 @@ describe('TH6–8 Barracks progression', () => {
 });
 
 describe('Healer support', () => {
-  it.each(['healer', 'dragon'] as const)('%s draws Air Defense fire while Cannons ignore it', (kind) => {
-    const { m, b } = arena();
-    b.units = [unit(kind, 120, 7, 11)];
-    b.buildings.push(makeBuilding(9001, 'cannon', 3, 10), makeBuilding(9002, 'airdefense', 4, 7));
-    m.step(0.05);
-    const shots = b.projectiles!;
-    expect(shots).toHaveLength(1);
-    expect(shots[0]).toMatchObject({ weapon: 'rocket', targetId: 120, toAir: true, sourceId: 9002 });
-  });
+  it.each(['healer', 'dragon'] as const)(
+    '%s draws Air Defense fire while Cannons ignore it',
+    (kind) => {
+      const { m, b } = arena();
+      b.units = [unit(kind, 120, 7, 11)];
+      b.buildings.push(makeBuilding(9001, 'cannon', 3, 10), makeBuilding(9002, 'airdefense', 4, 7));
+      m.step(0.05);
+      const shots = b.projectiles!;
+      expect(shots).toHaveLength(1);
+      expect(shots[0]).toMatchObject({
+        weapon: 'rocket',
+        targetId: 120,
+        toAir: true,
+        sourceId: 9002,
+      });
+    },
+  );
   it('heals ground allies at impact, caps HP, and never heals air, buildings or defeated troops', () => {
     const { m, b, patient, healer, fx } = arena();
     const capped = { ...unit('pekka', 102), hp: 2999 };
@@ -306,44 +315,56 @@ describe('Dragon and P.E.K.K.A attacks', () => {
 });
 
 describe('roster save and replay compatibility', () => {
-  it.each([1, 2, 3])('adds the roster while migrating an actual seven-key format-%s village', (version) => {
-    const save = JSON.parse(JSON.stringify(new GameModel().state));
-    save.version = version;
-    save.buildings = [makeBuilding(1, 'townhall', 2, 2), makeBuilding(2, 'barracks', 8, 2),
-      makeBuilding(3, 'laboratory', 14, 2), makeBuilding(4, 'builder', 20, 2),
-      makeBuilding(5, 'camp', 2, 8)];
-    save.nextId = 6;
-    save.obstacles = [];
-    delete save.obstacleGrowth;
-    save.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1]));
-    save.lastArmy = { ...save.army };
-    save.research = { kind: 'wizard', end: save.lastTick + 600000 };
-    for (const kind of LATE_TROOP_KEYS)
-      for (const record of [save.army, save.lastArmy, save.troopLevels]) delete record[kind];
-    const migrated = migrateSave(save) as typeof save;
-    expect(validateSave(migrated)).toBe(true);
-    expect(migrated.version).toBe(4);
-    expect(migrated.army.swordsman).toBe(save.army.swordsman);
-    expect(migrated.research).toEqual(save.research);
-    expect(migrated.elixir).toBe(save.elixir);
-    for (const kind of LATE_TROOP_KEYS) {
-      expect(migrated.army[kind]).toBe(0);
-      expect(migrated.lastArmy[kind]).toBe(0);
-      expect(migrated.troopLevels[kind]).toBe(1);
-    }
-  });
+  it.each([1, 2, 3])(
+    'adds the roster while migrating an actual seven-key format-%s village',
+    (version) => {
+      const save = JSON.parse(JSON.stringify(new GameModel().state));
+      save.version = version;
+      save.buildings = [
+        makeBuilding(1, 'townhall', 2, 2),
+        makeBuilding(2, 'barracks', 8, 2),
+        makeBuilding(3, 'laboratory', 14, 2),
+        makeBuilding(4, 'builder', 20, 2),
+        makeBuilding(5, 'camp', 2, 8),
+      ];
+      save.nextId = 6;
+      save.obstacles = [];
+      delete save.obstacleGrowth;
+      save.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1]));
+      save.lastArmy = { ...save.army };
+      save.research = { kind: 'wizard', end: save.lastTick + 600000 };
+      for (const kind of LATE_TROOP_KEYS)
+        for (const record of [save.army, save.lastArmy, save.troopLevels]) delete record[kind];
+      const migrated = migrateSave(save) as typeof save;
+      expect(validateSave(migrated)).toBe(true);
+      expect(migrated.version).toBe(4);
+      expect(migrated.army.swordsman).toBe(save.army.swordsman);
+      expect(migrated.research).toEqual(save.research);
+      expect(migrated.elixir).toBe(save.elixir);
+      for (const kind of LATE_TROOP_KEYS) {
+        expect(migrated.army[kind]).toBe(0);
+        expect(migrated.lastArmy[kind]).toBe(0);
+        expect(migrated.troopLevels[kind]).toBe(1);
+      }
+    },
+  );
 
-  it.each(LATE_TROOP_KEYS)('rejects unsupported %s levels in both saves and current replays', (kind) => {
-    const m = new GameModel();
-    m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as typeof m.state.army;
-    m.startBattle(0, true);
-    m.finishBattle();
-    const replay = structuredClone(m.state.raidLog![0].replay!);
-    replay.initial.troopLevels[kind] = 4;
-    expect(validateReplay(replay)).toBe(false);
-    m.state.troopLevels[kind] = 4;
-    expect(validateSave(migrateSave(m.state))).toBe(false);
-  });
+  it.each(LATE_TROOP_KEYS)(
+    'rejects unsupported %s levels in both saves and current replays',
+    (kind) => {
+      const m = new GameModel();
+      m.state.troopLevels = Object.fromEntries(
+        TROOP_KEYS.map((k) => [k, 1]),
+      ) as typeof m.state.army;
+      m.startBattle(0, true);
+      m.finishBattle();
+      const replay = structuredClone(m.state.raidLog![0].replay!);
+      replay.initial.troopLevels[kind] = maxTroopLevel(kind) + 1;
+      expect(validateReplay(replay)).toBe(false);
+      m.state.troopLevels[kind] = maxTroopLevel(kind) + 1;
+      expect(validateSave(migrateSave(m.state))).toBe(false);
+    },
+  );
   it('extends old version-four armies, presets, research and logs without mutating legacy recordings', () => {
     const m = new GameModel(developedSave());
     m.saveArmyPreset(0);

@@ -1,3 +1,4 @@
+import native from '../../reference/full-client/progression.json';
 /** Native base stats and destination-level upgrade prices. See docs/KING-COMBAT.md. */
 export const KING_LEVELS = [
   { hp: 1445, dps: 102, recovery: 200, cost: 0, seconds: 0, townhall: 4, hall: 1 },
@@ -20,4 +21,5 @@ export const KING_LEVELS = [
   { hp: 2198, dps: 143, recovery: 375, cost: 14000, seconds: 86400, townhall: 8, hall: 2 },
   { hp: 2253, dps: 145, recovery: 375, cost: 14500, seconds: 86400, townhall: 8, hall: 2 },
   { hp: 2309, dps: 148, recovery: 450, cost: 15000, seconds: 86400, townhall: 8, hall: 2 },
-] as const;
+  ...native.king.slice(20),
+];

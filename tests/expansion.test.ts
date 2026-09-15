@@ -1,3 +1,4 @@
+import { maxTroopLevel } from '../src/game/data';
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
@@ -448,17 +449,17 @@ describe('second-pass behaviour', () => {
     expect([b.x, b.y]).toEqual([from.x, from.y]);
     expect(m.canUndo).toBe(false);
   });
-  it('research runs to five levels behind the required laboratory', () => {
+  it('research runs through all native levels behind the required laboratory', () => {
     const m = new GameModel(developedSave());
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
-    m.state.elixir = 999999;
-    for (let level = 1; level < MAX_TROOP_LEVEL; level++) {
+    m.state.elixir = 999999999;
+    for (let level = 1; level < maxTroopLevel('swordsman'); level++) {
       lab.level = researchLaboratory('swordsman', level);
       m.researchTroop('swordsman');
       m.tick(m.state.research!.end + 1000);
       expect(m.troopLevel('swordsman')).toBe(level + 1);
     }
-    expect(m.troopLevel('swordsman')).toBe(MAX_TROOP_LEVEL);
+    expect(m.troopLevel('swordsman')).toBe(maxTroopLevel('swordsman'));
     lab.level = BUILDINGS.laboratory.maxLevel;
     m.researchTroop('swordsman');
     expect(m.state.research).toBeUndefined();

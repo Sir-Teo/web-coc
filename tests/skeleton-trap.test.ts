@@ -152,7 +152,7 @@ it('preserves all twenty Obsidian Tower defenders through native replay and reje
   old.version = 28;
   expect(validateReplay(old)).toBe(false);
   const bad = structuredClone(record.replay!);
-  bad.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 5;
+  bad.initial.buildings.find((b) => b.kind === 'skeletontrap')!.level = 6;
   expect(validateReplay(bad)).toBe(false);
   m.returnHome();
   const home = structuredClone(m.state);

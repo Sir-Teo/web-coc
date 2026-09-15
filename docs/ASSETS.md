@@ -1,5 +1,9 @@
 # Art direction and generation record
 
+## Complete TH8–18 source library
+
+The complete pinned official client archive now supplies all 9,075 source files, including higher-level buildings, troops, heroes, pets, equipment, spells, effects and animation sources. A new searchable `/asset-catalog.html` library exposes 552 original building/trap level PNGs and 271 roster/equipment icons. See [the full inventory, rebuild commands and integration boundaries](../reference/full-client/README.md). The archive stays outside the shipped game; catalog PNGs load on demand. This asset acquisition does not extend the current playable Town Hall progression.
+
 Santa Trap source assets now include the original present reveal, sleigh components and affine flight track, three gift variants, smoke/debris, shadow and four unchanged Ogg sounds. Eleven assets total 4,004,922 bytes. The importer preserves complete source evidence and a separate compact runtime reference consumed by the live combat presentation. See [the native Santa reference](../reference/santa-trap/README.md).
 
 Skeleton Trap coffin states and ground/air skeleton animation sources are retained under `art/source/skeleton-v1/`, with exact built-in generation prompts. `scripts/skeleton-assets.mjs` builds transparent gameplay atlases and supports deterministic `--check`. See [SKELETON-TRAP.md](SKELETON-TRAP.md).
@@ -114,3 +118,8 @@ Both coffin art tiers now use original SC6/SCTX artwork with complete ground/air
 The Santa Trap uses native trap, sleigh, present, smoke and debris assets plus four original sound samples. The [Santa reference](../reference/santa-trap/README.md) covers reproduction and the [combat record](SANTA-TRAP.md) explains implemented behavior and remaining approximations.
 
 The [X-Bow reference](../reference/xbow/README.md) preserves all 13 home-village levels, both targeting modes, upgrade variants, 36 directional views per control, projectile animations and seven native sounds. Its source meshes retain their original polygons, transforms, color changes and additive layers. Three lossless texture PNGs preserve the sampled source pixels, with sparse projectile regions packed to reduce GPU memory. X-Bow gameplay integration remains in progress.
+
+
+## TH8–18 native runtime coverage
+
+The full [official-client reference](../reference/full-client/README.md) includes 32 new building timeline packs (348 levels) and 32 troop packs (305 levels), in addition to the 823 catalog PNGs and existing specialized defense renderers. Runtime files live under `public/assets/village-native/` and `public/assets/troops-native/`. They retain original meshes, direction roots, color transforms and animation timing; no generated substitutes fill the higher-level tiers. Resource controls use source fill frames. Native packs are fetched on demand and cached after use.

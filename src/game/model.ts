@@ -1,3 +1,6 @@
+import { troopFacility } from './army-unlocks';
+import nativeProgression from '../../reference/full-client/progression.json';
+import { maxSpellLevel } from './spell-progression';
 import {
   stepArcherTower,
   recordArcherTowerShot,
@@ -623,7 +626,12 @@ export class GameModel {
       .reduce((n, b) => n + campCapacity(b.level), 0);
   }
   get spellCapacity() {
-    return spellFactoryCapacity(facilityLevel(this.state.buildings, 'spellfactory'));
+    return (
+      spellFactoryCapacity(facilityLevel(this.state.buildings, 'spellfactory')) +
+      (nativeProgression.buildings.darkspellfactory.levels[
+        facilityLevel(this.state.buildings, 'darkspellfactory') - 1
+      ]?.capacity ?? 0)
+    );
   }
   get laboratory() {
     return this.state.buildings
@@ -695,14 +703,16 @@ export class GameModel {
         `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
       );
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.researchLevel(kind) >= (spell ? MAX_SPELL_LEVEL : maxTroopLevel(kind)))
+    if (this.researchLevel(kind) >= (spell ? maxSpellLevel(kind) : maxTroopLevel(kind)))
       return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
     const requiredLab = this.researchLaboratory(kind);
     if (lab.level < requiredLab)
       return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
     const cost = this.researchCost(kind);
-    if (this.state.elixir < cost) return this.notify('Not enough elixir.');
-    this.state.elixir -= cost;
+    const researchResource = !spell && troopFacility(kind) === 'darkbarracks' ? 'dark' : 'elixir';
+    if (this.state[researchResource] < cost)
+      return this.notify(`Not enough ${researchResource === 'dark' ? 'dark elixir' : 'elixir'}.`);
+    this.state[researchResource] -= cost;
     this.state.research = {
       kind,
       end: this.clock + this.researchSeconds(kind) * 1000,
@@ -833,6 +843,21 @@ export class GameModel {
     );
   }
   resourceCap(kind: Resource) {
+    if (this.townhallLevel > 8) {
+      const field =
+        kind === 'gold' ? 'goldCapacity' : kind === 'elixir' ? 'elixirCapacity' : 'darkCapacity';
+      return this.state.buildings
+        .filter(
+          (b) =>
+            !b.constructing &&
+            ['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(b.kind),
+        )
+        .reduce(
+          (total, b) =>
+            total + (nativeProgression.buildings[b.kind].levels[b.level - 1]?.[field] ?? 0),
+          0,
+        );
+    }
     if (kind === 'dark')
       return this.state.buildings
         .filter((b) => b.kind === 'darkstorage' && !b.constructing)
@@ -911,10 +936,16 @@ export class GameModel {
         !b.upgradeEnd
       ) {
         const before = b.stored;
+        const production = nativeProgression.buildings[b.kind].levels[b.level - 1];
         b.stored =
           b.kind === 'darkdrill'
             ? produceDarkElixir(b.level, b.stored, productionSeconds)
-            : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
+            : b.level > 12 && production
+              ? Math.min(
+                  production.productionCapacity,
+                  b.stored + (productionSeconds * production.production) / 3600,
+                )
+              : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
       }
     }
@@ -965,23 +996,15 @@ export class GameModel {
       if (isSpellKind(kind)) {
         this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
         level = this.state.spellLevels[kind] = Math.min(
-          MAX_SPELL_LEVEL,
+          maxSpellLevel(kind),
           this.state.spellLevels[kind] + 1,
         );
         name = SPELLS[kind].name;
       } else {
-        this.state.troopLevels ??= {
-          swordsman: 1,
-          archer: 1,
-          giant: 1,
-          wizard: 1,
-          balloon: 1,
-          goblin: 1,
-          wallbreaker: 1,
-          healer: 1,
-          dragon: 1,
-          pekka: 1,
-        };
+        this.state.troopLevels ??= Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as Record<
+          TroopKind,
+          number
+        >;
         level = this.state.troopLevels[kind] = Math.min(
           maxTroopLevel(kind),
           this.state.troopLevels[kind] + 1,
@@ -1620,7 +1643,7 @@ export class GameModel {
     return 0;
   }
   troopUnlocked(kind: TroopKind) {
-    return facilityLevel(this.state.buildings, 'barracks') >= TROOP_UNLOCK[kind];
+    return facilityLevel(this.state.buildings, troopFacility(kind)) >= TROOP_UNLOCK[kind];
   }
   spellUnlocked(kind: SpellKind) {
     return facilityLevel(this.state.buildings, 'spellfactory') >= SPELL_UNLOCK[kind];
@@ -1647,7 +1670,7 @@ export class GameModel {
       );
     if (this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity)
       return this.notify('Army camps are full. Remove troops or upgrade a camp.');
-    this.state.army[kind] += count;
+    this.state.army[kind] = (this.state.army[kind] ?? 0) + count;
     this.state.stats.trained = (this.state.stats.trained ?? 0) + count;
     this.changed();
   }
@@ -2378,8 +2401,8 @@ export class GameModel {
         }
         continue;
       }
-      if (troop.flying) {
-        // Air troops ignore walls, buildings and the navigation grid entirely.
+      if (troop.flying || troop.wallJumper) {
+        // Flying and wall-jumping units move directly while retaining their target layer.
         const cx = Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),
           cy = Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size));
         const dx = cx - u.x,
@@ -3197,7 +3220,7 @@ export function enemyBase(index: number) {
   });
 }
 export function distanceTo(u: { x: number; y: number }, b: Building | { x: number; y: number }) {
-  const s = 'level' in b ? BUILDINGS[b.kind].size : 0;
+  const s = 'level' in b && b.kind in BUILDINGS ? BUILDINGS[b.kind as BuildingKind].size : 0;
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */

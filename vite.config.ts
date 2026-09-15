@@ -11,6 +11,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     // Generated reports and verification checkouts must not reload a live game.
-    watch: { ignored: ['**/output/**'] },
+    watch: { ignored: ['**/output/**', '**/art/source/native-client-*/files/**'] },
   },
 });

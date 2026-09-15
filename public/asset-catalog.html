@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Village Asset Library · TH8–18</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+        background: #101a18;
+        color: #eff4df;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      header,
+      main,
+      footer {
+        max-width: 1440px;
+        margin: auto;
+        padding: 32px;
+      }
+      header {
+        padding-top: 44px;
+        padding-bottom: 24px;
+      }
+      .eyebrow {
+        color: #b9cf86;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 750;
+      }
+      h1 {
+        font-size: clamp(28px, 4vw, 48px);
+        letter-spacing: -0.04em;
+        margin: 10px 0;
+      }
+      header p {
+        color: #aebdb2;
+        max-width: 750px;
+        margin: 6px 0;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: end;
+        padding: 20px 0;
+        border-top: 1px solid #33403a;
+        border-bottom: 1px solid #33403a;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        color: #c5d0bb;
+      }
+      input,
+      select {
+        background: #1d2a24;
+        color: #eff4df;
+        border: 1px solid #435047;
+        border-radius: 8px;
+        padding: 11px;
+        font: inherit;
+        min-height: 44px;
+      }
+      input[type='search'] {
+        width: 300px;
+      }
+      label.check {
+        flex-direction: row;
+        align-items: center;
+        align-self: center;
+        padding-top: 18px;
+      }
+      input[type='checkbox'] {
+        min-height: 22px;
+        accent-color: #c5d58b;
+      }
+      main {
+        padding-top: 0;
+      }
+      .summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        color: #bcc9b7;
+        font-size: 13px;
+        padding: 22px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: #1b2822;
+        border: 1px solid #334039;
+        border-radius: 12px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.15s;
+      }
+      .card:hover,
+      .card:focus-visible {
+        border-color: #c5d58b;
+        outline: 2px solid #c5d58b;
+        outline-offset: 2px;
+      }
+      .art {
+        height: 190px;
+        padding: 14px;
+        background: radial-gradient(ellipse at 50% 70%, #3b4b35, #202e26 70%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .art img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 7px 6px #0004);
+      }
+      .info {
+        padding: 13px 15px 16px;
+      }
+      .info h2 {
+        font-size: 14px;
+        margin: 0 0 7px;
+      }
+      .meta {
+        color: #aebba6;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .tag {
+        color: #d0df9e;
+      }
+      footer {
+        color: #9ead9f;
+        font-size: 12px;
+        border-top: 1px solid #33403a;
+        margin-top: 36px;
+      }
+      footer a {
+        color: #d0df9e;
+      }
+      .empty {
+        padding: 70px 20px;
+        text-align: center;
+        color: #aebba6;
+      }
+      button {
+        cursor: pointer;
+      }
+      #status {
+        color: #d0df9e;
+      }
+      a.back {
+        color: #aebba6;
+        text-decoration: none;
+        float: right;
+        padding: 8px;
+      }
+      a.back:hover {
+        color: white;
+      }
+      @media (max-width: 540px) {
+        header,
+        main,
+        footer {
+          padding: 20px;
+        }
+        header {
+          padding-top: 28px;
+        }
+        .toolbar {
+          gap: 10px;
+        }
+        input[type='search'] {
+          width: 100%;
+        }
+        .search {
+          width: 100%;
+        }
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .art {
+          height: 150px;
+          padding: 8px;
+        }
+        .info {
+          padding: 10px;
+        }
+        .summary {
+          gap: 12px;
+        }
+        .summary span:last-child {
+          max-width: 150px;
+          text-align: right;
+        }
+        .check {
+          width: 100%;
+        }
+        label.check {
+          padding-top: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="back" href="/">← Village</a>
+      <div class="eyebrow">Original client artwork · 18.400.21</div>
+      <h1>Village asset library</h1>
+      <p>
+        Explore buildings and traps through Town Hall 18, plus troop, hero, pet, spell and equipment
+        icons. Select an asset to open its transparent PNG.
+      </p>
+    </header>
+    <main>
+      <div class="toolbar">
+        <label class="search"
+          >Find an asset<input id="search" type="search" placeholder="Town Hall, Dragon, Monolith…"
+        /></label>
+        <label
+          >Collection<select id="category">
+            <option value="buildings">Buildings & traps</option>
+            <option value="troop">Troops</option>
+            <option value="hero">Heroes</option>
+            <option value="pet">Pets</option>
+            <option value="spell">Spells</option>
+            <option value="equipment">Equipment</option>
+            <option value="all">Everything</option>
+          </select></label
+        >
+        <label
+          >Town Hall<select id="townhall">
+            <option value="8">TH8</option>
+            <option value="9">TH9</option>
+            <option value="10">TH10</option>
+            <option value="11">TH11</option>
+            <option value="12">TH12</option>
+            <option value="13">TH13</option>
+            <option value="14">TH14</option>
+            <option value="15">TH15</option>
+            <option value="16">TH16</option>
+            <option value="17">TH17</option>
+            <option value="18" selected>TH18</option>
+          </select></label
+        >
+        <label class="check"
+          ><input id="latest" type="checkbox" checked />Highest building level at this Town
+          Hall</label
+        >
+      </div>
+      <div class="summary">
+        <span id="status" role="status">Loading the library…</span><span id="total"></span>
+      </div>
+      <div id="grid" class="grid"></div>
+    </main>
+    <footer>
+      Source: Supercell client 18.400.21. Artwork belongs to Supercell. This fan project is not
+      endorsed by Supercell. Building previews show source base and body at frame zero; live weapon
+      and animation composition may differ. Roster icons include event and Builder Base content and
+      are not filtered by Town Hall.
+      <a href="/assets/catalog-native/catalog.json">Building source records</a> ·
+      <a href="/assets/catalog-native/roster.json">Roster source records</a>
+    </footer>
+    <script type="module">
+      const $ = (id) => document.getElementById(id);
+      let all = [];
+      function render() {
+        const q = $('search').value.toLowerCase().trim(),
+          category = $('category').value,
+          th = Number($('townhall').value),
+          latest = $('latest').checked;
+        let rows = all.filter(
+          (r) =>
+            (category === 'all' || category === 'buildings'
+              ? category === 'all' || r.category === 'building' || r.category === 'trap'
+              : r.category === category) &&
+            r.name.toLowerCase().includes(q) &&
+            (r.townHall === undefined || r.townHall <= th),
+        );
+        if (latest) {
+          const highest = new Map();
+          for (const r of rows)
+            if (
+              r.level !== undefined &&
+              (!highest.has(r.kind) || highest.get(r.kind).level < r.level)
+            )
+              highest.set(r.kind, r);
+          rows = rows.filter((r) => r.level === undefined || highest.get(r.kind) === r);
+        }
+        $('townhall').disabled = !['buildings', 'all'].includes(category);
+        $('latest').disabled = $('townhall').disabled;
+        $('status').textContent = `${rows.length} assets shown`;
+        $('total').textContent = `${all.length} transparent PNGs`;
+        $('grid').replaceChildren(
+          ...rows.map((r) => {
+            const card = document.createElement('a');
+            card.className = 'card';
+            card.href = '/' + r.path;
+            card.target = '_blank';
+            card.rel = 'noopener';
+            const art = document.createElement('div');
+            art.className = 'art';
+            const img = document.createElement('img');
+            img.src = '/' + r.path;
+            img.alt = r.name + (r.level ? ' level ' + r.level : '');
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            art.append(img);
+            const info = document.createElement('div');
+            info.className = 'info';
+            const title = document.createElement('h2');
+            title.textContent = r.name;
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            const level = document.createElement('span');
+            level.className = 'tag';
+            level.textContent = r.level ? 'Level ' + r.level : r.category;
+            const townhall = document.createElement('span');
+            townhall.textContent = r.townHall ? 'TH' + r.townHall + '+' : 'Original icon';
+            meta.append(level, townhall);
+            info.append(title, meta);
+            card.append(art, info);
+            return card;
+          }),
+        );
+        if (!rows.length) {
+          const empty = document.createElement('p');
+          empty.className = 'empty';
+          empty.textContent = 'No matching assets. Try a different name or collection.';
+          $('grid').append(empty);
+        }
+      }
+      for (const id of ['search', 'category', 'townhall', 'latest'])
+        $(id).addEventListener('input', render);
+      try {
+        const catalog = await Promise.all(
+          ['catalog', 'roster'].map(async (name) => {
+            const response = await fetch('/assets/catalog-native/' + name + '.json');
+            if (!response.ok) throw new Error(name + ' could not load');
+            return response.json();
+          }),
+        );
+        all = catalog.flatMap((c) => c.portraits);
+        render();
+      } catch (error) {
+        $('status').textContent = 'The asset library could not load. ' + error.message;
+      }
+    </script>
+  </body>
+</html>

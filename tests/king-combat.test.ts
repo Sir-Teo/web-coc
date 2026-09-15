@@ -43,11 +43,11 @@ function arena(th = 7, level = 1) {
 
 describe('native King progression and default equipment', () => {
   it('uses all twenty base-health/DPS records and destination upgrade costs', () => {
-    expect(KING_LEVELS.map((l) => l.hp)).toEqual([
+    expect(KING_LEVELS.slice(0, 20).map((l) => l.hp)).toEqual([
       1445, 1481, 1518, 1556, 1595, 1635, 1675, 1717, 1760, 1805, 1850, 1896, 1943, 1992, 2042,
       2093, 2145, 2198, 2253, 2309,
     ]);
-    expect(KING_LEVELS.map((l) => l.dps)).toEqual([
+    expect(KING_LEVELS.slice(0, 20).map((l) => l.dps)).toEqual([
       102, 104, 105, 108, 110, 112, 115, 116, 119, 122, 124, 127, 129, 132, 134, 137, 139, 143, 145,
       148,
     ]);

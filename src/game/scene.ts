@@ -1,3 +1,6 @@
+import { TroopNativePresentation } from './troop-native-scene';
+import { EXTRA_TROOP_KINDS } from './extra-troops';
+import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
 import {
   ArcherTowerProjectiles,
   preloadArcherTowerProjectiles,
@@ -185,6 +188,8 @@ export class VillageScene extends Phaser.Scene {
   private garrisonPresentation!: GarrisonPresentation;
   private archerTowerProjectiles!: ArcherTowerProjectiles;
   private villageArcherTowers!: VillageArcherTowers;
+  private troopNativePresentation!: TroopNativePresentation;
+  private villageNativePresentation!: VillageNativePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
   private infernoPresentation!: InfernoPresentation;
   private castlePresentation!: CastlePresentation;
@@ -278,7 +283,9 @@ export class VillageScene extends Phaser.Scene {
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
-    for (const k of TROOP_KEYS)
+    for (const k of TROOP_KEYS.filter(
+      (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
+    ))
       this.load.spritesheet(
         `${k}-walk`,
         walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`),
@@ -287,6 +294,7 @@ export class VillageScene extends Phaser.Scene {
           frameHeight: 128,
         },
       );
+    for (const k of EXTRA_TROOP_KINDS) this.load.image(`${k}-walk`, asset(k));
     for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     this.load.on('progress', (p: number) => {
       const bar = document.querySelector<HTMLElement>('#load-progress');
@@ -326,6 +334,14 @@ export class VillageScene extends Phaser.Scene {
     this.archerTowerProjectiles = new ArcherTowerProjectiles(this);
     this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
+    this.troopNativePresentation = new TroopNativePresentation(this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.troopNativePresentation.destroy());
+    this.villageNativePresentation = new VillageNativePresentation(
+      this,
+      (message) => this.model.notify(message),
+      (resource) => this.model.state[resource] / Math.max(1, this.model.resourceCap(resource)),
+    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.villageNativePresentation.destroy());
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -358,6 +374,8 @@ export class VillageScene extends Phaser.Scene {
       this.castlePresentation.clear();
       this.infernoPresentation.clear();
       this.darkDrillPresentation.clear();
+      this.villageNativePresentation.clear();
+      this.troopNativePresentation.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
       this.cannonPresentation.destroy();
@@ -980,6 +998,8 @@ export class VillageScene extends Phaser.Scene {
       this.castlePresentation.clear();
       this.infernoPresentation.clear();
       this.darkDrillPresentation.clear();
+      this.villageNativePresentation.clear();
+      this.troopNativePresentation.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
       this.cannonPresentation.clear();
@@ -1655,7 +1675,13 @@ export class VillageScene extends Phaser.Scene {
     this.ghost.setPosition(screen.x, screen.y);
     if (this.model.placement !== 'darkdrill') this.darkDrillPresentation.preview(undefined);
     if (this.model.placement !== 'archertower') this.villageArcherTowers.preview(undefined);
-    if (this.model.placement === 'darkdrill') {
+    if (hasVillageNativeArt(this.model.placement)) {
+      const original = this.model.state.buildings.find((b) => b.id === this.model.moving);
+      const building = original
+        ? { ...original, x, y }
+        : makeBuilding(-1, this.model.placement, x, y, 1);
+      this.ghost.setAlpha(this.villageNativePresentation.preview(building, valid) ? 0 : 0.72);
+    } else if (this.model.placement === 'darkdrill') {
       this.ghost.setAlpha(0);
       const building =
         this.model.state.buildings.find((b) => b.id === this.model.moving) ??
@@ -1686,6 +1712,8 @@ export class VillageScene extends Phaser.Scene {
     return { x, y, size: s, valid };
   }
   drawOverlay(time: number) {
+    if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
+      this.villageNativePresentation.preview();
     if (this.model.battle)
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
@@ -1893,6 +1921,16 @@ export class VillageScene extends Phaser.Scene {
       battle,
       AIR_LIFT,
     );
+    this.villageNativePresentation.render(
+      this.model.buildings.filter(
+        (b) =>
+          this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
+      ),
+      battle,
+      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
+      iso,
+      this.sprites,
+    );
     const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
@@ -2094,7 +2132,7 @@ export class VillageScene extends Phaser.Scene {
         if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
         const animationTime = (battle.elapsed - (u.shrink?.timeLost ?? 0)) * 1000;
-        if (!u.hero)
+        if (!u.hero && im.texture.frameTotal > 2)
           im.setFrame(
             sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
               ? art.idleFrame
@@ -2146,6 +2184,13 @@ export class VillageScene extends Phaser.Scene {
           );
       }
     }
+    this.troopNativePresentation.render(
+      battle,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+      this.unitSprites,
+    );
     this.drawDefenders();
   }
   private drawDefenders() {
