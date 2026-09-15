@@ -41,8 +41,19 @@ TRAPS = [
     'Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Seeking Air Mine', 'Skeleton Trap',
     'Tornado Trap',
 ]
+# Ownable entities this game does not build. They are counted and gated here so the tier
+# ladder is complete and the gap is measurable, but their per-level rows are not tabled:
+# nothing reads them yet, and the catalog is parsed by every module that reads a building.
+UNBUILT_BUILDINGS = [
+    'Dark Barracks', 'Dark Spell Factory', 'Siege Workshop', 'Pet House',
+    'Multi Archer Tower', 'Multi Gear Tower', 'Ricochet Cannon', 'Firespitter',
+    'Super Wizard Tower', 'Revenge Tower', 'Crafting Station', 'Helper Hut', 'BOBs Hut',
+    'Communications mast',
+]
+UNBUILT_TRAPS = ['Giga Bomb', 'ShrinkTrap', 'SantaTrap', 'Halloweenbomb', 'FreezeBomb', 'Slowbomb']
 # Counted columns in townhall_levels.csv. The Town Hall itself is never one of them.
-COUNTED = [name for name in BUILDINGS if name != 'Town Hall'] + TRAPS
+COUNTED = ([name for name in BUILDINGS if name != 'Town Hall'] + TRAPS
+           + UNBUILT_BUILDINGS + UNBUILT_TRAPS)
 # Entities whose per-level rows this reference owns. The rest already have their own pinned
 # family reference (Cannon, Mortar, Tesla, X-Bow, the drill and so on) and are not duplicated.
 TABLED = [
@@ -189,7 +200,7 @@ def build():
                     f'{name} count falls at Town Hall {tier["level"]}')
 
     gates, tabled = {}, {}
-    for name in BUILDINGS + TRAPS:
+    for name in BUILDINGS + TRAPS + UNBUILT_BUILDINGS + UNBUILT_TRAPS:
         table = buildings.get(name) or traps[name]
         key = 'BuildingLevel' if name in buildings else 'Level'
         levels, rows = [], []
@@ -236,7 +247,7 @@ def build():
         bundle=BUNDLE,
         baseUrl=BASE,
         sources=dict(sorted(PINS.items())),
-        scope='Home Village tier counts and level gates for the entities this game implements, '
+        scope='Home Village tier counts and level gates for every entity a village can own, '
               'with the Barbarian King records a Hero Hall unlocks, the gem price of each hut '
               'and what a new village is granted.',
         townHalls=tiers,

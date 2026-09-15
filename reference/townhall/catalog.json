@@ -10,7 +10,7 @@
     "logic/townhall_levels.csv": "2d596bcd08433924c3e566f79f380eb2260076f87c5b5dd30c9ab6f2c3f41472",
     "logic/traps.csv": "757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c"
   },
-  "scope": "Home Village tier counts and level gates for the entities this game implements, with the Barbarian King records a Hero Hall unlocks, the gem price of each hut and what a new village is granted.",
+  "scope": "Home Village tier counts and level gates for every entity a village can own, with the Barbarian King records a Hero Hall unlocks, the gem price of each hut and what a new village is granted.",
   "townHalls": [
     {
       "level": 1,
@@ -53,7 +53,27 @@
         "Giant Bomb": 0,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 0,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 0,
+        "Slowbomb": 0
       }
     },
     {
@@ -97,7 +117,27 @@
         "Giant Bomb": 0,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 0,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 0,
+        "Slowbomb": 0
       }
     },
     {
@@ -141,7 +181,27 @@
         "Giant Bomb": 0,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 0,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 0,
+        "Slowbomb": 0
       }
     },
     {
@@ -185,7 +245,27 @@
         "Giant Bomb": 0,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 0,
+        "Slowbomb": 0
       }
     },
     {
@@ -229,7 +309,27 @@
         "Giant Bomb": 0,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -273,7 +373,27 @@
         "Giant Bomb": 1,
         "Seeking Air Mine": 0,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 0,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -317,7 +437,27 @@
         "Giant Bomb": 2,
         "Seeking Air Mine": 1,
         "Skeleton Trap": 0,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 0,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -361,7 +501,27 @@
         "Giant Bomb": 3,
         "Seeking Air Mine": 2,
         "Skeleton Trap": 2,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 0,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -405,7 +565,27 @@
         "Giant Bomb": 4,
         "Seeking Air Mine": 4,
         "Skeleton Trap": 2,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -449,7 +629,27 @@
         "Giant Bomb": 5,
         "Seeking Air Mine": 5,
         "Skeleton Trap": 3,
-        "Tornado Trap": 0
+        "Tornado Trap": 0,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -493,7 +693,27 @@
         "Giant Bomb": 5,
         "Seeking Air Mine": 5,
         "Skeleton Trap": 3,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 0,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -537,7 +757,27 @@
         "Giant Bomb": 6,
         "Seeking Air Mine": 6,
         "Skeleton Trap": 3,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -581,7 +821,27 @@
         "Giant Bomb": 6,
         "Seeking Air Mine": 7,
         "Skeleton Trap": 3,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 0,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -625,7 +885,27 @@
         "Giant Bomb": 7,
         "Seeking Air Mine": 8,
         "Skeleton Trap": 4,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 1,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -669,7 +949,27 @@
         "Giant Bomb": 7,
         "Seeking Air Mine": 8,
         "Skeleton Trap": 4,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 1,
+        "Multi Archer Tower": 0,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 0,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -713,7 +1013,27 @@
         "Giant Bomb": 7,
         "Seeking Air Mine": 8,
         "Skeleton Trap": 4,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 1,
+        "Multi Archer Tower": 2,
+        "Multi Gear Tower": 0,
+        "Ricochet Cannon": 2,
+        "Firespitter": 0,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 0,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -757,7 +1077,27 @@
         "Giant Bomb": 8,
         "Seeking Air Mine": 9,
         "Skeleton Trap": 4,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 1,
+        "Multi Archer Tower": 3,
+        "Multi Gear Tower": 1,
+        "Ricochet Cannon": 3,
+        "Firespitter": 2,
+        "Super Wizard Tower": 0,
+        "Revenge Tower": 0,
+        "Crafting Station": 0,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 1,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     },
     {
@@ -801,7 +1141,27 @@
         "Giant Bomb": 8,
         "Seeking Air Mine": 9,
         "Skeleton Trap": 4,
-        "Tornado Trap": 1
+        "Tornado Trap": 1,
+        "Dark Barracks": 1,
+        "Dark Spell Factory": 1,
+        "Siege Workshop": 1,
+        "Pet House": 1,
+        "Multi Archer Tower": 3,
+        "Multi Gear Tower": 1,
+        "Ricochet Cannon": 3,
+        "Firespitter": 2,
+        "Super Wizard Tower": 2,
+        "Revenge Tower": 1,
+        "Crafting Station": 1,
+        "Helper Hut": 1,
+        "BOBs Hut": 1,
+        "Communications mast": 0,
+        "Giga Bomb": 1,
+        "ShrinkTrap": 1,
+        "SantaTrap": 0,
+        "Halloweenbomb": 0,
+        "FreezeBomb": 1,
+        "Slowbomb": 0
       }
     }
   ],
@@ -1360,6 +1720,119 @@
       11,
       11,
       12
+    ],
+    "Dark Barracks": [
+      7,
+      7,
+      8,
+      8,
+      9,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "Dark Spell Factory": [
+      8,
+      8,
+      9,
+      9,
+      10,
+      12,
+      14,
+      15
+    ],
+    "Siege Workshop": [
+      12,
+      12,
+      12,
+      13,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "Pet House": [
+      14,
+      14,
+      14,
+      14,
+      15,
+      15,
+      15,
+      15,
+      16,
+      16,
+      17,
+      18
+    ],
+    "Multi Archer Tower": [
+      16,
+      16,
+      17,
+      18
+    ],
+    "Multi Gear Tower": [
+      17,
+      17,
+      18
+    ],
+    "Ricochet Cannon": [
+      16,
+      16,
+      17,
+      18
+    ],
+    "Firespitter": [
+      17,
+      17,
+      18
+    ],
+    "Super Wizard Tower": [
+      18,
+      18
+    ],
+    "Revenge Tower": [
+      18,
+      18
+    ],
+    "Crafting Station": [
+      17
+    ],
+    "Helper Hut": [
+      9
+    ],
+    "BOBs Hut": [
+      1
+    ],
+    "Communications mast": [
+      1
+    ],
+    "Giga Bomb": [
+      17,
+      17,
+      17,
+      18
+    ],
+    "ShrinkTrap": [
+      1
+    ],
+    "SantaTrap": [
+      1
+    ],
+    "Halloweenbomb": [
+      1
+    ],
+    "FreezeBomb": [
+      1
+    ],
+    "Slowbomb": [
+      9999
     ]
   },
   "levels": {

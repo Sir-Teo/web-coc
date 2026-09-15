@@ -27,10 +27,14 @@ PINS = {
     'logic/buildings.csv': '9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1',
     'logic/character_items.csv': '66e644c62331a026aec3795980d9a37af95e2120d67dfbad380c729f3645ebad',
     'logic/traps.csv': '757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c',
+    'logic/townhall_levels.csv': '2d596bcd08433924c3e566f79f380eb2260076f87c5b5dd30c9ab6f2c3f41472',
 }
 TARGET = ROOT / 'docs/CONTENT-INVENTORY.md'
 # The Builder Base is not modelled at all, so its village column is not a gap in this game.
 HOME_VILLAGE = '0'
+# A village always has exactly one Town Hall, so the tier table never counts it. It is the one
+# building a player owns that has no count column.
+UNCOUNTED = 'Town Hall'
 
 
 def require(condition, message):
@@ -53,16 +57,19 @@ def source(path):
     return data
 
 
-def records(path):
-    blob = source(path)
+def decoded(blob):
     if blob.startswith(b'Sig:'):
         blob = blob[68:]
     if not blob.startswith(b'"'):
         blob = lzma.decompress(blob[:9] + b'\0' * 4 + blob[9:])
-    decoded = list(csv.reader(io.StringIO(blob.decode('utf-8-sig'))))
-    headers = decoded[0]
+    return list(csv.reader(io.StringIO(blob.decode('utf-8-sig'))))
+
+
+def records(path):
+    decoded_rows = decoded(source(path))
+    headers = decoded_rows[0]
     result, name = {}, None
-    for row in decoded[2:]:
+    for row in decoded_rows[2:]:
         if not any(row):
             continue
         if row[0]:
@@ -114,6 +121,20 @@ def playable(rows):
     """A record a player can actually field: home village, not a summoned or defensive form."""
     first = rows[0]
     return first.get('VillageType', '0') == HOME_VILLAGE and first.get('DisableProduction') != 'TRUE'
+
+
+def ownable():
+    """Buildings and traps a player can actually own, named by the Town Hall tier table.
+
+    `buildings.csv` also holds hero altars, troop and spell cages, the goblin campaign's own
+    buildings, tutorial props, Town Hall teasers and explicit placeholders. None of those is a
+    building a village builds, and counting them as missing content would be wrong. The tier
+    table settles it: it has one count column per ownable entity, so a record the player can
+    own is one that column names.
+    """
+    rows = decoded(source('logic/townhall_levels.csv'))
+    require(rows and rows[0][0] == 'Name', 'Missing Town Hall tier header')
+    return set(rows[0]) | {UNCOUNTED}
 
 
 def section(title, table, have, pinned, note=''):
@@ -181,15 +202,19 @@ def build():
     # The Town Hall catalog tables only the entities this game builds, so for buildings and
     # traps pinning and implementing are the same step.
     building_names = implemented_buildings()
+    own = ownable()
+    # Counts and level gates are pinned for every ownable entity, built or not.
+    gated = catalogued('reference/townhall/catalog.json', 'gates') | {UNCOUNTED}
 
     totals = []
     for title, table, have, pinned, note in [
         ('Troops', characters, mapped('import-native-troops.py', 'TROOPS'), troop_roster, ''),
         ('Spells', spells, mapped('import-native-troops.py', 'SPELLS'), spell_roster, ''),
         ('Heroes', heroes, implemented_heroes(), hero_roster, ''),
-        ('Buildings', buildings, building_names & set(buildings),
-         building_names & set(buildings), ''),
-        ('Traps', traps, building_names & set(traps), building_names & set(traps), ''),
+        ('Buildings', {n: r for n, r in buildings.items() if n in own},
+         building_names & set(buildings), gated & set(buildings), ''),
+        ('Traps', {n: r for n, r in traps.items() if n in own},
+         building_names & set(traps), gated & set(traps), ''),
         ('Hero equipment', items, have_items, item_roster,
          ' `UNUSED*` placeholders are counted; the client ships them.'),
     ]:

@@ -49,7 +49,7 @@ The Clan Castle was the last of the others. It is buildable from Town Hall 3 and
 
 Reading the Castle's tier needed one rule the ladder did not have. A tier that permits none of a building already forced a zero ceiling; the reverse now holds too, because the source counts one Clan Castle from Town Hall 1 but gates its first level at Town Hall 3.
 
-Nothing outside this game's building catalog is silently treated as absent, either: Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop, the Town Hall's own Giga weapons and the later hero roster are simply not modelled, so the tiers that would unlock them add nothing.
+Nothing outside this game's building catalog is silently treated as absent, either. Every entity a home village can own is now counted and gated in the pinned catalog — 44 buildings and 13 traps — so the fourteen buildings and six traps this game does not build (Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House and the rest) are a measured gap rather than a missing column. They are counted in [CONTENT-INVENTORY.md](CONTENT-INVENTORY.md). The Town Hall's own Giga weapons and the later hero roster remain unmodelled systems rather than gaps in pinned data.
 
 ## The original economy
 

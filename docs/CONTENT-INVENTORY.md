@@ -15,8 +15,8 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Troops | 90 | 10 | 90 | 80 |
 | Spells | 23 | 3 | 23 | 20 |
 | Heroes | 6 | 1 | 6 | 5 |
-| Buildings | 30 | 30 | 73 | 43 |
-| Traps | 7 | 7 | 16 | 9 |
+| Buildings | 44 | 30 | 44 | 14 |
+| Traps | 13 | 7 | 13 | 6 |
 | Hero equipment | 61 | 3 | 61 | 58 |
 
 ## Troops
@@ -161,7 +161,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 
 ## Buildings
 
-**30 of 73** pinned, **30 of 73** implemented; 413 of 507 levels playable.
+**44 of 44** pinned, **30 of 44** implemented; 413 of 477 levels playable.
 
 | Record | Levels | Pinned | This game |
 | --- | --- | --- | --- |
@@ -195,53 +195,24 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Wall | 19 | yes | yes |
 | Wizard Tower | 17 | yes | yes |
 | X-Bow | 13 | yes | yes |
-| Archer Queen Altar | 1 | — | — |
-| BOBs Hut | 1 | — | — |
-| Barbarian King Altar | 1 | — | — |
-| Communications mast | 1 | — | — |
-| Crafting Station | 1 | — | — |
-| Dark Barracks | 13 | — | — |
-| Dark Spell Factory | 8 | — | — |
-| DefenseGenericTroopCage | 1 | — | — |
-| DefenseTroopCage | 1 | — | — |
-| DirectHeroChallengeGenericMainBuilding | 1 | — | — |
-| DirectHeroChallengeMainBuilding | 1 | — | — |
-| DragonLair | 1 | — | — |
-| Firespitter | 3 | — | — |
-| Foreboding Cave | 1 | — | — |
-| GenericSpellCage | 1 | — | — |
-| GenericTroopCage | 1 | — | — |
-| Goblin Boss TH | 1 | — | — |
-| Goblin Castle | 1 | — | — |
-| Goblin Hall | 2 | — | — |
-| Goblin Hut | 1 | — | — |
-| Grand Warden Altar | 1 | — | — |
-| Helper Hut | 1 | — | — |
-| Multi Archer Tower | 4 | — | — |
-| Multi Gear Tower | 3 | — | — |
-| PEKKA's Playhouse | 1 | — | — |
-| Pet House | 12 | — | — |
-| PetCage | 1 | — | — |
-| Revenge Tower | 2 | — | — |
-| Ricochet Cannon | 4 | — | — |
-| Royal Champion Altar | 1 | — | — |
-| Siege Workshop | 9 | — | — |
-| Sour Elixir Cauldron | 1 | — | — |
-| SpellCage | 1 | — | — |
-| Super Wizard Tower | 2 | — | — |
-| Town Hall 17 Upgrading | 1 | — | — |
-| Town Hall 18 Teaser | 1 | — | — |
-| TroopCage | 1 | — | — |
-| Tutorial Cannon | 1 | — | — |
-| Unused2 | 1 | — | — |
-| Unused3 | 1 | — | — |
-| Unused4 | 1 | — | — |
-| Unused5 | 1 | — | — |
-| Unused6 | 1 | — | — |
+| BOBs Hut | 1 | yes | — |
+| Communications mast | 1 | yes | — |
+| Crafting Station | 1 | yes | — |
+| Dark Barracks | 13 | yes | — |
+| Dark Spell Factory | 8 | yes | — |
+| Firespitter | 3 | yes | — |
+| Helper Hut | 1 | yes | — |
+| Multi Archer Tower | 4 | yes | — |
+| Multi Gear Tower | 3 | yes | — |
+| Pet House | 12 | yes | — |
+| Revenge Tower | 2 | yes | — |
+| Ricochet Cannon | 4 | yes | — |
+| Siege Workshop | 9 | yes | — |
+| Super Wizard Tower | 2 | yes | — |
 
 ## Traps
 
-**7 of 16** pinned, **7 of 16** implemented; 68 of 80 levels playable.
+**13 of 13** pinned, **7 of 13** implemented; 68 of 77 levels playable.
 
 | Record | Levels | Pinned | This game |
 | --- | --- | --- | --- |
@@ -252,15 +223,12 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Skeleton Trap | 5 | yes | yes |
 | Spring Trap | 13 | yes | yes |
 | Tornado Trap | 3 | yes | yes |
-| FreezeBomb | 1 | — | — |
-| FreezeTrap_SinglePlayer | 1 | — | — |
-| Ghost Trap | 1 | — | — |
-| Giga Bomb | 4 | — | — |
-| Halloweenbomb | 1 | — | — |
-| SantaTrap | 1 | — | — |
-| ShrinkTrap | 1 | — | — |
-| ShrinkTrap_SinglePlayer | 1 | — | — |
-| Slowbomb | 1 | — | — |
+| FreezeBomb | 1 | yes | — |
+| Giga Bomb | 4 | yes | — |
+| Halloweenbomb | 1 | yes | — |
+| SantaTrap | 1 | yes | — |
+| ShrinkTrap | 1 | yes | — |
+| Slowbomb | 1 | yes | — |
 
 ## Hero equipment
 
