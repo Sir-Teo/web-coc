@@ -1,3 +1,4 @@
+import { unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
 import { MAP_SIZE } from './grid';
@@ -124,7 +125,8 @@ export function stepSweepers(b: Battle, dt: number, effect: (fx: FX) => void) {
     const preparationDt = Math.max(0, activeDt - tower.cooldown);
     tower.cooldown = Math.max(0, tower.cooldown - activeDt);
     let state: SweeperState | undefined = states[tower.id];
-    const eligible = (u: Unit) => u.hp > 0 && !!TROOPS[u.kind].flying && inSweeperRange(tower, u);
+    const eligible = (u: Unit) =>
+      u.hp > 0 && !!TROOPS[u.kind].flying && !unitHidden(u, b.elapsed) && inSweeperRange(tower, u);
     let target = b.units.find((u) => u.id === state?.targetId && eligible(u));
     if (!target) {
       delete states[tower.id];

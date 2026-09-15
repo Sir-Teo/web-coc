@@ -14,6 +14,7 @@ const COLORS: Record<Weapon, number> = {
   arcane: 0xcf8dff,
   healing: 0xffed8a,
   xbowbolt: 0xffe3a3,
+  native: 0xfff0c2,
 };
 
 /** Short-lived weapon graphics. They never apply damage or mutate the battle. */

@@ -1,3 +1,4 @@
+import { hurtUnit } from './native-status';
 import { distance2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
@@ -55,7 +56,7 @@ export function stepDeathBombs(battle: Battle, effect: (fx: FX) => void) {
         !TROOPS[unit.kind].flying &&
         distance2D(unit.x - bomb.x, unit.y - bomb.y) <= BOMB_TOWER.deathRadius
       )
-        unit.hp -= bomb.damage;
+        hurtUnit(battle, unit, bomb.damage, bomb.impact);
     effect({
       type: 'blast',
       weapon: 'towerbomb',

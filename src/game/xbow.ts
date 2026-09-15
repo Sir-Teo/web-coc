@@ -1,3 +1,4 @@
+import { unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
@@ -33,6 +34,7 @@ export function stepXbow(
   const targets = battle.units.filter(
     (u) =>
       u.hp > 0 &&
+      !unitHidden(u, battle.elapsed) &&
       (u.spawnedAt ?? 0) <= battle.elapsed &&
       (tower.xbowMode === 'both' || !TROOPS[u.kind].flying) &&
       distance2D(u.x - center.x, u.y - center.y) <= range,

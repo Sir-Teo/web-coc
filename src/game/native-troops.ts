@@ -1,0 +1,976 @@
+import { distance2D } from './distance';
+import {
+  BUILDINGS,
+  TROOPS,
+  isDefense,
+  isResourceBuilding,
+  isTrap,
+  type BuildingKind,
+  type TroopKind,
+  type UnitKind,
+} from './data';
+import { EXTRA_TROOP_KINDS } from './extra-troops';
+import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
+import { MAP_SIZE } from './grid';
+import { targetableBuilding } from './hidden-tesla';
+import { flag, nativeRow, num, seconds, text, tiles } from './native-data';
+import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
+import {
+  buildingEffects,
+  healUnit,
+  hurtUnit,
+  unitAttackIntervalScale,
+  unitDamageScale,
+  unitEffects,
+  unitFrozen,
+  unitSpeedBonus,
+  unitSpeedScale,
+  type UnitEffects,
+} from './native-status';
+import {
+  isSpawnKind,
+  nativeUnitLevels,
+  nativeUnitStats,
+  unitKindForName,
+  type NativeUnitStats,
+} from './native-units';
+import { launchProjectile, type CombatProjectile } from './projectiles';
+import {
+  breachTarget,
+  distanceTo,
+  findPath,
+  type Battle,
+  type Building,
+  type FX,
+  type Unit,
+} from './model';
+
+/** Version 45+ native roster behavior state, created lazily on the unit. */
+export interface NativeUnitState {
+  effects?: UnitEffects;
+  /** Hitpoints actually lost, for damage-triggered spawns. */
+  damageTaken?: number;
+  /** Resolved attacks, for units with a declared attack count. */
+  attacks?: number;
+  /** Battle time the current building target was acquired. */
+  targetAt?: number;
+  /** Next scheduled periodic summon and lifetime summon count. */
+  summonAt?: number;
+  summoned?: number;
+  /** Bunker spawns released so far. */
+  released?: number;
+  /** Damage-triggered spawns released so far. */
+  damageSpawns?: number;
+  /** Next hitpoint decay tick. */
+  decayAt?: number;
+  /** Aura cast bound to this unit. */
+  aura?: number;
+  /** Unit or building that created this unit. */
+  owner?: number;
+  /** Underground movers become targetable while attacking. */
+  surfaced?: boolean;
+  /** True while an underground unit travels below the village. */
+  burrowed?: boolean;
+  /** Client row declares TriggersTraps=FALSE. */
+  noTraps?: boolean;
+  /** Presentation cue for rage-when-alone style abilities. */
+  alone?: boolean;
+}
+export interface NativeDeathBlast {
+  sourceId: number;
+  x: number;
+  y: number;
+  at: number;
+  damage: number;
+  radius: number;
+  air: boolean;
+  resolved?: boolean;
+}
+export interface NativeChainHop {
+  sourceId: number;
+  at: number;
+  x: number;
+  y: number;
+  damage: number;
+  remaining: number;
+  distance: number;
+  reduction: number;
+  delay: number;
+  hit: number[];
+}
+export interface NativeTroopContext extends NativeSpellContext {
+  /** Known targets: concealed Teslas and traps are already excluded. */
+  buildings: Building[];
+  nextId(): number;
+  troopLevel(kind: TroopKind): number;
+}
+
+const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
+/** Extra roster troops and every spawned unit follow the native rules from version 45. */
+export const nativeBehavior = (battle: Battle, kind: UnitKind) =>
+  !!battle.nativeRoster && (NATIVE_TROOPS.has(kind) || isSpawnKind(kind));
+export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
+  u.level ?? battle.troopLevels?.[u.kind as TroopKind] ?? 1;
+export const statsFor = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
+  nativeUnitStats(u.kind, unitLevel(battle, u));
+
+/** Client building names used by preferred-target columns. */
+const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
+  airdefense: 'Air Defense',
+  townhall: 'Town Hall',
+  wall: 'Wall',
+};
+const buildingName = (kind: BuildingKind) => BUILDING_NAME[kind] ?? BUILDINGS[kind].name;
+const matchesPreferred = (s: NativeUnitStats, b: Building) =>
+  s.preferredBuilding
+    ? buildingName(b.kind) === s.preferredBuilding
+    : s.preferredClass === 'Defense'
+      ? isDefense(b.kind) && b.npc !== 'tutorial-cannon'
+      : s.preferredClass === 'Resource'
+        ? isResourceBuilding(b.kind)
+        : s.preferredClass === 'Wall'
+          ? b.kind === 'wall'
+          : false;
+
+/** Flags that other combat systems read directly from the unit. */
+export function initialNativeState(kind: UnitKind, level: number, owner?: number): NativeUnitState {
+  const s = nativeUnitStats(kind, level);
+  return {
+    ...(owner !== undefined ? { owner } : {}),
+    ...(s.underground ? { burrowed: true } : {}),
+    ...(!s.triggersTraps ? { noTraps: true } : {}),
+  };
+}
+/** Deterministic unit creation shared by death splits, summons and damage spawns. */
+export function spawnNativeUnit(
+  ctx: NativeTroopContext,
+  kind: UnitKind,
+  level: number,
+  x: number,
+  y: number,
+  at: number,
+  owner?: number,
+) {
+  const battle = ctx.battle;
+  const count = nativeUnitLevels(kind);
+  const s = nativeUnitStats(kind, Math.max(1, Math.min(count, level)));
+  const spot = s.flying ? clampToMap(x, y) : openGround(ctx.buildings, x, y);
+  const unit: Unit = {
+    id: ctx.nextId(),
+    kind,
+    level: s.level,
+    x: spot.x,
+    y: spot.y,
+    hp: s.hp,
+    maxHp: s.hp,
+    cooldown: 0,
+    target: null,
+    path: [],
+    pathAt: 0,
+    attacking: false,
+    spawnedAt: at,
+    native: initialNativeState(kind, s.level, owner),
+  };
+  battle.units.push(unit);
+  ctx.effect({ type: 'spawn', x: unit.x, y: unit.y });
+  return unit;
+}
+function clampToMap(x: number, y: number) {
+  return {
+    x: Math.max(0.5, Math.min(MAP_SIZE - 0.5, x)),
+    y: Math.max(0.5, Math.min(MAP_SIZE - 0.5, y)),
+  };
+}
+/** Ground units never appear inside a standing footprint; search outward one ring at a time. */
+function openGround(buildings: Building[], x: number, y: number) {
+  const solid = (px: number, py: number) =>
+    buildings.some(
+      (b) =>
+        b.hp > 0 &&
+        !isTrap(b.kind) &&
+        b.kind !== 'wall' &&
+        px >= b.x &&
+        py >= b.y &&
+        px < b.x + BUILDINGS[b.kind].size &&
+        py < b.y + BUILDINGS[b.kind].size,
+    );
+  const start = clampToMap(x, y);
+  if (!solid(start.x, start.y)) return start;
+  for (let ring = 1; ring < 8; ring++)
+    for (let i = 0; i < ring * 8; i++) {
+      const angle = (i / (ring * 8)) * Math.PI * 2;
+      const p = clampToMap(
+        start.x + Math.cos(angle) * ring * 0.5,
+        start.y + Math.sin(angle) * ring * 0.5,
+      );
+      if (!solid(p.x, p.y)) return p;
+    }
+  return start;
+}
+/** Positions evenly around a point; randomized rows use the battle seed and source id. */
+function ringPoint(
+  battle: Battle,
+  source: Unit,
+  index: number,
+  count: number,
+  distance: number,
+  random: boolean,
+) {
+  const turn = random ? hash(battle.seed + source.id * 31, index) : index / Math.max(1, count);
+  const reach = random
+    ? distance * Math.sqrt(hash(battle.seed + source.id * 17, index + 101))
+    : distance;
+  const angle = turn * Math.PI * 2;
+  return { x: source.x + Math.cos(angle) * reach, y: source.y + Math.sin(angle) * reach };
+}
+function hash(seed: number, index: number) {
+  let v = (Math.imul(seed | 0, 0x27d4eb2d) ^ Math.imul(index + 1, 0x165667b1)) >>> 0;
+  v = Math.imul(v ^ (v >>> 15), 0x85ebca6b) >>> 0;
+  v = Math.imul(v ^ (v >>> 13), 0xc2b2ae35) >>> 0;
+  return ((v ^ (v >>> 16)) >>> 0) / 0x100000000;
+}
+
+/** Choose the nearest eligible building, honoring the unit's native favorite target. */
+function chooseTarget(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats) {
+  const battle = ctx.battle;
+  if (s.preferredClass === 'Wall') {
+    const breach = breachTarget(u, ctx.buildings);
+    if (breach) return breach;
+  }
+  const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetableBuilding(battle, b));
+  const favorite =
+    s.preferredClass || s.preferredBuilding ? alive.filter((b) => matchesPreferred(s, b)) : [];
+  const pool = favorite.length ? favorite : alive;
+  let best: Building | undefined,
+    distance = Infinity;
+  for (const b of pool) {
+    const d = distanceTo(u, b);
+    if (d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && best && b.id < best.id)) {
+      best = b;
+      distance = d;
+    }
+  }
+  return best;
+}
+
+/** Group-following support units trail the nearest cluster of friendly housing. */
+function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
+  let best: Unit | undefined,
+    weight = 0;
+  for (const ally of battle.units) {
+    if (
+      ally.id === u.id ||
+      ally.hp <= 0 ||
+      nativeUnitStats(ally.kind, unitLevel(battle, ally)).groups
+    )
+      continue;
+    if (distance2D(ally.x - u.x, ally.y - u.y) > s.groupRange) continue;
+    let space = 0;
+    for (const other of battle.units)
+      if (other.hp > 0 && distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
+        space += TROOPS[other.kind].space;
+    if (space > weight) {
+      weight = space;
+      best = ally;
+    }
+  }
+  return best;
+}
+
+export interface NativeStepStats {
+  damage: number;
+  speed: number;
+  heal?: number;
+}
+/**
+ * One simulation sample for a native-roster attacker. `boosted` carries the legacy Rage aura
+ * multiplier already applied by the caller.
+ */
+export function stepNativeUnit(
+  ctx: NativeTroopContext,
+  u: Unit,
+  boosted: NativeStepStats,
+  dt: number,
+) {
+  const battle = ctx.battle;
+  const s = statsFor(battle, u);
+  const state = (u.native ??= {});
+  const at = battle.elapsed;
+  stepLifecycle(ctx, u, s, at);
+  if (u.hp <= 0) return;
+  if (unitFrozen(u, at)) {
+    u.attacking = false;
+    return;
+  }
+  const speed = (boosted.speed + unitSpeedBonus(u, at)) * unitSpeedScale(u, at);
+  const damage = boosted.damage * unitDamageScale(u, at) * aloneScale(battle, u, s, state);
+  if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
+  if (s.heal > 0 && s.dps <= 0) {
+    stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);
+    return;
+  }
+  if (
+    stepAttackerVsDefenders(
+      battle,
+      u,
+      { damage, speed, range: s.range, rate: s.rate * unitAttackIntervalScale(u, at) },
+      dt,
+      ctx.buildings,
+      (target, power) => ctx.damageBuilding(target, power, battle.elapsed),
+      ctx.effect,
+    )
+  )
+    return;
+  let target = ctx.buildings.find((b) => b.id === u.target && targetableBuilding(battle, b));
+  if (!target) {
+    target = chooseTarget(ctx, u, s);
+    if (!target) {
+      u.attacking = false;
+      return;
+    }
+    u.target = target.id;
+    u.path = [];
+    u.pathAt = 0;
+    state.targetAt = at;
+    if (s.underground) {
+      state.surfaced = false;
+      state.burrowed = true;
+    }
+  }
+  if (s.groups) {
+    const anchor = groupAnchor(battle, u, s);
+    if (anchor && distanceTo(u, target) > s.range + 1e-9) {
+      moveToward(
+        u,
+        anchor,
+        Math.min(speed * dt, Math.max(0, distance2D(anchor.x - u.x, anchor.y - u.y) - 1)),
+      );
+      return;
+    }
+  }
+  const distance = distanceTo(u, target);
+  if (distance <= s.range + 1e-6) {
+    u.attacking = true;
+    if (s.underground) {
+      state.surfaced = true;
+      state.burrowed = false;
+    }
+    if (at + 1e-9 < (state.targetAt ?? 0) + s.newTargetDelay) return;
+    if (u.cooldown > 0) return;
+    u.cooldown = s.rate * unitAttackIntervalScale(u, at);
+    strike(ctx, u, s, target, damage);
+    return;
+  }
+  u.attacking = false;
+  if (s.speed <= 0) return;
+  const edge = {
+    x: Math.max(target.x, Math.min(u.x, target.x + BUILDINGS[target.kind].size)),
+    y: Math.max(target.y, Math.min(u.y, target.y + BUILDINGS[target.kind].size)),
+  };
+  if (s.flying || s.underground) {
+    moveToward(u, edge, Math.min(speed * dt, distance2D(edge.x - u.x, edge.y - u.y)));
+    return;
+  }
+  const jumping = s.jumper || (u.native?.effects?.jumpUntil ?? 0) > at;
+  if (!u.path.length || u.pathAt <= 0) {
+    u.path = findPath(
+      u,
+      target,
+      jumping ? ctx.buildings.filter((b) => b.kind !== 'wall') : ctx.buildings,
+      s.range,
+    );
+    u.pathAt = 1.5;
+  }
+  const next = u.path[0];
+  if (!next) return;
+  if (!jumping) {
+    const wall = battle.buildings.find(
+      (v) =>
+        v.kind === 'wall' && v.hp > 0 && Math.floor(next.x) === v.x && Math.floor(next.y) === v.y,
+    );
+    if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
+      u.attacking = true;
+      if (u.cooldown <= 0) {
+        u.cooldown = s.rate * unitAttackIntervalScale(u, at);
+        strike(ctx, u, s, wall, damage);
+      }
+      return;
+    }
+  }
+  let travel = speed * dt;
+  while (u.path.length && travel > 0) {
+    const p = u.path[0],
+      len = distance2D(p.x - u.x, p.y - u.y);
+    if (len <= travel) {
+      u.x = p.x;
+      u.y = p.y;
+      u.path.shift();
+      travel -= len;
+    } else {
+      moveToward(u, p, travel);
+      travel = 0;
+    }
+  }
+}
+function moveToward(u: Unit, point: { x: number; y: number }, travel: number) {
+  const dx = point.x - u.x,
+    dy = point.y - u.y,
+    len = distance2D(dx, dy);
+  if (len <= 1e-9 || travel <= 0) return;
+  const step = Math.min(travel, len);
+  u.x += (dx / len) * step;
+  u.y += (dy / len) * step;
+}
+
+/** Abilities active while no other friendly unit is nearby (Baby Dragon). */
+function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUnitState) {
+  if (!s.ability) return 1;
+  const row = nativeRow('abilities', s.ability, s.abilityLevel);
+  const radius = tiles(row, 'ActiveWhileAloneRadius');
+  if (radius <= 0) return 1;
+  const alone = !battle.units.some(
+    (other) =>
+      other.id !== u.id &&
+      other.hp > 0 &&
+      !other.ejected &&
+      (other.spawnedAt ?? 0) <= battle.elapsed + 1e-9 &&
+      !!TROOPS[other.kind].flying === s.flying &&
+      distance2D(other.x - u.x, other.y - u.y) <= radius,
+  );
+  state.alone = alone;
+  if (!alone) return 1;
+  const attackBoost = num(row, 'BoostAttackSpeedPercentage') / 100;
+  // Attack speed shortens the interval; damage per hit rises separately.
+  if (attackBoost && u.cooldown > s.rate / (1 + attackBoost))
+    u.cooldown = s.rate / (1 + attackBoost);
+  return 1 + num(row, 'BoostDamagePercentage') / 100;
+}
+
+function damageMultiplier(s: NativeUnitStats, b: Building) {
+  let scale = matchesPreferred(s, b) ? s.preferredMultiplier : 1;
+  if (s.damageMultiplierTarget && buildingName(b.kind) === s.damageMultiplierTarget)
+    scale *= s.damageMultiplier;
+  if (s.storageReduction && ['goldstorage', 'elixirstorage', 'darkstorage'].includes(b.kind))
+    scale *= 1 - s.storageReduction;
+  return scale;
+}
+
+/** Resolve one attack against a building according to the unit's native attack shape. */
+function strike(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  target: Building,
+  damage: number,
+) {
+  const battle = ctx.battle;
+  const state = (u.native ??= {});
+  const center = {
+    x: target.x + BUILDINGS[target.kind].size / 2,
+    y: target.y + BUILDINGS[target.kind].size / 2,
+  };
+  if (s.selfAreaCenter || s.multipleBuildings) {
+    const radius = Math.max(s.splash, s.range);
+    for (const b of battle.buildings)
+      if (
+        b.hp > 0 &&
+        !isTrap(b.kind) &&
+        targetableBuilding(battle, b) &&
+        distanceTo(u, b) <= radius + 1e-9
+      )
+        ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+    damageDefenders(battle, u, damage, radius, 'ground');
+    ctx.effect({ type: 'blast', x: u.x, y: u.y, radius, sourceId: u.id });
+  } else if (s.projectile && s.range >= 1) {
+    launchProjectile(
+      battle,
+      {
+        weapon: 'native',
+        native: { name: s.projectile, kind: u.kind, level: s.level },
+        sourceId: u.id,
+        targetId: target.id,
+        targetBuilding: true,
+        fromX: u.x,
+        fromY: u.y,
+        x: center.x,
+        y: center.y,
+        fromAir: s.flying,
+        damage,
+        splash: s.splash || undefined,
+      },
+      ctx.effect,
+    );
+  } else if (s.chainDepth > 0) {
+    zapChain(ctx, u, s, target, damage);
+  } else {
+    ctx.damageBuilding(target, damage * damageMultiplier(s, target), battle.elapsed);
+    if (s.splash)
+      for (const b of battle.buildings)
+        if (b.id !== target.id && b.hp > 0 && !isTrap(b.kind) && distanceTo(center, b) <= s.splash)
+          ctx.damageBuilding(b, damage * damageMultiplier(s, b), battle.elapsed);
+    applyFrost(battle, s, target);
+    ctx.effect({
+      type: 'hit',
+      x: u.x,
+      y: u.y,
+      toX: center.x,
+      toY: center.y,
+      sourceId: u.id,
+      targetId: target.id,
+      targetBuilding: true,
+    });
+  }
+  if (s.secondaryOnAttack && s.secondary) spawnSecondaries(ctx, u, s, battle.elapsed);
+  state.attacks = (state.attacks ?? 0) + 1;
+  if (s.attackCount > 0 && state.attacks >= s.attackCount) {
+    u.hp = 0;
+    u.spent = true;
+    u.defeatedAt = battle.elapsed;
+  }
+}
+function applyFrost(battle: Battle, s: NativeUnitStats, target: Building) {
+  if (!s.frostTime) return;
+  const e = buildingEffects(battle, target);
+  e.frost = { until: battle.elapsed + s.frostTime, percent: s.frostPercent };
+}
+
+/** Chain lightning: primary hit now, each hop after the native delay with reduced damage. */
+function zapChain(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  target: Building,
+  damage: number,
+) {
+  const battle = ctx.battle;
+  ctx.damageBuilding(target, damage, battle.elapsed);
+  const center = {
+    x: target.x + BUILDINGS[target.kind].size / 2,
+    y: target.y + BUILDINGS[target.kind].size / 2,
+  };
+  ctx.effect({
+    type: 'tesla-zap',
+    sourceId: u.id,
+    targetId: target.id,
+    x: u.x,
+    y: u.y,
+    toX: center.x,
+    toY: center.y,
+    fromAir: s.flying,
+  });
+  if (s.chainDepth > 1)
+    (battle.nativeChains ??= []).push({
+      sourceId: u.id,
+      at: battle.elapsed + s.chainDelay,
+      x: center.x,
+      y: center.y,
+      damage: damage * (1 - s.chainReduction),
+      remaining: s.chainDepth - 1,
+      distance: s.chainDistance,
+      reduction: s.chainReduction,
+      delay: s.chainDelay,
+      hit: [target.id],
+    });
+}
+export function stepNativeChains(ctx: NativeTroopContext) {
+  const battle = ctx.battle;
+  const pending: NativeChainHop[] = [];
+  for (const hop of battle.nativeChains ?? []) {
+    if (hop.at > battle.elapsed + 1e-9) {
+      pending.push(hop);
+      continue;
+    }
+    let next: Building | undefined,
+      best = Infinity;
+    for (const b of battle.buildings) {
+      if (
+        b.hp <= 0 ||
+        isTrap(b.kind) ||
+        b.kind === 'wall' ||
+        hop.hit.includes(b.id) ||
+        !targetableBuilding(battle, b)
+      )
+        continue;
+      const d = distanceTo(hop, b);
+      if (
+        d <= hop.distance + 1e-9 &&
+        (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && next && b.id < next.id))
+      ) {
+        best = d;
+        next = b;
+      }
+    }
+    if (!next) continue;
+    ctx.damageBuilding(next, hop.damage, hop.at);
+    const center = {
+      x: next.x + BUILDINGS[next.kind].size / 2,
+      y: next.y + BUILDINGS[next.kind].size / 2,
+    };
+    ctx.effect({
+      type: 'tesla-zap',
+      sourceId: hop.sourceId,
+      targetId: next.id,
+      x: hop.x,
+      y: hop.y,
+      toX: center.x,
+      toY: center.y,
+    });
+    if (hop.remaining > 1)
+      pending.push({
+        ...hop,
+        at: hop.at + hop.delay,
+        x: center.x,
+        y: center.y,
+        damage: hop.damage * (1 - hop.reduction),
+        remaining: hop.remaining - 1,
+        hit: [...hop.hit, next.id],
+      });
+  }
+  battle.nativeChains = pending;
+}
+
+/** Native projectile arrival: damage, splash, bounces and on-hit spells. */
+export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile) {
+  const battle = ctx.battle;
+  const source = p.native!;
+  const s = nativeUnitStats(source.kind, source.level);
+  const target = p.targetBuilding ? battle.buildings.find((b) => b.id === p.targetId) : undefined;
+  if (target && target.hp > 0) {
+    ctx.damageBuilding(target, p.damage * damageMultiplier(s, target), p.impact);
+    applyFrost(battle, s, target);
+  }
+  if (p.splash)
+    for (const b of battle.buildings)
+      if (b.id !== p.targetId && b.hp > 0 && !isTrap(b.kind) && distanceTo(p, b) <= p.splash)
+        ctx.damageBuilding(b, p.damage * damageMultiplier(s, b), p.impact);
+  if (p.splash) damageDefenders(battle, p, p.damage, p.splash, 'ground');
+  const projectile = nativeRow('projectiles', source.name);
+  const hitSpell = text(projectile, 'HitSpell');
+  if (hitSpell)
+    castNativeSpell(
+      battle,
+      hitSpell,
+      num(projectile, 'HitSpellLevel', 1) || 1,
+      'attack',
+      p.x,
+      p.y,
+      { at: p.impact, immediate: true },
+    );
+  const bounced = source.bounce ?? 0;
+  if (s.bounces > 1 && bounced + 1 < s.bounces && s.bounceDistance > 0) {
+    const dx = p.x - p.fromX,
+      dy = p.y - p.fromY,
+      len = distance2D(dx, dy) || 1;
+    const x = p.x + (dx / len) * s.bounceDistance,
+      y = p.y + (dy / len) * s.bounceDistance;
+    let next: Building | undefined,
+      best = Infinity;
+    for (const b of battle.buildings) {
+      if (b.hp <= 0 || isTrap(b.kind) || b.id === p.targetId || !targetableBuilding(battle, b))
+        continue;
+      const d = distanceTo({ x, y }, b);
+      if (d <= Math.max(0.5, s.splash) + 1e-9 && d < best) {
+        best = d;
+        next = b;
+      }
+    }
+    launchProjectile(
+      battle,
+      {
+        weapon: 'native',
+        native: { ...source, bounce: bounced + 1 },
+        sourceId: p.sourceId,
+        targetId: next?.id ?? p.targetId,
+        targetBuilding: !!next,
+        fromX: p.x,
+        fromY: p.y,
+        x,
+        y,
+        damage: p.damage,
+        splash: Math.max(0.5, s.splash),
+      },
+      ctx.effect,
+      p.impact,
+    );
+  }
+}
+
+/** Timers that run even while the unit is frozen. */
+function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const battle = ctx.battle;
+  const state = (u.native ??= {});
+  if (s.aura && state.aura === undefined) {
+    const cast = castNativeSpell(battle, s.aura, s.auraLevel, 'attack', u.x, u.y, {
+      at,
+      follow: u.id,
+      owner: u.id,
+      immediate: true,
+    });
+    state.aura = cast.id;
+  }
+  if (s.loseHp > 0 && s.loseHpInterval > 0) {
+    state.decayAt ??= (u.spawnedAt ?? at) + s.loseHpInterval;
+    while (state.decayAt <= at + 1e-9 && u.hp > 0) {
+      u.hp -= s.loseHp;
+      state.decayAt += s.loseHpInterval;
+    }
+  }
+  if (s.summon && s.summonCooldown > 0) stepSummons(ctx, u, s, at);
+  if (s.bunker && s.bunkerCount > 0) stepBunker(ctx, u, s, at);
+  if (s.evolveTo && s.evolveTime > 0 && at + 1e-9 >= (u.spawnedAt ?? 0) + s.evolveTime && u.hp > 0)
+    evolve(ctx, u, s, at);
+  if (s.spawnWhenDamaged > 0 && s.ability) stepDamageSpawns(ctx, u, s, at, false);
+}
+
+function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const battle = ctx.battle;
+  const state = u.native!;
+  state.summonAt ??= (u.spawnedAt ?? at) + s.summonDelay;
+  const kind = unitKindForName(s.summon) as UnitKind | undefined;
+  if (!kind) return;
+  while (state.summonAt <= at + 1e-9 && u.hp > 0) {
+    const alive = battle.units.filter((m) => m.hp > 0 && m.native?.owner === u.id).length;
+    const lifetime = state.summoned ?? 0;
+    if (s.summonLifetimeLimit > 0 && lifetime >= s.summonLifetimeLimit) {
+      if (s.diesWhenSpawnLimitReached) {
+        u.hp = 0;
+        u.defeatedAt = at;
+      }
+      return;
+    }
+    const room = Math.max(0, (s.summonLimit || Infinity) - alive);
+    const count = Math.min(s.summonCount || 1, room);
+    for (let i = 0; i < count; i++) {
+      const p = ringPoint(battle, u, lifetime + i, count, s.secondaryDistance || 1, false);
+      spawnNativeUnit(ctx, kind, s.summonLevel, p.x, p.y, state.summonAt + s.summonTime, u.id);
+    }
+    state.summoned = lifetime + count;
+    state.summonAt += s.summonCooldown + s.summonTime;
+  }
+}
+
+/** Bunker units (Furnace) release their full count evenly over the degeneration time. */
+function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const state = u.native!;
+  const kind = unitKindForName(s.bunker) as UnitKind | undefined;
+  if (!kind) return;
+  const start = u.spawnedAt ?? 0;
+  const interval = s.bunkerDecay / s.bunkerCount;
+  while ((state.released ?? 0) < s.bunkerCount) {
+    const index = state.released ?? 0;
+    const due = start + index * interval;
+    if (due > at + 1e-9) break;
+    const p = ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
+    spawnNativeUnit(ctx, kind, s.level, p.x, p.y, due, u.id);
+    state.released = index + 1;
+  }
+  if (s.bunkerDecay > 0) {
+    const lifetimeLeft = 1 - (at - start) / s.bunkerDecay;
+    if (lifetimeLeft <= 0) {
+      u.hp = 0;
+      u.defeatedAt = at;
+      u.spent = true;
+    } else u.hp = Math.min(u.hp, u.maxHp * lifetimeLeft);
+  }
+}
+
+function evolve(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const kind = unitKindForName(s.evolveTo) as UnitKind | undefined;
+  if (!kind) return;
+  const fraction = u.maxHp > 0 ? u.hp / u.maxHp : 1;
+  const next = nativeUnitStats(kind, s.level);
+  u.kind = kind;
+  u.level = next.level;
+  u.maxHp = next.hp;
+  u.hp = Math.max(1, next.hp * fraction);
+  u.cooldown = 0;
+  u.target = null;
+  u.path = [];
+  u.pathAt = 0;
+  delete u.native!.aura;
+  ctx.effect({ type: 'spawn', x: u.x, y: u.y });
+}
+
+function stepDamageSpawns(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  at: number,
+  death: boolean,
+) {
+  const row = nativeRow('abilities', s.ability, s.abilityLevel);
+  const kind = unitKindForName(text(row, 'SpawnedTroop')) as UnitKind | undefined;
+  const total = num(row, 'TroopCount');
+  if (!kind || total <= 0) return;
+  const state = u.native!;
+  const perDamage = num(row, 'SpawnnedTroopsPerDamage') || s.spawnWhenDamaged;
+  const due = death
+    ? flag(row, 'SpawnRemainingTroopsOnDeath')
+      ? total
+      : (state.damageSpawns ?? 0)
+    : Math.min(total, Math.floor((state.damageTaken ?? 0) / Math.max(1, perDamage)));
+  const level = num(row, 'TroopLevel', 1) || 1;
+  while ((state.damageSpawns ?? 0) < due) {
+    const index = state.damageSpawns ?? 0;
+    const p = ringPoint(ctx.battle, u, index, total, s.secondaryDistance || 1, true);
+    spawnNativeUnit(ctx, kind, level, p.x, p.y, at, u.id);
+    state.damageSpawns = index + 1;
+  }
+}
+
+function spawnSecondaries(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+  const kind = unitKindForName(s.secondary) as UnitKind | undefined;
+  if (!kind) return;
+  for (let i = 0; i < s.secondaryCount; i++) {
+    const p = ringPoint(ctx.battle, u, i, s.secondaryCount, s.secondaryDistance, s.secondaryRandom);
+    spawnNativeUnit(ctx, kind, s.level, p.x, p.y, at, u.id);
+  }
+}
+
+/** Native death rules: delayed blasts, secondary units, death spells and remaining spawns. */
+export function resolveNativeDeath(ctx: NativeTroopContext, u: Unit) {
+  const battle = ctx.battle;
+  const s = statsFor(battle, u);
+  const at = u.defeatedAt ?? battle.elapsed;
+  if (s.deathDamage > 0 && !u.ejected)
+    (battle.nativeDeaths ??= []).push({
+      sourceId: u.id,
+      x: u.x,
+      y: u.y,
+      at: at + s.deathDelay,
+      damage: s.deathDamage,
+      radius: s.deathRadius,
+      air: s.deathHitsAir,
+    });
+  if (s.secondary && !s.secondaryOnAttack && !(u.ejected && s.noSecondaryWhenEjected) && !u.ejected)
+    spawnSecondaries(ctx, u, s, at);
+  if (s.ability && !u.ejected) {
+    const row = nativeRow('abilities', s.ability, s.abilityLevel);
+    if (flag(row, 'ActiveOnDeath') && text(row, 'SelfSpell'))
+      castNativeSpell(
+        battle,
+        text(row, 'SelfSpell'),
+        num(row, 'SelfSpellLevel', 1) || 1,
+        'attack',
+        u.x,
+        u.y,
+        { at },
+      );
+    if (text(row, 'SpawnedTroop') && flag(row, 'SpawnRemainingTroopsOnDeath'))
+      stepDamageSpawns(ctx, u, s, at, true);
+  }
+}
+export function stepNativeDeaths(ctx: NativeTroopContext) {
+  const battle = ctx.battle;
+  for (const blast of battle.nativeDeaths ?? []) {
+    if (blast.resolved || blast.at > battle.elapsed + 1e-9) continue;
+    blast.resolved = true;
+    for (const b of battle.buildings)
+      if (b.hp > 0 && !isTrap(b.kind) && distanceTo(blast, b) <= blast.radius + 1e-9)
+        ctx.damageBuilding(b, blast.damage, blast.at);
+    damageDefenders(battle, blast, blast.damage, blast.radius, blast.air ? 'both' : 'ground');
+    ctx.effect({
+      type: 'blast',
+      x: blast.x,
+      y: blast.y,
+      radius: blast.radius,
+      sourceId: blast.sourceId,
+    });
+  }
+  battle.nativeDeaths = battle.nativeDeaths?.filter((blast) => !blast.resolved);
+}
+
+/** Healing units with negative DPS: follow and heal the most injured nearby ally. */
+function stepNativeHealer(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  heal: number,
+  speed: number,
+  dt: number,
+) {
+  const battle = ctx.battle;
+  const allies = battle.units.filter(
+    (a) => a.id !== u.id && a.hp > 0 && !a.ejected && (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9,
+  );
+  let target = allies.find((a) => a.id === u.healTarget);
+  if (!target || target.hp >= target.maxHp) {
+    target = allies
+      .filter(
+        (a) =>
+          (s.airTargets || !TROOPS[a.kind].flying) && (s.groundTargets || TROOPS[a.kind].flying),
+      )
+      .sort(
+        (a, b) =>
+          Number(a.hp >= a.maxHp) - Number(b.hp >= b.maxHp) ||
+          distance2D(a.x - u.x, a.y - u.y) - distance2D(b.x - u.x, b.y - u.y) ||
+          a.id - b.id,
+      )[0];
+    u.healTarget = target?.id;
+  }
+  if (!target) {
+    u.attacking = false;
+    return;
+  }
+  const distance = distance2D(target.x - u.x, target.y - u.y);
+  if (distance > s.range + 1e-9) {
+    u.attacking = false;
+    moveToward(u, target, Math.min(speed * dt, distance - s.range));
+    return;
+  }
+  u.attacking = true;
+  if (u.cooldown > 0) return;
+  u.cooldown = s.rate * unitAttackIntervalScale(u, battle.elapsed);
+  const hits = [target];
+  const bounceReach =
+    tiles(nativeRow('projectiles', s.projectile || 'BattleDruidProjectile'), 'MaxBounceDistance') ||
+    4.5;
+  for (let i = 1; i < Math.max(1, s.bounces + 1) && hits.length <= s.bounces; i++) {
+    const last = hits[hits.length - 1];
+    const next = allies
+      .filter(
+        (a) =>
+          !hits.includes(a) &&
+          a.hp < a.maxHp &&
+          distance2D(a.x - last.x, a.y - last.y) <= bounceReach,
+      )
+      .sort(
+        (a, b) =>
+          distance2D(a.x - last.x, a.y - last.y) - distance2D(b.x - last.x, b.y - last.y) ||
+          a.id - b.id,
+      )[0];
+    if (!next) break;
+    hits.push(next);
+  }
+  for (const ally of hits) {
+    const scale = ally.hero ? s.heroMultiplier : 1;
+    if (!nativeUnitStats(ally.kind, unitLevel(battle, ally)).immuneToHealing)
+      healUnit(battle, ally, heal * scale);
+  }
+  ctx.effect({
+    type: 'hit',
+    x: u.x,
+    y: u.y,
+    toX: target.x,
+    toY: target.y,
+    sourceId: u.id,
+    targetId: target.id,
+    color: 0x8dff8a,
+  });
+}
+
+/** Units that can be seen by defenses this sample: underground movers stay hidden until they attack. */
+export function targetableUnit(battle: Battle, u: Unit) {
+  if (u.hp <= 0) return false;
+  if (!battle.nativeRoster || !u.native) return true;
+  if ((u.native.effects?.invisibleUntil ?? 0) > battle.elapsed + 1e-9) return false;
+  if (nativeBehavior(battle, u.kind) && statsFor(battle, u).underground && !u.native.surfaced)
+    return false;
+  return true;
+}
+
+export function stepNativeBattle(ctx: NativeTroopContext) {
+  stepNativeSpells(ctx);
+  stepNativeDeaths(ctx);
+  stepNativeChains(ctx);
+}

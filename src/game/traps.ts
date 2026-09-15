@@ -1,3 +1,4 @@
+import { hurtUnit, unitTriggersTraps } from './native-status';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, springCapacity, trapStats } from './data';
 import type { Battle, Building, FX, Unit } from './model';
@@ -52,6 +53,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     };
     const eligible = (u: Unit) =>
       u.hp > 0 &&
+      unitTriggersTraps(u) &&
       (trap.npc !== 'shrink-trap' || (!u.ejected && (u.spawnedAt ?? 0) <= battle.elapsed)) &&
       (u.hero ? 25 : TROOPS[u.kind].space) >= (d.minHousing ?? 0) &&
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
@@ -159,7 +161,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         state,
         true,
       );
-      target.hp -= d.damage;
+      hurtUnit(battle, target, d.damage);
       state.resolved = true;
       changed = true;
       effect({
@@ -205,7 +207,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
       for (const u of battle.units)
-        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) u.hp -= power;
+        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius)
+          hurtUnit(battle, u, power);
       effect({
         type: 'blast',
         x: state.x,

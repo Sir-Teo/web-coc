@@ -1,3 +1,4 @@
+import { hurtUnit, unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack } from './garrison-combat';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
@@ -124,7 +125,10 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     );
     if (activeDt <= 0) continue;
     const stats = skeletonStats(defender.mode),
-      eligible = battle.units.filter((u) => u.hp > 0 && !!TROOPS[u.kind].flying === stats.flying);
+      eligible = battle.units.filter(
+        (u) =>
+          u.hp > 0 && !unitHidden(u, battle.elapsed) && !!TROOPS[u.kind].flying === stats.flying,
+      );
     const target =
       eligible.find((u) => u.id === defender.target) ??
       eligible.sort(
@@ -151,7 +155,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       if (defender.cooldown <= 0) {
         defender.cooldown = Math.max(0, stats.rate + (cooling ? defender.cooldown : 0));
         defender.alerted = true;
-        target.hp -= stats.damage;
+        hurtUnit(battle, target, stats.damage);
         effect({
           type: 'hit',
           sourceDefender: true,

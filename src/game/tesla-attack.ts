@@ -1,11 +1,11 @@
 import type { Battle, Building, Unit } from './model';
-import { TROOPS, type TroopKind } from './data';
+import { TROOPS, type UnitKind } from './data';
 
 export interface TeslaShot {
   index: number;
   at: number;
   targetId: number;
-  targetKind: TroopKind;
+  targetKind: UnitKind;
   targetHero: boolean;
   x: number;
   y: number;

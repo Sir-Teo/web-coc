@@ -5,11 +5,13 @@ import { distance2D } from './distance';
 import { recordBombTowerHit } from './bomb-tower-attack';
 import { recordWizardTowerHit } from './wizard-tower-attack';
 import { BUILDINGS, TROOPS, isTrap } from './data';
-import type { Battle, Building, FX } from './model';
+import type { Battle, Building, FX, Unit } from './model';
 import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
 import { XBOW_PROJECTILES } from './xbow-stats';
 import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
+import { nativeRow, num } from './native-data';
+import { hurtUnit } from './native-status';
 
 export type Weapon =
   | 'arrow'
@@ -20,7 +22,8 @@ export type Weapon =
   | 'towerbomb'
   | 'arcane'
   | 'healing'
-  | 'xbowbolt';
+  | 'xbowbolt'
+  | 'native';
 export interface CombatProjectile {
   id: string;
   weapon: Weapon;
@@ -43,6 +46,8 @@ export interface CombatProjectile {
   sequence?: number;
   /** Actual position of a tracking Cannon shot, tower arrow or X-Bow bolt at the last simulation sample. */
   flight?: { x: number; y: number; at: number };
+  /** Version 45+ native roster projectile: client projectile row, shooter kind/level and bounce index. */
+  native?: { name: string; kind: string; level: number; bounce?: number };
 }
 
 // Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;
@@ -57,7 +62,10 @@ const SPEED: Record<Weapon, number> = {
   arcane: WIZARD_TOWER_PROJECTILES[0].speed,
   healing: 12,
   xbowbolt: XBOW_PROJECTILES[0].speed,
+  native: 10,
 };
+const nativeSpeed = (p: Pick<CombatProjectile, 'native'>) =>
+  Math.max(0.5, num(nativeRow('projectiles', p.native!.name), 'Speed', 1000) / 100);
 const nativeCannon = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
   p.weapon === 'cannonball' && p.variant !== undefined;
 const nativeArcherTower = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
@@ -107,19 +115,21 @@ export function launchProjectile(
             ? 0.01
             : 0.12,
           distance2D(shot.x - shot.fromX, shot.y - shot.fromY) /
-            (nativeCannon(shot)
-              ? cannonSpeed(shot)
-              : nativeArcherTower(shot)
-                ? archerTowerSpeed(shot)
-                : shot.weapon === 'xbowbolt'
-                  ? xbowSpeed(shot)
-                  : shot.weapon === 'arcane'
-                    ? wizardTowerSpeed(shot)
-                    : SPEED[shot.weapon]),
+            (shot.weapon === 'native'
+              ? nativeSpeed(shot)
+              : nativeCannon(shot)
+                ? cannonSpeed(shot)
+                : nativeArcherTower(shot)
+                  ? archerTowerSpeed(shot)
+                  : shot.weapon === 'xbowbolt'
+                    ? xbowSpeed(shot)
+                    : shot.weapon === 'arcane'
+                      ? wizardTowerSpeed(shot)
+                      : SPEED[shot.weapon]),
         );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}`,
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}`,
     launched: at,
     impact: at + duration,
     ...(shot.weapon === 'xbowbolt' || nativeCannon(shot) || nativeArcherTower(shot)
@@ -157,6 +167,7 @@ export function stepProjectiles(
   battle: Battle,
   damage: (target: Building, power: number, at: number) => void,
   emit: (fx: FX) => void,
+  nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
   const pending: CombatProjectile[] = [];
   // Tracking bolts travel a bounded distance each sample. Moving a target does
@@ -207,7 +218,9 @@ export function stepProjectiles(
       continue;
     }
     const hitLivingTarget = !!target && target.hp > 0;
-    if (p.weapon === 'healing') {
+    if (p.weapon === 'native') {
+      nativeImpact?.(p);
+    } else if (p.weapon === 'healing') {
       for (const unit of battle.units)
         if (
           unit.hp > 0 &&
@@ -257,15 +270,16 @@ export function stepProjectiles(
           u.hp > 0 &&
           (u.spawnedAt ?? 0) <= p.impact + 1e-9 &&
           !!TROOPS[u.kind].flying === !!p.toAir &&
-          distance2D(u.x - p.x, u.y - p.y) <= p.splash
+          distance2D(u.x - p.x, u.y - p.y) <= p.splash &&
+          !u.native?.burrowed
         )
-          u.hp -= p.damage;
+          hurtUnit(battle, u, p.damage, p.impact);
     } else if (
       target &&
       target.hp > 0 &&
       (!('spawnedAt' in target) || (target.spawnedAt ?? 0) <= p.impact + 1e-9)
     )
-      target.hp -= p.damage;
+      hurtUnit(battle, target as Unit, p.damage, p.impact);
     if (p.weapon === 'xbowbolt') {
       const state = battle.xbows?.[p.sourceId];
       if (state && hitLivingTarget) {

@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { TROOPS } from './data';
+import { TROOPS, type TroopKind } from './data';
 import type { Battle } from './model';
 import { nativeScenePoses, type NativeMeshGraph } from './native-mesh';
 import { nativeMeshTexture } from './native-mesh-scene';
@@ -72,7 +72,9 @@ export class TroopNativePresentation {
         void this.load(u.kind);
         continue;
       }
-      const level = pack.levels.find((row) => row.level === (battle!.troopLevels?.[u.kind] ?? 1));
+      const level = pack.levels.find(
+        (row) => row.level === (u.level ?? battle!.troopLevels?.[u.kind as TroopKind] ?? 1),
+      );
       if (!level) continue;
       const old = this.positions.get(u.id);
       const dx = u.x - (old?.x ?? u.x),

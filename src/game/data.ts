@@ -1,4 +1,5 @@
-import { EXTRA_TROOPS, type ExtraTroopKind } from './extra-troops';
+import { EXTRA_TROOPS, EXTRA_TROOP_KINDS, type ExtraTroopKind } from './extra-troops';
+import { SPAWN_TROOPS, type SpawnKind } from './native-units';
 import { EXTRA_BUILDINGS, type ExtraBuildingKind } from './extra-buildings';
 import nativeProgression from '../../reference/full-client/progression.json';
 import { darkDrillStats } from './dark-drill-stats';
@@ -71,6 +72,8 @@ export type LegacyBuildingKind =
   | 'springtrap'
   | 'wall';
 export type TroopKind = LegacyTroopKind | ExtraTroopKind;
+/** Every battle unit: trainable troops plus housing-free spawned units. */
+export type UnitKind = TroopKind | SpawnKind;
 export type LegacyTroopKind =
   | 'swordsman'
   | 'archer'
@@ -963,9 +966,14 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
           : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
-export const TROOPS: Record<TroopKind, TroopDef> = { ...BASE_TROOPS, ...EXTRA_TROOPS };
+export const TROOPS: Record<UnitKind, TroopDef> = {
+  ...BASE_TROOPS,
+  ...EXTRA_TROOPS,
+  ...SPAWN_TROOPS,
+};
 export const PRE_EXPANSION_TROOP_KEYS = Object.keys(BASE_TROOPS) as LegacyTroopKind[];
-export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];
+/** Trainable army keys only; spawned units never enter armies, research or saves. */
+export const TROOP_KEYS = [...PRE_EXPANSION_TROOP_KEYS, ...EXTRA_TROOP_KINDS] as TroopKind[];
 export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
 export const LEGACY_TROOP_KEYS = PRE_EXPANSION_TROOP_KEYS.filter(
   (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),

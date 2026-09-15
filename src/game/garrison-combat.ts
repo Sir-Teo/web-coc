@@ -1,3 +1,4 @@
+import { unitHidden } from './native-status';
 import { TROOPS } from './data';
 import { distance2D } from './distance';
 import { garrisonStats, type GarrisonKind } from './garrison-reserve';
@@ -97,6 +98,7 @@ export function stepGarrisonDefender(
   const eligible = battle.units.filter(
     (unit) =>
       active(unit, battle.elapsed) &&
+      !unitHidden(unit, battle.elapsed) &&
       (TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets),
   );
   const target =

@@ -1,3 +1,4 @@
+import { hurtUnit } from './native-status';
 import type { Battle, Building, MortarShell, FX } from './model';
 import { TROOPS } from './data';
 import { distance2D } from './distance';
@@ -68,7 +69,7 @@ export function stepMortarShells(battle: Battle, emit: (fx: FX) => void) {
         (unit.spawnedAt ?? 0) <= shell.impact + 1e-9 &&
         distance2D(unit.x - shell.x, unit.y - shell.y) <= shell.radius
       )
-        unit.hp -= shell.damage;
+        hurtUnit(battle, unit, shell.damage, shell.impact);
     const state = battle.mortars?.[shell.sourceId];
     const shot = state?.shots.find((v) => v.launched === shell.launched);
     if (state && shot) {

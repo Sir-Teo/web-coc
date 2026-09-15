@@ -1,3 +1,4 @@
+import { hurtUnit } from './native-status';
 import { distance2D } from './distance';
 import native from '../../reference/santa-trap/runtime.json';
 import type { Battle } from './model';
@@ -76,7 +77,7 @@ export function stepSanta(battle: Battle, state: TrapState) {
         (unit.spawnedAt ?? 0) <= strike.hitAt + 1e-9 &&
         distance2D(unit.x - strike.x, unit.y - strike.y) <= SANTA_SPELL.radius
       )
-        unit.hp -= SANTA_SPELL.damage;
+        hurtUnit(battle, unit, SANTA_SPELL.damage);
     santa.hits++;
     changed = true;
   }

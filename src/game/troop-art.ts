@@ -1,4 +1,4 @@
-import type { TroopKind } from './data';
+import type { TroopKind, UnitKind } from './data';
 
 const normal = {
   nativeFacing: -1,
@@ -27,4 +27,4 @@ const profiles: Partial<Record<TroopKind, typeof normal>> = {
 };
 
 /** Rendering metadata stays separate from troop balance and saved progression. */
-export const troopArt = (kind: TroopKind) => profiles[kind] ?? normal;
+export const troopArt = (kind: UnitKind) => profiles[kind as TroopKind] ?? normal;

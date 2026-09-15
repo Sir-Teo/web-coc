@@ -1,3 +1,4 @@
+import { unitHidden } from './native-status';
 import type { Battle, Building, FX } from './model';
 import { TROOPS } from './data';
 import { ARCHER_TOWER } from './archer-tower-stats';
@@ -36,7 +37,8 @@ export function stepArcherTower(
   const x = tower.x + 1.5,
     y = tower.y + 1.5;
   const targets = b.units.filter(
-    (u) => u.hp > 0 && Math.hypot(u.x - x, u.y - y) <= ARCHER_TOWER.range,
+    (u) =>
+      u.hp > 0 && !unitHidden(u, b.elapsed) && Math.hypot(u.x - x, u.y - y) <= ARCHER_TOWER.range,
   );
   const target =
     targets.find((u) => u.id === b.defenseTargets[tower.id]) ??

@@ -1,3 +1,4 @@
+import { unitHidden } from './native-status';
 import { TROOPS } from './data';
 import { distance2D } from './distance';
 import type { Unit } from './model';
@@ -43,6 +44,7 @@ export function tickInfernoCombat(
       (unit) =>
         unit.hp > 0 &&
         !unit.ejected &&
+        !unitHidden(unit, at) &&
         (unit.spawnedAt ?? 0) <= at &&
         (TROOPS[unit.kind].flying ? stats.weapon.airTargets : stats.weapon.groundTargets) &&
         distance2D(unit.x - fromX, unit.y - fromY) <= range,

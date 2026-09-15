@@ -36,7 +36,7 @@ import { MAX_SPELL_LEVEL, maxSpellLevel } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 44;
+export const REPLAY_VERSION = 45;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
@@ -49,6 +49,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 41 ||
   version === 42 ||
   version === 43 ||
+  version === 44 ||
   version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
@@ -101,6 +102,8 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    // Version 45 enables native roster abilities, spawned units and their statuses.
+    ...(version >= 45 ? { nativeRoster: true as const } : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')
       ? { nativeInfernoAmmo: true as const }
       : {}),

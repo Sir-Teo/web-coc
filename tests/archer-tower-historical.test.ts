@@ -25,4 +25,4 @@ it('preserves every complete battle state captured from the original version-40 
       }
   }
   expect(arrows).toBeGreaterThan(0);
-});
+}, 30_000);

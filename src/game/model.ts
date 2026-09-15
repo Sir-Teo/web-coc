@@ -190,10 +190,26 @@ import {
   upgradeSeconds,
   type BuildingKind,
   type TroopKind,
+  type UnitKind,
   type SpellKind,
   type ResearchKind,
   type Resource,
 } from './data';
+import {
+  initialNativeState,
+  nativeBehavior,
+  resolveNativeDeath,
+  resolveNativeImpact,
+  stepNativeBattle,
+  stepNativeUnit,
+  type NativeUnitState,
+  type NativeDeathBlast,
+  type NativeChainHop,
+  type NativeTroopContext,
+} from './native-troops';
+import type { NativeSpellCast } from './native-spells';
+import { hurtUnit, unitHidden, type BuildingEffects } from './native-status';
+import { isSpawnKind, spawnStatsAt } from './native-units';
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
   npc?: NpcBuildingKind;
@@ -304,7 +320,11 @@ export interface Save {
 }
 export interface Unit {
   id: number;
-  kind: TroopKind;
+  kind: UnitKind;
+  /** Explicit level for units without an army research entry (spawned units). */
+  level?: number;
+  /** Native roster state created only by version 45+ battles. */
+  native?: NativeUnitState;
   hero?: 'king';
   summoned?: boolean;
   spawnedAt?: number;
@@ -350,6 +370,13 @@ export interface MortarShell {
   radius: number;
 }
 export interface Battle {
+  /** Version 45+: native troop abilities, spawned units, statuses and delayed death effects. */
+  nativeRoster?: true;
+  nativeSpells?: NativeSpellCast[];
+  nativeSpellSequence?: number;
+  nativeDeaths?: NativeDeathBlast[];
+  nativeChains?: NativeChainHop[];
+  buildingEffects?: Record<number, BuildingEffects>;
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
   troopLevels?: Army;
@@ -471,6 +498,7 @@ export type FX = {
     | 'seekingairmine-pickup'
     | 'seekingairmine-place'
     | 'seekingairmine-cancel'
+    | 'spell-native'
     | 'quake';
   x: number;
   y: number;
@@ -664,6 +692,12 @@ export class GameModel {
   }
   troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
     return troopStatsAt(kind, level);
+  }
+  /** Battle stats for any unit; spawned units carry their own level. */
+  unitStats(u: Pick<Unit, 'kind' | 'level'>) {
+    return isSpawnKind(u.kind)
+      ? spawnStatsAt(u.kind, u.level ?? 1)
+      : this.troopStats(u.kind, u.level ?? this.troopLevel(u.kind));
   }
   spellLevel(kind: SpellKind) {
     return this.battle?.spellLevels?.[kind] ?? this.state.spellLevels?.[kind] ?? 1;
@@ -2134,6 +2168,7 @@ export class GameModel {
       path: [],
       pathAt: 0,
       attacking: false,
+      ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
     });
     this.onEffect({ type: 'spawn', x, y });
     this.changed();
@@ -2202,6 +2237,17 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
+  private nativeContext(b: Battle): NativeTroopContext {
+    return {
+      battle: b,
+      buildings: b.buildings.filter((v) => !concealedTesla(b, v)),
+      damageBuilding: (target, amount, at) => this.damage(target, amount, at),
+      effect: (fx) => this.onEffect(fx),
+      nextId: () => this.state.nextId++,
+      troopLevel: (kind) => this.troopLevel(kind),
+    };
+  }
   private beginFight() {
     const b = this.battle!;
     if (b.started) return;
@@ -2238,7 +2284,14 @@ export class GameModel {
     b.elapsed += dt;
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
-    stepProjectiles(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
+    const native = b.nativeRoster ? this.nativeContext(b) : null;
+    stepProjectiles(
+      b,
+      (target, power, at) => this.damage(target, power, at),
+      this.onEffect,
+      native ? (p) => resolveNativeImpact(native, p) : undefined,
+    );
+    if (native) stepNativeBattle(native);
     stepDeathBombs(b, this.onEffect);
     stepSpellAuras(b);
     stepKingQuakes(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
@@ -2249,6 +2302,7 @@ export class GameModel {
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    if (native) native.buildings = knownBuildings;
     for (const u of b.units) {
       if (u.hp <= 0) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
@@ -2271,10 +2325,10 @@ export class GameModel {
       const base =
         u.hero && b.hero
           ? {
-              ...this.troopStats(u.kind),
+              ...this.unitStats(u),
               ...heroStats(b.hero.level, b.hero.townhall, b.hero.equipment),
             }
-          : this.troopStats(u.kind);
+          : this.unitStats(u);
       const d = {
         ...base,
         heal:
@@ -2295,6 +2349,10 @@ export class GameModel {
             )) *
           (actionDt / unitDt),
       };
+      if (native && nativeBehavior(b, u.kind)) {
+        stepNativeUnit(native, u, d, unitDt);
+        continue;
+      }
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);
         continue;
@@ -2513,6 +2571,7 @@ export class GameModel {
       const targets = b.units.filter(
         (u) =>
           u.hp > 0 &&
+          !unitHidden(u, b.elapsed) &&
           canTarget(d.targets, u.kind) &&
           distance2D(u.x - center.x, u.y - center.y) <= d.range! &&
           distance2D(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
@@ -2535,7 +2594,7 @@ export class GameModel {
             : defenseDamage(tower.kind, tower.level) *
               (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
         if (tower.kind === 'tesla') {
-          target.hp -= power;
+          hurtUnit(b, target, power);
           recordTeslaShot(b, tower, target);
           this.onEffect({
             type: 'tesla-zap',
@@ -2603,7 +2662,11 @@ export class GameModel {
       u.defeatedAt ??= b.elapsed;
       if (u.spent) continue;
       u.spent = true;
-      const troop = this.troopStats(u.kind);
+      if (native && nativeBehavior(b, u.kind)) {
+        resolveNativeDeath(native, u);
+        continue;
+      }
+      const troop = this.unitStats(u);
       if (!troop.deathDamage) continue;
       if (troop.wallBreaker) {
         this.detonate(u, troop.deathDamage);
@@ -2628,6 +2691,8 @@ export class GameModel {
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !b.units.some((u) => u.hp > 0 && !TROOPS[u.kind].healer) &&
+        !b.nativeDeaths?.some((blast) => !blast.resolved) &&
+        !b.nativeChains?.length &&
         !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !TROOPS[k].healer) &&
         !b.spells.lightning &&
         !(b.hero && b.hero.unitId === null))
@@ -3087,7 +3152,7 @@ export class GameModel {
     this.changed();
   }
 }
-export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: TroopKind) {
+export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: UnitKind) {
   const flying = !!TROOPS[kind].flying;
   if (!targets || targets === 'both') return true;
   return targets === 'air' ? flying : !flying;
