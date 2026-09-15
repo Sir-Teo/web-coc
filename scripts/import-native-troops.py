@@ -39,7 +39,8 @@ TROOPS = {
     'balloon': 'Balloon', 'goblin': 'Goblin', 'wallbreaker': 'Wall Breaker',
     'healer': 'Healer', 'dragon': 'Dragon', 'pekka': 'PEKKA',
 }
-SPELLS = {'lightning': 'Lightning', 'heal': 'Healing', 'rage': 'Rage', 'freeze': 'Freeze'}
+SPELLS = {'lightning': 'Lightning', 'heal': 'Healing', 'rage': 'Rage', 'freeze': 'Freeze',
+          'invisibility': 'Invisibility'}
 RESOURCES = {'Elixir': 'elixir', 'DarkElixir': 'dark', 'Gold': 'gold'}
 
 

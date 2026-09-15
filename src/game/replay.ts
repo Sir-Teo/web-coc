@@ -36,7 +36,6 @@ import {
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
-import { defaultSpellLevels } from './army';
 import {
   EQUIPMENT_LEVEL_BEFORE_47,
   EQUIPMENT_MAX_LEVEL,
@@ -45,14 +44,15 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 48;
+export const REPLAY_VERSION = 49;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
  * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
  * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
  * Version 46 carries the catalog to Town Hall 18, again with no combat rule change.
  * Version 47 adds the fifth Skeleton Trap tier, whose coffin releases level 2 skeletons,
  * and arms the home Builder's Hut with the turret campaign huts already carried.
- * Version 48 adds the Freeze Spell, which no earlier recording may carry or cast. */
+ * Version 48 adds the Freeze Spell and 49 the Invisibility Spell; no recording older than
+ * the version that added a spell may carry, cast or research it. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -68,6 +68,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 45 ||
   version === 46 ||
   version === 47 ||
+  version === 48 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -77,17 +78,32 @@ export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.
   ]),
 );
 const PRE_ROSTER_SPELL_LEVEL = 5;
-/** Spells added at version 48, which no earlier recording carries, casts or researches. */
-const VERSION_48_SPELLS = ['freeze'] as const;
-const PRE_VERSION_48_SPELL_KEYS: readonly SpellKind[] = SPELL_KEYS.filter(
-  (k) => !VERSION_48_SPELLS.includes(k as (typeof VERSION_48_SPELLS)[number]),
-);
+/**
+ * Spells added after version 47, by the version that first carried one. A recording older
+ * than that version may not carry, cast or research the spell, and is validated against the
+ * book it was written with rather than today's.
+ */
+const SPELLS_ADDED_AT: Readonly<Record<number, readonly SpellKind[]>> = {
+  48: ['freeze'],
+  49: ['invisibility'],
+};
+/** The spell book a recording of this version was written with, in its own key order. */
+export const spellKeysAt = (version: number): readonly SpellKind[] =>
+  SPELL_KEYS.filter((kind) =>
+    Object.entries(SPELLS_ADDED_AT).every(
+      ([added, kinds]) => version >= Number(added) || !kinds.includes(kind),
+    ),
+  );
 /**
  * The book every recording before version 48 was replayed with, written out in the order
  * those recordings hashed it. An archived battle state is compared as JSON, so the key order
  * is part of the result and cannot be rebuilt from today's key list.
  */
 const PRE_VERSION_48_SPELL_LEVELS = { lightning: 1, heal: 1, rage: 1 } as unknown as SpellBook;
+const spellLevelsAt = (version: number): SpellBook =>
+  version < 48
+    ? PRE_VERSION_48_SPELL_LEVELS
+    : (Object.fromEntries(spellKeysAt(version).map((k) => [k, 1])) as SpellBook);
 /** Ceilings before version 47 reconstructed the fifth coffin tier. */
 const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4 };
 /** Ceilings before version 46 carried the home catalog to Town Hall 18. */
@@ -221,12 +237,9 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
-    // The Freeze Spell is version 48's own; an earlier recording has no level for it, and
-    // adding one would change every archived battle state.
-    spellLevels: {
-      ...(version >= 48 ? defaultSpellLevels() : PRE_VERSION_48_SPELL_LEVELS),
-      ...s.spellLevels,
-    },
+    // A spell added after a recording was written has no level in it, and adding one would
+    // change that recording's archived battle state.
+    spellLevels: { ...spellLevelsAt(version), ...s.spellLevels },
     hero: s.hero
       ? { ...structuredClone(s.hero), unitId: null, abilityUsed: false, rageUntil: 0 }
       : undefined,
@@ -268,9 +281,8 @@ export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
   const troopKeys = value.version >= 18 ? TROOP_KEYS : LEGACY_TROOP_KEYS;
-  // A recording older than version 48 has no field for the spells that version added, so it
-  // is checked against the book it was written with rather than today's.
-  const spellKeys = value.version >= 48 ? SPELL_KEYS : PRE_VERSION_48_SPELL_KEYS;
+  // A recording is checked against the book it was written with, not today's.
+  const spellKeys = spellKeysAt(value.version);
   const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
   if (
     !validCampaignCatalog(s.catalog) ||

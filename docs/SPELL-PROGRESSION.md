@@ -1,6 +1,6 @@
 # Home Village spell progression
 
-Audited September 11, 2026; extended September 14, 2026 and again September 15, 2026. Four spells are now cast: Lightning, Healing, Rage and the **Freeze Spell**, each running to its own original ceiling — thirteen, twelve, seven and eight levels — read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+Audited September 11, 2026; extended September 14 and 15, 2026. Five spells are now cast: Lightning, Healing, Rage, **Freeze** and **Invisibility**, each running to its own original ceiling — thirteen, twelve, seven, eight and four levels — read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
 
 The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
 
@@ -12,7 +12,17 @@ It deals no damage. Within its 3.5-tile radius every defence stops mid-reload an
 
 Two source columns are deliberately not modelled, and the gap is here rather than hidden. `FreezeOuterTimeMS` states a shorter hold for the edge of the burst, which needs an outer radius the table does not give; the whole radius takes the inner time. `RandomRadius` scatters where the burst actually lands, which this game does not reproduce — a cast lands where it is aimed.
 
-The spell key order matters and is load-bearing: an archived battle state is compared as JSON, so `SPELL_KEYS` follows the `SPELLS` object's own order and the Freeze Spell is **appended**, never inserted. `tests/freeze-spell.test.ts` asserts that order.
+## The Invisibility Spell
+
+Added September 15, 2026, as **recording version 49**, and offered by a Spell Factory 6 — its own `SpellForgeLevel`. It runs to level 4, the shortest ladder of any spell this game casts.
+
+It deals no damage. Nothing can target a troop standing under the veil: not a defence, not a defending troop, not the Eagle Artillery's group weighting. Walls still block and traps still trigger, which is what the source's own immunity list says by naming `walls` and `siegeMachines` as untouched.
+
+Its rhythm is read rather than chosen. The source states a pulse count and an interval — 14 pulses at a quarter-second for level 1, 17 at level 4 — so the ring lasts 3.5 to 4.25 seconds, and each troop keeps its cover for a further `InvisibilityTime` of 0.6 seconds after stepping out, the way the Rage Spell's boost lingers.
+
+A unit carries `invisibleUntil` only while a veil is actually holding it, so a battle without one is byte-identical to a battle recorded before the spell existed.
+
+The spell key order matters and is load-bearing: an archived battle state is compared as JSON, so `SPELL_KEYS` follows the `SPELLS` object's own order and the Freeze Spell is **appended**, never inserted. `tests/freeze-spell.test.ts` asserts that order, and that every recording's own book is a prefix of today's. The per-version book is now one table, `SPELLS_ADDED_AT` in `replay.ts`, so the next spell is one line rather than a new constant.
 
 ## Sources
 

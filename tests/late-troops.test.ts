@@ -275,7 +275,13 @@ describe('Healer support', () => {
       const { m, b, healer } = arena();
       b.units = [healer];
       b.remaining = { ...emptyArmy(), healer: 1, swordsman: reserve === 'troop' ? 1 : 0 };
-      b.spells = { rage: 1, heal: 1, lightning: reserve === 'lightning' ? 1 : 0, freeze: 0 };
+      b.spells = {
+        rage: 1,
+        heal: 1,
+        lightning: reserve === 'lightning' ? 1 : 0,
+        freeze: 0,
+        invisibility: 0,
+      };
       m.step(0.05);
       expect(b.finished).toBe(reserve === 'none');
     },

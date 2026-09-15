@@ -15,6 +15,7 @@ import { stepSweepers, recordSweeperDestroyed } from '../src/game/air-sweeper';
 import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { airSweeperBattle, airSweeperVillage } from './fixtures/air-sweeper-battle';
+import { REPLAY_VERSION } from '../src/game/replay';
 
 it('supports every original level while preserving the TH8 ceiling and remaining campaign gates', () => {
   expect(SWEEPER_LEVELS).toHaveLength(7);
@@ -171,7 +172,7 @@ it.each([1, 4, 5, 6, 7])(
     expect(m.battle!.airSweepers![6].fired).toBeGreaterThan(0);
     const last = structuredClone(m.battle),
       parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(parsed.version).toBe(48);
+    expect(parsed.version).toBe(REPLAY_VERSION);
     expect(parsed.initial.buildings.find((v) => v.id === 6)!.level).toBe(level);
     const viewer = new GameModel(),
       home = JSON.stringify(viewer.state);

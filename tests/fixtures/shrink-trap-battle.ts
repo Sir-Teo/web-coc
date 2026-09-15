@@ -10,7 +10,7 @@ export function shrinkTrapVillage() {
   save.buildings.find((b) => b.kind === 'barracks')!.level = 10;
   save.army = { ...emptyArmy(), pekka: 4, dragon: 5 };
   save.king = undefined;
-  save.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0 };
+  save.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0, invisibility: 0 };
   save.nativeCampaign = freshNativeCampaign();
   save.nativeCampaign.stars[53] = 1;
   save.tutorial = true;

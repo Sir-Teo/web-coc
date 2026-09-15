@@ -22,6 +22,7 @@
   "spells": {
     "freeze": "Freeze",
     "heal": "Healing",
+    "invisibility": "Invisibility",
     "lightning": "Lightning",
     "rage": "Rage"
   },

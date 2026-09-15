@@ -209,6 +209,10 @@
       "freeze": {
         "source": "Freeze",
         "housingSpace": 1
+      },
+      "invisibility": {
+        "source": "Invisibility",
+        "housingSpace": 1
       }
     },
     "globals": {

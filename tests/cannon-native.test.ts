@@ -17,6 +17,7 @@ import { cannonBattle, cannonVillage } from './fixtures/cannon-battle';
 import { highPressureBattle, highPressureVillage } from './fixtures/high-pressure-battle';
 import { nativeBuildings, nativeCampaignIssues, nativeUnlocked } from '../src/game/native-campaign';
 import type { NativeScenePose } from '../src/game/native-mesh';
+import { REPLAY_VERSION } from '../src/game/replay';
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 
 it('retains all source levels and prices while respecting every home Town Hall gate', () => {
@@ -211,7 +212,7 @@ for (const level of [1, 8, 11, 12, 14, 15, 17, 20, 21])
     expect(m.battle!.finished).toBe(true);
     const end = structuredClone(m.battle),
       record = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(record.version).toBe(48);
+    expect(record.version).toBe(REPLAY_VERSION);
     m.returnHome();
     const home = JSON.stringify(m.state);
     expect(m.openReplay(record)).toBe(true);

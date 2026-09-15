@@ -18,6 +18,7 @@ The supported roster now unlocks through completed army facilities. One shared t
 | 2 | Healing | 6 |
 | 3 | Rage | 7 |
 | 4 | Freeze | 8 |
+| 6 | Invisibility | 10 |
 
 Every gate in that table is now read from the source's own `SpellForgeLevel` rather than written here: `SPELL_UNLOCK` is derived from the [pinned spell roster](../reference/troops/README.md), so a gate cannot drift from the client. The three original rows reproduce exactly what was hand-checked below.
 

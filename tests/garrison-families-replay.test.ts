@@ -51,7 +51,7 @@ function campaignSetup(index: number, bunker: (b: Building) => boolean, troops =
       dragon: 1,
       pekka: 1,
     },
-    spellLevels: { rage: 1, heal: 1, lightning: 1, freeze: 1 },
+    spellLevels: { rage: 1, heal: 1, lightning: 1, freeze: 1, invisibility: 1 },
     nextId: 100000,
     availableLoot: loot,
     lootRoom: loot,

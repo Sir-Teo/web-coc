@@ -13,7 +13,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Area | Pinned | Implemented | Source | Left to implement |
 | --- | --- | --- | --- | --- |
 | Troops | 90 | 10 | 90 | 80 |
-| Spells | 23 | 4 | 23 | 19 |
+| Spells | 23 | 5 | 23 | 18 |
 | Heroes | 6 | 1 | 6 | 5 |
 | Buildings | 44 | 30 | 44 | 14 |
 | Traps | 13 | 7 | 13 | 6 |
@@ -118,12 +118,13 @@ Records the client itself disables — summoned troops, defensive variants, inte
 
 ## Spells
 
-**23 of 23** pinned, **4 of 23** implemented; 40 of 161 levels playable.
+**23 of 23** pinned, **5 of 23** implemented; 44 of 161 levels playable.
 
 | Record | Levels | Pinned | This game |
 | --- | --- | --- | --- |
 | Freeze | 8 | yes | yes |
 | Healing | 12 | yes | yes |
+| Invisibility | 4 | yes | yes |
 | Lightning | 13 | yes | yes |
 | Rage | 7 | yes | yes |
 | AngrySpell | 4 | yes | — |
@@ -135,7 +136,6 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Earthquake | 8 | yes | — |
 | Haste | 7 | yes | — |
 | Ice Block | 6 | yes | — |
-| Invisibility | 4 | yes | — |
 | Jump | 5 | yes | — |
 | Overgrowth | 5 | yes | — |
 | Poison | 12 | yes | — |

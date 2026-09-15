@@ -9,8 +9,11 @@
  */
 import { spawnSync } from 'node:child_process';
 
-/** Cannot find module; has no exported member; has no exported member (did you mean…). */
-const RESOLUTION = new Set(['TS2305', 'TS2307', 'TS2724']);
+/**
+ * Cannot find module; has no exported member; has no exported member (did you mean…); and
+ * cannot find name, which is what a test that uses a symbol it forgot to import reports.
+ */
+const RESOLUTION = new Set(['TS2304', 'TS2305', 'TS2307', 'TS2724']);
 const LINE = /^(?<file>[^(]+)\((?<line>\d+),\d+\): error (?<code>TS\d+): (?<message>.*)$/;
 
 const { stdout } = spawnSync('npx', ['tsc', '--noEmit', '-p', 'tsconfig.tests.json'], {

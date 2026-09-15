@@ -4,7 +4,7 @@ import { SPELLS, SPELL_KEYS, SPELL_HOTKEYS, TROOP_HOTKEYS, spellStatsAt } from '
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { freezeSeconds, FREEZE_RADIUS, maxSpellLevelFor } from '../src/game/spell-progression';
 import { SPELL_ROSTER } from '../src/game/troop-progression';
-import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
+import { REPLAY_VERSION, spellKeysAt, validateReplay } from '../src/game/replay';
 import { defaultSpellLevels, emptySpells } from '../src/game/army';
 import { fundedVillage } from './fixtures/funded-village';
 import { developedSave } from './fixtures/developed-village';
@@ -83,13 +83,16 @@ describe('the Freeze Spell', () => {
   });
 
   it('is version 48 content that no earlier recording may carry or cast', () => {
-    expect(REPLAY_VERSION).toBe(48);
+    // The spell arrived at version 48 and every later recording still carries it.
+    expect(spellKeysAt(47)).not.toContain('freeze');
+    expect(spellKeysAt(48)).toContain('freeze');
+    expect(spellKeysAt(REPLAY_VERSION)).toContain('freeze');
     const { m } = arena();
     m.activeSpell = 'freeze';
     m.castSpell(10, 10);
     m.finishBattle();
     const replay = m.state.raidLog![0].replay!;
-    expect(replay.version).toBe(48);
+    expect(replay.version).toBe(REPLAY_VERSION);
     expect(validateReplay(replay)).toBe(true);
     // The same recording relabelled as version 47 carries a spell that version never had.
     expect(validateReplay({ ...replay, version: 47 })).toBe(false);
@@ -105,8 +108,14 @@ describe('the Freeze Spell', () => {
   });
 
   it('keeps the spell book key order, which archived battles are hashed by', () => {
-    // Appending rather than inserting is what keeps every pre-48 battle state byte-identical.
-    expect(SPELL_KEYS).toEqual(['rage', 'heal', 'lightning', 'freeze']);
+    // Appending rather than inserting is what keeps every older battle state byte-identical:
+    // the original three keep their places and each new spell goes on the end.
+    expect(SPELL_KEYS.slice(0, 4)).toEqual(['rage', 'heal', 'lightning', 'freeze']);
     expect(Object.keys(emptySpells())).toEqual([...SPELL_KEYS]);
+    // Every recording's own book is a prefix-stable subset of today's, in the same order.
+    for (const version of [47, 48, REPLAY_VERSION]) {
+      const book = spellKeysAt(version);
+      expect(book).toEqual(SPELL_KEYS.filter((k) => book.includes(k)));
+    }
   });
 });

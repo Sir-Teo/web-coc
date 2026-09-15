@@ -4,6 +4,7 @@ import { GameModel } from '../src/game/model';
 import { NATIVE_CAMPAIGN, nativeBuildings } from '../src/game/native-campaign';
 import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
+import { REPLAY_VERSION } from '../src/game/replay';
 
 it.each([51, 52, 53])(
   'resolves and portably replays the original mine flight in native village %i',
@@ -33,7 +34,7 @@ it.each([51, 52, 53])(
     const end = structuredClone(m.battle!);
     const parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
     expect(parsed.initial.buildings).toEqual(nativeBuildings(index));
-    expect(parsed.version).toBe(48);
+    expect(parsed.version).toBe(REPLAY_VERSION);
     const viewer = new GameModel();
     const home = JSON.stringify(viewer.state);
     expect(viewer.openReplay(parsed)).toBe(true);

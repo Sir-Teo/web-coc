@@ -265,7 +265,7 @@ describe('destruction charge', () => {
   it('waits for an outstanding fuse before ending an exhausted army battle', () => {
     const { m, b, tower } = arena();
     for (const kind of TROOP_KEYS) b.remaining[kind] = 0;
-    b.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0 };
+    b.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0, invisibility: 0 };
     b.hero = undefined;
     m.damage(tower, 9999);
     m.step(0.5);

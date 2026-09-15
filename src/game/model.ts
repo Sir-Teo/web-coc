@@ -139,7 +139,7 @@ import {
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
-import { startSpellAura, stepSpellAuras } from './spell-effects';
+import { startSpellAura, stepSpellAuras, untargetable } from './spell-effects';
 import { prepareHealerTargets, stepHealer } from './healing';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
@@ -351,6 +351,8 @@ export interface Unit {
   spawnedAt?: number;
   rageUntil?: number;
   spellRageUntil?: number;
+  /** Set only by the Invisibility Spell, so a battle without one is byte-identical. */
+  invisibleUntil?: number;
   healTarget?: number;
   defenderTarget?: number;
   x: number;
@@ -2715,6 +2717,7 @@ export class GameModel {
       const targets = b.units.filter(
         (u) =>
           u.hp > 0 &&
+          !untargetable(b, u) &&
           canTarget(d.targets, u.kind) &&
           distance2D(u.x - center.x, u.y - center.y) <= d.range! &&
           distance2D(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),

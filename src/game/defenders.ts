@@ -17,6 +17,7 @@ import { targetableBuilding } from './hidden-tesla';
 // Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
 // (all neutral without version 44 late state).
 import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
+import { untargetable } from './spell-effects';
 import {
   SKELETON_TRAP,
   skeletonCount,
@@ -180,7 +181,9 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
         defender,
         skeletonStats(defender.mode, defender.spawnLevel),
       ),
-      eligible = battle.units.filter((u) => u.hp > 0 && !!TROOPS[u.kind].flying === stats.flying);
+      eligible = battle.units.filter(
+        (u) => u.hp > 0 && !untargetable(battle, u) && !!TROOPS[u.kind].flying === stats.flying,
+      );
     const target =
       eligible.find((u) => u.id === defender.target) ??
       eligible.sort(

@@ -14,6 +14,7 @@ import { mortarFacing, mortarPose, mortarProjectilePose } from '../src/game/mort
 import { mortarEffectPoses, mortarSoundCues, mortarTrailPoses } from '../src/game/mortar-effects';
 import { mortarShake } from '../src/game/mortar-shake';
 import { mortarBattle, mortarVillage } from './fixtures/mortar-battle';
+import { REPLAY_VERSION } from '../src/game/replay';
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 
 it('retains every original normal level without exceeding home Town Hall eight limits', () => {
@@ -212,7 +213,7 @@ for (const level of [1, 6, 8, 11, 16, 17, 18])
     expect(m.battle!.mortars?.[6]?.fired).toBeGreaterThan(0);
     const end = JSON.stringify(m.battle),
       replay = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(replay.version).toBe(48);
+    expect(replay.version).toBe(REPLAY_VERSION);
     m.returnHome();
     const home = JSON.stringify(m.state);
     expect(m.openReplay(replay)).toBe(true);

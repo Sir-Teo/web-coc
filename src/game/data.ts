@@ -35,6 +35,8 @@ import {
   RAGE_PULSES,
   FREEZE_RADIUS,
   freezeSeconds,
+  INVISIBILITY_RADIUS,
+  invisibilitySeconds,
 } from './spell-progression';
 import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
@@ -107,7 +109,7 @@ export type TroopKind =
   | 'healer'
   | 'dragon'
   | 'pekka';
-export type SpellKind = 'rage' | 'heal' | 'lightning' | 'freeze';
+export type SpellKind = 'rage' | 'heal' | 'lightning' | 'freeze' | 'invisibility';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** What a purchase is paid in. Gems buy Builder's Huts and nothing else is priced in them. */
@@ -943,7 +945,7 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
 export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
 // The two lists share one keyboard and are compared lowercase, so no key may appear in both.
-export const SPELL_HOTKEYS = ['8', '9', '0', 'r'];
+export const SPELL_HOTKEYS = ['8', '9', '0', 'r', 't'];
 export const isResourceBuilding = (kind: BuildingKind) =>
   [
     'clancastle',
@@ -1025,6 +1027,18 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     duration: 0,
     effect: '2.5s freeze',
   },
+  invisibility: {
+    name: 'Invisibility Spell',
+    role: 'SUPPORT',
+    description:
+      'A veil that hides your troops. Nothing can shoot what it cannot see, though the walls and traps are still there.',
+    cost: 0,
+    space: 1,
+    radius: INVISIBILITY_RADIUS,
+    time: 0,
+    duration: invisibilitySeconds(1),
+    effect: '3.5s hidden',
+  },
 };
 export function spellStatsAt(kind: SpellKind, level = 1) {
   const stats = spellProgression(kind, level) ?? spellProgression(kind, 1);
@@ -1036,9 +1050,11 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
         ? `${stats.damage} damage · 0.1s stun`
         : kind === 'freeze'
           ? `${freezeSeconds(level)}s freeze`
-          : kind === 'heal'
-            ? `${stats.heal * HEAL_PULSES} total healing`
-            : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+          : kind === 'invisibility'
+            ? `${invisibilitySeconds(level)}s hidden`
+            : kind === 'heal'
+              ? `${stats.heal * HEAL_PULSES} total healing`
+              : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];

@@ -343,8 +343,8 @@ describe('campaign Tornado Trap', () => {
           dragon: 0,
           pekka: 0,
         },
-        spells: { lightning: 0, heal: 0, rage: 0, freeze: 0 },
-        spellLevels: { lightning: 1, heal: 1, rage: 1, freeze: 1 },
+        spells: { lightning: 0, heal: 0, rage: 0, freeze: 0, invisibility: 0 },
+        spellLevels: { lightning: 1, heal: 1, rage: 1, freeze: 1, invisibility: 1 },
         troopLevels: {
           swordsman: 1,
           archer: 1,

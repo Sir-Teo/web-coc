@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
 import { BUILDINGS, SPELL_KEYS, type SpellKind } from '../src/game/data';
+import { requiredTownHall } from '../src/game/progression';
+import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -10,6 +12,8 @@ import { defaultSpellLevels, emptyArmy } from '../src/game/army';
 import { developedSave } from './fixtures/developed-village';
 
 // Independent transcription from Supercell's immutable spells.csv and current wiki tables.
+/** Enough elixir for the dearest research in the table below, with room to check change. */
+const BUDGET = 20_000_000;
 const reference = {
   lightning: { cost: [50000, 100000, 200000, 600000], hours: [2, 4, 6, 24], lab: [1, 2, 3, 6] },
   heal: { cost: [75000, 150000, 300000, 900000], hours: [3, 6, 12, 24], lab: [2, 4, 5, 6] },
@@ -19,6 +23,8 @@ const reference = {
     hours: [24, 36, 48, 60],
     lab: [7, 8, 8, 8],
   },
+  // The Invisibility Spell stops at level 4, so it has three research steps, not four.
+  invisibility: { cost: [5000000, 6000000, 7000000], hours: [72, 96, 120], lab: [9, 10, 11] },
 };
 function developed() {
   const m = new GameModel(developedSave());
@@ -27,7 +33,7 @@ function developed() {
   // Research is gated on the Spell Factory that offers the spell; the Freeze Spell needs 4.
   for (const b of m.state.buildings) if (b.kind === 'spellfactory') b.level = 4;
   m.state.spellLevels = defaultSpellLevels();
-  m.state.elixir = 5000000;
+  m.state.elixir = BUDGET;
   return m;
 }
 function arena(kind: SpellKind, level = 1, troop: Unit['kind'] = 'giant') {
@@ -68,16 +74,26 @@ describe('spell research', () => {
   });
 
   for (const kind of SPELL_KEYS)
-    for (const level of [1, 2, 3, 4])
+    // A spell with fewer levels has fewer research steps; the reference lists what it has.
+    for (const level of [1, 2, 3, 4].filter((l) => l <= reference[kind].cost.length))
       it(`${kind} ${level} → ${level + 1} pays once, reloads and completes at the exact deadline`, () => {
         const m = developed(),
           expected = reference[kind];
+        // A village must be able to hold the Spell Factory that offers the spell and the
+        // Laboratory that researches it, so the Town Hall rises to whichever needs more.
         m.state.spellLevels![kind] = level;
+        const factory = SPELL_UNLOCK[kind];
+        m.townhall!.level = Math.max(
+          8,
+          requiredTownHall('laboratory', expected.lab[level - 1]),
+          requiredTownHall('spellfactory', factory),
+        );
+        for (const b of m.state.buildings) if (b.kind === 'spellfactory') b.level = factory;
         m.laboratory!.level = Math.max(1, expected.lab[level - 1] - 1);
         if (expected.lab[level - 1] > 1) {
           m.research(kind);
           expect(m.state.research).toBeUndefined();
-          expect(m.state.elixir).toBe(5000000);
+          expect(m.state.elixir).toBe(BUDGET);
         }
         m.laboratory!.level = expected.lab[level - 1];
         expect(m.researchCost(kind)).toBe(expected.cost[level - 1]);
@@ -85,11 +101,11 @@ describe('spell research', () => {
         m.research(kind);
         const research = structuredClone(m.state.research!);
         expect(research).toEqual({ kind, end: m.clock + expected.hours[level - 1] * 3600000 });
-        expect(m.state.elixir).toBe(5000000 - expected.cost[level - 1]);
+        expect(m.state.elixir).toBe(BUDGET - expected.cost[level - 1]);
         m.researchTroop('swordsman');
         m.research(kind);
         expect(m.state.research).toEqual(research);
-        expect(m.state.elixir).toBe(5000000 - expected.cost[level - 1]);
+        expect(m.state.elixir).toBe(BUDGET - expected.cost[level - 1]);
         expect(validateSave(m.state)).toBe(true);
         const restored = new GameModel(JSON.parse(JSON.stringify(m.state)));
         restored.tick(research.end - 1);
@@ -157,12 +173,20 @@ describe('spell research', () => {
     expect(loaded.spellLevel('lightning')).toBe(1);
     expect(loaded.state.research).toEqual(original.research);
     expect(loaded.state.spells).toEqual(original.spells);
-    // A save written before the Freeze Spell existed has no field for it. Loading gains the
-    // field at zero and keeps every count the village already held.
+    // A save written before a spell existed has no field for it. Loading gains every absent
+    // spell at zero and keeps every count the village already held.
+    const ORIGINAL_THREE = ['rage', 'heal', 'lightning'] as const;
     const legacy = JSON.parse(JSON.stringify(original)) as typeof original;
-    delete (legacy.spells as Partial<Record<string, number>>).freeze;
-    expect(Object.hasOwn(legacy.spells, 'freeze')).toBe(false);
-    expect(new GameModel(legacy).state.spells).toEqual({ ...legacy.spells, freeze: 0 });
+    legacy.spells = Object.fromEntries(
+      ORIGINAL_THREE.map((k) => [k, legacy.spells[k]]),
+    ) as typeof legacy.spells;
+    const migrated = new GameModel(legacy).state.spells;
+    expect(Object.keys(migrated).sort()).toEqual([...SPELL_KEYS].sort());
+    for (const kind of SPELL_KEYS)
+      expect([kind, migrated[kind]]).toEqual([
+        kind,
+        ORIGINAL_THREE.includes(kind as (typeof ORIGINAL_THREE)[number]) ? legacy.spells[kind] : 0,
+      ]);
     const good = developed().state;
     // The Healing spell now runs to its own original ceiling, so 6 is a real level.
     for (const invalid of [0, maxSpellLevelFor('heal') + 1, -1, 1.5, NaN, '2', null]) {
@@ -364,8 +388,8 @@ describe('native spell effects', () => {
 
   it('spell levels are frozen in battle, exported and replayed independently of home research', () => {
     const m = developed();
-    m.state.spellLevels = { lightning: 4, heal: 3, rage: 2, freeze: 1 };
-    m.state.spells = { lightning: 1, heal: 1, rage: 1, freeze: 1 };
+    m.state.spellLevels = { ...defaultSpellLevels(), lightning: 4, heal: 3, rage: 2 };
+    m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
     m.startBattle(0, true);
     const b = m.battle!;
     m.deploy(1, 13);
@@ -386,7 +410,12 @@ describe('native spell effects', () => {
       record = m.state.raidLog![0];
     expect(record.replay!.version).toBe(REPLAY_VERSION);
     const data = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
-    expect(data.initial.spellLevels).toEqual({ lightning: 4, heal: 3, rage: 2, freeze: 1 });
+    expect(data.initial.spellLevels).toEqual({
+      ...defaultSpellLevels(),
+      lightning: 4,
+      heal: 3,
+      rage: 2,
+    });
     const viewer = new GameModel();
     viewer.state.research = { kind: 'heal', end: viewer.clock + 1000 };
     expect(viewer.openReplay(data)).toBe(true);

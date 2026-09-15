@@ -43,6 +43,14 @@ const glyphs = {
     '#4f96c8',
     '<path d="M124 116 h8 v20 l16 -10 l4 7 l-20 12 l20 12 l-4 7 l-16 -10 v20 h-8 v-20 l-16 10 l-4 -7 l20 -12 l-20 -12 l4 -7 l16 10 z"/>',
   ],
+  // A veil, drawn as an eye whose lower half has faded out of the glass.
+  invisibility: [
+    '#d9cdf2',
+    '#6a56a0',
+    '<path d="M100 158 q28 -26 56 0 q-28 26 -56 0 z" opacity="0.95"/>' +
+      '<circle cx="128" cy="158" r="9" opacity="0.95"/>' +
+      '<path d="M104 176 h12 M124 180 h10 M142 176 h11" stroke="#fff8dd" stroke-width="5" stroke-linecap="round" opacity="0.5" fill="none"/>',
+  ],
 };
 for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
   const output = `${SPELLS}/${name}-v2.webp`;

@@ -26,6 +26,7 @@ import {
 } from './garrison-abilities';
 // Late campaign Spell Tower Rage (neutral without version 44 late state).
 import { lateDefenderStats } from './late-campaign';
+import { untargetable } from './spell-effects';
 
 export interface GarrisonAttack {
   at: number;
@@ -363,6 +364,7 @@ export function stepGarrisonDefender(
   const eligible = battle.units.filter(
     (unit) =>
       active(unit, battle.elapsed) &&
+      !untargetable(battle, unit) &&
       (TROOPS[unit.kind].flying ? stats.airTargets : stats.groundTargets),
   );
   // PreferHeroes (Headhunter) restricts the candidate pool to Heroes whenever one is valid.

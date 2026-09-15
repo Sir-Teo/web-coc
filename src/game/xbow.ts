@@ -3,6 +3,7 @@ import { TROOPS } from './data';
 import type { Battle, Building, FX } from './model';
 import { launchProjectile } from './projectiles';
 import { XBOW, xbowProjectile, xbowRange, type XbowState } from './xbow-stats';
+import { untargetable } from './spell-effects';
 
 export function xbowState(battle: Battle, tower: Building): XbowState {
   return ((battle.xbows ??= {})[tower.id] ??= {
@@ -33,6 +34,7 @@ export function stepXbow(
   const targets = battle.units.filter(
     (u) =>
       u.hp > 0 &&
+      !untargetable(battle, u) &&
       (u.spawnedAt ?? 0) <= battle.elapsed &&
       (tower.xbowMode === 'both' || !TROOPS[u.kind].flying) &&
       distance2D(u.x - center.x, u.y - center.y) <= range,

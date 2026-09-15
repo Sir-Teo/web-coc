@@ -134,7 +134,7 @@ describe('Monolith and Spell Tower replays', () => {
         buildings: [makeBuilding(1, 'townhall', 10, 10, 8), makeBuilding(2, 'monolith', 20, 20, 2)],
         army: data.initial.army,
         spells: data.initial.spells,
-        spellLevels: { heal: 1, rage: 1, lightning: 1, freeze: 1 },
+        spellLevels: { heal: 1, rage: 1, lightning: 1, freeze: 1, invisibility: 1 },
         troopLevels: data.initial.troopLevels,
       },
       steps: [],

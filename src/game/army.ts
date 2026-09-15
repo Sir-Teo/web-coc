@@ -17,7 +17,7 @@ export const emptySpells = (): SpellBook =>
 export const defaultSpellLevels = (): SpellBook =>
   Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
 /** Spells added after the first three, which an older save has no field for. */
-const LATE_SPELL_KEYS = ['freeze'] as const;
+const LATE_SPELL_KEYS = ['freeze', 'invisibility'] as const;
 
 /** Add absent roster fields without repairing malformed imported values. */
 export function expandArmyRoster(save: Partial<Save>) {

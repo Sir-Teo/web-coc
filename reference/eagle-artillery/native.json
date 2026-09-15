@@ -5698,6 +5698,66 @@
         "StrengthWeight": "2300",
         "FreezeOuterTimeMS": "5400"
       }
+    ],
+    "Invisibility": [
+      {
+        "Name": "Invisibility",
+        "GlobalID": "26000035",
+        "Level": "1",
+        "TID": "TID_INVISIBILITY_SPELL",
+        "InfoTID": "TID_INVISIBILITY_SPELL_INFO",
+        "SpellForgeLevel": "6",
+        "LaboratoryLevel": "1",
+        "HousingSpace": "1",
+        "DeployTimeMS": "800",
+        "ChargingTimeMS": "300",
+        "HitTimeMS": "400",
+        "UpgradeTimeH": "72",
+        "UpgradeResource": "Elixir",
+        "UpgradeCost": "5000000",
+        "Radius": "400",
+        "NumberOfHits": "14",
+        "RandomRadius": "200",
+        "TimeBetweenHitsMS": "250",
+        "IconSWF": "sc/ui.sc",
+        "IconExportName": "icon_spell_invisibility",
+        "BigPicture": "icon_spell_invisibility",
+        "PreDeployEffect": "Invisibility_Predeploy",
+        "DeployEffect": "Invisibility area lvl1",
+        "RandomRadiusAffectsOnlyGfx": "TRUE",
+        "StrengthWeight": "1500",
+        "ProductionBuilding": "Spell Factory",
+        "TargetInfoString": "TID_INFO_TARGET_TYPE_GROUND_AND_AIR",
+        "InvisibilityTime": "600",
+        "ImmunitySiegeMachines": "TRUE",
+        "ImmunityWalls": "TRUE",
+        "PreviewScenario": "SpellInvisibility"
+      },
+      {
+        "Level": "2",
+        "LaboratoryLevel": "9",
+        "UpgradeTimeH": "96",
+        "UpgradeCost": "6000000",
+        "NumberOfHits": "15",
+        "DeployEffect": "Invisibility area lvl2",
+        "StrengthWeight": "1600"
+      },
+      {
+        "Level": "3",
+        "LaboratoryLevel": "10",
+        "UpgradeTimeH": "120",
+        "UpgradeCost": "7000000",
+        "NumberOfHits": "16",
+        "DeployEffect": "Invisibility area lvl3",
+        "StrengthWeight": "1700"
+      },
+      {
+        "Level": "4",
+        "LaboratoryLevel": "11",
+        "NumberOfHits": "17",
+        "DeployEffect": "Invisibility area lvl4",
+        "StrengthWeight": "1800"
+      }
     ]
   },
   "globals": {

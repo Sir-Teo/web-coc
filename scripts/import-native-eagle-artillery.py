@@ -51,7 +51,8 @@ TURRET_LABELS = ['idle', 'activating_start', '25', '50', '75', 'activating_end',
 TROOPS = {'swordsman': 'Barbarian', 'archer': 'Archer', 'giant': 'Giant', 'wizard': 'Wizard',
           'balloon': 'Balloon', 'goblin': 'Goblin', 'wallbreaker': 'Wall Breaker', 'healer': 'Healer',
           'dragon': 'Dragon', 'pekka': 'PEKKA'}
-SPELLS = {'rage': 'Rage', 'heal': 'Healing', 'lightning': 'Lightning', 'freeze': 'Freeze'}
+SPELLS = {'rage': 'Rage', 'heal': 'Healing', 'lightning': 'Lightning', 'freeze': 'Freeze',
+          'invisibility': 'Invisibility'}
 HOUSING_GLOBALS = ['UNIT_HOUSING_COST_MULTIPLIER', 'SPELL_HOUSING_COST_MULTIPLIER', 'HERO_HOUSING_COST_MULTIPLIER',
                    'ALLIANCE_UNIT_HOUSING_COST_MULTIPLIER', 'PET_HOUSING_COST_MULTIPLIER',
                    'UNIT_HOUSING_COST_MULTIPLIER_FOR_TOTAL', 'SPELL_HOUSING_COST_MULTIPLIER_FOR_TOTAL',

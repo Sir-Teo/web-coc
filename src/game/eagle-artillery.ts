@@ -4,6 +4,7 @@ import type { Battle, Building, Unit } from './model';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import { MAP_SIZE } from './grid';
 import { spellTowerDefenseBoost } from './spell-tower';
+import { untargetable } from './spell-effects';
 import {
   EAGLE_ARTILLERY,
   NATIVE_TILE,
@@ -212,7 +213,9 @@ const SQRT_20000 = isqrt(20000);
 function refreshGroup(battle: Battle, tower: Building, s: EagleArtilleryTowerState, at: number) {
   s.group = [];
   const weights = new Array<number>(GROUP_COUNT * GROUP_COUNT).fill(0);
-  const candidates = battle.units.filter((u) => available(u, at) && inRange(tower, u));
+  const candidates = battle.units.filter(
+    (u) => available(u, at) && !untargetable(battle, u) && inRange(tower, u),
+  );
   let max = 0;
   for (const u of candidates) {
     const gx = Math.trunc(native(u.x) / GROUP_CELL),

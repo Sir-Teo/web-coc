@@ -3,6 +3,7 @@ import { TROOPS } from './data';
 import { ARCHER_TOWER } from './archer-tower-stats';
 import { towerArcherAttackTiming } from './archer-tower-art';
 import { launchProjectile, type CombatProjectile } from './projectiles';
+import { untargetable } from './spell-effects';
 export interface ArcherTowerWindup {
   readyAt: number;
   pending?: { targetId: number; startedAt: number; releaseAt: number };
@@ -36,7 +37,7 @@ export function stepArcherTower(
   const x = tower.x + 1.5,
     y = tower.y + 1.5;
   const targets = b.units.filter(
-    (u) => u.hp > 0 && Math.hypot(u.x - x, u.y - y) <= ARCHER_TOWER.range,
+    (u) => u.hp > 0 && !untargetable(b, u) && Math.hypot(u.x - x, u.y - y) <= ARCHER_TOWER.range,
   );
   const target =
     targets.find((u) => u.id === b.defenseTargets[tower.id]) ??

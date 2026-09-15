@@ -25,5 +25,17 @@ export const freezeSeconds = (level = 1) =>
   spellProgression('freeze', 1).mechanics!.freeze!;
 /** The Freeze Spell's radius, which the source states per level and never varies. */
 export const FREEZE_RADIUS = spellProgression('freeze', 1).mechanics!.radius!;
+/**
+ * How long the Invisibility Spell's ring lasts, which the source states as a pulse count and
+ * an interval rather than a duration, and how long a unit stays hidden after leaving it.
+ */
+export const invisibilitySeconds = (level = 1) => {
+  const m = (spellProgression('invisibility', level) ?? spellProgression('invisibility', 1))
+    .mechanics!;
+  return m.pulses! * m.interval!;
+};
+export const INVISIBILITY_LINGER = spellProgression('invisibility', 1).mechanics!.invisibility!;
+export const INVISIBILITY_INTERVAL = spellProgression('invisibility', 1).mechanics!.interval!;
+export const INVISIBILITY_RADIUS = spellProgression('invisibility', 1).mechanics!.radius!;
 /** Native movement-speed points convert to tiles/second at eight points per tile. */
 export const SPELL_SPEED_SCALE = 8;
