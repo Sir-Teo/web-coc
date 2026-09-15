@@ -34,9 +34,36 @@ export interface GarrisonDefender extends DefenderState {
   engaged?: boolean;
   deathResolved?: boolean;
 }
-export type Defender = (DefenderState & { kind: 'skeleton' }) | GarrisonDefender;
+/** Town Hall 18 Guardian (version 45+); rules live in native-guardians.ts. */
+export interface GuardianDefender extends DefenderState {
+  kind: 'guardian';
+  guardian: 'longshot' | 'smasher' | 'logger';
+  level: number;
+  home: { x: number; y: number };
+  phase: 'waiting' | 'leaping' | 'fighting';
+  leap?: { from: { x: number; y: number }; to: { x: number; y: number }; at: number };
+  /** Attack clock (slowed by poison), next ready time and pending release. */
+  clock?: number;
+  readyAt: number;
+  releaseAt?: number;
+  enraged?: boolean;
+  deathResolved?: boolean;
+  /** Friendly defensive Rage (Spell Tower, Smasher death rage). */
+  boost?: { until: number; damage: number; speed: number };
+}
+/** Builder's Hut Defending Builder (version 45+): repairs buildings and cannot be attacked. */
+export interface RepairDefender extends DefenderState {
+  kind: 'repairer';
+  level: number;
+  clock?: number;
+  readyAt: number;
+  /** Hiding in the destroyed hut's bunker. */
+  hidden?: boolean;
+}
+export type Defender =
+  (DefenderState & { kind: 'skeleton' }) | GarrisonDefender | GuardianDefender | RepairDefender;
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
-  if (defender.hp <= 0) return;
+  if (defender.hp <= 0 || defender.kind === 'repairer') return;
   if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
   defender.hp = Math.max(0, defender.hp - power);
   if (!defender.hp) {
@@ -111,6 +138,7 @@ function moveAlong(
 export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => void) {
   const structures = battle.buildings.filter((b) => b.kind !== 'wall'); // Home defenders jump their own walls.
   for (const defender of battle.defenders ?? []) {
+    if (defender.kind === 'guardian' || defender.kind === 'repairer') continue;
     if (defender.kind !== 'skeleton') {
       stepGarrisonDefender(battle, defender, dt, effect);
       continue;

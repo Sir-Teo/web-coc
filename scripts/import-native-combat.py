@@ -40,6 +40,8 @@ BUILDINGS = ['Town Hall', 'Clan Castle', 'Gold Storage', 'Elixir Storage', 'Dark
              'Multi Gear Tower', 'Firespitter', 'Revenge Tower', 'Super Wizard Tower']
 TRAPS = ['Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Seeking Air Mine', 'Skeleton Trap', 'Tornado Trap',
          'Giga Bomb']
+# guardians.csv also declares deprecated prototypes (Eagle, GigaInferno, Assassins, ...).
+GUARDIANS = ['InfernoArtillery', 'MeleeAreaaaa', 'Logger']
 
 # Text, 2D/3D artwork, icons, effects and UI metadata never influence the battle simulation.
 PRESENTATION = re.compile(
@@ -150,7 +152,8 @@ def main():
 
     source = {name: table(name) for name in [
         'characters', 'heroes', 'pets', 'character_items', 'spells', 'special_abilities', 'buildings',
-        'traps', 'weapons', 'projectiles', 'townhall_levels', 'globals', 'super_licences', 'mini_levels']}
+        'traps', 'weapons', 'projectiles', 'townhall_levels', 'globals', 'super_licences', 'mini_levels',
+        'guardians', 'upgrade_data']}
     result = {k: {} for k in ['characters', 'heroes', 'pets', 'items', 'spells', 'abilities', 'buildings',
                               'traps', 'weapons', 'projectiles']}
     pending = {k: [] for k in result}
@@ -160,6 +163,10 @@ def main():
             pending[kind].append(name)
 
     for n in TROOPS + SUPER + SIEGE: want('characters', n)
+    # Town Hall 18 Guardians: playable (non-deprecated) rows and their characters.
+    guardian_rows = {n: rows for n, rows in source['guardians'].items() if n in GUARDIANS}
+    for rows in guardian_rows.values():
+        for ref in names(rows[0].get('CharacterDatas')): want('characters', ref)
     for n in HEROES: want('heroes', n)
     for n in PETS: want('pets', n)
     for n in SPELLS: want('spells', n)
@@ -210,6 +217,8 @@ def main():
         superLicences=source['super_licences'],
         # Supercharges linked from a building row (MiniLevels); unlinked leftovers are not playable.
         superchargeRows=supercharges(source),
+        guardians={n: deltas([gameplay(row) for row in rows]) for n, rows in guardian_rows.items()},
+        upgrades={n: source['upgrade_data'][n] for n in sorted({rows[0]['UpgradeData'] for rows in guardian_rows.values()})},
     )
     text = json.dumps(result, separators=(',', ':'), sort_keys=False) + '\n'
     if args.check:

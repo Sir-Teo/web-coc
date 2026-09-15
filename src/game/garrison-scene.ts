@@ -58,7 +58,12 @@ export class GarrisonPresentation {
       }
     const wanted = new Set<number>();
     for (const defender of battle?.defenders ?? []) {
-      if (defender.kind === 'skeleton') continue;
+      if (
+        defender.kind === 'skeleton' ||
+        defender.kind === 'guardian' ||
+        defender.kind === 'repairer'
+      )
+        continue;
       wanted.add(defender.id);
       const family = defender.kind === 'dragon' && defender.hp <= 0 ? 'dragonDeath' : defender.kind;
       if (this.families.get(defender.id) !== family) {

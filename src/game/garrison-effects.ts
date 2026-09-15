@@ -75,7 +75,13 @@ export function garrisonImpactPoses(
     }
   };
   for (const defender of battle.defenders ?? []) {
-    if (defender.kind === 'skeleton' || battle.elapsed < defender.spawnedAt) continue;
+    if (
+      defender.kind === 'skeleton' ||
+      defender.kind === 'guardian' ||
+      defender.kind === 'repairer' ||
+      battle.elapsed < defender.spawnedAt
+    )
+      continue;
     if (defender.kind === 'dragon') {
       // The source detaches the fire origin after start and destroys it on death.
       if (defender.hp > 0)

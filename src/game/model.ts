@@ -256,6 +256,14 @@ import {
   type SpellTowerMode,
 } from './native-defense-stats';
 import { alwaysVisibleTrap } from './native-traps';
+import { stepHutBuilders } from './native-hut-builders';
+import {
+  GUARDIAN_KINDS,
+  GUARDIAN_NAMES,
+  guardianUpgrade,
+  stepGuardians,
+  type GuardianKind,
+} from './native-guardians';
 /** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
 const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
 import { SPELL_SOURCE } from './spell-progression';
@@ -290,9 +298,12 @@ export interface Building {
   /** Town Hall 17 Inferno Artillery weapon level; absent means 1. */
   weaponLevel?: number;
   /** A running builder job that improves the building without raising its level. */
-  improving?: 'weapon' | 'gearup' | 'supercharge';
+  improving?: 'weapon' | 'gearup' | 'supercharge' | 'guardian';
   /** Completed supercharges at the building's maximum level. */
   supercharge?: number;
+  /** Town Hall 18 Guardian selection and its level. */
+  guardian?: GuardianKind;
+  guardianLevel?: number;
   /** Geared-up Cannon, Archer Tower or Mortar: permanently uses the client Alt* attack. */
   geared?: true;
 }
@@ -452,6 +463,8 @@ export interface Battle {
   /** Firespitter balls in flight. */
   nativePiercing?: NativePiercingShot[];
   nativeShotSequence?: number;
+  /** Town Hall 18 Guardians have been placed for this battle. */
+  guardiansPlaced?: true;
   /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
   recalledHp?: Partial<Record<TroopKind, number[]>>;
   catalog?: CampaignCatalog;
@@ -1151,6 +1164,7 @@ export class GameModel {
         if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;
         else if (b.improving === 'gearup') b.geared = true;
         else if (b.improving === 'supercharge') b.supercharge = (b.supercharge ?? 0) + 1;
+        else if (b.improving === 'guardian') b.guardianLevel = (b.guardianLevel ?? 1) + 1;
         else if (!b.constructing) b.level++;
         delete b.improving;
         b.constructing = false;
@@ -1612,6 +1626,43 @@ export class GameModel {
     b.upgradeEnd = this.clock + this.upgradeSeconds(b) * 1000;
     this.notify(`Upgrading ${d.name} to level ${b.level + 1}.`);
     this.changed();
+  }
+  /** Town Hall 18: choose the Guardian that defends this village. */
+  selectGuardian(kind: GuardianKind) {
+    if (this.battle) return false;
+    const th = this.townhall;
+    if (!th || th.level < 18 || !GUARDIAN_KINDS.includes(kind)) return false;
+    if (th.improving === 'guardian') {
+      this.notify('Finish the Guardian upgrade before switching Guardians.');
+      return false;
+    }
+    th.guardian = kind;
+    this.notify(`${GUARDIAN_NAMES[kind]} now guards your Town Hall.`);
+    this.changed();
+    return true;
+  }
+  /** Town Hall 18: upgrade the selected Guardian with a builder (upgrade_data GuardianGeneral). */
+  upgradeGuardian() {
+    if (this.battle) return false;
+    const th = this.townhall;
+    if (!th || th.level < 18 || th.upgradeEnd || th.constructing) return false;
+    const next = guardianUpgrade(th.guardian ?? 'longshot', th.guardianLevel ?? 1);
+    if (!next) return false;
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[next.resource] < next.cost) {
+      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      return false;
+    }
+    this.state[next.resource] -= next.cost;
+    th.improving = 'guardian';
+    th.upgradeStart = this.clock;
+    th.upgradeEnd = this.clock + next.seconds * 1000;
+    this.notify(`Upgrading ${GUARDIAN_NAMES[th.guardian ?? 'longshot']} to level ${next.level}.`);
+    this.changed();
+    return true;
   }
   /** Supercharge a building at its maximum level with a builder (client mini levels). */
   supercharge(id: number) {
@@ -2643,6 +2694,8 @@ export class GameModel {
     stepSweepers(b, dt, this.onEffect);
     stepGarrisonReleases(b);
     stepDefenders(b, dt, this.onEffect);
+    if (native) stepGuardians(native, dt);
+    if (native) stepHutBuilders(native, dt);
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
@@ -3797,7 +3850,10 @@ export function findPath(
     // or an extra occupied cell. Other ranges retain their original grid route.
     if (range < 0.5 && !blocked[current]) {
       const center = { x: x + 0.5, y: y + 0.5 },
-        s = 'level' in target ? BUILDINGS[target.kind].size : 0;
+        s =
+          'level' in target && target.kind in BUILDINGS
+            ? BUILDINGS[target.kind as BuildingKind].size
+            : 0;
       const tx = Math.max(target.x, Math.min(center.x, target.x + s));
       const ty = Math.max(target.y, Math.min(center.y, target.y + s));
       const dx = center.x - tx,

@@ -58,7 +58,8 @@ export function stepGarrisonDefender(
   dt: number,
   effect: (fx: FX) => void,
 ) {
-  if (defender.kind === 'skeleton') return;
+  if (defender.kind === 'skeleton' || defender.kind === 'guardian' || defender.kind === 'repairer')
+    return;
   const stats = garrisonStats(defender.kind, defender.level);
   defender.attacking = false;
   if (defender.hp <= 0) {

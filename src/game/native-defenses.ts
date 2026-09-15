@@ -689,6 +689,8 @@ export interface NativePiercingShot {
   hits: number;
   damage: number;
   hit: number[];
+  /** Logger logs knock struck units back along their path. */
+  pushback?: number;
 }
 function firePiercing(
   ctx: NativeDefenseContext,
@@ -757,6 +759,8 @@ export function stepPiercingShots(ctx: NativeTroopContext) {
       if (shot.hit.length >= shot.hits) break;
       shot.hit.push(c.u.id);
       hurtUnit(battle, c.u, shot.damage, shot.launched + Math.max(0, c.along) / shot.speed);
+      if (shot.pushback && c.u.hp > 0 && !c.u.native?.siege)
+        knockback(ctx, c.u, c.u.x - shot.dirX, c.u.y - shot.dirY, shot.pushback);
     }
   }
   battle.nativePiercing = battle.nativePiercing.filter(
@@ -797,6 +801,18 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
     ctx.effect({ type: 'blast', x: p.x, y: p.y, radius: shot.shock.outer, color: 0xffc04a });
   }
   if (shot.scatter && struck) scatter(battle, p, target!, shot, at);
+  if (shot.layerSplash && struck) {
+    const layer = air(target!);
+    for (const u of battle.units)
+      if (
+        u.id !== target!.id &&
+        liveTarget(u, at) &&
+        air(u) === layer &&
+        !u.native?.burrowed &&
+        distance2D(u.x - p.x, u.y - p.y) <= shot.layerSplash + EPS
+      )
+        hurtUnit(battle, u, p.damage, at);
+  }
   if (shot.splash) {
     // Geared-up Mortar shells: ground splash around the landing point (the target is included).
     for (const u of battle.units)

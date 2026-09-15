@@ -11,7 +11,8 @@ function arena(layout: Placement[], army: Partial<Record<TroopKind, number>>, le
   const m = new GameModel();
   m.state.obstacles = [];
   m.state.buildings = [
-    makeBuilding(1, 'townhall', 22, 22, 18),
+    // Town Hall 11 has no weapon or Guardian, so only the placed buildings defend.
+    makeBuilding(1, 'townhall', 22, 22, 11),
     ...layout.map(([kind, x, y, lvl], i) => makeBuilding(10 + i, kind, x, y, lvl ?? 1)),
   ];
   m.state.nextId = 5000;

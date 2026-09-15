@@ -15,7 +15,9 @@ export type NativeTable =
   | 'buildings'
   | 'traps'
   | 'weapons'
-  | 'projectiles';
+  | 'projectiles'
+  | 'guardians'
+  | 'upgrades';
 export type NativeRow = Readonly<Record<string, string>>;
 interface CombatTables {
   clientVersion: string;

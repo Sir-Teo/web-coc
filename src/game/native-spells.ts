@@ -1,7 +1,16 @@
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
-import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
+import {
+  flag,
+  nativeGlobal,
+  nativeRow,
+  num,
+  seconds,
+  text,
+  tiles,
+  type NativeRow,
+} from './native-data';
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
 import { concealedTesla } from './hidden-tesla';
 import { unitKindForName } from './native-units';
@@ -286,7 +295,9 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
   state.speed = num(row, 'SpeedBoost') / 100;
   state.attack = num(row, 'AttackSpeedBoost') / 100;
   const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - state.since + tick) / 5) : 1;
-  const scale = d.kind === 'skeleton' ? 1 : 1;
+  // Guardians take poison damage and slows at the client's 30% (GUARDIAN_POISON_* globals).
+  const scale =
+    d.kind === 'guardian' ? nativeGlobal('GUARDIAN_POISON_SPEED_MULTIPLIER', 100) / 100 : 1;
   hurtDefender(battle, d, num(row, 'PoisonDPS') * tick * ramp * scale);
 }
 
@@ -632,6 +643,16 @@ function supportDefense(
 ) {
   const boost = num(row, 'BuildingDamageBoostPercent') / 100;
   const invisible = seconds(row, 'InvisibilityTime');
+  // Defensive Rage boosts Guardians at full strength (official wiki).
+  const unitBoost = num(row, 'DamageBoostPercent') / 100;
+  if (unitBoost > 0)
+    for (const d of battle.defenders ?? [])
+      if (d.kind === 'guardian' && d.hp > 0 && distance2D(d.x - x, d.y - y) <= radius + 1e-9)
+        d.boost = {
+          until: Math.max(d.boost?.until ?? 0, at + seconds(row, 'BoostTimeMS')),
+          damage: unitBoost,
+          speed: num(row, 'SpeedBoost') / SPELL_SPEED_SCALE,
+        };
   if (!boost && !invisible) return;
   for (const b of battle.buildings) {
     if (

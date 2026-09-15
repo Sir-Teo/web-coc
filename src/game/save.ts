@@ -2,6 +2,7 @@ import { maxSpellLevel } from './spell-progression';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
+import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
@@ -313,6 +314,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           !(
             (b.improving === 'weapon' && b.kind === 'townhall') ||
             (b.improving === 'gearup' && isGearable(b.kind) && !b.geared) ||
+            (b.improving === 'guardian' && b.kind === 'townhall' && b.level >= 18) ||
             (b.improving === 'supercharge' &&
               b.level === BUILDINGS[b.kind].maxLevel &&
               (b.supercharge ?? 0) < superchargeCount(b.kind))
@@ -323,6 +325,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           b.supercharge > superchargeCount(b.kind) ||
           b.level !== BUILDINGS[b.kind].maxLevel)) ||
       (b.geared !== undefined && (b.geared !== true || !isGearable(b.kind))) ||
+      ((b.guardian !== undefined || b.guardianLevel !== undefined) &&
+        (b.kind !== 'townhall' ||
+          b.level < 18 ||
+          !validGuardian(b.guardian) ||
+          (b.guardianLevel !== undefined &&
+            (!Number.isInteger(b.guardianLevel) ||
+              b.guardianLevel < 1 ||
+              b.guardianLevel > guardianLevels(b.guardian ?? 'longshot'))))) ||
       b.infernoAmmo !== undefined ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       !Number.isInteger(b.level) ||

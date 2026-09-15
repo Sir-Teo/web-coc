@@ -99,6 +99,7 @@ import {
   type MergedKind,
 } from '../game/native-merges';
 import { superchargeQuote } from '../game/native-supercharge';
+import { GUARDIAN_KINDS, GUARDIAN_NAMES, guardianUpgrade } from '../game/native-guardians';
 
 const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
   rage: 'Rage',
@@ -650,6 +651,16 @@ export class HUD {
         if (m.merge(result as MergedKind, Number(anchor))) this.audio.play('build');
         break;
       }
+      case 'guardian-next': {
+        const current = m.townhall?.guardian ?? 'longshot';
+        m.selectGuardian(
+          GUARDIAN_KINDS[(GUARDIAN_KINDS.indexOf(current) + 1) % GUARDIAN_KINDS.length],
+        );
+        break;
+      }
+      case 'guardian-upgrade':
+        if (m.upgradeGuardian()) this.audio.play('build');
+        break;
       case 'supercharge':
         if (m.supercharge(Number(arg))) this.audio.play('build');
         break;
@@ -1313,6 +1324,26 @@ export class HUD {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
+  /** Town Hall 18: Guardian choice and upgrades. */
+  private guardianButtons(b: Building) {
+    if (b.kind !== 'townhall' || b.level < 18) return '';
+    const kind = b.guardian ?? 'longshot';
+    const next = b.upgradeEnd ? null : guardianUpgrade(kind, b.guardianLevel ?? 1);
+    return `${button(
+      'guardian-next',
+      `<span>${icon('ShieldCheck', 19)} ${GUARDIAN_NAMES[kind]}</span><small>Level ${b.guardianLevel ?? 1}</small>`,
+      'game-btn blue',
+      `aria-label="Switch Town Hall Guardian (currently ${GUARDIAN_NAMES[kind]})" ${b.improving === 'guardian' ? 'disabled' : ''}`,
+    )}${
+      next
+        ? button(
+            'guardian-upgrade',
+            `<span>${icon('ArrowBigUp', 19)} Guardian ${next.level}</span><small>${resource(next.resource)} ${n(next.cost)}</small>`,
+            'game-btn green',
+          )
+        : ''
+    }`;
+  }
   /** Merge and gear-up actions for maxed Cannons, Archer Towers, Mortars and Wizard Towers. */
   private mergeButtons(b: Building) {
     const m = this.model;
@@ -1439,7 +1470,7 @@ export class HUD {
                 `upgrade:${b.id}`,
                 `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
               )
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   private wallMoveContext() {

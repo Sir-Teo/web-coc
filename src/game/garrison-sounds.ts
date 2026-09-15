@@ -30,7 +30,12 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
     }
   };
   for (const defender of battle?.defenders ?? []) {
-    if (defender.kind === 'skeleton') continue;
+    if (
+      defender.kind === 'skeleton' ||
+      defender.kind === 'guardian' ||
+      defender.kind === 'repairer'
+    )
+      continue;
     const binding = source.bindings[defender.kind];
     const key = `garrison:${defender.id}`;
     effect(binding.deploy, `${key}:deploy`, defender.spawnedAt);
