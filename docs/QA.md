@@ -1198,3 +1198,37 @@ Two of its source columns are deliberately not modelled and are named rather tha
 One near-miss worth recording. Inserting the new spell **before** `lightning` in the `SPELLS` object changed `SPELL_KEYS` order, and an archived battle state is compared as JSON — so every historical replay hash changed at step 0. The spell is appended instead, the pre-48 book is written out in its original key order, and `tests/freeze-spell.test.ts` asserts both. A second near-miss: its first hotkey, `7`, was already the Wizard's, and both lists are matched against the same key press; the test now rejects any shared key.
 
 Still open: the five later heroes, whose artwork is 3D (`sc3d/*.glb` in Supercell's `FLA2` container) rather than the 2D sprite sheets every other unit uses, so there is no sheet to extract; the 80 troops and 19 spells that are pinned but unplayed; the 14 buildings and 6 traps a village can own that this game does not build; and Clan Castle reinforcements, which need a clan.
+
+## September 15, 2026 — six new spells
+
+Three spells at the start of the day, nine at the end: every Spell Factory spell but the Totem. The inventory now reads:
+
+| Area | Pinned | Implemented | Source |
+| --- | --- | --- | --- |
+| Troops | 90 | 10 | 90 |
+| Spells | 23 | 9 | 23 |
+| Heroes | 6 | 1 | 6 |
+| Buildings | 44 | 30 | 44 |
+| Traps | 13 | 7 | 13 |
+| Hero equipment | 61 | 3 | 61 |
+
+**Freeze** (version 48) holds defences and defenders without dealing damage. **Invisibility** (49) hides troops from every defence, the Eagle Artillery's group weighting included. **Jump**, **Clone**, **Recall** and **Revive** (50) arrived together, so one fixture sweep paid for four spells instead of four sweeps paying for one each — the lesson of the two singles before them.
+
+Every value is read, never chosen: gates from `SpellForgeLevel`, radii and durations from each spell's own columns, and pulse counts and intervals where the source states those rather than a duration. Columns deliberately not modelled are named in [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md) rather than hidden — `FreezeOuterTimeMS` needs an outer radius the table does not give, and `RandomRadius` scatters where a cast lands.
+
+Four near-misses, all now asserted:
+
+- Inserting the first new spell **before** `lightning` in the `SPELLS` object changed `SPELL_KEYS` order, and an archived battle state is compared as JSON — every historical replay hash changed at step 0. Spells are appended, and the pre-48 book is written out in its original key order.
+- Its first hotkey, `7`, was already the Wizard's, and both lists are matched against the same key press.
+- `expandArmyRoster` knew only about the first new spell, so older saves were not given the later fields and failed validation.
+- The test-import gate missed `TS2304`, so a test using a symbol it never imported passed the gate and failed at runtime. It catches that now.
+
+Tests that pinned `expect(REPLAY_VERSION).toBe(n)` broke on every bump; the number records when a rule arrived, so they assert a floor instead. The per-version book is one table, `SPELLS_ADDED_AT`, so the next spell is a line rather than a constant.
+
+### What the remaining content needs
+
+The **Totem Spell** summons a totem, an entity with no model here. The other eight spells are Dark Spell Factory spells and wait on that building.
+
+Every missing building's artwork is reachable — `sc/buildings.sc` carries `mini_spell_distillery` (Dark Spell Factory), `darkBarracks`, `siegeWorkshop` and `pet_house` with their full level sets — but each needs its own extraction, atlas, scene presentation and placement work, on the scale of the Monolith or Spell Tower imports. That is the gate on 14 buildings, and through the Dark Barracks and Dark Spell Factory on 19 dark troops and 8 dark spells besides.
+
+The five later heroes remain gated on 3D: their art is `sc3d/*.glb` in Supercell's `FLA2` container, not the 2D sheets every other unit uses.
