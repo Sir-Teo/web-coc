@@ -1,6 +1,7 @@
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
+import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
   ArcherTowerProjectiles,
   preloadArcherTowerProjectiles,
@@ -119,6 +120,31 @@ const SPELL_COLOR: Record<string, number> = {
   rage: 0xcf79ef,
   heal: 0xffed8a,
   lightning: 0x6fd4ff,
+};
+/** Ring colors for client spell rows cast through the version 45 spell engine. */
+const NATIVE_SPELL_COLOR: Record<string, number> = {
+  Jump: 0x9be86a,
+  Freeze: 0x9fe3ff,
+  Clone: 0x7ee0ff,
+  Invisibility: 0xe8f4ff,
+  Recall: 0xffd36a,
+  Revive: 0xffe9a8,
+  'Totem Spell': 0xffb35c,
+  TotemSummon: 0xffb35c,
+  Poison: 0x86e04f,
+  Earthquake: 0xc9a06b,
+  Haste: 0xff9fe3,
+  'Skeleton Spell': 0xd9d4c7,
+  'Bat Spell': 0x9b7ad6,
+  Overgrowth: 0x57c95b,
+  'Ice Block': 0xbfeaff,
+  AngrySpell: 0xff6a5c,
+  'Electro Titan Aura': 0x8fd8ff,
+  'Apprentice Aura': 0xffe07a,
+  TreantWallDamageAura: 0x7cc46a,
+  FireSpiritBurn: 0xff8a3c,
+  ElectroDragonDie: 0x8fd8ff,
+  IceGolemFreeze: 0x9fe3ff,
 };
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
 const TERRAIN_SCALE = 1.35;
@@ -1802,6 +1828,22 @@ export class VillageScene extends Phaser.Scene {
           b = iso(x1, y1);
         this.groundMarks.lineBetween(a.x, a.y, b.x, b.y);
       }
+      for (const cast of active.nativeSpells ?? []) {
+        if (cast.firstHit - 0.9 > active.elapsed) continue;
+        const row = nativeRow('spells', cast.name, cast.level);
+        const radius = nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
+        if (radius <= 0.2) continue;
+        const color = NATIVE_SPELL_COLOR[cast.name] ?? (cast.side === 'defense' ? 0xff6a5c : 0xfff0c2);
+        const p = iso(cast.x, cast.y);
+        const aura = cast.follow !== undefined;
+        const pulse = this.model.state.settings.reducedMotion
+          ? 1
+          : 1 + Math.sin((active.elapsed - cast.castAt) / 0.22) * 0.03;
+        g.fillStyle(color, aura ? 0.06 : 0.15);
+        g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+        g.lineStyle(aura ? 1.5 : 2, color, aura ? 0.35 : 0.75);
+        g.strokeEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+      }
       for (const aura of active.auras) {
         const p = iso(aura.x, aura.y),
           radius = SPELLS[aura.kind].radius,
@@ -1873,6 +1915,20 @@ export class VillageScene extends Phaser.Scene {
         );
     }
     const battle = this.model.battle;
+    if (battle?.buildingEffects && !battle.finished)
+      for (const v of this.model.buildings) {
+        const e = battle.buildingEffects[v.id];
+        if (!e || v.hp <= 0) continue;
+        const size = BUILDINGS[v.kind].size;
+        const frozen = (e.frozenUntil ?? 0) > battle.elapsed;
+        const rooted = (e.overgrownUntil ?? 0) > battle.elapsed;
+        if (!frozen && !rooted) continue;
+        const pts = [iso(v.x, v.y), iso(v.x + size, v.y), iso(v.x + size, v.y + size), iso(v.x, v.y + size)];
+        this.detail.fillStyle(rooted ? 0x3f9f45 : 0xa8e6ff, rooted ? 0.35 : 0.3);
+        this.detail.fillPoints(pts, true);
+        this.detail.lineStyle(2, rooted ? 0x2f7a33 : 0xe6f8ff, 0.9);
+        this.detail.strokePoints(pts, true);
+      }
     const teslaCues = this.teslaPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,
@@ -2138,7 +2194,11 @@ export class VillageScene extends Phaser.Scene {
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
-        if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
+        const nativeEffects = u.native?.effects;
+        if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed) im.setTint(0xa8e6ff);
+        else if (nativeEffects?.poison && nativeEffects.poison.until > battle.elapsed)
+          im.setTint(0xa6e57a);
+        else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
         else if (
           (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
           (u.summoned && (u.rageUntil ?? 0) > battle.elapsed)
@@ -2586,6 +2646,24 @@ export class VillageScene extends Phaser.Scene {
         alpha: 0,
         duration: 1200,
         onComplete: () => text.destroy(),
+      });
+      return;
+    }
+    if (fx.type === 'spell-native') {
+      if (this.model.state.settings.reducedMotion) return;
+      const color = NATIVE_SPELL_COLOR[fx.text ?? ''] ?? 0xfff0c2;
+      const radius = Math.max(0.6, fx.radius ?? 1) * 64;
+      const ring = this.add
+        .ellipse(p.x, p.y, radius * 0.5, radius * 0.25)
+        .setStrokeStyle(3, color, 0.9)
+        .setDepth(7200);
+      this.animateEffect({
+        targets: ring,
+        scaleX: 4,
+        scaleY: 4,
+        alpha: 0,
+        duration: 420,
+        onComplete: () => ring.destroy(),
       });
       return;
     }

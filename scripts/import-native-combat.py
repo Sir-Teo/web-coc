@@ -79,14 +79,32 @@ def gameplay(row, kind=None):
     return {k: v for k, v in row.items() if not PRESENTATION.search(k)}
 
 
-def deltas(rows):
+# Per-level columns whose blank cells mean "none" rather than "same as the previous level".
+# Verified against the official wiki: the Town Hall 18 row has no weapon or merge, and research
+# minutes written only on level one do not carry into later levels.
+EXACT_COLUMNS = {
+    'buildings': {'Weapon', 'MergeRequirement', 'ActivateAfterSeconds', 'ActivateCombatOnDamageTaken',
+                  'CombatActivationDelay'},
+    'characters': {'UpgradeTimeM'},
+    'heroes': {'UpgradeTimeM'},
+    'pets': {'UpgradeTimeM'},
+    'spells': {'UpgradeTimeM'},
+}
+
+
+def deltas(rows, exact=frozenset()):
     """Keep only values that differ from the forward-inherited previous level.
 
     Explicit zeros stay: some columns (HealerWeight) distinguish a written 0 from a blank default.
+    Exact columns emit an empty string where a blank cell ends an inherited value.
     """
     inherited, result = {}, []
-    for row in rows:
+    for index, row in enumerate(rows):
         change = {k: v for k, v in row.items() if inherited.get(k) != v}
+        for column in exact:
+            if index and column not in row and inherited.get(column, '') != '':
+                change[column] = ''
+                inherited[column] = ''
         inherited.update(row)
         result.append(change)
     return result
@@ -141,7 +159,7 @@ def main():
                 name = pending[kind].pop(0)
                 rows = source[tables[kind]].get(name)
                 require(rows is not None, f'Missing {kind} record: {name}')
-                kept = deltas([gameplay(row, kind) for row in rows])
+                kept = deltas([gameplay(row, kind) for row in rows], EXACT_COLUMNS.get(kind, frozenset()))
                 result[kind][name] = kept
                 for row in rows:
                     for column, target in [(c, 'characters') for c in REFERENCE_COLUMNS['characters']] + \

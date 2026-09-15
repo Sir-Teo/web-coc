@@ -154,7 +154,8 @@ export class TroopNativePresentation {
         point.x,
         point.y - (air ? lift : 0),
         air ? 7500 : point.y + 1,
-        u.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : 1,
+        (u.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : 1) *
+          ((u.native?.effects?.invisibleUntil ?? 0) > battle!.elapsed ? 0.35 : 1),
       );
       for (const object of owned.view.objects) object.setData('nativeTroop', u.id);
     }

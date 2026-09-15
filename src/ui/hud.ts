@@ -42,8 +42,8 @@ import {
   RAGE_LINGER,
 } from '../game/spell-progression';
 import { OBSTACLES } from '../game/obstacles';
-import { TROOP_ORDER, SPELL_ORDER } from './army-roster';
-import { TROOP_UNLOCK, SPELL_UNLOCK, troopFacility } from '../game/army-unlocks';
+import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
+import { TROOP_UNLOCK, SPELL_UNLOCK, spellFactory, troopFacility } from '../game/army-unlocks';
 import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
 import { compatibleReplayVersion } from '../game/replay';
 import {
@@ -1268,7 +1268,7 @@ export class HUD {
     return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
-    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
+    return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
   // ------------------------------------------------------- anchored context
@@ -1613,10 +1613,10 @@ export class HUD {
               `<span class="progression-unlock"><img src="${hudAsset(k)}" alt=""><span>${TROOPS[k].name}<small>${BUILDINGS[troopFacility(k)].name} ${TROOP_UNLOCK[k]}</small></span></span>`,
           ),
           ...SPELL_ORDER.filter(
-            (k) => requiredTownHall('spellfactory', SPELL_UNLOCK[k]) === th,
+            (k) => requiredTownHall(spellFactory(k), SPELL_UNLOCK[k]) === th,
           ).map(
             (k) =>
-              `<span class="progression-unlock"><img src="${hudAsset(k)}" alt=""><span>${SPELLS[k].name}<small>Spell Factory ${SPELL_UNLOCK[k]}</small></span></span>`,
+              `<span class="progression-unlock"><img src="${hudAsset(k)}" alt=""><span>${SPELLS[k].name}<small>${spellUnlockLabel(k)}</small></span></span>`,
           ),
         ].join('');
         return `<article class="progression-tier ${th === m.townhallLevel ? 'current' : ''}"><h2>Town Hall ${th}${th === m.townhallLevel ? ' · Current' : ''}</h2><div>${changed.map((k) => `<span class="progression-unlock"><img src="${hudAsset(k, BUILDING_LEVELS[k][i])}" alt=""><span>${BUILDINGS[k].name}<small>${(BUILDING_LEVELS[k][i - 1] ?? 0) === 0 ? 'Unlock · ' : ''}Level ${BUILDING_LEVELS[k][i]}</small></span></span>`).join('')}${armyUnlocks}</div></article>`;
@@ -1676,7 +1676,7 @@ export class HUD {
       const d = m.spellStats(k);
       const unlocked = m.spellUnlocked(k);
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.spellCount ? '' : 'disabled')}</div>${TROOP_ORDER.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_ORDER.map(spellTile).join('')}</div><footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`;
   }
@@ -1847,7 +1847,7 @@ export class HUD {
     const kind = this.inspectedSpell,
       d = this.model.spellStats(kind);
     const rows: [string, string][] = [
-      ['Unlock requirement', `Spell Factory ${SPELL_UNLOCK[kind]}`],
+      ['Unlock requirement', spellUnlockLabel(kind)],
       ['Housing space', `${d.space}`],
       ['Effect radius', `${d.radius} tiles`],
       ['Targets', kind === 'lightning' ? 'Enemy buildings' : 'Ground and air troops'],
@@ -1893,8 +1893,10 @@ export class HUD {
     const nextUnlocks =
       b.kind === 'barracks'
         ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
-        : b.kind === 'spellfactory'
-          ? SPELL_ORDER.filter((k) => SPELL_UNLOCK[k] === b.level + 1).map((k) => SPELLS[k].name)
+        : b.kind === 'spellfactory' || b.kind === 'darkspellfactory'
+          ? SPELL_ORDER.filter(
+              (k) => spellFactory(k) === b.kind && SPELL_UNLOCK[k] === b.level + 1,
+            ).map((k) => SPELLS[k].name)
           : [];
     return `<div class="modal-body info-body"><div class="info-hero"><img src="${hudAsset(b.kind, b.level, b.skeletonMode, b.xbowMode, b.infernoMode)}" alt=""><div><span class="eyebrow">${d.category.toUpperCase()} · LEVEL ${b.level} OF ${d.maxLevel}</span><h2>${d.name}</h2><p>${d.description}</p>${b.kind === 'skeletontrap' ? `<p class="trap-note"><b>${b.skeletonMode === 'air' ? 'Air mode' : 'Ground mode'}</b> · Skeletons pursue ${b.skeletonMode === 'air' ? 'flying' : 'ground'} troops.</p>` : ''}${d.trap ? '<p class="trap-note">Hidden from attackers until triggered. One use per attack; automatically armed for the next practice. Traps do not count toward destruction.</p>' : ''}<div class="info-levels">${Array.from({ length: d.maxLevel }, (_, i) => `<i class="${i < b.level ? 'on' : ''}"></i>`).join('')}</div></div></div>
  <table class="info-table"><thead><tr><th>Stat</th><th>Level ${b.level}</th><th>${capped ? 'Max' : `Level ${b.level + 1}`}</th></tr></thead><tbody>${now
@@ -1940,7 +1942,7 @@ export class HUD {
     const label = max
       ? '★ Fully researched'
       : !unlocked
-        ? `Requires ${spell ? `Spell Factory ${SPELL_UNLOCK[kind]}` : `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`}`
+        ? `Requires ${spell ? spellUnlockLabel(kind) : `${BUILDINGS[troopFacility(kind)].name} ${TROOP_UNLOCK[kind]}`}`
         : gated
           ? `Requires laboratory ${requiredLab}`
           : `Research ${researchResource === 'dark' ? 'Dark elixir' : elixir} ${n(m.researchCost(kind))}`;
