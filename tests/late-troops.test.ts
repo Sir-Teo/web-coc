@@ -281,6 +281,10 @@ describe('Healer support', () => {
         lightning: reserve === 'lightning' ? 1 : 0,
         freeze: 0,
         invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
       };
       m.step(0.05);
       expect(b.finished).toBe(reserve === 'none');

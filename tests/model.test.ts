@@ -170,8 +170,28 @@ describe('combat', () => {
   it('a full starting army can complete the opening raid through actual simulation', () => {
     const m = new GameModel();
     m.startBattle(0);
-    m.state.spells = { rage: 0, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
-    m.battle!.spells = { rage: 0, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+    m.state.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
+    m.battle!.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     for (const kind of [
       'giant',
       'wallbreaker',

@@ -37,6 +37,15 @@ import {
   freezeSeconds,
   INVISIBILITY_RADIUS,
   invisibilitySeconds,
+  JUMP_RADIUS,
+  jumpSeconds,
+  CLONE_RADIUS,
+  CLONE_LIFETIME,
+  cloneHousing,
+  RECALL_RADIUS,
+  recallHousing,
+  REVIVE_RADIUS,
+  reviveFraction,
 } from './spell-progression';
 import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
@@ -109,7 +118,16 @@ export type TroopKind =
   | 'healer'
   | 'dragon'
   | 'pekka';
-export type SpellKind = 'rage' | 'heal' | 'lightning' | 'freeze' | 'invisibility';
+export type SpellKind =
+  | 'rage'
+  | 'heal'
+  | 'lightning'
+  | 'freeze'
+  | 'invisibility'
+  | 'jump'
+  | 'clone'
+  | 'recall'
+  | 'revive';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** What a purchase is paid in. Gems buy Builder's Huts and nothing else is priced in them. */
@@ -945,7 +963,7 @@ export const TROOPS: Record<TroopKind, TroopDef> = {
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
 export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
 // The two lists share one keyboard and are compared lowercase, so no key may appear in both.
-export const SPELL_HOTKEYS = ['8', '9', '0', 'r', 't'];
+export const SPELL_HOTKEYS = ['8', '9', '0', 'r', 't', 'y', 'u', 'i', 'o'];
 export const isResourceBuilding = (kind: BuildingKind) =>
   [
     'clancastle',
@@ -1039,6 +1057,53 @@ export const SPELLS: Record<SpellKind, SpellDef> = {
     duration: invisibilitySeconds(1),
     effect: '3.5s hidden',
   },
+  jump: {
+    name: 'Jump Spell',
+    role: 'SUPPORT',
+    description:
+      'A ramp of earth that lets your ground troops walk straight over the walls beneath it.',
+    cost: 0,
+    space: 2,
+    radius: JUMP_RADIUS,
+    time: 0,
+    duration: jumpSeconds(1),
+    effect: '20.3s open',
+  },
+  clone: {
+    name: 'Clone Spell',
+    role: 'SUPPORT',
+    description:
+      'A ring that copies the troops standing in it. The copies fight for half a minute and then fade.',
+    cost: 0,
+    space: 3,
+    radius: CLONE_RADIUS,
+    time: 0,
+    duration: CLONE_LIFETIME,
+    effect: '22 housing copied',
+  },
+  recall: {
+    name: 'Recall Spell',
+    role: 'SUPPORT',
+    description:
+      'Calls your troops back out of the village and into your hand, ready to be sent somewhere better.',
+    cost: 0,
+    space: 2,
+    radius: RECALL_RADIUS,
+    time: 0,
+    duration: 0,
+    effect: '83 housing recalled',
+  },
+  revive: {
+    name: 'Revive Spell',
+    role: 'SUPPORT',
+    description: 'Brings your fallen hero back to the fight, part way healed.',
+    cost: 0,
+    space: 2,
+    radius: REVIVE_RADIUS,
+    time: 0,
+    duration: 0,
+    effect: '60% hero health',
+  },
 };
 export function spellStatsAt(kind: SpellKind, level = 1) {
   const stats = spellProgression(kind, level) ?? spellProgression(kind, 1);
@@ -1052,9 +1117,17 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
           ? `${freezeSeconds(level)}s freeze`
           : kind === 'invisibility'
             ? `${invisibilitySeconds(level)}s hidden`
-            : kind === 'heal'
-              ? `${stats.heal * HEAL_PULSES} total healing`
-              : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+            : kind === 'jump'
+              ? `${jumpSeconds(level)}s open`
+              : kind === 'clone'
+                ? `${cloneHousing(level)} housing copied`
+                : kind === 'recall'
+                  ? `${recallHousing(level)} housing recalled`
+                  : kind === 'revive'
+                    ? `${Math.round(reviveFraction(level) * 100)}% hero health`
+                    : kind === 'heal'
+                      ? `${stats.heal * HEAL_PULSES} total healing`
+                      : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
   };
 }
 export const TROOP_KEYS = Object.keys(TROOPS) as TroopKind[];

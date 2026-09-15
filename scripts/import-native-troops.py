@@ -40,7 +40,8 @@ TROOPS = {
     'healer': 'Healer', 'dragon': 'Dragon', 'pekka': 'PEKKA',
 }
 SPELLS = {'lightning': 'Lightning', 'heal': 'Healing', 'rage': 'Rage', 'freeze': 'Freeze',
-          'invisibility': 'Invisibility'}
+          'invisibility': 'Invisibility', 'jump': 'Jump', 'clone': 'Clone',
+          'recall': 'Recall', 'revive': 'Revive'}
 RESOURCES = {'Elixir': 'elixir', 'DarkElixir': 'dark', 'Gold': 'gold'}
 
 
@@ -165,6 +166,12 @@ MECHANICS = (
     ('PoisonDPS', 'poisonDps', 1),
     ('InvisibilityTime', 'invisibility', 1000),
     ('JumpBoostMS', 'jump', 1000),
+    ('DuplicateHousing', 'duplicateHousing', 1),
+    ('DuplicateLifetime', 'duplicateLifetime', 1000),
+    ('RecallHousing', 'recallHousing', 1),
+    ('ResurrectHitpointPercentage', 'resurrect', 100),
+    ('TargetingRadius', 'targeting', 100),
+    ('StunTimeMS', 'stun', 1000),
 )
 # Flags that say what a spell cannot touch, kept so immunity is read rather than assumed.
 IMMUNITIES = (

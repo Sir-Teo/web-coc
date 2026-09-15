@@ -16,7 +16,17 @@ const replay = (kind: 'wall' | 'airdefense' | 'bomb', level: number, version = R
       buildings: [makeBuilding(1, kind, 10, 10, level)],
       army: emptyArmy(),
       spells: emptySpells(),
-      spellLevels: { heal: 1, rage: 1, lightning: 1, freeze: 1, invisibility: 1 },
+      spellLevels: {
+        heal: 1,
+        rage: 1,
+        lightning: 1,
+        freeze: 1,
+        invisibility: 1,
+        jump: 1,
+        clone: 1,
+        recall: 1,
+        revive: 1,
+      },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as ReturnType<
         typeof emptyArmy
       >,

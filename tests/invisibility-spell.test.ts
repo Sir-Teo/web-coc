@@ -129,8 +129,10 @@ describe('the Invisibility Spell', () => {
       expect(validateReplay({ ...replay, version }), `version ${version}`).toBe(false);
   });
 
-  it('takes its own place at the end of the book and its own free hotkey', () => {
-    expect(SPELL_KEYS.at(-1)).toBe('invisibility');
+  it('takes its own place in the book after the spells that predate it', () => {
+    // It was appended, so it sits after the four that came before and before any that
+    // came after; its index never moves.
+    expect(SPELL_KEYS.indexOf('invisibility')).toBe(4);
     expect(Object.keys(emptySpells() as SpellBook)).toEqual([...SPELL_KEYS]);
   });
 });

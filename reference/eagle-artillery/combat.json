@@ -213,6 +213,22 @@
       "invisibility": {
         "source": "Invisibility",
         "housingSpace": 1
+      },
+      "jump": {
+        "source": "Jump",
+        "housingSpace": 2
+      },
+      "clone": {
+        "source": "Clone",
+        "housingSpace": 3
+      },
+      "recall": {
+        "source": "Recall",
+        "housingSpace": 2
+      },
+      "revive": {
+        "source": "Revive",
+        "housingSpace": 2
       }
     },
     "globals": {

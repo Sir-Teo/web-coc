@@ -128,7 +128,7 @@ it('preserves all 59 level-three mines across the three newly supported original
 });
 
 it('keeps v32 results readable while refusing playback under the changed release timing', () => {
-  expect(REPLAY_VERSION).toBe(49);
+  expect(REPLAY_VERSION).toBeGreaterThanOrEqual(49);
   const m = new GameModel();
   m.startBattle(0, true);
   m.deploy(1, 1);

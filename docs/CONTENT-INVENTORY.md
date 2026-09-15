@@ -13,7 +13,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Area | Pinned | Implemented | Source | Left to implement |
 | --- | --- | --- | --- | --- |
 | Troops | 90 | 10 | 90 | 80 |
-| Spells | 23 | 5 | 23 | 18 |
+| Spells | 23 | 9 | 23 | 14 |
 | Heroes | 6 | 1 | 6 | 5 |
 | Buildings | 44 | 30 | 44 | 14 |
 | Traps | 13 | 7 | 13 | 6 |
@@ -118,29 +118,29 @@ Records the client itself disables — summoned troops, defensive variants, inte
 
 ## Spells
 
-**23 of 23** pinned, **5 of 23** implemented; 44 of 161 levels playable.
+**23 of 23** pinned, **9 of 23** implemented; 70 of 161 levels playable.
 
 | Record | Levels | Pinned | This game |
 | --- | --- | --- | --- |
+| Clone | 9 | yes | yes |
 | Freeze | 8 | yes | yes |
 | Healing | 12 | yes | yes |
 | Invisibility | 4 | yes | yes |
+| Jump | 5 | yes | yes |
 | Lightning | 13 | yes | yes |
 | Rage | 7 | yes | yes |
+| Recall | 7 | yes | yes |
+| Revive | 5 | yes | yes |
 | AngrySpell | 4 | yes | — |
 | BagOfFrostmites | 13 | yes | — |
 | Bat Spell | 8 | yes | — |
 | Birthday2017 | 1 | yes | — |
-| Clone | 9 | yes | — |
 | Debris Explosion 2 | 1 | yes | — |
 | Earthquake | 8 | yes | — |
 | Haste | 7 | yes | — |
 | Ice Block | 6 | yes | — |
-| Jump | 5 | yes | — |
 | Overgrowth | 5 | yes | — |
 | Poison | 12 | yes | — |
-| Recall | 7 | yes | — |
-| Revive | 5 | yes | — |
 | Santas Surprise | 13 | yes | — |
 | Skeleton Spell | 8 | yes | — |
 | Totem Spell | 4 | yes | — |

@@ -11,7 +11,17 @@ function upgradeFacilities() {
   const barracks = model.state.buildings.find((b) => b.kind === 'barracks')!;
   const factory = model.state.buildings.find((b) => b.kind === 'spellfactory')!;
   factory.level = 2;
-  model.state.spells = { rage: 0, heal: 2, lightning: 0, freeze: 0, invisibility: 0 };
+  model.state.spells = {
+    rage: 0,
+    heal: 2,
+    lightning: 0,
+    freeze: 0,
+    invisibility: 0,
+    jump: 0,
+    clone: 0,
+    recall: 0,
+    revive: 0,
+  };
   model.upgrade(barracks.id);
   model.upgrade(factory.id);
   expect(barracks.upgradeEnd).toBeGreaterThan(model.clock);

@@ -154,7 +154,17 @@ describe('the air layer', () => {
 describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
     const m = new GameModel(developedSave());
-    m.state.spells = { rage: 0, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+    m.state.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     expect(m.spellCapacity).toBe(6);
     const elixir = m.state.elixir;
     m.brew('rage', 2);
@@ -173,13 +183,33 @@ describe('spells', () => {
   });
   it('lightning damages every building inside its radius, once', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 0, heal: 0, lightning: 1, freeze: 0, invisibility: 0 };
+    m.state.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 1,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [
       ['cannon', 10, 10, 4],
       ['cannon', 11, 12, 4],
       ['cannon', 22, 22, 1],
     ]);
-    battle.spells = { rage: 0, heal: 0, lightning: 1, freeze: 0, invisibility: 0 };
+    battle.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 1,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeSpell = 'lightning';
     expect(m.castSpell(11.5, 11.5)).toBe(true);
     const [near, alsoNear, far] = battle.buildings;
@@ -193,9 +223,29 @@ describe('spells', () => {
   it('rage makes troops hit measurably harder', () => {
     const damageOver = (raged: boolean) => {
       const m = new GameModel();
-      m.state.spells = { rage: 1, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+      m.state.spells = {
+        rage: 1,
+        heal: 0,
+        lightning: 0,
+        freeze: 0,
+        invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
+      };
       const battle = arena(m, [['townhall', 12, 12, 1]]);
-      battle.spells = { rage: 1, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+      battle.spells = {
+        rage: 1,
+        heal: 0,
+        lightning: 0,
+        freeze: 0,
+        invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
+      };
       m.activeTroop = 'swordsman';
       m.deploy(10, 13);
       if (raged) {
@@ -212,9 +262,29 @@ describe('spells', () => {
   });
   it('healing restores wounded troops standing inside it', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 0, heal: 1, lightning: 0, freeze: 0, invisibility: 0 };
+    m.state.spells = {
+      rage: 0,
+      heal: 1,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
-    battle.spells = { rage: 0, heal: 1, lightning: 0, freeze: 0, invisibility: 0 };
+    battle.spells = {
+      rage: 0,
+      heal: 1,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeTroop = 'swordsman';
     m.deploy(4, 4);
     const unit = battle.units[0];
@@ -227,9 +297,29 @@ describe('spells', () => {
   });
   it('auras expire and stop applying', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 1, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+    m.state.spells = {
+      rage: 1,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
-    battle.spells = { rage: 1, heal: 0, lightning: 0, freeze: 0, invisibility: 0 };
+    battle.spells = {
+      rage: 1,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeTroop = 'swordsman';
     m.deploy(4, 4);
     m.activeSpell = 'rage';

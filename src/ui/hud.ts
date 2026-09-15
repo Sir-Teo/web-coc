@@ -45,6 +45,11 @@ import {
   freezeSeconds,
   invisibilitySeconds,
   INVISIBILITY_LINGER,
+  jumpSeconds,
+  cloneHousing,
+  CLONE_LIFETIME,
+  recallHousing,
+  reviveFraction,
   HEAL_HERO_MULTIPLIER,
   SPELL_PULSE_INTERVAL,
   RAGE_LINGER,
@@ -1900,12 +1905,37 @@ export class HUD {
           ? 'Enemy buildings'
           : kind === 'freeze'
             ? 'Defences and defending troops'
-            : kind === 'invisibility'
+            : kind === 'invisibility' || kind === 'clone' || kind === 'recall'
               ? 'Your own troops'
-              : 'Ground and air troops',
+              : kind === 'jump'
+                ? 'Walls beneath the ring'
+                : kind === 'revive'
+                  ? 'Your fallen hero'
+                  : 'Ground and air troops',
       ],
     ];
     if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
+    else if (kind === 'jump')
+      rows.push(
+        ['Damage', 'None'],
+        ['Breach holds for', `${jumpSeconds(this.model.spellLevel(kind))}s`],
+      );
+    else if (kind === 'clone')
+      rows.push(
+        ['Damage', 'None'],
+        ['Housing copied', `${cloneHousing(this.model.spellLevel(kind))}`],
+        ['Each copy lives', `${CLONE_LIFETIME}s`],
+      );
+    else if (kind === 'recall')
+      rows.push(
+        ['Damage', 'None'],
+        ['Housing recalled', `${recallHousing(this.model.spellLevel(kind))}`],
+      );
+    else if (kind === 'revive')
+      rows.push(
+        ['Damage', 'None'],
+        ['Hero returns with', `${Math.round(reviveFraction(this.model.spellLevel(kind)) * 100)}%`],
+      );
     else if (kind === 'invisibility')
       rows.push(
         ['Damage', 'None'],
@@ -1934,15 +1964,23 @@ export class HUD {
         ['Hero effectiveness', '50% of each boost'],
       );
     const tactic =
-      kind === 'invisibility'
-        ? 'Drop it over troops that are being shot at, not over troops that are walking. Nothing can target what it cannot see, so the veil buys a crossing or a clean run at a Town Hall — but walls still block and traps still trigger.'
-        : kind === 'freeze'
-          ? 'Cast it over the defences that are firing, not the ones ahead. Frozen defences stop mid-reload and pick a target again when they thaw, and frozen defenders stop where they stand. It deals no damage, so it buys time rather than destruction.'
-          : kind === 'lightning'
-            ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
-            : kind === 'heal'
-              ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
-              : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
+      kind === 'jump'
+        ? 'Lay it over the wall you want opened, not over your troops. Ground troops walk straight across while the ring holds, and the wall is still standing when it closes.'
+        : kind === 'clone'
+          ? 'Copy what is already winning, not what is about to die. Copies are made at full health and fade after half a minute whatever happens to them.'
+          : kind === 'recall'
+            ? 'Take troops back out of a corner they cannot win and send them somewhere better. Recalled troops return to your hand at full count; Clone copies have nowhere to go and are lost.'
+            : kind === 'revive'
+              ? 'Cast it where your hero fell. The hero stands back up part way healed, keeping whatever ability charge it had left.'
+              : kind === 'invisibility'
+                ? 'Drop it over troops that are being shot at, not over troops that are walking. Nothing can target what it cannot see, so the veil buys a crossing or a clean run at a Town Hall — but walls still block and traps still trigger.'
+                : kind === 'freeze'
+                  ? 'Cast it over the defences that are firing, not the ones ahead. Frozen defences stop mid-reload and pick a target again when they thaw, and frozen defenders stop where they stand. It deals no damage, so it buys time rather than destruction.'
+                  : kind === 'lightning'
+                    ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
+                    : kind === 'heal'
+                      ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
+                      : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
     return `<div class="modal-body troop-info-body spell-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.spellLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button(`research-view:${kind}`, `${icon('FlaskConical', 18)} Research spell`, 'game-btn green')}</div>`;
   }
   private surrender() {

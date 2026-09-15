@@ -13,7 +13,7 @@ import { developedSave } from './fixtures/developed-village';
 
 // Independent transcription from Supercell's immutable spells.csv and current wiki tables.
 /** Enough elixir for the dearest research in the table below, with room to check change. */
-const BUDGET = 20_000_000;
+const BUDGET = 60_000_000;
 const reference = {
   lightning: { cost: [50000, 100000, 200000, 600000], hours: [2, 4, 6, 24], lab: [1, 2, 3, 6] },
   heal: { cost: [75000, 150000, 300000, 900000], hours: [3, 6, 12, 24], lab: [2, 4, 5, 6] },
@@ -25,6 +25,22 @@ const reference = {
   },
   // The Invisibility Spell stops at level 4, so it has three research steps, not four.
   invisibility: { cost: [5000000, 6000000, 7000000], hours: [72, 96, 120], lab: [9, 10, 11] },
+  jump: {
+    cost: [1000000, 2000000, 5000000, 8000000],
+    hours: [24, 48, 96, 120],
+    lab: [5, 8, 11, 13],
+  },
+  clone: { cost: [1500000, 2500000, 3000000, 4000000], hours: [24, 48, 54, 60], lab: [8, 8, 9, 9] },
+  recall: {
+    cost: [7500000, 8000000, 9000000, 13000000],
+    hours: [168, 180, 192, 216],
+    lab: [11, 12, 13, 14],
+  },
+  revive: {
+    cost: [18000000, 19000000, 20000000, 29500000],
+    hours: [168, 192, 276, 384],
+    lab: [13, 14, 15, 16],
+  },
 };
 function developed() {
   const m = new GameModel(developedSave());
@@ -388,7 +404,18 @@ describe('native spell effects', () => {
 
   it('spell levels are frozen in battle, exported and replayed independently of home research', () => {
     const m = developed();
-    m.state.spellLevels = { ...defaultSpellLevels(), lightning: 4, heal: 3, rage: 2 };
+    m.state.spellLevels = {
+      ...defaultSpellLevels(),
+      lightning: 4,
+      heal: 3,
+      rage: 2,
+      freeze: 1,
+      invisibility: 1,
+      jump: 1,
+      clone: 1,
+      recall: 1,
+      revive: 1,
+    };
     m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
     m.startBattle(0, true);
     const b = m.battle!;

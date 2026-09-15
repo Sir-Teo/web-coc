@@ -149,7 +149,17 @@ describe('native army facility progression', () => {
       { hp: 720, cost: 2000000, seconds: 259200, capacity: 10 },
     ]);
     const old = developedSave();
-    old.spells = { rage: 2, heal: 2, lightning: 0, freeze: 0, invisibility: 0 };
+    old.spells = {
+      rage: 2,
+      heal: 2,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     old.spellQueue = [{ kind: 'lightning', end: old.lastTick + 50000 }];
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 32, 30, 2));
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 36, 30, 5));

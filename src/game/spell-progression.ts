@@ -37,5 +37,25 @@ export const invisibilitySeconds = (level = 1) => {
 export const INVISIBILITY_LINGER = spellProgression('invisibility', 1).mechanics!.invisibility!;
 export const INVISIBILITY_INTERVAL = spellProgression('invisibility', 1).mechanics!.interval!;
 export const INVISIBILITY_RADIUS = spellProgression('invisibility', 1).mechanics!.radius!;
+const mechanics = (kind: 'jump' | 'clone' | 'recall' | 'revive', level: number) =>
+  (spellProgression(kind, level) ?? spellProgression(kind, 1)).mechanics!;
+/** How long the Jump Spell's ring holds a breach open, stated as pulses and an interval. */
+export const jumpSeconds = (level = 1) => {
+  const m = mechanics('jump', level);
+  return m.pulses! * m.interval!;
+};
+/** How long a troop keeps vaulting after stepping out of the ring. */
+export const JUMP_LINGER = mechanics('jump', 1).jump!;
+export const JUMP_RADIUS = mechanics('jump', 1).radius!;
+/** Housing space of copies the Clone Spell may make, and how long a copy lives. */
+export const cloneHousing = (level = 1) => mechanics('clone', level).duplicateHousing!;
+export const CLONE_LIFETIME = mechanics('clone', 1).duplicateLifetime!;
+export const CLONE_RADIUS = mechanics('clone', 1).radius!;
+/** Housing space of troops the Recall Spell may take back into the hand. */
+export const recallHousing = (level = 1) => mechanics('recall', level).recallHousing!;
+export const RECALL_RADIUS = mechanics('recall', 1).radius!;
+/** Fraction of its maximum a revived hero returns with, and how far the spell reaches. */
+export const reviveFraction = (level = 1) => mechanics('revive', level).resurrect!;
+export const REVIVE_RADIUS = mechanics('revive', 1).targeting!;
 /** Native movement-speed points convert to tiles/second at eight points per tile. */
 export const SPELL_SPEED_SCALE = 8;

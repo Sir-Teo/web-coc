@@ -44,15 +44,16 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 49;
+export const REPLAY_VERSION = 50;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
  * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
  * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
  * Version 46 carries the catalog to Town Hall 18, again with no combat rule change.
  * Version 47 adds the fifth Skeleton Trap tier, whose coffin releases level 2 skeletons,
  * and arms the home Builder's Hut with the turret campaign huts already carried.
- * Version 48 adds the Freeze Spell and 49 the Invisibility Spell; no recording older than
- * the version that added a spell may carry, cast or research it. */
+ * Version 48 adds the Freeze Spell, 49 the Invisibility Spell and 50 the Jump, Clone, Recall
+ * and Revive Spells; no recording older than the version that added a spell may carry, cast
+ * or research it. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -69,6 +70,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 46 ||
   version === 47 ||
   version === 48 ||
+  version === 49 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -86,6 +88,7 @@ const PRE_ROSTER_SPELL_LEVEL = 5;
 const SPELLS_ADDED_AT: Readonly<Record<number, readonly SpellKind[]>> = {
   48: ['freeze'],
   49: ['invisibility'],
+  50: ['jump', 'clone', 'recall', 'revive'],
 };
 /** The spell book a recording of this version was written with, in its own key order. */
 export const spellKeysAt = (version: number): readonly SpellKind[] =>

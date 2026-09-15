@@ -52,7 +52,8 @@ TROOPS = {'swordsman': 'Barbarian', 'archer': 'Archer', 'giant': 'Giant', 'wizar
           'balloon': 'Balloon', 'goblin': 'Goblin', 'wallbreaker': 'Wall Breaker', 'healer': 'Healer',
           'dragon': 'Dragon', 'pekka': 'PEKKA'}
 SPELLS = {'rage': 'Rage', 'heal': 'Healing', 'lightning': 'Lightning', 'freeze': 'Freeze',
-          'invisibility': 'Invisibility'}
+          'invisibility': 'Invisibility', 'jump': 'Jump', 'clone': 'Clone',
+          'recall': 'Recall', 'revive': 'Revive'}
 HOUSING_GLOBALS = ['UNIT_HOUSING_COST_MULTIPLIER', 'SPELL_HOUSING_COST_MULTIPLIER', 'HERO_HOUSING_COST_MULTIPLIER',
                    'ALLIANCE_UNIT_HOUSING_COST_MULTIPLIER', 'PET_HOUSING_COST_MULTIPLIER',
                    'UNIT_HOUSING_COST_MULTIPLIER_FOR_TOTAL', 'SPELL_HOUSING_COST_MULTIPLIER_FOR_TOTAL',

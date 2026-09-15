@@ -21,7 +21,17 @@ function simpleReplay(): ReplayData {
       buildings: [makeBuilding(1, 'goldmine', 10, 10)],
       army: emptyArmy(),
       spells: { ...emptySpells(), lightning: 1 },
-      spellLevels: { lightning: 1, heal: 1, rage: 1, freeze: 1, invisibility: 1 },
+      spellLevels: {
+        lightning: 1,
+        heal: 1,
+        rage: 1,
+        freeze: 1,
+        invisibility: 1,
+        jump: 1,
+        clone: 1,
+        recall: 1,
+        revive: 1,
+      },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as ReturnType<
         typeof emptyArmy
       >,

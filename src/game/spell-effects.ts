@@ -22,7 +22,11 @@ const rhythm = (kind: Aura['kind'], level: number) =>
         count: Math.round(invisibilitySeconds(level) / INVISIBILITY_INTERVAL),
         interval: INVISIBILITY_INTERVAL,
       }
-    : {
+    : // The Jump Spell's ring is scenery: it opens a breach rather than touching troops, so
+      // it needs no pulses at all and simply lives out its stated length.
+      kind === 'jump'
+      ? { count: 0, interval: 1 }
+      : {
         count: kind === 'heal' ? HEAL_PULSES : RAGE_PULSES,
         interval: SPELL_PULSE_INTERVAL,
       };
@@ -62,7 +66,11 @@ export function stepSpellAuras(battle: Battle) {
 }
 
 /** Spells whose whole effect is a ring that pulses over time. */
-export type AuraSpell = 'heal' | 'rage' | 'invisibility';
+export type AuraSpell = 'heal' | 'rage' | 'invisibility' | 'jump';
+
+/** Rings that are holding a breach open right now, for the pathfinder to walk through. */
+export const openBreaches = (battle: Battle) =>
+  battle.auras.filter((aura) => aura.kind === 'jump' && aura.end > battle.elapsed);
 
 /** Whether a defence may fire at this attacker, or the Invisibility Spell is hiding it. */
 export const untargetable = (battle: Battle, unit: { invisibleUntil?: number }) =>

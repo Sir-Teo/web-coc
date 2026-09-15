@@ -51,6 +51,33 @@ const glyphs = {
       '<circle cx="128" cy="158" r="9" opacity="0.95"/>' +
       '<path d="M104 176 h12 M124 180 h10 M142 176 h11" stroke="#fff8dd" stroke-width="5" stroke-linecap="round" opacity="0.5" fill="none"/>',
   ],
+  // An arc over a wall, for the ramp the Jump Spell raises.
+  jump: [
+    '#b6e39b',
+    '#3f7a35',
+    '<path d="M98 186 q30 -52 60 0" stroke="#fff8dd" stroke-width="8" fill="none" stroke-linecap="round"/>'
+      + '<rect x="120" y="168" width="16" height="22" rx="3"/>',
+  ],
+  // Two overlapping silhouettes, for the copies the Clone Spell leaves behind.
+  clone: [
+    '#9fe8e0',
+    '#2f7d77',
+    '<circle cx="116" cy="150" r="12"/><path d="M100 190 q16 -22 32 0 z"/>'
+      + '<circle cx="142" cy="156" r="10" opacity="0.55"/><path d="M128 190 q14 -19 28 0 z" opacity="0.55"/>',
+  ],
+  // An arrow turning back on itself, for the troops the Recall Spell takes home.
+  recall: [
+    '#f6c99a',
+    '#a15c1f',
+    '<path d="M150 146 a30 30 0 1 0 -8 42" stroke="#fff8dd" stroke-width="9" fill="none" stroke-linecap="round"/>'
+      + '<path d="M138 132 l16 14 l-18 12 z"/>',
+  ],
+  // A heart with a spark, for the hero the Revive Spell brings back.
+  revive: [
+    '#f5a3b6',
+    '#9c2a49',
+    '<path d="M128 192 q-30 -22 -30 -40 a16 16 0 0 1 30 -8 a16 16 0 0 1 30 8 q0 18 -30 40 z"/>',
+  ],
 };
 for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
   const output = `${SPELLS}/${name}-v2.webp`;

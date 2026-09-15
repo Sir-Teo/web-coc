@@ -136,10 +136,14 @@ import {
   spellProgression,
   LIGHTNING_STUN,
   freezeSeconds,
+  cloneHousing,
+  CLONE_LIFETIME,
+  recallHousing,
+  reviveFraction,
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
-import { startSpellAura, stepSpellAuras, untargetable } from './spell-effects';
+import { startSpellAura, stepSpellAuras, untargetable, openBreaches } from './spell-effects';
 import { prepareHealerTargets, stepHealer } from './healing';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
@@ -353,6 +357,8 @@ export interface Unit {
   spellRageUntil?: number;
   /** Set only by the Invisibility Spell, so a battle without one is byte-identical. */
   invisibleUntil?: number;
+  /** Set only on a Clone Spell copy: the moment it fades, whether or not it has fought. */
+  fadesAt?: number;
   healTarget?: number;
   defenderTarget?: number;
   x: number;
@@ -2325,6 +2331,71 @@ export class GameModel {
           v.cooldown = BUILDINGS[v.kind].rate!;
           delete b.defenseTargets[v.id];
         }
+    } else if (k === 'clone') {
+      // Copies are made in the order the originals were deployed, while the housing the
+      // spell can carry lasts. A copy of a copy is not made: the source spends its housing
+      // on what is really standing there.
+      let room = cloneHousing(this.spellLevel('clone'));
+      for (const original of b.units) {
+        if (original.hp <= 0 || original.hero || original.summoned) continue;
+        if (distance2D(original.x - x, original.y - y) > d.radius) continue;
+        const space = TROOPS[original.kind].space;
+        if (space > room) continue;
+        room -= space;
+        const stats = this.troopStats(original.kind);
+        b.units.push({
+          id: this.state.nextId++,
+          kind: original.kind,
+          x: original.x,
+          y: original.y,
+          hp: stats.hp,
+          maxHp: stats.hp,
+          cooldown: 0,
+          target: null,
+          path: [],
+          pathAt: 0,
+          attacking: false,
+          spawnedAt: b.elapsed,
+          summoned: true,
+          fadesAt: b.elapsed + CLONE_LIFETIME,
+        });
+        this.onEffect({ type: 'spawn', x: original.x, y: original.y });
+      }
+    } else if (k === 'recall') {
+      // Troops come back into the hand, nearest the centre of the ring first, while the
+      // housing the spell can carry lasts. A copy has nowhere to return to and is simply lost.
+      let room = recallHousing(this.spellLevel('recall'));
+      const inside = b.units
+        .filter((u) => u.hp > 0 && !u.hero && distance2D(u.x - x, u.y - y) <= d.radius)
+        .sort((a, c) => distance2D(a.x - x, a.y - y) - distance2D(c.x - x, c.y - y) || a.id - c.id);
+      const taken = new Set<number>();
+      for (const unit of inside) {
+        const space = TROOPS[unit.kind].space;
+        if (space > room) continue;
+        room -= space;
+        taken.add(unit.id);
+        if (!unit.summoned) b.remaining[unit.kind]++;
+        this.onEffect({ type: 'spawn', x: unit.x, y: unit.y });
+      }
+      if (taken.size) b.units = b.units.filter((u) => !taken.has(u.id));
+    } else if (k === 'revive') {
+      // The hero comes back where it fell, part way healed. With no hero down there is
+      // nothing to revive and the spell is not spent.
+      const hero = b.units.find((u) => u.hero && u.hp <= 0);
+      if (!hero || distance2D(hero.x - x, hero.y - y) > d.radius) {
+        b.spells[k]++;
+        if (!b.practice) this.state.spells[k]++;
+        this.notify('Cast the Revive Spell on a fallen hero.');
+        return false;
+      }
+      hero.hp = Math.max(1, Math.round(hero.maxHp * reviveFraction(this.spellLevel('revive'))));
+      delete hero.defeatedAt;
+      delete hero.spent;
+      hero.target = null;
+      hero.path = [];
+      hero.pathAt = 0;
+      hero.attacking = false;
+      this.onEffect({ type: 'spawn', x: hero.x, y: hero.y });
     } else startSpellAura(b, k, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.changed();
@@ -2386,6 +2457,14 @@ export class GameModel {
     const solidBuildings = b.late
       ? b.buildings.filter((v) => !concealedTesla(b, v))
       : knownBuildings;
+    // A Clone Spell copy lives out its stated life and then goes, fought or not.
+    for (const u of b.units)
+      if (u.fadesAt !== undefined && u.hp > 0 && u.fadesAt <= b.elapsed) {
+        u.hp = 0;
+        u.defeatedAt = b.elapsed;
+      }
+    // Empty unless a Jump Spell is holding a ring open, so ordinary routing is unchanged.
+    const breaches = openBreaches(b);
     for (const u of b.units) {
       if (u.hp <= 0) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
@@ -2568,7 +2647,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, solidBuildings, d.range, !!b.nativeSubtiles);
+        u.path = findPath(u, target, solidBuildings, d.range, !!b.nativeSubtiles, breaches);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -3490,17 +3569,25 @@ export function findPath(
   buildings: Building[],
   range: number,
   subtiles = false,
+  /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
+  breaches: readonly { x: number; y: number }[] = [],
 ): { x: number; y: number }[] {
   if (subtiles) return findSubtilePath(start, target, buildings, range);
   const size = MAP_SIZE,
     blocked = new Uint8Array(size * size),
     wall = new Uint8Array(size * size);
+  const radius = SPELLS.jump.radius;
+  const breached = (x: number, y: number) =>
+    breaches.some((ring) => distance2D(x + 0.5 - ring.x, y + 0.5 - ring.y) <= radius);
   for (const b of buildings) {
     if (b.hp <= 0 || isTrap(b.kind)) continue;
     for (let x = b.x; x < b.x + BUILDINGS[b.kind].size; x++)
       for (let y = b.y; y < b.y + BUILDINGS[b.kind].size; y++) {
-        if (b.kind === 'wall') wall[y * size + x] = 1;
-        else blocked[y * size + x] = 1;
+        if (b.kind === 'wall') {
+          // A breached wall is not removed, only walked over: it still stands and still
+          // blocks everything outside the ring.
+          if (!breaches.length || !breached(x, y)) wall[y * size + x] = 1;
+        } else blocked[y * size + x] = 1;
       }
   }
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),

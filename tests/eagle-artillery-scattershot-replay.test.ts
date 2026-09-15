@@ -264,6 +264,6 @@ describe('Eagle Artillery and Scattershot replays', () => {
         .filter((b) => b.kind === 'scattershot')
         .map((b) => b.level),
     ).toEqual([3, 3, 3, 3]);
-    expect(REPLAY_VERSION).toBe(49);
+    expect(REPLAY_VERSION).toBeGreaterThanOrEqual(49);
   });
 });

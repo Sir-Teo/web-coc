@@ -20,11 +20,15 @@
     "wizard": "Wizard"
   },
   "spells": {
+    "clone": "Clone",
     "freeze": "Freeze",
     "heal": "Healing",
     "invisibility": "Invisibility",
+    "jump": "Jump",
     "lightning": "Lightning",
-    "rage": "Rage"
+    "rage": "Rage",
+    "recall": "Recall",
+    "revive": "Revive"
   },
   "roster": {
     "Barbarian": {
@@ -10243,7 +10247,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10262,7 +10267,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10281,7 +10287,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10300,7 +10307,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10319,7 +10327,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10338,7 +10347,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10357,7 +10367,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10376,7 +10387,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10395,7 +10407,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10414,7 +10427,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10433,7 +10447,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10452,7 +10467,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         },
         {
@@ -10471,7 +10487,8 @@
             "pulses": 1,
             "interval": 0.4,
             "deploy": 0.8,
-            "freeze": 0.1
+            "freeze": 0.1,
+            "stun": 0.1
           }
         }
       ]
@@ -11165,7 +11182,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 22,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11183,7 +11202,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 24,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11201,7 +11222,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 26,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11219,7 +11242,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 28,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11237,7 +11262,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 30,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11255,7 +11282,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 34,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11273,7 +11302,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 38,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11291,7 +11322,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 42,
+            "duplicateLifetime": 30.0
           }
         },
         {
@@ -11309,7 +11342,9 @@
             "radius": 3.5,
             "pulses": 60,
             "interval": 0.3,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "duplicateHousing": 48,
+            "duplicateLifetime": 30.0
           }
         }
       ]
@@ -11428,7 +11463,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 83
           }
         },
         {
@@ -11449,7 +11485,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 89
           }
         },
         {
@@ -11470,7 +11507,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 95
           }
         },
         {
@@ -11491,7 +11529,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 101
           }
         },
         {
@@ -11512,7 +11551,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 107
           }
         },
         {
@@ -11533,7 +11573,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 113
           }
         },
         {
@@ -11554,7 +11595,8 @@
             "deploy": 0.8,
             "boost": 0.0,
             "speedBoost": 0,
-            "speedBoost2": 0
+            "speedBoost2": 0,
+            "recallHousing": 120
           }
         }
       ]
@@ -11586,7 +11628,9 @@
             "radius": 0.0,
             "pulses": 1,
             "interval": 0.0,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "resurrect": 0.6,
+            "targeting": 8.0
           }
         },
         {
@@ -11604,7 +11648,9 @@
             "radius": 0.0,
             "pulses": 1,
             "interval": 0.0,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "resurrect": 0.65,
+            "targeting": 8.0
           }
         },
         {
@@ -11622,7 +11668,9 @@
             "radius": 0.0,
             "pulses": 1,
             "interval": 0.0,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "resurrect": 0.7,
+            "targeting": 8.0
           }
         },
         {
@@ -11640,7 +11688,9 @@
             "radius": 0.0,
             "pulses": 1,
             "interval": 0.0,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "resurrect": 0.75,
+            "targeting": 8.0
           }
         },
         {
@@ -11658,7 +11708,9 @@
             "radius": 0.0,
             "pulses": 1,
             "interval": 0.0,
-            "deploy": 0.8
+            "deploy": 0.8,
+            "resurrect": 0.8,
+            "targeting": 8.0
           }
         }
       ]
@@ -11690,7 +11742,8 @@
             "pulses": 1,
             "interval": 0.1,
             "deploy": 0.8,
-            "freeze": 0.2
+            "freeze": 0.2,
+            "stun": 0.2
           }
         },
         {
@@ -11709,7 +11762,8 @@
             "pulses": 1,
             "interval": 0.1,
             "deploy": 0.8,
-            "freeze": 0.2
+            "freeze": 0.2,
+            "stun": 0.2
           }
         },
         {
@@ -11728,7 +11782,8 @@
             "pulses": 1,
             "interval": 0.1,
             "deploy": 0.8,
-            "freeze": 0.2
+            "freeze": 0.2,
+            "stun": 0.2
           }
         },
         {
@@ -11747,7 +11802,8 @@
             "pulses": 1,
             "interval": 0.1,
             "deploy": 0.8,
-            "freeze": 0.2
+            "freeze": 0.2,
+            "stun": 0.2
           }
         }
       ]
@@ -13560,7 +13616,8 @@
             "deploy": 0.8,
             "freeze": 15.0,
             "freezeOuter": 15.0,
-            "invisibility": 15.0
+            "invisibility": 15.0,
+            "targeting": 3.0
           }
         }
       ]

@@ -63,6 +63,15 @@ export interface SpellMechanics {
   poisonDps?: number;
   invisibility?: number;
   jump?: number;
+  /** Housing space of copies the Clone Spell makes, and how long a copy lives. */
+  duplicateHousing?: number;
+  duplicateLifetime?: number;
+  /** Housing space the Recall Spell may take back into the hand. */
+  recallHousing?: number;
+  /** Fraction of its maximum a revived hero returns with, and how far the spell reaches. */
+  resurrect?: number;
+  targeting?: number;
+  stun?: number;
 }
 export interface SpellLevel {
   level: number;

@@ -10,7 +10,17 @@ export function invadersVillage() {
   save.buildings.find((b) => b.kind === 'barracks')!.level = 10;
   save.army = { ...emptyArmy(), giant: 8, dragon: 8 };
   save.king = undefined;
-  save.spells = { lightning: 0, heal: 0, rage: 0, freeze: 0, invisibility: 0 };
+  save.spells = {
+    lightning: 0,
+    heal: 0,
+    rage: 0,
+    freeze: 0,
+    invisibility: 0,
+    jump: 0,
+    clone: 0,
+    recall: 0,
+    revive: 0,
+  };
   save.nativeCampaign = freshNativeCampaign();
   save.nativeCampaign.stars[49] = 1;
   save.tutorial = true;
