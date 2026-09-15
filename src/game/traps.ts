@@ -10,6 +10,7 @@ import { spawnSkeleton } from './defenders';
 import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-trap';
 import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
 import { SHRINK_TRAP, makeShrinkState, stepShrink, type ShrinkState } from './shrink-trap';
+import { NATIVE_TRAP_SOURCE, fling, nativeTrapValues, stepNativeTrap } from './native-traps';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -30,11 +31,25 @@ export function springOutcome(housing: number, hp: number, capacity: number, dam
 }
 
 /** Resolve campaign identity before archetype, keeping seasonal traps out of the home catalog. */
-export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>) {
+export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, battle?: Battle) {
   const base = trapStats(trap.kind, trap.level);
   if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
   if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
   if (base && trap.npc === 'shrink-trap') return { ...base, ...SHRINK_TRAP };
+  if (base && battle?.nativeRoster && !trap.npc && NATIVE_TRAP_SOURCE[trap.kind]) {
+    // Version 45: every level's values come from the client rows (Town Hall 9-18 levels included).
+    const values = nativeTrapValues(trap.kind, trap.level);
+    return {
+      ...base,
+      damage: values.damage,
+      radius: values.radius || base.radius,
+      trigger: values.trigger || base.trigger,
+      ...(base.springCapacity ? { springCapacity: values.ejectHousing } : {}),
+      ...(values.pushback
+        ? { pushback: values.pushback, pushbackHousing: values.pushbackHousing }
+        : {}),
+    };
+  }
   return base;
 }
 
@@ -42,7 +57,16 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   if (battle.finished) return false;
   let changed = false;
   for (const trap of battle.buildings) {
-    const d = battleTrapStats(trap);
+    if (
+      battle.nativeRoster &&
+      !trap.npc &&
+      (trap.kind === 'tornadotrap' || trap.kind === 'gigabomb')
+    ) {
+      if (!trap.constructing && !trap.upgradeEnd)
+        changed = stepNativeTrap(battle, trap, effect) || changed;
+      continue;
+    }
+    const d = battleTrapStats(trap, battle);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
     const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
     let state = battle.traps[trap.id];
@@ -101,7 +125,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       continue;
     }
     if (trap.kind === 'skeletontrap') {
-      const count = skeletonCount(trap.level);
+      const count =
+        battle.nativeRoster && !trap.npc
+          ? nativeTrapValues('skeletontrap', trap.level).spawns
+          : skeletonCount(trap.level);
       while ((state.spawned ?? 0) < count) {
         const index = state.spawned ?? 0,
           at = state.activatedAt + SKELETON_TRAP.firstSpawn + index * SKELETON_TRAP.spawnInterval;
@@ -207,8 +234,17 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       effect({ type: 'spring', x: target.x, y: target.y });
     } else {
       for (const u of battle.units)
-        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius)
+        if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) {
           hurtUnit(battle, u, power);
+          // Version 45: bombs push small troops (Pushback / PushbackHousingLimit).
+          if (
+            'pushback' in d &&
+            d.pushback &&
+            u.hp > 0 &&
+            (u.hero ? 25 : TROOPS[u.kind].space) <= (d.pushbackHousing ?? 0)
+          )
+            fling(battle, u, state.x, state.y, d.pushback);
+        }
       effect({
         type: 'blast',
         x: state.x,

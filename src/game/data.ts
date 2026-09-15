@@ -137,7 +137,7 @@ export interface BuildingDef {
     radius: number;
     delay: number;
     damage: number;
-    targets: 'ground' | 'air';
+    targets: 'ground' | 'air' | 'both';
     springCapacity?: number;
     minHousing?: number;
     homingSpeed?: number;

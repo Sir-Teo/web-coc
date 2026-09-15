@@ -9,7 +9,9 @@ BASE=ROOT/'art/source/native-client-18.400.21'
 MAPPING={'townhall':'Town Hall','goldmine':'Gold Mine','collector':'Elixir Collector','goldstorage':'Gold Storage','elixirstorage':'Elixir Storage','darkdrill':'Dark Elixir Drill','darkstorage':'Dark Elixir Storage','barracks':'Barracks','camp':'Army Camp','builder':'Builders Hut','laboratory':'Laboratory','spellfactory':'Spell Factory','herohall':'Hero Hall','blacksmith':'Blacksmith','wall':'Wall','cannon':'Cannon','archertower':'Archer Tower','mortar':'Mortar','airdefense':'Air Defense','airsweeper':'Air Sweeper','tesla':'Hidden Tesla','bombtower':'Bomb Tower','wizardtower':'Wizard Tower','xbow':'X-Bow','inferno':'Inferno Tower','clancastle':'Clan Castle'}
 EXTRA={'darkbarracks':'Dark Barracks','darkspellfactory':'Dark Spell Factory','workshop':'Siege Workshop','pethouse':'Pet House','eagle':'Eagle Artillery','scattershot':'Scattershot','spelltower':'Spell Tower','monolith':'Monolith','multiarchertower':'Multi Archer Tower','ricochetcannon':'Ricochet Cannon','multigeartower':'Multi Gear Tower','firespitter':'Firespitter','revengetower':'Revenge Tower','superwizardtower':'Super Wizard Tower'}
 MAPPING.update(EXTRA)
-TRAPS={'bomb':'Bomb','giantbomb':'Giant Bomb','airbomb':'Air Bomb','springtrap':'Spring Trap','seekingairmine':'Seeking Air Mine','skeletontrap':'Skeleton Trap'}
+TRAPS={'bomb':'Bomb','giantbomb':'Giant Bomb','airbomb':'Air Bomb','springtrap':'Spring Trap','seekingairmine':'Seeking Air Mine','skeletontrap':'Skeleton Trap','tornadotrap':'Tornado Trap','gigabomb':'Giga Bomb'}
+# Blank Weapon and MergeRequirement cells mean "none": the Town Hall 18 row has neither (official wiki).
+EXACT={'Weapon','MergeRequirement'}
 TROOPS={'swordsman':'Barbarian','archer':'Archer','giant':'Giant','wizard':'Wizard','balloon':'Balloon','goblin':'Goblin','wallbreaker':'Wall Breaker','healer':'Healer','dragon':'Dragon','pekka':'PEKKA'}
 EXTRA_TROOPS={'babydragon':'Baby Dragon','miner':'Miner','electrodragon':'Electro Dragon','yeti':'Yeti','dragonrider':'Dragon Rider','electrotitan':'Electro Titan','rootrider':'Root Rider','thrower':'Thrower','meteorgolem':'Meteor Golem','minion':'Minion','hogrider':'Hog Rider','valkyrie':'Valkyrie','golem':'Golem','witch':'Witch','lavahound':'Lava Hound','bowler':'Bowler','icegolem':'Ice Golem','headhunter':'Headhunter','apprenticewarden':'Apprentice Warden','druid':'Druid','furnace':'Furnace','ruinwitch':'Ruin Witch'}
 TROOPS.update(EXTRA_TROOPS)
@@ -28,7 +30,9 @@ def main():
  b={}
  for kind,name in {**MAPPING,**TRAPS}.items():
   levels=[]
-  for row in inherited_levels((traps if kind in TRAPS else buildings)[name]):
+  raw=(traps if kind in TRAPS else buildings)[name]
+  for index,row in enumerate(inherited_levels(raw)):
+   row={k:v for k,v in row.items() if k not in EXACT or k in raw[index]}
    lv=int(row.get('BuildingLevel',row.get('Level',1)));th=max(1,int(row.get('TownHallLevel',1)))
    if th>18:continue
    weapon=row

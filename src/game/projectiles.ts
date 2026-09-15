@@ -10,7 +10,7 @@ import { healerContribution, HEALER_HERO_SCALE } from './healing';
 import { damageDefenders, hurtDefender, type Defender } from './defenders';
 import { XBOW_PROJECTILES } from './xbow-stats';
 import { WIZARD_TOWER_PROJECTILES } from './wizard-tower-stats';
-import { nativeRow, num } from './native-data';
+import { flag, nativeRow, num } from './native-data';
 import { hurtUnit } from './native-status';
 
 export type Weapon =
@@ -48,6 +48,26 @@ export interface CombatProjectile {
   flight?: { x: number; y: number; at: number };
   /** Version 45+ native roster projectile: client projectile row, shooter kind/level and bounce index. */
   native?: { name: string; kind: string; level: number; bounce?: number };
+  /** Version 45+ defense shot rules resolved on impact (bounces, hit spells, %-hitpoint bonus). */
+  defense?: NativeDefenseShot;
+}
+export interface NativeDefenseShot {
+  /** Units already struck by this shot and its ricochets. */
+  hit: number[];
+  air: boolean;
+  ground: boolean;
+  bounces: number;
+  bounceDistance: number;
+  /** Fraction kept by each ricochet (0.7 = -30%). */
+  bounceFactor: number;
+  /** Bonus damage as permil of the target's maximum hitpoints (not boosted by Rage). */
+  hpPermil?: number;
+  /** Eagle Artillery shockwave outside the main shell radius. */
+  shock?: { damage: number; inner: number; outer: number; pushback: number; housing: number };
+  /** Scattershot fragment cone behind the impact, limited to the struck layer. */
+  scatter?: { level: number; angle: number };
+  /** Spell released where the shot lands (Spell Tower, Inferno Artillery pools). */
+  spell?: { name: string; level: number };
 }
 
 // Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;
@@ -66,6 +86,12 @@ const SPEED: Record<Weapon, number> = {
 };
 const nativeSpeed = (p: Pick<CombatProjectile, 'native'>) =>
   Math.max(0.5, num(nativeRow('projectiles', p.native!.name), 'Speed', 1000) / 100);
+/** Client FixedTravelTime (ms) replaces distance-based flight; DamageDelay follows the landing. */
+const nativeFixedFlight = (p: Pick<CombatProjectile, 'native'>) => {
+  const row = nativeRow('projectiles', p.native!.name);
+  const fixed = num(row, 'FixedTravelTime');
+  return fixed > 0 ? (fixed + num(row, 'DamageDelay')) / 1000 : 0;
+};
 const nativeCannon = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
   p.weapon === 'cannonball' && p.variant !== undefined;
 const nativeArcherTower = (p: Pick<CombatProjectile, 'weapon' | 'variant'>) =>
@@ -104,32 +130,37 @@ export function launchProjectile(
   const duration =
     shot.weapon === 'bomb'
       ? 0.33
-      : Math.max(
-          nativeCannon(shot) ||
-            nativeArcherTower(shot) ||
-            shot.weapon === 'healing' ||
-            shot.weapon === 'towerbomb' ||
-            shot.weapon === 'fireball' ||
-            shot.weapon === 'arcane' ||
-            shot.weapon === 'xbowbolt'
-            ? 0.01
-            : 0.12,
-          distance2D(shot.x - shot.fromX, shot.y - shot.fromY) /
-            (shot.weapon === 'native'
-              ? nativeSpeed(shot)
-              : nativeCannon(shot)
-                ? cannonSpeed(shot)
-                : nativeArcherTower(shot)
-                  ? archerTowerSpeed(shot)
-                  : shot.weapon === 'xbowbolt'
-                    ? xbowSpeed(shot)
-                    : shot.weapon === 'arcane'
-                      ? wizardTowerSpeed(shot)
-                      : SPEED[shot.weapon]),
-        );
+      : shot.weapon === 'native' && nativeFixedFlight(shot)
+        ? nativeFixedFlight(shot)
+        : Math.max(
+            nativeCannon(shot) ||
+              nativeArcherTower(shot) ||
+              shot.weapon === 'healing' ||
+              shot.weapon === 'towerbomb' ||
+              shot.weapon === 'fireball' ||
+              shot.weapon === 'arcane' ||
+              shot.weapon === 'xbowbolt'
+              ? 0.01
+              : 0.12,
+            distance2D(shot.x - shot.fromX, shot.y - shot.fromY) /
+              (shot.weapon === 'native'
+                ? nativeSpeed(shot)
+                : nativeCannon(shot)
+                  ? cannonSpeed(shot)
+                  : nativeArcherTower(shot)
+                    ? archerTowerSpeed(shot)
+                    : shot.weapon === 'xbowbolt'
+                      ? xbowSpeed(shot)
+                      : shot.weapon === 'arcane'
+                        ? wizardTowerSpeed(shot)
+                        : SPEED[shot.weapon]),
+          );
   const projectile: CombatProjectile = {
     ...shot,
-    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}`,
+    id: `${shot.sourceId}:${at}${shot.native?.bounce ? `:${shot.native.bounce}` : ''}${
+      // Multi-target defenses release several shots in one instant.
+      shot.defense ? `:d${(battle.nativeShotSequence = (battle.nativeShotSequence ?? 0) + 1)}` : ''
+    }`,
     launched: at,
     impact: at + duration,
     ...(shot.weapon === 'xbowbolt' || nativeCannon(shot) || nativeArcherTower(shot)
@@ -170,6 +201,8 @@ export function stepProjectiles(
   nativeImpact?: (projectile: CombatProjectile) => void,
 ) {
   const pending: CombatProjectile[] = [];
+  // Ricochets launched while resolving impacts join the list after this sample.
+  const initial = battle.projectiles?.length ?? 0;
   // Tracking bolts travel a bounded distance each sample. Moving a target does
   // not teleport the bolt or preserve an arrival deadline at its old position.
   for (const p of battle.projectiles ?? []) {
@@ -206,7 +239,8 @@ export function stepProjectiles(
       p.weapon !== 'healing' &&
       p.weapon !== 'towerbomb' &&
       p.weapon !== 'arcane' &&
-      p.weapon !== 'fireball'
+      p.weapon !== 'fireball' &&
+      !(p.defense && flag(nativeRow('projectiles', p.native!.name), 'DontTrackTarget'))
     ) {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;
@@ -306,5 +340,5 @@ export function stepProjectiles(
     }
     emit(projectileEffect(p, 'impact'));
   }
-  battle.projectiles = pending;
+  battle.projectiles = [...pending, ...(battle.projectiles ?? []).slice(initial)];
 }

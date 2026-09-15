@@ -51,7 +51,14 @@ export function stepInfernos(battle: Battle, dt: number) {
       const previous = state.scheduler.slots.map((slot) =>
         infernoDamageStage(state.scheduler.mode, slot.lockedMs, tower.level),
       );
-      const hits = tickInfernoCombat(state.scheduler, tower, battle.units, at, enabled);
+      const hits = tickInfernoCombat(
+        state.scheduler,
+        tower,
+        battle.units,
+        at,
+        enabled,
+        battle.nativeRoster ? battle : undefined,
+      );
       state.hits.push(...hits);
       state.scheduler.slots.forEach((slot, index) => {
         const stage =

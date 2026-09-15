@@ -210,6 +210,8 @@ import {
 } from './native-troops';
 import type { NativeSpellCast } from './native-spells';
 import {
+  buildingAttackIntervalScale,
+  buildingDamageScale,
   buildingImmune,
   hurtUnit,
   unitDamageScale,
@@ -220,6 +222,23 @@ import {
   type BuildingEffects,
 } from './native-status';
 import { jumpWalls, castNativeSpell, nativeSpellCanStillFight } from './native-spells';
+import {
+  activeAsDefense,
+  heroWakeSpace,
+  nativeDefense,
+  noteBuildingDamage,
+  recordWakeSpace,
+  resolveDefenseImpact,
+  spellWakeSpace,
+  stepNativeDefense,
+  stepPiercingShots,
+  troopWakeSpace,
+  type NativeDefenseContext,
+  type NativeDefenseState,
+  type NativePiercingShot,
+} from './native-defenses';
+import type { GearMode, SpellTowerMode } from './native-defense-stats';
+import { alwaysVisibleTrap } from './native-traps';
 /** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
 const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
 import { SPELL_SOURCE } from './spell-progression';
@@ -247,6 +266,12 @@ export interface Building {
   infernoMode?: InfernoMode;
   /** Battle setup ammunition; omitted means full capacity. Not a home inventory. */
   infernoAmmo?: number;
+  /** Spell Tower spell chosen by the owner; absent means Rage. */
+  spellMode?: SpellTowerMode;
+  /** Multi-Gear Tower attack mode; absent means Long Range. */
+  gearMode?: GearMode;
+  /** Town Hall 17 Inferno Artillery weapon level; absent means 1. */
+  weaponLevel?: number;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -397,6 +422,13 @@ export interface Battle {
   consumedRubble?: number[];
   /** Active Jump Spell wall set signature; a change forces ground troops to re-route. */
   jumpSignature?: string;
+  /** Town Hall 11-18 defense weapon state, keyed by building id. */
+  nativeDefenses?: Record<number, NativeDefenseState>;
+  /** Cumulative activation housing after each deployment (Eagle Artillery, Builder's Huts). */
+  nativeDeployments?: { at: number; space: number }[];
+  /** Firespitter balls in flight. */
+  nativePiercing?: NativePiercingShot[];
+  nativeShotSequence?: number;
   /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
   recalledHp?: Partial<Record<TroopKind, number[]>>;
   catalog?: CampaignCatalog;
@@ -521,6 +553,7 @@ export type FX = {
     | 'seekingairmine-place'
     | 'seekingairmine-cancel'
     | 'spell-native'
+    | 'defense-zap'
     | 'quake';
   x: number;
   y: number;
@@ -1949,6 +1982,7 @@ export class GameModel {
     h.unitId = this.state.nextId++;
     const recalled = h.recalledHp;
     delete h.recalledHp;
+    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
     b.units.push({
       id: h.unitId,
       kind: 'swordsman',
@@ -2041,7 +2075,9 @@ export class GameModel {
     return (
       !this.battle ||
       (!concealedTesla(this.battle, building) &&
-        (!isTrap(building.kind) || !!this.battle.traps[building.id]))
+        (!isTrap(building.kind) ||
+          !!this.battle.traps[building.id] ||
+          alwaysVisibleTrap(this.battle, building)))
     );
   }
   campaignLoot(index: number, catalog?: CampaignCatalog): CampaignResources {
@@ -2185,6 +2221,7 @@ export class GameModel {
     if (!b.practice) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
+    if (recalled === undefined) recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
     b.units.push({
       id: this.state.nextId++,
       kind: k,
@@ -2231,6 +2268,7 @@ export class GameModel {
       return false;
     this.recordAction({ type: 'spell', kind: k, x, y });
     this.beginFight();
+    recordWakeSpace(b, spellWakeSpace(SPELLS[k].space));
     b.spells[k]--;
     if (!b.practice) this.state.spells[k]--;
     const d = this.spellStats(k);
@@ -2254,7 +2292,7 @@ export class GameModel {
           ) &&
           distanceTo({ x, y }, v) <= d.radius
         ) {
-          this.damage(v, d.damage);
+          this.damage(v, d.damage, b.elapsed, true);
           if (v.hp > 0 && isDefense(v.kind)) {
             b.defenseStuns[v.id] = b.elapsed + LIGHTNING_STUN;
             v.cooldown = BUILDINGS[v.kind].rate!;
@@ -2277,7 +2315,7 @@ export class GameModel {
     return {
       battle: b,
       buildings: b.buildings.filter((v) => !concealedTesla(b, v)),
-      damageBuilding: (target, amount, at) => this.damage(target, amount, at),
+      damageBuilding: (target, amount, at, spell) => this.damage(target, amount, at, spell),
       effect: (fx) => this.onEffect(fx),
       nextId: () => this.state.nextId++,
       troopLevel: (kind) => this.troopLevel(kind),
@@ -2337,11 +2375,20 @@ export class GameModel {
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
     const native = b.nativeRoster ? this.nativeContext(b) : null;
+    const defenses: NativeDefenseContext | null = native
+      ? {
+          ...native,
+          defenseScale:
+            b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense,
+        }
+      : null;
     stepProjectiles(
       b,
       (target, power, at) => this.damage(target, power, at),
       this.onEffect,
-      native ? (p) => resolveNativeImpact(native, p) : undefined,
+      native
+        ? (p) => (p.defense ? resolveDefenseImpact(native, p) : resolveNativeImpact(native, p))
+        : undefined,
     );
     if (native) stepNativeBattle(native);
     stepDeathBombs(b, this.onEffect);
@@ -2355,6 +2402,7 @@ export class GameModel {
     const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     if (native) native.buildings = knownBuildings;
+    if (defenses) defenses.buildings = knownBuildings;
     // Jump Spells change every ground route while active; the set changes only at cast/expiry.
     const passableWalls = native ? jumpWalls(b) : undefined;
     if (native) {
@@ -2450,7 +2498,7 @@ export class GameModel {
           troop.prefersResources && !angry
             ? alive.filter((v) => isResourceBuilding(v.kind))
             : troop.prefersDefenses || angry
-              ? alive.filter((v) => isDefense(v.kind) && v.npc !== 'tutorial-cannon')
+              ? alive.filter((v) => activeAsDefense(b, v) && v.npc !== 'tutorial-cannon')
               : alive;
         target =
           (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
@@ -2611,23 +2659,34 @@ export class GameModel {
     stepMortarShells(b, this.onEffect);
     stepInfernos(b, dt);
     for (const tower of b.buildings) {
+      if (defenses && nativeDefense(b, tower)) {
+        stepNativeDefense(defenses, tower, dt);
+        continue;
+      }
       if (tower.kind === 'inferno') continue;
       const d = BUILDINGS[tower.kind];
+      const canAct = b.nativeRoster
+        ? tower.hp > 0 && !concealedTesla(b, tower) && !buildingImmune(b, tower)
+        : targetableBuilding(b, tower);
+      // Version 45: a Rage Spell Tower boosts damage; frost and chill slow the attack clock.
+      const boost = b.nativeRoster ? buildingDamageScale(b, tower, b.elapsed) : 1;
+      const tempo = b.nativeRoster ? 1 / buildingAttackIntervalScale(b, tower, b.elapsed) : 1;
       if (tower.kind === 'archertower' && b.archerTowerWindups) {
         stepArcherTower(
           b,
           tower,
           dt,
-          targetableBuilding(b, tower),
+          canAct,
           defenseDamage(tower.kind, tower.level) *
-            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
+            boost,
           this.onEffect,
         );
         continue;
       }
-      if (!d.damage || !targetableBuilding(b, tower) || tower.constructing || tower.upgradeEnd)
-        continue;
-      const activeDt = Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0)));
+      if (!d.damage || !canAct || tower.constructing || tower.upgradeEnd) continue;
+      const activeDt =
+        Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0))) * tempo;
       if (activeDt <= 0) continue;
       if (tower.kind === 'xbow') {
         stepXbow(
@@ -2635,7 +2694,8 @@ export class GameModel {
           tower,
           activeDt,
           defenseDamage(tower.kind, tower.level) *
-            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense),
+            (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
+            boost,
           this.onEffect,
         );
         continue;
@@ -2668,7 +2728,8 @@ export class GameModel {
           tower.npc === 'tutorial-cannon'
             ? TUTORIAL_CANNON_DAMAGE
             : defenseDamage(tower.kind, tower.level) *
-              (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense);
+              (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
+              boost;
         if (tower.kind === 'tesla') {
           hurtUnit(b, target, power);
           recordTeslaShot(b, tower, target);
@@ -2730,6 +2791,7 @@ export class GameModel {
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);
       }
     }
+    if (native) stepPiercingShots(native);
     const king = b.units.find((u) => u.hero);
     if (king && !king.spent && king.hp <= 0 && b.hero && !b.hero.abilityUsed)
       this.activateHeroAbility(true);
@@ -2841,9 +2903,10 @@ export class GameModel {
       if (building.hp > 0 && distanceTo(u, building) <= radius)
         this.damage(building, power * (building.kind === 'wall' ? 40 : 1));
   }
-  damage(b: Building, n: number, at = this.battle?.elapsed ?? 0) {
+  damage(b: Building, n: number, at = this.battle?.elapsed ?? 0, spell = false) {
     if (b.hp <= 0 || isTrap(b.kind) || (this.battle && concealedTesla(this.battle, b))) return;
     if (this.battle?.buildingEffects && buildingImmune(this.battle, b, at)) return;
+    if (this.battle?.nativeRoster && n > 0) noteBuildingDamage(this.battle, b, at, spell);
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;

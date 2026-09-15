@@ -5,6 +5,7 @@ import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './na
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
 import { concealedTesla } from './hidden-tesla';
 import { unitKindForName } from './native-units';
+import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
 import type { Battle, Building, FX, Unit } from './model';
 
@@ -41,7 +42,8 @@ export interface NativeSpellCast {
 }
 export interface NativeSpellContext {
   battle: Battle;
-  damageBuilding(target: Building, amount: number, at: number): void;
+  /** `spell` marks spell damage, which cannot trigger defenses that watch attacker hits. */
+  damageBuilding(target: Building, amount: number, at: number, spell?: boolean): void;
   effect(fx: FX): void;
   /** Creates a housing-free unit; supplied by the troop context. */
   spawn?(kind: UnitKind, level: number, x: number, y: number, at: number, owner?: number): Unit;
@@ -178,7 +180,8 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
     if (chain && cast.hits === 0)
       castNativeSpell(battle, chain, num(row, 'ChainSpellLevel', 1) || 1, cast.side, x, y, { at });
   } else {
-    harmAttackers(ctx, row, at, x, y, inRange);
+    if (num(row, 'TornadoForce1') > 0) tornadoPulse(battle, cast, row, at, radius);
+    else harmAttackers(ctx, cast, row, at, x, y, inRange);
     supportDefense(battle, row, at, x, y, radius);
   }
   if (cast.hits === 0 || randomRadius > 0)
@@ -208,7 +211,7 @@ function harmDefense(
     for (const b of battle.buildings) {
       if (b.hp <= 0 || buildingSpellImmune(row, b) || concealedTesla(battle, b)) continue;
       if (footprintDistance(x, y, b) > radius + 1e-9) continue;
-      if (damage > 0) ctx.damageBuilding(b, damage, at);
+      if (damage > 0) ctx.damageBuilding(b, damage, at, true);
       // Burning pools (Firemite) carry poison damage without building immunities.
       if (poison > 0) {
         const e = buildingEffects(battle, b);
@@ -219,7 +222,7 @@ function harmDefense(
         const ramp = flag(row, 'PoisonIncreaseSlowly')
           ? Math.min(1, (at - exposure[key] + tick) / 5)
           : 1;
-        ctx.damageBuilding(b, poison * tick * ramp, at);
+        ctx.damageBuilding(b, poison * tick * ramp, at, true);
       }
       if (quakeBuilding > 0) quake(ctx, cast, row, b, quakeBuilding, at);
       if (freeze > 0 && !overgrowth) {
@@ -270,8 +273,8 @@ function quake(
   const hits = Math.max(1, num(row, 'NumberOfHits', 1));
   if (b.kind === 'wall') {
     const extra = (num(row, 'PreferredTargetDamageMod', 5) * (n - 1) ** 2) / 100 / hits;
-    ctx.damageBuilding(b, b.maxHp * (permil / n + extra), at);
-  } else ctx.damageBuilding(b, (b.maxHp * permil) / (2 * n - 1), at);
+    ctx.damageBuilding(b, b.maxHp * (permil / n + extra), at, true);
+  } else ctx.damageBuilding(b, (b.maxHp * permil) / (2 * n - 1), at, true);
 }
 
 /** Ramping poison: exposure raises damage toward the level's maximum; slows follow the cloud. */
@@ -551,6 +554,7 @@ const pendingSummons = (cast: NativeSpellCast, row: NativeRow) =>
 /** Harmful effects of a defensive spell (Spell Tower, Town Hall weapons) on attackers. */
 function harmAttackers(
   ctx: NativeSpellContext,
+  cast: NativeSpellCast,
   row: NativeRow,
   at: number,
   x: number,
@@ -563,26 +567,50 @@ function harmAttackers(
   const freeze = seconds(row, 'FreezeTimeMS');
   const freezePercent = num(row, 'FreezePercent') / 100;
   const poison = num(row, 'PoisonDPS');
+  const quake = num(row, 'TroopDamagePermil') / 1000;
   const interval = seconds(row, 'TimeBetweenHitsMS') || 0.4;
+  const groundOnly =
+    text(row, 'TargetInfoString').includes('TYPE_GROUND') &&
+    !text(row, 'TargetInfoString').includes('AIR');
   for (const u of battle.units) {
     if (!liveAttacker(u, at) || u.native?.burrowed) continue;
+    if (u.native?.siege && flag(row, 'ImmunitySiegeMachines')) continue;
     const flying = !!TROOPS[u.kind].flying;
     if (poison > 0 && flying && !flag(row, 'PoisonAffectAir')) continue;
+    if (groundOnly && flying) continue;
     if (!inRange(distance2D(u.x - x, u.y - y))) continue;
     const scale = u.hero ? heroScale : 1;
     if (damage > 0) hurtUnit(battle, u, damage * scale, at);
+    if (quake > 0) {
+      // Repeated Spell Tower quakes on one unit deal 1/(2n-1) of the damage (official wiki).
+      const e = unitEffects(u);
+      const seen = (e.quakeCasts ??= []);
+      if (!seen.includes(cast.id)) seen.push(cast.id);
+      const n = seen.indexOf(cast.id) + 1;
+      hurtUnit(battle, u, (u.maxHp * quake) / (2 * n - 1), at);
+    }
     if (poison > 0) {
       const e = unitEffects(u);
       const since = e.poison && e.poison.until + 6 >= at ? e.poison.since : at;
+      // Overlapping clouds never stack: the unit takes poison for the time since its last tick.
+      const last = e.poison?.tickAt;
+      const exposure = last !== undefined && last > at - interval ? at - last : interval;
       e.poison = {
         until: at + Math.max(seconds(row, 'BoostTimeMS'), interval),
-        speed: num(row, 'SpeedBoost') / 100,
-        attackSpeed: num(row, 'AttackSpeedBoost') / 100,
-        dps: poison,
+        speed: Math.min(
+          e.poison && e.poison.until > at ? e.poison.speed : 0,
+          num(row, 'SpeedBoost') / 100,
+        ),
+        attackSpeed: Math.min(
+          e.poison && e.poison.until > at ? e.poison.attackSpeed : 0,
+          num(row, 'AttackSpeedBoost') / 100,
+        ),
+        dps: Math.max(poison, e.poison && e.poison.until > at ? e.poison.dps : 0),
         since,
+        tickAt: at,
       };
       const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - since + interval) / 5) : 1;
-      hurtUnit(battle, u, poison * interval * ramp * scale, at);
+      if (exposure > 0) hurtUnit(battle, u, poison * exposure * ramp * scale, at);
     }
     if (freeze > 0) {
       const e = unitEffects(u);

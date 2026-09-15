@@ -1,4 +1,5 @@
 import { maxSpellLevel } from './spell-progression';
+import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
@@ -302,6 +303,9 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
+      !validSpellTowerMode(b.spellMode, b.kind, b.level) ||
+      !validGearMode(b.gearMode, b.kind) ||
+      !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
       b.infernoAmmo !== undefined ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       !Number.isInteger(b.level) ||

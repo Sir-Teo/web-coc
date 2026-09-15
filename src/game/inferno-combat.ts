@@ -1,7 +1,7 @@
-import { unitHidden } from './native-status';
+import { buildingDamageScale, hurtUnit, unitHidden } from './native-status';
 import { TROOPS } from './data';
 import { distance2D } from './distance';
-import type { Unit } from './model';
+import type { Battle, Building, Unit } from './model';
 import { infernoStats } from './inferno-weapon';
 import {
   infernoTargetKilled,
@@ -32,6 +32,8 @@ export function tickInfernoCombat(
   units: readonly Unit[],
   at: number,
   enabled = true,
+  /** Version 45+: shields and immunities apply, and a Rage Spell Tower boosts the beam. */
+  native?: Battle,
 ): InfernoHit[] {
   if (!Number.isFinite(at) || at < 0) throw new Error('Invalid Inferno combat time');
   const stats = infernoStats(state.level);
@@ -61,9 +63,17 @@ export function tickInfernoCombat(
     enabled,
   )) {
     const target = byId.get(pulse.targetId)!;
-    const damage = (pulse.dps * pulse.intervalMs) / 1000;
-    const killed = target.hp <= damage;
-    target.hp = Math.max(0, target.hp - damage);
+    let damage = (pulse.dps * pulse.intervalMs) / 1000;
+    let killed: boolean;
+    if (native) {
+      damage *= buildingDamageScale(native, tower as Building, at);
+      hurtUnit(native, target, damage, at);
+      killed = target.hp <= 0;
+      if (killed) target.hp = 0;
+    } else {
+      killed = target.hp <= damage;
+      target.hp = Math.max(0, target.hp - damage);
+    }
     if (killed) {
       target.defeatedAt ??= at;
       infernoTargetKilled(state, pulse.slot);

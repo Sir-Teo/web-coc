@@ -168,6 +168,8 @@ export interface NativeUnitStats {
   ability: string;
   abilityLevel: number;
   cooldownOverride: number;
+  /** Heat-map weight an enemy group-targeting defense (Eagle Artillery) assigns to this unit. */
+  enemyGroupWeight: number;
 }
 const statsCache = new Map<string, NativeUnitStats>();
 /** Parsed once per character level; values keep client units converted to tiles and seconds. */
@@ -264,6 +266,7 @@ export function nativeUnitStats(kind: string, level = 1): NativeUnitStats {
     ability: text(row, 'SpecialAbilities'),
     abilityLevel: num(row, 'SpecialAbilitiesLevel', 1) || 1,
     cooldownOverride: seconds(row, 'CoolDownOverride'),
+    enemyGroupWeight: num(row, 'EnemyGroupWeight', 100),
   };
   statsCache.set(key, stats);
   return stats;

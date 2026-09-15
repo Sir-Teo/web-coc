@@ -12,13 +12,23 @@ export interface UnitEffects {
   /** Strongest active friendly boost; rage-like spells do not stack with each other. */
   boost?: { until: number; speed: number; damage: number; attackSpeed: number };
   /** Enemy poison slows and damages over time. */
-  poison?: { until: number; speed: number; attackSpeed: number; dps: number; since: number };
+  poison?: {
+    until: number;
+    speed: number;
+    attackSpeed: number;
+    dps: number;
+    since: number;
+    /** Last poison damage sample; overlapping clouds share one damage clock. */
+    tickAt?: number;
+  };
   jumpUntil?: number;
   invisibleUntil?: number;
   shield?: { until: number; percent: number };
   /** Temporary health granted by life auras; damage consumes it before hitpoints. */
   extraHp?: { until: number; amount: number };
   immortalUntil?: number;
+  /** Defensive earthquake casts already felt, for 1/(2n-1) repeated damage. */
+  quakeCasts?: number[];
 }
 export interface BuildingEffects {
   frozenUntil?: number;
