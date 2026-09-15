@@ -8,6 +8,7 @@ import {
   SPELL_WAKE_MULTIPLIER,
   isNativeDefenseKind,
   monolithProjectile,
+  nativeGearedWeapon,
   nativeWeapon,
   revengeTier,
   spellTowerSpell,
@@ -85,9 +86,18 @@ const liveTarget = (u: Unit, at: number) =>
 
 /** Defenses the version 45 engine owns; campaign NPC archetypes keep their own rules. */
 export const nativeDefense = (battle: Battle, tower: Building): boolean =>
-  !!battle.nativeRoster && !tower.npc && isNativeDefenseKind(tower.kind);
+  !!battle.nativeRoster &&
+  !tower.npc &&
+  (isNativeDefenseKind(tower.kind) ||
+    (!!tower.geared &&
+      (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')));
 
 export function weaponFor(tower: Building): NativeWeapon | null {
+  if (
+    tower.geared &&
+    (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')
+  )
+    return nativeGearedWeapon(tower.kind, tower.level);
   const kind = tower.kind as NativeDefenseKind;
   if (kind === 'spelltower')
     return nativeWeapon(kind, tower.level, { mode: tower.spellMode ?? 'rage' });
@@ -444,6 +454,7 @@ function fire(
     bounceDistance: tiles(row, 'MaxBounceDistance'),
     bounceFactor: 1 - num(row, 'BounceDamageReductionPercent') / 100,
     ...(weapon.hpPermil ? { hpPermil: weapon.hpPermil } : {}),
+    ...(tower.kind === 'mortar' && weapon.splash ? { splash: weapon.splash } : {}),
     ...(tower.kind === 'scattershot' ? { scatter: { level: tower.level, angle: 0 } } : {}),
     ...(text(row, 'HitSpell') && tower.kind !== 'scattershot'
       ? { spell: { name: text(row, 'HitSpell'), level: num(row, 'HitSpellLevel', 1) || 1 } }
@@ -785,6 +796,18 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
     ctx.effect({ type: 'blast', x: p.x, y: p.y, radius: shot.shock.outer, color: 0xffc04a });
   }
   if (shot.scatter && struck) scatter(battle, p, target!, shot, at);
+  if (shot.splash) {
+    // Geared-up Mortar shells: ground splash around the landing point (the target is included).
+    for (const u of battle.units)
+      if (
+        liveTarget(u, at) &&
+        !air(u) &&
+        !u.native?.burrowed &&
+        u.id !== (struck ? target!.id : -1) &&
+        distance2D(u.x - p.x, u.y - p.y) <= shot.splash + EPS
+      )
+        hurtUnit(battle, u, p.damage, at);
+  }
   if (shot.bounces > (p.native?.bounce ?? 0) && shot.bounceDistance > 0) {
     const from = { x: p.x, y: p.y };
     const next = battle.units

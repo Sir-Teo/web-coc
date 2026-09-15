@@ -64,6 +64,8 @@ export interface NativeDefenseShot {
   hpPermil?: number;
   /** Eagle Artillery shockwave outside the main shell radius. */
   shock?: { damage: number; inner: number; outer: number; pushback: number; housing: number };
+  /** Ground splash radius (geared-up Mortar). */
+  splash?: number;
   /** Scattershot fragment cone behind the impact, limited to the struck layer. */
   scatter?: { level: number; angle: number };
   /** Spell released where the shot lands (Spell Tower, Inferno Artillery pools). */

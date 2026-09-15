@@ -305,12 +305,15 @@ export function validateReplay(value: unknown): value is ReplayData {
       ((b.spellMode !== undefined ||
         b.gearMode !== undefined ||
         b.weaponLevel !== undefined ||
+        b.geared !== undefined ||
         b.kind === 'tornadotrap' ||
         b.kind === 'gigabomb') &&
         value.version < 45) ||
       !validSpellTowerMode(b.spellMode, b.kind, b.level) ||
       !validGearMode(b.gearMode, b.kind) ||
       !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
+      (b.geared !== undefined &&
+        (b.geared !== true || !['cannon', 'archertower', 'mortar'].includes(b.kind))) ||
       (b.infernoAmmo !== undefined && (b.kind !== 'inferno' || value.version < 43)) ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       ((b.kind === 'inferno' || b.infernoMode !== undefined) && value.version < 39) ||

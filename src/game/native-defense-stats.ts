@@ -216,6 +216,17 @@ function buildWeapon(
   return weapon;
 }
 
+/** Geared-up Cannon (burst), Archer Tower (fast attack) and Mortar (burst) use the Alt* columns. */
+const GEARED_SOURCE = { cannon: 'Cannon', archertower: 'Archer Tower', mortar: 'Mortar' } as const;
+export function nativeGearedWeapon(kind: keyof typeof GEARED_SOURCE, level: number): NativeWeapon {
+  const key = `geared:${kind}/${level}`;
+  if (cache.has(key)) return cache.get(key)!;
+  const name = GEARED_SOURCE[kind];
+  const weapon: NativeWeapon = weaponBase(nativeRow('buildings', name, level), name, level, true);
+  cache.set(key, weapon);
+  return weapon;
+}
+
 /** Spell Tower levels unlock one additional spell each (Rage, Poison, Invisibility, Earthquake). */
 export function spellTowerModes(level: number): SpellTowerMode[] {
   const modes: SpellTowerMode[] = [];
@@ -321,3 +332,23 @@ export const validWeaponLevel = (value: unknown, kind: string, level: number) =>
     Number.isInteger(value) &&
     (value as number) >= 1 &&
     (value as number) <= townHallWeaponLevels(level));
+
+/** Next Town Hall weapon level (Inferno Artillery 2-5): client weapons.csv BuildCost/BuildTime. */
+export function townHallWeaponUpgrade(level: number, weaponLevel = 1) {
+  const weapon = text(nativeRow('buildings', 'Town Hall', level), 'Weapon');
+  if (!weapon || weaponLevel >= nativeLevelCount('weapons', weapon)) return null;
+  const row = nativeRow('weapons', weapon, weaponLevel + 1);
+  return {
+    level: weaponLevel + 1,
+    cost: num(row, 'BuildCost'),
+    seconds:
+      num(row, 'BuildTimeD') * 86400 +
+      num(row, 'BuildTimeH') * 3600 +
+      num(row, 'BuildTimeM') * 60 +
+      num(row, 'BuildTimeS'),
+    resource:
+      ({ Gold: 'gold', Elixir: 'elixir', DarkElixir: 'dark' } as const)[
+        text(row, 'BuildResource') as 'Gold' | 'Elixir' | 'DarkElixir'
+      ] ?? 'gold',
+  };
+}

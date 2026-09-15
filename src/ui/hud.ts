@@ -84,6 +84,27 @@ import {
   type ResearchKind,
 } from '../game/data';
 import { GameModel, formatTime, BATTLE_SECONDS, type Building } from '../game/model';
+import {
+  spellTowerModes,
+  townHallWeaponUpgrade,
+  type SpellTowerMode,
+} from '../game/native-defense-stats';
+import {
+  MERGED_KINDS,
+  gearUpQuote,
+  isGearable,
+  isMergedKind,
+  mergeInputs,
+  mergeQuote,
+  type MergedKind,
+} from '../game/native-merges';
+
+const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
+  rage: 'Rage',
+  poison: 'Poison',
+  invisibility: 'Invisibility',
+  earthquake: 'Earthquake',
+};
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
@@ -622,6 +643,23 @@ export class HUD {
         break;
       case 'xbow-mode':
         this.model.toggleXbowMode();
+        break;
+      case 'merge': {
+        const [result, anchor] = arg.split('.');
+        if (m.merge(result as MergedKind, Number(anchor))) this.audio.play('build');
+        break;
+      }
+      case 'gear-up':
+        if (m.gearUp(Number(arg))) this.audio.play('build');
+        break;
+      case 'th-weapon':
+        if (m.upgradeTownHallWeapon(Number(arg))) this.audio.play('build');
+        break;
+      case 'spelltower-mode':
+        this.model.cycleSpellTowerMode();
+        break;
+      case 'gear-mode':
+        this.model.toggleGearMode();
         break;
       case 'wall-rotate':
         m.rotateWallMove();
@@ -1271,6 +1309,39 @@ export class HUD {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
   }
 
+  /** Merge and gear-up actions for maxed Cannons, Archer Towers, Mortars and Wizard Towers. */
+  private mergeButtons(b: Building) {
+    const m = this.model;
+    if (b.upgradeEnd || b.constructing) return '';
+    let html = '';
+    for (const result of MERGED_KINDS) {
+      if (!mergeInputs(result).some((input) => input.kind === b.kind)) continue;
+      if (m.maxCount(result) === 0) continue;
+      const candidate = m.mergeCandidates(result, b.id);
+      if (!candidate.inputs?.includes(b)) continue;
+      const quote = mergeQuote(result);
+      html += button(
+        `merge:${result}.${b.id}`,
+        `<span>${icon('Layers', 19)} ${BUILDINGS[result].name}</span><small>${resource(quote.resource)} ${n(quote.cost)}</small>`,
+        'game-btn blue',
+        `aria-label="Merge into ${BUILDINGS[result].name}"`,
+      );
+    }
+    if (isGearable(b.kind) && !b.geared) {
+      const quote = gearUpQuote(b.kind);
+      const geared = m.state.buildings.filter(
+        (v) => v.kind === b.kind && (v.geared || v.improving === 'gearup'),
+      ).length;
+      if (quote && b.level >= quote.level && geared < quote.limit)
+        html += button(
+          `gear-up:${b.id}`,
+          `<span>${icon('Gauge', 19)} Gear Up</span><small>${resource(quote.resource)} ${n(quote.cost)}</small>`,
+          'game-btn blue',
+        );
+    }
+    return html;
+  }
+
   // ------------------------------------------------------- anchored context
   private context() {
     const m = this.model;
@@ -1315,7 +1386,28 @@ export class HUD {
                   'game-btn blue',
                   `aria-label="Switch X-Bow to ${b.xbowMode === 'both' ? 'ground' : 'ground and air'} mode"`,
                 )
-              : '';
+              : b.kind === 'spelltower' && !b.constructing
+                ? button(
+                    'spelltower-mode',
+                    `${icon('Sparkles', 21)}<span>${SPELL_TOWER_LABEL[b.spellMode ?? 'rage']}</span>`,
+                    'game-btn blue',
+                    `aria-label="Change the Spell Tower spell" ${spellTowerModes(b.level).length < 2 ? 'disabled' : ''}`,
+                  )
+                : b.kind === 'multigeartower' && !b.constructing
+                  ? button(
+                      'gear-mode',
+                      `${icon(b.gearMode === 'fast' ? 'Zap' : 'Target', 21)}<span>${b.gearMode === 'fast' ? 'Fast Attack' : 'Long Range'}</span>`,
+                      'game-btn blue',
+                      `aria-label="Switch Multi-Gear Tower to ${b.gearMode === 'fast' ? 'Long Range' : 'Fast Attack'} mode"`,
+                    )
+                  : b.kind === 'firespitter' && !b.constructing
+                    ? button(
+                        'sweeper-rotate',
+                        `${icon('RotateCw', 21)}<span>Rotate</span>`,
+                        'game-btn blue',
+                        'aria-label="Rotate Firespitter 90 degrees" title="Rotate clockwise · R"',
+                      )
+                    : '';
     if (m.editing && b.kind !== 'wall')
       return `<div class="building-context compact" data-anchor="${b.id}"><div class="context-info"><h2>${BUILDINGS[b.kind].name}</h2><span>Level ${b.level} <i>·</i> drag to reposition</span></div>${rotate}</div>`;
     if (b.kind === 'wall' && !b.upgradeEnd) return this.wallContext(b);
@@ -1336,7 +1428,7 @@ export class HUD {
                 `upgrade:${b.id}`,
                 `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
               )
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   private wallMoveContext() {
@@ -1639,6 +1731,18 @@ export class HUD {
         const locked = limit === 0;
         const full = !locked && count >= limit;
         const afford = m.state[d.resource] >= d.cost;
+        if (isMergedKind(k))
+          return `<article class="shop-tile unavailable"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(
+            `build:${k}`,
+            `${icon('Layers', 13)} Merge ${mergeInputs(k)
+              .map(
+                (input) =>
+                  `${input.geared ? 'geared ' : ''}${BUILDINGS[input.kind].name} ${input.level}`,
+              )
+              .join(' + ')}`,
+            'game-btn stone shop-buy',
+            'disabled',
+          )}</article>`;
         return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : d.cost === 0 ? 'Free' : `${resource(d.resource)} ${n(d.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
       })
       .join('');

@@ -237,7 +237,23 @@ import {
   type NativeDefenseState,
   type NativePiercingShot,
 } from './native-defenses';
-import type { GearMode, SpellTowerMode } from './native-defense-stats';
+import {
+  MERGED_KINDS,
+  consumedByMerges,
+  isMergedKind,
+  gearUpQuote,
+  isGearable,
+  mergeInputs,
+  mergeQuote,
+  townHallMergeInputs,
+  type MergedKind,
+} from './native-merges';
+import {
+  spellTowerModes,
+  townHallWeaponUpgrade,
+  type GearMode,
+  type SpellTowerMode,
+} from './native-defense-stats';
 import { alwaysVisibleTrap } from './native-traps';
 /** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
 const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
@@ -272,6 +288,10 @@ export interface Building {
   gearMode?: GearMode;
   /** Town Hall 17 Inferno Artillery weapon level; absent means 1. */
   weaponLevel?: number;
+  /** A running builder job that improves the building without raising its level. */
+  improving?: 'weapon' | 'gearup';
+  /** Geared-up Cannon, Archer Tower or Mortar: permanently uses the client Alt* attack. */
+  geared?: true;
 }
 export interface QueueItem {
   kind: TroopKind;
@@ -697,8 +717,124 @@ export class GameModel {
   maxLevel(kind: BuildingKind) {
     return maxLevelFor(kind, this.townhallLevel);
   }
+  /** Client counts minus the inputs merged defenses and the Town Hall 17 merge consumed. */
   maxCount(kind: BuildingKind) {
-    return maxCountFor(kind, this.townhallLevel);
+    return Math.max(
+      0,
+      maxCountFor(kind, this.townhallLevel) -
+        consumedByMerges(
+          kind,
+          this.state.buildings,
+          // A running Town Hall upgrade has already merged its inputs.
+          this.townhallLevel + (this.townhall?.upgradeEnd && !this.townhall.improving ? 1 : 0),
+        ),
+    );
+  }
+  /** Merge inputs available now for a merged defense, or the reason it cannot start. */
+  mergeCandidates(result: MergedKind, anchor?: number) {
+    const quote = mergeQuote(result);
+    const inputs = mergeInputs(result);
+    if (this.townhallLevel < quote.townhall)
+      return { issue: `Requires Town Hall ${quote.townhall}` };
+    if (this.countOf(result) >= this.maxCount(result)) return { issue: 'All merges built' };
+    const chosen: Building[] = [];
+    const pool = this.state.buildings
+      .filter((b) => !b.upgradeEnd && !b.constructing)
+      .sort((a, b) => Number(b.id === anchor) - Number(a.id === anchor) || a.id - b.id);
+    for (const input of inputs) {
+      const match = pool.find(
+        (b) =>
+          !chosen.includes(b) &&
+          b.kind === input.kind &&
+          b.level >= input.level &&
+          !!b.geared === input.geared,
+      );
+      if (!match)
+        return {
+          issue: `Needs ${input.geared ? 'a geared-up ' : ''}${BUILDINGS[input.kind].name} level ${input.level}`,
+        };
+      chosen.push(match);
+    }
+    return { inputs: chosen, quote };
+  }
+  /** Merge two maxed defenses into one merged defense at the first input's position. */
+  merge(result: MergedKind, anchor?: number) {
+    if (this.battle) return false;
+    const candidates = this.mergeCandidates(result, anchor);
+    if (!candidates.inputs) {
+      this.notify(candidates.issue!);
+      return false;
+    }
+    const { inputs, quote } = candidates;
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[quote.resource] < quote.cost) {
+      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      return false;
+    }
+    const [first] = inputs;
+    if (BUILDINGS[first.kind].size !== BUILDINGS[result].size) return false;
+    this.cancelNativeHandling();
+    this.state[quote.resource] -= quote.cost;
+    const removed = new Set(inputs.map((b) => b.id));
+    this.state.buildings = this.state.buildings.filter((b) => !removed.has(b.id));
+    const merged = makeBuilding(this.state.nextId++, result, first.x, first.y, 1);
+    merged.constructing = true;
+    merged.upgradeStart = this.clock;
+    merged.upgradeEnd = this.clock + quote.seconds * 1000;
+    this.state.buildings.push(merged);
+    this.selected = merged.id;
+    this.notify(`Merging into ${BUILDINGS[result].name} — ${formatTime(quote.seconds)}.`);
+    this.changed();
+    return true;
+  }
+  /** Master Builder gear-up. This village has no Builder Base, so its prerequisite is waived. */
+  gearUp(id: number) {
+    if (this.battle) return false;
+    const b = this.state.buildings.find((v) => v.id === id);
+    if (!b || !isGearable(b.kind) || b.geared || b.upgradeEnd || b.constructing) return false;
+    const quote = gearUpQuote(b.kind);
+    if (!quote || b.level < quote.level) return false;
+    if (
+      this.state.buildings.filter(
+        (v) => v.kind === b.kind && (v.geared || v.improving === 'gearup'),
+      ).length >= quote.limit
+    ) {
+      this.notify(`Only ${quote.limit} ${BUILDINGS[b.kind].name} can be geared up.`);
+      return false;
+    }
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[quote.resource] < quote.cost) {
+      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      return false;
+    }
+    this.state[quote.resource] -= quote.cost;
+    b.improving = 'gearup';
+    b.upgradeStart = this.clock;
+    b.upgradeEnd = this.clock + quote.seconds * 1000;
+    this.notify(`Gearing up ${BUILDINGS[b.kind].name} — ${formatTime(quote.seconds)}.`);
+    this.changed();
+    return true;
+  }
+  /** Why the Town Hall cannot move to its next level yet (merges), or null. */
+  townHallMergeIssue(level = this.townhallLevel) {
+    for (const result of MERGED_KINDS) {
+      const available = maxCountFor(result, level);
+      if (available > 0 && this.countOf(result) < available)
+        return `Build all ${available} ${BUILDINGS[result].name} merges first.`;
+    }
+    for (const input of townHallMergeInputs(level + 1)) {
+      const ready = this.state.buildings.some(
+        (b) => b.kind === input.kind && b.level >= input.level && !b.upgradeEnd && !b.constructing,
+      );
+      if (!ready) return `Needs ${BUILDINGS[input.kind].name} level ${input.level} to merge.`;
+    }
+    return null;
   }
   countOf(kind: BuildingKind) {
     return this.state.buildings.filter((b) => b.kind === kind).length;
@@ -1009,7 +1145,10 @@ export class GameModel {
         ? Math.max(0, Math.min(productionInterval, (now - b.upgradeEnd) / 1000))
         : productionInterval;
       if (b.upgradeEnd && b.upgradeEnd <= now) {
-        if (!b.constructing) b.level++;
+        if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;
+        else if (b.improving === 'gearup') b.geared = true;
+        else if (!b.constructing) b.level++;
+        delete b.improving;
         b.constructing = false;
         b.upgradeEnd = undefined;
         b.upgradeStart = undefined;
@@ -1183,6 +1322,10 @@ export class GameModel {
   beginBuild(kind: BuildingKind) {
     if (this.battle) return;
     const d = BUILDINGS[kind];
+    if (isMergedKind(kind))
+      return this.notify(
+        `${d.name} is created by merging defenses. Select a maxed input to merge.`,
+      );
     const limit = this.maxCount(kind);
     if (limit === 0)
       return this.notify(`Upgrade your Town Hall to unlock the ${d.name.toLowerCase()}.`);
@@ -1223,6 +1366,7 @@ export class GameModel {
       return true;
     }
     if (
+      isMergedKind(kind) ||
       this.state[d.resource] < d.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
       (!isTrap(kind) && this.busy >= this.builders)
@@ -1442,13 +1586,49 @@ export class GameModel {
       return this.notify('All builders are busy.');
     const d = BUILDINGS[b.kind],
       cost = this.upgradeCost(b);
+    if (b.kind === 'townhall') {
+      const issue = this.townHallMergeIssue(b.level);
+      if (issue) return this.notify(issue);
+    }
     if (this.state[d.resource] < cost)
       return this.notify(`You need ${cost.toLocaleString()} ${d.resource}.`);
     this.state[d.resource] -= cost;
+    if (b.kind === 'townhall') {
+      // The Town Hall 17 upgrade merges the level 7 Eagle Artillery into the Inferno Artillery.
+      for (const input of townHallMergeInputs(b.level + 1)) {
+        const merged = this.state.buildings.find(
+          (v) => v.kind === input.kind && v.level >= input.level && !v.upgradeEnd,
+        );
+        if (merged) this.state.buildings = this.state.buildings.filter((v) => v !== merged);
+      }
+    }
     b.upgradeStart = this.clock;
     b.upgradeEnd = this.clock + this.upgradeSeconds(b) * 1000;
     this.notify(`Upgrading ${d.name} to level ${b.level + 1}.`);
     this.changed();
+  }
+  /** Town Hall 17: upgrade the Inferno Artillery weapon with a builder. */
+  upgradeTownHallWeapon(id: number) {
+    if (this.battle) return false;
+    const b = this.state.buildings.find((v) => v.id === id);
+    if (!b || b.kind !== 'townhall' || b.upgradeEnd || b.constructing) return false;
+    const next = townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1);
+    if (!next) return false;
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[next.resource] < next.cost) {
+      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      return false;
+    }
+    this.state[next.resource] -= next.cost;
+    b.improving = 'weapon';
+    b.upgradeStart = this.clock;
+    b.upgradeEnd = this.clock + next.seconds * 1000;
+    this.notify(`Upgrading the Inferno Artillery to level ${next.level}.`);
+    this.changed();
+    return true;
   }
   finish(id: number) {
     const b = this.state.buildings.find((b) => b.id === id);
@@ -1515,7 +1695,9 @@ export class GameModel {
       id: b.id,
       x: b.x,
       y: b.y,
-      ...(b.kind === 'airsweeper' ? { direction: b.direction ?? 0 } : {}),
+      ...(b.kind === 'airsweeper' || b.kind === 'firespitter'
+        ? { direction: b.direction ?? 0 }
+        : {}),
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
       ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
       ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
@@ -1550,13 +1732,42 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Spell Tower: cycle through the spells its level has unlocked. */
+  cycleSpellTowerMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'spelltower' || b.constructing) return false;
+    const modes = spellTowerModes(b.level);
+    if (modes.length < 2) return false;
+    b.spellMode = modes[(modes.indexOf(b.spellMode ?? 'rage') + 1) % modes.length];
+    this.changed();
+    return true;
+  }
+  /** Multi-Gear Tower: Long Range or Fast Attack. */
+  toggleGearMode() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'multigeartower' || b.constructing) return false;
+    b.gearMode = b.gearMode === 'fast' ? 'long' : 'fast';
+    this.changed();
+    return true;
+  }
   rotateSweeper() {
     if (this.battle || this.placement || this.wallMove) return false;
     const b = this.state.buildings.find((v) => v.id === this.selected);
-    if (!b || b.kind !== 'airsweeper' || b.constructing || !validDirection(b.direction))
+    if (
+      !b ||
+      (b.kind !== 'airsweeper' && b.kind !== 'firespitter') ||
+      b.constructing ||
+      !validDirection(b.direction)
+    )
       return false;
     if (this.editing) this.recordPositions();
-    b.direction = ((b.direction ?? 0) + 1) % 8;
+    // The Firespitter turns in 90-degree steps along tile edges (client AimRotateStep 90).
+    b.direction =
+      b.kind === 'firespitter'
+        ? (Math.floor((b.direction ?? 0) / 2) * 2 + 2) % 8
+        : ((b.direction ?? 0) + 1) % 8;
     this.changed();
     return true;
   }
@@ -1594,7 +1805,8 @@ export class GameModel {
     for (const [i, b] of this.state.buildings.entries()) {
       b.x = placed[i].x;
       b.y = placed[i].y;
-      if (b.kind === 'airsweeper') b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
+      if (b.kind === 'airsweeper' || b.kind === 'firespitter')
+        b.direction = moved.get(b.id)?.direction ?? b.direction ?? 0;
       if (b.kind === 'skeletontrap')
         b.skeletonMode = moved.get(b.id)?.skeletonMode ?? b.skeletonMode ?? 'ground';
       if (b.kind === 'inferno')
