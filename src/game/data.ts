@@ -32,10 +32,13 @@ import { BUILDING_LEVELS } from './progression';
 import { troopProgression } from './troop-progression';
 import {
   spellProgression,
+  spellFactory,
+  SPELL_SOURCE,
   HEAL_PULSES,
   SPELL_PULSE_INTERVAL,
   RAGE_PULSES,
 } from './spell-progression';
+import { nativeRow, num, seconds as nativeSeconds, tiles as nativeTiles } from './native-data';
 import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
 export type BuildingKind = LegacyBuildingKind | ExtraBuildingKind;
 export type LegacyBuildingKind =
@@ -85,7 +88,24 @@ export type LegacyTroopKind =
   | 'healer'
   | 'dragon'
   | 'pekka';
-export type SpellKind = 'rage' | 'heal' | 'lightning';
+export type LegacySpellKind = 'rage' | 'heal' | 'lightning';
+export type SpellKind =
+  | LegacySpellKind
+  | 'jump'
+  | 'freeze'
+  | 'clone'
+  | 'invisibility'
+  | 'recall'
+  | 'revive'
+  | 'totem'
+  | 'poison'
+  | 'earthquake'
+  | 'haste'
+  | 'skeleton'
+  | 'bat'
+  | 'overgrowth'
+  | 'iceblock'
+  | 'angry';
 export type ResearchKind = TroopKind | SpellKind;
 export type Resource = 'gold' | 'elixir' | 'dark';
 /** Which layer a defence can shoot at. Troops without `flying` are ground units. */
@@ -917,7 +937,91 @@ export interface SpellDef {
   duration: number;
   effect: string;
 }
+/** Client-described spells beyond the three audited originals; stats come from their level rows. */
+const NATIVE_SPELL_TEXT: Record<Exclude<SpellKind, LegacySpellKind>, [string, string, string]> = {
+  jump: ['Jump Spell', 'PATHING', 'Ground troops hop over the walls inside its ring.'],
+  freeze: [
+    'Freeze Spell',
+    'CONTROL',
+    'Freezes defenses and defending units in place for a few seconds.',
+  ],
+  clone: [
+    'Clone Spell',
+    'SUPPORT',
+    'Copies troops that enter the ring, up to its housing capacity. Copies last 30 seconds.',
+  ],
+  invisibility: [
+    'Invisibility Spell',
+    'SUPPORT',
+    'Everything inside the ring becomes invisible and cannot be targeted.',
+  ],
+  recall: [
+    'Recall Spell',
+    'UTILITY',
+    'Returns troops inside the ring to your deployment bar so you can place them again.',
+  ],
+  revive: [
+    'Revive Spell',
+    'HEROES',
+    'Brings the nearest knocked-out hero back into the fight with part of their health.',
+  ],
+  totem: [
+    'Totem Spell',
+    'CONTROL',
+    'Stuns nearby defenses and plants a Totem that draws their fire.',
+  ],
+  poison: [
+    'Poison Spell',
+    'DIRECT',
+    'A toxic cloud that damages and slows defending troops and heroes.',
+  ],
+  earthquake: [
+    'Earthquake Spell',
+    'DIRECT',
+    'Shakes buildings for a share of their maximum hitpoints. Repeated quakes weaken; walls crack.',
+  ],
+  haste: ['Haste Spell', 'BOOST', 'Speeds up troops in the ring without raising their damage.'],
+  skeleton: ['Skeleton Spell', 'SUMMON', 'Summons a squad of shielded Skeletons where it lands.'],
+  bat: ['Bat Spell', 'SUMMON', 'Summons a swarm of Bats that hunt defenses.'],
+  overgrowth: [
+    'Overgrowth Spell',
+    'CONTROL',
+    'Wraps buildings in roots: defenses stop firing and nothing inside can be damaged.',
+  ],
+  iceblock: [
+    'Ice Block Spell',
+    'SUPPORT',
+    'Encases your troops in ice; they pause but block most incoming damage.',
+  ],
+  angry: [
+    'Angry Spell',
+    'CONTROL',
+    'Enraged troops switch to attacking defenses for several seconds.',
+  ],
+};
+function nativeSpellDef(kind: Exclude<SpellKind, LegacySpellKind>): SpellDef {
+  const row = nativeRow('spells', SPELL_SOURCE[kind], 1);
+  const [name, role, description] = NATIVE_SPELL_TEXT[kind];
+  const hits = Math.max(1, num(row, 'NumberOfHits', 1));
+  return {
+    name,
+    role,
+    description,
+    cost: 0,
+    space: num(row, 'HousingSpace', 1),
+    time: 0,
+    radius: nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius'),
+    duration: hits > 1 ? (hits - 1) * nativeSeconds(row, 'TimeBetweenHitsMS') : 0,
+    effect: '',
+  };
+}
 export const SPELLS: Record<SpellKind, SpellDef> = {
+  ...(Object.fromEntries(
+    (Object.keys(NATIVE_SPELL_TEXT) as Exclude<SpellKind, LegacySpellKind>[]).map((kind) => [
+      kind,
+      nativeSpellDef(kind),
+    ]),
+  ) as Record<Exclude<SpellKind, LegacySpellKind>, SpellDef>),
   rage: {
     name: 'Rage Spell',
     role: 'BOOST',
@@ -958,13 +1062,67 @@ export function spellStatsAt(kind: SpellKind, level = 1) {
   return {
     ...SPELLS[kind],
     ...stats,
-    effect:
-      kind === 'lightning'
-        ? `${stats.damage} damage · 0.1s stun`
-        : kind === 'heal'
-          ? `${stats.heal * HEAL_PULSES} total healing`
-          : `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`,
+    ...(kind === 'rage' || kind === 'heal' || kind === 'lightning'
+      ? {}
+      : { radius: nativeSpellRadius(kind, level) }),
+    effect: spellEffectText(kind, level, stats),
   };
+}
+const nativeSpellRadius = (kind: SpellKind, level: number) => {
+  const row = nativeRow('spells', SPELL_SOURCE[kind], level);
+  return nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
+};
+function spellEffectText(
+  kind: SpellKind,
+  level: number,
+  stats: { damage: number; heal: number; damageBoost: number; speedBoost: number },
+) {
+  const row = nativeRow('spells', SPELL_SOURCE[kind], level);
+  const hits = Math.max(1, num(row, 'NumberOfHits', 1));
+  const span = ((hits - 1) * num(row, 'TimeBetweenHitsMS')) / 1000;
+  switch (kind) {
+    case 'lightning':
+      return `${stats.damage} damage · 0.1s stun`;
+    case 'heal':
+      return `${stats.heal * HEAL_PULSES} total healing`;
+    case 'rage':
+      return `+${stats.damageBoost}% damage · +${stats.speedBoost / 8} tiles/s`;
+    case 'jump':
+      return `${Math.round(span)}s of wall jumping`;
+    case 'freeze':
+      return `${num(row, 'FreezeTimeMS') / 1000}s freeze`;
+    case 'clone':
+      return `${num(row, 'DuplicateHousing')} housing cloned · 30s copies`;
+    case 'invisibility':
+      return `${(span + num(row, 'InvisibilityTime') / 1000).toFixed(2)}s invisible`;
+    case 'recall':
+      return `Recalls ${num(row, 'RecallHousing')} housing`;
+    case 'revive':
+      return `Revives a hero at ${num(row, 'ResurrectHitpointPercentage')}% health`;
+    case 'totem': {
+      const totem = nativeRow('characters', 'Totem', level);
+      return `${num(totem, 'Hitpoints').toLocaleString()} HP Totem · 0.2s stun`;
+    }
+    case 'poison':
+      return `Up to ${num(row, 'PoisonDPS')} DPS · ${-num(row, 'SpeedBoost')}% slower`;
+    case 'earthquake':
+      return `${(num(row, 'BuildingDamagePermil') * hits) / 10}% building damage`;
+    case 'haste':
+      return `+${num(row, 'SpeedBoost') / 8} tiles/s for ${Math.round(span)}s`;
+    case 'skeleton':
+    case 'bat':
+      return `${num(row, 'UnitsToSpawn')} ${kind === 'bat' ? 'Bats' : 'Skeletons'}`;
+    case 'overgrowth':
+      return `${num(row, 'FreezeTimeMS') / 1000}s of roots`;
+    case 'iceblock': {
+      const block = nativeRow('abilities', 'IceBlockSpell', level);
+      return `${num(row, 'FreezeTimeMS') / 1000}s · ${num(block, 'ShieldProtectionPercent')}% damage blocked`;
+    }
+    case 'angry': {
+      const anger = nativeRow('abilities', 'AngrySpellAnger', level);
+      return `Targets defenses for ${num(anger, 'DeactivateAfterTime') / 1000}s`;
+    }
+  }
 }
 export const TROOPS: Record<UnitKind, TroopDef> = {
   ...BASE_TROOPS,
@@ -978,7 +1136,14 @@ export const LATE_TROOP_KEYS = ['healer', 'dragon', 'pekka'] as const;
 export const LEGACY_TROOP_KEYS = PRE_EXPANSION_TROOP_KEYS.filter(
   (k) => !LATE_TROOP_KEYS.includes(k as (typeof LATE_TROOP_KEYS)[number]),
 );
-export const SPELL_KEYS = Object.keys(SPELLS) as SpellKind[];
+export const LEGACY_SPELL_KEYS: readonly LegacySpellKind[] = ['rage', 'heal', 'lightning'];
+export const SPELL_KEYS = [
+  ...LEGACY_SPELL_KEYS,
+  ...(Object.keys(SPELL_SOURCE) as SpellKind[]).filter(
+    (k) => !LEGACY_SPELL_KEYS.includes(k as LegacySpellKind),
+  ),
+] as SpellKind[];
+export { spellFactory };
 export const isSpellKind = (kind: unknown): kind is SpellKind =>
   typeof kind === 'string' && Object.hasOwn(SPELLS, kind);
 export const BUILDING_KEYS = Object.keys(BUILDINGS) as BuildingKind[];
@@ -1095,7 +1260,10 @@ export const asset = (
   if (kind === 'king') return '/assets/characters/king-v1/portrait.webp';
   if (LATE_TROOP_KEYS.includes(kind as (typeof LATE_TROOP_KEYS)[number]))
     return `/assets/characters/${kind}-v1.webp`;
-  if (kind in SPELLS) return `/assets/spells/${kind}-v2.webp`;
+  if (kind === 'rage' || kind === 'heal' || kind === 'lightning')
+    return `/assets/spells/${kind}-v2.webp`;
+  if (kind in SPELLS)
+    return `/assets/catalog-native/roster/spell-${SPELL_SOURCE[kind as SpellKind].toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
   if (kind in BUILDINGS && buildingTexture(kind as BuildingKind, level).endsWith('-tier3'))
     return `/assets/buildings/tier3/${artName(kind)}.webp`;
   const folder =

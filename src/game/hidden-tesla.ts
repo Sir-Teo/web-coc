@@ -1,3 +1,4 @@
+import { buildingHidden } from './native-status';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
@@ -17,7 +18,12 @@ export function concealedTesla(battle: Battle, building: Building) {
 }
 
 export function targetableBuilding(battle: Battle, building: Building) {
-  return building.hp > 0 && !isTrap(building.kind) && !concealedTesla(battle, building);
+  return (
+    building.hp > 0 &&
+    !isTrap(building.kind) &&
+    !concealedTesla(battle, building) &&
+    !buildingHidden(battle, building)
+  );
 }
 
 /** A Tesla stays up for the rest of this attack. Reveal invalidates offensive routes. */

@@ -165,6 +165,109 @@ describe('version 45 native roster battles', () => {
     expect(m.battle!.units.filter((u) => u.kind === 'yetimite').length).toBeGreaterThan(early);
   });
 
+  it('splits a Meteor Golem into two half-health Meteormites when it throws', () => {
+    const m = arena([['goldstorage', 12, 12, 1]], { meteorgolem: 1 });
+    m.activeTroop = 'meteorgolem';
+    expect(m.deploy(4, 13)).toBe(true);
+    const golem = m.battle!.units[0];
+    const level = maxTroopLevel('meteorgolem');
+    const mite = nativeUnitStats('meteormite', level);
+    for (let i = 0; i < 400 && golem.kind === 'meteorgolem'; i++) m.step(0.05);
+    expect(golem.kind).toBe('meteormite');
+    const step = mite.hp / 100;
+    expect(golem.hp % step).toBeCloseTo(0, 6);
+    run(m, 2);
+    const mites = m.battle!.units.filter((u) => u.kind === 'meteormite' && u.hp > 0);
+    expect(mites).toHaveLength(2);
+  });
+
+  it('merges two idle Meteormites back into a briefly invulnerable Meteor Golem', () => {
+    const m = arena([['goldstorage', 40, 40, 1]], { swordsman: 1 });
+    m.activeTroop = 'swordsman';
+    m.deploy(2, 2);
+    const b = m.battle!;
+    const level = 3;
+    const mite = nativeUnitStats('meteormite', level);
+    for (const [id, x] of [
+      [9001, 10],
+      [9002, 12],
+    ] as const)
+      b.units.push({
+        id,
+        kind: 'meteormite',
+        level,
+        x,
+        y: 10,
+        hp: mite.hp / 2,
+        maxHp: mite.hp,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+        native: {},
+      });
+    run(m, 3);
+    const golem = b.units.find((u) => u.kind === 'meteorgolem' && u.hp > 0);
+    expect(golem).toBeDefined();
+    expect(b.units.filter((u) => u.kind === 'meteormite' && u.hp > 0)).toHaveLength(0);
+  });
+
+  it('keeps the Furnace passive while it drains and releases Firemites on schedule', () => {
+    const m = arena([['goldstorage', 30, 30, 1]], { furnace: 1 });
+    // Indestructible targets keep the battle open for the Furnace's whole lifetime.
+    for (const b of m.battle!.buildings) b.hp = b.maxHp = 1e9;
+    m.activeTroop = 'furnace';
+    m.deploy(6, 6);
+    const furnace = m.battle!.units[0];
+    const stats = nativeUnitStats('furnace', maxTroopLevel('furnace'));
+    run(m, stats.bunkerDecay / 2);
+    expect(furnace.hp).toBeCloseTo(furnace.maxHp / 2, 0);
+    expect(furnace.attacking).toBe(false);
+    run(m, stats.bunkerDecay / 2 - 1);
+    expect(m.battle!.units.filter((u) => u.kind === 'firemite')).toHaveLength(stats.bunkerCount);
+    expect(furnace.hp / furnace.maxHp).toBeLessThan(0.1);
+  });
+
+  it('turns rubble into a Ruin Knight after the vacuum and wind-up', () => {
+    const m = arena([['goldmine', 10, 10, 1]], { ruinwitch: 1, swordsman: 1 });
+    m.activeTroop = 'ruinwitch';
+    m.deploy(6, 11);
+    const mine = building(m, 10);
+    run(m, 2);
+    expect(m.battle!.units[0].x).toBe(6);
+    m.damage(mine, mine.maxHp);
+    const stats = nativeUnitStats('ruinwitch', maxTroopLevel('ruinwitch'));
+    const vacuum = 4;
+    run(m, 4 + vacuum + stats.summonDelay + 0.5);
+    expect(m.battle!.units.some((u) => u.kind === 'ruinknight')).toBe(true);
+    expect(m.battle!.consumedRubble).toContain(10);
+  });
+
+  it('keeps a lone Druid’s battle open until its Bear form fights', () => {
+    const m = arena([['goldstorage', 20, 20, 1]], { druid: 1 });
+    m.activeTroop = 'druid';
+    m.deploy(3, 3);
+    run(m, 5);
+    expect(m.battle!.finished).toBe(false);
+    run(m, 30);
+    expect(m.battle!.units[0].kind).toBe('bear');
+  });
+
+  it('sends a Lava Hound to other defenses once Air Defenses are gone', () => {
+    const m = arena(
+      [
+        ['goldmine', 6, 6, 1],
+        ['cannon', 30, 30, 1],
+      ],
+      { lavahound: 1 },
+    );
+    m.activeTroop = 'lavahound';
+    m.deploy(5, 3);
+    run(m, 0.2);
+    expect(m.battle!.units[0].target).toBe(11);
+  });
+
   it('replays native abilities to the identical final battle', () => {
     const m = arena(
       [

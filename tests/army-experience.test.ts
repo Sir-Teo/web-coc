@@ -13,7 +13,7 @@ describe('instant army preparation', () => {
     m.brew('rage');
     m.brew('lightning', 2);
     expect(m.state.army.giant).toBe(5);
-    expect(m.state.spells).toEqual({ rage: 1, heal: 0, lightning: 2 });
+    expect(m.state.spells).toEqual({ ...emptySpells(), rage: 1, heal: 0, lightning: 2 });
     expect(m.spellHousing).toBe(4);
     expect(m.state.elixir).toBe(0);
     expect(m.state.queue).toEqual([]);

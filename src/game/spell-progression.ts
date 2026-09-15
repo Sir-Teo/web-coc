@@ -1,9 +1,38 @@
-import native from '../../reference/full-client/progression.json';
+import { nativeLevelCount, nativeLevels, num, text } from './native-data';
 import type { SpellKind } from './data';
 
-/** Home Village levels supported through TH8. Sources: docs/SPELL-PROGRESSION.md. */
-export const MAX_SPELL_LEVEL = Math.max(...Object.values(native.spells).map((rows) => rows.length));
-export const maxSpellLevel = (kind: SpellKind) => native.spells[kind].length;
+/** Client spell rows for every Home Village spell key. Sources: docs/SPELL-PROGRESSION.md. */
+export const SPELL_SOURCE: Record<SpellKind, string> = {
+  lightning: 'Lightning',
+  heal: 'Healing',
+  rage: 'Rage',
+  jump: 'Jump',
+  freeze: 'Freeze',
+  clone: 'Clone',
+  invisibility: 'Invisibility',
+  recall: 'Recall',
+  revive: 'Revive',
+  totem: 'Totem Spell',
+  poison: 'Poison',
+  earthquake: 'Earthquake',
+  haste: 'Haste',
+  skeleton: 'Skeleton Spell',
+  bat: 'Bat Spell',
+  overgrowth: 'Overgrowth',
+  iceblock: 'Ice Block',
+  angry: 'AngrySpell',
+};
+export const maxSpellLevel = (kind: SpellKind) => nativeLevelCount('spells', SPELL_SOURCE[kind]);
+export const MAX_SPELL_LEVEL = Math.max(
+  ...(Object.keys(SPELL_SOURCE) as SpellKind[]).map(maxSpellLevel),
+);
+/** Which factory prepares the spell; dark spells are researched with dark elixir. */
+export const spellFactory = (kind: SpellKind) =>
+  text(nativeLevels('spells', SPELL_SOURCE[kind])[0], 'ProductionBuilding') === 'Dark Spell Factory'
+    ? ('darkspellfactory' as const)
+    : ('spellfactory' as const);
+export const spellFactoryLevel = (kind: SpellKind) =>
+  num(nativeLevels('spells', SPELL_SOURCE[kind])[0], 'SpellForgeLevel', 1);
 interface SpellLevel {
   cost: number;
   seconds: number;
@@ -24,7 +53,7 @@ const level = (
 ): SpellLevel => ({ cost, seconds, laboratory, damage, heal, damageBoost, speedBoost });
 
 // Cost/time describe the destination level; CSV UpgradeCost/Time describe the next level.
-export const SPELL_LEVELS: Record<SpellKind, readonly SpellLevel[]> = {
+const AUDITED: Partial<Record<SpellKind, readonly SpellLevel[]>> = {
   lightning: [
     level(0, 0, 0, 150),
     level(50000, 7200, 1, 180),
@@ -47,28 +76,32 @@ export const SPELL_LEVELS: Record<SpellKind, readonly SpellLevel[]> = {
     level(2000000, 172800, 6, 0, 0, 170, 28),
   ],
 };
-for (const kind of Object.keys(SPELL_LEVELS) as SpellKind[]) {
-  const rows = native.spells[kind] as unknown as Record<string, string>[];
-  for (let i = 5; i < rows.length; i++) {
-    const row = rows[i],
-      previous = rows[i - 1];
-    const num = (r: Record<string, string>, k: string) => Number(r[k] || 0);
-    SPELL_LEVELS[kind] = [
-      ...SPELL_LEVELS[kind],
-      level(
-        num(previous, 'UpgradeCost'),
-        num(previous, 'UpgradeTimeH') * 3600 +
-          num(previous, 'UpgradeTimeD') * 86400 +
-          num(previous, 'UpgradeTimeM') * 60,
-        num(row, 'LaboratoryLevel'),
-        Math.max(0, num(row, 'Damage')),
-        Math.max(0, -num(row, 'Damage')),
-        num(row, 'DamageBoostPercent'),
-        num(row, 'SpeedBoost'),
-      ),
+export const SPELL_LEVELS = Object.fromEntries(
+  (Object.keys(SPELL_SOURCE) as SpellKind[]).map((kind) => {
+    const rows = nativeLevels('spells', SPELL_SOURCE[kind]);
+    const audited = AUDITED[kind] ?? [];
+    return [
+      kind,
+      rows.map((row, i) => {
+        if (audited[i]) return audited[i];
+        const previous = rows[Math.max(0, i - 1)];
+        return level(
+          i ? num(previous, 'UpgradeCost') : 0,
+          i
+            ? num(previous, 'UpgradeTimeD') * 86400 +
+                num(previous, 'UpgradeTimeH') * 3600 +
+                num(previous, 'UpgradeTimeM') * 60
+            : 0,
+          i ? num(row, 'LaboratoryLevel') : 0,
+          Math.max(0, num(row, 'Damage')),
+          Math.max(0, -num(row, 'Damage')),
+          num(row, 'DamageBoostPercent'),
+          num(row, 'SpeedBoost'),
+        );
+      }),
     ];
-  }
-}
+  }),
+) as unknown as Record<SpellKind, readonly SpellLevel[]>;
 export const SPELL_PULSE_INTERVAL = 0.3;
 export const HEAL_PULSES = 41;
 export const RAGE_PULSES = 60;

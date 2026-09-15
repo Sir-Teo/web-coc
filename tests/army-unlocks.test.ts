@@ -1,3 +1,4 @@
+import { spellFactory } from '../src/game/army-unlocks';
 import { troopFacility } from '../src/game/army-unlocks';
 import { describe, it, expect } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
@@ -46,7 +47,7 @@ describe('army unlock progression', () => {
     for (let level = 1; level <= 3; level++) {
       factory.level = level;
       m.clearArmy();
-      for (const kind of SPELL_KEYS) {
+      for (const kind of SPELL_KEYS.filter((k) => spellFactory(k) === 'spellfactory')) {
         m.brew(kind);
         expect(m.state.spells[kind], `${kind} at ${level}`).toBe(
           Number(level >= SPELL_UNLOCK[kind]),

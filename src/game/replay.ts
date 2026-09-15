@@ -26,10 +26,12 @@ import {
   MAX_TROOP_LEVEL,
   maxTroopLevel,
   SPELL_KEYS,
+  LEGACY_SPELL_KEYS,
   TROOP_KEYS,
   LEGACY_TROOP_KEYS,
   PRE_EXPANSION_TROOP_KEYS,
   LEGACY_BUILDING_MAX_LEVEL,
+  type SpellKind,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
 import { MAX_SPELL_LEVEL, maxSpellLevel } from './spell-progression';
@@ -133,7 +135,11 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
-    spellLevels: { lightning: 1, heal: 1, rage: 1, ...s.spellLevels },
+    // Recordings before version 45 keep their original three-spell battle state byte-for-byte.
+    spellLevels:
+      version >= 45
+        ? { ...(Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook), ...s.spellLevels }
+        : ({ lightning: 1, heal: 1, rage: 1, ...s.spellLevels } as SpellBook),
     hero: s.hero
       ? { ...structuredClone(s.hero), unitId: null, abilityUsed: false, rageUntil: 0 }
       : undefined,
@@ -174,6 +180,7 @@ const counts = (v: unknown, keys: readonly string[], min: number, max: number) =
 export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
+  const spellKeys: readonly string[] = value.version >= 45 ? SPELL_KEYS : LEGACY_SPELL_KEYS;
   const troopKeys =
     value.version >= 44
       ? TROOP_KEYS
@@ -188,16 +195,16 @@ export function validateReplay(value: unknown): value is ReplayData {
     typeof s.practice !== 'boolean' ||
     !integer(s.nextId, 1, Number.MAX_SAFE_INTEGER - 10000) ||
     !counts(s.army, troopKeys, 0, 9999) ||
-    !counts(s.spells, SPELL_KEYS, 0, 999) ||
+    !counts(s.spells, spellKeys, 0, 999) ||
     !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
     (value.version >= 18 && troopKeys.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
-    (value.version >= 17 && !counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL)) ||
+    (value.version >= 17 && !counts(s.spellLevels, spellKeys, 1, MAX_SPELL_LEVEL)) ||
     (s.spellLevels !== undefined &&
-      (!counts(s.spellLevels, SPELL_KEYS, 1, MAX_SPELL_LEVEL) ||
-        SPELL_KEYS.some((k) => s.spellLevels[k] > maxSpellLevel(k)))) ||
+      (!counts(s.spellLevels, spellKeys, 1, MAX_SPELL_LEVEL) ||
+        spellKeys.some((k) => s.spellLevels[k] > maxSpellLevel(k as SpellKind)))) ||
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
-        SPELL_KEYS.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
+        spellKeys.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
     (value.version >= 25 &&
       !s.practice &&
       !validCampaignResources(
@@ -348,7 +355,7 @@ export function validateReplay(value: unknown): value is ReplayData {
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
-      if (a.type === 'spell' && !SPELL_KEYS.includes(a.kind)) return false;
+      if (a.type === 'spell' && !spellKeys.includes(a.kind as string)) return false;
       if (a.type === 'hero' && !s.hero) return false;
     } else return false;
   }

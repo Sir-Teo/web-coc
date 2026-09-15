@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { CAMPAIGN, TROOP_KEYS } from '../src/game/data';
-import { emptyArmy, emptySpells } from '../src/game/army';
+import { emptyArmy, emptySpells, baseSpellLevels } from '../src/game/army';
 import {
   REPLAY_VERSION,
   MAX_REPLAY_STEPS_PER_UPDATE,
@@ -21,7 +21,7 @@ function simpleReplay(): ReplayData {
       buildings: [makeBuilding(1, 'goldmine', 10, 10)],
       army: emptyArmy(),
       spells: { ...emptySpells(), lightning: 1 },
-      spellLevels: { lightning: 1, heal: 1, rage: 1 },
+      spellLevels: baseSpellLevels(),
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as ReturnType<
         typeof emptyArmy
       >,

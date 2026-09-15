@@ -1,6 +1,7 @@
 import source from '../../reference/full-client/progression.json';
 import type { Building } from './model';
 import type { TroopKind, SpellKind } from './data';
+import { SPELL_SOURCE, spellFactory, spellFactoryLevel } from './spell-progression';
 
 /** Supported Home Village unlocks. References: docs/ARMY-UNLOCKS.md. */
 export const TROOP_UNLOCK: Record<TroopKind, number> = {
@@ -18,7 +19,11 @@ export const TROOP_UNLOCK: Record<TroopKind, number> = {
   dragon: 9,
   pekka: 10,
 };
-export const SPELL_UNLOCK: Record<SpellKind, number> = { lightning: 1, heal: 2, rage: 3 };
+/** Factory level from each spell's client row; spellFactory() names the factory. */
+export const SPELL_UNLOCK = Object.fromEntries(
+  (Object.keys(SPELL_SOURCE) as SpellKind[]).map((kind) => [kind, spellFactoryLevel(kind)]),
+) as Record<SpellKind, number>;
+export { spellFactory };
 
 export function facilityLevel(
   buildings: Building[],

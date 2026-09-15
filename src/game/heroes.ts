@@ -16,6 +16,8 @@ export interface BattleHero {
   rageUntil: number;
   abilityAt?: number;
   summonsSpawned?: number;
+  /** Health kept by a Recall Spell until the hero is deployed again. */
+  recalledHp?: number;
 }
 export const HERO_MAX_LEVEL = KING_LEVELS.length;
 export const heroLevelCap = (townhall: number, hall: number) =>

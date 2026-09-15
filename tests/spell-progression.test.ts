@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit } from '../src/game/model';
-import { BUILDINGS, SPELL_KEYS, type SpellKind } from '../src/game/data';
+import { BUILDINGS, SPELL_KEYS, LEGACY_SPELL_KEYS, type SpellKind } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { stepSpellAuras } from '../src/game/spell-effects';
-import { emptyArmy } from '../src/game/army';
+import { emptyArmy, emptySpells, baseSpellLevels } from '../src/game/army';
 import { developedSave } from './fixtures/developed-village';
 
 // Independent transcription from Supercell's immutable spells.csv and current wiki tables.
@@ -18,14 +18,14 @@ function developed() {
   const m = new GameModel(developedSave());
   m.townhall!.level = 8;
   m.laboratory!.level = 6;
-  m.state.spellLevels = { lightning: 1, heal: 1, rage: 1 };
+  m.state.spellLevels = baseSpellLevels();
   m.state.elixir = 5000000;
   return m;
 }
 function arena(kind: SpellKind, level = 1, troop: Unit['kind'] = 'giant') {
   const m = developed();
   m.state.spellLevels![kind] = level;
-  m.state.spells = { lightning: 2, heal: 2, rage: 2 };
+  m.state.spells = { ...emptySpells(), lightning: 2, heal: 2, rage: 2 };
   m.startBattle(0, true);
   const b = m.battle!;
   b.started = true;
@@ -59,7 +59,7 @@ describe('spell research', () => {
     }
   });
 
-  for (const kind of SPELL_KEYS)
+  for (const kind of LEGACY_SPELL_KEYS)
     for (const level of [1, 2, 3, 4])
       it(`${kind} ${level} → ${level + 1} pays once, reloads and completes at the exact deadline`, () => {
         const m = developed(),
@@ -148,7 +148,7 @@ describe('spell research', () => {
     expect(loaded.state.spellLevels).toBeUndefined();
     expect(loaded.spellLevel('lightning')).toBe(1);
     expect(loaded.state.research).toEqual(original.research);
-    expect(loaded.state.spells).toEqual(original.spells);
+    expect(loaded.state.spells).toEqual({ ...emptySpells(), ...original.spells });
     const good = developed().state;
     for (const invalid of [0, 99, -1, 1.5, NaN, '2', null]) {
       const bad = structuredClone(good);
@@ -349,8 +349,8 @@ describe('native spell effects', () => {
 
   it('spell levels are frozen in battle, exported and replayed independently of home research', () => {
     const m = developed();
-    m.state.spellLevels = { lightning: 4, heal: 3, rage: 2 };
-    m.state.spells = { lightning: 1, heal: 1, rage: 1 };
+    m.state.spellLevels = { ...baseSpellLevels(), lightning: 4, heal: 3, rage: 2 };
+    m.state.spells = { ...emptySpells(), lightning: 1, heal: 1, rage: 1 };
     m.startBattle(0, true);
     const b = m.battle!;
     m.deploy(1, 13);
@@ -371,7 +371,12 @@ describe('native spell effects', () => {
       record = m.state.raidLog![0];
     expect(record.replay!.version).toBe(REPLAY_VERSION);
     const data = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
-    expect(data.initial.spellLevels).toEqual({ lightning: 4, heal: 3, rage: 2 });
+    expect(data.initial.spellLevels).toEqual({
+      ...baseSpellLevels(),
+      lightning: 4,
+      heal: 3,
+      rage: 2,
+    });
     const viewer = new GameModel();
     viewer.state.research = { kind: 'heal', end: viewer.clock + 1000 };
     expect(viewer.openReplay(data)).toBe(true);

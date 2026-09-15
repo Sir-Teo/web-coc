@@ -24,6 +24,8 @@ interface DefenderState {
   alerted?: boolean;
   defeatedAt?: number;
   stunnedUntil?: number;
+  /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
+  poison?: { since: number; until: number; speed: number; attack: number };
 }
 export interface GarrisonDefender extends DefenderState {
   kind: 'dragon' | 'balloon';
@@ -182,13 +184,17 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     }
   }
 }
-const canFight = (unit: Unit, enemy: Defender) =>
-  !TROOPS[unit.kind].healer &&
-  !TROOPS[unit.kind].wallBreaker &&
+/** Targeting traits; native roster units pass their client-derived values instead of TROOPS. */
+export type DefenderFightTraits = Pick<
+  TroopDef,
+  'prefersDefenses' | 'prefersResources' | 'healer' | 'wallBreaker' | 'flying' | 'splash'
+> & { airTargets?: boolean };
+const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
+  !troop.healer &&
+  !troop.wallBreaker &&
   (enemy.mode === 'ground' ||
-    unit.kind === 'archer' ||
-    unit.kind === 'wizard' ||
-    unit.kind === 'dragon');
+    (troop.airTargets ??
+      (unit.kind === 'archer' || unit.kind === 'wizard' || unit.kind === 'dragon')));
 type AttackStats = Pick<TroopDef, 'damage' | 'speed' | 'range' | 'rate'>;
 export function stepAttackerVsDefenders(
   battle: Battle,
@@ -198,8 +204,9 @@ export function stepAttackerVsDefenders(
   buildings: Building[],
   damage: (b: Building, power: number) => void,
   effect: (fx: FX) => void,
+  traits?: DefenderFightTraits,
 ) {
-  const troop = TROOPS[unit.kind];
+  const troop = traits ?? TROOPS[unit.kind];
   const preferred = buildings.some(
     (b) =>
       b.hp > 0 &&
@@ -220,7 +227,7 @@ export function stepAttackerVsDefenders(
       d.id === unit.defenderTarget &&
       d.hp > 0 &&
       (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-      canFight(unit, d),
+      canFight(unit, d, troop),
   );
   if (!target) {
     target = (battle.defenders ?? [])
@@ -229,7 +236,7 @@ export function stepAttackerVsDefenders(
           d.hp > 0 &&
           (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
           d.alerted &&
-          canFight(unit, d) &&
+          canFight(unit, d, troop) &&
           distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
       )
       .sort(

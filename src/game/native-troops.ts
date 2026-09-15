@@ -13,7 +13,7 @@ import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
 import { MAP_SIZE } from './grid';
 import { targetableBuilding } from './hidden-tesla';
-import { flag, nativeRow, num, seconds, text, tiles } from './native-data';
+import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
 import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './native-spells';
 import {
   buildingEffects,
@@ -75,6 +75,34 @@ export interface NativeUnitState {
   noTraps?: boolean;
   /** Presentation cue for rage-when-alone style abilities. */
   alone?: boolean;
+  /** Removed from the field by a Recall Spell and waiting in the deployment bar. */
+  recalled?: boolean;
+  /** Angry Spell: favors defenses until this time. */
+  angryUntil?: number;
+  /** Clone Spell copies vanish at this time without death effects. */
+  cloneUntil?: number;
+  /** Siege machines are immune to troop spells. */
+  siege?: boolean;
+  /** Units the client marks immune to healing (Totem). */
+  noHealing?: boolean;
+  /** Halves consumed by a merge resolve no death effects. */
+  merged?: boolean;
+  /** Last attack time; merging units only merge while not fighting. */
+  lastAttackAt?: number;
+  /** Battle time of the last lifetime drain sample (Furnace). */
+  drainAt?: number;
+  /** Ruin Witch rubble cycle: seek, vacuum, wind up and rest. */
+  ruin?: { phase: 'seek' | 'vacuum' | 'windup' | 'rest'; until: number; rubble?: number };
+}
+/** A unit scheduled to appear later even if its creator is gone (Ruin Knight, thrown Meteormite). */
+export interface NativePendingSpawn {
+  at: number;
+  kind: string;
+  level: number;
+  x: number;
+  y: number;
+  hp?: number;
+  owner?: number;
 }
 export interface NativeDeathBlast {
   sourceId: number;
@@ -101,6 +129,8 @@ export interface NativeChainHop {
 export interface NativeTroopContext extends NativeSpellContext {
   /** Known targets: concealed Teslas and traps are already excluded. */
   buildings: Building[];
+  /** Walls inside active Jump Spells: every ground route passes over them. */
+  passableWalls: Set<number>;
   nextId(): number;
   troopLevel(kind: TroopKind): number;
 }
@@ -171,6 +201,9 @@ export function spawnNativeUnit(
     spawnedAt: at,
     native: initialNativeState(kind, s.level, owner),
   };
+  // Units spawned by a Clone Spell copy inherit its expiry.
+  const source = owner === undefined ? undefined : battle.units.find((u) => u.id === owner);
+  if (source?.native?.cloneUntil !== undefined) unit.native!.cloneUntil = source.native.cloneUntil;
   battle.units.push(unit);
   ctx.effect({ type: 'spawn', x: unit.x, y: unit.y });
   return unit;
@@ -231,15 +264,20 @@ function hash(seed: number, index: number) {
 }
 
 /** Choose the nearest eligible building, honoring the unit's native favorite target. */
-function chooseTarget(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats) {
+function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
   const battle = ctx.battle;
+  const angry = (u.native?.angryUntil ?? 0) > battle.elapsed + 1e-9 && base.heal <= 0;
+  const s = angry ? { ...base, preferredClass: 'Defense', preferredBuilding: '' } : base;
   if (s.preferredClass === 'Wall') {
     const breach = breachTarget(u, ctx.buildings);
     if (breach) return breach;
   }
   const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetableBuilding(battle, b));
-  const favorite =
+  // A named favorite (Air Defense) falls back to any defense before any building.
+  let favorite =
     s.preferredClass || s.preferredBuilding ? alive.filter((b) => matchesPreferred(s, b)) : [];
+  if (!favorite.length && s.preferredBuilding)
+    favorite = alive.filter((b) => isDefense(b.kind) && b.npc !== 'tutorial-cannon');
   const pool = favorite.length ? favorite : alive;
   let best: Building | undefined,
     distance = Infinity;
@@ -302,6 +340,10 @@ export function stepNativeUnit(
     u.attacking = false;
     return;
   }
+  if (s.ability === 'DisableAttacking') {
+    u.attacking = false;
+    return;
+  }
   const speed = (boosted.speed + unitSpeedBonus(u, at)) * unitSpeedScale(u, at);
   const damage = boosted.damage * unitDamageScale(u, at) * aloneScale(battle, u, s, state);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
@@ -309,6 +351,16 @@ export function stepNativeUnit(
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);
     return;
   }
+  // Stationary spawners (Furnace) never attack; their timers already ran above.
+  if (s.bunker) {
+    u.attacking = false;
+    return;
+  }
+  if (s.consumeDebris) {
+    stepRuinWitch(ctx, u, s, speed, dt);
+    return;
+  }
+  if (s.mergeTo && stepMerge(ctx, u, s, speed, dt)) return;
   if (
     stepAttackerVsDefenders(
       battle,
@@ -318,6 +370,15 @@ export function stepNativeUnit(
       ctx.buildings,
       (target, power) => ctx.damageBuilding(target, power, battle.elapsed),
       ctx.effect,
+      {
+        prefersDefenses: s.preferredClass === 'Defense' || !!s.preferredBuilding || undefined,
+        prefersResources: s.preferredClass === 'Resource' || undefined,
+        wallBreaker: s.preferredClass === 'Wall' || undefined,
+        healer: s.heal > 0 && s.dps <= 0,
+        flying: s.flying || undefined,
+        splash: s.splash || undefined,
+        airTargets: s.airTargets,
+      },
     )
   )
     return;
@@ -371,12 +432,12 @@ export function stepNativeUnit(
     moveToward(u, edge, Math.min(speed * dt, distance2D(edge.x - u.x, edge.y - u.y)));
     return;
   }
-  const jumping = s.jumper || (u.native?.effects?.jumpUntil ?? 0) > at;
+  const jumping = s.jumper;
   if (!u.path.length || u.pathAt <= 0) {
     u.path = findPath(
       u,
       target,
-      jumping ? ctx.buildings.filter((b) => b.kind !== 'wall') : ctx.buildings,
+      ctx.buildings.filter((b) => b.kind !== 'wall' || (!jumping && !ctx.passableWalls.has(b.id))),
       s.range,
     );
     u.pathAt = 1.5;
@@ -386,7 +447,11 @@ export function stepNativeUnit(
   if (!jumping) {
     const wall = battle.buildings.find(
       (v) =>
-        v.kind === 'wall' && v.hp > 0 && Math.floor(next.x) === v.x && Math.floor(next.y) === v.y,
+        v.kind === 'wall' &&
+        v.hp > 0 &&
+        !ctx.passableWalls.has(v.id) &&
+        Math.floor(next.x) === v.x &&
+        Math.floor(next.y) === v.y,
     );
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
       u.attacking = true;
@@ -450,8 +515,7 @@ function damageMultiplier(s: NativeUnitStats, b: Building) {
   let scale = matchesPreferred(s, b) ? s.preferredMultiplier : 1;
   if (s.damageMultiplierTarget && buildingName(b.kind) === s.damageMultiplierTarget)
     scale *= s.damageMultiplier;
-  if (s.storageReduction && ['goldstorage', 'elixirstorage', 'darkstorage'].includes(b.kind))
-    scale *= 1 - s.storageReduction;
+  if (s.storageReduction && isResourceBuilding(b.kind)) scale *= 1 - s.storageReduction;
   return scale;
 }
 
@@ -520,14 +584,134 @@ function strike(
       targetBuilding: true,
     });
   }
-  if (s.secondaryOnAttack && s.secondary) spawnSecondaries(ctx, u, s, battle.elapsed);
+  state.lastAttackAt = battle.elapsed;
   state.attacks = (state.attacks ?? 0) + 1;
+  // A throwing golem's single attack ends in a split rather than its own defeat.
+  if (s.secondaryOnAttack && s.secondary) {
+    splitOnThrow(ctx, u, s, center);
+    return;
+  }
   if (s.attackCount > 0 && state.attacks >= s.attackCount) {
     u.hp = 0;
     u.spent = true;
     u.defeatedAt = battle.elapsed;
   }
 }
+/**
+ * Meteor Golem: one Meteormite is hurled at the target and the other stays. Each starts with half of
+ * the golem's health, rounded down to a 1% step of Meteormite health; below that only the thrown one
+ * (1 HP) appears where it lands.
+ */
+function splitOnThrow(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  landing: { x: number; y: number },
+) {
+  const battle = ctx.battle;
+  const kind = unitKindForName(s.secondary) as UnitKind | undefined;
+  if (!kind || u.native?.cloneUntil !== undefined) return;
+  const mite = nativeUnitStats(kind, s.level);
+  const step = mite.hp / 100;
+  const half = Math.floor(u.hp / 2 / step) * step;
+  const travel = distance2D(landing.x - u.x, landing.y - u.y);
+  const flight =
+    travel / Math.max(0.5, num(nativeRow('projectiles', s.projectile), 'Speed', 800) / 100);
+  (battle.nativePendingSpawns ??= []).push({
+    at: battle.elapsed + flight,
+    kind,
+    level: mite.level,
+    x: landing.x,
+    y: landing.y,
+    hp: half >= step ? half : 1,
+  });
+  if (half < step) {
+    u.hp = 0;
+    u.spent = true;
+    u.defeatedAt = battle.elapsed;
+    return;
+  }
+  u.kind = kind;
+  u.level = mite.level;
+  u.maxHp = mite.hp;
+  u.hp = half;
+  u.target = null;
+  u.path = [];
+  u.pathAt = 0;
+  u.cooldown = mite.rate;
+  const state = (u.native ??= {});
+  state.lastAttackAt = battle.elapsed;
+  state.attacks = 0;
+}
+/** Two idle Meteormites within reach walk together and merge into a briefly invulnerable golem. */
+function stepMerge(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  speed: number,
+  dt: number,
+) {
+  const battle = ctx.battle;
+  const state = u.native!;
+  if (state.cloneUntil !== undefined || !s.mergeTo) return false;
+  const idle = (m: Unit) => battle.elapsed - (m.native?.lastAttackAt ?? -Infinity) > 2;
+  if (!idle(u)) return false;
+  let partner: Unit | undefined,
+    best = Infinity;
+  for (const other of battle.units) {
+    if (
+      other.id === u.id ||
+      other.kind !== u.kind ||
+      other.hp <= 0 ||
+      other.native?.recalled ||
+      other.native?.cloneUntil !== undefined ||
+      (other.spawnedAt ?? 0) > battle.elapsed + 1e-9 ||
+      !idle(other)
+    )
+      continue;
+    const d = distance2D(other.x - u.x, other.y - u.y);
+    if (
+      d <= s.mergeRadius + 1e-9 &&
+      (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && partner && other.id < partner.id))
+    ) {
+      best = d;
+      partner = other;
+    }
+  }
+  if (!partner) return false;
+  if (best > 0.5) {
+    u.attacking = false;
+    moveToward(u, partner, Math.min(speed * dt, best / 2));
+    return true;
+  }
+  // The lower identifier completes the merge once, so both halves never resolve it twice.
+  if (u.id > partner.id) return true;
+  const golemKind = unitKindForName(s.mergeTo) as UnitKind | undefined;
+  if (!golemKind) return false;
+  const golem = nativeUnitStats(golemKind, s.level);
+  const step = golem.hp / 200;
+  const hp = Math.max(1, Math.floor((u.hp + partner.hp) / step) * step);
+  for (const half of [u, partner]) {
+    half.hp = 0;
+    half.spent = true;
+    half.defeatedAt = battle.elapsed;
+    (half.native ??= {}).merged = true;
+  }
+  const merged = spawnNativeUnit(
+    ctx,
+    golemKind,
+    s.level,
+    (u.x + partner.x) / 2,
+    (u.y + partner.y) / 2,
+    battle.elapsed,
+  );
+  merged.hp = Math.min(merged.maxHp, hp);
+  unitEffects(merged).immortalUntil = battle.elapsed + MERGE_INVULNERABLE_SECONDS;
+  return true;
+}
+/** The wiki describes the merged golem as briefly invulnerable; the client row names no duration. */
+const MERGE_INVULNERABLE_SECONDS = 1;
+
 function applyFrost(battle: Battle, s: NativeUnitStats, target: Building) {
   if (!s.frostTime) return;
   const e = buildingEffects(battle, target);
@@ -715,7 +899,7 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
       state.decayAt += s.loseHpInterval;
     }
   }
-  if (s.summon && s.summonCooldown > 0) stepSummons(ctx, u, s, at);
+  if (s.summon && s.summonCooldown > 0 && !s.consumeDebris) stepSummons(ctx, u, s, at);
   if (s.bunker && s.bunkerCount > 0) stepBunker(ctx, u, s, at);
   if (s.evolveTo && s.evolveTime > 0 && at + 1e-9 >= (u.spawnedAt ?? 0) + s.evolveTime && u.hp > 0)
     evolve(ctx, u, s, at);
@@ -749,28 +933,155 @@ function stepSummons(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: n
   }
 }
 
-/** Bunker units (Furnace) release their full count evenly over the degeneration time. */
+/**
+ * Furnace: hitpoints drain at a fixed rate over its 60 s lifetime and Firemites leave on a fixed
+ * schedule. The wiki says an untouched Furnace releases every Firemite with a little under 10% of
+ * its health left; releasing at (index + 1) / (count + 2) of the lifetime reproduces that.
+ */
 function stepBunker(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
   const state = u.native!;
   const kind = unitKindForName(s.bunker) as UnitKind | undefined;
-  if (!kind) return;
+  if (!kind || s.bunkerDecay <= 0) return;
   const start = u.spawnedAt ?? 0;
-  const interval = s.bunkerDecay / s.bunkerCount;
-  while ((state.released ?? 0) < s.bunkerCount) {
+  const interval = s.bunkerDecay / (s.bunkerCount + 2);
+  while ((state.released ?? 0) < s.bunkerCount && u.hp > 0) {
     const index = state.released ?? 0;
-    const due = start + index * interval;
+    const due = start + (index + 1) * interval;
     if (due > at + 1e-9) break;
     const p = ringPoint(ctx.battle, u, index, 6, s.bunkerDistance || 1, false);
     spawnNativeUnit(ctx, kind, s.level, p.x, p.y, due, u.id);
     state.released = index + 1;
   }
-  if (s.bunkerDecay > 0) {
-    const lifetimeLeft = 1 - (at - start) / s.bunkerDecay;
-    if (lifetimeLeft <= 0) {
+  const from = Math.max(start, state.drainAt ?? start);
+  if (at > from) {
+    u.hp -= (u.maxHp * (at - from)) / s.bunkerDecay;
+    state.drainAt = at;
+  }
+  if (u.hp <= 0) u.defeatedAt ??= at;
+}
+
+/** Ruin Witch: waits for rubble, vacuums it, winds up and summons one Ruin Knight per pile. */
+function stepRuinWitch(
+  ctx: NativeTroopContext,
+  u: Unit,
+  s: NativeUnitStats,
+  speed: number,
+  dt: number,
+) {
+  const battle = ctx.battle;
+  const state = u.native!;
+  const at = battle.elapsed;
+  const ruin = (state.ruin ??= { phase: 'seek', until: 0 });
+  u.attacking = false;
+  if (ruin.phase !== 'seek' && at + 1e-9 < ruin.until) {
+    u.attacking = ruin.phase !== 'rest';
+    return;
+  }
+  if (ruin.phase === 'vacuum') {
+    ruin.phase = 'windup';
+    ruin.until = at + s.summonDelay;
+    const kind = unitKindForName(s.summon);
+    const pile = battle.buildings.find((b) => b.id === ruin.rubble);
+    if (kind && pile) {
+      const cx = pile.x + BUILDINGS[pile.kind].size / 2,
+        cy = pile.y + BUILDINGS[pile.kind].size / 2;
+      const len = distance2D(cx - u.x, cy - u.y) || 1;
+      // Once the debris is cleared the knight appears even if the witch falls during the wind-up.
+      (battle.nativePendingSpawns ??= []).push({
+        at: ruin.until,
+        kind,
+        level: s.summonLevel,
+        x: u.x + ((cx - u.x) / len) * Math.min(0.8, len),
+        y: u.y + ((cy - u.y) / len) * Math.min(0.8, len),
+        owner: u.id,
+      });
+      state.summoned = (state.summoned ?? 0) + 1;
+    }
+    u.attacking = true;
+    return;
+  }
+  if (ruin.phase === 'windup') {
+    const limit = s.summonLifetimeLimit || s.summonLimit;
+    if (limit > 0 && (state.summoned ?? 0) >= limit && s.diesWhenSpawnLimitReached) {
       u.hp = 0;
       u.defeatedAt = at;
-      u.spent = true;
-    } else u.hp = Math.min(u.hp, u.maxHp * lifetimeLeft);
+      return;
+    }
+    ruin.phase = 'rest';
+    ruin.until = at + s.summonCooldown;
+    return;
+  }
+  ruin.phase = 'seek';
+  const consumed = (battle.consumedRubble ??= []);
+  let pile = battle.buildings.find((b) => b.id === ruin.rubble && !consumed.includes(b.id));
+  if (!pile) {
+    let best = Infinity;
+    for (const b of battle.buildings) {
+      if (b.hp > 0 || b.kind === 'wall' || isTrap(b.kind) || consumed.includes(b.id)) continue;
+      const d = distanceTo(u, b);
+      if (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && pile && b.id < pile.id)) {
+        best = d;
+        pile = b;
+      }
+    }
+    ruin.rubble = pile?.id;
+    u.path = [];
+    u.pathAt = 0;
+  }
+  if (!pile) return;
+  if (distanceTo(u, pile) <= 1 + 1e-6) {
+    consumed.push(pile.id);
+    ruin.phase = 'vacuum';
+    ruin.until =
+      at + nativeSeconds(nativeRow('characters', s.name, s.level), 'DebrisSummonCompletionTime');
+    u.attacking = true;
+    return;
+  }
+  if (!u.path.length || u.pathAt <= 0) {
+    u.path = findPath(
+      u,
+      { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
+      ctx.buildings.filter((b) => b.hp > 0),
+      1,
+    );
+    u.pathAt = 1.5;
+  }
+  let travel = speed * dt;
+  while (u.path.length && travel > 0) {
+    const p = u.path[0],
+      len = distance2D(p.x - u.x, p.y - u.y);
+    if (len <= travel) {
+      u.x = p.x;
+      u.y = p.y;
+      u.path.shift();
+      travel -= len;
+    } else {
+      moveToward(u, p, travel);
+      travel = 0;
+    }
+  }
+}
+
+/** Scheduled arrivals that no longer depend on their creator being alive. */
+function stepPendingSpawns(ctx: NativeTroopContext) {
+  const battle = ctx.battle;
+  if (!battle.nativePendingSpawns?.length) return;
+  const due = battle.nativePendingSpawns.filter((spawn) => spawn.at <= battle.elapsed + 1e-9);
+  if (!due.length) return;
+  battle.nativePendingSpawns = battle.nativePendingSpawns.filter(
+    (spawn) => spawn.at > battle.elapsed + 1e-9,
+  );
+  for (const spawn of due) {
+    const unit = spawnNativeUnit(
+      ctx,
+      spawn.kind as UnitKind,
+      spawn.level,
+      spawn.x,
+      spawn.y,
+      spawn.at,
+      spawn.owner,
+    );
+    if (spawn.hp !== undefined) unit.hp = Math.min(unit.maxHp, spawn.hp);
   }
 }
 
@@ -830,6 +1141,7 @@ function spawnSecondaries(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, 
 /** Native death rules: delayed blasts, secondary units, death spells and remaining spawns. */
 export function resolveNativeDeath(ctx: NativeTroopContext, u: Unit) {
   const battle = ctx.battle;
+  if (u.native?.merged) return;
   const s = statsFor(battle, u);
   const at = u.defeatedAt ?? battle.elapsed;
   if (s.deathDamage > 0 && !u.ejected)
@@ -970,7 +1282,23 @@ export function targetableUnit(battle: Battle, u: Unit) {
 }
 
 export function stepNativeBattle(ctx: NativeTroopContext) {
-  stepNativeSpells(ctx);
+  const battle = ctx.battle;
+  // Clone Spell copies expire silently: no death damage, splits or spells.
+  for (const u of battle.units)
+    if (
+      u.hp > 0 &&
+      u.native?.cloneUntil !== undefined &&
+      u.native.cloneUntil <= battle.elapsed + 1e-9
+    ) {
+      u.hp = 0;
+      u.spent = true;
+      u.defeatedAt = u.native.cloneUntil;
+    }
+  stepNativeSpells({
+    ...ctx,
+    spawn: (kind, level, x, y, at, owner) => spawnNativeUnit(ctx, kind, level, x, y, at, owner),
+  });
   stepNativeDeaths(ctx);
   stepNativeChains(ctx);
+  stepPendingSpawns(ctx);
 }

@@ -29,7 +29,8 @@ HEROES = ['Barbarian King', 'Archer Queen', 'Grand Warden', 'Royal Champion', 'M
 PETS = ['LASSI', 'Mighty Yak', 'Electro Owl', 'Unicorn', 'Phoenix', 'Phoenix Egg', 'Poison Lizard', 'Diggy',
         'Frosty', 'Spirit Fox', 'Angry Jelly', 'Sneezy', 'Crow']
 SPELLS = ['Lightning', 'Healing', 'Rage', 'Jump', 'Freeze', 'Clone', 'Invisibility', 'Recall', 'Revive',
-          'Totem Spell', 'Poison', 'Earthquake', 'Haste', 'Skeleton Spell', 'Bat Spell', 'Overgrowth', 'Ice Block']
+          'Totem Spell', 'Poison', 'Earthquake', 'Haste', 'Skeleton Spell', 'Bat Spell', 'Overgrowth', 'Ice Block',
+          'AngrySpell']
 BUILDINGS = ['Town Hall', 'Clan Castle', 'Gold Storage', 'Elixir Storage', 'Dark Elixir Storage', 'Gold Mine',
              'Elixir Collector', 'Dark Elixir Drill', 'Army Camp', 'Laboratory', 'Barracks', 'Dark Barracks',
              'Spell Factory', 'Dark Spell Factory', 'Siege Workshop', 'Hero Hall', 'Pet House', 'Blacksmith',
@@ -42,7 +43,7 @@ TRAPS = ['Bomb', 'Spring Trap', 'Air Bomb', 'Giant Bomb', 'Seeking Air Mine', 'S
 
 # Text, 2D/3D artwork, icons, effects and UI metadata never influence the battle simulation.
 PRESENTATION = re.compile(
-    r'(TID|SWF|ExportName|Icon|Picture|Effect|Scenario|StatBars|StrengthWeight|HintPriority|Animation|'
+    r'(TID|SWF|ExportName|Icon|Picture|Effect|Scenario|StatBars|StrengthWeight2?$|HintPriority|Animation|'
     r'Gfx|Sound|Sfx|Skin|Geometry|Texture|ShadowExport|Camera|Portrait|Banner|Flag|Tombstone|TombStone|'
     r'ClipName|DepthBias|Offset$|^Visual|^Gender|Wardrobe|ThemeYear|HighlightEffect|MiniLevels|'
     r'Locked$|ShopBuildingClass|IsRed$|UpgradeTasks|LevelRequirementTID|Capital|War(Gold|Elixir|Dark)|'
@@ -57,7 +58,7 @@ REFERENCE_COLUMNS = {
     'spells': ['AuraSpell', 'SelfSpell', 'HitSpell', 'PoisonOnHitSpell', 'ChainSpell', 'CastSpell',
                'RageOnHitSpell', 'HeroDeathAbilitySpell', 'DieSpellAttacker', 'Spell', 'SummonTroop',
                'HitSpellOverride', 'DieDamageSpell', 'MasterAura'],
-    'abilities': ['SpecialAbilities', 'GivenAbility', 'ExtraAbilities', 'MainAbilities'],
+    'abilities': ['SpecialAbilities', 'GivenAbility', 'ExtraAbilities', 'MainAbilities', 'GiveSpecialAbility'],
     'projectiles': ['Projectile', 'AltProjectile', 'ProjectileOnActivation', 'ReflectProjectile'],
 }
 
@@ -81,12 +82,11 @@ def gameplay(row, kind=None):
 def deltas(rows):
     """Keep only values that differ from the forward-inherited previous level.
 
-    An absent column reads as 0/FALSE at runtime, so explicit zero defaults are not stored.
+    Explicit zeros stay: some columns (HealerWeight) distinguish a written 0 from a blank default.
     """
     inherited, result = {}, []
     for row in rows:
-        change = {k: v for k, v in row.items()
-                  if inherited.get(k) != v and not (k not in inherited and v in ('0', 'FALSE'))}
+        change = {k: v for k, v in row.items() if inherited.get(k) != v}
         inherited.update(row)
         result.append(change)
     return result

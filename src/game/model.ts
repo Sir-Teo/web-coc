@@ -121,7 +121,7 @@ import {
   type ObstacleGrowth,
   type Obstacle,
 } from './obstacles';
-import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel } from './army-unlocks';
+import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel, spellFactory } from './army-unlocks';
 import {
   REPLAY_VERSION,
   compatibleReplayVersion,
@@ -206,9 +206,23 @@ import {
   type NativeDeathBlast,
   type NativeChainHop,
   type NativeTroopContext,
+  type NativePendingSpawn,
 } from './native-troops';
 import type { NativeSpellCast } from './native-spells';
-import { hurtUnit, unitHidden, type BuildingEffects } from './native-status';
+import {
+  buildingImmune,
+  hurtUnit,
+  unitDamageScale,
+  unitFrozen,
+  unitHidden,
+  unitSpeedBonus,
+  unitSpeedScale,
+  type BuildingEffects,
+} from './native-status';
+import { jumpWalls, castNativeSpell, nativeSpellCanStillFight } from './native-spells';
+/** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
+const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
+import { SPELL_SOURCE } from './spell-progression';
 import { isSpawnKind, spawnStatsAt } from './native-units';
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
@@ -377,6 +391,14 @@ export interface Battle {
   nativeDeaths?: NativeDeathBlast[];
   nativeChains?: NativeChainHop[];
   buildingEffects?: Record<number, BuildingEffects>;
+  /** Scheduled unit arrivals (Ruin Knights, thrown Meteormites). */
+  nativePendingSpawns?: NativePendingSpawn[];
+  /** Destroyed buildings whose rubble a Ruin Witch has already vacuumed. */
+  consumedRubble?: number[];
+  /** Active Jump Spell wall set signature; a change forces ground troops to re-route. */
+  jumpSignature?: string;
+  /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
+  recalledHp?: Partial<Record<TroopKind, number[]>>;
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
   troopLevels?: Army;
@@ -676,7 +698,7 @@ export class GameModel {
     return this.state.queue.reduce((n, q) => n + TROOPS[q.kind].space, 0);
   }
   get spellCount() {
-    return SPELL_KEYS.reduce((n, k) => n + this.state.spells[k], 0);
+    return SPELL_KEYS.reduce((n, k) => n + (this.state.spells[k] ?? 0), 0);
   }
   get spellHousing() {
     return spellSpace(this.state.spells);
@@ -743,7 +765,11 @@ export class GameModel {
     if (lab.level < requiredLab)
       return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
     const cost = this.researchCost(kind);
-    const researchResource = !spell && troopFacility(kind) === 'darkbarracks' ? 'dark' : 'elixir';
+    const researchResource = (
+      spell ? spellFactory(kind) === 'darkspellfactory' : troopFacility(kind) === 'darkbarracks'
+    )
+      ? 'dark'
+      : 'elixir';
     if (this.state[researchResource] < cost)
       return this.notify(`Not enough ${researchResource === 'dark' ? 'dark elixir' : 'elixir'}.`);
     this.state[researchResource] -= cost;
@@ -1028,7 +1054,7 @@ export class GameModel {
       const { kind } = this.state.research;
       let name: string, level: number;
       if (isSpellKind(kind)) {
-        this.state.spellLevels ??= { lightning: 1, heal: 1, rage: 1 };
+        this.state.spellLevels ??= Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
         level = this.state.spellLevels[kind] = Math.min(
           maxSpellLevel(kind),
           this.state.spellLevels[kind] + 1,
@@ -1680,7 +1706,7 @@ export class GameModel {
     return facilityLevel(this.state.buildings, troopFacility(kind)) >= TROOP_UNLOCK[kind];
   }
   spellUnlocked(kind: SpellKind) {
-    return facilityLevel(this.state.buildings, 'spellfactory') >= SPELL_UNLOCK[kind];
+    return facilityLevel(this.state.buildings, spellFactory(kind)) >= SPELL_UNLOCK[kind];
   }
   get barracksReady() {
     // Completed production facilities remain usable throughout an upgrade.
@@ -1719,7 +1745,7 @@ export class GameModel {
       return;
     if (!this.spellUnlocked(kind))
       return this.notify(
-        `${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} Spell Factory.`,
+        `${SPELLS[kind].name} requires a completed level ${SPELL_UNLOCK[kind]} ${BUILDINGS[spellFactory(kind)].name}.`,
       );
     if (
       this.spellHousing + this.queuedSpellHousing + SPELLS[kind].space * count >
@@ -1759,7 +1785,7 @@ export class GameModel {
       (k) => spells[k] > this.state.spells[k] && !this.spellUnlocked(k),
     );
     if (spell)
-      return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} Spell Factory.`;
+      return `${SPELLS[spell].name} requires a completed level ${SPELL_UNLOCK[spell]} ${BUILDINGS[spellFactory(spell)].name}.`;
     return null;
   }
   private prepareArmy(army: Army, spells: SpellBook) {
@@ -1921,13 +1947,15 @@ export class GameModel {
     this.beginFight();
     const stats = heroStats(h.level, h.townhall, h.equipment);
     h.unitId = this.state.nextId++;
+    const recalled = h.recalledHp;
+    delete h.recalledHp;
     b.units.push({
       id: h.unitId,
       kind: 'swordsman',
       hero: 'king',
       x,
       y,
-      hp: stats.hp,
+      hp: recalled ?? stats.hp,
       maxHp: stats.hp,
       cooldown: 0,
       target: null,
@@ -2065,8 +2093,8 @@ export class GameModel {
       index,
       practice,
       buildings,
-      army: { ...this.state.army },
-      spells: { ...this.state.spells },
+      army: { ...emptyArmy(), ...this.state.army },
+      spells: { ...emptySpells(), ...this.state.spells },
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
       spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, this.spellLevel(k)])) as SpellBook,
       nextId: this.state.nextId,
@@ -2156,12 +2184,13 @@ export class GameModel {
     b.remaining[k]--;
     if (!b.practice) this.state.army[k]--;
     const d = this.troopStats(k);
+    const recalled = b.recalledHp?.[k]?.shift();
     b.units.push({
       id: this.state.nextId++,
       kind: k,
       x,
       y,
-      hp: d.hp,
+      hp: recalled ?? d.hp,
       maxHp: d.hp,
       cooldown: 0,
       target: null,
@@ -2232,10 +2261,16 @@ export class GameModel {
             delete b.defenseTargets[v.id];
           }
         }
-    } else startSpellAura(b, k, x, y);
+    } else if (k === 'heal' || k === 'rage') startSpellAura(b, k, x, y);
+    else if (b.nativeRoster)
+      castNativeSpell(b, SPELL_SOURCE[k], this.spellLevel(k), 'attack', x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.changed();
     return true;
+  }
+  /** Pure healers never keep a battle open; a Druid does, because it becomes a fighting Bear. */
+  private supportOnly(b: Battle, kind: UnitKind) {
+    return !!TROOPS[kind].healer && !(b.nativeRoster && kind === 'druid');
   }
   /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
   private nativeContext(b: Battle): NativeTroopContext {
@@ -2246,7 +2281,24 @@ export class GameModel {
       effect: (fx) => this.onEffect(fx),
       nextId: () => this.state.nextId++,
       troopLevel: (kind) => this.troopLevel(kind),
+      passableWalls: new Set(),
+      recall: (u) => this.recallUnit(b, u),
     };
+  }
+  /** Recall Spell: the unit leaves the field and its card returns with the same health. */
+  private recallUnit(b: Battle, u: Unit) {
+    (u.native ??= {}).recalled = true;
+    u.attacking = false;
+    if (u.hero && b.hero) {
+      b.hero.unitId = null;
+      b.hero.recalledHp = u.hp;
+    } else if (TROOP_KEYS.includes(u.kind as TroopKind)) {
+      const kind = u.kind as TroopKind;
+      b.remaining[kind]++;
+      if (!b.practice) this.state.army[kind]++;
+      ((b.recalledHp ??= {})[kind] ??= []).push(u.hp);
+    }
+    this.onEffect({ type: 'spawn', x: u.x, y: u.y });
   }
   private beginFight() {
     const b = this.battle!;
@@ -2303,14 +2355,32 @@ export class GameModel {
     const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
     if (native) native.buildings = knownBuildings;
+    // Jump Spells change every ground route while active; the set changes only at cast/expiry.
+    const passableWalls = native ? jumpWalls(b) : undefined;
+    if (native) {
+      native.passableWalls = passableWalls!;
+      const signature = [...passableWalls!].join(',');
+      if (signature !== (b.jumpSignature ?? '')) {
+        b.jumpSignature = signature;
+        for (const u of b.units) if (!TROOPS[u.kind].flying) u.pathAt = 0;
+      }
+    }
+    const routeBuildings = passableWalls?.size
+      ? knownBuildings.filter((v) => !passableWalls.has(v.id))
+      : knownBuildings;
     for (const u of b.units) {
-      if (u.hp <= 0) continue;
+      if (u.hp <= 0 || u.native?.recalled) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
       if (!unitDt) continue;
       const actionDt = shrinkStepTime(u, b.elapsed, unitDt);
       if (u.shrink) u.shrink.timeLost += unitDt - actionDt;
       if (stepAirPush(u, unitDt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
+        u.attacking = false;
+        continue;
+      }
+      // Frozen, stunned and ice-blocked legacy troops pause; native units resolve their own timers.
+      if (native && u.native && unitFrozen(u, b.elapsed) && !nativeBehavior(b, u.kind)) {
         u.attacking = false;
         continue;
       }
@@ -2340,14 +2410,17 @@ export class GameModel {
           Math.max(
             abilityRage ? (u.hero ? gear.damage : gear.summonDamage) : 1,
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
+            u.native ? unitDamageScale(u, b.elapsed) : 1,
           ),
         speed:
           (base.speed +
             Math.max(
               abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
               ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+              u.native ? unitSpeedBonus(u, b.elapsed) : 0,
             )) *
-          (actionDt / unitDt),
+          (actionDt / unitDt) *
+          (u.native ? unitSpeedScale(u, b.elapsed) : 1),
       };
       if (native && nativeBehavior(b, u.kind)) {
         stepNativeUnit(native, u, d, unitDt);
@@ -2372,11 +2445,13 @@ export class GameModel {
       let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
         const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
-        const preferred = troop.prefersResources
-          ? alive.filter((v) => isResourceBuilding(v.kind))
-          : troop.prefersDefenses
-            ? alive.filter((v) => isDefense(v.kind) && v.npc !== 'tutorial-cannon')
-            : alive;
+        const angry = (u.native?.angryUntil ?? 0) > b.elapsed && !troop.healer;
+        const preferred =
+          troop.prefersResources && !angry
+            ? alive.filter((v) => isResourceBuilding(v.kind))
+            : troop.prefersDefenses || angry
+              ? alive.filter((v) => isDefense(v.kind) && v.npc !== 'tutorial-cannon')
+              : alive;
         target =
           (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
           (preferred.length ? preferred : alive).sort(
@@ -2472,7 +2547,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, knownBuildings, d.range);
+        u.path = findPath(u, target, routeBuildings, d.range);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -2481,6 +2556,7 @@ export class GameModel {
           (v) =>
             v.kind === 'wall' &&
             v.hp > 0 &&
+            !passableWalls?.has(v.id) &&
             Math.floor(next.x) === v.x &&
             Math.floor(next.y) === v.y,
         );
@@ -2683,6 +2759,8 @@ export class GameModel {
           this.damage(v, troop.deathDamage);
       damageDefenders(b, u, troop.deathDamage, troop.deathRadius ?? 1.5);
     }
+    if (native && b.units.some((u) => u.native?.recalled))
+      b.units = b.units.filter((u) => !u.native?.recalled);
     this.refreshBattleScore();
     if (
       b.destruction === 100 ||
@@ -2690,11 +2768,14 @@ export class GameModel {
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
-        !b.units.some((u) => u.hp > 0 && !TROOPS[u.kind].healer) &&
+        !b.units.some((u) => u.hp > 0 && !this.supportOnly(b, u.kind)) &&
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
-        !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !TROOPS[k].healer) &&
+        !b.nativePendingSpawns?.length &&
+        !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
+        !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !this.supportOnly(b, k)) &&
         !b.spells.lightning &&
+        !(b.nativeRoster && FIGHTING_SPELLS.some((k) => (b.spells[k] ?? 0) > 0)) &&
         !(b.hero && b.hero.unitId === null))
     )
       this.finishBattle();
@@ -2762,6 +2843,7 @@ export class GameModel {
   }
   damage(b: Building, n: number, at = this.battle?.elapsed ?? 0) {
     if (b.hp <= 0 || isTrap(b.kind) || (this.battle && concealedTesla(this.battle, b))) return;
+    if (this.battle?.buildingEffects && buildingImmune(this.battle, b, at)) return;
     b.hp -= n;
     if (b.hp <= 0) {
       b.hp = 0;
@@ -3153,6 +3235,8 @@ export class GameModel {
   }
 }
 export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: UnitKind) {
+  // Totems are valid targets for ground-only and air-only defenses.
+  if (kind === 'totem') return true;
   const flying = !!TROOPS[kind].flying;
   if (!targets || targets === 'both') return true;
   return targets === 'air' ? flying : !flying;

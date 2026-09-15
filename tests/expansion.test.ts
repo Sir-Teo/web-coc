@@ -1,3 +1,4 @@
+import { emptySpells } from '../src/game/army';
 import { maxTroopLevel } from '../src/game/data';
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
@@ -151,7 +152,7 @@ describe('the air layer', () => {
 describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
     const m = new GameModel(developedSave());
-    m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+    m.state.spells = emptySpells();
     expect(m.spellCapacity).toBe(6);
     const elixir = m.state.elixir;
     m.brew('rage', 2);
@@ -378,7 +379,7 @@ describe('saves', () => {
     expect(migrated.army.balloon).toBe(0);
     expect(migrated.troopLevels!.balloon).toBe(1);
     expect(migrated.troopLevels!.swordsman).toBe(2);
-    expect(migrated.spells).toEqual({ rage: 0, heal: 0, lightning: 0 });
+    expect(migrated.spells).toEqual(emptySpells());
     expect(new GameModel(migrated).armySize).toBe(
       3 * TROOPS.swordsman.space +
         2 * TROOPS.archer.space +

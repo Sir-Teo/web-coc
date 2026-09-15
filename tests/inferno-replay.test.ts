@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { makeBuilding, type Unit } from '../src/game/model';
-import { emptyArmy, emptySpells } from '../src/game/army';
+import { emptyArmy, emptySpells, baseSpellLevels } from '../src/game/army';
 import { TROOP_KEYS } from '../src/game/data';
 import { REPLAY_VERSION, validateReplay, replayBattle, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
@@ -15,7 +15,7 @@ function replay(): ReplayData {
       buildings: [{ ...makeBuilding(1, 'inferno', 10, 10, 8), infernoMode: 'multi' }],
       army: emptyArmy(),
       spells: emptySpells(),
-      spellLevels: { heal: 1, rage: 1, lightning: 1 },
+      spellLevels: baseSpellLevels(),
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as ReturnType<
         typeof emptyArmy
       >,

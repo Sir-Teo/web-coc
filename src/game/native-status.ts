@@ -28,9 +28,28 @@ export interface BuildingEffects {
   frost?: { until: number; percent: number };
   boost?: { until: number; damage: number };
   invisibleUntil?: number;
-  /** Earthquake strike count, for diminishing repeated quakes. */
+  /** Earthquake strike count and the casts already counted, for diminishing repeated quakes. */
   quakes?: number;
+  quakeCasts?: string[];
+  /** Overgrowth roots: disabled, untargetable and immune to damage. */
+  overgrownUntil?: number;
+  /** First exposure per burning cast, for ramping pool damage. */
+  burn?: Record<string, number>;
 }
+/** Buildings that attackers cannot choose this sample (Overgrowth, Invisibility). */
+export const buildingHidden = (
+  battle: Battle,
+  building: Pick<Building, 'id'>,
+  at = battle.elapsed,
+) => {
+  const e = battle.buildingEffects?.[building.id];
+  return !!e && ((e.overgrownUntil ?? 0) > at + 1e-9 || (e.invisibleUntil ?? 0) > at + 1e-9);
+};
+export const buildingImmune = (
+  battle: Battle,
+  building: Pick<Building, 'id'>,
+  at = battle.elapsed,
+) => (battle.buildingEffects?.[building.id]?.overgrownUntil ?? 0) > at + 1e-9;
 
 export const unitEffects = (unit: Unit): UnitEffects => ((unit.native ??= {}).effects ??= {});
 export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>): BuildingEffects =>
@@ -39,7 +58,9 @@ export const buildingEffects = (battle: Battle, building: Pick<Building, 'id'>):
 /** Burrowed or invisible attackers cannot be chosen as targets; older battles never carry either state. */
 export const unitHidden = (unit: Unit, at: number) =>
   !!unit.native &&
-  (!!unit.native.burrowed || (unit.native.effects?.invisibleUntil ?? 0) > at + 1e-9);
+  (!!unit.native.burrowed ||
+    !!unit.native.recalled ||
+    (unit.native.effects?.invisibleUntil ?? 0) > at + 1e-9);
 /** Burrowed movers and units whose client row disables trap triggers pass over armed traps. */
 export const unitTriggersTraps = (unit: Unit) => !unit.native?.burrowed && !unit.native?.noTraps;
 export const unitFrozen = (unit: Unit, at: number) => {
@@ -110,6 +131,8 @@ export const buildingDamageScale = (battle: Battle, building: Pick<Building, 'id
 export function hurtUnit(battle: Battle, unit: Unit, amount: number, at = battle.elapsed) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
+  // Burrowed and recalled units cannot be damaged at all.
+  if (state?.burrowed || state?.recalled) return 0;
   const e = state?.effects;
   if (e) {
     if ((e.immortalUntil ?? 0) > at + 1e-9) return 0;
