@@ -4,7 +4,12 @@ import { campaignResources } from '../../src/game/campaign-loot';
 import { BUILDINGS, TROOP_KEYS, maxTroopLevel, type TroopKind } from '../../src/game/data';
 import { GameModel, type Building } from '../../src/game/model';
 import { nativeLayout, nativeScenery } from '../../src/game/native-campaign';
-import { REPLAY_VERSION, replayBattle, type ReplayData } from '../../src/game/replay';
+import {
+  PRE_ROSTER_TROOP_LEVELS,
+  REPLAY_VERSION,
+  replayBattle,
+  type ReplayData,
+} from '../../src/game/replay';
 
 export interface LateDeploy {
   step: number;
@@ -12,8 +17,16 @@ export interface LateDeploy {
   x: number;
   y: number;
 }
+/**
+ * The army these recordings carry. It is pinned to the roster's pre-version-47 ceiling, which
+ * is what the combat expectations built on this fixture were calibrated against: a level 13
+ * P.E.K.K.A levels a Builder's Hut before its turret can fire, so letting the roster's own
+ * ceiling float in here would silently re-balance every test that uses it.
+ */
 const troopLevels = () =>
-  Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)])) as ReturnType<typeof emptyArmy>;
+  Object.fromEntries(
+    TROOP_KEYS.map((k) => [k, Math.min(maxTroopLevel(k), PRE_ROSTER_TROOP_LEVELS[k])]),
+  ) as ReturnType<typeof emptyArmy>;
 
 /** Explicit version-44 goblin-v1 recording of a late layout; gated villages open without the UI gate. */
 export function lateGoblinReplay(
