@@ -88,8 +88,8 @@ export function nativeGlobal(name: string, fallback = 0) {
   if (row.BooleanValue !== undefined) return row.BooleanValue === 'TRUE' ? 1 : 0;
   return num(row, 'NumberValue', num(row, 'NumberArray', fallback));
 }
-export const nativeGlobalArray = (name: string) =>
-  (combat.globals[name] ?? []).map((row) => num(row, 'NumberArray'));
+export const nativeGlobalArray = (name: string, column = 'NumberArray') =>
+  (combat.globals[name] ?? []).map((row) => num(row, column));
 /** Town Hall level table rows (1..18) including per-building count columns. */
 export const nativeTownHall = (level: number): NativeRow =>
   combat.townhall[Math.max(1, Math.min(combat.townhall.length, Math.floor(level) || 1)) - 1];

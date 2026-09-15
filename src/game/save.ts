@@ -2,6 +2,8 @@ import { maxSpellLevel } from './spell-progression';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
+import { HERO_KINDS } from './native-hero-data';
+import { validGear, validHeroRoster, validPetProgress } from './native-hero-village';
 import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
@@ -142,6 +144,20 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.campaignLoot !== undefined && !validCampaignLoot(s.campaignLoot)) return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;
   if (s.ores !== undefined && !validOres(s.ores)) return false;
+  if (s.heroes !== undefined) {
+    if (!validHeroRoster(s.heroes)) return false;
+    if (!s.buildings.some((b) => b?.kind === 'herohall' && !b.constructing)) return false;
+  }
+  if (s.gear !== undefined && !validGear(s.gear)) return false;
+  if (s.pets !== undefined && !validPetProgress(s.pets)) return false;
+  if (
+    s.heroLineup !== undefined &&
+    (!Array.isArray(s.heroLineup) ||
+      s.heroLineup.length > 4 ||
+      new Set(s.heroLineup).size !== s.heroLineup.length ||
+      !s.heroLineup.every((hero) => HERO_KINDS.includes(hero)))
+  )
+    return false;
   if (s.equipment !== undefined) {
     if (!validEquipment(s.equipment)) return false;
     const requiresBlacksmith =

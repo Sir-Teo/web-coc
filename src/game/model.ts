@@ -70,6 +70,7 @@ import {
   EQUIPMENT,
   EQUIPMENT_MAX_LEVEL,
   ORE_KEYS,
+  ORES,
   type KingEquipment,
   type Ores,
   type EquipmentKind,
@@ -258,6 +259,39 @@ import {
 import { alwaysVisibleTrap } from './native-traps';
 import { stepHutBuilders } from './native-hut-builders';
 import {
+  HERO_KINDS,
+  HERO_SOURCE,
+  PET_DISPLAY,
+  PET_KINDS,
+  heroLevelCap as rosterLevelCap,
+  heroSlots,
+  heroUnlockHall,
+  heroUnlockTownHall,
+  heroUpgradeQuote,
+  itemHero,
+  itemLevelCap,
+  itemName,
+  itemRarity,
+  itemUpgradeCost,
+  petLevelCap,
+  petMaxLevel,
+  petUnlockHouse,
+  petUpgradeQuote,
+  validItem,
+  type HeroKind,
+  type PetKind,
+} from './native-hero-data';
+import {
+  gearFromLegacy,
+  unlockCommonItems,
+  type HeroGear,
+  type HeroRosterProgress,
+  type PetProgress,
+} from './native-hero-village';
+
+/** Official wiki: Epic equipment from the Trader costs 1,500 gems. */
+export const EPIC_ITEM_GEMS = 1500;
+import {
   GUARDIAN_KINDS,
   GUARDIAN_NAMES,
   guardianUpgrade,
@@ -359,6 +393,14 @@ export interface Save {
   mapUpgrade?: { moved: number };
   dark: number;
   king?: HeroProgress;
+  /** Archer Queen, Minion Prince, Grand Warden, Royal Champion and Dragon Duke progress. */
+  heroes?: Partial<Record<Exclude<HeroKind, 'king'>, HeroRosterProgress>>;
+  /** Every owned hero item and each hero's two-item loadout (replaces `equipment`). */
+  gear?: HeroGear;
+  /** Pet levels, hero assignments and the running Pet House upgrade. */
+  pets?: PetProgress;
+  /** Heroes chosen for attacks, in slot order (limited by Hero Hall slots). */
+  heroLineup?: HeroKind[];
   equipment?: KingEquipment;
   ores?: Ores;
   gold: number;
@@ -1084,7 +1126,8 @@ export class GameModel {
   get busy() {
     return (
       this.state.buildings.filter((b) => b.upgradeEnd && b.kind !== 'wall').length +
-      Number(!!this.state.king?.upgradeEnd)
+      Number(!!this.state.king?.upgradeEnd) +
+      Object.values(this.state.heroes ?? {}).filter((hero) => hero?.upgradeEnd).length
     );
   }
   resourceCap(kind: Resource) {
@@ -1228,6 +1271,7 @@ export class GameModel {
       structural = changed = true;
       this.notify(`Barbarian King reached level ${this.state.king.level}!`);
     }
+    if (this.advanceHeroRoster(now)) structural = changed = true;
     // Older saves may still contain paid training queues. Complete those once;
     // new armies are prepared immediately and never create queue entries.
     while (this.state.queue.length) {
@@ -2224,6 +2268,259 @@ export class GameModel {
   }
   get heroHall() {
     return this.state.buildings.find((b) => b.kind === 'herohall' && !b.constructing);
+  }
+  // ------------------------------------------------------------ complete hero roster
+  get heroHallLevel() {
+    return this.heroHall?.level ?? 0;
+  }
+  get blacksmithLevel() {
+    return this.blacksmith?.level ?? 0;
+  }
+  get petHouse() {
+    return this.state.buildings.find((b) => b.kind === 'pethouse' && !b.constructing);
+  }
+  heroProgress(kind: HeroKind): HeroRosterProgress | undefined {
+    return kind === 'king' ? this.state.king : this.state.heroes?.[kind];
+  }
+  /** The hero exists in this village (unlocked by its Hero Hall and Town Hall gates). */
+  heroUnlocked(kind: HeroKind) {
+    return (
+      !!this.heroHall &&
+      this.heroHallLevel >= heroUnlockHall(kind) &&
+      this.townhallLevel >= heroUnlockTownHall(kind)
+    );
+  }
+  heroLevelMax(kind: HeroKind) {
+    return rosterLevelCap(kind, this.townhallLevel, this.heroHallLevel);
+  }
+  get heroSlotCount() {
+    return this.heroHall ? heroSlots(this.heroHallLevel) : 0;
+  }
+  /** Gear derived from the original King equipment record until the full roster writes it. */
+  get gear(): HeroGear {
+    const gear = this.state.gear ?? gearFromLegacy(this.state.equipment);
+    unlockCommonItems(gear, this.blacksmithLevel);
+    return gear;
+  }
+  get petProgress(): PetProgress {
+    return this.state.pets ?? { levels: {}, assigned: {} };
+  }
+  /** Heroes that attack, in slot order: the saved lineup, then unlocked heroes in roster order. */
+  get heroLineup(): HeroKind[] {
+    const ready = HERO_KINDS.filter((kind) => this.heroProgress(kind));
+    const chosen = (this.state.heroLineup ?? []).filter((kind) => ready.includes(kind));
+    for (const kind of ready) if (!chosen.includes(kind)) chosen.push(kind);
+    return chosen.slice(0, this.heroSlotCount);
+  }
+  setHeroLineup(heroes: HeroKind[]) {
+    if (this.battle || !heroes.every((kind) => this.heroProgress(kind))) return false;
+    if (new Set(heroes).size !== heroes.length || heroes.length > this.heroSlotCount) return false;
+    this.state.heroLineup = [...heroes];
+    this.changed();
+    return true;
+  }
+  private advanceHeroRoster(now: number) {
+    let changed = false;
+    for (const kind of HERO_KINDS) {
+      if (kind === 'king' || !this.heroUnlocked(kind) || this.state.heroes?.[kind]) continue;
+      (this.state.heroes ??= {})[kind] = { level: 1 };
+      this.notify(`${HERO_SOURCE[kind]} has joined your village!`);
+      changed = true;
+    }
+    for (const [kind, hero] of Object.entries(this.state.heroes ?? {}) as [
+      HeroKind,
+      HeroRosterProgress,
+    ][]) {
+      if (!hero.upgradeEnd || hero.upgradeEnd > now) continue;
+      hero.level++;
+      delete hero.upgradeEnd;
+      delete hero.upgradeStart;
+      this.notify(`${HERO_SOURCE[kind]} reached level ${hero.level}!`);
+      changed = true;
+    }
+    const house = this.petHouse?.level ?? 0;
+    if (house > 0) {
+      const pets = (this.state.pets ??= { levels: {}, assigned: {} });
+      for (const pet of PET_KINDS)
+        if (petUnlockHouse(pet) <= house && pets.levels[pet] === undefined) {
+          pets.levels[pet] = 1;
+          this.notify(`${PET_DISPLAY[pet]} is ready at the Pet House!`);
+          changed = true;
+        }
+    }
+    const research = this.state.pets?.research;
+    if (research && research.end <= now) {
+      const pets = this.state.pets!;
+      pets.levels[research.kind] = Math.min(
+        petMaxLevel(research.kind),
+        (pets.levels[research.kind] ?? 0) + 1,
+      );
+      delete pets.research;
+      this.notify(`${PET_DISPLAY[research.kind]} reached level ${pets.levels[research.kind]}!`);
+      changed = true;
+    }
+    return changed;
+  }
+  /** Upgrade any hero with a builder (the King keeps its original progress record). */
+  upgradeRosterHero(kind: HeroKind) {
+    if (kind === 'king') return this.upgradeHero();
+    const hero = this.state.heroes?.[kind];
+    if (this.battle || !hero || !this.heroHall || hero.upgradeEnd) return false;
+    if (hero.level >= this.heroLevelMax(kind)) {
+      this.notify('Upgrade your Town Hall and Hero Hall to unlock more hero levels.');
+      return false;
+    }
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    const quote = heroUpgradeQuote(kind, hero.level)!;
+    if (this.state[quote.resource] < quote.cost) {
+      this.notify(
+        `You need ${quote.cost.toLocaleString()} ${quote.resource === 'dark' ? 'dark elixir' : quote.resource}.`,
+      );
+      return false;
+    }
+    this.state[quote.resource] -= quote.cost;
+    hero.upgradeStart = this.clock;
+    hero.upgradeEnd = this.clock + quote.seconds * 1000;
+    this.changed();
+    return true;
+  }
+  finishRosterHero(kind: HeroKind) {
+    if (kind === 'king') return this.finishHero();
+    const hero = this.state.heroes?.[kind];
+    if (this.battle || !hero?.upgradeEnd) return false;
+    const cost = gemCost((hero.upgradeEnd - this.clock) / 1000);
+    if (this.state.gems < cost) {
+      this.notify('Not enough gems.');
+      return false;
+    }
+    this.state.gems -= cost;
+    hero.upgradeEnd = this.clock;
+    this.tick(this.clock);
+    this.changed();
+    return true;
+  }
+  /** Equip an owned item in one of the hero's two slots; an item in the other slot swaps. */
+  equipItem(hero: HeroKind, slug: string, slot: number) {
+    if (this.battle || !this.blacksmith || (slot !== 0 && slot !== 1)) return false;
+    const gear = structuredClone(this.gear);
+    if (!validItem(slug) || itemHero(slug) !== hero || gear.levels[slug] === undefined)
+      return false;
+    const loadout = [...(gear.loadouts[hero] ?? [])];
+    const previous = loadout[slot];
+    if (previous === slug) return false;
+    const other = loadout.indexOf(slug);
+    if (other >= 0) loadout[other] = previous!;
+    loadout[slot] = slug;
+    gear.loadouts[hero] = loadout.filter(Boolean);
+    this.state.gear = gear;
+    this.changed();
+    return true;
+  }
+  /** Instant ore upgrade, gated by the Blacksmith; a confirmed gem ceiling covers missing ore. */
+  upgradeItem(slug: string, expectedLevel: number, maxGems = 0) {
+    if (
+      this.battle ||
+      !this.blacksmith ||
+      !validItem(slug) ||
+      !Number.isInteger(maxGems) ||
+      maxGems < 0
+    )
+      return false;
+    const gear = structuredClone(this.gear);
+    const level = gear.levels[slug];
+    if (level === undefined || level !== expectedLevel) return false;
+    if (level >= itemLevelCap(slug, this.blacksmithLevel)) {
+      this.notify('Upgrade the Blacksmith to raise this item further.');
+      return false;
+    }
+    const cost = itemUpgradeCost(slug, level)!;
+    const ores = { ...this.ores };
+    const gems = ORE_KEYS.reduce(
+      (sum, k) => sum + Math.max(0, cost[k] - ores[k]) * ORES[k].gems,
+      0,
+    );
+    if (gems > maxGems || gems > this.state.gems) {
+      this.notify(
+        gems > this.state.gems ? 'Not enough gems.' : 'More ore is needed for this upgrade.',
+      );
+      return false;
+    }
+    for (const k of ORE_KEYS) ores[k] -= Math.min(ores[k], cost[k]);
+    this.state.ores = ores;
+    this.state.gems -= gems;
+    gear.levels[slug] = level + 1;
+    this.state.gear = gear;
+    this.notify(`${itemName(slug)} upgraded to level ${level + 1}.`);
+    this.changed();
+    return true;
+  }
+  /** Epic items are sold by the Trader for gems (official wiki: 1,500 gems). */
+  buyEpicItem(slug: string) {
+    if (this.battle || !this.blacksmith || !validItem(slug) || itemRarity(slug) !== 'EPIC')
+      return false;
+    const gear = structuredClone(this.gear);
+    if (gear.levels[slug] !== undefined) return false;
+    if (this.state.gems < EPIC_ITEM_GEMS) {
+      this.notify('Not enough gems.');
+      return false;
+    }
+    this.state.gems -= EPIC_ITEM_GEMS;
+    gear.levels[slug] = 1;
+    this.state.gear = gear;
+    this.notify(`${itemName(slug)} added to your Blacksmith.`);
+    this.changed();
+    return true;
+  }
+  /** One pet per hero and one hero per pet; `null` removes the hero's pet. */
+  assignPet(hero: HeroKind, pet: PetKind | null) {
+    if (this.battle || !this.petHouse || !this.heroProgress(hero)) return false;
+    const pets = structuredClone(this.petProgress);
+    if (pet !== null && pets.levels[pet] === undefined) return false;
+    for (const [other, assigned] of Object.entries(pets.assigned))
+      if (assigned === pet) delete pets.assigned[other as HeroKind];
+    if (pet === null) delete pets.assigned[hero];
+    else pets.assigned[hero] = pet;
+    this.state.pets = pets;
+    this.changed();
+    return true;
+  }
+  /** Pet House upgrade: Dark Elixir, one pet at a time, no builder. */
+  researchPet(kind: PetKind) {
+    if (this.battle || !this.petHouse) return false;
+    const pets = structuredClone(this.petProgress);
+    const level = pets.levels[kind];
+    if (level === undefined || pets.research) return false;
+    if (level >= petLevelCap(kind, this.petHouse.level)) {
+      this.notify('Upgrade the Pet House to raise this pet further.');
+      return false;
+    }
+    const quote = petUpgradeQuote(kind, level)!;
+    if (this.state[quote.resource] < quote.cost) {
+      this.notify(`You need ${quote.cost.toLocaleString()} dark elixir.`);
+      return false;
+    }
+    this.state[quote.resource] -= quote.cost;
+    pets.research = { kind, start: this.clock, end: this.clock + quote.seconds * 1000 };
+    this.state.pets = pets;
+    this.changed();
+    return true;
+  }
+  finishPetResearch() {
+    const research = this.state.pets?.research;
+    if (this.battle || !research) return false;
+    const cost = gemCost((research.end - this.clock) / 1000);
+    if (this.state.gems < cost) {
+      this.notify('Not enough gems.');
+      return false;
+    }
+    this.state.gems -= cost;
+    research.end = this.clock;
+    this.tick(this.clock);
+    this.changed();
+    return true;
   }
   get heroReady() {
     return !!this.state.king && !!this.heroHall && !this.state.king.upgradeEnd;

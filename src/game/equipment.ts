@@ -8,10 +8,11 @@ export interface KingEquipment {
 export const ORE_KEYS = ['shiny', 'glowy', 'starry'] as const;
 export type OreKind = (typeof ORE_KEYS)[number];
 export type Ores = Record<OreKind, number>;
+/** Caps are the Blacksmith 1 storage; `maxCap` is the highest Blacksmith level (10). */
 export const ORES = {
-  shiny: { name: 'Shiny Ore', cap: 10000, gems: 1 },
-  glowy: { name: 'Glowy Ore', cap: 1000, gems: 5 },
-  starry: { name: 'Starry Ore', cap: 200, gems: 35 },
+  shiny: { name: 'Shiny Ore', cap: 10000, maxCap: 50000, gems: 1 },
+  glowy: { name: 'Glowy Ore', cap: 1000, maxCap: 5000, gems: 5 },
+  starry: { name: 'Starry Ore', cap: 200, maxCap: 1000, gems: 35 },
 } as const;
 export const emptyOres = (): Ores => ({ shiny: 0, glowy: 0, starry: 0 });
 export const defaultEquipment = (): KingEquipment => ({
@@ -53,7 +54,8 @@ export function validEquipment(value: unknown): value is KingEquipment {
 export function validOres(value: unknown): value is Ores {
   if (!record(value)) return false;
   return ORE_KEYS.every(
-    (k) => Number.isInteger(value[k]) && Number(value[k]) >= 0 && Number(value[k]) <= ORES[k].cap,
+    (k) =>
+      Number.isInteger(value[k]) && Number(value[k]) >= 0 && Number(value[k]) <= ORES[k].maxCap,
   );
 }
 export function equipmentCost(destination: number): Ores | null {

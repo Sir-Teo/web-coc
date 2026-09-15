@@ -83,7 +83,8 @@ describe('native TH8 King equipment', () => {
       {},
       { shiny: -1, glowy: 0, starry: 0 },
       { shiny: 0.5, glowy: 0, starry: 0 },
-      { shiny: 10001, glowy: 0, starry: 0 },
+      // Blacksmith 10 stores at most 50,000 Shiny Ore.
+      { shiny: 50001, glowy: 0, starry: 0 },
       { shiny: 1, glowy: Infinity, starry: 0 },
     ])
       expect(validOres(value)).toBe(false);
