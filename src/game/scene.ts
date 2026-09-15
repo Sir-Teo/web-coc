@@ -20,7 +20,8 @@ import { FROZEN_TINT } from './freeze-trap-art';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
-import { infernoPortrait, infernoBounds } from './inferno-art';
+import { infernoPortrait } from './inferno-art';
+import { infernoBounds } from './inferno-graph';
 import {
   preloadGarrisonTroops,
   preloadLateGarrisonTroops,
@@ -30,7 +31,8 @@ import { garrisonSoundCues } from './garrison-sounds';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
 import { preloadCastles, CastlePresentation } from './castle-scene';
-import { CASTLE_ART, castleBounds } from './castle-art';
+import { CASTLE_ART } from './castle-art';
+import { castleBounds } from './castle-graph';
 import { CANNON_ART } from './cannon-art';
 import { preloadCannons, CannonPresentation } from './cannon-scene';
 import { cannonBounds } from './cannon-poses';

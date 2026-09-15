@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import { CASTLE_LEVELS, castlePoses } from '../src/game/castle-art';
+import { CASTLE_LEVELS } from '../src/game/castle-art';
+import { castlePoses } from '../src/game/castle-graph';
 import {
   buildingHp,
   isDefense,

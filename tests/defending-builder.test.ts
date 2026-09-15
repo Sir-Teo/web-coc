@@ -6,7 +6,6 @@ import {
   DEFENDING_BUILDER_REPAIR_RADIUS,
   defendingBuilderCandidates,
   defendingBuilderHealSlot,
-  defendingBuilderPose,
   defendingBuilderStats,
   healStackPercent,
   hutBuilderLevel,
@@ -15,6 +14,7 @@ import {
   stepDefendingBuilders,
   type DefendingBuilderBattleState,
 } from '../src/game/defending-builder';
+import { defendingBuilderPose } from '../src/game/defending-builder-poses';
 import { REPAIR_GLOBALS } from '../src/game/character-catalog';
 import { HEALER_STACK } from '../src/game/healing';
 import { animationStates, rowExport } from '../src/game/character-poses';

@@ -894,6 +894,9 @@ export class GameModel {
     );
   }
   tick(now: number) {
+    // A non-finite time would poison the clock and every timer derived from it, turning a
+    // caller's missing timestamp into an upgrade that can never complete.
+    if (!Number.isFinite(now)) throw new Error(`Invalid clock time: ${now}`);
     this.clock = now;
     let changed = false;
     let structural = false;

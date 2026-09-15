@@ -353,10 +353,19 @@ describe('Town Hall tier village', () => {
       m.beginBuild(kind);
       expect(m.place(30, 30)).toBe(true);
       const built = m.state.buildings.at(-1)!;
-      m.tick(built.upgradeEnd!);
+      // A trap whose first row costs no time is finished the moment it is placed, so it has
+      // no completion stamp to advance to.
+      const finish = () => {
+        if (built.upgradeEnd !== undefined) m.tick(built.upgradeEnd);
+      };
+      finish();
       while (built.level < level) {
+        const before = built.level;
         m.upgrade(built.id);
-        m.tick(built.upgradeEnd!);
+        finish();
+        // Assert forward progress rather than looping on it: an upgrade that cannot start
+        // would otherwise spin here forever instead of failing.
+        expect(built.level, `${kind} stalled at level ${before}`).toBeGreaterThan(before);
       }
       expect(built.level).toBe(level);
       return built;
@@ -379,12 +388,14 @@ describe('Town Hall tier village', () => {
     expect(validateReplay(fifth)).toBe(true);
     expect(validateReplay({ ...fifth, version: 46 })).toBe(false);
 
-    // A later tier does not: its Town Hall alone is above every earlier ceiling.
+    // A Laboratory 16 needs the Town Hall 18 ladder, which arrived at version 46. That
+    // recording still holds it; only the three older than it refuse the level.
     const latest = village();
     raise(latest, 'laboratory', 16);
     const current = record(latest);
     expect(validateReplay(current)).toBe(true);
-    for (const version of [43, 44, 45, 46])
+    expect(validateReplay({ ...current, version: 46 })).toBe(true);
+    for (const version of [43, 44, 45])
       expect(validateReplay({ ...current, version }), `version ${version}`).toBe(false);
   });
 });

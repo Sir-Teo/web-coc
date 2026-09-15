@@ -2,7 +2,8 @@ import type Phaser from 'phaser';
 import type { Building } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { CASTLE_GRAPH, CASTLE_LEVELS, castleAsset, castleTexture, castlePoses } from './castle-art';
+import { CASTLE_LEVELS, castleAsset, castleTexture } from './castle-art';
+import { CASTLE_GRAPH, castlePoses } from './castle-graph';
 
 export function preloadCastles(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, CASTLE_GRAPH, 'clancastle');

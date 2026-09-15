@@ -4,7 +4,7 @@ import type { Building } from './model';
 import type { LatePresentation, LateRenderContext } from './late-campaign-scene';
 import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
-import { defendingBuilderLayers } from './defending-builder';
+import { defendingBuilderLayers } from './defending-builder-poses';
 
 /**
  * Defending Builders in the late campaign scene: the original worker body and its ground shadow,

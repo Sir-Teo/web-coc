@@ -1,44 +1,8 @@
-import raw from '../../reference/inferno/art-runtime.json' with { type: 'json' };
 import portraits from '../../reference/inferno/portraits.json' with { type: 'json' };
 import { infernoStats, type InfernoMode } from './inferno-weapon';
-import {
-  NATIVE_IDENTITY,
-  nativeVertices,
-  type NativeScenePose,
-  nativeScenePoses,
-  type NativeMatrix,
-  type NativeMeshGraph,
-} from './native-mesh';
+import { type NativeMatrix } from './native-mesh';
 
-export const INFERNO_GRAPH = raw as unknown as NativeMeshGraph;
 export type InfernoArtState = 'active' | 'empty' | 'constructing' | 'upgrading' | 'ruin';
-
-/** Original source layers. The world adapter supplies registration explicitly. */
-export function infernoPoses(
-  level: number,
-  mode: InfernoMode,
-  state: InfernoArtState,
-  seconds: number,
-  root: NativeMatrix = NATIVE_IDENTITY,
-) {
-  const { art } = infernoStats(level);
-  if (!Number.isFinite(seconds) || seconds < 0) throw new Error('Invalid Inferno art time');
-  const sample = (name: string, empty = false) =>
-    nativeScenePoses(INFERNO_GRAPH, name, seconds, empty ? { ammo: false } : {}, root);
-  if (state === 'ruin') return sample(art.ExportNameDamaged);
-  const base = sample(art.ExportNameBase);
-  if (state === 'constructing') return [...base, ...sample(art.ExportNameConstruction)];
-  if (state === 'upgrading')
-    return [
-      ...base,
-      ...sample(mode === 'multi' ? art.AlternateUpgradeExportName : art.ExportNameUpgradeAnim),
-      ...sample(art.ExportNameBuildAnim),
-    ];
-  return [
-    ...base,
-    ...sample(mode === 'multi' ? art.AlternateExportName : art.ExportName, state === 'empty'),
-  ];
-}
 
 export function infernoPortrait(level: number, mode: InfernoMode = 'single') {
   const portrait = portraits.portraits.find((row) => row.level === level && row.mode === mode);
@@ -54,28 +18,3 @@ export const infernoAsset = (level: number, mode: InfernoMode = 'single') =>
 
 /** Shared local world registration; native executable alignment remains unverified. */
 export const INFERNO_ROOT: NativeMatrix = [1.2, 0, 0, 0, 1.2, -64];
-export function infernoBounds(
-  level: number,
-  state: 'setup' | 'constructing' | 'upgrading' | 'ruin' = 'setup',
-  seconds = 0,
-  mode: InfernoMode = 'single',
-) {
-  const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
-  const visit = (poses: NativeScenePose[]) => {
-    for (const pose of poses) {
-      if ('group' in pose) visit(pose.group);
-      else {
-        const vertices = nativeVertices(pose);
-        for (let i = 0; i < vertices.length; i += 4) {
-          bounds[0] = Math.min(bounds[0], vertices[i]);
-          bounds[1] = Math.min(bounds[1], vertices[i + 1]);
-          bounds[2] = Math.max(bounds[2], vertices[i]);
-          bounds[3] = Math.max(bounds[3], vertices[i + 1]);
-        }
-      }
-    }
-  };
-  visit(infernoPoses(level, mode, state === 'setup' ? 'active' : state, seconds, INFERNO_ROOT));
-  if (!bounds.every(Number.isFinite)) throw new Error('Empty original Inferno pose');
-  return bounds;
-}
