@@ -116,22 +116,39 @@ def playable(rows):
     return first.get('VillageType', '0') == HOME_VILLAGE and first.get('DisableProduction') != 'TRUE'
 
 
-def section(title, table, have, note=''):
-    """One inventory section: every playable record, with whether this game implements it."""
+def section(title, table, have, pinned, note=''):
+    """One inventory section: every playable record, what is pinned, and what is implemented.
+
+    `pinned` is the set whose complete original levels a reference catalog already carries.
+    Pinning is the cheap half and implementing is the expensive one, so counting them apart
+    keeps a catalogued but unplayable record from reading as finished work.
+    """
     rows = {name: rs for name, rs in table.items() if playable(rs)}
     done = sorted(n for n in rows if n in have)
     missing = sorted(n for n in rows if n not in have)
     unknown = sorted(n for n in have if n not in rows)
     require(not unknown, f'{title}: implemented records absent from the source: {unknown}')
+    stray = sorted(n for n in pinned if n not in rows)
+    require(not stray, f'{title}: pinned records absent from the source: {stray}')
+    levels = sum(len(r) for r in rows.values())
     lines = [f'## {title}', '',
-             f'**{len(done)} of {len(rows)}** implemented. '
-             f'{sum(len(rows[n]) for n in done):,} of {sum(len(r) for r in rows.values()):,} '
-             f'levels.{note}', '',
-             '| Record | Levels | This game |', '| --- | --- | --- |']
+             f'**{len(pinned)} of {len(rows)}** pinned, **{len(done)} of {len(rows)}** '
+             f'implemented; {sum(len(rows[n]) for n in done):,} of {levels:,} levels '
+             f'playable.{note}', '',
+             '| Record | Levels | Pinned | This game |', '| --- | --- | --- | --- |']
     for name in done + missing:
-        lines.append(f'| {name} | {len(rows[name])} | {"yes" if name in done else "—"} |')
+        lines.append(f'| {name} | {len(rows[name])} | {"yes" if name in pinned else "—"} '
+                     f'| {"yes" if name in done else "—"} |')
     lines.append('')
-    return lines, len(done), len(rows)
+    return lines, len(done), len(rows), len(pinned)
+
+
+def catalogued(path, *keys):
+    """Record names a committed reference catalog carries."""
+    data = json.loads((ROOT / path).read_text())
+    for key in keys:
+        data = data[key]
+    return set(data)
 
 
 def build():
@@ -155,24 +172,35 @@ def build():
              'not gaps. Builder Base content is excluded for the same reason, as that village '
              'is not modelled.', '']
 
+    troop_roster = catalogued('reference/troops/catalog.json', 'roster')
+    spell_roster = catalogued('reference/troops/catalog.json', 'spellRoster')
+    hero_roster = {h['name'] for h in
+                   json.loads((ROOT / 'reference/heroes/catalog.json').read_text())['heroes']
+                   .values()}
+    item_roster = catalogued('reference/equipment/catalog.json', 'roster')
+    # The Town Hall catalog tables only the entities this game builds, so for buildings and
+    # traps pinning and implementing are the same step.
+    building_names = implemented_buildings()
+
     totals = []
-    for title, table, have, note in [
-        ('Troops', characters, mapped('import-native-troops.py', 'TROOPS'), ''),
-        ('Spells', spells, mapped('import-native-troops.py', 'SPELLS'), ''),
-        ('Heroes', heroes, implemented_heroes(), ''),
-        ('Buildings', buildings, implemented_buildings() & set(buildings), ''),
-        ('Traps', traps, implemented_buildings() & set(traps), ''),
-        ('Hero equipment', items, have_items,
+    for title, table, have, pinned, note in [
+        ('Troops', characters, mapped('import-native-troops.py', 'TROOPS'), troop_roster, ''),
+        ('Spells', spells, mapped('import-native-troops.py', 'SPELLS'), spell_roster, ''),
+        ('Heroes', heroes, implemented_heroes(), hero_roster, ''),
+        ('Buildings', buildings, building_names & set(buildings),
+         building_names & set(buildings), ''),
+        ('Traps', traps, building_names & set(traps), building_names & set(traps), ''),
+        ('Hero equipment', items, have_items, item_roster,
          ' `UNUSED*` placeholders are counted; the client ships them.'),
     ]:
-        body, done, total = section(title, table, have)
+        body, done, total, held = section(title, table, have, pinned, note)
         lines += body
-        totals.append((title, done, total))
+        totals.append((title, done, total, held))
 
-    summary = ['## Summary', '', '| Area | Implemented | Source | Remaining |',
-               '| --- | --- | --- | --- |']
-    for title, done, total in totals:
-        summary.append(f'| {title} | {done} | {total} | {total - done} |')
+    summary = ['## Summary', '', '| Area | Pinned | Implemented | Source | Left to implement |',
+               '| --- | --- | --- | --- | --- |']
+    for title, done, total, held in totals:
+        summary.append(f'| {title} | {held} | {done} | {total} | {total - done} |')
     summary.append('')
     return '\n'.join(lines[:10] + summary + lines[10:]) + '\n'
 

@@ -28,4 +28,6 @@ This re-downloads the pinned tables, verifies their SHA-256 values and requires 
 
 ## Scope
 
-Only the three common items this game implements are recorded. The rest of the original equipment list, the Epic items and the other heroes' loadouts are deliberately absent. What the home village actually offers is recorded in [BLACKSMITH.md](../../docs/BLACKSMITH.md).
+`roster` carries every equipment record the source defines: 1,032 levels across 61 items, each with the heroes allowed to carry it, its rarity, and per level the Blacksmith it needs, the ability tier it carries, its hitpoint and damage bonuses and its ore price. Rarity sets the ceiling — common items reach level 18, Epic ones 27. The `UNUSED*` records are one-row placeholders the client ships but never offers; they are marked `unused` rather than dropped, so the roster stays countable against the source.
+
+`items` maps this game's three local keys onto the records they name. Only those three have their ability tiers resolved here, because only they have an implemented ability; the other 58 records carry their stats and prices but not the behaviour behind them. Pinning a record is not implementing it — what the home village actually offers is recorded in [BLACKSMITH.md](../../docs/BLACKSMITH.md) and counted in [CONTENT-INVENTORY.md](../../docs/CONTENT-INVENTORY.md).

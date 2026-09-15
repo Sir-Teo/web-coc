@@ -34,7 +34,34 @@ export const EQUIPMENT = {
   vial: { name: 'Rage Vial', icon: 'Zap' },
   boots: { name: 'Earthquake Boots', icon: 'Waves' },
 } as const;
-const ITEMS = catalog.items;
+export interface EquipmentLevel {
+  level: number;
+  /** Blacksmith level this item level needs. */
+  blacksmith: number;
+  /** Tier of the ability the item carries. */
+  ability: number;
+  hp: number;
+  dps: number;
+  recovery: number;
+  cost: { shiny: number; glowy: number; starry: number };
+}
+export interface EquipmentRecord {
+  /** Heroes the source allows to carry it. */
+  heroes: readonly string[];
+  rarity: string;
+  /** A one-row placeholder the client ships but never offers. */
+  unused: boolean;
+  levels: readonly EquipmentLevel[];
+}
+/** Every hero equipment record the source defines, by its original name. */
+export const EQUIPMENT_ROSTER = catalog.roster as unknown as Readonly<
+  Record<string, EquipmentRecord>
+>;
+/** The original record behind each local item key. */
+export const EQUIPMENT_NAMES = catalog.items as Readonly<Record<EquipmentKind, string>>;
+const ITEMS = Object.fromEntries(
+  Object.entries(EQUIPMENT_NAMES).map(([kind, name]) => [kind, EQUIPMENT_ROSTER[name].levels]),
+) as Readonly<Record<EquipmentKind, readonly EquipmentLevel[]>>;
 /** Every item shares the Blacksmith gate column, so one item's rows describe them all. */
 export const EQUIPMENT_LEVELS = ITEMS.puppet;
 const TIERS = catalog.abilities;

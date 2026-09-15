@@ -27,6 +27,8 @@ PINS = {
     'logic/spells.csv': '385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d',
 }
 REFERENCE = ROOT / 'reference/equipment'
+# Local keys and the original record each one is. Every other item is pinned here too but
+# has no local key until this game equips it.
 ITEMS = {'puppet': 'Barbarian Puppet', 'vial': 'Rage Vial', 'boots': 'Earthquake Boots'}
 ORES = {'CommonOre': 'shiny', 'RareOre': 'glowy', 'EpicOre': 'starry'}
 ABILITY_TIERS = 7
@@ -117,17 +119,14 @@ def build():
                           glowy=number(row, 'MaxStoredRareOre'),
                           starry=number(row, 'MaxStoredEpicOre')))
 
-    tabled = {}
-    for kind, name in ITEMS.items():
-        require(name in items, f'Absent source equipment: {name}')
-        table = items[name]
+    roster = {}
+    for name, table in items.items():
         rows = []
         for index, row in enumerate(table):
             require(number(row, 'Level') == index + 1, f'Unexpected {name} level order')
-            tier = number(row, 'MainAbilityLevels')
-            require(1 <= tier <= ABILITY_TIERS, f'{name} level {index + 1} names tier {tier}')
             rows.append(dict(level=index + 1, blacksmith=number(row, 'RequiredBlacksmithLevel'),
-                             ability=tier, hp=number(row, 'HitPoints'), dps=number(row, 'DPS'),
+                             ability=number(row, 'MainAbilityLevels'),
+                             hp=number(row, 'HitPoints'), dps=number(row, 'DPS'),
                              recovery=number(row, 'HealOnActivation'),
                              cost=price(table, index + 1)))
         for previous, row in zip(rows, rows[1:]):
@@ -135,7 +134,19 @@ def build():
                     f'{name} Blacksmith requirement falls at level {row["level"]}')
             require(row['ability'] >= previous['ability'],
                     f'{name} ability tier falls at level {row["level"]}')
-        tabled[kind] = rows
+        roster[name] = dict(
+            heroes=[h.strip() for h in table[0].get('AllowedCharacters', '').split(';') if h.strip()],
+            rarity=table[0].get('Rarity', ''),
+            # A one-row placeholder the client ships but never offers.
+            unused=name.startswith('UNUSED'),
+            levels=rows,
+        )
+
+    for kind, name in ITEMS.items():
+        require(name in roster, f'Absent source equipment: {name} (for {kind})')
+        for row in roster[name]['levels']:
+            require(1 <= row['ability'] <= ABILITY_TIERS,
+                    f'{name} level {row["level"]} names tier {row["ability"]}')
 
     summon = abilities['BarbarianKingSpawnBarbarians']
     boost = abilities['BoostBarbarian']
@@ -177,10 +188,12 @@ def build():
         bundle=BUNDLE,
         baseUrl=BASE,
         sources=dict(sorted(PINS.items())),
-        scope='Every Blacksmith level, every level of the three King items this game '
-              'implements, and the seven tiers of the abilities they carry.',
+        scope='Every Blacksmith level, every level of every hero equipment record the '
+              'source defines, and the seven tiers of the abilities the three items this '
+              'game equips carry.',
         blacksmith=forge,
-        items=tabled,
+        items=dict(sorted(ITEMS.items())),
+        roster=roster,
         abilities=tiers,
     )
 
@@ -197,8 +210,9 @@ def main():
         require(target.exists(), 'Missing reference/equipment/catalog.json')
         require(target.read_text() == text, 'Committed equipment catalog differs from the source')
         print(f'Equipment catalog reproduces {len(catalog["blacksmith"])} Blacksmith levels, '
-              f'{sum(len(r) for r in catalog["items"].values())} item levels across '
-              f'{len(catalog["items"])} items and {ABILITY_TIERS} ability tiers.')
+              f'{sum(len(r["levels"]) for r in catalog["roster"].values())} item levels across '
+              f'{len(catalog["roster"])} equipment records and {ABILITY_TIERS} ability tiers; '
+              f'{len(catalog["items"])} items have a local key.')
         return
     REFERENCE.mkdir(parents=True, exist_ok=True)
     target.write_text(text)

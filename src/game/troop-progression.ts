@@ -20,9 +20,24 @@ export interface TroopLevel {
   /** Wall Breakers and Balloons alone damage what they die on. */
   deathDamage?: number;
 }
-export const TROOP_LEVELS = catalog.troops as unknown as Readonly<
-  Record<TroopKind, readonly TroopLevel[]>
->;
+export interface RosterEntry {
+  /** Barracks, Dark Barracks or Siege Workshop. */
+  building: string;
+  /** A paid, temporary upgrade of an ordinary troop rather than a troop of its own. */
+  superTroop: boolean;
+  /** Production building level that unlocks it. */
+  barracks: number;
+  /** Town Hall the source says first offers it. */
+  townhall: number;
+  levels: readonly TroopLevel[];
+}
+/** Every producible troop the source defines, by its original name. */
+export const TROOP_ROSTER = catalog.roster as unknown as Readonly<Record<string, RosterEntry>>;
+/** The original record behind each local troop key. */
+export const TROOP_NAMES = catalog.troops as Readonly<Record<TroopKind, string>>;
+export const TROOP_LEVELS = Object.fromEntries(
+  Object.entries(TROOP_NAMES).map(([kind, name]) => [kind, TROOP_ROSTER[name].levels]),
+) as Readonly<Record<TroopKind, readonly TroopLevel[]>>;
 export const troopProgression = (kind: TroopKind, level: number) => TROOP_LEVELS[kind][level - 1];
 /** Highest level the Laboratory can research, per troop. */
 export const maxTroopLevelFor = (kind: TroopKind) => TROOP_LEVELS[kind].length;
@@ -40,9 +55,22 @@ export interface SpellLevel {
   seconds: number;
   resource: 'gold' | 'elixir' | 'dark';
 }
-export const SPELL_LEVELS = catalog.spells as unknown as Readonly<
-  Record<SpellKind, readonly SpellLevel[]>
+export interface SpellRosterEntry {
+  /** Spell Factory or Dark Spell Factory. */
+  building: string;
+  /** Factory level that unlocks it. */
+  forge: number;
+  levels: readonly SpellLevel[];
+}
+/** Every producible spell the source defines, by its original name. */
+export const SPELL_ROSTER = catalog.spellRoster as unknown as Readonly<
+  Record<string, SpellRosterEntry>
 >;
+/** The original record behind each local spell key. */
+export const SPELL_NAMES = catalog.spells as Readonly<Record<SpellKind, string>>;
+export const SPELL_LEVELS = Object.fromEntries(
+  Object.entries(SPELL_NAMES).map(([kind, name]) => [kind, SPELL_ROSTER[name].levels]),
+) as Readonly<Record<SpellKind, readonly SpellLevel[]>>;
 export const spellProgression = (kind: SpellKind, level: number) => SPELL_LEVELS[kind][level - 1];
 export const maxSpellLevelFor = (kind: SpellKind) => SPELL_LEVELS[kind].length;
 export const MAX_SPELL_LEVEL = Math.max(...Object.values(SPELL_LEVELS).map((r) => r.length));

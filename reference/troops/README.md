@@ -1,8 +1,8 @@
 # Native troop and spell roster
 
-Pinned public client 18.400.21, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`, downloaded from `https://game-assets.clashofclans.com/`. This reference holds every original level of the ten troops and three spells this game implements. It contains no artwork; troop artwork is per kind, not per level.
+Pinned public client 18.400.21, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`, downloaded from `https://game-assets.clashofclans.com/`. This reference holds every original level of every troop and spell the home village can produce — not only the ones this game trains. It contains no artwork; troop artwork is per kind, not per level.
 
-- `catalog.json`: 129 troop levels across ten troops and 32 spell levels across three spells, each with its hitpoints, damage, housing space, Laboratory requirement and the price and duration of reaching it.
+- `catalog.json`: `roster` carries 931 levels across 90 producible troops and `spellRoster` 161 levels across 23 spells, each level with its hitpoints, damage, housing space, Laboratory requirement and the price and duration of reaching it. Each record also carries the building that produces it, its unlock gate, and whether it is a Super troop. `troops` and `spells` map this game's local keys onto the original records they name.
 
 | Source | SHA-256 |
 | --- | --- |
@@ -28,4 +28,8 @@ This re-downloads the pinned tables, verifies their SHA-256 values and requires 
 
 ## Scope
 
-Only the ten troops and three spells this game trains are recorded. The rest of the original roster — Miner, Baby Dragon, Electro Dragon, the dark troops, siege machines and the Builder Base list — is deliberately absent rather than silently treated as zero-level content.
+The roster is everything the home village can actually produce: a record whose `VillageType` is the home village and whose `DisableProduction` is unset. That is 61 Barracks troops (17 of them Super troops, which are paid temporary upgrades of ordinary ones), 19 Dark Barracks troops and 10 siege machines; and 15 Spell Factory spells with 8 dark ones.
+
+Summoned units, defensive variants and internal spell effects are excluded — a player never trains a Golemite, a Defensive Ice Hound or an `ElectroDragonDie`, so they are not part of the roster. The Builder Base is excluded because that village is not modelled.
+
+Pinning a record is not implementing it. Which of these this game actually trains is counted in [CONTENT-INVENTORY.md](../../docs/CONTENT-INVENTORY.md), and is at the time of writing ten troops and three spells.

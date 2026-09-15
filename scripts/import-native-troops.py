@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""Import the pinned troop and spell rosters: every level the original defines.
+"""Import the pinned troop and spell rosters: every level of every producible unit.
 
 Both tables use the same offset the hero table does. A row's own cells describe that
 level — hitpoints, damage, housing and the Laboratory it needs — while its `UpgradeCost`
 and `UpgradeTime` buy the level *above* it, so they are shifted down by one row here.
 Blank cells inherit from the previous row within a named record.
+
+The roster is everything the home village can actually produce: a record whose `VillageType`
+is the home village and whose `DisableProduction` is unset. That excludes summoned units,
+defensive variants and internal spell effects — a player never trains them, so they are not
+part of the roster — and excludes the Builder Base, which is not modelled. `ProductionBuilding`
+says which building trains each one, and is kept so a caller can tell a Barracks troop from a
+dark or siege one without a list written here.
 """
 import argparse
 import csv
@@ -23,7 +30,10 @@ PINS = {
     'logic/spells.csv': '385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d',
 }
 REFERENCE = ROOT / 'reference/troops'
-# Local troop keys and the original record each one is.
+# Home village records, as the source spells its own village column.
+HOME_VILLAGE = '0'
+# Local troop keys and the original record each one is. Every other roster entry is pinned
+# here too but has no local key until this game trains it.
 TROOPS = {
     'swordsman': 'Barbarian', 'archer': 'Archer', 'giant': 'Giant', 'wizard': 'Wizard',
     'balloon': 'Balloon', 'goblin': 'Goblin', 'wallbreaker': 'Wall Breaker',
@@ -95,62 +105,108 @@ def paid(table, level):
                 resource=RESOURCES[resource])
 
 
+def playable(rows):
+    """A record the home village can actually produce, not a summon or defensive variant."""
+    first = rows[0]
+    return (first.get('VillageType', HOME_VILLAGE) == HOME_VILLAGE
+            and first.get('DisableProduction') != 'TRUE')
+
+
+def troop_levels(name, table):
+    """Every row of one character record, in table order."""
+    rows = []
+    for index, row in enumerate(table):
+        dps = number(row, 'DPS')
+        record = dict(
+            # A Super troop's rows begin at the level of the troop it upgrades, so the
+            # displayed level is the row's own `VisualLevel`, not its position.
+            level=number(row, 'VisualLevel', index + 1),
+            hp=number(row, 'Hitpoints'),
+            # The Healer carries its healing as a negative damage rate.
+            dps=max(0, dps),
+            housing=number(row, 'HousingSpace'),
+            # Level one is the troop as trained, so no research reaches it.
+            laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
+            **paid(table, index + 1),
+        )
+        if dps < 0:
+            record['heal'] = -dps
+        if number(row, 'DieDamage'):
+            record['deathDamage'] = number(row, 'DieDamage')
+        rows.append(record)
+    for previous, row in zip(rows, rows[1:]):
+        require(row['hp'] >= previous['hp'], f'{name} hitpoints fall at level {row["level"]}')
+        require(row['laboratory'] >= previous['laboratory'],
+                f'{name} Laboratory requirement falls at level {row["level"]}')
+        require(row['level'] == previous['level'] + 1, f'{name} levels skip at {row["level"]}')
+    return rows
+
+
+def spell_levels(name, table):
+    rows = []
+    for index, row in enumerate(table):
+        require(number(row, 'Level') == index + 1, f'Unexpected {name} level order')
+        # The Healing spell carries its healing as a negative damage rate, as the Healer
+        # does; every other spell leaves the healing column at zero.
+        damage = number(row, 'Damage')
+        rows.append(dict(level=index + 1, housing=number(row, 'HousingSpace'),
+                         laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
+                         damage=max(0, damage),
+                         heal=max(0, -damage),
+                         damageBoost=number(row, 'DamageBoostPercent'),
+                         speedBoost=number(row, 'SpeedBoost'),
+                         **paid(table, index + 1)))
+    return rows
+
+
 def build():
     characters = records('logic/characters.csv')
     spells = records('logic/spells.csv')
 
-    troops = {}
-    for kind, name in TROOPS.items():
-        require(name in characters, f'Absent source troop: {name}')
-        table = characters[name]
-        rows = []
-        for index, row in enumerate(table):
-            require(number(row, 'VisualLevel') == index + 1, f'Unexpected {name} level order')
-            dps = number(row, 'DPS')
-            record = dict(level=index + 1, hp=number(row, 'Hitpoints'),
-                          # The Healer carries its healing as a negative damage rate.
-                          dps=max(0, dps), housing=number(row, 'HousingSpace'),
-                          # Level one is the troop as trained, so no research reaches it.
-                          laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
-                          **paid(table, index + 1))
-            if dps < 0:
-                record['heal'] = -dps
-            if number(row, 'DieDamage'):
-                record['deathDamage'] = number(row, 'DieDamage')
-            rows.append(record)
-        for previous, row in zip(rows, rows[1:]):
-            require(row['hp'] >= previous['hp'], f'{name} hitpoints fall at level {row["level"]}')
-            require(row['laboratory'] >= previous['laboratory'],
-                    f'{name} Laboratory requirement falls at level {row["level"]}')
-        troops[kind] = rows
+    roster = {}
+    for name, table in characters.items():
+        if not playable(table):
+            continue
+        first = table[0]
+        building = first.get('ProductionBuilding')
+        require(building, f'Producible troop without a production building: {name}')
+        roster[name] = dict(
+            building=building,
+            # A Super troop is a paid, temporary upgrade of an ordinary one.
+            superTroop=first.get('EnabledBySuperLicence') == 'TRUE',
+            barracks=number(first, 'BarrackLevel'),
+            townhall=number(first, 'UnlockByTH'),
+            levels=troop_levels(name, table),
+        )
 
-    tabled = {}
-    for kind, name in SPELLS.items():
-        require(name in spells, f'Absent source spell: {name}')
-        table = spells[name]
-        rows = []
-        for index, row in enumerate(table):
-            require(number(row, 'Level') == index + 1, f'Unexpected {name} level order')
-            # The Healing spell carries its healing as a negative damage rate, as the
-            # Healer does; every other spell leaves the healing column at zero.
-            damage = number(row, 'Damage')
-            rows.append(dict(level=index + 1, housing=number(row, 'HousingSpace'),
-                             laboratory=0 if index == 0 else number(row, 'LaboratoryLevel'),
-                             damage=max(0, damage),
-                             heal=max(0, -damage),
-                             damageBoost=number(row, 'DamageBoostPercent'),
-                             speedBoost=number(row, 'SpeedBoost'),
-                             **paid(table, index + 1)))
-        tabled[kind] = rows
+    spellRoster = {}
+    for name, table in spells.items():
+        if not playable(table):
+            continue
+        building = table[0].get('ProductionBuilding')
+        require(building, f'Producible spell without a production building: {name}')
+        spellRoster[name] = dict(
+            building=building,
+            forge=number(table[0], 'SpellForgeLevel'),
+            levels=spell_levels(name, table),
+        )
+
+    for key, name in TROOPS.items():
+        require(name in roster, f'Absent source troop: {name} (for {key})')
+    for key, name in SPELLS.items():
+        require(name in spellRoster, f'Absent source spell: {name} (for {key})')
 
     return dict(
         clientVersion='18.400.21',
         bundle=BUNDLE,
         baseUrl=BASE,
         sources=dict(sorted(PINS.items())),
-        scope='Every original level of the ten troops and three spells this game implements.',
-        troops=troops,
-        spells=tabled,
+        scope='Every original level of every troop and spell the home village can produce, '
+              'with the local key of each one this game trains.',
+        troops=dict(sorted(TROOPS.items())),
+        spells=dict(sorted(SPELLS.items())),
+        roster=roster,
+        spellRoster=spellRoster,
     )
 
 
@@ -165,10 +221,12 @@ def main():
     if arguments.check:
         require(target.exists(), 'Missing reference/troops/catalog.json')
         require(target.read_text() == text, 'Committed troop catalog differs from the source')
-        print(f'Troop catalog reproduces {len(catalog["troops"])} troops and '
-              f'{len(catalog["spells"])} spells across '
-              f'{sum(len(r) for r in catalog["troops"].values())} troop levels and '
-              f'{sum(len(r) for r in catalog["spells"].values())} spell levels.')
+        print(f'Troop catalog reproduces {len(catalog["roster"])} producible troops and '
+              f'{len(catalog["spellRoster"])} spells across '
+              f'{sum(len(r["levels"]) for r in catalog["roster"].values())} troop levels and '
+              f'{sum(len(r["levels"]) for r in catalog["spellRoster"].values())} spell levels; '
+              f'{len(catalog["troops"])} troops and {len(catalog["spells"])} spells have a '
+              'local key.')
         return
     REFERENCE.mkdir(parents=True, exist_ok=True)
     target.write_text(text)
