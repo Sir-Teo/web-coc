@@ -237,6 +237,7 @@ import {
   type NativeDefenseState,
   type NativePiercingShot,
 } from './native-defenses';
+import { buildingMaxHp, superchargeBonus, superchargeQuote } from './native-supercharge';
 import {
   MERGED_KINDS,
   consumedByMerges,
@@ -289,7 +290,9 @@ export interface Building {
   /** Town Hall 17 Inferno Artillery weapon level; absent means 1. */
   weaponLevel?: number;
   /** A running builder job that improves the building without raising its level. */
-  improving?: 'weapon' | 'gearup';
+  improving?: 'weapon' | 'gearup' | 'supercharge';
+  /** Completed supercharges at the building's maximum level. */
+  supercharge?: number;
   /** Geared-up Cannon, Archer Tower or Mortar: permanently uses the client Alt* attack. */
   geared?: true;
 }
@@ -1133,9 +1136,9 @@ export class GameModel {
             'darkstorage',
             'darkdrill',
           ].includes(b.kind)) &&
-        b.maxHp !== buildingHp(b.kind, b.level)
+        b.maxHp !== buildingMaxHp(b)
       ) {
-        const hp = buildingHp(b.kind, b.level);
+        const hp = buildingMaxHp(b);
         b.hp = b.maxHp > 0 ? Math.min(1, b.hp / b.maxHp) * hp : hp;
         b.maxHp = hp;
         structural = changed = true;
@@ -1147,12 +1150,13 @@ export class GameModel {
       if (b.upgradeEnd && b.upgradeEnd <= now) {
         if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;
         else if (b.improving === 'gearup') b.geared = true;
+        else if (b.improving === 'supercharge') b.supercharge = (b.supercharge ?? 0) + 1;
         else if (!b.constructing) b.level++;
         delete b.improving;
         b.constructing = false;
         b.upgradeEnd = undefined;
         b.upgradeStart = undefined;
-        b.maxHp = buildingHp(b.kind, b.level);
+        b.maxHp = buildingMaxHp(b);
         b.hp = b.maxHp;
         structural = true;
         this.notify(`${BUILDINGS[b.kind].name} is ready!`);
@@ -1169,13 +1173,15 @@ export class GameModel {
       ) {
         const before = b.stored;
         const production = nativeProgression.buildings[b.kind].levels[b.level - 1];
+        const charged = superchargeBonus(b.kind, b.supercharge);
         b.stored =
           b.kind === 'darkdrill'
-            ? produceDarkElixir(b.level, b.stored, productionSeconds)
+            ? produceDarkElixir(b.level, b.stored, productionSeconds, charged)
             : b.level > 12 && production
               ? Math.min(
-                  production.productionCapacity,
-                  b.stored + (productionSeconds * production.production) / 3600,
+                  production.productionCapacity + charged.capacity,
+                  b.stored +
+                    (productionSeconds * (production.production + charged.production)) / 3600,
                 )
               : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
         if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
@@ -1606,6 +1612,33 @@ export class GameModel {
     b.upgradeEnd = this.clock + this.upgradeSeconds(b) * 1000;
     this.notify(`Upgrading ${d.name} to level ${b.level + 1}.`);
     this.changed();
+  }
+  /** Supercharge a building at its maximum level with a builder (client mini levels). */
+  supercharge(id: number) {
+    if (this.battle) return false;
+    const b = this.state.buildings.find((v) => v.id === id);
+    if (!b || b.upgradeEnd || b.constructing || b.level < BUILDINGS[b.kind].maxLevel) return false;
+    const quote = superchargeQuote(b.kind, b.supercharge ?? 0);
+    if (!quote) return false;
+    if (this.townhallLevel < quote.townhall) {
+      this.notify(`Supercharges need Town Hall ${quote.townhall}.`);
+      return false;
+    }
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[quote.resource] < quote.cost) {
+      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      return false;
+    }
+    this.state[quote.resource] -= quote.cost;
+    b.improving = 'supercharge';
+    b.upgradeStart = this.clock;
+    b.upgradeEnd = this.clock + quote.seconds * 1000;
+    this.notify(`Supercharging ${BUILDINGS[b.kind].name} — ${formatTime(quote.seconds)}.`);
+    this.changed();
+    return true;
   }
   /** Town Hall 17: upgrade the Inferno Artillery weapon with a builder. */
   upgradeTownHallWeapon(id: number) {
@@ -2882,6 +2915,8 @@ export class GameModel {
         : targetableBuilding(b, tower);
       // Version 45: a Rage Spell Tower boosts damage; frost and chill slow the attack clock.
       const boost = b.nativeRoster ? buildingDamageScale(b, tower, b.elapsed) : 1;
+      // Supercharged DPS (client mini levels) exists only in version 45 battles.
+      const charged = b.nativeRoster ? superchargeBonus(tower.kind, tower.supercharge).dps : 0;
       const tempo = b.nativeRoster ? 1 / buildingAttackIntervalScale(b, tower, b.elapsed) : 1;
       if (tower.kind === 'archertower' && b.archerTowerWindups) {
         stepArcherTower(
@@ -2905,7 +2940,7 @@ export class GameModel {
           b,
           tower,
           activeDt,
-          defenseDamage(tower.kind, tower.level) *
+          (defenseDamage(tower.kind, tower.level) + charged * 0.128) *
             (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
             boost,
           this.onEffect,
@@ -2939,7 +2974,7 @@ export class GameModel {
         const power =
           tower.npc === 'tutorial-cannon'
             ? TUTORIAL_CANNON_DAMAGE
-            : defenseDamage(tower.kind, tower.level) *
+            : (defenseDamage(tower.kind, tower.level) + charged * d.rate!) *
               (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
               boost;
         if (tower.kind === 'tesla') {

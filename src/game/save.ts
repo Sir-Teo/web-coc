@@ -1,6 +1,7 @@
 import { maxSpellLevel } from './spell-progression';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { isGearable } from './native-merges';
+import { superchargeCount } from './native-supercharge';
 import { validInfernoMode } from './inferno-weapon';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
@@ -311,8 +312,16 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
         (b.upgradeEnd === undefined ||
           !(
             (b.improving === 'weapon' && b.kind === 'townhall') ||
-            (b.improving === 'gearup' && isGearable(b.kind) && !b.geared)
+            (b.improving === 'gearup' && isGearable(b.kind) && !b.geared) ||
+            (b.improving === 'supercharge' &&
+              b.level === BUILDINGS[b.kind].maxLevel &&
+              (b.supercharge ?? 0) < superchargeCount(b.kind))
           ))) ||
+      (b.supercharge !== undefined &&
+        (!Number.isInteger(b.supercharge) ||
+          b.supercharge < 1 ||
+          b.supercharge > superchargeCount(b.kind) ||
+          b.level !== BUILDINGS[b.kind].maxLevel)) ||
       (b.geared !== undefined && (b.geared !== true || !isGearable(b.kind))) ||
       b.infernoAmmo !== undefined ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||

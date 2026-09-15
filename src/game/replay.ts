@@ -1,5 +1,6 @@
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
+import { superchargeCount } from './native-supercharge';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
 import {
@@ -306,6 +307,7 @@ export function validateReplay(value: unknown): value is ReplayData {
         b.gearMode !== undefined ||
         b.weaponLevel !== undefined ||
         b.geared !== undefined ||
+        b.supercharge !== undefined ||
         b.kind === 'tornadotrap' ||
         b.kind === 'gigabomb') &&
         value.version < 45) ||
@@ -314,6 +316,8 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
       (b.geared !== undefined &&
         (b.geared !== true || !['cannon', 'archertower', 'mortar'].includes(b.kind))) ||
+      (b.supercharge !== undefined &&
+        (!integer(b.supercharge, 1, superchargeCount(b.kind)) || b.level !== d.maxLevel)) ||
       (b.infernoAmmo !== undefined && (b.kind !== 'inferno' || value.version < 43)) ||
       (b.infernoMode !== undefined && b.kind !== 'inferno') ||
       ((b.kind === 'inferno' || b.infernoMode !== undefined) && value.version < 39) ||

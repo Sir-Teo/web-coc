@@ -110,6 +110,24 @@ def deltas(rows, exact=frozenset()):
     return result
 
 
+SUPERCHARGE_COLUMNS = {'Name', 'Level', 'TargetBuilding', 'RequiredTownHallLevel', 'BuildTimeD', 'BuildTimeH',
+                       'BuildTimeM', 'BuildTimeS', 'BuildResource', 'BuildCost', 'DPS', 'DPSLv2', 'DPSLv3',
+                       'Hitpoints', 'ResourcePer100Hours', 'ResourceMax', 'SpecialAbilityLevelBuff',
+                       'ProjectileSpellDamageBoost'}
+
+
+def supercharges(source):
+    linked = {}
+    for name in BUILDINGS:
+        link = next((row['MiniLevels'] for row in source['buildings'][name] if row.get('MiniLevels')), None)
+        if not link:
+            continue
+        rows = source['mini_levels'][link]
+        require(rows[0].get('TargetBuilding') == name, f'Supercharge target mismatch: {link}')
+        linked[name] = deltas([{k: v for k, v in row.items() if k in SUPERCHARGE_COLUMNS} for row in rows])
+    return linked
+
+
 def names(value):
     return [part for part in (value or '').split(';') if part]
 
@@ -132,7 +150,7 @@ def main():
 
     source = {name: table(name) for name in [
         'characters', 'heroes', 'pets', 'character_items', 'spells', 'special_abilities', 'buildings',
-        'traps', 'weapons', 'projectiles', 'townhall_levels', 'globals', 'super_licences']}
+        'traps', 'weapons', 'projectiles', 'townhall_levels', 'globals', 'super_licences', 'mini_levels']}
     result = {k: {} for k in ['characters', 'heroes', 'pets', 'items', 'spells', 'abilities', 'buildings',
                               'traps', 'weapons', 'projectiles']}
     pending = {k: [] for k in result}
@@ -190,6 +208,8 @@ def main():
         townhall=townhall,
         globals={name: rows for name, rows in source['globals'].items()},
         superLicences=source['super_licences'],
+        # Supercharges linked from a building row (MiniLevels); unlinked leftovers are not playable.
+        superchargeRows=supercharges(source),
     )
     text = json.dumps(result, separators=(',', ':'), sort_keys=False) + '\n'
     if args.check:

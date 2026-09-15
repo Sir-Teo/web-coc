@@ -26,6 +26,7 @@ interface CombatTables {
   townhall: Record<string, string>[];
   globals: Record<string, Record<string, string>[]>;
   superLicences: Record<string, Record<string, string>[]>;
+  superchargeRows: Record<string, Record<string, string>[]>;
 }
 const combat = source as unknown as CombatTables &
   Record<NativeTable, Record<string, Record<string, string>[]>>;
@@ -95,3 +96,10 @@ export const nativeSuperLicence = (name: string): NativeRow | undefined =>
   combat.superLicences[name]?.[0];
 export const nativeSuperLicences = () => Object.keys(combat.superLicences);
 export const nativeNames = (table: NativeTable) => Object.keys(combat[table]);
+/** Supercharge rows linked from a building (mini_levels.csv), inherited like level rows. */
+export function nativeSupercharges(building: string): readonly NativeRow[] {
+  const declared = combat.superchargeRows[building];
+  if (!declared) return [];
+  let inherited: Record<string, string> = {};
+  return declared.map((row) => Object.freeze((inherited = { ...inherited, ...row })));
+}

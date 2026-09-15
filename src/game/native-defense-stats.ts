@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import { superchargeBonus } from './native-supercharge';
 import {
   flag,
   list,
@@ -100,14 +101,15 @@ export interface NativeWeapon {
 }
 
 const cache = new Map<string, NativeWeapon | null>();
-const weaponBase = (row: NativeRow, source: string, level: number, alt = false) => {
+const weaponBase = (row: NativeRow, source: string, level: number, alt = false, bonusDps = 0) => {
   const p = alt ? 'Alt' : '';
   const attackSpeed = seconds(row, `${p}AttackSpeed`) || seconds(row, 'AttackSpeed');
   const override = seconds(row, `${p}CoolDownOverride`);
   const burst = Math.max(1, num(row, `${p}BurstCount`, 1));
   const burstDelay = seconds(row, `${p}BurstDelay`);
   const interval = burst > 1 ? burstGap(attackSpeed) + (burst - 1) * burstDelay : attackSpeed;
-  const dps = num(row, `${p}DPS`);
+  // Supercharge DPS is added to both the normal and the Alt attack (client mini levels).
+  const dps = num(row, `${p}DPS`) + (num(row, `${p}DPS`) ? bonusDps : 0);
   const declared = num(row, 'Damage');
   return {
     source,
@@ -143,9 +145,9 @@ const weaponBase = (row: NativeRow, source: string, level: number, alt = false) 
 export function nativeWeapon(
   kind: NativeDefenseKind,
   level: number,
-  options: { mode?: SpellTowerMode | GearMode; weaponLevel?: number } = {},
+  options: { mode?: SpellTowerMode | GearMode; weaponLevel?: number; supercharge?: number } = {},
 ): NativeWeapon | null {
-  const key = `${kind}/${level}/${options.mode ?? ''}/${options.weaponLevel ?? ''}`;
+  const key = `${kind}/${level}/${options.mode ?? ''}/${options.weaponLevel ?? ''}/${options.supercharge ?? 0}`;
   if (cache.has(key)) return cache.get(key)!;
   const result = buildWeapon(kind, level, options);
   cache.set(key, result);
@@ -155,9 +157,10 @@ export function nativeWeapon(
 function buildWeapon(
   kind: NativeDefenseKind,
   level: number,
-  options: { mode?: SpellTowerMode | GearMode; weaponLevel?: number },
+  options: { mode?: SpellTowerMode | GearMode; weaponLevel?: number; supercharge?: number },
 ): NativeWeapon | null {
   const name = NATIVE_DEFENSE_SOURCE[kind];
+  const bonus = superchargeBonus(kind, options.supercharge).dps;
   const row = nativeRow('buildings', name, level);
   if (kind === 'townhall') {
     const weapon = text(row, 'Weapon');
@@ -187,7 +190,7 @@ function buildWeapon(
   }
   if (kind === 'builder' && !num(row, 'DPS')) return null;
   const alt = kind === 'multigeartower' && options.mode === 'fast';
-  const base = weaponBase(row, name, level, alt);
+  const base = weaponBase(row, name, level, alt, bonus);
   const weapon: NativeWeapon = {
     ...base,
     ...(num(row, 'ChainAttackFactor')
@@ -218,11 +221,21 @@ function buildWeapon(
 
 /** Geared-up Cannon (burst), Archer Tower (fast attack) and Mortar (burst) use the Alt* columns. */
 const GEARED_SOURCE = { cannon: 'Cannon', archertower: 'Archer Tower', mortar: 'Mortar' } as const;
-export function nativeGearedWeapon(kind: keyof typeof GEARED_SOURCE, level: number): NativeWeapon {
-  const key = `geared:${kind}/${level}`;
+export function nativeGearedWeapon(
+  kind: keyof typeof GEARED_SOURCE,
+  level: number,
+  supercharge = 0,
+): NativeWeapon {
+  const key = `geared:${kind}/${level}/${supercharge}`;
   if (cache.has(key)) return cache.get(key)!;
   const name = GEARED_SOURCE[kind];
-  const weapon: NativeWeapon = weaponBase(nativeRow('buildings', name, level), name, level, true);
+  const weapon: NativeWeapon = weaponBase(
+    nativeRow('buildings', name, level),
+    name,
+    level,
+    true,
+    superchargeBonus(kind, supercharge).dps,
+  );
   cache.set(key, weapon);
   return weapon;
 }
@@ -260,11 +273,13 @@ export interface RevengeTier {
   projectile: string;
   bounces: number;
 }
-export function revengeTiers(level: number): RevengeTier[] {
+export function revengeTiers(level: number, supercharge = 0): RevengeTier[] {
   const row = nativeRow('buildings', 'Revenge Tower', level);
   const levels = numbers(row, 'SpecialAbilitiesLevel');
+  // Supercharge SpecialAbilityLevelBuff raises every stage ability by one level.
+  const buff = superchargeBonus('revengetower', supercharge).abilityLevels;
   return list(row, 'SpecialAbilities').map((name, index) => {
-    const ability = nativeRow('abilities', name, levels[index] || 1);
+    const ability = nativeRow('abilities', name, (levels[index] || 1) + (buff[index] ?? 0));
     return {
       name,
       disabled: flag(ability, 'DisableAttacking'),
@@ -277,9 +292,10 @@ export function revengeTiers(level: number): RevengeTier[] {
     };
   });
 }
-export const revengeTier = (level: number, destroyed: number) =>
-  revengeTiers(level).find((tier) => destroyed >= tier.after && destroyed < tier.until) ??
-  revengeTiers(level).at(-1)!;
+export const revengeTier = (level: number, destroyed: number, supercharge = 0) =>
+  revengeTiers(level, supercharge).find(
+    (tier) => destroyed >= tier.after && destroyed < tier.until,
+  ) ?? revengeTiers(level, supercharge).at(-1)!;
 
 /** Town Hall weapon wake rules from the Town Hall row and the hidden-building global. */
 export function townHallActivation(level: number) {

@@ -97,15 +97,16 @@ export function weaponFor(tower: Building): NativeWeapon | null {
     tower.geared &&
     (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')
   )
-    return nativeGearedWeapon(tower.kind, tower.level);
+    return nativeGearedWeapon(tower.kind, tower.level, tower.supercharge);
   const kind = tower.kind as NativeDefenseKind;
+  const supercharge = tower.supercharge;
   if (kind === 'spelltower')
     return nativeWeapon(kind, tower.level, { mode: tower.spellMode ?? 'rage' });
   if (kind === 'multigeartower')
-    return nativeWeapon(kind, tower.level, { mode: tower.gearMode ?? 'long' });
+    return nativeWeapon(kind, tower.level, { mode: tower.gearMode ?? 'long', supercharge });
   if (kind === 'townhall')
     return nativeWeapon(kind, tower.level, { weaponLevel: tower.weaponLevel ?? 1 });
-  return nativeWeapon(kind, tower.level);
+  return nativeWeapon(kind, tower.level, { supercharge });
 }
 
 /** Counts deployed housing toward Eagle Artillery and Builder's Hut activation. */
@@ -225,7 +226,7 @@ export function stepNativeDefense(ctx: NativeDefenseContext, tower: Building, dt
     return stepMultiTarget(ctx, tower, state, weapon, battleTime);
   if (kind === 'multiarchertower') return stepMultiTarget(ctx, tower, state, weapon, battleTime);
   if (kind === 'revengetower') {
-    const tier = revengeTier(tower.level, destroyedBuildings(battle));
+    const tier = revengeTier(tower.level, destroyedBuildings(battle), tower.supercharge);
     if (tier.disabled) {
       delete state.target;
       delete state.releaseAt;

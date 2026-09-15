@@ -1,4 +1,5 @@
 import { buildingDamageScale, hurtUnit, unitHidden } from './native-status';
+import { superchargeBonus } from './native-supercharge';
 import { TROOPS } from './data';
 import { distance2D } from './distance';
 import type { Battle, Building, Unit } from './model';
@@ -66,6 +67,10 @@ export function tickInfernoCombat(
     let damage = (pulse.dps * pulse.intervalMs) / 1000;
     let killed: boolean;
     if (native) {
+      // Supercharged ramp DPS per stage (client mini levels DPS / DPSLv2 / DPSLv3).
+      const charged = superchargeBonus('inferno', (tower as Building).supercharge);
+      damage +=
+        ([charged.dps, charged.dpsLv2, charged.dpsLv3][pulse.stage] * pulse.intervalMs) / 1000;
       damage *= buildingDamageScale(native, tower as Building, at);
       hurtUnit(native, target, damage, at);
       killed = target.hp <= 0;

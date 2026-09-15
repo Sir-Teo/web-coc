@@ -98,6 +98,7 @@ import {
   mergeQuote,
   type MergedKind,
 } from '../game/native-merges';
+import { superchargeQuote } from '../game/native-supercharge';
 
 const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
   rage: 'Rage',
@@ -649,6 +650,9 @@ export class HUD {
         if (m.merge(result as MergedKind, Number(anchor))) this.audio.play('build');
         break;
       }
+      case 'supercharge':
+        if (m.supercharge(Number(arg))) this.audio.play('build');
+        break;
       case 'gear-up':
         if (m.gearUp(Number(arg))) this.audio.play('build');
         break;
@@ -1327,6 +1331,13 @@ export class HUD {
         `aria-label="Merge into ${BUILDINGS[result].name}"`,
       );
     }
+    const charge = superchargeQuote(b.kind, b.supercharge ?? 0);
+    if (charge && b.level >= BUILDINGS[b.kind].maxLevel && m.townhallLevel >= charge.townhall)
+      html += button(
+        `supercharge:${b.id}`,
+        `<span>${icon('Zap', 19)} Supercharge ${charge.charge}</span><small>${resource(charge.resource)} ${n(charge.cost)}</small>`,
+        'game-btn blue',
+      );
     if (isGearable(b.kind) && !b.geared) {
       const quote = gearUpQuote(b.kind);
       const geared = m.state.buildings.filter(

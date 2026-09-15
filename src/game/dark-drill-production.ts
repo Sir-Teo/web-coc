@@ -9,8 +9,15 @@ export function darkDrillProduction(level: number) {
 }
 
 /** Preserve already-earned legacy overflow; resume production after collection creates space. */
-export function produceDarkElixir(level: number, stored: number, seconds: number) {
-  const { perHour, capacity } = darkDrillProduction(level);
+export function produceDarkElixir(
+  level: number,
+  stored: number,
+  seconds: number,
+  supercharge: { production: number; capacity: number } = { production: 0, capacity: 0 },
+) {
+  const base = darkDrillProduction(level);
+  const perHour = base.perHour + supercharge.production;
+  const capacity = base.capacity + supercharge.capacity;
   if (!Number.isFinite(stored) || stored < 0 || !Number.isFinite(seconds) || seconds < 0)
     throw new Error('Invalid Dark Elixir production state');
   return Math.max(stored, Math.min(capacity, stored + (seconds * perHour) / 3600));

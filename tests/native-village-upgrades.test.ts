@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { maxCountFor } from '../src/game/data';
 import { GameModel, makeBuilding, type Building } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
-import { nativeGearedWeapon } from '../src/game/native-defense-stats';
+import { nativeGearedWeapon, nativeWeapon, revengeTier } from '../src/game/native-defense-stats';
+import { superchargeBonus, superchargeQuote } from '../src/game/native-supercharge';
 import { consumedByMerges, gearUpQuote, mergeInputs, mergeQuote } from '../src/game/native-merges';
 import { validateSave } from '../src/game/save';
 
@@ -134,6 +135,37 @@ describe('Town Hall 11-18 village upgrades', () => {
     select(m, 12);
     expect(m.rotateSweeper()).toBe(true);
     expect(m.state.buildings.find((b) => b.id === 12)!.direction).toBe(2);
+    expect(validateSave(m.state)).toBe(true);
+  });
+
+  it('supercharges maxed buildings with cumulative client bonuses', () => {
+    expect(superchargeBonus('inferno', 2)).toMatchObject({
+      dps: 10,
+      dpsLv2: 20,
+      dpsLv3: 200,
+      hp: 200,
+    });
+    expect(superchargeBonus('goldmine', 3)).toMatchObject({
+      production: 594,
+      capacity: 33000,
+      hp: 50,
+    });
+    // Official wiki: Ricochet Cannon charge 1 = 420 DPS / 336 per shot; Revenge Tower stage 1 = 510.
+    expect(nativeWeapon('ricochetcannon', 4, { supercharge: 1 })!.damage).toBeCloseTo(336, 6);
+    expect(revengeTier(2, 5, 1).damage).toBe(510);
+    expect(revengeTier(2, 30, 1).damage).toBe(260);
+    const m = village(18, [makeBuilding(10, 'scattershot', 30, 30, 7)]);
+    const tower = m.state.buildings.find((b) => b.id === 10)!;
+    const hp = tower.maxHp;
+    expect(superchargeQuote('scattershot', 0)).toMatchObject({ cost: 14_500_000, charge: 1 });
+    expect(m.supercharge(10)).toBe(true);
+    expect(validateSave(m.state)).toBe(true);
+    m.tick(tower.upgradeEnd! + 1);
+    expect([tower.supercharge, tower.maxHp]).toEqual([1, hp]);
+    expect(m.supercharge(10)).toBe(true);
+    m.tick(tower.upgradeEnd! + 1);
+    expect([tower.supercharge, tower.maxHp]).toEqual([2, hp + 150]);
+    expect(m.supercharge(10)).toBe(false);
     expect(validateSave(m.state)).toBe(true);
   });
 
