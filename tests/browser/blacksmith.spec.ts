@@ -94,7 +94,9 @@ for (const [width, height] of [
     await page.waitForFunction(() => window.__game?.scene.ready);
     await page.locator('.train-add').click();
     await page.locator('[data-action="heroes"]').click();
-    await expect(page.locator('.hero-equipment')).toContainText('Earthquake Boots');
+    await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText(
+      'Earthquake Boots',
+    );
     expect(
       await page.evaluate(() => [
         window.__game.model.kingEquipment.levels.puppet,

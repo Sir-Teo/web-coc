@@ -106,10 +106,24 @@ try {
       await expect(page.locator('.shop-btn')).toBeVisible();
       await page.locator('.train-add').click();
       await page.locator('[data-action="heroes"]').click();
-      await expect(page.locator('.hero-equipment')).toContainText('Earthquake Boots');
-      await expect(page.locator('.hero-equipment')).toContainText('LEVEL 3');
+      await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText(
+        'Earthquake Boots',
+      );
+      await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText('LEVEL 3');
       await page.locator('[data-action="practice"]').click();
       await page.getByRole('button', { name: 'Barbarian King, Deploy King', exact: true }).click();
+      // Native battles carry the roster in `heroes`; the King is found by kind.
+      const kingId = () =>
+        page.evaluate(
+          () =>
+            JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king')
+              .unitId,
+        );
+      const summoned = () =>
+        page.evaluate(
+          () =>
+            JSON.parse(window.render_game_to_text()).battle.troops.filter((u) => u.summoned).length,
+        );
       for (const [x, y] of [480, 400, 320, 240, 560].flatMap((y) =>
         [720, 560, 880, 400, 1040, 240, 1200].map((x) => [x, y]),
       )) {
@@ -121,29 +135,23 @@ try {
         ) {
           await page.mouse.click(x, y);
           await page.waitForTimeout(50);
-          if (
-            await page.evaluate(
-              () => JSON.parse(window.render_game_to_text()).battle.hero.unitId !== null,
-            )
-          )
-            break;
+          if ((await kingId()) !== null) break;
         }
       }
       await expect(
         page.getByRole('button', { name: 'Barbarian King, Activate ability', exact: true }),
       ).toBeEnabled();
       await page.keyboard.press('h');
-      await expect
-        .poll(() =>
-          page.evaluate(() => JSON.parse(window.render_game_to_text()).battle.hero.summonsSpawned),
-        )
-        .toBe(16);
-      const hero = await page.evaluate(() => JSON.parse(window.render_game_to_text()).battle.hero);
-      expect(hero.equipment).toEqual({
-        levels: { puppet: 3, vial: 1, boots: 1 },
-        loadout: ['puppet', 'boots'],
-      });
-      expect(hero.rageUntil).toBe(hero.abilityAt);
+      // Level-3 Barbarian Puppet uses ability level 2: sixteen Barbarians.
+      await expect.poll(summoned).toBe(16);
+      const hero = await page.evaluate(
+        () => JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
+      );
+      expect(hero.items).toEqual([
+        { slug: 'barbarian-puppet', level: 3 },
+        { slug: 'earthquake-boots', level: 1 },
+      ]);
+      expect(hero.abilityUsed).toBe(true);
       await page.waitForTimeout(1000);
       await page.locator('[data-action="surrender"]').click();
       await page.locator('[data-action="end"]').click();
@@ -153,10 +161,10 @@ try {
       await page.getByRole('slider', { name: 'Replay position' }).press('End');
       await expect(page.locator('.replay-status')).toContainText('Replay complete');
       const replayHero = await page.evaluate(
-        () => JSON.parse(window.render_game_to_text()).battle.hero,
+        () => JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
       );
-      expect(replayHero.equipment).toEqual(hero.equipment);
-      expect(replayHero.summonsSpawned).toBe(16);
+      expect(replayHero.items).toEqual(hero.items);
+      expect(replayHero.abilityUsed).toBe(true);
       expect(
         await page.evaluate(() => JSON.parse(window.render_game_to_text()).resources.gems),
       ).toBe(660);

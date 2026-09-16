@@ -171,6 +171,7 @@ async function boot() {
               stars: model.battle.stars,
               remaining: model.battle.remaining,
               hero: model.battle.hero,
+              heroes: model.battle.nativeHeroes,
               units: model.battle.units.filter((u) => u.hp > 0).length,
               troops: model.battle.units
                 .filter((u) => u.hp > 0)

@@ -94,4 +94,6 @@ keeps. `tests/replay.test.ts` covers the version gate and the portable file roun
 
 `tests/content-expansion.test.ts` covers all six equipment effects, local defending heroes,
 new spell timing, siege production and super licences. `tests/browser/native-hero-art.spec.ts`
-checks desktop/mobile rendering and missing asset requests.
+checks desktop/mobile rendering and missing asset requests. `tests/browser/hero-roster.spec.ts`
+covers the roster panel (all six heroes, upgrades, lineup swaps), pet research/assignment, per-hero
+forge tabs and multi-hero deployment/activation.

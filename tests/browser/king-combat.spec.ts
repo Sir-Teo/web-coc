@@ -43,22 +43,30 @@ for (const width of [1440, 390, 320])
     await page.setViewportSize({ width, height: width === 1440 ? 960 : 844 });
     await fixture(page);
     await panel(page);
-    const stats = page.locator('.hero-stat-grid');
+    const stats = page.locator('[data-hero="king"] .hero-stat-grid');
     await expect(stats).toContainText('2,114 → 2,159');
     await expect(stats).toContainText('139 → 141');
     await expect(stats).toContainText('166.8 → 169.2');
     for (const text of ['1.2s', '1 tile', '2 tiles/s']) await expect(stats).toContainText(text);
-    await expect(page.locator('.hero-equipment')).toContainText('Barbarian Puppet');
-    await expect(page.locator('.hero-equipment')).toContainText('Rage Vial');
+    await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText(
+      'Barbarian Puppet',
+    );
+    await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText('Rage Vial');
     await expect(page.locator('.hero-activation')).toContainText('570 hitpoints');
-    await expect(page.locator('.hero-upgrade')).toContainText('10,500');
-    await expect(page.locator('.hero-upgrade')).toContainText('22h');
+    await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('10,500');
+    await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('22h');
     await expect(page.locator('#toast')).not.toHaveClass(/show/);
     await expect(page.locator('.modal')).toHaveCSS('opacity', '1');
-    await page.screenshot({ animations: 'disabled', path: `output/playtest/king-panel-${width}-${browserName}.png` });
-    await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
-    await page.screenshot({ animations: 'disabled', path: `output/playtest/king-equipment-${width}-${browserName}.png` });
-    await page.locator('[data-action="hero-upgrade"]').tap();
+    await page.screenshot({
+      animations: 'disabled',
+      path: `output/playtest/king-panel-${width}-${browserName}.png`,
+    });
+    await page.locator('[data-action="hero-upgrade:king"]').scrollIntoViewIfNeeded();
+    await page.screenshot({
+      animations: 'disabled',
+      path: `output/playtest/king-equipment-${width}-${browserName}.png`,
+    });
+    await page.locator('[data-action="hero-upgrade:king"]').tap();
     expect(
       await page.evaluate(() => {
         const m = window.__game.model,
@@ -71,9 +79,9 @@ for (const width of [1440, 390, 320])
     await page.waitForFunction(() => window.__game?.scene.ready);
     await panel(page);
     await expect(page.locator('[data-hero-timer]')).toBeVisible();
-    await page.locator('[data-action="hero-finish"]').scrollIntoViewIfNeeded();
-    await page.locator('[data-action="hero-finish"]').tap();
-    await expect(page.locator('.hero-overview')).toContainText('Level 11');
+    await page.locator('[data-action="hero-finish:king"]').scrollIntoViewIfNeeded();
+    await page.locator('[data-action="hero-finish:king"]').tap();
+    await expect(page.locator('[data-hero="king"]')).toContainText('Level 11');
     expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(39500);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -88,15 +96,19 @@ test('TH4 King can activate both default items by touch while permanent upgrades
   await fixture(page, 4, 1);
   await panel(page);
   await expect(page.locator('.hero-scaling')).toContainText('50%');
-  await expect(page.locator('.hero-stat-grid')).toContainText('877');
-  await expect(page.locator('.hero-stat-grid')).toContainText('59.5');
+  await expect(page.locator('[data-hero="king"] .hero-stat-grid')).toContainText('877');
+  await expect(page.locator('[data-hero="king"] .hero-stat-grid')).toContainText('59.5');
   await expect(page.locator('.hero-activation')).toContainText('230 hitpoints');
-  await expect(page.locator('.hero-upgrade')).toContainText('Hero upgrades unlock at Town Hall 7');
-  await expect(page.locator('[data-action="hero-upgrade"]')).toHaveCount(0);
+  await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText(
+    'Hero upgrades unlock at Town Hall 7',
+  );
+  await expect(page.locator('[data-action="hero-upgrade:king"]')).toHaveCount(0);
   await page.locator('[data-action="practice"]').scrollIntoViewIfNeeded();
   await page.locator('[data-action="practice"]').tap();
   await page.getByRole('button', { name: 'Barbarian King, Deploy King', exact: true }).tap();
-  await expect(page.locator('.deploy-label')).toContainText('Tap outside the red boundary to deploy');
+  await expect(page.locator('.deploy-label')).toContainText(
+    'Tap outside the red boundary to deploy',
+  );
   const p = await page.evaluate(() => {
     const scene = window.__game.scene;
     const p = scene.screenFor(12, 15);
@@ -116,7 +128,9 @@ test('TH4 King can activate both default items by touch while permanent upgrades
   expect(
     await page.evaluate(() => window.__game.model.battle.units.find((u) => u.hero).maxHp),
   ).toBe(877);
-  await expect(page.locator('.deploy-label')).toHaveText('Barbarian King · Ability used · Fighting');
+  await expect(page.locator('.deploy-label')).toHaveText(
+    'Barbarian King · Ability used · Fighting',
+  );
   await page.screenshot({ path: `output/playtest/king-early-ability-${browserName}.png` });
   await page.evaluate(() => {
     const { model, scene } = window.__game;
@@ -124,8 +138,12 @@ test('TH4 King can activate both default items by touch while permanent upgrades
     model.battle.units.find((u) => u.hero).hp = 0;
     // The passive HUD refresh must update both the card and its instructions.
   });
-  await expect(page.locator('.deploy-label')).toHaveText('Barbarian King · Defeated · Returns next attack');
-  await expect(page.getByRole('button', { name: 'Barbarian King, Defeated', exact: true })).toBeDisabled();
+  await expect(page.locator('.deploy-label')).toHaveText(
+    'Barbarian King · Defeated · Returns next attack',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Barbarian King, Defeated', exact: true }),
+  ).toBeDisabled();
 });
 
 test('Puppet waves and boost colors use battle time, reconstruct on replay seek and clear at home', async ({

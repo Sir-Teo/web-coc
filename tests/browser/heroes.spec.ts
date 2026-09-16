@@ -10,6 +10,7 @@ async function unlock(page: Page, th = 7) {
     const m = window.__game.model;
     m.state.obstacles = []; // The developed hero fixture uses cleared ground.
     m.townhall!.level = th;
+    m.state.elixir = 100000; // The native Hero Hall costs 30,000 elixir; the starter grant cannot cover it.
     m.beginBuild('herohall');
     if (!m.place(2, 26)) throw Error('Hero Hall fixture cannot be placed');
     m.tick(m.state.buildings.at(-1)!.upgradeEnd! + 1);
@@ -70,7 +71,8 @@ test('Hero Hall, dark buildings, and King art load with accurate unlock labels',
       .locator('.progression-unlock')
       .filter({ hasText: /^Archer Tower/ })
       .locator('img'),
-  ).toHaveAttribute('src', /tier3\/archertower.webp$/);
+    // Per-level native portraits replaced the shared tier3 webp; the exact ceiling is pinned in townhall-tiers.test.ts.
+  ).toHaveAttribute('src', /archer-tower-native\/portrait\/\d+\.png$/);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/progression-desktop.png',
@@ -84,9 +86,9 @@ test('hero upgrade charges once, persists through reload, and finishes through t
   await boot(page);
   await unlock(page);
   await heroes(page);
-  await expect(page.locator('.hero-overview')).toContainText('Level 1');
+  await expect(page.locator('[data-hero="king"]')).toContainText('Level 1');
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-desktop.png' });
-  await page.locator('[data-action="hero-upgrade"]').click();
+  await page.locator('[data-action="hero-upgrade:king"]').click();
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
   expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(5000);
   await page.waitForTimeout(400);
@@ -94,8 +96,8 @@ test('hero upgrade charges once, persists through reload, and finishes through t
   await page.waitForFunction(() => window.__game?.scene.ready);
   await heroes(page);
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
-  await page.locator('[data-action="hero-finish"]').click();
-  await expect(page.locator('.hero-overview')).toContainText('Level 2');
+  await page.locator('[data-action="hero-finish:king"]').click();
+  await expect(page.locator('[data-hero="king"]')).toContainText('Level 2');
   expect(await page.evaluate(() => window.__game.model.heroReady)).toBe(true);
 });
 
@@ -140,18 +142,18 @@ test('hero and progression panels fit phone portrait and landscape with reachabl
   await heroes(page);
   // A queued village render or viewport resize can replace the dialog during scrolling.
   await expect(async () => {
-    await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
-    await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+    await page.locator('[data-action="hero-upgrade:king"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-action="hero-upgrade:king"]')).toBeInViewport();
   }).toPass({ timeout: 5000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-mobile.png' });
   await page.setViewportSize({ width: 844, height: 390 });
   // A queued village render or viewport resize can replace the dialog during scrolling.
   await expect(async () => {
-    await page.locator('[data-action="hero-upgrade"]').scrollIntoViewIfNeeded();
-    await expect(page.locator('[data-action="hero-upgrade"]')).toBeInViewport();
+    await page.locator('[data-action="hero-upgrade:king"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-action="hero-upgrade:king"]')).toBeInViewport();
   }).toPass({ timeout: 5000 });
-  await page.locator('[data-action="hero-upgrade"]').click();
+  await page.locator('[data-action="hero-upgrade:king"]').click();
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/heroes-landscape.png' });
   await page.locator('[data-action="close"]').click();
@@ -185,8 +187,9 @@ test('dark elixir collection updates its own HUD counter and survives reload', a
   });
   await expect(page.locator('.resource-bar.dark')).not.toHaveClass(/full/);
   await page.locator('.collect-btn').click();
-  await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('360');
-  expect(await page.evaluate(() => window.__game.model.resourceCap('dark'))).toBe(10000);
+  // Pinned native Dark Drill level 1 produces 20/hour (the old local 360/hr no longer applies).
+  await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('20');
+  expect(await page.evaluate(() => window.__game.model.resourceCap('dark'))).toBe(12500); // TH7 hall 2,500 + storage 10,000.
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/dark-elixir-village.png',
@@ -194,5 +197,5 @@ test('dark elixir collection updates its own HUD counter and survives reload', a
   await page.waitForTimeout(400);
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.ready);
-  await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('360');
+  await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('20');
 });

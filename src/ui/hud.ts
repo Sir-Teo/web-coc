@@ -69,6 +69,32 @@ import {
   heroUpgradeCost,
   heroUpgradeSeconds,
 } from '../game/heroes';
+import {
+  HERO_KINDS,
+  HERO_SOURCE,
+  PET_DISPLAY,
+  PET_KINDS,
+  heroItems,
+  heroLevelCap as nativeHeroLevelCap,
+  heroSlots as nativeHeroSlots,
+  heroUnlockHall,
+  heroUnlockTownHall,
+  heroUpgradeQuote as nativeHeroUpgradeQuote,
+  itemLevelCap,
+  itemMaxLevel,
+  itemName as nativeItemName,
+  itemRarity,
+  itemStats as nativeItemStats,
+  itemUpgradeCost,
+  petLevelCap,
+  petMaxLevel,
+  petUnlockHouse,
+  petUpgradeQuote,
+  validPet,
+  type HeroKind,
+  type PetKind,
+} from '../game/native-hero-data';
+import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
 import {
@@ -101,7 +127,13 @@ import {
   type SpellKind,
   type ResearchKind,
 } from '../game/data';
-import { GameModel, formatTime, BATTLE_SECONDS, type Building } from '../game/model';
+import {
+  GameModel,
+  formatTime,
+  BATTLE_SECONDS,
+  EPIC_ITEM_GEMS,
+  type Building,
+} from '../game/model';
 import {
   spellTowerModes,
   townHallWeaponUpgrade,
@@ -136,6 +168,7 @@ type Panel =
   | 'blacksmith'
   | 'ore-confirm'
   | 'heroes'
+  | 'pets'
   | 'progression'
   | 'research'
   | 'campaign'
@@ -157,6 +190,33 @@ const n = (v: number) => Math.floor(v).toLocaleString('en-US');
 const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
   `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
+/** Native roster portraits for every hero (the legacy King keeps its own `king` art). */
+const HERO_PORTRAIT: Record<HeroKind, string> = {
+  king: '/assets/catalog-native/roster/hero-barbarian-king.png',
+  queen: '/assets/catalog-native/roster/hero-archer-queen.png',
+  prince: '/assets/catalog-native/roster/hero-minion-prince.png',
+  warden: '/assets/catalog-native/roster/hero-grand-warden.png',
+  champion: '/assets/catalog-native/roster/hero-royal-champion.png',
+  duke: '/assets/catalog-native/roster/hero-dragon-duke.png',
+};
+const heroPortrait = (kind: HeroKind) => HERO_PORTRAIT[kind];
+/** Pet House portraits; filenames follow the client record names, not the short keys. */
+const PET_PORTRAIT: Record<PetKind, string> = {
+  lassi: '/assets/catalog-native/roster/pet-lassi.png',
+  yak: '/assets/catalog-native/roster/pet-mighty-yak.png',
+  owl: '/assets/catalog-native/roster/pet-electro-owl.png',
+  unicorn: '/assets/catalog-native/roster/pet-unicorn.png',
+  frosty: '/assets/catalog-native/roster/pet-frosty.png',
+  diggy: '/assets/catalog-native/roster/pet-diggy.png',
+  lizard: '/assets/catalog-native/roster/pet-poison-lizard.png',
+  phoenix: '/assets/catalog-native/roster/pet-phoenix.png',
+  fox: '/assets/catalog-native/roster/pet-spirit-fox.png',
+  jelly: '/assets/catalog-native/roster/pet-angry-jelly.png',
+  sneezy: '/assets/catalog-native/roster/pet-sneezy.png',
+  crow: '/assets/catalog-native/roster/pet-crow.png',
+};
+const nativeItemImage = (slug: string, cls = '') =>
+  `<img class="${cls}" src="/assets/catalog-native/roster/equipment-${slug}.png" alt="">`;
 const time = (seconds: number) => formatTime(seconds);
 const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
@@ -371,6 +431,9 @@ export class HUD {
   private inspectedTroop: TroopKind = 'swordsman';
   private inspectedSpell: SpellKind = 'lightning';
   private inspectedEquipment: EquipmentKind = 'puppet';
+  private inspectedSmithHero: HeroKind | 'legacy' = 'legacy';
+  private inspectedNativeItem = '';
+  private nativeOrePurchase: { slug: string; level: number; gems: number } | null = null;
   private orePurchase: { kind: EquipmentKind; level: number; gems: number } | null = null;
   private presetNames = new Map<number, string>();
   private toastTimer?: ReturnType<typeof setTimeout>;
@@ -672,6 +735,57 @@ export class HUD {
         this.show('blacksmith');
         break;
       }
+      case 'blacksmith-hero':
+        this.nativeOrePurchase = null;
+        this.inspectedSmithHero = (HERO_KINDS as string[]).includes(arg)
+          ? (arg as HeroKind)
+          : 'legacy';
+        this.show('blacksmith');
+        break;
+      case 'native-item':
+      case 'native-slot':
+        this.nativeOrePurchase = null;
+        this.inspectedNativeItem = arg;
+        this.show('blacksmith');
+        break;
+      case 'native-equip': {
+        const [slug, rawSlot] = arg.split(',');
+        if (this.inspectedSmithHero !== 'legacy' && Number(rawSlot) <= 1)
+          m.equipItem(this.inspectedSmithHero, slug, Number(rawSlot));
+        break;
+      }
+      case 'native-upgrade': {
+        const [slug, rawLevel] = arg.split(','),
+          level = Number(rawLevel);
+        if (this.inspectedSmithHero === 'legacy' || !m.blacksmith) break;
+        if (m.gear.levels[slug] !== level) break;
+        const cost = itemUpgradeCost(slug, level);
+        if (!cost) break;
+        const gems = ORE_KEYS.reduce(
+          (sum, k) => sum + Math.max(0, cost[k] - m.ores[k]) * ORES[k].gems,
+          0,
+        );
+        if (gems > 0) {
+          this.nativeOrePurchase = { slug, level, gems };
+          this.show('blacksmith');
+        } else if (m.upgradeItem(slug, level)) this.audio.play('build');
+        break;
+      }
+      case 'native-ore-buy': {
+        const purchase = this.nativeOrePurchase;
+        this.nativeOrePurchase = null;
+        if (purchase && m.upgradeItem(purchase.slug, purchase.level, purchase.gems))
+          this.audio.play('build');
+        this.show('blacksmith');
+        break;
+      }
+      case 'native-ore-cancel':
+        this.nativeOrePurchase = null;
+        this.show('blacksmith');
+        break;
+      case 'epic-buy':
+        if (this.inspectedSmithHero !== 'legacy') m.buyEpicItem(arg);
+        break;
       case 'close':
         this.closePanel();
         break;
@@ -767,19 +881,94 @@ export class HUD {
         this.show('progression');
         break;
       case 'hero-upgrade':
-        m.upgradeHero();
+        if (arg && (HERO_KINDS as string[]).includes(arg)) m.upgradeRosterHero(arg as HeroKind);
+        else m.upgradeHero();
         break;
       case 'hero-finish':
-        m.finishHero();
+        if (arg && (HERO_KINDS as string[]).includes(arg)) m.finishRosterHero(arg as HeroKind);
+        else m.finishHero();
         break;
-      case 'hero-select':
+      case 'hero-lineup': {
+        if (!(HERO_KINDS as string[]).includes(arg)) break;
+        const kind = arg as HeroKind;
+        if (!m.heroProgress(kind)) break;
+        const current = m.heroLineup;
+        if (current.includes(kind)) break;
+        // The lineup always refills from ready heroes in roster order, so benching is
+        // expressed as swapping: append when a slot is free, otherwise take the last slot.
+        const next =
+          current.length < m.heroSlotCount ? [...current, kind] : [...current.slice(0, -1), kind];
+        if (!m.setHeroLineup(next)) m.notify('That hero cannot join the lineup right now.');
+        break;
+      }
+      case 'pets':
+        this.show('pets');
+        break;
+      case 'pet-research':
+        if (validPet(arg)) m.researchPet(arg);
+        break;
+      case 'pet-finish':
+        m.finishPetResearch();
+        break;
+      case 'pet-assign': {
+        const [pet, hero] = arg.split(',');
+        if (!validPet(pet)) break;
+        if (hero === 'none') {
+          const current = Object.entries(m.petProgress.assigned).find(([, p]) => p === pet)?.[0];
+          if (current) m.assignPet(current as HeroKind, null);
+        } else if ((HERO_KINDS as string[]).includes(hero)) {
+          // Assigning an already-assigned pet moves it; the model enforces one pet per hero.
+          const current = Object.entries(m.petProgress.assigned).find(([, p]) => p === pet)?.[0];
+          if (current === hero) break;
+          m.assignPet(hero as HeroKind, pet as PetKind);
+        }
+        break;
+      }
+      case 'hero-select': {
+        // Native battles (v51+) carry the whole roster; legacy battles carry one King.
+        if (arg && (HERO_KINDS as string[]).includes(arg)) {
+          const kind = arg as HeroKind;
+          const hero = m.battle?.nativeHeroes?.find((h) => h.kind === kind);
+          if (!hero) break;
+          if (hero.unitId === null) m.selectNativeHero(kind);
+          else void m.activateNativeHeroAbility(kind);
+          break;
+        }
+        if (m.battle?.nativeHeroes?.length) {
+          const heroes = m.battle.nativeHeroes;
+          const ready = heroes.filter((h) => {
+            const unit = m.battle!.units.find((u) => u.id === h.unitId);
+            return h.unitId === null || (!!unit && unit.hp > 0 && !h.abilityUsed);
+          });
+          if (!ready.length) break;
+          // H cycles through ready heroes; a second press on a deployed hero fires its ability.
+          const current = heroes.find((h) => h.kind === m.activeHeroKind);
+          const currentUnit = m.battle.units.find((u) => u.id === current?.unitId);
+          if (
+            current &&
+            current.unitId !== null &&
+            currentUnit &&
+            currentUnit.hp > 0 &&
+            !current.abilityUsed
+          ) {
+            void m.activateNativeHeroAbility(current.kind);
+            break;
+          }
+          const at = current ? ready.findIndex((h) => h.kind === current.kind) : -1;
+          const next = ready[(at + 1) % ready.length];
+          if (next.unitId === null) m.selectNativeHero(next.kind);
+          else void m.activateNativeHeroAbility(next.kind);
+          break;
+        }
         if (!m.battle?.hero) break;
         if (m.battle.hero.unitId === null) {
           m.activeHero = true;
+          m.activeHeroKind = null;
           m.activeSpell = null;
           m.changed();
         } else m.activateHeroAbility();
         break;
+      }
       case 'shop':
         this.tab = 'All';
         this.showDrawer('shop');
@@ -1025,6 +1214,7 @@ export class HUD {
       case 'troop':
         if (!m.battle || !m.battle.remaining[arg as TroopKind]) break;
         m.activeHero = false;
+        m.activeHeroKind = null;
         m.activeTroop = arg as TroopKind;
         m.activeSpell = null;
         this.render();
@@ -1035,6 +1225,7 @@ export class HUD {
       case 'spell':
         if (!m.battle || !m.battle.spells[arg as SpellKind]) break;
         m.activeHero = false;
+        m.activeHeroKind = null;
         m.activeSpell = m.activeSpell === arg ? null : (arg as SpellKind);
         this.render();
         document
@@ -1531,7 +1722,7 @@ export class HUD {
                 `upgrade:${b.id}`,
                 `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
               )
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   private wallMoveContext() {
@@ -1613,28 +1804,28 @@ export class HUD {
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!b.practice ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${b.practice ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="width:${pct(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
- ${
-   m.replay
-     ? this.replayControls()
-     : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${m.activeHero ? this.kingDeploymentHint() : m.activeSpell ? `Tap anywhere to cast ${SPELLS[m.activeSpell].name}` : `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`}</div><div class="army-tray">${this.heroCard()}${TROOP_ORDER.filter(
-         (k) => b.carriedArmy[k] > 0,
-       )
-         .map((k) =>
-           this.troopCard(
-             k,
-             b.remaining[k],
-             `troop:${k}`,
-             !m.activeHero && !m.activeSpell && m.activeTroop === k,
-           ),
-         )
-         .join('')}${
-         SPELL_ORDER.some((k) => b.carried[k])
-           ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
-               .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
-               .join('')}`
-           : ''
-       }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, W, E</b> · Spells <b>8, 9, 0</b><br>Drag the base to move the camera</span></div></div>`
- }`;
+  ${
+    m.replay
+      ? this.replayControls()
+      : `<div class="battle-bottom"><button class="game-btn red end-battle" data-action="${b.started ? 'surrender' : 'home'}">${icon('Flag', 23)} ${b.started ? 'Surrender' : 'Return home'}</button><div class="deploy-tray"><div class="deploy-label">${this.deployHint()}</div><div class="army-tray">${this.battleHeroCards()}${TROOP_ORDER.filter(
+          (k) => b.carriedArmy[k] > 0,
+        )
+          .map((k) =>
+            this.troopCard(
+              k,
+              b.remaining[k],
+              `troop:${k}`,
+              !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === k,
+            ),
+          )
+          .join('')}${
+          SPELL_ORDER.some((k) => b.carried[k])
+            ? `<span class="tray-divider"></span>${SPELL_ORDER.filter((k) => b.carried[k])
+                .map((k) => this.spellCard(k, b.spells[k], `spell:${k}`, m.activeSpell === k))
+                .join('')}`
+            : ''
+        }</div></div><div class="battle-tip">${icon('MousePointer2', 19)}<span>Troops <b>1–7, Q, W, E</b> · Spells <b>8, 9, 0</b> · Heroes <b>H</b><br>Drag the base to move the camera</span></div></div>`
+  }`;
   }
 
   // ----------------------------------------------------------------- drawer
@@ -1645,6 +1836,28 @@ export class HUD {
       <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', 'First deployment', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-export', `${icon('Download', 14)} Export replay`, 'replay-link')}</div>
       <div class="replay-buttons">${button('replay-pause', r.paused ? 'Play' : 'Pause', 'game-btn blue', r.complete || r.seeking ? 'disabled' : '')}${button('replay-restart', `${icon('RotateCcw', 17)} Restart`, 'game-btn stone')}<div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', 'Back to log', 'game-btn stone')}</div>
     </section>`;
+  }
+  private deployHint() {
+    const m = this.model;
+    if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
+    if (m.activeHero) return this.kingDeploymentHint();
+    if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    return `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap or hold & drag to deploy`;
+  }
+  private nativeDeploymentHint(kind: HeroKind) {
+    const battle = this.model.battle,
+      hero = battle?.nativeHeroes?.find((h) => h.kind === kind),
+      unit = battle?.units.find((u) => u.id === hero?.unitId);
+    const name = HERO_SOURCE[kind];
+    const status =
+      !hero || hero.unitId === null
+        ? 'Tap outside the red boundary to deploy'
+        : unit && unit.hp <= 0
+          ? 'Defeated · Returns next attack'
+          : hero.abilityUsed
+            ? 'Ability used · Fighting'
+            : `Tap ${kind === 'king' ? 'his' : 'its'} card or press H to activate`;
+    return `${name} · ${status}`;
   }
   private kingDeploymentHint() {
     const battle = this.model.battle,
@@ -1660,22 +1873,81 @@ export class HUD {
             : 'Tap his card or press H to activate';
     return `Barbarian King · ${status}`;
   }
+  /** Battle cards: the native roster when present, otherwise the legacy King. */
+  private battleHeroCards() {
+    const m = this.model;
+    if (m.battle?.nativeHeroes?.length) return this.nativeHeroCards();
+    return this.heroCard();
+  }
+  private nativeHeroCards() {
+    const m = this.model,
+      battle = m.battle!;
+    return battle
+      .nativeHeroes!.map((hero, index) => this.nativeHeroCard(hero.kind, index === 0))
+      .join('');
+  }
+  private nativeHeroCard(kind: HeroKind, hotkey = false) {
+    const m = this.model,
+      battle = m.battle!,
+      hero = battle.nativeHeroes!.find((h) => h.kind === kind)!;
+    const unit = battle.units.find((u) => u.id === hero.unitId);
+    const defeated = !!unit && unit.hp <= 0;
+    const ready = hero.unitId === null;
+    const disabled = defeated || (!ready && !!hero.abilityUsed) || !!m.replay;
+    const name = HERO_SOURCE[hero.kind];
+    const short = name
+      .replace('Barbarian ', '')
+      .replace('Archer ', '')
+      .replace('Grand ', '')
+      .replace('Royal ', '')
+      .replace('Minion ', '')
+      .replace('Dragon ', '');
+    const label = ready
+      ? `Deploy ${short}`
+      : defeated
+        ? 'Defeated'
+        : hero.abilityUsed
+          ? 'Ability used'
+          : 'Activate ability';
+    const selected = m.activeHeroKind === hero.kind;
+    return `<button class="troop-card hero-card ${selected ? 'selected' : ''}" data-hero-state="${hero.kind}:${ready}:${defeated}:${!!hero.abilityUsed}:${selected}" data-action="hero-select:${hero.kind}" aria-label="${name}, ${label}" ${disabled ? 'disabled' : ''}>${hotkey ? '<kbd class="troop-key">H</kbd>' : ''}<img src="${heroPortrait(hero.kind)}" alt=""><span class="troop-level">★ ${hero.level}</span><span class="hero-health"><i style="width:${unit ? pct((unit.hp / unit.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+  }
+  /** Home village tray: the saved lineup with levels; opens the Hero Hall. */
+  private rosterCards() {
+    const m = this.model;
+    if (!m.heroHall) return '';
+    const lineup = m.heroLineup;
+    if (!lineup.length) return '';
+    return lineup
+      .map((kind) => {
+        const progress = m.heroProgress(kind);
+        if (!progress) return '';
+        const upgrading = !!progress.upgradeEnd;
+        return `<button class="troop-card hero-card" data-action="heroes" aria-label="${HERO_SOURCE[kind]}, level ${progress.level}${upgrading ? ', upgrading' : ''}"><img src="${heroPortrait(kind)}" alt=""><span class="troop-level">★ ${progress.level}</span><span class="troop-name">${HERO_SOURCE[kind].replace('Barbarian ', '').replace('Archer ', '').replace('Grand ', '').replace('Royal ', '').replace('Minion ', '').replace('Dragon ', '')}</span></button>`;
+      })
+      .join('');
+  }
   private heroCard() {
     const m = this.model,
       h = m.battle?.hero;
-    if (!h) return '';
-    const u = m.battle!.units.find((u) => u.id === h.unitId);
+    if (m.battle) {
+      if (!h) return '';
+    } else {
+      // Home village uses the roster preview instead of a single King card.
+      return this.rosterCards();
+    }
+    const u = m.battle!.units.find((u) => u.id === h!.unitId);
     const defeated = !!u && u.hp <= 0;
-    const ready = h.unitId === null;
-    const disabled = defeated || (!ready && h.abilityUsed);
+    const ready = h!.unitId === null;
+    const disabled = defeated || (!ready && h!.abilityUsed);
     const label = ready
       ? 'Deploy King'
       : defeated
         ? 'Defeated'
-        : h.abilityUsed
+        : h!.abilityUsed
           ? 'Ability used'
           : 'Activate ability';
-    return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+    return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   private heroes() {
     const m = this.model,
@@ -1683,28 +1955,158 @@ export class HUD {
       hall = m.heroHall;
     if (!king || !hall)
       return `<div class="modal-body hero-body"><div class="hero-portrait"><img src="${hudAsset('king')}" alt="Barbarian King"></div><h2>Meet the Barbarian King</h2><p>Build a Hero Hall at Town Hall 4 to unlock your first hero. He fights without army housing and returns at full health for every attack.</p>${button('shop', 'Open the shop', 'game-btn green')}</div>`;
-    const stats = heroStats(king.level, m.townhallLevel, m.kingEquipment),
-      next = heroStats(king.level + 1, m.townhallLevel, m.kingEquipment);
-    const capped = king.level >= m.heroMaxLevel;
-    const required = heroNextRequirement(king.level);
+    const slots = nativeHeroSlots(hall.level);
+    const lineup = m.heroLineup;
+    return `<div class="modal-body hero-body">
+      <p class="hero-stats-note">Hero Hall ${hall.level} · ${slots} battle slot${slots === 1 ? '' : 's'} · ${lineup.length} selected. Heroes use no army space and return at full health for every attack.</p>
+      ${HERO_KINDS.map((kind) => this.heroRosterCard(kind)).join('')}
+      ${button('practice', 'Practice with this army', 'game-btn blue', m.armyReady ? '' : 'disabled')}
+    </div>`;
+  }
+  /** One roster entry: unlock gate, native stats, equipment, pet, upgrade and lineup. */
+  private heroRosterCard(kind: HeroKind) {
+    const m = this.model,
+      hall = m.heroHall!,
+      name = HERO_SOURCE[kind],
+      progress = m.heroProgress(kind);
+    if (!m.heroUnlocked(kind)) {
+      const th = heroUnlockTownHall(kind),
+        hh = heroUnlockHall(kind);
+      return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>${name}</h2><p>Locked · Requires Town Hall ${th} and Hero Hall ${hh}</p></div></article></section>`;
+    }
+    if (!progress)
+      return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>${name}</h2><p>Unlocked · Joining your village…</p></div></article></section>`;
+    const inLineup = m.heroLineup.includes(kind);
+    const gear = m.gear,
+      loadout = (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
+      setup = {
+        kind,
+        level: progress.level,
+        items: loadout.slice(0, 2).map((slug) => ({ slug, level: gear.levels[slug] })),
+      };
+    const native = heroStatsFor(setup, m.townhallLevel),
+      heal = heroAbilityHeal(setup, m.townhallLevel);
+    const pet = m.petProgress.assigned[kind];
+    // The King keeps its original upgrade record; the other five use the native quote.
+    const isKing = kind === 'king';
+    const max = isKing ? m.heroMaxLevel : m.heroLevelMax(kind);
+    const capped = progress.level >= max;
+    const quote = isKing ? null : nativeHeroUpgradeQuote(kind, progress.level);
+    const required = isKing
+      ? heroNextRequirement(progress.level)
+      : quote
+        ? null
+        : (() => {
+            const cap = nativeHeroLevelCap(kind, 18, 12);
+            return progress.level >= cap ? null : { townhall: 0, hall: 0 };
+          })();
     const missing = !required
       ? []
       : [
           ...(required.townhall > m.townhallLevel ? [`Town Hall ${required.townhall}`] : []),
           ...(required.hall > hall.level ? [`Hero Hall ${required.hall}`] : []),
         ];
-    const scale = heroTownHallScale(m.townhallLevel);
-    const stat = (label: string, value: number, destination?: number, suffix = '') =>
-      `<div>${label}<b>${damageNumber(value)}${suffix}${destination === undefined || capped ? '' : ` → ${damageNumber(destination)}${suffix}`}</b></div>`;
-    return `<div class="modal-body hero-body">
-      <div class="hero-overview"><div class="hero-portrait"><img src="${hudAsset('king')}" alt="Barbarian King"></div><div><span class="eyebrow">HERO HALL ${hall.level}</span><h2>Barbarian King</h2><p>Level ${king.level} / ${m.heroMaxLevel} · ${king.upgradeEnd ? 'Upgrading' : 'Ready for battle'}</p><p>Your hero uses no army space and is never lost in battle.</p></div></div>
+    const stat = (label: string, value: number, suffix = '') =>
+      `<div>${label}<b>${damageNumber(value)}${suffix}</b></div>`;
+    const upgradeCostText = isKing
+      ? `${resource('dark')} ${n(heroUpgradeCost(progress.level))} · Upgrade to ${progress.level + 1}`
+      : quote
+        ? `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Upgrade to ${quote.level}`
+        : '';
+    const upgradeDisabled = isKing
+      ? m.busy >= m.builders || m.state.dark < heroUpgradeCost(progress.level)
+      : !quote ||
+        m.busy >= m.builders ||
+        m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost;
+    const upgradeSecondsText = isKing
+      ? time(heroUpgradeSeconds(progress.level))
+      : quote
+        ? time(quote.seconds)
+        : '';
+    const legacyStats =
+      isKing && progress.level <= 110
+        ? (() => {
+            try {
+              const s = heroStats(progress.level, m.townhallLevel, m.kingEquipment);
+              const nx = heroStats(progress.level + 1, m.townhallLevel, m.kingEquipment);
+              const scale = heroTownHallScale(m.townhallLevel);
+              const arrow = (label: string, value: number, destination?: number, suffix = '') =>
+                `<div>${label}<b>${damageNumber(value)}${suffix}${destination === undefined || capped ? '' : ` → ${damageNumber(destination)}${suffix}`}</b></div>`;
+              return `<div class="hero-stat-grid">${arrow('Hitpoints', s.hp, nx.hp)}${arrow('Damage per second', s.dps, nx.dps)}${arrow('Damage per hit', s.damage, nx.damage)}${arrow('Attack interval', s.rate, undefined, 's')}${arrow('Attack range', s.range, undefined, ' tile')}${arrow('Movement', s.speed, undefined, ' tiles/s')}</div>
       ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
-      <div class="hero-stat-grid">${stat('Hitpoints', stats.hp, next.hp)}${stat('Damage per second', stats.dps, next.dps)}${stat('Damage per hit', stats.damage, next.damage)}${stat('Attack interval', stats.rate, undefined, 's')}${stat('Attack range', stats.range, undefined, ' tile')}${stat('Movement', stats.speed, undefined, ' tiles/s')}</div>
       <p class="hero-stats-note">Stats include the equipped items below.</p>
-      <div class="hero-equipment">${m.kingEquipment.loadout.map((kind) => `<article class="hero-ability">${gearImage(kind, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${m.kingEquipment.levels[kind]}</span><h3>${EQUIPMENT[kind].name}</h3><p>${this.equipmentDescription(kind, m.kingEquipment.levels[kind])}</p>${button(`equipment-view:${kind}`, 'View equipment', 'replay-link')}</article>`).join('')}</div>
-      <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel, m.kingEquipment))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
-      ${button('practice', 'Practice with this army', 'game-btn blue', m.armyReady ? '' : 'disabled')}
+      <div class="hero-equipment">${m.kingEquipment.loadout.map((k) => `<article class="hero-ability">${gearImage(k, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${m.kingEquipment.levels[k]}</span><h3>${EQUIPMENT[k].name}</h3><p>${this.equipmentDescription(k, m.kingEquipment.levels[k])}</p>${button(`equipment-view:${k}`, 'View equipment', 'replay-link')}</article>`).join('')}</div>
+      <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(progress.level, m.townhallLevel, m.kingEquipment))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>`;
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+    return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${pet ? ` · ${PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet}` : ''}</p></div></article>
+      ${
+        isKing && legacyStats
+          ? legacyStats
+          : `<div class="hero-stat-grid">${stat('Hitpoints', native.hp)}${stat('Damage per second', native.dps)}${stat('Damage per hit', native.damage)}${stat('Attack interval', native.rate, 's')}</div>
+      <p class="hero-stats-note">Native stats with equipped items · Recover ${damageNumber(heal)} hitpoints on activation.</p>
+      ${
+        loadout.length
+          ? `<div class="hero-equipment">${loadout
+              .slice(0, 2)
+              .map(
+                (slug) =>
+                  `<article class="hero-ability">${nativeItemImage(slug, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${gear.levels[slug]}</span><h3>${nativeItemName(slug)}</h3></article>`,
+              )
+              .join('')}</div>`
+          : ''
+      }`
+      }
+      <p class="hero-stats-note">Pet: ${pet ? (PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet) : 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
+      ${inLineup ? '' : `<div class="hero-upgrade">${m.heroLineup.length >= nativeHeroSlots(hall.level) ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[m.heroLineup[m.heroLineup.length - 1]]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
+  }
+  /** Pet House: research one pet at a time and assign one pet to each hero. */
+  private pets() {
+    const m = this.model,
+      house = m.petHouse;
+    if (!house)
+      return `<div class="modal-body hero-body"><div class="hero-portrait"><img src="${PET_PORTRAIT.lassi}" alt="L.A.S.S.I"></div><h2>Meet your future companions</h2><p>Build a Pet House to research pets and assign one to each hero. A pet deploys with its hero and stays by its side in battle.</p>${button('shop', 'Open the shop', 'game-btn green')}</div>`;
+    const pets = m.petProgress,
+      research = pets.research;
+    const heroButtons = (pet: PetKind, assigned?: string) =>
+      HERO_KINDS.filter((hero) => m.heroProgress(hero))
+        .map((hero) =>
+          button(
+            `pet-assign:${pet},${hero}`,
+            HERO_SOURCE[hero]
+              .replace('Barbarian ', '')
+              .replace('Archer ', '')
+              .replace('Grand ', '')
+              .replace('Royal ', '')
+              .replace('Minion ', '')
+              .replace('Dragon ', ''),
+            `game-btn ${assigned === hero ? 'green' : 'stone'}`,
+            assigned === hero
+              ? 'disabled'
+              : `aria-label="Assign ${PET_DISPLAY[pet]} to ${HERO_SOURCE[hero]}"`,
+          ),
+        )
+        .join('') +
+      (assigned ? button(`pet-assign:${pet},none`, 'Unassign', 'game-btn stone') : '');
+    return `<div class="modal-body hero-body">
+      <p class="hero-stats-note">Pet House ${house.level} · ${research ? `Researching ${PET_DISPLAY[research.kind]} to level ${(pets.levels[research.kind] ?? 0) + 1}` : 'No research in progress'} · One pet per hero.</p>
+      ${PET_KINDS.map((kind) => {
+        const level = pets.levels[kind];
+        if (level === undefined)
+          return `<section class="hero-section" data-pet="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${PET_PORTRAIT[kind]}" alt="${PET_DISPLAY[kind]}"></div><div><span class="eyebrow">PET HOUSE ${house.level}</span><h2>${PET_DISPLAY[kind]}</h2><p>Locked · Requires Pet House ${petUnlockHouse(kind)}</p></div></article></section>`;
+        const cap = petLevelCap(kind, house.level),
+          max = petMaxLevel(kind),
+          capped = level >= cap,
+          quote = !capped && !research ? petUpgradeQuote(kind, level) : null;
+        const assigned = Object.entries(pets.assigned).find(([, p]) => p === kind)?.[0];
+        return `<section class="hero-section" data-pet="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${PET_PORTRAIT[kind]}" alt="${PET_DISPLAY[kind]}"></div><div><span class="eyebrow">PET HOUSE ${house.level}</span><h2>${PET_DISPLAY[kind]}</h2><p>Level ${level} / ${max}${level >= max ? ' · Max' : capped ? ` · Pet House cap ${cap}` : ''} · ${assigned ? HERO_SOURCE[assigned as HeroKind] : 'Unassigned'}</p></div></article>
+        <div class="hero-upgrade">${research?.kind === kind ? `<p>Upgrade completes in <b data-pet-timer>${time((research.end - m.clock) / 1000)}</b></p>${button('pet-finish', `Finish ${gem} <span data-pet-gems>${m.finishCost({ upgradeEnd: research.end } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${level >= max ? 'Maximum pet level' : `Upgrade the Pet House for higher levels`}</p>` : quote ? `${button(`pet-research:${kind}`, `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Research to ${quote.level}`, 'game-btn green', research || m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost || !!m.battle ? 'disabled' : '')}<p>${time(quote.seconds)} · One research at a time</p>` : ''}</div>
+        <div class="hero-upgrade"><p>Assigned to</p><div>${heroButtons(kind, assigned)}</div></div></section>`;
+      }).join('')}
     </div>`;
   }
   private equipmentDescription(kind: EquipmentKind, level: number) {
@@ -1743,19 +2145,141 @@ export class HUD {
       );
     return rows;
   }
-  private blacksmith() {
+  /** Hero tabs above the forge: the original King view plus one native loadout per hero. */
+  private smithTabs() {
+    const m = this.model;
+    const tab = (value: HeroKind | 'legacy', label: string) =>
+      button(
+        `blacksmith-hero:${value}`,
+        label,
+        `tab ${this.inspectedSmithHero === value ? 'active' : ''}`,
+        `role="tab" aria-selected="${this.inspectedSmithHero === value}"`,
+      );
+    return `<div class="shop-tabs" role="tablist" aria-label="Hero equipment">${tab('legacy', 'King · Classic')}${HERO_KINDS.filter(
+      (hero) => m.heroProgress(hero),
+    )
+      .map((hero) => tab(hero, HERO_SOURCE[hero].replace('Barbarian ', '')))
+      .join('')}</div>`;
+  }
+  /** Native equipment for one hero: two loadout slots, the full catalog, upgrades and Epic offers. */
+  private nativeBlacksmith(hero: HeroKind) {
     const m = this.model,
-      gear = m.kingEquipment,
+      gear = m.gear,
+      catalog = heroItems(hero),
+      loadout = (gear.loadouts[hero] ?? []).filter((slug) => gear.levels[slug] !== undefined),
+      unlocked = !!m.blacksmith;
+    let slug = this.inspectedNativeItem;
+    if (!catalog.includes(slug)) slug = loadout[0] ?? catalog[0] ?? '';
+    const level = gear.levels[slug],
+      owned = level !== undefined,
+      rarity = slug ? itemRarity(slug) : null,
+      cap = slug ? itemLevelCap(slug, m.blacksmithLevel) : 0,
+      max = slug ? itemMaxLevel(slug) : 0,
+      cost = owned && slug ? itemUpgradeCost(slug, level) : null;
+    const purchase = this.nativeOrePurchase;
+    const stats = slug ? nativeItemStats(slug, owned ? level : 1) : null;
+    return `<div class="modal-body blacksmith-body">
+      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
+      ${this.smithTabs()}
+      ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>Build a Blacksmith at Town Hall 8 to equip and upgrade items. Your default equipment is ready for battle.</span>${button('shop', 'Shop', 'game-btn green')}</div>`}
+      <div class="king-loadout"><img class="loadout-portrait" src="${heroPortrait(hero)}" alt="${HERO_SOURCE[hero]}"><div class="loadout-label"><span class="eyebrow">${HERO_SOURCE[hero].toUpperCase()}</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${[
+        0, 1,
+      ]
+        .map((slot) => {
+          const equipped = loadout[slot];
+          return equipped
+            ? button(
+                `native-slot:${equipped}`,
+                `${nativeItemImage(equipped)}<span>Slot ${slot + 1}<b>${nativeItemName(equipped)}</b></span><em>${gear.levels[equipped]}</em>`,
+                'equipment-slot',
+                `aria-label="Slot ${slot + 1}: ${nativeItemName(equipped)}, level ${gear.levels[equipped]}"`,
+              )
+            : `<span class="equipment-slot" aria-label="Slot ${slot + 1}: empty">Slot ${slot + 1}<b>Empty</b></span>`;
+        })
+        .join('')}</div></div>
+      <div class="equipment-catalog" role="group" aria-label="${HERO_SOURCE[hero]} equipment">${catalog
+        .map((s) => {
+          const own = gear.levels[s] !== undefined;
+          return button(
+            `native-item:${s}`,
+            `<span class="equipment-badge">${loadout.includes(s) ? 'Equipped' : own ? 'Available' : itemRarity(s) === 'EPIC' ? 'Epic' : 'Locked'}</span>${nativeItemImage(s)}<strong>${nativeItemName(s)}</strong><span class="equipment-level">${own ? `Level ${gear.levels[s]} / ${itemMaxLevel(s)}` : itemRarity(s)}</span>`,
+            `equipment-card ${s === slug ? 'selected' : ''}`,
+            `aria-pressed="${s === slug}"`,
+          );
+        })
+        .join('')}</div>
+      ${
+        slug
+          ? `<section class="equipment-detail" aria-label="${nativeItemName(slug)} details"><div class="equipment-detail-heading">${nativeItemImage(slug)}<div><span class="eyebrow">${rarity} · ${stats!.passive ? 'PASSIVE' : 'ACTIVE ABILITY'}</span><h2>${nativeItemName(slug)}</h2><p>${owned ? `Level ${level} / ${max}` : `${rarity} item · Not owned`}</p></div></div>
+      ${
+        stats
+          ? `<table class="equipment-stats"><thead><tr><th>Attribute</th><th>${owned ? `Level ${level}` : 'Level 1'}</th></tr></thead><tbody>${[
+              ['Hitpoint increase', stats.hp ? `+${n(stats.hp)}` : '—'],
+              ['Damage per second', stats.dps ? `+${n(stats.dps)}` : '—'],
+              ['Hitpoint recovery', stats.heal ? n(stats.heal) : '—'],
+              [
+                'Attack speed',
+                stats.attackSpeed ? `+${Math.round(stats.attackSpeed * 100)}%` : '—',
+              ],
+              ['Abilities', stats.abilities.map((a) => a.name).join(', ') || '—'],
+            ]
+              .map(([label, value]) => `<tr><td>${label}</td><td>${value}</td></tr>`)
+              .join('')}</tbody></table>`
+          : ''
+      }
+      ${owned ? `<div class="equipment-equip">${loadout.includes(slug) ? `<span class="equipped-label">${icon('Check', 18)} Equipped in slot ${loadout.indexOf(slug) + 1}</span>` : [0, 1].map((slot) => button(`native-equip:${slug},${slot}`, `Equip in slot ${slot + 1}`, 'game-btn blue', unlocked && !m.battle ? '' : 'disabled')).join('')}</div>` : ''}
+      ${!owned && rarity === 'EPIC' ? `<div class="equipment-upgrade"><div><b>Buy for ${gem} ${n(EPIC_ITEM_GEMS)}</b><p>Instant · Epic items are sold, not forged</p></div>${button(`epic-buy:${slug}`, `${icon('ArrowBigUp', 20)} Buy`, 'game-btn green', unlocked && m.state.gems >= EPIC_ITEM_GEMS && !m.battle ? '' : 'disabled')}</div>` : ''}
+      ${
+        owned && cost
+          ? `<div class="equipment-upgrade"><div><b>Upgrade to level ${level + 1}</b><p>Instant · No builder needed</p><div class="equipment-cost">${ORE_KEYS.filter(
+              (k) => cost[k],
+            )
+              .map(
+                (k) =>
+                  `<span class="${m.ores[k] < cost[k] ? 'short' : ''}">${gearImage(k)}${n(cost[k])}<small>${ORES[k].name}</small></span>`,
+              )
+              .join(
+                '',
+              )}</div></div>${button(`native-upgrade:${slug},${level}`, `${icon('ArrowBigUp', 20)} Upgrade`, 'game-btn green', unlocked && !m.battle ? '' : 'disabled')}</div>`
+          : ''
+      }
+      ${owned && !cost ? `<p class="max-level">${level >= max ? 'Maximum item level' : `Upgrade the Blacksmith to raise this item further (cap ${cap}).`}</p>` : ''}
+      ${
+        purchase && purchase.slug === slug
+          ? `<div class="ore-confirm-body"><p>Use your stored ore and buy the missing amount below.</p><div class="missing-ores">${ORE_KEYS.filter(
+              (k) => cost && cost[k] > m.ores[k],
+            )
+              .map((k) => {
+                const missing = cost![k] - m.ores[k];
+                return `<div>${gearImage(k)}<span><b>${n(missing)}</b> ${ORES[k].name}</span><strong>${gem}${n(missing * ORES[k].gems)}</strong></div>`;
+              })
+              .join(
+                '',
+              )}</div><p class="gem-balance">You have ${gem} <b>${n(m.state.gems)}</b> gems</p><div class="confirm-actions">${button('native-ore-cancel', 'Cancel', 'game-btn stone')}${button('native-ore-buy', `Buy & upgrade ${gem} ${n(purchase.gems)}`, 'game-btn green', purchase.gems > m.state.gems || m.gear.levels[slug] !== purchase.level ? 'disabled' : '')}</div></div>`
+          : ''
+      }
+      </section>`
+          : '<p class="hero-stats-note">Select an item to inspect it.</p>'
+      }
+      <p class="ore-source-note">Missing ore can be purchased with gems during an upgrade. Star Bonus, Clan War and Hero Journey rewards are not yet available in this village.</p>
+    </div>`;
+  }
+  private blacksmith() {
+    const m = this.model;
+    if (this.inspectedSmithHero !== 'legacy' && m.heroProgress(this.inspectedSmithHero))
+      return this.nativeBlacksmith(this.inspectedSmithHero);
+    const gear = m.kingEquipment,
       kind = this.inspectedEquipment,
       level = gear.levels[kind],
       cap = level >= m.equipmentCeiling,
       quote = equipmentQuote(level + 1, m.ores),
       unlocked = !!m.blacksmith;
     const rows = this.equipmentRows(kind, level),
-      next = cap ? [] : this.equipmentRows(kind, level + 1);
+      next = unlocked && cap ? [] : this.equipmentRows(kind, level + 1);
     const pending = m.state.buildings.find((b) => b.kind === 'blacksmith' && b.constructing);
     return `<div class="modal-body blacksmith-body">
       <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
+      ${this.smithTabs()}
       ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>${pending ? 'Finish building your Blacksmith to equip and upgrade items.' : 'Build a Blacksmith at Town Hall 8 to equip and upgrade items.'} Your default equipment is ready for battle.</span>${pending ? '' : button('shop', 'Shop', 'game-btn green')}</div>`}
       <div class="king-loadout"><img class="loadout-portrait" src="${hudAsset('king')}" alt="Barbarian King"><div class="loadout-label"><span class="eyebrow">BARBARIAN KING</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${gear.loadout.map((k, slot) => button(`equipment-view:${k}`, `${gearImage(k)}<span>Slot ${slot + 1}<b>${EQUIPMENT[k].name}</b></span><em>${gear.levels[k]}</em>`, 'equipment-slot', `aria-label="Slot ${slot + 1}: ${EQUIPMENT[k].name}, level ${gear.levels[k]}"`)).join('')}</div></div>
       <div class="equipment-catalog" role="group" aria-label="King equipment">${EQUIPMENT_KEYS.map((k) => button(`equipment-view:${k}`, `<span class="equipment-badge">${gear.loadout.includes(k) ? 'Equipped' : unlocked ? 'Available' : 'Blacksmith 1'}</span>${gearImage(k)}<strong>${EQUIPMENT[k].name}</strong><span class="equipment-level">Level ${gear.levels[k]} / 9</span>`, `equipment-card ${kind === k ? 'selected' : ''}`, `aria-pressed="${kind === k}"`)).join('')}</div>
@@ -1763,7 +2287,7 @@ export class HUD {
       <table class="equipment-stats"><thead><tr><th>Attribute</th><th>Level ${level}</th><th>${cap ? 'TH8 max' : `Level ${level + 1}`}</th></tr></thead><tbody>${rows.map(([label, value], i) => `<tr><td>${label}</td><td>${value}</td><td class="${next[i]?.[1] !== value ? 'better' : ''}">${next[i]?.[1] ?? '—'}</td></tr>`).join('')}</tbody></table>
       <div class="equipment-equip">${gear.loadout.includes(kind) ? `<span class="equipped-label">${icon('Check', 18)} Equipped in slot ${gear.loadout.indexOf(kind) + 1}</span>` : gear.loadout.map((k, slot) => button(`equipment-equip:${kind},${slot}`, `Replace ${EQUIPMENT[k].name}`, 'game-btn blue', unlocked && m.state.king ? '' : 'disabled')).join('')}</div>
       <div class="equipment-upgrade">${
-        cap
+        unlocked && cap
           ? '<p class="max-level">Maximum for Blacksmith 1 · Level 10 requires Blacksmith 3 at Town Hall 10.</p>'
           : `<div><b>Upgrade to level ${level + 1}</b><p>Instant · No builder needed</p><div class="equipment-cost">${ORE_KEYS.filter(
               (k) => quote!.cost[k],
@@ -1917,6 +2441,7 @@ export class HUD {
       blacksmith: 'Hero Equipment',
       'ore-confirm': 'Missing ore',
       heroes: 'Hero Hall',
+      pets: 'Pet House',
       progression: 'Town Hall progression',
       research: 'The laboratory',
       campaign: 'The Goblin Valley',
@@ -1935,6 +2460,7 @@ export class HUD {
       blacksmith: 'Forge your King’s abilities.',
       'ore-confirm': 'Complete this upgrade with gems.',
       heroes: 'A champion for every attack.',
+      pets: 'A companion for every hero.',
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
       campaign: 'Beyond the forest, a whole valley is waiting.',
@@ -1954,31 +2480,33 @@ export class HUD {
           ? this.oreConfirm()
           : this.panel === 'heroes'
             ? this.heroes()
-            : this.panel === 'progression'
-              ? this.progression()
-              : this.panel === 'army-presets'
-                ? this.armyPresets()
-                : this.panel === 'battle-log'
-                  ? this.battleLog()
-                  : this.panel === 'spell-info'
-                    ? this.spellInfo()
-                    : this.panel === 'troop-info'
-                      ? this.troopInfo()
-                      : this.panel === 'campaign'
-                        ? this.campaign()
-                        : this.panel === 'settings'
-                          ? this.settings()
-                          : this.panel === 'achievements'
-                            ? this.achievements()
-                            : this.panel === 'research'
-                              ? this.research()
-                              : this.panel === 'info'
-                                ? this.info()
-                                : this.panel === 'layouts'
-                                  ? this.layoutPanel()
-                                  : this.panel === 'surrender'
-                                    ? this.surrender()
-                                    : this.help();
+            : this.panel === 'pets'
+              ? this.pets()
+              : this.panel === 'progression'
+                ? this.progression()
+                : this.panel === 'army-presets'
+                  ? this.armyPresets()
+                  : this.panel === 'battle-log'
+                    ? this.battleLog()
+                    : this.panel === 'spell-info'
+                      ? this.spellInfo()
+                      : this.panel === 'troop-info'
+                        ? this.troopInfo()
+                        : this.panel === 'campaign'
+                          ? this.campaign()
+                          : this.panel === 'settings'
+                            ? this.settings()
+                            : this.panel === 'achievements'
+                              ? this.achievements()
+                              : this.panel === 'research'
+                                ? this.research()
+                                : this.panel === 'info'
+                                  ? this.info()
+                                  : this.panel === 'layouts'
+                                    ? this.layoutPanel()
+                                    : this.panel === 'surrender'
+                                      ? this.surrender()
+                                      : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' || this.panel === 'ore-confirm' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -2413,8 +2941,57 @@ export class HUD {
       heroGems.textContent = String(
         m.finishCost({ upgradeEnd: m.state.king.upgradeEnd } as Building),
       );
+    // Per-hero upgrade timers in the roster panel.
+    document.querySelectorAll<HTMLElement>('[data-hero-timer]').forEach((el) => {
+      const kind = el.dataset.heroTimer as HeroKind | undefined;
+      if (!kind || !(HERO_KINDS as string[]).includes(kind)) return;
+      const progress = m.heroProgress(kind);
+      if (progress?.upgradeEnd) el.textContent = time((progress.upgradeEnd - m.clock) / 1000);
+    });
+    document.querySelectorAll<HTMLElement>('[data-pet-timer]').forEach((el) => {
+      const research = m.state.pets?.research;
+      if (research) el.textContent = time((research.end - m.clock) / 1000);
+    });
+    document.querySelectorAll<HTMLElement>('[data-pet-gems]').forEach((el) => {
+      const research = m.state.pets?.research;
+      if (research) el.textContent = String(m.finishCost({ upgradeEnd: research.end } as Building));
+    });
+    document.querySelectorAll<HTMLElement>('[data-hero-gems]').forEach((el) => {
+      const kind = el.dataset.heroGems as HeroKind | undefined;
+      if (!kind || !(HERO_KINDS as string[]).includes(kind)) return;
+      const progress = m.heroProgress(kind);
+      if (progress?.upgradeEnd)
+        el.textContent = String(m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building));
+    });
+    // Native battle cards: refresh state transitions, otherwise just the health bars.
+    if (m.battle?.nativeHeroes?.length) {
+      const cards = document.querySelectorAll<HTMLElement>(
+        '.deploy-tray .hero-card[data-action^="hero-select:"]',
+      );
+      cards.forEach((card) => {
+        const kind = card.dataset.action!.slice('hero-select:'.length) as HeroKind;
+        const hero = m.battle!.nativeHeroes!.find((h) => h.kind === kind);
+        if (!hero) return;
+        const unit = m.battle!.units.find((u) => u.id === hero.unitId);
+        const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}`;
+        if (card.dataset.heroState !== state) {
+          const focused = document.activeElement === card;
+          const order = m.battle!.nativeHeroes!.map((h) => h.kind);
+          card.outerHTML = this.nativeHeroCard(kind, order[0] === kind);
+          if (focused)
+            document
+              .querySelector<HTMLElement>(`[data-action="hero-select:${kind}"]`)
+              ?.focus({ preventScroll: true });
+          const hint = document.querySelector('.deploy-label');
+          if (hint) hint.textContent = this.deployHint();
+        } else {
+          const health = card.querySelector<HTMLElement>('.hero-health i');
+          if (health && unit) health.style.width = pct((unit.hp / unit.maxHp) * 100);
+        }
+      });
+    }
     const heroCard = document.querySelector<HTMLElement>('.hero-card');
-    if (heroCard && m.battle?.hero) {
+    if (heroCard && m.battle?.hero && !m.battle?.nativeHeroes?.length) {
       const h = m.battle.hero;
       const u = m.battle.units.find((u) => u.id === h.unitId);
       const state = `${h.unitId === null}:${!!u && u.hp <= 0}:${h.abilityUsed}:${m.activeHero}`;
@@ -2432,12 +3009,10 @@ export class HUD {
         if (health && u) health.style.width = pct((u.hp / u.maxHp) * 100);
       }
     }
-    document
-      .querySelectorAll<HTMLElement>('[data-resource]')
-      .forEach((el) => {
-        const next = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']);
-        if (el.textContent !== next) el.textContent = next;
-      });
+    document.querySelectorAll<HTMLElement>('[data-resource]').forEach((el) => {
+      const next = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']);
+      if (el.textContent !== next) el.textContent = next;
+    });
     const obstacleTimes = document.querySelectorAll<HTMLElement>('[data-obstacle-time]');
     if (obstacleTimes.length) {
       const byId = new Map(m.obstacles.map((o) => [o.id, o]));

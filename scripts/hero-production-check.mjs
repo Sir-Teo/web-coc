@@ -73,15 +73,19 @@ try {
       await expect(page.locator('#toast')).toContainText('Village restored');
       await page.locator('.train-add').click();
       await page.locator('[data-action="heroes"]').click();
-      await expect(page.locator('.hero-stat-grid')).toContainText('1,754 → 1,790');
-      await expect(page.locator('.hero-upgrade')).toContainText('5,000');
-      await expect(page.locator('.hero-upgrade')).toContainText('2h');
-      await page.locator('[data-action="hero-upgrade"]').click();
+      await expect(page.locator('[data-hero="king"] .hero-stat-grid')).toContainText(
+        '1,754 → 1,790',
+      );
+      await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('5,000');
+      await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('2h');
+      await page.locator('[data-action="hero-upgrade:king"]').click();
       await expect(page.locator('[data-hero-timer]')).toBeVisible();
-      await page.locator('[data-action="hero-finish"]').click();
-      await expect(page.locator('.hero-overview')).toContainText('Level 2');
-      await expect(page.locator('.hero-equipment')).toContainText('Barbarian Puppet');
-      await expect(page.locator('.hero-equipment')).toContainText('Rage Vial');
+      await page.locator('[data-action="hero-finish:king"]').click();
+      await expect(page.locator('[data-hero="king"]')).toContainText('Level 2');
+      await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText(
+        'Barbarian Puppet',
+      );
+      await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText('Rage Vial');
       await page.screenshot({
         animations: 'disabled',
         path: `output/playtest/production-hero-${name}.png`,
@@ -99,13 +103,25 @@ try {
         await expect(page.locator('.shop-btn')).toBeVisible();
         await page.locator('.train-add').click();
         await page.locator('[data-action="heroes"]').click();
-        await expect(page.locator('.hero-overview')).toContainText('Level 2');
+        await expect(page.locator('[data-hero="king"]')).toContainText('Level 2');
       }
       await page.locator('[data-action="practice"]').click();
       await page.getByRole('button', { name: 'Barbarian King, Deploy King', exact: true }).click();
       const sites = [480, 400, 320, 240, 560].flatMap((y) =>
         [720, 560, 880, 400, 1040, 240, 1200].map((x) => [x, y]),
       );
+      // Native battles carry the roster in `heroes`; the King is found by kind.
+      const kingId = () =>
+        page.evaluate(
+          () =>
+            JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king')
+              .unitId,
+        );
+      const summoned = () =>
+        page.evaluate(
+          () =>
+            JSON.parse(window.render_game_to_text()).battle.troops.filter((u) => u.summoned).length,
+        );
       for (const [x, y] of sites) {
         if (
           await page.evaluate(
@@ -115,12 +131,7 @@ try {
         ) {
           await page.mouse.click(x, y);
           await page.waitForTimeout(50);
-          if (
-            await page.evaluate(
-              () => JSON.parse(window.render_game_to_text()).battle.hero.unitId !== null,
-            )
-          )
-            break;
+          if ((await kingId()) !== null) break;
         }
       }
       await expect(
@@ -133,11 +144,8 @@ try {
       await expect(
         page.getByRole('button', { name: 'Barbarian King, Ability used', exact: true }),
       ).toBeDisabled();
-      await expect
-        .poll(() =>
-          page.evaluate(() => JSON.parse(window.render_game_to_text()).battle.hero.summonsSpawned),
-        )
-        .toBe(8);
+      // Level-1 Barbarian Puppet summons eight Barbarians (client TroopCount).
+      await expect.poll(summoned).toBe(8);
       await expect(page.locator('.deploy-label')).toHaveText(
         'Barbarian King · Ability used · Fighting',
       );
@@ -152,11 +160,13 @@ try {
       await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
       await page.getByRole('slider', { name: 'Replay position' }).press('End');
       await expect(page.locator('.replay-status')).toContainText('Replay complete');
+      // The recording reproduces the deployment and the spent ability, not just the score.
       expect(
         await page.evaluate(
-          () => JSON.parse(window.render_game_to_text()).battle.hero.summonsSpawned,
+          () =>
+            JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
         ),
-      ).toBe(8);
+      ).toMatchObject({ level: 2, abilityUsed: true });
       expect(errors).toEqual([]);
       report[name] = {
         density: 2,

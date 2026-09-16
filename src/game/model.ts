@@ -1939,6 +1939,7 @@ export class GameModel {
     this.moving = null;
     this.activeSpell = null;
     this.activeHero = false;
+    this.activeHeroKind = null;
     this.changed();
   }
 
@@ -2758,6 +2759,17 @@ export class GameModel {
   battleHero(kind: HeroKind = this.activeHeroKind ?? 'king') {
     return this.battle?.nativeHeroes?.find((hero) => hero.kind === kind);
   }
+  /** Select one native hero for deployment (or deselect); clears troop/spell selection. */
+  selectNativeHero(kind: HeroKind | null) {
+    if (this.replay) return false;
+    if (kind !== null && !this.battle?.nativeHeroes?.some((hero) => hero.kind === kind))
+      return false;
+    this.activeHeroKind = kind;
+    this.activeHero = false;
+    this.activeSpell = null;
+    this.changed();
+    return true;
+  }
   get heroMaxLevel() {
     return heroLevelCap(this.townhallLevel, this.heroHall?.level ?? 0);
   }
@@ -3122,6 +3134,7 @@ export class GameModel {
     this.activeTroop = TROOP_KEYS.find((k) => this.state.army[k] > 0) ?? 'swordsman';
     this.activeSpell = null;
     this.activeHero = false;
+    this.activeHeroKind = null;
     this.changed();
   }
   /** True where a troop may not be dropped: the red boundary the scene draws. */
@@ -4354,7 +4367,8 @@ export class GameModel {
     const spent =
       TROOP_KEYS.some((k) => b.remaining[k] < b.carriedArmy[k]) ||
       SPELL_KEYS.some((k) => b.spells[k] < b.carried[k]) ||
-      b.hero?.unitId != null;
+      b.hero?.unitId != null ||
+      b.nativeHeroes?.some((hero) => hero.unitId != null || hero.deployed);
     // Nothing was committed yet, so scouting costs the player nothing.
     if (!b.finished && spent) this.finishBattle();
     this.battle = null;
@@ -4362,6 +4376,7 @@ export class GameModel {
     this.selected = null;
     this.activeSpell = null;
     this.activeHero = false;
+    this.activeHeroKind = null;
   }
   /** Toolbox mutations are not player inputs and cannot produce faithful recordings. */
   discardRecording() {
@@ -4424,6 +4439,7 @@ export class GameModel {
     this.resetReplayRunner();
     this.battle = this.replayRunner!.battle;
     this.activeHero = false;
+    this.activeHeroKind = null;
     this.activeSpell = null;
     this.selected = null;
     this.applyReplayActions();
@@ -4619,6 +4635,7 @@ export class GameModel {
     this.selected = null;
     this.activeSpell = null;
     this.activeHero = false;
+    this.activeHeroKind = null;
     this.changed();
   }
 }

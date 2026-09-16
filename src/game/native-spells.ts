@@ -196,6 +196,9 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
   }
   if (cast.hits === 0 || randomRadius > 0)
     ctx.effect({ type: 'spell-native', x, y, radius, text: cast.name, sourceId: cast.id });
+  // Quake spells (Earthquake, Earthquake Boots) drive the battle-clock fracture graphic.
+  if (cast.hits === 0 && num(row, 'BuildingDamagePermil') > 0)
+    ctx.effect({ type: 'quake', x, y, radius });
 }
 
 /** Harmful effects of an attacker's spell on buildings and defending units. */
