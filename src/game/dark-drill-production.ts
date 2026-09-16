@@ -18,7 +18,7 @@ export function produceDarkElixir(
   const base = darkDrillProduction(level);
   const perHour = base.perHour + supercharge.production;
   const capacity = base.capacity + supercharge.capacity;
-  if (!Number.isFinite(stored) || stored < 0 || !Number.isFinite(seconds) || seconds < 0)
-    throw new Error('Invalid Dark Elixir production state');
-  return Math.max(stored, Math.min(capacity, stored + (seconds * perHour) / 3600));
+  const safeStored = !Number.isFinite(stored) || stored < 0 ? 0 : stored;
+  const safeSeconds = !Number.isFinite(seconds) || seconds < 0 ? 0 : seconds;
+  return Math.max(safeStored, Math.min(capacity, safeStored + (safeSeconds * perHour) / 3600));
 }

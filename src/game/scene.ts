@@ -371,13 +371,22 @@ export class VillageScene extends Phaser.Scene {
       );
     for (const k of EXTRA_TROOP_KINDS) this.load.image(`${k}-walk`, asset(k));
     for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
-    this.load.on('progress', (p: number) => {
+    // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
+    this.load.off('progress');
+    this.load.off('loaderror');
+    const onProgress = (p: number) => {
       const bar = document.querySelector<HTMLElement>('#load-progress');
       if (bar) bar.style.width = `${Math.round(p * 100)}%`;
-    });
-    this.load.on('loaderror', () => {
+    };
+    const onLoadError = () => {
       const label = document.querySelector('#load-label');
       if (label) label.textContent = 'An asset could not load. Please refresh to retry.';
+    };
+    this.load.on('progress', onProgress);
+    this.load.on('loaderror', onLoadError);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.load.off('progress', onProgress);
+      this.load.off('loaderror', onLoadError);
     });
   }
   create() {
@@ -473,17 +482,21 @@ export class VillageScene extends Phaser.Scene {
     this.decorate();
     this.cameras.main.setBackgroundColor('#50683d');
     this.resetCamera();
-    this.scale.on('resize', () => {
+    const onResize = () => {
       this.resourceFlights.clear();
       this.resizeCamera();
+    };
+    this.scale.on('resize', onResize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.resourceFlights.clear();
+      this.scale.off('resize', onResize);
     });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.resourceFlights.clear());
     this.input.addPointer(2);
     this.focusKeys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<
       string,
       Phaser.Input.Keyboard.Key
     >;
-    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+    const onPointerDown = (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
       this.audio.unlock();
       const world = this.cameras.main.getWorldPoint(p.x, p.y),
@@ -519,8 +532,9 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = held.id;
         this.model.changed();
       }
-    });
-    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+    };
+    this.input.on('pointerdown', onPointerDown);
+    const onPointerMove = (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
       const pointers = this.input.manager.pointers.filter((v) => v.isDown);
       if (pointers.length >= 2) {
@@ -560,8 +574,9 @@ export class VillageScene extends Phaser.Scene {
         }
       }
       this.updateGhost(p);
-    });
-    this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
+    };
+    this.input.on('pointermove', onPointerMove);
+    const onPointerUp = (p: Phaser.Input.Pointer) => {
       this.pinchDistance = 0;
       const gesture = this.gesture;
       this.gesture = 'none';
@@ -582,7 +597,8 @@ export class VillageScene extends Phaser.Scene {
         return;
       if (this.dragged || gesture !== 'none') return;
       this.tap(p);
-    });
+    };
+    this.input.on('pointerup', onPointerUp);
     // Phaser sends DOM releases through a separate event. A control can move
     // under a held pointer when a drawer opens or rerenders.
     const cancelGesture = () => {
@@ -595,25 +611,38 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('pointerdownoutside', cancelGesture);
     this.input.on('pointerupoutside', cancelGesture);
     this.game.canvas.addEventListener('pointercancel', cancelGesture);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
-      this.game.canvas.removeEventListener('pointercancel', cancelGesture),
-    );
-    this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
+    const onWheel = (_p: unknown, _o: unknown, _dx: number, dy: number) => {
       if (!this.uiBlocked) this.setZoom(this.viewZoom * (dy > 0 ? 0.92 : 1.08));
-    });
+    };
+    this.input.on('wheel', onWheel);
     this.model.onEffect = (fx) => this.effect(fx);
     this.sync();
     this.ready = true;
     this.onReady();
     document.querySelector('#loading')?.classList.add('loaded');
     setTimeout(() => document.querySelector('#loading')?.remove(), 500);
-    this.game.canvas.addEventListener('webglcontextlost', () => {
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
       this.paused = true;
       this.audio.samples.stop();
       this.model.notify('Graphics paused. Restoring your village…');
-    });
-    this.game.canvas.addEventListener('webglcontextrestored', () => {
+    };
+    const onContextRestored = () => {
       this.paused = false;
+    };
+    this.game.canvas.addEventListener('webglcontextlost', onContextLost);
+    this.game.canvas.addEventListener('webglcontextrestored', onContextRestored);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.off('pointerdown', onPointerDown);
+      this.input.off('pointermove', onPointerMove);
+      this.input.off('pointerup', onPointerUp);
+      this.input.off('pointerdownoutside', cancelGesture);
+      this.input.off('pointerupoutside', cancelGesture);
+      this.input.off('wheel', onWheel);
+      this.game.canvas.removeEventListener('pointercancel', cancelGesture);
+      this.game.canvas.removeEventListener('webglcontextlost', onContextLost);
+      this.game.canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      if (this.model.onEffect !== undefined) this.model.onEffect = () => {};
     });
   }
   /**
@@ -622,7 +651,15 @@ export class VillageScene extends Phaser.Scene {
    */
   loadLateAssets(): Promise<void> {
     if (this.lateAssets) return this.lateAssets;
-    const slow = setTimeout(() => this.model.notify(LOADING_LATE_ART), 400);
+    let shutdown = false;
+    let slow: ReturnType<typeof setTimeout>;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      shutdown = true;
+      clearTimeout(slow);
+    });
+    slow = setTimeout(() => {
+      if (!shutdown) this.model.notify(LOADING_LATE_ART);
+    }, 400);
     const settle = () => {
       clearTimeout(slow);
       // Withdraw a loading notice that is still showing; later messages stay.
@@ -638,6 +675,10 @@ export class VillageScene extends Phaser.Scene {
           this.load.once(Phaser.Loader.Events.COMPLETE, () => {
             settle();
             this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+            if (shutdown) {
+              resolve();
+              return;
+            }
             if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
             this.lateCampaign = new LateCampaignPresentation(this, this.audio);
             this.lateAssetsReady = true;
@@ -651,6 +692,7 @@ export class VillageScene extends Phaser.Scene {
         }),
       () => {
         settle();
+        if (shutdown) return;
         this.model.notify('Village art could not load. Check your connection and try again.');
         // The waiting battle can still return home; a later sync retries after a pause.
         setTimeout(() => (this.lateAssets = undefined), 5000);
@@ -1894,9 +1936,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle)
       this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
-    const bombTowerCues = this.drawBombTowers();
+    // One visible-building pass per frame; every presentation below filters by kind.
+    const visible = this.model.buildings.filter((v) => this.model.visibleBuilding(v));
+    const bombTowerCues = this.drawBombTowers(visible);
     const wizardTowerCues = this.wizardTowerPresentation.render(
-      this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
+      visible,
       this.model.battle,
       this.model.battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
@@ -1937,11 +1981,14 @@ export class VillageScene extends Phaser.Scene {
           const angle = sweeperAngle(b.direction),
             x = b.x + 1,
             y = b.y + 1;
-          const arc = (radius: number, reverse = false) =>
-            Array.from({ length: 49 }, (_, i) => {
+          const arc = (radius: number, reverse = false) => {
+            const points: Phaser.Math.Vector2[] = new Array(49);
+            for (let i = 0; i < 49; i++) {
               const a = angle + SWEEPER.cone * ((reverse ? 48 - i : i) / 48 - 0.5);
-              return iso(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
-            });
+              points[i] = iso(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+            }
+            return points;
+          };
           const points = [...arc(range), ...arc(SWEEPER.minRange, true)];
           g.fillStyle(0xcaf8ff, 0.1).fillPoints(points, true);
           g.lineStyle(2, 0xe1fbff, 0.8).strokePoints(points, true);
@@ -2089,7 +2136,7 @@ export class VillageScene extends Phaser.Scene {
         this.detail.strokePoints(pts, true);
       }
     const teslaCues = this.teslaPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
@@ -2110,7 +2157,7 @@ export class VillageScene extends Phaser.Scene {
       iso,
     );
     const xbowCues = this.xbowPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
@@ -2118,7 +2165,7 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
     );
     const mineCues = this.seekingMinePresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
@@ -2128,7 +2175,7 @@ export class VillageScene extends Phaser.Scene {
     const archerTowerCues = this.villageArcherTowers.render(
       battle && !battle.nativeArcherTowers
         ? []
-        : this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+        : visible,
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
@@ -2137,17 +2184,16 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
     );
     this.villageNativePresentation.render(
-      this.model.buildings.filter(
-        (b) =>
-          this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
-      ),
+      this.model.wallMove
+        ? visible.filter((b) => !this.model.wallMove?.source.some((w) => w.id === b.id))
+        : visible,
       battle,
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       this.sprites,
     );
     this.nativeDefenses.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
@@ -2155,7 +2201,7 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
     );
     const drillCues = this.darkDrillPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
@@ -2163,39 +2209,39 @@ export class VillageScene extends Phaser.Scene {
       battle?.drillDestructions,
     );
     this.infernoPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       battle ?? null,
       this.model.state.settings.reducedMotion,
       iso,
     );
     this.castlePresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       iso,
     );
     const cannonCues = this.cannonPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       iso,
     );
     const mortarCues = this.mortarPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       iso,
     );
     const sweeperCues = this.sweeperPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       iso,
     );
     const lateCues = this.lateCampaign.render({
-      buildings: this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      buildings: visible,
       battle,
       elapsed: battle?.elapsed ?? this.renderClock / 1000,
       reduced: this.model.state.settings.reducedMotion,
@@ -2203,7 +2249,7 @@ export class VillageScene extends Phaser.Scene {
       airLift: AIR_LIFT,
     });
     const shrinkCues = this.shrinkTrapPresentation.render(
-      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      visible,
       battle,
       this.model.state.settings.reducedMotion,
       iso,
@@ -2241,11 +2287,14 @@ export class VillageScene extends Phaser.Scene {
         const alpha = 0.9 * Math.min(1, (SWEEPER.range - gust.radius) / 2);
         for (let trail = 0; trail < 3; trail++) {
           const radius = Math.max(1, gust.radius - trail * 0.24);
-          const points = Array.from({ length: 21 }, (_, i) => {
-            const a = Math.atan2(gust.directionY, gust.directionX) + half * (i / 10 - 1),
+          const baseAngle = Math.atan2(gust.directionY, gust.directionX);
+          const points: Phaser.Math.Vector2[] = new Array(21);
+          for (let i = 0; i < 21; i++) {
+            const a = baseAngle + half * (i / 10 - 1),
               p = iso(gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius);
-            return new Phaser.Math.Vector2(p.x, p.y - AIR_LIFT);
-          });
+            p.y -= AIR_LIFT;
+            points[i] = p;
+          }
           this.detail.lineStyle(
             trail ? 2 : 4,
             trail ? 0x91dbe9 : 0xe4fbff,
@@ -3167,9 +3216,9 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
     }
   }
-  private drawBombTowers() {
+  private drawBombTowers(visible?: Building[]) {
     return this.bombTowerPresentation.render(
-      this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
+      visible ?? this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
       this.model.battle,
       this.model.battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,

@@ -152,7 +152,7 @@ const live = (u: Unit, at: number) =>
 
 /** Town Hall 18 in version 45 battles houses its selected Guardian; nothing earlier does. */
 export function createGuardian(battle: Battle, th: Building, id: number): GuardianDefender | null {
-  if (!battle.nativeRoster || th.kind !== 'townhall' || th.npc || th.level < 18) return null;
+  if (!battle.nativeRoster || battle.catalog === 'goblin-v1' || th.kind !== 'townhall' || th.npc || th.level < 18) return null;
   const kind = th.guardian ?? 'longshot';
   const stats = guardianStats(kind, th.guardianLevel ?? 1);
   const home = center(th);
@@ -209,13 +209,19 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
   }
   const th = battle.buildings.find((b) => b.id === g.sourceId);
   if (g.phase === 'waiting') {
-    const trigger = battle.units
-      .filter((u) => live(u, at) && distance2D(u.x - g.home.x, u.y - g.home.y) <= stats.alert + EPS)
-      .sort(
-        (a, b) =>
-          distance2D(a.x - g.home.x, a.y - g.home.y) - distance2D(b.x - g.home.x, b.y - g.home.y) ||
-          a.id - b.id,
-      )[0];
+    let trigger: Unit | undefined;
+    let best = Infinity;
+    let bestId = Infinity;
+    for (const u of battle.units) {
+      if (!live(u, at)) continue;
+      const dist = distance2D(u.x - g.home.x, u.y - g.home.y);
+      if (dist > stats.alert + EPS) continue;
+      if (dist < best || (dist === best && u.id < bestId)) {
+        best = dist;
+        bestId = u.id;
+        trigger = u;
+      }
+    }
     if (!trigger && th && th.hp > 0) return;
     const toward = trigger ?? { x: g.home.x, y: g.home.y + 1 };
     const dx = toward.x - g.home.x,
@@ -255,14 +261,28 @@ export function stepGuardian(ctx: NativeTroopContext, g: GuardianDefender, dt: n
     (stats.speed + Math.max(g.enraged ? stats.homeRage!.speed : 0, boost?.speed ?? 0)) *
     (poison ? Math.max(0, 1 + poison.speed * scale) : 1);
   const tempo = poison ? Math.max(0.05, 1 + poison.attack * scale) : 1;
-  const candidates = battle.units.filter(
-    (u) => live(u, at) && distance2D(u.x - g.home.x, u.y - g.home.y) <= stats.search + EPS,
-  );
-  let target = candidates.find((u) => u.id === g.target);
-  if (!target) {
-    target = candidates.sort(
-      (a, b) => distance2D(a.x - g.x, a.y - g.y) - distance2D(b.x - g.x, b.y - g.y) || a.id - b.id,
-    )[0];
+  // Sticky target while it stays in search range; otherwise closest by distance then id.
+  let sticky: Unit | undefined;
+  let best: Unit | undefined;
+  let bestDist = Infinity;
+  let bestTargetId = Infinity;
+  for (const u of battle.units) {
+    if (!live(u, at)) continue;
+    if (distance2D(u.x - g.home.x, u.y - g.home.y) > stats.search + EPS) continue;
+    if (u.id === g.target) {
+      sticky = u;
+      break;
+    }
+    const dist = distance2D(u.x - g.x, u.y - g.y);
+    if (dist < bestDist || (dist === bestDist && u.id < bestTargetId)) {
+      bestDist = dist;
+      bestTargetId = u.id;
+      best = u;
+    }
+  }
+  const target = sticky ?? best;
+  if (!sticky) {
+    // Retarget only on loss; a retained sticky keeps its path.
     g.target = target?.id ?? null;
     g.path = [];
     g.pathAt = 0;
@@ -429,7 +449,7 @@ export const guardianRageSpeed = (speedBoost: number) => speedBoost / SPELL_SPEE
 /** Places the Town Hall 18 Guardian on the first version 45 battle step. */
 export function stepGuardians(ctx: NativeTroopContext, dt: number) {
   const battle = ctx.battle;
-  if (!battle.nativeRoster) return;
+  if (!battle.nativeRoster || battle.catalog === 'goblin-v1') return;
   if (!battle.guardiansPlaced) {
     battle.guardiansPlaced = true;
     for (const th of battle.buildings) {

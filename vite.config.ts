@@ -1,9 +1,17 @@
 import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
+    chunkSizeWarningLimit: 1500,
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
-        manualChunks: (id: string) => (id.includes('node_modules/phaser') ? 'phaser' : undefined),
+        manualChunks: (id: string) => {
+          if (id.includes('node_modules/phaser')) return 'phaser';
+          if (id.includes('node_modules')) return 'vendor';
+          if (id.includes('src/ui/')) return 'ui';
+          if (id.includes('src/dev/')) return 'dev';
+          return undefined;
+        },
       },
     },
   },

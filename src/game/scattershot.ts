@@ -322,7 +322,7 @@ function stepProjectiles(battle: Battle, state: ScattershotBattleState, at: numb
       const d = Math.sqrt(d2);
       const cos = (ux * impact.dirX + uy * impact.dirY) / d;
       if (cos < Math.cos(half) - 1e-12) continue;
-      const falloff = Math.min(1, Math.max(0, (d - SCATTERSHOT.coneMinRadius) / span));
+      const falloff = Math.min(1, Math.max(0, (d - SCATTERSHOT.coneMinRadius) / Math.max(1e-9, span)));
       damageUnit(u, p.spellDamage + (p.spellMinDamage - p.spellDamage) * falloff, at);
       impact.shardHits++;
     }

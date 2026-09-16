@@ -3,7 +3,8 @@ export class AudioManager {
   context: AudioContext | null = null;
   enabled = true;
   samples = new SampleAudio(() => this.context);
-  private ambient: OscillatorNode[] = [];
+  private ambient: { osc: OscillatorNode; gain: GainNode }[] = [];
+  private lastPlay: Partial<Record<'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory', number>> = {};
   unlock() {
     if (!this.context) this.context = new AudioContext();
     if (this.context.state === 'suspended') void this.context.resume();
@@ -11,6 +12,13 @@ export class AudioManager {
   }
   play(kind: 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory') {
     if (!this.enabled) return;
+    // Battles can emit dozens of blips per second; throttle per kind
+    // so overlapping volleys don't thrash the mixer.
+    const throttleMs =
+      kind === 'hit' ? 70 : kind === 'destroy' ? 150 : kind === 'victory' ? 500 : 50;
+    const now = performance.now();
+    if (now - (this.lastPlay[kind] ?? 0) < throttleMs) return;
+    this.lastPlay[kind] = now;
     this.unlock();
     const ctx = this.context!;
     const settings = {
@@ -37,9 +45,21 @@ export class AudioManager {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
   }
   music(on: boolean) {
-    for (const o of this.ambient) o.stop();
+    for (const { osc, gain } of this.ambient) {
+      try {
+        osc.stop();
+      } catch {
+        // Already stopped.
+      }
+      osc.disconnect();
+      gain.disconnect();
+    }
     this.ambient = [];
     if (!on) return;
     this.unlock();
@@ -53,7 +73,11 @@ export class AudioManager {
       o.connect(g);
       g.connect(ctx.destination);
       o.start();
-      this.ambient.push(o);
+      o.onended = () => {
+        o.disconnect();
+        g.disconnect();
+      };
+      this.ambient.push({ osc: o, gain: g });
     }
   }
 }

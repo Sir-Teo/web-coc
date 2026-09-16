@@ -467,7 +467,12 @@ export async function loadSave(): Promise<Save | undefined> {
   } catch {
     /* A valid local backup remains usable. */
   }
-  const primaryText = primary == null ? undefined : JSON.stringify(primary, null, 2);
+  let primaryText: string | undefined;
+  try {
+    primaryText = primary == null ? undefined : JSON.stringify(primary, null, 2);
+  } catch {
+    primaryText = undefined;
+  }
   const originals = [primary, backup];
   primary = migrateSave(primary);
   backup = migrateSave(backup);
@@ -495,7 +500,12 @@ export async function loadSave(): Promise<Save | undefined> {
 }
 export async function saveGame(state: Save): Promise<boolean> {
   let stored = false;
-  const copy = structuredClone(state);
+  let copy: Save;
+  try {
+    copy = structuredClone(state);
+  } catch {
+    return false;
+  }
   try {
     localStorage.setItem(KEY, JSON.stringify(copy));
     stored = true;

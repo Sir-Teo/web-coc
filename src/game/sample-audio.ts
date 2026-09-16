@@ -32,9 +32,16 @@ export class SampleAudio {
           .catch(() => {});
       }
   }
+  private static safeStop(source: AudioBufferSourceNode) {
+    try {
+      source.stop();
+    } catch {
+      // Already stopped/ended — disconnect below still applies.
+    }
+  }
   stop() {
     for (const { source, gain } of this.active.values()) {
-      source.stop();
+      SampleAudio.safeStop(source);
       source.disconnect();
       gain.disconnect();
     }
@@ -93,7 +100,7 @@ export class SampleAudio {
     }
     for (const [key, node] of this.active)
       if (!wanted.has(key)) {
-        node.source.stop();
+        SampleAudio.safeStop(node.source);
         node.source.disconnect();
         node.gain.disconnect();
         this.active.delete(key);

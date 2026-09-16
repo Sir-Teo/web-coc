@@ -111,6 +111,7 @@ function sampleNativeScene(
   const id = graph.exports[name];
   if (id === undefined) throw Error(`Unknown native export: ${name}`);
   const poses: NativeScenePose[] = [];
+  const ancestors: number[] = [];
   const walk = (
     id: number,
     frame: number,
@@ -119,7 +120,6 @@ function sampleNativeScene(
     add: number[],
     blend: NativeBlend,
     path: string,
-    ancestors: number[],
     output: NativeScenePose[],
   ) => {
     if (ancestors.includes(id) || ancestors.length >= 32) throw Error('Recursive native scene');
@@ -150,8 +150,27 @@ function sampleNativeScene(
       const color = graph.colors[tint];
       if (color[7] !== 0) throw Error('Additive native alpha is unsupported');
       const nextMatrix = nativeMatrix(matrix, graph.matrices[transform]);
-      const nextMultiply = multiply.map((v, i) => v * color[i]);
-      const nextAdd = add.map((v, i) => multiply[i] * color[i + 4] + v);
+      // Identity tints (1,1,1,1,0,0,0,0) are common: reuse the parent arrays.
+      const identity =
+        color[0] === 1 &&
+        color[1] === 1 &&
+        color[2] === 1 &&
+        color[3] === 1 &&
+        color[4] === 0 &&
+        color[5] === 0 &&
+        color[6] === 0 &&
+        color[7] === 0;
+      const nextMultiply = identity
+        ? multiply
+        : [multiply[0] * color[0], multiply[1] * color[1], multiply[2] * color[2], multiply[3] * color[3]];
+      const nextAdd = identity
+        ? add
+        : [
+            multiply[0] * color[4] + add[0],
+            multiply[1] * color[5] + add[1],
+            multiply[2] * color[6] + add[2],
+            multiply[3] * color[7] + add[3],
+          ];
       if (mode === 3 || ((mode === 4 || mode === 8) && nested?.children.length)) {
         if (!isolate) throw Error('Native blend group requires isolated compositing');
         const group: NativeScenePose[] = [];
@@ -162,6 +181,7 @@ function sampleNativeScene(
           add: nextAdd,
           blend: mode,
         });
+        ancestors.push(id);
         walk(
           child,
           phase,
@@ -170,11 +190,12 @@ function sampleNativeScene(
           [0, 0, 0, 0],
           0,
           `${path}/${slot}`,
-          [...ancestors, id],
           group,
         );
+        ancestors.pop();
         continue;
       }
+      ancestors.push(id);
       walk(
         child,
         phase,
@@ -183,9 +204,9 @@ function sampleNativeScene(
         nextAdd,
         mode || blend,
         `${path}/${slot}`,
-        [...ancestors, id],
         output,
       );
+      ancestors.pop();
     }
   };
   const fps = graph.clips[id]?.fps ?? 1;
@@ -197,25 +218,34 @@ function sampleNativeScene(
     [0, 0, 0, 0],
     0,
     String(id),
-    [],
     poses,
   );
   return poses;
 }
 
-/** Exact native strip topology, with one triangle per adjacent triple. */
+/** Triangle topology depends only on vertex count: cache per strip length. */
+const triangleCache = new Map<number, number[]>();
 export function nativeTriangles(vertices: readonly number[]) {
-  const indices: number[] = [];
-  for (let i = 0; i < vertices.length / 4 - 2; i++)
-    indices.push(i % 2 ? i + 1 : i, i % 2 ? i : i + 1, i + 2, 0);
-  return indices;
+  const quads = vertices.length / 4 - 2;
+  let cached = triangleCache.get(quads);
+  if (!cached) {
+    cached = [];
+    for (let i = 0; i < quads; i++)
+      cached.push(i % 2 ? i + 1 : i, i % 2 ? i : i + 1, i + 2, 0);
+    triangleCache.set(quads, cached);
+  }
+  return cached;
 }
 
 export function nativeVertices(pose: NativeMeshPose) {
   const [a, c, x, b, d, y] = pose.matrix;
-  return pose.vertices.map((v, i, vertices) => {
-    if (i % 4 === 0) return a * v + c * vertices[i + 1] + x;
-    if (i % 4 === 1) return b * vertices[i - 1] + d * v + y;
-    return v;
-  });
+  const src = pose.vertices;
+  const out = new Array<number>(src.length);
+  for (let i = 0; i < src.length; i += 4) {
+    out[i] = a * src[i] + c * src[i + 1] + x;
+    out[i + 1] = b * src[i] + d * src[i + 1] + y;
+    out[i + 2] = src[i + 2];
+    out[i + 3] = src[i + 3];
+  }
+  return out;
 }

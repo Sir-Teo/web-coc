@@ -1,4 +1,4 @@
-import { compatibleReplayVersion, validateReplay, type ReplayData } from './replay';
+import { compatibleReplayVersion, spellKeysAt, validateReplay, type ReplayData } from './replay';
 import { TROOP_KEYS, SPELL_KEYS } from './data';
 import { EQUIPMENT_KEYS, type KingEquipment } from './equipment';
 import { campaignResources } from './campaign-loot';
@@ -44,8 +44,11 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         army: army(s.army),
         spells,
         troopLevels: army(s.troopLevels),
+        // Pre-v17 recordings carry no spell levels: default each of the
+        // version's own spells to 1. Keep the version's key set so JSON
+        // round-trips stay byte-identical for all other recordings.
         spellLevels: Object.fromEntries(
-          SPELL_KEYS.map((k) => [k, s.spellLevels![k]]),
+          spellKeysAt(replay.version).map((k) => [k, s.spellLevels?.[k] ?? 1]),
         ) as typeof s.spells,
         ...(s.hero
           ? {

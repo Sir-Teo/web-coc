@@ -7,6 +7,7 @@ import { lateBuildingHidden, type LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { tornadoDrag, tornadoTrapStats, type TornadoTrapLevel } from './tornado-trap-stats';
 import { nativeOwned } from './native-ownership';
+import { hurtUnit } from './native-status';
 
 /** Tornado Trap: vortex that draws attackers in (reference/tornado-trap/README.md).
  * The campaign gate keeps affected villages unavailable until this is true. */
@@ -118,7 +119,7 @@ function stepVortices(battle: Battle, dt: number) {
       vortex.caught = [];
       for (const u of battle.units) {
         if (!eligible(u, at) || distance2D(u.x - vortex.x, u.y - vortex.y) > stats.radius) continue;
-        u.hp -= stats.damage;
+        hurtUnit(battle, u, stats.damage, at);
         // A Spring Trap survivor is airborne for its local toss; it is hit but not carried.
         if (u.hp <= 0 || (u.springUntil ?? 0) > at) continue;
         vortex.caught.push(u.id);

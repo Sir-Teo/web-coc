@@ -44,20 +44,21 @@ export function tickInfernoCombat(
   const fromY = tower.y + stats.size[1] / 2;
   const range =
     (state.mode === 'multi' ? stats.weapon.alternateRangeSource : stats.weapon.rangeSource) / 100;
-  const targets = units
-    .filter(
-      (unit) =>
-        unit.hp > 0 &&
-        !unit.ejected &&
-        !unitHidden(unit, at) &&
-        (unit.spawnedAt ?? 0) <= at &&
-        (TROOPS[unit.kind].flying ? stats.weapon.airTargets : stats.weapon.groundTargets) &&
-        distance2D(unit.x - fromX, unit.y - fromY) <= range,
+  const scored: { unit: Unit; dist: number }[] = [];
+  for (const unit of units) {
+    if (
+      unit.hp <= 0 ||
+      unit.ejected ||
+      unitHidden(unit, at) ||
+      (unit.spawnedAt ?? 0) > at ||
+      !(TROOPS[unit.kind].flying ? stats.weapon.airTargets : stats.weapon.groundTargets)
     )
-    .sort(
-      (a, b) =>
-        distance2D(a.x - fromX, a.y - fromY) - distance2D(b.x - fromX, b.y - fromY) || a.id - b.id,
-    );
+      continue;
+    const dist = distance2D(unit.x - fromX, unit.y - fromY);
+    if (dist <= range) scored.push({ unit, dist });
+  }
+  scored.sort((a, b) => a.dist - b.dist || a.unit.id - b.unit.id);
+  const targets = scored.map((s) => s.unit);
   const byId = new Map(targets.map((unit) => [unit.id, unit]));
   const hits: InfernoHit[] = [];
   for (const pulse of tickInfernoScheduler(

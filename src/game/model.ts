@@ -1384,6 +1384,7 @@ export class GameModel {
     if (this.advanceHeroRoster(now)) structural = changed = true;
     // Older saves may still contain paid training queues. Complete those once;
     // new armies are prepared immediately and never create queue entries.
+    // Paid queues complete even over cap (tests rely on this); caps apply to new training only.
     while (this.state.queue.length) {
       const q = this.state.queue.shift()!;
       this.state.army[q.kind]++;
@@ -3476,6 +3477,11 @@ export class GameModel {
     const routeBuildings = passableWalls?.size
       ? solidBuildings.filter((v) => !passableWalls.has(v.id))
       : solidBuildings;
+    // Hero base stats are constant within a tick: compute once, not per unit.
+    const heroBaseStats = b.hero
+      ? heroStats(b.hero.level, b.hero.townhall, b.hero.equipment)
+      : null;
+    const rageSpellStats = this.spellStats('rage');
     for (const u of b.units) {
       if (u.hp <= 0 || u.native?.recalled) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
@@ -3506,18 +3512,19 @@ export class GameModel {
       const troop = TROOPS[u.kind];
       const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
-      const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
+      const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? rageSpellStats : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
       u.cooldown -= poison.attack === 1 ? actionDt : actionDt * poison.attack;
       u.pathAt -= unitDt;
       u.attacking = false;
+      const unitBase = this.unitStats(u);
       const base =
-        u.hero && b.hero
+        u.hero && b.hero && heroBaseStats
           ? {
-              ...this.unitStats(u),
-              ...heroStats(b.hero.level, b.hero.townhall, b.hero.equipment),
+              ...unitBase,
+              ...heroBaseStats,
             }
-          : this.unitStats(u);
+          : unitBase;
       const d = {
         ...base,
         heal:
@@ -3844,21 +3851,20 @@ export class GameModel {
       tower.cooldown -= boost.rate === 1 ? activeDt : activeDt * boost.rate;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
-      const targets = b.units.filter(
-        (u) =>
-          u.hp > 0 &&
-          !untargetable(b, u) &&
-          canTarget(d.targets, u.kind) &&
-          distance2D(u.x - center.x, u.y - center.y) <= d.range! &&
-          distance2D(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
-      );
+      // One distance evaluation per unit; the sort below is stable and orders by
+      // distance only, so equal-range ties keep battle-array order exactly as before.
+      const range = d.range!;
+      const minRange = d.minRange ?? 0;
+      const scored: { u: (typeof b.units)[number]; dist: number }[] = [];
+      for (const u of b.units) {
+        if (u.hp <= 0 || untargetable(b, u) || !canTarget(d.targets, u.kind)) continue;
+        const dist = distance2D(u.x - center.x, u.y - center.y);
+        if (dist <= range && dist >= minRange) scored.push({ u, dist });
+      }
       // Keep firing at the same eligible target until it dies or leaves range.
       const target =
-        targets.find((u) => u.id === b.defenseTargets[tower.id]) ??
-        targets.sort(
-          (a, c) =>
-            distance2D(a.x - center.x, a.y - center.y) - distance2D(c.x - center.x, c.y - center.y),
-        )[0];
+        scored.find((s) => s.u.id === b.defenseTargets[tower.id])?.u ??
+        scored.sort((a, c) => a.dist - c.dist)[0]?.u;
       if (target) {
         b.defenseTargets[tower.id] = target.id;
         // Carry the fraction of a frame past the deadline, so sustained fire
@@ -4651,6 +4657,8 @@ export function distanceTo(u: { x: number; y: number }, b: Building | { x: numbe
 export function breachTarget(u: { x: number; y: number }, buildings: Building[], subtiles = false) {
   const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
   if (!walls.length) return undefined;
+  const wallTiles = new Map<number, Building>();
+  for (const wall of walls) wallTiles.set(wall.y * MAP_SIZE + wall.x, wall);
   const structures = buildings
     .filter((b) => b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0)
     .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
@@ -4658,7 +4666,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
   for (const structure of structures.slice(0, 5)) {
     const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
     const obstruction = path
-      .map((p) => walls.find((wall) => wall.x === Math.floor(p.x) && wall.y === Math.floor(p.y)))
+      .map((p) => wallTiles.get(Math.floor(p.y) * MAP_SIZE + Math.floor(p.x)))
       .find((wall) => wall !== undefined);
     if (obstruction) candidates.push(obstruction);
   }
@@ -4666,6 +4674,19 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
 }
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
 // Version-44 native campaign battles pass `subtiles` for the client's building-edge lanes.
+// Pooled buffers: findPath runs many times per tick, so reuse fixed grid buffers
+// instead of allocating ~8 MAP_SIZE² arrays per call (no reentrancy: single-threaded).
+const PATH_CELLS = MAP_SIZE * MAP_SIZE;
+const pathBlocked = new Uint8Array(PATH_CELLS);
+const pathWall = new Uint8Array(PATH_CELLS);
+const pathCost = new Float64Array(PATH_CELLS);
+const pathPrev = new Int16Array(PATH_CELLS);
+const pathClosed = new Uint8Array(PATH_CELLS);
+const pathPriority = new Float64Array(PATH_CELLS);
+const pathHeuristic = new Float64Array(PATH_CELLS);
+const pathOrder = new Uint32Array(PATH_CELLS);
+const pathPosition = new Int16Array(PATH_CELLS);
+const pathOpen: number[] = [];
 export function findPath(
   start: { x: number; y: number },
   target: Building | { x: number; y: number },
@@ -4676,9 +4697,11 @@ export function findPath(
   breaches: readonly { x: number; y: number }[] = [],
 ): { x: number; y: number }[] {
   if (subtiles) return findSubtilePath(start, target, buildings, range);
-  const size = MAP_SIZE,
-    blocked = new Uint8Array(size * size),
-    wall = new Uint8Array(size * size);
+  const size = MAP_SIZE;
+  const blocked = pathBlocked;
+  const wall = pathWall;
+  blocked.fill(0);
+  wall.fill(0);
   const radius = SPELLS.jump.radius;
   const breached = (x: number, y: number) =>
     breaches.some((ring) => distance2D(x + 0.5 - ring.x, y + 0.5 - ring.y) <= radius);
@@ -4696,16 +4719,22 @@ export function findPath(
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
     sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
     first = sy * size + sx;
-  const cost = new Float64Array(size * size).fill(Infinity),
-    prev = new Int16Array(size * size).fill(-1),
-    closed = new Uint8Array(size * size);
+  const cost = pathCost;
+  const prev = pathPrev;
+  const closed = pathClosed;
+  cost.fill(Infinity);
+  prev.fill(-1);
+  closed.fill(0);
   // Stable heap preserves the old queue's first-in tie order. A decrease updates
   // the existing entry rather than making every search rescan the entire queue.
-  const priority = new Float64Array(size * size),
-    heuristic = new Float64Array(size * size).fill(NaN),
-    order = new Uint32Array(size * size),
-    position = new Int16Array(size * size).fill(-1),
-    open: number[] = [];
+  const priority = pathPriority;
+  const heuristic = pathHeuristic;
+  const order = pathOrder;
+  const position = pathPosition;
+  heuristic.fill(NaN);
+  position.fill(-1);
+  const open = pathOpen;
+  open.length = 0;
   let sequence = 0;
   const before = (a: number, b: number) =>
     priority[a] < priority[b] || (priority[a] === priority[b] && order[a] < order[b]);
@@ -4822,6 +4851,10 @@ export function findPath(
 
 /** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */
 export function separateUnits(units: Unit[], buildings: Building[], subtiles = false) {
+  // Fewer than two living units cannot push each other; skip the collision rebuild.
+  let living = 0;
+  for (const u of units) if (u.hp > 0 && ++living > 1) break;
+  if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
   const lanes = subtiles ? subtileSolid(buildings) : undefined;
   const solid = new Set<number>();

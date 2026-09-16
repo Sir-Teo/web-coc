@@ -58,9 +58,9 @@ export function stepInfernos(battle: Battle, dt: number) {
         battle.units,
         at,
         enabled,
-        battle.nativeRoster ? battle : undefined,
+        battle.nativeRoster && battle.catalog !== 'goblin-v1' ? battle : undefined,
         // Defensive Rage exists only in version 44 late campaign battles.
-        battle.late ? lateDefenseBoost(battle, tower, at).damage : 1,
+        battle.late && battle.catalog === 'goblin-v1' ? lateDefenseBoost(battle, tower, at).damage : 1,
       );
       state.hits.push(...hits);
       state.scheduler.slots.forEach((slot, index) => {

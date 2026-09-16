@@ -1,4 +1,4 @@
-import { distance2D } from './distance';
+import { distance2D, distanceSquared2D } from './distance';
 import { TROOPS } from './data';
 import type { Battle, Unit } from './model';
 import { launchProjectile } from './projectiles';
@@ -8,22 +8,29 @@ import type { FX } from './model';
 export const HEALER_STACK = [1, 1, 0.9, 0.9, 0.7, 0.4, 0.1, 0] as const;
 export const HEALER_HERO_SCALE = 0.55;
 export const HEALER_RADIUS = 1.5;
+const HEALER_RADIUS_SQ = HEALER_RADIUS * HEALER_RADIUS;
 const groundAlly = (u: Unit) => u.hp > 0 && !TROOPS[u.kind].flying;
 const distance = (a: Unit, b: Unit) => distance2D(a.x - b.x, a.y - b.y);
+const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y);
 
 /** Choose before movement so healers in the same update see the same group. */
 export function prepareHealerTargets(battle: Battle) {
   const allies = battle.units.filter(groundAlly);
+  if (!allies.length) return;
+  // Cluster housing once per tick (O(A²)), not once per healer (O(H·A²)).
+  const clusterSpace = new Map<number, number>();
+  for (const target of allies) {
+    let space = 0;
+    for (const u of allies)
+      if (distanceSquared2D(u.x - target.x, u.y - target.y) <= HEALER_RADIUS_SQ)
+        space += TROOPS[u.kind].space;
+    clusterSpace.set(target.id, space);
+  }
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
     if (allies.some((u) => u.id === healer.healTarget)) continue;
     const candidates = allies.filter(
-      (target) =>
-        target.hero ||
-        allies.reduce(
-          (space, u) => space + (distance(u, target) <= HEALER_RADIUS ? TROOPS[u.kind].space : 0),
-          0,
-        ) > 2,
+      (target) => target.hero || (clusterSpace.get(target.id) ?? 0) > 2,
     );
     // Retain a living target. On acquisition, favor an injured ally at a similar distance.
     candidates.sort(
@@ -78,14 +85,18 @@ export function stepHealer(
 
 /** Stable source order applies the native marginal stacking curve to each recipient. */
 export function healerContribution(battle: Battle, recipient: Unit, sourceId: number) {
+  const byId = new Map<number, Unit>();
+  for (const u of battle.units) byId.set(u.id, u);
   const sources = new Set([sourceId]);
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
-    const target = battle.units.find((u) => u.id === healer.healTarget && groundAlly(u));
+    const target = byId.get(healer.healTarget ?? -1);
+    if (!target || !groundAlly(target)) continue;
+    const healerRange = TROOPS.healer.range + 1e-9;
     if (
       target &&
-      distance(healer, target) <= TROOPS.healer.range + 1e-9 &&
-      distance(target, recipient) <= HEALER_RADIUS
+      distanceSq(healer, target) <= healerRange * healerRange &&
+      distanceSq(target, recipient) <= HEALER_RADIUS_SQ
     )
       sources.add(healer.id);
   }

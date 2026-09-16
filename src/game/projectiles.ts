@@ -207,13 +207,18 @@ export function stepProjectiles(
   const pending: CombatProjectile[] = [];
   // Ricochets launched while resolving impacts join the list after this sample.
   const initial = battle.projectiles?.length ?? 0;
+  // Id lookups once per sample instead of a linear scan per projectile.
+  const unitById = new Map((battle.units ?? []).map((u) => [u.id, u]));
+  const buildingById = new Map((battle.buildings ?? []).map((b) => [b.id, b]));
+  const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
+  const trackableByNative = new Map<string, boolean>();
   // Tracking bolts travel a bounded distance each sample. Moving a target does
   // not teleport the bolt or preserve an arrival deadline at its old position.
   for (const p of battle.projectiles ?? []) {
     if ((p.weapon !== 'xbowbolt' && !nativeCannon(p) && !nativeArcherTower(p)) || !p.flight)
       continue;
-    const target = battle.units.find((u) => u.id === p.targetId && u.hp > 0);
-    if (target) {
+    const target = unitById.get(p.targetId);
+    if (target && target.hp > 0) {
       p.x = target.x;
       p.y = target.y;
     }
@@ -231,12 +236,25 @@ export function stepProjectiles(
     p.flight.y += (p.y - p.flight.y) * fraction;
     p.flight.at = Math.min(battle.elapsed, p.impact);
   }
-  for (const p of [...(battle.projectiles ?? [])].sort((a, b) => a.impact - b.impact)) {
+  const shots = battle.projectiles ?? [];
+  // Snapshot semantics: ricochets launched mid-sample join after it, even when skipping the sort.
+  const ordered =
+    shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
+  for (const p of ordered) {
     const target = p.targetDefender
-      ? battle.defenders?.find((d) => d.id === p.targetId)
+      ? defenderById.get(p.targetId)
       : p.targetBuilding
-        ? battle.buildings.find((b) => b.id === p.targetId)
-        : battle.units.find((u) => u.id === p.targetId);
+        ? buildingById.get(p.targetId)
+        : unitById.get(p.targetId);
+    let trackable = true;
+    if (p.defense && p.native) {
+      let cached = trackableByNative.get(p.native.name);
+      if (cached === undefined) {
+        cached = !flag(nativeRow('projectiles', p.native.name), 'DontTrackTarget');
+        trackableByNative.set(p.native.name, cached);
+      }
+      trackable = cached;
+    }
     if (
       target &&
       target.hp > 0 &&
@@ -244,7 +262,7 @@ export function stepProjectiles(
       p.weapon !== 'towerbomb' &&
       p.weapon !== 'arcane' &&
       p.weapon !== 'fireball' &&
-      !(p.defense && flag(nativeRow('projectiles', p.native!.name), 'DontTrackTarget'))
+      trackable
     ) {
       const aim = p.targetBuilding ? buildingAim(p, target as Building) : target;
       p.x = aim.x;

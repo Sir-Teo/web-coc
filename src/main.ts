@@ -51,14 +51,22 @@ async function boot() {
   });
   let ownsSession = true;
   let lastSavedRevision = -1;
+  let lastPersistAt = 0;
   let saving = false;
   const persist = async () => {
     if (!ownsSession || saving || lastSavedRevision === model.revision) return;
+    // Battles mutate revision every step: persist at most every 5s mid-battle
+    // so full clone+stringify doesn't run every second during raids.
+    const now = Date.now();
+    if (model.battle && now - lastPersistAt < 5000) return;
     saving = true;
     const revision = model.revision;
     const ok = await saveGame(model.state);
     hud.setSaveState(ok);
-    if (ok) lastSavedRevision = revision;
+    if (ok) {
+      lastSavedRevision = revision;
+      lastPersistAt = now;
+    }
     saving = false;
   };
   const economyTimer = setInterval(() => {

@@ -37,7 +37,7 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, 
   if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
   if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
   if (base && trap.npc === 'shrink-trap') return { ...base, ...SHRINK_TRAP };
-  if (base && battle?.nativeRoster && !trap.npc && NATIVE_TRAP_SOURCE[trap.kind]) {
+  if (base && battle?.nativeRoster && !trap.npc && battle.catalog !== 'goblin-v1' && NATIVE_TRAP_SOURCE[trap.kind]) {
     // Version 45: every level's values come from the client rows (Town Hall 9-18 levels included).
     const values = nativeTrapValues(trap.kind, trap.level);
     return {
@@ -89,18 +89,21 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
       (mode === 'both' || !!TROOPS[u.kind].flying === (mode === 'air'));
     if (!state) {
-      const nearby = battle.units.filter(
-        (u) => eligible(u) && distance2D(u.x - center.x, u.y - center.y) <= d.trigger,
-      );
+      const nearby: { u: Unit; dist: number }[] = [];
+      for (const u of battle.units) {
+        if (!eligible(u)) continue;
+        const dist = distance2D(u.x - center.x, u.y - center.y);
+        if (dist <= d.trigger) nearby.push({ u, dist });
+      }
       nearby.sort(
         (a, b) =>
           (d.springCapacity
-            ? (b.hero ? 25 : TROOPS[b.kind].space) - (a.hero ? 25 : TROOPS[a.kind].space)
+            ? (b.u.hero ? 25 : TROOPS[b.u.kind].space) - (a.u.hero ? 25 : TROOPS[a.u.kind].space)
             : 0) ||
-          distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y) ||
-          a.id - b.id,
+          a.dist - b.dist ||
+          a.u.id - b.u.id,
       );
-      const target = nearby[0];
+      const target = nearby[0]?.u;
       if (!target) continue;
       state = battle.traps[trap.id] = {
         activatedAt: battle.elapsed,
@@ -132,7 +135,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     if (trap.kind === 'skeletontrap') {
       const count =
-        battle.nativeRoster && !trap.npc
+        battle.nativeRoster && !trap.npc && battle.catalog !== 'goblin-v1'
           ? nativeTrapValues('skeletontrap', trap.level).spawns
           : skeletonCount(trap.level);
       while ((state.spawned ?? 0) < count) {
@@ -209,6 +212,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       continue;
     }
     if (d.targets === 'air') {
+      if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
       const target = battle.units.find((u) => u.id === state.targetId);
       if (target) {
         const remaining = Math.max(dt, state.activatedAt + d.delay - battle.elapsed + dt);
@@ -225,7 +229,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
       if (!target) continue;
       const outcome = target.hero
-        ? { ejected: false, hp: target.hp - power * 0.5 }
+        ? { ejected: false, hp: Math.max(0, target.hp - power * 0.5) }
         : springOutcome(TROOPS[target.kind].space, target.hp, springCapacity(trap.level), power);
       target.hp = outcome.hp;
       target.ejected = outcome.ejected;

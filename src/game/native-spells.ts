@@ -396,7 +396,7 @@ function supportAttackers(
       e.extraHp = {
         until: at + (cast.interval || 0.3) + 1e-6,
         amount:
-          e.extraHp && e.extraHp.until >= at - 1e-9 ? Math.min(e.extraHp.amount, amount) : amount,
+          e.extraHp && e.extraHp.until >= at - 1e-9 ? Math.max(e.extraHp.amount, amount) : amount,
       };
     }
     if (immortal) {
@@ -495,7 +495,6 @@ function cloneUnits(
     copy.summoned = true;
     copy.native = { ...copy.native, cloneUntil: at + lifetime };
     if (source.level === undefined) delete copy.level;
-    break;
   }
 }
 

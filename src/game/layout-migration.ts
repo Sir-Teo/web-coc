@@ -121,6 +121,19 @@ function arrange(buildings: Building[], obstacles: Obstacle[], version: GridVers
 
 /** Called after old fields and geometry are validated. Undefined leaves an unplaceable save untouched. */
 export function migrateFootprints(save: Save, version: GridVersion) {
+  const pickSlotModes = (slot?: {
+    direction?: number;
+    skeletonMode?: Building['skeletonMode'];
+    xbowMode?: Building['xbowMode'];
+    spellTowerWeapon?: Building['spellTowerWeapon'];
+    infernoMode?: Building['infernoMode'];
+  }) => ({
+    ...(slot?.direction === undefined ? {} : { direction: slot.direction }),
+    ...(slot?.skeletonMode === undefined ? {} : { skeletonMode: slot.skeletonMode }),
+    ...(slot?.xbowMode === undefined ? {} : { xbowMode: slot.xbowMode }),
+    ...(slot?.spellTowerWeapon === undefined ? {} : { spellTowerWeapon: slot.spellTowerWeapon }),
+    ...(slot?.infernoMode === undefined ? {} : { infernoMode: slot.infernoMode }),
+  });
   const original = save.buildings;
   const result = arrange(original, save.obstacles ?? [], version);
   if (!result || !validArrangement(result.buildings, result.obstacles)) return undefined;
@@ -134,7 +147,7 @@ export function migrateFootprints(save: Save, version: GridVersion) {
         id,
         x,
         y,
-        ...(slots.get(id)?.direction === undefined ? {} : { direction: slots.get(id)!.direction }),
+        ...pickSlotModes(slots.get(id)),
       }));
       continue;
     }
@@ -145,11 +158,11 @@ export function migrateFootprints(save: Save, version: GridVersion) {
       ? buildings.map(spread)
       : arrange(buildings, result.obstacles, version)?.buildings;
     if (migrated && validArrangement(migrated, result.obstacles))
-      layout.slots = migrated.map(({ id, x, y, direction }) => ({
+      layout.slots = migrated.map(({ id, x, y, direction, skeletonMode, xbowMode, spellTowerWeapon, infernoMode }) => ({
         id,
         x,
         y,
-        ...(direction === undefined ? {} : { direction }),
+        ...pickSlotModes({ direction, skeletonMode, xbowMode, spellTowerWeapon, infernoMode }),
       }));
   }
   return result.buildings.filter((b, i) => b.x !== original[i].x || b.y !== original[i].y).length;

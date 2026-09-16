@@ -380,6 +380,8 @@ export class HUD {
   private renderPending = false;
   private drawerMarkup = '';
   private modalMarkup = '';
+  private hudMarkup = '';
+  private contextMarkup = '';
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
   private focusBefore: HTMLElement | null = null;
@@ -387,6 +389,9 @@ export class HUD {
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private anchorFrame = 0;
+  private liveTimer: ReturnType<typeof setInterval> | undefined;
+  private lastAnchorLeft = -1;
+  private lastAnchorTop = -1;
   private replayScrubbing = false;
   constructor(
     private model: GameModel,
@@ -468,8 +473,12 @@ export class HUD {
       this.render();
     };
     this.render();
-    setInterval(() => this.updateLive(), 250);
+    this.liveTimer = setInterval(() => this.updateLive(), 250);
     this.trackAnchor();
+  }
+  destroy() {
+    if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
+    cancelAnimationFrame(this.anchorFrame);
   }
   private scheduleRender() {
     if (this.raf) return;
@@ -489,7 +498,11 @@ export class HUD {
   }
   private positionContext() {
     const card = document.querySelector<HTMLElement>('.building-context[data-anchor]');
-    if (!card) return;
+    if (!card) {
+      this.lastAnchorLeft = -1;
+      this.lastAnchorTop = -1;
+      return;
+    }
     const b = this.model.state.buildings.find((v) => v.id === Number(card.dataset.anchor));
     const o = this.model.selectedObstacle;
     if (!b && !o) return;
@@ -511,8 +524,14 @@ export class HUD {
       window.innerHeight - height - (window.innerHeight >= 650 ? 150 : 12),
     );
     const top = Math.min(Math.max(minTop, p.y - height - 62), maxTop);
-    card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
+    const leftPx = Math.round(left);
+    const topPx = Math.round(top);
+    // offsetWidth/offsetHeight force layout: skip style writes when pinned position is unchanged.
+    if (leftPx === this.lastAnchorLeft && topPx === this.lastAnchorTop) return;
+    this.lastAnchorLeft = leftPx;
+    this.lastAnchorTop = topPx;
+    card.style.left = `${leftPx}px`;
+    card.style.top = `${topPx}px`;
   }
   toast(message: string) {
     const el = document.querySelector<HTMLElement>('#toast')!;
@@ -1214,8 +1233,16 @@ export class HUD {
     const categoryScroll = document.querySelector('.shop-tabs')?.scrollLeft ?? 0;
     const armyScroll = document.querySelector('.army-tray')?.scrollLeft ?? 0;
     const focused = (document.activeElement as HTMLElement)?.dataset?.action;
-    document.querySelector('#hud')!.innerHTML = b ? this.battleHUD() : this.homeHUD();
-    document.querySelector('#context')!.innerHTML = this.context();
+    const hudMarkup = b ? this.battleHUD() : this.homeHUD();
+    if (hudMarkup !== this.hudMarkup) {
+      document.querySelector('#hud')!.innerHTML = hudMarkup;
+      this.hudMarkup = hudMarkup;
+    }
+    const contextMarkup = this.context();
+    if (contextMarkup !== this.contextMarkup) {
+      document.querySelector('#context')!.innerHTML = contextMarkup;
+      this.contextMarkup = contextMarkup;
+    }
     const drawerMarkup = this.drawer();
     const drawerChanged = drawerMarkup !== this.drawerMarkup;
     if (drawerChanged) {
@@ -2368,6 +2395,7 @@ export class HUD {
       }
       const started = performance.now();
       const step = () => {
+        if (!el.isConnected) return;
         const t = Math.min(1, (performance.now() - started) / 780);
         el.textContent = n(target * (1 - Math.pow(1 - t, 3)));
         if (t < 1) requestAnimationFrame(step);
@@ -2406,22 +2434,40 @@ export class HUD {
     }
     document
       .querySelectorAll<HTMLElement>('[data-resource]')
-      .forEach(
-        (el) =>
-          (el.textContent = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems'])),
-      );
-    document.querySelectorAll<HTMLElement>('[data-obstacle-time]').forEach((el) => {
-      const o = m.obstacles.find((o) => o.id === Number(el.dataset.obstacleTime));
-      if (o?.removeEnd) el.textContent = time((o.removeEnd - m.clock) / 1000);
-    });
-    document.querySelectorAll<HTMLElement>('[data-upgrade]').forEach((el) => {
-      const b = m.state.buildings.find((v) => v.id === Number(el.dataset.upgrade));
-      if (b?.upgradeEnd) el.textContent = time((b.upgradeEnd - m.clock) / 1000);
-    });
-    document.querySelectorAll<HTMLElement>('[data-finish]').forEach((el) => {
-      const b = m.state.buildings.find((v) => v.id === Number(el.dataset.finish));
-      if (b?.upgradeEnd) el.textContent = String(m.finishCost(b));
-    });
+      .forEach((el) => {
+        const next = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']);
+        if (el.textContent !== next) el.textContent = next;
+      });
+    const obstacleTimes = document.querySelectorAll<HTMLElement>('[data-obstacle-time]');
+    if (obstacleTimes.length) {
+      const byId = new Map(m.obstacles.map((o) => [o.id, o]));
+      obstacleTimes.forEach((el) => {
+        const o = byId.get(Number(el.dataset.obstacleTime));
+        if (o?.removeEnd) {
+          const next = time((o.removeEnd - m.clock) / 1000);
+          if (el.textContent !== next) el.textContent = next;
+        }
+      });
+    }
+    const upgradeEls = document.querySelectorAll<HTMLElement>('[data-upgrade]');
+    const finishEls = document.querySelectorAll<HTMLElement>('[data-finish]');
+    if (upgradeEls.length || finishEls.length) {
+      const byId = new Map(m.state.buildings.map((v) => [v.id, v]));
+      upgradeEls.forEach((el) => {
+        const b = byId.get(Number(el.dataset.upgrade));
+        if (b?.upgradeEnd) {
+          const next = time((b.upgradeEnd - m.clock) / 1000);
+          if (el.textContent !== next) el.textContent = next;
+        }
+      });
+      finishEls.forEach((el) => {
+        const b = byId.get(Number(el.dataset.finish));
+        if (b?.upgradeEnd) {
+          const next = String(m.finishCost(b));
+          if (el.textContent !== next) el.textContent = next;
+        }
+      });
+    }
     const research = document.querySelector('[data-research]');
     if (research && m.state.research)
       research.textContent = time((m.state.research.end - m.clock) / 1000);
@@ -2431,8 +2477,15 @@ export class HUD {
         m.finishCost({ upgradeEnd: m.state.research.end } as Building),
       );
     const queue = document.querySelector('[data-queue]');
-    const nextQueued = [...m.state.queue, ...m.state.spellQueue].sort((a, b) => a.end - b.end)[0];
-    if (queue && nextQueued) queue.textContent = time((nextQueued.end - m.clock) / 1000);
+    if (queue) {
+      let nextEnd = Infinity;
+      for (const q of m.state.queue) if (q.end < nextEnd) nextEnd = q.end;
+      for (const q of m.state.spellQueue) if (q.end < nextEnd) nextEnd = q.end;
+      if (nextEnd !== Infinity) {
+        const next = time((nextEnd - m.clock) / 1000);
+        if (queue.textContent !== next) queue.textContent = next;
+      }
+    }
     const replay = m.replay;
     if (replay) {
       const time = document.querySelector('#replay-time');
@@ -2459,7 +2512,10 @@ export class HUD {
       const fill = document.querySelector<HTMLElement>('#destruction-fill');
       if (fill) fill.style.width = pct(b.destruction);
       const stars = document.querySelector('#battle-stars');
-      if (stars) stars.innerHTML = `${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span>`;
+      if (stars) {
+        const next = `${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span>`;
+        if (stars.innerHTML !== next) stars.innerHTML = next;
+      }
       for (const k of campaignResourceKeys(b.availableLoot ?? { gold: 0, elixir: 0 })) {
         const el = document.querySelector(`[data-loot="${k}"]`);
         const available = b.availableLoot?.[k] ?? 0;

@@ -1,6 +1,6 @@
 import { unitHidden } from './native-status';
 import { TROOPS } from './data';
-import { distance2D } from './distance';
+import { distance2D, distanceSquared2D } from './distance';
 import {
   garrisonLongShots,
   garrisonPoisonOnHit,
@@ -383,8 +383,8 @@ export function stepGarrisonDefender(
     pool.find((unit) => unit.id === defender.target) ??
     pool.sort(
       (a, b) =>
-        distance2D(a.x - defender.x, a.y - defender.y) -
-          distance2D(b.x - defender.x, b.y - defender.y) || a.id - b.id,
+        distanceSquared2D(a.x - defender.x, a.y - defender.y) -
+          distanceSquared2D(b.x - defender.x, b.y - defender.y) || a.id - b.id,
     )[0];
   defender.cooldown = Math.max(0, defender.cooldown - attackDt);
   if (!target) {

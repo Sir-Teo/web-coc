@@ -56,7 +56,7 @@ const live = (u: Unit, at: number) =>
 
 /** Giga Bomb stays on the map for attackers; other traps hide until triggered. */
 export const alwaysVisibleTrap = (battle: Battle, b: Building) =>
-  !!battle.nativeRoster && b.kind === 'gigabomb';
+  !!battle.nativeRoster && !b.npc && b.kind === 'gigabomb' && battle.catalog !== 'goblin-v1';
 
 /**
  * Tornado Trap and Giga Bomb. Returns true when battle state changed.
@@ -75,14 +75,21 @@ export function stepNativeTrap(battle: Battle, trap: Building, effect: (fx: FX) 
     (TROOPS[u.kind].flying ? values.air : values.ground) &&
     distance2D(u.x - c.x, u.y - c.y) <= values.trigger + 1e-9;
   if (!state) {
-    const inside = battle.units.filter(eligible).sort((a, b) => a.id - b.id);
-    const total = inside.reduce((n, u) => n + housing(u), 0);
+    let total = 0;
+    let firstId: number | undefined;
+    let count = 0;
+    for (const u of battle.units) {
+      if (!eligible(u)) continue;
+      count++;
+      total += housing(u);
+      if (firstId === undefined || u.id < firstId) firstId = u.id;
+    }
     const needed = trap.kind === 'gigabomb' ? values.minHousing : 1;
-    if (!inside.length || total < needed) return false;
+    if (!count || total < needed) return false;
     state = battle.traps[trap.id] = {
       activatedAt: at,
       resolved: false,
-      targetId: inside[0].id,
+      targetId: firstId!,
       ...c,
     };
     effect({
@@ -126,24 +133,27 @@ export function fling(battle: Battle, u: Unit, x: number, y: number, distance: n
   const nx = d > 1e-9 ? dx / d : 1,
     ny = d > 1e-9 ? dy / d : 0;
   const flying = !!TROOPS[u.kind].flying;
+  // Solid footprints once per throw; the unit's own motion does not move buildings.
+  const solids: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  if (!flying)
+    for (const b of battle.buildings) {
+      if (b.hp <= 0 || BUILDINGS[b.kind].trap) continue;
+      const size = BUILDINGS[b.kind].size;
+      solids.push({ x0: b.x, x1: b.x + size, y0: b.y, y1: b.y + size });
+    }
   let travel = 0;
   while (travel + 0.1 <= distance + 1e-9) {
     const px = u.x + nx * (travel + 0.1),
       py = u.y + ny * (travel + 0.1);
     if (px < 0.5 || py < 0.5 || px > MAP_SIZE - 0.5 || py > MAP_SIZE - 0.5) break;
-    if (
-      !flying &&
-      battle.buildings.some(
-        (b) =>
-          b.hp > 0 &&
-          !BUILDINGS[b.kind].trap &&
-          px > b.x &&
-          px < b.x + BUILDINGS[b.kind].size &&
-          py > b.y &&
-          py < b.y + BUILDINGS[b.kind].size,
-      )
-    )
-      break;
+    let blocked = false;
+    for (const s of solids) {
+      if (px > s.x0 && px < s.x1 && py > s.y0 && py < s.y1) {
+        blocked = true;
+        break;
+      }
+    }
+    if (blocked) break;
     travel += 0.1;
   }
   if (travel <= 1e-9) return;
@@ -168,6 +178,13 @@ export function tornadoPulse(
   const interval = cast.interval || 0.128;
   const inner = tiles(row, 'TornadoInnerRadius');
   const siegeTier = nativeGlobal('TORNADO_SIEGE_FORCE_TIER', 1);
+  // Solid footprints once per pulse; buildings do not move mid-pulse.
+  const solids: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  for (const b of battle.buildings) {
+    if (b.hp <= 0 || BUILDINGS[b.kind].trap || b.kind === 'wall') continue;
+    const size = BUILDINGS[b.kind].size;
+    solids.push({ x0: b.x, x1: b.x + size, y0: b.y, y1: b.y + size });
+  }
   for (const u of battle.units) {
     if (!live(u, at)) continue;
     const dx = u.x - cast.x,
@@ -196,20 +213,16 @@ export function tornadoPulse(
     const theta = Math.atan2(dy, dx) + angle;
     const tx = cast.x + Math.cos(theta) * nd,
       ty = cast.y + Math.sin(theta) * nd;
-    if (
-      !flying &&
-      battle.buildings.some(
-        (b) =>
-          b.hp > 0 &&
-          !BUILDINGS[b.kind].trap &&
-          b.kind !== 'wall' &&
-          tx > b.x &&
-          tx < b.x + BUILDINGS[b.kind].size &&
-          ty > b.y &&
-          ty < b.y + BUILDINGS[b.kind].size,
-      )
-    )
-      continue;
+    if (!flying) {
+      let blocked = false;
+      for (const s of solids) {
+        if (tx > s.x0 && tx < s.x1 && ty > s.y0 && ty < s.y1) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) continue;
+    }
     u.x = tx;
     u.y = ty;
     u.path = [];

@@ -180,11 +180,17 @@ export class NativeSceneView {
           1,
           1,
         );
-        entry.image
-          .resize(width, height)
-          .setPosition(x + left / density, y + top / density)
-          .setScale(1 / density)
-          .setAlpha(alpha * pose.multiply[3]);
+        // Resize reallocates the GPU buffer: only do it when bounds actually change.
+        if (entry.image.width !== width || entry.image.height !== height)
+          entry.image.resize(width, height);
+        const wantX = x + left / density;
+        const wantY = y + top / density;
+        const wantScale = 1 / density;
+        const wantAlpha = alpha * pose.multiply[3];
+        if (entry.image.x !== wantX || entry.image.y !== wantY) entry.image.setPosition(wantX, wantY);
+        if (entry.image.scaleX !== wantScale || entry.image.scaleY !== wantScale)
+          entry.image.setScale(wantScale);
+        if (entry.image.alpha !== wantAlpha) entry.image.setAlpha(wantAlpha);
         (entry.image.texture as Phaser.Textures.DynamicTexture).commandBuffer.length = 0;
         entry.image.clear().draw(entry.content.objects).setRenderMode('all', true);
         if (pose.blend === 3) {
