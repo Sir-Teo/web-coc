@@ -15,6 +15,8 @@ const distanceSq = (a: Unit, b: Unit) => distanceSquared2D(a.x - b.x, a.y - b.y)
 
 /** Choose before movement so healers in the same update see the same group. */
 export function prepareHealerTargets(battle: Battle) {
+  // Early-return when no healers are on the field: avoids O(units²) clustering.
+  if (!battle.units.some((u) => TROOPS[u.kind].healer && u.hp > 0)) return;
   const allies = battle.units.filter(groundAlly);
   if (!allies.length) return;
   // Cluster housing once per tick (O(A²)), not once per healer (O(H·A²)).

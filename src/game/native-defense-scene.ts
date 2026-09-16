@@ -226,6 +226,7 @@ export class NativeDefensePresentation {
           this.record({ key: `${source.id}:death:${i}:${at.toFixed(2)}`, effect, at, ground });
     }
   }
+  private effectsCache = new Map<string, ReturnType<typeof nativeDefenseEffects>>();
   render(
     buildings: readonly Building[],
     battle: Battle | null,
@@ -237,12 +238,28 @@ export class NativeDefensePresentation {
     this.layer.begin();
     const shown = new Set<string>();
     const live = battle && !battle.finished;
+    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    const view = cam?.worldView;
     for (const tower of buildings) {
       const pack = this.pack(tower.kind);
       if (!pack) continue;
-      const effects = nativeDefenseEffects(pack, tower);
-      const state = battle?.nativeDefenses?.[tower.id];
       const point = iso(center(tower).x, center(tower).y);
+      // Same worldView early-out the village natives use; never derive tables for culled towers.
+      if (
+        view &&
+        (Math.abs(point.x - view.centerX) > view.width / 2 + 420 ||
+          Math.abs(point.y - view.centerY) > view.height / 2 + 420)
+      )
+        continue;
+      const effectsKey = `${tower.kind}:${tower.level}:${tower.weaponLevel ?? ''}:${tower.spellMode ?? ''}:${tower.gearMode ?? ''}`;
+      let effects = this.effectsCache.get(effectsKey);
+      if (!effects) {
+        effects = nativeDefenseEffects(pack, tower);
+        // Bound the cache; tower variety per battle is small.
+        if (this.effectsCache.size > 64) this.effectsCache.clear();
+        this.effectsCache.set(effectsKey, effects);
+      }
+      const state = battle?.nativeDefenses?.[tower.id];
       const target = live ? nativeDefenseTarget(battle, tower) : undefined;
       const aim = target
         ? { x: target.x - center(tower).x, y: target.y - center(tower).y }

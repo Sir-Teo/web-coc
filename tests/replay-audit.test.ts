@@ -129,7 +129,10 @@ describe('replay isolation and input budgets', () => {
       m.step(1);
       expect(m.replay!.time).toBe(0.05);
       m.seekReplay(5);
-      expect(m.replay!.time).toBe(0.05);
+      // Forward seeks continue from the current runner instead of restarting
+      // from tick zero, so one budgeted chunk advances past the old head.
+      expect(m.replay!.time).toBeGreaterThanOrEqual(0.05);
+      expect(m.replay!.time).toBeLessThanOrEqual(0.1);
       expect(m.replay!.seeking).toBe(true);
     } finally {
       clock.mockRestore();

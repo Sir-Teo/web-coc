@@ -12,6 +12,10 @@ import {
 
 type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.Image;
 
+/** Quantize density to half steps so zoom gestures reuse isolated blend buffers. */
+export function quantizedDensity(density: number) {
+  return Math.max(1, Math.round(density * 2) / 2);
+}
 function groupSignature(poses: readonly NativeScenePose[], density: number): string {
   // Value hash of everything baked into the isolated buffer: leaf geometry
   // transforms, texture selection and per-texel colors. Group-level
@@ -127,6 +131,7 @@ export class NativeSceneView {
     alpha = 1,
     density = Math.max(1, this.scene.cameras.main.zoomX, this.scene.cameras.main.zoomY),
   ) {
+    density = quantizedDensity(density);
     // Direct multiply leaves also need isolation before the two destination passes.
     poses = poses.map((p) =>
       !('group' in p) && p.blend === 3
@@ -242,19 +247,23 @@ export class NativeSceneView {
           if (!entry.multiplyImage)
             entry.multiplyImage = this.scene.add.image(0, 0, entry.image.texture).setOrigin(0, 0);
           const second = entry.multiplyImage;
+          const wantSecondDepth = depth + order * 0.0001 + 0.00005;
           second
             .setFrame(entry.image.frame.name)
             .setPosition(entry.image.x, entry.image.y)
             .setScale(1 / density)
             .setAlpha(alpha * pose.multiply[3])
-            .setBlendMode(nativeMultiplyModes(renderer)[1])
-            .setDepth(depth + order * 0.0001 + 0.00005)
-            .setVisible(true);
+            .setBlendMode(nativeMultiplyModes(renderer)[1]);
+          if (second.depth !== wantSecondDepth) second.setDepth(wantSecondDepth);
+          if (!second.visible) second.setVisible(true);
           if (this.detached) second.removeFromDisplayList();
         }
         object = entry.image;
       } else object = this.meshes.get(pose.key)!;
-      object.setDepth(depth + order * 0.0001).setVisible(true);
+      // Guard depth writes: any assignment queues a full stable sort of the display list.
+      const wantDepth = depth + order * 0.0001;
+      if (object.depth !== wantDepth) object.setDepth(wantDepth);
+      if (!object.visible) object.setVisible(true);
       if (this.detached) object.removeFromDisplayList();
       this.objects.push(object);
       if ('group' in pose && pose.blend === 3)

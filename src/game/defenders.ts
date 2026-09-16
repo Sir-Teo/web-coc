@@ -312,6 +312,24 @@ export function stepAttackerVsDefenders(
   traits?: DefenderFightTraits,
 ) {
   const troop = traits ?? TROOPS[unit.kind];
+  if (troop.healer || troop.wallBreaker) {
+    delete unit.defenderTarget;
+    return false;
+  }
+  // Early-return when no defenders exist before scanning all buildings twice.
+  // Mirrors the no-target branch below: a stale defenderTarget also clears the
+  // building target so the unit retargets instead of resuming its old route.
+  if (!(battle.defenders ?? []).some(
+    (d) => d.hp > 0 && (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed),
+  )) {
+    if (unit.defenderTarget !== undefined) {
+      delete unit.defenderTarget;
+      unit.target = null;
+      unit.path = [];
+      unit.pathAt = 0;
+    }
+    return false;
+  }
   const preferred = buildings.some(
     (b) =>
       b.hp > 0 &&
@@ -324,7 +342,7 @@ export function stepAttackerVsDefenders(
   const committed =
     (troop.prefersDefenses || troop.prefersResources) &&
     buildings.some((b) => b.id === unit.target && b.hp > 0 && targetableBuilding(battle, b));
-  if (preferred || committed || troop.healer || troop.wallBreaker) {
+  if (preferred || committed) {
     delete unit.defenderTarget;
     return false;
   }

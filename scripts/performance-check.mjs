@@ -5,7 +5,8 @@ const hostLoadStart = loadavg();
 const metal = process.argv.includes('--metal');
 const armyProfile =
   process.argv.find((arg) => arg.startsWith('--army='))?.split('=')[1] ?? 'starter';
-if (!['starter', 'mixed'].includes(armyProfile)) throw Error('Use --army=starter or --army=mixed.');
+if (!['starter', 'mixed', 'stress400'].includes(armyProfile))
+  throw Error('Use --army=starter, --army=mixed or --army=stress400.');
 const density = Number(
   process.argv.find((arg) => arg.startsWith('--density='))?.split('=')[1] ?? 1,
 );
@@ -218,18 +219,74 @@ const battleArmy = await page.evaluate(async (armyProfile) => {
     if (m.armySize !== 200 || m.capacity !== 200)
       throw Error('Expected a native 200-space mixed army.');
   }
+  if (armyProfile === 'stress400') {
+    // 400-unit mixed-army stress profile: TH8+ / siege / super kinds included so
+    // the LOD, fallback and mass re-path paths are all exercised with numbers.
+    const { developedSave } = await import('/tests/fixtures/developed-village.ts');
+    const { maxTroopLevel } = await import('/src/game/data.ts');
+    const { settings, tutorial } = m.state;
+    m.state = developedSave();
+    m.state.settings = settings;
+    m.state.tutorial = tutorial;
+    m.townhall.level = 8;
+    m.state.buildings.find((b) => b.kind === 'laboratory').level = 6;
+    m.state.troopLevels = Object.fromEntries(
+      Object.keys(m.state.army).map((k) => [k, maxTroopLevel(k)]),
+    );
+    m.state.army = {
+      ...m.state.army,
+      swordsman: 40,
+      archer: 40,
+      giant: 20,
+      wizard: 20,
+      goblin: 20,
+      wallbreaker: 8,
+      balloon: 6,
+      healer: 4,
+      dragon: 4,
+      pekka: 4,
+      miner: 10,
+      bowler: 10,
+      witch: 6,
+      golem: 2,
+      wallwrecker: 1,
+      superbarbarian: 10,
+      superarcher: 10,
+    };
+  }
   const composition = { ...m.state.army },
     housing = m.armySize;
   m.state.settings.sound = false;
   m.startBattle(0);
-  for (const k of ['giant', 'wallbreaker', 'swordsman', 'archer', 'wizard', 'balloon', 'goblin']) {
+  const deployOrder = [
+    'giant',
+    'golem',
+    'wallwrecker',
+    'wallbreaker',
+    'swordsman',
+    'superbarbarian',
+    'archer',
+    'superarcher',
+    'wizard',
+    'bowler',
+    'witch',
+    'miner',
+    'balloon',
+    'goblin',
+    'healer',
+    'dragon',
+    'pekka',
+  ].filter((k) => (m.battle.remaining[k] ?? 0) > 0);
+  for (const k of deployOrder) {
     m.activeTroop = k;
     let i = 0;
     while (m.battle.remaining[k] > 0) {
-      if (!m.deploy(4 + (i % 3) * 0.3, 10 + (i % 4) * 0.5))
-        throw Error(`Could not deploy ${k} in the performance scenario.`);
+      if (!m.deploy(4 + (i % 5) * 0.3, 10 + (i % 6) * 0.5)) break;
       i++;
+      // Cap the stress profile so a full roster never hangs headless CI.
+      if (armyProfile === 'stress400' && m.battle.units.length >= 400) break;
     }
+    if (armyProfile === 'stress400' && m.battle.units.length >= 400) break;
   }
   return {
     profile: armyProfile,

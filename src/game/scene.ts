@@ -226,7 +226,7 @@ export class VillageScene extends Phaser.Scene {
   private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' | 'drag-wall' = 'none';
   private lastDeploy = { x: -99, y: -99 };
   private lastTap = { x: -99, y: -99, t: 0 };
-  private boundary: { signature: string; edges: number[][] } = { signature: '', edges: [] };
+  private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
   private pinchDistance = 0;
   private tick = 0;
   private renderClock = 0;
@@ -240,6 +240,7 @@ export class VillageScene extends Phaser.Scene {
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
+  private armyPrefetchSignature = '';
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
   private wizardTowerPresentation!: WizardTowerPresentation;
@@ -374,7 +375,11 @@ export class VillageScene extends Phaser.Scene {
           frameHeight: 128,
         },
       );
-    for (const k of EXTRA_TROOP_KINDS) this.load.image(`${k}-walk`, asset(k));
+    // Extra / siege / super troops have no walk spritesheet. Their portrait stays
+    // under the roster key (`k`) only; the walk key is intentionally left missing
+    // so a portrait can never collide with a walk sheet on one texture key.
+    // Battle and camp sprites fall back to the transparent `troop-fallback`
+    // texture (plus a ground marker) until the native mesh is ready.
     for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
     this.load.off('progress');
@@ -396,6 +401,16 @@ export class VillageScene extends Phaser.Scene {
   }
   create() {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
+    // Transparent 1x1 fallback for troops without a walk sheet (TH8+ / siege /
+    // super). Keeps the sprite pipeline alive without ever showing a roster card.
+    if (!this.textures.exists('troop-fallback')) {
+      const canvas = this.textures.createCanvas('troop-fallback', 2, 2);
+      if (canvas) {
+        const ctx = canvas.getContext();
+        ctx.clearRect(0, 0, 2, 2);
+        canvas.refresh();
+      }
+    }
     this.add
       .image(WORLD.ox, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
@@ -1026,16 +1041,14 @@ export class VillageScene extends Phaser.Scene {
   private battleBoundary() {
     const b = this.model.battle;
     if (!b) return [];
+    // Numeric revision instead of joining every building id into a string per frame.
     // Stage index included: two stages can share building ids and building counts.
-    const signature =
-      b.index +
-      ':' +
-      b.buildings
-        .filter(
-          (v) => v.hp > 0 && v.kind !== 'wall' && !isTrap(v.kind) && this.model.visibleBuilding(v),
-        )
-        .map((v) => v.id)
-        .join(',');
+    let signature = (b.index * 2654435761) | 0;
+    for (const v of b.buildings) {
+      if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind)) continue;
+      if (!this.model.visibleBuilding(v)) continue;
+      signature = ((signature * 31 + v.id) | 0) ^ ((v.hp * 7) | 0);
+    }
     if (signature === this.boundary.signature) return this.boundary.edges;
     const blocked = (x: number, y: number) =>
       x < 1 || y < 1 || x > MAP_SIZE - 2 || y > MAP_SIZE - 2
@@ -1168,6 +1181,17 @@ export class VillageScene extends Phaser.Scene {
   }
   sync() {
     if (this.lateAssetsPending()) void this.loadLateAssets();
+    // Prefetch native packs for the carried army when the roster changes, not on
+    // first deploy, so the portrait window never opens mid-battle.
+    {
+      const army = this.model.state.army as Record<string, number> | undefined;
+      const kinds = Object.keys(army ?? {}).filter((k) => (army?.[k] ?? 0) > 0);
+      const signature = kinds.sort().join(',');
+      if (signature !== this.armyPrefetchSignature) {
+        this.armyPrefetchSignature = signature;
+        if (kinds.length) this.troopNativePresentation?.prefetch(kinds);
+      }
+    }
     const reduced = this.model.state.settings.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -1232,7 +1256,7 @@ export class VillageScene extends Phaser.Scene {
           .setAlpha(NATIVE_SCENERY[o.data].faded ? 0.5 : 1);
         this.campaignScenery.push(im);
       }
-      this.boundary.signature = '';
+      this.boundary.signature = -1;
       for (const s of this.sprites.values()) s.destroy();
       for (const s of this.unitSprites.values()) s.destroy();
       for (const id of this.bubbles.keys()) this.removeBubble(id);
@@ -1634,12 +1658,16 @@ export class VillageScene extends Phaser.Scene {
         if (!im) {
           const art = troopArt(actor.kind),
             size = TROOPS[actor.kind].width * art.displayScale * 0.7;
+          const walkKey = `${actor.kind}-walk`;
+          const texKey = this.textures.exists(walkKey) ? walkKey : 'troop-fallback';
+          const frame = this.textures.exists(walkKey) ? art.idleFrame : undefined;
           im = this.add
-            .image(0, 0, `${actor.kind}-walk`, art.idleFrame)
+            .image(0, 0, texKey, frame)
             .setOrigin(0.5, 122 / 128)
             .setDisplaySize(size, size)
             .setData('campActor', actor.id)
-            .setData('kind', actor.kind);
+            .setData('kind', actor.kind)
+            .setData('isFallback', texKey === 'troop-fallback');
           this.campViews.set(actor.id, im);
         }
         return im.setData('campId', actor.campId);
@@ -1676,6 +1704,13 @@ export class VillageScene extends Phaser.Scene {
       if (previousFacing !== facing)
         im.setFlipX(art.nativeFacing > 0 ? facing < 0 : facing > 0).setData('facing', facing);
       if (flying) this.campShadows.fillEllipse(px, py, 22, 11);
+      if (im.getData('isFallback')) {
+        // Transparent fallback + marker reads as a unit, never a roster card.
+        this.campShadows.fillEllipse(px, py, 20, 10);
+        this.campShadows.fillStyle(0xf3e9d2, 0.9);
+        this.campShadows.fillCircle(px, py - 10, 3.5);
+        this.campShadows.fillStyle(0x1f2a16, 0.26);
+      }
     }
   }
   private renderRuin(b: Building, im: Phaser.GameObjects.Image) {
@@ -2346,19 +2381,44 @@ export class VillageScene extends Phaser.Scene {
         this.detail.fillStyle(0xffdc85, 1);
         this.detail.fillCircle(p.x, p.y - lift - 5, 3 + progress * 3);
       }
+      // Reuse id maps for the whole unit pass instead of linear finds per unit.
+      const buildingById = new Map(battle.buildings.map((b) => [b.id, b]));
+      const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
+      const unitById = new Map(battle.units.map((v) => [v.id, v]));
+      void unitById;
+      const cam = this.cameras.main;
+      const worldView = cam.worldView;
+      const cullMargin = 80;
       for (const u of battle.units) {
         const art = troopArt(u.kind);
         let im = this.unitSprites.get(u.id);
         if (!im) {
           const d = TROOPS[u.kind];
+          const walkKey = `${u.kind}-walk`;
+          const hasWalk = u.hero || this.textures.exists(walkKey);
+          const texKey = u.hero ? kingTexture('front-left') : hasWalk ? walkKey : 'troop-fallback';
+          const frame = u.hero ? 0 : hasWalk ? 0 : undefined;
           im = this.add
-            .image(0, 0, u.hero ? kingTexture('front-left') : `${u.kind}-walk`, 0)
+            .image(0, 0, texKey, frame)
             .setOrigin(0.5, u.hero ? KING_ART.baseline / KING_ART.cell : 122 / 128);
           if (u.hero) im.setDisplaySize(KING_ART.width, KING_ART.width);
           else im.setDisplaySize(d.width * art.displayScale, d.width * art.displayScale);
+          im.setData('isFallback', !hasWalk && !u.hero);
+          im.setData('nativeTroop', u.id);
           this.unitSprites.set(u.id, im);
           const spawn = iso(u.x, u.y);
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
+        }
+        // Viewport cull: skip off-screen units entirely (mesh layer culls itself).
+        {
+          const early = iso(u.x, u.y);
+          if (
+            Math.abs(early.x - worldView.centerX) > worldView.width / 2 + cullMargin ||
+            Math.abs(early.y - worldView.centerY) > worldView.height / 2 + cullMargin
+          ) {
+            im.setVisible(false);
+            continue;
+          }
         }
         const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
         // Local visual half-scale; health, collision space and projectile speed are unchanged.
@@ -2366,10 +2426,15 @@ export class VillageScene extends Phaser.Scene {
         const width =
           (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
         im.setDisplaySize(width, width).setData('shrinkScale', shrinkScale);
+        const defenderTarget =
+          u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
+        const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
         const target = TROOPS[u.kind].healer
-          ? battle.units.find((ally) => ally.id === u.healTarget)
-          : (battle.defenders?.find((d) => d.id === u.defenderTarget && d.hp > 0) ??
-            battle.buildings.find((b) => b.id === u.target));
+          ? unitById.get(u.healTarget ?? -1)
+          : (liveDefender ?? buildingById.get(u.target ?? -1));
+        // Fallback sprites are invisible by design; draw a small ground marker so
+        // the unit still reads as a unit while its native mesh loads.
+        const isFallback = !!im.getData('isFallback');
         if (u.hero && battle.hero) {
           const king = kingPose(
             u,
@@ -2422,12 +2487,16 @@ export class VillageScene extends Phaser.Scene {
         // Frozen late campaign attackers hold their current frame and hover phase.
         const animationTime =
           (battle.elapsed - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, battle.elapsed)) * 1000;
-        if (!u.hero && im.texture.frameTotal > 2)
-          im.setFrame(
+        // Guard every frame selection with a texture lookup: a miss would
+        // otherwise draw the entire baked atlas page / portrait card.
+        if (!u.hero && !isFallback && im.texture.frameTotal > 2) {
+          const frame = String(
             sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
               ? art.idleFrame
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
+          if (im.frame.name !== frame && im.texture.has(frame)) im.setFrame(frame);
+        }
         const nativeEffects = u.native?.effects;
         const frozen = lateUnitFrozen(u, battle.elapsed);
         if (frozen) im.setTint(FROZEN_TINT);
@@ -2455,12 +2524,21 @@ export class VillageScene extends Phaser.Scene {
                   : 0;
         const lift = flying ? AIR_LIFT : springLift;
         // Air troops draw above every rooftop, with a shadow left on the ground.
-        im.setPosition(p.x, p.y + motion - lift)
-          .setDepth(flying || sprung ? 7500 : p.y + 1)
-          .setData('springLift', springLift);
+        // Guard depth writes: Phaser queues a full display-list sort on any assignment.
+        const wantDepth = flying || sprung ? 7500 : p.y + 1;
+        im.setPosition(p.x, p.y + motion - lift);
+        if (im.depth !== wantDepth) im.setDepth(wantDepth);
+        im.setData('springLift', springLift);
         if (flying || sprung) {
           this.detail.fillStyle(0x1f2a16, 0.28);
           this.detail.fillEllipse(p.x, p.y, 26 * shrinkScale, 13 * shrinkScale);
+        }
+        if (isFallback) {
+          // Invisible sprite + small ground marker reads as a unit, never a card.
+          this.detail.fillStyle(0x1f2a16, 0.32);
+          this.detail.fillEllipse(p.x, p.y, 22 * shrinkScale, 11 * shrinkScale);
+          this.detail.fillStyle(0xf3e9d2, 0.9);
+          this.detail.fillCircle(p.x, p.y - 10, 4 * shrinkScale);
         }
         const rate =
           u.hero && battle.hero
@@ -2620,10 +2698,11 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
+    // Plain rects: rounded rects expand to arcs + earcut triangulation every frame.
     graphics.fillStyle(0x292920, 0.8);
-    graphics.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 7, 3);
+    graphics.fillRect(x - w / 2 - 2, y - 2, w + 4, 7);
     graphics.fillStyle(color);
-    graphics.fillRoundedRect(x - w / 2, y, Math.max(0, w * p), 3, 1);
+    graphics.fillRect(x - w / 2, y, Math.max(0, w * p), 3);
   }
   private animateEffect(config: EffectTween) {
     if (this.model.state.settings.reducedMotion) {

@@ -583,6 +583,7 @@ export interface Battle {
   consumedRubble?: number[];
   /** Active Jump Spell wall set signature; a change forces ground troops to re-route. */
   jumpSignature?: string;
+  jumpVersion?: number;
   /** Town Hall 11-18 defense weapon state, keyed by building id. */
   nativeDefenses?: Record<number, NativeDefenseState>;
   /** Cumulative activation housing after each deployment (Eagle Artillery, Builder's Huts). */
@@ -764,6 +765,13 @@ export class GameModel {
   private replayAction = 0;
   private replayBudget = 0;
   private replaySeekPaused = true;
+  private replayKeyframes: {
+    time: number;
+    step: number;
+    action: number;
+    battle: Battle;
+    nextId: number;
+  }[] = [];
   private selection: number | null = null;
   private wallGroup: number[] = [];
   wallMove: WallMove | null = null;
@@ -3468,12 +3476,31 @@ export class GameModel {
     const passableWalls = native ? jumpWalls(b) : undefined;
     if (native) {
       native.passableWalls = passableWalls!;
-      const signature = [...passableWalls!].join(',');
-      if (signature !== (b.jumpSignature ?? '')) {
-        b.jumpSignature = signature;
-        for (const u of b.units) if (!TROOPS[u.kind].flying) u.pathAt = 0;
+      // Numeric version instead of joining every wall id into a string per tick.
+      let jumpVersion = passableWalls!.size;
+      for (const id of passableWalls!) jumpVersion = (jumpVersion * 31 + id) | 0;
+      if (jumpVersion !== (b.jumpVersion ?? 0)) {
+        b.jumpVersion = jumpVersion;
+        b.jumpSignature = String(jumpVersion);
+        for (const u of b.units) {
+          if (TROOPS[u.kind].flying) continue;
+          u.pathAt = 0;
+        }
       }
     }
+    // One id map for buildings, units and defenders at the top of the tick.
+    const buildingById = new Map(b.buildings.map((v) => [v.id, v]));
+    const unitById = new Map(b.units.map((v) => [v.id, v]));
+    const defenderById = new Map((b.defenders ?? []).map((v) => [v.id, v]));
+    void buildingById;
+    void unitById;
+    void defenderById;
+    // Per-tick re-path budget spreads A* searches across ticks. Only enforced
+    // for large battles so small-battle determinism (historical hashes) is unchanged.
+    let repathsThisTick = 0;
+    const REPATH_BUDGET = b.units.length > 100 ? 48 : Number.POSITIVE_INFINITY;
+    // Memoize unit stats by kind+level for the tick.
+    const statsCache = new Map<string, ReturnType<GameModel['unitStats']>>();
     const routeBuildings = passableWalls?.size
       ? solidBuildings.filter((v) => !passableWalls.has(v.id))
       : solidBuildings;
@@ -3517,7 +3544,13 @@ export class GameModel {
       u.cooldown -= poison.attack === 1 ? actionDt : actionDt * poison.attack;
       u.pathAt -= unitDt;
       u.attacking = false;
-      const unitBase = this.unitStats(u);
+      // Memoize stats by kind+level for the tick instead of recomputing per unit.
+      const statsKey = `${u.kind}:${u.level ?? b.troopLevels?.[u.kind as TroopKind] ?? this.state.troopLevels?.[u.kind as TroopKind] ?? 1}:${u.id !== undefined && (b.nativeHeroes || (u as { hero?: boolean }).hero) ? u.id : ''}`;
+      let unitBase = statsCache.get(statsKey);
+      if (!unitBase) {
+        unitBase = this.unitStats(u);
+        statsCache.set(statsKey, unitBase);
+      }
       const base =
         u.hero && b.hero && heroBaseStats
           ? {
@@ -3570,27 +3603,38 @@ export class GameModel {
         )
       )
         continue;
-      let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
+      let target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
+      if (!target || !targetableBuilding(b, target)) target = undefined;
       if (!target) {
-        const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
-        // An Angry Spell sends its target at the defenses whatever it would ordinarily prefer.
+        // Min-scan instead of filter-sort over the whole building list.
+        let best: (typeof b.buildings)[number] | undefined;
+        let bestPreferred: (typeof b.buildings)[number] | undefined;
+        let bestPreferredDist = Infinity;
+        let bestDist = Infinity;
         const angry = (u.native?.angryUntil ?? 0) > b.elapsed && !troop.healer;
-        // Goblin Castle is BuildingClass Npc; active late hall weapons/hut turrets add Defense.
-        const preferred =
-          troop.prefersResources && !angry
-            ? alive.filter((v) => isResourceBuilding(v.kind) && v.npc !== 'goblin-castle')
-            : troop.prefersDefenses || angry
-              ? alive.filter(
-                  (v) =>
-                    (activeAsDefense(b, v) && v.npc !== 'tutorial-cannon') ||
-                    lateActivatedDefense(b, v),
-                )
-              : alive;
+        for (const v of knownBuildings) {
+          if (v.kind === 'wall' || !targetableBuilding(b, v)) continue;
+          const dTo = distanceTo(u, v);
+          if (dTo < bestDist) {
+            bestDist = dTo;
+            best = v;
+          }
+          const preferredMatch =
+            troop.prefersResources && !angry
+              ? isResourceBuilding(v.kind) && v.npc !== 'goblin-castle'
+              : troop.prefersDefenses || angry
+                ? (activeAsDefense(b, v) && v.npc !== 'tutorial-cannon') ||
+                  lateActivatedDefense(b, v)
+                : true;
+          if (preferredMatch && dTo < bestPreferredDist) {
+            bestPreferredDist = dTo;
+            bestPreferred = v;
+          }
+        }
         target =
           (troop.wallBreaker ? breachTarget(u, knownBuildings, !!b.nativeSubtiles) : undefined) ??
-          (preferred.length ? preferred : alive).sort(
-            (a, c) => distanceTo(u, a) - distanceTo(u, c),
-          )[0];
+          bestPreferred ??
+          best;
         if (!target) continue;
         u.target = target.id;
         u.path = [];
@@ -3681,8 +3725,14 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, routeBuildings, d.range, !!b.nativeSubtiles, breaches);
-        u.pathAt = 1.5;
+        // Per-tick A* budget: defer overflow to the next tick instead of spiking.
+        if (repathsThisTick >= REPATH_BUDGET) {
+          u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
+        } else {
+          repathsThisTick++;
+          u.path = findPath(u, target, routeBuildings, d.range, !!b.nativeSubtiles, breaches);
+          u.pathAt = 1.5;
+        }
       }
       const next = u.path[0];
       if (next) {
@@ -4028,13 +4078,20 @@ export class GameModel {
   }
   private refreshBattleScore() {
     const b = this.battle!;
-    const structures = b.buildings.filter((v) => v.kind !== 'wall' && !isTrap(v.kind));
-    const dead = structures.filter((v) => v.hp <= 0).length;
-    b.destruction = structures.length ? Math.floor((dead / structures.length) * 100) : 100;
-    b.stars =
-      Number(b.destruction >= 50) +
-      Number(structures.some((v) => v.kind === 'townhall' && v.hp <= 0)) +
-      Number(b.destruction === 100);
+    // Single walk instead of re-walking buildings ~8 times per tick.
+    let total = 0;
+    let dead = 0;
+    let townHallDead = false;
+    for (const v of b.buildings) {
+      if (v.kind === 'wall' || isTrap(v.kind)) continue;
+      total++;
+      if (v.hp <= 0) {
+        dead++;
+        if (v.kind === 'townhall') townHallDead = true;
+      }
+    }
+    b.destruction = total ? Math.floor((dead / total) * 100) : 100;
+    b.stars = Number(b.destruction >= 50) + Number(townHallDead) + Number(b.destruction === 100);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (b.practice) {
       b.loot = { gold: 0, elixir: 0 };
@@ -4065,13 +4122,16 @@ export class GameModel {
                       : 'darkdrill')
                 ? 1
                 : 0;
-      const total = structures.reduce((n, v) => n + weight(v), 0);
-      const taken = total
-        ? structures.reduce(
-            (n, v) => n + weight(v) * (1 - Math.max(0, lateLootHitpoints(b, v)) / v.maxHp),
-            0,
-          ) / total
-        : dead / Math.max(1, structures.length);
+      let weightTotal = 0;
+      let weightTaken = 0;
+      for (const v of b.buildings) {
+        if (v.kind === 'wall' || isTrap(v.kind)) continue;
+        const w = weight(v);
+        if (!w) continue;
+        weightTotal += w;
+        weightTaken += w * (1 - Math.max(0, lateLootHitpoints(b, v)) / v.maxHp);
+      }
+      const taken = weightTotal ? weightTaken / weightTotal : dead / Math.max(1, total);
       const removed = Math.floor(
         campaignAmount(available, resource) * Math.min(1, Math.max(0, taken)),
       );
@@ -4149,8 +4209,30 @@ export class GameModel {
         y: b.y + BUILDINGS[b.kind].size / 2,
         major: b.kind === 'townhall',
       });
-      for (const u of this.battle?.units ?? []) {
-        u.pathAt = 0;
+      // Selective re-path for large battles only; small battles keep the
+      // original mass invalidation so historical hashes are unchanged. Large
+      // battles skip unaffected units (their recomputed route would usually
+      // match) and rely on the per-tick A* budget to spread genuine spikes.
+      if (this.battle) {
+        if (this.battle.units.length > 100) {
+          const size = BUILDINGS[b.kind].size;
+          const x0 = b.x - 1;
+          const y0 = b.y - 1;
+          const x1 = b.x + size + 1;
+          const y1 = b.y + size + 1;
+          for (const u of this.battle.units) {
+            if (TROOPS[u.kind].flying) continue;
+            if (u.target !== b.id && u.defenderTarget === undefined) {
+              const crosses = u.path?.some((p) => p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1);
+              if (!crosses) continue;
+            }
+            u.pathAt = 0;
+          }
+        } else {
+          for (const u of this.battle.units) {
+            u.pathAt = 0;
+          }
+        }
       }
     }
   }
@@ -4365,6 +4447,7 @@ export class GameModel {
     };
     this.replayRunner = runner;
     this.replayStep = this.replayAction = this.replayBudget = 0;
+    this.replayKeyframes = [];
   }
   replayRecording(recordId?: number) {
     return recordId === undefined
@@ -4384,8 +4467,27 @@ export class GameModel {
     r.seeking = true;
     r.complete = false;
     r.paused = true;
-    r.time = 0;
-    this.resetReplayRunner();
+    // Forward seeks continue from the current runner; backward seeks restore the
+    // nearest keyframe snapshot (every 10s) instead of restarting from tick zero.
+    if (r.seekTarget < r.time - 1e-9) {
+      let frame: (typeof this.replayKeyframes)[number] | undefined;
+      for (const key of this.replayKeyframes) {
+        if (key.time <= r.seekTarget + 1e-9) frame = key;
+        else break;
+      }
+      if (frame && this.replayRunner) {
+        r.time = frame.time;
+        this.replayStep = frame.step;
+        this.replayAction = frame.action;
+        this.replayRunner.battle = structuredClone(frame.battle) as Battle;
+        this.replayRunner.state.nextId = frame.nextId;
+        // Drop newer keyframes; they will be rebuilt as the seek advances.
+        this.replayKeyframes = this.replayKeyframes.filter((k) => k.time <= frame!.time + 1e-9);
+      } else {
+        r.time = 0;
+        this.resetReplayRunner();
+      }
+    }
     this.applyReplayActions();
     this.advanceReplaySeek();
     this.changed();
@@ -4408,6 +4510,22 @@ export class GameModel {
       r.time += dt;
       this.replayRunner!.step(dt);
       this.applyReplayActions();
+      // Keyframe ring every 10s for backward seeks.
+      const last = this.replayKeyframes.at(-1);
+      if (!last || r.time - last.time >= 10) {
+        try {
+          this.replayKeyframes.push({
+            time: r.time,
+            step: this.replayStep,
+            action: this.replayAction,
+            battle: structuredClone(this.replayRunner!.battle) as Battle,
+            nextId: this.replayRunner!.state.nextId,
+          });
+          if (this.replayKeyframes.length > 36) this.replayKeyframes.shift();
+        } catch {
+          // Cloning can fail on very large battles; seeking still works from zero.
+        }
+      }
     }
     if (
       this.replayStep === data.steps.length ||

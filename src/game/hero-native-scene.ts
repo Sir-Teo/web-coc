@@ -43,8 +43,14 @@ export class HeroNativePresentation {
   >();
   private alive = true;
   constructor(private scene: Phaser.Scene) {}
+  /** Prefetch hero/pet atlases for the carried army; retries on failure. */
+  prefetch(keys: Iterable<string>) {
+    for (const key of keys) {
+      if (!this.packs.has(key)) void this.load(key);
+    }
+  }
   private async load(key: string) {
-    if (this.pending.has(key)) return;
+    if (this.pending.has(key) || this.packs.has(key)) return;
     this.pending.add(key);
     try {
       const response = await fetch(`/assets/${key}/atlas.json`);
@@ -76,6 +82,8 @@ export class HeroNativePresentation {
       if (this.alive) this.packs.set(key, pack);
     } catch (error) {
       console.error('Baked character animation', key, error);
+    } finally {
+      this.pending.delete(key);
     }
   }
   clear() {
@@ -103,12 +111,16 @@ export class HeroNativePresentation {
     const hw = (view?.width ?? 0) / 2;
     const hh = (view?.height ?? 0) / 2;
     if (battle) {
+      const buildingById = new Map(battle.buildings.map((b) => [b.id, b]));
+      const unitById = new Map(battle.units.map((u) => [u.id, u]));
+      const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
       const actors = [
         ...battle.units.flatMap((u) => {
           const key = KEYS[u.kind] ?? (u.hero ? 'king' : undefined);
           if (!key || u.ejected || (u.spawnedAt ?? 0) > battle.elapsed) return [];
-          const target = battle.buildings.find((b) => b.id === u.target);
-          const enemy = battle.defenders?.find((d) => d.id === u.defenderTarget);
+          const target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
+          const enemy =
+            typeof u.defenderTarget === 'number' ? defenderById.get(u.defenderTarget) : undefined;
           return [
             {
               ...u,
@@ -137,7 +149,7 @@ export class HeroNativePresentation {
                       ? `heroes-native/${d.hero}`
                       : `guardians-native/${d.guardian}`,
                   flying: d.mode === 'air',
-                  targetPoint: battle.units.find((u) => u.id === d.target),
+                  targetPoint: typeof d.target === 'number' ? unitById.get(d.target) : undefined,
                   fallback: defenders.get(d.id),
                   rate: 1,
                 },
@@ -205,6 +217,10 @@ export class HeroNativePresentation {
         const frame = bakedFrame(state, direction, seconds);
         const texture = `baked:${actor.key}/${frame.image}`,
           name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
+        // Guard every frame selection with a texture lookup: a miss would draw
+        // the entire baked atlas page.
+        if (!this.scene.textures.exists(texture)) continue;
+        if (!this.scene.textures.get(texture).has(name)) continue;
         let sprite = this.sprites.get(actor.id);
         if (!sprite) {
           sprite = this.scene.add.image(0, 0, texture, name).setData('nativeHero', actor.id);
@@ -214,13 +230,14 @@ export class HeroNativePresentation {
         const scale = 'shrink' in actor && (actor.shrink?.until ?? 0) > battle.elapsed ? 0.5 : 1;
         const invisible =
           'native' in actor && (actor.native?.effects?.invisibleUntil ?? 0) > battle.elapsed;
+        const wantDepth = actor.flying ? 7500 : point.y + 1.2;
         sprite
           .setTexture(texture, name)
           .setOrigin(frame.anchorX / frame.w, frame.anchorY / frame.h)
           .setPosition(point.x, point.y - (actor.flying ? lift : 0))
           .setScale(0.6 * scale)
-          .setDepth(actor.flying ? 7500 : point.y + 1.2)
           .setAlpha(actor.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
+        if (sprite.depth !== wantDepth) sprite.setDepth(wantDepth);
         wanted.add(actor.id);
       }
     }

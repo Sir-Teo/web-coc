@@ -17,14 +17,16 @@ interface Pack {
   scenes: Record<string, NativeMeshGraph>;
 }
 /** Source direction roots and native clip timing follow the deterministic battle clock. */
-// Viewport culling skips mesh work for off-screen units; LOD keeps central
-// units on meshes and leaves distant units on the cheap sprite fallback.
+// Viewport culling skips mesh work for off-screen units; LOD freezes distant
+// meshes in place (never swaps a model for a portrait card) and keeps their
+// views alive-but-hidden so panning across the boundary never rebuilds them.
 const CULL_MARGIN = 300;
 const CULL_MARGIN_KEPT = 420;
-const LOD_UNIT_THRESHOLD = 100;
-const LOD_RADIUS_FRACTION = 0.45;
-const LOD_RADIUS_MIN = 480;
+const LOD_UNIT_THRESHOLD = 180;
+const LOD_RADIUS_FRACTION = 0.55;
+const LOD_RADIUS_MIN = 560;
 const LOD_HYSTERESIS = 1.25;
+const LOD_CLOSE_ZOOM = 1.15;
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
@@ -32,8 +34,37 @@ export class TroopNativePresentation {
   private positions = new Map<number, { x: number; y: number; dx: number; dy: number }>();
   private alive = true;
   constructor(private scene: Phaser.Scene) {}
+  /** Prefetch packs for the carried army when the roster changes, not on first deploy. */
+  prefetch(kinds: Iterable<string>) {
+    for (const kind of kinds) {
+      if (!this.packs.has(kind)) void this.load(kind);
+    }
+  }
+  private async decodeTexture(key: string, path: string) {
+    if (this.scene.textures.exists(key)) return;
+    // createImageBitmap decodes off the main thread; fall back to <img> decode.
+    try {
+      if (typeof createImageBitmap === 'function') {
+        const response = await fetch('/' + path);
+        if (!response.ok) throw Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        const bitmap = await createImageBitmap(blob);
+        if (this.alive && !this.scene.textures.exists(key))
+          this.scene.textures.addImage(key, bitmap as unknown as HTMLImageElement);
+        bitmap.close?.();
+        return;
+      }
+    } catch {
+      // Fall through to <img> decode below.
+    }
+    const image = new Image();
+    image.src = '/' + path;
+    await image.decode();
+    if (this.alive && !this.scene.textures.exists(key))
+      this.scene.textures.addImage(key, image);
+  }
   private async load(kind: string) {
-    if (this.pending.has(kind)) return;
+    if (this.pending.has(kind) || this.packs.has(kind)) return;
     this.pending.add(kind);
     try {
       const response = await fetch(`/assets/troops-native/${kind}/graph.json`);
@@ -41,20 +72,17 @@ export class TroopNativePresentation {
       const pack = (await response.json()) as Pack;
       await Promise.all(
         Object.entries(pack.scenes).flatMap(([name, g]) =>
-          Object.entries(g.textures).map(async ([id, t]) => {
-            const key = nativeMeshTexture(`troop:${kind}:${name}`, id);
-            if (this.scene.textures.exists(key)) return;
-            const image = new Image();
-            image.src = '/' + t.path;
-            await image.decode();
-            if (this.alive && !this.scene.textures.exists(key))
-              this.scene.textures.addImage(key, image);
-          }),
+          Object.entries(g.textures).map(async ([id, t]) =>
+            this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path),
+          ),
         ),
       );
       if (this.alive) this.packs.set(kind, pack);
     } catch (error) {
       console.error('Native troop animation', kind, error);
+    } finally {
+      // A failed load must retry next frame instead of pinning the portrait fallback.
+      this.pending.delete(kind);
     }
   }
   clear() {
@@ -75,8 +103,14 @@ export class TroopNativePresentation {
   ) {
     const wanted = new Set<number>();
     const alive = new Set<number>();
+    const buildingById = new Map((battle?.buildings ?? []).map((b) => [b.id, b]));
     const cam = this.scene.cameras?.main as
-      | { worldView?: { centerX: number; centerY: number; width: number; height: number } }
+      | {
+          worldView?: { centerX: number; centerY: number; width: number; height: number };
+          zoom?: number;
+          zoomX?: number;
+          zoomY?: number;
+        }
       | undefined;
     const view = cam?.worldView;
     const culling = !!view;
@@ -84,8 +118,10 @@ export class TroopNativePresentation {
     const cy = view?.centerY ?? 0;
     const hw = (view?.width ?? 0) / 2;
     const hh = (view?.height ?? 0) / 2;
+    const zoom = cam?.zoom ?? Math.max(cam?.zoomX ?? 1, cam?.zoomY ?? 1);
     const total = battle?.units.length ?? 0;
-    const lodActive = culling && total > LOD_UNIT_THRESHOLD;
+    // Cull LOD by zoom, not a fixed radius: close-ups keep full meshes.
+    const lodActive = culling && total > LOD_UNIT_THRESHOLD && zoom < LOD_CLOSE_ZOOM;
     const lodRadius = lodActive
       ? Math.max(LOD_RADIUS_MIN, Math.min(view!.width, view!.height) * LOD_RADIUS_FRACTION)
       : 0;
@@ -97,7 +133,7 @@ export class TroopNativePresentation {
       if (culling) {
         const margin = this.views.has(u.id) ? CULL_MARGIN_KEPT : CULL_MARGIN;
         if (Math.abs(early.x - cx) > hw + margin || Math.abs(early.y - cy) > hh + margin) {
-          sprites.get(u.id)?.setVisible(true);
+          // Off-screen: leave the (now invisible) fallback as-is; it is off screen.
           continue;
         }
         if (lodActive) {
@@ -105,7 +141,16 @@ export class TroopNativePresentation {
           const dy = early.y - cy;
           const radius = lodRadius * (this.views.has(u.id) ? LOD_HYSTERESIS : 1);
           if (dx * dx + dy * dy > radius * radius) {
-            sprites.get(u.id)?.setVisible(true);
+            // LOD demotion never swaps a model for a portrait: keep the existing
+            // view alive but hidden instead of destroying/rebuilding at the boundary.
+            const kept = this.views.get(u.id);
+            if (kept) {
+              for (const object of kept.view.objects) object.setVisible(false);
+              wanted.add(u.id);
+            }
+            // Hide the fallback sprite too (it is the transparent marker now);
+            // the ground marker in scene.ts still shows the unit's position.
+            sprites.get(u.id)?.setVisible(false);
             continue;
           }
         }
@@ -113,6 +158,9 @@ export class TroopNativePresentation {
       const pack = this.packs.get(u.kind);
       if (!pack) {
         void this.load(u.kind);
+        // While loading, keep the fallback hidden (transparent + ground marker)
+        // instead of flashing a roster card.
+        sprites.get(u.id)?.setVisible(false);
         continue;
       }
       const level = pack.levels.find(
@@ -123,7 +171,7 @@ export class TroopNativePresentation {
       const dx = u.x - (old?.x ?? u.x),
         dy = u.y - (old?.y ?? u.y),
         moving = Math.abs(dx) + Math.abs(dy) > 0.00001;
-      const target = battle!.buildings.find((b) => b.id === u.target);
+      const target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
       const facing =
         u.attacking && target
           ? { dx: target.x + 1 - u.x, dy: target.y + 1 - u.y }

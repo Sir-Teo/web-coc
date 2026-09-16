@@ -327,7 +327,42 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
 }
 
 /** Group-following support units trail the nearest cluster of friendly housing. */
+const groupWeightCache = new WeakMap<Battle, { tick: number; weights: Map<number, number> }>();
 function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
+  // Compute cluster weight once per tick instead of O(units) per candidate.
+  let cached = groupWeightCache.get(battle);
+  if (!cached || cached.tick !== battle.elapsed) {
+    cached = { tick: battle.elapsed, weights: new Map() };
+    groupWeightCache.set(battle, cached);
+    const cell = Math.max(1, s.groupRadius);
+    const grid = new Map<string, Unit[]>();
+    for (const other of battle.units) {
+      if (other.hp <= 0) continue;
+      const key = `${Math.floor(other.x / cell)},${Math.floor(other.y / cell)}`;
+      let list = grid.get(key);
+      if (!list) grid.set(key, (list = []));
+      list.push(other);
+    }
+    const nearby = (x: number, y: number): Unit[] => {
+      const out: Unit[] = [];
+      const cx = Math.floor(x / cell);
+      const cy = Math.floor(y / cell);
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dy = -1; dy <= 1; dy++) {
+          const list = grid.get(`${cx + dx},${cy + dy}`);
+          if (list) out.push(...list);
+        }
+      return out;
+    };
+    for (const ally of battle.units) {
+      if (ally.hp <= 0) continue;
+      let space = 0;
+      for (const other of nearby(ally.x, ally.y))
+        if (distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
+          space += TROOPS[other.kind].space;
+      cached.weights.set(ally.id, space);
+    }
+  }
   let best: Unit | undefined,
     weight = 0;
   for (const ally of battle.units) {
@@ -338,10 +373,7 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
     )
       continue;
     if (distance2D(ally.x - u.x, ally.y - u.y) > s.groupRange) continue;
-    let space = 0;
-    for (const other of battle.units)
-      if (other.hp > 0 && distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
-        space += TROOPS[other.kind].space;
+    const space = cached.weights.get(ally.id) ?? 0;
     if (space > weight) {
       weight = space;
       best = ally;
