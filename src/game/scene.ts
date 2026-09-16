@@ -1,6 +1,9 @@
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
+import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
+import { NativeProjectilePresentation } from './native-projectile-scene';
+import { NativeDefensePresentation } from './native-defense-scene';
 import { nativeRow, tiles as nativeTiles } from './native-data';
 import {
   ArcherTowerProjectiles,
@@ -216,6 +219,9 @@ export class VillageScene extends Phaser.Scene {
   private villageArcherTowers!: VillageArcherTowers;
   private troopNativePresentation!: TroopNativePresentation;
   private villageNativePresentation!: VillageNativePresentation;
+  private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
+  private nativeProjectiles!: NativeProjectilePresentation;
+  private nativeDefenses!: NativeDefensePresentation;
   private darkDrillPresentation!: DarkDrillPresentation;
   private infernoPresentation!: InfernoPresentation;
   private castlePresentation!: CastlePresentation;
@@ -368,6 +374,14 @@ export class VillageScene extends Phaser.Scene {
       (resource) => this.model.state[resource] / Math.max(1, this.model.resourceCap(resource)),
     );
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.villageNativePresentation.destroy());
+    this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
+    this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
+    this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.nativeProjectiles.destroy();
+      this.nativeDefenses.destroy();
+      this.nativeEffectPacks.destroy();
+    });
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
@@ -1026,6 +1040,8 @@ export class VillageScene extends Phaser.Scene {
       this.darkDrillPresentation.clear();
       this.villageNativePresentation.clear();
       this.troopNativePresentation.clear();
+      this.nativeProjectiles.clear();
+      this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
       this.cannonPresentation.clear();
@@ -1833,7 +1849,8 @@ export class VillageScene extends Phaser.Scene {
         const row = nativeRow('spells', cast.name, cast.level);
         const radius = nativeTiles(row, 'Radius') || nativeTiles(row, 'TargetingRadius');
         if (radius <= 0.2) continue;
-        const color = NATIVE_SPELL_COLOR[cast.name] ?? (cast.side === 'defense' ? 0xff6a5c : 0xfff0c2);
+        const color =
+          NATIVE_SPELL_COLOR[cast.name] ?? (cast.side === 'defense' ? 0xff6a5c : 0xfff0c2);
         const p = iso(cast.x, cast.y);
         const aura = cast.follow !== undefined;
         const pulse = this.model.state.settings.reducedMotion
@@ -1923,7 +1940,12 @@ export class VillageScene extends Phaser.Scene {
         const frozen = (e.frozenUntil ?? 0) > battle.elapsed;
         const rooted = (e.overgrownUntil ?? 0) > battle.elapsed;
         if (!frozen && !rooted) continue;
-        const pts = [iso(v.x, v.y), iso(v.x + size, v.y), iso(v.x + size, v.y + size), iso(v.x, v.y + size)];
+        const pts = [
+          iso(v.x, v.y),
+          iso(v.x + size, v.y),
+          iso(v.x + size, v.y + size),
+          iso(v.x, v.y + size),
+        ];
         this.detail.fillStyle(rooted ? 0x3f9f45 : 0xa8e6ff, rooted ? 0.35 : 0.3);
         this.detail.fillPoints(pts, true);
         this.detail.lineStyle(2, rooted ? 0x2f7a33 : 0xe6f8ff, 0.9);
@@ -1986,6 +2008,14 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       this.sprites,
+    );
+    this.nativeDefenses.render(
+      this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      battle?.elapsed ?? this.renderClock / 1000,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
     );
     const drillCues = this.darkDrillPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
@@ -2195,7 +2225,8 @@ export class VillageScene extends Phaser.Scene {
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
         const nativeEffects = u.native?.effects;
-        if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed) im.setTint(0xa8e6ff);
+        if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed)
+          im.setTint(0xa8e6ff);
         else if (nativeEffects?.poison && nativeEffects.poison.until > battle.elapsed)
           im.setTint(0xa6e57a);
         else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
@@ -2387,6 +2418,20 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    // Native defense effects carry their own geometry; record them before the drawn fallbacks.
+    if (fx.type === 'defense-zap' || fx.type === 'impact' || fx.type === 'blast')
+      this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);
+    if (
+      fx.type === 'defense-zap' &&
+      this.nativeDefenses.covers(
+        this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind,
+      )
+    )
+      return;
+    if (fx.weapon === 'native' && (fx.type === 'projectile' || fx.type === 'impact')) {
+      if (fx.type === 'projectile') this.drawProjectiles();
+      if (this.nativeProjectiles.covers(fx.projectileId)) return;
+    }
     if (
       fx.type === 'seekingairmine-pickup' ||
       fx.type === 'seekingairmine-place' ||
@@ -2927,11 +2972,19 @@ export class VillageScene extends Phaser.Scene {
       iso,
       (p) => iso(p.x, p.y).y - this.projectileAnchors(projectileEffect(p, 'projectile')).to.y,
     );
+    // Original client flight art, trails and impact effects; drawn shots keep the fallback.
+    const native = this.nativeProjectiles.render(
+      b ?? null,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+    );
     const shots =
       !b || b.finished || this.model.state.settings.reducedMotion
         ? []
         : (b.projectiles ?? []).filter(
             (p) =>
+              !native.has(p.id) &&
               p.weapon !== 'xbowbolt' &&
               p.weapon !== 'towerbomb' &&
               p.weapon !== 'arcane' &&

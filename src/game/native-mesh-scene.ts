@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 import { nativeBlendMode } from './native-blend';
 import { configureNativeTriangleRendering } from './quad-renderer';
 import {
+  nativeMeshTexture,
   nativeTriangles,
   nativeVertices,
   type NativeMeshGraph,
   type NativeMeshPose,
 } from './native-mesh';
 
-export const nativeMeshTexture = (prefix: string, id: string | number) => `${prefix}:mesh:${id}`;
+export { nativeMeshTexture };
 
 export function preloadNativeMeshes(scene: Phaser.Scene, graph: NativeMeshGraph, prefix: string) {
   for (const [id, texture] of Object.entries(graph.textures))

@@ -11,6 +11,8 @@ export interface NativeMeshGraph {
       blending: number[];
       frames: number[][][];
       timeline: number[];
+      /** Retained source frame labels: activation, battle idle, attack and reload segments. */
+      labels?: [frame: number, label: string][];
     }
   >;
   matrices: number[][];
@@ -37,6 +39,8 @@ export interface NativeGroupPose {
 }
 export type NativeScenePose = NativeMeshPose | NativeGroupPose;
 export const NATIVE_IDENTITY: NativeMatrix = [1, 0, 0, 0, 1, 0];
+/** Texture key of one retained source texture page inside a renderer namespace. */
+export const nativeMeshTexture = (prefix: string, id: string | number) => `${prefix}:mesh:${id}`;
 
 export function nativeMatrix(a: readonly number[], b: readonly number[]): NativeMatrix {
   return [
