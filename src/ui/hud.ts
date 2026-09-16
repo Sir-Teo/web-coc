@@ -76,6 +76,7 @@ import {
   PET_KINDS,
   heroItems,
   heroLevelCap as nativeHeroLevelCap,
+  heroPortraitImage,
   heroSlots as nativeHeroSlots,
   heroUnlockHall,
   heroUnlockTownHall,
@@ -192,12 +193,12 @@ const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
   `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
 /** Native roster portraits for every hero (the legacy King keeps its own `king` art). */
 const HERO_PORTRAIT: Record<HeroKind, string> = {
-  king: '/assets/catalog-native/roster/hero-barbarian-king.png',
-  queen: '/assets/catalog-native/roster/hero-archer-queen.png',
-  prince: '/assets/catalog-native/roster/hero-minion-prince.png',
-  warden: '/assets/catalog-native/roster/hero-grand-warden.png',
-  champion: '/assets/catalog-native/roster/hero-royal-champion.png',
-  duke: '/assets/catalog-native/roster/hero-dragon-duke.png',
+  king: heroPortraitImage('king'),
+  queen: heroPortraitImage('queen'),
+  prince: heroPortraitImage('prince'),
+  warden: heroPortraitImage('warden'),
+  champion: heroPortraitImage('champion'),
+  duke: heroPortraitImage('duke'),
 };
 const heroPortrait = (kind: HeroKind) => HERO_PORTRAIT[kind];
 /** Pet House portraits; filenames follow the client record names, not the short keys. */

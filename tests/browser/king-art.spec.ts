@@ -71,7 +71,7 @@ for (const width of [1440, 390, 320])
     expect(textures).toEqual([true, true, true, true]);
     await page.locator('.train-add').click();
     await page.locator('[data-action="heroes"]').click();
-    await expect(page.locator('.hero-portrait img')).toHaveAttribute(
+    await expect(page.locator('[data-hero="king"] .hero-portrait img')).toHaveAttribute(
       'src',
       '/assets/characters/king-v1/portrait.webp',
     );
@@ -85,16 +85,26 @@ for (const width of [1440, 390, 320])
     });
   });
 
-test('King uses all four views, four strides and four sword poses without mirroring or procedural bob', async ({
+test('King baked art switches direction and state without mirroring', async ({
   page,
   browserName,
 }) => {
   await arena(page);
+  // Baked atlases stream in on the live loader; pause only once the King pack is ready.
+  await page.waitForFunction(
+    () => window.__game.scene.heroNativePresentation.packs.has('heroes-native/king'),
+    null,
+    { timeout: 15000 },
+  );
   const results = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
+    scene.scene.pause();
     const b = m.battle,
       u = b.units.find((u) => u.hero),
-      sprite = scene.unitSprites.get(u.id);
+      baked = () => {
+        for (const o of scene.children.list) if (o.getData?.('nativeHero') === u.id) return o;
+        return null;
+      };
     const target = b.buildings.find((v) => v.kind === 'townhall');
     const views = [];
     for (const [dx, dy] of [
@@ -103,65 +113,73 @@ test('King uses all four views, four strides and four sword poses without mirror
       [-3, 0],
       [0, -3],
     ]) {
-      u.attacking = false;
-      u.path = [{ x: u.x + dx, y: u.y + dy }];
-      const walking = [];
-      for (const t of [0.08, 0.24, 0.4, 0.56]) {
-        b.elapsed = t;
-        scene.drawOverlay();
-        walking.push([sprite.frame.name, sprite.x, sprite.y, sprite.angle, sprite.flipX]);
-      }
       u.attacking = true;
-      u.target = target.id;
       target.x = u.x + dx - 2;
       target.y = u.y + dy - 2;
-      const striking = [];
-      for (const phase of [0.85, 0, 0.18, 0.3]) {
-        u.cooldown = 1.2 * (1 - phase);
-        scene.drawOverlay();
-        striking.push(sprite.frame.name);
-      }
-      views.push({
-        texture: sprite.texture.key,
-        walking,
-        striking,
-        origin: sprite.originY,
-        width: sprite.displayWidth,
-      });
+      u.target = target.id;
+      b.elapsed = 1.0;
+      scene.drawOverlay();
+      const s = baked();
+      views.push({ texture: s.texture.key, frame: s.frame.name, flipX: s.flipX });
     }
-    return views;
+    // Walking tracks the unit with the walk state and no mirroring.
+    u.attacking = false;
+    u.target = null;
+    const walking = [];
+    for (let i = 0; i < 4; i++) {
+      u.x += 0.5;
+      b.elapsed = 2 + i * 0.16;
+      scene.drawOverlay();
+      const s = baked();
+      walking.push([s.texture.key, s.frame.name, Math.round(s.x), s.flipX]);
+    }
+    return { views, walking };
   });
-  expect(results.map((r) => r.texture)).toEqual([
-    'king-front-left',
-    'king-front-right',
-    'king-back-left',
-    'king-back-right',
-  ]);
-  for (const result of results) {
-    expect(result.walking.map((r) => r[0])).toEqual([1, 2, 3, 4]);
-    expect(result.striking).toEqual([5, 6, 7, 8]);
-    expect(new Set(result.walking.map((r) => `${r[1]}:${r[2]}`)).size).toBe(1);
-    expect(result.walking.every((r) => r[3] === 0 && r[4] === false)).toBe(true);
-    expect(result.origin).toBe(216 / 256);
-    expect(result.width).toBe(88);
+  for (const view of results.views) {
+    expect(view.texture).toMatch(/^baked:heroes-native\/king\/attack\.png$/);
+    expect(view.flipX).toBe(false);
   }
+  // Four headings, four directional frames: the atlas turns instead of mirroring.
+  expect(new Set(results.views.map((v) => v.frame)).size).toBe(4);
+  for (const [texture, , , flipX] of results.walking) {
+    expect(texture).toMatch(/^baked:heroes-native\/king\/(walk|idle)\.png$/);
+    expect(flipX).toBe(false);
+  }
+  const xs = results.walking.map(([, , x]) => x);
+  expect(xs[3] - xs[0]).toBeGreaterThan(0);
   await page.screenshot({ path: `output/playtest/king-art-rear-attack-${browserName}.png` });
 });
 
-test('King poses freeze on pause, honor reduced motion, and reconstruct a directional defeat', async ({
+test('King baked poses freeze on pause, honor reduced motion, and fade on defeat', async ({
   page,
   browserName,
 }) => {
   await arena(page);
+  await page.waitForFunction(
+    () => window.__game.scene.heroNativePresentation.packs.has('heroes-native/king'),
+    null,
+    { timeout: 15000 },
+  );
   const read = () =>
     page.evaluate(() => {
       const { model: m, scene } = window.__game;
-      const im = scene.unitSprites.get(m.battle.hero.unitId);
-      return [im.texture.key, im.frame.name, im.x, im.y, im.angle, im.alpha, im.visible];
+      const u = m.battle.units.find((u) => u.hero);
+      for (const o of scene.children.list)
+        if (o.getData?.('nativeHero') === u.id)
+          return [
+            o.texture.key,
+            o.frame.name,
+            Math.round(o.x),
+            Math.round(o.y),
+            +o.alpha.toFixed(2),
+            o.visible,
+          ];
+      return null;
     });
   await page.evaluate(() => {
-    const { model: m, scene } = window.__game,
-      u = m.battle.units.find((u) => u.hero);
+    const { model: m, scene } = window.__game;
+    scene.scene.pause();
+    const u = m.battle.units.find((u) => u.hero);
     u.path = [{ x: 15, y: 12 }];
     m.battle.elapsed = 0.24;
     scene.drawOverlay();
@@ -173,34 +191,41 @@ test('King poses freeze on pause, honor reduced motion, and reconstruct a direct
   await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.state.settings.reducedMotion = true;
+    m.battle.elapsed = 90;
     scene.drawOverlay();
   });
-  expect((await read()).slice(0, 2)).toEqual(['king-back-right', 0]);
+  // Reduced motion pins the clip: a huge clock jump renders the identical frame.
+  const pinned = await read();
   await page.evaluate(() => {
-    const { model: m, scene } = window.__game,
-      u = m.battle.units.find((u) => u.hero);
+    const { model: m, scene } = window.__game;
+    m.battle.elapsed = 200;
+    scene.drawOverlay();
+  });
+  expect(await read()).toEqual(pinned);
+  await page.evaluate(() => {
+    const { model: m, scene } = window.__game;
+    const u = m.battle.units.find((u) => u.hero);
     m.state.settings.reducedMotion = false;
     u.hp = 0;
     u.defeatedAt = m.battle.elapsed;
     scene.drawOverlay();
-    m.battle = structuredClone(m.battle);
-    scene.sync();
-    scene.drawOverlay();
   });
-  expect((await read()).slice(0, 2)).toEqual(initial.slice(0, 2));
+  // A fresh corpse is still fully drawn, then fades out over a second and a half.
+  expect((await read())![4]).toBe(1);
   await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.battle.elapsed += 0.2;
     scene.drawOverlay();
   });
-  expect((await read())[5]).toBeCloseTo(0.5);
+  expect((await read())![4]).toBeCloseTo(0.87, 1);
   await page.screenshot({ path: `output/playtest/king-art-defeat-${browserName}.png` });
   await page.evaluate(() => {
     const { model: m, scene } = window.__game;
-    m.battle.elapsed += 1;
+    m.battle.elapsed += 1.5;
     scene.drawOverlay();
   });
-  expect((await read())[6]).toBe(false);
+  // Past the fade the baked actor is destroyed and the fallback stays hidden.
+  expect(await read()).toBeNull();
 });
 
 test('repeated replay seeks rebuild the King atlas and clear every actor at home', async ({
@@ -226,29 +251,42 @@ test('repeated replay seeks rebuild the King atlas and clear every actor at home
       for (let i = 0; i < 100 && m.replay.seeking; i++) m.step(0.05);
       scene.sync();
       scene.drawOverlay();
-      const im = scene.unitSprites.get(m.battle.hero.unitId);
-      states.push([
-        im.texture.key,
-        im.frame.name,
-        im.flipX,
-        im.x,
-        im.y,
-        im.tintTopLeft,
-        scene.unitSprites.size,
-      ]);
+      const king = m.battle.units.find((u) => u.hero);
+      let baked = null;
+      for (const o of scene.children.list)
+        if (o.getData?.('nativeHero') === king.id)
+          baked = [
+            o.texture.key,
+            o.frame.name,
+            o.flipX,
+            Math.round(o.x),
+            Math.round(o.y),
+            o.tintTopLeft,
+          ];
+      states.push([...(baked ?? ['missing']), scene.unitSprites.size]);
     }
     return states;
   });
   expect(result[0]).toEqual(result[2]);
   expect(result[1]).toEqual(result[3]);
-  expect(result.every((r) => r[0].startsWith('king-') && r[2] === false && r[6] === 9)).toBe(true);
+  expect(
+    result.every(
+      (r) =>
+        r[0].startsWith('baked:heroes-native/king/') &&
+        r[2] === false &&
+        r[5] === 0xffbd76 &&
+        r[6] === 9,
+    ),
+  ).toBe(true);
   await page.screenshot({ path: `output/playtest/king-art-replay-${browserName}.png` });
   expect(
     await page.evaluate(() => {
       const { model: m, scene } = window.__game;
       m.returnHome();
       scene.sync();
-      return scene.unitSprites.size;
+      let baked = 0;
+      for (const o of scene.children.list) if (o.getData?.('nativeHero') !== undefined) baked++;
+      return [scene.unitSprites.size, baked];
     }),
-  ).toBe(0);
+  ).toEqual([0, 0]);
 });

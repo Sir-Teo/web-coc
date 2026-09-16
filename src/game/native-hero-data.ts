@@ -29,6 +29,9 @@ export const HERO_SOURCE = {
 } as const;
 export type HeroKind = keyof typeof HERO_SOURCE;
 export const HERO_KINDS = Object.keys(HERO_SOURCE) as HeroKind[];
+/** Catalog roster portrait shared by hero cards, panels and battle fallbacks. */
+export const heroPortraitImage = (kind: HeroKind) =>
+  `/assets/catalog-native/roster/hero-${HERO_SOURCE[kind].toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
 /** Battle unit kinds for heroes (their stats come from heroes.csv). */
 export const HERO_UNIT = {
   king: 'barbarianking',

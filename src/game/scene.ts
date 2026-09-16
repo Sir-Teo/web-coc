@@ -1,4 +1,5 @@
 import { HeroNativePresentation } from './hero-native-scene';
+import { HERO_KINDS, heroPortraitImage } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
@@ -241,6 +242,7 @@ export class VillageScene extends Phaser.Scene {
   private wallSignature = '';
   private wallViews: Phaser.GameObjects.Graphics[] = [];
   private armyPrefetchSignature = '';
+  private heroPrefetchSignature = '';
   private seekingMinePresentation!: SeekingMinePresentation;
   private bombTowerPresentation!: BombTowerPresentation;
   private wizardTowerPresentation!: WizardTowerPresentation;
@@ -340,6 +342,8 @@ export class VillageScene extends Phaser.Scene {
       endFrame: 44,
     });
     this.load.image('king', asset('king'));
+    for (const kind of HERO_KINDS)
+      this.load.image(`hero-fallback-${kind}`, heroPortraitImage(kind));
     for (const direction of KING_DIRECTIONS)
       this.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
         frameWidth: KING_ART.cell,
@@ -1190,6 +1194,19 @@ export class VillageScene extends Phaser.Scene {
       if (signature !== this.armyPrefetchSignature) {
         this.armyPrefetchSignature = signature;
         if (kinds.length) this.troopNativePresentation?.prefetch(kinds);
+      }
+    }
+    // Same for heroes and pets: fetch the baked atlases while scouting so the
+    // portrait fallback never opens mid-battle.
+    {
+      const wanted = new Set<string>();
+      for (const kind of this.model.heroLineup) wanted.add(`heroes-native/${kind}`);
+      for (const pet of Object.values(this.model.petProgress.assigned))
+        if (pet) wanted.add(`heroes-native/${pet}`);
+      const signature = [...wanted].sort().join(',');
+      if (signature !== this.heroPrefetchSignature) {
+        this.heroPrefetchSignature = signature;
+        if (wanted.size) this.heroNativePresentation?.prefetch(wanted);
       }
     }
     const reduced = this.model.state.settings.reducedMotion;
@@ -2213,9 +2230,7 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
     );
     const archerTowerCues = this.villageArcherTowers.render(
-      battle && !battle.nativeArcherTowers
-        ? []
-        : visible,
+      battle && !battle.nativeArcherTowers ? [] : visible,
       this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
       iso,
       battle?.elapsed ?? this.renderClock / 1000,
@@ -2255,10 +2270,7 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
     );
-    this.castlePresentation.render(
-      visible,
-      iso,
-    );
+    this.castlePresentation.render(visible, iso);
     const cannonCues = this.cannonPresentation.render(
       visible,
       battle,
@@ -2396,8 +2408,17 @@ export class VillageScene extends Phaser.Scene {
           const d = TROOPS[u.kind];
           const walkKey = `${u.kind}-walk`;
           const hasWalk = u.hero || this.textures.exists(walkKey);
-          const texKey = u.hero ? kingTexture('front-left') : hasWalk ? walkKey : 'troop-fallback';
-          const frame = u.hero ? 0 : hasWalk ? 0 : undefined;
+          // Legacy battles animate the procedural King; native heroes fall back to their own
+          // roster portrait until (and unless) the baked atlas arrives.
+          const legacyKing = !!u.hero && !!battle.hero;
+          const texKey = legacyKing
+            ? kingTexture('front-left')
+            : u.hero
+              ? `hero-fallback-${u.hero}`
+              : hasWalk
+                ? walkKey
+                : 'troop-fallback';
+          const frame = legacyKing || (!u.hero && hasWalk) ? 0 : undefined;
           im = this.add
             .image(0, 0, texKey, frame)
             .setOrigin(0.5, u.hero ? KING_ART.baseline / KING_ART.cell : 122 / 128);
@@ -2507,7 +2528,9 @@ export class VillageScene extends Phaser.Scene {
         else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
         else if (
           (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
-          (u.summoned && (u.rageUntil ?? 0) > battle.elapsed)
+          (u.summoned && (u.rageUntil ?? 0) > battle.elapsed) ||
+          // Native ability boosts (Rage Vial, puppet rage, Haste, ...) tint like legacy rage.
+          (nativeEffects?.boost?.until ?? 0) > battle.elapsed
         )
           im.setTint(0xffbd76);
         else im.clearTint();
@@ -3197,7 +3220,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.state.settings.reducedMotion) return;
     // Off-screen impacts never need dots; the battle layer already culled them.
     const camView = this.cameras.main.worldView;
-    if (camView && (Math.abs(x - camView.centerX) > camView.width / 2 + 100 || Math.abs(y - camView.centerY) > camView.height / 2 + 100))
+    if (
+      camView &&
+      (Math.abs(x - camView.centerX) > camView.width / 2 + 100 ||
+        Math.abs(y - camView.centerY) > camView.height / 2 + 100)
+    )
       return;
     // Timeline.clear() destroys live dots without running onComplete; prune the
     // dead handles here so the cap self-heals after battle/mode changes.
@@ -3236,7 +3263,10 @@ export class VillageScene extends Phaser.Scene {
         duration: 300 + Math.random() * 400,
         onComplete: () => {
           this.liveSparks.delete(target);
-          if ((target as unknown as { scene?: unknown }).scene && this.sparkPool.length < MAX_SPARKS) {
+          if (
+            (target as unknown as { scene?: unknown }).scene &&
+            this.sparkPool.length < MAX_SPARKS
+          ) {
             target.setVisible(false).setActive(false);
             this.sparkPool.push(target);
           } else target.destroy();

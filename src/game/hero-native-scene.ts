@@ -104,7 +104,15 @@ export class HeroNativePresentation {
     defenders: Map<number, Phaser.GameObjects.Image>,
   ) {
     const wanted = new Set<number>();
-    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    const cam = (
+      this.scene as unknown as {
+        cameras?: {
+          main?: {
+            worldView?: { centerX: number; centerY: number; width: number; height: number };
+          };
+        };
+      }
+    ).cameras?.main;
     const view = cam?.worldView;
     const cx = view?.centerX ?? 0;
     const cy = view?.centerY ?? 0;
@@ -230,6 +238,8 @@ export class HeroNativePresentation {
         const scale = 'shrink' in actor && (actor.shrink?.until ?? 0) > battle.elapsed ? 0.5 : 1;
         const invisible =
           'native' in actor && (actor.native?.effects?.invisibleUntil ?? 0) > battle.elapsed;
+        const boosted =
+          'native' in actor && (actor.native?.effects?.boost?.until ?? 0) > battle.elapsed;
         const wantDepth = actor.flying ? 7500 : point.y + 1.2;
         sprite
           .setTexture(texture, name)
@@ -237,6 +247,8 @@ export class HeroNativePresentation {
           .setPosition(point.x, point.y - (actor.flying ? lift : 0))
           .setScale(0.6 * scale)
           .setAlpha(actor.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
+        if (boosted) sprite.setTint(0xffbd76);
+        else if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();
         if (sprite.depth !== wantDepth) sprite.setDepth(wantDepth);
         wanted.add(actor.id);
       }

@@ -199,3 +199,58 @@ test('each lineup hero deploys and activates from its own card', async ({ page }
   await page.waitForTimeout(300);
   expect(errors).toEqual([]);
 });
+
+test('every deployed hero bakes its own atlas, never the King', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('response', (r) => {
+    if (r.status() >= 400 && r.url().includes('/assets/')) errors.push(r.url());
+  });
+  await boot(page);
+  await develop(page);
+  await heroes(page);
+  await page.locator('[data-action="practice"]').click();
+  // Atlases prefetch while scouting, before anything deploys.
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__game.scene.heroNativePresentation.packs.size))
+    .toBeGreaterThan(0);
+  for (const kind of ['king', 'queen', 'prince']) {
+    await page.locator(`[data-action="hero-select:${kind}"]`).click();
+    await page.evaluate((kind) => {
+      const m = (window as any).__game.model;
+      outer: for (let y = 2; y < 46; y += 1)
+        for (let x = 2; x < 46; x += 1) {
+          if (!m.deployBlocked(x, y)) {
+            m.deploy(x, y);
+            break outer;
+          }
+        }
+    }, kind);
+  }
+  await page.waitForTimeout(3000);
+  const seen = await page.evaluate(() => {
+    const { scene, model: m } = window.__game;
+    const baked: Record<string, string> = {};
+    for (const o of scene.children.list) {
+      const id = o.getData?.('nativeHero');
+      if (id !== undefined && o.visible) baked[id] = o.texture.key;
+    }
+    const units = m.battle.units
+      .filter((u: any) => u.hero)
+      .map((u: any) => ({ id: u.id, hero: u.hero }));
+    const fallbacks = units.map((u: any) => {
+      const s = scene.unitSprites.get(u.id);
+      return { hero: u.hero, tex: s?.texture.key, visible: s?.visible };
+    });
+    return { baked, units, fallbacks };
+  });
+  for (const u of seen.units) {
+    const tex = (seen.baked as Record<string, string>)[u.id];
+    expect(tex, `${u.hero} baked texture`).toMatch(new RegExp(`^baked:heroes-native/${u.hero}/`));
+  }
+  // Baked sprites take over; every fallback keeps its own face anyway.
+  for (const f of seen.fallbacks as { hero: string; tex: string }[]) {
+    expect(f.tex, `${f.hero} fallback`).not.toBe('king-front-left');
+  }
+  expect(errors).toEqual([]);
+});
