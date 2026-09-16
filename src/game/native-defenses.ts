@@ -85,9 +85,14 @@ const liveTarget = (u: Unit, at: number) =>
   u.hp > 0 && !u.ejected && (u.spawnedAt ?? 0) <= at + EPS && !unitHidden(u, at);
 
 /** Defenses the version 45 engine owns; campaign NPC archetypes keep their own rules. */
+/**
+ * Defenses the version 51 engine owns. A campaign layout keeps the late families that have
+ * always stepped it, so the two engines never step the same building.
+ */
 export const nativeDefense = (battle: Battle, tower: Building): boolean =>
   !!battle.nativeRoster &&
   !tower.npc &&
+  battle.catalog !== 'goblin-v1' &&
   (isNativeDefenseKind(tower.kind) ||
     (!!tower.geared &&
       (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')));

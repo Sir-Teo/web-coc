@@ -30,7 +30,9 @@ describe('Home Village starter troop progression', () => {
     it(`${kind} uses its first five researched levels in deployment and previews`, () => {
       const m = new GameModel(developedSave()),
         r = reference[kind];
-      m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as typeof m.state.army;
+      m.state.troopLevels = Object.fromEntries(
+        TROOP_KEYS.map((k) => [k, 1]),
+      ) as typeof m.state.army;
       for (let level = 1; level <= 5; level++) {
         m.state.troopLevels![kind] = level;
         expect(m.troopStats(kind)).toMatchObject({

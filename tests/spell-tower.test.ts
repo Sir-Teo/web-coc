@@ -47,21 +47,31 @@ describe('Spell Tower source records', () => {
       expect(SPELL_TOWER[weapon].globalId).toBe(Number(id));
     const { rage, poison, invisibility } = SPELL_TOWER;
     expect([rage.range, poison.range, invisibility.range]).toEqual([9, 9, 4.5]);
-    expect([rage.windup, poison.windup, invisibility.windup].map((v) => Math.round(v * 1000))).toEqual([
-      1200, 1200, 1200,
-    ]);
+    expect(
+      [rage.windup, poison.windup, invisibility.windup].map((v) => Math.round(v * 1000)),
+    ).toEqual([1200, 1200, 1200]);
     expect([rage.cooldown, poison.cooldown, invisibility.cooldown]).toEqual([68.8, 68.8, 48.8]);
-    expect([rage.selfCentered, poison.selfCentered, invisibility.selfCentered]).toEqual([true, false, true]);
-    expect([rage.hitBuildingTrigger, poison.hitBuildingTrigger, invisibility.hitBuildingTrigger]).toEqual([
-      false,
+    expect([rage.selfCentered, poison.selfCentered, invisibility.selfCentered]).toEqual([
+      true,
       false,
       true,
     ]);
-    expect([rage.castOnDeath, poison.castOnDeath, invisibility.castOnDeath]).toEqual([true, true, true]);
-    expect(rage.exports[2]).toBe('spell_tower_lvl3_rage');
-    expect([rage.projectile.travel, rage.projectile.ballisticHeight, poison.projectile.startHeight]).toEqual([
-      0.8, 300, 146,
+    expect([
+      rage.hitBuildingTrigger,
+      poison.hitBuildingTrigger,
+      invisibility.hitBuildingTrigger,
+    ]).toEqual([false, false, true]);
+    expect([rage.castOnDeath, poison.castOnDeath, invisibility.castOnDeath]).toEqual([
+      true,
+      true,
+      true,
     ]);
+    expect(rage.exports[2]).toBe('spell_tower_lvl3_rage');
+    expect([
+      rage.projectile.travel,
+      rage.projectile.ballisticHeight,
+      poison.projectile.startHeight,
+    ]).toEqual([0.8, 300, 146]);
     expect(rage.spell).toMatchObject({
       name: 'Spell Tower Rage',
       radius: 5,
@@ -101,9 +111,11 @@ describe('Spell Tower source records', () => {
       immuneWalls: true,
     });
     expect(SPELL_TOWER_HERO).toEqual({ rage: 0.5, speed: 0.5 });
-    expect([rage.stateLabels.load_end, poison.stateLabels.load_end, invisibility.stateLabels.load_end]).toEqual([
-      1235, 1473, 993,
-    ]);
+    expect([
+      rage.stateLabels.load_end,
+      poison.stateLabels.load_end,
+      invisibility.stateLabels.load_end,
+    ]).toEqual([1235, 1473, 993]);
     expect(catalog.sources['sc/buildings_17.sctx']).toBe(
       'bce86a6857d43a6705833a6cb0a5ec269d8ff9990e8e15c5b9011422d59ab201',
     );
@@ -150,12 +162,38 @@ describe('Spell Tower Rage', () => {
     const battle = isolatedBattle([lateBuilding(1, 'spelltower', 20, 20, 3, 'rage')]);
     battle.units.push(attacker(7, 'giant', 29, 21, 1e9, 900));
     const defender = (id: number, kind: 'skeleton' | 'balloon', x: number) =>
-      ({ id, kind, level: 1, sourceId: 1, mode: 'ground', x, y: 21, hp: 100, maxHp: 100, spawnedAt: 0,
-        cooldown: 0, target: null, path: [], pathAt: 0, attacking: false, attacks: [] }) as never;
-    battle.defenders = [defender(-1, 'skeleton', 22), defender(-2, 'balloon', 20), defender(-3, 'skeleton', 27)];
+      ({
+        id,
+        kind,
+        level: 1,
+        sourceId: 1,
+        mode: 'ground',
+        x,
+        y: 21,
+        hp: 100,
+        maxHp: 100,
+        spawnedAt: 0,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+        attacks: [],
+      }) as never;
+    battle.defenders = [
+      defender(-1, 'skeleton', 22),
+      defender(-2, 'balloon', 20),
+      defender(-3, 'skeleton', 27),
+    ];
     for (let i = 0; i < 60; i++) stepFamilies(battle);
-    expect(spellTowerDefenderBoost(battle, battle.defenders[0])).toEqual({ damage: 1.6, speed: 30 / 8 });
-    expect(spellTowerDefenderBoost(battle, battle.defenders[1])).toEqual({ damage: 1.6, speed: 15 / 8 });
+    expect(spellTowerDefenderBoost(battle, battle.defenders[0])).toEqual({
+      damage: 1.6,
+      speed: 30 / 8,
+    });
+    expect(spellTowerDefenderBoost(battle, battle.defenders[1])).toEqual({
+      damage: 1.6,
+      speed: 15 / 8,
+    });
     expect(spellTowerDefenderBoost(battle, battle.defenders[2])).toEqual({ damage: 1, speed: 0 });
   });
 });
@@ -189,7 +227,11 @@ describe('Spell Tower Poison', () => {
     battle.units.push(giant);
     // The bottle lands at 2.05 s; the preceding source tick (2.048 s) precedes the first pulse.
     for (let i = 0; i < 41; i++) stepFamilies(battle);
-    expect(giant.late!.spellTower).toMatchObject({ poisonDps: 60, poisonTime: 1000, poisonHold: 640 });
+    expect(giant.late!.spellTower).toMatchObject({
+      poisonDps: 60,
+      poisonTime: 1000,
+      poisonHold: 640,
+    });
     // Leave the cloud after the first pulse; only its lingering poison remains.
     giant.x = 45;
     const hp = giant.hp;
@@ -247,8 +289,22 @@ describe('Spell Tower Invisibility', () => {
     const wizard = attacker(7, 'wizard', 13, 21.5, 1e9, 75);
     battle.units.push(wizard);
     battle.defenders = [
-      { id: -1, kind: 'skeleton', sourceId: 1, mode: 'ground', x: 22, y: 22, hp: 50, maxHp: 50,
-        spawnedAt: 0, cooldown: 0, target: null, path: [], pathAt: 0, attacking: false },
+      {
+        id: -1,
+        kind: 'skeleton',
+        sourceId: 1,
+        mode: 'ground',
+        x: 22,
+        y: 22,
+        hp: 50,
+        maxHp: 50,
+        spawnedAt: 0,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+      },
     ];
     for (let i = 0; i < 50; i++) {
       wizard.attacking = true;
@@ -283,7 +339,10 @@ describe('Spell Tower destruction', () => {
       lateBuilding(1, 'spelltower', 20, 20, 3, 'poison'),
       lateBuilding(2, 'spelltower', 40, 40, 3, 'poison'),
     ]);
-    battle.units.push(attacker(7, 'giant', 21 + 8, 21, 1e9, 900), attacker(8, 'giant', 21 + 3, 21, 1e9, 900));
+    battle.units.push(
+      attacker(7, 'giant', 21 + 8, 21, 1e9, 900),
+      attacker(8, 'giant', 21 + 3, 21, 1e9, 900),
+    );
     stepFamilies(battle);
     destroy(battle, 1);
     destroy(battle, 2);

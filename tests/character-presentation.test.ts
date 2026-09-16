@@ -20,7 +20,11 @@ import {
 } from '../src/game/character-poses';
 import { characterLayers } from '../src/game/garrison-layers';
 import { garrisonShotPose } from '../src/game/garrison-projectiles';
-import { nativeScenePoses, type NativeMeshPose, type NativeScenePose } from '../src/game/native-mesh';
+import {
+  nativeScenePoses,
+  type NativeMeshPose,
+  type NativeScenePose,
+} from '../src/game/native-mesh';
 
 const FAMILIES: [GarrisonKind, number][] = [
   ['goblin', 7],
@@ -55,7 +59,13 @@ function setup() {
   ];
   return battle;
 }
-const source = (animation: string, row: Record<string, string>, view: number, time: number, mirror = 1) => {
+const source = (
+  animation: string,
+  row: Record<string, string>,
+  view: number,
+  time: number,
+  mirror = 1,
+) => {
   const scale = rowScale(row);
   return nativeScenePoses(characterArt(animation).graph, rowExport(row, view), time, {}, [
     scale * (row.HasDirections === 'TRUE' ? mirror : 1),
@@ -72,11 +82,17 @@ it('captures intact original graphs: exports, shadows, packed textures and UV ra
     for (const row of animationBlock(name).rows)
       if (row.SWF)
         for (const view of [1, 2, 3])
-          expect(art.graph.exports, `${name} ${row.ExportName}`).toHaveProperty(rowExport(row, view));
+          expect(art.graph.exports, `${name} ${row.ExportName}`).toHaveProperty(
+            rowExport(row, view),
+          );
     expect(art.shadows, name).toHaveLength(1);
     expect(art.graph.shapes[art.shadows[0]], name).toBeTruthy();
   }
-  for (const art of [...Object.values(CHARACTER_ART), COMMON_DEATH_ART, ...Object.values(PROJECTILE_ART)])
+  for (const art of [
+    ...Object.values(CHARACTER_ART),
+    COMMON_DEATH_ART,
+    ...Object.values(PROJECTILE_ART),
+  ])
     for (const texture of Object.values(art.graph.textures)) {
       const png = readFileSync(`public/${texture.path}`);
       expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([texture.width, texture.height]);
@@ -101,7 +117,9 @@ it('poses every family by state with source views, mirroring, scale, timing and 
     expect(characterPose(defender, battle), kind).toBeNull();
     // Idle without a target faces the default down-right view on the loop clock.
     battle.elapsed = 2;
-    expect(characterPose(defender, battle)!.poses, kind).toEqual(source(animation, states.idle[0], 3, 1));
+    expect(characterPose(defender, battle)!.poses, kind).toEqual(
+      source(animation, states.idle[0], 3, 1),
+    );
     // Moving toward a target on the left: walk row, view 2, reflected.
     defender.target = 1;
     if (!flying) defender.path = [{ x: 9.5, y: 10.5 }];
@@ -109,8 +127,13 @@ it('poses every family by state with source views, mirroring, scale, timing and 
     expect(walk.poses, kind).toEqual(source(animation, states.walk[0], 2, 1, -1));
     const layers = characterLayers(defender, battle)!;
     expect(leaves(layers.shadow).length, kind).toBeGreaterThan(0);
-    expect([...leaves(layers.body), ...leaves(layers.shadow)].map((p) => p.key).sort(), kind).toEqual(
-      leaves(walk.poses).map((p) => p.key).sort(),
+    expect(
+      [...leaves(layers.body), ...leaves(layers.shadow)].map((p) => p.key).sort(),
+      kind,
+    ).toEqual(
+      leaves(walk.poses)
+        .map((p) => p.key)
+        .sort(),
     );
     // A non-looping attack reaches its source ActionFrame at the damage event, then plays through.
     defender.path = [];
@@ -128,7 +151,9 @@ it('poses every family by state with source views, mirroring, scale, timing and 
       battle.elapsed = 2.1;
       const follow = characterAttackTime(defender, 2.1, animation, 2)!;
       expect(follow.time, kind).toBeCloseTo((Number(follow.row.ActionFrame) - 1) / 24 + 0.1, 12);
-      expect(characterPose(defender, battle)!.poses, kind).toEqual(source(animation, follow.row, 2, follow.time, -1));
+      expect(characterPose(defender, battle)!.poses, kind).toEqual(
+        source(animation, follow.row, 2, follow.time, -1),
+      );
       expect(characterAttackTime(defender, 2.1, animation, 2, true)).toBeNull();
     }
     // Death uses the common source export at the die row's scale and ends on its empty frame.
@@ -139,7 +164,14 @@ it('poses every family by state with source views, mirroring, scale, timing and 
     const dieScale = rowScale(states.die[0]);
     expect(death.prefix).toBe(COMMON_DEATH_ART.prefix);
     expect(death.poses).toEqual(
-      nativeScenePoses(COMMON_DEATH_ART.graph, 'barbarian_death_1', 0.5, {}, [dieScale, 0, 0, 0, dieScale, 0]),
+      nativeScenePoses(COMMON_DEATH_ART.graph, 'barbarian_death_1', 0.5, {}, [
+        dieScale,
+        0,
+        0,
+        0,
+        dieScale,
+        0,
+      ]),
     );
     battle.elapsed = 30;
     expect(leaves(characterPose(defender, battle)!.poses)).toEqual([]);
@@ -218,7 +250,11 @@ it('draws original projectiles along the recorded flight with source shadows', (
   // Halfway along the flight, StartOffset 40 leaves 0.2 tiles of launch offset ahead.
   expect(pose.shadow).toMatchObject(iso(13.2, 10));
   expect(garrisonShotPose(shot, true, 0.5, iso, 46, 'shot')).toBeNull();
-  for (const projectile of ['Arrow_small_darkElixirFire2', 'Headhunter_Card_lvl3', 'babydragon_projectile_lvl3'])
+  for (const projectile of [
+    'Arrow_small_darkElixirFire2',
+    'Headhunter_Card_lvl3',
+    'babydragon_projectile_lvl3',
+  ])
     expect(
       leaves(garrisonShotPose({ ...shot, projectile }, false, 1.5, iso, 46, 'shot')!.poses).length,
       projectile,

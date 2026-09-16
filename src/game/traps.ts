@@ -58,10 +58,12 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   if (battle.finished) return false;
   let changed = false;
   for (const trap of battle.buildings) {
-    // From version 51 the native engine owns the Town Hall 11+ traps.
+    // From version 51 the native engine owns the Town Hall 11+ traps at home. A campaign
+    // layout's own traps stay with the late family that has always stepped them.
     if (
       battle.nativeRoster &&
       !trap.npc &&
+      battle.catalog !== 'goblin-v1' &&
       (trap.kind === 'tornadotrap' || trap.kind === 'gigabomb')
     ) {
       if (!trap.constructing && !trap.upgradeEnd)

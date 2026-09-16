@@ -1,3 +1,4 @@
+import { defaultSpellLevels, emptySpells } from '../src/game/army';
 import { describe, expect, it } from 'vitest';
 import combat from '../reference/tornado-trap/combat.json';
 import { makeBuilding, type Battle, type Unit } from '../src/game/model';
@@ -343,28 +344,8 @@ describe('campaign Tornado Trap', () => {
           dragon: 0,
           pekka: 0,
         },
-        spells: {
-          lightning: 0,
-          heal: 0,
-          rage: 0,
-          freeze: 0,
-          invisibility: 0,
-          jump: 0,
-          clone: 0,
-          recall: 0,
-          revive: 0,
-        },
-        spellLevels: {
-          lightning: 1,
-          heal: 1,
-          rage: 1,
-          freeze: 1,
-          invisibility: 1,
-          jump: 1,
-          clone: 1,
-          recall: 1,
-          revive: 1,
-        },
+        spells: emptySpells(),
+        spellLevels: defaultSpellLevels(),
         troopLevels: {
           swordsman: 1,
           archer: 1,

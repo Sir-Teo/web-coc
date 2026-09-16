@@ -5,7 +5,7 @@ import { campaignResources, validCampaignResources } from '../src/game/campaign-
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay, replayBattle, type ReplayData } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { emptyArmy, emptySpells, baseSpellLevels } from '../src/game/army';
+import { emptyArmy, emptySpells, baseSpellLevels, defaultSpellLevels } from '../src/game/army';
 
 function attack(index = 50, room = 10000) {
   const m = new GameModel();
@@ -36,17 +36,7 @@ function fixtureRecord(m: GameModel, index = 50): ReplayData {
       troopLevels: Object.fromEntries(Object.keys(emptyArmy()).map((k) => [k, 1])) as ReturnType<
         typeof emptyArmy
       >,
-      spellLevels: {
-        lightning: 1,
-        heal: 1,
-        rage: 1,
-        freeze: 1,
-        invisibility: 1,
-        jump: 1,
-        clone: 1,
-        recall: 1,
-        revive: 1,
-      },
+      spellLevels: defaultSpellLevels(),
       nextId: m.state.nextId,
       availableLoot,
       lootRoom: {

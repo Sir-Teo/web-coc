@@ -85,7 +85,8 @@ describe('troop progression', () => {
     m.train('archer');
     expect(m.state.army.archer).toBe(before);
     const b = makeBuilding(m.state.nextId++, 'barracks', 1, 1, 2);
-    b.constructing = true; m.state.buildings.push(b);
+    b.constructing = true;
+    m.state.buildings.push(b);
     m.train('archer');
     expect(m.state.army.archer).toBe(before);
     b.constructing = false;

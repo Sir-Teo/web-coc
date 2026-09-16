@@ -10,7 +10,7 @@ import {
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { campaignResources } from '../src/game/campaign-loot';
 import { campaignStage } from '../src/game/campaign-catalog';
-import { emptyArmy, emptySpells } from '../src/game/army';
+import { emptyArmy, emptySpells, defaultSpellLevels } from '../src/game/army';
 import { campaignGarrisonSetup } from '../src/game/garrison-campaign';
 import { stepGarrisonReleases, type GarrisonSetup } from '../src/game/garrison-release';
 import { wizardTowerVillage } from './fixtures/wizard-tower-battle';
@@ -51,17 +51,7 @@ function campaignSetup(index: number, bunker: (b: Building) => boolean, troops =
       dragon: 1,
       pekka: 1,
     },
-    spellLevels: {
-      rage: 1,
-      heal: 1,
-      lightning: 1,
-      freeze: 1,
-      invisibility: 1,
-      jump: 1,
-      clone: 1,
-      recall: 1,
-      revive: 1,
-    },
+    spellLevels: defaultSpellLevels(),
     nextId: 100000,
     availableLoot: loot,
     lootRoom: loot,

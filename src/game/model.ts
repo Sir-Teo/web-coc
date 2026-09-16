@@ -3709,7 +3709,9 @@ export class GameModel {
         ? tower.hp > 0 && !concealedTesla(b, tower) && !buildingImmune(b, tower)
         : targetableBuilding(b, tower);
       // Version 51: a Rage Spell Tower boosts damage; frost and chill slow the attack clock.
-      const nativeBoost = b.nativeRoster ? buildingDamageScale(b, tower, b.elapsed) : 1;
+      // One engine boosts a tower, never both: the native rules own a version 51 home defense,
+      // and the late campaign families keep their own defensive Rage.
+      const nativeBoost = b.nativeRoster && !b.late ? buildingDamageScale(b, tower, b.elapsed) : 1;
       // Supercharged DPS (client mini levels) exists only in version 51 battles.
       const charged = b.nativeRoster ? superchargeBonus(tower.kind, tower.supercharge).dps : 0;
       const tempo = b.nativeRoster ? 1 / buildingAttackIntervalScale(b, tower, b.elapsed) : 1;
@@ -3754,7 +3756,7 @@ export class GameModel {
       }
       const cooling = tower.cooldown > 0;
       // Defensive Rage from late campaign Spell Towers; exactly one without an active cast.
-      const boost = lateDefenseBoost(b, tower);
+      const boost = b.late ? lateDefenseBoost(b, tower) : { damage: 1, rate: 1 };
       tower.cooldown -= boost.rate === 1 ? activeDt : activeDt * boost.rate;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };

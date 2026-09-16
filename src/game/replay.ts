@@ -536,7 +536,7 @@ export function validateReplay(value: unknown): value is ReplayData {
         b.supercharge !== undefined ||
         b.guardian !== undefined ||
         b.guardianLevel !== undefined ||
-        b.kind === 'tornadotrap' ||
+        // The Tornado Trap is not here: it shipped as a campaign family in version 44.
         b.kind === 'gigabomb') &&
         value.version < NATIVE_VERSION) ||
       !validSpellTowerMode(b.spellMode, b.kind, b.level) ||

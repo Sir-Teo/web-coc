@@ -15,6 +15,8 @@ import {
   upgradeSeconds,
   type BuildingKind,
 } from '../src/game/data';
+import { makeBuilding } from '../src/game/model';
+import { MERGED_KINDS, townHallMergeInputs } from '../src/game/native-merges';
 import { requiredTownHall } from '../src/game/progression';
 import { BUILDING_COUNTS, BUILDING_LEVELS, WITHHELD } from '../src/game/tiers';
 import { SOURCE_NAME, sourceCeiling, sourceCount } from '../src/game/townhall-catalog';
@@ -61,7 +63,9 @@ describe('Town Hall tier catalog', () => {
   });
 
   it('matches the pinned source counts and ceilings at every tier', () => {
-    for (const kind of BUILDING_KEYS) {
+    // The families the native roster added carry their own client tier columns, which
+    // tests/native-village-upgrades.test.ts checks against the same source.
+    for (const kind of BUILDING_KEYS.filter((k) => SOURCE_NAME[k])) {
       const name = SOURCE_NAME[kind]!;
       expect(name, kind).toBeTruthy();
       const withheld = WITHHELD[kind];
@@ -261,9 +265,24 @@ describe('Town Hall tier village', () => {
     expect(restored.maxCount('xbow')).toBe(2);
     expect(restored.maxLevel('cannon')).toBe(11);
     expect(validateSave(restored.state)).toBe(true);
-    // The ladder keeps going, one tier at a time, to the catalog ceiling.
+    // The ladder keeps going, one tier at a time, to the catalog ceiling. Town Hall 17 is the
+    // one rung that is not a plain upgrade: the source merges an Eagle Artillery into the hall's
+    // own weapon, so the village has to own a maxed one first (docs/NATIVE-DEFENSES.md).
     for (let tier = 9; tier < MAX_TOWNHALL; tier++) {
       restored.upgrade(restored.townhall!.id);
+      if (restored.townhall!.upgradeEnd === undefined) {
+        // This rung is a merge, not a plain upgrade: the source consumes finished defenses into
+        // the Town Hall's own weapon, so the village has to own them first.
+        let id = 9000 + tier * 10;
+        for (const result of MERGED_KINDS)
+          while (restored.countOf(result) < maxCountFor(result, tier))
+            restored.state.buildings.push(
+              makeBuilding(id++, result, 2 + (id % 6) * 4, 38, maxLevelFor(result, tier) || 1),
+            );
+        for (const input of townHallMergeInputs(tier + 1))
+          restored.state.buildings.push(makeBuilding(id++, input.kind, 30, 30, input.level));
+        restored.upgrade(restored.townhall!.id);
+      }
       restored.tick(restored.townhall!.upgradeEnd!);
     }
     expect(restored.townhallLevel).toBe(MAX_TOWNHALL);
@@ -307,6 +326,12 @@ describe('Town Hall tier village', () => {
     };
     for (const [kind, [x, y]] of Object.entries(spots) as [BuildingKind, [number, number]][]) {
       expect(maxCountFor(kind, MAX_TOWNHALL), kind).toBeGreaterThan(0);
+      // Town Hall 17 merges the Eagle Artillery into its own weapon, so this village, which is
+      // past that tier, may no longer own a standalone one (see docs/NATIVE-DEFENSES.md).
+      if (m.maxCount(kind) === 0) {
+        expect(kind, kind).toBe('eagleartillery');
+        continue;
+      }
       // Long build times let trees regrow between placements; this village stays cleared.
       m.state.obstacles = [];
       m.beginBuild(kind);

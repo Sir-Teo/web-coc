@@ -32,7 +32,9 @@ describe('Monolith source records', () => {
       [5959, 225, 150, [800, 3500]],
     ]);
     expect(combat.levels.map((v) => v.hp)).toEqual(NATIVE_COMBAT[1000077].hp);
-    expect(combat.levels.every((v) => v.defaultVariant === 3 && v.base === 'dark_tower_base')).toBe(true);
+    expect(combat.levels.every((v) => v.defaultVariant === 3 && v.base === 'dark_tower_base')).toBe(
+      true,
+    );
     expect(combat.levels[1]).toMatchObject({
       body: 'monolith_lvl_2',
       upgrade: 'monolith_lvl_2_upgrade',
@@ -40,15 +42,19 @@ describe('Monolith source records', () => {
       attackEffect: 'Monolith Attack',
       hitEffect: 'Explosive Arrow',
     });
-    expect([combat.range, combat.attackSpeedMs, combat.coolDownOverrideMs]).toEqual([1100, 1500, 750]);
-    expect([combat.animationActionFrame, combat.defenderZ, combat.airTargets, combat.groundTargets]).toEqual([
-      5,
-      155,
-      true,
-      true,
+    expect([combat.range, combat.attackSpeedMs, combat.coolDownOverrideMs]).toEqual([
+      1100, 1500, 750,
     ]);
+    expect([
+      combat.animationActionFrame,
+      combat.defenderZ,
+      combat.airTargets,
+      combat.groundTargets,
+    ]).toEqual([5, 155, true, true]);
     expect(MONOLITH).toMatchObject({ range: 11, interval: 1.5, cooldown: 0.75, windup: 0.75 });
-    expect(MONOLITH_PROJECTILES.map((p) => [p.name, p.speed, p.scale, p.startHeight, p.tracksTarget])).toEqual([
+    expect(
+      MONOLITH_PROJECTILES.map((p) => [p.name, p.speed, p.scale, p.startHeight, p.tracksTarget]),
+    ).toEqual([
       ['MonolithProjectileMin', 2200, 100, 220, true],
       ['MonolithProjectileMed', 2200, 150, 220, true],
       ['MonolithProjectileMax', 2200, 200, 220, true],
@@ -66,18 +72,32 @@ describe('Monolith source records', () => {
       textures: Record<string, { path: string }>;
     };
     for (const level of combat.levels)
-      for (const name of [level.body, level.upgrade, level.base, level.ruin, level.construction, level.buildAnim])
+      for (const name of [
+        level.body,
+        level.upgrade,
+        level.base,
+        level.ruin,
+        level.construction,
+        level.buildAnim,
+      ])
         expect(graph.exports[name], name).toBeTypeOf('number');
     const body = graph.clips[graph.exports.monolith_lvl_2];
     const turret = graph.clips[body.children[body.names.indexOf('turret')]];
     expect(turret.timeline).toHaveLength(360);
     expect(turret.names).toEqual(Array.from({ length: 16 }, (_, i) => `d${i + 1}`));
     for (const id of turret.children)
-      expect(graph.clips[id].names.filter(Boolean).sort()).toEqual(['projectile_0', 'projectile_1', 'projectile_2']);
+      expect(graph.clips[id].names.filter(Boolean).sort()).toEqual([
+        'projectile_0',
+        'projectile_1',
+        'projectile_2',
+      ]);
     // Every shape references a shipped texture, and every shipped texture is referenced.
-    const used = new Set(Object.values(graph.shapes).flatMap((commands) => commands.map(([t]) => String(t))));
+    const used = new Set(
+      Object.values(graph.shapes).flatMap((commands) => commands.map(([t]) => String(t))),
+    );
     expect([...used].sort()).toEqual(Object.keys(graph.textures).sort());
-    for (const texture of Object.values(graph.textures)) expect(existsSync(`public/${texture.path}`)).toBe(true);
+    for (const texture of Object.values(graph.textures))
+      expect(existsSync(`public/${texture.path}`)).toBe(true);
     for (const level of [1, 2, 3, 4, 5]) {
       expect(existsSync(`public${monolithAsset(level)}`)).toBe(true);
       expect(catalog.previews[String(level) as keyof typeof catalog.previews]).toMatchObject({
@@ -158,7 +178,13 @@ describe('Monolith combat', () => {
       onDeath: false,
       applied: 60,
     };
-    battle.late!.spellTower = { towers: {}, casts: [cast], poisonTick: 1, defenderRage: {}, defenderHidden: {} };
+    battle.late!.spellTower = {
+      towers: {},
+      casts: [cast],
+      poisonTick: 1,
+      defenderRage: {},
+      defenderHidden: {},
+    };
     for (let i = 0; i < 20; i++) stepFamilies(battle);
     expect(1e9 - battle.units[0].hp).toBeCloseTo(262.5 * 1.6 + 120, 6);
   });
@@ -179,7 +205,11 @@ describe('Monolith combat', () => {
     expect(state.shots.map((s) => s.at)).toEqual([0.8, 3.3].map((v) => expect.closeTo(v, 9)));
     const b = battle.buildings[0];
     b.hp = 0;
-    monolithDestroyed({ battle, dt: 0, phase: 'defenses', effect: () => {}, damageBuilding: () => {} }, b, battle.elapsed);
+    monolithDestroyed(
+      { battle, dt: 0, phase: 'defenses', effect: () => {}, damageBuilding: () => {} },
+      b,
+      battle.elapsed,
+    );
     const before = giant.hp;
     for (let i = 0; i < 40; i++) stepFamilies(battle);
     expect(state.destroyedAt).toBeCloseTo(battle.elapsed - 2, 9);

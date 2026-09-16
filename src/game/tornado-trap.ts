@@ -6,6 +6,7 @@ import { concealedTesla } from './hidden-tesla';
 import { lateBuildingHidden, type LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { tornadoDrag, tornadoTrapStats, type TornadoTrapLevel } from './tornado-trap-stats';
+import { nativeOwned } from './native-ownership';
 
 /** Tornado Trap: vortex that draws attackers in (reference/tornado-trap/README.md).
  * The campaign gate keeps affected villages unavailable until this is true. */
@@ -57,6 +58,7 @@ export function stepTornadoTrap(context: LateCombatContext) {
 function triggerTornadoTraps(battle: Battle) {
   for (const trap of battle.buildings) {
     if (trap.kind !== 'tornadotrap' || trap.constructing || trap.upgradeEnd) continue;
+    if (nativeOwned(battle, trap)) continue;
     if (battle.traps[trap.id]) continue;
     const stats = tornadoTrapStats(trap.level),
       c = center(trap);

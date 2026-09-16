@@ -21,14 +21,29 @@ vi.mock('../src/game/spell-tower', async (importOriginal) => {
 
 let nextUnit = 1;
 function unit(kind: Unit['kind'], x: number, y: number): Unit {
-  return { id: nextUnit++, kind, x, y, hp: 1e6, maxHp: 1e6, cooldown: 0, target: null, path: [], pathAt: 0, attacking: false };
+  return {
+    id: nextUnit++,
+    kind,
+    x,
+    y,
+    hp: 1e6,
+    maxHp: 1e6,
+    cooldown: 0,
+    target: null,
+    path: [],
+    pathAt: 0,
+    attacking: false,
+  };
 }
 function defense(kind: 'eagleartillery' | 'scattershot', level: number): Building {
   const hp = NATIVE_COMBAT[kind === 'eagleartillery' ? 1000031 : 1000067].hp[level - 1];
   return { ...makeBuilding(700, kind, 20, 20, level), hp, maxHp: hp };
 }
 function board(kind: 'eagleartillery' | 'scattershot', level: number, offset: number) {
-  const battle = replayBattle(isolatedSetup(kind === 'eagleartillery' ? 65 : 75, defense(kind, level), { giant: 40 }), 44);
+  const battle = replayBattle(
+    isolatedSetup(kind === 'eagleartillery' ? 65 : 75, defense(kind, level), { giant: 40 }),
+    44,
+  );
   battle.started = true;
   for (const troop of TROOP_KEYS) battle.remaining[troop] = 0;
   const size = kind === 'eagleartillery' ? 4 : 3;
@@ -38,7 +53,13 @@ function board(kind: 'eagleartillery' | 'scattershot', level: number, offset: nu
 function advance(battle: Battle, seconds: number) {
   for (let t = 0; t < seconds - 1e-9; t += 0.05) {
     battle.elapsed += 0.05;
-    stepLateCampaign({ battle, dt: 0.05, phase: 'defenses', effect: () => {}, damageBuilding: () => {} });
+    stepLateCampaign({
+      battle,
+      dt: 0.05,
+      phase: 'defenses',
+      effect: () => {},
+      damageBuilding: () => {},
+    });
   }
 }
 afterEach(() => {

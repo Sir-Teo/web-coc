@@ -1,5 +1,5 @@
 import nativeProgressionSource from '../../reference/full-client/progression.json';
-import { BUILDING_LEVELS } from './tiers';
+import { BUILDING_LEVELS, WITHHELD } from './tiers';
 const nativeProgression = nativeProgressionSource as unknown as {
   buildings: Record<string, (typeof nativeProgressionSource.buildings)['townhall']>;
 };
@@ -21,7 +21,10 @@ export { BUILDING_LEVELS } from './tiers';
 
 export const requiredTownHall = (kind: BuildingKind, level: number) => {
   if (kind === 'townhall') return level >= 1 && level <= 18 ? Math.max(1, level - 1) : null;
-  const native = nativeProgression.buildings[kind].levels[level - 1];
+  // A level this game withholds is never reachable, so it has no requirement to report.
+  const withheld = WITHHELD[kind];
+  if (withheld && level > withheld.level) return null;
+  const native = nativeProgression.buildings[kind]?.levels[level - 1];
   if (native && native.townhall > 8) return native.townhall;
   if (kind === 'inferno')
     return Number.isInteger(level) && level >= 1 && level <= 12

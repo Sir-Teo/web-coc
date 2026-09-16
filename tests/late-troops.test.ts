@@ -1,4 +1,3 @@
-import { maxTroopLevel } from '../src/game/data';
 import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';

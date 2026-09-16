@@ -159,7 +159,11 @@ describe('native defense combat', () => {
   });
 
   it('lands Eagle shells for the hit-spell damage plus a shockwave that pushes small troops', () => {
-    const m = arena([['eagleartillery', 30, 30, 7]], { golem: 20, swordsman: 1 }, { troopLevel: 10 });
+    const m = arena(
+      [['eagleartillery', 30, 30, 7]],
+      { golem: 20, swordsman: 1 },
+      { troopLevel: 10 },
+    );
     const golems = deploy(m, 'golem', 6, 6, 20);
     const barbarian = deploy(m, 'swordsman', 6, 7.5)[0];
     // Hold every attacker in place so the volley lands on known positions.

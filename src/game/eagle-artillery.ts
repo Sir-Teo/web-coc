@@ -5,6 +5,7 @@ import { BUILDINGS, TROOPS, isTrap } from './data';
 import { MAP_SIZE } from './grid';
 import { spellTowerDefenseBoost } from './spell-tower';
 import { untargetable } from './spell-effects';
+import { nativeOwned } from './native-ownership';
 import {
   EAGLE_ARTILLERY,
   NATIVE_TILE,
@@ -606,7 +607,7 @@ function stepShells(battle: Battle, state: EagleArtilleryBattleState, at: number
 export function stepEagleArtillery(context: LateCombatContext) {
   const { battle, phase } = context;
   if (phase !== 'defenses' || !battle.late) return;
-  const towers = battle.buildings.filter(isArtillery);
+  const towers = battle.buildings.filter((b) => isArtillery(b) && !nativeOwned(battle, b));
   if (!towers.length && !battle.late.eagleArtillery) return;
   const state = eagleArtilleryState(battle);
   for (const tower of towers) towerState(state, tower);

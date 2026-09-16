@@ -2,6 +2,7 @@ import type { LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { TROOPS } from './data';
 import { spellTowerDefenseBoost } from './spell-tower';
+import { nativeOwned } from './native-ownership';
 import {
   SCATTERSHOT,
   SCATTERSHOT_NATIVE_TILE,
@@ -191,8 +192,7 @@ function tick(
     return;
   }
   // RefreshTarget: keep a valid target; otherwise search the nearest at most every 500 ms.
-  let target =
-    s.targetId === null ? undefined : battle.units.find((u) => u.id === s.targetId);
+  let target = s.targetId === null ? undefined : battle.units.find((u) => u.id === s.targetId);
   if (target && !(available(target, at) && inRange(tower, target))) target = undefined;
   if (!target) {
     s.targetId = null;
@@ -244,7 +244,8 @@ function stepProjectiles(battle: Battle, state: ScattershotBattleState, at: numb
   for (const p of state.projectiles) {
     if (p.arrivedAt === undefined) {
       if (at <= p.launchedAt + 1e-9) continue;
-      const target = p.targetId === null ? undefined : battle.units.find((u) => u.id === p.targetId);
+      const target =
+        p.targetId === null ? undefined : battle.units.find((u) => u.id === p.targetId);
       // Non-group projectiles keep tracking until the target is removed from battle.
       if (target && target.hp > 0) {
         p.targetX = target.x;
@@ -333,7 +334,7 @@ function stepProjectiles(battle: Battle, state: ScattershotBattleState, at: numb
 export function stepScattershot(context: LateCombatContext) {
   const { battle, phase } = context;
   if (phase !== 'defenses' || !battle.late) return;
-  const towers = battle.buildings.filter(isScattershot);
+  const towers = battle.buildings.filter((b) => isScattershot(b) && !nativeOwned(battle, b));
   if (!towers.length && !battle.late.scattershot) return;
   const state = scattershotState(battle);
   for (const tower of towers) towerState(state, tower);

@@ -21,7 +21,20 @@ function artillery(level = 1, x = 20, y = 20): Building {
 }
 let nextUnit = 1;
 function unit(kind: Unit['kind'], x: number, y: number, extra: Partial<Unit> = {}): Unit {
-  return { id: nextUnit++, kind, x, y, hp: 1e6, maxHp: 1e6, cooldown: 0, target: null, path: [], pathAt: 0, attacking: false, ...extra };
+  return {
+    id: nextUnit++,
+    kind,
+    x,
+    y,
+    hp: 1e6,
+    maxHp: 1e6,
+    cooldown: 0,
+    target: null,
+    path: [],
+    pathAt: 0,
+    attacking: false,
+    ...extra,
+  };
 }
 /** Family-only harness: attackers stay where the test puts them; deployments are accounted. */
 function board(level = 1, deployed: Partial<Record<Unit['kind'], number>> = { giant: 40 }) {
@@ -33,7 +46,13 @@ function board(level = 1, deployed: Partial<Record<Unit['kind'], number>> = { gi
 function advance(battle: Battle, seconds: number) {
   for (let t = 0; t < seconds - 1e-9; t += 0.05) {
     battle.elapsed += 0.05;
-    stepLateCampaign({ battle, dt: 0.05, phase: 'defenses', effect: () => {}, damageBuilding: () => {} });
+    stepLateCampaign({
+      battle,
+      dt: 0.05,
+      phase: 'defenses',
+      effect: () => {},
+      damageBuilding: () => {},
+    });
   }
 }
 const tower = (battle: Battle) => battle.late!.eagleArtillery!.towers[500];
@@ -70,8 +89,17 @@ describe('Eagle Artillery source values', () => {
       travelMs: 5000,
       damageDelayMs: 580,
     });
-    expect(combat.projectile).toMatchObject({ IsBallistic: 'TRUE', BallisticHeight: '5000', FixedTravelTime: '5000', DamageDelay: '580' });
-    expect(combat.hitSpell).toMatchObject({ radius: 75, numberOfHits: 1, hitEffect: 'Artillery Hit' });
+    expect(combat.projectile).toMatchObject({
+      IsBallistic: 'TRUE',
+      BallisticHeight: '5000',
+      FixedTravelTime: '5000',
+      DamageDelay: '580',
+    });
+    expect(combat.hitSpell).toMatchObject({
+      radius: 75,
+      numberOfHits: 1,
+      hitEffect: 'Artillery Hit',
+    });
   });
   it('weighs deployed housing with the source multipliers and housing spaces', () => {
     const housing = EAGLE_ARTILLERY_HOUSING;
@@ -82,9 +110,15 @@ describe('Eagle Artillery source values', () => {
       ALLIANCE_UNIT_HOUSING_COST_MULTIPLIER: 0,
       PET_HOUSING_COST_MULTIPLIER: 0,
     });
-    for (const kind of TROOP_KEYS) expect(housing.troops[kind].housingSpace).toBe(TROOPS[kind].space);
-    for (const kind of SPELL_KEYS) expect(housing.spells[kind].housingSpace).toBe(SPELLS[kind].space);
-    expect(housing.hero).toEqual({ source: 'Barbarian King', housingSpace: 25, enemyGroupWeight: 2500 });
+    for (const kind of TROOP_KEYS)
+      expect(housing.troops[kind].housingSpace).toBe(TROOPS[kind].space);
+    for (const kind of SPELL_KEYS)
+      expect(housing.spells[kind].housingSpace).toBe(SPELLS[kind].space);
+    expect(housing.hero).toEqual({
+      source: 'Barbarian King',
+      housingSpace: 25,
+      enemyGroupWeight: 2500,
+    });
     const battle = board(1, { giant: 35 });
     battle.carried.lightning = battle.spells.lightning = 1;
     expect(eagleArtilleryDeployedHousing(battle)).toBe(175);
@@ -112,13 +146,18 @@ describe('Eagle Artillery activation and bursts', () => {
     expect(s.awakeAt).toBeCloseTo(17 * 0.064, 9);
     // 47 charge ticks from the first active tick, then 11- and 12-tick burst gaps.
     const first = s.awakeAt! + 46 * 0.064;
-    expect(s.volleys[0].launches.map((t) => +t.toFixed(3))).toEqual([first, first + 0.704, first + 1.472].map((t) => +t.toFixed(3)));
+    expect(s.volleys[0].launches.map((t) => +t.toFixed(3))).toEqual(
+      [first, first + 0.704, first + 1.472].map((t) => +t.toFixed(3)),
+    );
     // 110 cooldown ticks, a new group search, then a full 47-tick charge: 180 ticks per cycle.
     expect(s.volleys[1].launches[0] - s.volleys[0].launches[0]).toBeCloseTo(180 * 0.064, 9);
   });
   it('ignores attackers inside the seven-tile blind spot and reaches ground and air beyond it', () => {
     const battle = board();
-    battle.units.push(unit('giant', center.x + 6.9, center.y), unit('balloon', center.x, center.y + 6.5));
+    battle.units.push(
+      unit('giant', center.x + 6.9, center.y),
+      unit('balloon', center.x, center.y + 6.5),
+    );
     advance(battle, 12);
     expect(tower(battle).fired).toBe(0);
     const reach = board();
@@ -131,12 +170,18 @@ describe('Eagle Artillery activation and bursts', () => {
   it('prefers the weighted group over a nearer light attacker', () => {
     const battle = board();
     const lone = unit('swordsman', center.x + 8, center.y);
-    const giants = Array.from({ length: 6 }, (_, i) => unit('giant', center.x - 14 + (i % 3) * 0.8, center.y + 10 + Math.floor(i / 3) * 0.8));
+    const giants = Array.from({ length: 6 }, (_, i) =>
+      unit('giant', center.x - 14 + (i % 3) * 0.8, center.y + 10 + Math.floor(i / 3) * 0.8),
+    );
     battle.units.push(lone, ...giants);
     advance(battle, 4.5);
     const s = tower(battle);
     expect(s.group).toEqual(giants.map((g) => g.id));
-    expect(battle.late!.eagleArtillery!.shells.every((shell) => giants.some((g) => g.id === shell.targetId))).toBe(true);
+    expect(
+      battle.late!.eagleArtillery!.shells.every((shell) =>
+        giants.some((g) => g.id === shell.targetId),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -199,7 +244,11 @@ describe('Eagle Artillery shells', () => {
     expect(shell.x).toBeCloseTo(center.x + 9, 2);
     battle.buildings[0].hp = 0;
     advance(battle, 8);
-    expect(battle.late!.eagleArtillery!.impacts.some((i) => i.id === shell.id && Math.abs(i.x - (center.x + 9)) < 0.01)).toBe(true);
+    expect(
+      battle.late!.eagleArtillery!.impacts.some(
+        (i) => i.id === shell.id && Math.abs(i.x - (center.x + 9)) < 0.01,
+      ),
+    ).toBe(true);
   });
   it('fires exactly thirty shells, then empties', () => {
     const battle = board();

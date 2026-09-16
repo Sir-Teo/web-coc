@@ -1,4 +1,3 @@
-import { emptyArmy } from '../src/game/army';
 import { describe, expect, it } from 'vitest';
 import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import {

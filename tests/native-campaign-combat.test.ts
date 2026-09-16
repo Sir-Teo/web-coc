@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
-import { emptyArmy } from '../src/game/army';
+import { emptyArmy, emptySpells } from '../src/game/army';
 import { BUILDINGS, TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 import {
   NATIVE_CAMPAIGN,
@@ -26,17 +26,7 @@ describe.each(playable)('native combat: $name', ({ index }) => {
       m.state.nativeCampaign = freshNativeCampaign();
       m.state.nativeCampaign.stars.fill(1);
       m.state.army = { ...emptyArmy(), ...units };
-      m.state.spells = {
-        lightning: 0,
-        heal: 0,
-        rage: 0,
-        freeze: 0,
-        invisibility: 0,
-        jump: 0,
-        clone: 0,
-        recall: 0,
-        revive: 0,
-      };
+      m.state.spells = emptySpells();
       m.state.king = undefined;
       m.state.troopLevels = Object.fromEntries(
         TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),

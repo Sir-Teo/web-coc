@@ -23,7 +23,9 @@ export function targetableBuilding(battle: Battle, building: Building) {
     building.hp > 0 &&
     !isTrap(building.kind) &&
     !concealedTesla(battle, building) &&
-    !lateBuildingHidden(battle, building)
+    !lateBuildingHidden(battle, building) &&
+    // Overgrowth roots a building and Spell Tower Invisibility covers one (version 51+).
+    !buildingHidden(battle, building)
   );
 }
 /** Late campaign Invisibility only blocks targeting: a concealed defense still fires and area

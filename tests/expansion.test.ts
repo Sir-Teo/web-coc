@@ -1,5 +1,3 @@
-import { emptySpells } from '../src/game/army';
-import { maxTroopLevel } from '../src/game/data';
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { fundedVillage } from './fixtures/funded-village';

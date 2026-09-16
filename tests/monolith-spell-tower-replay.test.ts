@@ -1,3 +1,4 @@
+import { defaultSpellLevels } from '../src/game/army';
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS, type TroopKind } from '../src/game/data';
 import { GameModel, makeBuilding } from '../src/game/model';
@@ -134,17 +135,7 @@ describe('Monolith and Spell Tower replays', () => {
         buildings: [makeBuilding(1, 'townhall', 10, 10, 8), makeBuilding(2, 'monolith', 20, 20, 2)],
         army: data.initial.army,
         spells: data.initial.spells,
-        spellLevels: {
-          heal: 1,
-          rage: 1,
-          lightning: 1,
-          freeze: 1,
-          invisibility: 1,
-          jump: 1,
-          clone: 1,
-          recall: 1,
-          revive: 1,
-        },
+        spellLevels: defaultSpellLevels(),
         troopLevels: data.initial.troopLevels,
       },
       steps: [],

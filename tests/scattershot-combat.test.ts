@@ -4,11 +4,7 @@ import { replayBattle } from '../src/game/replay';
 import { TROOP_KEYS } from '../src/game/data';
 import { stepLateCampaign } from '../src/game/late-campaign';
 import { NATIVE_COMBAT } from '../src/game/native-campaign';
-import {
-  SCATTERSHOT,
-  SCATTERSHOT_LEVELS,
-  scattershotDamage,
-} from '../src/game/scattershot-stats';
+import { SCATTERSHOT, SCATTERSHOT_LEVELS, scattershotDamage } from '../src/game/scattershot-stats';
 import { scattershotPending } from '../src/game/scattershot';
 import { isolatedSetup } from './fixtures/late-eagle-scattershot-battle';
 import combat from '../reference/scattershot/combat.json';
@@ -20,7 +16,19 @@ function scattershot(level = 1, x = 20, y = 20): Building {
 }
 let nextUnit = 1;
 function unit(kind: Unit['kind'], x: number, y: number, hp = 1e6): Unit {
-  return { id: nextUnit++, kind, x, y, hp, maxHp: hp, cooldown: 0, target: null, path: [], pathAt: 0, attacking: false };
+  return {
+    id: nextUnit++,
+    kind,
+    x,
+    y,
+    hp,
+    maxHp: hp,
+    cooldown: 0,
+    target: null,
+    path: [],
+    pathAt: 0,
+    attacking: false,
+  };
 }
 function board(level = 1) {
   const battle = replayBattle(isolatedSetup(75, scattershot(level), { giant: 1 }), 44);
@@ -31,7 +39,13 @@ function board(level = 1) {
 function advance(battle: Battle, seconds: number) {
   for (let t = 0; t < seconds - 1e-9; t += 0.05) {
     battle.elapsed += 0.05;
-    stepLateCampaign({ battle, dt: 0.05, phase: 'defenses', effect: () => {}, damageBuilding: () => {} });
+    stepLateCampaign({
+      battle,
+      dt: 0.05,
+      phase: 'defenses',
+      effect: () => {},
+      damageBuilding: () => {},
+    });
   }
 }
 const tower = (battle: Battle) => battle.late!.scattershot!.towers[600];
@@ -65,7 +79,11 @@ describe('Scattershot source values', () => {
       coneMinRadius: TILE,
       coneAngle: 90,
     });
-    expect(combat.projectile).toMatchObject({ Speed: '1200', SmoothDamage: 'TRUE', HitSpellInheritAffectType: 'TRUE' });
+    expect(combat.projectile).toMatchObject({
+      Speed: '1200',
+      SmoothDamage: 'TRUE',
+      HitSpellInheritAffectType: 'TRUE',
+    });
     expect(combat.miniLevels.map((row) => row.Level)).toEqual(['1', '2']);
     expect(combat.levels.every((l) => l.animationActionFrame === 5)).toBe(true);
   });
@@ -74,7 +92,10 @@ describe('Scattershot source values', () => {
 describe('Scattershot targeting and timing', () => {
   it('keeps the three-tile blind spot and retained half-tile range allowance', () => {
     const battle = board();
-    battle.units.push(unit('giant', center.x + 2.9, center.y), unit('balloon', center.x, center.y + 10.6));
+    battle.units.push(
+      unit('giant', center.x + 2.9, center.y),
+      unit('balloon', center.x, center.y + 10.6),
+    );
     advance(battle, 5);
     expect(tower(battle).fired).toBe(0);
     const edge = board();
@@ -120,7 +141,17 @@ describe('Scattershot impact', () => {
     const frontSide = unit('wizard', center.x + 5.2, center.y + 3.3, 1000);
     const front = unit('wizard', center.x + 2.5, center.y, 1000);
     const beyond = unit('swordsman', center.x + 11.3, center.y, 1000);
-    battle.units.push(target, beside, airAbove, behind, behindAngled, outsideCone, frontSide, front, beyond);
+    battle.units.push(
+      target,
+      beside,
+      airAbove,
+      behind,
+      behindAngled,
+      outsideCone,
+      frontSide,
+      front,
+      beyond,
+    );
     advance(battle, 1.3);
     expect(tower(battle).targetId).toBe(target.id);
     const impact = battle.late!.scattershot!.impacts[0];

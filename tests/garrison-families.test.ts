@@ -68,7 +68,12 @@ it('resolves every roster level from its pinned VisualLevel row, including the d
     ['babydragon', 6, 'Baby Dragon', 6, { hp: 1700, housing: 10, damage: 125, range: 2.25 }],
   ] as const;
   for (const [kind, level, character, row, values] of table)
-    expect(garrisonStats(kind, level)).toMatchObject({ character, row, visualLevel: level, ...values });
+    expect(garrisonStats(kind, level)).toMatchObject({
+      character,
+      row,
+      visualLevel: level,
+      ...values,
+    });
   expect(garrisonStats('valkyrie', 7)).toMatchObject({
     selfAsAoeCenter: true,
     groundTargets: true,
@@ -146,7 +151,9 @@ it('releases increasing housing, seeded order for equal housing and lowest level
       (t) => `${t.kind}${t.level}`,
     );
     expect(order.slice(2)).toEqual(['balloon8', 'dragon5', 'dragon7']);
-    expect(createGarrisonReserve(5, [...roster], 'guard', seed).troops.map((t) => `${t.kind}${t.level}`)).toEqual(order);
+    expect(
+      createGarrisonReserve(5, [...roster], 'guard', seed).troops.map((t) => `${t.kind}${t.level}`),
+    ).toEqual(order);
     orders.add(order.slice(0, 2).join());
   }
   // Both equal-housing orders occur across seeds; neither is a fixed alphabetical rule.
@@ -244,7 +251,11 @@ it('Headhunters prefer the King, deal hero damage and apply timed source poison'
   advance(battle, 0.2);
   const king = battle.units[1];
   expect(battle.units[0].hp).toBe(5000);
-  expect(king.late?.garrison?.poison).toMatchObject({ dps: 14, moveScale: 0.56, attackScale: 0.35 });
+  expect(king.late?.garrison?.poison).toMatchObject({
+    dps: 14,
+    moveScale: 0.56,
+    attackScale: 0.35,
+  });
   expect(garrisonUnitScales(battle, king)).toEqual({ move: 0.56, attack: 0.35 });
   const hitAt = headhunter.attacks[0].hitAt!;
   const expectedPoison = 14 * (battle.elapsed - hitAt);
@@ -303,8 +314,7 @@ it('Baby Dragons enter Tantrum only without another flying defender nearby', () 
   expect(escorted.baby.tantrum).toBe(false);
   expect(escorted.first).toBeCloseTo(1, 9);
   expect(escorted.interval).toBeCloseTo(1, 9);
-  const damage = (r: ReturnType<typeof run>) =>
-    r.battle.units[0].maxHp - r.battle.units[0].hp;
+  const damage = (r: ReturnType<typeof run>) => r.battle.units[0].maxHp - r.battle.units[0].hp;
   expect(damage(alone) / alone.baby.attacks.filter((a) => a.hit).length).toBe(250);
   expect(damage(escorted) / escorted.baby.attacks.filter((a) => a.hit).length).toBe(125);
 });
@@ -358,5 +368,7 @@ it('keeps new-family combat, projectiles and poison deterministic through JSON r
   advance(battle, 6);
   advance(restored, 6);
   expect(restored).toEqual(battle);
-  expect(battle.defenders!.every((d) => d.kind === 'skeleton' || d.attacks.length <= 16)).toBe(true);
+  expect(battle.defenders!.every((d) => d.kind === 'skeleton' || d.attacks.length <= 16)).toBe(
+    true,
+  );
 });

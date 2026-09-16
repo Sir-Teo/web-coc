@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { replayBattle, compatibleReplayVersion, type ReplaySetup } from '../src/game/replay';
-import { emptyArmy, emptySpells } from '../src/game/army';
+import { emptyArmy, emptySpells, defaultSpellLevels } from '../src/game/army';
 import { TROOP_KEYS } from '../src/game/data';
 import { launchProjectile, stepProjectiles } from '../src/game/projectiles';
 const setup = (level = 1): ReplaySetup => ({
@@ -11,17 +11,7 @@ const setup = (level = 1): ReplaySetup => ({
   buildings: [makeBuilding(1, 'archertower', 10, 10, level)],
   army: emptyArmy(),
   spells: emptySpells(),
-  spellLevels: {
-    heal: 1,
-    rage: 1,
-    lightning: 1,
-    freeze: 1,
-    invisibility: 1,
-    jump: 1,
-    clone: 1,
-    recall: 1,
-    revive: 1,
-  },
+  spellLevels: defaultSpellLevels(),
   troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as ReturnType<typeof emptyArmy>,
 });
 function arena(version = 41, level = 1) {
