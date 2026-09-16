@@ -1,4 +1,4 @@
-import native from '../../reference/santa-trap/runtime.json';
+import native from '../../reference/santa-trap/runtime.json' with { type: 'json' };
 import type { TrapState } from './traps';
 import { SANTA_TRAP, SANTA_SPELL, santaRandom } from './santa-trap';
 

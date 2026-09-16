@@ -19,14 +19,14 @@ const CLIENT_KIND: Record<string, BuildingKind> = {
   'Archer Tower': 'archertower',
   Mortar: 'mortar',
   'Wizard Tower': 'wizardtower',
-  'Eagle Artillery': 'eagle',
+  'Eagle Artillery': 'eagleartillery',
 };
 const CLIENT_NAME: Partial<Record<BuildingKind, string>> = {
   cannon: 'Cannon',
   archertower: 'Archer Tower',
   mortar: 'Mortar',
   wizardtower: 'Wizard Tower',
-  eagle: 'Eagle Artillery',
+  eagleartillery: 'Eagle Artillery',
   ricochetcannon: 'Ricochet Cannon',
   multiarchertower: 'Multi Archer Tower',
   multigeartower: 'Multi Gear Tower',

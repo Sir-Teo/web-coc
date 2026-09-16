@@ -1,4 +1,4 @@
-import source from '../../reference/archer-tower/native.json';
+import source from '../../reference/archer-tower/native.json' with { type: 'json' };
 import type { Battle } from './model';
 import { ARCHER_TOWER_GRAPH, archerTowerSource } from './archer-tower-art';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';

@@ -17,7 +17,8 @@ import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
 import {
   EQUIPMENT,
   EQUIPMENT_KEYS,
-  EQUIPMENT_MAX_LEVEL,
+  EQUIPMENT_LEVELS,
+  oreCapacity,
   ORES,
   ORE_KEYS,
   EARTHQUAKE_BOOTS,
@@ -32,11 +33,24 @@ import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
 import { WIZARD_TOWER_PROJECTILES, wizardTowerProjectileTier } from '../game/wizard-tower-stats';
-import { SKELETON_TRAP, skeletonCount, skeletonStats } from '../game/skeleton-stats';
 import {
-  MAX_SPELL_LEVEL,
+  SKELETON_TRAP,
+  skeletonCount,
+  skeletonSpawnLevel,
+  skeletonStats,
+} from '../game/skeleton-stats';
+import {
+  maxSpellLevelFor,
   SPELL_LEVELS,
   HEAL_PULSES,
+  freezeSeconds,
+  invisibilitySeconds,
+  INVISIBILITY_LINGER,
+  jumpSeconds,
+  cloneHousing,
+  CLONE_LIFETIME,
+  recallHousing,
+  reviveFraction,
   HEAL_HERO_MULTIPLIER,
   SPELL_PULSE_INTERVAL,
   RAGE_LINGER,
@@ -49,6 +63,7 @@ import { compatibleReplayVersion } from '../game/replay';
 import {
   heroStats,
   heroRecovery,
+  heroNextRequirement,
   heroTownHallScale,
   heroUpgradeCost,
   heroUpgradeSeconds,
@@ -57,6 +72,7 @@ import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, spellSpace } from '../game/army';
 import {
   BUILDINGS,
+  buildPrice,
   buildingHp,
   TROOPS,
   TROOP_KEYS,
@@ -75,6 +91,7 @@ import {
   isSpellKind,
   springCapacity,
   unlockTownHall,
+  MAX_TOWNHALL,
   storageCapacity,
   upgradeSeconds,
   upgradeCost as costFor,
@@ -107,9 +124,12 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
   invisibility: 'Invisibility',
   earthquake: 'Earthquake',
 };
+/** Title-cased weapon name for the campaign Spell Tower selector. */
+const spellTowerLabel = (weapon = 'rage') => weapon[0].toUpperCase() + weapon.slice(1);
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
+import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
   | 'blacksmith'
@@ -120,6 +140,7 @@ type Panel =
   | 'campaign'
   | 'settings'
   | 'achievements'
+  | 'star-bonus'
   | 'help'
   | 'info'
   | 'layouts'
@@ -176,7 +197,7 @@ function statRows(
     rows.push(['Radar', 'Targets', trap.targets === 'air' ? 'Air only' : 'Ground only']);
   }
   if (kind === 'skeletontrap') {
-    const skeleton = skeletonStats('ground');
+    const skeleton = skeletonStats('ground', skeletonSpawnLevel(level));
     rows.length = 0;
     rows.push(
       ['Users', 'Skeletons', String(skeletonCount(level))],
@@ -279,8 +300,11 @@ function statRows(
   if (kind === 'herohall')
     rows.push(['ShieldCheck', 'King level cap at TH7+', level === 1 ? '10' : '20']);
   if (kind === 'blacksmith') {
-    rows.push(['Anvil', 'Common equipment level cap', '9']);
-    for (const k of ORE_KEYS) rows.push(['Gem', `${ORES[k].name} capacity`, n(ORES[k].cap)]);
+    // Each forge level opens its own band of equipment levels and stores more ore.
+    const reach = EQUIPMENT_LEVELS.filter((row) => row.blacksmith <= level).length;
+    const capacity = oreCapacity(level);
+    rows.push(['Anvil', 'Equipment level cap', String(reach)]);
+    for (const k of ORE_KEYS) rows.push(['Gem', `${ORES[k].name} capacity`, n(capacity[k])]);
   }
   if (kind === 'camp') rows.push(['UsersRound', 'Troop capacity', `${campCapacity(level)}`]);
   if (kind === 'spellfactory')
@@ -643,6 +667,9 @@ export class HUD {
       case 'inferno-mode':
         this.model.toggleInfernoMode();
         break;
+      case 'spell-tower-weapon':
+        this.model.cycleSpellTowerWeapon();
+        break;
       case 'xbow-mode':
         this.model.toggleXbowMode();
         break;
@@ -894,6 +921,9 @@ export class HUD {
       case 'settings':
         this.show('settings');
         break;
+      case 'star-bonus':
+        this.model.collectStarBonus();
+        return;
       case 'achievements':
         this.show('achievements');
         break;
@@ -1277,7 +1307,7 @@ export class HUD {
     if (m.editing) return this.editHUD();
     const free = m.builders - m.busy;
     return `
- <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league}</span></button></div></header>
+ <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
  <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !nativeCampaignIssues(i).length) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
@@ -1625,6 +1655,13 @@ export class HUD {
     const stats = heroStats(king.level, m.townhallLevel, m.kingEquipment),
       next = heroStats(king.level + 1, m.townhallLevel, m.kingEquipment);
     const capped = king.level >= m.heroMaxLevel;
+    const required = heroNextRequirement(king.level);
+    const missing = !required
+      ? []
+      : [
+          ...(required.townhall > m.townhallLevel ? [`Town Hall ${required.townhall}`] : []),
+          ...(required.hall > hall.level ? [`Hero Hall ${required.hall}`] : []),
+        ];
     const scale = heroTownHallScale(m.townhallLevel);
     const stat = (label: string, value: number, destination?: number, suffix = '') =>
       `<div>${label}<b>${damageNumber(value)}${suffix}${destination === undefined || capped ? '' : ` → ${damageNumber(destination)}${suffix}`}</b></div>`;
@@ -1635,7 +1672,7 @@ export class HUD {
       <p class="hero-stats-note">Stats include the equipped items below.</p>
       <div class="hero-equipment">${m.kingEquipment.loadout.map((kind) => `<article class="hero-ability">${gearImage(kind, 'hero-gear-icon')}<span class="eyebrow">EQUIPPED · LEVEL ${m.kingEquipment.levels[kind]}</span><h3>${EQUIPMENT[kind].name}</h3><p>${this.equipmentDescription(kind, m.kingEquipment.levels[kind])}</p>${button(`equipment-view:${kind}`, 'View equipment', 'replay-link')}</article>`).join('')}</div>
       <p class="hero-activation"><b>Recover ${damageNumber(heroRecovery(king.level, m.townhallLevel, m.kingEquipment))} hitpoints on activation.</b> Tap the deployed King card or press H to use both items once per attack. Automatically activates on a lethal hit.</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : king.level >= 20 ? 'Maximum hero level for Town Hall 8' : 'Upgrade to Town Hall 8 and Hero Hall 2'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir</p>${king.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer>${time((king.upgradeEnd - m.clock) / 1000)}</b></p>${button('hero-finish', `Finish ${gem} <span data-hero-gems>${m.finishCost({ upgradeEnd: king.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button('hero-upgrade', `${resource('dark')} ${n(heroUpgradeCost(king.level))} · Upgrade to ${king.level + 1}`, 'game-btn green', m.busy >= m.builders || m.state.dark < heroUpgradeCost(king.level) ? 'disabled' : '')}<p>${time(heroUpgradeSeconds(king.level))} · Requires one free builder</p>`}</div>
       ${button('practice', 'Practice with this army', 'game-btn blue', m.armySize || m.heroReady ? '' : 'disabled')}
     </div>`;
   }
@@ -1680,14 +1717,14 @@ export class HUD {
       gear = m.kingEquipment,
       kind = this.inspectedEquipment,
       level = gear.levels[kind],
-      cap = level >= EQUIPMENT_MAX_LEVEL,
+      cap = level >= m.equipmentCeiling,
       quote = equipmentQuote(level + 1, m.ores),
       unlocked = !!m.blacksmith;
     const rows = this.equipmentRows(kind, level),
       next = cap ? [] : this.equipmentRows(kind, level + 1);
     const pending = m.state.buildings.find((b) => b.kind === 'blacksmith' && b.constructing);
     return `<div class="modal-body blacksmith-body">
-      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(ORES[k].cap)}</small></b></span></div>`).join('')}</div>
+      <div class="ore-wallet" aria-label="Ore storage">${ORE_KEYS.map((k) => `<div class="ore-balance ${k}">${gearImage(k)}<span>${ORES[k].name}<b>${n(m.ores[k])}<small> / ${n(m.oreCapacity[k])}</small></b></span></div>`).join('')}</div>
       ${unlocked ? '' : `<div class="equipment-locked">${icon('LockKeyhole', 20)}<span>${pending ? 'Finish building your Blacksmith to equip and upgrade items.' : 'Build a Blacksmith at Town Hall 8 to equip and upgrade items.'} Your default equipment is ready for battle.</span>${pending ? '' : button('shop', 'Shop', 'game-btn green')}</div>`}
       <div class="king-loadout"><img class="loadout-portrait" src="${hudAsset('king')}" alt="Barbarian King"><div class="loadout-label"><span class="eyebrow">BARBARIAN KING</span><h2>Equipped abilities</h2><p>Both activate together, once per attack.</p></div><div class="equipment-slots">${gear.loadout.map((k, slot) => button(`equipment-view:${k}`, `${gearImage(k)}<span>Slot ${slot + 1}<b>${EQUIPMENT[k].name}</b></span><em>${gear.levels[k]}</em>`, 'equipment-slot', `aria-label="Slot ${slot + 1}: ${EQUIPMENT[k].name}, level ${gear.levels[k]}"`)).join('')}</div></div>
       <div class="equipment-catalog" role="group" aria-label="King equipment">${EQUIPMENT_KEYS.map((k) => button(`equipment-view:${k}`, `<span class="equipment-badge">${gear.loadout.includes(k) ? 'Equipped' : unlocked ? 'Available' : 'Blacksmith 1'}</span>${gearImage(k)}<strong>${EQUIPMENT[k].name}</strong><span class="equipment-level">Level ${gear.levels[k]} / 9</span>`, `equipment-card ${kind === k ? 'selected' : ''}`, `aria-pressed="${kind === k}"`)).join('')}</div>
@@ -1733,7 +1770,7 @@ export class HUD {
   private progression() {
     const m = this.model;
     return `<div class="modal-body progression-body"><p>Current Town Hall: <b>${m.townhallLevel}</b>. Upgrade your Town Hall to unlock buildings and raise their level limits.</p>${Array.from(
-      { length: 8 },
+      { length: MAX_TOWNHALL },
       (_, i) => {
         const th = i + 1;
         const changed = (Object.keys(BUILDINGS) as BuildingKind[]).filter(
@@ -1767,12 +1804,20 @@ export class HUD {
     const m = this.model;
     const cards = (Object.entries(BUILDINGS) as [BuildingKind, (typeof BUILDINGS)[BuildingKind]][])
       .filter(([k, d]) => k !== 'townhall' && (this.tab === 'All' || d.category === this.tab))
+      // Buildable tiles first in catalog order, then locked ones by their Town Hall requirement.
+      .sort(
+        ([a], [b]) =>
+          Number(m.maxCount(a) === 0) - Number(m.maxCount(b) === 0) ||
+          (m.maxCount(a) === 0 ? unlockTownHall(a) - unlockTownHall(b) : 0),
+      )
       .map(([k, d]) => {
         const count = m.countOf(k),
           limit = m.maxCount(k);
         const locked = limit === 0;
         const full = !locked && count >= limit;
-        const afford = m.state[d.resource] >= d.cost;
+        // A Builder's Hut is priced per hut in gems, so the tile quotes the next one.
+        const price = buildPrice(k, count);
+        const afford = m.state[price.resource] >= price.cost;
         if (isMergedKind(k))
           return `<article class="shop-tile unavailable"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(
             `build:${k}`,
@@ -1785,7 +1830,7 @@ export class HUD {
             'game-btn stone shop-buy',
             'disabled',
           )}</article>`;
-        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : d.cost === 0 ? 'Free' : `${resource(d.resource)} ${n(d.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
+        return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : price.cost === 0 ? 'Free' : `${resource(price.resource)} ${n(price.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
       })
       .join('');
     return `<div class="drawer-body shop-strip">${cards}</div><footer class="drawer-foot">${icon('Hammer', 16)} ${m.builders - m.busy} of ${m.builders} builders free <span>Drag a building onto the village, or tap to pick it up</span></footer>`;
@@ -1996,9 +2041,54 @@ export class HUD {
       ['Unlock requirement', spellUnlockLabel(kind)],
       ['Housing space', `${d.space}`],
       ['Effect radius', `${d.radius} tiles`],
-      ['Targets', kind === 'lightning' ? 'Enemy buildings' : 'Ground and air troops'],
+      [
+        'Targets',
+        kind === 'lightning'
+          ? 'Enemy buildings'
+          : kind === 'freeze'
+            ? 'Defences and defending troops'
+            : kind === 'invisibility' || kind === 'clone' || kind === 'recall'
+              ? 'Your own troops'
+              : kind === 'jump'
+                ? 'Walls beneath the ring'
+                : kind === 'revive'
+                  ? 'Your fallen hero'
+                  : 'Ground and air troops',
+      ],
     ];
     if (kind === 'lightning') rows.push(['Damage', n(d.damage)], ['Stun duration', '0.1s']);
+    else if (kind === 'jump')
+      rows.push(
+        ['Damage', 'None'],
+        ['Breach holds for', `${jumpSeconds(this.model.spellLevel(kind))}s`],
+      );
+    else if (kind === 'clone')
+      rows.push(
+        ['Damage', 'None'],
+        ['Housing copied', `${cloneHousing(this.model.spellLevel(kind))}`],
+        ['Each copy lives', `${CLONE_LIFETIME}s`],
+      );
+    else if (kind === 'recall')
+      rows.push(
+        ['Damage', 'None'],
+        ['Housing recalled', `${recallHousing(this.model.spellLevel(kind))}`],
+      );
+    else if (kind === 'revive')
+      rows.push(
+        ['Damage', 'None'],
+        ['Hero returns with', `${Math.round(reviveFraction(this.model.spellLevel(kind)) * 100)}%`],
+      );
+    else if (kind === 'invisibility')
+      rows.push(
+        ['Damage', 'None'],
+        ['Hidden for', `${invisibilitySeconds(this.model.spellLevel(kind))}s`],
+        ['Cover lingers', `${INVISIBILITY_LINGER}s after leaving the veil`],
+      );
+    else if (kind === 'freeze')
+      rows.push(
+        ['Damage', 'None'],
+        ['Freeze duration', `${freezeSeconds(this.model.spellLevel(kind))}s`],
+      );
     else if (kind === 'heal')
       rows.push(
         ['Total troop healing', n(d.heal * HEAL_PULSES)],
@@ -2016,11 +2106,23 @@ export class HUD {
         ['Hero effectiveness', '50% of each boost'],
       );
     const tactic =
-      kind === 'lightning'
-        ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
-        : kind === 'heal'
-          ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
-          : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
+      kind === 'jump'
+        ? 'Lay it over the wall you want opened, not over your troops. Ground troops walk straight across while the ring holds, and the wall is still standing when it closes.'
+        : kind === 'clone'
+          ? 'Copy what is already winning, not what is about to die. Copies are made at full health and fade after half a minute whatever happens to them.'
+          : kind === 'recall'
+            ? 'Take troops back out of a corner they cannot win and send them somewhere better. Recalled troops return to your hand at full count; Clone copies have nowhere to go and are lost.'
+            : kind === 'revive'
+              ? 'Cast it where your hero fell. The hero stands back up part way healed, keeping whatever ability charge it had left.'
+              : kind === 'invisibility'
+                ? 'Drop it over troops that are being shot at, not over troops that are walking. Nothing can target what it cannot see, so the veil buys a crossing or a clean run at a Town Hall — but walls still block and traps still trigger.'
+                : kind === 'freeze'
+                  ? 'Cast it over the defences that are firing, not the ones ahead. Frozen defences stop mid-reload and pick a target again when they thaw, and frozen defenders stop where they stand. It deals no damage, so it buys time rather than destruction.'
+                  : kind === 'lightning'
+                    ? 'Aim at clustered defenses. The bolt hits any building footprint within its radius, but Town Halls, resource storages and traps are immune. Surviving defenses briefly stop and choose a target again.'
+                    : kind === 'heal'
+                      ? 'Place Healing where damaged troops will stay. Each spell heals independently, so overlapping rings stack. Heroes receive 55% of the healing; defeated troops cannot be revived.'
+                      : 'Lead your troops with the ring. Damage and movement increase without changing attack speed. Overlapping Rage spells do not add their boosts, and the stronger spell or hero ability boost takes effect.';
     return `<div class="modal-body troop-info-body spell-info-body"><div class="troop-info-hero"><img src="${hudAsset(kind)}" alt="${d.name}"><div><span class="eyebrow">${d.role} · LEVEL ${this.model.spellLevel(kind)}</span><h2>${d.name}</h2><p>${d.description}</p></div></div><dl class="troop-stats">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="troop-tactic">${icon('Info', 20)}<span>${tactic}</span></p>${button(`research-view:${kind}`, `${icon('FlaskConical', 18)} Research spell`, 'game-btn green')}</div>`;
   }
   private surrender() {
@@ -2078,7 +2180,7 @@ export class HUD {
       spell = isSpellKind(kind);
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     const level = m.researchLevel(kind),
-      maximum = isSpellKind(kind) ? maxSpellLevel(kind) : maxTroopLevel(kind);
+      maximum = isSpellKind(kind) ? maxSpellLevelFor(kind) : maxTroopLevel(kind);
     const max = level >= maximum,
       nextLevel = Math.min(level + 1, maximum);
     const unlocked = spell ? m.spellUnlocked(kind) : m.troopUnlocked(kind);
@@ -2145,7 +2247,7 @@ export class HUD {
       .filter(([id]) => id !== 1000019)
       .map(
         ([id, x, y]) =>
-          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 ? '#f3c346' : '#e0cf97'}"/>`,
+          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 || id === 1000017 || id === 1000069 ? '#f3c346' : '#e0cf97'}"/>`,
       )
       .join('')}</svg>`;
   }
@@ -2179,9 +2281,32 @@ export class HUD {
         '',
       )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
   }
+  /** The league's own daily bonus, which is where ore comes from. */
+  private starBonusCard() {
+    const m = this.model,
+      bonus = m.starBonus,
+      reward = starBonusReward(m.state.trophies),
+      waiting = Math.max(0, bonus.readyAt - m.clock);
+    const parts = (['gold', 'elixir', 'dark'] as const)
+      .filter((k) => reward[k] > 0)
+      .map((k) => `<span>${resource(k)} ${n(reward[k])}</span>`)
+      .concat(
+        ORE_KEYS.filter((k) => reward[k] > 0).map(
+          (k) => `<span>${gearImage(k)} ${n(reward[k])}</span>`,
+        ),
+      )
+      .join('');
+    const short = Math.max(0, STAR_BONUS_STARS - bonus.stars);
+    const status = short
+      ? `${short} more ${short === 1 ? 'star' : 'stars'}`
+      : waiting
+        ? `Ready in ${time(waiting / 1000)}`
+        : 'Ready to collect';
+    return `<div class="star-bonus"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
+  }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div><div class="profile-stats">${(
+    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div>${this.starBonusCard()}<div class="profile-stats">${(
       [
         ['Swords', 'Raids won', n(s.stats.raids)],
         ['Castle', 'Buildings destroyed', n(s.stats.destroyed)],

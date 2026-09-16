@@ -1,6 +1,6 @@
 # Army Camp progression
 
-Audited September 11, 2026. `src/game/camp-stats.ts` holds undiscounted Home Village camp values. The same table drives training capacity, occupant distribution, building health, shop placement, upgrades and the Info panel. The playable TH1–8 catalog stops at camp level 6; levels 7–8 remain supported for older accepted saves.
+Audited September 11, 2026. `src/game/camp-stats.ts` holds undiscounted Home Village camp values. The same table drives training capacity, occupant distribution, building health, shop placement, upgrades and the Info panel. The playable TH1–18 catalog reaches camp level 14, the end of the original table.
 
 | Level | Housing | Hitpoints | Elixir cost to reach level | Build / upgrade time |
 | --- | ---: | ---: | ---: | --- |
@@ -13,7 +13,7 @@ Audited September 11, 2026. `src/game/camp-stats.ts` holds undiscounted Home Vil
 | 7 | 55 | 400 | 1,500,000 | 2 days |
 | 8 | 60 | 500 | 2,500,000 | 3 days |
 
-TH1–8 camp count limits are **1, 1, 2, 2, 3, 3, 4, 4**. With the existing per-Town-Hall camp level ceilings, maximum housing is **20, 30, 70, 80, 135, 150, 200, 200**. Constructing camps contribute no housing until completion. Upgrading camps retain their current capacity until the new level completes. There is no base housing allowance independent of camps.
+Camp count limits are **1, 1, 2, 2, 3, 3** and then four from TH7 onwards. With the per-Town-Hall camp level ceilings, maximum housing runs **20, 30, 70, 80, 135, 150, 200, 200, 220** through TH9 and reaches **352** at TH18. Constructing camps contribute no housing until completion. Upgrading camps retain their current capacity until the new level completes. There is no base housing allowance independent of camps.
 
 ## Sources and scope
 

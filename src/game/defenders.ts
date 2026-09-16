@@ -1,11 +1,31 @@
 import { hurtUnit, unitHidden } from './native-status';
 import { distance2D } from './distance';
-import { stepGarrisonDefender, type GarrisonAttack } from './garrison-combat';
+import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
+// Later garrison families: spawning summons and concealed Royal Ghosts cannot be selected.
+import {
+  garrisonDefenderTargetable,
+  type GarrisonBolt,
+  type GarrisonChain,
+  type GarrisonPush,
+  type GarrisonSummonState,
+} from './garrison-abilities';
+import type { GarrisonKind } from './garrison-kinds';
+import { stepGarrisonStatus } from './garrison-status';
 import { TROOPS, isDefense, isResourceBuilding, isTrap, type TroopDef } from './data';
 import { findPath, distanceTo, type Battle, type Building, type Unit, type FX } from './model';
 import { launchProjectile } from './projectiles';
 import { targetableBuilding } from './hidden-tesla';
-import { SKELETON_TRAP, skeletonCount, skeletonStats, type SkeletonMode } from './skeleton-stats';
+// Late campaign Spell Tower Rage and Invisibility, and activated late Defense classes
+// (all neutral without version 44 late state).
+import { lateActivatedDefense, lateDefenderHidden, lateDefenderStats } from './late-campaign';
+import { untargetable } from './spell-effects';
+import {
+  SKELETON_TRAP,
+  skeletonCount,
+  skeletonSpawnLevel,
+  skeletonStats,
+  type SkeletonMode,
+} from './skeleton-stats';
 
 interface DefenderState {
   id: number;
@@ -28,13 +48,36 @@ interface DefenderState {
   poison?: { since: number; until: number; speed: number; attack: number };
 }
 export interface GarrisonDefender extends DefenderState {
-  kind: 'dragon' | 'balloon';
+  kind: GarrisonKind;
   level: number;
   attacks: GarrisonAttack[];
   engaged?: boolean;
   deathResolved?: boolean;
+  /** Version-44 garrison families (see garrison-combat.ts); absent for Dragon/Balloon. */
+  attackCount?: number;
+  shots?: GarrisonShot[];
+  longShots?: number;
+  tantrum?: boolean;
+  /** Later families (see garrison-abilities.ts): split-timer recovery still to run. */
+  recovery?: number;
+  /** Secondary troops and summons: push-out from their spawn point, then summon SpawnIdle. */
+  push?: GarrisonPush;
+  idleUntil?: number;
+  /** The Golem, Lava Hound or Witch this unit came from. */
+  parentId?: number;
+  /** Golem and Lava Hound: the secondary wave has spawned. */
+  split?: boolean;
+  /** Electro Dragon: the chain lightning in progress and the death bolts. */
+  chain?: GarrisonChain;
+  bolts?: GarrisonBolt[];
+  /** Witch summon cycle. */
+  summon?: GarrisonSummonState;
+  /** Electro Titan: aura pulses already applied. */
+  auraHits?: number;
+  /** Royal Ghost: concealed and ignoring obstacles until this battle time. */
+  stealthUntil?: number;
 }
-/** Town Hall 18 Guardian (version 45+); rules live in native-guardians.ts. */
+/** Town Hall 18 Guardian (version 51+); rules live in native-guardians.ts. */
 export interface GuardianDefender extends DefenderState {
   kind: 'guardian';
   guardian: 'longshot' | 'smasher' | 'logger';
@@ -61,7 +104,17 @@ export interface RepairDefender extends DefenderState {
   hidden?: boolean;
 }
 export type Defender =
-  (DefenderState & { kind: 'skeleton' }) | GarrisonDefender | GuardianDefender | RepairDefender;
+  | (DefenderState & {
+      kind: 'skeleton';
+      /** Skeleton level this coffin releases; absent on recordings made before tier 5. */
+      spawnLevel?: number;
+    })
+  | GarrisonDefender
+  | GuardianDefender
+  | RepairDefender;
+/** A Clan Castle defender: the skeleton, Guardian and repair families have their own rules. */
+export const isGarrisonDefender = (d: Defender): d is GarrisonDefender =>
+  d.kind !== 'skeleton' && d.kind !== 'guardian' && d.kind !== 'repairer';
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
   if (defender.hp <= 0 || defender.kind === 'repairer') return;
   if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
@@ -90,7 +143,8 @@ export function damageDefenders(
 }
 export function spawnSkeleton(battle: Battle, source: Building, at: number, index: number) {
   const mode = source.skeletonMode ?? 'ground',
-    stats = skeletonStats(mode);
+    spawnLevel = skeletonSpawnLevel(source.level),
+    stats = skeletonStats(mode, spawnLevel);
   // Small deterministic offsets keep the burst legible and inside its passable tile.
   const angle = (index * Math.PI * 2) / skeletonCount(source.level);
   const defender: Defender = {
@@ -98,6 +152,9 @@ export function spawnSkeleton(battle: Battle, source: Building, at: number, inde
     kind: 'skeleton',
     sourceId: source.id,
     mode,
+    // Only the fifth coffin tier releases anything but the level 1 skeleton; leaving the
+    // default off keeps every archived battle state byte-identical.
+    ...(spawnLevel > 1 ? { spawnLevel } : {}),
     x: source.x + 0.5 + Math.cos(angle) * 0.18,
     y: source.y + 0.5 + Math.sin(angle) * 0.18,
     hp: stats.hp,
@@ -154,10 +211,13 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       ),
     );
     if (activeDt <= 0) continue;
-    const stats = skeletonStats(defender.mode),
+    const stats = lateDefenderStats(
+        battle,
+        defender,
+        skeletonStats(defender.mode, defender.spawnLevel),
+      ),
       eligible = battle.units.filter(
-        (u) =>
-          u.hp > 0 && !unitHidden(u, battle.elapsed) && !!TROOPS[u.kind].flying === stats.flying,
+        (u) => u.hp > 0 && !untargetable(battle, u) && !!TROOPS[u.kind].flying === stats.flying,
       );
     const target =
       eligible.find((u) => u.id === defender.target) ??
@@ -205,12 +265,20 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       defender.y += ((target.y - defender.y) / distance) * move;
     } else {
       if (!defender.path.length || defender.pathAt <= 0) {
-        defender.path = findPath(defender, target, structures, stats.range);
+        defender.path = findPath(
+          defender,
+          target,
+          structures,
+          stats.range,
+          !!battle.nativeSubtiles,
+        );
         defender.pathAt = 0.3;
       }
       moveAlong(defender, stats.speed, activeDt);
     }
   }
+  // Campaign garrisons: poison applied by defending Headhunters ticks after every defender acted.
+  if (battle.defenders?.length) stepGarrisonStatus(battle);
 }
 /** Targeting traits; native roster units pass their client-derived values instead of TROOPS. */
 export type DefenderFightTraits = Pick<
@@ -239,8 +307,9 @@ export function stepAttackerVsDefenders(
     (b) =>
       b.hp > 0 &&
       targetableBuilding(battle, b) &&
-      ((troop.prefersDefenses && isDefense(b.kind)) ||
-        (troop.prefersResources && isResourceBuilding(b.kind))),
+      // Late campaign target classes mirror the attacker loop in model.ts.
+      ((troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
+        (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')),
   );
   // Preferred-target troops finish their current building before accepting an alert.
   const committed =
@@ -255,7 +324,9 @@ export function stepAttackerVsDefenders(
       d.id === unit.defenderTarget &&
       d.hp > 0 &&
       (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-      canFight(unit, d, troop),
+      canFight(unit, d, troop) &&
+      !lateDefenderHidden(battle, d) &&
+      garrisonDefenderTargetable(battle, d),
   );
   if (!target) {
     target = (battle.defenders ?? [])
@@ -265,6 +336,8 @@ export function stepAttackerVsDefenders(
           (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
           d.alerted &&
           canFight(unit, d, troop) &&
+          !lateDefenderHidden(battle, d) &&
+          garrisonDefenderTargetable(battle, d) &&
           distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
       )
       .sort(
@@ -349,7 +422,14 @@ export function stepAttackerVsDefenders(
     unit.y += ((target.y - unit.y) / distance) * move;
   } else {
     if (!unit.path.length || unit.pathAt <= 0) {
-      unit.path = findPath(unit, target, buildings, stats.range);
+      // Defenders are troop points; leveled garrison defenders must not be read as footprints.
+      unit.path = findPath(
+        unit,
+        { x: target.x, y: target.y },
+        buildings,
+        stats.range,
+        !!battle.nativeSubtiles,
+      );
       unit.pathAt = 0.3;
     }
     const next = unit.path[0],

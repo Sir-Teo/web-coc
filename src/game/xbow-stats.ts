@@ -1,4 +1,4 @@
-import source from '../../reference/xbow/combat.json';
+import source from '../../reference/xbow/combat.json' with { type: 'json' };
 
 export type XbowMode = 'ground' | 'both';
 export const validXbowMode = (v: unknown): v is XbowMode | undefined =>

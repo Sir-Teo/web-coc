@@ -17,6 +17,9 @@ function reload(m: GameModel) {
   return new GameModel(migrateSave(save) as typeof save);
 }
 function fullInventory(m = new GameModel()) {
+  // Empty stores with room for the whole advertised haul: a starter Town Hall holds 7,000 of
+  // each, below stage one's 8,500 gold. Overflow has its own case further down.
+  m.townhall!.level = 3;
   m.state.gold = m.state.elixir = 0;
   m.startBattle(0);
   return m;

@@ -33,8 +33,10 @@ export function tickInfernoCombat(
   units: readonly Unit[],
   at: number,
   enabled = true,
-  /** Version 45+: shields and immunities apply, and a Rage Spell Tower boosts the beam. */
+  /** Version 51+: shields and immunities apply, and a Rage Spell Tower boosts the beam. */
   native?: Battle,
+  /** Late campaign defensive Rage multiplier at this tick; exactly one elsewhere. */
+  damageScale = 1,
 ): InfernoHit[] {
   if (!Number.isFinite(at) || at < 0) throw new Error('Invalid Inferno combat time');
   const stats = infernoStats(state.level);
@@ -64,7 +66,8 @@ export function tickInfernoCombat(
     enabled,
   )) {
     const target = byId.get(pulse.targetId)!;
-    let damage = (pulse.dps * pulse.intervalMs) / 1000;
+    const unscaled = (pulse.dps * pulse.intervalMs) / 1000;
+    let damage = damageScale === 1 ? unscaled : unscaled * damageScale;
     let killed: boolean;
     if (native) {
       // Supercharged ramp DPS per stage (client mini levels DPS / DPSLv2 / DPSLv3).

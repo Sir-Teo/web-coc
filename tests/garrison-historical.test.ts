@@ -46,4 +46,4 @@ for (const record of witness.records)
     expect(retaliation).toBe(record.retaliationSamples);
     expect(cannonFlight).toBe(record.cannonFlightSamples);
     expect(viewer.battle!.result).toEqual(record.result);
-  }, 30000);
+  }, 180_000);

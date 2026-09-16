@@ -1,6 +1,7 @@
 import { spellFactory } from '../src/game/army-unlocks';
 import { troopFacility } from '../src/game/army-unlocks';
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { TROOP_KEYS, SPELL_KEYS, maxLevelFor, maxCountFor } from '../src/game/data';
 import { TROOP_UNLOCK, SPELL_UNLOCK } from '../src/game/army-unlocks';
@@ -57,7 +58,7 @@ describe('army unlock progression', () => {
   });
 
   it('retains old unlocks during upgrades and grants the next one only on completion', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     m.clearArmy();
     const b = m.state.buildings.find((b) => b.kind === 'barracks')!;
     m.upgrade(b.id);

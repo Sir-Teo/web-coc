@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import { infernoPoses, INFERNO_GRAPH, type InfernoArtState } from '../src/game/inferno-art';
+import { type InfernoArtState } from '../src/game/inferno-art';
+import { infernoPoses, INFERNO_GRAPH } from '../src/game/inferno-graph';
 import { nativeScenePoses, type NativeScenePose } from '../src/game/native-mesh';
 import { infernoStats } from '../src/game/inferno-weapon';
 const leaves = (poses: NativeScenePose[]): number =>

@@ -1,0 +1,20 @@
+// Scratch (not committed): list asset requests made before the loading screen detaches.
+import { chromium } from '@playwright/test';
+import { preview } from 'vite';
+import fs from 'node:fs/promises';
+const [root, out] = process.argv.slice(2);
+const browser = await chromium.launch({ args: ['--use-angle=metal'] });
+const server = await preview({ root, configFile: false, build: { outDir: 'dist' }, preview: { host: '127.0.0.1', port: 0, strictPort: true }, logLevel: 'error' });
+const url = `http://127.0.0.1:${server.httpServer.address().port}/`;
+const context = await browser.newContext({ serviceWorkers: 'block' });
+const page = await context.newPage();
+const seen = [];
+let ready = false;
+page.on('response', (r) => { if (!ready) seen.push([new URL(r.url()).pathname, Number(r.headers()['content-length'] ?? 0)]); });
+await page.goto(url);
+await page.waitForSelector('#loading', { state: 'attached', timeout: 60000 }).catch(() => {});
+await page.locator('#loading').waitFor({ state: 'detached', timeout: 120000 });
+ready = true;
+await fs.writeFile(out, JSON.stringify(seen));
+await browser.close();
+await server.httpServer.close();

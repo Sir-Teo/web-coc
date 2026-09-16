@@ -4,6 +4,7 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import {
   BUILDINGS,
   buildingHp,
+  MAX_TOWNHALL,
   maxCountFor,
   maxLevelFor,
   upgradeCost,
@@ -14,6 +15,7 @@ import { emptySpells } from '../src/game/army';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
 import { developedSave } from './fixtures/developed-village';
+import { sourceCeiling, sourceCount } from '../src/game/townhall-catalog';
 
 const levels = {
   barracks: [
@@ -27,6 +29,7 @@ const levels = {
     [575, 600000, 43200],
     [650, 1000000, 86400],
     [730, 1400000, 129600],
+    [810, 2600000, 172800],
   ],
   laboratory: [
     [500, 5000, 60],
@@ -35,11 +38,13 @@ const levels = {
     [650, 100000, 14400],
     [700, 200000, 28800],
     [750, 400000, 57600],
+    [830, 800000, 86400],
   ],
   spellfactory: [
     [425, 150000, 21600],
     [470, 300000, 43200],
     [520, 600000, 86400],
+    [600, 1200000, 172800],
   ],
 } as const;
 
@@ -49,7 +54,7 @@ describe('native army facility progression', () => {
       const level = index + 1;
       it(`purchases ${kind} level ${level} at its exact price and completes once at its saved deadline`, () => {
         const m = new GameModel();
-        m.townhall!.level = 8;
+        m.townhall!.level = MAX_TOWNHALL;
         m.state.obstacles = [];
         m.state.buildings = m.state.buildings.filter((b) => b.kind !== kind);
         m.state.elixir = cost;
@@ -86,23 +91,33 @@ describe('native army facility progression', () => {
       });
     });
 
-  it('enforces a single facility, matching construction and upgrade gates at all eight Town Hall tiers', () => {
+  it('enforces a single facility, matching construction and upgrade gates at every tier', () => {
+    // The first nine tiers are spelled out; the rest follow the pinned original gate column.
     const counts = {
-      barracks: [1, 1, 1, 1, 1, 1, 1, 1],
-      laboratory: [0, 0, 1, 1, 1, 1, 1, 1],
-      spellfactory: [0, 0, 0, 0, 1, 1, 1, 1],
-    };
+      barracks: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      laboratory: [0, 0, 1, 1, 1, 1, 1, 1, 1],
+      spellfactory: [0, 0, 0, 0, 1, 1, 1, 1, 1],
+    } as Record<string, number[]>;
     const caps = {
-      barracks: [1, 4, 5, 6, 7, 8, 9, 10],
-      laboratory: [0, 0, 1, 2, 3, 4, 5, 6],
-      spellfactory: [0, 0, 0, 0, 1, 2, 3, 3],
-    };
+      barracks: [1, 4, 5, 6, 7, 8, 9, 10, 11],
+      laboratory: [0, 0, 1, 2, 3, 4, 5, 6, 7],
+      spellfactory: [0, 0, 0, 0, 1, 2, 3, 3, 4],
+    } as Record<string, number[]>;
+    for (const [kind, name] of [
+      ['barracks', 'Barracks'],
+      ['laboratory', 'Laboratory'],
+      ['spellfactory', 'Spell Factory'],
+    ] as const)
+      for (let th = 10; th <= MAX_TOWNHALL; th++) {
+        counts[kind].push(sourceCount(name, th));
+        caps[kind].push(sourceCeiling(name, th));
+      }
     for (const kind of ['barracks', 'laboratory', 'spellfactory'] as const)
-      for (let th = 1; th <= 8; th++) {
+      for (let th = 1; th <= MAX_TOWNHALL; th++) {
         const m = new GameModel();
         m.state.obstacles = [];
         m.townhall!.level = th;
-        m.state.elixir = 5000000;
+        m.state.elixir = 500000000;
         m.state.buildings = m.state.buildings.filter((b) => b.kind !== kind);
         expect(maxCountFor(kind, th)).toBe(counts[kind][th - 1]);
         expect(maxLevelFor(kind, th)).toBe(caps[kind][th - 1]);
@@ -130,12 +145,22 @@ describe('native army facility progression', () => {
 
   it('uses completed factory housing without multiplying it for imported extra factories', () => {
     expect([0, 1, 2, 3, 4, 5].map(spellFactoryCapacity)).toEqual([0, 2, 4, 6, 8, 10]);
-    expect(FACILITY_LEVELS.spellfactory.slice(3)).toEqual([
+    expect(FACILITY_LEVELS.spellfactory.slice(3, 5)).toEqual([
       { hp: 600, cost: 1200000, seconds: 172800, capacity: 8 },
       { hp: 720, cost: 2000000, seconds: 259200, capacity: 10 },
     ]);
     const old = developedSave();
-    old.spells = { ...emptySpells(), rage: 2, heal: 2, lightning: 0 };
+    old.spells = {
+      rage: 2,
+      heal: 2,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     old.spellQueue = [{ kind: 'lightning', end: old.lastTick + 50000 }];
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 32, 30, 2));
     old.buildings.push(makeBuilding(old.nextId++, 'spellfactory', 36, 30, 5));

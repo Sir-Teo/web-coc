@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { infernoBattle } from './fixtures/inferno-battle';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
+import { REPLAY_VERSION } from '../src/game/replay';
 for (const [level, mode] of [
   [1, 'single'],
   [8, 'multi'],
@@ -22,7 +23,7 @@ for (const [level, mode] of [
     expect(model.battle!.finished).toBe(true);
     const final = structuredClone(model.battle);
     const record = parseReplayFile(JSON.stringify(makeReplayFile(model.state.raidLog[0].replay!)));
-    expect(record.version).toBe(46);
+    expect(record.version).toBe(REPLAY_VERSION);
     model.returnHome();
     const home = JSON.stringify(model.state);
     expect(model.openReplay(record)).toBe(true);

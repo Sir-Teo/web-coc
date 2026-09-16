@@ -1,4 +1,4 @@
-import source from '../../reference/bombtower/combat.json';
+import source from '../../reference/bombtower/combat.json' with { type: 'json' };
 
 /** Pinned source levels; home purchase/upgrade ceilings remain Town Hall-specific. */
 export const BOMB_TOWER_LEVELS = source.levels;

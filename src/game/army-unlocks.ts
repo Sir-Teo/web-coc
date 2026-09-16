@@ -1,7 +1,7 @@
 import source from '../../reference/full-client/progression.json';
 import type { Building } from './model';
-import type { TroopKind, SpellKind } from './data';
-import { SPELL_SOURCE, spellFactory, spellFactoryLevel } from './spell-progression';
+import { SPELL_KEYS, type TroopKind, type SpellKind } from './data';
+import { SPELL_NAMES, SPELL_ROSTER } from './troop-progression';
 
 /** Supported Home Village unlocks. References: docs/ARMY-UNLOCKS.md. */
 export const TROOP_UNLOCK: Record<TroopKind, number> = {
@@ -19,11 +19,14 @@ export const TROOP_UNLOCK: Record<TroopKind, number> = {
   dragon: 9,
   pekka: 10,
 };
-/** Factory level from each spell's client row; spellFactory() names the factory. */
+/**
+ * Spell Factory level that offers each spell, straight from the source's own `SpellForgeLevel`.
+ * Every spell this game casts is a Spell Factory spell; the dark ones need a building the
+ * village does not yet have.
+ */
 export const SPELL_UNLOCK = Object.fromEntries(
-  (Object.keys(SPELL_SOURCE) as SpellKind[]).map((kind) => [kind, spellFactoryLevel(kind)]),
+  SPELL_KEYS.map((kind) => [kind, SPELL_ROSTER[SPELL_NAMES[kind]].forge]),
 ) as Record<SpellKind, number>;
-export { spellFactory };
 
 export function facilityLevel(
   buildings: Building[],
@@ -37,3 +40,5 @@ export function facilityLevel(
 
 export const troopFacility = (kind: TroopKind) =>
   source.troopDefs[kind].ProductionBuilding === 'Dark Barracks' ? 'darkbarracks' : 'barracks';
+/** Re-exported for callers that ask a spell where it is prepared. */
+export { spellFactory } from './spell-progression';

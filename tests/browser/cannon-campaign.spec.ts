@@ -24,7 +24,9 @@ for (const width of [1440, 390])
     await page.locator('.attack-btn').click();
     await expect(page.locator('[data-action="attack:55"]')).toBeDisabled();
     await expect(page.locator('[data-action="attack:55"]')).not.toHaveText('Coming soon');
-    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+    // Every native village is playable; No Flight Zone waits only on High Pressure's star.
+    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Locked');
+    await expect(page.getByText('This village is coming soon.')).toHaveCount(0);
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.evaluate(() => {
       const m = window.__game.model;

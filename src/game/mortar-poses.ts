@@ -1,4 +1,4 @@
-import raw from '../../reference/mortar/runtime.json';
+import raw from '../../reference/mortar/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

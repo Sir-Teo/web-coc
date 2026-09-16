@@ -1,5 +1,5 @@
-import catalog from '../../reference/archer-tower/catalog.json';
-import source from '../../reference/archer-tower/native.json';
+import catalog from '../../reference/archer-tower/catalog.json' with { type: 'json' };
+import source from '../../reference/archer-tower/native.json' with { type: 'json' };
 
 export const MAX_ARCHER_TOWER_LEVEL = catalog.levels.length;
 export const ARCHER_TOWER_LEVELS = catalog.levels.map((row) => ({

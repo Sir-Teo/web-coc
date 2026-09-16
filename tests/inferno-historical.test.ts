@@ -26,4 +26,4 @@ for (const scenario of witness.cases)
       );
     }
     expect(model.battle!.finished).toBe(true);
-  }, 20000);
+  }, 180_000);

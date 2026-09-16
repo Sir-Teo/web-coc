@@ -7,6 +7,25 @@ import {
   type ArcherTowerWindup,
 } from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
+import { findSubtilePath, subtileSolid } from './subtile-path';
+import {
+  lateActivatedDefense,
+  lateBuildingDestroyed,
+  lateBuildingHidden,
+  lateCampaignPending,
+  lateDefenseBoost,
+  lateLightningStrike,
+  lateLootHitpoints,
+  lateUnitHeld,
+  lateUnitRooted,
+  lateUnitMoveScale,
+  lateUnitTimeScale,
+  stepLateCampaign,
+  type LateBattleState,
+  type LatePhase,
+  type LateUnitState,
+  type SpellTowerWeapon,
+} from './late-campaign';
 import { validInfernoMode, type InfernoMode } from './inferno-weapon';
 import { stepInfernos, type InfernoBattleState } from './inferno-battle';
 import { recordCannonShot, recordCannonDestroyed, type CannonAttackState } from './cannon-attack';
@@ -18,6 +37,7 @@ import {
 } from './mortar-attack';
 import { distance2D } from './distance';
 import { stepGarrisonReleases, type GarrisonState } from './garrison-release';
+import { garrisonUnitScales } from './garrison-status';
 import { campaignGarrisonSetup } from './garrison-campaign';
 import {
   recordWizardTowerShot,
@@ -31,6 +51,15 @@ import {
 } from './bomb-tower-attack';
 import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
+import {
+  emptyStarBonus,
+  leagueFor,
+  STAR_BONUS_COOLDOWN,
+  STAR_BONUS_STARS,
+  starBonusReward,
+  type StarBonus,
+} from './leagues';
+import { STARTING_GRANT } from './townhall-catalog';
 import {
   campaignStage,
   campaignStages,
@@ -60,15 +89,18 @@ import {
   type CampaignLoot,
   type CampaignResources,
 } from './campaign-loot';
-import { concealedTesla, targetableBuilding, revealTeslas } from './hidden-tesla';
+import { concealedTesla, presentBuilding, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
   defaultEquipment,
   emptyOres,
+  oreCapacity,
   equipmentBonuses,
   equipmentQuote,
   validEquipmentKind,
   EQUIPMENT,
   EQUIPMENT_MAX_LEVEL,
+  EQUIPMENT_LEVELS,
+  equipmentBlacksmith,
   ORE_KEYS,
   ORES,
   type KingEquipment,
@@ -98,16 +130,30 @@ import {
   type AirPush,
 } from './air-sweeper';
 import { isDefense } from './data';
+import { BUILDING_COUNTS } from './tiers';
+/** Weapon order for the home Spell Tower selector. */
+const SPELL_TOWER_CYCLE = ['rage', 'poison', 'invisibility'] as const;
 import { campCapacity } from './camp-stats';
 import { spellFactoryCapacity, facilityProgression } from './facility-progression';
 import {
-  MAX_SPELL_LEVEL,
+  maxSpellLevelFor,
   spellProgression,
   LIGHTNING_STUN,
+  freezeSeconds,
+  cloneHousing,
+  CLONE_LIFETIME,
+  recallHousing,
+  reviveFraction,
   RAGE_HERO_MULTIPLIER,
   SPELL_SPEED_SCALE,
 } from './spell-progression';
-import { startSpellAura, stepSpellAuras } from './spell-effects';
+import {
+  startSpellAura,
+  stepSpellAuras,
+  untargetable,
+  openBreaches,
+  type AuraSpell,
+} from './spell-effects';
 import { prepareHealerTargets, stepHealer } from './healing';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { wallDestinations, wallMoveIssue, type WallMove } from './wall-movement';
@@ -159,6 +205,7 @@ import {
   spellSpace,
   emptyArmy,
   emptySpells,
+  defaultSpellLevels,
   expandArmyRoster,
   type ArmyPreset,
 } from './army';
@@ -170,6 +217,7 @@ import {
   SPELLS,
   TROOP_KEYS,
   SPELL_KEYS,
+  RELEASED_SPELL_KEYS,
   CAMPAIGN,
   isSpellKind,
   spellStatsAt,
@@ -185,7 +233,9 @@ import {
   researchSeconds,
   researchLaboratory,
   troopStatsAt,
+  buildPrice,
   storageCapacity,
+  townHallCapacity,
   buildingHp,
   upgradeCost,
   upgradeSeconds,
@@ -338,7 +388,9 @@ export interface Building {
   infernoMode?: InfernoMode;
   /** Battle setup ammunition; omitted means full capacity. Not a home inventory. */
   infernoAmmo?: number;
-  /** Spell Tower spell chosen by the owner; absent means Rage. */
+  /** Campaign Spell Tower weapon selected by the source layout. */
+  spellTowerWeapon?: SpellTowerWeapon;
+  /** Spell Tower spell chosen by the owner; absent means the layout's weapon, then Rage. */
   spellMode?: SpellTowerMode;
   /** Multi-Gear Tower attack mode; absent means Long Range. */
   gearMode?: GearMode;
@@ -371,6 +423,7 @@ export interface Layout {
     direction?: number;
     skeletonMode?: SkeletonMode;
     xbowMode?: XbowMode;
+    spellTowerWeapon?: SpellTowerWeapon;
     infernoMode?: InfernoMode;
   }[];
 }
@@ -416,6 +469,8 @@ export interface Save {
   heroLineup?: HeroKind[];
   equipment?: KingEquipment;
   ores?: Ores;
+  /** Stars banked toward the daily Star Bonus, and when it may next be taken. */
+  starBonus?: StarBonus;
   gold: number;
   elixir: number;
   gems: number;
@@ -459,6 +514,10 @@ export interface Unit {
   spawnedAt?: number;
   rageUntil?: number;
   spellRageUntil?: number;
+  /** Set only by the Invisibility Spell, so a battle without one is byte-identical. */
+  invisibleUntil?: number;
+  /** Set only on a Clone Spell copy: the moment it fades, whether or not it has fought. */
+  fadesAt?: number;
   healTarget?: number;
   defenderTarget?: number;
   x: number;
@@ -478,6 +537,8 @@ export interface Unit {
   springUntil?: number;
   airPush?: AirPush;
   shrink?: ShrinkStatus;
+  /** Status applied by late single-player campaign families. */
+  late?: LateUnitState;
 }
 export interface Aura {
   kind: SpellKind;
@@ -585,6 +646,10 @@ export interface Battle {
   deathBombs?: Record<number, DeathBomb>;
   defenders?: Defender[];
   garrisons?: GarrisonState[];
+  /** Late single-player campaign family state (version 44+). */
+  late?: LateBattleState;
+  /** Version 44+ native campaign battles use the client's sub-tile building collision. */
+  nativeSubtiles?: true;
   hero?: BattleHero;
   kingQuakes?: KingQuake[];
   elapsed: number;
@@ -1014,7 +1079,7 @@ export class GameModel {
         `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
       );
     if (this.state.research) return this.notify('Research is already in progress.');
-    if (this.researchLevel(kind) >= (spell ? maxSpellLevel(kind) : maxTroopLevel(kind)))
+    if (this.researchLevel(kind) >= (spell ? maxSpellLevelFor(kind) : maxTroopLevel(kind)))
       return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
     const requiredLab = this.researchLaboratory(kind);
     if (lab.level < requiredLab)
@@ -1140,13 +1205,7 @@ export class GameModel {
   get chiefLevel() {
     return Math.max(1, Math.floor(this.state.xp / 100));
   }
-  get league() {
-    return this.state.trophies >= 1800
-      ? 'Gold League I'
-      : this.state.trophies >= 1000
-        ? 'Silver League II'
-        : 'Bronze League I';
-  }
+
   get builders() {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
@@ -1159,27 +1218,17 @@ export class GameModel {
     );
   }
   resourceCap(kind: Resource) {
-    if (this.townhallLevel > 8) {
-      const field =
-        kind === 'gold' ? 'goldCapacity' : kind === 'elixir' ? 'elixirCapacity' : 'darkCapacity';
-      return this.state.buildings
-        .filter(
-          (b) =>
-            !b.constructing &&
-            ['townhall', 'goldstorage', 'elixirstorage', 'darkstorage'].includes(b.kind),
-        )
-        .reduce(
-          (total, b) =>
-            total + (nativeProgression.buildings[b.kind].levels[b.level - 1]?.[field] ?? 0),
-          0,
-        );
-    }
+    // The original counts the Town Hall's own store toward every cap, stores on top of it.
+    const hall = townHallCapacity(this.townhall?.level ?? 1, kind);
     if (kind === 'dark')
-      return this.state.buildings
-        .filter((b) => b.kind === 'darkstorage' && !b.constructing)
-        .reduce((n, b) => n + darkStorageCapacity(b.level), 0);
+      return (
+        hall +
+        this.state.buildings
+          .filter((b) => b.kind === 'darkstorage' && !b.constructing)
+          .reduce((n, b) => n + darkStorageCapacity(b.level), 0)
+      );
     return (
-      100000 +
+      hall +
       this.state.buildings
         .filter(
           (b) => b.kind === (kind === 'gold' ? 'goldstorage' : 'elixirstorage') && !b.constructing,
@@ -1188,6 +1237,9 @@ export class GameModel {
     );
   }
   tick(now: number) {
+    // A non-finite time would poison the clock and every timer derived from it, turning a
+    // caller's missing timestamp into an upgrade that can never complete.
+    if (!Number.isFinite(now)) throw new Error(`Invalid clock time: ${now}`);
     this.clock = now;
     let changed = false;
     let structural = false;
@@ -1318,9 +1370,9 @@ export class GameModel {
       const { kind } = this.state.research;
       let name: string, level: number;
       if (isSpellKind(kind)) {
-        this.state.spellLevels ??= Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
+        this.state.spellLevels ??= defaultSpellLevels();
         level = this.state.spellLevels[kind] = Math.min(
-          maxSpellLevel(kind),
+          maxSpellLevelFor(kind),
           this.state.spellLevels[kind] + 1,
         );
         name = SPELLS[kind].name;
@@ -1423,11 +1475,13 @@ export class GameModel {
       return this.notify(`Upgrade your Town Hall to unlock the ${d.name.toLowerCase()}.`);
     if (this.countOf(kind) >= limit)
       return this.notify(
-        d.available.some((count) => count > limit)
+        BUILDING_COUNTS[kind].some((count) => count > limit)
           ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
           : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );
-    if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
+    const price = buildPrice(kind, this.countOf(kind));
+    if (this.state[price.resource] < price.cost)
+      return this.notify(`Not enough ${price.resource}.`);
     if (!isTrap(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
     this.cancelNativeHandling();
@@ -1457,17 +1511,21 @@ export class GameModel {
       this.changed();
       return true;
     }
+    const price = buildPrice(kind, this.countOf(kind));
     if (
+      // A merged defense is built by merging its inputs, never bought from the shop.
       isMergedKind(kind) ||
-      this.state[d.resource] < d.cost ||
+      this.state[price.resource] < price.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
       (!isTrap(kind) && this.busy >= this.builders)
     ) {
       this.notify('Unable to build. Check your resources and builders.');
       return false;
     }
-    this.state[d.resource] -= d.cost;
+    this.state[price.resource] -= price.cost;
     const b = makeBuilding(this.state.nextId++, kind, x, y, 1);
+    // A home Spell Tower always carries a weapon; the original picks one on placement too.
+    if (kind === 'spelltower') b.spellTowerWeapon = 'rage';
     if (d.build > 0) {
       b.constructing = true;
       b.upgradeStart = this.clock;
@@ -1857,6 +1915,7 @@ export class GameModel {
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
       ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
       ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
+      ...(b.kind === 'spelltower' ? { spellTowerWeapon: b.spellTowerWeapon ?? 'rage' } : {}),
     }));
   }
   toggleSkeletonMode() {
@@ -1905,6 +1964,19 @@ export class GameModel {
     const b = this.state.buildings.find((v) => v.id === this.selected);
     if (!b || b.kind !== 'multigeartower' || b.constructing) return false;
     b.gearMode = b.gearMode === 'fast' ? 'long' : 'fast';
+    this.changed();
+    return true;
+  }
+  /** Cycles the three original Spell Tower weapons, like the X-Bow's targeting mode. */
+  cycleSpellTowerWeapon() {
+    if (this.battle || this.placement || this.wallMove) return false;
+    const b = this.state.buildings.find((v) => v.id === this.selected);
+    if (!b || b.kind !== 'spelltower' || b.constructing) return false;
+    if (this.editing) this.recordPositions();
+    b.spellTowerWeapon =
+      SPELL_TOWER_CYCLE[
+        (SPELL_TOWER_CYCLE.indexOf(b.spellTowerWeapon ?? 'rage') + 1) % SPELL_TOWER_CYCLE.length
+      ];
     this.changed();
     return true;
   }
@@ -1968,6 +2040,8 @@ export class GameModel {
       if (b.kind === 'inferno')
         b.infernoMode = moved.get(b.id)?.infernoMode ?? b.infernoMode ?? 'single';
       if (b.kind === 'xbow') b.xbowMode = moved.get(b.id)?.xbowMode ?? b.xbowMode ?? 'ground';
+      if (b.kind === 'spelltower')
+        b.spellTowerWeapon = moved.get(b.id)?.spellTowerWeapon ?? b.spellTowerWeapon ?? 'rage';
     }
     return true;
   }
@@ -2245,6 +2319,54 @@ export class GameModel {
   get ores() {
     return this.state.ores ?? emptyOres();
   }
+  /** What this village's forge can hold. A village with no forge still keeps what it has. */
+  get oreCapacity() {
+    return oreCapacity(this.blacksmith?.level ?? 1);
+  }
+  get starBonus() {
+    return this.state.starBonus ?? emptyStarBonus();
+  }
+  /** The pinned league this village's trophies fall in; its bands are contiguous. */
+  get league() {
+    return leagueFor(this.state.trophies);
+  }
+  /** Whether the daily bonus is both paid for and off cooldown. */
+  get starBonusReady() {
+    const bonus = this.starBonus;
+    return bonus.stars >= STAR_BONUS_STARS && this.clock >= bonus.readyAt;
+  }
+  /** The league's own reward, clamped to the room each store has left. */
+  collectStarBonus() {
+    if (this.battle || !this.starBonusReady) return false;
+    const reward = starBonusReward(this.state.trophies);
+    const bonus = (this.state.starBonus ??= emptyStarBonus());
+    const taken: Partial<Record<string, number>> = {};
+    for (const k of ['gold', 'elixir', 'dark'] as const) {
+      const room = Math.max(0, this.resourceCap(k) - this.state[k]);
+      const amount = Math.min(reward[k], room);
+      if (amount > 0) this.state[k] += amount;
+      taken[k] = amount;
+    }
+    const ores = { ...this.ores },
+      capacity = this.oreCapacity;
+    for (const k of ORE_KEYS) {
+      const amount = Math.min(reward[k], Math.max(0, capacity[k] - ores[k]));
+      ores[k] += amount;
+      taken[k] = amount;
+    }
+    this.state.ores = ores;
+    bonus.stars -= STAR_BONUS_STARS;
+    bonus.readyAt = this.clock + STAR_BONUS_COOLDOWN;
+    this.state.stats.collected = (this.state.stats.collected ?? 0) + 1;
+    this.notify(`${this.league.name} Star Bonus collected.`);
+    this.changed();
+    return taken;
+  }
+  /** Highest equipment level this village's forge opens; every item shares the gate. */
+  get equipmentCeiling() {
+    const forge = this.blacksmith?.level ?? 0;
+    return forge ? EQUIPMENT_LEVELS.filter((row) => row.blacksmith <= forge).length : 0;
+  }
   equipKing(kind: EquipmentKind, slot: number) {
     if (
       this.battle ||
@@ -2277,6 +2399,10 @@ export class GameModel {
     const gear = structuredClone(this.kingEquipment),
       level = gear.levels[kind];
     if (level !== expectedLevel || level >= EQUIPMENT_MAX_LEVEL) return false;
+    if (level + 1 > this.equipmentCeiling) {
+      this.notify(`Upgrade the Blacksmith to level ${equipmentBlacksmith(level + 1)} first.`);
+      return false;
+    }
     const quote = equipmentQuote(level + 1, this.ores)!;
     if (quote.gems > maxGems || quote.gems > this.state.gems) {
       this.notify(
@@ -3004,6 +3130,7 @@ export class GameModel {
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
+      lateLightningStrike(b, x, y, d.radius);
       for (const enemy of b.defenders ?? [])
         if (
           enemy.hp > 0 &&
@@ -3028,9 +3155,100 @@ export class GameModel {
             delete b.defenseTargets[v.id];
           }
         }
-    } else if (k === 'heal' || k === 'rage') startSpellAura(b, k, x, y);
-    else if (b.nativeRoster)
+    } else if (b.nativeRoster && !RELEASED_SPELL_KEYS.includes(k)) {
+      // The spells the native roster added are cast from their client rows; the nine released
+      // before it keep the implementation their own recordings were made with.
       castNativeSpell(b, SPELL_SOURCE[k], this.spellLevel(k), 'attack', x, y);
+    } else if (k === 'freeze') {
+      // Cold, not damage: defences stop mid-reload and defenders stop mid-step. The source
+      // states a shorter `FreezeOuterTimeMS` for the edge of the burst, which needs an outer
+      // radius the table does not give, so the whole radius takes the inner time.
+      const until = b.elapsed + freezeSeconds(this.spellLevel('freeze'));
+      for (const enemy of b.defenders ?? [])
+        if (
+          enemy.hp > 0 &&
+          (enemy.kind === 'skeleton' || enemy.spawnedAt <= b.elapsed) &&
+          distance2D(enemy.x - x, enemy.y - y) <= d.radius
+        )
+          enemy.stunnedUntil = Math.max(enemy.stunnedUntil ?? 0, until);
+      for (const v of b.buildings)
+        if (
+          v.hp > 0 &&
+          isDefense(v.kind) &&
+          !concealedTesla(b, v) &&
+          distanceTo({ x, y }, v) <= d.radius
+        ) {
+          b.defenseStuns[v.id] = Math.max(b.defenseStuns[v.id] ?? 0, until);
+          v.cooldown = BUILDINGS[v.kind].rate!;
+          delete b.defenseTargets[v.id];
+        }
+    } else if (k === 'clone') {
+      // Copies are made in the order the originals were deployed, while the housing the
+      // spell can carry lasts. A copy of a copy is not made: the source spends its housing
+      // on what is really standing there.
+      let room = cloneHousing(this.spellLevel('clone'));
+      for (const original of b.units) {
+        if (original.hp <= 0 || original.hero || original.summoned) continue;
+        if (!(original.kind in b.remaining)) continue;
+        if (distance2D(original.x - x, original.y - y) > d.radius) continue;
+        const space = TROOPS[original.kind].space;
+        if (space > room) continue;
+        room -= space;
+        const stats = this.troopStats(original.kind as TroopKind);
+        b.units.push({
+          id: this.state.nextId++,
+          kind: original.kind,
+          x: original.x,
+          y: original.y,
+          hp: stats.hp,
+          maxHp: stats.hp,
+          cooldown: 0,
+          target: null,
+          path: [],
+          pathAt: 0,
+          attacking: false,
+          spawnedAt: b.elapsed,
+          summoned: true,
+          fadesAt: b.elapsed + CLONE_LIFETIME,
+        });
+        this.onEffect({ type: 'spawn', x: original.x, y: original.y });
+      }
+    } else if (k === 'recall') {
+      // Troops come back into the hand, nearest the centre of the ring first, while the
+      // housing the spell can carry lasts. A copy has nowhere to return to and is simply lost.
+      let room = recallHousing(this.spellLevel('recall'));
+      const inside = b.units
+        .filter((u) => u.hp > 0 && !u.hero && distance2D(u.x - x, u.y - y) <= d.radius)
+        .sort((a, c) => distance2D(a.x - x, a.y - y) - distance2D(c.x - x, c.y - y) || a.id - c.id);
+      const taken = new Set<number>();
+      for (const unit of inside) {
+        const space = TROOPS[unit.kind].space;
+        if (space > room) continue;
+        room -= space;
+        taken.add(unit.id);
+        if (!unit.summoned && unit.kind in b.remaining) b.remaining[unit.kind as TroopKind]++;
+        this.onEffect({ type: 'spawn', x: unit.x, y: unit.y });
+      }
+      if (taken.size) b.units = b.units.filter((u) => !taken.has(u.id));
+    } else if (k === 'revive') {
+      // The hero comes back where it fell, part way healed. With no hero down there is
+      // nothing to revive and the spell is not spent.
+      const hero = b.units.find((u) => u.hero && u.hp <= 0);
+      if (!hero || distance2D(hero.x - x, hero.y - y) > d.radius) {
+        b.spells[k]++;
+        if (!b.practice) this.state.spells[k]++;
+        this.notify('Cast the Revive Spell on a fallen hero.');
+        return false;
+      }
+      hero.hp = Math.max(1, Math.round(hero.maxHp * reviveFraction(this.spellLevel('revive'))));
+      delete hero.defeatedAt;
+      delete hero.spent;
+      hero.target = null;
+      hero.path = [];
+      hero.pathAt = 0;
+      hero.attacking = false;
+      this.onEffect({ type: 'spawn', x: hero.x, y: hero.y });
+    } else startSpellAura(b, k as AuraSpell, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
     this.changed();
     return true;
@@ -3130,8 +3348,10 @@ export class GameModel {
         : undefined,
     );
     if (native) stepNativeBattle(native);
+    this.stepLate('projectiles', dt);
     stepDeathBombs(b, this.onEffect);
     stepSpellAuras(b);
+    this.stepLate('auras', dt);
     stepKingQuakes(b, (target, power, at) => this.damage(target, power, at), this.onEffect);
     prepareHealerTargets(b);
     stepSweepers(b, dt, this.onEffect);
@@ -3141,7 +3361,22 @@ export class GameModel {
     if (native) stepHutBuilders(native, dt);
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
-    const knownBuildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    const knownBuildings = b.buildings.filter(
+      (v) => !concealedTesla(b, v) && !lateBuildingHidden(b, v),
+    );
+    // Late campaign Invisibility conceals targets, not obstacles: routes and crowd separation
+    // still collide with concealed buildings. Without `late` this is the same list as before.
+    const solidBuildings = b.late
+      ? b.buildings.filter((v) => !concealedTesla(b, v))
+      : knownBuildings;
+    // A Clone Spell copy lives out its stated life and then goes, fought or not.
+    for (const u of b.units)
+      if (u.fadesAt !== undefined && u.hp > 0 && u.fadesAt <= b.elapsed) {
+        u.hp = 0;
+        u.defeatedAt = b.elapsed;
+      }
+    // Empty unless a Jump Spell is holding a ring open, so ordinary routing is unchanged.
+    const breaches = openBreaches(b);
     if (native) native.buildings = knownBuildings;
     if (defenses) defenses.buildings = knownBuildings;
     // Jump Spells change every ground route while active; the set changes only at cast/expiry.
@@ -3155,14 +3390,14 @@ export class GameModel {
       }
     }
     const routeBuildings = passableWalls?.size
-      ? knownBuildings.filter((v) => !passableWalls.has(v.id))
-      : knownBuildings;
+      ? solidBuildings.filter((v) => !passableWalls.has(v.id))
+      : solidBuildings;
     for (const u of b.units) {
       if (u.hp <= 0 || u.native?.recalled) continue;
       const unitDt = Math.min(dt, Math.max(0, b.elapsed - (u.spawnedAt ?? 0)));
       if (!unitDt) continue;
-      const actionDt = shrinkStepTime(u, b.elapsed, unitDt);
-      if (u.shrink) u.shrink.timeLost += unitDt - actionDt;
+      const shrunkDt = shrinkStepTime(u, b.elapsed, unitDt);
+      if (u.shrink) u.shrink.timeLost += unitDt - shrunkDt;
       if (stepAirPush(u, unitDt)) continue;
       if ((u.springUntil ?? 0) > b.elapsed) {
         u.attacking = false;
@@ -3173,12 +3408,23 @@ export class GameModel {
         u.attacking = false;
         continue;
       }
+      if (lateUnitHeld(b, u)) {
+        u.attacking = false;
+        continue;
+      }
+      // Late status effects scale attack timers and movement separately (Poison: 25% / 35%).
+      const lateScale = lateUnitTimeScale(b, u);
+      const actionDt = lateScale === 1 ? shrunkDt : shrunkDt * lateScale;
+      const lateMove = lateUnitMoveScale(b, u);
+      const moveDt = lateMove === 1 ? shrunkDt : shrunkDt * lateMove;
+      // Garrison Headhunter poison slows movement and attack timers by separate source percentages.
+      const poison = garrisonUnitScales(b, u);
       const troop = TROOPS[u.kind];
       const abilityRage =
         (u.rageUntil ?? 0) > b.elapsed || !!(u.hero && b.hero && b.hero.rageUntil > b.elapsed);
       const spellRage = (u.spellRageUntil ?? 0) > b.elapsed ? this.spellStats('rage') : null;
       const heroScale = u.hero ? RAGE_HERO_MULTIPLIER : 1;
-      u.cooldown -= actionDt;
+      u.cooldown -= poison.attack === 1 ? actionDt : actionDt * poison.attack;
       u.pathAt -= unitDt;
       u.attacking = false;
       const base =
@@ -3201,15 +3447,17 @@ export class GameModel {
             1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
             u.native ? unitDamageScale(u, b.elapsed) : 1,
           ),
-        speed:
-          (base.speed +
-            Math.max(
-              abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
-              ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
-              u.native ? unitSpeedBonus(u, b.elapsed) : 0,
-            )) *
-          (actionDt / unitDt) *
-          (u.native ? unitSpeedScale(u, b.elapsed) : 1),
+        // A late campaign vortex carries this attacker: it may attack in range but never moves itself.
+        speed: lateUnitRooted(b, u)
+          ? 0
+          : (base.speed +
+              Math.max(
+                abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
+                ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+                u.native ? unitSpeedBonus(u, b.elapsed) : 0,
+              )) *
+            ((poison.move === 1 ? moveDt : moveDt * poison.move) / unitDt) *
+            (u.native ? unitSpeedScale(u, b.elapsed) : 1),
       };
       if (native && nativeBehavior(b, u.kind)) {
         stepNativeUnit(native, u, d, unitDt);
@@ -3225,7 +3473,7 @@ export class GameModel {
           u,
           d,
           unitDt,
-          knownBuildings,
+          solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
         )
@@ -3234,15 +3482,21 @@ export class GameModel {
       let target = knownBuildings.find((t) => t.id === u.target && targetableBuilding(b, t));
       if (!target) {
         const alive = knownBuildings.filter((v) => v.kind !== 'wall' && targetableBuilding(b, v));
+        // An Angry Spell sends its target at the defenses whatever it would ordinarily prefer.
         const angry = (u.native?.angryUntil ?? 0) > b.elapsed && !troop.healer;
+        // Goblin Castle is BuildingClass Npc; active late hall weapons/hut turrets add Defense.
         const preferred =
           troop.prefersResources && !angry
-            ? alive.filter((v) => isResourceBuilding(v.kind))
+            ? alive.filter((v) => isResourceBuilding(v.kind) && v.npc !== 'goblin-castle')
             : troop.prefersDefenses || angry
-              ? alive.filter((v) => activeAsDefense(b, v) && v.npc !== 'tutorial-cannon')
+              ? alive.filter(
+                  (v) =>
+                    (activeAsDefense(b, v) && v.npc !== 'tutorial-cannon') ||
+                    lateActivatedDefense(b, v),
+                )
               : alive;
         target =
-          (troop.wallBreaker ? breachTarget(u, knownBuildings) : undefined) ??
+          (troop.wallBreaker ? breachTarget(u, knownBuildings, !!b.nativeSubtiles) : undefined) ??
           (preferred.length ? preferred : alive).sort(
             (a, c) => distanceTo(u, a) - distanceTo(u, c),
           )[0];
@@ -3336,7 +3590,7 @@ export class GameModel {
         continue;
       }
       if (!u.path.length || u.pathAt <= 0) {
-        u.path = findPath(u, target, routeBuildings, d.range);
+        u.path = findPath(u, target, routeBuildings, d.range, !!b.nativeSubtiles, breaches);
         u.pathAt = 1.5;
       }
       const next = u.path[0];
@@ -3380,6 +3634,50 @@ export class GameModel {
           }
           continue;
         }
+        if (b.nativeSubtiles) {
+          // Half-tile waypoints: carry unused travel past each one, stopping before a wall.
+          let travel = d.speed * unitDt;
+          while (travel > 0 && u.path.length) {
+            const point = u.path[0];
+            const walled = b.buildings.some(
+              (v) =>
+                v.kind === 'wall' &&
+                v.hp > 0 &&
+                Math.floor(point.x) === v.x &&
+                Math.floor(point.y) === v.y,
+            );
+            if (point !== next && walled) break;
+            // Crowd separation can push a unit past a half-tile waypoint. Walking back to it
+            // stalls whole crowds, so a non-wall waypoint the unit already passed along the
+            // following leg is dropped while the unit stays within half a sub-tile of that leg.
+            const after = u.path[1];
+            if (after && !walled) {
+              const lx = after.x - point.x,
+                ly = after.y - point.y,
+                leg = distance2D(lx, ly) || 1,
+                ahead = ((u.x - point.x) * lx + (u.y - point.y) * ly) / leg,
+                aside = Math.abs((u.x - point.x) * ly - (u.y - point.y) * lx) / leg;
+              if (ahead > 0 && aside <= 0.25) {
+                u.path.shift();
+                continue;
+              }
+            }
+            const dx = point.x - u.x,
+              dy = point.y - u.y,
+              len = distance2D(dx, dy);
+            if (len <= travel) {
+              u.x = point.x;
+              u.y = point.y;
+              u.path.shift();
+              travel -= len;
+            } else {
+              u.x += (dx / len) * travel;
+              u.y += (dy / len) * travel;
+              travel = 0;
+            }
+          }
+          continue;
+        }
         const dx = next.x - u.x,
           dy = next.y - u.y,
           len = distance2D(dx, dy),
@@ -3394,9 +3692,10 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, knownBuildings);
+    separateUnits(b.units, solidBuildings, !!b.nativeSubtiles);
     if (revealTeslas(b, this.onEffect)) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
+    this.stepLate('traps', dt);
     stepMortarShells(b, this.onEffect);
     stepInfernos(b, dt);
     for (const tower of b.buildings) {
@@ -3409,9 +3708,9 @@ export class GameModel {
       const canAct = b.nativeRoster
         ? tower.hp > 0 && !concealedTesla(b, tower) && !buildingImmune(b, tower)
         : targetableBuilding(b, tower);
-      // Version 45: a Rage Spell Tower boosts damage; frost and chill slow the attack clock.
-      const boost = b.nativeRoster ? buildingDamageScale(b, tower, b.elapsed) : 1;
-      // Supercharged DPS (client mini levels) exists only in version 45 battles.
+      // Version 51: a Rage Spell Tower boosts damage; frost and chill slow the attack clock.
+      const nativeBoost = b.nativeRoster ? buildingDamageScale(b, tower, b.elapsed) : 1;
+      // Supercharged DPS (client mini levels) exists only in version 51 battles.
       const charged = b.nativeRoster ? superchargeBonus(tower.kind, tower.supercharge).dps : 0;
       const tempo = b.nativeRoster ? 1 / buildingAttackIntervalScale(b, tower, b.elapsed) : 1;
       if (tower.kind === 'archertower' && b.archerTowerWindups) {
@@ -3419,15 +3718,24 @@ export class GameModel {
           b,
           tower,
           dt,
-          canAct,
+          canAct && presentBuilding(b, tower),
           defenseDamage(tower.kind, tower.level) *
             (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
-            boost,
+            // Defensive Rage (version 44 late campaign only; exactly one otherwise).
+            (b.late ? lateDefenseBoost(b, tower).damage : 1) *
+            nativeBoost,
           this.onEffect,
         );
         continue;
       }
-      if (!d.damage || !canAct || tower.constructing || tower.upgradeEnd) continue;
+      if (
+        !d.damage ||
+        !canAct ||
+        !presentBuilding(b, tower) ||
+        tower.constructing ||
+        tower.upgradeEnd
+      )
+        continue;
       const activeDt =
         Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0))) * tempo;
       if (activeDt <= 0) continue;
@@ -3438,19 +3746,22 @@ export class GameModel {
           activeDt,
           (defenseDamage(tower.kind, tower.level) + charged * 0.128) *
             (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
-            boost,
+            (b.late ? lateDefenseBoost(b, tower).damage : 1) *
+            nativeBoost,
           this.onEffect,
         );
         continue;
       }
       const cooling = tower.cooldown > 0;
-      tower.cooldown -= activeDt;
+      // Defensive Rage from late campaign Spell Towers; exactly one without an active cast.
+      const boost = lateDefenseBoost(b, tower);
+      tower.cooldown -= boost.rate === 1 ? activeDt : activeDt * boost.rate;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
       const targets = b.units.filter(
         (u) =>
           u.hp > 0 &&
-          !unitHidden(u, b.elapsed) &&
+          !untargetable(b, u) &&
           canTarget(d.targets, u.kind) &&
           distance2D(u.x - center.x, u.y - center.y) <= d.range! &&
           distance2D(u.x - center.x, u.y - center.y) >= (d.minRange ?? 0),
@@ -3467,12 +3778,13 @@ export class GameModel {
         // Carry the fraction of a frame past the deadline, so sustained fire
         // does not lose time every shot. Idle towers never accumulate a burst.
         tower.cooldown = Math.max(0, d.rate! + (cooling ? tower.cooldown : 0));
-        const power =
+        const basePower =
           tower.npc === 'tutorial-cannon'
             ? TUTORIAL_CANNON_DAMAGE
             : (defenseDamage(tower.kind, tower.level) + charged * d.rate!) *
               (b.practice || b.catalog === 'goblin-v1' ? 1 : CAMPAIGN_LAYOUTS[b.index].defense) *
-              boost;
+              nativeBoost;
+        const power = boost.damage === 1 ? basePower : basePower * boost.damage;
         if (tower.kind === 'tesla') {
           hurtUnit(b, target, power);
           recordTeslaShot(b, tower, target);
@@ -3534,6 +3846,7 @@ export class GameModel {
         if (tower.kind === 'wizardtower') recordWizardTowerShot(b, tower, projectile);
       }
     }
+    this.stepLate('defenses', dt);
     if (native) stepPiercingShots(native);
     if (native && b.nativeHeroes)
       for (const hero of b.nativeHeroes) {
@@ -3593,6 +3906,7 @@ export class GameModel {
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
+        !lateCampaignPending(b) &&
         !b.units.some((u) => u.hp > 0 && !this.supportOnly(b, u.kind)) &&
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
@@ -3605,6 +3919,18 @@ export class GameModel {
         !b.nativeHeroes?.some((hero) => hero.unitId === null))
     )
       this.finishBattle();
+  }
+  /** Late campaign families run at fixed points in each simulation step. */
+  private stepLate(phase: LatePhase, dt: number) {
+    const battle = this.battle;
+    if (!battle?.late) return;
+    stepLateCampaign({
+      battle,
+      dt,
+      phase,
+      effect: this.onEffect,
+      damageBuilding: (target, power, at) => this.damage(target, power, at),
+    });
   }
   private refreshBattleScore() {
     const b = this.battle!;
@@ -3647,7 +3973,10 @@ export class GameModel {
                 : 0;
       const total = structures.reduce((n, v) => n + weight(v), 0);
       const taken = total
-        ? structures.reduce((n, v) => n + weight(v) * (1 - Math.max(0, v.hp) / v.maxHp), 0) / total
+        ? structures.reduce(
+            (n, v) => n + weight(v) * (1 - Math.max(0, lateLootHitpoints(b, v)) / v.maxHp),
+            0,
+          ) / total
         : dead / Math.max(1, structures.length);
       const removed = Math.floor(
         campaignAmount(available, resource) * Math.min(1, Math.max(0, taken)),
@@ -3685,6 +4014,18 @@ export class GameModel {
         this.battle.drillDestructions[b.id] ??= { at, x: b.x + 1.5, y: b.y + 1.5, level: b.level };
       const tesla = b.kind === 'tesla' ? this.battle?.teslas?.[b.id] : undefined;
       if (tesla) tesla.destroyedAt = at;
+      if (this.battle?.late)
+        lateBuildingDestroyed(
+          {
+            battle: this.battle,
+            dt: 0,
+            phase: 'defenses',
+            effect: this.onEffect,
+            damageBuilding: (target, power, time) => this.damage(target, power, time),
+          },
+          b,
+          at,
+        );
       if (this.battle && b.kind === 'wizardtower') recordWizardTowerDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'airsweeper') recordSweeperDestroyed(this.battle, b, at);
       if (this.battle && b.kind === 'mortar') recordMortarDestroyed(this.battle, b, at);
@@ -3783,6 +4124,11 @@ export class GameModel {
         (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
       ).length;
       this.state.xp += b.stars * 15;
+      // Stars bank toward the daily bonus and are allowed to overflow past its price.
+      if (b.stars > 0) {
+        const bonus = (this.state.starBonus ??= emptyStarBonus());
+        bonus.stars += b.stars;
+      }
     }
     b.result = {
       gold,
@@ -4160,9 +4506,11 @@ export function initialSave(): Save {
   return {
     version: 4,
     dark: 0,
-    gold: 205000,
-    elixir: 165000,
-    gems: 250,
+    // The original's own opening grant. Storage now holds the original allowance, which a
+    // prototype-sized purse would overflow several times over before the first battle.
+    gold: STARTING_GRANT.gold,
+    elixir: STARTING_GRANT.elixir,
+    gems: STARTING_GRANT.gems,
     trophies: 1248,
     xp: 1850,
     buildings,
@@ -4212,7 +4560,7 @@ export function distanceTo(u: { x: number; y: number }, b: Building | { x: numbe
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
 /** Find an actual obstruction on an approach to a building, ignoring stray walls. */
-export function breachTarget(u: { x: number; y: number }, buildings: Building[]) {
+export function breachTarget(u: { x: number; y: number }, buildings: Building[], subtiles = false) {
   const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
   if (!walls.length) return undefined;
   const structures = buildings
@@ -4220,7 +4568,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
     .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
   const candidates: Building[] = [];
   for (const structure of structures.slice(0, 5)) {
-    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range);
+    const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
     const obstruction = path
       .map((p) => walls.find((wall) => wall.x === Math.floor(p.x) && wall.y === Math.floor(p.y)))
       .find((wall) => wall !== undefined);
@@ -4229,21 +4577,32 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[])
   return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b))[0];
 }
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
+// Version-44 native campaign battles pass `subtiles` for the client's building-edge lanes.
 export function findPath(
   start: { x: number; y: number },
   target: Building | { x: number; y: number },
   buildings: Building[],
   range: number,
+  subtiles = false,
+  /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
+  breaches: readonly { x: number; y: number }[] = [],
 ): { x: number; y: number }[] {
+  if (subtiles) return findSubtilePath(start, target, buildings, range);
   const size = MAP_SIZE,
     blocked = new Uint8Array(size * size),
     wall = new Uint8Array(size * size);
+  const radius = SPELLS.jump.radius;
+  const breached = (x: number, y: number) =>
+    breaches.some((ring) => distance2D(x + 0.5 - ring.x, y + 0.5 - ring.y) <= radius);
   for (const b of buildings) {
     if (b.hp <= 0 || isTrap(b.kind)) continue;
     for (let x = b.x; x < b.x + BUILDINGS[b.kind].size; x++)
       for (let y = b.y; y < b.y + BUILDINGS[b.kind].size; y++) {
-        if (b.kind === 'wall') wall[y * size + x] = 1;
-        else blocked[y * size + x] = 1;
+        if (b.kind === 'wall') {
+          // A breached wall is not removed, only walked over: it still stands and still
+          // blocks everything outside the ring.
+          if (!breaches.length || !breached(x, y)) wall[y * size + x] = 1;
+        } else blocked[y * size + x] = 1;
       }
   }
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
@@ -4374,14 +4733,17 @@ export function findPath(
 }
 
 /** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */
-export function separateUnits(units: Unit[], buildings: Building[]) {
+export function separateUnits(units: Unit[], buildings: Building[], subtiles = false) {
+  // Version-44 native campaign crowds use the same sub-tile building collision as routes.
+  const lanes = subtiles ? subtileSolid(buildings) : undefined;
   const solid = new Set<number>();
-  for (const b of buildings)
-    if (b.hp > 0 && !isTrap(b.kind)) {
-      const size = BUILDINGS[b.kind].size;
-      for (let x = b.x; x < b.x + size; x++)
-        for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
-    }
+  if (!lanes)
+    for (const b of buildings)
+      if (b.hp > 0 && !isTrap(b.kind)) {
+        const size = BUILDINGS[b.kind].size;
+        for (let x = b.x; x < b.x + size; x++)
+          for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
+      }
   const buckets = new Map<number, Unit[]>();
   const alive = units.filter((u) => u.hp > 0);
   for (const u of alive) {
@@ -4396,7 +4758,8 @@ export function separateUnits(units: Unit[], buildings: Building[]) {
     y >= 0.1 &&
     x < MAP_SIZE - 0.1 &&
     y < MAP_SIZE - 0.1 &&
-    (!!TROOPS[u.kind].flying || !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x)));
+    (!!TROOPS[u.kind].flying ||
+      (lanes ? !lanes(x, y) : !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x))));
   for (const u of alive) {
     const cx = Math.floor(u.x),
       cy = Math.floor(u.y);

@@ -37,6 +37,47 @@ const glyphs = {
     '<path d="M118 128 h20 v22 h22 v20 h-22 v22 h-20 v-22 h-22 v-20 h22 z"/>',
   ],
   lightning: ['#6fd4ff', '#1d5d97', '<path d="M144 116 l-40 54 h22 l-6 42 l42 -58 h-22 z"/>'],
+  // Paler and colder than the Lightning vial, so the two read apart in the tray at a glance.
+  freeze: [
+    '#e2f6ff',
+    '#4f96c8',
+    '<path d="M124 116 h8 v20 l16 -10 l4 7 l-20 12 l20 12 l-4 7 l-16 -10 v20 h-8 v-20 l-16 10 l-4 -7 l20 -12 l-20 -12 l4 -7 l16 10 z"/>',
+  ],
+  // A veil, drawn as an eye whose lower half has faded out of the glass.
+  invisibility: [
+    '#d9cdf2',
+    '#6a56a0',
+    '<path d="M100 158 q28 -26 56 0 q-28 26 -56 0 z" opacity="0.95"/>' +
+      '<circle cx="128" cy="158" r="9" opacity="0.95"/>' +
+      '<path d="M104 176 h12 M124 180 h10 M142 176 h11" stroke="#fff8dd" stroke-width="5" stroke-linecap="round" opacity="0.5" fill="none"/>',
+  ],
+  // An arc over a wall, for the ramp the Jump Spell raises.
+  jump: [
+    '#b6e39b',
+    '#3f7a35',
+    '<path d="M98 186 q30 -52 60 0" stroke="#fff8dd" stroke-width="8" fill="none" stroke-linecap="round"/>'
+      + '<rect x="120" y="168" width="16" height="22" rx="3"/>',
+  ],
+  // Two overlapping silhouettes, for the copies the Clone Spell leaves behind.
+  clone: [
+    '#9fe8e0',
+    '#2f7d77',
+    '<circle cx="116" cy="150" r="12"/><path d="M100 190 q16 -22 32 0 z"/>'
+      + '<circle cx="142" cy="156" r="10" opacity="0.55"/><path d="M128 190 q14 -19 28 0 z" opacity="0.55"/>',
+  ],
+  // An arrow turning back on itself, for the troops the Recall Spell takes home.
+  recall: [
+    '#f6c99a',
+    '#a15c1f',
+    '<path d="M150 146 a30 30 0 1 0 -8 42" stroke="#fff8dd" stroke-width="9" fill="none" stroke-linecap="round"/>'
+      + '<path d="M138 132 l16 14 l-18 12 z"/>',
+  ],
+  // A heart with a spark, for the hero the Revive Spell brings back.
+  revive: [
+    '#f5a3b6',
+    '#9c2a49',
+    '<path d="M128 192 q-30 -22 -30 -40 a16 16 0 0 1 30 -8 a16 16 0 0 1 30 8 q0 18 -30 40 z"/>',
+  ],
 };
 for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
   const output = `${SPELLS}/${name}-v2.webp`;
@@ -48,4 +89,4 @@ for (const [name, [liquid, dark, glyph]] of Object.entries(glyphs)) {
     if (!(await fs.readFile(output)).equals(bytes)) throw Error(`${output} needs regeneration.`);
   } else await fs.writeFile(output, bytes);
 }
-console.log('Verified three spell vials with blue, yellow and purple native palettes.');
+console.log(`Verified ${Object.keys(glyphs).length} spell vials against their native palettes.`);

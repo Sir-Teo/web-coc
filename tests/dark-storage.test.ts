@@ -47,11 +47,11 @@ it('uses all 13 inherited native storage rows for health, capacity, cost, time a
     10000, 17500, 40000, 75000, 140000, 180000, 220000, 280000, 330000, 360000, 390000, 420000,
     450000,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('darkstorage', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 2, 4,
+  expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('darkstorage', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 2, 4, 6,
   ]);
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('darkstorage', i + 1))).toEqual([
-    0, 0, 0, 0, 0, 0, 1, 1,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('darkstorage', i + 1))).toEqual([
+    0, 0, 0, 0, 0, 0, 1, 1, 1,
   ]);
 });
 
@@ -100,10 +100,11 @@ it('upgrades using native destination values and keeps the home Town Hall limit'
   m.upgrade(storage.id);
   expect(m.state.elixir).toBe(500000);
   expect(storage.upgradeEnd! - m.clock).toBe(57600000);
-  expect(m.resourceCap('dark')).toBe(10000);
+  // A Town Hall 7 holds 2,500 dark of its own on top of whatever its stores hold.
+  expect(m.resourceCap('dark')).toBe(2500 + 10000);
   m.tick(storage.upgradeEnd!);
   expect(storage.level).toBe(2);
-  expect(m.resourceCap('dark')).toBe(17500);
+  expect(m.resourceCap('dark')).toBe(2500 + 17500);
   m.state.elixir = 2000000;
   m.upgrade(storage.id);
   expect(storage.upgradeEnd).toBeUndefined();

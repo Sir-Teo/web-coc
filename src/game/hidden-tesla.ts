@@ -3,6 +3,7 @@ import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX } from './model';
 import { TESLA } from './tesla-stats';
+import { lateBuildingHidden } from './late-campaign';
 
 /** Public client data: 600 hundredths of a tile; destruction threshold 50. */
 export const TESLA_TRIGGER = TESLA.trigger;
@@ -22,8 +23,14 @@ export function targetableBuilding(battle: Battle, building: Building) {
     building.hp > 0 &&
     !isTrap(building.kind) &&
     !concealedTesla(battle, building) &&
-    !buildingHidden(battle, building)
+    !lateBuildingHidden(battle, building)
   );
+}
+/** Late campaign Invisibility only blocks targeting: a concealed defense still fires and area
+ * effects still reach it; a buried Tesla does neither. Identical to `targetableBuilding`
+ * whenever no late campaign state exists. */
+export function presentBuilding(battle: Battle, building: Building) {
+  return building.hp > 0 && !isTrap(building.kind) && !concealedTesla(battle, building);
 }
 
 /** A Tesla stays up for the rest of this attack. Reveal invalidates offensive routes. */

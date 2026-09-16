@@ -1,4 +1,4 @@
-import source from '../../reference/garrison/sounds.json';
+import source from '../../reference/garrison/sounds.json' with { type: 'json' };
 import type { Battle } from './model';
 import type { SampleCue } from './sample-audio';
 import { garrisonStats } from './garrison-reserve';
@@ -36,7 +36,11 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
       defender.kind === 'repairer'
     )
       continue;
-    const binding = source.bindings[defender.kind];
+    // Dragon levels share the Dragon effect rows; later families' original sounds are pending.
+    const binding = (source.bindings as Partial<Record<string, (typeof source.bindings)['dragon']>>)[
+      defender.kind
+    ];
+    if (!binding) continue;
     const key = `garrison:${defender.id}`;
     effect(binding.deploy, `${key}:deploy`, defender.spawnedAt);
     for (const [index, attack] of defender.attacks.entries()) {

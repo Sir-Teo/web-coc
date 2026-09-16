@@ -2,7 +2,8 @@ import type Phaser from 'phaser';
 import type { Building } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { CASTLE_GRAPH, CASTLE_LEVELS, castleAsset, castleTexture, castlePoses } from './castle-art';
+import { CASTLE_LEVELS, castleAsset, castleTexture } from './castle-art';
+import { CASTLE_GRAPH, castlePoses } from './castle-graph';
 
 export function preloadCastles(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, CASTLE_GRAPH, 'clancastle');
@@ -19,7 +20,8 @@ export class CastlePresentation {
   render(buildings: Building[], iso: (x: number, y: number) => { x: number; y: number }) {
     const wanted = new Set<number>();
     for (const building of buildings) {
-      if (building.kind !== 'clancastle') continue;
+      // The Goblin Castle NPC keeps its own body/foundation/ruin in the late Goblin family.
+      if (building.kind !== 'clancastle' || building.npc === 'goblin-castle') continue;
       wanted.add(building.id);
       let view = this.castles.get(building.id);
       if (!view)

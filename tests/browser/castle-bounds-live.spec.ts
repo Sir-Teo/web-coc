@@ -9,7 +9,7 @@ test('Castle selection follows each original tier and construction state', async
   const results = await page.evaluate(async () => {
     const { scene } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');
-    const { castlePoses } = await import('/src/game/castle-art.ts');
+    const { castlePoses } = await import('/src/game/castle-graph.ts');
     const { nativeSceneBounds } = await import('/src/game/native-scene-view.ts');
     scene.paused = true;
     scene.model.battle = null;

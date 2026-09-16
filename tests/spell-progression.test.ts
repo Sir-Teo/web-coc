@@ -1,31 +1,61 @@
 import { describe, expect, it } from 'vitest';
-import { GameModel, makeBuilding, type Unit } from '../src/game/model';
-import { BUILDINGS, SPELL_KEYS, LEGACY_SPELL_KEYS, type SpellKind } from '../src/game/data';
+import { GameModel, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
+import { BUILDINGS, SPELL_KEYS, type SpellKind } from '../src/game/data';
+import { requiredTownHall } from '../src/game/progression';
+import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { stepSpellAuras } from '../src/game/spell-effects';
-import { emptyArmy, emptySpells, baseSpellLevels } from '../src/game/army';
+import { maxSpellLevelFor } from '../src/game/spell-progression';
+import { defaultSpellLevels, emptyArmy } from '../src/game/army';
 import { developedSave } from './fixtures/developed-village';
 
 // Independent transcription from Supercell's immutable spells.csv and current wiki tables.
+/** Enough elixir for the dearest research in the table below, with room to check change. */
+const BUDGET = 60_000_000;
 const reference = {
   lightning: { cost: [50000, 100000, 200000, 600000], hours: [2, 4, 6, 24], lab: [1, 2, 3, 6] },
   heal: { cost: [75000, 150000, 300000, 900000], hours: [3, 6, 12, 24], lab: [2, 4, 5, 6] },
   rage: { cost: [400000, 800000, 1000000, 2000000], hours: [6, 12, 24, 48], lab: [3, 4, 5, 6] },
+  freeze: {
+    cost: [1200000, 1700000, 3000000, 4200000],
+    hours: [24, 36, 48, 60],
+    lab: [7, 8, 8, 8],
+  },
+  // The Invisibility Spell stops at level 4, so it has three research steps, not four.
+  invisibility: { cost: [5000000, 6000000, 7000000], hours: [72, 96, 120], lab: [9, 10, 11] },
+  jump: {
+    cost: [1000000, 2000000, 5000000, 8000000],
+    hours: [24, 48, 96, 120],
+    lab: [5, 8, 11, 13],
+  },
+  clone: { cost: [1500000, 2500000, 3000000, 4000000], hours: [24, 48, 54, 60], lab: [8, 8, 9, 9] },
+  recall: {
+    cost: [7500000, 8000000, 9000000, 13000000],
+    hours: [168, 180, 192, 216],
+    lab: [11, 12, 13, 14],
+  },
+  revive: {
+    cost: [18000000, 19000000, 20000000, 29500000],
+    hours: [168, 192, 276, 384],
+    lab: [13, 14, 15, 16],
+  },
 };
 function developed() {
   const m = new GameModel(developedSave());
   m.townhall!.level = 8;
   m.laboratory!.level = 6;
-  m.state.spellLevels = baseSpellLevels();
-  m.state.elixir = 5000000;
+  // Research is gated on the Spell Factory that offers the spell; the Freeze Spell needs 4.
+  for (const b of m.state.buildings) if (b.kind === 'spellfactory') b.level = 4;
+  m.state.spellLevels = defaultSpellLevels();
+  m.state.elixir = BUDGET;
   return m;
 }
 function arena(kind: SpellKind, level = 1, troop: Unit['kind'] = 'giant') {
   const m = developed();
   m.state.spellLevels![kind] = level;
-  m.state.spells = { ...emptySpells(), lightning: 2, heal: 2, rage: 2 };
+  m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 2])) as SpellBook;
   m.startBattle(0, true);
   const b = m.battle!;
   b.started = true;
@@ -59,17 +89,29 @@ describe('spell research', () => {
     }
   });
 
-  for (const kind of LEGACY_SPELL_KEYS)
-    for (const level of [1, 2, 3, 4])
+  // The reference lists the spells released before the native roster; the rest are covered by
+  // tests/native-spells.test.ts against their own client rows.
+  for (const kind of SPELL_KEYS.filter((k) => k in reference))
+    // A spell with fewer levels has fewer research steps; the reference lists what it has.
+    for (const level of [1, 2, 3, 4].filter((l) => l <= reference[kind].cost.length))
       it(`${kind} ${level} → ${level + 1} pays once, reloads and completes at the exact deadline`, () => {
         const m = developed(),
           expected = reference[kind];
+        // A village must be able to hold the Spell Factory that offers the spell and the
+        // Laboratory that researches it, so the Town Hall rises to whichever needs more.
         m.state.spellLevels![kind] = level;
+        const factory = SPELL_UNLOCK[kind];
+        m.townhall!.level = Math.max(
+          8,
+          requiredTownHall('laboratory', expected.lab[level - 1]),
+          requiredTownHall('spellfactory', factory),
+        );
+        for (const b of m.state.buildings) if (b.kind === 'spellfactory') b.level = factory;
         m.laboratory!.level = Math.max(1, expected.lab[level - 1] - 1);
         if (expected.lab[level - 1] > 1) {
           m.research(kind);
           expect(m.state.research).toBeUndefined();
-          expect(m.state.elixir).toBe(5000000);
+          expect(m.state.elixir).toBe(BUDGET);
         }
         m.laboratory!.level = expected.lab[level - 1];
         expect(m.researchCost(kind)).toBe(expected.cost[level - 1]);
@@ -77,11 +119,11 @@ describe('spell research', () => {
         m.research(kind);
         const research = structuredClone(m.state.research!);
         expect(research).toEqual({ kind, end: m.clock + expected.hours[level - 1] * 3600000 });
-        expect(m.state.elixir).toBe(5000000 - expected.cost[level - 1]);
+        expect(m.state.elixir).toBe(BUDGET - expected.cost[level - 1]);
         m.researchTroop('swordsman');
         m.research(kind);
         expect(m.state.research).toEqual(research);
-        expect(m.state.elixir).toBe(5000000 - expected.cost[level - 1]);
+        expect(m.state.elixir).toBe(BUDGET - expected.cost[level - 1]);
         expect(validateSave(m.state)).toBe(true);
         const restored = new GameModel(JSON.parse(JSON.stringify(m.state)));
         restored.tick(research.end - 1);
@@ -148,9 +190,24 @@ describe('spell research', () => {
     expect(loaded.state.spellLevels).toBeUndefined();
     expect(loaded.spellLevel('lightning')).toBe(1);
     expect(loaded.state.research).toEqual(original.research);
-    expect(loaded.state.spells).toEqual({ ...emptySpells(), ...original.spells });
+    expect(loaded.state.spells).toEqual(original.spells);
+    // A save written before a spell existed has no field for it. Loading gains every absent
+    // spell at zero and keeps every count the village already held.
+    const ORIGINAL_THREE = ['rage', 'heal', 'lightning'] as const;
+    const legacy = JSON.parse(JSON.stringify(original)) as typeof original;
+    legacy.spells = Object.fromEntries(
+      ORIGINAL_THREE.map((k) => [k, legacy.spells[k]]),
+    ) as typeof legacy.spells;
+    const migrated = new GameModel(legacy).state.spells;
+    expect(Object.keys(migrated).sort()).toEqual([...SPELL_KEYS].sort());
+    for (const kind of SPELL_KEYS)
+      expect([kind, migrated[kind]]).toEqual([
+        kind,
+        ORIGINAL_THREE.includes(kind as (typeof ORIGINAL_THREE)[number]) ? legacy.spells[kind] : 0,
+      ]);
     const good = developed().state;
-    for (const invalid of [0, 99, -1, 1.5, NaN, '2', null]) {
+    // The Healing spell now runs to its own original ceiling, so 6 is a real level.
+    for (const invalid of [0, maxSpellLevelFor('heal') + 1, -1, 1.5, NaN, '2', null]) {
       const bad = structuredClone(good);
       (bad.spellLevels as any).heal = invalid;
       expect(validateSave(bad)).toBe(false);
@@ -158,7 +215,7 @@ describe('spell research', () => {
     const partial = structuredClone(good);
     delete (partial.spellLevels as any).rage;
     expect(validateSave(partial)).toBe(false);
-    good.spellLevels!.rage = 7;
+    good.spellLevels!.rage = maxSpellLevelFor('rage');
     good.research = { kind: 'rage', end: good.lastTick + 600000 };
     expect(validateSave(good)).toBe(false);
     delete good.research;
@@ -349,8 +406,19 @@ describe('native spell effects', () => {
 
   it('spell levels are frozen in battle, exported and replayed independently of home research', () => {
     const m = developed();
-    m.state.spellLevels = { ...baseSpellLevels(), lightning: 4, heal: 3, rage: 2 };
-    m.state.spells = { ...emptySpells(), lightning: 1, heal: 1, rage: 1 };
+    m.state.spellLevels = {
+      ...defaultSpellLevels(),
+      lightning: 4,
+      heal: 3,
+      rage: 2,
+      freeze: 1,
+      invisibility: 1,
+      jump: 1,
+      clone: 1,
+      recall: 1,
+      revive: 1,
+    };
+    m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook;
     m.startBattle(0, true);
     const b = m.battle!;
     m.deploy(1, 13);
@@ -372,7 +440,7 @@ describe('native spell effects', () => {
     expect(record.replay!.version).toBe(REPLAY_VERSION);
     const data = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
     expect(data.initial.spellLevels).toEqual({
-      ...baseSpellLevels(),
+      ...defaultSpellLevels(),
       lightning: 4,
       heal: 3,
       rage: 2,
@@ -402,7 +470,11 @@ describe('native spell effects', () => {
     const malformed = structuredClone(data);
     delete malformed.initial.spellLevels;
     expect(validateReplay(malformed)).toBe(false);
-    data.initial.spellLevels!.rage = 99;
+    // Rage reaches seven, and a version-46 recording may hold none of the new levels.
+    data.initial.spellLevels!.rage = maxSpellLevelFor('rage');
+    expect(validateReplay(data)).toBe(true);
+    expect(validateReplay({ ...data, version: 46 })).toBe(false);
+    data.initial.spellLevels!.rage = maxSpellLevelFor('rage') + 1;
     expect(validateReplay(data)).toBe(false);
   });
 });

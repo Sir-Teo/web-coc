@@ -4,9 +4,11 @@ import {
   SPELLS,
   TROOP_KEYS,
   SPELL_KEYS,
+  MAX_TOWNHALL,
   type TroopKind,
   type SpellKind,
 } from '../game/data';
+import { HERO_MAX_LEVEL } from '../game/heroes';
 import { VillageScene } from '../game/scene';
 import { DeveloperControls } from './controls';
 import './style.css';
@@ -48,8 +50,8 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
       <p class="developer-status" role="status">${model.battle ? 'Attack paused. Return home to edit your village.' : 'Village ready for testing.'}</p>
       <form data-form="resources"><h2>Resources</h2><div class="developer-grid">${(['gold', 'elixir', 'dark', 'gems'] as const).map((k) => field(k, k === 'dark' ? 'Dark elixir' : k[0].toUpperCase() + k.slice(1), model.state[k], 999999999)).join('')}</div><div class="developer-actions"><button>Set balances</button>${button('fill', 'Fill storage + 10,000 gems')}</div></form>
       <form data-form="army"><h2>Army &amp; spells</h2><div class="developer-grid">${TROOP_KEYS.map((k) => field(k, TROOPS[k].name, model.state.army[k], 9999)).join('')}${SPELL_KEYS.map((k) => field(k, SPELLS[k].name, model.state.spells[k], 999)).join('')}</div><div class="developer-actions"><button>Set army</button>${button('army20', '20 of each troop + 5 of each spell')}${button('clear', 'Clear army')}${button('research', 'Max troop research')}</div></form>
-      <h2>Progression</h2><form data-form="townhall" class="developer-actions">${field('townhall', 'Town Hall', model.townhallLevel, 8, 1)}<button>Set Town Hall</button></form><div class="developer-actions">${button('max', 'Max existing buildings at this TH')}${button('timers', 'Finish all timers')}${button('campaign', 'Unlock campaign')}${button('king', 'Unlock King (TH4+)')}</div>
-      <form data-form="hero" class="developer-actions">${field('kingLevel', 'King level', model.state.king?.level ?? 1, 20, 1)}<button>Set King level</button></form>
+      <h2>Progression</h2><form data-form="townhall" class="developer-actions">${field('townhall', 'Town Hall', model.townhallLevel, MAX_TOWNHALL, 1)}<button>Set Town Hall</button></form><div class="developer-actions">${button('max', 'Max existing buildings at this TH')}${button('timers', 'Finish all timers')}${button('campaign', 'Unlock campaign')}${button('king', 'Unlock King (TH4+)')}</div>
+      <form data-form="hero" class="developer-actions">${field('kingLevel', 'King level', model.state.king?.level ?? 1, HERO_MAX_LEVEL, 1)}<button>Set King level</button></form>
       <h2>Battle</h2><div class="developer-actions">${button('win', 'Finish with 3 stars')}${button('end', 'End with current result')}</div>`;
   };
   let resume = false;

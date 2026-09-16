@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { GameModel, makeBuilding, type Effect } from '../src/game/model';
+import { GameModel, makeBuilding, type FX } from '../src/game/model';
 import { archerTowerHandlingCues } from '../src/game/archer-tower-sounds';
 it('uses the original handling samples, volume, pitch and event identity', () => {
   const events = [
@@ -28,7 +28,7 @@ it('emits pickup, successful placement and cancellation without sounding rejecte
   model.state.obstacles = [];
   const b = makeBuilding(999, 'archertower', 2, 2);
   model.state.buildings.push(b);
-  const events: Effect[] = [];
+  const events: FX[] = [];
   model.onEffect = (e) => events.push(e);
   model.move(b.id);
   expect(model.place(0, 0)).toBe(false);

@@ -130,6 +130,9 @@ for path in ['logic/buildings.csv', 'logic/traps.csv']:
         combat[gid] = dict(name=first['Name'], size=int(first['Width']),
                            hp=[int(row.get('Hitpoints', 1)) for row in group],
                            dps=[int(row.get('DPS', 0)) for row in group])
+        # Collision width for the client's sub-tile pathfinder (traps have none).
+        if 'BuildingW' in first:
+            combat[gid]['collision'] = int(first['BuildingW'])
 scenery = {}
 for path, family in [('logic/obstacles.csv', 8000000), ('logic/decos.csv', 18000000)]:
     for index, group in enumerate(groups(table(path))):
@@ -141,6 +144,11 @@ for path, family in [('logic/obstacles.csv', 8000000), ('logic/decos.csv', 18000
 used_scenery = {b['data'] for v in layouts for key in ['obstacles', 'decos'] for b in v[key]}
 scenery = {i: s for i, s in scenery.items() if i in used_scenery}
 assert used_scenery == set(scenery)
+# Eagle Artillery, Scattershot, Spell Tower, Goblin Hall, Goblin Castle, Foreboding Cave, Goblin Boss TH.
+LATE_STATE_IDS = {1000031, 1000067, 1000072, 1000017, 1000061, 1000062, 1000069}
+LATE_STATE_FIELDS = ['data', 'x', 'y', 'lvl', 'ammo', 'wp_lvl', 'mode', 'attack_mode_weapon']
+
+
 def compact_entity(b):
     return [b['data'], b['x'], b['y'], b.get('lvl', 0) + 1]
 runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], dependencies=s['dependencies'],
@@ -156,7 +164,11 @@ runtime = dict(stages=[dict(stage=s['stage'], name=s['name'], dependencies=s['de
                            infernoStates=[b for b in v['buildings'] if b['data'] == 1000027],
                            # Keep active mode fields explicit; unsupported modes cannot silently vanish.
                            activeModes=[b for b in v['buildings'] + v['traps']
-                                        if any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])])
+                                        if any(b.get(k) for k in ['attack_mode', 'air_mode', 'dir', 'direction'])],
+                           # Late campaign weapons, ammunition and bunker modes. Only the current
+                           # single-player selection is kept; war/draft alternatives are excluded.
+                           lateStates=[{k: b[k] for k in LATE_STATE_FIELDS if k in b}
+                                       for b in v['buildings'] + v['traps'] if b['data'] in LATE_STATE_IDS])
                       for s, v in zip(stages, layouts)], combat=combat, scenery=scenery)
 outputs = {
     'catalog.json': json.dumps(dict(bundle=BUNDLE, stages=stages, entities=entities), indent=2) + '\n',

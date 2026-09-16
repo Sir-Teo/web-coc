@@ -1,5 +1,5 @@
 import { visualRandom } from './visual-random';
-import source from '../../reference/dark-drill/sounds.json';
+import source from '../../reference/dark-drill/sounds.json' with { type: 'json' };
 import type { SampleCue } from './sample-audio';
 export const DARK_DRILL_SOUNDS = source.sounds;
 export const darkDrillSample = (path: string) => `dark-drill-${path.split('/').at(-1)}`;

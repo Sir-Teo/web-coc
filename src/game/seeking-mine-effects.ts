@@ -1,4 +1,4 @@
-import raw from '../../reference/seeking-mine/effects.json';
+import raw from '../../reference/seeking-mine/effects.json' with { type: 'json' };
 import { nativeScenePoses } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { SEEKING_MINE_GRAPH, seekingMineClip, seekingMineFlightPoint } from './seeking-mine-poses';

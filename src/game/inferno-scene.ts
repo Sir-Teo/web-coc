@@ -8,13 +8,8 @@ import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import {
-  INFERNO_ROOT,
-  INFERNO_GRAPH,
-  infernoAsset,
-  infernoTexture,
-  infernoPoses,
-} from './inferno-art';
+import { INFERNO_ROOT, infernoAsset, infernoTexture } from './inferno-art';
+import { INFERNO_GRAPH, infernoPoses } from './inferno-graph';
 
 export function preloadInfernos(scene: Phaser.Scene) {
   for (const [path, sound] of Object.entries(INFERNO_SOUNDS))

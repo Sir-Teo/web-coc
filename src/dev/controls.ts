@@ -3,6 +3,7 @@ import { GameModel, makeBuilding, type Save } from '../game/model';
 import {
   BUILDINGS,
   buildingHp,
+  MAX_TOWNHALL,
   maxTroopLevel,
   SPELL_KEYS,
   TROOP_KEYS,
@@ -95,7 +96,7 @@ export class DeveloperControls {
     });
   }
   setTownHall(level: number) {
-    integer(level, 1, 8);
+    integer(level, 1, MAX_TOWNHALL);
     this.edit((m) => {
       const hall = m.townhall!;
       hall.level = level;

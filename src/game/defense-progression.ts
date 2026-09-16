@@ -1,5 +1,5 @@
 import { ARCHER_TOWER_LEVELS, ARCHER_TOWER } from './archer-tower-stats';
-import infernoCatalog from '../../reference/inferno/catalog.json';
+import infernoCatalog from '../../reference/inferno/catalog.json' with { type: 'json' };
 import { CANNON_LEVELS, CANNON } from './cannon-stats';
 import { MORTAR_LEVELS, MORTAR } from './mortar-stats';
 import type { BuildingKind } from './data';
@@ -7,25 +7,22 @@ import { XBOW_LEVELS, XBOW } from './xbow-stats';
 import { TESLA_LEVELS, TESLA } from './tesla-stats';
 import { BOMB_TOWER_LEVELS, BOMB_TOWER } from './bomb-tower-stats';
 import { WIZARD_TOWER_LEVELS, WIZARD_TOWER } from './wizard-tower-stats';
+import { namedLevels } from './townhall-catalog';
+
+/** Undiscounted original Air Defense rows; pinned in reference/townhall. */
+export const AIR_DEFENSE_LEVELS = namedLevels('Air Defense').map((row) => ({
+  dps: row.dps!,
+  hp: row.hp!,
+  cost: row.cost,
+  seconds: row.seconds,
+}));
 
 /** Undiscounted destination-level values. See the defense progression audits in docs/. */
 export const DEFENSE_PROGRESSION = {
   inferno: infernoCatalog.levels.map((row) => ({ ...row, dps: row.weapon.dps[0] })),
   bombtower: BOMB_TOWER_LEVELS,
   tesla: TESLA_LEVELS,
-  airdefense: [
-    { dps: 80, hp: 800, cost: 22000, seconds: 3600 },
-    { dps: 110, hp: 850, cost: 90000, seconds: 7200 },
-    { dps: 140, hp: 900, cost: 210000, seconds: 21600 },
-    { dps: 160, hp: 950, cost: 500000, seconds: 43200 },
-    { dps: 190, hp: 1000, cost: 800000, seconds: 64800 },
-    { dps: 230, hp: 1050, cost: 1000000, seconds: 86400 },
-    // Accepted older saves retain levels beyond the TH8 ceiling.
-    { dps: 280, hp: 1100, cost: 1750000, seconds: 172800 },
-    { dps: 320, hp: 1210, cost: 2300000, seconds: 216000 },
-    { dps: 360, hp: 1300, cost: 3400000, seconds: 259200 },
-    { dps: 400, hp: 1400, cost: 5000000, seconds: 345600 },
-  ],
+  airdefense: AIR_DEFENSE_LEVELS,
   wizardtower: WIZARD_TOWER_LEVELS,
   cannon: CANNON_LEVELS,
   mortar: MORTAR_LEVELS,
@@ -57,7 +54,8 @@ export const DEFENSE_WEAPONS = {
 /** Returns a destination's stats when this defense has been audited. */
 export function defenseProgression(kind: BuildingKind, level: number) {
   if (kind === 'xbow') return XBOW_LEVELS[level - 1];
-  return kind === 'bombtower' ||
+  return kind === 'inferno' ||
+    kind === 'bombtower' ||
     kind === 'tesla' ||
     kind === 'cannon' ||
     kind === 'archertower' ||

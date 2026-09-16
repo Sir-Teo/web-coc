@@ -1,98 +1,158 @@
-import native from '../../reference/full-client/progression.json';
-import type { TroopKind, LegacyTroopKind } from './data';
+import catalog from '../../reference/troops/catalog.json' with { type: 'json' };
+import type { SpellKind, TroopKind } from './data';
 
-/** Undiscounted Home Village values; each row describes its destination level.
- * Sources and conversion notes: docs/TROOP-PROGRESSION.md.
+/**
+ * Every original level of the troops and spells this game trains. See
+ * reference/troops/README.md; a row describes its destination level, and its price and
+ * duration are what reaching that level costs.
  */
-interface TroopLevel {
+export interface TroopLevel {
+  level: number;
   hp: number;
   dps: number;
+  housing: number;
+  laboratory: number;
   cost: number;
   seconds: number;
-  laboratory: number;
-  deathDamage?: number;
+  resource: 'gold' | 'elixir' | 'dark';
+  /** The Healer alone heals, which the source carries as a negative damage rate. */
   heal?: number;
+  /** Wall Breakers and Balloons alone damage what they die on. */
+  deathDamage?: number;
 }
-const BASE_TROOP_LEVELS: Record<LegacyTroopKind, readonly TroopLevel[]> = {
-  healer: [
-    { hp: 500, dps: 0, heal: 36, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 700, dps: 0, heal: 48, cost: 450000, seconds: 43200, laboratory: 5 },
-    { hp: 900, dps: 0, heal: 60, cost: 900000, seconds: 86400, laboratory: 6 },
-  ],
-  dragon: [
-    { hp: 1900, dps: 140, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 2100, dps: 160, cost: 1000000, seconds: 64800, laboratory: 5 },
-    { hp: 2300, dps: 180, cost: 2000000, seconds: 129600, laboratory: 6 },
-  ],
-  pekka: [
-    { hp: 3000, dps: 260, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 3500, dps: 290, cost: 600000, seconds: 43200, laboratory: 6 },
-    { hp: 4000, dps: 320, cost: 1300000, seconds: 64800, laboratory: 6 },
-  ],
-  swordsman: [
-    { hp: 45, dps: 9, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 54, dps: 12, cost: 10000, seconds: 1800, laboratory: 1 },
-    { hp: 65, dps: 15, cost: 50000, seconds: 3600, laboratory: 3 },
-    { hp: 85, dps: 18, cost: 130000, seconds: 7200, laboratory: 5 },
-    { hp: 105, dps: 23, cost: 300000, seconds: 14400, laboratory: 6 },
-  ],
-  archer: [
-    { hp: 22, dps: 8, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 26, dps: 10, cost: 20000, seconds: 3600, laboratory: 1 },
-    { hp: 29, dps: 13, cost: 80000, seconds: 7200, laboratory: 3 },
-    { hp: 33, dps: 16, cost: 200000, seconds: 10800, laboratory: 5 },
-    { hp: 40, dps: 20, cost: 500000, seconds: 28800, laboratory: 6 },
-  ],
-  giant: [
-    { hp: 400, dps: 12, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 500, dps: 15, cost: 40000, seconds: 7200, laboratory: 2 },
-    { hp: 600, dps: 20, cost: 150000, seconds: 14400, laboratory: 4 },
-    { hp: 700, dps: 24, cost: 400000, seconds: 21600, laboratory: 5 },
-    { hp: 900, dps: 31, cost: 800000, seconds: 43200, laboratory: 6 },
-  ],
-  wizard: [
-    { hp: 75, dps: 50, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 90, dps: 70, cost: 120000, seconds: 14400, laboratory: 3 },
-    { hp: 108, dps: 90, cost: 300000, seconds: 18000, laboratory: 4 },
-    { hp: 135, dps: 125, cost: 600000, seconds: 43200, laboratory: 5 },
-    { hp: 165, dps: 170, cost: 1200000, seconds: 64800, laboratory: 6 },
-  ],
-  balloon: [
-    { hp: 150, dps: 25, deathDamage: 25, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 180, dps: 32, deathDamage: 32, cost: 100000, seconds: 14400, laboratory: 2 },
-    { hp: 216, dps: 48, deathDamage: 48, cost: 400000, seconds: 21600, laboratory: 4 },
-    { hp: 280, dps: 72, deathDamage: 72, cost: 720000, seconds: 64800, laboratory: 5 },
-    { hp: 390, dps: 108, deathDamage: 108, cost: 1300000, seconds: 86400, laboratory: 6 },
-  ],
-  goblin: [
-    { hp: 25, dps: 11, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 30, dps: 14, cost: 45000, seconds: 7200, laboratory: 1 },
-    { hp: 36, dps: 19, cost: 100000, seconds: 10800, laboratory: 3 },
-    { hp: 50, dps: 24, cost: 500000, seconds: 21600, laboratory: 5 },
-    { hp: 65, dps: 32, cost: 700000, seconds: 43200, laboratory: 6 },
-  ],
-  wallbreaker: [
-    { hp: 20, dps: 10, deathDamage: 6, cost: 0, seconds: 0, laboratory: 0 },
-    { hp: 24, dps: 20, deathDamage: 9, cost: 80000, seconds: 10800, laboratory: 2 },
-    { hp: 29, dps: 25, deathDamage: 13, cost: 200000, seconds: 14400, laboratory: 4 },
-    { hp: 35, dps: 30, deathDamage: 16, cost: 450000, seconds: 43200, laboratory: 5 },
-    { hp: 53, dps: 43, deathDamage: 23, cost: 1000000, seconds: 57600, laboratory: 6 },
-  ],
-};
-export const TROOP_LEVELS = { ...native.troops, ...BASE_TROOP_LEVELS } as Record<
-  TroopKind,
-  readonly TroopLevel[]
+export interface RosterEntry {
+  /** Barracks, Dark Barracks or Siege Workshop. */
+  building: string;
+  /** A paid, temporary upgrade of an ordinary troop rather than a troop of its own. */
+  superTroop: boolean;
+  /** Production building level that unlocks it. */
+  barracks: number;
+  /** Town Hall the source says first offers it. */
+  townhall: number;
+  levels: readonly TroopLevel[];
+}
+/** Every producible troop the source defines, by its original name. */
+export const TROOP_ROSTER = catalog.roster as unknown as Readonly<Record<string, RosterEntry>>;
+/** The original record behind each local troop key. */
+/**
+ * The ten original troops come from the catalog map; the native roster added the rest, whose
+ * rows the same pinned source already carries under their client names.
+ */
+const NATIVE_TROOP_NAMES = {
+  babydragon: 'Baby Dragon',
+  miner: 'Miner',
+  electrodragon: 'Electro Dragon',
+  yeti: 'Yeti',
+  dragonrider: 'Dragon Rider',
+  electrotitan: 'Electro Titan',
+  rootrider: 'Root Rider',
+  thrower: 'Thrower',
+  meteorgolem: 'Meteor Golem',
+  minion: 'Minion',
+  hogrider: 'Hog Rider',
+  valkyrie: 'Valkyrie',
+  golem: 'Golem',
+  witch: 'Witch',
+  lavahound: 'Lava Hound',
+  bowler: 'Bowler',
+  icegolem: 'Ice Golem',
+  headhunter: 'Headhunter',
+  apprenticewarden: 'Apprentice Warden',
+  druid: 'Druid',
+  furnace: 'Furnace',
+  ruinwitch: 'Ruin Witch',
+} as const;
+export const TROOP_NAMES = { ...catalog.troops, ...NATIVE_TROOP_NAMES } as Readonly<
+  Record<TroopKind, string>
 >;
-for (const kind of Object.keys(TROOP_LEVELS) as TroopKind[]) {
-  TROOP_LEVELS[kind] = [
-    ...TROOP_LEVELS[kind],
-    ...native.troops[kind]
-      .slice(TROOP_LEVELS[kind].length)
-      .map((row) => ({
-        ...row,
-        heal: row.heal || undefined,
-        deathDamage: row.deathDamage || undefined,
-      })),
-  ];
-}
+export const TROOP_LEVELS = Object.fromEntries(
+  Object.entries(TROOP_NAMES).map(([kind, name]) => [kind, TROOP_ROSTER[name].levels]),
+) as Readonly<Record<TroopKind, readonly TroopLevel[]>>;
 export const troopProgression = (kind: TroopKind, level: number) => TROOP_LEVELS[kind][level - 1];
+/** Highest level the Laboratory can research, per troop. */
+export const maxTroopLevelFor = (kind: TroopKind) => TROOP_LEVELS[kind].length;
+export const MAX_TROOP_LEVEL = Math.max(...Object.values(TROOP_LEVELS).map((r) => r.length));
+
+/** Mechanical columns a spell carries, in tiles and seconds. Absent means the source has
+ * no such column for that spell, which is different from a column that is zero. */
+export interface SpellMechanics {
+  radius?: number;
+  pulses?: number;
+  interval?: number;
+  deploy?: number;
+  buildingDamage?: number;
+  troopDamage?: number;
+  preferredDamage?: number;
+  freeze?: number;
+  freezeOuter?: number;
+  boost?: number;
+  speedBoost?: number;
+  speedBoost2?: number;
+  attackSpeedBoost?: number;
+  damageBoost?: number;
+  poisonDps?: number;
+  invisibility?: number;
+  jump?: number;
+  /** Housing space of copies the Clone Spell makes, and how long a copy lives. */
+  duplicateHousing?: number;
+  duplicateLifetime?: number;
+  /** Housing space the Recall Spell may take back into the hand. */
+  recallHousing?: number;
+  /** Fraction of its maximum a revived hero returns with, and how far the spell reaches. */
+  resurrect?: number;
+  targeting?: number;
+  stun?: number;
+}
+export interface SpellLevel {
+  level: number;
+  housing: number;
+  laboratory: number;
+  damage: number;
+  heal: number;
+  damageBoost: number;
+  speedBoost: number;
+  cost: number;
+  seconds: number;
+  resource: 'gold' | 'elixir' | 'dark';
+  mechanics?: SpellMechanics;
+}
+export interface SpellRosterEntry {
+  /** Spell Factory or Dark Spell Factory. */
+  building: string;
+  /** The Earthquake alone names one: it hits Walls five times as hard. */
+  preferredTarget: string;
+  /** What this spell cannot touch, read from the source rather than assumed. */
+  immune: readonly string[];
+  /** Factory level that unlocks it. */
+  forge: number;
+  levels: readonly SpellLevel[];
+}
+/** Every producible spell the source defines, by its original name. */
+export const SPELL_ROSTER = catalog.spellRoster as unknown as Readonly<
+  Record<string, SpellRosterEntry>
+>;
+/** The original record behind each local spell key. */
+/**
+ * The nine released spells come from the catalog map; the native roster added the rest, whose
+ * rows the same pinned source already carries under their client names.
+ */
+const NATIVE_SPELL_NAMES = {
+  totem: 'Totem Spell',
+  poison: 'Poison',
+  earthquake: 'Earthquake',
+  haste: 'Haste',
+  skeleton: 'Skeleton Spell',
+  bat: 'Bat Spell',
+  overgrowth: 'Overgrowth',
+  iceblock: 'Ice Block',
+  angry: 'AngrySpell',
+} as const;
+export const SPELL_NAMES = { ...catalog.spells, ...NATIVE_SPELL_NAMES } as Readonly<
+  Record<SpellKind, string>
+>;
+export const SPELL_LEVELS = Object.fromEntries(
+  Object.entries(SPELL_NAMES).map(([kind, name]) => [kind, SPELL_ROSTER[name].levels]),
+) as Readonly<Record<SpellKind, readonly SpellLevel[]>>;
+export const spellProgression = (kind: SpellKind, level: number) => SPELL_LEVELS[kind][level - 1];
+export const maxSpellLevelFor = (kind: SpellKind) => SPELL_LEVELS[kind].length;
+export const MAX_SPELL_LEVEL = Math.max(...Object.values(SPELL_LEVELS).map((r) => r.length));

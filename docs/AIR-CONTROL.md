@@ -1,6 +1,6 @@
 # Air Sweeper and Seeking Air Mine audit
 
-Implemented for the local Town Hall 1–8 catalog. Reviewed 2026-09-12. The Sweeper now renders its original source bodies, independent rotating parts, loading animation, particles and four sounds across all seven levels. [Seeking Air Mines](../reference/seeking-mine/README.md) now render the original four animated families, appearance and impact effects, five sounds and original Info portrait across all eight source levels. Both run in the local simulation, with unresolved native behavior listed below.
+Implemented for the local Town Hall 1–18 catalog. Reviewed 2026-09-12. The Sweeper now renders its original source bodies, independent rotating parts, loading animation, particles and four sounds across all seven levels. [Seeking Air Mines](../reference/seeking-mine/README.md) now render the original four animated families, appearance and impact effects, five sounds and original Info portrait across all eight source levels. Both run in the local simulation, with unresolved native behavior listed below.
 
 ## Primary data
 
@@ -22,7 +22,7 @@ Supercell public client bundle `18.400.21`, asset hash `7f04bdfdc4124b1f49308423
 
 The mine now uses all eight original damage/cost/time rows for campaign, retained saves and practice. Home availability remains level 1: 1,500 damage, 12,000 gold, instant placement. Every level uses a four-tile trigger, minimum five housing spaces, a single target and 3.5 tiles/s. Healers are eligible. The focused runtime projection preserves all four projectile exports, shadow, emitter, start height/offset, scale and play-once fields.
 
-Catalog ceilings/counts were cross-checked against [Sweeper progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/air-sweeper) and [mine progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/seeking-air-mine): one Sweeper from TH6, levels 2/3/4 at TH6/7/8; one mine at TH7 and two at TH8. Mine level 2 requires TH9 and is outside this catalog. The trap CSV's level-one TownHallLevel field is not its unlock gate.
+Catalog ceilings/counts were cross-checked against [Sweeper progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/air-sweeper) and [mine progression](https://www.gibiarena.com/en/clash-of-clans/upgrades/seeking-air-mine): one Sweeper from TH6, levels 2/3/4 at TH6/7/8; one mine at TH7 and two at TH8. The pinned tier tables in [reference/townhall](../reference/townhall/README.md) agree, and carry both families to the end of their original rows: two Sweepers up to level 7 by Town Hall 11, and nine mines up to level 8 by Town Hall 18. The trap CSV's level-one TownHallLevel field is not its unlock gate.
 
 ## Simulation and limits of the comparison
 
@@ -58,6 +58,6 @@ Original attack smoke uses all source emitter parameters through the shared dete
 
 The original `dummy_particle` is a tiny white marker. It is retained as source evidence and is not rendered as a visible traveling projectile. The existing three curved gust lines continue to show the local collision front; their shape/color are authored and native procedural wind-wave rendering remains unresolved. Reduced motion freezes the loading mechanism and suppresses particles and gust curves while preserving aiming, combat displacement and audio controls.
 
-All seven HP/push/cost/time rows now drive retained villages and practice. The source TH9/10/11 requirements for levels 5/6/7 appear in Info; home purchase/upgrade ceilings remain levels 2/3/4 at TH6/7/8. Higher retained levels are never clamped. High Pressure still requires Mortar 11 and Cannon 15; No Flight Zone still requires its garrison and Clan Castle. Supporting the Sweeper alone does not unlock either incomplete stage.
+All seven HP/push/cost/time rows now drive retained villages and practice, and the home ladder reaches every one of them: levels 2/3/4/5/6/7 at TH6/7/8/9/10/11. Higher retained levels are never clamped. High Pressure still requires Mortar 11 and Cannon 15; No Flight Zone still requires its garrison and Clan Castle. Supporting the Sweeper alone does not unlock either incomplete stage.
 
 Replay format remains **34** and home save format **4**. Old viewers reject newly supported levels through their lower level limits. Two immutable pre-integration recordings were generated using actual commit `8e786b6`: all **1,371 physical states** reproduce exactly after removing only the new presentation-history field, including complete results. Five new air-army fixtures also match Node at every step in Chromium and WebKit. Current and historical tests establish local compatibility, not native client balance. See [QA.md](QA.md) for the live pixel, viewport, audio, source-reproduction and shipping/offline results.

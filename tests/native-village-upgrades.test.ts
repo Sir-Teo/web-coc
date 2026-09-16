@@ -81,7 +81,7 @@ describe('Town Hall 11-18 village upgrades', () => {
   });
 
   it('requires every Town Hall 16 merge before Town Hall 17 and merges the Eagle Artillery', () => {
-    const m = village(16, [makeBuilding(10, 'eagle', 30, 30, 7)]);
+    const m = village(16, [makeBuilding(10, 'eagleartillery', 30, 30, 7)]);
     m.upgrade(1);
     expect(m.state.buildings.find((b) => b.id === 1)!.upgradeEnd).toBeUndefined();
     expect(m.townHallMergeIssue()).toMatch(/Ricochet Cannon/);
@@ -92,8 +92,8 @@ describe('Town Hall 11-18 village upgrades', () => {
     expect(m.townHallMergeIssue()).toBeNull();
     m.upgrade(1);
     expect(m.state.buildings.find((b) => b.id === 1)!.upgradeEnd).toBeDefined();
-    expect(m.state.buildings.some((b) => b.kind === 'eagle')).toBe(false);
-    expect(m.maxCount('eagle')).toBe(0);
+    expect(m.state.buildings.some((b) => b.kind === 'eagleartillery')).toBe(false);
+    expect(m.maxCount('eagleartillery')).toBe(0);
   });
 
   it('gears up one Cannon, which then fires native 4-ball bursts in version 45 battles', () => {

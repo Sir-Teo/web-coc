@@ -48,11 +48,11 @@ describe('Home Village wall progression', () => {
   });
 
   it('starts within the TH2 limit and places for free with no gold for the final available piece', () => {
-    expect(Array.from({ length: 8 }, (_, i) => maxCountFor('wall', i + 1))).toEqual([
-      0, 25, 50, 75, 100, 125, 175, 225,
+    expect(Array.from({ length: 9 }, (_, i) => maxCountFor('wall', i + 1))).toEqual([
+      0, 25, 50, 75, 100, 125, 175, 225, 250,
     ]);
-    expect(Array.from({ length: 8 }, (_, i) => maxLevelFor('wall', i + 1))).toEqual([
-      0, 2, 3, 4, 5, 6, 7, 8,
+    expect(Array.from({ length: 9 }, (_, i) => maxLevelFor('wall', i + 1))).toEqual([
+      0, 2, 3, 4, 5, 6, 7, 8, 10,
     ]);
     const m = new GameModel();
     expect(m.countOf('wall')).toBe(25);

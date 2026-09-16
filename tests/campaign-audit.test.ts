@@ -130,7 +130,17 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
         m.state.stars.fill(1);
         m.state.army = { ...emptyArmy(), ...army.units };
         // Compare troop compositions without spell assistance.
-        m.state.spells = { rage: 0, heal: 0, lightning: 0 };
+        m.state.spells = {
+          rage: 0,
+          heal: 0,
+          lightning: 0,
+          freeze: 0,
+          invisibility: 0,
+          jump: 0,
+          clone: 0,
+          recall: 0,
+          revive: 0,
+        };
         m.state.troopLevels = Object.fromEntries(
           TROOP_KEYS.map((k) => [k, Math.min(army.level, maxTroopLevel(k))]),
         ) as Record<TroopKind, number>;
@@ -196,7 +206,7 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
       `Stage ${stage} cannot be cleared`,
     ).toBe(true);
   // This 288-battle functional matrix is not a frame-time benchmark.
-}, 60000);
+}, 180_000);
 
 it('the actual starter army can win the opening raid without spells or upgrades', () => {
   const stars = approaches.map((approach) => {

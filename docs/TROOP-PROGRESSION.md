@@ -1,8 +1,12 @@
 # Home Village troop progression
 
-September 11, 2026. The seven earlier troop types use explicit level 1–5 records for health, damage, research price, duration and laboratory requirement. The prototype 30% upgrade multiplier has been removed. Barbarian and Archer values are documented in [the starter troop audit](STARTER-TROOP-PROGRESSION.md); this pass completes the other five supported types.
+September 14, 2026. Every troop now runs to its own original ceiling, read from the pinned [troop reference](../reference/troops/README.md) rather than transcribed: 129 levels across the ten troops this game trains, from the Goblin's ten to the Archer's, Giant's, Wizard's and Wall Breaker's fourteen.
 
-The later Healer, Dragon and P.E.K.K.A expansion is documented in [LATE-TROOPS.md](LATE-TROOPS.md), including its separate three-level ceilings and engine version 18.
+One value correction came out of the switch. The Barbarian's research carries a trailing 30 minutes at every level, which the earlier transcription dropped from levels 3 to 5: they take 1h30, 2h30 and 4h30, not 1h, 2h and 4h. Nothing else moved.
+
+Otherwise the tables the roster replaces were correct. Every value the importer produces for the levels this game already shipped — the seven earlier types through level 5, and the Healer, Dragon and P.E.K.K.A through level 3 — reproduces the previous records exactly apart from those three durations, so extending the roster changed no combat value and no recorded battle. The prototype 30% upgrade multiplier remains removed. Barbarian and Archer values are documented in [the starter troop audit](STARTER-TROOP-PROGRESSION.md); the Healer, Dragon and P.E.K.K.A expansion in [LATE-TROOPS.md](LATE-TROOPS.md), including engine version 18.
+
+This is what makes the Laboratory worth raising. Its last level now reaches the last level of every troop, where the roster used to run out far below it.
 
 ## References and values
 

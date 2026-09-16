@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { BUILDINGS, TROOPS, trapDamage, type TroopKind } from '../src/game/data';
 import {
   GameModel,
@@ -45,7 +46,7 @@ function traps(m: GameModel, seconds: number, effects: FX[] = []) {
 
 describe('hidden traps', () => {
   it('obeys unlocks, building limits, collision, builders, upgrades and save round trips', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     m.state.obstacles = []; // Cleared ground for this placement scenario.
     m.beginBuild('springtrap');
     expect(m.placement).toBeNull();

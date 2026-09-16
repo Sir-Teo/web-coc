@@ -22,6 +22,11 @@ export interface BattleHero {
 export const HERO_MAX_LEVEL = KING_LEVELS.length;
 export const heroLevelCap = (townhall: number, hall: number) =>
   KING_LEVELS.filter((level) => level.townhall <= townhall && level.hall <= hall).length;
+/** What the next King level needs, so a capped hero can name its own requirement. */
+export const heroNextRequirement = (level: number) => {
+  const next = KING_LEVELS[level];
+  return next && { townhall: next.townhall, hall: next.hall };
+};
 export const heroUpgradeCost = (level: number) => KING_LEVELS[level]?.cost ?? 0;
 export const heroUpgradeSeconds = (level: number) => KING_LEVELS[level]?.seconds ?? 0;
 export const heroTownHallScale = (townhall: number) =>

@@ -37,7 +37,8 @@ test('all defense artwork loads and locked buildings show their actual unlock', 
   await boot(page);
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Traps"]').click();
-  await expect(page.locator('.shop-tile')).toHaveCount(5);
+  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine and Tornado Trap.
+  await expect(page.locator('.shop-tile')).toHaveCount(7);
   await expect(page.locator('.shop-tile').filter({ hasText: 'Giant Bomb' })).toContainText(
     'Town Hall 6',
   );
@@ -150,7 +151,8 @@ test('phone shop categories and trap info stay usable in portrait and landscape'
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Traps"]').click();
-  await expect(page.locator('.shop-tile')).toHaveCount(5);
+  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine and Tornado Trap.
+  await expect(page.locator('.shop-tile')).toHaveCount(7);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(
     await page.evaluate(() => {

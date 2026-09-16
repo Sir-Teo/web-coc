@@ -66,7 +66,7 @@ const lost = (u: { hp: number; maxHp: number }) => u.maxHp - u.hp;
 describe('Town Hall 11-18 defense weapons from the client tables', () => {
   it('matches the official per-hit values and timings', () => {
     // Eagle Artillery: 3 shells 0.75 s apart, 10 s cooldown, 7-50 tiles, wakes at 200 housing.
-    const eagle = nativeWeapon('eagle', 7)!;
+    const eagle = nativeWeapon('eagleartillery', 7)!;
     expect([eagle.burst, eagle.burstDelay, eagle.minRange, eagle.range, eagle.wakeSpace]).toEqual([
       3, 0.75, 7, 50, 200,
     ]);
@@ -138,7 +138,7 @@ describe('Town Hall 11-18 defense weapons from the client tables', () => {
 
 describe('native defense combat', () => {
   it('keeps the Eagle Artillery dormant until 200 housing is deployed, then fires 3-shell volleys', () => {
-    const m = arena([['eagle', 20, 20, 7]], { giant: 45 });
+    const m = arena([['eagleartillery', 20, 20, 7]], { giant: 45 });
     // 39 Giants = 195 housing: still dormant.
     deploy(m, 'giant', 2, 2, 39);
     run(m, 6);
@@ -159,14 +159,14 @@ describe('native defense combat', () => {
   });
 
   it('lands Eagle shells for the hit-spell damage plus a shockwave that pushes small troops', () => {
-    const m = arena([['eagle', 30, 30, 7]], { golem: 20, swordsman: 1 }, { troopLevel: 10 });
+    const m = arena([['eagleartillery', 30, 30, 7]], { golem: 20, swordsman: 1 }, { troopLevel: 10 });
     const golems = deploy(m, 'golem', 6, 6, 20);
     const barbarian = deploy(m, 'swordsman', 6, 7.5)[0];
     // Hold every attacker in place so the volley lands on known positions.
     for (const u of m.battle!.units) u.springUntil = 1e9;
     run(m, 12);
     const shellDamage = num(nativeRow('spells', 'Eagle Artillery Hit Spell', 7), 'Damage');
-    const shock = nativeWeapon('eagle', 7)!.damage;
+    const shock = nativeWeapon('eagleartillery', 7)!.damage;
     const target = m.battle!.units.find((u) => u.id === m.battle!.nativeDefenses![10].target)!;
     expect(golems).toContain(target);
     expect(lost(target)).toBeCloseTo(3 * shellDamage, 6);
@@ -481,7 +481,7 @@ describe('native defense combat', () => {
 
   it('replays a version 45 attack against the new defenses deterministically', () => {
     const layout: Placement[] = [
-      ['eagle', 8, 30, 7],
+      ['eagleartillery', 8, 30, 7],
       ['scattershot', 20, 20, 7],
       ['firespitter', 28, 12, 3, { direction: 4 }],
       ['superwizardtower', 34, 26, 2],

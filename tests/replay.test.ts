@@ -1,7 +1,7 @@
 import { emptySpells } from '../src/game/army';
 import { describe, expect, it, vi } from 'vitest';
 import { GameModel, makeBuilding, type Battle } from '../src/game/model';
-import { TROOP_KEYS, maxTroopLevel } from '../src/game/data';
+import { SPELL_KEYS, TROOP_KEYS, maxTroopLevel } from '../src/game/data';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 
@@ -29,7 +29,7 @@ function recorded(practice = false) {
   m.state.buildings.push(makeBuilding(m.state.nextId++, 'herohall', 23, 23));
   m.state.king = { level: 4 };
   m.state.army = Object.fromEntries(TROOP_KEYS.map((k) => [k, 2])) as typeof m.state.army;
-  m.state.spells = { ...emptySpells(), rage: 1, heal: 1, lightning: 1 };
+  m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as typeof m.state.spells;
   m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, 3])) as typeof m.state.army;
   m.startBattle(0, practice);
   m.step(0.05);

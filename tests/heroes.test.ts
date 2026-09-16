@@ -3,14 +3,17 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import {
   BUILDINGS,
+  MAX_TOWNHALL,
   maxCountFor,
   maxLevelFor,
+  buildPrice,
   storageCapacity,
+  townHallCapacity,
   upgradeCost,
   trapDamage,
   type BuildingKind,
 } from '../src/game/data';
-import { heroUpgradeCost, heroRecovery, HERO_ABILITY } from '../src/game/heroes';
+import { heroUpgradeCost, heroRecovery, HERO_ABILITY, HERO_MAX_LEVEL } from '../src/game/heroes';
 import { requiredTownHall } from '../src/game/progression';
 import { migrateSave, validateSave } from '../src/game/save';
 import { stepTraps } from '../src/game/traps';
@@ -39,6 +42,7 @@ describe('hero progression', () => {
     m.beginBuild('herohall');
     expect(m.placement).toBeNull();
     m.townhall!.level = 4;
+    m.state.elixir = 30000; // A Town Hall 4 can hold this; the opening grant cannot.
     m.beginBuild('herohall');
     expect(m.place(2, 26)).toBe(true);
     expect(m.heroReady).toBe(false);
@@ -96,19 +100,25 @@ describe('hero progression', () => {
     m.state.buildings.push(drill);
     m.tick(m.clock + 3600000);
     expect(drill.stored).toBeCloseTo(20);
+    // A Town Hall 7 holds 2,500 dark of its own, so the first collection lands with no store.
+    expect(m.resourceCap('dark')).toBe(2500);
+    m.state.dark = 2490;
     m.collect(drill.id);
-    expect(m.state.dark).toBe(0);
+    expect(m.state.dark).toBe(2500);
+    expect(drill.stored).toBeCloseTo(10);
+    // A first Dark Elixir Storage adds its own 10,000 on top of the Town Hall's.
     const storage = makeBuilding(m.state.nextId++, 'darkstorage', 1, 9);
     m.state.buildings.push(storage);
-    m.state.dark = 9990;
+    expect(m.resourceCap('dark')).toBe(12500);
+    m.state.dark = 12495;
     m.collect(drill.id);
-    expect(m.state.dark).toBe(10000);
-    expect(drill.stored).toBeCloseTo(10);
+    expect(m.state.dark).toBe(12500);
+    expect(drill.stored).toBeCloseTo(5);
     drill.upgradeEnd = m.clock + 3600000;
     m.tick(m.clock + 1800000);
-    expect(drill.stored).toBeCloseTo(10);
+    expect(drill.stored).toBeCloseTo(5);
     m.tick(drill.upgradeEnd + 3600000);
-    expect(drill.stored).toBeCloseTo(40);
+    expect(drill.stored).toBeCloseTo(35);
   });
 
   it('preserves old villages and rejects malformed hero state', () => {
@@ -123,7 +133,7 @@ describe('hero progression', () => {
     expect(validateSave(migrated)).toBe(true);
     const s = village().state;
     for (const king of [
-      { level: 111 },
+      { level: HERO_MAX_LEVEL + 1 },
       { level: 0 },
       { level: 1, upgradeStart: 10 },
       { level: 1, upgradeStart: 20, upgradeEnd: 10 },
@@ -231,15 +241,18 @@ describe('Town Hall tables', () => {
   });
 
   it('makes every available construction and upgrade affordable within that tier storage', () => {
-    for (let th = 1; th <= 8; th++) {
+    for (let th = 1; th <= MAX_TOWNHALL; th++) {
       const capacity =
-        100000 + maxCountFor('goldstorage', th) * storageCapacity(maxLevelFor('goldstorage', th));
+        townHallCapacity(th, 'gold') +
+        maxCountFor('goldstorage', th) * storageCapacity(maxLevelFor('goldstorage', th));
       for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
         if (!maxCountFor(kind, th)) continue;
-        expect(BUILDINGS[kind].cost, `${kind} construction at TH${th}`).toBeLessThanOrEqual(
-          capacity,
-        );
-        const cap = kind === 'townhall' ? Math.min(8, th + 1) : maxLevelFor(kind, th);
+        // A village always has exactly one Town Hall, so its level-1 price is never charged,
+        // and a Builder's Hut is bought with gems, which no storage caps.
+        const price = buildPrice(kind, 1);
+        if (kind !== 'townhall' && price.resource !== 'gems')
+          expect(price.cost, `${kind} construction at TH${th}`).toBeLessThanOrEqual(capacity);
+        const cap = kind === 'townhall' ? Math.min(MAX_TOWNHALL, th + 1) : maxLevelFor(kind, th);
         for (let level = kind === 'townhall' ? th : 1; level < cap; level++)
           expect(upgradeCost(kind, level), `${kind} ${level + 1} at TH${th}`).toBeLessThanOrEqual(
             capacity,

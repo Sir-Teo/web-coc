@@ -1,4 +1,4 @@
-import raw from '../../reference/cannon/runtime.json';
+import raw from '../../reference/cannon/runtime.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMeshGraph, type NativeMatrix } from './native-mesh';
 import { CANNON_ART } from './cannon-art';
 import { CANNON, CANNON_BUILDING, cannonStats, cannonProjectileRow } from './cannon-stats';

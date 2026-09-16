@@ -1,4 +1,4 @@
-import graph from '../../reference/archer-tower/characters-runtime.json';
+import graph from '../../reference/archer-tower/characters-runtime.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMeshGraph } from './native-mesh';
 import { archerTowerProjectileRow } from './archer-tower-stats';
 import type { CombatProjectile } from './projectiles';

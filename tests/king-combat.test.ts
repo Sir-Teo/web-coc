@@ -9,6 +9,7 @@ import {
   heroUpgradeSeconds,
 } from '../src/game/heroes';
 import { KING_LEVELS } from '../src/game/king-progression';
+import catalog from '../reference/townhall/catalog.json';
 import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { REPLAY_VERSION } from '../src/game/replay';
@@ -47,14 +48,18 @@ function arena(th = 7, level = 1) {
 }
 
 describe('native King progression and default equipment', () => {
-  it('uses all twenty base-health/DPS records and destination upgrade costs', () => {
+  it('uses every original base-health/DPS record and destination upgrade cost', () => {
+    // The catalog reproduces the signed client table; this checks the transcription into play.
+    expect(KING_LEVELS).toHaveLength(110);
+    expect(KING_LEVELS.map((l, i) => ({ level: i + 1, ...l }))).toEqual(
+      catalog.heroes.barbarianKing,
+    );
     expect(KING_LEVELS.slice(0, 20).map((l) => l.hp)).toEqual([
       1445, 1481, 1518, 1556, 1595, 1635, 1675, 1717, 1760, 1805, 1850, 1896, 1943, 1992, 2042,
       2093, 2145, 2198, 2253, 2309,
     ]);
-    expect(KING_LEVELS.slice(0, 20).map((l) => l.dps)).toEqual([
-      102, 104, 105, 108, 110, 112, 115, 116, 119, 122, 124, 127, 129, 132, 134, 137, 139, 143, 145,
-      148,
+    expect(KING_LEVELS.slice(19, 30).map((l) => l.recovery)).toEqual([
+      450, 450, 450, 450, 450, 525, 525, 525, 525, 525, 625,
     ]);
     expect(Array.from({ length: 19 }, (_, i) => heroUpgradeCost(i + 1))).toEqual([
       5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 10000, 10500, 11000, 11500, 12000, 12500,
@@ -63,12 +68,18 @@ describe('native King progression and default equipment', () => {
     expect(Array.from({ length: 19 }, (_, i) => heroUpgradeSeconds(i + 1) / 3600)).toEqual([
       2, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 24, 24, 24, 24, 24, 24, 24, 24,
     ]);
-    expect(Array.from({ length: 8 }, (_, i) => heroLevelCap(i + 1, 1))).toEqual([
-      0, 0, 0, 1, 1, 1, 10, 10,
+    expect(Array.from({ length: 9 }, (_, i) => heroLevelCap(i + 1, 1))).toEqual([
+      0, 0, 0, 1, 1, 1, 10, 10, 10,
     ]);
+    // Both the Town Hall and the Hero Hall have to permit a level.
     expect(heroLevelCap(8, 2)).toBe(20);
+    expect(heroLevelCap(9, 2)).toBe(20);
+    expect(heroLevelCap(9, 3)).toBe(30);
+    expect(heroLevelCap(8, 3)).toBe(20);
     expect(heroLevelCap(8, 0)).toBe(0);
+    expect(heroLevelCap(18, 12)).toBe(110);
   });
+
   it.each([
     [4, 877, 59.5, 71.4, 230],
     [5, 1315.5, 89.25, 107.1, 345],

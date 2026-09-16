@@ -1,6 +1,6 @@
 # Blacksmith and King equipment
 
-Numeric audit: September 12, 2026 UTC; native client 18.400.21. The local content ceiling remains Town Hall 8. This work implements Blacksmith level 1 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 9.
+Numeric audit: September 12, 2026 UTC; native client 18.400.21. This work implements the Blacksmith through its original level 10 and the Barbarian Puppet, Rage Vial and Earthquake Boots through equipment level 18, all read from the pinned [equipment reference](../reference/equipment/README.md) rather than transcribed. Every value it produces for the nine levels and four ability tiers this game already shipped reproduces the previous constants exactly, so nothing existing changed. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
 
 ## Primary references
 
@@ -17,7 +17,7 @@ Native numeric files are from the immutable Supercell client bundle `7f04bdfdc41
 | [globals.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/globals.csv) | `16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087` | Common ore gem anchors 1/10/100; Glowy 5; Starry 35 gems each |
 | [resources.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/resources.csv) | `15f321776bb2ae323bef624a7d7f0235d3f5f40420a6a78e1586b33e972a19d0` | Ore identity and native UI hue families |
 
-The signed CSV decoding procedure is recorded in [KING-COMBAT.md](KING-COMBAT.md). Blank cells inherit within a named record. Equipment costs on a current row buy the **next** level; Blacksmith requirements describe the current row. Equipment levels 1–9 require Blacksmith 1; level 10 requires Blacksmith 3 (TH10), beyond the local ceiling.
+The signed CSV decoding procedure is recorded in [KING-COMBAT.md](KING-COMBAT.md). Blank cells inherit within a named record. Equipment costs on a current row buy the **next** level; Blacksmith requirements describe the current row. Equipment levels 1–9 require Blacksmith 1; level 10 requires Blacksmith 3 (TH10). Equipment levels 1–9 need only Blacksmith 1; the source gates 10, 13 and 16 behind Blacksmith 3, 5 and 7. Each forge level also stores more ore, from 10,000 Shiny / 1,000 Glowy / 200 Starry at level 1 to 50,000 / 5,000 / 1,000 at level 10. An upgrade past what the built forge allows is refused, naming the level it needs. Ability tiers run to seven: the Puppet's summons rise 8 / 16 / 20 / 30 / 36 / 40 / 44 with a +100 to +220% boost, the Vial reaches +155% damage and 4.8 tiles/s, and the Boots reach 8% of a building's maximum health and 2% of a ground defender's per pulse. These three items never charge Starry Ore at any level. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
 
 Blacksmith 1 occupies 3×3 tiles, costs 600,000 Elixir, takes 12 hours, has 700 HP, and holds 10,000 Shiny / 1,000 Glowy / 200 Starry Ore. One is available at TH8.
 

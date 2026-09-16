@@ -15,11 +15,11 @@ The signed files have a 68-byte signature header followed by the client LZMA pay
 
 ## Base progression
 
-`src/game/king-progression.ts` contains all twenty supported base-health, DPS, recovery and upgrade records. Heroes use **two tiles/s movement**, **one-tile melee range**, and a **1.2-second attack interval**. Damage per hit is DPS × 1.2. The King attacks ground targets only and uses no army housing.
+`src/game/king-progression.ts` carries all 110 original base-health, DPS, recovery and upgrade records, read from [reference/townhall](../reference/townhall/README.md). Heroes use **two tiles/s movement**, **one-tile melee range**, and a **1.2-second attack interval**. Damage per hit is DPS × 1.2. The King attacks ground targets only and uses no army housing.
 
 `heroes.csv` stores the next upgrade's price and duration on the current-level row. The implementation converts these to destination-level records: level 2 costs **5,000 dark elixir / 2 hours**, level 10 costs **10,000 / 20 hours**, level 11 costs **10,500 / 22 hours**, and level 20 costs **15,000 / 24 hours**. [The community King table](https://clashofclans.fandom.com/wiki/Barbarian_King?page=2) corroborates this offset; reading those fields as destination-level values would misprice every upgrade.
 
-TH4–6 retain level 1. TH7/Hero Hall 1 permits level 10; TH8/Hero Hall 2 permits level 20. Missing halls permit no hero levels. Already paid legacy upgrades keep their original cost and deadline, complete once, and do not charge again. New upgrades use the corrected table.
+TH4–6 retain level 1. TH7/Hero Hall 1 permits level 10; TH8/Hero Hall 2 permits level 20; TH9/Hero Hall 3 permits level 30, and each later hall raises it to 110 at TH18/Hero Hall 12. Both requirements must be met. Missing halls permit no hero levels. Already paid legacy upgrades keep their original cost and deadline, complete once, and do not charge again. New upgrades use the corrected table.
 
 `ScaleByTH=TRUE` and `ScaleByTHPercent` specify **50% at TH4, 75% at TH5, and 100% from TH6**. Health, damage and recovery include that scaling; movement, range and the equipment's percentage/flat movement boosts do not. Fractional health and damage are retained by the simulation; exact native integer/fixed-point rounding is not proven.
 
@@ -32,7 +32,7 @@ A new King starts with **level 1 Barbarian Puppet and level 1 Rage Vial**, the n
 | Barbarian Puppet | +309 health; +110 activation recovery | 8 Barbarians, five immediately and three after 0.5s. Each receives +100% damage and +1.2 tiles/s movement for 20s. |
 | Rage Vial | +17 DPS; +150 activation recovery | King receives +120% damage and +2.25 tiles/s movement for 10s. Attack interval is unchanged. |
 
-The King also has intrinsic activation recovery: 200 at levels 1–4, 250 at 5–9, 310 at 10–14, 375 at 15–19, and 450 at level 20. Combined default recovery is therefore 460 at level 1 and 710 at level 20 before early-TH scaling. Recovery is a fixed amount, capped by maximum health, not a percentage of maximum health.
+The King also has intrinsic activation recovery: 200 at levels 1–4, 250 at 5–9, 310 at 10–14, 375 at 15–19, 450 at 20–24, 525 at 25–29 and 625 at level 30. Combined default recovery is therefore 460 at level 1 and 710 at level 20 before early-TH scaling. Recovery is a fixed amount, capped by maximum health, not a percentage of maximum health.
 
 At TH6+ a level-1 attacking King has **1,754 health, 119 DPS, and 142.8 damage per hit** with these defaults. At TH4 these become **877, 59.5, and 71.4**, with 230 activation recovery. A level-20 King has **2,618 health, 165 DPS, and 198 damage per hit**. The panel shows equipped totals, the two items, recovery, movement, attack timing, early scaling and the next upgrade.
 

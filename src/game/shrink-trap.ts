@@ -1,4 +1,4 @@
-import source from '../../reference/shrink-trap/combat.json';
+import source from '../../reference/shrink-trap/combat.json' with { type: 'json' };
 import { distance2D } from './distance';
 import type { Battle, Unit } from './model';
 import type { TrapState } from './traps';

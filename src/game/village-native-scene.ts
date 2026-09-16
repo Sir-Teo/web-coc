@@ -11,7 +11,10 @@ import {
 } from './native-mesh';
 import { hasNativeDefenseBody, nativeDefenseBody } from './native-defense-poses';
 import { nativeTrapValues } from './native-traps';
-import progression from '../../reference/full-client/progression.json';
+import progressionSource from '../../reference/full-client/progression.json';
+const progression = progressionSource as unknown as {
+  buildings: Record<string, (typeof progressionSource.buildings)['townhall']>;
+};
 import index from '../../reference/full-client/village-art.json';
 
 interface Reference {

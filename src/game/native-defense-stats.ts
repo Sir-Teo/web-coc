@@ -20,7 +20,7 @@ import {
  * documented beside the reader and in docs/NATIVE-DEFENSES.md with the official wiki reference.
  */
 export const NATIVE_DEFENSE_SOURCE = {
-  eagle: 'Eagle Artillery',
+  eagleartillery: 'Eagle Artillery',
   scattershot: 'Scattershot',
   spelltower: 'Spell Tower',
   monolith: 'Monolith',

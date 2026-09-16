@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 import { OBSTACLES, OBSTACLE_GEMS } from '../src/game/obstacles';
 
 describe('village obstacles', () => {
   it('blocks building, moving and saved layouts until removal completes without reserving a builder', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     const o = m.obstacles.find((o) => o.x === 2 && o.y === 2)!;
     const camp = m.state.buildings.find((b) => b.kind === 'camp')!;
     for (const b of m.state.buildings.slice(0, m.builders)) b.upgradeEnd = m.clock + 60000;
@@ -31,7 +32,7 @@ describe('village obstacles', () => {
   });
 
   it('charges the correct resource once and cancellation refunds fully without a reward', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     for (const kind of ['trees', 'rocks'] as const) {
       const o = m.obstacles.find((o) => o.kind === kind)!;
       const d = OBSTACLES[kind];
@@ -51,7 +52,7 @@ describe('village obstacles', () => {
   });
 
   it('settles offline completion once, preserves cleared villages, and supports gem finishing', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     const o = m.obstacles[0];
     m.removeObstacle(o.id);
     o.removeEnd = Date.now() - 1;
@@ -73,7 +74,7 @@ describe('village obstacles', () => {
   });
 
   it('persists the regular reward cycle and advances it only on completed removals', () => {
-    let m = new GameModel();
+    let m = fundedVillage();
     const startingGems = m.state.gems;
     for (let i = 0; i < OBSTACLE_GEMS.length; i++) {
       m.state.obstacles = [{ id: 100, kind: 'rocks', x: 2, y: 2 }];
@@ -91,7 +92,7 @@ describe('village obstacles', () => {
   });
 
   it('rejects unaffordable removal and battle-time edits', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     const o = m.obstacles[0];
     m.state.elixir = 0;
     expect(m.removeObstacle(o.id)).toBe(false);

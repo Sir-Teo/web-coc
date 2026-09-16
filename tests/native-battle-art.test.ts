@@ -181,7 +181,7 @@ describe('native effect sampling', () => {
   it('draws the Eagle Artillery crater and blast at the impact point', () => {
     const poses = nativeEffectPoses(
       pack,
-      { key: 'eagle:1', effect: 'Ancient Hit', at: 4, ground: { x: 100, y: 200 } },
+      { key: 'eagleartillery:1', effect: 'Ancient Hit', at: 4, ground: { x: 100, y: 200 } },
       4.2,
       false,
     );
@@ -300,9 +300,9 @@ describe('native defense bodies', () => {
     expect(body.controls.turret).toBe(90);
   });
   it('holds the Eagle Artillery dormant, then activates, fires and reloads', () => {
-    const tower = makeBuilding(3, 'eagle', 6, 6, 1);
-    const resolve = resolverFor('eagle')(1);
-    const graph = village('eagle').scenes.buildings;
+    const tower = makeBuilding(3, 'eagleartillery', 6, 6, 1);
+    const resolve = resolverFor('eagleartillery')(1);
+    const graph = village('eagleartillery').scenes.buildings;
     const labels = nativeLabels(graph, nativeNamedChild(graph, 'doom_cannon_lvl1', 'turret_load'));
     const dormant = nativeDefenseBody(tower, battleWith([tower]), 5, resolve)!;
     expect(dormant.controls.turret_load).toBeUndefined();

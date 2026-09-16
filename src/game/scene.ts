@@ -15,14 +15,31 @@ import {
   villageArcherTowerBounds,
 } from './archer-tower-scene';
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
+import type { LateCampaignPresentation } from './late-campaign-scene';
+import { hasLateArt, lateArt } from './late-campaign-art';
+import {
+  isLateBuilding,
+  isLateCampaignBuilding,
+  lateUnitFrozen,
+  lateUnitTimeLost,
+} from './late-campaign';
+import { FROZEN_TINT } from './freeze-trap-art';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
-import { infernoPortrait, infernoBounds } from './inferno-art';
-import { preloadGarrisonTroops, GarrisonPresentation } from './garrison-scene';
+import { infernoPortrait } from './inferno-art';
+import { infernoBounds } from './inferno-graph';
+import {
+  preloadGarrisonTroops,
+  preloadLateGarrisonTroops,
+  GarrisonPresentation,
+} from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
+import { garrisonStats } from './garrison-kinds';
+import { characterBarHeight } from './character-poses';
 import { preloadCastles, CastlePresentation } from './castle-scene';
-import { CASTLE_ART, castleBounds } from './castle-art';
+import { CASTLE_ART } from './castle-art';
+import { castleBounds } from './castle-graph';
 import { CANNON_ART } from './cannon-art';
 import { preloadCannons, CannonPresentation } from './cannon-scene';
 import { cannonBounds } from './cannon-poses';
@@ -46,6 +63,7 @@ import { isShrunk } from './shrink-trap';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import { xbowRange, type XbowMode } from './xbow-stats';
+import { spellTowerRange } from './spell-tower-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
@@ -62,6 +80,7 @@ import {
   skeletonAsset,
 } from './skeleton-art';
 import { skeletonStats, type SkeletonMode } from './skeleton-stats';
+import { isGarrisonDefender } from './defenders';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
@@ -111,6 +130,15 @@ import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
+const LOADING_LATE_ART = 'Loading village art…';
+/** Stands in for the late campaign presentation until its art has loaded. */
+const INERT_LATE_CAMPAIGN = {
+  handles: () => false,
+  bounds: () => undefined,
+  render: () => [],
+  clear: () => {},
+  destroy: () => {},
+};
 const WOOD_RUINS = new Set<BuildingKind>([
   'barracks',
   'builder',
@@ -241,6 +269,17 @@ export class VillageScene extends Phaser.Scene {
   private darkStoragePresentation!: DarkStoragePresentation;
   private xbowPresentation!: XbowPresentation;
   private teslaPresentation!: TeslaPresentation;
+  /** Inert until the late campaign art loads; see `loadLateAssets`. */
+  private lateCampaign: Pick<
+    LateCampaignPresentation,
+    'handles' | 'bounds' | 'render' | 'clear' | 'destroy'
+  > = INERT_LATE_CAMPAIGN;
+  private lateAssets?: Promise<void>;
+  lateAssetsReady = false;
+  private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
+    battle: null,
+    needed: false,
+  };
   private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
@@ -303,6 +342,8 @@ export class VillageScene extends Phaser.Scene {
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     for (const k of Object.keys(BUILDINGS)) {
+      // Late campaign kinds render from their own per-level art, loaded with the late families.
+      if (hasLateArt(k)) continue;
       if (k !== 'mortar' && k !== 'cannon')
         this.load.image(k, k === 'darkdrill' ? '/assets/buildings/darkdrill.webp' : asset(k));
       if (
@@ -406,6 +447,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.destroy();
       this.goblinBuildingPresentation.destroy();
       this.teslaPresentation.destroy();
+      this.lateCampaign.destroy();
       this.bombTowerPresentation.destroy();
       this.wizardTowerPresentation.destroy();
       this.sweeperPresentation.destroy();
@@ -568,6 +610,58 @@ export class VillageScene extends Phaser.Scene {
     this.game.canvas.addEventListener('webglcontextrestored', () => {
       this.paused = false;
     });
+  }
+  /**
+   * The late Goblin Map families and their defending characters (about 40 MB) load the first
+   * time a battle or replay needs them rather than at boot. Resolves once they can render.
+   */
+  loadLateAssets(): Promise<void> {
+    if (this.lateAssets) return this.lateAssets;
+    const slow = setTimeout(() => this.model.notify(LOADING_LATE_ART), 400);
+    const settle = () => {
+      clearTimeout(slow);
+      // Withdraw a loading notice that is still showing; later messages stay.
+      if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
+    };
+    // The presentation code and its source graphs are a separate chunk, fetched with the art.
+    this.lateAssets = import('./late-campaign-scene').then(
+      ({ LateCampaignPresentation, preloadLateCampaign }) =>
+        new Promise<void>((resolve) => {
+          let failed = false;
+          const failure = () => (failed = true);
+          this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+          this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+            settle();
+            this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+            if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
+            this.lateCampaign = new LateCampaignPresentation(this, this.audio);
+            this.lateAssetsReady = true;
+            // Restyle every building so late bodies replace the hidden fallback sprites.
+            this.lastRevision = -1;
+            resolve();
+          });
+          preloadLateCampaign(this);
+          preloadLateGarrisonTroops(this);
+          this.load.start();
+        }),
+      () => {
+        settle();
+        this.model.notify('Village art could not load. Check your connection and try again.');
+        // The waiting battle can still return home; a later sync retries after a pause.
+        setTimeout(() => (this.lateAssets = undefined), 5000);
+      },
+    );
+    return this.lateAssets;
+  }
+  /** True while the current battle waits for late campaign art; its clock and input hold. */
+  private lateAssetsPending() {
+    if (this.lateAssetsReady) return false;
+    const battle = this.model.battle;
+    // A home village that owns a late family needs the same art outside battle.
+    if (!battle) return this.model.state.buildings.some(isLateCampaignBuilding);
+    if (this.lateBattle.battle !== battle)
+      this.lateBattle = { battle, needed: battle.buildings.some(isLateCampaignBuilding) };
+    return this.lateBattle.needed;
   }
   private drawField() {
     // One tiny repeating texture avoids tessellating 968 static diamonds every frame.
@@ -732,7 +826,8 @@ export class VillageScene extends Phaser.Scene {
       !this.model.replay &&
       !b.finished &&
       !this.model.placement &&
-      !this.model.activeSpell
+      !this.model.activeSpell &&
+      !this.lateAssetsPending()
     ) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
@@ -776,6 +871,10 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (this.model.battle) {
+      if (this.lateAssetsPending()) {
+        this.model.notify(LOADING_LATE_ART);
+        return;
+      }
       if (this.model.activeSpell) {
         if (this.model.castSpell(grid.x, grid.y)) this.audio.play('deploy');
         return;
@@ -786,7 +885,7 @@ export class VillageScene extends Phaser.Scene {
         this.model.selected = hit.id;
         this.model.changed();
         this.model.notify(
-          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'inferno' ? (hit.infernoMode === 'multi' ? 10 : 9) : hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
+          `${d.name} · Level ${hit.level} · Range ${d.minRange ? `${d.minRange}–` : ''}${hit.kind === 'inferno' ? (hit.infernoMode === 'multi' ? 10 : 9) : hit.kind === 'xbow' ? xbowRange(hit.xbowMode) : hit.kind === 'spelltower' ? spellTowerRange(hit) : d.range} tiles${d.minRange ? ' · Orange ring = blind spot' : ''}${hit.kind === 'xbow' ? ` · ${hit.xbowMode === 'both' ? 'Ground & air' : 'Ground only'} · ${(this.model.battle.xbows?.[hit.id]?.ammunition ?? 1500).toLocaleString()} bolts` : ''}`,
         );
         return;
       }
@@ -903,6 +1002,8 @@ export class VillageScene extends Phaser.Scene {
     return edges;
   }
   private nativeBuildingBounds(b: Building) {
+    const late = this.lateCampaign.bounds(b);
+    if (late) return late;
     if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
       return villageArcherTowerBounds(
         b,
@@ -1014,6 +1115,7 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sync() {
+    if (this.lateAssetsPending()) void this.loadLateAssets();
     const reduced = this.model.state.settings.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -1030,6 +1132,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkStoragePresentation.clear();
       this.goblinBuildingPresentation.clear();
       this.teslaPresentation.clear();
+      this.lateCampaign.clear();
       this.bombTowerPresentation.clear();
       this.wizardTowerPresentation.clear();
       this.sweeperPresentation.clear();
@@ -1126,7 +1229,16 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
         this.sprites.set(b.id, im);
       }
-      this.styleBuilding(im, b.kind, b.level, b.direction, b.skeletonMode, b.npc, b.xbowMode)
+      this.styleBuilding(
+        im,
+        b.kind,
+        b.level,
+        b.direction,
+        b.skeletonMode,
+        b.npc,
+        b.xbowMode,
+        b.spellTowerWeapon,
+      )
         .setPosition(p.x, p.y)
         .setDepth(p.y)
         .setCrop();
@@ -1221,6 +1333,13 @@ export class VillageScene extends Phaser.Scene {
         this.renderRuin(b, im);
       }
       if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
+      // Late campaign families draw their own bodies, foundations and ruins; until their art has
+      // loaded, the fallback sprites have no texture to show either.
+      if (
+        this.lateCampaign.handles(b) ||
+        (!this.lateAssetsReady && this.model.battle && isLateCampaignBuilding(b))
+      )
+        im.setAlpha(0);
       if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
         im.setAlpha(0);
       const shouldBubble =
@@ -1326,6 +1445,7 @@ export class VillageScene extends Phaser.Scene {
     skeletonMode: SkeletonMode = 'ground',
     npc?: NpcBuildingKind,
     xbowMode: XbowMode = 'ground',
+    spellTowerWeapon?: string,
   ) {
     if (kind === 'skeletontrap') {
       const art = skeletonTrapArt(level);
@@ -1350,8 +1470,15 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
-    const texture = buildingTexture(kind, level, direction, xbowMode);
+    const texture = buildingTexture(kind, level, direction, xbowMode, 'single', spellTowerWeapon);
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (hasLateArt(kind)) {
+      const art = lateArt(kind);
+      return im
+        .setOrigin(art.originX, art.originY)
+        .setFlipX(false)
+        .setDisplaySize(art.width, art.height);
+    }
     if (kind === 'inferno') {
       const art = infernoPortrait(level);
       return im
@@ -1556,7 +1683,9 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'wizardtower' ||
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
-        (b.kind === 'cannon' && !b.npc)
+        (b.kind === 'cannon' && !b.npc) ||
+        // Late campaign families draw their own native rubble.
+        this.lateCampaign.handles(b)
       )
         continue;
       const d = BUILDINGS[b.kind];
@@ -1793,7 +1922,9 @@ export class VillageScene extends Phaser.Scene {
               : 9
             : b.kind === 'xbow'
               ? xbowRange(b.xbowMode)
-              : (d.trap?.trigger ?? d.range!);
+              : b.kind === 'spelltower'
+                ? spellTowerRange(b) // per-weapon activation range
+                : (d.trap?.trigger ?? d.range!);
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
         if (b.kind === 'airsweeper') {
@@ -2057,6 +2188,14 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
     );
+    const lateCues = this.lateCampaign.render({
+      buildings: this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
+      battle,
+      elapsed: battle?.elapsed ?? this.renderClock / 1000,
+      reduced: this.model.state.settings.reducedMotion,
+      iso,
+      airLift: AIR_LIFT,
+    });
     const shrinkCues = this.shrinkTrapPresentation.render(
       this.model.buildings.filter((b) => this.model.visibleBuilding(b)),
       battle,
@@ -2083,6 +2222,7 @@ export class VillageScene extends Phaser.Scene {
         ...cannonCues,
         ...garrisonSoundCues(battle),
         ...infernoSoundCues(battle),
+        ...lateCues,
       ],
       this.renderClock / 1000,
     );
@@ -2114,7 +2254,8 @@ export class VillageScene extends Phaser.Scene {
         const state = battle.traps[trap.id];
         const def = battleTrapStats(trap);
         if (!def || !state) continue;
-        if (trap.npc === 'shrink-trap') continue;
+        // Late campaign traps draw their own trigger and effect states.
+        if (trap.npc === 'shrink-trap' || isLateBuilding(trap)) continue;
         if (trap.npc === 'santa-trap') {
           this.sprites
             .get(trap.id)
@@ -2173,7 +2314,7 @@ export class VillageScene extends Phaser.Scene {
           const king = kingPose(
             u,
             target,
-            statusTime - (u.shrink?.timeLost ?? 0),
+            statusTime - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, statusTime),
             heroStats(battle.hero.level, battle.hero.townhall).rate,
             this.model.state.settings.reducedMotion,
             im.getData('kingDirection'),
@@ -2197,6 +2338,7 @@ export class VillageScene extends Phaser.Scene {
           im.setData('dying', true)
             .setData('defeatedAt', at)
             .setTint(u.ejected ? 0xffe9ae : 0xa09482)
+            .setTintMode(Phaser.TintModes.MULTIPLY)
             .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
             .setDepth(flying || u.ejected ? 7500 : p.y + 1)
             .setAngle(pose.angle)
@@ -2217,7 +2359,9 @@ export class VillageScene extends Phaser.Scene {
         const pose = unitPose(u, target, im.getData('facing') ?? -1);
         if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
         // Presentation shares battle time, so pause, playback speed and seeking agree.
-        const animationTime = (battle.elapsed - (u.shrink?.timeLost ?? 0)) * 1000;
+        // Frozen late campaign attackers hold their current frame and hover phase.
+        const animationTime =
+          (battle.elapsed - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, battle.elapsed)) * 1000;
         if (!u.hero && im.texture.frameTotal > 2)
           im.setFrame(
             sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
@@ -2225,7 +2369,9 @@ export class VillageScene extends Phaser.Scene {
               : Math.floor(animationTime / art.frameMs + u.id) % 4,
           );
         const nativeEffects = u.native?.effects;
-        if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed)
+        const frozen = lateUnitFrozen(u, battle.elapsed);
+        if (frozen) im.setTint(FROZEN_TINT);
+        else if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed)
           im.setTint(0xa8e6ff);
         else if (nativeEffects?.poison && nativeEffects.poison.until > battle.elapsed)
           im.setTint(0xa6e57a);
@@ -2236,6 +2382,8 @@ export class VillageScene extends Phaser.Scene {
         )
           im.setTint(0xffbd76);
         else im.clearTint();
+        // Frozen late campaign attackers brighten toward ice; other tints multiply as before.
+        im.setTintMode(frozen ? Phaser.TintModes.SCREEN : Phaser.TintModes.MULTIPLY);
         const p = iso(u.x, u.y),
           motion =
             sprung || u.hero || this.model.state.settings.reducedMotion
@@ -2296,12 +2444,14 @@ export class VillageScene extends Phaser.Scene {
         this.defenderSprites.delete(id);
       }
     for (const d of defenders) {
-      if (d.kind !== 'skeleton') {
+      if (isGarrisonDefender(d)) {
         if (battle!.elapsed >= d.spawnedAt && d.hp > 0) {
           const point = iso(d.x, d.y);
+          // Garrison families: source-graph bar height; air lift only for flying troops.
+          const stats = garrisonStats(d.kind, d.level);
           this.bar(
             point.x,
-            point.y - AIR_LIFT - (d.kind === 'dragon' ? 94 : 115),
+            point.y - (stats.flying ? AIR_LIFT : 0) - characterBarHeight(stats.animation),
             28,
             d.hp / d.maxHp,
             0xea654d,
@@ -2313,7 +2463,7 @@ export class VillageScene extends Phaser.Scene {
       const flying = d.mode === 'air',
         width = flying ? 68 : 40,
         p = iso(d.x, d.y),
-        stats = skeletonStats(d.mode);
+        stats = skeletonStats(d.mode, d.kind === 'skeleton' ? d.spawnLevel : undefined);
       let sprite = this.defenderSprites.get(d.id);
       if (!sprite) {
         sprite = this.add
@@ -3031,7 +3181,8 @@ export class VillageScene extends Phaser.Scene {
         this.clampCamera();
       }
     }
-    this.tick += dt;
+    // A battle waiting for late campaign art keeps its clock, replay and deployments on hold.
+    this.tick = this.lateAssetsPending() ? 0 : this.tick + dt;
     while (this.tick >= 0.05) {
       this.model.step(0.05);
       this.tick -= 0.05;

@@ -5,7 +5,19 @@ import native from '../reference/skeleton-trap/native.json';
 import pumpkin from '../reference/pumpkin-bomb/native.json';
 
 it('preserves native spawn counts, levels, timers and seasonal source identity', () => {
-  expect(native.sources).toEqual(pumpkin.sources);
+  // The trap shares the Pumpkin Bomb's art sources and pins its spawned characters too.
+  expect(native.sources).toEqual({
+    ...pumpkin.sources,
+    'logic/characters.csv': '5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89',
+  });
+  expect(native.spawned.ground.map((r) => [r.level, r.hp, r.dps])).toEqual([
+    [1, 30, 25],
+    [2, 45, 30],
+  ]);
+  expect(native.spawned.air.map((r) => [r.level, r.hp, r.dps])).toEqual([
+    [1, 30, 25],
+    [2, 45, 30],
+  ]);
   expect(native.rows.map((r) => [+r.Level, +r.NumSpawns, +r.SpawnLvl])).toEqual([
     [1, 2, 1],
     [2, 3, 1],
@@ -29,17 +41,18 @@ it('preserves native spawn counts, levels, timers and seasonal source identity',
     BuildTimeH: '12',
     TownHallLevel: '10',
   });
-  expect(native.supportedLevels).toEqual([1, 2, 3, 4]);
+  expect(native.supportedLevels).toEqual([1, 2, 3, 4, 5]);
 });
 
-it.each([1, 3] as const)(
+it.each([1, 3, 5] as const)(
   'retains tier %i native pixels, complete timelines and registered thumbnails',
   async (tier) => {
     const { atlas, clips, frames } = native.tiers[tier];
     const digest = (b: Buffer) => createHash('sha256').update(b).digest('hex');
     const file = `public/${atlas.path}`;
     expect(digest(await sharp(file).raw().toBuffer())).toBe(atlas.rgbaSha256);
-    expect(frames).toHaveLength(35);
+    // The level 5 coffin dedupes to three more unique cells than the two tiers before it.
+    expect(frames).toHaveLength(tier === 5 ? 38 : 35);
     for (const [state, c] of Object.entries(clips)) {
       expect(c.fps).toBe(24);
       expect(c.frames).toHaveLength(state.endsWith('trigger') ? 43 : 35);

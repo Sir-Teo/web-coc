@@ -11,6 +11,7 @@ import { SANTA_TRAP, makeSantaState, stepSanta, type SantaState } from './santa-
 import { recordSeekingMineTrail, type SeekingMineFlight } from './seeking-mine-flight';
 import { SHRINK_TRAP, makeShrinkState, stepShrink, type ShrinkState } from './shrink-trap';
 import { NATIVE_TRAP_SOURCE, fling, nativeTrapValues, stepNativeTrap } from './native-traps';
+import { isLateBuilding } from './late-campaign';
 
 /** Battle-only state. A home trap is always armed when a fresh attack starts. */
 export interface TrapState {
@@ -57,6 +58,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   if (battle.finished) return false;
   let changed = false;
   for (const trap of battle.buildings) {
+    // From version 51 the native engine owns the Town Hall 11+ traps.
     if (
       battle.nativeRoster &&
       !trap.npc &&
@@ -66,6 +68,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         changed = stepNativeTrap(battle, trap, effect) || changed;
       continue;
     }
+    // Late campaign traps trigger in their own family phase.
+    if (isLateBuilding(trap)) continue;
     const d = battleTrapStats(trap, battle);
     if (!d || trap.constructing || trap.upgradeEnd) continue;
     const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
@@ -241,9 +245,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
             'pushback' in d &&
             d.pushback &&
             u.hp > 0 &&
-            (u.hero ? 25 : TROOPS[u.kind].space) <= (d.pushbackHousing ?? 0)
+            (u.hero ? 25 : TROOPS[u.kind].space) <=
+              ((d as { pushbackHousing?: number }).pushbackHousing ?? 0)
           )
-            fling(battle, u, state.x, state.y, d.pushback);
+            fling(battle, u, state.x, state.y, d.pushback as number);
         }
       effect({
         type: 'blast',

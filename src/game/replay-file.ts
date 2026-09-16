@@ -95,6 +95,7 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
           ...(b.supercharge !== undefined ? { supercharge: b.supercharge } : {}),
           ...(b.guardian !== undefined ? { guardian: b.guardian } : {}),
           ...(b.guardianLevel !== undefined ? { guardianLevel: b.guardianLevel } : {}),
+          ...(b.spellTowerWeapon !== undefined ? { spellTowerWeapon: b.spellTowerWeapon } : {}),
           ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
           ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
           ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),

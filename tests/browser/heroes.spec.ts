@@ -51,7 +51,7 @@ test('Hero Hall, dark buildings, and King art load with accurate unlock labels',
   await page.locator('[data-action="close-drawer"]').click();
   await page.locator('.train-add').click();
   await page.locator('[data-action="progression"]').click();
-  await expect(page.locator('.progression-tier')).toHaveCount(8);
+  await expect(page.locator('.progression-tier')).toHaveCount(18);
   await expect(page.locator('.progression-tier.current')).toContainText('Town Hall 2');
   const th5 = page
     .locator('.progression-tier')
@@ -158,7 +158,7 @@ test('hero and progression panels fit phone portrait and landscape with reachabl
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('[data-action="heroes"]')).toBeFocused();
   await page.locator('[data-action="progression"]').click();
-  await expect(page.locator('.progression-tier')).toHaveCount(8);
+  await expect(page.locator('.progression-tier')).toHaveCount(18);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/progression-mobile.png' });
 });

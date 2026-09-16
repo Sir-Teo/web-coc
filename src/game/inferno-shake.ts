@@ -1,4 +1,4 @@
-import source from '../../reference/inferno/native.json';
+import source from '../../reference/inferno/native.json' with { type: 'json' };
 import type { Battle } from './model';
 import { visualRandom } from './visual-random';
 

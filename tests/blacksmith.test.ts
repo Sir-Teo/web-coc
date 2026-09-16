@@ -3,6 +3,7 @@ import { GameModel, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { BUILDINGS, maxCountFor, maxLevelFor } from '../src/game/data';
 import {
+  EQUIPMENT_MAX_LEVEL,
   defaultEquipment,
   equipmentCost,
   equipmentStats,
@@ -146,7 +147,7 @@ describe('Blacksmith economy and persistence', () => {
       null,
       [],
       { ...m.kingEquipment, loadout: ['vial', 'vial'] },
-      { ...m.kingEquipment, levels: { puppet: 1, vial: 10, boots: 1 } },
+      { ...m.kingEquipment, levels: { puppet: 1, vial: EQUIPMENT_MAX_LEVEL + 1, boots: 1 } },
     ])
       expect(validateSave({ ...m.state, equipment })).toBe(false);
   });

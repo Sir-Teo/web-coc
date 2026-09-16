@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import {
   BUILDINGS,
   buildingHp,
@@ -36,8 +37,8 @@ it('starts with one completed level-2 camp and follows native TH1–8 housing ce
   expect(m.state.buildings.find((b) => b.kind === 'camp')!.level).toBe(2);
   expect(m.capacity).toBe(30);
   expect(m.armySize).toBeLessThanOrEqual(30);
-  expect(Array.from({ length: 8 }, (_, i) => maxCountFor('camp', i + 1))).toEqual([
-    1, 1, 2, 2, 3, 3, 4, 4,
+  expect(Array.from({ length: 9 }, (_, i) => maxCountFor('camp', i + 1))).toEqual([
+    1, 1, 2, 2, 3, 3, 4, 4, 4,
   ]);
   expect(
     Array.from(
@@ -52,7 +53,7 @@ it('starts with one completed level-2 camp and follows native TH1–8 housing ce
 });
 
 it('charges once, keeps capacity while upgrading, and adds only the earned spaces after reload', () => {
-  const m = new GameModel();
+  const m = fundedVillage();
   m.townhall!.level = 3;
   const camp = m.state.buildings.find((b) => b.kind === 'camp')!;
   const elixir = m.state.elixir;

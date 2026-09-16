@@ -2,10 +2,13 @@ import { emptySpells } from '../src/game/army';
 import { maxTroopLevel } from '../src/game/data';
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
 import {
   BUILDINGS,
   MAX_TROOP_LEVEL,
+  TROOP_KEYS,
+  maxTroopLevel,
   researchLaboratory,
   SPELLS,
   TROOPS,
@@ -13,6 +16,7 @@ import {
   gemCost,
 } from '../src/game/data';
 import { migrateSave, validateSave } from '../src/game/save';
+import { emptySpells } from '../src/game/army';
 
 /** A battle with a hand-built enemy base, so a single interaction can be isolated. */
 function arena(
@@ -152,7 +156,17 @@ describe('the air layer', () => {
 describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
     const m = new GameModel(developedSave());
-    m.state.spells = emptySpells();
+    m.state.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     expect(m.spellCapacity).toBe(6);
     const elixir = m.state.elixir;
     m.brew('rage', 2);
@@ -171,13 +185,33 @@ describe('spells', () => {
   });
   it('lightning damages every building inside its radius, once', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 0, heal: 0, lightning: 1 };
+    m.state.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 1,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [
       ['cannon', 10, 10, 4],
       ['cannon', 11, 12, 4],
       ['cannon', 22, 22, 1],
     ]);
-    battle.spells = { rage: 0, heal: 0, lightning: 1 };
+    battle.spells = {
+      rage: 0,
+      heal: 0,
+      lightning: 1,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeSpell = 'lightning';
     expect(m.castSpell(11.5, 11.5)).toBe(true);
     const [near, alsoNear, far] = battle.buildings;
@@ -191,9 +225,29 @@ describe('spells', () => {
   it('rage makes troops hit measurably harder', () => {
     const damageOver = (raged: boolean) => {
       const m = new GameModel();
-      m.state.spells = { rage: 1, heal: 0, lightning: 0 };
+      m.state.spells = {
+        rage: 1,
+        heal: 0,
+        lightning: 0,
+        freeze: 0,
+        invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
+      };
       const battle = arena(m, [['townhall', 12, 12, 1]]);
-      battle.spells = { rage: 1, heal: 0, lightning: 0 };
+      battle.spells = {
+        rage: 1,
+        heal: 0,
+        lightning: 0,
+        freeze: 0,
+        invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
+      };
       m.activeTroop = 'swordsman';
       m.deploy(10, 13);
       if (raged) {
@@ -210,9 +264,29 @@ describe('spells', () => {
   });
   it('healing restores wounded troops standing inside it', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 0, heal: 1, lightning: 0 };
+    m.state.spells = {
+      rage: 0,
+      heal: 1,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
-    battle.spells = { rage: 0, heal: 1, lightning: 0 };
+    battle.spells = {
+      rage: 0,
+      heal: 1,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeTroop = 'swordsman';
     m.deploy(4, 4);
     const unit = battle.units[0];
@@ -225,9 +299,29 @@ describe('spells', () => {
   });
   it('auras expire and stop applying', () => {
     const m = new GameModel();
-    m.state.spells = { rage: 1, heal: 0, lightning: 0 };
+    m.state.spells = {
+      rage: 1,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
-    battle.spells = { rage: 1, heal: 0, lightning: 0 };
+    battle.spells = {
+      rage: 1,
+      heal: 0,
+      lightning: 0,
+      freeze: 0,
+      invisibility: 0,
+      jump: 0,
+      clone: 0,
+      recall: 0,
+      revive: 0,
+    };
     m.activeTroop = 'swordsman';
     m.deploy(4, 4);
     m.activeSpell = 'rage';
@@ -240,7 +334,7 @@ describe('spells', () => {
 
 describe('town hall gating and stretched timers', () => {
   it('uses building-specific Town Hall level caps', () => {
-    const m = new GameModel();
+    const m = fundedVillage();
     expect(m.townhallLevel).toBe(2);
     const cannon = m.state.buildings.find((b) => b.kind === 'cannon' && b.level === 2)!;
     expect(m.maxLevel('cannon')).toBe(3);
@@ -379,6 +473,8 @@ describe('saves', () => {
     expect(migrated.army.balloon).toBe(0);
     expect(migrated.troopLevels!.balloon).toBe(1);
     expect(migrated.troopLevels!.swordsman).toBe(2);
+    // A version-1 village predates spells entirely and is given the whole current book at
+    // zero, however many spells that is by now.
     expect(migrated.spells).toEqual(emptySpells());
     expect(new GameModel(migrated).armySize).toBe(
       3 * TROOPS.swordsman.space +
@@ -450,21 +546,28 @@ describe('second-pass behaviour', () => {
     expect([b.x, b.y]).toEqual([from.x, from.y]);
     expect(m.canUndo).toBe(false);
   });
-  it('research runs through all native levels behind the required laboratory', () => {
+  it('research runs to every original level behind the required laboratory', () => {
     const m = new GameModel(developedSave());
     const lab = m.state.buildings.find((b) => b.kind === 'laboratory')!;
-    m.state.elixir = 999999999;
-    for (let level = 1; level < maxTroopLevel('swordsman'); level++) {
+    const ceiling = maxTroopLevel('swordsman');
+    for (let level = 1; level < ceiling; level++) {
+      // Late research costs more than any one tier's storage; the purse is not the subject.
+      m.state.elixir = 999_999_999;
       lab.level = researchLaboratory('swordsman', level);
       m.researchTroop('swordsman');
       m.tick(m.state.research!.end + 1000);
       expect(m.troopLevel('swordsman')).toBe(level + 1);
     }
-    expect(m.troopLevel('swordsman')).toBe(maxTroopLevel('swordsman'));
+    expect(m.troopLevel('swordsman')).toBe(ceiling);
     lab.level = BUILDINGS.laboratory.maxLevel;
     m.researchTroop('swordsman');
     expect(m.state.research).toBeUndefined();
-    expect(BUILDINGS.laboratory.maxLevel).toBeGreaterThanOrEqual(MAX_TROOP_LEVEL);
+    // The last Laboratory reaches the last level of every troop, which is what makes it worth
+    // building: the roster no longer runs out far below it.
+    for (const kind of TROOP_KEYS)
+      expect(researchLaboratory(kind, maxTroopLevel(kind) - 1), kind).toBeLessThanOrEqual(
+        BUILDINGS.laboratory.maxLevel,
+      );
     expect(validateSave(m.state)).toBe(true);
   });
   it('counts what the tutorial asks for and carries a spell book into battle', () => {

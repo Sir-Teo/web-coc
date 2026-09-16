@@ -1,4 +1,4 @@
-import source from '../../reference/xbow/runtime.json';
+import source from '../../reference/xbow/runtime.json' with { type: 'json' };
 import { nativeMeshPoses, type NativeMatrix, type NativeMeshGraph } from './native-mesh';
 import { XBOW_ART, xbowExport } from './xbow-art';
 import type { XbowMode } from './xbow-stats';

@@ -223,7 +223,7 @@ export function stepNativeDefense(ctx: NativeDefenseContext, tower: Building, dt
   }
   const kind = tower.kind as NativeDefenseKind;
   if (kind === 'spelltower') return stepSpellTower(ctx, tower, state, weapon, battleTime);
-  if (kind === 'eagle') return stepEagle(ctx, tower, state, weapon, battleTime);
+  if (kind === 'eagleartillery') return stepEagle(ctx, tower, state, weapon, battleTime);
   if (kind === 'townhall' && weapon.targets > 1)
     return stepMultiTarget(ctx, tower, state, weapon, battleTime);
   if (kind === 'multiarchertower') return stepMultiTarget(ctx, tower, state, weapon, battleTime);
@@ -363,7 +363,7 @@ function stepQueue(
     const shot = state.queue.shift()!;
     const target = battle.units.find((u) => u.id === shot.target);
     const at = battleTime(shot.at);
-    if (tower.kind === 'eagle') {
+    if (tower.kind === 'eagleartillery') {
       // Shells lock onto the chosen unit; a lost target keeps its last position.
       const live = target && liveTarget(target, at) ? target : undefined;
       if (live) Object.assign(shot, { x: live.x, y: live.y });

@@ -1,5 +1,5 @@
-import source from '../../reference/inferno/native.json';
-import { INFERNO_GRAPH } from './inferno-art';
+import source from '../../reference/inferno/native.json' with { type: 'json' };
+import { INFERNO_GRAPH } from './inferno-graph';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import type { Battle } from './model';

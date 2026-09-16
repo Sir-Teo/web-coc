@@ -1,7 +1,7 @@
 import type { Battle } from './model';
 import { archerTowerSource } from './archer-tower-art';
 import { visualRandom } from './visual-random';
-import source from '../../reference/archer-tower/sounds.json';
+import source from '../../reference/archer-tower/sounds.json' with { type: 'json' };
 import type { SampleCue } from './sample-audio';
 export const ARCHER_TOWER_SOUNDS = source.sounds;
 export const archerTowerSample = (path: string) => `archer-tower-${path.split('/').at(-1)}`;

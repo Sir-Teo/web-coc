@@ -1,7 +1,7 @@
-import body from '../../reference/wizard-tower/body.json';
-import defender from '../../reference/wizard-tower/defender.json';
-import effectArt from '../../reference/wizard-tower/effect_art.json';
-import effects from '../../reference/wizard-tower/effects.json';
+import body from '../../reference/wizard-tower/body.json' with { type: 'json' };
+import defender from '../../reference/wizard-tower/defender.json' with { type: 'json' };
+import effectArt from '../../reference/wizard-tower/effect_art.json' with { type: 'json' };
+import effects from '../../reference/wizard-tower/effects.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,

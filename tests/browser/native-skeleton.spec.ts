@@ -93,7 +93,8 @@ for (const viewport of [
     });
     await page.locator('.attack-btn').click();
     await expect(page.locator('[data-action="attack:26"]')).toBeEnabled();
-    await expect(page.locator('[data-action="attack:56"]')).toHaveText('Coming soon');
+    await expect(page.locator('[data-action="attack:56"]')).toBeEnabled();
+    await expect(page.locator('[data-action="attack:89"]')).toBeEnabled();
     await page.locator('[data-action="attack:26"]').click();
     await expect(page.locator('.battle-enemy h2')).toHaveText('Obsidian Tower');
     const active = await page.evaluate(() => {

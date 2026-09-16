@@ -1,4 +1,4 @@
-# Bomb Tower — native levels 1–13 and Town Hall 8 home progression
+# Bomb Tower — native levels 1–13 and Town Hall 8–9 home progression
 
 ## Reference and numerical scope
 
@@ -7,7 +7,7 @@ The primary reference is Supercell's immutable public client bundle `18.400.21`,
 - [buildings.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/buildings.csv): `Bomb Tower`, global ID `1000032`. Download SHA-256 `9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1`.
 - [projectiles.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/projectiles.csv): `Bomb Tower Ammo1`. Download SHA-256 `71cda0e457ad88a6772f6421a22419b24d6bcf78d0ed305f09184404889a72dc`.
 
-Fields left blank in a level row inherit the previous nonempty value within the same named record. Combat, retained saves and imported replays support all thirteen source levels. Home purchases and upgrades follow the current Town Hall 8 ceiling of level 2. The values below are undiscounted; seasonal boosts and event modifiers are not modeled. The [Home Village community reference](https://clashofclans.fandom.com/wiki/Bomb_Tower/Home_Village) supplies the TH8 count/ceiling cross-check and appearance history. Its Clan Capital table describes a different building.
+Fields left blank in a level row inherit the previous nonempty value within the same named record. Combat, retained saves and imported replays support all thirteen source levels. Home purchases and upgrades follow the original ceilings, from one tower at level 2 at Town Hall 8 to two at level 13 by Town Hall 18. The values below are undiscounted; seasonal boosts and event modifiers are not modeled. The [Home Village community reference](https://clashofclans.fandom.com/wiki/Bomb_Tower/Home_Village) supplies the TH8 count/ceiling cross-check and appearance history. Its Clan Capital table describes a different building.
 
 | Level | Hitpoints | DPS | Damage per hit | Death damage | Gold | Destination duration |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -25,7 +25,7 @@ Fields left blank in a level row inherit the previous nonempty value within the 
 | 12 | 2,900 | 114 | 125.4 | 650 | 14,500,000 | 168 hours |
 | 13 | 3,050 | 122 | 134.2 | 700 | 25,000,000 | 312 hours |
 
-TH8 permits one tower and both levels. Its footprint is 3×3, range six tiles, attack interval 1.1 seconds and splash radius 1.5 tiles. Both normal attacks and its destruction blast affect ground troops only. `DieDamageDelay=1000` and `DieDamageRadius=275` give a one-second fuse and 2.75-tile death radius. The projectile record specifies `Speed=800`, `DontTrackTarget=TRUE`, `IsBallistic=TRUE`, `UseRotate=TRUE`, no bounce and no target-position randomization.
+TH8 permits one tower and its first two levels; TH9 keeps the single tower and adds level 3. Its footprint is 3×3, range six tiles, attack interval 1.1 seconds and splash radius 1.5 tiles. Both normal attacks and its destruction blast affect ground troops only. `DieDamageDelay=1000` and `DieDamageRadius=275` give a one-second fuse and 2.75-tile death radius. The projectile record specifies `Speed=800`, `DontTrackTarget=TRUE`, `IsBallistic=TRUE`, `UseRotate=TRUE`, no bounce and no target-position randomization.
 
 ## Implemented behavior
 
@@ -34,11 +34,11 @@ TH8 permits one tower and both levels. Its footprint is 3×3, range six tiles, a
 - Construction and upgrades disable firing. This implementation also suppresses the death charge while those activities are in progress; the public tables do not establish that behavior, so it remains an explicit assumption requiring native validation.
 - An outstanding charge keeps a raid with no offensive troops from ending early. Manual end, complete destruction and the raid deadline cancel unresolved charges. Native terminal-frame ordering still needs comparison.
 - Authored campaign stages 9–12 each add one level-3 tower in a previously empty 3×3 footprint. Their existing stage-level rule now reaches the supported native level instead of stopping at the former entity cap of 2. Campaign defense multipliers affect both attack and death damage. These maps and multipliers are local difficulty choices.
-- Home saves remain version 4, retaining all thirteen source tower levels without allowing new TH8 upgrades beyond level 2. Current replay version 32 reconstructs thrown bombs, destruction fuses and results from battle snapshots and actions. Seeking and returning home clear presentation objects. Older recordings retain summaries without playback through the current rules.
+- Home saves remain version 4, retaining all thirteen source tower levels without allowing new upgrades beyond the current tier's ceiling. Current replay version 32 reconstructs thrown bombs, destruction fuses and results from battle snapshots and actions. Seeking and returning home clear presentation objects. Older recordings retain summaries without playback through the current rules.
 
 ## Native presentation and remaining fidelity limits
 
-The live tower now uses the pinned client's original polygons, texture samples, colors and timelines. Separate native views draw the foundation/body, rooftop defender, construction and upgrade scaffolds, rubble, thrown bomb, ground shadow and exposed death charge. All 13 original bodies and source-selected defender/weapon families are retained; combat, save validation and replay now use all thirteen source levels. Home purchase and upgrade progression remains capped at level 2 for Town Hall 8. The authored files in `art/source/bombtower-v1/` and their reproducible derivatives remain historical assets and no longer supply live Bomb Tower artwork.
+The live tower now uses the pinned client's original polygons, texture samples, colors and timelines. Separate native views draw the foundation/body, rooftop defender, construction and upgrade scaffolds, rubble, thrown bomb, ground shadow and exposed death charge. All 13 original bodies and source-selected defender/weapon families are retained; combat, save validation and replay now use all thirteen source levels. Home purchase and upgrade progression follows the original tier column to level 13 at Town Hall 18. The authored files in `art/source/bombtower-v1/` and their reproducible derivatives remain historical assets and no longer supply live Bomb Tower artwork.
 
 Thirteen transparent 360×420 portraits are independently rasterized from the original source textures and graphs. They include the foundation and frame-zero front-facing defender at the source idle scale of 108%. They omit the additive fuse glow so they work against any interface background. Live rendering preserves the isolated additive fuse group; reduced motion freezes the defender and exposed charge at frame zero and removes moving projectiles and additive defender glow.
 

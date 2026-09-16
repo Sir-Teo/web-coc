@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { wallDestinations } from '../src/game/wall-movement';
 import { validateSave } from '../src/game/save';
 
 function village(edit = false) {
-  const m = new GameModel();
+  const m = fundedVillage();
   m.townhall!.level = 8;
   m.state.obstacles = [];
   m.state.buildings = m.state.buildings.filter((b) => b.kind !== 'wall');

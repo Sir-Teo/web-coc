@@ -26,7 +26,17 @@ describe.each(playable)('native combat: $name', ({ index }) => {
       m.state.nativeCampaign = freshNativeCampaign();
       m.state.nativeCampaign.stars.fill(1);
       m.state.army = { ...emptyArmy(), ...units };
-      m.state.spells = { lightning: 0, heal: 0, rage: 0 };
+      m.state.spells = {
+        lightning: 0,
+        heal: 0,
+        rage: 0,
+        freeze: 0,
+        invisibility: 0,
+        jump: 0,
+        clone: 0,
+        recall: 0,
+        revive: 0,
+      };
       m.state.king = undefined;
       m.state.troopLevels = Object.fromEntries(
         TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),
@@ -56,7 +66,9 @@ describe.each(playable)('native combat: $name', ({ index }) => {
           ).toBe(true);
         }
       }
-      for (let step = 0; step < 12000 && !b.finished; step++) m.step(0.05);
+      // Campaign raids have no timer: a lone survivor chipping maximum-level walls out of every
+      // remaining defense's reach can need over ten minutes. The cap only guards against stalls.
+      for (let step = 0; step < 24000 && !b.finished; step++) m.step(0.05);
       if (performance.now() - began > 1000)
         console.log(
           JSON.stringify({
@@ -80,6 +92,13 @@ describe.each(playable)('native combat: $name', ({ index }) => {
         b.defenders?.every(
           (d) =>
             d.kind === 'skeleton' ||
+            // Ghost Traps release Royal Ghosts; secondary troops and summons have a parent defender.
+            (d.kind === 'royalghost' &&
+              b.buildings.some((v) => v.id === d.sourceId && v.npc === 'ghost-trap')) ||
+            // Town Hall Guardians and Defending Builders belong to the building they came from.
+            ((d.kind === 'guardian' || d.kind === 'repairer') &&
+              b.buildings.some((v) => v.id === d.sourceId)) ||
+            (d.parentId !== undefined && b.defenders!.some((p) => p.id === d.parentId)) ||
             b.garrisons?.some(
               (g) =>
                 g.castleId === d.sourceId &&

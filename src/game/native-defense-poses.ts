@@ -323,7 +323,7 @@ function loadFrame(
     labels.battleidle_end !== undefined ? 'battleidle_end' : 'battleidle',
     info.frames,
   );
-  if (kind === 'eagle') {
+  if (kind === 'eagleartillery') {
     const attack = segment(labels, 'attack_start', 'attack_end', info.frames);
     const load = segment(labels, 'load_start', 'load_end', info.frames);
     const empty = labels.empty;

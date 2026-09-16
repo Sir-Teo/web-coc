@@ -14,8 +14,10 @@ import {
   type HeroKind,
 } from './native-hero-data';
 import type { HeroSetup } from './native-heroes';
+import { HERO_MAX_LEVEL } from './heroes';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
+import { isLateBuilding, isLateCampaignBuilding, validLateBuilding } from './late-campaign';
 import {
   campaignStage,
   campaignStages,
@@ -33,11 +35,13 @@ import {
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
-import { initializeGarrison, type GarrisonSetup } from './garrison-release';
+import { initializeGarrison, isGarrisonBunker, type GarrisonSetup } from './garrison-release';
 import { createGarrisonReserve, MAX_GARRISON_TROOPS } from './garrison-reserve';
+import { garrisonTroopVersion } from './garrison-kinds';
 import { gridSize, footprintSize, type GridVersion } from './grid';
 import {
   BUILDINGS,
+  MAX_TOWNHALL,
   MAX_TROOP_LEVEL,
   maxTroopLevel,
   SPELL_KEYS,
@@ -45,18 +49,38 @@ import {
   TROOP_KEYS,
   LEGACY_TROOP_KEYS,
   PRE_EXPANSION_TROOP_KEYS,
-  LEGACY_BUILDING_MAX_LEVEL,
   type SpellKind,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
-import { MAX_SPELL_LEVEL, maxSpellLevel } from './spell-progression';
-import { validEquipment, type KingEquipment } from './equipment';
+import { MAX_SPELL_LEVEL, maxSpellLevel, maxSpellLevelFor } from './spell-progression';
+import {
+  EQUIPMENT_LEVEL_BEFORE_47,
+  EQUIPMENT_MAX_LEVEL,
+  validEquipment,
+  type KingEquipment,
+} from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 46;
-/** Version 46 replaces the single King with the full hero roster, equipment and pets. */
-export const NATIVE_HERO_VERSION = 46;
-/** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
+export const REPLAY_VERSION = 51;
+/**
+ * Version 51 runs the battle from the client's own tables: the native troop roster with its
+ * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
+ * and the complete hero roster with equipment and pets in place of the single King.
+ */
+export const NATIVE_VERSION = 51;
+/** Heroes, equipment and pets arrived with the same version as the rest of the native rules. */
+export const NATIVE_HERO_VERSION = NATIVE_VERSION;
+/** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight.
+ * Version 44 adds late single-player campaign levels and entities without changing earlier rules.
+ * Version 45 adds the Town Hall 9 home ceilings without changing any combat rule.
+ * Version 46 carries the catalog to Town Hall 18, again with no combat rule change.
+ * Version 47 adds the fifth Skeleton Trap tier, whose coffin releases level 2 skeletons,
+ * and arms the home Builder's Hut with the turret campaign huts already carried.
+ * Version 48 adds the Freeze Spell, 49 the Invisibility Spell and 50 the Jump, Clone, Recall
+ * and Revive Spells; no recording older than the version that added a spell may carry, cast
+ * or research it.
+ * Version 51 hands combat to the native client tables; every recording before it keeps the
+ * rules it was written with. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -70,7 +94,100 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 43 ||
   version === 44 ||
   version === 45 ||
+  version === 46 ||
+  version === 47 ||
+  version === 48 ||
+  version === 49 ||
+  version === 50 ||
   version === REPLAY_VERSION;
+/** Roster ceilings before version 47 took every troop and spell to its own original last level. */
+export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
+  TROOP_KEYS.map((kind) => [
+    kind,
+    kind === 'healer' || kind === 'dragon' || kind === 'pekka' ? 3 : 5,
+  ]),
+);
+const PRE_ROSTER_SPELL_LEVEL = 5;
+/**
+ * Spells added after version 47, by the version that first carried one. A recording older
+ * than that version may not carry, cast or research the spell, and is validated against the
+ * book it was written with rather than today's.
+ */
+const SPELLS_ADDED_AT: Readonly<Record<number, readonly SpellKind[]>> = {
+  48: ['freeze'],
+  49: ['invisibility'],
+  50: ['jump', 'clone', 'recall', 'revive'],
+  51: [
+    'totem',
+    'poison',
+    'earthquake',
+    'haste',
+    'skeleton',
+    'bat',
+    'overgrowth',
+    'iceblock',
+    'angry',
+  ],
+};
+/** The spell book a recording of this version was written with, in its own key order. */
+export const spellKeysAt = (version: number): readonly SpellKind[] =>
+  SPELL_KEYS.filter((kind) =>
+    Object.entries(SPELLS_ADDED_AT).every(
+      ([added, kinds]) => version >= Number(added) || !kinds.includes(kind),
+    ),
+  );
+/**
+ * The book every recording before version 48 was replayed with, written out in the order
+ * those recordings hashed it. An archived battle state is compared as JSON, so the key order
+ * is part of the result and cannot be rebuilt from today's key list.
+ */
+const PRE_VERSION_48_SPELL_LEVELS = { lightning: 1, heal: 1, rage: 1 } as unknown as SpellBook;
+const spellLevelsAt = (version: number): SpellBook =>
+  version < 48
+    ? PRE_VERSION_48_SPELL_LEVELS
+    : (Object.fromEntries(spellKeysAt(version).map((k) => [k, 1])) as SpellBook);
+/** Ceilings before version 47 reconstructed the fifth coffin tier. */
+const PRE_VERSION_47_LEVELS: Readonly<Record<string, number>> = { skeletontrap: 4 };
+/** Ceilings before version 46 carried the home catalog to Town Hall 18. */
+const PRE_TOWNHALL_18_LEVELS: Readonly<Record<string, number>> = {
+  townhall: 9,
+  herohall: 3,
+  darkdrill: 6,
+  goldmine: 14,
+  collector: 14,
+  goldstorage: 16,
+  elixirstorage: 16,
+  archertower: 12,
+  camp: 8,
+  barracks: 11,
+  laboratory: 7,
+  spellfactory: 5,
+  airdefense: 13,
+  wall: 16,
+  bomb: 11,
+  giantbomb: 8,
+  airbomb: 10,
+  springtrap: 5,
+};
+/** Ceilings before version 45 raised the home catalog to Town Hall 9. */
+const PRE_TOWNHALL_9_LEVELS: Readonly<Record<string, number>> = {
+  barracks: 10,
+  laboratory: 6,
+  herohall: 2,
+  darkdrill: 3,
+};
+/** Ceilings before version 44 added late single-player campaign levels. */
+const PRE_LATE_CAMPAIGN_LEVELS: Readonly<Record<string, number>> = {
+  wall: 12,
+  goldstorage: 11,
+  elixirstorage: 11,
+  goldmine: 12,
+  collector: 12,
+  airdefense: 10,
+  bomb: 8,
+  giantbomb: 5,
+  airbomb: 6,
+};
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
 export const MAX_REPLAY_ACTIONS = 2000;
@@ -125,7 +242,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
-    // Version 46 deploys the complete hero roster with equipment and pets.
+    // Version 51 deploys the complete hero roster with equipment and pets.
     ...(version >= NATIVE_HERO_VERSION && s.heroes?.length
       ? {
           nativeHeroRoster: true as const,
@@ -137,8 +254,16 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
           townhall: s.townhall,
         }
       : {}),
-    // Version 45 enables native roster abilities, spawned units and their statuses.
-    ...(version >= 45 ? { nativeRoster: true as const } : {}),
+    // Version 51 enables native roster abilities, spawned units and their statuses.
+    ...(version >= NATIVE_VERSION ? { nativeRoster: true as const } : {}),
+    ...(version >= 44 && s.catalog === 'goblin-v1' ? { nativeSubtiles: true as const } : {}),
+    // Late families step wherever they stand: campaign villages from version 44, late home
+    // defenses and traps from version 46, and an armed Builder's Hut anywhere from version 47.
+    ...((version >= 44 && s.catalog === 'goblin-v1' && s.buildings.some(isLateCampaignBuilding)) ||
+    (version >= 46 && s.buildings.some(isLateBuilding)) ||
+    (version >= 47 && s.buildings.some(isLateCampaignBuilding))
+      ? { late: {} }
+      : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')
       ? { nativeInfernoAmmo: true as const }
       : {}),
@@ -151,7 +276,10 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     ...(version >= 40 && s.buildings.some((b) => b.kind === 'darkdrill')
       ? { drillDestructions: {} }
       : {}),
-    ...(s.garrisons ? { garrisons: s.garrisons.map(initializeGarrison) } : {}),
+    // The battle seed orders different garrison troops of equal housing (no effect on older rosters).
+    ...(s.garrisons
+      ? { garrisons: s.garrisons.map((g) => initializeGarrison(g, 1337 + s.index)) }
+      : {}),
     ...((version === 34 || version === 35) && s.buildings.some((b) => b.kind === 'cannon' && !b.npc)
       ? { legacyCannonFlight: true as const }
       : {}),
@@ -168,11 +296,9 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     carried: { ...s.spells },
     spells: { ...s.spells },
     troopLevels: { ...s.troopLevels },
-    // Recordings before version 45 keep their original three-spell battle state byte-for-byte.
-    spellLevels:
-      version >= 45
-        ? { ...(Object.fromEntries(SPELL_KEYS.map((k) => [k, 1])) as SpellBook), ...s.spellLevels }
-        : ({ lightning: 1, heal: 1, rage: 1, ...s.spellLevels } as SpellBook),
+    // A spell added after a recording was written has no level in it, and adding one would
+    // change that recording's archived battle state.
+    spellLevels: { ...spellLevelsAt(version), ...s.spellLevels },
     hero: s.hero
       ? { ...structuredClone(s.hero), unitId: null, abilityUsed: false, rageUntil: 0 }
       : undefined,
@@ -213,13 +339,16 @@ const counts = (v: unknown, keys: readonly string[], min: number, max: number) =
 export function validateReplay(value: unknown): value is ReplayData {
   if (!object(value) || !integer(value.version, 1, 1000000) || !object(value.initial)) return false;
   const s = value.initial;
-  const spellKeys: readonly string[] = value.version >= 45 ? SPELL_KEYS : LEGACY_SPELL_KEYS;
+  // The native roster arrived with version 51; earlier recordings carry the ten original troops.
   const troopKeys =
-    value.version >= 44
+    value.version >= NATIVE_VERSION
       ? TROOP_KEYS
       : value.version >= 18
         ? PRE_EXPANSION_TROOP_KEYS
         : LEGACY_TROOP_KEYS;
+  // A recording is checked against the book it was written with, not today's.
+  const spellKeys = spellKeysAt(value.version);
+  const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
   if (
     !validCampaignCatalog(s.catalog) ||
     (s.catalog !== undefined && value.version < 27) ||
@@ -230,11 +359,20 @@ export function validateReplay(value: unknown): value is ReplayData {
     !counts(s.army, troopKeys, 0, 9999) ||
     !counts(s.spells, spellKeys, 0, 999) ||
     !counts(s.troopLevels, troopKeys, 1, MAX_TROOP_LEVEL) ||
-    (value.version >= 18 && troopKeys.some((k) => s.troopLevels[k] > maxTroopLevel(k))) ||
+    // The roster reached each troop's own original ceiling in version 47; before that every
+    // troop stopped at five and the Healer, Dragon and P.E.K.K.A at three.
+    (value.version >= 18 &&
+      troopKeys.some(
+        (k) =>
+          s.troopLevels[k] > (value.version < 47 ? PRE_ROSTER_TROOP_LEVELS[k] : maxTroopLevel(k)),
+      )) ||
     (value.version >= 17 && !counts(s.spellLevels, spellKeys, 1, MAX_SPELL_LEVEL)) ||
     (s.spellLevels !== undefined &&
-      (!counts(s.spellLevels, spellKeys, 1, MAX_SPELL_LEVEL) ||
-        spellKeys.some((k) => s.spellLevels[k] > maxSpellLevel(k as SpellKind)))) ||
+      spellKeys.some(
+        (k) =>
+          s.spellLevels![k] < 1 ||
+          s.spellLevels![k] > (value.version < 47 ? PRE_ROSTER_SPELL_LEVEL : maxSpellLevelFor(k)),
+      )) ||
     (value.version >= 4 &&
       (troopKeys.reduce((n, k) => n + s.army[k], 0) > MAX_REPLAY_TROOPS ||
         spellKeys.reduce((n, k) => n + s.spells[k], 0) > MAX_REPLAY_SPELLS)) ||
@@ -259,13 +397,23 @@ export function validateReplay(value: unknown): value is ReplayData {
         ))) ||
     (s.hero !== undefined &&
       (!object(s.hero) ||
-        !integer(s.hero.level, 1, value.version >= 44 ? 110 : 20) ||
-        !integer(s.hero.townhall, 4, 18) ||
-        (value.version >= 24 && !validEquipment(s.hero.equipment)) ||
-        (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment)))) ||
+        !integer(
+          s.hero.level,
+          1,
+          value.version < 45 ? 20 : value.version < 46 ? 30 : HERO_MAX_LEVEL,
+        ) ||
+        !integer(
+          s.hero.townhall,
+          4,
+          value.version < 45 ? 8 : value.version < 46 ? 9 : MAX_TOWNHALL,
+        ) ||
+        // Equipment reached level 18 in version 47; every earlier recording stops at nine.
+        (value.version >= 24 && !validEquipment(s.hero.equipment, equipmentCeiling)) ||
+        (s.hero.equipment !== undefined && !validEquipment(s.hero.equipment, equipmentCeiling)))) ||
     !Array.isArray(s.buildings) ||
     !s.buildings.length ||
-    s.buildings.length > (value.version >= 27 ? 600 : 400)
+    // Version 44 admits complete late villages (Underground Workaround has 820 source entities).
+    s.buildings.length > (value.version >= 44 ? 1000 : value.version >= 27 ? 600 : 400)
   )
     return false;
   if (
@@ -338,14 +486,18 @@ export function validateReplay(value: unknown): value is ReplayData {
         !['guard', 'sleep'].includes(g.mode) ||
         !Array.isArray(g.troops) ||
         g.troops.length > MAX_GARRISON_TROOPS ||
-        !s.buildings.some((b: any) => object(b) && b.id === g.castleId && b.kind === 'clancastle')
+        !s.buildings.some(
+          (b: any) => object(b) && b.id === g.castleId && isGarrisonBunker(b as Building),
+        )
       )
         return false;
       for (const troop of g.troops) {
         if (
           !object(troop) ||
           !integer(troop.level, 1, 100) ||
-          !integer(troop.count, 1, MAX_GARRISON_TROOPS)
+          !integer(troop.count, 1, MAX_GARRISON_TROOPS) ||
+          // Dragon 7 and Balloon 8 exist since version 38; other kinds and levels since 44.
+          (garrisonTroopVersion(troop.kind, troop.level) ?? Infinity) > value.version
         )
           return false;
         total += troop.count;
@@ -375,6 +527,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validSkeletonMode(b.skeletonMode) ||
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
+      !validLateBuilding(b as Building, value.version, s.practice) ||
       !validInfernoAmmo(b.infernoAmmo, b.level) ||
       ((b.spellMode !== undefined ||
         b.gearMode !== undefined ||
@@ -385,7 +538,7 @@ export function validateReplay(value: unknown): value is ReplayData {
         b.guardianLevel !== undefined ||
         b.kind === 'tornadotrap' ||
         b.kind === 'gigabomb') &&
-        value.version < 45) ||
+        value.version < NATIVE_VERSION) ||
       !validSpellTowerMode(b.spellMode, b.kind, b.level) ||
       !validGearMode(b.gearMode, b.kind) ||
       !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
@@ -411,9 +564,11 @@ export function validateReplay(value: unknown): value is ReplayData {
             ? MAX_ARCHER_TOWER_LEVEL
             : b.kind === 'darkdrill' && value.version >= 40
               ? MAX_DARK_DRILL_LEVEL
-              : value.version < 44
-                ? (LEGACY_BUILDING_MAX_LEVEL[b.kind] ?? 0)
-                : d.maxLevel),
+              : ((value.version < 44 ? PRE_LATE_CAMPAIGN_LEVELS[b.kind] : undefined) ??
+                (value.version < 45 ? PRE_TOWNHALL_9_LEVELS[b.kind] : undefined) ??
+                (value.version < 46 ? PRE_TOWNHALL_18_LEVELS[b.kind] : undefined) ??
+                (value.version < 47 ? PRE_VERSION_47_LEVELS[b.kind] : undefined) ??
+                d.maxLevel)),
       ) ||
       !validNpcBuilding(b.npc, b.kind, b.level) ||
       (b.npc !== undefined && (s.practice || value.version < 26)) ||
@@ -453,7 +608,7 @@ export function validateReplay(value: unknown): value is ReplayData {
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
-      if (a.type === 'spell' && !spellKeys.includes(a.kind as string)) return false;
+      if (a.type === 'spell' && !spellKeys.includes(a.kind)) return false;
       if (a.type === 'hero' && !s.hero && !s.heroes?.some((h: HeroSetup) => h.kind === a.hero))
         return false;
     } else return false;

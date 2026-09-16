@@ -5,6 +5,7 @@ import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { nativeBuildings, nativeCampaignIssues } from '../src/game/native-campaign';
 import { seekingMineBattle, seekingMineVillage } from './fixtures/seeking-mine-battle';
+import { REPLAY_VERSION } from '../src/game/replay';
 
 it.each([1, 5, 8, 10, 17])(
   'portably reconstructs level %i source flight, complete results and backward seeking',
@@ -18,7 +19,7 @@ it.each([1, 5, 8, 10, 17])(
     expect(m.battle!.finished).toBe(true);
     const end = structuredClone(m.battle!);
     const parsed = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog[0].replay!)));
-    expect(parsed.version).toBe(46);
+    expect(parsed.version).toBe(REPLAY_VERSION);
     expect(parsed.initial.buildings.find((v) => v.kind === 'wizardtower')?.level).toBe(level);
     const viewer = new GameModel();
     const home = JSON.stringify(viewer.state);

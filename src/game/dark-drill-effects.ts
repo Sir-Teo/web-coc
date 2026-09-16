@@ -1,4 +1,4 @@
-import source from '../../reference/dark-drill/native.json';
+import source from '../../reference/dark-drill/native.json' with { type: 'json' };
 import { DARK_DRILL_GRAPH } from './dark-drill-art';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';

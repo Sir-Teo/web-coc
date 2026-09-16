@@ -1,4 +1,4 @@
-import source from '../../reference/dark-storage/runtime.json';
+import source from '../../reference/dark-storage/runtime.json' with { type: 'json' };
 import { nativeMeshPoses, type NativeMeshGraph } from './native-mesh';
 import { DARK_STORAGE_ART, darkStorageFrame } from './dark-storage-art';
 import { darkStorageStats } from './dark-storage-stats';

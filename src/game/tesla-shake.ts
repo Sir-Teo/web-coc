@@ -1,4 +1,4 @@
-import raw from '../../reference/tesla/effects.json';
+import raw from '../../reference/tesla/effects.json' with { type: 'json' };
 import type { Battle } from './model';
 import { teslaVariation } from './tesla-attack';
 

@@ -1,9 +1,9 @@
 import type { SkeletonMode } from './skeleton-stats';
 import type { TrapState } from './traps';
-import native from '../../reference/skeleton-trap/native.json';
+import native from '../../reference/skeleton-trap/native.json' with { type: 'json' };
 
-export const SKELETON_ART_TIERS = [1, 3] as const;
-const tier = (level: number) => (level >= 3 ? 3 : 1);
+export const SKELETON_ART_TIERS = [1, 3, 5] as const;
+const tier = (level: number) => (level >= 5 ? 5 : level >= 3 ? 3 : 1);
 export const skeletonTrapAsset = (mode: SkeletonMode | 'spent' = 'ground', level = 1) =>
   `/assets/buildings/skeleton-trap-native/${tier(level)}-${mode}.png`;
 export const skeletonTrapTexture = (mode: SkeletonMode | 'spent' = 'ground', level = 1) =>

@@ -1,4 +1,4 @@
-import source from '../../reference/wizard-tower/combat.json';
+import source from '../../reference/wizard-tower/combat.json' with { type: 'json' };
 
 export const WIZARD_TOWER_LEVELS = source.levels;
 export const WIZARD_TOWER_PROJECTILES = source.projectiles;

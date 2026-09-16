@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fundedVillage } from './fixtures/funded-village';
 import {
   BUILDINGS,
   maxCountFor,
@@ -16,7 +17,7 @@ import { stepTraps } from '../src/game/traps';
 const expected = {
   bomb: {
     costs: [400, 1000, 10000, 40000, 100000, 230000, 330000, 500000],
-    seconds: [0, 60, 300, 2400, 3600, 7200, 10800, 14400],
+    seconds: [0, 60, 300, 1800, 3600, 7200, 10800, 14400],
     damage: [20, 24, 29, 35, 42, 54, 72, 92],
     counts: [0, 0, 2, 2, 4, 4, 6, 6],
     cap: 5,
@@ -125,7 +126,7 @@ for (const kind of kinds)
     it('enforces Town Hall gates and counts, while retaining old above-cap traps and paid construction', () => {
       expect(Array.from({ length: 8 }, (_, i) => maxCountFor(kind, i + 1))).toEqual(e.counts);
       expect(maxLevelFor(kind, 8)).toBe(e.cap);
-      const m = new GameModel();
+      const m = fundedVillage();
       m.state.obstacles = [];
       m.townhall!.level = e.unlock - 1;
       m.beginBuild(kind);

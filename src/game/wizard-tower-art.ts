@@ -1,4 +1,4 @@
-import source from '../../reference/wizard-tower/combat.json';
+import source from '../../reference/wizard-tower/combat.json' with { type: 'json' };
 
 export const WIZARD_TOWER_ART_LEVELS = source.levels.map((v) => v.level);
 export const wizardTowerTexture = (level = 1) =>

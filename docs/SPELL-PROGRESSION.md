@@ -1,6 +1,42 @@
 # Home Village spell progression
 
-Audited September 11, 2026. Lightning, Healing and Rage now support levels 1–5, covering their upgrades through TH8. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+Audited September 11, 2026; extended September 14 and 15, 2026. Nine spells are now cast: Lightning, Healing, Rage, **Freeze**, **Invisibility**, **Jump**, **Clone**, **Recall** and **Revive** — every Spell Factory spell but the Totem. Each runs to its own original ceiling, read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+
+The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
+
+## The Freeze Spell
+
+Added September 15, 2026, as **recording version 48**: no earlier recording may carry or cast one, and every archived battle before it stays byte-identical. The Spell Factory offers it at level 4, its own `SpellForgeLevel`, and it runs to level 8.
+
+It deals no damage. Within its 3.5-tile radius every defence stops mid-reload and picks a target again when it thaws, and every defending troop stops where it stands. Its hold comes straight from the source's `FreezeTimeMS`: 2.5 seconds at level 1, rising with research. A second cast may only extend a freeze already running, never cut it short.
+
+Two source columns are deliberately not modelled, and the gap is here rather than hidden. `FreezeOuterTimeMS` states a shorter hold for the edge of the burst, which needs an outer radius the table does not give; the whole radius takes the inner time. `RandomRadius` scatters where the burst actually lands, which this game does not reproduce — a cast lands where it is aimed.
+
+## The Invisibility Spell
+
+Added September 15, 2026, as **recording version 49**, and offered by a Spell Factory 6 — its own `SpellForgeLevel`. It runs to level 4, the shortest ladder of any spell this game casts.
+
+It deals no damage. Nothing can target a troop standing under the veil: not a defence, not a defending troop, not the Eagle Artillery's group weighting. Walls still block and traps still trigger, which is what the source's own immunity list says by naming `walls` and `siegeMachines` as untouched.
+
+Its rhythm is read rather than chosen. The source states a pulse count and an interval — 14 pulses at a quarter-second for level 1, 17 at level 4 — so the ring lasts 3.5 to 4.25 seconds, and each troop keeps its cover for a further `InvisibilityTime` of 0.6 seconds after stepping out, the way the Rage Spell's boost lingers.
+
+A unit carries `invisibleUntil` only while a veil is actually holding it, so a battle without one is byte-identical to a battle recorded before the spell existed.
+
+## Jump, Clone, Recall and Revive
+
+Added September 15, 2026, as **recording version 50** — one version for all four, so a recording either predates the batch or carries all of it.
+
+**Jump** (Spell Factory 4) raises a ramp. Walls under the ring cost nothing to cross while it holds, and stand untouched when it closes: the pathfinder takes `breaches` and stops marking those tiles as wall. Nothing else changes, and with no ring open the routing is byte-identical to before. Its length is stated as pulses and an interval — 81 × 0.25s at level 1, 401 at level 5 — so it runs from 20.3 to 100.3 seconds.
+
+**Clone** (Spell Factory 5) copies the troops in the ring in deployment order, spending `DuplicateHousing` — 22 at level 1 up to 48 — and each copy lives its stated `DuplicateLifetime` of 30 seconds before fading, fought or not. A copy is never copied: the spell spends its housing on what is really standing there.
+
+**Recall** (Spell Factory 7) takes troops back into the hand, nearest the centre first, spending `RecallHousing` — 83 at level 1 up to 120. A recalled troop returns to the hand and may be redeployed. A Clone copy has nowhere to return to and is simply lost, which is why the two spells read each other's marks.
+
+**Revive** (Spell Factory 8) stands a fallen hero back up where it fell, at `ResurrectHitpointPercentage` of its maximum — 60% at level 1 rising to 80%. Its `Radius` is zero and its reach is `TargetingRadius`, eight tiles. With no hero down within reach the spell is **not spent**: the cast is refused and the spell stays in hand.
+
+The **Totem Spell** is the one Spell Factory spell still unimplemented: its `ChainSpell` summons a totem, an entity this game has no model for. The eight Dark Spell Factory spells wait on that building.
+
+The spell key order matters and is load-bearing: an archived battle state is compared as JSON, so `SPELL_KEYS` follows the `SPELLS` object's own order and the Freeze Spell is **appended**, never inserted. `tests/freeze-spell.test.ts` asserts that order, and that every recording's own book is a prefix of today's. The per-version book is now one table, `SPELLS_ADDED_AT` in `replay.ts`, so the next spell is one line rather than a new constant.
 
 ## Sources
 

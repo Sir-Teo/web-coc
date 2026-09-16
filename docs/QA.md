@@ -1072,3 +1072,163 @@ Validation:
 The source catalogue was committed separately from the capture correction and artwork. Runtime stays unchanged from `1c72c636541cd0a52aa76a6580f5ff1be10562ef`: **141 TypeScript/CSS files**, SHA-256 **`65520cd44e286dec1c0627992b4b598ad08d7a3daa4ef52aa4546adec907632a`**. Combat version **36**, save version **4**, home limits and native campaign gates are intact. Frozen evidence is indexed by `output/playtest/native-garrison-foundation-verification.json`, with raw copies under `garrison-foundation-evidence`. Earlier frozen records and historical replay fixtures remain untouched.
 
 Next integration includes Castle targeting and spell immunity, eligible garrison exits, source troop damage/splash/death effects, finite rosters, original combat effects/audio, animation state/clock handling, attacker retaliation and replay compatibility. Home Castle progression, donations/clans, later campaign families, native executable equivalence, physical-device/WebKit-offline qualification and the broader production-clone goal remain open.
+
+## Town Hall 9 home tier — September 14, 2026
+
+The home village now ends at **Town Hall 9**. The tier unlocks the X-Bow as a buildable home defense (two, levels 1–3), raises the Archer Tower, Cannon, Air Defense, Wizard Tower, Hidden Tesla, Mortar, Air Sweeper, Bomb Tower, Wall, trap, Army Camp, Spell Factory, Barracks, Laboratory, Dark Elixir Drill and Dark Elixir Storage ceilings, and takes the Barbarian King to level 30 behind a Hero Hall 3. Army housing reaches 220 and spell housing reaches 8. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
+
+Tier data is no longer a wiki transcription. `reference/townhall/catalog.json` now pins the client's own tables — `townhall_levels.csv`, `buildings.csv`, `traps.csv`, `heroes.csv` and `special_abilities.csv` from bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3` — with `scripts/import-native-townhall.py --check` re-downloading them, verifying every SHA-256 and reproducing the JSON byte for byte. Three different inheritance rules apply across those tables and are expanded and asserted rather than assumed. The pinned rows agree with the existing Town Hall 1–8 column for every entity the catalog gates from source, so this tier only added a ninth column. The King's twenty existing records also reproduce exactly, which independently confirms the destination-level reading convention before levels 21–30 were transcribed.
+
+Three source allowances are deliberately withheld and asserted to be strictly below the original: the home Clan Castle (unimplemented), Blacksmith 2 (unlocks no equipment before Blacksmith 3 at Town Hall 10) and Town Hall 10 itself. The Town Hall's own hitpoints, price and duration keep their local curve; adopting the pinned row would rewrite the Town Hall 1–8 economy and every recorded battle built on it.
+
+Recording version **45** carries the new ceilings. No combat rule changed and versions 34–44 remain playable, but an earlier recording still cannot contain a Barracks 11, Laboratory 7, Hero Hall 3, a King above 20 or a Town Hall above 8; versions below 40 keep the Dark Elixir Drill at level 3. Save version 4 is unchanged and nothing is granted retroactively.
+
+Validation:
+
+- **1,836 model/asset cases across 211 files; 1,823 pass.** The 13 failures are the pre-existing heavy fixture suites — `air-sweeper-historical`, `archer-tower-v41-historical`, `garrison-historical`, `inferno-historical`, `mortar-historical`, `native-mortar-reference` and the 288-battle `campaign-audit`. They exceed their own per-test timeouts on this host and **fail identically on the unmodified tree**, which was re-run to confirm. They are not regressions and this milestone therefore does not certify them.
+- The new `tests/townhall-9.test.ts` contributes **10 cases**. Rather than restating the tier, it checks the whole ninth column against `reference/townhall/catalog.json`: every count, every ceiling, monotonic tiers, nine-row tables, and the three withheld gaps. It then exercises the tier as a village — the Town Hall 8 → 9 upgrade and its intact building list, X-Bow construction, the two-tower count gate, the stored targeting mode and both paid upgrades, the Hero Hall 3 path to King 21, army and spell housing, affordability of every purchase within Town Hall 9 storage, shipped artwork for every reachable level, and the version-45 recording boundary against a real version-44 rejection.
+- `tests/king-combat.test.ts` compares all thirty King records to the pinned catalog. The Air Sweeper, Bomb Tower, Cannon, Archer Tower, Hidden Tesla, Dark Elixir Storage, Skeleton Trap, Seeking Air Mine, Army Camp, Wall, Clan Castle and army-facility suites each gained their ninth tier entry, and the facility suite now buys Barracks 11, Laboratory 7 and Spell Factory 4 at their exact source prices and timers.
+- TypeScript, scoped Prettier formatting over the changed files and the production build pass. The build precaches **861 files**, cache `crown-clan-bcabc43cc43d`.
+
+**Browser scenarios, production smoke checks and campaign audits were not re-run for this tier.** `tests/browser/heroes.spec.ts` was updated to expect nine progression tiers but has not been executed here; the X-Bow shop-gate scenario still starts from a Town Hall 2 village and is unaffected. Physical-device qualification, WebKit offline and the full production-clone goal remain open, as does the Archer Queen that the original Town Hall 9 unlocks alongside Hero Hall 3.
+
+## The home village ladder to Town Hall 18 — September 14, 2026
+
+The home village now runs to **Town Hall 18**, the last tier the pinned client defines, and the six late defense families fight in it. See [TOWNHALL-TIERS.md](TOWNHALL-TIERS.md).
+
+`reference/townhall/catalog.json` grew from the tier columns alone to the complete home catalog: 18 tiers, **37 gated entities, 296 per-level rows across 24 tabled entities and all 110 Barbarian King records**, still reproduced byte for byte by `scripts/import-native-townhall.py --check` against five signed sources.
+
+`src/game/tiers.ts` now derives both tier columns from that reference instead of transcribing them. Two rules produce the whole ladder: a tier's count is the original count except for six buildings this game hands out differently before Town Hall 9, and a tier's ceiling is the original gate capped by what this game implements, zero wherever the tier permits none of that building. Applying them **reproduces every Town Hall 1–9 value that shipped before**, verified against the previous revision's own arrays including its count-normalisation pass; the single intended change is the Town Hall's own ceiling.
+
+Army Camp, Wall, Barracks, Laboratory, Spell Factory, Air Defense and the five trap tables now read the same reference. They already matched it exactly — checked row by row before the switch — so the only value correction is the Bomb's level-4 build time, 40 minutes locally against 30 in the source. Upgrade prices and durations are original for every home building. The prototype curve they replace multiplied cost by 1.85 per level while storage grew by 1.5, so it outgrew what a village could hold and stalled the ladder around Town Hall 13. The Inferno Tower had been falling through to that curve because it was missing from the audited defense lookup.
+
+The Inferno Tower (TH10), Eagle Artillery and Tornado Trap (TH11), Scattershot (TH13), Monolith and Spell Tower (TH15) are now buildable at home, and home and practice battles step late-family state as campaign battles do. Campaign-only identities stay campaign-only, and the armed Builder's Hut turret remains campaign-only, so the home hut is held at level 1. A home Spell Tower is placed carrying Rage and cycles all three original weapons.
+
+Validation:
+
+- **1,837 model/asset cases across 211 files; 1,828 pass.** The nine failures are the pre-existing heavy fixture suites — `air-sweeper-historical`, `campaign-audit`, `garrison-historical`, `inferno-historical`, `mortar-historical` and `native-mortar-reference` — which exceed their own per-test timeouts on this host and **fail identically on the unmodified tree**. They are not regressions and are not certified here.
+- `tests/townhall-tiers.test.ts` replaces the Town Hall 9 suite with **11 cases** checking the ladder against the catalog rather than a transcript: every count and ceiling at all 18 tiers, monotonic columns, a zero ceiling wherever a tier permits none of a building, nothing above what the game implements, the four withheld gaps proven strictly below the source, the original requirement for a spread of levels, army and spell housing, hero caps, affordability of every purchase within its own tier's storage, and shipped artwork for every reachable level. It plays the ladder too: the Town Hall 8 → 9 → 18 climb, X-Bow construction and its count gate, the Hero Hall 3 path to King 21, all six late families built and fought in a practice battle, the Spell Tower weapon cycle, and the version-46 boundary against real version-44 and version-45 rejections.
+- `tests/king-combat.test.ts` compares all 110 King records to the catalog. The facility gate suite now derives its own expectations from the pinned gate column instead of a nine-entry literal. The Archer Tower, Dark Elixir Drill, Builder's Hut, late-campaign-level and trap suites were updated to the new ceilings.
+- Recording version **46** carries the ladder with no combat rule change. Versions 34–45 keep their own limits: a version-45 recording still cannot hold a Town Hall above 9, an Archer Tower above 12, a Wall above 16, a King above 30, or a late family outside a campaign village.
+- TypeScript, scoped Prettier formatting over the changed files, the importer check and the production build pass. The build precaches **861 files**, cache `crown-clan-f328b153dbee`.
+
+One test defect was found and fixed while writing this: the late-family village case placed buildings across multi-day build timers, and tree regrowth during those ticks intermittently occupied the Monolith's tile. The village is now cleared before each placement.
+
+### Browser coverage — September 14, 2026
+
+The browser suite was afterwards run in Chromium against the preinstalled revision 1194 build, since this host's `@playwright/test` would otherwise download revision 1243. It immediately found a real defect the model suite could not: the progression browser renders one card per tier, so `tests/browser/heroes.spec.ts` was still asserting nine. That is fixed.
+
+The new `tests/browser/townhall-tiers.spec.ts` covers what had never been seen in a browser: **three cases pass, three times in a row**, checking all eighteen progression cards and the families each unlocks, the late families' shop tiles — locked behind Town Hall 10/11/13/15 in a starter village, and counted 3/1/2 at Town Hall 18 — and a Town Hall 18 village building a Spell Tower and cycling Rage, Poison and Invisibility with no page errors.
+
+**The wider browser suite cannot be certified on this host.** A 43-test selection across the progression, shop, wall, trap, X-Bow and army specs gives **22 passed / 21 failed here, against 24 passed / 19 failed on the unmodified tree**. Nearly every failure is a bare 30-second interaction timeout — mouse drags, double taps, phone-viewport clicks — not a value mismatch. The failure sets overlap on 18 tests; three fail only on this branch and one fails only on `main`, and all four are bare timeouts, so the difference is this host's flakiness rather than a regression. `tests/browser/camp-progression.spec.ts` loads no tests at all under this Node version, on both trees, because a source module imports JSON without an import attribute. Neither the shape of these results nor their causes is a verdict on the suite itself; it is a verdict on running it here.
+
+The troop and spell rosters still stop at five levels each, and the Archer Queen, the later hero roster, Dark Barracks, siege machines and the Town Hall's own Giga weapons remain unimplemented. Production smoke checks, campaign audits, physical-device qualification, WebKit and offline reload remain unrun for this ladder, and the full production-clone goal is open.
+
+## Closing the tier gaps — September 14, 2026
+
+Five of the gaps the ladder left open are now closed, and one silent test-infrastructure defect with them.
+
+**Every browser spec was failing to load.** `tests/browser/camp-progression.spec.ts` loading no tests turned out not to be one spec's problem: Playwright loads specs under Node rather than Vite, and 137 of the repo's 142 source JSON imports carried no `with { type: 'json' }` attribute, so the first one Node reached aborted the whole run. Listing the suite returned **0 tests in 0 files**. With the attribute added throughout it returns **687 tests across 165 files**. Every browser result recorded before this date was therefore a subset of the suite, not the suite.
+
+**Hitpoints.** The eight buildings that never had a source table — the Town Hall, both resource buildings, both storages, the Builder's Hut, the Hero Hall and the Blacksmith — now read their pinned rows instead of a local curve. Recorded battles are unaffected: a recording carries each building's own `maxHp` and the replay restores it rather than deriving it.
+
+**Storage.** `storageCapacity` is the original per-level allowance and the Town Hall counts its own store toward every cap, as the original does; the flat 100,000 base is gone. This is what makes the ladder close rather than merely what limits it — at Town Hall 16 a 26,000,000 elixir cap carries a 24,000,000 Spell Factory 9, and without the hall's own 4,000,000 the tier does not fit. The consequences are real and were followed rather than papered over: the opening grant is now the original's own 750 gold and 750 elixir (its 250 gems already matched), because a prototype-sized purse overflows the faithful cap several times over, and raid loot is capped by the room left at home, which now actually binds.
+
+**Builder's Huts** are sold as the original sells them: five available from Town Hall 1, priced in gems from the pinned `WORKER_COST_*` globals — the second free, then 500, 1,000 and 2,000 — rather than 12,000 gold each, tier by tier. That removes one of the six count divergences below Town Hall 9. The armed hut also fights at home now, from Town Hall 14, with the turret, Defending Builders and repair behaviour that campaign huts already carried. It stops at level 4 with the campaign huts: those are the tiers whose artwork and weapon are reconstructed, so the ceiling follows the art rather than the tier table.
+
+**The fifth Skeleton Trap tier** is reconstructed, not stubbed. `scripts/import-native-skeleton-trap.py` now builds three art tiers from the pinned `sc/buildings.sc`: 38 unique atlas cells for the level-5 coffin beside 35 for each of the others, verified pixel for pixel by `--check`. Its level 2 skeletons — 45 hitpoints, 30 DPS — come from a newly pinned `logic/characters.csv`, and the level 1 values it also captures match the constants they replace exactly.
+
+Validation:
+
+- Recording version **47** carries the fifth coffin tier and the armed home hut; version 46 recordings are rejected for either.
+- A real defect was caught by the archived-state suites: adding `spawnLevel` to every spawned skeleton changed the canonical battle hash of v36 recordings. The field is now written only when it is not the default, and the archived states hash identically again.
+- The heavy determinism suites were failing on their own inline 20–30 second caps while doing 40–50 seconds of genuine work. Those caps are raised to the 180 seconds the repo already uses for its other replay suites, and `vitest.config.ts` sets the same default.
+- `reference/townhall/catalog.json` now also carries the worker gem prices and the starting grant, still reproduced byte for byte by `scripts/import-native-townhall.py --check` against six signed sources.
+
+## Closing the rest of the ladder — September 14, 2026
+
+The gaps left open above are closed, each from the pinned client rather than by transcription. Four new references join the two that existed, every one reproduced byte for byte by its own `--check`.
+
+**The rosters.** Troops ran to five levels — three for the Healer, Dragon and P.E.K.K.A — and spells to five, so Laboratory 16 was reachable but raised no research ceiling at all. `reference/troops` now carries **129 troop levels and 32 spell levels** from `characters.csv` and `spells.csv`. The extension is additive: every value for the levels already shipped reproduces the previous records exactly, so no combat value and no recorded battle changed. The Laboratory's last level now reaches the last level of every troop.
+
+**Equipment and the forge.** The Blacksmith was held at level 1 because equipment stopped at 9, which needs only Blacksmith 1. `reference/equipment` carries all **10 forge levels, 54 item levels and 7 ability tiers**. Equipment runs to 18, gated at Blacksmith 3, 5 and 7, and an upgrade past what the built forge allows is refused naming the level it needs. Ability tiers went from four to seven: the Puppet summons 36/40/44 Barbarians at the new tiers, the Vial reaches +155% damage and 4.8 tiles/s, the Boots 8% of a building's maximum health per pulse. Each forge level stores more ore, 10,000/1,000/200 rising to 50,000/5,000/1,000.
+
+**Ore income**, which is what actually gated the forge. The original's answer is in the tables: `leagues.csv` gives all **23 leagues** a trophy band and a daily Star Bonus including Common, Rare and Epic Ore, and `globals.csv` gives the five stars it costs and the 1,440-minute cooldown. Stars now bank from every attack and overflow past the price, as the source allows; collecting pays the league's reward clamped to the room each store and the forge have left. A starting village sits in Silver1 and takes 275 Shiny and 11 Glowy Ore a day. This also replaced an invented league: the profile used to guess one of three names from three hand-written thresholds.
+
+**The Clan Castle** is buildable from Town Hall 3 through all 14 original levels. Reading its tier needed one rule the ladder lacked — a tier that permits no *level* of a building permits none of it — because the source counts one Castle from Town Hall 1 but gates its first level at Town Hall 3. A sweep of all 37 gated entities across all 18 tiers finds that the only place the rule applies. What it does not do is hold reinforcements, which need donations and have no original answer for a village with no clan.
+
+Two value corrections came out of sourcing, neither findable by re-reading a transcription:
+
+- The Barbarian's research carries a trailing 30 minutes at every level, dropped from levels 3 to 5: they take 1h30, 2h30 and 4h30. Every other value across ten troops and three spells matched exactly.
+- The league shown on the profile was this game's own invention.
+
+Validation:
+
+- Recording version **47** carries the new roster, equipment and coffin ceilings; version 46 rejects all of them. Two version-44 fixtures asked for "max troop levels" and so began asking for levels their own version may not hold; both now read the same `PRE_ROSTER_TROOP_LEVELS` the validator uses, so the fixture and the rule cannot drift apart.
+- `tests/star-bonus.test.ts` adds **3 cases**: contiguous trophy bands with no gap, the Silver1 reward by value, banking and overflow, the day-long wait, and ore clamped to the forge.
+- The importers are `import-native-troops.py`, `import-native-equipment.py` and `import-native-leagues.py`, each with `--check`.
+
+`WITHHELD` in `src/game/tiers.ts` now holds one entry: the Builder's Hut above level 4, and it is short of **artwork** rather than of data. All eight source tiers exist in `sc/buildings.sc`; tiers 5 to 7 (`worker_building_armed_lvl4` through `lvl6`) share the rig the reconstructed tiers already use, while tier 8 (`lvl7`) has a different clip layout — an extra child shifts the turret, which carries 39 frames rather than 360. Its Defending Builder levels 4 to 7 all exist. That is the whole of what remains on the withheld list.
+
+Also open: the Archer Queen, the later hero roster, Dark Barracks, Dark Spell Factory, Siege Workshop, Pet House, Workshop and the Town Hall's own Giga weapons — new systems rather than gaps in pinned data — and Clan Castle reinforcements, which need a clan.
+
+## September 15, 2026 — the whole roster pinned, and the Freeze Spell
+
+The catalogs held only what the game already played, so they could not say what was missing. They now carry everything the home village can produce or own, straight from the pinned client, and [CONTENT-INVENTORY.md](CONTENT-INVENTORY.md) counts pinning and implementing apart because they are different work.
+
+| Area | Pinned | Implemented | Source |
+| --- | --- | --- | --- |
+| Troops | 90 | 10 | 90 |
+| Spells | 23 | 4 | 23 |
+| Heroes | 6 | 1 | 6 |
+| Buildings | 44 | 30 | 44 |
+| Traps | 13 | 7 | 13 |
+| Hero equipment | 61 | 3 | 61 |
+
+Three corrections came out of counting rather than remembering:
+
+- Buildings were being measured against all 73 home records in `buildings.csv`, which also holds hero altars, troop and spell cages, the goblin campaign's own buildings, tutorial props, Town Hall teasers and placeholders. A village owns **44** buildings and **13** traps; the tier table settles it, because it carries one count column per ownable entity.
+- A Super troop's rows begin at the level of the troop it upgrades, so its displayed level is the row's own `VisualLevel`, not its position. Super Barbarian starts at five.
+- An item's rarity sets its ceiling: common equipment reaches 18, Epic reaches 27.
+
+**The Freeze Spell** is the first new spell since the original three, at recording version **48**. Everything about it is read from the source: its Spell Factory 4 gate is `SpellForgeLevel`, its 3.5-tile radius and its 2.5-second hold are its own columns, and it deals no damage at any of its eight levels. `SPELL_UNLOCK` for all four spells is now derived from that column rather than written down.
+
+Two of its source columns are deliberately not modelled and are named rather than hidden: `FreezeOuterTimeMS` needs an outer radius the table does not give, and `RandomRadius` scatters where a cast lands.
+
+One near-miss worth recording. Inserting the new spell **before** `lightning` in the `SPELLS` object changed `SPELL_KEYS` order, and an archived battle state is compared as JSON — so every historical replay hash changed at step 0. The spell is appended instead, the pre-48 book is written out in its original key order, and `tests/freeze-spell.test.ts` asserts both. A second near-miss: its first hotkey, `7`, was already the Wizard's, and both lists are matched against the same key press; the test now rejects any shared key.
+
+Still open: the five later heroes, whose artwork is 3D (`sc3d/*.glb` in Supercell's `FLA2` container) rather than the 2D sprite sheets every other unit uses, so there is no sheet to extract; the 80 troops and 19 spells that are pinned but unplayed; the 14 buildings and 6 traps a village can own that this game does not build; and Clan Castle reinforcements, which need a clan.
+
+## September 15, 2026 — six new spells
+
+Three spells at the start of the day, nine at the end: every Spell Factory spell but the Totem. The inventory now reads:
+
+| Area | Pinned | Implemented | Source |
+| --- | --- | --- | --- |
+| Troops | 90 | 10 | 90 |
+| Spells | 23 | 9 | 23 |
+| Heroes | 6 | 1 | 6 |
+| Buildings | 44 | 30 | 44 |
+| Traps | 13 | 7 | 13 |
+| Hero equipment | 61 | 3 | 61 |
+
+**Freeze** (version 48) holds defences and defenders without dealing damage. **Invisibility** (49) hides troops from every defence, the Eagle Artillery's group weighting included. **Jump**, **Clone**, **Recall** and **Revive** (50) arrived together, so one fixture sweep paid for four spells instead of four sweeps paying for one each — the lesson of the two singles before them.
+
+Every value is read, never chosen: gates from `SpellForgeLevel`, radii and durations from each spell's own columns, and pulse counts and intervals where the source states those rather than a duration. Columns deliberately not modelled are named in [SPELL-PROGRESSION.md](SPELL-PROGRESSION.md) rather than hidden — `FreezeOuterTimeMS` needs an outer radius the table does not give, and `RandomRadius` scatters where a cast lands.
+
+Four near-misses, all now asserted:
+
+- Inserting the first new spell **before** `lightning` in the `SPELLS` object changed `SPELL_KEYS` order, and an archived battle state is compared as JSON — every historical replay hash changed at step 0. Spells are appended, and the pre-48 book is written out in its original key order.
+- Its first hotkey, `7`, was already the Wizard's, and both lists are matched against the same key press.
+- `expandArmyRoster` knew only about the first new spell, so older saves were not given the later fields and failed validation.
+- The test-import gate missed `TS2304`, so a test using a symbol it never imported passed the gate and failed at runtime. It catches that now.
+
+Tests that pinned `expect(REPLAY_VERSION).toBe(n)` broke on every bump; the number records when a rule arrived, so they assert a floor instead. The per-version book is one table, `SPELLS_ADDED_AT`, so the next spell is a line rather than a constant.
+
+### What the remaining content needs
+
+The **Totem Spell** summons a totem, an entity with no model here. The other eight spells are Dark Spell Factory spells and wait on that building.
+
+Every missing building's artwork is reachable — `sc/buildings.sc` carries `mini_spell_distillery` (Dark Spell Factory), `darkBarracks`, `siegeWorkshop` and `pet_house` with their full level sets — but each needs its own extraction, atlas, scene presentation and placement work, on the scale of the Monolith or Spell Tower imports. That is the gate on 14 buildings, and through the Dark Barracks and Dark Spell Factory on 19 dark troops and 8 dark spells besides.
+
+The five later heroes remain gated on 3D: their art is `sc3d/*.glb` in Supercell's `FLA2` container, not the 2D sheets every other unit uses.

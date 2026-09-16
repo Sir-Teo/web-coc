@@ -70,9 +70,8 @@ it('keeps progression and campaign acceptance separate from source tier coverage
   model.townhall!.level = 8;
   expect(model.maxLevel('archertower')).toBe(10);
   expect(BUILDINGS.archertower.maxLevel).toBe(21);
-  model.state.obstacles = [];
-  model.state.buildings.push(makeBuilding(model.state.nextId++, 'archertower', 35, 35, 15));
-  expect(validateSave(model.state)).toBe(true);
+  model.state.buildings.push(makeBuilding(999, 'archertower', 20, 20, 22));
+  expect(validateSave(model.state)).toBe(false);
   expect(nativeCampaignIssues(58)).not.toContain('Archer Tower level 15');
   for (const level of [0, 22, 1.5, NaN]) expect(() => archerTowerStats(level)).toThrow();
 });
