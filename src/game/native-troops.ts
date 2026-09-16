@@ -27,7 +27,10 @@ import {
   unitSpeedScale,
   type UnitEffects,
 } from './native-status';
+import { heroStatsFor } from './native-heroes';
 import {
+  isHeroUnitKind,
+  isPetUnitKind,
   isSpawnKind,
   nativeUnitLevels,
   nativeUnitStats,
@@ -138,11 +141,19 @@ export interface NativeTroopContext extends NativeSpellContext {
 const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
 /** Extra roster troops and every spawned unit follow the native rules from version 45. */
 export const nativeBehavior = (battle: Battle, kind: UnitKind) =>
-  !!battle.nativeRoster && (NATIVE_TROOPS.has(kind) || isSpawnKind(kind));
+  !!battle.nativeRoster &&
+  (NATIVE_TROOPS.has(kind) ||
+    isSpawnKind(kind) ||
+    ((isHeroUnitKind(kind) || isPetUnitKind(kind)) && !!battle.nativeHeroRoster));
 export const unitLevel = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
   u.level ?? battle.troopLevels?.[u.kind as TroopKind] ?? 1;
-export const statsFor = (battle: Battle, u: Pick<Unit, 'kind' | 'level'>) =>
-  nativeUnitStats(u.kind, unitLevel(battle, u));
+export function statsFor(battle: Battle, u: Pick<Unit, 'kind' | 'level' | 'id'>) {
+  if (battle.nativeHeroes && u.id !== undefined) {
+    const hero = battle.nativeHeroes.find((entry) => entry.unitId === u.id);
+    if (hero) return heroStatsFor(hero, battle.townhall ?? 18);
+  }
+  return nativeUnitStats(u.kind, unitLevel(battle, u));
+}
 
 /** Client building names used by preferred-target columns. */
 const BUILDING_NAME: Partial<Record<BuildingKind, string>> = {
@@ -344,8 +355,9 @@ export function stepNativeUnit(
     u.attacking = false;
     return;
   }
-  const speed = (boosted.speed + unitSpeedBonus(u, at)) * unitSpeedScale(u, at);
-  const damage = boosted.damage * unitDamageScale(u, at) * aloneScale(battle, u, s, state);
+  // The model already folded boosts, poison and chill into these values.
+  const speed = boosted.speed;
+  const damage = boosted.damage * aloneScale(battle, u, s, state);
   if (s.speed <= 0 && !s.summon && !s.bunker && s.range < 0.05) return;
   if (s.heal > 0 && s.dps <= 0) {
     stepNativeHealer(ctx, u, s, boosted.heal ?? s.heal, speed, dt);

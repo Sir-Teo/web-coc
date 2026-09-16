@@ -8,6 +8,7 @@ import {
   text,
   tiles,
   type NativeRow,
+  type NativeTable,
 } from './native-data';
 import type { TroopDef } from './data';
 
@@ -70,20 +71,61 @@ export const SPAWN_SOURCE = {
   gwlavaloon: 'GW Equipment Lavaloon',
   gwlavaloonpup: 'GW Equipment Lavaloon Pup',
 } as const;
+/** Heroes and pets are battle units too; their rows live in the heroes and pets tables. */
+export const HERO_UNIT_SOURCE = {
+  barbarianking: 'Barbarian King',
+  archerqueen: 'Archer Queen',
+  minionprince: 'Minion Prince',
+  grandwarden: 'Grand Warden',
+  royalchampion: 'Royal Champion',
+  dragonduke: 'Dragon Duke',
+} as const;
+export const PET_UNIT_SOURCE = {
+  lassi: 'LASSI',
+  mightyyak: 'Mighty Yak',
+  electroowl: 'Electro Owl',
+  unicorn: 'Unicorn',
+  frostypet: 'Frosty',
+  diggy: 'Diggy',
+  poisonlizard: 'Poison Lizard',
+  phoenix: 'Phoenix',
+  phoenixegg: 'Phoenix Egg',
+  spiritfox: 'Spirit Fox',
+  angryjelly: 'Angry Jelly',
+  sneezy: 'Sneezy',
+  greedyraven: 'Crow',
+} as const;
+export type HeroUnitKey = keyof typeof HERO_UNIT_SOURCE;
+export type PetUnitKey = keyof typeof PET_UNIT_SOURCE;
+export const HERO_UNIT_KINDS = Object.keys(HERO_UNIT_SOURCE) as HeroUnitKey[];
+export const PET_UNIT_KINDS = Object.keys(PET_UNIT_SOURCE) as PetUnitKey[];
+export const isHeroUnitKind = (kind: string): kind is HeroUnitKey =>
+  Object.hasOwn(HERO_UNIT_SOURCE, kind);
+export const isPetUnitKind = (kind: string): kind is PetUnitKey =>
+  Object.hasOwn(PET_UNIT_SOURCE, kind);
+
 export type NativeTroopKey = keyof typeof TROOP_SOURCE;
 export type SpawnKind = keyof typeof SPAWN_SOURCE;
 export const SPAWN_KINDS = Object.keys(SPAWN_SOURCE) as SpawnKind[];
-const SOURCE: Record<string, string> = { ...TROOP_SOURCE, ...SPAWN_SOURCE };
+const SOURCE: Record<string, string> = {
+  ...TROOP_SOURCE,
+  ...SPAWN_SOURCE,
+  ...HERO_UNIT_SOURCE,
+  ...PET_UNIT_SOURCE,
+};
+/** Table each unit kind reads; only heroes and pets leave the characters table. */
+const UNIT_TABLE = (kind: string): NativeTable =>
+  isHeroUnitKind(kind) ? 'heroes' : isPetUnitKind(kind) ? 'pets' : 'characters';
 const KIND_BY_NAME = new Map(Object.entries(SOURCE).map(([kind, name]) => [name, kind]));
 export const nativeUnitName = (kind: string) => SOURCE[kind];
 export const unitKindForName = (name: string) => KIND_BY_NAME.get(name);
 export const isSpawnKind = (kind: string): kind is SpawnKind => Object.hasOwn(SPAWN_SOURCE, kind);
 export const nativeUnitLevels = (kind: string) =>
-  SOURCE[kind] && hasNative('characters', SOURCE[kind])
-    ? nativeLevelCount('characters', SOURCE[kind])
+  SOURCE[kind] && hasNative(UNIT_TABLE(kind), SOURCE[kind])
+    ? nativeLevelCount(UNIT_TABLE(kind), SOURCE[kind])
     : 0;
 export const nativeUnitRow = (kind: string, level = 1): NativeRow =>
-  nativeRow('characters', SOURCE[kind], level);
+  nativeRow(UNIT_TABLE(kind), SOURCE[kind], level);
 
 export interface NativeUnitStats {
   kind: string;
@@ -167,7 +209,17 @@ export interface NativeUnitStats {
   immuneToHealing: boolean;
   ability: string;
   abilityLevel: number;
+  /** Every declared special ability with its level (heroes and pets carry several). */
+  abilities: { name: string; level: number }[];
   cooldownOverride: number;
+  /** Pets: how far they may wander from their hero before returning. */
+  leash: number;
+  /** Alternate mode (Grand Warden ground/air). */
+  altMode: boolean;
+  altFlying: boolean;
+  altRange: number;
+  /** Group targeting minimum weight (Grand Warden). */
+  groupMinWeight: number;
   /** Heat-map weight an enemy group-targeting defense (Eagle Artillery) assigns to this unit. */
   enemyGroupWeight: number;
 }
@@ -176,12 +228,13 @@ const statsCache = new Map<string, NativeUnitStats>();
 export function nativeUnitStats(kind: string, level = 1): NativeUnitStats {
   const name = SOURCE[kind];
   if (!name) throw Error(`Unsupported native unit: ${kind}`);
-  const count = nativeLevelCount('characters', name);
+  const table = UNIT_TABLE(kind);
+  const count = nativeLevelCount(table, name);
   const safe = Math.max(1, Math.min(count, Math.floor(level) || 1));
   const key = `${kind}:${safe}`;
   const cached = statsCache.get(key);
   if (cached) return cached;
-  const row = nativeRow('characters', name, safe);
+  const row = nativeRow(table, name, safe);
   const rate = seconds(row, 'AttackSpeed') || 1;
   const dps = num(row, 'DPS');
   const stats: NativeUnitStats = {
@@ -263,9 +316,25 @@ export function nativeUnitStats(kind: string, level = 1): NativeUnitStats {
     triggersTraps: flag(row, 'TriggersTraps'),
     cantBeEjected: flag(row, 'CantBeEjected'),
     immuneToHealing: flag(row, 'ImmuneToHealing'),
-    ability: text(row, 'SpecialAbilities'),
+    ability: text(row, 'SpecialAbilities').split(';')[0] ?? '',
     abilityLevel: num(row, 'SpecialAbilitiesLevel', 1) || 1,
+    abilities: text(row, 'SpecialAbilities')
+      .split(';')
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .map((name, index) => ({
+        name,
+        level:
+          Number(text(row, 'SpecialAbilitiesLevel').split(';')[index]) ||
+          num(row, 'SpecialAbilitiesLevel', 1) ||
+          1,
+      })),
     cooldownOverride: seconds(row, 'CoolDownOverride'),
+    leash: tiles(row, 'LeashLength'),
+    altMode: flag(row, 'HasAltMode'),
+    altFlying: flag(row, 'AltModeFlying'),
+    altRange: tiles(row, 'AltAttackRange'),
+    groupMinWeight: num(row, 'TargetGroupsMinWeight'),
     enemyGroupWeight: num(row, 'EnemyGroupWeight', 100),
   };
   statsCache.set(key, stats);
@@ -303,12 +372,21 @@ export function nativeTroopDef(kind: string): TroopDef {
 export const SPAWN_TROOPS = Object.fromEntries(
   SPAWN_KINDS.map((kind) => [kind, nativeTroopDef(kind)]),
 ) as Record<SpawnKind, TroopDef>;
+/** Heroes and pets fight as units; their definitions come from the hero and pet tables. */
+export const HERO_TROOPS = Object.fromEntries(
+  HERO_UNIT_KINDS.map((kind) => [kind, nativeTroopDef(kind)]),
+) as Record<HeroUnitKey, TroopDef>;
+export const PET_TROOPS = Object.fromEntries(
+  PET_UNIT_KINDS.map((kind) => [kind, nativeTroopDef(kind)]),
+) as Record<PetUnitKey, TroopDef>;
 
-/** TroopDef-shaped stats at a spawned unit's own level. */
-export function spawnStatsAt(kind: SpawnKind, level: number) {
+/** TroopDef-shaped stats at a spawned, hero or pet unit's own level. */
+export function spawnStatsAt(kind: SpawnKind | HeroUnitKey | PetUnitKey, level: number) {
   const s = nativeUnitStats(kind, level);
   return {
-    ...SPAWN_TROOPS[kind],
+    ...(SPAWN_TROOPS[kind as SpawnKind] ??
+      HERO_TROOPS[kind as HeroUnitKey] ??
+      PET_TROOPS[kind as PetUnitKey]),
     hp: s.hp,
     damage: s.damage,
     heal: s.heal > 0 ? s.heal : undefined,

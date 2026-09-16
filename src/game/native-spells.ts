@@ -254,7 +254,9 @@ function harmDefense(
   }
   if (damage > 0) damageDefenders(battle, { x, y }, damage, radius, 'both');
   for (const d of battle.defenders ?? []) {
-    if (d.hp <= 0 || distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;
+    // Defenders still inside their coffin or hut take nothing.
+    if (d.hp <= 0 || d.spawnedAt > at + 1e-9) continue;
+    if (distance2D(d.x - x, d.y - y) > radius + 1e-9) continue;
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
@@ -281,6 +283,8 @@ function quake(
   const n = seen.indexOf(key) + 1;
   const hits = Math.max(1, num(row, 'NumberOfHits', 1));
   if (b.kind === 'wall') {
+    // Earthquake Boots destroy every wall they reach outright (DestroyWalls, official wiki).
+    if (flag(row, 'DestroyWalls')) return ctx.damageBuilding(b, b.maxHp, at, true);
     const extra = (num(row, 'PreferredTargetDamageMod', 5) * (n - 1) ** 2) / 100 / hits;
     ctx.damageBuilding(b, b.maxHp * (permil / n + extra), at, true);
   } else ctx.damageBuilding(b, (b.maxHp * permil) / (2 * n - 1), at, true);

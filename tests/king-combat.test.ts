@@ -30,6 +30,11 @@ function village(th = 7, level = 1) {
   m.state.king = { level };
   return m;
 }
+/** Version 46 Rage Vial state: the ability flag plus the boost the client row grants. */
+function rage(m: GameModel, king: { native?: { effects?: unknown } }, until: number) {
+  m.battleHero('king')!.abilityUsed = true;
+  (king.native ??= {}).effects = { boost: { until, speed: 2.25, damage: 1.2, attackSpeed: 0 } };
+}
 function arena(th = 7, level = 1) {
   const m = village(th, level);
   m.startBattle(0, true);
@@ -203,7 +208,9 @@ describe('King equipment activation', () => {
     expect(
       b.units
         .filter((u) => u.summoned)
-        .every((u) => u.maxHp === 105 && u.spawnedAt === 0 && u.rageUntil === 20),
+        .every(
+          (u) => u.maxHp === 105 && u.spawnedAt === 0 && u.native?.effects?.boost?.until === 20,
+        ),
     ).toBe(true);
     m.state.troopLevels = { ...b.troopLevels, swordsman: 1 };
     m.step(0.499);
@@ -213,7 +220,9 @@ describe('King equipment activation', () => {
     expect(
       b.units
         .slice(-3)
-        .every((u) => u.maxHp === 105 && u.spawnedAt === 0.5 && u.rageUntil === 20.5),
+        .every(
+          (u) => u.maxHp === 105 && u.spawnedAt === 0.5 && u.native?.effects?.boost?.until === 20.5,
+        ),
     ).toBe(true);
     expect(m.activateHeroAbility()).toBe(false);
     expect(b.remaining).toEqual(emptyArmy());
@@ -244,8 +253,7 @@ describe('King equipment activation', () => {
     king.target = target.id;
     m.step(0.05);
     expect(target.maxHp - target.hp).toBeCloseTo(142.8);
-    b.hero!.abilityUsed = true;
-    b.hero!.rageUntil = 10;
+    rage(m, king, 10);
     king.cooldown = 0;
     m.step(0.05);
     expect(target.maxHp - target.hp).toBeCloseTo(142.8 + 314.16);
@@ -267,8 +275,7 @@ describe('King equipment activation', () => {
     king.target = target.id;
     king.path = [{ x: 15, y: 15 }];
     king.pathAt = 10;
-    b.hero!.abilityUsed = true;
-    b.hero!.rageUntil = active ? 10 : 0;
+    rage(m, king, active ? 10 : 0);
     m.step(0.1);
     expect(king.x).toBeCloseTo(active ? 10.425 : 10.2);
   });
@@ -308,10 +315,16 @@ describe('King equipment activation', () => {
     const lethal = arena();
     lethal.king.hp = -461;
     lethal.m.step(0.05);
-    expect(lethal.b.hero!.abilityUsed).toBe(true);
+    expect(lethal.m.battleHero('king')!.abilityUsed).toBe(true);
     expect(lethal.king.hp).toBe(-1);
     expect(lethal.king.spent).toBe(true);
-    expect(lethal.b.units).toHaveLength(1);
+    // The automatic activation still releases the first Puppet wave; later waves stop with the King.
+    expect(lethal.b.units.filter((u) => u.summoned)).toHaveLength(5);
+    expect(lethal.b.finished).toBe(false);
+    lethal.m.step(1);
+    expect(lethal.b.units.filter((u) => u.summoned)).toHaveLength(5);
+    for (const unit of lethal.b.units) unit.hp = 0;
+    lethal.m.step(0.05);
     expect(lethal.b.finished).toBe(true);
   });
   it('replays default equipment and timed summons after portable export and seeks on either side of the second wave', () => {
@@ -329,7 +342,7 @@ describe('King equipment activation', () => {
     expect(viewer.openReplay(data)).toBe(true);
     for (let i = 0; i < 100 && !viewer.replay!.complete; i++) viewer.step(0.05);
     expect(viewer.battle!.units).toEqual(original.units);
-    expect(viewer.battle!.hero).toEqual(original.hero);
+    expect(viewer.battle!.nativeHeroes).toEqual(original.nativeHeroes);
     for (const [at, count] of [
       [0.45, 5],
       [0.55, 8],

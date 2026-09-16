@@ -138,7 +138,7 @@ describe('recorded battle playback', () => {
       mortar ||= m.battle!.shells.length > 0;
     }
     m.finishBattle();
-    expect(m.battle!.hero!.abilityUsed).toBe(true);
+    expect(m.battleHero('king')!.abilityUsed).toBe(true);
     expect(mortar).toBe(true);
     expect(Object.values(m.battle!.traps).filter((t) => t.resolved).length).toBeGreaterThanOrEqual(
       2,
@@ -223,7 +223,7 @@ describe('recorded battle playback', () => {
       (r: any) => (r.actions[0].type = 'arbitrary'),
       (r: any) => (r.initial.buildings[0].kind = '__proto__'),
       (r: any) => r.initial.buildings.push(r.initial.buildings[0]),
-      (r: any) => (r.initial.hero.townhall = 999),
+      (r: any) => (r.initial.townhall = 999),
       (r: any) => (r.initial.troopLevels.giant = 100),
       (r: any) => (r.actions.at(-1).step = 0),
       (r: any) => (r.actions[0].x = NaN),

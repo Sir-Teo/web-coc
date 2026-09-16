@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GameModel, makeBuilding, type FX } from '../src/game/model';
+import { GameModel, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { BUILDINGS, maxCountFor, maxLevelFor } from '../src/game/data';
 import {
@@ -8,11 +8,11 @@ import {
   equipmentStats,
   type EquipmentKind,
 } from '../src/game/equipment';
-import { heroStats, heroRecovery } from '../src/game/heroes';
+import { heroStatsFor } from '../src/game/native-heroes';
+import { heroAbilityHeal } from '../src/game/native-heroes';
 import { validateSave, migrateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
-import { stepKingQuakes } from '../src/game/king-quake';
 import { spawnSkeleton } from '../src/game/defenders';
 
 function village(blacksmith = true) {
@@ -119,7 +119,10 @@ describe('Blacksmith economy and persistence', () => {
     expect(m.equipKing('puppet', 1)).toBe(false);
     expect(m.upgradeEquipment('boots', 1, 120)).toBe(false);
     m.state.equipment!.levels.boots = 9;
-    expect(m.battle!.hero!.equipment!.levels.boots).toBe(1);
+    // The battle keeps the loadout snapshot taken when it started.
+    expect(
+      m.battle!.nativeHeroes![0].items.find((item) => item.slug === 'earthquake-boots')!.level,
+    ).toBe(1);
   });
   it('retains legacy defaults, pre-Blacksmith ore and imported upgrades; rejects malformed gear', () => {
     const legacy = village(false).state;
@@ -168,45 +171,42 @@ describe('equipped King combat and recordings', () => {
       const late = spawnSkeleton(b, source, 0.8, 2);
       const stats = equipmentStats('boots', level),
         before = b.buildings.map((v) => v.hp);
-      const fx: FX[] = [];
+      // Version 46 runs the Earthquake Boots Spell through the native spell engine.
       const step = (at: number) => {
-        b.elapsed = at;
-        stepKingQuakes(
-          b,
-          (v, n, t) => m.damage(v, n, t),
-          (e) => fx.push(e),
-        );
+        while (b.elapsed < at - 1e-9 && !b.finished) m.step(Math.min(0.05, at - b.elapsed));
       };
       m.activateHeroAbility();
       expect(b.units).toHaveLength(1);
+      // The spell keeps the cast position, so park the King away from the arena and measure it alone.
+      king.x = king.y = 45;
       step(0.699);
       expect(b.buildings.map((v) => v.hp)).toEqual(before);
       step(0.7);
       expect(b.buildings[2].hp).toBe(0);
       expect(ground.hp).toBeCloseTo(ground.maxHp * (1 - stats.quakeTroop));
       expect(late.hp).toBe(late.maxHp);
-      king.x = king.y = 45;
-      king.hp = 0;
+      // The quake keeps pulsing wherever the King goes: the spell is independent of its caster.
       step(2.3);
       step(4);
-      expect(fx).toHaveLength(5);
       for (const i of [0, 1])
         expect(b.buildings[i].hp).toBeCloseTo(before[i] * (1 - stats.quakeBuilding * 5));
       for (const i of [3, 4, 5]) expect(b.buildings[i].hp).toBe(before[i]);
       expect(ground.hp).toBeCloseTo(ground.maxHp * (1 - stats.quakeTroop * 5));
       expect(late.hp).toBeCloseTo(late.maxHp * (1 - stats.quakeTroop * 4));
       expect(air.hp).toBe(air.maxHp);
-      expect(b.kingQuakes).toEqual([]);
+      expect(b.nativeSpells ?? []).toEqual([]);
     },
   );
   it('uses equipped passive stats, recovery, summon count and independent boost', () => {
     const { m, b, king } = arena(9, ['puppet', 'boots']);
     expect(king.maxHp).toBe(2309 + 1045 + 522);
-    expect(heroStats(20, 8, b.hero!.equipment).dps).toBe(148 + 32);
+    const hero = m.battleHero('king')!;
+    expect(heroStatsFor(hero, 8).dps).toBe(148 + 32);
     king.hp = 100;
     m.activateHeroAbility();
-    expect(king.hp).toBe(100 + heroRecovery(20, 8, b.hero!.equipment));
-    expect(b.hero!.rageUntil).toBe(0);
+    expect(king.hp).toBe(100 + heroAbilityHeal(hero, 8));
+    // Without a Rage Vial the ability grants no boost.
+    expect(king.native?.effects?.boost).toBeUndefined();
     for (let i = 0; i < 50; i++) m.step(0.05);
     expect(b.units.filter((u) => u.summoned)).toHaveLength(30);
     expect(b.units.filter((u) => u.summoned).at(-1)!.spawnedAt).toBe(2.5);
@@ -232,7 +232,10 @@ describe('equipped King combat and recordings', () => {
     for (let i = 0; i < 80; i++) m.step(0.05);
     m.finishBattle();
     const data = parseReplayFile(JSON.stringify(makeReplayFile(m.state.raidLog![0].replay!)));
-    expect(data.initial.hero!.equipment).toEqual(m.kingEquipment);
+    expect(data.initial.heroes![0].items).toEqual([
+      { slug: 'barbarian-puppet', level: 9 },
+      { slug: 'earthquake-boots', level: 9 },
+    ]);
     const viewer = new GameModel();
     const home = structuredClone(viewer.state);
     expect(viewer.openReplay(data)).toBe(true);
@@ -242,12 +245,18 @@ describe('equipped King combat and recordings', () => {
     for (const at of [0.6, 1.2, 0.6, 2.4]) {
       viewer.seekReplay(at);
       for (let i = 0; i < 200 && viewer.replay!.seeking; i++) viewer.step(0.05);
-      expect(viewer.battle!.hero!.equipment).toEqual(m.kingEquipment);
+      expect(viewer.battle!.nativeHeroes![0].items).toEqual(data.initial.heroes![0].items);
     }
     expect(viewer.state).toEqual(home);
     const missing = structuredClone(data);
-    delete missing.initial.hero!.equipment;
+    missing.initial.heroes![0].items[0].level = 99;
     expect(validateReplay(missing)).toBe(false);
+    // A hero roster only exists from version 46; older recordings carry the single King instead.
+    missing.initial.heroes![0].items[0].level = 9;
+    missing.version = 45;
+    expect(validateReplay(missing)).toBe(false);
+    delete missing.initial.heroes;
+    missing.initial.hero = { level: 20, townhall: 8 };
     missing.version = 23;
     expect(validateReplay(missing)).toBe(true);
     expect(viewer.openReplay(missing)).toBe(false);

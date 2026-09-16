@@ -162,7 +162,8 @@ describe('hero combat', () => {
     expect(m.battle!.units.filter((u) => u.summoned)).toHaveLength(HERO_ABILITY.spawnBatch);
     m.step(0.5);
     expect(m.battle!.units.filter((u) => u.summoned)).toHaveLength(HERO_ABILITY.summons);
-    expect(m.battle!.hero!.rageUntil).toBe(HERO_ABILITY.duration);
+    // Version 46 keeps the Rage Vial boost on the hero unit itself.
+    expect(u.native!.effects!.boost!.until).toBe(HERO_ABILITY.duration);
     expect(m.activateHeroAbility()).toBe(false);
     expect(m.state.army).toEqual(emptyArmy());
     m.finishBattle();
@@ -177,10 +178,10 @@ describe('hero combat', () => {
     const u = m.battle!.units[0];
     u.hp = u.maxHp * 0.1;
     m.step(0.05);
-    expect(m.battle!.hero!.abilityUsed).toBe(false);
+    expect(m.battleHero('king')!.abilityUsed).toBeFalsy();
     u.hp = -10;
     m.step(0.05);
-    expect(m.battle!.hero!.abilityUsed).toBe(true);
+    expect(m.battleHero('king')!.abilityUsed).toBe(true);
     expect(u.hp).toBe(450);
     expect(m.battle!.units).toHaveLength(6);
     m.step(0.5);
@@ -211,7 +212,7 @@ describe('hero combat', () => {
     expect(m.state.king).toEqual({ level: 1 });
     m.returnHome();
     m.startBattle(0, true);
-    expect(m.battle!.hero!.abilityUsed).toBe(false);
+    expect(m.battleHero('king')!.abilityUsed).toBeFalsy();
     expect(m.deployHero(2, 13)).toBe(true);
     expect(m.battle!.units[0].hp).toBe(m.battle!.units[0].maxHp);
   });

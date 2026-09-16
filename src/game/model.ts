@@ -301,7 +301,20 @@ import {
 /** Spells that can still destroy buildings or create attackers keep a version 45 battle open. */
 const FIGHTING_SPELLS: readonly SpellKind[] = ['earthquake', 'skeleton', 'bat'];
 import { SPELL_SOURCE } from './spell-progression';
-import { isSpawnKind, spawnStatsAt } from './native-units';
+import { isHeroUnitKind, isPetUnitKind, isSpawnKind, spawnStatsAt } from './native-units';
+import { spawnNativeUnit } from './native-troops';
+import {
+  heroOf,
+  heroTroopStats,
+  heroUnitKind,
+  petOwner,
+  petTroopStats,
+  petUnitKind,
+  type HeroSetup,
+  type NativeBattleHero,
+} from './native-heroes';
+import { activateHero, stepHeroAbilities } from './native-hero-abilities';
+import { HERO_UNIT } from './native-hero-data';
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
   npc?: NpcBuildingKind;
@@ -440,7 +453,8 @@ export interface Unit {
   level?: number;
   /** Native roster state created only by version 45+ battles. */
   native?: NativeUnitState;
-  hero?: 'king';
+  /** Legacy battles mark the King; version 46 battles name the hero kind. */
+  hero?: HeroKind;
   summoned?: boolean;
   spawnedAt?: number;
   rageUntil?: number;
@@ -507,6 +521,11 @@ export interface Battle {
   nativeShotSequence?: number;
   /** Town Hall 18 Guardians have been placed for this battle. */
   guardiansPlaced?: true;
+  /** Version 46+: the complete hero roster with equipment and pets. */
+  nativeHeroRoster?: true;
+  nativeHeroes?: NativeBattleHero[];
+  /** Town Hall level of the attacker, for hero scaling. */
+  townhall?: number;
   /** Health of recalled troops waiting in the deployment bar, first recalled first redeployed. */
   recalledHp?: Partial<Record<TroopKind, number[]>>;
   catalog?: CampaignCatalog;
@@ -686,6 +705,8 @@ export class GameModel {
   placement: BuildingKind | null = null;
   moving: number | null = null;
   activeHero = false;
+  /** Version 46 battles select which hero the next deployment places. */
+  activeHeroKind: HeroKind | null = null;
   activeTroop: TroopKind = 'swordsman';
   /** When set, tapping the battlefield casts this spell instead of deploying. */
   activeSpell: SpellKind | null = null;
@@ -942,11 +963,18 @@ export class GameModel {
   troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
     return troopStatsAt(kind, level);
   }
-  /** Battle stats for any unit; spawned units carry their own level. */
-  unitStats(u: Pick<Unit, 'kind' | 'level'>) {
-    return isSpawnKind(u.kind)
-      ? spawnStatsAt(u.kind, u.level ?? 1)
-      : this.troopStats(u.kind, u.level ?? this.troopLevel(u.kind));
+  /** Battle stats for any unit; spawned units, heroes and pets carry their own level. */
+  unitStats(u: Pick<Unit, 'kind' | 'level' | 'id'>) {
+    const battle = this.battle;
+    if (battle?.nativeHeroes && u.id !== undefined) {
+      const hero = heroOf(battle, { id: u.id });
+      if (hero) return heroTroopStats(hero, battle.townhall ?? this.townhallLevel);
+      const owner = petOwner(battle, { id: u.id });
+      if (owner?.pet) return petTroopStats(owner.pet);
+    }
+    if (isHeroUnitKind(u.kind) || isPetUnitKind(u.kind) || isSpawnKind(u.kind))
+      return spawnStatsAt(u.kind, u.level ?? 1);
+    return this.troopStats(u.kind as TroopKind, u.level ?? this.troopLevel(u.kind as TroopKind));
   }
   spellLevel(kind: SpellKind) {
     return this.battle?.spellLevels?.[kind] ?? this.state.spellLevels?.[kind] ?? 1;
@@ -2523,7 +2551,11 @@ export class GameModel {
     return true;
   }
   get heroReady() {
-    return !!this.state.king && !!this.heroHall && !this.state.king.upgradeEnd;
+    return this.heroLineup.some((kind) => !this.heroProgress(kind)!.upgradeEnd);
+  }
+  /** The battle hero entry for a kind, in version 46 battles. */
+  battleHero(kind: HeroKind = this.activeHeroKind ?? 'king') {
+    return this.battle?.nativeHeroes?.find((hero) => hero.kind === kind);
   }
   get heroMaxLevel() {
     return heroLevelCap(this.townhallLevel, this.heroHall?.level ?? 0);
@@ -2564,10 +2596,115 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Hero setups for a version 46 battle: lineup order, equipped items and assigned pets. */
+  private heroSetups(): HeroSetup[] {
+    const gear = this.gear;
+    const pets = this.petProgress;
+    return this.heroLineup
+      .filter((kind) => {
+        const hero = this.heroProgress(kind);
+        return hero && !hero.upgradeEnd;
+      })
+      .map((kind) => {
+        const items = (gear.loadouts[kind] ?? [])
+          .filter((slug) => gear.levels[slug] !== undefined)
+          .slice(0, 2)
+          .map((slug) => ({ slug, level: gear.levels[slug] }));
+        const pet = pets.assigned[kind];
+        const level = pet ? pets.levels[pet] : undefined;
+        return {
+          kind,
+          level: this.heroProgress(kind)!.level,
+          items,
+          ...(pet && level ? { pet: { kind: pet, level } } : {}),
+        };
+      });
+  }
+  /** Deploy one hero of the roster with its pet (version 46). */
+  deployNativeHero(kind: HeroKind, x: number, y: number) {
+    if (this.replay) return false;
+    const b = this.battle;
+    const hero = b?.nativeHeroes?.find((entry) => entry.kind === kind);
+    if (!b || b.finished || !hero || hero.unitId !== null || this.deployBlocked(x, y)) return false;
+    this.recordAction({ type: 'hero', hero: kind, x, y });
+    this.beginFight();
+    const stats = heroTroopStats(hero, b.townhall ?? this.townhallLevel);
+    hero.unitId = this.state.nextId++;
+    const recalled = hero.recalledHp;
+    delete hero.recalledHp;
+    if (recalled === undefined) recordWakeSpace(b, heroWakeSpace());
+    b.units.push({
+      id: hero.unitId,
+      kind: heroUnitKind(kind),
+      hero: kind,
+      level: hero.level,
+      x,
+      y,
+      hp: recalled ?? stats.hp,
+      maxHp: stats.hp,
+      cooldown: 0,
+      target: null,
+      path: [],
+      pathAt: 0,
+      attacking: false,
+      spawnedAt: b.elapsed,
+      native: initialNativeState(heroUnitKind(kind), hero.level),
+    });
+    if (hero.pet) {
+      const pet = petTroopStats(hero.pet);
+      const recalledPet = hero.recalledPetHp;
+      delete hero.recalledPetHp;
+      hero.petId = this.state.nextId++;
+      b.units.push({
+        id: hero.petId,
+        kind: petUnitKind(hero.pet.kind),
+        level: hero.pet.level,
+        x: x + 0.6,
+        y: y + 0.4,
+        hp: recalledPet ?? pet.hp,
+        maxHp: pet.hp,
+        cooldown: 0,
+        target: null,
+        path: [],
+        pathAt: 0,
+        attacking: false,
+        spawnedAt: b.elapsed,
+        native: initialNativeState(petUnitKind(hero.pet.kind), hero.pet.level),
+      });
+    }
+    hero.deployed = true;
+    this.onEffect({ type: 'spawn', x, y });
+    this.changed();
+    return true;
+  }
+  /** One ability activation per hero and battle; a knocked-out hero fires it automatically. */
+  activateNativeHeroAbility(kind: HeroKind, automatic = false) {
+    if (this.replay) return false;
+    const b = this.battle;
+    const hero = b?.nativeHeroes?.find((entry) => entry.kind === kind);
+    const unit = b?.units.find((u) => u.id === hero?.unitId);
+    if (!b || b.finished || !hero || !unit || hero.abilityUsed || unit.spent) return false;
+    if (!automatic && unit.hp <= 0) return false;
+    if (!automatic) this.recordAction({ type: 'ability', hero: kind });
+    const native = this.nativeContext(b);
+    activateHero(
+      {
+        ...native,
+        spawn: (k, level, x, y, at, owner) => spawnNativeUnit(native, k, level, x, y, at, owner),
+      },
+      hero,
+      unit,
+      b.townhall ?? this.townhallLevel,
+    );
+    this.changed();
+    return true;
+  }
+  /** Legacy entry point: version 46 battles deploy the King from the roster. */
   deployHero(x: number, y: number) {
     if (this.replay) return false;
     const b = this.battle,
       h = b?.hero;
+    if (b?.nativeHeroes) return this.deployNativeHero(this.activeHeroKind ?? 'king', x, y);
     if (!b || b.finished || !h || h.unitId !== null || this.deployBlocked(x, y)) return false;
     this.recordAction({ type: 'hero', x, y });
     this.beginFight();
@@ -2598,6 +2735,8 @@ export class GameModel {
     if (this.replay) return false;
     const b = this.battle,
       h = b?.hero;
+    if (b?.nativeHeroes)
+      return this.activateNativeHeroAbility(this.activeHeroKind ?? 'king', automatic);
     const u = b?.units.find((u) => u.id === h?.unitId);
     if (!b || b.finished || !h || !u || h.abilityUsed || u.spent || (!automatic && u.hp <= 0))
       return false;
@@ -2709,6 +2848,7 @@ export class GameModel {
       this.state.lastArmy = { ...this.state.army };
       this.state.lastSpells = { ...this.state.spells };
     }
+    const heroes = this.heroSetups();
     const buildings = practice
       ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
       : catalog === 'goblin-v1'
@@ -2750,13 +2890,8 @@ export class GameModel {
             },
           }
         : {}),
-      hero: this.heroReady
-        ? {
-            level: this.state.king!.level,
-            townhall: this.townhallLevel,
-            equipment: structuredClone(this.kingEquipment),
-          }
-        : undefined,
+      townhall: this.townhallLevel,
+      ...(heroes.length ? { heroes } : {}),
     };
     this.battle = replayBattle(initial);
     this.recordingLimitReached = false;
@@ -2800,6 +2935,7 @@ export class GameModel {
   }
   deploy(x: number, y: number) {
     if (this.replay) return false;
+    if (this.activeHeroKind) return this.deployNativeHero(this.activeHeroKind, x, y);
     if (this.activeHero) return this.deployHero(x, y);
     const b = this.battle,
       k = this.activeTroop;
@@ -2920,7 +3056,17 @@ export class GameModel {
   private recallUnit(b: Battle, u: Unit) {
     (u.native ??= {}).recalled = true;
     u.attacking = false;
-    if (u.hero && b.hero) {
+    const roster = b.nativeHeroes?.find((hero) => hero.unitId === u.id);
+    if (roster) {
+      roster.unitId = null;
+      roster.recalledHp = u.hp;
+      const pet = b.units.find((other) => other.id === roster.petId);
+      if (pet) {
+        (pet.native ??= {}).recalled = true;
+        roster.recalledPetHp = pet.hp;
+        roster.petId = null;
+      }
+    } else if (u.hero && b.hero) {
       b.hero.unitId = null;
       b.hero.recalledHp = u.hp;
     } else if (TROOP_KEYS.includes(u.kind as TroopKind)) {
@@ -3389,6 +3535,26 @@ export class GameModel {
       }
     }
     if (native) stepPiercingShots(native);
+    if (native && b.nativeHeroes)
+      for (const hero of b.nativeHeroes) {
+        const unit = b.units.find((u) => u.id === hero.unitId);
+        if (!unit) continue;
+        // A knocked-out hero fires its ability automatically (SimulatePlayerInputOnDeath).
+        if (unit.hp <= 0 && !unit.spent && !hero.abilityUsed)
+          this.activateNativeHeroAbility(hero.kind, true);
+        // Waves stop when the hero falls; the automatic activation above still fires once.
+        if (unit.hp > 0)
+          stepHeroAbilities(
+            {
+              ...native,
+              spawn: (k, level, x, y, at, owner) =>
+                spawnNativeUnit(native, k, level, x, y, at, owner),
+            },
+            hero,
+            unit,
+            b.townhall ?? this.townhallLevel,
+          );
+      }
     const king = b.units.find((u) => u.hero);
     if (king && !king.spent && king.hp <= 0 && b.hero && !b.hero.abilityUsed)
       this.activateHeroAbility(true);
@@ -3435,7 +3601,8 @@ export class GameModel {
         !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !this.supportOnly(b, k)) &&
         !b.spells.lightning &&
         !(b.nativeRoster && FIGHTING_SPELLS.some((k) => (b.spells[k] ?? 0) > 0)) &&
-        !(b.hero && b.hero.unitId === null))
+        !(b.hero && b.hero.unitId === null) &&
+        !b.nativeHeroes?.some((hero) => hero.unitId === null))
     )
       this.finishBattle();
   }
@@ -3645,7 +3812,7 @@ export class GameModel {
         spells,
         ...(b.hero?.unitId != null
           ? { hero: { level: b.hero.level, abilityUsed: b.hero.abilityUsed } }
-          : {}),
+          : nativeHeroRecord(b)),
       },
       ...(this.state.raidLog ?? []),
     ].slice(0, 20);
@@ -3682,8 +3849,9 @@ export class GameModel {
     action:
       | Omit<Extract<ReplayAction, { type: 'troop' }>, 'step'>
       | Omit<Extract<ReplayAction, { type: 'spell' }>, 'step'>
-      | { type: 'hero'; x: number; y: number }
-      | { type: 'ability' | 'end' },
+      | { type: 'hero'; x: number; y: number; hero?: HeroKind }
+      | { type: 'ability'; hero?: HeroKind }
+      | { type: 'end' },
   ) {
     if (!this.recording) return;
     if (this.recording.actions.length >= MAX_REPLAY_ACTIONS) {
@@ -3847,8 +4015,10 @@ export class GameModel {
       } else if (a.type === 'spell') {
         runner.activeSpell = a.kind;
         runner.castSpell(a.x, a.y);
-      } else if (a.type === 'hero') runner.deployHero(a.x, a.y);
-      else if (a.type === 'ability') runner.activateHeroAbility();
+      } else if (a.type === 'hero')
+        a.hero ? runner.deployNativeHero(a.hero, a.x, a.y) : runner.deployHero(a.x, a.y);
+      else if (a.type === 'ability')
+        a.hero ? runner.activateNativeHeroAbility(a.hero) : runner.activateHeroAbility();
       else runner.finishBattle();
     }
     if (this.replayStep === data.steps.length) {
@@ -3914,6 +4084,15 @@ export function formatTime(seconds: number) {
     return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
   }
   return `${s}s`;
+}
+/**
+ * Version 46 raid summary of the hero roster. The log keeps one entry, so it reports the King
+ * when it fought and otherwise the first hero that was deployed.
+ */
+function nativeHeroRecord(b: Battle) {
+  const deployed = (b.nativeHeroes ?? []).filter((hero) => hero.deployed);
+  const hero = deployed.find((h) => h.kind === 'king') ?? deployed[0];
+  return hero ? { hero: { level: hero.level, abilityUsed: !!hero.abilityUsed } } : {};
 }
 export function makeBuilding(
   id: number,

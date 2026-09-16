@@ -293,7 +293,7 @@ describe('version 45 native roster battles', () => {
     m.finishBattle();
     const record = m.state.raidLog![0];
     const parsed = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
-    expect(parsed.version).toBe(45);
+    expect(parsed.version).toBe(46);
     const viewer = new GameModel();
     expect(viewer.openReplay(parsed)).toBe(true);
     viewer.seekReplay(1e9);

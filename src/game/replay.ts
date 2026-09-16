@@ -2,6 +2,18 @@ import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { superchargeCount } from './native-supercharge';
 import { guardianLevels, validGuardian } from './native-guardians';
+import {
+  HERO_KINDS,
+  heroMaxLevel,
+  itemHero,
+  itemMaxLevel,
+  petMaxLevel,
+  validHero,
+  validItem,
+  validPet,
+  type HeroKind,
+} from './native-hero-data';
+import type { HeroSetup } from './native-heroes';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import { validInfernoAmmo, validInfernoMode } from './inferno-weapon';
 import {
@@ -41,7 +53,9 @@ import { MAX_SPELL_LEVEL, maxSpellLevel } from './spell-progression';
 import { validEquipment, type KingEquipment } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 45;
+export const REPLAY_VERSION = 46;
+/** Version 46 replaces the single King with the full hero roster, equipment and pets. */
+export const NATIVE_HERO_VERSION = 46;
 /** Versions 34–35 preserve their prior Cannon rules; 34 also keeps fixed Mortar flight. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
@@ -55,6 +69,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 42 ||
   version === 43 ||
   version === 44 ||
+  version === 45 ||
   version === REPLAY_VERSION;
 export const REPLAY_LIMIT = 5;
 export const MAX_REPLAY_STEPS = 60_000;
@@ -66,8 +81,8 @@ export const MAX_REPLAY_UPDATE_MS = 8;
 export type ReplayAction = { step: number } & (
   | { type: 'troop'; kind: keyof Army; x: number; y: number }
   | { type: 'spell'; kind: keyof SpellBook; x: number; y: number }
-  | { type: 'hero'; x: number; y: number }
-  | { type: 'ability' }
+  | { type: 'hero'; x: number; y: number; hero?: HeroKind }
+  | { type: 'ability'; hero?: HeroKind }
   | { type: 'end' }
 );
 export interface ReplaySetup {
@@ -80,6 +95,9 @@ export interface ReplaySetup {
   army: Army;
   spells: SpellBook;
   hero?: { level: number; townhall: number; equipment?: KingEquipment };
+  /** Version 46+: every hero that may be deployed, with its items and pet. */
+  heroes?: HeroSetup[];
+  townhall?: number;
   troopLevels: Army;
   spellLevels?: SpellBook;
   nextId: number;
@@ -107,6 +125,18 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    // Version 46 deploys the complete hero roster with equipment and pets.
+    ...(version >= NATIVE_HERO_VERSION && s.heroes?.length
+      ? {
+          nativeHeroRoster: true as const,
+          nativeHeroes: s.heroes.map((hero) => ({
+            ...structuredClone(hero),
+            unitId: null,
+            petId: null,
+          })),
+          townhall: s.townhall,
+        }
+      : {}),
     // Version 45 enables native roster abilities, spawned units and their statuses.
     ...(version >= 45 ? { nativeRoster: true as const } : {}),
     ...(version >= 43 && s.buildings.some((b) => b.kind === 'inferno')
@@ -254,6 +284,48 @@ export function validateReplay(value: unknown): value is ReplayData {
       ))
   )
     return false;
+  if (s.heroes !== undefined) {
+    if (value.version < NATIVE_HERO_VERSION || !Array.isArray(s.heroes) || s.heroes.length > 4)
+      return false;
+    const kinds = new Set<string>();
+    const pets = new Set<string>();
+    for (const hero of s.heroes) {
+      if (
+        !object(hero) ||
+        !validHero(hero.kind) ||
+        kinds.has(hero.kind) ||
+        !integer(hero.level, 1, heroMaxLevel(hero.kind as HeroKind)) ||
+        !Array.isArray(hero.items) ||
+        hero.items.length > 2
+      )
+        return false;
+      kinds.add(hero.kind);
+      const slugs = new Set<string>();
+      for (const item of hero.items) {
+        if (
+          !object(item) ||
+          !validItem(item.slug) ||
+          slugs.has(item.slug) ||
+          itemHero(item.slug) !== hero.kind ||
+          !integer(item.level, 1, itemMaxLevel(item.slug))
+        )
+          return false;
+        slugs.add(item.slug);
+      }
+      if (hero.pet !== undefined) {
+        if (
+          !object(hero.pet) ||
+          !validPet(hero.pet.kind) ||
+          pets.has(hero.pet.kind) ||
+          !integer(hero.pet.level, 1, petMaxLevel(hero.pet.kind))
+        )
+          return false;
+        pets.add(hero.pet.kind);
+      }
+    }
+    if (s.hero !== undefined) return false;
+    if (s.townhall !== undefined && !integer(s.townhall, 1, 18)) return false;
+  } else if (value.version >= NATIVE_HERO_VERSION && s.hero !== undefined) return false;
   if (s.garrisons !== undefined) {
     if (value.version < 38 || !Array.isArray(s.garrisons) || s.garrisons.length > 20) return false;
     const castles = new Set<number>();
@@ -377,12 +449,13 @@ export function validateReplay(value: unknown): value is ReplayData {
     if (a.type === 'end') {
       if (i !== value.actions.length - 1 || a.step !== value.steps.length) return false;
     } else if (a.type === 'ability') {
-      if (!s.hero) return false;
+      if (!s.hero && !s.heroes?.some((hero: HeroSetup) => hero.kind === a.hero)) return false;
     } else if (a.type === 'troop' || a.type === 'spell' || a.type === 'hero') {
       if (!number(a.x, 0, mapSize) || !number(a.y, 0, mapSize)) return false;
       if (a.type === 'troop' && !troopKeys.includes(a.kind)) return false;
       if (a.type === 'spell' && !spellKeys.includes(a.kind as string)) return false;
-      if (a.type === 'hero' && !s.hero) return false;
+      if (a.type === 'hero' && !s.hero && !s.heroes?.some((h: HeroSetup) => h.kind === a.hero))
+        return false;
     } else return false;
   }
   return value.actions.at(-1).type === 'end';

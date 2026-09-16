@@ -29,6 +29,18 @@ export interface UnitEffects {
   immortalUntil?: number;
   /** Defensive earthquake casts already felt, for 1/(2n-1) repeated damage. */
   quakeCasts?: number[];
+  /** Hero ability attack-interval override (Haste Vial, Stick Horse). */
+  attackInterval?: { until: number; seconds: number };
+  /** Flat damage an equipment ability adds, optionally for a number of hits. */
+  extraDamage?: {
+    until: number;
+    amount: number;
+    hits?: number;
+    range?: number;
+    projectile?: string;
+  };
+  /** Splash and wall jumping while an ability is active (Giant Gauntlet). */
+  splash?: { until: number; radius: number; jumper?: boolean };
 }
 export interface BuildingEffects {
   frozenUntil?: number;

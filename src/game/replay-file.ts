@@ -51,6 +51,18 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
               },
             }
           : {}),
+        // Version 46 carries the whole hero roster, its equipment and pets.
+        ...(s.heroes
+          ? {
+              heroes: s.heroes.map((hero) => ({
+                kind: hero.kind,
+                level: hero.level,
+                items: hero.items.map((item) => ({ slug: item.slug, level: item.level })),
+                ...(hero.pet ? { pet: { kind: hero.pet.kind, level: hero.pet.level } } : {}),
+              })),
+            }
+          : {}),
+        ...(s.townhall !== undefined ? { townhall: s.townhall } : {}),
         ...(s.garrisons
           ? {
               garrisons: s.garrisons.map((g) => ({
@@ -76,6 +88,13 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
           ...(b.infernoMode !== undefined ? { infernoMode: b.infernoMode } : {}),
           ...(b.infernoAmmo !== undefined ? { infernoAmmo: b.infernoAmmo } : {}),
           ...(b.xbowMode !== undefined ? { xbowMode: b.xbowMode } : {}),
+          ...(b.spellMode !== undefined ? { spellMode: b.spellMode } : {}),
+          ...(b.gearMode !== undefined ? { gearMode: b.gearMode } : {}),
+          ...(b.weaponLevel !== undefined ? { weaponLevel: b.weaponLevel } : {}),
+          ...(b.geared !== undefined ? { geared: b.geared } : {}),
+          ...(b.supercharge !== undefined ? { supercharge: b.supercharge } : {}),
+          ...(b.guardian !== undefined ? { guardian: b.guardian } : {}),
+          ...(b.guardianLevel !== undefined ? { guardianLevel: b.guardianLevel } : {}),
           ...(b.constructing !== undefined ? { constructing: b.constructing } : {}),
           ...(b.upgradeEnd !== undefined ? { upgradeEnd: b.upgradeEnd } : {}),
           ...(b.upgradeStart !== undefined ? { upgradeStart: b.upgradeStart } : {}),
@@ -86,7 +105,10 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         const base = { step: a.step, type: a.type };
         if (a.type === 'troop' || a.type === 'spell')
           return { ...base, type: a.type, kind: a.kind, x: a.x, y: a.y } as typeof a;
-        if (a.type === 'hero') return { ...base, type: a.type, x: a.x, y: a.y };
+        if (a.type === 'hero')
+          return { ...base, type: a.type, x: a.x, y: a.y, ...(a.hero ? { hero: a.hero } : {}) };
+        if (a.type === 'ability')
+          return { ...base, type: a.type, ...(a.hero ? { hero: a.hero } : {}) };
         return { ...base, type: a.type };
       }),
     },
