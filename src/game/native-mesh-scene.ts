@@ -23,6 +23,22 @@ export function preloadNativeMeshes(scene: Phaser.Scene, graph: NativeMeshGraph,
  */
 const TINT_ORDER: string[] = [];
 const MAX_TINTED_TEXTURES = 256;
+/**
+ * Meshes a tinted texture is drawing right now. A mesh holds the `Frame` itself, not its key,
+ * so removing a texture still on screen leaves that frame without a source and the triangle
+ * batcher throws reading its `glTexture` — which ends the frame, and with it the game loop.
+ */
+const TINT_REFS = new Map<string, number>();
+const isTinted = (key: string) => key.includes(':color:');
+export function retainTint(key: string) {
+  if (isTinted(key)) TINT_REFS.set(key, (TINT_REFS.get(key) ?? 0) + 1);
+}
+export function releaseTint(key: string) {
+  if (!isTinted(key)) return;
+  const left = (TINT_REFS.get(key) ?? 0) - 1;
+  if (left > 0) TINT_REFS.set(key, left);
+  else TINT_REFS.delete(key);
+}
 function tintedTexture(scene: Phaser.Scene, prefix: string, pose: NativeMeshPose) {
   const original = nativeMeshTexture(prefix, pose.texture);
   const mul = pose.multiply.slice(0, 3),
@@ -54,9 +70,14 @@ function tintedTexture(scene: Phaser.Scene, prefix: string, pose: NativeMeshPose
   ctx.putImageData(pixels, 0, 0);
   scene.textures.addCanvas(key, canvas);
   TINT_ORDER.push(key);
-  while (TINT_ORDER.length > MAX_TINTED_TEXTURES) {
+  // Evict only what nothing is drawing; a texture in use waits for its meshes to let it go.
+  for (let scan = TINT_ORDER.length; TINT_ORDER.length > MAX_TINTED_TEXTURES && scan > 0; scan--) {
     const oldest = TINT_ORDER.shift()!;
-    if (oldest !== key && scene.textures.exists(oldest)) scene.textures.remove(oldest);
+    if (oldest === key || TINT_REFS.has(oldest)) {
+      TINT_ORDER.push(oldest);
+      continue;
+    }
+    if (scene.textures.exists(oldest)) scene.textures.remove(oldest);
   }
   return key;
 }
@@ -82,10 +103,15 @@ export class NativeMeshView {
         mesh = this.scene.add.mesh2d(x, y, texture, vertices, indices, true);
         mesh.setOrigin(0, 0).setRenderAsTriangles(true);
         this.meshes.set(pose.key, mesh);
+        retainTint(texture);
       }
       mesh.vertices = vertices;
       mesh.indices = indices;
-      if (mesh.texture.key !== texture) mesh.setTexture(texture);
+      if (mesh.texture.key !== texture) {
+        releaseTint(mesh.texture.key);
+        retainTint(texture);
+        mesh.setTexture(texture);
+      }
       if (mesh.x !== x || mesh.y !== y) mesh.setPosition(x, y);
       const wantDepth = depth + order * 0.0001;
       if (mesh.depth !== wantDepth) mesh.setDepth(wantDepth);
@@ -101,12 +127,16 @@ export class NativeMeshView {
     }
     for (const [key, mesh] of this.meshes)
       if (!wanted.has(key)) {
+        releaseTint(mesh.texture.key);
         mesh.destroy();
         this.meshes.delete(key);
       }
   }
   clear() {
-    for (const mesh of this.meshes.values()) mesh.destroy();
+    for (const mesh of this.meshes.values()) {
+      releaseTint(mesh.texture.key);
+      mesh.destroy();
+    }
     this.meshes.clear();
   }
   destroy() {

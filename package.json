@@ -41,7 +41,8 @@
     "test:th18:browser": "node scripts/th18-playtest.mjs",
     "test:th18:offline": "node scripts/th18-offline-check.mjs",
     "test:asset-library": "node scripts/asset-library-check.mjs",
-    "test:imports": "node scripts/check-test-imports.mjs"
+    "test:imports": "node scripts/check-test-imports.mjs",
+    "test:army:browser": "node scripts/army-load-check.mjs"
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",
