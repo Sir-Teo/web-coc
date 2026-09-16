@@ -98,6 +98,8 @@ export function weaponFor(tower: Building): NativeWeapon | null {
     (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')
   )
     return nativeGearedWeapon(tower.kind, tower.level, tower.supercharge);
+  // Traps and ordinary buildings have no weapon row of their own.
+  if (!isNativeDefenseKind(tower.kind)) return null;
   const kind = tower.kind as NativeDefenseKind;
   const supercharge = tower.supercharge;
   if (kind === 'spelltower')
