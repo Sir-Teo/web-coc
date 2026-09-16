@@ -14,6 +14,10 @@ TRAPS={'bomb':'Bomb','giantbomb':'Giant Bomb','airbomb':'Air Bomb','springtrap':
 EXACT={'Weapon','MergeRequirement'}
 TROOPS={'swordsman':'Barbarian','archer':'Archer','giant':'Giant','wizard':'Wizard','balloon':'Balloon','goblin':'Goblin','wallbreaker':'Wall Breaker','healer':'Healer','dragon':'Dragon','pekka':'PEKKA'}
 EXTRA_TROOPS={'babydragon':'Baby Dragon','miner':'Miner','electrodragon':'Electro Dragon','yeti':'Yeti','dragonrider':'Dragon Rider','electrotitan':'Electro Titan','rootrider':'Root Rider','thrower':'Thrower','meteorgolem':'Meteor Golem','minion':'Minion','hogrider':'Hog Rider','valkyrie':'Valkyrie','golem':'Golem','witch':'Witch','lavahound':'Lava Hound','bowler':'Bowler','icegolem':'Ice Golem','headhunter':'Headhunter','apprenticewarden':'Apprentice Warden','druid':'Druid','furnace':'Furnace','ruinwitch':'Ruin Witch'}
+SIEGE_TROOPS={'wallwrecker': 'Wall Wrecker', 'battleblimp': 'Battle Blimp', 'stoneslammer': 'Stone Slammer', 'siegebarracks': 'Siege Barracks', 'loglauncher': 'Log Launcher', 'flameflinger': 'Flame Flinger', 'battledrill': 'Battle Drill', 'trooplauncher': 'Troop Launcher'}
+SUPER_TROOPS={'superbarbarian': 'Super Barbarian', 'superarcher': 'Super Archer', 'supergiant': 'Super Giant', 'sneakygoblin': 'Sneaky Goblin', 'superwallbreaker': 'Super Wall Breaker', 'rocketballoon': 'Rocket Balloon', 'superwizard': 'Super Wizard', 'superdragon': 'Super Dragon', 'infernodragon': 'Inferno Dragon', 'superminer': 'Super Miner', 'superyeti': 'Super Yeti', 'superminion': 'Super Minion', 'superhogrider': 'Super Hog Rider', 'supervalkyrie': 'Super Valkyrie', 'superwitch': 'Super Witch', 'icehound': 'Ice Hound', 'superbowler': 'Super Bowler'}
+EXTRA_TROOPS.update(SIEGE_TROOPS)
+EXTRA_TROOPS.update(SUPER_TROOPS)
 TROOPS.update(EXTRA_TROOPS)
 SPELLS={'lightning':'Lightning','heal':'Healing','rage':'Rage'}
 

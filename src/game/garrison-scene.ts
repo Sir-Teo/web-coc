@@ -97,7 +97,8 @@ export class GarrisonPresentation {
       if (
         defender.kind === 'skeleton' ||
         defender.kind === 'guardian' ||
-        defender.kind === 'repairer'
+        defender.kind === 'repairer' ||
+        defender.kind === 'hero'
       )
         continue;
       wanted.add(defender.id);

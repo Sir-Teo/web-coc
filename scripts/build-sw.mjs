@@ -8,9 +8,13 @@ async function walk(dir, precache = true) {
     // The full TH18 art library is browsed on demand, not downloaded by every player.
     if (
       precache &&
-      (['catalog-native', 'village-native', 'troops-native'].some(
-        (name) => p === path.join('dist', 'assets', name),
-      ) ||
+      ([
+        'catalog-native',
+        'village-native',
+        'troops-native',
+        'heroes-native',
+        'guardians-native',
+      ].some((name) => p === path.join('dist', 'assets', name)) ||
         p === path.join('dist', 'asset-catalog.html'))
     )
       continue;

@@ -150,7 +150,13 @@ export const buildingDamageScale = (battle: Battle, building: Pick<Building, 'id
  * Central attacker damage. Without version 45 effects this is exactly `unit.hp -= amount`.
  * Returns the hitpoints actually removed.
  */
-export function hurtUnit(battle: Battle, unit: Unit, amount: number, at = battle.elapsed) {
+export function hurtUnit(
+  battle: Battle,
+  unit: Unit,
+  amount: number,
+  at = battle.elapsed,
+  sourceId?: number,
+) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
   // Burrowed and recalled units cannot be damaged at all.
@@ -166,6 +172,8 @@ export function hurtUnit(battle: Battle, unit: Unit, amount: number, at = battle
     }
   }
   if (amount <= 0) return 0;
+  if (battle.nativeContentExpansion && state && sourceId !== undefined)
+    state.lastDamageSource = sourceId;
   if (state) state.damageTaken = (state.damageTaken ?? 0) + Math.min(amount, unit.hp);
   unit.hp -= amount;
   return amount;

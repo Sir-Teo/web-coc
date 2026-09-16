@@ -1,3 +1,4 @@
+import type { HeroKind } from './native-hero-data';
 import { hurtUnit, unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
@@ -103,7 +104,14 @@ export interface RepairDefender extends DefenderState {
   /** Hiding in the destroyed hut's bunker. */
   hidden?: boolean;
 }
+export interface HeroDefender extends DefenderState {
+  kind: 'hero';
+  hero: HeroKind;
+  level: number;
+  home: { x: number; y: number };
+}
 export type Defender =
+  | HeroDefender
   | (DefenderState & {
       kind: 'skeleton';
       /** Skeleton level this coffin releases; absent on recordings made before tier 5. */
@@ -114,7 +122,7 @@ export type Defender =
   | RepairDefender;
 /** A Clan Castle defender: the skeleton, Guardian and repair families have their own rules. */
 export const isGarrisonDefender = (d: Defender): d is GarrisonDefender =>
-  d.kind !== 'skeleton' && d.kind !== 'guardian' && d.kind !== 'repairer';
+  d.kind !== 'skeleton' && d.kind !== 'guardian' && d.kind !== 'repairer' && d.kind !== 'hero';
 export function hurtDefender(battle: Battle, defender: Defender, power: number) {
   if (defender.hp <= 0 || defender.kind === 'repairer') return;
   if (defender.kind !== 'skeleton' && defender.spawnedAt > battle.elapsed) return;
@@ -195,7 +203,8 @@ function moveAlong(
 export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => void) {
   const structures = battle.buildings.filter((b) => b.kind !== 'wall'); // Home defenders jump their own walls.
   for (const defender of battle.defenders ?? []) {
-    if (defender.kind === 'guardian' || defender.kind === 'repairer') continue;
+    if (defender.kind === 'guardian' || defender.kind === 'repairer' || defender.kind === 'hero')
+      continue;
     if (defender.kind !== 'skeleton') {
       stepGarrisonDefender(battle, defender, dt, effect);
       continue;

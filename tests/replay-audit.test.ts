@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, it, expect, vi } from 'vitest';
-import { GameModel, makeBuilding } from '../src/game/model';
+import { makeBuilding } from '../src/game/model';
 import { CAMPAIGN, TROOP_KEYS } from '../src/game/data';
 import { emptyArmy, emptySpells, baseSpellLevels, defaultSpellLevels } from '../src/game/army';
 import {
@@ -13,7 +14,7 @@ import { validateSave } from '../src/game/save';
 
 function simpleReplay(): ReplayData {
   return {
-    version: REPLAY_VERSION,
+    version: 51,
     initial: {
       index: 11,
       practice: false,

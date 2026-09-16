@@ -106,15 +106,15 @@ def implemented_buildings():
     return set(re.findall(r":\s*'([^']+)'", match.group(1)))
 
 
+def runtime_map(file, constant):
+    text = (ROOT / 'src/game' / file).read_text()
+    match = re.search(rf'(?:export )?const {constant}[^=]*=\s*\{{(.*?)\}}', text, re.S)
+    require(match is not None, f'Cannot read {constant} from {file}')
+    return set(re.findall(r":\s*'([^']+)'", match.group(1)))
+
+
 def implemented_heroes():
-    """The heroes the running game offers, read from its own roster module."""
-    text = (ROOT / 'src/game/hero-roster.ts').read_text()
-    require('OFFERED' in text, 'Cannot read OFFERED from hero-roster.ts')
-    match = re.search(r'export const OFFERED[^=]*=\s*\[(.*?)\]', text, re.S)
-    require(match is not None, 'Cannot read OFFERED from hero-roster.ts')
-    keys = set(re.findall(r"'([^']+)'", match.group(1)))
-    catalog = json.loads((ROOT / 'reference/heroes/catalog.json').read_text())['heroes']
-    return {catalog[key]['name'] for key in keys}
+    return runtime_map('native-hero-data.ts', 'HERO_SOURCE')
 
 
 def playable(rows):
@@ -134,7 +134,8 @@ def ownable():
     """
     rows = decoded(source('logic/townhall_levels.csv'))
     require(rows and rows[0][0] == 'Name', 'Missing Town Hall tier header')
-    return set(rows[0]) | {UNCOUNTED}
+    # A header with no positive count is a retired/internal entity, not an ownable gap.
+    return {name for index, name in enumerate(rows[0]) if any(index < len(row) and row[index].isdigit() and int(row[index]) > 0 for row in rows[2:])} | {UNCOUNTED}
 
 
 def section(title, table, have, pinned, note=''):
@@ -180,7 +181,13 @@ def build():
     traps = records('logic/traps.csv')
     items = records('logic/character_items.csv')
 
-    have_items = mapped('import-native-equipment.py', 'ITEMS')
+    native = json.loads((ROOT / 'reference/full-client/combat.json').read_text())
+    progression = json.loads((ROOT / 'reference/full-client/progression.json').read_text())
+    have_items = {n for n, rows in native['items'].items() if rows[0].get('Deprecated') != 'TRUE'}
+    # Seasonal gifts and disabled prototypes are not permanent playable content.
+    spells = {n: r for n, r in spells.items() if n not in {'Santas Surprise', 'BagOfFrostmites', 'Debris Explosion 2', 'Yellow Card', 'SantaSurprise', 'Santa\'s Surprise', 'Birthday2017'}}
+    items = {n: r for n, r in items.items() if not n.lower().startswith('unused') and r[0].get('Deprecated') != 'TRUE'}
+    characters = {n: r for n, r in characters.items() if not n.lower().startswith('unused') and n != 'Air Troop Launcher'}
 
     lines = ['# Content inventory', '',
              f'Counted from the pinned public client **18.400.21**, bundle `{BUNDLE}`, by '
@@ -191,7 +198,7 @@ def build():
              'Records the client itself disables — summoned troops, defensive variants, '
              'internal spell effects — are excluded: a player never trains them, so they are '
              'not gaps. Builder Base content is excluded for the same reason, as that village '
-             'is not modelled.', '']
+             'is not modelled. Seasonal troops (no normal Barracks unlock or donation disabled), seasonal/internal spells and unused prototypes are also excluded. Registry coverage does not imply every behavior is complete; see EXPERIENCE-PARITY.md.', '']
 
     troop_roster = catalogued('reference/troops/catalog.json', 'roster')
     spell_roster = catalogued('reference/troops/catalog.json', 'spellRoster')
@@ -201,26 +208,58 @@ def build():
     item_roster = catalogued('reference/equipment/catalog.json', 'roster')
     # The Town Hall catalog tables only the entities this game builds, so for buildings and
     # traps pinning and implementing are the same step.
-    building_names = implemented_buildings()
+    building_names = implemented_buildings() | {row['name'] for row in progression['buildings'].values()}
+    # Imported seasonal traps use their own pinned reference packs.
+    for folder in ['freeze-trap', 'shrink-trap', 'pumpkin-bomb', 'santa-trap']:
+        reference = json.loads((ROOT / 'reference' / folder / 'native.json').read_text())
+        def names(value):
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    if key == 'Name' and isinstance(item, str) and item in traps and playable(traps[item]): yield item
+                    else: yield from names(item)
+            elif isinstance(value, list):
+                for item in value: yield from names(item)
+        building_names.update(names(reference))
     own = ownable()
     # Counts and level gates are pinned for every ownable entity, built or not.
     gated = catalogued('reference/townhall/catalog.json', 'gates') | {UNCOUNTED}
 
+    groups = {
+        'troops': {n for n, r in characters.items() if r[0].get('ProductionBuilding') != 'Siege Workshop' and r[0].get('EnabledBySuperLicence') != 'TRUE' and int(r[0].get('BarrackLevel', '0')) > 0 and r[0].get('DisableDonate') != 'TRUE' and playable(r)},
+        'siege': {n for n, r in characters.items() if r[0].get('ProductionBuilding') == 'Siege Workshop' and playable(r)},
+        'super': {n for n, r in characters.items() if r[0].get('EnabledBySuperLicence') == 'TRUE' and playable(r)},
+    }
     totals = []
     for title, table, have, pinned, note in [
-        ('Troops', characters, mapped('import-native-troops.py', 'TROOPS'), troop_roster, ''),
-        ('Spells', spells, mapped('import-native-troops.py', 'SPELLS'), spell_roster, ''),
+        ('Troops', {n: r for n, r in characters.items() if n in groups['troops']},
+         runtime_map('native-units.ts', 'TROOP_SOURCE') & set(groups['troops']),
+         set(progression['troopDefs'][k]['Name'] for k in progression['troopDefs']) & set(groups['troops']), ''),
+        ('Siege machines', {n: r for n, r in characters.items() if n in groups['siege']},
+         runtime_map('native-units.ts', 'TROOP_SOURCE') & set(groups['siege']),
+         set(progression['troopDefs'][k]['Name'] for k in progression['troopDefs']) & set(groups['siege']), ''),
+        ('Super troops', {n: r for n, r in characters.items() if n in groups['super']},
+         runtime_map('native-units.ts', 'TROOP_SOURCE') & set(groups['super']),
+         set(progression['troopDefs'][k]['Name'] for k in progression['troopDefs']) & set(groups['super']), ''),
+        ('Spells', spells, set(json.loads((ROOT / 'reference/troops/catalog.json').read_text())['spells'].values()) | runtime_map('troop-progression.ts', 'NATIVE_SPELL_NAMES'), spell_roster & set(spells), ''),
         ('Heroes', heroes, implemented_heroes(), hero_roster, ''),
+        ('Pets', {n: [{**r[0], 'DisableProduction': 'FALSE'}, *r[1:]] for n, r in native['pets'].items() if n != 'Phoenix Egg'},
+         runtime_map('native-hero-data.ts', 'PET_SOURCE'), set(native['pets']) - {'Phoenix Egg'}, ''),
         ('Buildings', {n: r for n, r in buildings.items() if n in own},
-         building_names & set(buildings), gated & set(buildings), ''),
+         building_names & set(buildings) & own, gated & set(buildings) & own, ''),
         ('Traps', {n: r for n, r in traps.items() if n in own},
-         building_names & set(traps), gated & set(traps), ''),
-        ('Hero equipment', items, have_items, item_roster,
-         ' `UNUSED*` placeholders are counted; the client ships them.'),
+         building_names & set(traps) & own, gated & set(traps) & own, ''),
+        ('Hero equipment', items, have_items, item_roster & set(items),
+         ' Deprecated/unused prototype rows are excluded; ability behavior is tracked separately in EXPERIENCE-PARITY.md.'),
     ]:
         body, done, total, held = section(title, table, have, pinned, note)
         lines += body
         totals.append((title, done, total, held))
+
+    npc = (ROOT / 'src/game/npc-buildings.ts').read_text()
+    entries = re.findall(r"'([^']+)': \{\s*globalId: (\d+),\s*kind: '[^']+',\s*name: '([^']+)'", npc)
+    lines += ['## Campaign identities', '', 'These additional runtime identities are counted separately from ownable Home Village records.', '', '| Runtime key | Name | Source global ID |', '| --- | --- | --- |']
+    lines += [f'| {key} | {name} | {gid} |' for key, gid, name in entries]
+    lines.append('')
 
     summary = ['## Summary', '', '| Area | Pinned | Implemented | Source | Left to implement |',
                '| --- | --- | --- | --- | --- |']

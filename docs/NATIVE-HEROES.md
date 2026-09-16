@@ -8,7 +8,7 @@ equipment and its pets are read from client 18.400.21 (`heroes.csv`, `character_
 [`native-hero-abilities.ts`](../src/game/native-hero-abilities.ts). Behaviour is cross-checked
 against the dossiers in `reference/official-wiki/`.
 
-Replay version 46 introduced all of this. Recordings from versions 34–45 keep their old rules and
+Replay version 51 introduced the native roster. Recordings from versions 34–50 keep their old rules and
 replay byte for byte; every rule below is gated behind the version and the battle's hero roster.
 
 ## The roster
@@ -20,7 +20,7 @@ replay byte for byte; every rule below is gated behind the version and the battl
 | Minion Prince  | `Minion Prince`  | Hero Hall 1 | 95        |
 | Grand Warden   | `Grand Warden`   | Hero Hall 4 | 85        |
 | Royal Champion | `Royal Champion` | Hero Hall 6 | 55        |
-| Battle Duke    | `Battle Duke`    | Hero Hall 8 | 25        |
+| Dragon Duke    | `Dragon Duke`    | Hero Hall 8 | 25        |
 
 Caps are the lower of the hero's own table and the Hero Hall level, exactly as the client computes
 them. How many heroes may be taken into a battle comes from `TAVERN_LEVEL_TO_HERO_SLOT_COUNT`:
@@ -65,14 +65,25 @@ Twelve pets plus the Phoenix Egg, unlocked by Pet House level, researched one at
 assigned to one hero each. A pet deploys with its hero and stays within `LeashLength + AttackRange`
 of it, per the wiki's leash description.
 
-## What the model does not do yet
+## Version 52 presentation and abilities
 
-- Hero and pet battle art. The units fight with the existing presentation; the baked hero and
-  guardian art packs are not wired to the renderer.
-- Equipment abilities that need their own projectile behaviour (Monolith Arrow, Dark Crown, Meteor
-  Staff, Snake Bracelet, Revenge Deck, the Rocket Backpack dash) apply their stat columns but not
-  their bespoke flight.
-- Defending heroes. The village's heroes do not defend it.
+`hero-native-scene.ts` lazy-loads the baked hero, pet and Guardian atlases, respecting their
+frame rectangles, ground anchors, eight directions and clip timing. Atlas assets are shipped
+but excluded from the initial offline precache; they are cached when visited. The rebuild script
+and pinned manifests are tracked alongside them.
+
+Local practice attacks snapshot the selected, available defending heroes with their levels and
+positions around the Hero Hall. Defenders engage nearby attackers, return home, obey target layers
+and can be damaged or frozen. They do not use attacking equipment or pets. Their setups survive
+portable replay exports. Campaign layouts do not acquire invented defending heroes.
+
+Equipment behavior now includes Monolith Arrow's housing-dependent projectile and HP bonus;
+Dark Crown's highest crossed friendly-loss threshold; Meteor Staff's timed defense-targeted cast;
+Snake Bracelet's cumulative-damage spawns; Revenge Deck's projectile return toward the recorded
+attacking defense; and Rocket Backpack's continuous dash with one hit per crossed target.
+These are local deterministic interpretations of the pinned rows, not a claim of pixel-identical
+client behavior. Reflection currently covers damage sources routed through the shared native
+and standard projectile damage paths; campaign-specific weapon paths need a separate audit.
 
 ## Verification
 
@@ -80,3 +91,7 @@ of it, per the wiki's leash description.
 `tests/heroes.test.ts`, `tests/king-combat.test.ts` and `tests/blacksmith.test.ts` cover deployment,
 activation, summon timing, the automatic activation on defeat and the equipment snapshot a recording
 keeps. `tests/replay.test.ts` covers the version gate and the portable file round-trip.
+
+`tests/content-expansion.test.ts` covers all six equipment effects, local defending heroes,
+new spell timing, siege production and super licences. `tests/browser/native-hero-art.spec.ts`
+checks desktop/mobile rendering and missing asset requests.

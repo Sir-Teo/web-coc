@@ -1,3 +1,11 @@
+import { stepDefendingHeroes } from './defending-heroes';
+import {
+  isSiege,
+  superLicence,
+  superOriginal,
+  superMinimum,
+  superLevelOffset,
+} from './special-troops';
 import { troopFacility } from './army-unlocks';
 import nativeProgression from '../../reference/full-client/progression.json';
 import { maxSpellLevel } from './spell-progression';
@@ -307,7 +315,6 @@ import {
   type SpellTowerMode,
 } from './native-defense-stats';
 import { alwaysVisibleTrap } from './native-traps';
-import { stepHutBuilders } from './native-hut-builders';
 import {
   HERO_KINDS,
   HERO_SOURCE,
@@ -454,6 +461,7 @@ export interface RaidRecord {
   replayUnavailable?: 'limit';
 }
 export interface Save {
+  superBoosts?: Partial<Record<TroopKind, number>>;
   nativeCampaign?: NativeCampaignProgress;
   version: 4;
   mapUpgrade?: { moved: number };
@@ -562,6 +570,8 @@ export interface MortarShell {
 export interface Battle {
   /** Version 45+: native troop abilities, spawned units, statuses and delayed death effects. */
   nativeRoster?: true;
+  nativeContentExpansion?: true;
+  siegeDeployed?: boolean;
   nativeSpells?: NativeSpellCast[];
   nativeSpellSequence?: number;
   nativeDeaths?: NativeDeathBlast[];
@@ -1007,6 +1017,12 @@ export class GameModel {
   get armySize() {
     return armySpace(this.state.army);
   }
+  get siegeCount() {
+    return TROOP_KEYS.filter(isSiege).reduce((n, kind) => n + (this.state.army[kind] ?? 0), 0);
+  }
+  get armyReady() {
+    return this.armySize > 0 || this.siegeCount > 0 || this.heroReady;
+  }
   get queuedSize() {
     return this.state.queue.reduce((n, q) => n + TROOPS[q.kind].space, 0);
   }
@@ -1022,8 +1038,20 @@ export class GameModel {
   get queuedSpellCount() {
     return this.state.spellQueue.length;
   }
-  troopLevel(kind: TroopKind) {
+  troopLevel(kind: TroopKind): number {
+    const original = superOriginal(kind);
+    if (original && !this.battle?.troopLevels?.[kind])
+      return Math.max(
+        1,
+        Math.min(
+          maxTroopLevel(kind),
+          (this.state.troopLevels?.[original] ?? 1) - superLevelOffset(kind),
+        ),
+      );
     return this.battle?.troopLevels?.[kind] ?? this.state.troopLevels?.[kind] ?? 1;
+  }
+  troopDisplayLevel(kind: TroopKind) {
+    return this.troopLevel(kind) + (superOriginal(kind) ? superLevelOffset(kind) : 0);
   }
   troopStats(kind: TroopKind, level = this.troopLevel(kind)) {
     return troopStatsAt(kind, level);
@@ -1073,6 +1101,8 @@ export class GameModel {
     const lab = this.laboratory;
     if (!lab) return this.notify('Complete a laboratory before starting research.');
     const spell = isSpellKind(kind);
+    if (!spell && superOriginal(kind))
+      return this.notify('Research the original troop to upgrade its super variant.');
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     if (spell ? !this.spellUnlocked(kind) : !this.troopUnlocked(kind))
       return this.notify(
@@ -2177,7 +2207,33 @@ export class GameModel {
   trainingTime(_kind: TroopKind) {
     return 0;
   }
+  boostSuperTroop(kind: TroopKind) {
+    if (this.battle) return;
+    const row = superLicence(kind);
+    if (
+      !row ||
+      this.townhallLevel < 11 ||
+      this.troopLevel(superOriginal(kind)!) < superMinimum(kind)
+    )
+      return this.notify('Requires Town Hall 11 and the original troop at its required level.');
+    const now = Date.now();
+    if ((this.state.superBoosts?.[kind] ?? 0) > now) return;
+    if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)
+      return this.notify('Two super troop boosts are already active.');
+    const cost = Number(row.ResourceCost);
+    if (this.state.dark < cost) return this.notify('Not enough dark elixir.');
+    this.state.dark -= cost;
+    (this.state.superBoosts ??= {})[kind] = now + Number(row.DurationH) * 3600000;
+    this.changed();
+  }
   troopUnlocked(kind: TroopKind) {
+    if (
+      superOriginal(kind) &&
+      (this.townhallLevel < 11 ||
+        this.troopLevel(superOriginal(kind)!) < superMinimum(kind) ||
+        (this.state.superBoosts?.[kind] ?? 0) <= Date.now())
+    )
+      return false;
     return facilityLevel(this.state.buildings, troopFacility(kind)) >= TROOP_UNLOCK[kind];
   }
   spellUnlocked(kind: SpellKind) {
@@ -2201,9 +2257,17 @@ export class GameModel {
       return;
     if (!this.troopUnlocked(kind))
       return this.notify(
-        `${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} Barracks.`,
+        `${TROOPS[kind].name} requires a completed level ${TROOP_UNLOCK[kind]} ${BUILDINGS[troopFacility(kind)].name}.`,
       );
-    if (this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity)
+    if (
+      isSiege(kind) &&
+      TROOP_KEYS.filter(isSiege).reduce((n, k) => n + (this.state.army[k] ?? 0), count) > 3
+    )
+      return this.notify('The siege reserve holds three machines.');
+    if (
+      !isSiege(kind) &&
+      this.armySize + this.queuedSize + TROOPS[kind].space * count > this.capacity
+    )
       return this.notify('Army camps are full. Remove troops or upgrade a camp.');
     this.state.army[kind] = (this.state.army[kind] ?? 0) + count;
     this.state.stats.trained = (this.state.stats.trained ?? 0) + count;
@@ -2251,6 +2315,8 @@ export class GameModel {
   /** Shared validation for preparation controls and atomic composition changes. */
   armyPreparationIssue(army: Army, spells: SpellBook): string | null {
     if (this.battle) return 'Return home before preparing an army.';
+    if (TROOP_KEYS.filter(isSiege).reduce((n, k) => n + (army[k] ?? 0), 0) > 3)
+      return 'The siege reserve holds three machines.';
     if (armySpace(army) > this.capacity || spellSpace(spells) > this.spellCapacity)
       return 'This army needs more troop or spell housing.';
     const troop = TROOP_KEYS.find((k) => army[k] > this.state.army[k] && !this.troopUnlocked(k));
@@ -2280,7 +2346,7 @@ export class GameModel {
   }
   saveArmyPreset(slot: number, name?: string) {
     if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return;
-    if (!this.armySize) return this.notify('Add troops before saving an army.');
+    if (!this.armySize && !this.siegeCount) return this.notify('Add troops before saving an army.');
     this.state.armyPresets ??= [null, null, null];
     this.state.armyPresets[slot] = {
       name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),
@@ -2966,7 +3032,11 @@ export class GameModel {
     }
     if (!practice && catalog === 'valley-v1' && index > 0 && !this.state.stars[index - 1])
       return this.notify(`Earn a star on ${CAMPAIGN[index - 1].name} to unlock this village.`);
-    if (this.armySize === 0 && !this.heroReady)
+    if (
+      this.armySize === 0 &&
+      !TROOP_KEYS.some((k) => isSiege(k) && this.state.army[k] > 0) &&
+      !this.heroReady
+    )
       return this.notify('Prepare an army or a hero before attacking.');
     this.cancel();
     this.editing = false;
@@ -2982,7 +3052,18 @@ export class GameModel {
         : enemyBase(index);
     const garrisons =
       !practice && catalog === 'goblin-v1' ? campaignGarrisonSetup(index, buildings) : undefined;
+    const home =
+      buildings.find((b) => b.kind === 'herohall') ?? buildings.find((b) => b.kind === 'townhall')!;
+    const defendingHeroes = practice
+      ? heroes.map((h, i) => ({
+          kind: h.kind,
+          level: h.level,
+          x: home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3,
+          y: home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3,
+        }))
+      : [];
     const initial = {
+      ...(defendingHeroes.length ? { defendingHeroes } : {}),
       ...(garrisons ? { garrisons } : {}),
       ...(catalog === 'goblin-v1' ? { catalog, scenery: nativeScenery(index) } : {}),
       index,
@@ -3065,7 +3146,7 @@ export class GameModel {
     if (this.activeHero) return this.deployHero(x, y);
     const b = this.battle,
       k = this.activeTroop;
-    if (!b || b.finished || b.remaining[k] <= 0) return false;
+    if (!b || b.finished || b.remaining[k] <= 0 || (isSiege(k) && b.siegeDeployed)) return false;
     if (this.deployBlocked(x, y)) {
       this.notify('Deploy on the grass outside the red boundary.');
       return false;
@@ -3073,6 +3154,7 @@ export class GameModel {
     this.recordAction({ type: 'troop', kind: k, x, y });
     this.beginFight();
     b.remaining[k]--;
+    if (isSiege(k)) b.siegeDeployed = true;
     if (!b.practice) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
@@ -3128,7 +3210,9 @@ export class GameModel {
     if (!b.practice) this.state.spells[k]--;
     const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
-    if (k === 'lightning') {
+    if (b.nativeContentExpansion) {
+      castNativeSpell(b, SPELL_SOURCE[k], this.spellLevel(k), 'attack', x, y);
+    } else if (k === 'lightning') {
       damageDefenders(b, { x, y }, d.damage, d.radius, 'both');
       lateLightningStrike(b, x, y, d.radius);
       for (const enemy of b.defenders ?? [])
@@ -3255,7 +3339,7 @@ export class GameModel {
   }
   /** Pure healers never keep a battle open; a Druid does, because it becomes a fighting Bear. */
   private supportOnly(b: Battle, kind: UnitKind) {
-    return !!TROOPS[kind].healer && !(b.nativeRoster && kind === 'druid');
+    return !!TROOPS[kind].healer && !isSiege(kind) && !(b.nativeRoster && kind === 'druid');
   }
   /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
   private nativeContext(b: Battle): NativeTroopContext {
@@ -3357,8 +3441,8 @@ export class GameModel {
     stepSweepers(b, dt, this.onEffect);
     stepGarrisonReleases(b);
     stepDefenders(b, dt, this.onEffect);
+    if (b.nativeContentExpansion) stepDefendingHeroes(b, dt, this.onEffect);
     if (native) stepGuardians(native, dt);
-    if (native) stepHutBuilders(native, dt);
     // Concealed defenses cannot influence target selection or navigation.
     const gear = equipmentBonuses(b.hero?.equipment);
     const knownBuildings = b.buildings.filter(
@@ -3914,7 +3998,9 @@ export class GameModel {
         !b.nativeChains?.length &&
         !b.nativePendingSpawns?.length &&
         !b.nativeSpells?.some((cast) => nativeSpellCanStillFight(cast)) &&
-        !TROOP_KEYS.some((k) => b.remaining[k] > 0 && !this.supportOnly(b, k)) &&
+        !TROOP_KEYS.some(
+          (k) => b.remaining[k] > 0 && !(isSiege(k) && b.siegeDeployed) && !this.supportOnly(b, k),
+        ) &&
         !b.spells.lightning &&
         !(b.nativeRoster && FIGHTING_SPELLS.some((k) => (b.spells[k] ?? 0) > 0)) &&
         !(b.hero && b.hero.unitId === null) &&

@@ -14,7 +14,7 @@ Source modules:
 | `src/game/native-defenses.ts` | Battle engine: activation, weapon clock, targeting, bursts, projectiles, chains, piercing balls, Spell Tower casts, Town Hall death bombs |
 | `src/game/native-traps.ts` | Client values for every trap level, Tornado Trap pull, Giga Bomb |
 | `src/game/native-guardians.ts` | Longshot, Smasher and Logger |
-| `src/game/native-hut-builders.ts` | Defending Builder repairs |
+| `src/game/defending-builder.ts` | Shared released Defending Builder repairs; duplicate native-hut module removed |
 | `src/game/native-merges.ts` | Merge recipes, merged-input limits, gear-up prices |
 | `src/game/native-supercharge.ts` | Linked supercharge rows (`superchargeRows` in combat.json) |
 

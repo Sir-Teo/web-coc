@@ -1,3 +1,5 @@
+import { superLicence } from './special-troops';
+import type { TroopKind } from './data';
 import { maxSpellLevel } from './spell-progression';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { isGearable } from './native-merges';
@@ -115,6 +117,20 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     s.spellQueue.length > 50 ||
     !Array.isArray(s.stars) ||
     s.stars.length !== 12
+  )
+    return false;
+  if (
+    s.superBoosts !== undefined &&
+    (!s.superBoosts ||
+      typeof s.superBoosts !== 'object' ||
+      Array.isArray(s.superBoosts) ||
+      Object.entries(s.superBoosts).some(
+        ([kind, end]) =>
+          !TROOP_KEYS.includes(kind as TroopKind) ||
+          !superLicence(kind as TroopKind) ||
+          !Number.isFinite(end) ||
+          end! < 0,
+      ))
   )
     return false;
   if (

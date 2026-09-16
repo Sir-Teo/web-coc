@@ -406,7 +406,7 @@ function fire(
   const damage = weapon.damage * damageScale(ctx, tower, at);
   if (weapon.pierce) return firePiercing(ctx, tower, weapon, target, at, damage);
   if (weapon.chain) {
-    hurtUnit(battle, target, damage, at);
+    hurtUnit(battle, target, damage, at, tower.id);
     ctx.effect({
       type: 'defense-zap',
       sourceId: tower.id,
@@ -440,7 +440,7 @@ function fire(
     return;
   }
   if (!weapon.projectile) {
-    hurtUnit(battle, target, damage, at);
+    hurtUnit(battle, target, damage, at, tower.id);
     ctx.effect({
       type: 'defense-zap',
       sourceId: tower.id,
@@ -568,7 +568,7 @@ function stepMultiTarget(
       const target = battle.units.find((u) => u.id === id);
       if (!target || target.hp <= 0) continue;
       if (state.beams) {
-        hurtUnit(battle, target, weapon.damage * damageScale(ctx, tower, time), time);
+        hurtUnit(battle, target, weapon.damage * damageScale(ctx, tower, time), time, tower.id);
         continue;
       }
       fire(ctx, tower, weapon, target, time);
@@ -791,6 +791,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
       target!,
       p.damage + (shot.hpPermil ? (target!.maxHp * shot.hpPermil) / 1000 : 0),
       at,
+      p.sourceId,
     );
     shot.hit.push(target!.id);
   }
@@ -804,7 +805,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
       if (!liveTarget(u, at) || u.native?.burrowed) continue;
       const d = distance2D(u.x - p.x, u.y - p.y);
       if (d <= shot.shock.inner + EPS || d > shot.shock.outer + EPS) continue;
-      hurtUnit(battle, u, shot.shock.damage, at);
+      hurtUnit(battle, u, shot.shock.damage, at, p.sourceId);
       if (shot.shock.pushback > 0 && housing(u) <= shot.shock.housing && !u.native?.siege)
         knockback(ctx, u, p.x, p.y, shot.shock.pushback);
     }
@@ -821,7 +822,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         !u.native?.burrowed &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.layerSplash + EPS
       )
-        hurtUnit(battle, u, p.damage, at);
+        hurtUnit(battle, u, p.damage, at, p.sourceId);
   }
   if (shot.splash) {
     // Geared-up Mortar shells: ground splash around the landing point (the target is included).
@@ -833,7 +834,7 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
         u.id !== (struck ? target!.id : -1) &&
         distance2D(u.x - p.x, u.y - p.y) <= shot.splash + EPS
       )
-        hurtUnit(battle, u, p.damage, at);
+        hurtUnit(battle, u, p.damage, at, p.sourceId);
   }
   if (shot.bounces > (p.native?.bounce ?? 0) && shot.bounceDistance > 0) {
     const from = { x: p.x, y: p.y };

@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, it, expect } from 'vitest';
-import { GameModel, makeBuilding, findPath, type Unit, type FX } from '../src/game/model';
+import { makeBuilding, findPath, type Unit, type FX } from '../src/game/model';
 import {
   BUILDINGS,
   TROOP_KEYS,
@@ -579,7 +580,7 @@ it('replay import and seeking reconstruct defender combat and re-arm both traps 
   expect(before.defenders).toHaveLength(6);
   const record = m.state.raidLog![0];
   record.replay = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
-  expect(record.replay!.version).toBe(REPLAY_VERSION);
+  expect(record.replay!.version).toBe(51);
   expect(validateReplay(record.replay)).toBe(true);
   m.returnHome();
   m.startReplay(record.id);

@@ -1,3 +1,4 @@
+import { HeroNativePresentation } from './hero-native-scene';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
@@ -245,6 +246,7 @@ export class VillageScene extends Phaser.Scene {
   private garrisonPresentation!: GarrisonPresentation;
   private archerTowerProjectiles!: ArcherTowerProjectiles;
   private villageArcherTowers!: VillageArcherTowers;
+  private heroNativePresentation!: HeroNativePresentation;
   private troopNativePresentation!: TroopNativePresentation;
   private villageNativePresentation!: VillageNativePresentation;
   private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
@@ -407,6 +409,8 @@ export class VillageScene extends Phaser.Scene {
     this.archerTowerProjectiles = new ArcherTowerProjectiles(this);
     this.villageArcherTowers = new VillageArcherTowers(this, this.audio);
     this.darkDrillPresentation = new DarkDrillPresentation(this, this.audio);
+    this.heroNativePresentation = new HeroNativePresentation(this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.heroNativePresentation.destroy());
     this.troopNativePresentation = new TroopNativePresentation(this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.troopNativePresentation.destroy());
     this.villageNativePresentation = new VillageNativePresentation(
@@ -458,6 +462,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkDrillPresentation.clear();
       this.villageNativePresentation.clear();
       this.troopNativePresentation.clear();
+      this.heroNativePresentation.clear();
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
       this.cannonPresentation.destroy();
@@ -1143,6 +1148,7 @@ export class VillageScene extends Phaser.Scene {
       this.darkDrillPresentation.clear();
       this.villageNativePresentation.clear();
       this.troopNativePresentation.clear();
+      this.heroNativePresentation.clear();
       this.nativeProjectiles.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
@@ -1619,7 +1625,7 @@ export class VillageScene extends Phaser.Scene {
       im.setVisible(true).setPosition(px, py - (flying ? AIR_LIFT : 0) + bob);
       if (im.depth !== depth) im.setDepth(depth);
       // Avoid rebuilding identical frame geometry and dispatching data events each frame.
-      if (Number(im.frame.name) !== frame) im.setFrame(frame);
+      if (Number(im.frame.name) !== frame && im.texture.has(String(frame))) im.setFrame(frame);
       if (previousFacing !== facing)
         im.setFlipX(art.nativeFacing > 0 ? facing < 0 : facing > 0).setData('facing', facing);
       if (flying) this.campShadows.fillEllipse(px, py, 22, 11);
@@ -2431,6 +2437,14 @@ export class VillageScene extends Phaser.Scene {
       this.unitSprites,
     );
     this.drawDefenders();
+    this.heroNativePresentation.render(
+      battle,
+      this.model.state.settings.reducedMotion,
+      iso,
+      AIR_LIFT,
+      this.unitSprites,
+      this.defenderSprites,
+    );
   }
   private drawDefenders() {
     const markers = this.defenderMarkers.clear();

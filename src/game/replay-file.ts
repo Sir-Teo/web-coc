@@ -28,6 +28,16 @@ export function makeReplayFile(replay: ReplayData): ReplayFile {
         ...(s.catalog ? { catalog: s.catalog } : {}),
         ...(s.scenery ? { scenery: s.scenery.map((o) => ({ data: o.data, x: o.x, y: o.y })) } : {}),
         practice: s.practice,
+        ...(s.defendingHeroes
+          ? {
+              defendingHeroes: s.defendingHeroes.map(({ kind, level, x, y }) => ({
+                kind,
+                level,
+                x,
+                y,
+              })),
+            }
+          : {}),
         nextId: s.nextId,
         ...(s.availableLoot ? { availableLoot: campaignResources(s.availableLoot) } : {}),
         ...(s.lootRoom ? { lootRoom: campaignResources(s.lootRoom) } : {}),

@@ -1,3 +1,4 @@
+import { isPetUnitKind } from './native-units';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle } from './model';
@@ -66,7 +67,7 @@ export class TroopNativePresentation {
   ) {
     const wanted = new Set<number>();
     for (const u of battle?.units ?? []) {
-      if (u.hero || u.ejected) continue;
+      if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
       const pack = this.packs.get(u.kind);
       if (!pack) {
         void this.load(u.kind);

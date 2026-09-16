@@ -269,7 +269,12 @@ export function stepGarrisonDefender(
   dt: number,
   effect: (fx: FX) => void,
 ) {
-  if (defender.kind === 'skeleton' || defender.kind === 'guardian' || defender.kind === 'repairer')
+  if (
+    defender.kind === 'skeleton' ||
+    defender.kind === 'guardian' ||
+    defender.kind === 'repairer' ||
+    defender.kind === 'hero'
+  )
     return;
   const stats = lateDefenderStats(battle, defender, garrisonStats(defender.kind, defender.level));
   stepShots(battle, defender, effect);

@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
-import { GameModel, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
+import { makeBuilding, type SpellBook, type Unit } from '../src/game/model';
 import { BUILDINGS, SPELL_KEYS, type SpellKind } from '../src/game/data';
 import { requiredTownHall } from '../src/game/progression';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
@@ -438,7 +439,7 @@ describe('native spell effects', () => {
     m.finishBattle();
     const expected = structuredClone(b),
       record = m.state.raidLog![0];
-    expect(record.replay!.version).toBe(REPLAY_VERSION);
+    expect(record.replay!.version).toBe(51);
     const data = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
     expect(data.initial.spellLevels).toEqual({
       ...defaultSpellLevels(),

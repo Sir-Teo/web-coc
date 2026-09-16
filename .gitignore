@@ -7,14 +7,6 @@ output/
 __pycache__/
 art/source/native-client-*/files/
 
-# Baked hero and Guardian art: imported but not yet wired to the renderer, so it is kept
-# locally rather than shipped in the deploy. Rebuild with scripts/native3d/bake_hero_art.py.
-public/assets/heroes-native/
-public/assets/guardians-native/
-reference/full-client/hero-art.json
-reference/full-client/guardian-art.json
-scripts/native3d/
-
 # Local scratch files
 playwright.local-*.config.ts
 scripts/_boot-*.mjs

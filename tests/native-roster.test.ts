@@ -1,3 +1,4 @@
+import { isSiege } from '../src/game/special-troops';
 import { REPLAY_VERSION } from '../src/game/replay';
 import { describe, expect, it } from 'vitest';
 import { TROOP_KEYS, maxTroopLevel, type BuildingKind, type TroopKind } from '../src/game/data';
@@ -43,8 +44,8 @@ describe('version 45 native roster battles', () => {
       const m = arena(layout, { [kind]: 3 });
       m.activeTroop = kind;
       expect(m.deploy(3, 3), kind).toBe(true);
-      expect(m.deploy(4, 3), kind).toBe(true);
-      expect(m.deploy(3, 4), kind).toBe(true);
+      expect(m.deploy(4, 3), kind).toBe(!isSiege(kind));
+      expect(m.deploy(3, 4), kind).toBe(!isSiege(kind));
       expect(m.battle!.nativeRoster).toBe(true);
       run(m, 40);
       const b = m.battle!;

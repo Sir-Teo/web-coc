@@ -311,13 +311,13 @@ export function stepProjectiles(
           distance2D(u.x - p.x, u.y - p.y) <= p.splash &&
           !u.native?.burrowed
         )
-          hurtUnit(battle, u, p.damage, p.impact);
+          hurtUnit(battle, u, p.damage, p.impact, p.sourceId);
     } else if (
       target &&
       target.hp > 0 &&
       (!('spawnedAt' in target) || (target.spawnedAt ?? 0) <= p.impact + 1e-9)
     )
-      hurtUnit(battle, target as Unit, p.damage, p.impact);
+      hurtUnit(battle, target as Unit, p.damage, p.impact, p.sourceId);
     if (p.weapon === 'xbowbolt') {
       const state = battle.xbows?.[p.sourceId];
       if (state && hitLivingTarget) {

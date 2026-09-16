@@ -17,7 +17,7 @@ import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { validateReplay } from '../src/game/replay';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { validateSave } from '../src/game/save';
-import { hurtUnit } from '../src/game/native-status';
+import { hurtUnit, unitEffects } from '../src/game/native-status';
 
 type Placement = [BuildingKind, number, number, number?];
 function arena(
@@ -59,6 +59,22 @@ function cast(m: GameModel, kind: SpellKind, x: number, y: number) {
 }
 
 describe('complete spell roster', () => {
+  it('Rage boosts ordinary attackers while respecting siege immunity', () => {
+    const m = arena([], { wallwrecker: 1, swordsman: 1 }, { rage: 1 });
+    for (const kind of ['wallwrecker', 'swordsman'] as const) {
+      m.activeTroop = kind;
+      expect(m.deploy(5, 5)).toBe(true);
+    }
+    run(m, 0.05);
+    for (const unit of m.battle!.units) unitEffects(unit).frozenUntil = 20;
+    cast(m, 'rage', 5, 5);
+    run(m, firstHit('rage', maxSpellLevel('rage')) + 0.1);
+    const siege = m.battle!.units.find((u) => u.kind === 'wallwrecker')!;
+    const soldier = m.battle!.units.find((u) => u.kind === 'swordsman')!;
+    expect(siege.native?.effects?.boost).toBeUndefined();
+    expect(soldier.native?.effects?.boost?.damage).toBeGreaterThan(0);
+  });
+
   it('exposes all 18 Home Village spells with factory unlocks and native research', () => {
     expect(SPELL_KEYS).toHaveLength(18);
     for (const kind of SPELL_KEYS) {
@@ -102,7 +118,7 @@ describe('complete spell roster', () => {
     m.activeTroop = 'swordsman';
     m.deploy(2, 2);
     cast(m, 'freeze', 11.5, 11.5);
-    run(m, 0.1);
+    run(m, 1.6);
     expect(m.battle!.defenseStuns[10]).toBeGreaterThan(m.battle!.elapsed);
   });
 
@@ -143,8 +159,9 @@ describe('complete spell roster', () => {
     m.activeTroop = 'balloon';
     m.deploy(6, 6);
     const budget = num(nativeRow('spells', 'Clone', 1), 'DuplicateHousing');
+    m.battle!.units[0].native = { effects: { frozenUntil: 5 } };
     cast(m, 'clone', 6, 6);
-    run(m, 0.1);
+    run(m, 2);
     const copies = m.battle!.units.filter((u) => u.summoned);
     expect(copies.length).toBeGreaterThan(0);
     expect(copies.length).toBeLessThanOrEqual(Math.floor(budget / TROOPS.balloon.space));
@@ -162,8 +179,9 @@ describe('complete spell roster', () => {
     const giant = m.battle!.units[0];
     run(m, 0.5);
     giant.hp = 123;
+    for (const u of m.battle!.units) u.native = { effects: { frozenUntil: 5 } };
     cast(m, 'recall', giant.x, giant.y);
-    run(m, 0.1);
+    run(m, 2);
     // The released Recall Spell returns the troops to the bar to be deployed again.
     expect(m.battle!.units.some((u) => u.kind === 'giant')).toBe(false);
     expect(m.battle!.remaining.giant).toBe(2);

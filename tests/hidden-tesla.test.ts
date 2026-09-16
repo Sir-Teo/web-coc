@@ -1,3 +1,4 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
 import {
   BUILDINGS,
@@ -11,7 +12,7 @@ import {
   upgradeSeconds,
   type TroopKind,
 } from '../src/game/data';
-import { GameModel, makeBuilding, findPath, type Unit, type FX } from '../src/game/model';
+import { makeBuilding, findPath, type Unit, type FX } from '../src/game/model';
 import { concealedTesla, revealTeslas, targetableBuilding } from '../src/game/hidden-tesla';
 import { stepProjectiles, launchProjectile } from '../src/game/projectiles';
 import { validateSave } from '../src/game/save';
@@ -350,7 +351,7 @@ it.each([6, 17])(
     expect(before.revealedTeslas[3]).toBeGreaterThan(0);
     const record = m.state.raidLog![0];
     const imported = JSON.parse(JSON.stringify(makeReplayFile(record.replay!))).replay;
-    expect(imported.version).toBe(REPLAY_VERSION);
+    expect(imported.version).toBe(51);
     expect(validateReplay(imported)).toBe(true);
     record.replay = imported;
     m.returnHome();

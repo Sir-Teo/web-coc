@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel, useReleasedCombat } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
-import { GameModel, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
+import { makeBuilding, type SpellBook, type Unit } from '../src/game/model';
 import { SPELLS, SPELL_KEYS, spellStatsAt } from '../src/game/data';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import {
@@ -37,6 +38,7 @@ function arena(level = 1) {
   m.state.spellLevels.invisibility = level;
   m.state.spells = { ...emptySpells(), invisibility: 2 };
   m.startBattle(0, true);
+  useReleasedCombat(m);
   const b = m.battle!;
   b.started = true;
   b.buildings = [makeBuilding(9001, 'cannon', 10, 10)];

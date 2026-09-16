@@ -1,3 +1,4 @@
+import { superOriginal } from '../src/game/special-troops';
 import { spellFactory } from '../src/game/army-unlocks';
 import { troopFacility } from '../src/game/army-unlocks';
 import { describe, it, expect } from 'vitest';
@@ -31,7 +32,11 @@ describe('army unlock progression', () => {
       for (const kind of TROOP_KEYS) {
         m.train(kind);
         expect(m.state.army[kind], `${kind} at ${level}`).toBe(
-          Number(troopFacility(kind) === 'barracks' && level >= TROOP_UNLOCK[kind]),
+          Number(
+            !superOriginal(kind) &&
+              troopFacility(kind) === 'barracks' &&
+              level >= TROOP_UNLOCK[kind],
+          ),
         );
       }
     }

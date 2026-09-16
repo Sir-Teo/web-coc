@@ -1,3 +1,4 @@
+import unitArt from '../reference/full-client/unit-art.json';
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -87,13 +88,13 @@ describe('complete extracted native animation packs', () => {
     });
   for (const kind of TROOP_KEYS)
     it(`${kind}: every troop tier has usable source walk and attack timelines`, () => {
-      const row = troopArt.troops[kind];
+      const row = { ...troopArt.troops, ...unitArt.units }[kind];
       const bytes = fs.readFileSync('public/' + row.path);
       expect(createHash('sha256').update(bytes).digest('hex')).toBe(row.sha256);
       const pack = JSON.parse(bytes.toString());
       expect(pack.levels.length).toBe(maxTroopLevel(kind));
       for (const level of pack.levels) {
-        expect(level.states.walk.exports.length).toBeGreaterThan(0);
+        expect((level.states.walk ?? level.states.idle).exports.length).toBeGreaterThan(0);
         expect(level.states.attack.exports.length).toBeGreaterThan(0);
       }
       for (const graph of Object.values(pack.scenes)) verifyGraph(graph as NativeMeshGraph);

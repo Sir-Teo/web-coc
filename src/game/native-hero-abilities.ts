@@ -1,3 +1,4 @@
+import { startEquipmentDash, stepEquipmentEffects } from './native-equipment-effects';
 import { distance2D } from './distance';
 import { TROOPS, type UnitKind } from './data';
 import { flag, nativeRow, num, seconds, text, tiles, type NativeRow } from './native-data';
@@ -49,6 +50,7 @@ function applyAbility(
   ability: HeroAbility,
   at: number,
 ) {
+  startEquipmentDash(ctx, unit, ability);
   const row = ability.row;
   const battle = ctx.battle;
   const duration = seconds(row, 'DeactivateAfterTime');
@@ -170,6 +172,7 @@ export function stepHeroAbilities(
   townhall: number,
 ) {
   const at = ctx.battle.elapsed;
+  stepEquipmentEffects(ctx, hero, unit);
   for (const ability of heroAbilities(hero)) {
     if (!ability.passive && hero.abilityUsed && text(ability.row, 'SpawnedTroop'))
       releaseSpawns(ctx, hero, unit, ability, at);

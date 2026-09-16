@@ -30,7 +30,7 @@ export const SPELL_UNLOCK = Object.fromEntries(
 
 export function facilityLevel(
   buildings: Building[],
-  kind: 'barracks' | 'darkbarracks' | 'spellfactory' | 'darkspellfactory',
+  kind: 'barracks' | 'darkbarracks' | 'spellfactory' | 'darkspellfactory' | 'workshop',
 ) {
   return buildings.reduce(
     (level, b) => (b.kind === kind && !b.constructing ? Math.max(level, b.level) : level),
@@ -39,6 +39,10 @@ export function facilityLevel(
 }
 
 export const troopFacility = (kind: TroopKind) =>
-  source.troopDefs[kind].ProductionBuilding === 'Dark Barracks' ? 'darkbarracks' : 'barracks';
+  source.troopDefs[kind].ProductionBuilding === 'Siege Workshop'
+    ? 'workshop'
+    : source.troopDefs[kind].ProductionBuilding === 'Dark Barracks'
+      ? 'darkbarracks'
+      : 'barracks';
 /** Re-exported for callers that ask a spell where it is prepared. */
 export { spellFactory } from './spell-progression';

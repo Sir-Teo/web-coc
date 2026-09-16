@@ -52,7 +52,7 @@ def resolve(name,chars,animations):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');args=p.parse_args()
  raw=(art.ARCHIVE/'fingerprint.json').read_bytes();require(digest(raw)=='ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b','Fingerprint differs');art.MEMBERS={r['file']:r['sha'] for r in json.loads(raw)['files']}
- require(not set(UNITS)&set(data.TROOPS),'Unit keys would replace trainable troop packs')
+ require(all(data.TROOPS.get(k, n) == n for k, n in UNITS.items()), 'Conflicting unit names')
  chars=records(decoded_rows(art.read('logic/characters.csv')));animations=animation_blocks(decoded_rows(art.read('csv/animations.csv')));index,skipped={},{}
  for kind,name in UNITS.items():
   resolved=resolve(name,chars,animations)

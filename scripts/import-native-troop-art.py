@@ -16,6 +16,7 @@ def main():
  raw=(art.ARCHIVE/'fingerprint.json').read_bytes();require(digest(raw)=='ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b','Fingerprint differs');art.MEMBERS={r['file']:r['sha'] for r in json.loads(raw)['files']}
  chars=records(decoded_rows(art.read('logic/characters.csv')));animations=animation_blocks(decoded_rows(art.read('csv/animations.csv')));index={}
  for kind,name in data.TROOPS.items():
+  if kind in data.SIEGE_TROOPS or kind in data.SUPER_TROOPS:continue # owned by import-native-unit-art.py
   levels=[];groups={}
   for row in inherited_levels(chars[name]):
    animation=row['Animation'];require(animation in animations,f'Missing animation {animation}');states={}

@@ -33,13 +33,14 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
     if (
       defender.kind === 'skeleton' ||
       defender.kind === 'guardian' ||
-      defender.kind === 'repairer'
+      defender.kind === 'repairer' ||
+      defender.kind === 'hero'
     )
       continue;
     // Dragon levels share the Dragon effect rows; later families' original sounds are pending.
-    const binding = (source.bindings as Partial<Record<string, (typeof source.bindings)['dragon']>>)[
-      defender.kind
-    ];
+    const binding = (
+      source.bindings as Partial<Record<string, (typeof source.bindings)['dragon']>>
+    )[defender.kind];
     if (!binding) continue;
     const key = `garrison:${defender.id}`;
     effect(binding.deploy, `${key}:deploy`, defender.spawnedAt);

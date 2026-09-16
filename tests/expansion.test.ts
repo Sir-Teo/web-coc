@@ -1,7 +1,8 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { developedSave } from './fixtures/developed-village';
 import { describe, it, expect } from 'vitest';
 import { fundedVillage } from './fixtures/funded-village';
-import { GameModel, initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
+import { initialSave, makeBuilding, PREP_SECONDS, type Save } from '../src/game/model';
 import {
   BUILDINGS,
   MAX_TROOP_LEVEL,

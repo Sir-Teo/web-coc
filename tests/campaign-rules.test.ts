@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
-import { GameModel, initialSave, makeBuilding, findPath, distanceTo } from '../src/game/model';
+import { initialSave, makeBuilding, findPath, distanceTo } from '../src/game/model';
 import { CAMPAIGN } from '../src/game/data';
 import { freshCampaignLoot } from '../src/game/campaign-loot';
 import { validateSave, migrateSave } from '../src/game/save';

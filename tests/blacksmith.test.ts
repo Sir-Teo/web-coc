@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel } from './fixtures/released-combat';
 import { describe, it, expect } from 'vitest';
-import { GameModel, makeBuilding } from '../src/game/model';
+import { makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 import { BUILDINGS, maxCountFor, maxLevelFor } from '../src/game/data';
 import {

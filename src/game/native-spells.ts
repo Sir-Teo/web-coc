@@ -47,6 +47,7 @@ export interface NativeSpellCast {
   touched?: number[];
   /** Summons released so far by skeleton/bat style spells. */
   released?: number;
+  summonGroups?: number[];
   ended?: boolean;
 }
 export interface NativeSpellContext {
@@ -344,6 +345,7 @@ function supportAttackers(
     return;
   for (const u of battle.units) {
     if (!liveAttacker(u, at) || isTotem(u)) continue;
+    if (u.native?.siege && flag(row, 'ImmunitySiegeMachines')) continue;
     if (flag(row, 'DoesNotAffectOwner') && u.id === cast.owner) continue;
     if (distance2D(u.x - x, u.y - y) > radius + 1e-9) continue;
     const flying = !!TROOPS[u.kind].flying;
@@ -490,6 +492,7 @@ function cloneUnits(
       at,
       source.native?.owner,
     );
+    copy.summoned = true;
     copy.native = { ...copy.native, cloneUntil: at + lifetime };
     if (source.level === undefined) delete copy.level;
     break;
@@ -543,6 +546,25 @@ function reviveHero(ctx: NativeSpellContext, row: NativeRow, at: number, x: numb
 
 /** Skeleton/Bat spells: a first group at the first hit, the remainder evenly over the spawn time. */
 function stepSpellSummons(ctx: NativeSpellContext, cast: NativeSpellCast, row: NativeRow) {
+  const names = text(row, 'SummonTroop').split(';');
+  if (names.length > 1) {
+    cast.summonGroups ??= names.map(() => 0);
+    names.forEach((name, i) => {
+      const groupRow: Record<string, string> = { ...row, SummonTroop: name };
+      for (const key of [
+        'UnitsToSpawn',
+        'SpawnUpgradeLevel',
+        'SpawnDuration',
+        'SpawnFirstGroupSize',
+      ])
+        groupRow[key] = text(row, key).split(';')[i] ?? text(row, key).split(';')[0];
+      const group = { ...cast, released: cast.summonGroups![i] };
+      stepSpellSummons(ctx, group, groupRow);
+      cast.summonGroups![i] = group.released ?? 0;
+    });
+    cast.released = cast.summonGroups.reduce((sum, n) => sum + n, 0);
+    return;
+  }
   const troop = text(row, 'SummonTroop');
   const count = num(row, 'UnitsToSpawn');
   if (!troop || !count || !ctx.spawn || cast.hits === 0) return;
@@ -564,7 +586,11 @@ function stepSpellSummons(ctx: NativeSpellContext, cast: NativeSpellCast, row: N
   }
 }
 const pendingSummons = (cast: NativeSpellCast, row: NativeRow) =>
-  !!text(row, 'SummonTroop') && (cast.released ?? 0) < num(row, 'UnitsToSpawn');
+  !!text(row, 'SummonTroop') &&
+  (cast.released ?? 0) <
+    text(row, 'UnitsToSpawn')
+      .split(';')
+      .reduce((sum, n) => sum + Number(n || 0), 0);
 
 /** Harmful effects of a defensive spell (Spell Tower, Town Hall weapons) on attackers. */
 function harmAttackers(

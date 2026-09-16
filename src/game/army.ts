@@ -1,3 +1,4 @@
+import { isSiege } from './special-troops';
 import { TROOPS, SPELLS, TROOP_KEYS, SPELL_KEYS, LATE_TROOP_KEYS } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import type { Army, SpellBook, Save } from './model';
@@ -8,7 +9,7 @@ export interface ArmyPreset {
   spells: SpellBook;
 }
 export const armySpace = (army: Army) =>
-  TROOP_KEYS.reduce((n, k) => n + (army[k] ?? 0) * TROOPS[k].space, 0);
+  TROOP_KEYS.reduce((n, k) => n + (isSiege(k) ? 0 : (army[k] ?? 0) * TROOPS[k].space), 0);
 export const spellSpace = (spells: SpellBook) =>
   SPELL_KEYS.reduce((n, k) => n + (spells[k] ?? 0) * SPELLS[k].space, 0);
 export const emptyArmy = () => Object.fromEntries(TROOP_KEYS.map((k) => [k, 0])) as Army;

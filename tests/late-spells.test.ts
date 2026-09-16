@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel, useReleasedCombat } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
-import { GameModel, findPath, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
+import { findPath, makeBuilding, type SpellBook, type Unit } from '../src/game/model';
 import { SPELLS, SPELL_KEYS, TROOPS, spellStatsAt } from '../src/game/data';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import {
@@ -39,6 +40,7 @@ function arena(levels: Partial<SpellBook> = {}) {
   m.state.spellLevels = { ...defaultSpellLevels(), ...levels };
   m.state.spells = Object.fromEntries(SPELL_KEYS.map((k) => [k, 2])) as SpellBook;
   m.startBattle(0, true);
+  useReleasedCombat(m);
   const b = m.battle!;
   b.started = true;
   b.buildings = [makeBuilding(9001, 'townhall', 20, 20)];

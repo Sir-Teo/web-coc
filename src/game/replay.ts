@@ -1,3 +1,5 @@
+import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
+import { isSiege, superOriginal } from './special-troops';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { superchargeCount } from './native-supercharge';
@@ -61,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 51;
+export const REPLAY_VERSION = 52;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -99,6 +101,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 48 ||
   version === 49 ||
   version === 50 ||
+  version === 51 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -203,6 +206,7 @@ export type ReplayAction = { step: number } & (
   | { type: 'end' }
 );
 export interface ReplaySetup {
+  defendingHeroes?: DefendingHeroSetup[];
   garrisons?: GarrisonSetup[];
   catalog?: CampaignCatalog;
   scenery?: CampaignScenery[];
@@ -242,6 +246,10 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 52 ? { nativeContentExpansion: true as const } : {}),
+    ...(version >= 52 && s.defendingHeroes?.length
+      ? { defenders: s.defendingHeroes.map(defendingHero) }
+      : {}),
     // Version 51 deploys the complete hero roster with equipment and pets.
     ...(version >= NATIVE_HERO_VERSION && s.heroes?.length
       ? {
@@ -341,11 +349,13 @@ export function validateReplay(value: unknown): value is ReplayData {
   const s = value.initial;
   // The native roster arrived with version 51; earlier recordings carry the ten original troops.
   const troopKeys =
-    value.version >= NATIVE_VERSION
+    value.version >= 52
       ? TROOP_KEYS
-      : value.version >= 18
-        ? PRE_EXPANSION_TROOP_KEYS
-        : LEGACY_TROOP_KEYS;
+      : value.version >= NATIVE_VERSION
+        ? TROOP_KEYS.filter((k) => !isSiege(k) && !superOriginal(k))
+        : value.version >= 18
+          ? PRE_EXPANSION_TROOP_KEYS
+          : LEGACY_TROOP_KEYS;
   // A recording is checked against the book it was written with, not today's.
   const spellKeys = spellKeysAt(value.version);
   const equipmentCeiling = value.version < 47 ? EQUIPMENT_LEVEL_BEFORE_47 : EQUIPMENT_MAX_LEVEL;
@@ -429,6 +439,26 @@ export function validateReplay(value: unknown): value is ReplayData {
           Object.hasOwn(NATIVE_SCENERY, o.data) &&
           integer(o.x, 0, 48 - NATIVE_SCENERY[o.data].size) &&
           integer(o.y, 0, 48 - NATIVE_SCENERY[o.data].size),
+      ))
+  )
+    return false;
+  if (
+    s.defendingHeroes !== undefined &&
+    (value.version < 52 ||
+      !Array.isArray(s.defendingHeroes) ||
+      s.defendingHeroes.length > 4 ||
+      new Set(s.defendingHeroes.map((h) => h?.kind)).size !== s.defendingHeroes.length ||
+      s.defendingHeroes.some(
+        (h) =>
+          !object(h) ||
+          !validHero(h.kind) ||
+          !integer(h.level, 1, heroMaxLevel(h.kind as HeroKind)) ||
+          !Number.isFinite(h.x) ||
+          !Number.isFinite(h.y) ||
+          h.x < 0 ||
+          h.y < 0 ||
+          h.x > gridSize(4) ||
+          h.y > gridSize(4),
       ))
   )
     return false;

@@ -1,5 +1,6 @@
+import { ReleasedGameModel as GameModel, useReleasedCombat } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
-import { GameModel, makeBuilding } from '../src/game/model';
+import { makeBuilding } from '../src/game/model';
 import { SPELLS, SPELL_KEYS, SPELL_HOTKEYS, TROOP_HOTKEYS, spellStatsAt } from '../src/game/data';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { freezeSeconds, FREEZE_RADIUS, maxSpellLevelFor } from '../src/game/spell-progression';
@@ -17,6 +18,7 @@ function arena(level = 1) {
   m.state.spellLevels.freeze = level;
   m.state.spells = { ...emptySpells(), freeze: 2 };
   m.startBattle(0, true);
+  useReleasedCombat(m);
   const b = m.battle!;
   b.started = true;
   b.buildings = [makeBuilding(9001, 'cannon', 10, 10), makeBuilding(9002, 'archertower', 20, 20)];
@@ -92,7 +94,7 @@ describe('the Freeze Spell', () => {
     m.castSpell(10, 10);
     m.finishBattle();
     const replay = m.state.raidLog![0].replay!;
-    expect(replay.version).toBe(REPLAY_VERSION);
+    expect(replay.version).toBe(51);
     expect(validateReplay(replay)).toBe(true);
     // The same recording relabelled as version 47 carries a spell that version never had.
     expect(validateReplay({ ...replay, version: 47 })).toBe(false);
