@@ -95,7 +95,27 @@ export class NativeMeshView {
     const wanted = new Set<string>();
     for (const [order, pose] of poses.entries()) {
       wanted.add(pose.key);
-      const texture = tintedTexture(this.scene, this.prefix, pose);
+      // Multiply-only tints run on the GPU via the mesh tint: no canvas bake,
+      // no texture upload and no eviction pressure. Anything with an additive
+      // term, or a multiply outside the 0..1 tint range, still bakes.
+      const mul = pose.multiply.slice(0, 3);
+      const add = pose.add.slice(0, 3);
+      const identityMul = mul.every((v) => v === 1);
+      const hasAdd = add.some((v) => v !== 0);
+      const gpuTintable =
+        !hasAdd && !identityMul && mul.every((v) => v >= 0 && v <= 1);
+      let texture: string;
+      let tint: number | undefined;
+      if (gpuTintable) {
+        texture = nativeMeshTexture(this.prefix, pose.texture);
+        tint =
+          (Math.round(mul[0] * 255) << 16) |
+          (Math.round(mul[1] * 255) << 8) |
+          Math.round(mul[2] * 255);
+      } else {
+        texture = tintedTexture(this.scene, this.prefix, pose);
+        tint = undefined;
+      }
       const vertices = nativeVertices(pose);
       const indices = nativeTriangles(vertices);
       let mesh = this.meshes.get(pose.key);
@@ -105,13 +125,31 @@ export class NativeMeshView {
         this.meshes.set(pose.key, mesh);
         retainTint(texture);
       }
-      mesh.vertices = vertices;
-      mesh.indices = indices;
+      if (mesh.indices !== indices) mesh.indices = indices;
+      else if (mesh.vertices.length !== vertices.length) mesh.vertices = vertices;
+      else {
+        let same = true;
+        const current = mesh.vertices;
+        for (let i = 0; i < vertices.length; i++)
+          if (current[i] !== vertices[i]) {
+            same = false;
+            break;
+          }
+        if (!same) mesh.vertices = vertices;
+      }
       if (mesh.texture.key !== texture) {
         releaseTint(mesh.texture.key);
         retainTint(texture);
         mesh.setTexture(texture);
       }
+      const tinted = mesh as unknown as {
+        tint: number;
+        setTint(color: number): void;
+        clearTint(): void;
+      };
+      if (tint === undefined) {
+        if (tinted.tint !== 0xffffff) tinted.clearTint();
+      } else if (tinted.tint !== tint) tinted.setTint(tint);
       if (mesh.x !== x || mesh.y !== y) mesh.setPosition(x, y);
       const wantDepth = depth + order * 0.0001;
       if (mesh.depth !== wantDepth) mesh.setDepth(wantDepth);

@@ -12,6 +12,34 @@ import {
 
 type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.Image;
 
+function groupSignature(poses: readonly NativeScenePose[], density: number): string {
+  // Value hash of everything baked into the isolated buffer: leaf geometry
+  // transforms, texture selection and per-texel colors. Group-level
+  // multiply/add use the GPU color filter on the composed image, and group
+  // blend/alpha/position are image state, so they are intentionally excluded
+  // and never force a render-target redraw by themselves.
+  const parts: string[] = [`d${density}`];
+  const walk = (list: readonly NativeScenePose[]) => {
+    for (const p of list) {
+      if ('group' in p) {
+        parts.push(`G${p.key}:${p.blend}:`);
+        walk(p.group);
+        parts.push(';');
+      } else {
+        parts.push(`${p.key}|${p.texture}|${p.blend}|`);
+        parts.push(p.matrix.join(','));
+        parts.push('|');
+        parts.push(p.multiply.join(','));
+        parts.push('|');
+        parts.push(p.add.join(','));
+        parts.push(';');
+      }
+    }
+  };
+  walk(poses);
+  return parts.join('');
+}
+
 function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): NativeScenePose[] {
   return poses.map((pose) =>
     'group' in pose
@@ -59,6 +87,7 @@ export class NativeSceneView {
       content: NativeSceneView;
       color?: NativeGroupColor;
       multiplyImage?: Phaser.GameObjects.Image;
+      signature?: string;
     }
   >();
   objects: NativeObject[] = [];
@@ -78,6 +107,14 @@ export class NativeSceneView {
     // retain the wrappers/attachment descriptions so Phaser can recreate them.
     const renderer = this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
     for (const framebuffer of renderer.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
+    this.invalidate();
+  }
+  /** Force isolated buffers to repaint (context loss drops their pixels). */
+  invalidate() {
+    for (const entry of this.groups.values()) {
+      entry.signature = undefined;
+      entry.content.invalidate();
+    }
   }
   get meshes() {
     return this.leaves.meshes;
@@ -172,17 +209,27 @@ export class NativeSceneView {
           entry.color.active = colored;
           entry.color.setColor(pose.multiply, pose.add);
         }
-        entry.content.render(
-          transformed(pose.group, [density, 0, -left, 0, density, -top]),
-          0,
-          0,
-          0,
-          1,
-          1,
-        );
-        // Resize reallocates the GPU buffer: only do it when bounds actually change.
-        if (entry.image.width !== width || entry.image.height !== height)
-          entry.image.resize(width, height);
+        // Idle groups reuse the same isolated pixels: skip the render-target
+        // switch, mesh re-upload and draw when nothing baked into the buffer
+        // changed. Image transform, blend, filter color and alpha still update
+        // below so fades and moves never stick.
+        const signature = groupSignature(pose.group, density);
+        const resized = entry.image.width !== width || entry.image.height !== height;
+        if (entry.signature !== signature || resized) {
+          entry.content.render(
+            transformed(pose.group, [density, 0, -left, 0, density, -top]),
+            0,
+            0,
+            0,
+            1,
+            1,
+          );
+          // Resize reallocates the GPU buffer: only do it when bounds actually change.
+          if (resized) entry.image.resize(width, height);
+          (entry.image.texture as Phaser.Textures.DynamicTexture).commandBuffer.length = 0;
+          entry.image.clear().draw(entry.content.objects).setRenderMode('all', true);
+          entry.signature = signature;
+        }
         const wantX = x + left / density;
         const wantY = y + top / density;
         const wantScale = 1 / density;
@@ -191,8 +238,6 @@ export class NativeSceneView {
         if (entry.image.scaleX !== wantScale || entry.image.scaleY !== wantScale)
           entry.image.setScale(wantScale);
         if (entry.image.alpha !== wantAlpha) entry.image.setAlpha(wantAlpha);
-        (entry.image.texture as Phaser.Textures.DynamicTexture).commandBuffer.length = 0;
-        entry.image.clear().draw(entry.content.objects).setRenderMode('all', true);
         if (pose.blend === 3) {
           if (!entry.multiplyImage)
             entry.multiplyImage = this.scene.add.image(0, 0, entry.image.texture).setOrigin(0, 0);

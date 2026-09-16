@@ -17,6 +17,14 @@ interface Pack {
   scenes: Record<string, NativeMeshGraph>;
 }
 /** Source direction roots and native clip timing follow the deterministic battle clock. */
+// Viewport culling skips mesh work for off-screen units; LOD keeps central
+// units on meshes and leaves distant units on the cheap sprite fallback.
+const CULL_MARGIN = 300;
+const CULL_MARGIN_KEPT = 420;
+const LOD_UNIT_THRESHOLD = 100;
+const LOD_RADIUS_FRACTION = 0.45;
+const LOD_RADIUS_MIN = 480;
+const LOD_HYSTERESIS = 1.25;
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
@@ -66,8 +74,42 @@ export class TroopNativePresentation {
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
     const wanted = new Set<number>();
+    const alive = new Set<number>();
+    const cam = this.scene.cameras?.main as
+      | { worldView?: { centerX: number; centerY: number; width: number; height: number } }
+      | undefined;
+    const view = cam?.worldView;
+    const culling = !!view;
+    const cx = view?.centerX ?? 0;
+    const cy = view?.centerY ?? 0;
+    const hw = (view?.width ?? 0) / 2;
+    const hh = (view?.height ?? 0) / 2;
+    const total = battle?.units.length ?? 0;
+    const lodActive = culling && total > LOD_UNIT_THRESHOLD;
+    const lodRadius = lodActive
+      ? Math.max(LOD_RADIUS_MIN, Math.min(view!.width, view!.height) * LOD_RADIUS_FRACTION)
+      : 0;
     for (const u of battle?.units ?? []) {
       if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
+      alive.add(u.id);
+      // Cull before pack fetch/decode so off-screen families never start loading.
+      const early = iso(u.x, u.y);
+      if (culling) {
+        const margin = this.views.has(u.id) ? CULL_MARGIN_KEPT : CULL_MARGIN;
+        if (Math.abs(early.x - cx) > hw + margin || Math.abs(early.y - cy) > hh + margin) {
+          sprites.get(u.id)?.setVisible(true);
+          continue;
+        }
+        if (lodActive) {
+          const dx = early.x - cx;
+          const dy = early.y - cy;
+          const radius = lodRadius * (this.views.has(u.id) ? LOD_HYSTERESIS : 1);
+          if (dx * dx + dy * dy > radius * radius) {
+            sprites.get(u.id)?.setVisible(true);
+            continue;
+          }
+        }
+      }
       const pack = this.packs.get(u.kind);
       if (!pack) {
         void this.load(u.kind);
@@ -148,7 +190,7 @@ export class TroopNativePresentation {
       }
       wanted.add(u.id);
       sprites.get(u.id)?.setVisible(false);
-      const point = iso(u.x, u.y),
+      const point = early,
         air = TROOPS[u.kind].flying;
       owned.view.render(
         poses,
@@ -165,5 +207,6 @@ export class TroopNativePresentation {
         view.destroy();
         this.views.delete(id);
       }
+    for (const id of this.positions.keys()) if (!alive.has(id)) this.positions.delete(id);
   }
 }

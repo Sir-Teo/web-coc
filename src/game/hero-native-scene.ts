@@ -96,6 +96,12 @@ export class HeroNativePresentation {
     defenders: Map<number, Phaser.GameObjects.Image>,
   ) {
     const wanted = new Set<number>();
+    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    const view = cam?.worldView;
+    const cx = view?.centerX ?? 0;
+    const cy = view?.centerY ?? 0;
+    const hw = (view?.width ?? 0) / 2;
+    const hh = (view?.height ?? 0) / 2;
     if (battle) {
       const actors = [
         ...battle.units.flatMap((u) => {
@@ -140,6 +146,14 @@ export class HeroNativePresentation {
         ),
       ];
       for (const actor of actors) {
+        // Cull before atlas work; the cheap fallback sprite stays visible.
+        if (view) {
+          const early = iso(actor.x, actor.y);
+          if (Math.abs(early.x - cx) > hw + 320 || Math.abs(early.y - cy) > hh + 320) {
+            actor.fallback?.setVisible(true);
+            continue;
+          }
+        }
         const pack = this.packs.get(actor.key);
         if (!pack) {
           void this.load(actor.key);

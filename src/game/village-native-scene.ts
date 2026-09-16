@@ -105,8 +105,30 @@ export class VillageNativePresentation {
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
     const wanted = new Set<string>();
+    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    const camView = cam?.worldView;
+    const cx = camView?.centerX ?? 0;
+    const cy = camView?.centerY ?? 0;
+    const hw = (camView?.width ?? 0) / 2;
+    const hh = (camView?.height ?? 0) / 2;
     for (const b of [...buildings, ...(this.placement ? [this.placement.building] : [])]) {
       if (!hasVillageNativeArt(b.kind) || b.npc) continue;
+      // Viewport cull before pose sampling; retain hidden views so scrolling
+      // back never reallocates their RenderTextures.
+      const earlyPoint = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+      if (camView && b.id !== -1) {
+        const margin = 450;
+        if (Math.abs(earlyPoint.x - cx) > hw + margin || Math.abs(earlyPoint.y - cy) > hh + margin) {
+          const prefix = `${b.id}:`;
+          for (const [key, existing] of this.views)
+            if (key.startsWith(prefix)) {
+              wanted.add(key);
+              for (const object of existing.objects) object.setVisible(false);
+            }
+          sprites.get(b.id)?.setVisible(true);
+          continue;
+        }
+      }
       const pack = this.packs.get(b.kind);
       if (!pack) {
         void this.load(b.kind);
@@ -209,7 +231,7 @@ export class VillageNativePresentation {
       }
       if (!poses.size) continue;
       sprites.get(b.id)?.setVisible(false);
-      const point = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+      const point = earlyPoint;
       let order = 0;
       for (const [name, entry] of poses) {
         const key = `${b.id}:${b.kind}:${name}`;

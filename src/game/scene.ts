@@ -181,6 +181,8 @@ const NATIVE_SPELL_COLOR: Record<string, number> = {
 // The painted surround covers the full supported zoom-out view beyond the playable grid.
 const TERRAIN_SCALE = 1.35;
 const CAMERA_MARGIN = 224;
+/** Live spark cap: heavy fights previously held ~1,900 Arc tweens at once. */
+const MAX_SPARKS = 240;
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
   width: MAP_SIZE * 64,
@@ -285,6 +287,9 @@ export class VillageScene extends Phaser.Scene {
   private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
+  /** Pooled spark dots; live count is capped so heavy fights cannot spawn thousands of Arcs. */
+  private sparkPool: Phaser.GameObjects.Arc[] = [];
+  private liveSparks = new Set<Phaser.GameObjects.Arc>();
   constructor(model: GameModel, audio: AudioManager) {
     super('village');
     this.model = model;
@@ -3111,15 +3116,52 @@ export class VillageScene extends Phaser.Scene {
   }
   sparks(x: number, y: number, color: number, count: number) {
     if (this.model.state.settings.reducedMotion) return;
-    for (let i = 0; i < count; i++) {
-      const dot = this.add.circle(x, y, 2 + Math.random() * 3, color, 0.9).setDepth(8100);
+    // Off-screen impacts never need dots; the battle layer already culled them.
+    const camView = this.cameras.main.worldView;
+    if (camView && (Math.abs(x - camView.centerX) > camView.width / 2 + 100 || Math.abs(y - camView.centerY) > camView.height / 2 + 100))
+      return;
+    // Timeline.clear() destroys live dots without running onComplete; prune the
+    // dead handles here so the cap self-heals after battle/mode changes.
+    for (const dot of this.liveSparks) if (!dot.active) this.liveSparks.delete(dot);
+    const remaining = MAX_SPARKS - this.liveSparks.size;
+    if (remaining <= 0) return;
+    const n = Math.min(count, remaining);
+    for (let i = 0; i < n; i++) {
+      const radius = 2 + Math.random() * 3;
+      let dot: Phaser.GameObjects.Arc | undefined;
+      while (this.sparkPool.length) {
+        const candidate = this.sparkPool.pop()!;
+        if ((candidate as unknown as { scene?: unknown }).scene) {
+          dot = candidate;
+          break;
+        }
+      }
+      if (dot)
+        dot
+          .setRadius(radius)
+          .setFillStyle(color, 0.9)
+          .setPosition(x, y)
+          .setAlpha(1)
+          .setScale(1)
+          .setVisible(true)
+          .setActive(true)
+          .setDepth(8100);
+      else dot = this.add.circle(x, y, radius, color, 0.9).setDepth(8100);
+      this.liveSparks.add(dot);
+      const target = dot;
       this.animateEffect({
-        targets: dot,
+        targets: target,
         x: x + (Math.random() - 0.5) * 75,
         y: y - 10 - Math.random() * 55,
         alpha: 0,
         duration: 300 + Math.random() * 400,
-        onComplete: () => dot.destroy(),
+        onComplete: () => {
+          this.liveSparks.delete(target);
+          if ((target as unknown as { scene?: unknown }).scene && this.sparkPool.length < MAX_SPARKS) {
+            target.setVisible(false).setActive(false);
+            this.sparkPool.push(target);
+          } else target.destroy();
+        },
       });
     }
   }
