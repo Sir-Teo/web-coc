@@ -1,3 +1,4 @@
+import { REPLAY_VERSION } from '../src/game/replay';
 import { describe, expect, it } from 'vitest';
 import { TROOP_KEYS, maxTroopLevel, type BuildingKind, type TroopKind } from '../src/game/data';
 import { GameModel, makeBuilding, type Building } from '../src/game/model';
@@ -293,7 +294,7 @@ describe('version 45 native roster battles', () => {
     m.finishBattle();
     const record = m.state.raidLog![0];
     const parsed = parseReplayFile(JSON.stringify(makeReplayFile(record.replay!)));
-    expect(parsed.version).toBe(46);
+    expect(parsed.version).toBe(REPLAY_VERSION);
     const viewer = new GameModel();
     expect(viewer.openReplay(parsed)).toBe(true);
     viewer.seekReplay(1e9);

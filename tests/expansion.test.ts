@@ -154,17 +154,7 @@ describe('the air layer', () => {
 describe('spells', () => {
   it('brews within the spell factory capacity and refuses beyond it', () => {
     const m = new GameModel(developedSave());
-    m.state.spells = {
-      rage: 0,
-      heal: 0,
-      lightning: 0,
-      freeze: 0,
-      invisibility: 0,
-      jump: 0,
-      clone: 0,
-      recall: 0,
-      revive: 0,
-    };
+    m.state.spells = emptySpells();
     expect(m.spellCapacity).toBe(6);
     const elixir = m.state.elixir;
     m.brew('rage', 2);

@@ -32,6 +32,7 @@ export function stepHutBuilders(ctx: NativeTroopContext, dt: number) {
   const at = battle.elapsed;
   for (const hut of battle.buildings) {
     if (hut.kind !== 'builder' || hut.npc || hut.constructing || hut.upgradeEnd) continue;
+    if (battle.late) continue;
     const repair = hutRepair(hut.level);
     if (!repair || !nativeWeapon('builder', hut.level)) continue;
     const awake = battle.nativeDefenses?.[hut.id]?.awakeAt;

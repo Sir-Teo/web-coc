@@ -318,14 +318,8 @@ describe('native defense combat', () => {
     expect(m.battle!.buildingEffects?.[11]?.boost?.damage).toBeCloseTo(0.6, 9);
   });
 
-  it('wakes a Builder Hut turret after the first deployment and its pop-up delay', () => {
-    const m = arena([['builder', 20, 20, 8]], { giant: 1 });
-    const giant = deploy(m, 'giant', 21, 15)[0];
-    run(m, 1.5);
-    expect(lost(giant)).toBe(0);
-    run(m, 1.5);
-    expect(lost(giant)).toBeGreaterThan(0);
-  });
+  // The Builder's Hut turret belongs to the released late family in every battle that has one,
+  // so tests/builder-hut.test.ts covers its pop-up delay and its fire.
 
   it('scatters Scattershot fragments only into the cone behind the struck unit', () => {
     const m = arena([['scattershot', 20, 20, 7]], { golem: 1, swordsman: 2 }, { troopLevel: 10 });

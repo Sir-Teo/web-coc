@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { BUILDINGS, type BuildingKind } from './data';
+import { BUILDINGS, type BuildingKind, sourceKind } from './data';
 import type { Building, Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { nativeMeshTexture } from './native-mesh-scene';
@@ -30,11 +30,12 @@ const packs = index.buildings as unknown as Record<
   string,
   { path: string; variants?: Record<string, { path: string }> }
 >;
-export const hasVillageNativeArt = (kind: string) => Object.hasOwn(packs, kind);
+export const hasVillageNativeArt = (kind: string) => Object.hasOwn(packs, sourceKind(kind));
 /** Pack key of one building family, or of one of its per-level battle-mode variant packs. */
-const packKey = (kind: string, variant?: string) => (variant ? `${kind}/${variant}` : kind);
+const packKey = (kind: string, variant?: string) =>
+  variant ? `${sourceKind(kind)}/${variant}` : sourceKind(kind);
 const packPath = (kind: string, variant?: string) =>
-  variant ? packs[kind]?.variants?.[variant]?.path : packs[kind]?.path;
+  variant ? packs[sourceKind(kind)]?.variants?.[variant]?.path : packs[sourceKind(kind)]?.path;
 
 /** Source timelines are fetched only for families actually visible in the village or battle. */
 export class VillageNativePresentation {

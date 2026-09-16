@@ -10,7 +10,7 @@ import {
   upgradeSeconds,
 } from '../src/game/data';
 import { FACILITY_LEVELS, spellFactoryCapacity } from '../src/game/facility-progression';
-import { emptySpells } from '../src/game/army';
+import { emptySpells, emptyArmy } from '../src/game/army';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { validateSave } from '../src/game/save';
 import { developedSave } from './fixtures/developed-village';

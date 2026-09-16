@@ -3,6 +3,7 @@ import { distance2D } from './distance';
 import type { LateCombatContext, SpellTowerWeapon } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
 import { SPELL_TOWER, SPELL_TOWER_HERO, speedPoints } from './spell-tower-stats';
+import { nativeOwned } from './native-ownership';
 
 /** Spell Tower: defensive Rage, Poison and Invisibility casts.
  * The campaign gate keeps affected villages unavailable until this is true. */
@@ -115,7 +116,13 @@ export function spellTowerUnitState(unit: Unit): SpellTowerUnitState {
   });
 }
 
-function cast(battle: Battle, tower: Building, at: number, target: Unit | undefined, onDeath: boolean) {
+function cast(
+  battle: Battle,
+  tower: Building,
+  at: number,
+  target: Unit | undefined,
+  onDeath: boolean,
+) {
   const weapon = tower.spellTowerWeapon!;
   const stats = SPELL_TOWER[weapon];
   const family = familyState(battle),
@@ -172,6 +179,7 @@ function stepTowers({ battle, dt }: LateCombatContext) {
   const start = battle.elapsed - dt;
   for (const tower of battle.buildings) {
     if (tower.kind !== 'spelltower' || !tower.spellTowerWeapon) continue;
+    if (nativeOwned(battle, tower)) continue;
     const state = spellTowerState(battle, tower),
       stats = SPELL_TOWER[tower.spellTowerWeapon];
     if (tower.hp <= 0 || tower.constructing || tower.upgradeEnd) {
@@ -197,9 +205,7 @@ function stepTowers({ battle, dt }: LateCombatContext) {
         ? attacksBuildingInside(battle, tower, unit)
         : distance2D(unit.x - c.x, unit.y - c.y) <= stats.range + 1e-9);
     const retained = battle.units.find(
-      (u) =>
-        u.id === state.targetId &&
-        (stats.hitBuildingTrigger ? eligible(u) : inRange(u)),
+      (u) => u.id === state.targetId && (stats.hitBuildingTrigger ? eligible(u) : inRange(u)),
     );
     const target =
       retained ??
@@ -225,7 +231,12 @@ function stepTowers({ battle, dt }: LateCombatContext) {
   }
 }
 
-function applyPulse(battle: Battle, family: SpellTowerBattleState, entry: SpellTowerCast, at: number) {
+function applyPulse(
+  battle: Battle,
+  family: SpellTowerBattleState,
+  entry: SpellTowerCast,
+  at: number,
+) {
   const spell = SPELL_TOWER[entry.weapon].spell;
   if (entry.weapon === 'poison') {
     for (const unit of battle.units) {
@@ -389,7 +400,9 @@ export function spellTowerMoveScale(battle: Battle, unit: Unit) {
   if (!status || status.slowUntil <= battle.elapsed) return 1;
   const spell = SPELL_TOWER.poison.spell;
   if (preferredTarget(unit.kind)) return 1 + spell.speedBoost2 / 100;
-  return 1 + (unit.hero ? Math.trunc(spell.speedBoost * SPELL_TOWER_HERO.speed) : spell.speedBoost) / 100;
+  return (
+    1 + (unit.hero ? Math.trunc(spell.speedBoost * SPELL_TOWER_HERO.speed) : spell.speedBoost) / 100
+  );
 }
 /** Rage on defending units: damage multiplier and added movement speed in tiles per second. */
 export function spellTowerDefenderBoost(

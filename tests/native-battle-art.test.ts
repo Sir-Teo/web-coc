@@ -1,3 +1,4 @@
+import { sourceKind } from '../src/game/data';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -234,8 +235,10 @@ describe('native defense bodies', () => {
   const actionFrame = (kind: string, level: number) =>
     (village(kind).levels.find((row) => row.level === level) as { action?: number } | undefined)
       ?.action;
-  const village = (kind: string, variant?: string) =>
-    read(
+  const village = (buildingKind: string, variant?: string) => {
+    // The manifest keys the Eagle Artillery by its client name, as the runtime lookup does.
+    const kind = sourceKind(buildingKind);
+    return read(
       variant
         ? (villageArt.buildings as Record<string, { variants: Record<string, { path: string }> }>)[
             kind
@@ -245,6 +248,7 @@ describe('native defense bodies', () => {
       levels: { level: number; refs: Record<string, { scene: string; export: string }> }[];
       scenes: Record<string, NativeMeshGraph>;
     };
+  };
   const resolverFor = (kind: string) => {
     const main = village(kind);
     return (level: number) => (field: string, variant?: string) => {

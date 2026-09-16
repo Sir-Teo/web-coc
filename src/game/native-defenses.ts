@@ -93,6 +93,9 @@ export const nativeDefense = (battle: Battle, tower: Building): boolean =>
   !!battle.nativeRoster &&
   !tower.npc &&
   battle.catalog !== 'goblin-v1' &&
+  // The Builder's Hut turret and its Defending Builder stay with the late family wherever that
+  // family is running, so one hut is never armed and repaired by both engines.
+  !(tower.kind === 'builder' && !!battle.late) &&
   (isNativeDefenseKind(tower.kind) ||
     (!!tower.geared &&
       (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')));

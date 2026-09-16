@@ -211,6 +211,8 @@ const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export { MAX_TOWNHALL, BUILDING_COUNTS } from './tiers';
 /** Progression key of a family the client names differently from its building kind. */
 const SOURCE_KIND: Partial<Record<BuildingKind, string>> = { eagleartillery: 'eagle' };
+/** Progression and artwork key of a family whose client name differs from its building kind. */
+export const sourceKind = (kind: string) => SOURCE_KIND[kind as BuildingKind] ?? kind;
 export const extendedBuildingStats = (kind: BuildingKind, level: number) => {
   const family = nativeProgression.buildings[SOURCE_KIND[kind] ?? kind];
   const row = family?.levels[level - 1];

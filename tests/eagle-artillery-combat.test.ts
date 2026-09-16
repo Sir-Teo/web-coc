@@ -110,9 +110,11 @@ describe('Eagle Artillery source values', () => {
       ALLIANCE_UNIT_HOUSING_COST_MULTIPLIER: 0,
       PET_HOUSING_COST_MULTIPLIER: 0,
     });
-    for (const kind of TROOP_KEYS)
+    // The pinned table covers the roster this game had when the Eagle Artillery arrived; the
+    // families added since weigh by their own client housing (see eagle-artillery-stats.ts).
+    for (const kind of TROOP_KEYS.filter((k) => k in housing.troops))
       expect(housing.troops[kind].housingSpace).toBe(TROOPS[kind].space);
-    for (const kind of SPELL_KEYS)
+    for (const kind of SPELL_KEYS.filter((k) => k in housing.spells))
       expect(housing.spells[kind].housingSpace).toBe(SPELLS[kind].space);
     expect(housing.hero).toEqual({
       source: 'Barbarian King',

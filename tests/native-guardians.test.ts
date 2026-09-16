@@ -104,34 +104,9 @@ describe('Town Hall 18 Guardians', () => {
     expect(hurt.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("sends a Builder's Hut Defending Builder to repair damaged buildings nearby", () => {
-    const m = new GameModel();
-    m.state.obstacles = [];
-    m.state.buildings = [
-      makeBuilding(1, 'townhall', 40, 40, 11),
-      makeBuilding(2, 'builder', 20, 20, 8),
-      makeBuilding(3, 'goldstorage', 24, 20, 10),
-    ];
-    m.state.nextId = 5000;
-    m.state.army = { ...emptyArmy(), swordsman: 1 };
-    m.state.spells = emptySpells();
-    m.startBattle(0, true);
-    m.activeTroop = 'swordsman';
-    m.deploy(2, 46);
-    m.battle!.units[0].springUntil = 1e9;
-    const storage = m.battle!.buildings.find((b) => b.id === 3)!;
-    storage.hp = storage.maxHp / 2;
-    run(m, 1);
-    expect(m.battle!.defenders?.some((d) => d.kind === 'repairer') ?? false).toBe(false);
-    run(m, 6);
-    const builder = m.battle!.defenders!.find((d) => d.kind === 'repairer')!;
-    expect(builder).toBeDefined();
-    expect(storage.hp).toBeGreaterThan(storage.maxHp / 2);
-    // Level 8 hut -> Defending Builder level 7: 95 HP per second in 0.75 s hits.
-    const before = storage.hp;
-    run(m, 1.5);
-    expect(storage.hp - before).toBeCloseTo(2 * 95 * 0.75, 6);
-  });
+  // The Builder's Hut turret and its Defending Builder stay with the released late family in
+  // every battle that has one, so that behaviour is covered by tests/builder-hut.test.ts and
+  // tests/defending-builder-replay.test.ts rather than here.
 
   it('chooses and upgrades the Guardian in the village', () => {
     const m = new GameModel();

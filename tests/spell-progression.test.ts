@@ -190,7 +190,8 @@ describe('spell research', () => {
     expect(loaded.state.spellLevels).toBeUndefined();
     expect(loaded.spellLevel('lightning')).toBe(1);
     expect(loaded.state.research).toEqual(original.research);
-    expect(loaded.state.spells).toEqual(original.spells);
+    // Loading gains a field for every spell the save predates, and keeps every count it held.
+    expect(loaded.state.spells).toMatchObject(original.spells);
     // A save written before a spell existed has no field for it. Loading gains every absent
     // spell at zero and keeps every count the village already held.
     const ORIGINAL_THREE = ['rage', 'heal', 'lightning'] as const;

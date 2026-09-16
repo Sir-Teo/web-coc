@@ -332,13 +332,16 @@ export function lateNativeFields(
 
 /** Late kinds exist in version 44+ campaign recordings, and at home from version 46. */
 export function validLateBuilding(
-  b: Pick<Building, 'kind' | 'npc' | 'spellTowerWeapon'>,
+  b: Pick<Building, 'kind' | 'npc' | 'spellTowerWeapon' | 'spellMode'>,
   version: number,
   practice: boolean,
 ) {
   if (!validSpellTowerWeapon(b.spellTowerWeapon)) return false;
   if (b.spellTowerWeapon !== undefined && b.kind !== 'spelltower') return false;
-  if (b.kind === 'spelltower' && b.spellTowerWeapon === undefined) return false;
+  // A campaign Spell Tower states the weapon its layout chose; a home one states the spell its
+  // owner set instead, which the native engine reads (version 51+).
+  if (b.kind === 'spelltower' && b.spellTowerWeapon === undefined && b.spellMode === undefined)
+    return false;
   if (!isLateBuilding(b)) return true;
   // A campaign-only identity is still never a home building: only real kinds are buildable.
   if (b.npc !== undefined) return version >= 44 && !practice;

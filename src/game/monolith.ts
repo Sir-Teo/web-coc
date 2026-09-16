@@ -10,6 +10,7 @@ import {
   type MonolithVariant,
 } from './monolith-stats';
 import { spellTowerDefenseBoost } from './spell-tower';
+import { nativeOwned } from './native-ownership';
 
 /** Monolith: base damage plus a share of the target's hitpoints.
  * The campaign gate keeps affected villages unavailable until this is true. */
@@ -152,7 +153,7 @@ function release(
 function stepTowers({ battle, dt }: LateCombatContext) {
   const start = battle.elapsed - dt;
   for (const tower of battle.buildings) {
-    if (tower.kind !== 'monolith') continue;
+    if (tower.kind !== 'monolith' || nativeOwned(battle, tower)) continue;
     const state = monolithTowerState(battle, tower);
     if (tower.hp <= 0 || tower.constructing || tower.upgradeEnd) {
       state.targetId = null;
@@ -234,7 +235,9 @@ function stepProjectiles({ battle }: LateCombatContext) {
     p.flight.y += (p.y - p.flight.y) * fraction;
     p.flight.at = Math.min(battle.elapsed, p.impact);
   }
-  for (const p of [...family.projectiles].sort((a, b) => a.impact - b.impact || a.index - b.index)) {
+  for (const p of [...family.projectiles].sort(
+    (a, b) => a.impact - b.impact || a.index - b.index,
+  )) {
     if (p.impact > battle.elapsed + 1e-9) {
       pending.push(p);
       continue;

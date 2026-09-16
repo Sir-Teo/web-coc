@@ -1,4 +1,4 @@
-import { emptyArmy } from '../src/game/army';
+import { emptyArmy, emptySpells } from '../src/game/army';
 import { it, expect } from 'vitest';
 import fs from 'node:fs';
 import { GameModel, enemyBase, makeBuilding } from '../src/game/model';
@@ -130,17 +130,7 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
         m.state.stars.fill(1);
         m.state.army = { ...emptyArmy(), ...army.units };
         // Compare troop compositions without spell assistance.
-        m.state.spells = {
-          rage: 0,
-          heal: 0,
-          lightning: 0,
-          freeze: 0,
-          invisibility: 0,
-          jump: 0,
-          clone: 0,
-          recall: 0,
-          revive: 0,
-        };
+        m.state.spells = emptySpells();
         m.state.troopLevels = Object.fromEntries(
           TROOP_KEYS.map((k) => [k, Math.min(army.level, maxTroopLevel(k))]),
         ) as Record<TroopKind, number>;
