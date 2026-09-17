@@ -56,16 +56,19 @@ export function subtileSolid(buildings: readonly Building[]) {
 }
 
 // Reused search buffers: pathfinding is synchronous and each call resets what it reads.
+// Search state uses a generation stamp: one counter bump replaces five full-array fills.
 const cost = new Float64Array(CELLS),
   prev = new Int32Array(CELLS),
   closed = new Uint8Array(CELLS),
   priority = new Float64Array(CELLS),
   heuristic = new Float64Array(CELLS),
   order = new Uint32Array(CELLS),
-  position = new Int32Array(CELLS);
+  position = new Int32Array(CELLS),
+  stamp = new Uint32Array(CELLS);
+let epoch = 0;
 
 const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: number }) => {
-  const s = 'level' in b ? BUILDINGS[b.kind].size : 0;
+  const s = 'kind' in b && b.kind in BUILDINGS ? BUILDINGS[(b as Building).kind].size : 0;
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 };
 
@@ -117,11 +120,21 @@ export function findSubtilePath(
   const sx = Math.max(0, Math.min(SIZE - 1, Math.floor(start.x * SUBTILES))),
     sy = Math.max(0, Math.min(SIZE - 1, Math.floor(start.y * SUBTILES))),
     first = sy * SIZE + sx;
-  cost.fill(Infinity);
-  prev.fill(-1);
-  closed.fill(0);
-  heuristic.fill(NaN);
-  position.fill(-1);
+  if (epoch === 0xffffffff) {
+    stamp.fill(0);
+    epoch = 0;
+  }
+  const generation = ++epoch;
+  const fresh = (n: number) => {
+    if (stamp[n] !== generation) {
+      stamp[n] = generation;
+      cost[n] = Infinity;
+      prev[n] = -1;
+      closed[n] = 0;
+      heuristic[n] = NaN;
+      position[n] = -1;
+    }
+  };
   const open: number[] = [];
   let sequence = 0;
   const center = (node: number) => ({
@@ -169,6 +182,7 @@ export function findSubtilePath(
     return node;
   };
   const step = 1 / SUBTILES;
+  fresh(first);
   cost[first] = 0;
   queue(first);
   let goal = -1;
@@ -185,12 +199,16 @@ export function findSubtilePath(
       break;
     }
     if (range < 0.5 && !blocked[current]) {
-      const s = 'level' in target ? BUILDINGS[target.kind].size : 0;
+      const s = 'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
       const tx = Math.max(target.x, Math.min(here.x, target.x + s));
       const ty = Math.max(target.y, Math.min(here.y, target.y + s));
       const dx = here.x - tx,
         dy = here.y - ty,
         distance = distance2D(dx, dy);
+      if (distance <= 1e-9) {
+        goal = current;
+        break;
+      }
       const reach = Math.max(0, range - 1e-6);
       const point = { x: tx + (dx * reach) / distance, y: ty + (dy * reach) / distance };
       if (Math.floor(point.x * SUBTILES) === x && Math.floor(point.y * SUBTILES) === y) {
@@ -209,7 +227,9 @@ export function findSubtilePath(
         ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) continue;
       const n = ny * SIZE + nx;
-      if (blocked[n] || closed[n]) continue;
+      if (blocked[n]) continue;
+      fresh(n);
+      if (closed[n]) continue;
       const next = cost[current] + step + (wall[n] ? 6 * step : 0);
       if (next < cost[n]) {
         cost[n] = next;

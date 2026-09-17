@@ -156,7 +156,7 @@ export function spawnSkeleton(battle: Battle, source: Building, at: number, inde
   // Small deterministic offsets keep the burst legible and inside its passable tile.
   const angle = (index * Math.PI * 2) / skeletonCount(source.level);
   const defender: Defender = {
-    id: -(battle.defenders?.length ?? 0) - 1,
+    id: Math.min(0, ...(battle.defenders ?? []).map((d) => d.id)) - 1,
     kind: 'skeleton',
     sourceId: source.id,
     mode,
@@ -310,8 +310,11 @@ export function stepAttackerVsDefenders(
   damage: (b: Building, power: number) => void,
   effect: (fx: FX) => void,
   traits?: DefenderFightTraits,
+  /** Per-tick targetability with hp checked live; defaults to targetableBuilding. */
+  isTargetable?: (b: Building) => boolean,
 ) {
   const troop = traits ?? TROOPS[unit.kind];
+  const targetable = isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
   if (troop.healer || troop.wallBreaker) {
     delete unit.defenderTarget;
     return false;
@@ -319,9 +322,11 @@ export function stepAttackerVsDefenders(
   // Early-return when no defenders exist before scanning all buildings twice.
   // Mirrors the no-target branch below: a stale defenderTarget also clears the
   // building target so the unit retargets instead of resuming its old route.
-  if (!(battle.defenders ?? []).some(
-    (d) => d.hp > 0 && (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed),
-  )) {
+  if (
+    !(battle.defenders ?? []).some(
+      (d) => d.hp > 0 && (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed),
+    )
+  ) {
     if (unit.defenderTarget !== undefined) {
       delete unit.defenderTarget;
       unit.target = null;
@@ -330,18 +335,23 @@ export function stepAttackerVsDefenders(
     }
     return false;
   }
-  const preferred = buildings.some(
-    (b) =>
-      b.hp > 0 &&
-      targetableBuilding(battle, b) &&
-      // Late campaign target classes mirror the attacker loop in model.ts.
-      ((troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
-        (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')),
-  );
-  // Preferred-target troops finish their current building before accepting an alert.
-  const committed =
-    (troop.prefersDefenses || troop.prefersResources) &&
-    buildings.some((b) => b.id === unit.target && b.hp > 0 && targetableBuilding(battle, b));
+  // Single pass: the old code scanned all buildings twice per unit (once for
+  // "any preferred still stands", once for "committed to current target").
+  const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
+  let preferred = false;
+  let committed = false;
+  for (const b of buildings) {
+    if (b.hp <= 0 || !targetable(b)) continue;
+    if (!preferred) {
+      if (
+        (troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
+        (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')
+      )
+        preferred = true;
+    }
+    if (!committed && wantsPreferred && b.id === unit.target) committed = true;
+    if (preferred && committed) break;
+  }
   if (preferred || committed) {
     delete unit.defenderTarget;
     return false;
@@ -356,22 +366,27 @@ export function stepAttackerVsDefenders(
       garrisonDefenderTargetable(battle, d),
   );
   if (!target) {
-    target = (battle.defenders ?? [])
-      .filter(
-        (d) =>
-          d.hp > 0 &&
-          (d.kind === 'skeleton' || d.spawnedAt <= battle.elapsed) &&
-          d.alerted &&
-          canFight(unit, d, troop) &&
-          !lateDefenderHidden(battle, d) &&
-          garrisonDefenderTargetable(battle, d) &&
-          distance2D(d.x - unit.x, d.y - unit.y) <= SKELETON_TRAP.alertRadius,
+    // Min-scan: identical winner to the old filter+sort (distance, then larger id).
+    let bestDist = Infinity;
+    let best: Defender | undefined;
+    for (const d of battle.defenders ?? []) {
+      if (
+        d.hp <= 0 ||
+        (d.kind !== 'skeleton' && d.spawnedAt > battle.elapsed) ||
+        !d.alerted ||
+        !canFight(unit, d, troop) ||
+        lateDefenderHidden(battle, d) ||
+        !garrisonDefenderTargetable(battle, d)
       )
-      .sort(
-        (a, b) =>
-          distance2D(a.x - unit.x, a.y - unit.y) - distance2D(b.x - unit.x, b.y - unit.y) ||
-          b.id - a.id,
-      )[0];
+        continue;
+      const dist = distance2D(d.x - unit.x, d.y - unit.y);
+      if (dist > SKELETON_TRAP.alertRadius) continue;
+      if (best === undefined || dist < bestDist || (dist === bestDist && d.id > best.id)) {
+        best = d;
+        bestDist = dist;
+      }
+    }
+    target = best;
     if (!target) {
       if (unit.defenderTarget !== undefined) {
         delete unit.defenderTarget;

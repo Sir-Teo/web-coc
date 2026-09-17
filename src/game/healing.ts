@@ -19,6 +19,7 @@ export function prepareHealerTargets(battle: Battle) {
   if (!battle.units.some((u) => TROOPS[u.kind].healer && u.hp > 0)) return;
   const allies = battle.units.filter(groundAlly);
   if (!allies.length) return;
+  const allyIds = new Set(allies.map((u) => u.id));
   // Cluster housing once per tick (O(A²)), not once per healer (O(H·A²)).
   const clusterSpace = new Map<number, number>();
   for (const target of allies) {
@@ -30,18 +31,19 @@ export function prepareHealerTargets(battle: Battle) {
   }
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
-    if (allies.some((u) => u.id === healer.healTarget)) continue;
-    const candidates = allies.filter(
-      (target) => target.hero || (clusterSpace.get(target.id) ?? 0) > 2,
-    );
-    // Retain a living target. On acquisition, favor an injured ally at a similar distance.
-    candidates.sort(
-      (a, b) =>
-        distance(healer, a) +
-          (a.hp < a.maxHp ? 0 : 0.75) -
-          (distance(healer, b) + (b.hp < b.maxHp ? 0 : 0.75)) || a.id - b.id,
-    );
-    healer.healTarget = candidates[0]?.id;
+    if (allyIds.has(healer.healTarget ?? -1)) continue;
+    // Min-scan with the old sort's winner (distance + injury penalty, then id).
+    let pick: Unit | undefined;
+    let pickScore = Infinity;
+    for (const target of allies) {
+      if (!target.hero && (clusterSpace.get(target.id) ?? 0) <= 2) continue;
+      const score = distance(healer, target) + (target.hp < target.maxHp ? 0 : 0.75);
+      if (pick === undefined || score < pickScore || (score === pickScore && target.id < pick.id)) {
+        pick = target;
+        pickScore = score;
+      }
+    }
+    healer.healTarget = pick?.id;
     healer.target = null;
     healer.path = [];
   }
@@ -85,10 +87,21 @@ export function stepHealer(
   );
 }
 
+/** Unit lookup cached per battle tick: contributions run once per healed unit per pulse. */
+const contributionCache = new WeakMap<
+  Battle,
+  { tick: number; count: number; byId: Map<number, Unit> }
+>();
 /** Stable source order applies the native marginal stacking curve to each recipient. */
 export function healerContribution(battle: Battle, recipient: Unit, sourceId: number) {
-  const byId = new Map<number, Unit>();
-  for (const u of battle.units) byId.set(u.id, u);
+  let cached = contributionCache.get(battle);
+  if (!cached || cached.tick !== battle.elapsed || cached.count !== battle.units.length) {
+    const byId = new Map<number, Unit>();
+    for (const u of battle.units) byId.set(u.id, u);
+    cached = { tick: battle.elapsed, count: battle.units.length, byId };
+    contributionCache.set(battle, cached);
+  }
+  const byId = cached.byId;
   const sources = new Set([sourceId]);
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;

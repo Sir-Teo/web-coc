@@ -93,7 +93,7 @@ export function spawnGarrisonDefender(
 ): GarrisonDefender {
   const stats = garrisonStats(kind, level);
   const defender: GarrisonDefender = {
-    id: -(battle.defenders?.length ?? 0) - 1,
+    id: Math.min(0, ...(battle.defenders ?? []).map((d) => d.id)) - 1,
     kind,
     level,
     sourceId,

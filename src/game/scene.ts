@@ -239,8 +239,8 @@ export class VillageScene extends Phaser.Scene {
   onSelect = () => {};
   baseZoom = 1;
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
-  private wallSignature = '';
-  private wallViews: Phaser.GameObjects.Graphics[] = [];
+  wallLinks = new Map<string, { g: Phaser.GameObjects.Graphics; a: number; b: number }>();
+  private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
   private heroPrefetchSignature = '';
   private seekingMinePresentation!: SeekingMinePresentation;
@@ -1282,6 +1282,9 @@ export class VillageScene extends Phaser.Scene {
       this.bubbles.clear();
       for (const sprite of this.defenderSprites.values()) sprite.destroy();
       this.defenderSprites.clear();
+      for (const link of this.wallLinks.values()) link.g.destroy();
+      this.wallLinks.clear();
+      this.pendingFx.length = 0;
       this.mode = mode;
       if (!keepCamera) this.resetCamera();
     }
@@ -1810,27 +1813,38 @@ export class VillageScene extends Phaser.Scene {
     this.bubbles.delete(id);
   }
   syncWalls() {
+    const moving = new Set((this.model.wallMove?.source ?? []).map((w) => w.id));
     const walls = this.model.buildings.filter(
-      (b) =>
-        b.kind === 'wall' && b.hp > 0 && !this.model.wallMove?.source.some((w) => w.id === b.id),
+      (b) => b.kind === 'wall' && b.hp > 0 && !moving.has(b.id),
     );
-    const signature = this.mode + walls.map((b) => `${b.id},${b.x},${b.y},${b.level}`).join(';');
-    if (signature === this.wallSignature) return;
-    this.wallSignature = signature;
-    for (const g of this.wallViews) g.destroy();
-    this.wallViews = [];
+    // Tile index replaces the O(walls) find per wall; links persist across calls
+    // so a wall death only rebuilds its own adjacencies instead of every link.
+    const tiles = new Map<string, (typeof walls)[number]>();
+    for (const w of walls) tiles.set(`${w.x},${w.y}`, w);
+    const seen = new Set<string>();
     for (const b of walls) {
       for (const [dx, dy] of [
         [1, 0],
         [0, 1],
       ]) {
-        const next = walls.find((w) => w.x === b.x + dx && w.y === b.y + dy);
+        const next = tiles.get(`${b.x + dx},${b.y + dy}`);
         if (!next) continue;
+        const key = b.id < next.id ? `${b.id}-${next.id}` : `${next.id}-${b.id}`;
+        seen.add(key);
+        const existing = this.wallLinks.get(key);
+        if (existing && existing.a === b.level && existing.b === next.level) continue;
+        existing?.g.destroy();
         const p = iso(b.x + 0.5, b.y + 0.5),
           q = iso(next.x + 0.5, next.y + 0.5);
         const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
         this.paintWallLink(g, p, q, b.level, next.level);
-        this.wallViews.push(g);
+        this.wallLinks.set(key, { g, a: b.level, b: next.level });
+      }
+    }
+    for (const [key, link] of this.wallLinks) {
+      if (!seen.has(key)) {
+        link.g.destroy();
+        this.wallLinks.delete(key);
       }
     }
   }
@@ -2738,13 +2752,34 @@ export class VillageScene extends Phaser.Scene {
   }
   effect(fx: FX) {
     if (!this.ready) return;
+    // Queued and drained once per frame: hundreds of combat events share one
+    // building lookup instead of scanning per event inside the sim tick.
+    if (this.pendingFx.length < 4000) this.pendingFx.push(fx);
+  }
+  /** Buildings by id captured once per drain for the find-gated branches below. */
+  private fxBattle: Map<number, { kind: string }> | null = null;
+  private fxHome: Map<number, { kind: string; npc?: unknown }> | null = null;
+  private drainEffects() {
+    if (!this.pendingFx.length) return;
+    const battle = this.model.battle;
+    this.fxBattle = battle ? new Map(battle.buildings.map((b) => [b.id, b])) : null;
+    this.fxHome = new Map(this.model.buildings.map((b) => [b.id, b]));
+    for (const fx of this.pendingFx) this.renderEffect(fx);
+    this.pendingFx.length = 0;
+    this.fxBattle = null;
+    this.fxHome = null;
+  }
+  private renderEffect(fx: FX) {
     // Native defense effects carry their own geometry; record them before the drawn fallbacks.
     if (fx.type === 'defense-zap' || fx.type === 'impact' || fx.type === 'blast')
       this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);
     if (
       fx.type === 'defense-zap' &&
       this.nativeDefenses.covers(
-        this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind,
+        (
+          this.fxBattle?.get(fx.sourceId!) ??
+          this.model.battle?.buildings.find((b) => b.id === fx.sourceId)
+        )?.kind,
       )
     )
       return;
@@ -2774,7 +2809,10 @@ export class VillageScene extends Phaser.Scene {
     }
     if (
       (fx.type === 'trap' || fx.type === 'blast') &&
-      this.model.battle?.buildings.find((b) => b.id === fx.sourceId)?.kind === 'seekingairmine'
+      (
+        this.fxBattle?.get(fx.sourceId!) ??
+        this.model.battle?.buildings.find((b) => b.id === fx.sourceId)
+      )?.kind === 'seekingairmine'
     )
       return;
     if (
@@ -3122,12 +3160,18 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'mortar-fire') return;
-    if (
-      fx.weapon === 'cannonball' &&
-      (fx.type === 'projectile' || fx.type === 'impact') &&
-      this.model.buildings.some((b) => b.id === fx.sourceId && b.kind === 'cannon' && !b.npc)
-    )
-      return;
+    {
+      const cannon =
+        (this.fxHome?.get(fx.sourceId!) as { kind?: string; npc?: unknown } | undefined) ??
+        this.model.buildings.find((b) => b.id === fx.sourceId);
+      if (
+        fx.weapon === 'cannonball' &&
+        (fx.type === 'projectile' || fx.type === 'impact') &&
+        cannon?.kind === 'cannon' &&
+        !cannon.npc
+      )
+        return;
+    }
     if (fx.type === 'breath') {
       const { from, to } = this.projectileAnchors(fx);
       this.combatEffects.breath(from, to, this.model.state.settings.reducedMotion);
@@ -3401,6 +3445,7 @@ export class VillageScene extends Phaser.Scene {
       this.model.step(0.05);
       this.tick -= 0.05;
     }
+    this.drainEffects();
     if (this.lastRevision !== this.model.revision) this.sync();
     if (this.model.battle)
       for (const b of this.model.battle.buildings) {

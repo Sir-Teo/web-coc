@@ -271,6 +271,7 @@ import type { NativeSpellCast } from './native-spells';
 import {
   buildingAttackIntervalScale,
   buildingDamageScale,
+  buildingHidden,
   buildingImmune,
   hurtUnit,
   unitDamageScale,
@@ -2890,7 +2891,11 @@ export class GameModel {
     hero.deployed = true;
     if (b.nativeHeroPassives) {
       const native = this.nativeContext(b);
-      refreshHeroPassives(native, hero, b.units.find((u) => u.id === hero.unitId)!);
+      refreshHeroPassives(
+        native,
+        hero,
+        b.units.find((u) => u.id === hero.unitId)!,
+      );
     }
     this.onEffect({ type: 'spawn', x, y });
     this.changed();
@@ -3371,9 +3376,15 @@ export class GameModel {
   }
   /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
   private nativeContext(b: Battle): NativeTroopContext {
+    const buildings = b.buildings.filter((v) => !concealedTesla(b, v));
+    const wallTile = new Map<number, Building>();
+    for (const v of b.buildings)
+      if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * MAP_SIZE + v.x, v);
     return {
       battle: b,
-      buildings: b.buildings.filter((v) => !concealedTesla(b, v)),
+      buildings,
+      buildingsById: new Map(buildings.map((v) => [v.id, v])),
+      wallTile,
       damageBuilding: (target, amount, at, spell) => this.damage(target, amount, at, spell),
       effect: (fx) => this.onEffect(fx),
       nextId: () => this.state.nextId++,
@@ -3444,6 +3455,11 @@ export class GameModel {
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
     const native = b.nativeRoster ? this.nativeContext(b) : null;
+    // Shared per-tick A* budget, spent by native units first and the legacy
+    // loop after. Only enforced for large battles so small-battle determinism
+    // (historical hashes) is unchanged.
+    const pathBudget = b.units.length > 100 ? { count: 0, limit: 48 } : undefined;
+    if (native && pathBudget) native.pathBudget = pathBudget;
     if (native && b.nativeHeroPassives)
       for (const hero of b.nativeHeroes ?? []) {
         const unit = b.units.find((u) => u.id === hero.unitId);
@@ -3494,7 +3510,14 @@ export class GameModel {
       }
     // Empty unless a Jump Spell is holding a ring open, so ordinary routing is unchanged.
     const breaches = openBreaches(b);
-    if (native) native.buildings = knownBuildings;
+    if (native) {
+      native.buildings = knownBuildings;
+      native.buildingsById = new Map(knownBuildings.map((v) => [v.id, v]));
+      const nativeWalls = new Map<number, Building>();
+      for (const v of b.buildings)
+        if (v.kind === 'wall' && v.hp > 0) nativeWalls.set(v.y * MAP_SIZE + v.x, v);
+      native.wallTile = nativeWalls;
+    }
     if (defenses) defenses.buildings = knownBuildings;
     // Jump Spells change every ground route while active; the set changes only at cast/expiry.
     const passableWalls = native ? jumpWalls(b) : undefined;
@@ -3512,17 +3535,27 @@ export class GameModel {
         }
       }
     }
-    // One id map for buildings, units and defenders at the top of the tick.
+    // The legacy loop spends from the shared budget the native phase used first.
+    const repathState = pathBudget ?? { count: 0, limit: Number.POSITIVE_INFINITY };
     const buildingById = new Map(b.buildings.map((v) => [v.id, v]));
-    const unitById = new Map(b.units.map((v) => [v.id, v]));
-    const defenderById = new Map((b.defenders ?? []).map((v) => [v.id, v]));
-    void buildingById;
-    void unitById;
-    void defenderById;
-    // Per-tick re-path budget spreads A* searches across ticks. Only enforced
-    // for large battles so small-battle determinism (historical hashes) is unchanged.
-    let repathsThisTick = 0;
-    const REPATH_BUDGET = b.units.length > 100 ? 48 : Number.POSITIVE_INFINITY;
+    // Per-tick targetability for the non-hp reasons (trap, concealment, hiding).
+    // hp is checked live at each use so mid-tick kills keep exact semantics.
+    const untargetableStatus = new Set<number>();
+    for (const v of b.buildings) {
+      if (
+        isTrap(v.kind) ||
+        concealedTesla(b, v) ||
+        lateBuildingHidden(b, v) ||
+        buildingHidden(b, v)
+      )
+        untargetableStatus.add(v.id);
+    }
+    const isTargetableLive = (v: Building) => v.hp > 0 && !untargetableStatus.has(v.id);
+    // Wall-by-tile index for per-waypoint lookups; hp verified live at each hit.
+    const wallTile = new Map<number, Building>();
+    for (const v of b.buildings) {
+      if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * MAP_SIZE + v.x, v);
+    }
     // Memoize unit stats by kind+level for the tick.
     const statsCache = new Map<string, ReturnType<GameModel['unitStats']>>();
     const routeBuildings = passableWalls?.size
@@ -3624,11 +3657,13 @@ export class GameModel {
           solidBuildings,
           (target, power) => this.damage(target, power),
           this.onEffect,
+          undefined,
+          isTargetableLive,
         )
       )
         continue;
       let target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
-      if (!target || !targetableBuilding(b, target)) target = undefined;
+      if (!target || !isTargetableLive(target)) target = undefined;
       if (!target) {
         // Min-scan instead of filter-sort over the whole building list.
         let best: (typeof b.buildings)[number] | undefined;
@@ -3637,7 +3672,7 @@ export class GameModel {
         let bestDist = Infinity;
         const angry = (u.native?.angryUntil ?? 0) > b.elapsed && !troop.healer;
         for (const v of knownBuildings) {
-          if (v.kind === 'wall' || !targetableBuilding(b, v)) continue;
+          if (v.kind === 'wall' || !isTargetableLive(v)) continue;
           const dTo = distanceTo(u, v);
           if (dTo < bestDist) {
             bestDist = dTo;
@@ -3750,24 +3785,18 @@ export class GameModel {
       }
       if (!u.path.length || u.pathAt <= 0) {
         // Per-tick A* budget: defer overflow to the next tick instead of spiking.
-        if (repathsThisTick >= REPATH_BUDGET) {
+        if (repathState.count >= repathState.limit) {
           u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
         } else {
-          repathsThisTick++;
+          repathState.count++;
           u.path = findPath(u, target, routeBuildings, d.range, !!b.nativeSubtiles, breaches);
           u.pathAt = 1.5;
         }
       }
       const next = u.path[0];
       if (next) {
-        const wall = b.buildings.find(
-          (v) =>
-            v.kind === 'wall' &&
-            v.hp > 0 &&
-            !passableWalls?.has(v.id) &&
-            Math.floor(next.x) === v.x &&
-            Math.floor(next.y) === v.y,
-        );
+        const hit = wallTile.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x));
+        const wall = hit && hit.hp > 0 && !passableWalls?.has(hit.id) ? hit : undefined;
         if (wall && distanceTo(u, wall) <= d.range) {
           u.attacking = true;
           if (u.cooldown <= 0) {
@@ -3804,13 +3833,8 @@ export class GameModel {
           let travel = d.speed * unitDt;
           while (travel > 0 && u.path.length) {
             const point = u.path[0];
-            const walled = b.buildings.some(
-              (v) =>
-                v.kind === 'wall' &&
-                v.hp > 0 &&
-                Math.floor(point.x) === v.x &&
-                Math.floor(point.y) === v.y,
-            );
+            const walledTile = wallTile.get(Math.floor(point.y) * MAP_SIZE + Math.floor(point.x));
+            const walled = !!walledTile && walledTile.hp > 0;
             if (point !== next && walled) break;
             // Crowd separation can push a unit past a half-tile waypoint. Walking back to it
             // stalls whole crowds, so a non-wall waypoint the unit already passed along the
@@ -3863,6 +3887,9 @@ export class GameModel {
     this.stepLate('traps', dt);
     stepMortarShells(b, this.onEffect);
     stepInfernos(b, dt);
+    // Unit visibility is fixed for the defense phase (only hp changes below).
+    const hiddenUnits = new Set<number>();
+    for (const u of b.units) if (untargetable(b, u)) hiddenUnits.add(u.id);
     for (const tower of b.buildings) {
       if (defenses && nativeDefense(b, tower)) {
         stepNativeDefense(defenses, tower, dt);
@@ -3925,20 +3952,25 @@ export class GameModel {
       tower.cooldown -= boost.rate === 1 ? activeDt : activeDt * boost.rate;
       if (tower.cooldown > 0) continue;
       const center = { x: tower.x + d.size / 2, y: tower.y + d.size / 2 };
-      // One distance evaluation per unit; the sort below is stable and orders by
-      // distance only, so equal-range ties keep battle-array order exactly as before.
+      // Min-scan with the old sort's winner (distance, then smaller unit id).
       const range = d.range!;
       const minRange = d.minRange ?? 0;
-      const scored: { u: (typeof b.units)[number]; dist: number }[] = [];
+      const stickyId = b.defenseTargets[tower.id];
+      let sticky: (typeof b.units)[number] | undefined;
+      let best: (typeof b.units)[number] | undefined;
+      let bestDist = Infinity;
       for (const u of b.units) {
-        if (u.hp <= 0 || untargetable(b, u) || !canTarget(d.targets, u.kind)) continue;
+        if (u.hp <= 0 || hiddenUnits.has(u.id) || !canTarget(d.targets, u.kind)) continue;
         const dist = distance2D(u.x - center.x, u.y - center.y);
-        if (dist <= range && dist >= minRange) scored.push({ u, dist });
+        if (dist > range || dist < minRange) continue;
+        if (u.id === stickyId) sticky = u;
+        if (best === undefined || dist < bestDist || (dist === bestDist && u.id < best.id)) {
+          best = u;
+          bestDist = dist;
+        }
       }
       // Keep firing at the same eligible target until it dies or leaves range.
-      const target =
-        scored.find((s) => s.u.id === b.defenseTargets[tower.id])?.u ??
-        scored.sort((a, c) => a.dist - c.dist)[0]?.u;
+      const target = sticky ?? best;
       if (target) {
         b.defenseTargets[tower.id] = target.id;
         // Carry the fraction of a frame past the deadline, so sustained fire
@@ -4520,6 +4552,24 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Keyframe ring every 10s so backward seeks start near the target, not at tick zero. */
+  private maybeKeyframe() {
+    const r = this.replay!;
+    const last = this.replayKeyframes.at(-1);
+    if (last && r.time - last.time < 10) return;
+    try {
+      this.replayKeyframes.push({
+        time: r.time,
+        step: this.replayStep,
+        action: this.replayAction,
+        battle: structuredClone(this.replayRunner!.battle) as Battle,
+        nextId: this.replayRunner!.state.nextId,
+      });
+      if (this.replayKeyframes.length > 36) this.replayKeyframes.shift();
+    } catch {
+      // Cloning can fail on very large battles; seeking still works from zero.
+    }
+  }
   private advanceReplaySeek() {
     const r = this.replay!,
       data = this.replayData!;
@@ -4537,22 +4587,7 @@ export class GameModel {
       r.time += dt;
       this.replayRunner!.step(dt);
       this.applyReplayActions();
-      // Keyframe ring every 10s for backward seeks.
-      const last = this.replayKeyframes.at(-1);
-      if (!last || r.time - last.time >= 10) {
-        try {
-          this.replayKeyframes.push({
-            time: r.time,
-            step: this.replayStep,
-            action: this.replayAction,
-            battle: structuredClone(this.replayRunner!.battle) as Battle,
-            nextId: this.replayRunner!.state.nextId,
-          });
-          if (this.replayKeyframes.length > 36) this.replayKeyframes.shift();
-        } catch {
-          // Cloning can fail on very large battles; seeking still works from zero.
-        }
-      }
+      this.maybeKeyframe();
     }
     if (
       this.replayStep === data.steps.length ||
@@ -4635,6 +4670,7 @@ export class GameModel {
       replay.time += delta;
       this.replayRunner!.step(delta);
       this.applyReplayActions();
+      this.maybeKeyframe();
     }
   }
   returnHome() {
@@ -4807,7 +4843,7 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
   for (const wall of walls) wallTiles.set(wall.y * MAP_SIZE + wall.x, wall);
   const structures = buildings
     .filter((b) => b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0)
-    .sort((a, b) => distanceTo(u, a) - distanceTo(u, b));
+    .sort((a, b) => distanceTo(u, a) - distanceTo(u, b) || a.id - b.id);
   const candidates: Building[] = [];
   for (const structure of structures.slice(0, 5)) {
     const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
@@ -4816,12 +4852,14 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
       .find((wall) => wall !== undefined);
     if (obstruction) candidates.push(obstruction);
   }
-  return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b))[0];
+  return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b) || a.id - b.id)[0];
 }
 // A* on the occupancy grid. Walls carry a break-through cost, buildings are solid.
 // Version-44 native campaign battles pass `subtiles` for the client's building-edge lanes.
 // Pooled buffers: findPath runs many times per tick, so reuse fixed grid buffers
 // instead of allocating ~8 MAP_SIZE² arrays per call (no reentrancy: single-threaded).
+// Search state uses a generation stamp: bumping one counter replaces five full-array
+// fills per search, with identical observable behavior.
 const PATH_CELLS = MAP_SIZE * MAP_SIZE;
 const pathBlocked = new Uint8Array(PATH_CELLS);
 const pathWall = new Uint8Array(PATH_CELLS);
@@ -4832,6 +4870,8 @@ const pathPriority = new Float64Array(PATH_CELLS);
 const pathHeuristic = new Float64Array(PATH_CELLS);
 const pathOrder = new Uint32Array(PATH_CELLS);
 const pathPosition = new Int16Array(PATH_CELLS);
+const pathStamp = new Uint32Array(PATH_CELLS);
+let pathEpoch = 0;
 const pathOpen: number[] = [];
 export function findPath(
   start: { x: number; y: number },
@@ -4868,17 +4908,28 @@ export function findPath(
   const cost = pathCost;
   const prev = pathPrev;
   const closed = pathClosed;
-  cost.fill(Infinity);
-  prev.fill(-1);
-  closed.fill(0);
   // Stable heap preserves the old queue's first-in tie order. A decrease updates
   // the existing entry rather than making every search rescan the entire queue.
   const priority = pathPriority;
   const heuristic = pathHeuristic;
   const order = pathOrder;
   const position = pathPosition;
-  heuristic.fill(NaN);
-  position.fill(-1);
+  // Generation stamp replaces cost/prev/closed/heuristic/position fills.
+  if (pathEpoch === 0xffffffff) {
+    pathStamp.fill(0);
+    pathEpoch = 0;
+  }
+  const epoch = ++pathEpoch;
+  const fresh = (n: number) => {
+    if (pathStamp[n] !== epoch) {
+      pathStamp[n] = epoch;
+      cost[n] = Infinity;
+      prev[n] = -1;
+      closed[n] = 0;
+      heuristic[n] = NaN;
+      position[n] = -1;
+    }
+  };
   const open = pathOpen;
   open.length = 0;
   let sequence = 0;
@@ -4926,6 +4977,7 @@ export function findPath(
     }
     return node;
   };
+  fresh(first);
   cost[first] = 0;
   queue(first);
   let goal = -1;
@@ -4957,6 +5009,10 @@ export function findPath(
       const dx = center.x - tx,
         dy = center.y - ty,
         distance = distance2D(dx, dy);
+      if (distance <= 1e-9) {
+        goal = current;
+        break;
+      }
       const reach = Math.max(0, range - 1e-6); // Stay inside range despite float rounding.
       const point = { x: tx + (dx * reach) / distance, y: ty + (dy * reach) / distance };
       if (Math.floor(point.x) === x && Math.floor(point.y) === y) {
@@ -4975,7 +5031,9 @@ export function findPath(
         ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
       const n = ny * size + nx;
-      if (blocked[n] || closed[n]) continue;
+      if (blocked[n]) continue;
+      fresh(n);
+      if (closed[n]) continue;
       const next = cost[current] + 1 + (wall[n] ? 6 : 0);
       if (next < cost[n]) {
         cost[n] = next;

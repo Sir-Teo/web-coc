@@ -40,6 +40,7 @@ function arena(kind: HeroKind, items = heroDefaultItems(kind)) {
         effect: () => {},
         damageBuilding: () => {},
         buildings: b.buildings,
+        buildingsById: new Map(b.buildings.map((v) => [v.id, v])),
         passableWalls: new Set<number>(),
         nextId: () => m.state.nextId++,
         troopLevel: () => 1,

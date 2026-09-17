@@ -147,8 +147,20 @@ export interface NativeChainHop {
 export interface NativeTroopContext extends NativeSpellContext {
   /** Known targets: concealed Teslas and traps are already excluded. */
   buildings: Building[];
+  /** Same list by id: replaces the per-unit linear find on retarget. */
+  buildingsById: Map<number, Building>;
   /** Walls inside active Jump Spells: every ground route passes over them. */
   passableWalls: Set<number>;
+  /**
+   * Walls by tile for per-waypoint lookups; hp verified live at each hit.
+   * Rebuilt with the context; cleared when the building list is reassigned.
+   */
+  wallTile?: Map<number, Building>;
+  /**
+   * Shared per-tick A* budget for large battles (same gate as the legacy loop).
+   * Absent in small battles so historical hashes are untouched.
+   */
+  pathBudget?: { count: number; limit: number };
   nextId(): number;
   troopLevel(kind: TroopKind): number;
 }
@@ -304,7 +316,7 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     if (hall) return hall;
   }
   if (s.preferredClass === 'Wall') {
-    const breach = breachTarget(u, ctx.buildings);
+    const breach = breachTarget(u, ctx.buildings, !!ctx.battle.nativeSubtiles);
     if (breach) return breach;
   }
   const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetableBuilding(battle, b));
@@ -451,7 +463,8 @@ export function stepNativeUnit(
     )
   )
     return;
-  let target = ctx.buildings.find((b) => b.id === u.target && targetableBuilding(battle, b));
+  let target = ctx.buildingsById.get(u.target ?? -1);
+  if (!target || !targetableBuilding(battle, target)) target = undefined;
   if (!target) {
     target = chooseTarget(ctx, u, s);
     if (!target) {
@@ -550,25 +563,38 @@ export function stepNativeUnit(
   }
   const jumping = s.jumper;
   if (!u.path.length || u.pathAt <= 0) {
-    u.path = findPath(
-      u,
-      target,
-      ctx.buildings.filter((b) => b.kind !== 'wall' || (!jumping && !ctx.passableWalls.has(b.id))),
-      s.range,
-    );
-    u.pathAt = 1.5;
+    // Large-battle A* budget shared with the legacy loop; defer overflow a tick.
+    if (ctx.pathBudget && ctx.pathBudget.count >= ctx.pathBudget.limit) {
+      u.pathAt = Math.min(Math.max(u.pathAt, 0.05), 0.15);
+    } else {
+      if (ctx.pathBudget) ctx.pathBudget.count++;
+      u.path = findPath(
+        u,
+        target,
+        ctx.buildings.filter(
+          (b) => b.kind !== 'wall' || (!jumping && !ctx.passableWalls.has(b.id)),
+        ),
+        s.range,
+        !!ctx.battle.nativeSubtiles,
+      );
+      u.pathAt = 1.5;
+    }
   }
   const next = u.path[0];
   if (!next) return;
   if (!jumping) {
-    const wall = battle.buildings.find(
-      (v) =>
-        v.kind === 'wall' &&
-        v.hp > 0 &&
-        !ctx.passableWalls.has(v.id) &&
-        Math.floor(next.x) === v.x &&
-        Math.floor(next.y) === v.y,
-    );
+    const hit = ctx.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x));
+    const wall =
+      hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id)
+        ? hit
+        : battle.buildings.find(
+            (v) =>
+              v.kind === 'wall' &&
+              v.hp > 0 &&
+              !ctx.passableWalls.has(v.id) &&
+              Math.floor(next.x) === v.x &&
+              Math.floor(next.y) === v.y,
+          );
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
       u.attacking = true;
       if (u.cooldown <= 0) {
@@ -1242,6 +1268,7 @@ function stepRuinWitch(
       { x: pile.x, y: pile.y, level: pile.level, kind: pile.kind } as Building,
       ctx.buildings.filter((b) => b.hp > 0),
       1,
+      !!ctx.battle.nativeSubtiles,
     );
     u.pathAt = 1.5;
   }

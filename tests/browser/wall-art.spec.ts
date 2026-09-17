@@ -90,8 +90,11 @@ test('an instant upgrade refreshes the post and connector material without movin
   await expect
     .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.texture.key, before.id))
     .toBe('wall-level-4');
-  const signature = await page.evaluate(
-    () => (window.__game.scene as unknown as { wallSignature: string }).wallSignature,
+  const signature = await page.evaluate(() =>
+    [...window.__game.scene.wallLinks.values()]
+      .map((l: { a: number; b: number }) => `${l.a}:${l.b}`)
+      .sort()
+      .join(';'),
   );
   await page.locator('[data-action="wall-upgrade:gold"]').click();
   await expect(page.locator('.wall-context .context-art')).toHaveAttribute('src', /level-5.webp$/);
@@ -99,8 +102,11 @@ test('an instant upgrade refreshes the post and connector material without movin
     .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.texture.key, before.id))
     .toBe('wall-level-5');
   expect(
-    await page.evaluate(
-      () => (window.__game.scene as unknown as { wallSignature: string }).wallSignature,
+    await page.evaluate(() =>
+      [...window.__game.scene.wallLinks.values()]
+        .map((l: { a: number; b: number }) => `${l.a}:${l.b}`)
+        .sort()
+        .join(';'),
     ),
   ).not.toBe(signature);
   expect(
@@ -156,21 +162,13 @@ test('mixed-level row previews preserve individual artwork and battle destructio
   await expect
     .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.texture.key, id))
     .toBe('wall-level-6');
-  const links = await page.evaluate(
-    () => (window.__game.scene as unknown as { wallViews: unknown[] }).wallViews.length,
-  );
+  const links = await page.evaluate(() => window.__game.scene.wallLinks.size);
   await page.evaluate((id) => {
     const m = window.__game.model;
     m.battle!.buildings.find((b) => b.id === id)!.hp = 0;
     m.changed();
   }, id);
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window.__game.scene as unknown as { wallViews: unknown[] }).wallViews.length,
-      ),
-    )
-    .toBe(links - 2);
+  await expect.poll(() => page.evaluate(() => window.__game.scene.wallLinks.size)).toBe(links - 2);
   expect(await page.evaluate(() => window.__game.scene.wallGhosts.size)).toBe(0);
 });
 

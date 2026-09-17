@@ -37,7 +37,13 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, 
   if (base && trap.npc === 'pumpkin-bomb') return { ...base, ...PUMPKIN_BOMB };
   if (base && trap.npc === 'santa-trap') return { ...base, ...SANTA_TRAP };
   if (base && trap.npc === 'shrink-trap') return { ...base, ...SHRINK_TRAP };
-  if (base && battle?.nativeRoster && !trap.npc && battle.catalog !== 'goblin-v1' && NATIVE_TRAP_SOURCE[trap.kind]) {
+  if (
+    base &&
+    battle?.nativeRoster &&
+    !trap.npc &&
+    battle.catalog !== 'goblin-v1' &&
+    NATIVE_TRAP_SOURCE[trap.kind]
+  ) {
     // Version 45: every level's values come from the client rows (Town Hall 9-18 levels included).
     const values = nativeTrapValues(trap.kind, trap.level);
     return {
@@ -57,6 +63,33 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, 
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
   if (battle.finished) return false;
   let changed = false;
+  const unitById = new Map(battle.units.map((u) => [u.id, u]));
+  // Unit position grid for trigger searches: every unresolved trap scans for units
+  // in its trigger circle each tick. Refs are shared so eligibility stays live;
+  // only positions can go stale, and the sole in-phase mover (fling) clears it.
+  const CELL = 4;
+  let grid: Map<string, Unit[]> | null = null;
+  const ensureGrid = () => {
+    if (grid) return grid;
+    grid = new Map();
+    for (const u of battle.units) {
+      const key = `${Math.floor(u.x / CELL)},${Math.floor(u.y / CELL)}`;
+      let list = grid.get(key);
+      if (!list) grid.set(key, (list = []));
+      list.push(u);
+    }
+    return grid;
+  };
+  const nearUnits = (x: number, y: number, r: number): Unit[] => {
+    const g = ensureGrid();
+    const out: Unit[] = [];
+    for (let cx = Math.floor((x - r) / CELL); cx <= Math.floor((x + r) / CELL); cx++)
+      for (let cy = Math.floor((y - r) / CELL); cy <= Math.floor((y + r) / CELL); cy++) {
+        const list = g.get(`${cx},${cy}`);
+        if (list) out.push(...list);
+      }
+    return out;
+  };
   for (const trap of battle.buildings) {
     // From version 51 the native engine owns the Town Hall 11+ traps at home. A campaign
     // layout's own traps stay with the late family that has always stepped them.
@@ -89,21 +122,27 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       (!d.springCapacity || (u.springUntil ?? 0) <= battle.elapsed) &&
       (mode === 'both' || !!TROOPS[u.kind].flying === (mode === 'air'));
     if (!state) {
-      const nearby: { u: Unit; dist: number }[] = [];
-      for (const u of battle.units) {
+      // Min-scan with the old sort's winner (spring housing, distance, id).
+      let pick: Unit | undefined;
+      let pickSpace = -Infinity;
+      let pickDist = Infinity;
+      for (const u of nearUnits(center.x, center.y, d.trigger)) {
         if (!eligible(u)) continue;
         const dist = distance2D(u.x - center.x, u.y - center.y);
-        if (dist <= d.trigger) nearby.push({ u, dist });
+        if (dist > d.trigger) continue;
+        const space = u.hero ? 25 : TROOPS[u.kind].space;
+        const lead = d.springCapacity ? space - pickSpace : 0;
+        if (
+          pick === undefined ||
+          lead > 0 ||
+          (lead === 0 && (dist < pickDist || (dist === pickDist && u.id < (pick as Unit).id)))
+        ) {
+          pick = u;
+          pickSpace = space;
+          pickDist = dist;
+        }
       }
-      nearby.sort(
-        (a, b) =>
-          (d.springCapacity
-            ? (b.u.hero ? 25 : TROOPS[b.u.kind].space) - (a.u.hero ? 25 : TROOPS[a.u.kind].space)
-            : 0) ||
-          a.dist - b.dist ||
-          a.u.id - b.u.id,
-      );
-      const target = nearby[0]?.u;
+      const target = pick;
       if (!target) continue;
       state = battle.traps[trap.id] = {
         activatedAt: battle.elapsed,
@@ -152,7 +191,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     if (d.homingSpeed) {
       const flight = (state.mine ??= { trail: [], nextTrail: 0 });
       // A mine follows one live air target; loss of that target consumes the shot.
-      const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
+      const homing = unitById.get(state.targetId);
+      const target = homing && eligible(homing) ? homing : undefined;
       if (!target) {
         state.resolved = true;
         flight.resolvedAt = battle.elapsed;
@@ -213,7 +253,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     if (d.targets === 'air') {
       if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
-      const target = battle.units.find((u) => u.id === state.targetId);
+      const target = unitById.get(state.targetId);
       if (target) {
         const remaining = Math.max(dt, state.activatedAt + d.delay - battle.elapsed + dt);
         const fraction = Math.min(1, dt / remaining);
@@ -226,7 +266,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     changed = true;
     const power = d.damage;
     if (d.springCapacity) {
-      const target = battle.units.find((u) => u.id === state.targetId && eligible(u));
+      const springing = unitById.get(state.targetId);
+      const target = springing && eligible(springing) ? springing : undefined;
       if (!target) continue;
       const outcome = target.hero
         ? { ejected: false, hp: Math.max(0, target.hp - power * 0.5) }
@@ -253,8 +294,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
             u.hp > 0 &&
             (u.hero ? 25 : TROOPS[u.kind].space) <=
               ((d as { pushbackHousing?: number }).pushbackHousing ?? 0)
-          )
+          ) {
             fling(battle, u, state.x, state.y, d.pushback as number);
+            grid = null; // Positions moved: later trigger searches rebuild.
+          }
         }
       effect({
         type: 'blast',
