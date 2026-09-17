@@ -77,7 +77,7 @@ export function stepSanta(battle: Battle, state: TrapState) {
         (unit.spawnedAt ?? 0) <= strike.hitAt + 1e-9 &&
         distance2D(unit.x - strike.x, unit.y - strike.y) <= SANTA_SPELL.radius
       )
-        hurtUnit(battle, unit, SANTA_SPELL.damage);
+        hurtUnit(battle, unit, SANTA_SPELL.damage, battle.elapsed, undefined, true);
     santa.hits++;
     changed = true;
   }

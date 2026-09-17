@@ -148,7 +148,11 @@ export function stepNativeSpells(ctx: NativeSpellContext) {
       if (at > battle.elapsed + 1e-9) break;
       if (cast.follow !== undefined) {
         const owner = battle.units.find((u) => u.id === cast.follow);
-        if (!owner || owner.hp <= 0) {
+        if (
+          !owner ||
+          owner.hp <= 0 ||
+          (battle.nativeHeroPassives && (owner.ejected || owner.native?.recalled))
+        ) {
           cast.ended = true;
           break;
         }
@@ -396,11 +400,25 @@ function supportAttackers(
       const e = unitEffects(u);
       const cap = num(row, 'ExtraHealthMax');
       const amount = Math.min(cap > 0 ? cap : Infinity, (u.maxHp * extraPermil) / 1000);
-      e.extraHp = {
-        until: at + (cast.interval || 0.3) + 1e-6,
-        amount:
-          e.extraHp && e.extraHp.until >= at - 1e-9 ? Math.max(e.extraHp.amount, amount) : amount,
-      };
+      const until = at + (cast.interval || 0.3) + 1e-6;
+      const previous = e.extraHp && e.extraHp.until >= at - 1e-9 ? e.extraHp : undefined;
+      if (battle.nativeHeroPassives) {
+        // Overlapping life auras use the strongest live source. Refreshing the
+        // radius must neither replenish consumed health nor stack two auras.
+        const sources = Object.fromEntries(
+          Object.entries(previous?.sources ?? {}).filter(([, source]) => source.until >= at - 1e-9),
+        );
+        sources[cast.id] = { until, capacity: amount };
+        const capacity = Math.max(...Object.values(sources).map((source) => source.capacity));
+        e.extraHp = {
+          sources,
+          capacity,
+          until: Math.max(...Object.values(sources).map((source) => source.until)),
+          amount: previous
+            ? Math.max(0, previous.amount + capacity - (previous.capacity ?? capacity))
+            : capacity,
+        };
+      } else e.extraHp = { until, amount: previous ? Math.max(previous.amount, amount) : amount };
     }
     if (immortal) {
       const e = unitEffects(u);

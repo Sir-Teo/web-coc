@@ -114,7 +114,7 @@ export function stepNativeTrap(battle: Battle, trap: Building, effect: (fx: FX) 
     if (!live(u, when) || u.native?.burrowed) continue;
     const d = distance2D(u.x - c.x, u.y - c.y);
     if (d > values.radius + 1e-9) continue;
-    hurtUnit(battle, u, values.damage, when);
+    hurtUnit(battle, u, values.damage, when, undefined, true);
     if (d <= values.throwRadius + 1e-9 && !u.native?.siege && u.hp > 0)
       fling(battle, u, c.x, c.y, values.throwDistance);
     u.target = null;
@@ -191,7 +191,7 @@ export function tornadoPulse(
       dy = u.y - cast.y,
       d = distance2D(dx, dy);
     if (d > radius + 1e-9) continue;
-    if (num(row, 'Damage') > 0) hurtUnit(battle, u, num(row, 'Damage'), at);
+    if (num(row, 'Damage') > 0) hurtUnit(battle, u, num(row, 'Damage'), at, undefined, true);
     if (u.native?.burrowed || u.hp <= 0 || d < 1e-6) continue;
     const tier = u.native?.siege
       ? siegeTier

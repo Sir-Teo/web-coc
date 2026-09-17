@@ -370,7 +370,7 @@ import {
   type HeroSetup,
   type NativeBattleHero,
 } from './native-heroes';
-import { activateHero, stepHeroAbilities } from './native-hero-abilities';
+import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
 import { HERO_UNIT } from './native-hero-data';
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
@@ -571,6 +571,8 @@ export interface Battle {
   /** Version 45+: native troop abilities, spawned units, statuses and delayed death effects. */
   nativeRoster?: true;
   nativeContentExpansion?: true;
+  /** Version 53: passive hero auras and Royal Rampage. */
+  nativeHeroPassives?: true;
   siegeDeployed?: boolean;
   nativeSpells?: NativeSpellCast[];
   nativeSpellSequence?: number;
@@ -2886,6 +2888,10 @@ export class GameModel {
       });
     }
     hero.deployed = true;
+    if (b.nativeHeroPassives) {
+      const native = this.nativeContext(b);
+      refreshHeroPassives(native, hero, b.units.find((u) => u.id === hero.unitId)!);
+    }
     this.onEffect({ type: 'spawn', x, y });
     this.changed();
     return true;
@@ -3438,6 +3444,11 @@ export class GameModel {
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
     const native = b.nativeRoster ? this.nativeContext(b) : null;
+    if (native && b.nativeHeroPassives)
+      for (const hero of b.nativeHeroes ?? []) {
+        const unit = b.units.find((u) => u.id === hero.unitId);
+        if (unit) refreshHeroPassives(native, hero, unit);
+      }
     const defenses: NativeDefenseContext | null = native
       ? {
           ...native,

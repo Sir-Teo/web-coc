@@ -605,6 +605,9 @@ function moveToward(u: Unit, point: { x: number; y: number }, travel: number) {
 
 /** Abilities active while no other friendly unit is nearby (Baby Dragon). */
 function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUnitState) {
+  // Version 53 hero passives feed the shared damage and attack-interval scales.
+  // Keep the original path for Baby Dragons and historical recordings.
+  if (battle.nativeHeroPassives && u.hero) return 1;
   if (!s.ability) return 1;
   const row = nativeRow('abilities', s.ability, s.abilityLevel);
   const radius = tiles(row, 'ActiveWhileAloneRadius');

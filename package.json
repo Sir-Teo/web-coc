@@ -11,7 +11,7 @@
     "test:e2e": "playwright test",
     "test:production": "node scripts/release-check.mjs",
     "test:heroes:production": "node scripts/hero-production-check.mjs",
-    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs && node scripts/defense-assets.mjs && node scripts/hero-assets.mjs && node scripts/king-assets.mjs && node scripts/air-magic-assets.mjs && node scripts/ruins-assets.mjs && node scripts/specialist-walk-assets.mjs && node scripts/terrain-assets.mjs && node scripts/wall-assets.mjs && node scripts/mortar-assets.mjs && node scripts/camp-assets.mjs && node scripts/barbarian-assets.mjs && node scripts/late-troop-assets.mjs && node scripts/air-control-assets.mjs && node scripts/tesla-assets.mjs && node scripts/bomb-tower-assets.mjs && node scripts/skeleton-assets.mjs && node scripts/blacksmith-assets.mjs && node scripts/goblin-assets.mjs && node scripts/campaign-scenery-assets.mjs",
+    "assets": "node scripts/assets.mjs && node scripts/walk-atlas.mjs && node scripts/tier3-assets.mjs && node scripts/derived-assets.mjs && node scripts/raiding-assets.mjs && node scripts/defense-assets.mjs && node scripts/hero-assets.mjs && node scripts/king-assets.mjs && node scripts/hero-redesign-assets.mjs && node scripts/air-magic-assets.mjs && node scripts/ruins-assets.mjs && node scripts/specialist-walk-assets.mjs && node scripts/terrain-assets.mjs && node scripts/wall-assets.mjs && node scripts/mortar-assets.mjs && node scripts/camp-assets.mjs && node scripts/barbarian-assets.mjs && node scripts/late-troop-assets.mjs && node scripts/air-control-assets.mjs && node scripts/tesla-assets.mjs && node scripts/bomb-tower-assets.mjs && node scripts/skeleton-assets.mjs && node scripts/blacksmith-assets.mjs && node scripts/goblin-assets.mjs && node scripts/campaign-scenery-assets.mjs",
     "format": "prettier --write src tests scripts *.ts *.json index.html",
     "check": "npm run test:imports && npm test && npm run build",
     "deploy": "npm run build && npx -y firebase-tools deploy --only hosting:coc-teozeng --project personal-website-3bc37",
@@ -42,7 +42,8 @@
     "test:th18:offline": "node scripts/th18-offline-check.mjs",
     "test:asset-library": "node scripts/asset-library-check.mjs",
     "test:imports": "node scripts/check-test-imports.mjs",
-    "test:army:browser": "node scripts/army-load-check.mjs"
+    "test:army:browser": "node scripts/army-load-check.mjs",
+    "test:heroes:art": "node scripts/hero-redesign-assets.mjs --check"
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",

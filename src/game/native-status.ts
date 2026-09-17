@@ -11,6 +11,8 @@ export interface UnitEffects {
   chill?: { until: number; percent: number };
   /** Strongest active friendly boost; rage-like spells do not stack with each other. */
   boost?: { until: number; speed: number; damage: number; attackSpeed: number };
+  /** Dragon Duke's innate boost, separate from temporary spells and equipment. */
+  rampage?: { damage: number; attackSpeed: number; trapProtection: number };
   /** Enemy poison slows and damages over time. */
   poison?: {
     until: number;
@@ -25,7 +27,12 @@ export interface UnitEffects {
   invisibleUntil?: number;
   shield?: { until: number; percent: number };
   /** Temporary health granted by life auras; damage consumes it before hitpoints. */
-  extraHp?: { until: number; amount: number };
+  extraHp?: {
+    until: number;
+    amount: number;
+    capacity?: number;
+    sources?: Record<number, { until: number; capacity: number }>;
+  };
   immortalUntil?: number;
   /** Defensive earthquake casts already felt, for 1/(2n-1) repeated damage. */
   quakeCasts?: number[];
@@ -117,14 +124,25 @@ export const unitSpeedBonus = (unit: Unit, at: number) => {
 };
 export const unitDamageScale = (unit: Unit, at: number) => {
   const boost = unit.native?.effects?.boost;
-  return boost && boost.until > at + 1e-9 ? 1 + boost.damage : 1;
+  return (
+    1 +
+    Math.max(
+      boost && boost.until > at + 1e-9 ? boost.damage : 0,
+      unit.native?.effects?.rampage?.damage ?? 0,
+    )
+  );
 };
 /** Multiplier on the time between attacks. */
 export function unitAttackIntervalScale(unit: Unit, at: number) {
   const e = unit.native?.effects;
   if (!e) return 1;
   let speed = 1;
-  if (e.boost && e.boost.until > at + 1e-9) speed *= 1 + e.boost.attackSpeed;
+  speed *=
+    1 +
+    Math.max(
+      e.boost && e.boost.until > at + 1e-9 ? e.boost.attackSpeed : 0,
+      e.rampage?.attackSpeed ?? 0,
+    );
   if (e.poison && e.poison.until > at + 1e-9) speed *= Math.max(0.05, 1 + e.poison.attackSpeed);
   if (e.chill && e.chill.until > at + 1e-9) speed *= Math.max(0.05, 1 - e.chill.percent);
   return 1 / speed;
@@ -156,6 +174,7 @@ export function hurtUnit(
   amount: number,
   at = battle.elapsed,
   sourceId?: number,
+  trap = false,
 ) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const state = battle.nativeRoster ? unit.native : undefined;
@@ -163,6 +182,7 @@ export function hurtUnit(
   if (state?.burrowed || state?.recalled) return 0;
   const e = state?.effects;
   if (e) {
+    if (trap && e.rampage) amount *= Math.max(0, 1 - e.rampage.trapProtection);
     if ((e.immortalUntil ?? 0) > at + 1e-9) return 0;
     if (e.shield && e.shield.until > at + 1e-9) amount *= Math.max(0, 1 - e.shield.percent);
     if (e.extraHp && e.extraHp.until > at + 1e-9 && e.extraHp.amount > 0) {

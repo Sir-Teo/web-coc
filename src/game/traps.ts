@@ -197,7 +197,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
         state,
         true,
       );
-      hurtUnit(battle, target, d.damage);
+      hurtUnit(battle, target, d.damage, battle.elapsed, undefined, true);
       state.resolved = true;
       changed = true;
       effect({
@@ -245,7 +245,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     } else {
       for (const u of battle.units)
         if (eligible(u) && distance2D(u.x - state.x, u.y - state.y) <= d.radius) {
-          hurtUnit(battle, u, power);
+          hurtUnit(battle, u, power, battle.elapsed, undefined, true);
           // Version 45: bombs push small troops (Pushback / PushbackHousingLimit).
           if (
             'pushback' in d &&

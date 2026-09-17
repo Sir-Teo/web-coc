@@ -1,6 +1,9 @@
 import type Phaser from 'phaser';
 import { BUILDINGS, TROOPS } from './data';
 import { HERO_UNIT, PET_UNIT } from './native-hero-data';
+import { heroStatsFor } from './native-heroes';
+import { heroAttackInterval } from './native-hero-abilities';
+import { unitAttackIntervalScale } from './native-status';
 import type { Battle } from './model';
 
 export interface BakedFrame {
@@ -19,7 +22,17 @@ export interface BakedState {
 }
 interface Atlas {
   states: Record<string, BakedState>;
+  scale?: number;
+  normalizedAttack?: boolean;
 }
+/** Hero keys remain stable for prefetch/replays; only their presentation pack changes. */
+export const heroArtDirectory = (key: string) => {
+  const hero = key.startsWith('heroes-native/') ? key.slice('heroes-native/'.length) : '';
+  if (hero === 'king') return '/assets/characters/king-v1';
+  if (['queen', 'warden', 'champion', 'prince', 'duke'].includes(hero))
+    return `/assets/characters/hero-redesign-v1/${hero}`;
+  return `/assets/${key}`;
+};
 const KEYS: Record<string, string> = Object.fromEntries(
   [...Object.entries(HERO_UNIT), ...Object.entries(PET_UNIT)].map(([key, unit]) => [unit, key]),
 );
@@ -53,7 +66,8 @@ export class HeroNativePresentation {
     if (this.pending.has(key) || this.packs.has(key)) return;
     this.pending.add(key);
     try {
-      const response = await fetch(`/assets/${key}/atlas.json`);
+      const directory = heroArtDirectory(key);
+      const response = await fetch(`${directory}/atlas.json`);
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Atlas;
       const images = new Set(
@@ -64,7 +78,7 @@ export class HeroNativePresentation {
           const texture = `baked:${key}/${file}`;
           if (this.scene.textures.exists(texture)) return;
           const image = new Image();
-          image.src = `/assets/${key}/${file}`;
+          image.src = `${directory}/${file}`;
           await image.decode();
           if (!this.alive) return;
           const loaded = this.scene.textures.exists(texture)
@@ -121,6 +135,7 @@ export class HeroNativePresentation {
     if (battle) {
       const buildingById = new Map(battle.buildings.map((b) => [b.id, b]));
       const unitById = new Map(battle.units.map((u) => [u.id, u]));
+      const heroById = new Map((battle.nativeHeroes ?? []).map((hero) => [hero.unitId, hero]));
       const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
       const actors = [
         ...battle.units.flatMap((u) => {
@@ -129,6 +144,7 @@ export class HeroNativePresentation {
           const target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
           const enemy =
             typeof u.defenderTarget === 'number' ? defenderById.get(u.defenderTarget) : undefined;
+          const hero = heroById.get(u.id);
           return [
             {
               ...u,
@@ -143,7 +159,13 @@ export class HeroNativePresentation {
                     }
                   : undefined),
               fallback: units.get(u.id),
-              rate: TROOPS[u.kind].rate,
+              rate: hero
+                ? heroAttackInterval(
+                    u,
+                    battle.elapsed,
+                    heroStatsFor(hero, battle.townhall ?? 18).rate,
+                  ) * unitAttackIntervalScale(u, battle.elapsed)
+                : TROOPS[u.kind].rate,
             },
           ];
         }),
@@ -192,13 +214,15 @@ export class HeroNativePresentation {
         const stateName =
           actor.hp <= 0
             ? 'die'
-            : 'phase' in actor && actor.phase === 'leaping'
-              ? 'jump'
-              : actor.attacking
-                ? 'attack'
-                : moving
-                  ? 'walk'
-                  : 'idle';
+            : reduced && pack.normalizedAttack
+              ? 'idle'
+              : 'phase' in actor && actor.phase === 'leaping'
+                ? 'jump'
+                : actor.attacking
+                  ? 'attack'
+                  : moving
+                    ? 'walk'
+                    : 'idle';
         const since = old?.state === stateName ? old.since : battle.elapsed;
         this.positions.set(actor.id, {
           x: actor.x,
@@ -215,13 +239,15 @@ export class HeroNativePresentation {
         const deathAge = battle.elapsed - (actor.defeatedAt ?? battle.elapsed);
         actor.fallback?.setVisible(false);
         if (actor.hp <= 0 && deathAge > 1.5) continue;
-        const seconds = reduced
+        let seconds = reduced
           ? 0
           : actor.hp <= 0
             ? deathAge
             : actor.attacking && actor.kind !== 'guardian'
               ? Math.max(0, actor.rate - actor.cooldown)
               : battle.elapsed - since;
+        if (pack.normalizedAttack && actor.attacking && actor.hp > 0)
+          seconds /= Math.max(0.01, actor.rate);
         const frame = bakedFrame(state, direction, seconds);
         const texture = `baked:${actor.key}/${frame.image}`,
           name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
@@ -239,13 +265,15 @@ export class HeroNativePresentation {
         const invisible =
           'native' in actor && (actor.native?.effects?.invisibleUntil ?? 0) > battle.elapsed;
         const boosted =
-          'native' in actor && (actor.native?.effects?.boost?.until ?? 0) > battle.elapsed;
+          'native' in actor &&
+          ((actor.native?.effects?.boost?.until ?? 0) > battle.elapsed ||
+            !!actor.native?.effects?.rampage);
         const wantDepth = actor.flying ? 7500 : point.y + 1.2;
         sprite
           .setTexture(texture, name)
           .setOrigin(frame.anchorX / frame.w, frame.anchorY / frame.h)
           .setPosition(point.x, point.y - (actor.flying ? lift : 0))
-          .setScale(0.6 * scale)
+          .setScale((pack.scale ?? 0.6) * scale)
           .setAlpha(actor.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
         if (boosted) sprite.setTint(0xffbd76);
         else if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();

@@ -17,10 +17,10 @@ replay byte for byte; every rule below is gated behind the version and the battl
 | -------------- | ---------------- | ----------- | --------- |
 | Barbarian King | `Barbarian King` | Hero Hall 1 | 110       |
 | Archer Queen   | `Archer Queen`   | Hero Hall 2 | 110       |
-| Minion Prince  | `Minion Prince`  | Hero Hall 1 | 95        |
-| Grand Warden   | `Grand Warden`   | Hero Hall 4 | 85        |
-| Royal Champion | `Royal Champion` | Hero Hall 6 | 55        |
-| Dragon Duke    | `Dragon Duke`    | Hero Hall 8 | 25        |
+| Minion Prince  | `Minion Prince`  | Hero Hall 3 | 95        |
+| Grand Warden   | `Grand Warden`   | Hero Hall 5 | 85        |
+| Royal Champion | `Royal Champion` | Hero Hall 7 | 55        |
+| Dragon Duke    | `Dragon Duke`    | Hero Hall 9 | 25        |
 
 Caps are the lower of the hero's own table and the Hero Hall level, exactly as the client computes
 them. How many heroes may be taken into a battle comes from `TAVERN_LEVEL_TO_HERO_SLOT_COUNT`:
@@ -97,3 +97,32 @@ new spell timing, siege production and super licences. `tests/browser/native-her
 checks desktop/mobile rendering and missing asset requests. `tests/browser/hero-roster.spec.ts`
 covers the roster panel (all six heroes, upgrades, lineup swaps), pet research/assignment, per-hero
 forge tabs and multi-hero deployment/activation.
+
+## Version 53 hero completion
+
+Passive Life Gem, Rage Gem and Electro Boots auras now begin on deployment without spending
+an ability. They follow their owner, stop after death or Recall, and restart on redeployment.
+Life Gem preserves damage already absorbed instead of refilling its bonus health every pulse.
+
+Dragon Duke's Royal Rampage now uses a single damage and attack-speed calculation: double
+hit damage and a 1/1.5 attack interval while no other living air ally is within six tiles.
+His own pet, ground allies, recalled units and future summons do not suppress the passive.
+Other heroes' flying pets count. Rampage reduces trap damage by 20% and lights the baked
+sprite with the same boost tint used for active equipment. Version 52 and older recordings
+retain their previous combat calculations.
+
+`tests/hero-passives.test.ts` exercises every hero's deployment, one-use activation, combat,
+and saved replay, plus passive aura lifetime, consumed Life Gem health, Rampage's actual
+hit damage/cadence, nearby-air transitions, pet exclusion and trap-only damage reduction.
+`tests/browser/hero-roster.spec.ts` also deploys and activates all six heroes, verifies each
+hero's own baked atlas, and captures desktop and phone screenshots of both lineups.
+
+## Matching custom hero art
+
+The five other heroes now use generated portraits and four directional pose sets matching the
+approved Barbarian King artwork. The existing King sheets are reused through the same renderer.
+Idle, movement, cooldown-driven attacks, reduced motion, ability tint, invisibility and death
+fading all use the matching art. Pets and Guardians retain their native animation packs.
+See [the source record and exact prompts](../art/source/hero-redesign-v1/README.md).
+Run `npm run test:heroes:art` to verify the reproducible image imports. Original native hero
+assets remain preserved as references; this change only replaces the presentation.

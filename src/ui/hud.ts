@@ -191,7 +191,7 @@ const n = (v: number) => Math.floor(v).toLocaleString('en-US');
 const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
   `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
-/** Native roster portraits for every hero (the legacy King keeps its own `king` art). */
+/** Matching hero portraits; the legacy King alias uses the same approved art. */
 const HERO_PORTRAIT: Record<HeroKind, string> = {
   king: heroPortraitImage('king'),
   queen: heroPortraitImage('queen'),

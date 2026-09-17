@@ -84,9 +84,12 @@ export const heroAbility = (hero: HeroKey, level: number) => {
   return source.ability.tiers[row.tier - 1];
 };
 
-/**
- * The heroes this village actually offers, in the order the Hero Hall unlocks them. Every
- * other hero the source defines stays out of the game until it has artwork and an ability;
- * `scripts/content-inventory.py` reads this list, so the inventory cannot overstate it.
- */
-export const OFFERED: readonly HeroKey[] = ['barbarianKing'];
+/** Home-village heroes available through the native roster, in unlock order. */
+export const OFFERED: readonly HeroKey[] = [
+  'barbarianKing',
+  'archerQueen',
+  'minionPrince',
+  'grandWarden',
+  'royalChampion',
+  'dragonDuke',
+];

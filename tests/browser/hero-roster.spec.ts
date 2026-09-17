@@ -254,3 +254,99 @@ test('every deployed hero bakes its own atlas, never the King', async ({ page })
   }
   expect(errors).toEqual([]);
 });
+
+for (const lineup of [
+  ['king', 'queen', 'prince'],
+  ['warden', 'champion', 'duke'],
+])
+  test(`complete hero lineup: ${lineup.join(', ')}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (e) => {
+      if (e.type() === 'error') errors.push(e.text());
+    });
+    page.on('response', (r) => {
+      if (r.status() >= 400 && r.url().includes('/assets/')) errors.push(r.url());
+    });
+    await boot(page);
+    await page.evaluate(async (lineup) => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { HERO_KINDS, heroDefaultItems } = await import('/src/game/native-hero-data.ts');
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const m = window.__game.model;
+      m.state.obstacles = [];
+      m.state.buildings = [
+        makeBuilding(1, 'townhall', 22, 22, 18),
+        makeBuilding(2, 'herohall', 15, 15, 12),
+      ];
+      m.state.king = { level: 20 };
+      m.state.heroes = Object.fromEntries(
+        HERO_KINDS.filter((k) => k !== 'king').map((k) => [k, { level: 20 }]),
+      );
+      m.state.heroLineup = lineup;
+      m.state.gear = {
+        levels: Object.fromEntries(HERO_KINDS.flatMap(heroDefaultItems).map((s) => [s, 1])),
+        loadouts: Object.fromEntries(HERO_KINDS.map((k) => [k, heroDefaultItems(k)])),
+      };
+      m.state.army = { ...emptyArmy(), giant: 1 };
+      m.state.nextId = 5000;
+      m.startBattle(0, true);
+      m.battle.defenders = [];
+      m.changed();
+    }, lineup);
+    for (const [i, kind] of lineup.entries()) {
+      await page.locator(`[data-action="hero-select:${kind}"]`).click();
+      expect(await page.evaluate((i) => window.__game.model.deploy(10 + i * 2, 8), i)).toBe(true);
+    }
+    await expect
+      .poll(
+        () =>
+          page.evaluate((lineup) => {
+            const { scene, model: m } = window.__game;
+            return lineup.every((kind) => {
+              const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
+              return scene.children.list.some(
+                (o) =>
+                  o.getData?.('nativeHero') === hero.unitId &&
+                  o.visible &&
+                  o.texture.key.startsWith(`baked:heroes-native/${kind}/`) &&
+                  o.texture.source[0].image.src.includes('/assets/characters/'),
+              );
+            });
+          }, lineup),
+        { timeout: 15000 },
+      )
+      .toBe(true);
+    for (const kind of lineup) {
+      await page.locator(`[data-action="hero-select:${kind}"]`).click();
+      expect(
+        await page.evaluate((kind) => window.__game.model.battleHero(kind).abilityUsed, kind),
+      ).toBe(true);
+    }
+    await page.screenshot({ path: `output/playtest/heroes-${lineup[0]}-desktop.png` });
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const kind of lineup)
+      await expect(page.locator(`[data-action="hero-select:${kind}"]`)).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `output/playtest/heroes-${lineup[0]}-mobile.png` });
+    await page.evaluate(() => {
+      window.__game.model.state.settings.reducedMotion = true;
+      window.__game.model.changed();
+    });
+    await expect
+      .poll(() =>
+        page.evaluate((lineup) => {
+          const { scene, model: m } = window.__game;
+          return lineup.every((kind) => {
+            const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
+            return scene.children.list.some(
+              (o) => o.getData?.('nativeHero') === hero.unitId && o.frame.cutX === 0,
+            );
+          });
+        }, lineup),
+      )
+      .toBe(true);
+    expect(errors).toEqual([]);
+  });

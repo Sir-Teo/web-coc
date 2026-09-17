@@ -119,7 +119,7 @@ function stepVortices(battle: Battle, dt: number) {
       vortex.caught = [];
       for (const u of battle.units) {
         if (!eligible(u, at) || distance2D(u.x - vortex.x, u.y - vortex.y) > stats.radius) continue;
-        hurtUnit(battle, u, stats.damage, at);
+        hurtUnit(battle, u, stats.damage, at, undefined, true);
         // A Spring Trap survivor is airborne for its local toss; it is hit but not carried.
         if (u.hp <= 0 || (u.springUntil ?? 0) > at) continue;
         vortex.caught.push(u.id);

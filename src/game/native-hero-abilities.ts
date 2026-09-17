@@ -172,6 +172,7 @@ export function stepHeroAbilities(
   townhall: number,
 ) {
   const at = ctx.battle.elapsed;
+  refreshHeroPassives(ctx, hero, unit);
   stepEquipmentEffects(ctx, hero, unit);
   for (const ability of heroAbilities(hero)) {
     if (!ability.passive && hero.abilityUsed && text(ability.row, 'SpawnedTroop'))
@@ -180,6 +181,58 @@ export function stepHeroAbilities(
     stepPassive(ctx, hero, unit, ability, at, townhall);
   }
 }
+/** Recompute continuous effects before combat so new air deployments count immediately. */
+export function refreshHeroPassives(ctx: NativeTroopContext, hero: NativeBattleHero, unit: Unit) {
+  if (!ctx.battle.nativeHeroPassives || unit.hp <= 0 || unit.ejected || unit.native?.recalled)
+    return;
+  const at = ctx.battle.elapsed;
+  for (const ability of heroAbilities(hero)) {
+    if (!ability.passive) continue;
+    const row = ability.row;
+    // Passive equipment auras start without spending the player's ability. Track
+    // the unit id so Recall starts a fresh aura on the newly deployed unit.
+    const aura = text(row, 'AuraSpell');
+    if (aura) {
+      const state = (hero.charges ??= {});
+      const key = `aura:${ability.name}`;
+      if (state[key] !== unit.id) {
+        state[key] = unit.id;
+        castNativeSpell(
+          ctx.battle,
+          aura,
+          num(row, 'AuraSpellLevel', 1) || 1,
+          'attack',
+          unit.x,
+          unit.y,
+          { at, follow: unit.id, owner: unit.id, immediate: true },
+        );
+      }
+    }
+    const radius = tiles(row, 'ActiveWhileAloneRadius');
+    if (radius > 0) {
+      const crowded = ctx.battle.units.some(
+        (other) =>
+          other.id !== unit.id &&
+          other.id !== hero.petId &&
+          other.hp > 0 &&
+          !other.ejected &&
+          !other.native?.recalled &&
+          (other.spawnedAt ?? 0) <= at + EPS &&
+          isFlyingUnit(other) &&
+          heroDistance(unit, other) <= radius + EPS,
+      );
+      const effects = unitEffects(unit);
+      if (crowded) delete effects.rampage;
+      else
+        effects.rampage = {
+          damage: num(row, 'BoostDamagePercentage') / 100,
+          attackSpeed: num(row, 'BoostAttackSpeedPercentage') / 100,
+          trapProtection: num(row, 'TrapShieldProtectionPercent') / 100,
+        };
+    }
+  }
+}
+
 function stepPassive(
   ctx: NativeTroopContext,
   hero: NativeBattleHero,
