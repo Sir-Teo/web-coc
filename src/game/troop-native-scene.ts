@@ -60,8 +60,7 @@ export class TroopNativePresentation {
     const image = new Image();
     image.src = '/' + path;
     await image.decode();
-    if (this.alive && !this.scene.textures.exists(key))
-      this.scene.textures.addImage(key, image);
+    if (this.alive && !this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
   }
   private async load(kind: string) {
     if (this.pending.has(kind) || this.packs.has(kind)) return;
@@ -248,7 +247,25 @@ export class TroopNativePresentation {
         (u.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : 1) *
           ((u.native?.effects?.invisibleUntil ?? 0) > battle!.elapsed ? 0.35 : 1),
       );
-      for (const object of owned.view.objects) object.setData('nativeTroop', u.id);
+      // Ability boosts read gold on the fallback layer; mirror them on the meshes.
+      const meshTint =
+        (u.spellRageUntil ?? 0) > battle!.elapsed
+          ? 0xf2b3ff
+          : (u.native?.effects?.boost?.until ?? 0) > battle!.elapsed ||
+              (u.summoned && (u.rageUntil ?? 0) > battle!.elapsed)
+            ? 0xffbd76
+            : 0xffffff;
+      for (const object of owned.view.objects) {
+        object.setData('nativeTroop', u.id);
+        const tinted = object as unknown as {
+          tint: number;
+          setTint(color: number): void;
+          clearTint(): void;
+        };
+        if (meshTint === 0xffffff) {
+          if (tinted.tint !== 0xffffff) tinted.clearTint();
+        } else if (tinted.tint !== meshTint) tinted.setTint(meshTint);
+      }
     }
     for (const [id, { view }] of this.views)
       if (!wanted.has(id)) {
