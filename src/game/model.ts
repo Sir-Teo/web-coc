@@ -2890,7 +2890,7 @@ export class GameModel {
     }
     hero.deployed = true;
     if (b.nativeHeroPassives) {
-      const native = this.nativeContext(b);
+      const native = this.nativeContext(b, this.sharedWalls(b));
       refreshHeroPassives(
         native,
         hero,
@@ -2910,7 +2910,7 @@ export class GameModel {
     if (!b || b.finished || !hero || !unit || hero.abilityUsed || unit.spent) return false;
     if (!automatic && unit.hp <= 0) return false;
     if (!automatic) this.recordAction({ type: 'ability', hero: kind });
-    const native = this.nativeContext(b);
+    const native = this.nativeContext(b, this.sharedWalls(b));
     activateHero(
       {
         ...native,
@@ -3374,17 +3374,24 @@ export class GameModel {
   private supportOnly(b: Battle, kind: UnitKind) {
     return !!TROOPS[kind].healer && !isSiege(kind) && !(b.nativeRoster && kind === 'druid');
   }
-  /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
-  private nativeContext(b: Battle): NativeTroopContext {
-    const buildings = b.buildings.filter((v) => !concealedTesla(b, v));
+  /** Walls by tile for per-waypoint lookups; callers verify hp live at each hit. */
+  private sharedWalls(b: Battle) {
     const wallTile = new Map<number, Building>();
     for (const v of b.buildings)
       if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * MAP_SIZE + v.x, v);
+    return { wallTile };
+  }
+  /** Version 45 roster rules share model damage, identifiers and effects with legacy combat. */
+  private nativeContext(
+    b: Battle,
+    shared: { wallTile: Map<number, Building> },
+  ): NativeTroopContext {
+    const buildings = b.buildings.filter((v) => !concealedTesla(b, v));
     return {
       battle: b,
       buildings,
       buildingsById: new Map(buildings.map((v) => [v.id, v])),
-      wallTile,
+      wallTile: shared.wallTile,
       damageBuilding: (target, amount, at, spell) => this.damage(target, amount, at, spell),
       effect: (fx) => this.onEffect(fx),
       nextId: () => this.state.nextId++,
@@ -3454,7 +3461,9 @@ export class GameModel {
     b.elapsed += dt;
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect)) this.changed();
-    const native = b.nativeRoster ? this.nativeContext(b) : null;
+    // One wall index per tick, shared by the native context and the legacy loop below.
+    const shared = this.sharedWalls(b);
+    const native = b.nativeRoster ? this.nativeContext(b, shared) : null;
     // Shared per-tick A* budget, spent by native units first and the legacy
     // loop after. Only enforced for large battles so small-battle determinism
     // (historical hashes) is unchanged.
@@ -3513,10 +3522,7 @@ export class GameModel {
     if (native) {
       native.buildings = knownBuildings;
       native.buildingsById = new Map(knownBuildings.map((v) => [v.id, v]));
-      const nativeWalls = new Map<number, Building>();
-      for (const v of b.buildings)
-        if (v.kind === 'wall' && v.hp > 0) nativeWalls.set(v.y * MAP_SIZE + v.x, v);
-      native.wallTile = nativeWalls;
+      native.wallTile = shared.wallTile;
     }
     if (defenses) defenses.buildings = knownBuildings;
     // Jump Spells change every ground route while active; the set changes only at cast/expiry.
@@ -3537,6 +3543,7 @@ export class GameModel {
     }
     // The legacy loop spends from the shared budget the native phase used first.
     const repathState = pathBudget ?? { count: 0, limit: Number.POSITIVE_INFINITY };
+    // All-buildings scope (concealed included): distinct from the native maps above.
     const buildingById = new Map(b.buildings.map((v) => [v.id, v]));
     // Per-tick targetability for the non-hp reasons (trap, concealment, hiding).
     // hp is checked live at each use so mid-tick kills keep exact semantics.
@@ -3551,11 +3558,8 @@ export class GameModel {
         untargetableStatus.add(v.id);
     }
     const isTargetableLive = (v: Building) => v.hp > 0 && !untargetableStatus.has(v.id);
-    // Wall-by-tile index for per-waypoint lookups; hp verified live at each hit.
-    const wallTile = new Map<number, Building>();
-    for (const v of b.buildings) {
-      if (v.kind === 'wall' && v.hp > 0) wallTile.set(v.y * MAP_SIZE + v.x, v);
-    }
+    // Wall-by-tile index shared with the native context above; hp verified live at each hit.
+    const wallTile = shared.wallTile;
     // Memoize unit stats by kind+level for the tick.
     const statsCache = new Map<string, ReturnType<GameModel['unitStats']>>();
     const routeBuildings = passableWalls?.size
