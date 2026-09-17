@@ -2484,6 +2484,9 @@ export class VillageScene extends Phaser.Scene {
             im.setVisible(false);
             continue;
           }
+          // A culled sprite stays hidden until restored: the mesh layer hides it
+          // again below whenever it draws a mesh, so this cannot over-show.
+          if (!im.visible) im.setVisible(true);
         }
         const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
         // Local visual half-scale; health, collision space and projectile speed are unchanged.
