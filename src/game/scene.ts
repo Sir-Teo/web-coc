@@ -240,6 +240,13 @@ export class VillageScene extends Phaser.Scene {
   ready = false;
   onReady = () => {};
   onSelect = () => {};
+  /** Callbacks waiting for Phaser to inject `events` (the HUD is built before the game boots). */
+  private bootWaiters: (() => void)[] = [];
+  /** Runs `callback` once scene systems (events, cameras) exist: now, or when Phaser boots the scene. */
+  whenBooted(callback: () => void) {
+    if (this.sys?.events) callback();
+    else this.bootWaiters.push(callback);
+  }
   baseZoom = 1;
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
   wallLinks = new Map<
@@ -321,6 +328,7 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    for (const callback of this.bootWaiters.splice(0)) callback();
     // Santa, X-Bow and Cannon pages are heavy and rarely seen at boot; they
     // bundle in after startup (see loadHeavyArt) with fallback sprites covering.
     preloadDarkStorages(this);

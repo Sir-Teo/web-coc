@@ -542,7 +542,7 @@ export class HUD {
   }
   destroy() {
     if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
-    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    this.scene.events?.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
   }
   private scheduleRender() {
     if (this.raf) return;
@@ -556,8 +556,11 @@ export class HUD {
   private trackAnchor() {
     // Reposition on Phaser's post-update, in the same frame after the camera
     // moved. A standalone rAF loop races Phaser's own frame and trails by one.
-    this.positionContext();
-    this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    // The HUD is built before Phaser boots the scene, so `events` may not exist yet.
+    this.scene.whenBooted(() => {
+      this.positionContext();
+      this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    });
   }
   positionContext() {
     const card = document.querySelector<HTMLElement>('.building-context[data-anchor]');
