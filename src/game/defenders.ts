@@ -310,6 +310,97 @@ export interface DefenderRoute {
   budget?: { count: number; limit: number };
   breaches?: readonly { x: number; y: number }[];
 }
+/** Min-scan: identical winner to the old filter+sort (distance, then larger id). */
+function nearestAlertedDefender(battle: Battle, unit: Unit, troop: DefenderFightTraits) {
+  let bestDist = Infinity;
+  let best: Defender | undefined;
+  for (const d of battle.defenders ?? []) {
+    if (
+      d.hp <= 0 ||
+      (d.kind !== 'skeleton' && d.spawnedAt > battle.elapsed) ||
+      !d.alerted ||
+      !canFight(unit, d, troop) ||
+      lateDefenderHidden(battle, d) ||
+      !garrisonDefenderTargetable(battle, d)
+    )
+      continue;
+    const dist = distance2D(d.x - unit.x, d.y - unit.y);
+    if (dist > SKELETON_TRAP.alertRadius) continue;
+    if (best === undefined || dist < bestDist || (dist === bestDist && d.id > best.id)) {
+      best = d;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+/**
+ * Per-list index for the preferred-building exits: the buildings that can ever match each
+ * preference, and ids for the committed-target lookup. Callers rebuild their lists every
+ * tick and pass a per-tick targetability closure, so an index keyed by both lives one tick.
+ * Hit points and the live predicates are still read at every use.
+ */
+interface PreferenceIndex {
+  battle: Battle;
+  targetable: (b: Building) => boolean;
+  length: number;
+  defenses: Building[];
+  resources: Building[];
+  byId: Map<number, Building> | null;
+}
+const preferenceIndexes = new WeakMap<readonly Building[], PreferenceIndex>();
+function preferenceIndex(
+  battle: Battle,
+  buildings: Building[],
+  targetable: (b: Building) => boolean,
+): PreferenceIndex {
+  const known = preferenceIndexes.get(buildings);
+  if (
+    known &&
+    known.targetable === targetable &&
+    known.battle === battle &&
+    known.length === buildings.length
+  )
+    return known;
+  const weapons = battle.late?.goblinBuildings?.weapons,
+    huts = battle.late?.builderHut?.huts;
+  const defenses: Building[] = [],
+    resources: Building[] = [];
+  let byId: Map<number, Building> | null = new Map();
+  for (const b of buildings) {
+    // Weapon and hut entries are created by the late phases, never inside the unit loop.
+    if (isDefense(b.kind) || (battle.late && (weapons?.[b.id] || huts?.[b.id]))) defenses.push(b);
+    if (isResourceBuilding(b.kind) && b.npc !== 'goblin-castle') resources.push(b);
+    if (byId) {
+      if (byId.has(b.id)) byId = null;
+      else byId.set(b.id, b);
+    }
+  }
+  const index = { battle, targetable, length: buildings.length, defenses, resources, byId };
+  preferenceIndexes.set(buildings, index);
+  return index;
+}
+/** Whether a preferred building still stands, or the unit's own building target does. */
+function preferredOrCommitted(
+  battle: Battle,
+  unit: Unit,
+  troop: DefenderFightTraits,
+  buildings: Building[],
+  targetable: (b: Building) => boolean,
+) {
+  const index = preferenceIndex(battle, buildings, targetable);
+  if (troop.prefersDefenses)
+    for (const b of index.defenses)
+      if (b.hp > 0 && targetable(b) && (isDefense(b.kind) || lateActivatedDefense(battle, b)))
+        return true;
+  if (troop.prefersResources)
+    for (const b of index.resources) if (b.hp > 0 && targetable(b)) return true;
+  if (index.byId) {
+    const committed = typeof unit.target === 'number' ? index.byId.get(unit.target) : undefined;
+    return !!committed && committed.hp > 0 && targetable(committed);
+  }
+  for (const b of buildings) if (b.id === unit.target && b.hp > 0 && targetable(b)) return true;
+  return false;
+}
 export function stepAttackerVsDefenders(
   battle: Battle,
   unit: Unit,
@@ -346,27 +437,20 @@ export function stepAttackerVsDefenders(
     }
     return false;
   }
-  // Single pass: the old code scanned all buildings twice per unit (once for
-  // "any preferred still stands", once for "committed to current target").
-  // Troops with no preferred target can satisfy neither exit, so skip the scan
-  // (and its slow per-building targetability check) entirely for them.
+  // A troop that prefers defenses or resources ignores defenders while a preferred building
+  // stands or while it is committed to its current building target. That answer only needs
+  // computing when a defender could actually be engaged: an unengaged troop with no alerted
+  // defender in reach returns here exactly as it would after the building checks.
   const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
+  let nearest: Defender | undefined;
+  let searched = false;
   if (wantsPreferred) {
-    let preferred = false;
-    let committed = false;
-    for (const b of buildings) {
-      if (b.hp <= 0 || !targetable(b)) continue;
-      if (!preferred) {
-        if (
-          (troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
-          (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')
-        )
-          preferred = true;
-      }
-      if (!committed && b.id === unit.target) committed = true;
-      if (preferred && committed) break;
+    if (unit.defenderTarget === undefined) {
+      nearest = nearestAlertedDefender(battle, unit, troop);
+      searched = true;
+      if (!nearest) return false;
     }
-    if (preferred || committed) {
+    if (preferredOrCommitted(battle, unit, troop, buildings, targetable)) {
       delete unit.defenderTarget;
       return false;
     }
@@ -381,27 +465,7 @@ export function stepAttackerVsDefenders(
       garrisonDefenderTargetable(battle, d),
   );
   if (!target) {
-    // Min-scan: identical winner to the old filter+sort (distance, then larger id).
-    let bestDist = Infinity;
-    let best: Defender | undefined;
-    for (const d of battle.defenders ?? []) {
-      if (
-        d.hp <= 0 ||
-        (d.kind !== 'skeleton' && d.spawnedAt > battle.elapsed) ||
-        !d.alerted ||
-        !canFight(unit, d, troop) ||
-        lateDefenderHidden(battle, d) ||
-        !garrisonDefenderTargetable(battle, d)
-      )
-        continue;
-      const dist = distance2D(d.x - unit.x, d.y - unit.y);
-      if (dist > SKELETON_TRAP.alertRadius) continue;
-      if (best === undefined || dist < bestDist || (dist === bestDist && d.id > best.id)) {
-        best = d;
-        bestDist = dist;
-      }
-    }
-    target = best;
+    target = searched ? nearest : nearestAlertedDefender(battle, unit, troop);
     if (!target) {
       if (unit.defenderTarget !== undefined) {
         delete unit.defenderTarget;

@@ -15,7 +15,13 @@ import {
   type ArcherTowerWindup,
 } from './archer-tower-attack';
 import { produceDarkElixir } from './dark-drill-production';
-import { findSubtilePath, subtileSolid } from './subtile-path';
+import {
+  BuildingListSnapshot,
+  PATH_MEMO_LIMIT,
+  findSubtilePath,
+  resetSubtileGrids,
+  subtileSolid,
+} from './subtile-path';
 import {
   lateActivatedDefense,
   lateBuildingDestroyed,
@@ -3140,6 +3146,7 @@ export class GameModel {
       ...(heroes.length ? { heroes } : {}),
     };
     this.battle = replayBattle(initial);
+    resetPathCaches();
     this.recordingLimitReached = false;
     this.recording = this.recordBattles
       ? {
@@ -4560,11 +4567,14 @@ export class GameModel {
     runner.state.troopLevels = { ...data.initial.troopLevels };
     runner.state.nextId = data.initial.nextId;
     runner.battle = replayBattle(data.initial, data.version);
+    resetPathCaches();
     runner.onEffect = (fx) => {
       if (!this.replay?.seeking) this.onEffect(fx);
     };
-    runner.onChange = () => {
-      if (!this.replay?.seeking) this.changed();
+    // Deploys report passive changes (live HUD refresh); forward that instead of forcing a
+    // full render for every replayed troop.
+    runner.onChange = (passive) => {
+      if (!this.replay?.seeking) this.changed(passive);
     };
     this.replayRunner = runner;
     this.replayStep = this.replayAction = this.replayBudget = 0;
@@ -4586,6 +4596,7 @@ export class GameModel {
     if (!r.seeking) this.replaySeekPaused = r.paused;
     r.seekTarget = Math.max(0, Math.min(r.duration, seconds));
     r.seeking = true;
+    this.replayBudget = 0;
     r.complete = false;
     r.paused = true;
     // Forward seeks continue from the current runner; backward seeks restore the
@@ -4676,11 +4687,13 @@ export class GameModel {
   toggleReplay() {
     if (!this.replay || this.replay.complete || this.replay.seeking) return;
     this.replay.paused = !this.replay.paused;
+    this.replayBudget = 0;
     this.changed();
   }
   setReplaySpeed(speed: number) {
     if (!this.replay || (speed !== 1 && speed !== 2 && speed !== 4)) return;
     this.replay.speed = speed;
+    this.replayBudget = 0;
     this.changed();
   }
   private applyReplayActions() {
@@ -4734,6 +4747,9 @@ export class GameModel {
       this.applyReplayActions();
       this.maybeKeyframe();
     }
+    // A battle heavier than real time falls behind instead of banking the shortfall: an
+    // unbounded backlog later fast-forwarded up to 100 steps (5 s) in a single frame.
+    this.replayBudget = Math.min(this.replayBudget, MAX_REPLAY_BACKLOG_SECONDS);
   }
   returnHome() {
     this.replay = null;
@@ -4748,6 +4764,8 @@ export class GameModel {
     this.changed();
   }
 }
+/** Playback may run at most this far behind the clock before it slows down instead. */
+export const MAX_REPLAY_BACKLOG_SECONDS = 0.25;
 export function canTarget(targets: 'ground' | 'air' | 'both' | undefined, kind: UnitKind) {
   // Totems are valid targets for ground-only and air-only defenses.
   if (kind === 'totem') return true;
@@ -4897,21 +4915,91 @@ export function distanceTo(u: { x: number; y: number }, b: Building | { x: numbe
   const s = 'level' in b && b.kind in BUILDINGS ? BUILDINGS[b.kind as BuildingKind].size : 0;
   return distance2D(Math.max(b.x - u.x, 0, u.x - b.x - s), Math.max(b.y - u.y, 0, u.y - b.y - s));
 }
-/** Find an actual obstruction on an approach to a building, ignoring stray walls. */
+/** Walls by tile and non-wall structures of one building list (hp is read at each use). */
+interface BreachIndex {
+  length: number;
+  first: Building | undefined;
+  last: Building | undefined;
+  walls: Building[];
+  wallTiles: Map<number, Building[]>;
+  structures: Building[];
+}
+const breachIndexes = new WeakMap<readonly Building[], BreachIndex>();
+function breachIndex(buildings: Building[]): BreachIndex {
+  const known = breachIndexes.get(buildings);
+  if (
+    known &&
+    known.length === buildings.length &&
+    known.first === buildings[0] &&
+    known.last === buildings[buildings.length - 1]
+  )
+    return known;
+  const walls: Building[] = [],
+    structures: Building[] = [];
+  const wallTiles = new Map<number, Building[]>();
+  for (const b of buildings) {
+    if (b.kind === 'wall') {
+      walls.push(b);
+      const tile = b.y * MAP_SIZE + b.x;
+      const list = wallTiles.get(tile);
+      if (list) list.push(b);
+      else wallTiles.set(tile, [b]);
+    } else if (!isTrap(b.kind)) structures.push(b);
+  }
+  const index = {
+    length: buildings.length,
+    first: buildings[0],
+    last: buildings[buildings.length - 1],
+    walls,
+    wallTiles,
+    structures,
+  };
+  breachIndexes.set(buildings, index);
+  return index;
+}
+/** The standing wall a tile map built from the list's living walls would hold (the last one). */
+function standingWallAt(index: BreachIndex, tile: number) {
+  const list = index.wallTiles.get(tile);
+  if (!list) return undefined;
+  for (let i = list.length - 1; i >= 0; i--) if (list[i].hp > 0) return list[i];
+  return undefined;
+}
+/**
+ * Find an actual obstruction on an approach to a building, ignoring stray walls.
+ * The five nearest living structures (distance, then id) are selected without sorting the
+ * whole list, and their routes come from the pathfinder's memo when already searched.
+ */
 export function breachTarget(u: { x: number; y: number }, buildings: Building[], subtiles = false) {
-  const walls = buildings.filter((b) => b.kind === 'wall' && b.hp > 0);
-  if (!walls.length) return undefined;
-  const wallTiles = new Map<number, Building>();
-  for (const wall of walls) wallTiles.set(wall.y * MAP_SIZE + wall.x, wall);
-  const structures = buildings
-    .filter((b) => b.kind !== 'wall' && !isTrap(b.kind) && b.hp > 0)
-    .sort((a, b) => distanceTo(u, a) - distanceTo(u, b) || a.id - b.id);
+  const index = breachIndex(buildings);
+  if (!index.walls.some((b) => b.hp > 0)) return undefined;
+  const nearest: Building[] = [];
+  const distances: number[] = [];
+  for (const b of index.structures) {
+    if (b.hp <= 0) continue;
+    const d = distanceTo(u, b);
+    // Insert into the sorted top five: same order as sort((a, b) => da - db || a.id - b.id).
+    let at = nearest.length;
+    while (
+      at > 0 &&
+      (distances[at - 1] > d || (distances[at - 1] === d && nearest[at - 1].id > b.id))
+    )
+      at--;
+    if (at >= 5) continue;
+    nearest.splice(at, 0, b);
+    distances.splice(at, 0, d);
+    if (nearest.length > 5) {
+      nearest.pop();
+      distances.pop();
+    }
+  }
   const candidates: Building[] = [];
-  for (const structure of structures.slice(0, 5)) {
+  for (const structure of nearest) {
     const path = findPath(u, structure, buildings, TROOPS.wallbreaker.range, subtiles);
-    const obstruction = path
-      .map((p) => wallTiles.get(Math.floor(p.y) * MAP_SIZE + Math.floor(p.x)))
-      .find((wall) => wall !== undefined);
+    let obstruction: Building | undefined;
+    for (const p of path) {
+      obstruction = standingWallAt(index, Math.floor(p.y) * MAP_SIZE + Math.floor(p.x));
+      if (obstruction) break;
+    }
     if (obstruction) candidates.push(obstruction);
   }
   return candidates.sort((a, b) => distanceTo(u, a) - distanceTo(u, b) || a.id - b.id)[0];
@@ -4923,8 +5011,6 @@ export function breachTarget(u: { x: number; y: number }, buildings: Building[],
 // Search state uses a generation stamp: bumping one counter replaces five full-array
 // fills per search, with identical observable behavior.
 const PATH_CELLS = MAP_SIZE * MAP_SIZE;
-const pathBlocked = new Uint8Array(PATH_CELLS);
-const pathWall = new Uint8Array(PATH_CELLS);
 const pathCost = new Float64Array(PATH_CELLS);
 const pathPrev = new Int16Array(PATH_CELLS);
 const pathClosed = new Uint8Array(PATH_CELLS);
@@ -4934,22 +5020,42 @@ const pathOrder = new Uint32Array(PATH_CELLS);
 const pathPosition = new Int16Array(PATH_CELLS);
 const pathStamp = new Uint32Array(PATH_CELLS);
 let pathEpoch = 0;
-const pathOpen: number[] = [];
-export function findPath(
-  start: { x: number; y: number },
-  target: Building | { x: number; y: number },
-  buildings: Building[],
-  range: number,
-  subtiles = false,
-  /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
-  breaches: readonly { x: number; y: number }[] = [],
-): { x: number; y: number }[] {
-  if (subtiles) return findSubtilePath(start, target, buildings, range);
+const pathOpen = new Int32Array(PATH_CELLS);
+/** A whole-tile collision grid for one exact building list and set of Jump Spell rings. */
+interface TileGrid {
+  key: BuildingListSnapshot;
+  breaches: number[];
+  blocked: Uint8Array;
+  wall: Uint8Array;
+  /** Exact search results: A* is a pure function of the grid, start cell, goal and range. */
+  paths: Map<string, readonly { x: number; y: number }[]>;
+}
+const TILE_GRID_SLOTS = 6;
+const tileGrids: TileGrid[] = [];
+/** Drop every cached route grid (a new battle or replay runner). Never needed for results. */
+export function resetPathCaches() {
+  tileGrids.length = 0;
+  resetSubtileGrids();
+}
+function sameBreaches(known: number[], breaches: readonly { x: number; y: number }[]) {
+  if (known.length !== breaches.length * 2) return false;
+  for (let i = 0; i < breaches.length; i++)
+    if (known[i * 2] !== breaches[i].x || known[i * 2 + 1] !== breaches[i].y) return false;
+  return true;
+}
+function tileGridFor(buildings: Building[], breaches: readonly { x: number; y: number }[]) {
+  for (let i = 0; i < tileGrids.length; i++) {
+    const grid = tileGrids[i];
+    if (!sameBreaches(grid.breaches, breaches) || !grid.key.matches(buildings)) continue;
+    if (i) {
+      tileGrids.splice(i, 1);
+      tileGrids.unshift(grid);
+    }
+    return grid;
+  }
   const size = MAP_SIZE;
-  const blocked = pathBlocked;
-  const wall = pathWall;
-  blocked.fill(0);
-  wall.fill(0);
+  const blocked = new Uint8Array(PATH_CELLS),
+    wall = new Uint8Array(PATH_CELLS);
   const radius = SPELLS.jump.radius;
   const breached = (x: number, y: number) =>
     breaches.some((ring) => distance2D(x + 0.5 - ring.x, y + 0.5 - ring.y) <= radius);
@@ -4964,96 +5070,141 @@ export function findPath(
         } else blocked[y * size + x] = 1;
       }
   }
+  const grid: TileGrid = {
+    key: new BuildingListSnapshot(buildings),
+    breaches: breaches.flatMap((ring) => [ring.x, ring.y]),
+    blocked,
+    wall,
+    paths: new Map(),
+  };
+  tileGrids.unshift(grid);
+  if (tileGrids.length > TILE_GRID_SLOTS) tileGrids.pop();
+  return grid;
+}
+export function findPath(
+  start: { x: number; y: number },
+  target: Building | { x: number; y: number },
+  buildings: Building[],
+  range: number,
+  subtiles = false,
+  /** Jump Spell rings. A wall inside one costs nothing to cross while the ring holds. */
+  breaches: readonly { x: number; y: number }[] = [],
+): { x: number; y: number }[] {
+  if (subtiles) return findSubtilePath(start, target, buildings, range);
+  const grid = tileGridFor(buildings, breaches);
   const sx = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.x))),
     sy = Math.max(0, Math.min(MAP_SIZE - 1, Math.floor(start.y))),
-    first = sy * size + sx;
+    first = sy * MAP_SIZE + sx;
+  const goalSize =
+    'level' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind as BuildingKind].size : 0;
+  // The start point matters only through its cell and whether it is already in range.
+  const far = distanceTo(start, target) > range;
+  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
+  const known = grid.paths.get(key);
+  if (known) return known.map((p) => ({ x: p.x, y: p.y }));
+  const path = searchTilePath(grid, first, target, goalSize, range, far);
+  if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
+  grid.paths.set(
+    key,
+    path.map((p) => ({ x: p.x, y: p.y })),
+  );
+  return path;
+}
+/**
+ * The original closure-based search with its helpers inlined: the same arithmetic in the
+ * same order and the same stable heap (priority, then first-in), without allocating a
+ * point per scored node or a direction array per expansion.
+ */
+function searchTilePath(
+  grid: TileGrid,
+  first: number,
+  target: Building | { x: number; y: number },
+  goalSize: number,
+  range: number,
+  far: boolean,
+): { x: number; y: number }[] {
+  const size = MAP_SIZE;
+  const blocked = grid.blocked,
+    wall = grid.wall;
   const cost = pathCost;
   const prev = pathPrev;
   const closed = pathClosed;
-  // Stable heap preserves the old queue's first-in tie order. A decrease updates
-  // the existing entry rather than making every search rescan the entire queue.
   const priority = pathPriority;
   const heuristic = pathHeuristic;
   const order = pathOrder;
   const position = pathPosition;
+  const stamp = pathStamp;
   // Generation stamp replaces cost/prev/closed/heuristic/position fills.
   if (pathEpoch === 0xffffffff) {
-    pathStamp.fill(0);
+    stamp.fill(0);
     pathEpoch = 0;
   }
   const epoch = ++pathEpoch;
-  const fresh = (n: number) => {
-    if (pathStamp[n] !== epoch) {
-      pathStamp[n] = epoch;
-      cost[n] = Infinity;
-      prev[n] = -1;
-      closed[n] = 0;
-      heuristic[n] = NaN;
-      position[n] = -1;
-    }
-  };
-  const open = pathOpen;
-  open.length = 0;
+  const heap = pathOpen;
+  let length = 0;
   let sequence = 0;
-  const before = (a: number, b: number) =>
-    priority[a] < priority[b] || (priority[a] === priority[b] && order[a] < order[b]);
-  const queue = (node: number) => {
-    if (Number.isNaN(heuristic[node]))
-      heuristic[node] = distanceTo(
-        { x: (node % size) + 0.5, y: Math.floor(node / size) + 0.5 },
-        target,
-      );
-    priority[node] = cost[node] + heuristic[node];
-    let at = position[node];
-    if (at < 0) {
-      at = open.length;
-      open.push(node);
-      order[node] = sequence++;
-    }
-    while (at > 0) {
-      const parent = (at - 1) >> 1;
-      if (!before(node, open[parent])) break;
-      open[at] = open[parent];
-      position[open[at]] = at;
-      at = parent;
-    }
-    open[at] = node;
-    position[node] = at;
+  const targetX = target.x,
+    targetY = target.y;
+  // distanceTo({ x: cx + 0.5, y: cy + 0.5 }, target), expression for expression.
+  const score = (cx: number, cy: number) => {
+    const ux = cx + 0.5,
+      uy = cy + 0.5;
+    return distance2D(
+      Math.max(targetX - ux, 0, ux - targetX - goalSize),
+      Math.max(targetY - uy, 0, uy - targetY - goalSize),
+    );
   };
-  const take = () => {
-    const node = open[0],
-      last = open.pop()!;
-    position[node] = -1;
-    if (open.length) {
-      let at = 0;
-      while (at * 2 + 1 < open.length) {
-        let child = at * 2 + 1;
-        if (child + 1 < open.length && before(open[child + 1], open[child])) child++;
-        if (!before(open[child], last)) break;
-        open[at] = open[child];
-        position[open[at]] = at;
-        at = child;
-      }
-      open[at] = last;
-      position[last] = at;
-    }
-    return node;
-  };
-  fresh(first);
+  stamp[first] = epoch;
+  prev[first] = -1;
+  closed[first] = 0;
   cost[first] = 0;
-  queue(first);
+  heuristic[first] = score(first % size, Math.floor(first / size));
+  priority[first] = cost[first] + heuristic[first];
+  order[first] = sequence++;
+  heap[length++] = first;
+  position[first] = 0;
   let goal = -1;
   let approach: { x: number; y: number } | undefined;
-  while (open.length) {
-    const current = take();
+  while (length) {
+    const current = heap[0];
+    const last = heap[--length];
+    position[current] = -1;
+    if (length) {
+      const lastPriority = priority[last],
+        lastOrder = order[last];
+      let at = 0;
+      while (at * 2 + 1 < length) {
+        let child = at * 2 + 1;
+        if (child + 1 < length) {
+          const right = heap[child + 1],
+            left = heap[child];
+          if (
+            priority[right] < priority[left] ||
+            (priority[right] === priority[left] && order[right] < order[left])
+          )
+            child++;
+        }
+        const node = heap[child];
+        if (!(
+          priority[node] < lastPriority ||
+          (priority[node] === lastPriority && order[node] < lastOrder)
+        ))
+          break;
+        heap[at] = node;
+        position[node] = at;
+        at = child;
+      }
+      heap[at] = last;
+      position[last] = at;
+    }
     closed[current] = 1;
     const x = current % size,
       y = Math.floor(current / size);
-    if (distanceTo({ x: x + 0.5, y: y + 0.5 }, target) <= range) {
+    // heuristic[current] is distanceTo(cell center, target), scored when it was queued.
+    if (heuristic[current] <= range) {
       // A grid-center goal can be in range while the unit's actual position is not.
       // Keep that final segment for buildings as well as defending troops.
-      if (current === first && distanceTo(start, target) > range)
-        approach = { x: x + 0.5, y: y + 0.5 };
+      if (current === first && far) approach = { x: x + 0.5, y: y + 0.5 };
       goal = current;
       break;
     }
@@ -5061,15 +5212,13 @@ export function findPath(
     // Finish with a short segment inside the final cell, never through a corner
     // or an extra occupied cell. Other ranges retain their original grid route.
     if (range < 0.5 && !blocked[current]) {
-      const center = { x: x + 0.5, y: y + 0.5 },
-        s =
-          'level' in target && target.kind in BUILDINGS
-            ? BUILDINGS[target.kind as BuildingKind].size
-            : 0;
-      const tx = Math.max(target.x, Math.min(center.x, target.x + s));
-      const ty = Math.max(target.y, Math.min(center.y, target.y + s));
-      const dx = center.x - tx,
-        dy = center.y - ty,
+      const centerX = x + 0.5,
+        centerY = y + 0.5,
+        s = goalSize;
+      const tx = Math.max(targetX, Math.min(centerX, targetX + s));
+      const ty = Math.max(targetY, Math.min(centerY, targetY + s));
+      const dx = centerX - tx,
+        dy = centerY - ty,
         distance = distance2D(dx, dy);
       if (distance <= 1e-9) {
         goal = current;
@@ -5083,24 +5232,50 @@ export function findPath(
         break;
       }
     }
-    for (const [dx, dy] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ]) {
-      const nx = x + dx,
-        ny = y + dy;
+    const base = cost[current];
+    // Neighbours in the original order: +x, -x, +y, -y.
+    for (let d = 0; d < 4; d++) {
+      let nx = x,
+        ny = y;
+      if (d === 0) nx++;
+      else if (d === 1) nx--;
+      else if (d === 2) ny++;
+      else ny--;
       if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
       const n = ny * size + nx;
       if (blocked[n]) continue;
-      fresh(n);
-      if (closed[n]) continue;
-      const next = cost[current] + 1 + (wall[n] ? 6 : 0);
+      if (stamp[n] !== epoch) {
+        stamp[n] = epoch;
+        cost[n] = Infinity;
+        prev[n] = -1;
+        closed[n] = 0;
+        heuristic[n] = NaN;
+        position[n] = -1;
+      } else if (closed[n]) continue;
+      const next = base + 1 + (wall[n] ? 6 : 0);
       if (next < cost[n]) {
         cost[n] = next;
         prev[n] = current;
-        queue(n);
+        if (Number.isNaN(heuristic[n])) heuristic[n] = score(nx, ny);
+        const value = next + heuristic[n];
+        priority[n] = value;
+        let at = position[n];
+        if (at < 0) {
+          at = length++;
+          order[n] = sequence++;
+        }
+        const nodeOrder = order[n];
+        while (at > 0) {
+          const parent = (at - 1) >> 1;
+          const above = heap[parent];
+          if (!(value < priority[above] || (value === priority[above] && nodeOrder < order[above])))
+            break;
+          heap[at] = above;
+          position[above] = at;
+          at = parent;
+        }
+        heap[at] = n;
+        position[n] = at;
       }
     }
   }
@@ -5115,39 +5290,79 @@ export function findPath(
   return path;
 }
 
-/** Local, deterministic crowd separation. A sparse grid bounds neighbor work. */
-export function separateUnits(units: Unit[], buildings: Building[], subtiles = false) {
+/** Version 54: the most crowd separation may move one unit in a second (tiles). */
+export const SEPARATION_TILES_PER_SECOND = 2;
+// Reused separation buckets: per (tile, layer) linked lists in insertion order.
+const SEPARATION_CELLS = MAP_SIZE * MAP_SIZE * 2;
+const separationHead = new Int32Array(SEPARATION_CELLS).fill(-1);
+const separationTail = new Int32Array(SEPARATION_CELLS).fill(-1);
+let separationNext = new Int32Array(256);
+let separationSpent = new Float64Array(256);
+const separationTouched: number[] = [];
+/**
+ * Local, deterministic crowd separation. A sparse grid bounds neighbor work.
+ * `maxPush` (version 54) bounds how far separation moves any one unit in the call; without
+ * it each overlapping pair pushes up to 0.07 tiles, and a dense blob could throw a unit well
+ * over a tile in one 50 ms tick.
+ */
+export function separateUnits(
+  units: Unit[],
+  buildings: Building[],
+  subtiles = false,
+  maxPush?: number,
+) {
   // Fewer than two living units cannot push each other; skip the collision rebuild.
   let living = 0;
   for (const u of units) if (u.hp > 0 && ++living > 1) break;
   if (living < 2) return;
   // Version-44 native campaign crowds use the same sub-tile building collision as routes.
+  // Whole-tile battles read the route grid for the list: blocked or walled is solid.
   const lanes = subtiles ? subtileSolid(buildings) : undefined;
-  const solid = new Set<number>();
-  if (!lanes)
-    for (const b of buildings)
-      if (b.hp > 0 && !isTrap(b.kind)) {
-        const size = BUILDINGS[b.kind].size;
-        for (let x = b.x; x < b.x + size; x++)
-          for (let y = b.y; y < b.y + size; y++) solid.add(y * MAP_SIZE + x);
-      }
-  const buckets = new Map<number, Unit[]>();
-  const alive = units.filter((u) => u.hp > 0);
-  for (const u of alive) {
-    const key = Math.floor(u.y) * MAP_SIZE + Math.floor(u.x);
-    const bucket = buckets.get(key) ?? [];
-    bucket.push(u);
-    buckets.set(key, bucket);
+  const tiles = lanes ? undefined : tileGridFor(buildings, []);
+  const alive: Unit[] = [];
+  for (const u of units) if (u.hp > 0) alive.push(u);
+  const count = alive.length;
+  if (separationNext.length < count) {
+    separationNext = new Int32Array(count * 2);
+    separationSpent = new Float64Array(count * 2);
   }
-  // Air and ground share no space, so they never push each other around.
-  const free = (u: Unit, x: number, y: number) =>
+  const next = separationNext,
+    spent = separationSpent;
+  // Air and ground share no space, so they never push each other around: each (tile, layer)
+  // keeps its own list, in the same order the shared tile list used to hold them.
+  const flying = new Uint8Array(count);
+  const radius = new Float64Array(count);
+  for (let i = 0; i < count; i++) {
+    const u = alive[i];
+    flying[i] = TROOPS[u.kind].flying ? 1 : 0;
+    radius[i] = u.kind === 'giant' ? 0.85 : 0.5;
+    spent[i] = 0;
+    next[i] = -1;
+    const key = (Math.floor(u.y) * MAP_SIZE + Math.floor(u.x)) * 2 + flying[i];
+    // Units can stand off the grid; the old sparse map still bucketed them by that key.
+    if (key < 0 || key >= SEPARATION_CELLS || !Number.isInteger(key)) {
+      next[i] = -2;
+      continue;
+    }
+    if (separationHead[key] < 0) {
+      separationHead[key] = i;
+      separationTouched.push(key);
+    } else next[separationTail[key]] = i;
+    separationTail[key] = i;
+  }
+  const free = (air: number, x: number, y: number) =>
     x >= 0.1 &&
     y >= 0.1 &&
     x < MAP_SIZE - 0.1 &&
     y < MAP_SIZE - 0.1 &&
-    (!!TROOPS[u.kind].flying ||
-      (lanes ? !lanes(x, y) : !solid.has(Math.floor(y) * MAP_SIZE + Math.floor(x))));
-  for (const u of alive) {
+    (air === 1 ||
+      (lanes
+        ? !lanes(x, y)
+        : tiles!.blocked[Math.floor(y) * MAP_SIZE + Math.floor(x)] !== 1 &&
+          tiles!.wall[Math.floor(y) * MAP_SIZE + Math.floor(x)] !== 1));
+  for (let i = 0; i < count; i++) {
+    const u = alive[i];
+    const air = flying[i];
     const cx = Math.floor(u.x),
       cy = Math.floor(u.y);
     for (let oy = -1; oy <= 1; oy++)
@@ -5156,10 +5371,10 @@ export function separateUnits(units: Unit[], buildings: Building[], subtiles = f
           ny = cy + oy;
         // A flat index wraps at the row edges; column 0 must not neighbour the last column.
         if (nx < 0 || nx >= MAP_SIZE || ny < 0 || ny >= MAP_SIZE) continue;
-        for (const v of buckets.get(ny * MAP_SIZE + nx) ?? []) {
+        for (let j = separationHead[(ny * MAP_SIZE + nx) * 2 + air]; j >= 0; j = next[j]) {
+          const v = alive[j];
           if (v.id <= u.id) continue;
-          if (!!TROOPS[u.kind].flying !== !!TROOPS[v.kind].flying) continue;
-          const spacing = (u.kind === 'giant' ? 0.85 : 0.5) + (v.kind === 'giant' ? 0.85 : 0.5);
+          const spacing = radius[i] + radius[j];
           const desired = spacing / 2;
           let dx = v.x - u.x,
             dy = v.y - u.y;
@@ -5171,18 +5386,46 @@ export function separateUnits(units: Unit[], buildings: Building[], subtiles = f
             dy = Math.sin(angle);
             distance = 1;
           }
-          const push = Math.min(0.07, (desired - distance2D(v.x - u.x, v.y - u.y)) * 0.25),
-            px = (dx / distance) * push,
-            py = (dy / distance) * push;
-          if (free(u, u.x - px, u.y - py)) {
-            u.x -= px;
-            u.y -= py;
+          const push = Math.min(0.07, (desired - distance2D(v.x - u.x, v.y - u.y)) * 0.25);
+          if (maxPush === undefined) {
+            const px = (dx / distance) * push,
+              py = (dy / distance) * push;
+            if (free(air, u.x - px, u.y - py)) {
+              u.x -= px;
+              u.y -= py;
+            }
+            if (free(air, v.x + px, v.y + py)) {
+              v.x += px;
+              v.y += py;
+            }
+            continue;
           }
-          if (free(v, v.x + px, v.y + py)) {
-            v.x += px;
-            v.y += py;
+          const pushU = Math.min(push, maxPush - spent[i]);
+          if (pushU > 0) {
+            const px = (dx / distance) * pushU,
+              py = (dy / distance) * pushU;
+            if (free(air, u.x - px, u.y - py)) {
+              u.x -= px;
+              u.y -= py;
+              spent[i] += pushU;
+            }
+          }
+          const pushV = Math.min(push, maxPush - spent[j]);
+          if (pushV > 0) {
+            const px = (dx / distance) * pushV,
+              py = (dy / distance) * pushV;
+            if (free(air, v.x + px, v.y + py)) {
+              v.x += px;
+              v.y += py;
+              spent[j] += pushV;
+            }
           }
         }
       }
   }
+  for (const key of separationTouched) {
+    separationHead[key] = -1;
+    separationTail[key] = -1;
+  }
+  separationTouched.length = 0;
 }
