@@ -602,12 +602,13 @@ h3 {
   display: flex;
   gap: 7px;
   padding: 7px;
-  background: linear-gradient(#4b493ac4, #393b2dc9);
+  /* No backdrop blur: it forces the browser to re-filter the live canvas every
+     frame, which is expensive on mobile GPUs. The near-opaque fill keeps contrast. */
+  background: linear-gradient(#4b493af2, #393b2df5);
   border: 2px solid #e1d5a967;
   border-bottom: 4px solid #303627;
   border-radius: 13px;
   box-shadow: 0 4px 10px #1f2d223b;
-  backdrop-filter: blur(5px);
 }
 .troop-card {
   position: relative;
@@ -987,8 +988,8 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #152419a8;
-  backdrop-filter: blur(5px);
+  /* No backdrop blur: same per-frame cost as the tray blur above. */
+  background: #152419e6;
   pointer-events: auto;
   z-index: 20;
   padding: 30px;

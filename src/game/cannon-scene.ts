@@ -40,11 +40,20 @@ export class CannonPresentation {
   }[] = [];
   constructor(
     private scene: Phaser.Scene,
-    audio: AudioManager,
+    private audio: AudioManager,
   ) {
-    for (const path of Object.keys(CANNON_SOUNDS))
-      audio.samples.register(cannonSample(path), scene.cache.binary.get(cannonSample(path)));
+    this.bindAudio();
   }
+  /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
+  bindAudio() {
+    for (const path of Object.keys(CANNON_SOUNDS)) {
+      const key = cannonSample(path);
+      if (this.scene.cache.binary.exists(key))
+        this.audio.samples.register(key, this.scene.cache.binary.get(key));
+    }
+  }
+  /** Heavy textures arrive after boot; the fallback sprite covers until then. */
+  artReady = false;
   handling(id: number, kind: CannonHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((e) => e.id !== id);
     else {
@@ -70,6 +79,7 @@ export class CannonPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    if (!this.artReady) return [];
     const wanted = new Set<number>(),
       showing = new Set<string>(),
       flying = new Set<string>(),

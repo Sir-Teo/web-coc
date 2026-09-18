@@ -174,10 +174,19 @@ it('preserves original polygons, transforms, timelines and exact texture samplin
 });
 
 it('ships exactly three lossless texture crops, two registered previews and four unchanged Ogg files', async () => {
-  const expected = [...Object.values(native.world.textures), ...Object.values(native.previews)].map(
+  const references = [...Object.values(native.world.textures), ...Object.values(native.previews)];
+  const expected = references.map(
     (v) => v.path.replace('assets/buildings/shrink-trap-native/', ''),
   );
   expect(expected).toHaveLength(5);
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = [...new Set(
+    references
+      .map((v) => v.path)
+      .filter((p) => p.startsWith('assets/buildings/shrink-trap-native/'))
+      .map((p) => p.replace('assets/buildings/shrink-trap-native/', '')),
+  )];
   for (const preview of Object.values(native.previews)) {
     const { data, info } = await sharp(`public/${preview.path}`)
       .ensureAlpha()
@@ -188,7 +197,7 @@ it('ships exactly three lossless texture crops, two registered previews and four
   }
   expect(Object.keys(native.sounds)).toHaveLength(4);
   for (const sound of Object.values(native.sounds)) {
-    expected.push(sound.path.split('/').at(-1)!);
+    local.push(sound.path.split('/').at(-1)!);
     const bytes = await readFile(`public/${sound.path}`);
     expect(bytes.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(bytes)).toBe(sound.sha256);
@@ -204,5 +213,5 @@ it('ships exactly three lossless texture crops, two registered previews and four
         `${f.parentPath}/${f.name}`.replace('public/assets/buildings/shrink-trap-native/', ''),
       )
       .sort(),
-  ).toEqual(expected.sort());
+  ).toEqual(local.sort());
 });

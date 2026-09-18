@@ -75,8 +75,8 @@
   "packs": {
     "arrow-small": {
       "path": "assets/projectiles-native/arrow-small/graph.json",
-      "sha256": "0624dc01358f2d8cb00c0a99b2338ed8827cf251a864897a87fe3bbb917ae40a",
-      "bytes": 3156,
+      "sha256": "4cc2031f24345e5274f0190e31b5bbc8e55d9a978ef656319f17b7061de01c75",
+      "bytes": 2733,
       "projectiles": [
         "Arrow_small",
         "Tower Arrow",
@@ -85,8 +85,8 @@
     },
     "arrow-small-fire": {
       "path": "assets/projectiles-native/arrow-small-fire/graph.json",
-      "sha256": "46b0f595f3a746647e9ad4287707485335c3e9e121f7da53003ddd91223d1eba",
-      "bytes": 15632,
+      "sha256": "da354fc413855af8cf5075284074cab27791fb073c9553333827578ff699801f",
+      "bytes": 6470,
       "projectiles": [
         "Arrow_small_fire",
         "Tower Arrow Fire",
@@ -119,8 +119,8 @@
     },
     "arrow-small-darkelixirfire2": {
       "path": "assets/projectiles-native/arrow-small-darkelixirfire2/graph.json",
-      "sha256": "8ace1ff52d2d6d975bf91d676f4d159e7ef989ed9310f5a57f3e0326634e20dc",
-      "bytes": 18752,
+      "sha256": "f6359e98147c838b9eaec10b7cbd10f0a9c7c603fa6dcec70d0c77091576d9e2",
+      "bytes": 9245,
       "projectiles": [
         "Arrow_small_darkElixirFire2"
       ]
@@ -163,8 +163,8 @@
     },
     "healerenergy": {
       "path": "assets/projectiles-native/healerenergy/graph.json",
-      "sha256": "57b9fc555cccb4169f261f305dcf5afe67bd846ca9e0ef07339c45efe62b14e0",
-      "bytes": 3670,
+      "sha256": "fc1c213ec98893b611a1c9da0ab46de6efe88b58900642482afba5cd0f36ff71",
+      "bytes": 3587,
       "projectiles": [
         "HealerEnergy",
         "UnicornHealEnergy",
@@ -175,8 +175,8 @@
     },
     "babydragon-projectile": {
       "path": "assets/projectiles-native/babydragon-projectile/graph.json",
-      "sha256": "632e532639df3b81c2e3976b824f6a3813f1a63adc52f2abd510524145b4a006",
-      "bytes": 23528,
+      "sha256": "4f749d6a169ab96d91d68d7f54dbdb563b8e811169c2ea526dddafecc0bf8453",
+      "bytes": 17330,
       "projectiles": [
         "babydragon_projectile"
       ]
@@ -191,16 +191,16 @@
     },
     "babydragon-projectile-lvl3": {
       "path": "assets/projectiles-native/babydragon-projectile-lvl3/graph.json",
-      "sha256": "ef439f9500e1455f9917fbf5b94ef4289a1b65d050944fbd5b83857f424b8dd9",
-      "bytes": 28503,
+      "sha256": "40605b728e62cfcc3f60a99d5168524385856e667b378b320bbf3bf6e9c9e89a",
+      "bytes": 19460,
       "projectiles": [
         "babydragon_projectile_lvl3"
       ]
     },
     "babydragon-projectile-lvl10": {
       "path": "assets/projectiles-native/babydragon-projectile-lvl10/graph.json",
-      "sha256": "b70463e21f5946f6176564c9f23999a3fc6864c3a3927642545d5cb4e322fcdf",
-      "bytes": 28467,
+      "sha256": "86f8e1e9d01dd139a98f706657b55615b2b249f94a0ccc3ef6179d3dc71585b3",
+      "bytes": 19423,
       "projectiles": [
         "babydragon_projectile_lvl10"
       ]
@@ -223,64 +223,64 @@
     },
     "dragonriderprojectile-3": {
       "path": "assets/projectiles-native/dragonriderprojectile-3/graph.json",
-      "sha256": "5fbfb7e69bad6904379e658423002c0bfb73e8afaf285e12242b84ff0e7b6fd6",
-      "bytes": 7643,
+      "sha256": "fe31f5f6472b281076489f9cb95d551640b446b36736ab42e2f0dd5d555f6908",
+      "bytes": 2290,
       "projectiles": [
         "DragonRiderProjectile 3"
       ]
     },
     "throwerprojectile1": {
       "path": "assets/projectiles-native/throwerprojectile1/graph.json",
-      "sha256": "be5dd5f0a591ff560acba1ad24f1405b068c45f0f66a148183b0145007054f50",
-      "bytes": 261891,
+      "sha256": "7febda50f6f55bd3500188a595d525d1acc25cb812d98b533d4b0d932eb5ddae",
+      "bytes": 14704,
       "projectiles": [
         "ThrowerProjectile1"
       ]
     },
     "throwerprojectile2": {
       "path": "assets/projectiles-native/throwerprojectile2/graph.json",
-      "sha256": "c300b18cd3d900af72e94b85fabf1863c4f6e03e239b8aa535a59979ffd1dca3",
-      "bytes": 313186,
+      "sha256": "b821e28fc44425c08f74c4afb63ce2953724648e3fbeaa25e4602840f01fb6a8",
+      "bytes": 22410,
       "projectiles": [
         "ThrowerProjectile2"
       ]
     },
     "throwerprojectile3": {
       "path": "assets/projectiles-native/throwerprojectile3/graph.json",
-      "sha256": "a198113acc57182924746ad7998fe51e1c2d6bf410629e3695f67b893566cc1e",
-      "bytes": 410898,
+      "sha256": "a67d2969d9314b3f20f6bf9972b56ae8a0ef8bb737ed695290cc61469f53c15c",
+      "bytes": 33130,
       "projectiles": [
         "ThrowerProjectile3"
       ]
     },
     "throwerprojectile4": {
       "path": "assets/projectiles-native/throwerprojectile4/graph.json",
-      "sha256": "d2bb7647580c57b1d4925bcc1e8502b1dade96049d4283137946fc793f462e2a",
-      "bytes": 278970,
+      "sha256": "e238dfa3af33e1c098f2da2c0b92897903911bc8cdb80d8c944ee6838cda9881",
+      "bytes": 15116,
       "projectiles": [
         "ThrowerProjectile4"
       ]
     },
     "meteoritegolemprojectile": {
       "path": "assets/projectiles-native/meteoritegolemprojectile/graph.json",
-      "sha256": "3e532326c2270ac1bdc0d831bdf779e92723c435f5a79a468ab32192262fee5e",
-      "bytes": 55728,
+      "sha256": "a9aacc13d03c81506f0ad18648e49e439e2dee10a28df0f5f8e4b9db15b190b6",
+      "bytes": 9416,
       "projectiles": [
         "MeteoriteGolemProjectile"
       ]
     },
     "meteoritegolemprojectilelvl2": {
       "path": "assets/projectiles-native/meteoritegolemprojectilelvl2/graph.json",
-      "sha256": "a5491b47754f2186286033bc4da584524fa89193eb8173bfbb3e0b55bb0a76f9",
-      "bytes": 55679,
+      "sha256": "46d425c5bec61359ef62bc98576835ae8263d595a87e7ddddaaa1647427d96d4",
+      "bytes": 9392,
       "projectiles": [
         "MeteoriteGolemProjectileLvl2"
       ]
     },
     "meteoritegolemprojectilelvl3": {
       "path": "assets/projectiles-native/meteoritegolemprojectilelvl3/graph.json",
-      "sha256": "66dee5ce8ad3b0b1e30bccb6abfc03af559f6df5c6b142f5baec95e535490edc",
-      "bytes": 57948,
+      "sha256": "4ca09e64ff4293cf86c843f8871c79047268bc3bc6ddc09210556b9048e0c88d",
+      "bytes": 9394,
       "projectiles": [
         "MeteoriteGolemProjectileLvl3"
       ]
@@ -295,16 +295,16 @@
     },
     "witch-projectile": {
       "path": "assets/projectiles-native/witch-projectile/graph.json",
-      "sha256": "ba85f53f48528aae86e61edb79b355d89684e1bab1350303a853343d3c8874df",
-      "bytes": 19165,
+      "sha256": "57497f0b0c8a11678fa20eab9aa95ad0178fd1d2f7e4039b3f6ef96a10bef419",
+      "bytes": 13312,
       "projectiles": [
         "Witch_projectile"
       ]
     },
     "hound-projectile": {
       "path": "assets/projectiles-native/hound-projectile/graph.json",
-      "sha256": "54a98bb0db11f9f228db924d9bd2b7ccf4477274434ee2edc8a3abcc681bd9e0",
-      "bytes": 7858,
+      "sha256": "c842cbeba0fa77d18489a712fa1648204a1f62c7b5e9036e30d1d4fdc8e8c58a",
+      "bytes": 6871,
       "projectiles": [
         "hound_projectile"
       ]
@@ -319,32 +319,32 @@
     },
     "trollboulder-lvl2": {
       "path": "assets/projectiles-native/trollboulder-lvl2/graph.json",
-      "sha256": "1ecebf23d7ba94c171b6af6944f92b9df901d68b58df082c80164b5f9c490fd7",
-      "bytes": 416961,
+      "sha256": "7692e0870ad9057a2b79eaceac06918b481dfab05a5276245e84650d6a3818bd",
+      "bytes": 93213,
       "projectiles": [
         "trollBoulder_lvl2"
       ]
     },
     "trollboulder-lvl3": {
       "path": "assets/projectiles-native/trollboulder-lvl3/graph.json",
-      "sha256": "e32d05ab3eab0ca426c60c7c522a31515290f62d957b3b0becc6ca557fce67ce",
-      "bytes": 417011,
+      "sha256": "1aeb34da0e884f712ab66e81161998e16380d6ccfa730f8fe4445b16140b926c",
+      "bytes": 93263,
       "projectiles": [
         "trollBoulder_lvl3"
       ]
     },
     "trollboulder-lvl5": {
       "path": "assets/projectiles-native/trollboulder-lvl5/graph.json",
-      "sha256": "5bf7313ace7f9fa7ecdf644729afd821ee07ad9fc22f5ebba590daa754231e88",
-      "bytes": 417025,
+      "sha256": "f0348ed02ea55f6f7c94dd2d82c97c55902cd03323be167124f9c07bc8cac09b",
+      "bytes": 93277,
       "projectiles": [
         "trollBoulder_lvl5"
       ]
     },
     "trollboulder-lvl6": {
       "path": "assets/projectiles-native/trollboulder-lvl6/graph.json",
-      "sha256": "41d062765686a9617b06abb3e011be9c0c8ad7d8fe4e053843db381bea6c0cc1",
-      "bytes": 417025,
+      "sha256": "33e6088c893f0ca669dc9aa9cbd25686344c855c39294c5f353d881ca135164b",
+      "bytes": 93277,
       "projectiles": [
         "trollBoulder_lvl6"
       ]
@@ -383,8 +383,8 @@
     },
     "headhunter-card-lvl1": {
       "path": "assets/projectiles-native/headhunter-card-lvl1/graph.json",
-      "sha256": "822641f045c0ba26320c430503a2880e0a43acf4f45af7d262a49059b259d3a5",
-      "bytes": 9133,
+      "sha256": "b0db22a0a959b2825e4bcf39c730d9d49748290dee1d2f9b97fd6a3045041606",
+      "bytes": 4671,
       "projectiles": [
         "Headhunter_Card_lvl1",
         "Headhunter_Card_lvl2",
@@ -402,8 +402,8 @@
     },
     "apprenticewarden-small2": {
       "path": "assets/projectiles-native/apprenticewarden-small2/graph.json",
-      "sha256": "06de9c685d70cbf700ca661d7e8cb6eef1e0781753d8eb65ea90da441f302e96",
-      "bytes": 6466,
+      "sha256": "8e610400b10a9df1279f748fba52bf638fe5b2fd1caa9a53f448225effcc9b15",
+      "bytes": 6072,
       "projectiles": [
         "ApprenticeWarden_small2"
       ]
@@ -426,8 +426,8 @@
     },
     "superdragonprojectile": {
       "path": "assets/projectiles-native/superdragonprojectile/graph.json",
-      "sha256": "8ac511d7b831b45530f6c3462dc72c2fbaf5e40be31529fb9bc0616253c3b6a3",
-      "bytes": 23082,
+      "sha256": "0ded6bc8a877862dd56ae495abe46a5b199105910b5275e194fe0a8147d42cf6",
+      "bytes": 22183,
       "projectiles": [
         "SuperDragonProjectile"
       ]
@@ -442,32 +442,32 @@
     },
     "superbowlerprojectile": {
       "path": "assets/projectiles-native/superbowlerprojectile/graph.json",
-      "sha256": "76e503c06e5382eadccbeca5afa2b7a1a992b613054663c148c9cef4f7d36c0e",
-      "bytes": 816878,
+      "sha256": "990240845e962f9861c18d3f103de6bd923a0d8853adb26b0e0a38758a688fe1",
+      "bytes": 41649,
       "projectiles": [
         "SuperBowlerProjectile"
       ]
     },
     "siege-zeppelin-projectile": {
       "path": "assets/projectiles-native/siege-zeppelin-projectile/graph.json",
-      "sha256": "bb71a94aff06fd5ff8551488f200f0f1c83073e294d5b105da1422c5353b2f1d",
-      "bytes": 5898,
+      "sha256": "47bdd086c97ad6231b0879e7695fe79d34a6b6d642d56fb214c3b746cd4c9eec",
+      "bytes": 2100,
       "projectiles": [
         "Siege Zeppelin Projectile"
       ]
     },
     "rollinglog": {
       "path": "assets/projectiles-native/rollinglog/graph.json",
-      "sha256": "6f0ba5a40934265380a08a4ca2521089a6528c39d4a0af3f2e576249f4c7c278",
-      "bytes": 802404,
+      "sha256": "759fde0ca0dd5072c70388abed3c23f2ffa628b49e8f47b1c94be1b01a16fa76",
+      "bytes": 54911,
       "projectiles": [
         "RollingLog"
       ]
     },
     "firecatapultprojectile1": {
       "path": "assets/projectiles-native/firecatapultprojectile1/graph.json",
-      "sha256": "ef2718837d06b1c015dc69cebe86dc7d984c34b9b53b54a1efbf7ed9843a81b6",
-      "bytes": 73462,
+      "sha256": "bb1b3c6a17b8de17e56edf70d6e818227ddb0b813c60a591709c3f83be66ca2b",
+      "bytes": 20126,
       "projectiles": [
         "FireCatapultProjectile1",
         "FireCatapultProjectile2",
@@ -478,8 +478,8 @@
     },
     "commandtower-barrel1": {
       "path": "assets/projectiles-native/commandtower-barrel1/graph.json",
-      "sha256": "71ca732b425d41525f6b8f6cd762200a41ca4d34319e65f56403d267d2661600",
-      "bytes": 643896,
+      "sha256": "1b88c85e5abe2e4aeafa4bfbe6ea57c8d01ee1a19423aa7d760ad7c3546e6a41",
+      "bytes": 36297,
       "projectiles": [
         "CommandTower Barrel1",
         "CommandTower Barrel2",
@@ -505,8 +505,8 @@
     },
     "tinyhound-projectile": {
       "path": "assets/projectiles-native/tinyhound-projectile/graph.json",
-      "sha256": "67aab15bbf7654527fe61793fde489e9a2e4928589513f0d921a52782671d7ad",
-      "bytes": 7195,
+      "sha256": "8c3eaa2880f649c01e90193dfdbd2a4398c7298e9b9c7636623077119ac40e52",
+      "bytes": 6204,
       "projectiles": [
         "tinyhound_projectile"
       ]
@@ -529,8 +529,8 @@
     },
     "icy-tinyhound-projectile": {
       "path": "assets/projectiles-native/icy-tinyhound-projectile/graph.json",
-      "sha256": "d05f20252bca2db3452e696bc5266760c660eb1262dab84a516d8dddcadf2b88",
-      "bytes": 7184,
+      "sha256": "5fc40a7e9b4a3e49529ce75cca0cb95d7b9aa000ac6b794ab3cff65b077754b2",
+      "bytes": 6189,
       "projectiles": [
         "icy_tinyhound_projectile"
       ]
@@ -545,48 +545,48 @@
     },
     "archerqueen-arrow-lvl2": {
       "path": "assets/projectiles-native/archerqueen-arrow-lvl2/graph.json",
-      "sha256": "53a9448e1f955e957757de07f3beb46f31dc61003edd566feef30618d0272da2",
-      "bytes": 6159,
+      "sha256": "530814fcd4bbd261e51aba2a5312716e3d026ad3cb625164220378758cd7ce40",
+      "bytes": 3982,
       "projectiles": [
         "ArcherQueen arrow lvl2"
       ]
     },
     "archerqueen-arrow-lvl3": {
       "path": "assets/projectiles-native/archerqueen-arrow-lvl3/graph.json",
-      "sha256": "544b1d3563402115e76f5ad0a82d7c5d903257b40698e60f417de358a47cfa1d",
-      "bytes": 6221,
+      "sha256": "72eb10e6eeed1fb3a31379943d7f96e649b69fdb9d338640409e5069c4f9a586",
+      "bytes": 4044,
       "projectiles": [
         "ArcherQueen arrow lvl3"
       ]
     },
     "amazonqueen-javelin": {
       "path": "assets/projectiles-native/amazonqueen-javelin/graph.json",
-      "sha256": "c21dd322657e2fdb0620bc24dbbb68f19ebb162108929c40d693dc32c107679a",
-      "bytes": 4304,
+      "sha256": "a2fcde20a9437bd05786054ff117ba441c67896f90ccce5cbc9e0e2f426bec3c",
+      "bytes": 2569,
       "projectiles": [
         "AmazonQueen_javelin"
       ]
     },
     "minionheroattackprojectile": {
       "path": "assets/projectiles-native/minionheroattackprojectile/graph.json",
-      "sha256": "5f04ce4c47acc8196d6ab6ddbe5e75a0f454b9c0664e0178be722ca3dfb9d9a2",
-      "bytes": 50018,
+      "sha256": "d9bbb2a5e94ebc8830ee485be431f51469e3254b4aca7fc349df198d20a4315b",
+      "bytes": 34152,
       "projectiles": [
         "MinionHeroAttackProjectile"
       ]
     },
     "phoenixprojectile": {
       "path": "assets/projectiles-native/phoenixprojectile/graph.json",
-      "sha256": "887af4d62fa1911238369ec71f34a1bd3a411107f6de5fa3b73166bec91fd1d7",
-      "bytes": 9423,
+      "sha256": "80e65fab3d7802cca09606cd7ed1acc92f129850eef0793ee8bce3df7b334bbb",
+      "bytes": 7981,
       "projectiles": [
         "PhoenixProjectile"
       ]
     },
     "phoenixresurrect": {
       "path": "assets/projectiles-native/phoenixresurrect/graph.json",
-      "sha256": "8bfd4a8774647423518d0e56f1b981e62ec4d6e3a70250303a611da3c635436a",
-      "bytes": 40917,
+      "sha256": "8867a7d5320057fcdd155922dbd33b7b7ea92bab0abfa14a72b085ded1dd1d7b",
+      "bytes": 39477,
       "projectiles": [
         "PhoenixResurrect"
       ]
@@ -641,8 +641,8 @@
     },
     "jumpingriderprojectile1": {
       "path": "assets/projectiles-native/jumpingriderprojectile1/graph.json",
-      "sha256": "732646a301a1213994ec4cb922e5ee54210b2b9b46d878a6308a588acd49e1ce",
-      "bytes": 164790,
+      "sha256": "ca68844b0a44ab0678d2db39196ae53036718bd418816666fb26887b2dd5093b",
+      "bytes": 15680,
       "projectiles": [
         "JumpingRiderProjectile1",
         "JumpingRiderProjectile2",
@@ -660,16 +660,16 @@
     },
     "amazonqueen-shield": {
       "path": "assets/projectiles-native/amazonqueen-shield/graph.json",
-      "sha256": "0754a82cd3f0b5758fe713449cb178cfeefa47ae2d1acef325d0794e2abc8453",
-      "bytes": 14181,
+      "sha256": "284bb1d3163c9fc1837020e63aa3e686de14837840afc533a262b5bdeff68dcb",
+      "bytes": 8391,
       "projectiles": [
         "AmazonQueen_shield"
       ]
     },
     "rocketspearprojectile": {
       "path": "assets/projectiles-native/rocketspearprojectile/graph.json",
-      "sha256": "c9785d3b8b5ddf8e345a1459de4164086dbb59458b86e2ea0e7875da18f2794d",
-      "bytes": 82413,
+      "sha256": "75fe7c4d91379dac483f1bd59f4b8776c66e002c53b6c27628b24d25121ac93f",
+      "bytes": 9154,
       "projectiles": [
         "RocketSpearProjectile"
       ]
@@ -759,16 +759,16 @@
     },
     "kickedfootball": {
       "path": "assets/projectiles-native/kickedfootball/graph.json",
-      "sha256": "261ee4bc7334eca04bfd4cee332cec00d091c3a6fe31c3a2eaccb2a738c77c17",
-      "bytes": 94153,
+      "sha256": "96027a09209acb1a5d4860c64f5c2b2141eda9a7f5b0152d174760d5ace1aa6a",
+      "bytes": 13199,
       "projectiles": [
         "KickedFootball"
       ]
     },
     "turbostartprojectile": {
       "path": "assets/projectiles-native/turbostartprojectile/graph.json",
-      "sha256": "23f50714dd73e16c5126acaa9278ed1cccb31336d1e36d345a73e29d6750bd95",
-      "bytes": 49749,
+      "sha256": "e4d613ab7f4a2ac94134d8a97335bccaa69846e088b432a70b025dd8a856f971",
+      "bytes": 9122,
       "projectiles": [
         "TurboStartProjectile"
       ]
@@ -871,8 +871,8 @@
     },
     "cannonball14": {
       "path": "assets/projectiles-native/cannonball14/graph.json",
-      "sha256": "caaee16db86832dc0b89f8f7f45738f968b481f35176769c7b773111b6213877",
-      "bytes": 7560,
+      "sha256": "e531a8437f0042c83e6d4a5b0078f32ca2ae1bac3e4abf476aabc3771aa9e827",
+      "bytes": 2218,
       "projectiles": [
         "Cannonball14"
       ]
@@ -887,112 +887,112 @@
     },
     "cannonball16": {
       "path": "assets/projectiles-native/cannonball16/graph.json",
-      "sha256": "c0fbbd79f0c0ccd7dc3727c1f630d80600e3b38ccdbcc2f199e529f24579cdfd",
-      "bytes": 21121,
+      "sha256": "2373817be7006e9d6fc54c23b262296c2cb1dcab18908a3885bacf62273e8433",
+      "bytes": 3767,
       "projectiles": [
         "Cannonball16"
       ]
     },
     "mortar-ammo1": {
       "path": "assets/projectiles-native/mortar-ammo1/graph.json",
-      "sha256": "0a1d65b09f4315db3f545c0fbc299b0af8c8ad7d7b00c74e6e6b48c3ec695cd4",
-      "bytes": 12243,
+      "sha256": "8632bbe65cc7130959f73ff5e0ecb66b77e02770a197eda1097833f51516e171",
+      "bytes": 4330,
       "projectiles": [
         "Mortar Ammo1"
       ]
     },
     "mortar-ammo2": {
       "path": "assets/projectiles-native/mortar-ammo2/graph.json",
-      "sha256": "96ba6e52a576d41b628088f7f4edc63578d4a28fdeb87441a179ff809370ff3c",
-      "bytes": 12243,
+      "sha256": "ec6d196166b9dfce9c40be69a8b4905f8add6167e30a563defbff8a8ae085775",
+      "bytes": 4330,
       "projectiles": [
         "Mortar Ammo2"
       ]
     },
     "mortar-ammo3": {
       "path": "assets/projectiles-native/mortar-ammo3/graph.json",
-      "sha256": "924bb5d987dd0781ab7a7c52127412b90c15a27b795586e2b55b39bd2814facf",
-      "bytes": 12245,
+      "sha256": "dc80c4d7c4184e081dc9f39f273b68d315e8b79b5b0d6639e58a1e451bd57416",
+      "bytes": 4332,
       "projectiles": [
         "Mortar Ammo3"
       ]
     },
     "mortar-ammo4": {
       "path": "assets/projectiles-native/mortar-ammo4/graph.json",
-      "sha256": "dbd67e695fdb5e50cb9aa466c60dd085e27589a06d0f1cde8a6838aa286140bf",
-      "bytes": 12322,
+      "sha256": "23406455f0b46e3d679e82ae7fe7126b564d35013a7e98667449adc0ebddc34e",
+      "bytes": 4409,
       "projectiles": [
         "Mortar Ammo4"
       ]
     },
     "mortar-ammo5": {
       "path": "assets/projectiles-native/mortar-ammo5/graph.json",
-      "sha256": "33892730a47320827381072dd2a634175945527dee5585cf8e7d2516c6755e1f",
-      "bytes": 12322,
+      "sha256": "5c83b0d1412b51e6bd8022813a23f194f942c84e966c6bf9f567835cd538911a",
+      "bytes": 4409,
       "projectiles": [
         "Mortar Ammo5"
       ]
     },
     "mortar-ammo6": {
       "path": "assets/projectiles-native/mortar-ammo6/graph.json",
-      "sha256": "c19f78420bcd78e199058f2421cf9658bbf6f7c01c12663e8592f0961ff769a6",
-      "bytes": 13383,
+      "sha256": "607693e7c73e45dd6947e5fdbd65d9abd53b98936c58ba8e1032f528ff586b87",
+      "bytes": 7403,
       "projectiles": [
         "Mortar Ammo6"
       ]
     },
     "mortar-ammo8": {
       "path": "assets/projectiles-native/mortar-ammo8/graph.json",
-      "sha256": "1f62edddcaaf74526544a16a815ec206ee8c1ff55352c8cca3bb67f68dd5a337",
-      "bytes": 30142,
+      "sha256": "6f97820b4e288de4e16951ee1bad89fb5aff3b7d5d463af757ac2c11c30bed5d",
+      "bytes": 8276,
       "projectiles": [
         "Mortar Ammo8"
       ]
     },
     "mortar-ammo9": {
       "path": "assets/projectiles-native/mortar-ammo9/graph.json",
-      "sha256": "bf6fca58d674615c739e857f9a9930a77928ccf26f460976a0aaafc1b73b93cb",
-      "bytes": 58846,
+      "sha256": "34d67f295138291a2381ae05948bf4fd57d447d29f5c76c15639996ad0eb4b00",
+      "bytes": 8332,
       "projectiles": [
         "Mortar Ammo9"
       ]
     },
     "mortar-ammo10": {
       "path": "assets/projectiles-native/mortar-ammo10/graph.json",
-      "sha256": "a1ab181a23565a26cf407b7d0d270184915850acb56d7cde0747b0f4f2f47eec",
-      "bytes": 44377,
+      "sha256": "1ffc4864ee161b8a659f94df15bda3d4371aac03cbce4e253fa380dfb0ec00a0",
+      "bytes": 8671,
       "projectiles": [
         "Mortar Ammo10"
       ]
     },
     "mortar-ammo11": {
       "path": "assets/projectiles-native/mortar-ammo11/graph.json",
-      "sha256": "1e77cec37b3f6e3c534906f5d23be967fce3535eec0f35627a17697fdb225d8b",
-      "bytes": 39482,
+      "sha256": "db691f060ad98d715ffb2293f44e8697aed85fa8c9b2fac1480299c427f6ccbc",
+      "bytes": 8609,
       "projectiles": [
         "Mortar Ammo11"
       ]
     },
     "mortar-ammo-lvl16": {
       "path": "assets/projectiles-native/mortar-ammo-lvl16/graph.json",
-      "sha256": "aad1694e8dfed904af1a856e3bf74059055eb851efa4c1b408f41b6eb6b536ca",
-      "bytes": 61468,
+      "sha256": "45052d80618fca45ad6e92a36886dc0b05c315b46f1bc256eb2d14ce5b7e08f5",
+      "bytes": 6504,
       "projectiles": [
         "Mortar Ammo lvl16"
       ]
     },
     "mortar-ammo-lvl17": {
       "path": "assets/projectiles-native/mortar-ammo-lvl17/graph.json",
-      "sha256": "1bff4e84a542a64f5db87945fd4cecd10f3d412cd89286b1962fa4c80d247077",
-      "bytes": 88666,
+      "sha256": "e10fc7ecdb989fa6872fd9f80b39acd8045bd47e70f131b1b14a0d6062dc5c3f",
+      "bytes": 8476,
       "projectiles": [
         "Mortar Ammo lvl17"
       ]
     },
     "mortar-ammo-lvl18": {
       "path": "assets/projectiles-native/mortar-ammo-lvl18/graph.json",
-      "sha256": "ee8969de7db4a968300310111af15f70c2e0e0ffce712edac9e1898804980fbd",
-      "bytes": 82202,
+      "sha256": "69f83a46835cd2ebc4e4b17fc64709ad5f4e784f770e46c52bc4822ec8ca7113",
+      "bytes": 8421,
       "projectiles": [
         "Mortar Ammo lvl18"
       ]
@@ -1087,24 +1087,24 @@
     },
     "bomb-tower-ammo1": {
       "path": "assets/projectiles-native/bomb-tower-ammo1/graph.json",
-      "sha256": "a50a7bbfc4a448c27196f9a10bb3aafdd4a6fa2442f8aa6bfc02755fad563191",
-      "bytes": 7834,
+      "sha256": "31d8fe51e4be0f2db2e6450cf189bc804840deb9d3e432ed5ac1377b4719582e",
+      "bytes": 5097,
       "projectiles": [
         "Bomb Tower Ammo1"
       ]
     },
     "bomb-tower-ammo2": {
       "path": "assets/projectiles-native/bomb-tower-ammo2/graph.json",
-      "sha256": "828e7cfdd7abcd3b988e0f04bac8ca82a2c929210d62a1232094b2026e92ccaf",
-      "bytes": 8102,
+      "sha256": "e36679566e5380a178568ca058f3113aad81d4fd48266023d6f551b5098d02bf",
+      "bytes": 5072,
       "projectiles": [
         "Bomb Tower Ammo2"
       ]
     },
     "bomb-tower-ammo3": {
       "path": "assets/projectiles-native/bomb-tower-ammo3/graph.json",
-      "sha256": "9b099f893570293441c012d03883b8e42261c6e752d51faa3b2dae31362b4bef",
-      "bytes": 8728,
+      "sha256": "86ebdfc82049859db4e38b032aac94fbac7c1c645d15a0cd1b3cc0bd1e1df11b",
+      "bytes": 5117,
       "projectiles": [
         "Bomb Tower Ammo3"
       ]
@@ -1119,8 +1119,8 @@
     },
     "x-bow-projectile-2": {
       "path": "assets/projectiles-native/x-bow-projectile-2/graph.json",
-      "sha256": "15e1a352f216011a62ebd11720418393d6788bb68c1504c6c92f5e91f3fdf294",
-      "bytes": 2993,
+      "sha256": "163fb43b69819fc3ec2c2089805daca0fcf840ff25695bd3b19e87a949197be5",
+      "bytes": 1939,
       "projectiles": [
         "X-Bow Projectile 2"
       ]
@@ -1143,24 +1143,24 @@
     },
     "x-bow-projectile-5": {
       "path": "assets/projectiles-native/x-bow-projectile-5/graph.json",
-      "sha256": "a04ccf30b354527b62403f1381a732a25a7bb00fbe1d912edfc880ecae63f6d8",
-      "bytes": 24747,
+      "sha256": "c76809b5aac64aa975e706ec413ade0ded1ef8247cc80ffd671364b7236377c6",
+      "bytes": 11222,
       "projectiles": [
         "X-Bow Projectile 5"
       ]
     },
     "x-bow-projectile-6": {
       "path": "assets/projectiles-native/x-bow-projectile-6/graph.json",
-      "sha256": "0335dc34337da676b178a31926ac0675b173f9c2903faa75751edf7954f6a183",
-      "bytes": 25237,
+      "sha256": "147ca2e2e0c2922248f31bf41b1813cd5bc894bc0d86c1703ecf5b18b77b8e46",
+      "bytes": 11712,
       "projectiles": [
         "X-Bow Projectile 6"
       ]
     },
     "x-bow-projectile-7": {
       "path": "assets/projectiles-native/x-bow-projectile-7/graph.json",
-      "sha256": "7e5439d45deae2b3e02994b18b029cb5f80585750c7fde1571babd2f5d20e32a",
-      "bytes": 25707,
+      "sha256": "f755896bf55825b5afd66c7416cb1a6a3aaf82feecf436ea7f05f1abd2b11f75",
+      "bytes": 12182,
       "projectiles": [
         "X-Bow Projectile 7"
       ]
@@ -1175,8 +1175,8 @@
     },
     "artillery-ammo2": {
       "path": "assets/projectiles-native/artillery-ammo2/graph.json",
-      "sha256": "e42f02d536451a1a11e327e07ab943596eaffa53a7f4a1d6e7d0de15c0731b2a",
-      "bytes": 16249,
+      "sha256": "222d10ee7ba683a3e4bab44e19ac6ada050242061bcec8b5257f2316a1bb47bb",
+      "bytes": 7571,
       "projectiles": [
         "Artillery Ammo2",
         "Artillery Ammo3",
@@ -1188,16 +1188,16 @@
     },
     "scattershot-projectile-1": {
       "path": "assets/projectiles-native/scattershot-projectile-1/graph.json",
-      "sha256": "ad88d9183793bc07ffba7fea6e9ee6782a722c2b37f2298c04e08187f6a9edf5",
-      "bytes": 81960,
+      "sha256": "e92514bb12155fe4b38f72fb043259eeb8c8471877acbd7e892d3ea0913e2f5c",
+      "bytes": 10455,
       "projectiles": [
         "Scattershot Projectile 1"
       ]
     },
     "scattershot-projectile-2": {
       "path": "assets/projectiles-native/scattershot-projectile-2/graph.json",
-      "sha256": "788b82a64d46d72b985219d925d86ae76091fdb41f54361547e892ceba1f23df",
-      "bytes": 83104,
+      "sha256": "5408acbbb3d21405a683808865fe8e08e4d60c12f68ea14cf433a9dd63d65621",
+      "bytes": 11381,
       "projectiles": [
         "Scattershot Projectile 2",
         "Scattershot Projectile 3",
@@ -1206,24 +1206,24 @@
     },
     "scattershot-projectile-5": {
       "path": "assets/projectiles-native/scattershot-projectile-5/graph.json",
-      "sha256": "845417ec7ba7f1cf3822240a279e096c587081c190b194eeac76accf95194d4b",
-      "bytes": 133692,
+      "sha256": "16135a06a768d66b4881fea6145065d84db0803df0b2959da086f6f71f7af369",
+      "bytes": 13208,
       "projectiles": [
         "Scattershot Projectile 5"
       ]
     },
     "scattershot-projectile-6": {
       "path": "assets/projectiles-native/scattershot-projectile-6/graph.json",
-      "sha256": "8c3a0696d7fc76e00f006dceecb36b650c87ee279c1a297f7143968a04035306",
-      "bytes": 129080,
+      "sha256": "e232d0d4fe887897053ac8d40f13cda0802eb68f7c83bad19ee0e0a66f068e96",
+      "bytes": 11474,
       "projectiles": [
         "Scattershot Projectile 6"
       ]
     },
     "scattershot-projectile-7": {
       "path": "assets/projectiles-native/scattershot-projectile-7/graph.json",
-      "sha256": "f45bed4640574205b90e5483328c98cb9e83da89a5a62d4158feedd152183d7a",
-      "bytes": 80493,
+      "sha256": "f2b9e4fefb8ee4cdcf76b4171e0faa9262bab8e2c2078bc0e39b133361d275d2",
+      "bytes": 8406,
       "projectiles": [
         "Scattershot Projectile 7"
       ]
@@ -1310,8 +1310,8 @@
     },
     "gatlinggunammo": {
       "path": "assets/projectiles-native/gatlinggunammo/graph.json",
-      "sha256": "d9a32d6ea75e87902948f7d8543e3c21877bf172e3d0355cab0aba9256372476",
-      "bytes": 11641,
+      "sha256": "daf2ef943d05fe8168c46775aadebfd12435781899af6414328d809cfdbe09bf",
+      "bytes": 4201,
       "projectiles": [
         "GatlingGunAmmo"
       ]
@@ -1326,88 +1326,88 @@
     },
     "airtrapballoon": {
       "path": "assets/projectiles-native/airtrapballoon/graph.json",
-      "sha256": "b6a83259834b6b5da204ed44b4478097b072c1a8306fc3c8f1c2c3d648662b21",
-      "bytes": 29703,
+      "sha256": "8c4289e48210fef4010df743f2420ed665812338628b7af5c46f5099904a3e3c",
+      "bytes": 12520,
       "projectiles": [
         "AirTrapBalloon"
       ]
     },
     "airtrapballoon-lvl3": {
       "path": "assets/projectiles-native/airtrapballoon-lvl3/graph.json",
-      "sha256": "42429900c41e19ebe217f2743fd079646262adbcd89c4e1efcc7b6409580bdcd",
-      "bytes": 31422,
+      "sha256": "f6e9c2af71d7c032f11e39a3d74f9f97fe55b4f784826be06b37abd4b5254446",
+      "bytes": 12867,
       "projectiles": [
         "AirTrapBalloon_lvl3"
       ]
     },
     "airtrapballoon-lvl5": {
       "path": "assets/projectiles-native/airtrapballoon-lvl5/graph.json",
-      "sha256": "08a45c31b7e15e4d5a0de2fac506a555a49344c14b0be9c6fa55bacb1c5e8190",
-      "bytes": 32011,
+      "sha256": "653861c2ef82163759edbb64649bb0f0144cc25d46616ec3458edb974da8ae23",
+      "bytes": 13224,
       "projectiles": [
         "AirTrapBalloon_lvl5"
       ]
     },
     "airtrapballoon-lvl6": {
       "path": "assets/projectiles-native/airtrapballoon-lvl6/graph.json",
-      "sha256": "4a785a10bcd1f006d1546442b35d542497f6ef5868b529555a66755bdcedae05",
-      "bytes": 32640,
+      "sha256": "8d188bbac4c04d9ebec0e2add9451cee212c81a6716105f9b168544d53e1a3f9",
+      "bytes": 13382,
       "projectiles": [
         "AirTrapBalloon_lvl6"
       ]
     },
     "airtrapballoon-lvl8": {
       "path": "assets/projectiles-native/airtrapballoon-lvl8/graph.json",
-      "sha256": "970c891e4fc19655de607a4c5bdd7c9e19aca2c04d44c6cb7856ed322a3bd3c4",
-      "bytes": 90084,
+      "sha256": "288be1662c39016044e22999f6514c889463118c08a27f93fa36be6d47e0967d",
+      "bytes": 23783,
       "projectiles": [
         "AirTrapBalloon_lvl8"
       ]
     },
     "airtrapballoon-lvl11": {
       "path": "assets/projectiles-native/airtrapballoon-lvl11/graph.json",
-      "sha256": "58cba734847416375d8a27fe05353d553e063791dfe9865b5e0f956e462ec7b4",
-      "bytes": 90914,
+      "sha256": "1bfca3f57196ce63810978f3f0757e3c7b598a5969f121423e1264972e280db3",
+      "bytes": 23919,
       "projectiles": [
         "AirTrapBalloon_lvl11"
       ]
     },
     "airtrapballoon-lvl13": {
       "path": "assets/projectiles-native/airtrapballoon-lvl13/graph.json",
-      "sha256": "a1f9fdb092e1fcad1f098c03c77d1133fd99cd4965d455c0b609213dd078aebe",
-      "bytes": 42940,
+      "sha256": "0a1d3aab75a4eb59ad341a29b20f4c71de86e19effd00e91481967f2ca41a696",
+      "bytes": 19881,
       "projectiles": [
         "AirTrapBalloon_lvl13"
       ]
     },
     "largedarkelixirballoon": {
       "path": "assets/projectiles-native/largedarkelixirballoon/graph.json",
-      "sha256": "d5e1d476a3e36f607272eb5ad84b52fb7b728a23f893384db7e3ba519ce9820a",
-      "bytes": 35409,
+      "sha256": "ffb2ba058dcfafe408839e5d50db0d13728dd8d3758247d12b12084cb0c43d6c",
+      "bytes": 15604,
       "projectiles": [
         "LargeDarkElixirBalloon"
       ]
     },
     "largedarkelixirballoon-lvl3": {
       "path": "assets/projectiles-native/largedarkelixirballoon-lvl3/graph.json",
-      "sha256": "cf6c6a40fd9035a2e04a16089331440ada176a6cc82af6efed9c57adba7d57a7",
-      "bytes": 40239,
+      "sha256": "d3ae7a2621a93eaf3a9f91441fd47737e625f0d702dc6f78818ca46f4bc71322",
+      "bytes": 15613,
       "projectiles": [
         "LargeDarkElixirBalloon_lvl3"
       ]
     },
     "largedarkelixirballoon-lvl5": {
       "path": "assets/projectiles-native/largedarkelixirballoon-lvl5/graph.json",
-      "sha256": "35ebdfc9f79583a18e795e504bae6fd9bb9f7012862176a347d04114a0a351bc",
-      "bytes": 42119,
+      "sha256": "512fa559a125487d43e2ca436d6c2651b63396e568edbaa7dd48883219b6b9bd",
+      "bytes": 15382,
       "projectiles": [
         "LargeDarkElixirBalloon_lvl5"
       ]
     },
     "largedarkelixirballoon-lvl7": {
       "path": "assets/projectiles-native/largedarkelixirballoon-lvl7/graph.json",
-      "sha256": "adaefaa893f6fce5b6a8842149189e7927d7edd4abe8d3f5c65bb0cd7af29c3d",
-      "bytes": 41749,
+      "sha256": "4817ab5bb46fe9c87c3462c5ef737d6814f44773296046cb54b65dd1b83df3ca",
+      "bytes": 15614,
       "projectiles": [
         "LargeDarkElixirBalloon_lvl7"
       ]
@@ -1438,8 +1438,8 @@
     },
     "th17cannonprojectile": {
       "path": "assets/projectiles-native/th17cannonprojectile/graph.json",
-      "sha256": "06c7ebb8c52f363eb53924c8a034e624bd5a1e47b342434f00b3ced8a9f3fab1",
-      "bytes": 71856,
+      "sha256": "0068c35732e7e18d8a30e53a741e507f01e5849e418fb5627812bab6707de5f3",
+      "bytes": 8140,
       "projectiles": [
         "TH17CannonProjectile"
       ]
@@ -1486,16 +1486,16 @@
     },
     "yetimitejump4": {
       "path": "assets/projectiles-native/yetimitejump4/graph.json",
-      "sha256": "3fea912175a8ba455623e003d1cc4ce7678131036ba14d08a53eb81668cb2387",
-      "bytes": 7396,
+      "sha256": "4fb9f7c145be9afd45d47c74dbcf68236386ecb027eb03cf22f00391a93aafc0",
+      "bytes": 2430,
       "projectiles": [
         "YetimiteJump4"
       ]
     },
     "yetimitejump6": {
       "path": "assets/projectiles-native/yetimitejump6/graph.json",
-      "sha256": "04517d088198441e5dc395944e4f001beb790487460325eb61b5461a3013c60c",
-      "bytes": 7384,
+      "sha256": "b69d5e27530add431a9b8e8b318b4304f80a304fea30e1766f6a5db56ce5215d",
+      "bytes": 2418,
       "projectiles": [
         "YetimiteJump6"
       ]
@@ -1518,8 +1518,8 @@
     },
     "gw-equipment-lavaloonprojectile1": {
       "path": "assets/projectiles-native/gw-equipment-lavaloonprojectile1/graph.json",
-      "sha256": "145c576f0ddd35afda496d2e5d6d738a0f7230162c140ca10fd30ffb06ff55a4",
-      "bytes": 24696,
+      "sha256": "144cdacdd4d696373aead84c0e9e08d63f23332f98531770e281a2d007839f63",
+      "bytes": 15823,
       "projectiles": [
         "GW_equipment_LavaloonProjectile1",
         "GW_equipment_LavaloonProjectile2",
@@ -1552,8 +1552,8 @@
     },
     "revengetowerprojectile3": {
       "path": "assets/projectiles-native/revengetowerprojectile3/graph.json",
-      "sha256": "9b523fd1f462d6e6eb6b8d32d3862f5dc7271377dedc6465c72b062918a5485a",
-      "bytes": 37978,
+      "sha256": "2a924c19d93da08a1d6c102791ac2387b7147686e35d38534b488e05d64b5267",
+      "bytes": 16658,
       "projectiles": [
         "RevengeTowerProjectile3"
       ]

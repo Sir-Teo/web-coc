@@ -51,7 +51,10 @@ export class TroopNativePresentation {
         const bitmap = await createImageBitmap(blob);
         if (this.alive && !this.scene.textures.exists(key))
           this.scene.textures.addImage(key, bitmap as unknown as HTMLImageElement);
-        bitmap.close?.();
+        // Do not close the bitmap: Phaser retains it as the texture source for
+        // canvas colour bakes and WebGL context restore. Closing detaches its
+        // pixels, so the next colour bake (giants, wizards, wall breakers, ...)
+        // throws inside drawImage and ends the game loop.
         return;
       }
     } catch {
@@ -88,6 +91,22 @@ export class TroopNativePresentation {
     for (const { view } of this.views.values()) view.destroy();
     this.views.clear();
     this.positions.clear();
+  }
+  /**
+   * Drop decoded packs (and their GPU textures) for kinds outside `keep`.
+   * Loaded textures otherwise accumulate forever across battles. Kept kinds
+   * reload through the existing prefetch path; dropped views are already gone.
+   */
+  releaseExcept(keep?: ReadonlySet<string>) {
+    for (const [kind, pack] of this.packs) {
+      if (keep?.has(kind)) continue;
+      for (const [name, graph] of Object.entries(pack.scenes))
+        for (const id of Object.keys(graph.textures)) {
+          const key = nativeMeshTexture(`troop:${kind}:${name}`, id);
+          if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+        }
+      this.packs.delete(kind);
+    }
   }
   destroy() {
     this.alive = false;
@@ -126,6 +145,17 @@ export class TroopNativePresentation {
       : 0;
     for (const u of battle?.units ?? []) {
       if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
+      // Recalled units are gone: drop their meshes now, or a frozen frame stays.
+      if (u.native?.recalled) {
+        const owned = this.views.get(u.id);
+        if (owned) {
+          owned.view.destroy();
+          this.views.delete(u.id);
+        }
+        this.positions.delete(u.id);
+        sprites.get(u.id)?.setVisible(false);
+        continue;
+      }
       alive.add(u.id);
       // Cull before pack fetch/decode so off-screen families never start loading.
       const early = iso(u.x, u.y);
@@ -248,6 +278,11 @@ export class TroopNativePresentation {
           ((u.native?.effects?.invisibleUntil ?? 0) > battle!.elapsed ? 0.35 : 1),
       );
       // Ability boosts read gold on the fallback layer; mirror them on the meshes.
+      // The mesh renderer already applied per-pose shading (darkened Pekka, Golem,
+      // Giant, Healer and Dragon parts) as each leaf's tint, so a boost must
+      // multiply that tint instead of replacing it, and the no-boost path must
+      // leave it alone. Blend-group images carry no per-object shading (it is
+      // baked into their buffer), so they take the boost tint directly.
       const meshTint =
         (u.spellRageUntil ?? 0) > battle!.elapsed
           ? 0xf2b3ff
@@ -255,6 +290,13 @@ export class TroopNativePresentation {
               (u.summoned && (u.rageUntil ?? 0) > battle!.elapsed)
             ? 0xffbd76
             : 0xffffff;
+      const leaves = new Set(owned.view.meshes.values());
+      const combineTint = (base: number, over: number) => {
+        const r = Math.round((((base >> 16) & 255) * ((over >> 16) & 255)) / 255);
+        const g = Math.round((((base >> 8) & 255) * ((over >> 8) & 255)) / 255);
+        const b = Math.round(((base & 255) * (over & 255)) / 255);
+        return (r << 16) | (g << 8) | b;
+      };
       for (const object of owned.view.objects) {
         object.setData('nativeTroop', u.id);
         const tinted = object as unknown as {
@@ -262,7 +304,15 @@ export class TroopNativePresentation {
           setTint(color: number): void;
           clearTint(): void;
         };
-        if (meshTint === 0xffffff) {
+        if (leaves.has(object as Phaser.GameObjects.Mesh2D)) {
+          // Leaf meshes were just tinted with their own shading by the mesh
+          // renderer above; preserve it when there is no boost.
+          if (meshTint === 0xffffff) continue;
+          const final = combineTint(tinted.tint ?? 0xffffff, meshTint);
+          if (tinted.tint === final) continue;
+          if (final === 0xffffff) tinted.clearTint();
+          else tinted.setTint(final);
+        } else if (meshTint === 0xffffff) {
           if (tinted.tint !== 0xffffff) tinted.clearTint();
         } else if (tinted.tint !== meshTint) tinted.setTint(meshTint);
       }

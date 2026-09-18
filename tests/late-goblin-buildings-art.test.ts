@@ -71,16 +71,24 @@ describe('original late Goblin building art', () => {
       ['assets/buildings/late-goblin-native/', goblinNative, goblinNative.characters.textures],
       ['assets/buildings/builder-hut-native/', hutNative, {}],
     ] as const) {
-      const expected = [
+      const references = [
         ...Object.values(native.world.textures),
         ...Object.values(extra),
         ...Object.values(native.previews),
-      ].map((v) => (v as { path: string }).path.replace(prefix, ''));
+      ];
+      // Duplicate texture pages consolidate into shared files: the directory
+      // holds the unique locally-referenced entries.
+      const local = [...new Set(
+        references
+          .map((v) => (v as { path: string }).path)
+          .filter((p) => p.startsWith(prefix))
+          .map((p) => p.replace(prefix, '')),
+      )];
       for (const sound of Object.values(native.sounds)) {
         const bytes = await readFile(`public/${sound.path}`);
         expect(bytes.subarray(0, 4).toString()).toBe('OggS');
         expect(hash(bytes)).toBe(sound.sha256);
-        expected.push(sound.path.replace(prefix, ''));
+        if (sound.path.startsWith(prefix)) local.push(sound.path.replace(prefix, ''));
       }
       for (const preview of Object.values(native.previews)) {
         const { data, info } = await sharp(`public/${preview.path}`)
@@ -99,7 +107,7 @@ describe('original late Goblin building art', () => {
           .filter((f) => f.isFile())
           .map((f) => join(f.parentPath, f.name).replace(`public/${prefix}`, ''))
           .sort(),
-      ).toEqual(expected.sort());
+      ).toEqual(local.sort());
     }
     expect(LATE_GOBLIN_BUILDING_ART['goblin-boss-th'].asset).toBe(
       '/assets/buildings/late-goblin-native/goblin-th02.png',

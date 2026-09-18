@@ -22,7 +22,10 @@ export function preloadNativeMeshes(scene: Phaser.Scene, graph: NativeMeshGraph,
  * textures keep their original pixels. Alpha remains on each retained mesh.
  */
 const TINT_ORDER: string[] = [];
-const MAX_TINTED_TEXTURES = 256;
+/** Baked pages are full texture copies: budget bytes, not texture count. */
+const MAX_TINTED_BYTES = 32 << 20;
+const tintedBytes = new Map<string, number>();
+let tintedBytesTotal = 0;
 /**
  * Meshes a tinted texture is drawing right now. A mesh holds the `Frame` itself, not its key,
  * so removing a texture still on screen leaves that frame without a source and the triangle
@@ -69,15 +72,20 @@ function tintedTexture(scene: Phaser.Scene, prefix: string, pose: NativeMeshPose
       );
   ctx.putImageData(pixels, 0, 0);
   scene.textures.addCanvas(key, canvas);
+  const bytes = canvas.width * canvas.height * 4;
+  tintedBytes.set(key, bytes);
+  tintedBytesTotal += bytes;
   TINT_ORDER.push(key);
   // Evict only what nothing is drawing; a texture in use waits for its meshes to let it go.
-  for (let scan = TINT_ORDER.length; TINT_ORDER.length > MAX_TINTED_TEXTURES && scan > 0; scan--) {
+  for (let scan = TINT_ORDER.length; tintedBytesTotal > MAX_TINTED_BYTES && scan > 0; scan--) {
     const oldest = TINT_ORDER.shift()!;
     if (oldest === key || TINT_REFS.has(oldest)) {
       TINT_ORDER.push(oldest);
       continue;
     }
     if (scene.textures.exists(oldest)) scene.textures.remove(oldest);
+    tintedBytesTotal -= tintedBytes.get(oldest) ?? 0;
+    tintedBytes.delete(oldest);
   }
   return key;
 }
@@ -91,7 +99,19 @@ export class NativeMeshView {
   ) {
     configureNativeTriangleRendering(scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
   }
-  render(poses: readonly NativeMeshPose[], x: number, y: number, depth: number, alpha = 1) {
+  render(
+    poses: readonly NativeMeshPose[],
+    x: number,
+    y: number,
+    depth: number,
+    alpha = 1,
+    /**
+     * False when the caller assigns final depths itself (NativeSceneView orders
+     * leaves among blend groups, a different order than the leaf list here):
+     * skips a depth write that would be overwritten one line later.
+     */
+    assignDepth = true,
+  ) {
     const wanted = new Set<string>();
     for (const [order, pose] of poses.entries()) {
       wanted.add(pose.key);
@@ -152,7 +172,7 @@ export class NativeMeshView {
       } else if (tinted.tint !== tint) tinted.setTint(tint);
       if (mesh.x !== x || mesh.y !== y) mesh.setPosition(x, y);
       const wantDepth = depth + order * 0.0001;
-      if (mesh.depth !== wantDepth) mesh.setDepth(wantDepth);
+      if (assignDepth && mesh.depth !== wantDepth) mesh.setDepth(wantDepth);
       const wantAlpha = alpha * pose.multiply[3];
       if (mesh.alpha !== wantAlpha) mesh.setAlpha(wantAlpha);
       const wantBlend = nativeBlendMode(

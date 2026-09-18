@@ -6,6 +6,7 @@ import { healUnit, unitEffects } from './native-status';
 import { launchProjectile } from './projectiles';
 import { damageDefenders } from './defenders';
 import { distanceTo, type Unit } from './model';
+import { distance2D } from './distance';
 import type { NativeTroopContext } from './native-troops';
 import { MAP_SIZE } from './grid';
 
@@ -140,7 +141,9 @@ export function startEquipmentDash(ctx: NativeTroopContext, unit: Unit, ability:
   const row = ability.row,
     dx = MAP_SIZE / 2 - unit.x,
     dy = MAP_SIZE / 2 - unit.y,
-    length = Math.hypot(dx, dy) || 1;
+    // Explicit operation order (see distance.ts): Math.hypot may differ by ulp
+    // across browser engines, which desyncs replays.
+    length = distance2D(dx, dy) || 1;
   (unit.native ??= {}).dash = {
     dx: dx / length,
     dy: dy / length,
@@ -176,7 +179,7 @@ export function stepEquipmentDash(ctx: NativeTroopContext, unit: Unit, dt: numbe
       if (
         d.hp > 0 &&
         !dash.hit.includes(d.id) &&
-        Math.hypot(d.x - unit.x, d.y - unit.y) <= dash.radius
+        distance2D(d.x - unit.x, d.y - unit.y) <= dash.radius
       ) {
         dash.hit.push(d.id);
         damageDefenders(ctx.battle, d, dash.damage, 0, 'both');

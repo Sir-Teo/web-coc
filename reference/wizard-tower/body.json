@@ -5223,7 +5223,7 @@
   ],
   "textures": {
     "8": {
-      "path": "assets/buildings/wizard-tower-native/body/texture-8.png",
+      "path": "assets/archer-tower-native/buildings/texture/texture-8.png",
       "width": 59,
       "height": 85
     },

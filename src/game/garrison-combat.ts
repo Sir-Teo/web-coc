@@ -148,7 +148,9 @@ function followPath(defender: GarrisonDefender, speed: number, dt: number) {
 
 function recordAttack(defender: GarrisonDefender, attack: GarrisonAttack) {
   (defender.attacks ??= []).push(attack);
-  if (!LEGACY_KINDS.has(defender.kind) && defender.attacks.length > GARRISON_ATTACK_HISTORY)
+  // All families cap at recent history; ordinals (attackCount / attack.n) stay
+  // stable so replays, chains and shot lookups keep working.
+  if (defender.attacks.length > GARRISON_ATTACK_HISTORY)
     defender.attacks.splice(0, defender.attacks.length - GARRISON_ATTACK_HISTORY);
 }
 
@@ -451,6 +453,8 @@ export function stepGarrisonDefender(
   const air = !!TROOPS[target.kind].flying;
   const damage = raged ? stats.damage * tantrum!.damageScale : stats.damage;
   if (LEGACY_KINDS.has(defender.kind)) {
+    const n = defender.attackCount ?? 0;
+    defender.attackCount = n + 1;
     recordAttack(defender, {
       at: battle.elapsed,
       x: defender.x,
@@ -458,6 +462,7 @@ export function stepGarrisonDefender(
       targetId: target.id,
       targetX: target.x,
       targetY: target.y,
+      n,
     });
     const center = stats.selfAsAoeCenter ? defender : target;
     for (const unit of eligible)

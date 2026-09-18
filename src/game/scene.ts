@@ -87,6 +87,7 @@ import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
 import { teslaRevealShake } from './tesla-shake';
+import { concealedTesla } from './hidden-tesla';
 import { CameraShakeLayer } from './camera-shake-layer';
 import { SWEEPER_ART } from './air-control-art';
 import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
@@ -132,6 +133,8 @@ import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
+/** Wall links batch into one Graphics per band of this screen height. */
+const WALL_LINK_BAND = 64;
 const LOADING_LATE_ART = 'Loading village art…';
 /** Stands in for the late campaign presentation until its art has loaded. */
 const INERT_LATE_CAMPAIGN = {
@@ -242,15 +245,23 @@ export class VillageScene extends Phaser.Scene {
   wallLinks = new Map<
     string,
     {
-      g: Phaser.GameObjects.Graphics;
       a: number;
       b: number;
       ax: number;
       ay: number;
       bx: number;
       by: number;
+      px: number;
+      py: number;
+      qx: number;
+      qy: number;
     }
   >();
+  // One shared Graphics per 64px depth band paints every wall link in that band.
+  // Per-link Graphics objects interleaved with wall meshes in depth order, one
+  // draw call each with no batching; links are thin connectors, so band-center
+  // depth is visually identical.
+  private wallLinkBands = new Map<number, { g: Phaser.GameObjects.Graphics; sig: string }>();
   private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
   private heroPrefetchSignature = '';
@@ -310,8 +321,8 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
-    preloadSanta(this);
-    preloadXbows(this);
+    // Santa, X-Bow and Cannon pages are heavy and rarely seen at boot; they
+    // bundle in after startup (see loadHeavyArt) with fallback sprites covering.
     preloadDarkStorages(this);
     preloadGoblinBuildings(this);
     preloadTeslas(this);
@@ -326,7 +337,6 @@ export class VillageScene extends Phaser.Scene {
     preloadDarkDrills(this);
     preloadVillageArcherTowers(this);
     preloadArcherTowerProjectiles(this);
-    preloadCannons(this);
     preloadSeekingMines(this);
     preloadShrinkTraps(this);
     for (const level of SKELETON_ART_TIERS) {
@@ -656,6 +666,10 @@ export class VillageScene extends Phaser.Scene {
     this.onReady();
     document.querySelector('#loading')?.classList.add('loaded');
     setTimeout(() => document.querySelector('#loading')?.remove(), 500);
+    // Rare, heavy art (Santa/XBow/Cannon) bundles in after boot instead of
+    // blocking it; battles trigger it immediately (see update) so scout time
+    // covers the fetch.
+    setTimeout(() => void this.loadHeavyArt(), 1500);
     const onContextLost = (e: Event) => {
       e.preventDefault();
       this.paused = true;
@@ -734,6 +748,53 @@ export class VillageScene extends Phaser.Scene {
       },
     );
     return this.lateAssets;
+  }
+  private heavyArt?: Promise<void>;
+  heavyArtReady = false;
+  /** Santa, X-Bow and Cannon pages are heavy and rarely needed at boot; they
+   * bundle in afterwards while fallback sprites cover, then restyle. */
+  loadHeavyArt(): Promise<void> {
+    if (this.heavyArt) return this.heavyArt;
+    let shutdown = false;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      shutdown = true;
+    });
+    this.heavyArt = new Promise<void>((resolve) => {
+      const done = () => {
+        if (shutdown) {
+          resolve();
+          return;
+        }
+        this.xbowPresentation.artReady = true;
+        this.santaPresentation.artReady = true;
+        this.cannonPresentation.artReady = true;
+        this.xbowPresentation.bindAudio();
+        this.santaPresentation.bindAudio();
+        this.cannonPresentation.bindAudio();
+        this.heavyArtReady = true;
+        // Restyle: fallback sprites hide now that native bodies draw.
+        this.lastRevision = -1;
+        resolve();
+      };
+      const kick = () => {
+        let failed = false;
+        const failure = () => (failed = true);
+        this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+        this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+          this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+          if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
+          done();
+        });
+        preloadSanta(this);
+        preloadXbows(this);
+        preloadCannons(this);
+        this.load.start();
+      };
+      // The late-campaign bundle may own the loader; wait for it first.
+      if (this.load.isLoading()) this.load.once(Phaser.Loader.Events.COMPLETE, kick);
+      else kick();
+    });
+    return this.heavyArt;
   }
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
@@ -1062,7 +1123,11 @@ export class VillageScene extends Phaser.Scene {
     for (const v of b.buildings) {
       if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind)) continue;
       if (!this.model.visibleBuilding(v)) continue;
-      signature = ((signature * 31 + v.id) | 0) ^ ((v.hp * 7) | 0);
+      // HP magnitude never changes the outline (only aliveness matters, covered
+      // by the skip above); keying on it rebuilt the outline on every hit.
+      // Concealment matters instead: deployBlocked excludes buried Teslas, and a
+      // reveal changes the outline without any HP change.
+      signature = ((signature * 31 + v.id) | 0) ^ (concealedTesla(b, v) ? 1 : 0);
     }
     if (signature === this.boundary.signature) return this.boundary.edges;
     const blocked = (x: number, y: number) =>
@@ -1248,6 +1313,25 @@ export class VillageScene extends Phaser.Scene {
       this.villageNativePresentation.clear();
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
+      // Battle art accumulates forever otherwise: drop packs the new mode
+      // cannot use (prefetch re-warms the rest before first deploy).
+      {
+        const battle = mode === 'battle' ? this.model.battle : null;
+        const keepTroops = new Set<string>();
+        if (battle) {
+          for (const [k, n] of Object.entries(battle.remaining ?? {}))
+            if (n > 0) keepTroops.add(k);
+          for (const u of battle.units) keepTroops.add(u.kind);
+        }
+        this.troopNativePresentation.releaseExcept(keepTroops);
+        const keepHeroes = new Set<string>();
+        if (battle) {
+          for (const kind of this.model.heroLineup) keepHeroes.add(`heroes-native/${kind}`);
+          for (const pet of Object.values(this.model.petProgress.assigned))
+            if (pet) keepHeroes.add(`heroes-native/${pet}`);
+        }
+        this.heroNativePresentation.releaseExcept(keepHeroes);
+      }
       this.nativeProjectiles.clear();
       this.nativeDefenses.clear();
       this.villageArcherTowers.clear();
@@ -1293,7 +1377,8 @@ export class VillageScene extends Phaser.Scene {
       this.bubbles.clear();
       for (const sprite of this.defenderSprites.values()) sprite.destroy();
       this.defenderSprites.clear();
-      for (const link of this.wallLinks.values()) link.g.destroy();
+      for (const link of this.wallLinkBands.values()) link.g.destroy();
+      this.wallLinkBands.clear();
       this.wallLinks.clear();
       this.pendingFx.length = 0;
       this.mode = mode;
@@ -1394,6 +1479,9 @@ export class VillageScene extends Phaser.Scene {
           ),
         );
       im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
+      // Fallback sprites hide only once native bodies actually draw: X-Bow and
+      // Cannon art bundles in after boot (see loadHeavyArt).
+      const deferredNative = b.kind === 'xbow' || (b.kind === 'cannon' && !b.npc);
       if (
         (b.kind === 'clancastle' ||
           b.kind === 'xbow' ||
@@ -1407,7 +1495,8 @@ export class VillageScene extends Phaser.Scene {
           b.kind === 'seekingairmine' ||
           b.npc === 'shrink-trap' ||
           isGoblinBuilding(b.npc)) &&
-        b.hp > 0
+        b.hp > 0 &&
+        (!deferredNative || this.heavyArtReady)
       )
         im.setAlpha(0);
       if (b.npc === 'santa-trap')
@@ -1522,7 +1611,8 @@ export class VillageScene extends Phaser.Scene {
         this.ghost = this.add
           .image(0, 0, buildingTexture(this.model.placement, level))
           .setAlpha(0.72)
-          .setDepth(6001);
+          // Above home flying camp units (6500) so the preview is never buried.
+          .setDepth(6600);
       }
       // A paid upgrade can finish while this preview is open, even within one artwork tier.
       this.styleBuilding(
@@ -1833,6 +1923,7 @@ export class VillageScene extends Phaser.Scene {
     const tiles = new Map<string, (typeof walls)[number]>();
     for (const w of walls) tiles.set(`${w.x},${w.y}`, w);
     const seen = new Set<string>();
+    const dirtyBands = new Set<number>();
     for (const b of walls) {
       for (const [dx, dy] of [
         [1, 0],
@@ -1855,27 +1946,65 @@ export class VillageScene extends Phaser.Scene {
           existing.by === next.y
         )
           continue;
-        existing?.g.destroy();
         const p = iso(b.x + 0.5, b.y + 0.5),
           q = iso(next.x + 0.5, next.y + 0.5);
-        const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
-        this.paintWallLink(g, p, q, b.level, next.level);
         this.wallLinks.set(key, {
-          g,
           a: b.level,
           b: next.level,
           ax: b.x,
           ay: b.y,
           bx: next.x,
           by: next.y,
+          px: p.x,
+          py: p.y,
+          qx: q.x,
+          qy: q.y,
         });
+        dirtyBands.add(Math.floor((p.y + q.y) / 2 / WALL_LINK_BAND));
       }
     }
     for (const [key, link] of this.wallLinks) {
       if (!seen.has(key)) {
-        link.g.destroy();
+        dirtyBands.add(Math.floor((link.py + link.qy) / 2 / WALL_LINK_BAND));
         this.wallLinks.delete(key);
       }
+    }
+    for (const band of dirtyBands) {
+      const keys: string[] = [];
+      for (const [key, link] of this.wallLinks)
+        if (Math.floor((link.py + link.qy) / 2 / WALL_LINK_BAND) === band) keys.push(key);
+      keys.sort();
+      if (!keys.length) {
+        this.wallLinkBands.get(band)?.g.destroy();
+        this.wallLinkBands.delete(band);
+        continue;
+      }
+      const sig = keys
+        .map((key) => {
+          const link = this.wallLinks.get(key)!;
+          return `${key}:${link.a}:${link.b}`;
+        })
+        .join('|');
+      let entry = this.wallLinkBands.get(band);
+      if (entry?.sig === sig) continue;
+      if (!entry) {
+        entry = { g: this.add.graphics(), sig: '' };
+        // Band-center depth keeps the whole band roughly where per-link depths were.
+        entry.g.setDepth(band * WALL_LINK_BAND + WALL_LINK_BAND / 2);
+        this.wallLinkBands.set(band, entry);
+      }
+      entry.g.clear();
+      for (const key of keys) {
+        const link = this.wallLinks.get(key)!;
+        this.paintWallLink(
+          entry.g,
+          new Phaser.Math.Vector2(link.px, link.py),
+          new Phaser.Math.Vector2(link.qx, link.qy),
+          link.a,
+          link.b,
+        );
+      }
+      entry.sig = sig;
     }
   }
   /** Two material halves meet at the seam, including when neighbouring walls differ in level. */
@@ -2179,7 +2308,10 @@ export class VillageScene extends Phaser.Scene {
           .setCrop()
           .setAlpha(1);
       }
-      const nativeBounds = this.nativeBuildingBounds(v);
+      const needsBar = !!v.upgradeEnd || (!!this.model.battle && v.hp < v.maxHp);
+      // Bounds need the full pose (Archer Towers especially); skip the work when
+      // no bar is drawn for this building.
+      const nativeBounds = needsBar ? this.nativeBuildingBounds(v) : undefined;
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
@@ -2246,7 +2378,7 @@ export class VillageScene extends Phaser.Scene {
     );
     this.goblinBuildingPresentation.render(
       this.model.buildings,
-      battle?.elapsed ?? 0,
+      battle?.elapsed ?? this.renderClock / 1000,
       this.model.state.settings.reducedMotion,
       iso,
     );
@@ -2446,6 +2578,17 @@ export class VillageScene extends Phaser.Scene {
       const worldView = cam.worldView;
       const cullMargin = 80;
       for (const u of battle.units) {
+        // Recalled units leave the battle at once; drop their sprite here instead
+        // of waiting for a mode change, or a frozen frame is left behind.
+        // (The mesh presentations skip/prune them in their own passes below.)
+        if (u.native?.recalled) {
+          const recalled = this.unitSprites.get(u.id);
+          if (recalled) {
+            recalled.destroy();
+            this.unitSprites.delete(u.id);
+          }
+          continue;
+        }
         const art = troopArt(u.kind);
         let im = this.unitSprites.get(u.id);
         if (!im) {
@@ -2475,11 +2618,18 @@ export class VillageScene extends Phaser.Scene {
           im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
         }
         // Viewport cull: skip off-screen units entirely (mesh layer culls itself).
+        // Cull against sprite extents, not the feet: flyers ride AIR_LIFT above
+        // their position, and tall sprites otherwise pop at the bottom edge.
         {
           const early = iso(u.x, u.y);
+          const marginX = cullMargin + im.displayWidth / 2;
+          const marginY =
+            cullMargin +
+            im.displayHeight / 2 +
+            (TROOPS[u.kind].flying ? AIR_LIFT : 0);
           if (
-            Math.abs(early.x - worldView.centerX) > worldView.width / 2 + cullMargin ||
-            Math.abs(early.y - worldView.centerY) > worldView.height / 2 + cullMargin
+            Math.abs(early.x - worldView.centerX) > worldView.width / 2 + marginX ||
+            Math.abs(early.y - worldView.centerY) > worldView.height / 2 + marginY
           ) {
             im.setVisible(false);
             continue;
@@ -2528,15 +2678,24 @@ export class VillageScene extends Phaser.Scene {
             AIR_LIFT,
           );
           const p = iso(u.x, u.y);
-          im.setData('dying', true)
-            .setData('defeatedAt', at)
-            .setTint(u.ejected ? 0xffe9ae : 0xa09482)
-            .setTintMode(Phaser.TintModes.MULTIPLY)
-            .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
-            .setDepth(flying || u.ejected ? 7500 : p.y + 1)
-            .setAngle(pose.angle)
-            .setAlpha(pose.alpha)
-            .setVisible(pose.visible);
+          // One-time death styling; the animated fade values below are guarded so
+          // a settled corpse writes nothing (any depth write re-sorts Phaser's
+          // whole display list).
+          const freshCorpse = !im.getData('dying');
+          im.setData('dying', true).setData('defeatedAt', at);
+          if (freshCorpse) {
+            im
+              .setTint(u.ejected ? 0xffe9ae : 0xa09482)
+              .setTintMode(Phaser.TintModes.MULTIPLY);
+          }
+          const corpseX = p.x + pose.x,
+            corpseY = p.y - (flying ? AIR_LIFT : 0) + pose.y,
+            corpseDepth = flying || u.ejected ? 7500 : p.y + 1;
+          if (im.x !== corpseX || im.y !== corpseY) im.setPosition(corpseX, corpseY);
+          if (im.depth !== corpseDepth) im.setDepth(corpseDepth);
+          if (im.angle !== pose.angle) im.setAngle(pose.angle);
+          if (im.alpha !== pose.alpha) im.setAlpha(pose.alpha);
+          if (im.visible !== pose.visible) im.setVisible(pose.visible);
           continue;
         }
         const flying = !!TROOPS[u.kind].flying;
@@ -2583,6 +2742,10 @@ export class VillageScene extends Phaser.Scene {
         else im.clearTint();
         // Frozen late campaign attackers brighten toward ice; other tints multiply as before.
         im.setTintMode(frozen ? Phaser.TintModes.SCREEN : Phaser.TintModes.MULTIPLY);
+        // The death fade above takes alpha to zero; a revived unit must restore
+        // it here (the cull above already restores visibility).
+        if (im.getData('dying')) im.setData('dying', false);
+        if (im.alpha !== 1) im.setAlpha(1);
         const p = iso(u.x, u.y),
           motion =
             sprung || u.hero || this.model.state.settings.reducedMotion
@@ -2654,6 +2817,11 @@ export class VillageScene extends Phaser.Scene {
       reduced = this.model.state.settings.reducedMotion;
     this.garrisonPresentation.render(battle, reduced, iso, AIR_LIFT);
     const defenders = battle?.defenders ?? [];
+    // Tile index for the skeleton jump check below; was an O(buildings) scan
+    // per defender per frame.
+    const wallTiles = new Set<number>();
+    for (const v of battle?.buildings ?? [])
+      if (v.kind === 'wall' && v.hp > 0) wallTiles.add(v.x * 4096 + v.y);
     for (const [id, sprite] of this.defenderSprites)
       if (!defenders.some((d) => d.id === id)) {
         sprite.destroy();
@@ -2694,14 +2862,16 @@ export class VillageScene extends Phaser.Scene {
       const heading = d.attacking || flying ? target : (waypoint ?? target);
       const dx = heading ? heading.x - d.x - (heading.y - d.y) : 0,
         facing = Math.abs(dx) > 0.03 ? Math.sign(dx) : (sprite.getData('facing') ?? -1);
-      sprite
-        .setData('facing', facing)
-        .setFlipX(facing > 0)
-        .setAngle(0)
-        .setAlpha(1)
-        .setVisible(true)
-        .setDepth(flying ? 7500 : p.y + 1.1)
-        .clearTint();
+      // Guarded writes: any depth write re-sorts the whole display list, so a
+      // settled skeleton must cost nothing.
+      if ((sprite.getData('facing') ?? -1) !== facing)
+        sprite.setData('facing', facing).setFlipX(facing > 0);
+      if (sprite.angle !== 0) sprite.setAngle(0);
+      if (sprite.alpha !== 1) sprite.setAlpha(1);
+      if (!sprite.visible) sprite.setVisible(true);
+      const defenderDepth = flying ? 7500 : p.y + 1.1;
+      if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);
+      if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();
       if (d.hp <= 0) {
         const pose = defeatPose(
           battle!.finished ? Infinity : battle!.elapsed - (d.defeatedAt ?? battle!.elapsed),
@@ -2710,12 +2880,13 @@ export class VillageScene extends Phaser.Scene {
           reduced,
           AIR_LIFT,
         );
-        sprite
-          .setPosition(p.x + pose.x, p.y - (flying ? AIR_LIFT : 0) + pose.y)
-          .setAngle(pose.angle)
-          .setAlpha(pose.alpha)
-          .setVisible(pose.visible)
-          .setTint(0xa09482);
+        const dx = p.x + pose.x,
+          dy = p.y - (flying ? AIR_LIFT : 0) + pose.y;
+        if (sprite.x !== dx || sprite.y !== dy) sprite.setPosition(dx, dy);
+        if (sprite.angle !== pose.angle) sprite.setAngle(pose.angle);
+        if (sprite.alpha !== pose.alpha) sprite.setAlpha(pose.alpha);
+        if (sprite.visible !== pose.visible) sprite.setVisible(pose.visible);
+        if (sprite.tintTopLeft !== 0xa09482) sprite.setTint(0xa09482);
         continue;
       }
       const moving = !!target && !d.attacking && battle!.elapsed >= d.spawnedAt + 0.5;
@@ -2730,17 +2901,12 @@ export class VillageScene extends Phaser.Scene {
               : moving
                 ? Math.floor(battle!.elapsed / 0.11 + Math.abs(d.id)) % 4
                 : 1;
-      const jumping =
-        !flying &&
-        battle!.buildings.some(
-          (b) =>
-            b.kind === 'wall' && b.hp > 0 && Math.floor(d.x) === b.x && Math.floor(d.y) === b.y,
-        );
+      const jumping = !flying && wallTiles.has(Math.floor(d.x) * 4096 + Math.floor(d.y));
       const lift = flying ? AIR_LIFT : jumping && !reduced ? 9 : 0;
-      sprite
-        .setFrame(frame)
-        .setPosition(p.x, p.y - lift)
-        .setDepth(flying ? 7500 : p.y + 1.1);
+      if (Number(sprite.frame.name) !== frame && sprite.texture.has(String(frame)))
+        sprite.setFrame(frame);
+      if (sprite.x !== p.x || sprite.y !== p.y - lift) sprite.setPosition(p.x, p.y - lift);
+      if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);
       if (flying) {
         this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(p.x, p.y, 16, 8);
       }
@@ -2817,7 +2983,8 @@ export class VillageScene extends Phaser.Scene {
     )
       return;
     if (fx.weapon === 'native' && (fx.type === 'projectile' || fx.type === 'impact')) {
-      if (fx.type === 'projectile') this.drawProjectiles();
+      // No eager drawProjectiles() here: fx drain every frame before the
+      // overlay pass, which draws the whole projectile layer once.
       if (this.nativeProjectiles.covers(fx.projectileId)) return;
     }
     if (
@@ -3474,6 +3641,8 @@ export class VillageScene extends Phaser.Scene {
     }
     // A battle waiting for late campaign art keeps its clock, replay and deployments on hold.
     this.tick = this.lateAssetsPending() ? 0 : this.tick + dt;
+    // Battles trigger the deferred heavy art immediately so scout time covers it.
+    if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     while (this.tick >= 0.05) {
       this.model.step(0.05);
       this.tick -= 0.05;

@@ -37,9 +37,18 @@ export class SantaPresentation {
     this.marks = scene.add.graphics().setDepth(-849);
     this.flashes = scene.add.graphics().setDepth(6900);
     scene.events.on(Phaser.Scenes.Events.PAUSE, this.stopAudio);
-    for (const name of Object.keys(SANTA_SOUNDS))
-      audio.samples.register(`santa-${name}`, scene.cache.binary.get(`santa-${name}`));
+    this.bindAudio();
   }
+  /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
+  bindAudio() {
+    for (const name of Object.keys(SANTA_SOUNDS)) {
+      const key = `santa-${name}`;
+      if (this.scene.cache.binary.exists(key))
+        this.audio.samples.register(key, this.scene.cache.binary.get(key));
+    }
+  }
+  /** Heavy textures arrive after boot; the fallback sprite covers until then. */
+  artReady = false;
   clear() {
     for (const mesh of this.meshes.values()) mesh.destroy();
     this.meshes.clear();
@@ -62,6 +71,7 @@ export class SantaPresentation {
     additionalCues: SampleCue[] = [],
     homeTime = 0,
   ) {
+    if (!this.artReady) return;
     const wanted = new Set<string>(),
       cues: SampleCue[] = [...additionalCues];
     this.marks.clear();

@@ -173,6 +173,9 @@ export class NativeSceneView {
       y,
       depth,
       alpha,
+      // Final depths are assigned below in full pose order (leaves interleaved
+      // with blend groups), not in leaf-list order.
+      false,
     );
     this.objects = [];
     const wanted = new Set<string>();
@@ -184,10 +187,13 @@ export class NativeSceneView {
         wanted.add(pose.key);
         // Pixel-aligned edges and a transparent guard texel avoid clipping the
         // source strips. Buffers follow physical camera zoom, including retina.
-        const left = Math.floor(bounds[0] * density) - 1,
-          top = Math.floor(bounds[1] * density) - 1;
-        const width = Math.ceil(bounds[2] * density) - left + 1,
-          height = Math.ceil(bounds[3] * density) - top + 1;
+        // Bounds quantize outward to 16px cells: growing or drifting content
+        // (notably per-particle buffers) reuses the same GPU buffer instead of
+        // reallocating on every frame.
+        const left = Math.floor((bounds[0] * density) / 16) * 16 - 1,
+          top = Math.floor((bounds[1] * density) / 16) * 16 - 1;
+        const width = Math.ceil((bounds[2] * density) / 16) * 16 - left + 1,
+          height = Math.ceil((bounds[3] * density) / 16) * 16 - top + 1;
         let entry = this.groups.get(pose.key);
         if (!entry) {
           entry = {

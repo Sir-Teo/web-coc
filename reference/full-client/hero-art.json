@@ -1085,7 +1085,7 @@
       },
       "atlas": {
         "path": "assets/heroes-native/warden/atlas.json",
-        "sha256": "a473069af1e7344df4748dd6dd302b0cde6abc3c23d09059b77e74957287c469"
+        "sha256": "01be2469713300e3587810194a6590c85c52a3637709e8abfd627f3db32296e8"
       },
       "images": {
         "walk.png": {
@@ -1111,12 +1111,6 @@
           "width": 371,
           "height": 361,
           "bytes": 142924
-        },
-        "alt_walk.png": {
-          "sha256": "ee745c480076135341e0b2f91c98cff3b33c6d584a393b3bc65ed57ef58b00cf",
-          "width": 1177,
-          "height": 1084,
-          "bytes": 1473688
         },
         "alt_idle.png": {
           "sha256": "ee745c480076135341e0b2f91c98cff3b33c6d584a393b3bc65ed57ef58b00cf",
@@ -1551,15 +1545,9 @@
       },
       "atlas": {
         "path": "assets/heroes-native/prince/atlas.json",
-        "sha256": "e04abaa9d9a2cc24627bd659d6e4f3e9684676f522851cde5dd5c09a20aa5b99"
+        "sha256": "81b3eb6d3a8ee9b1377ff26de51d7e610434c606df736409ca2989f19d2afa8c"
       },
       "images": {
-        "walk.png": {
-          "sha256": "5f9e59d2df861cdf5fae05ca13caeaf1aeda409ffed2475844e36a83c3c544de",
-          "width": 907,
-          "height": 886,
-          "bytes": 980493
-        },
         "idle.png": {
           "sha256": "5f9e59d2df861cdf5fae05ca13caeaf1aeda409ffed2475844e36a83c3c544de",
           "width": 907,
@@ -4764,5 +4752,5 @@
       "bytes": 1593384
     }
   },
-  "totalBytes": 59388222
+  "totalBytes": 56934041
 }

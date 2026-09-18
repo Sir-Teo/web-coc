@@ -211,12 +211,20 @@ describe('original Tornado Trap source', () => {
   }, 30000);
 
   it('ships only lossless crops, two registered previews and two unchanged Ogg files', async () => {
-    const expected = [
+    const references = [
       ...Object.values(tornadoNative.world.textures),
       ...Object.values(tornadoNative.vfx.textures),
       ...Object.values(tornadoNative.previews),
       ...Object.values(tornadoNative.sounds),
-    ].map((v) => v.path.replace('assets/buildings/tornado-trap-native/', ''));
+    ];
+    // Duplicate texture pages consolidate into shared files: the directory
+    // holds the unique locally-referenced entries.
+    const expected = [...new Set(
+      references
+        .map((v) => v.path)
+        .filter((p) => p.startsWith('assets/buildings/tornado-trap-native/'))
+        .map((p) => p.replace('assets/buildings/tornado-trap-native/', '')),
+    )];
     expect(await files('assets/buildings/tornado-trap-native')).toEqual(expected.sort());
     for (const preview of Object.values(tornadoNative.previews)) {
       const { data, info } = await sharp(`public/${preview.path}`)

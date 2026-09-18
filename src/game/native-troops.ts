@@ -161,6 +161,19 @@ export interface NativeTroopContext extends NativeSpellContext {
    * Absent in small battles so historical hashes are untouched.
    */
   pathBudget?: { count: number; limit: number };
+  /**
+   * Per-tick building targetability (trap/concealment/hiding precomputed by the
+   * model; hp checked live). Absent in hand-built contexts, which fall back to
+   * the slow check.
+   */
+  isTargetable?: (b: Building) => boolean;
+  /** Jump Spell rings for findPath; absent outside the stepped tick. */
+  breaches?: readonly { x: number; y: number }[];
+  /**
+   * Buildings with Jump-opened walls removed, refreshed per tick like
+   * `buildings`. Falls back to `buildings` when no ring is open.
+   */
+  routableBuildings?: Building[];
   nextId(): number;
   troopLevel(kind: TroopKind): number;
 }
@@ -319,7 +332,8 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     const breach = breachTarget(u, ctx.buildings, !!ctx.battle.nativeSubtiles);
     if (breach) return breach;
   }
-  const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetableBuilding(battle, b));
+  const targetable = ctx.isTargetable ?? ((v: Building) => targetableBuilding(battle, v));
+  const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetable(b));
   // A named favorite (Air Defense) falls back to any defense before any building.
   let favorite =
     s.preferredClass || s.preferredBuilding ? alive.filter((b) => matchesPreferred(s, b)) : [];
@@ -460,11 +474,20 @@ export function stepNativeUnit(
         splash: s.splash || undefined,
         airTargets: s.airTargets,
       },
+      ctx.isTargetable,
+      {
+        buildings: ctx.routableBuildings ?? ctx.buildings,
+        wallTile: ctx.wallTile,
+        passableWalls: ctx.passableWalls,
+        budget: ctx.pathBudget,
+        breaches: ctx.breaches,
+      },
     )
   )
     return;
   let target = ctx.buildingsById.get(u.target ?? -1);
-  if (!target || !targetableBuilding(battle, target)) target = undefined;
+  const targetable = ctx.isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
+  if (!target || !targetable(target)) target = undefined;
   if (!target) {
     target = chooseTarget(ctx, u, s);
     if (!target) {

@@ -36450,7 +36450,7 @@
     },
     "textures": {
       "8": {
-        "path": "assets/buildings/mortar-native/texture/texture-8.png",
+        "path": "assets/buildings/bombtower-native/body/texture-8.png",
         "sourceSize": [
           444,
           448
@@ -40426,7 +40426,7 @@
         ]
       },
       "66": {
-        "path": "assets/buildings/mortar-native/texture/texture-66.png",
+        "path": "assets/buildings/bombtower-native/particles/texture-66.png",
         "sourceSize": [
           1536,
           1402

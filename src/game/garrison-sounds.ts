@@ -45,8 +45,10 @@ export function garrisonSoundCues(battle: Battle | null): SampleCue[] {
     const key = `garrison:${defender.id}`;
     effect(binding.deploy, `${key}:deploy`, defender.spawnedAt);
     for (const [index, attack] of defender.attacks.entries()) {
-      effect(binding.attack, `${key}:attack:${index}`, attack.at);
-      effect(binding.hit, `${key}:hit:${index}`, attack.at);
+      // Stable attack ordinal, not the array index: pruning must not rekey cues.
+      const ordinal = attack.n ?? index;
+      effect(binding.attack, `${key}:attack:${ordinal}`, attack.at);
+      effect(binding.hit, `${key}:hit:${ordinal}`, attack.at);
     }
     if (defender.defeatedAt !== undefined) {
       effect(binding.die, `${key}:die`, defender.defeatedAt);

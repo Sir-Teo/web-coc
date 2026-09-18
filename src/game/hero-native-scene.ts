@@ -105,6 +105,23 @@ export class HeroNativePresentation {
     this.sprites.clear();
     this.positions.clear();
   }
+  /**
+   * Drop decoded atlases (and their GPU textures) for keys outside `keep`.
+   * Baked atlas pages are megabytes each and otherwise accumulate forever.
+   */
+  releaseExcept(keep?: ReadonlySet<string>) {
+    for (const [key, pack] of this.packs) {
+      if (keep?.has(key)) continue;
+      const files = new Set(
+        Object.values(pack.states).flatMap((s) => s.frames.flat().map((f) => f.image)),
+      );
+      for (const file of files) {
+        const texture = `baked:${key}/${file}`;
+        if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+      }
+      this.packs.delete(key);
+    }
+  }
   destroy() {
     this.alive = false;
     this.clear();
@@ -140,7 +157,8 @@ export class HeroNativePresentation {
       const actors = [
         ...battle.units.flatMap((u) => {
           const key = KEYS[u.kind] ?? (u.hero ? 'king' : undefined);
-          if (!key || u.ejected || (u.spawnedAt ?? 0) > battle.elapsed) return [];
+          if (!key || u.ejected || u.native?.recalled || (u.spawnedAt ?? 0) > battle.elapsed)
+            return [];
           const target = typeof u.target === 'number' ? buildingById.get(u.target) : undefined;
           const enemy =
             typeof u.defenderTarget === 'number' ? defenderById.get(u.defenderTarget) : undefined;

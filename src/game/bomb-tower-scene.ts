@@ -263,7 +263,10 @@ export class BombTowerPresentation {
         if (!shadow)
           this.shadows.set(shot.id, (shadow = new NativeSceneView(this.scene, 'bombtower')));
         view.render(pose.poses, pose.x, pose.y, 8000);
-        shadow.render(pose.shadow, pose.ground.x, pose.ground.y, pose.ground.y - 0.1);
+        // Ground shadows always draw under buildings like every other
+        // projectile shadow; a y-sorted shadow would paint over buildings
+        // standing further up-screen.
+        shadow.render(pose.shadow, pose.ground.x, pose.ground.y, -869);
         for (const object of view.objects)
           object.setData('nativeBombProjectile', { id: shot.id, progress: pose.t });
       }

@@ -57,6 +57,7 @@ import {
   RAGE_LINGER,
 } from '../game/spell-progression';
 import { OBSTACLES } from '../game/obstacles';
+import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import { TROOP_UNLOCK, SPELL_UNLOCK, spellFactory, troopFacility } from '../game/army-unlocks';
 import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
@@ -205,12 +206,12 @@ const heroPortrait = (kind: HeroKind) => HERO_PORTRAIT[kind];
 const PET_PORTRAIT: Record<PetKind, string> = {
   lassi: '/assets/catalog-native/roster/pet-lassi.png',
   yak: '/assets/catalog-native/roster/pet-mighty-yak.png',
-  owl: '/assets/catalog-native/roster/pet-electro-owl.png',
+  owl: '/assets/catalog-native/roster/equipment-mp-trap-shield.png',
   unicorn: '/assets/catalog-native/roster/pet-unicorn.png',
   frosty: '/assets/catalog-native/roster/pet-frosty.png',
   diggy: '/assets/catalog-native/roster/pet-diggy.png',
   lizard: '/assets/catalog-native/roster/pet-poison-lizard.png',
-  phoenix: '/assets/catalog-native/roster/pet-phoenix.png',
+  phoenix: '/assets/catalog-native/roster/equipment-unused17.png',
   fox: '/assets/catalog-native/roster/pet-spirit-fox.png',
   jelly: '/assets/catalog-native/roster/pet-angry-jelly.png',
   sneezy: '/assets/catalog-native/roster/pet-sneezy.png',
@@ -452,7 +453,6 @@ export class HUD {
   private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
   private actionSource: HTMLElement | null = null;
   private dragging = false;
-  private anchorFrame = 0;
   private liveTimer: ReturnType<typeof setInterval> | undefined;
   private lastAnchorLeft = -1;
   private lastAnchorTop = -1;
@@ -542,7 +542,7 @@ export class HUD {
   }
   destroy() {
     if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
-    cancelAnimationFrame(this.anchorFrame);
+    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
   }
   private scheduleRender() {
     if (this.raf) return;
@@ -554,13 +554,12 @@ export class HUD {
   }
   /** Keeps the building card pinned to its building while the camera moves. */
   private trackAnchor() {
-    const step = () => {
-      this.positionContext();
-      this.anchorFrame = requestAnimationFrame(step);
-    };
-    this.anchorFrame = requestAnimationFrame(step);
+    // Reposition on Phaser's post-update, in the same frame after the camera
+    // moved. A standalone rAF loop races Phaser's own frame and trails by one.
+    this.positionContext();
+    this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
   }
-  private positionContext() {
+  positionContext() {
     const card = document.querySelector<HTMLElement>('.building-context[data-anchor]');
     if (!card) {
       this.lastAnchorLeft = -1;
@@ -3008,6 +3007,42 @@ export class HUD {
       } else {
         const health = heroCard.querySelector<HTMLElement>('.hero-health i');
         if (health && u) health.style.width = pct((u.hp / u.maxHp) * 100);
+      }
+    }
+    // Deploy tray counts: patched live so each deploy doesn't rebuild the whole
+    // HUD. Mirrors troopCard/spellCard state (count, empty, disabled, selected).
+    if (m.battle && !m.replay) {
+      const b = m.battle;
+      const tray = document.querySelector('.army-tray');
+      if (tray) {
+        tray.querySelectorAll<HTMLElement>('[data-action]').forEach((el) => {
+          const action = el.dataset.action!;
+          const troop = action.startsWith('troop:')
+            ? (action.slice('troop:'.length) as TroopKind)
+            : null;
+          const spell = action.startsWith('spell:')
+            ? (action.slice('spell:'.length) as SpellKind)
+            : null;
+          if (!troop && !spell) return;
+          const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
+          const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
+          const selected = troop
+            ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
+            : m.activeSpell === spell;
+          const countEl = el.querySelector('.troop-count');
+          if (countEl && countEl.textContent !== `x${count}`) countEl.textContent = `x${count}`;
+          el.classList.toggle('empty', count === 0);
+          el.classList.toggle('selected', selected);
+          if (count === 0) el.setAttribute('disabled', '');
+          else el.removeAttribute('disabled');
+          const label = `${name}, ${count} available`;
+          if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
+        });
+        const hint = tray.parentElement?.querySelector<HTMLElement>('.deploy-label');
+        if (hint) {
+          const next = this.deployHint();
+          if (hint.textContent !== next) hint.textContent = next;
+        }
       }
     }
     document.querySelectorAll<HTMLElement>('[data-resource]').forEach((el) => {

@@ -87,11 +87,14 @@ export function garrisonImpactPoses(
       // The source detaches the fire origin after start and destroys it on death.
       if (defender.hp > 0)
         for (const [index, attack] of defender.attacks.entries()) {
+          // Stable attack ordinal, not the array index: pruning must not rekey
+          // live effects or reseed their particles.
+          const ordinal = attack.n ?? index;
           const facing = { x: attack.targetX - attack.x, y: attack.targetY - attack.y };
           const offset = dragonAttackOffset(facing.x, facing.y, animation);
           effect(
             defender.id,
-            index,
+            ordinal,
             'attack',
             raw.bindings.dragon.attack,
             attack.at,
@@ -117,7 +120,15 @@ export function garrisonImpactPoses(
     // Original attack/death particles for the version-44 families remain pending.
     if (defender.kind !== 'balloon') continue;
     for (const [index, attack] of defender.attacks.entries())
-      effect(defender.id, index, 'hit', raw.bindings.balloon.hit, attack.at, attack.x, attack.y);
+      effect(
+        defender.id,
+        attack.n ?? index,
+        'hit',
+        raw.bindings.balloon.hit,
+        attack.at,
+        attack.x,
+        attack.y,
+      );
     if (defender.defeatedAt !== undefined && defender.deathResolved)
       effect(
         defender.id,

@@ -25,8 +25,16 @@ export function passableSubtilesAtEdge(b: Pick<Building, 'kind' | 'npc'>) {
 
 const blocked = new Uint8Array(CELLS),
   wall = new Uint8Array(CELLS);
+/** Collision depends only on membership + aliveness (footprints are static). */
+let gridHash: number | undefined;
 /** Rebuild collision for the living, non-trap buildings the caller knows about. */
 function occupy(buildings: readonly Building[]) {
+  // One cheap hash replaces the full footprint loop when nothing changed; the
+  // hash is exact, so a match can never serve a stale grid.
+  let hash = buildings.length;
+  for (const b of buildings) hash = ((hash * 31 + b.id) | 0) ^ (b.hp > 0 ? 0x9e37 : 0);
+  if (gridHash === hash) return;
+  gridHash = hash;
   blocked.fill(0);
   wall.fill(0);
   for (const b of buildings) {
@@ -66,6 +74,16 @@ const cost = new Float64Array(CELLS),
   position = new Int32Array(CELLS),
   stamp = new Uint32Array(CELLS);
 let epoch = 0;
+
+/** Neighbor offsets shared by every search instead of allocated per expansion. */
+const DIRS: ReadonlyArray<readonly [number, number]> = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+/** Heap storage reused across searches (synchronous, no reentrancy). */
+const openHeap: number[] = [];
 
 const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: number }) => {
   const s = 'kind' in b && b.kind in BUILDINGS ? BUILDINGS[(b as Building).kind].size : 0;
@@ -135,16 +153,25 @@ export function findSubtilePath(
       position[n] = -1;
     }
   };
-  const open: number[] = [];
+  const open: number[] = openHeap;
+  open.length = 0;
   let sequence = 0;
-  const center = (node: number) => ({
-    x: ((node % SIZE) + 0.5) / SUBTILES,
-    y: (Math.floor(node / SIZE) + 0.5) / SUBTILES,
-  });
+  // Plain coordinates, not point objects: center() used to allocate one object
+  // per expanded node plus one per heap entry scored.
+  const centerX = (node: number) => ((node % SIZE) + 0.5) / SUBTILES;
+  const centerY = (node: number) => (Math.floor(node / SIZE) + 0.5) / SUBTILES;
+  const goalSize =
+    'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
+  const distGoal = (hx: number, hy: number) =>
+    distance2D(
+      Math.max(target.x - hx, 0, hx - target.x - goalSize),
+      Math.max(target.y - hy, 0, hy - target.y - goalSize),
+    );
   const before = (a: number, b: number) =>
     priority[a] < priority[b] || (priority[a] === priority[b] && order[a] < order[b]);
   const queue = (node: number) => {
-    if (Number.isNaN(heuristic[node])) heuristic[node] = distanceTo(center(node), target);
+    if (Number.isNaN(heuristic[node]))
+      heuristic[node] = distGoal(centerX(node), centerY(node));
     priority[node] = cost[node] + heuristic[node];
     let at = position[node];
     if (at < 0) {
@@ -192,18 +219,19 @@ export function findSubtilePath(
     closed[current] = 1;
     const x = current % SIZE,
       y = Math.floor(current / SIZE),
-      here = center(current);
-    if (distanceTo(here, target) <= range) {
-      if (current === first && distanceTo(start, target) > range) approach = here;
+      hx = (x + 0.5) / SUBTILES,
+      hy = (y + 0.5) / SUBTILES;
+    if (distGoal(hx, hy) <= range) {
+      if (current === first && distanceTo(start, target) > range) approach = { x: hx, y: hy };
       goal = current;
       break;
     }
     if (range < 0.5 && !blocked[current]) {
       const s = 'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
-      const tx = Math.max(target.x, Math.min(here.x, target.x + s));
-      const ty = Math.max(target.y, Math.min(here.y, target.y + s));
-      const dx = here.x - tx,
-        dy = here.y - ty,
+      const tx = Math.max(target.x, Math.min(hx, target.x + s));
+      const ty = Math.max(target.y, Math.min(hy, target.y + s));
+      const dx = hx - tx,
+        dy = hy - ty,
         distance = distance2D(dx, dy);
       if (distance <= 1e-9) {
         goal = current;
@@ -217,12 +245,7 @@ export function findSubtilePath(
         break;
       }
     }
-    for (const [dx, dy] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ]) {
+    for (const [dx, dy] of DIRS) {
       const nx = x + dx,
         ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) continue;
@@ -241,11 +264,12 @@ export function findSubtilePath(
   if (goal < 0) return [];
   // `LogicPathFinderNew.FindPath`: a clear sight line replaces the searched route with a single
   // straight walk to its end point, so open ground is crossed directly rather than in steps.
+  const goalPoint = { x: centerX(goal), y: centerY(goal) };
   if (goal !== first && lineOfSight(sx, sy, goal % SIZE, Math.floor(goal / SIZE)))
-    return [approach ?? center(goal)];
+    return [approach ?? goalPoint];
   const path = [];
   while (goal !== first && goal >= 0) {
-    path.push(center(goal));
+    path.push({ x: centerX(goal), y: centerY(goal) });
     goal = prev[goal];
   }
   path.reverse();

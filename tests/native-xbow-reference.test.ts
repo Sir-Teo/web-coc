@@ -155,8 +155,11 @@ it('keeps every polygon, transform, color, layer, label and timeline while remap
 
 it('ships exact source sampling regions and native sound bytes in a bounded asset set', async () => {
   const expected: string[] = [];
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = (p: string) => p.startsWith('assets/buildings/xbow-native/');
   for (const texture of Object.values(native.textures)) {
-    expected.push(texture.path.split('/').at(-1)!);
+    if (local(texture.path)) expected.push(texture.path.split('/').at(-1)!);
     const { data, info } = await sharp(`public/${texture.path}`)
       .raw()
       .toBuffer({ resolveWithObject: true });
@@ -186,7 +189,7 @@ it('ships exact source sampling regions and native sound bytes in a bounded asse
   }
   expect(Object.keys(native.previews)).toHaveLength(26);
   for (const preview of Object.values(native.previews)) {
-    expected.push(preview.path.split('/').at(-1)!);
+    if (local(preview.path)) expected.push(preview.path.split('/').at(-1)!);
     const { data, info } = await sharp(`public/${preview.path}`)
       .raw()
       .toBuffer({ resolveWithObject: true });
@@ -195,5 +198,5 @@ it('ships exact source sampling regions and native sound bytes in a bounded asse
     expect(preview.direction).toBe(225);
     expect(hash(data)).toBe(preview.rgbaSha256);
   }
-  expect((await readdir('public/assets/buildings/xbow-native')).sort()).toEqual(expected.sort());
+  expect((await readdir('public/assets/buildings/xbow-native')).sort()).toEqual([...new Set(expected)].sort());
 });

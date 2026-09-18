@@ -15975,7 +15975,7 @@
     },
     "textures": {
       "18": {
-        "path": "assets/buildings/shrink-trap-native/texture/texture-18.png",
+        "path": "assets/buildings/freeze-trap-native/texture/texture-18.png",
         "sourceSize": [
           2552,
           4056

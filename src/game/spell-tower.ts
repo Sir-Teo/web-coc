@@ -86,6 +86,15 @@ const lastPulseAt = (cast: SpellTowerCast) => {
   const spell = SPELL_TOWER[cast.weapon].spell;
   return cast.deployAt + spell.firstHit + (spell.hits - 1) * spell.interval;
 };
+/** Deploy visuals (bottle, trail, impact bursts) run seconds past impact. */
+const CAST_VISUAL_TTL = 10;
+/** True when no pulse, effect window or visual can still read this cast. */
+function castExpired(entry: SpellTowerCast, at: number) {
+  if (at < entry.deployAt + CAST_VISUAL_TTL) return false;
+  const spell = SPELL_TOWER[entry.weapon].spell;
+  if (entry.applied < spell.hits) return false;
+  return at > lastPulseAt(entry) + Math.max(spell.boostTime ?? 0, spell.invisibilityTime ?? 0);
+}
 const firstPulseAt = (cast: SpellTowerCast) =>
   cast.deployAt + SPELL_TOWER[cast.weapon].spell.firstHit;
 
@@ -129,6 +138,12 @@ function cast(
     state = spellTowerState(battle, tower),
     from = center(tower);
   const point = stats.selfCentered || !target ? from : { x: target.x, y: target.y };
+  // Casts push rarely, so prune here: drop entries whose pulses, effect
+  // windows and visuals all ended. The sim and renderer walk this list, and it
+  // previously grew for the whole battle. Entries push in time order, so only
+  // filter when the oldest already expired.
+  if (family.casts.length > 0 && castExpired(family.casts[0], at))
+    family.casts = family.casts.filter((entry) => !castExpired(entry, at));
   family.casts.push({
     index: family.casts.length + 1,
     sourceId: tower.id,

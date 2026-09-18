@@ -245,12 +245,13 @@ export class NativeDefensePresentation {
       if (!pack) continue;
       const point = iso(center(tower).x, center(tower).y);
       // Same worldView early-out the village natives use; never derive tables for culled towers.
-      if (
-        view &&
+      const towerOut =
+        !!view &&
         (Math.abs(point.x - view.centerX) > view.width / 2 + 420 ||
-          Math.abs(point.y - view.centerY) > view.height / 2 + 420)
-      )
-        continue;
+          Math.abs(point.y - view.centerY) > view.height / 2 + 420);
+      // Beam weapons draw their impact end at the target: a culled tower with a
+      // visible beam endpoint must still run its beam passes.
+      if (towerOut && !this.beamOnScreen(tower, battle, elapsed, iso, view!)) continue;
       const effectsKey = `${tower.kind}:${tower.level}:${tower.weaponLevel ?? ''}:${tower.spellMode ?? ''}:${tower.gearMode ?? ''}`;
       let effects = this.effectsCache.get(effectsKey);
       if (!effects) {
@@ -309,6 +310,33 @@ export class NativeDefensePresentation {
         this.views.delete(key);
       }
     this.layer.end();
+  }
+  /** True when a held Giga beam or an in-flight Eagle shell of this tower can
+   * draw on screen, so culling must not skip its beam passes. Over-approximates
+   * (the passes re-check exact effect state); it must never wrongly return false. */
+  private beamOnScreen(
+    tower: Building,
+    battle: Battle | null,
+    elapsed: number,
+    iso: (x: number, y: number) => Point,
+    view: { centerX: number; centerY: number; width: number; height: number },
+  ) {
+    if (!battle || battle.finished) return false;
+    const onScreen = (p: Point) =>
+      Math.abs(p.x - view.centerX) <= view.width / 2 + 420 &&
+      Math.abs(p.y - view.centerY) <= view.height / 2 + 420;
+    for (const id of battle.nativeDefenses?.[tower.id]?.beams ?? []) {
+      const unit = battle.units.find((u) => u.id === id && u.hp > 0);
+      if (unit && onScreen(iso(unit.x, unit.y))) return true;
+    }
+    for (const shot of battle.projectiles ?? []) {
+      if (shot.sourceId !== tower.id || shot.weapon !== 'native') continue;
+      const age = elapsed - shot.launched;
+      if (age < 0) continue;
+      if (age > Math.max(0.001, shot.impact - shot.launched) + 3) continue;
+      if (onScreen(iso(shot.x, shot.y))) return true;
+    }
+    return false;
   }
   /** Giga Inferno beams: one continuous attack effect per held beam target. */
   private renderBeams(

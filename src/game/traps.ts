@@ -111,11 +111,12 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     // Late campaign traps trigger in their own family phase.
     if (isLateBuilding(trap)) continue;
-    const d = battleTrapStats(trap, battle);
-    if (!d || trap.constructing || trap.upgradeEnd) continue;
-    const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
+    // Cheap state checks before allocating stats rows for already-fired traps.
     let state = battle.traps[trap.id];
-    if (state?.resolved) continue;
+    if (trap.constructing || trap.upgradeEnd || state?.resolved) continue;
+    const d = battleTrapStats(trap, battle);
+    if (!d) continue;
+    const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
     const center = {
       x: trap.x + BUILDINGS[trap.kind].size / 2,
       y: trap.y + BUILDINGS[trap.kind].size / 2,

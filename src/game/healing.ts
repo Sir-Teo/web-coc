@@ -20,13 +20,29 @@ export function prepareHealerTargets(battle: Battle) {
   const allies = battle.units.filter(groundAlly);
   if (!allies.length) return;
   const allyIds = new Set(allies.map((u) => u.id));
-  // Cluster housing once per tick (O(A²)), not once per healer (O(H·A²)).
+  // Cluster housing once per tick via spatial hash instead of O(A²). Housing
+  // space is always an integer, so differently-ordered sums match exactly.
+  const CELL = HEALER_RADIUS;
+  const cells = new Map<number, Unit[]>();
+  for (const u of allies) {
+    const key = Math.floor(u.x / CELL) * 4096 + Math.floor(u.y / CELL);
+    const bucket = cells.get(key);
+    if (bucket) bucket.push(u);
+    else cells.set(key, [u]);
+  }
   const clusterSpace = new Map<number, number>();
   for (const target of allies) {
+    const cx = Math.floor(target.x / CELL),
+      cy = Math.floor(target.y / CELL);
     let space = 0;
-    for (const u of allies)
-      if (distanceSquared2D(u.x - target.x, u.y - target.y) <= HEALER_RADIUS_SQ)
-        space += TROOPS[u.kind].space;
+    for (let gx = cx - 1; gx <= cx + 1; gx++)
+      for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        const bucket = cells.get(gx * 4096 + gy);
+        if (!bucket) continue;
+        for (const u of bucket)
+          if (distanceSquared2D(u.x - target.x, u.y - target.y) <= HEALER_RADIUS_SQ)
+            space += TROOPS[u.kind].space;
+      }
     clusterSpace.set(target.id, space);
   }
   for (const healer of battle.units) {

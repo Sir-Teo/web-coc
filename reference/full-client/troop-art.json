@@ -75,22 +75,22 @@
   "troops": {
     "swordsman": {
       "path": "assets/troops-native/swordsman/graph.json",
-      "sha256": "f369c234abe369052a52d266382e493dd98fb798eba432c3d7cb9c5d0877898c",
+      "sha256": "3a7d4f8b03a819f0c573bb508686331fa982ed0da9b5cebe3210ce7f5917ffbc",
       "levels": 13
     },
     "archer": {
       "path": "assets/troops-native/archer/graph.json",
-      "sha256": "cab4c2edba5caa00c5cb9bba081e2480626b24d0f39ad6f3477a3e5f5c54bbd3",
+      "sha256": "4a6249cf1cd228ee4410abda346c2c1659bdabfeb8d1afa46f5ca59a653dd4bc",
       "levels": 14
     },
     "giant": {
       "path": "assets/troops-native/giant/graph.json",
-      "sha256": "1a7a8228757eb97507708843fd3fa066120722053d3e124151b0a6f9398eb808",
+      "sha256": "5acbfc7ba072c70aef8651231edb1ce3702b70c7be7af4561f17b1b8aef4cc6a",
       "levels": 14
     },
     "wizard": {
       "path": "assets/troops-native/wizard/graph.json",
-      "sha256": "f39a45cc770f2f6b67ae7747f4b197f65e14c2545fa71840c25716e879e0a7f4",
+      "sha256": "e29992ecd4eaf8d9693dce33ff0f27fed1973ec0f7ad2636ddbc8d57c03b2914",
       "levels": 14
     },
     "balloon": {
@@ -100,37 +100,37 @@
     },
     "goblin": {
       "path": "assets/troops-native/goblin/graph.json",
-      "sha256": "244d0f58218536a07b0a9b62bb45c928667847e13dda6b733b8e32bf3d3798c3",
+      "sha256": "3ad89ba5e15142dd79843a0de4744390bf7271d77a1de0ff1814b7a78979f230",
       "levels": 10
     },
     "wallbreaker": {
       "path": "assets/troops-native/wallbreaker/graph.json",
-      "sha256": "9a28cbda9adda86efc580e493dac681442990e3690083a467ad61a20e8e8b3aa",
+      "sha256": "9d904485ffa1c2ab2d1a525e99481b3e6ea93088ce8bbcb549ce482272bd4aeb",
       "levels": 14
     },
     "healer": {
       "path": "assets/troops-native/healer/graph.json",
-      "sha256": "d5d007ee64e2e0ea56b56c353bdc3998f6d123ce9703502c6c4c3df0aaebc54a",
+      "sha256": "83d084f80c7856d1b4f370d08c688a7771051c094c15efc11323fc8dbab3f53c",
       "levels": 11
     },
     "dragon": {
       "path": "assets/troops-native/dragon/graph.json",
-      "sha256": "d94e8e82d0baad8e583b703b6d388d235f8baa903dfb37cbe37deed298467b2b",
+      "sha256": "19f079e44f19427310357b75cdbe472f5fb3548e754c7ec605e4ad5efd564cbc",
       "levels": 13
     },
     "pekka": {
       "path": "assets/troops-native/pekka/graph.json",
-      "sha256": "7dd8d7e1fcd85b06f88a31c7a3396aa017fd5594e9a116d7d882ae8e2e6755c1",
+      "sha256": "fb79a51af055192c6136b94b76c445bcff6fdcfd24b5a28567393e7b238ac369",
       "levels": 13
     },
     "babydragon": {
       "path": "assets/troops-native/babydragon/graph.json",
-      "sha256": "54efbefae845d2362009cb956b768f906616602eba5c0deb6fbf4d33d8ed336e",
+      "sha256": "af74e2f715005b228266acc992f13977a9ce7dbb33cbe7107e3b51c2ba091dc2",
       "levels": 12
     },
     "miner": {
       "path": "assets/troops-native/miner/graph.json",
-      "sha256": "d1906cb099fd16d255ed80446be8bafe269dda4e1feb295c256a2adc165aab01",
+      "sha256": "b36f9679ed6daeef207c74daa39cd258b909e83f27d47d2b9bfd27a0371d5b2e",
       "levels": 12
     },
     "electrodragon": {
@@ -140,7 +140,7 @@
     },
     "yeti": {
       "path": "assets/troops-native/yeti/graph.json",
-      "sha256": "e2f0b624f5540171cac030cbc9a9b0aa72f1207e67def550df1e01eb368ca21a",
+      "sha256": "3ae0418264518e1dc80dcc897b20d18854f7207c2acedf9823a3e81c15b89329",
       "levels": 8
     },
     "dragonrider": {
@@ -150,87 +150,87 @@
     },
     "electrotitan": {
       "path": "assets/troops-native/electrotitan/graph.json",
-      "sha256": "59ba43a7612c6e28f6f7f8b5b6ca109646d21b9d63157a171cb0f645c79f0d7f",
+      "sha256": "1781ecf888a653cf7f54492d85c529706a3880a338fe471ec178a7c50c2b2d81",
       "levels": 5
     },
     "rootrider": {
       "path": "assets/troops-native/rootrider/graph.json",
-      "sha256": "b6f8ed7fbbb7e37ce663a064c038c765cbd63aa52f818924294f89ae7e6c2c83",
+      "sha256": "8af06f61462348432a5d28741daf1a2fc6d131271135e15c1010aa43efe74642",
       "levels": 4
     },
     "thrower": {
       "path": "assets/troops-native/thrower/graph.json",
-      "sha256": "7d4900456e75b165cd05eb09bc5675f6a3ffca8d5c3f93dbdedf1e9ecc05943f",
+      "sha256": "c0fe61a283f0f8a71a4edc06830b61df94b2127092d03ba25a09736dde2246d4",
       "levels": 4
     },
     "meteorgolem": {
       "path": "assets/troops-native/meteorgolem/graph.json",
-      "sha256": "59d97a7bfb8574ef33d06b14b437b8baa9d1ccb5a1edb01b6cd3f51c33bd03b5",
+      "sha256": "f7bb99aa0719f48424d72dfc517fc8527fcd141f3a40cb65aecf57155f693eed",
       "levels": 3
     },
     "minion": {
       "path": "assets/troops-native/minion/graph.json",
-      "sha256": "9467e88dd164f212cdf628d6d3336d1ae54a42422576741cd9c0c471c412fffe",
+      "sha256": "cedbafe83fb2091d1bf45f0d057c3448f7146c1e42103acc9880fbce1666aeab",
       "levels": 14
     },
     "hogrider": {
       "path": "assets/troops-native/hogrider/graph.json",
-      "sha256": "75d1efacf9c5d0caa59f32b799c1507ca23bb9231f8080eec71cce5e02c301e7",
+      "sha256": "abd9735d7f3072a24328bf3f3a2fbed157b7b7d1ccc8a66bdb72736a44a20f5b",
       "levels": 15
     },
     "valkyrie": {
       "path": "assets/troops-native/valkyrie/graph.json",
-      "sha256": "4b3049bd1931e12261c2cbe0ae0009416b1bb0b1967efc40a498fd269206bfac",
+      "sha256": "5aa804a387c89fe593f2ddbf75ab22f8e73064223b71390779c973e0d0a5575c",
       "levels": 12
     },
     "golem": {
       "path": "assets/troops-native/golem/graph.json",
-      "sha256": "db475871018ee2f1bbf45995840dbd095760190ed63962e1e179f98e1d41ef1f",
+      "sha256": "fc19bca6295b54596c0934a47555c9003f56bcdcc62d2ed1941b6f7131c9c8af",
       "levels": 15
     },
     "witch": {
       "path": "assets/troops-native/witch/graph.json",
-      "sha256": "b138afc53e6d9a28eaea5384b7425666a4807c6f6da9c0f1dedeea2e3283eef4",
+      "sha256": "a79826e2c35c9109585f8d54f958cd5eb2893e5c13dd1b05cb73355b07a9e8ab",
       "levels": 8
     },
     "lavahound": {
       "path": "assets/troops-native/lavahound/graph.json",
-      "sha256": "93877daeb66092832a1057db1868ccf80b9f26b6670ed7eccdb4f061bb403a75",
+      "sha256": "b879671c80d99eafb0276e91979a71c85a018234a8bdfe4a95afe609c55f3f97",
       "levels": 8
     },
     "bowler": {
       "path": "assets/troops-native/bowler/graph.json",
-      "sha256": "e7df130ebad3ba7c4b921b9bd77bafacd3a11056d7756085448cd327f62cd615",
+      "sha256": "e5b06120035abdbee558d9a36af3cf343d570e0aba278c53bc08dfced58e6f35",
       "levels": 10
     },
     "icegolem": {
       "path": "assets/troops-native/icegolem/graph.json",
-      "sha256": "cb8a642357356335982eacd1ab1372fbe762bce2e6a361bfe4e89b4223430abd",
+      "sha256": "20e76e67ea43a31eaee8920e8762f4bf2eddbdbdc04eaab0cd5b992f24ce20a0",
       "levels": 9
     },
     "headhunter": {
       "path": "assets/troops-native/headhunter/graph.json",
-      "sha256": "7366a50ba3f5b2a7c112170b34414aa8aec6ed807d7b8bb9e74defd6db64e338",
+      "sha256": "36f6857a065c08ae8cec92ed4e8d6c5057fa06cb1e60e7faddeebca7c7ebfa96",
       "levels": 4
     },
     "apprenticewarden": {
       "path": "assets/troops-native/apprenticewarden/graph.json",
-      "sha256": "54c20630f5099ebf1030a9c03965ec048561b3b7ad8f0ac6750aaf9f0f501248",
+      "sha256": "893a202f344143a2f10814a8a41767d488c84a1e5e6c171bc0f8832834e139a8",
       "levels": 4
     },
     "druid": {
       "path": "assets/troops-native/druid/graph.json",
-      "sha256": "75b25ac97c5b426c7d2e6bbbcb5b4d0a499461604e03c640561b18bc6bc25908",
+      "sha256": "9671a7c778d47c2532808d4026e2e6f85702bb3220a065defed953cba0d7eb66",
       "levels": 6
     },
     "furnace": {
       "path": "assets/troops-native/furnace/graph.json",
-      "sha256": "8ec1d7899d9b229916fd118f9b3f68fc265c8914c80fce747652297ce32830b8",
+      "sha256": "ad216c182219f765fbdf2096d09c55d97d9b25e62f11d00b26a0e8f4cd0a617c",
       "levels": 4
     },
     "ruinwitch": {
       "path": "assets/troops-native/ruinwitch/graph.json",
-      "sha256": "193ae20e6e2a2fda5dc49d4ad6d2eeadf492c78a4b6d796942a0a67a08f1dda5",
+      "sha256": "31416a95a9548a4eb3786b802291299df8039bbb726242d5f76dbc83b7939202",
       "levels": 4
     }
   }

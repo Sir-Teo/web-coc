@@ -202,13 +202,22 @@ for (const [name, packed, original] of [
   });
 
 it('ships the verified textures, seventeen source portraits and seven original sounds', async () => {
-  const expected = [
+  const references = [
     ...Object.values(native.body.textures),
     ...Object.values(native.defender.textures),
     ...Object.values(native.effectArt.textures),
     ...Object.values(native.previews),
-  ].map((v) => v.path.replace('assets/buildings/wizard-tower-native/', ''));
+  ];
+  const expected = references.map((v) => v.path.replace('assets/buildings/wizard-tower-native/', ''));
   expect(expected).toHaveLength(24);
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = [...new Set(
+    references
+      .map((v) => v.path)
+      .filter((p) => p.startsWith('assets/buildings/wizard-tower-native/'))
+      .map((p) => p.replace('assets/buildings/wizard-tower-native/', '')),
+  )];
   for (const preview of Object.values(native.previews)) {
     const { data, info } = await sharp(`public/${preview.path}`)
       .ensureAlpha()
@@ -218,7 +227,7 @@ it('ships the verified textures, seventeen source portraits and seven original s
   }
   expect(Object.keys(native.sounds)).toHaveLength(7);
   for (const sound of Object.values(native.sounds)) {
-    expected.push(sound.path.split('/').at(-1)!);
+    local.push(sound.path.split('/').at(-1)!);
     const bytes = await readFile(`public/${sound.path}`);
     expect(bytes.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(bytes)).toBe(sound.sha256);
@@ -234,5 +243,5 @@ it('ships the verified textures, seventeen source portraits and seven original s
         `${f.parentPath}/${f.name}`.replace('public/assets/buildings/wizard-tower-native/', ''),
       )
       .sort(),
-  ).toEqual(expected.sort());
+  ).toEqual(local.sort());
 });

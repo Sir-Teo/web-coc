@@ -220400,17 +220400,17 @@
   ],
   "textures": {
     "8": {
-      "path": "assets/dark-drill-native/texture/texture-8.png",
+      "path": "assets/archer-tower-native/buildings/texture/texture-8.png",
       "width": 59,
       "height": 85
     },
     "25": {
-      "path": "assets/dark-drill-native/texture/texture-25.png",
+      "path": "assets/buildings/mortar-native/texture/texture-25.png",
       "width": 256,
       "height": 192
     },
     "39": {
-      "path": "assets/dark-drill-native/texture/texture-39.png",
+      "path": "assets/buildings/air-sweeper-native/texture/texture-39.png",
       "width": 64,
       "height": 560
     },

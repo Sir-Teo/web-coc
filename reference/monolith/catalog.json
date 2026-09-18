@@ -2063,7 +2063,7 @@
   },
   "textures": {
     "8": {
-      "path": "assets/buildings/monolith-native/texture-8.png",
+      "path": "assets/buildings/builder-hut-native/texture/texture-8.png",
       "sourceSize": [
         444,
         448

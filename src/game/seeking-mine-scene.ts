@@ -175,7 +175,10 @@ export class SeekingMinePresentation {
       if (!shadow)
         this.shadows.set(mine.id, (shadow = new NativeSceneView(this.scene, 'seeking-mine')));
       projectile.render(flight.poses, flight.x, flight.y, 7999);
-      shadow.render(flight.shadow, flight.ground.x, flight.ground.y, flight.ground.y - 0.1);
+      // Ground shadows always draw under buildings like every other
+      // projectile shadow; a y-sorted shadow would paint over buildings
+      // standing further up-screen.
+      shadow.render(flight.shadow, flight.ground.x, flight.ground.y, -869);
       for (const object of projectile.objects)
         object.setData('nativeSeekingMineProjectile', {
           id: mine.id,

@@ -54,22 +54,37 @@ async function boot() {
     let lastSavedRevision = -1;
     let lastPersistAt = 0;
     let saving = false;
+    // A forced save (tab hidden) that arrives while a persist is in flight.
+    let pendingForce = false;
     const persist = async (force = false) => {
-      if (!ownsSession || saving || lastSavedRevision === model.revision) return;
+      if (!ownsSession || lastSavedRevision === model.revision) return;
+      if (saving) {
+        // Never drop a forced save: a finished raid would be lost if the tab
+        // is evicted before the in-flight persist lands.
+        if (force) pendingForce = true;
+        return;
+      }
       // Battles mutate revision every step and collectors bump it every second:
       // persist at most every 5s everywhere so full clone+stringify stays off the hot path.
       // A forced persist (tab hidden) skips the time window but keeps the in-flight guard.
       const now = Date.now();
       if (!force && now - lastPersistAt < 5000) return;
       saving = true;
-      const revision = model.revision;
-      const ok = await saveGame(model.state);
-      hud.setSaveState(ok);
-      if (ok) {
-        lastSavedRevision = revision;
-        lastPersistAt = now;
+      try {
+        const revision = model.revision;
+        const ok = await saveGame(model.state);
+        hud.setSaveState(ok);
+        if (ok) {
+          lastSavedRevision = revision;
+          lastPersistAt = now;
+        }
+      } finally {
+        saving = false;
+        if (pendingForce) {
+          pendingForce = false;
+          void persist(true);
+        }
       }
-      saving = false;
     };
     const economyTimer = setInterval(() => {
       model.tick(Date.now());

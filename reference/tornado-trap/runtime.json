@@ -27778,7 +27778,7 @@
   ],
   "textures": {
     "18": {
-      "path": "assets/buildings/tornado-trap-native/texture/texture-18.png",
+      "path": "assets/buildings/freeze-trap-native/texture/texture-18.png",
       "width": 100,
       "height": 100
     },

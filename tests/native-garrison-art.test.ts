@@ -230,7 +230,11 @@ it('ships six source textures and nineteen distinct portraits with exact padded 
       .filter((f) => f.isFile())
       .map((f) => `${f.parentPath}/${f.name}`.replace('public/', ''))
       .sort(),
-  ).toEqual(assets.map((p) => p.path).sort());
+  ).toEqual(
+    // Duplicate texture pages consolidate into shared files: the directory
+    // holds the unique locally-referenced entries.
+    [...new Set(assets.map((p) => p.path).filter((p) => p.startsWith('assets/garrison-native/')))].sort(),
+  );
 });
 
 it('keeps every independent source witness image and cell hash intact within canvas limits', async () => {

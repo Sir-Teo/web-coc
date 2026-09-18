@@ -208,11 +208,17 @@ export function tornadoPulse(
       d,
       force * scale * interval * (num(row, 'TornadoSpeedTowardsCenter', 100) / 100),
     );
-    const angle = ((num(row, 'TornadoRotationSpeed') * Math.PI) / 180) * interval * scale;
-    const nd = d - pull;
-    const theta = Math.atan2(dy, dx) + angle;
-    const tx = cast.x + Math.cos(theta) * nd,
-      ty = cast.y + Math.sin(theta) * nd;
+    // Rational (Cayley) rotation by tan(half angle) ≈ half the turned arc, like
+    // tornadoCarryPoint: only correctly rounded arithmetic and square roots run,
+    // so replays agree across browser engines whose sin/cos/atan2 may differ.
+    const half = (((num(row, 'TornadoRotationSpeed') * Math.PI) / 180) * interval * scale) / 2,
+      denominator = 1 + half * half;
+    const cos = (1 - half * half) / denominator,
+      sin = (2 * half) / denominator;
+    const nd = d - pull,
+      spin = nd / d;
+    const tx = cast.x + (dx * cos - dy * sin) * spin,
+      ty = cast.y + (dx * sin + dy * cos) * spin;
     if (!flying) {
       let blocked = false;
       for (const s of solids) {

@@ -93,7 +93,7 @@
   "units": {
     "golemite": {
       "path": "assets/troops-native/golemite/graph.json",
-      "sha256": "381a35dee2816917c807276f14a75b244ff7493cb85f46b7507d0cf9eacb67f4",
+      "sha256": "3ee100ad0ec92c140dedc64667a2abe1846039e97d4a62dae89d606c20c78dd6",
       "levels": 15,
       "clientName": "Golemite",
       "states": [
@@ -106,7 +106,7 @@
     },
     "lavapup": {
       "path": "assets/troops-native/lavapup/graph.json",
-      "sha256": "76a3b5958e8c995843c81f4eb61f40d24bdc8cf6e197ff3db0f806e4516cb3d4",
+      "sha256": "b6914273adf466d2a76da714e37942fee89d01fb9235b6854482c8b65e57b939",
       "levels": 1,
       "clientName": "Lava Pup",
       "states": [
@@ -119,7 +119,7 @@
     },
     "skeleton": {
       "path": "assets/troops-native/skeleton/graph.json",
-      "sha256": "c6225cc0721c549705ef5d47f672ebd4260cfa6dfef4393199da5e378911970f",
+      "sha256": "294a9e9fd3982ba735685f503a4c86bf70f68a2d1e9a08ae362d3b8b61180b76",
       "levels": 2,
       "clientName": "Skeleton",
       "states": [
@@ -132,7 +132,7 @@
     },
     "bear": {
       "path": "assets/troops-native/bear/graph.json",
-      "sha256": "00c551d517dce4bb74e109d3c8c5c4f9bf81bf9474993e50d84d78bf9d14a033",
+      "sha256": "6f25baf1f97bea8740a9ff284c3d589f9163b19ae1b8898f95477057fb2eeb85",
       "levels": 6,
       "clientName": "Bear",
       "states": [
@@ -158,7 +158,7 @@
     },
     "meteormite": {
       "path": "assets/troops-native/meteormite/graph.json",
-      "sha256": "b037be5bfbad286ca7d094d33e6f4538d154065f8091a843761622e46a96b24a",
+      "sha256": "dbe60394bd8e1494c1bf2d7083cf603ba6c7403fb4203f7bbf9c6d59612c9fc0",
       "levels": 3,
       "clientName": "Meteormite",
       "states": [
@@ -171,7 +171,7 @@
     },
     "ruinknight": {
       "path": "assets/troops-native/ruinknight/graph.json",
-      "sha256": "a2477526b00f0b891473844fa6ebb0baf473dacab2a4f3b3fa55fb757527dc28",
+      "sha256": "5a9aa423a9ffcdc6ce83940b02ebe925c4eca4431a9e876029ef1cb0ebe3e538",
       "levels": 4,
       "clientName": "Ruin Knight",
       "states": [
@@ -210,7 +210,7 @@
     },
     "icehoundpup": {
       "path": "assets/troops-native/icehoundpup/graph.json",
-      "sha256": "2137545f2ddd58a13a715da912019c97c65833e5338479f4d34038e28aef8f2c",
+      "sha256": "af05d4911343e963edbdecebbb39938de65fbae2ff262424d2c81f44f7ed5936",
       "levels": 1,
       "clientName": "Ice Hound Pup",
       "states": [
@@ -223,7 +223,7 @@
     },
     "superhog": {
       "path": "assets/troops-native/superhog/graph.json",
-      "sha256": "185bdc150fb631a9eb473c3ec3f30fe03a8bb54355ff230b7bbe05dd59f17b35",
+      "sha256": "26c5d1c1cb46d79199dcb40e857c91903c37cf7ce50aa8a6f9a3e44b6314c92a",
       "levels": 12,
       "clientName": "Super Hog",
       "states": [
@@ -236,7 +236,7 @@
     },
     "superrider": {
       "path": "assets/troops-native/superrider/graph.json",
-      "sha256": "aa40c97b45a387885a75f6463b0ef514fc5de78e2f20c2568d3a13afe5063254",
+      "sha256": "0551041f523b5d0a8830ab8ecb2eb0342d5e075592e8ed0c5dcac2166f49c1fc",
       "levels": 12,
       "clientName": "Super Rider",
       "states": [
@@ -250,7 +250,7 @@
     },
     "bigboy": {
       "path": "assets/troops-native/bigboy/graph.json",
-      "sha256": "fa1a5b1e195db1d17b7858d2322deeefd6e73e8d440ab128d4e137fcea2388e3",
+      "sha256": "98ba986958d33be2596a579944c6cc37e173e17154b1a88f72f1225e28c97050",
       "levels": 1,
       "clientName": "Big Boy",
       "states": [
@@ -317,7 +317,7 @@
     },
     "snake": {
       "path": "assets/troops-native/snake/graph.json",
-      "sha256": "85040c5f4bb32c2f50b6becb70b85ed96161048e07903ba81d46ad2a5bedd701",
+      "sha256": "e93870f5f3398f1aca51dc8e141e13c0ba4dd9bcab7779f4829999ab96f1a22c",
       "levels": 10,
       "clientName": "BK Equipment Snake",
       "states": [
@@ -331,7 +331,7 @@
     },
     "henchman": {
       "path": "assets/troops-native/henchman/graph.json",
-      "sha256": "9ac1fc45920d2357f0ab101a6d6de6919b241295a422256d9ddfb3c6fa84761e",
+      "sha256": "b3aea0d6d1f0e67b46463a643a59b58afdfd55e4926f310aa1da1a6a97c9804f",
       "levels": 7,
       "clientName": "MP Equipment Henchman",
       "states": [
@@ -357,7 +357,7 @@
     },
     "gwlavaloonpup": {
       "path": "assets/troops-native/gwlavaloonpup/graph.json",
-      "sha256": "aba4b9234e3731955f638eea3819ac7e1f27c4f63a29782c31724aeb9fec0956",
+      "sha256": "23ee2092e83f2a3cede18ab745e757d69a5182f4a413a7a560727cce0d114948",
       "levels": 11,
       "clientName": "GW Equipment Lavaloon Pup",
       "states": [
@@ -370,7 +370,7 @@
     },
     "defendingbuilder": {
       "path": "assets/troops-native/defendingbuilder/graph.json",
-      "sha256": "5300f627dfa88a9ab9a4d79f306f3b5adc6016f654ebda7cfd53eff5d17dc7d5",
+      "sha256": "d98e5c1caed2b5f0fa4b777a5e9df4949c95deef6ad046e135bd2b43d5e19b4b",
       "levels": 7,
       "clientName": "Defending Builder",
       "states": [
@@ -383,7 +383,7 @@
     },
     "trapskeleton": {
       "path": "assets/troops-native/trapskeleton/graph.json",
-      "sha256": "7ba51eb00eade5884a6287999ee6e38feb0fd6ea36070fe9e6960dc39c017004",
+      "sha256": "97b620a32eac4a7b720ed3f71b95762abee48dba6154855844552f81c2aca740",
       "levels": 2,
       "clientName": "Trap Skeleton",
       "states": [
@@ -396,7 +396,7 @@
     },
     "trapairskeleton": {
       "path": "assets/troops-native/trapairskeleton/graph.json",
-      "sha256": "b2c23c18c1f1c99183f190ed7c82afea774db1474209a2066efc16052416f673",
+      "sha256": "65b81e1f065859e878335b3037368cd29b8a50d5b23daa5310d9deccc68faaf9",
       "levels": 2,
       "clientName": "Trap Air Skeleton",
       "states": [
@@ -410,7 +410,7 @@
     },
     "wallwrecker": {
       "path": "assets/troops-native/wallwrecker/graph.json",
-      "sha256": "89d1564582623f8de28d68b9593f5e4daf07ce7c16122b0c69372b86d57a6e36",
+      "sha256": "19e080b8696e3e1a711ae3dda32fd69b33bf3c63acaa520d5bdc02bdeafa1239",
       "levels": 6,
       "clientName": "Wall Wrecker",
       "states": [
@@ -467,7 +467,7 @@
     },
     "loglauncher": {
       "path": "assets/troops-native/loglauncher/graph.json",
-      "sha256": "23d1cbff39e8c361895b550cf5c84248fdcf2684b689990c5e2256ae0c310b85",
+      "sha256": "c245beae0aeacf8536b898518bfa2d0c6244faabc5ae560d629f779620877eed",
       "levels": 6,
       "clientName": "Log Launcher",
       "states": [
@@ -481,7 +481,7 @@
     },
     "flameflinger": {
       "path": "assets/troops-native/flameflinger/graph.json",
-      "sha256": "1a3bc8819fa9981046b59b02f2bfdc84d6ee9154be76817cea7c6393b737a3d1",
+      "sha256": "61124714429f258cf028182c8f95c69c38596bb7709cf9b7e333f773a425f2f5",
       "levels": 5,
       "clientName": "Flame Flinger",
       "states": [
@@ -512,7 +512,7 @@
     },
     "trooplauncher": {
       "path": "assets/troops-native/trooplauncher/graph.json",
-      "sha256": "ac86afffd0a7b1291249e358674934da49a5cbf52989ad46f128b82cbf2ffb90",
+      "sha256": "abe268411396228e81908db0f501d38a81364adc2c1498a4aab1834955ccd265",
       "levels": 4,
       "clientName": "Troop Launcher",
       "states": [
@@ -526,7 +526,7 @@
     },
     "superbarbarian": {
       "path": "assets/troops-native/superbarbarian/graph.json",
-      "sha256": "82e5de3fbb901905792ad443c12eef63fa2272d26e268b0da64e663743057233",
+      "sha256": "0cc01b04e0a2ac547e3baccd0be7d048836c1d688e3497970a0ddad912432bfa",
       "levels": 9,
       "clientName": "Super Barbarian",
       "states": [
@@ -540,7 +540,7 @@
     },
     "superarcher": {
       "path": "assets/troops-native/superarcher/graph.json",
-      "sha256": "71f1318a6fcba78670b8b90f6a37446486d6086a68cb2eca6878bfabfefe511a",
+      "sha256": "174e40aded2923323e9ded917d5841e54b80af4f90b1111152590996cd307596",
       "levels": 10,
       "clientName": "Super Archer",
       "states": [
@@ -554,7 +554,7 @@
     },
     "supergiant": {
       "path": "assets/troops-native/supergiant/graph.json",
-      "sha256": "72b82cac223bf0259e20398bddfd784c712b2a5abe82775fcdb32bdf7aefcd49",
+      "sha256": "ab78f602e3fb48c49107842fce734565e0d1e56281dca6e7c9420808ede07b15",
       "levels": 10,
       "clientName": "Super Giant",
       "states": [
@@ -567,7 +567,7 @@
     },
     "sneakygoblin": {
       "path": "assets/troops-native/sneakygoblin/graph.json",
-      "sha256": "bc83aca840dab2b5541186499a0a600d7503b7739a96c37bbc25d8a976e60982",
+      "sha256": "6724f769104e607e1964dd08bd93000e6f287b924c4c798086ec307cb33bb05f",
       "levels": 6,
       "clientName": "Sneaky Goblin",
       "states": [
@@ -580,7 +580,7 @@
     },
     "superwallbreaker": {
       "path": "assets/troops-native/superwallbreaker/graph.json",
-      "sha256": "17a56d8901b3c17c4565ccbd1ba69e7606c8ac773a3590c55af81b8b011a87dc",
+      "sha256": "3c46933ab834d86f382fa2353a1b6efb66543fd8c53f0a88469a377bb1c599c7",
       "levels": 10,
       "clientName": "Super Wall Breaker",
       "states": [
@@ -606,7 +606,7 @@
     },
     "superwizard": {
       "path": "assets/troops-native/superwizard/graph.json",
-      "sha256": "9e94a8b2a99e8ddedec9a5143b19cf852acc112f343ad83f3c97935ae864f7a6",
+      "sha256": "18efdca823368387007df113fe74289960c2d8e134b8ecfa0fc8845ecac79490",
       "levels": 10,
       "clientName": "Super Wizard",
       "states": [
@@ -619,7 +619,7 @@
     },
     "superdragon": {
       "path": "assets/troops-native/superdragon/graph.json",
-      "sha256": "f46f2750f9084079ffd54d54dbc758069b151b68d881418343ee34900e9f2602",
+      "sha256": "e0ae44d079136a3c1c39fcca3eed80781f8d0b75cbbfdf1030bcf222dee979d2",
       "levels": 11,
       "clientName": "Super Dragon",
       "states": [
@@ -632,7 +632,7 @@
     },
     "infernodragon": {
       "path": "assets/troops-native/infernodragon/graph.json",
-      "sha256": "c4a36e544e6ceb615fe48324f634db7d38de033de0e93a870a105aa0ab91bf24",
+      "sha256": "6e693109f29313bdc65b760c5d4baf132edd525e045cefc64497c0ec7d447ab4",
       "levels": 12,
       "clientName": "Inferno Dragon",
       "states": [
@@ -645,7 +645,7 @@
     },
     "superminer": {
       "path": "assets/troops-native/superminer/graph.json",
-      "sha256": "4355e79e4bf68baa3fd3e092cc3100525fe0a77303b247e2a3fa0a70bb4cc4f1",
+      "sha256": "fc5eb6a93d354e682333b572ab2975f755a51d30ba0c222092c5e36cb8fe3686",
       "levels": 12,
       "clientName": "Super Miner",
       "states": [
@@ -659,7 +659,7 @@
     },
     "superyeti": {
       "path": "assets/troops-native/superyeti/graph.json",
-      "sha256": "3dc80df15e1d987c55e4ec70e66ac2b2a8e5eabd66c2274bf01ee549f14719ce",
+      "sha256": "cefcae45d27455197e6796030a5b52ae41293384d699d24731dd2fc305b677b8",
       "levels": 8,
       "clientName": "Super Yeti",
       "states": [
@@ -672,7 +672,7 @@
     },
     "superminion": {
       "path": "assets/troops-native/superminion/graph.json",
-      "sha256": "5f7260b07a0682692f6eef8139db25af299fd15148abe5b141ea4792e857b493",
+      "sha256": "069bd7c83ac42812a95fa19323a71a74da97161ec57779ea6b3257b0be53f795",
       "levels": 11,
       "clientName": "Super Minion",
       "states": [
@@ -698,7 +698,7 @@
     },
     "supervalkyrie": {
       "path": "assets/troops-native/supervalkyrie/graph.json",
-      "sha256": "9e4a49252ab436e08495a2b6c71e6ee6d6e3aad470fbb41f3ecd463b3e37bc25",
+      "sha256": "4ae9f042514799c4a0261371b986b349781ba7cf1317f9eef413c8f664962790",
       "levels": 12,
       "clientName": "Super Valkyrie",
       "states": [
@@ -711,7 +711,7 @@
     },
     "superwitch": {
       "path": "assets/troops-native/superwitch/graph.json",
-      "sha256": "61979072783fcef26bcc0d8a076a4c88309223890807aa2c1232600c040f14c7",
+      "sha256": "8dc54984d688a6df609e6455f6530b084f7d1d5c4485618a7b27197f6f05ee62",
       "levels": 8,
       "clientName": "Super Witch",
       "states": [
@@ -725,7 +725,7 @@
     },
     "icehound": {
       "path": "assets/troops-native/icehound/graph.json",
-      "sha256": "3c854a89dbd3a10bdac14e2cd8d0401f06f7aa11c04709c4c5b956052b3effcb",
+      "sha256": "9f6db0234f9fd9c5a3aefc406a1b4fdb32d4a660300d940d7e32c8fe07933814",
       "levels": 8,
       "clientName": "Ice Hound",
       "states": [
@@ -738,7 +738,7 @@
     },
     "superbowler": {
       "path": "assets/troops-native/superbowler/graph.json",
-      "sha256": "b63691d588e8c9b7577602747fd1329825f9cdd6a487ee624319ce715de93f0a",
+      "sha256": "4ba09bf3109c1ab1ae06307925da5833cc95fb11a3bd8a330fe139a96cdfc5c1",
       "levels": 10,
       "clientName": "Super Bowler",
       "states": [

@@ -250,11 +250,20 @@ it('preserves original polygons, transforms, timelines and exact texture samplin
 }, 30000);
 
 it('ships six exact texture crops, twenty-one registered source portraits, exact UI crops and five original Ogg files', async () => {
-  const expected = [...Object.values(native.world.textures), ...Object.values(native.previews)].map(
+  const references = [...Object.values(native.world.textures), ...Object.values(native.previews)];
+  const expected = references.map(
     (v) => v.path.replace('assets/buildings/cannon-native/', ''),
   );
   expect(Object.keys(native.world.textures)).toEqual(['2', '8', '18', '25', '39', '41']);
   expect(expected).toHaveLength(27);
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = [...new Set(
+    references
+      .map((v) => v.path)
+      .filter((p) => p.startsWith('assets/buildings/cannon-native/'))
+      .map((p) => p.replace('assets/buildings/cannon-native/', '')),
+  )];
   const hashes = new Set<string>();
   for (const [key, preview] of Object.entries(native.previews)) {
     expect(preview.export).toBe(`basic_turret_lvl${key}`);
@@ -296,11 +305,12 @@ it('ships six exact texture crops, twenty-one registered source portraits, exact
     expect([info.width, info.height]).toEqual([icon.width, icon.height]);
     expect(data.equals(original), `level ${level} icon preserves source pixels`).toBe(true);
     expect(hash(data)).toBe(icon.rgbaSha256);
-    expected.push(icon.path.split('/').at(-1)!);
+    if (icon.path.startsWith('assets/buildings/cannon-native/'))
+      local.push(icon.path.split('/').at(-1)!);
   }
   expect(Object.keys(native.sounds)).toHaveLength(5);
   for (const sound of Object.values(native.sounds)) {
-    expected.push(sound.path.split('/').at(-1)!);
+    local.push(sound.path.split('/').at(-1)!);
     const bytes = await readFile(`public/${sound.path}`);
     expect(bytes.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(bytes)).toBe(sound.sha256);
@@ -314,5 +324,5 @@ it('ships six exact texture crops, twenty-one registered source portraits, exact
       .filter((f) => f.isFile())
       .map((f) => `${f.parentPath}/${f.name}`.replace('public/assets/buildings/cannon-native/', ''))
       .sort(),
-  ).toEqual(expected.sort());
+  ).toEqual([...new Set(local)].sort());
 });

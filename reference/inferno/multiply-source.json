@@ -1976,7 +1976,7 @@
   },
   "textures": {
     "8": {
-      "path": "assets/inferno-multiply-native/texture/texture-8.png",
+      "path": "assets/buildings/builder-hut-native/texture/texture-8.png",
       "sourceSize": [
         444,
         448

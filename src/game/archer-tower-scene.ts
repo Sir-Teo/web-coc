@@ -40,22 +40,26 @@ export function villageArcherTowerPoses(
 ) {
   const state =
     b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
-  const poses = archerTowerComposition(
-    b.level,
-    state,
-    seconds,
-    false,
-    battleTowerArcherPose(b, battle, seconds, reduced),
-    battleTowerArcherPose(b, battle, seconds, reduced),
-  );
+  const archer = battleTowerArcherPose(b, battle, seconds, reduced);
+  const poses = archerTowerComposition(b.level, state, seconds, false, archer, archer);
   return { body: transform(poses.body), residents: transform(poses.residents) };
 }
+/** Bounds change slowly (aim sector, attack cycle, idle sway): cache by pose
+ * signature at 4 Hz instead of rebuilding the full pose every frame. Bar
+ * anchors only read the top edge, so quantum staleness is invisible. */
+const archerBoundsCache = new Map<string, number[]>();
 export function villageArcherTowerBounds(
   b: Building,
   seconds: number,
   battle?: Battle | null,
   reduced = false,
 ) {
+  const state =
+    b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
+  const pose = battleTowerArcherPose(b, battle, seconds, reduced);
+  const key = `${b.level}:${state}:${pose.direction}:${pose.flip ? 1 : 0}:${pose.action}:${Math.floor(seconds * 4)}:${reduced ? 1 : 0}`;
+  const hit = archerBoundsCache.get(key);
+  if (hit) return hit;
   const poses = villageArcherTowerPoses(b, seconds, battle, reduced),
     bounds = [Infinity, Infinity, -Infinity, -Infinity];
   const pending = [...poses.body, ...poses.residents];
@@ -73,6 +77,8 @@ export function villageArcherTowerBounds(
       bounds[3] = Math.max(bounds[3], v[i + 1]);
     }
   }
+  if (archerBoundsCache.size > 512) archerBoundsCache.clear();
+  archerBoundsCache.set(key, bounds);
   return bounds;
 }
 export function preloadVillageArcherTowers(scene: Phaser.Scene) {

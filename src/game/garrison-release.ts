@@ -45,14 +45,28 @@ const exits = [
 export const garrisonExitOffset = (size: number) => size / 2 - 0.25;
 
 export function stepGarrisonReleases(battle: Battle) {
-  for (const reserve of battle.garrisons ?? []) {
-    const castle = battle.buildings.find((b) => b.id === reserve.castleId && isGarrisonBunker(b));
+  const garrisons = battle.garrisons ?? [];
+  if (!garrisons.length) return;
+  // Nothing to do until some reserve's next search is due: previously every
+  // garrison copied every unit every tick even when the loop below never fired.
+  let due = false;
+  for (const reserve of garrisons)
+    if (searchTime(reserve.nextSearch) <= battle.elapsed + 1e-9) {
+      due = true;
+      break;
+    }
+  if (!due) return;
+  const bunkers = new Map<number, Building>();
+  for (const b of battle.buildings) if (isGarrisonBunker(b)) bunkers.set(b.id, b);
+  // One snapshot per tick: defender spawns below never touch battle.units.
+  const targets = battle.units.map((unit) => ({ ...unit, flying: !!TROOPS[unit.kind].flying }));
+  for (const reserve of garrisons) {
+    const castle = bunkers.get(reserve.castleId);
     if (!castle) continue;
     const size = BUILDINGS[castle.kind].size;
     const centerX = castle.x + size / 2,
       centerY = castle.y + size / 2,
       offset = garrisonExitOffset(size);
-    const targets = battle.units.map((unit) => ({ ...unit, flying: !!TROOPS[unit.kind].flying }));
     while (searchTime(reserve.nextSearch) <= battle.elapsed + 1e-9) {
       const at = searchTime(reserve.nextSearch++);
       const troop = releaseGarrisonTroop(

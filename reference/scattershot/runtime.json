@@ -129730,7 +129730,7 @@
   ],
   "textures": {
     "8": {
-      "path": "assets/buildings/scattershot-native/texture-8.png",
+      "path": "assets/buildings/bombtower-native/body/texture-8.png",
       "width": 64,
       "height": 110
     },

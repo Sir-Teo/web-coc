@@ -115,7 +115,8 @@ export class ScattershotPresentation implements LatePresentation {
         for (const p of state.projectiles) {
           if (p.arrivedAt !== undefined || elapsed <= p.launchedAt + 1e-9) continue;
           const pose = scattershotProjectilePose(p, iso, airLift, elapsed);
-          show(`projectile:${p.id}`, pose.poses, pose.x, pose.y, 7200, { projectile: p.id, u: pose.u });
+          // Above flying units (7500) like every other projectile type.
+          show(`projectile:${p.id}`, pose.poses, pose.x, pose.y, 7700, { projectile: p.id, u: pose.u });
           show(`shadow:${p.id}`, pose.shadow, pose.ground.x, pose.ground.y, -869);
           const span = Math.max(1e-6, elapsed - p.launchedAt);
           const trail = scattershotTrailPoses(p.towerId, p.index, scattershotStats(p.level).trailEmitter, p.launchedAt, elapsed, (at) => {

@@ -259,6 +259,7 @@ import {
   nativeBehavior,
   resolveNativeDeath,
   resolveNativeImpact,
+  statsFor,
   stepNativeBattle,
   stepNativeUnit,
   type NativeUnitState,
@@ -1282,6 +1283,10 @@ export class GameModel {
     // caller's missing timestamp into an upgrade that can never complete.
     if (!Number.isFinite(now)) throw new Error(`Invalid clock time: ${now}`);
     this.clock = now;
+    // Home production accrues during raids but stays silent: the battle HUD
+    // shows raid state, and flagging it would resync the whole scene every
+    // second mid-raid. Amounts flush on return.
+    const inBattle = !!this.battle && !this.battle.finished;
     let changed = false;
     let structural = false;
     if (
@@ -1362,7 +1367,7 @@ export class GameModel {
                     (productionSeconds * (production.production + charged.production)) / 3600,
                 )
               : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
-        if (Math.floor(before) !== Math.floor(b.stored)) changed = true;
+        if (Math.floor(before) !== Math.floor(b.stored) && !inBattle) changed = true;
       }
     }
     const growth = this.state.obstacleGrowth!;
@@ -2843,6 +2848,7 @@ export class GameModel {
     const hero = b?.nativeHeroes?.find((entry) => entry.kind === kind);
     if (!b || b.finished || !hero || hero.unitId !== null || this.deployBlocked(x, y)) return false;
     this.recordAction({ type: 'hero', hero: kind, x, y });
+    const starting = !b.started;
     this.beginFight();
     const stats = heroTroopStats(hero, b.townhall ?? this.townhallLevel);
     hero.unitId = this.state.nextId++;
@@ -2898,7 +2904,7 @@ export class GameModel {
       );
     }
     this.onEffect({ type: 'spawn', x, y });
-    this.changed();
+    this.deployChanged(starting);
     return true;
   }
   /** One ability activation per hero and battle; a knocked-out hero fires it automatically. */
@@ -2931,6 +2937,7 @@ export class GameModel {
     if (b?.nativeHeroes) return this.deployNativeHero(this.activeHeroKind ?? 'king', x, y);
     if (!b || b.finished || !h || h.unitId !== null || this.deployBlocked(x, y)) return false;
     this.recordAction({ type: 'hero', x, y });
+    const starting = !b.started;
     this.beginFight();
     const stats = heroStats(h.level, h.townhall, h.equipment);
     h.unitId = this.state.nextId++;
@@ -2952,7 +2959,7 @@ export class GameModel {
       attacking: false,
     });
     this.onEffect({ type: 'spawn', x, y });
-    this.changed();
+    this.deployChanged(starting);
     return true;
   }
   activateHeroAbility(automatic = false) {
@@ -3173,6 +3180,15 @@ export class GameModel {
         y < v.y + BUILDINGS[v.kind].size + 1.5,
     );
   }
+  /**
+   * Deploys only move tray counts, which the HUD patches live; the first
+   * deploy of a battle also starts the fight (banner, clock, buttons) and
+   * still needs a full render.
+   */
+  private deployChanged(starting: boolean) {
+    if (starting) this.changed();
+    else this.changed(true);
+  }
   deploy(x: number, y: number) {
     if (this.replay) return false;
     if (this.activeHeroKind) return this.deployNativeHero(this.activeHeroKind, x, y);
@@ -3185,6 +3201,7 @@ export class GameModel {
       return false;
     }
     this.recordAction({ type: 'troop', kind: k, x, y });
+    const starting = !b.started;
     this.beginFight();
     b.remaining[k]--;
     if (isSiege(k)) b.siegeDeployed = true;
@@ -3207,7 +3224,7 @@ export class GameModel {
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
     });
     this.onEffect({ type: 'spawn', x, y });
-    this.changed();
+    this.deployChanged(starting);
     return true;
   }
   /** Drops `count` troops in a small ring, the way a drag-deploy does in Clash. */
@@ -3237,6 +3254,7 @@ export class GameModel {
     )
       return false;
     this.recordAction({ type: 'spell', kind: k, x, y });
+    const starting = !b.started;
     this.beginFight();
     recordWakeSpace(b, spellWakeSpace(SPELLS[k].space));
     b.spells[k]--;
@@ -3367,7 +3385,7 @@ export class GameModel {
       this.onEffect({ type: 'spawn', x: hero.x, y: hero.y });
     } else startSpellAura(b, k as AuraSpell, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
-    this.changed();
+    this.deployChanged(starting);
     return true;
   }
   /** Pure healers never keep a battle open; a Druid does, because it becomes a fighting Bear. */
@@ -3399,6 +3417,13 @@ export class GameModel {
       passableWalls: new Set(),
       recall: (u) => this.recallUnit(b, u),
     };
+  }
+  /** Troops that would divert onto a newly revealed Hidden Tesla. */
+  private teslaDiverts(b: Battle, u: Unit) {
+    if (TROOPS[u.kind].prefersDefenses) return true;
+    if (!nativeBehavior(b, u.kind)) return false;
+    const s = statsFor(b, u);
+    return s.preferredClass === 'Defense' || !!s.preferredBuilding;
   }
   /** Recall Spell: the unit leaves the field and its card returns with the same health. */
   private recallUnit(b: Battle, u: Unit) {
@@ -3460,7 +3485,7 @@ export class GameModel {
     if (b.practice) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
     this.spawnHeroSummons();
-    if (revealTeslas(b, this.onEffect)) this.changed();
+    if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     // One wall index per tick, shared by the native context and the legacy loop below.
     const shared = this.sharedWalls(b);
     const native = b.nativeRoster ? this.nativeContext(b, shared) : null;
@@ -3469,6 +3494,20 @@ export class GameModel {
     // (historical hashes) is unchanged.
     const pathBudget = b.units.length > 100 ? { count: 0, limit: 48 } : undefined;
     if (native && pathBudget) native.pathBudget = pathBudget;
+    // Per-tick targetability for the native phase (same predicate the legacy
+    // loop uses below). Built separately because statuses can change mid-tick
+    // (Tesla reveals, fresh auras), and hp stays live at each use.
+    const nativeUntargetable = new Set<number>();
+    for (const v of b.buildings) {
+      if (
+        isTrap(v.kind) ||
+        concealedTesla(b, v) ||
+        lateBuildingHidden(b, v) ||
+        buildingHidden(b, v)
+      )
+        nativeUntargetable.add(v.id);
+    }
+    if (native) native.isTargetable = (v) => v.hp > 0 && !nativeUntargetable.has(v.id);
     if (native && b.nativeHeroPassives)
       for (const hero of b.nativeHeroes ?? []) {
         const unit = b.units.find((u) => u.id === hero.unitId);
@@ -3523,12 +3562,18 @@ export class GameModel {
       native.buildings = knownBuildings;
       native.buildingsById = new Map(knownBuildings.map((v) => [v.id, v]));
       native.wallTile = shared.wallTile;
+      native.breaches = breaches;
     }
     if (defenses) defenses.buildings = knownBuildings;
     // Jump Spells change every ground route while active; the set changes only at cast/expiry.
     const passableWalls = native ? jumpWalls(b) : undefined;
     if (native) {
       native.passableWalls = passableWalls!;
+      // Breach-free routing list for defender chases (mirrors the wall filter
+      // the native building chase applies per search).
+      native.routableBuildings = passableWalls!.size
+        ? knownBuildings.filter((v) => v.kind !== 'wall' || !passableWalls!.has(v.id))
+        : undefined;
       // Numeric version instead of joining every wall id into a string per tick.
       let jumpVersion = passableWalls!.size;
       for (const id of passableWalls!) jumpVersion = (jumpVersion * 31 + id) | 0;
@@ -3606,7 +3651,13 @@ export class GameModel {
       u.pathAt -= unitDt;
       u.attacking = false;
       // Memoize stats by kind+level for the tick instead of recomputing per unit.
-      const statsKey = `${u.kind}:${u.level ?? b.troopLevels?.[u.kind as TroopKind] ?? this.state.troopLevels?.[u.kind as TroopKind] ?? 1}:${u.id !== undefined && (b.nativeHeroes || (u as { hero?: boolean }).hero) ? u.id : ''}`;
+      // Only hero/pet units can resolve to per-unit stats (the heroOf/petOwner id
+      // lookup); unit ids are unique, so no other unit can hit that branch. The
+      // old key scoped by id whenever the battle had a hero roster (u.id is
+      // always defined, and even an empty nativeHeroes array is truthy), so it
+      // never hit.
+      const perUnitStats = !!u.hero || isHeroUnitKind(u.kind) || isPetUnitKind(u.kind);
+      const statsKey = `${u.kind}:${u.level ?? b.troopLevels?.[u.kind as TroopKind] ?? this.state.troopLevels?.[u.kind as TroopKind] ?? 1}:${perUnitStats ? u.id : ''}`;
       let unitBase = statsCache.get(statsKey);
       if (!unitBase) {
         unitBase = this.unitStats(u);
@@ -3663,6 +3714,13 @@ export class GameModel {
           this.onEffect,
           undefined,
           isTargetableLive,
+          {
+            buildings: routeBuildings,
+            wallTile,
+            passableWalls,
+            budget: repathState,
+            breaches,
+          },
         )
       )
         continue;
@@ -3886,7 +3944,7 @@ export class GameModel {
       }
     }
     separateUnits(b.units, solidBuildings, !!b.nativeSubtiles);
-    if (revealTeslas(b, this.onEffect)) this.changed();
+    if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     this.stepLate('traps', dt);
     stepMortarShells(b, this.onEffect);
@@ -4152,7 +4210,7 @@ export class GameModel {
     }
     b.destruction = total ? Math.floor((dead / total) * 100) : 100;
     b.stars = Number(b.destruction >= 50) + Number(townHallDead) + Number(b.destruction === 100);
-    if (revealTeslas(b, this.onEffect)) this.changed();
+    if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     if (b.practice) {
       b.loot = { gold: 0, elixir: 0 };
       return;

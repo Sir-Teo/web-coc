@@ -158,18 +158,26 @@ for (const [name, packed, original] of [
   });
 
 it('ships exactly seven texture crops, four world previews, the original Info image and five sounds', async () => {
-  const expected = [
+  const references = [
     ...Object.values(native.world.textures),
     ...Object.values(native.info.textures),
     ...Object.values(native.previews),
     native.info,
-  ].map((v) => v.path.replace('assets/buildings/seeking-mine-native/', ''));
+  ];
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = [...new Set(
+    references
+      .map((v) => v.path)
+      .filter((p) => p.startsWith('assets/buildings/seeking-mine-native/'))
+      .map((p) => p.replace('assets/buildings/seeking-mine-native/', '')),
+  )];
   for (const preview of Object.values(native.previews)) {
     const pixels = await sharp(`public/${preview.path}`).raw().toBuffer();
     expect(hash(pixels)).toBe(preview.rgbaSha256);
   }
   for (const sound of Object.values(native.sounds)) {
-    expected.push(sound.path.split('/').at(-1)!);
+    local.push(sound.path.split('/').at(-1)!);
     const bytes = await readFile(`public/${sound.path}`);
     expect(bytes.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(bytes)).toBe(sound.sha256);
@@ -185,5 +193,5 @@ it('ships exactly seven texture crops, four world previews, the original Info im
         `${f.parentPath}/${f.name}`.replace('public/assets/buildings/seeking-mine-native/', ''),
       )
       .sort(),
-  ).toEqual(expected.sort());
+  ).toEqual(local.sort());
 });

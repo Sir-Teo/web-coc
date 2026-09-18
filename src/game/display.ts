@@ -12,9 +12,12 @@ export function displaySize(width: number, height: number, density: number, maxD
     maxDimension / width,
     maxDimension / height,
   );
+  // Round, don't floor: at fractional devicePixelRatio (1.25/1.5) flooring
+  // loses a pixel, leaving the backbuffer smaller than the element so the
+  // browser rescales every frame.
   return {
-    width: Math.max(1, Math.floor(width * ratio)),
-    height: Math.max(1, Math.floor(height * ratio)),
+    width: Math.max(1, Math.round(width * ratio)),
+    height: Math.max(1, Math.round(height * ratio)),
   };
 }
 

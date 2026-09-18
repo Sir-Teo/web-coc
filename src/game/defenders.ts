@@ -1,4 +1,5 @@
 import type { HeroKind } from './native-hero-data';
+import { MAP_SIZE } from './grid';
 import { hurtUnit, unitHidden } from './native-status';
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
@@ -301,6 +302,14 @@ const canFight = (unit: Unit, enemy: Defender, troop: DefenderFightTraits) =>
     (troop.airTargets ??
       (unit.kind === 'archer' || unit.kind === 'wizard' || unit.kind === 'dragon')));
 type AttackStats = Pick<TroopDef, 'damage' | 'speed' | 'range' | 'rate'>;
+/** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
+export interface DefenderRoute {
+  buildings: Building[];
+  wallTile?: Map<number, Building>;
+  passableWalls?: Set<number>;
+  budget?: { count: number; limit: number };
+  breaches?: readonly { x: number; y: number }[];
+}
 export function stepAttackerVsDefenders(
   battle: Battle,
   unit: Unit,
@@ -312,6 +321,8 @@ export function stepAttackerVsDefenders(
   traits?: DefenderFightTraits,
   /** Per-tick targetability with hp checked live; defaults to targetableBuilding. */
   isTargetable?: (b: Building) => boolean,
+  /** Routing shared with the building chase: wall index, Jump breaches, A* budget. */
+  route?: DefenderRoute,
 ) {
   const troop = traits ?? TROOPS[unit.kind];
   const targetable = isTargetable ?? ((b: Building) => targetableBuilding(battle, b));
@@ -337,24 +348,28 @@ export function stepAttackerVsDefenders(
   }
   // Single pass: the old code scanned all buildings twice per unit (once for
   // "any preferred still stands", once for "committed to current target").
+  // Troops with no preferred target can satisfy neither exit, so skip the scan
+  // (and its slow per-building targetability check) entirely for them.
   const wantsPreferred = !!troop.prefersDefenses || !!troop.prefersResources;
-  let preferred = false;
-  let committed = false;
-  for (const b of buildings) {
-    if (b.hp <= 0 || !targetable(b)) continue;
-    if (!preferred) {
-      if (
-        (troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
-        (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')
-      )
-        preferred = true;
+  if (wantsPreferred) {
+    let preferred = false;
+    let committed = false;
+    for (const b of buildings) {
+      if (b.hp <= 0 || !targetable(b)) continue;
+      if (!preferred) {
+        if (
+          (troop.prefersDefenses && (isDefense(b.kind) || lateActivatedDefense(battle, b))) ||
+          (troop.prefersResources && isResourceBuilding(b.kind) && b.npc !== 'goblin-castle')
+        )
+          preferred = true;
+      }
+      if (!committed && b.id === unit.target) committed = true;
+      if (preferred && committed) break;
     }
-    if (!committed && wantsPreferred && b.id === unit.target) committed = true;
-    if (preferred && committed) break;
-  }
-  if (preferred || committed) {
-    delete unit.defenderTarget;
-    return false;
+    if (preferred || committed) {
+      delete unit.defenderTarget;
+      return false;
+    }
   }
   let target = (battle.defenders ?? []).find(
     (d) =>
@@ -464,26 +479,42 @@ export function stepAttackerVsDefenders(
     unit.y += ((target.y - unit.y) / distance) * move;
   } else {
     if (!unit.path.length || unit.pathAt <= 0) {
-      // Defenders are troop points; leveled garrison defenders must not be read as footprints.
-      unit.path = findPath(
-        unit,
-        { x: target.x, y: target.y },
-        buildings,
-        stats.range,
-        !!battle.nativeSubtiles,
-      );
-      unit.pathAt = 0.3;
-    }
-    const next = unit.path[0],
-      wall =
-        next &&
-        buildings.find(
-          (b) =>
-            b.kind === 'wall' &&
-            b.hp > 0 &&
-            b.x === Math.floor(next.x) &&
-            b.y === Math.floor(next.y),
+      // Same per-tick A* budget as the building chase: defer overflow a tick
+      // instead of spiking.
+      if (route?.budget && route.budget.count >= route.budget.limit) {
+        unit.pathAt = Math.min(Math.max(unit.pathAt, 0.05), 0.15);
+      } else {
+        if (route?.budget) route.budget.count++;
+        // Defenders are troop points; leveled garrison defenders must not be read as footprints.
+        unit.path = findPath(
+          unit,
+          { x: target.x, y: target.y },
+          route?.buildings ?? buildings,
+          stats.range,
+          !!battle.nativeSubtiles,
+          route?.breaches ?? [],
         );
+        unit.pathAt = 0.3;
+      }
+    }
+    const next = unit.path[0];
+    // Jump-opened walls are walked over, not attacked. Index-only when the
+    // caller shares its wall index; the linear scan survives only for
+    // index-less contexts (tests).
+    const hit =
+      next === undefined
+        ? undefined
+        : (route?.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x)) ??
+          (!route?.wallTile
+            ? buildings.find(
+                (b) =>
+                  b.kind === 'wall' &&
+                  b.hp > 0 &&
+                  b.x === Math.floor(next.x) &&
+                  b.y === Math.floor(next.y),
+              )
+            : undefined));
+    const wall = hit && hit.hp > 0 && !route?.passableWalls?.has(hit.id) ? hit : undefined;
     if (wall && distanceTo(unit, wall) <= stats.range) {
       unit.attacking = true;
       if (unit.cooldown <= 0) {

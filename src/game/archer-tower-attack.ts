@@ -1,4 +1,5 @@
 import { unitHidden } from './native-status';
+import { distance2D } from './distance';
 import type { Battle, Building, FX } from './model';
 import { TROOPS } from './data';
 import { ARCHER_TOWER } from './archer-tower-stats';
@@ -38,11 +39,11 @@ export function stepArcherTower(
   const x = tower.x + 1.5,
     y = tower.y + 1.5;
   const targets = b.units.filter(
-    (u) => u.hp > 0 && !untargetable(b, u) && Math.hypot(u.x - x, u.y - y) <= ARCHER_TOWER.range,
+    (u) => u.hp > 0 && !untargetable(b, u) && distance2D(u.x - x, u.y - y) <= ARCHER_TOWER.range,
   );
   const target =
     targets.find((u) => u.id === b.defenseTargets[tower.id]) ??
-    targets.sort((a, c) => Math.hypot(a.x - x, a.y - y) - Math.hypot(c.x - x, c.y - y))[0];
+    targets.sort((a, c) => distance2D(a.x - x, a.y - y) - distance2D(c.x - x, c.y - y))[0];
   if (!target) {
     delete state.pending;
     tower.cooldown = Math.max(0, state.readyAt - b.elapsed);

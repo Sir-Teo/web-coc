@@ -93880,7 +93880,7 @@
   },
   "textures": {
     "8": {
-      "path": "assets/buildings/xbow-native/texture-8.png",
+      "path": "assets/archer-tower-native/buildings/texture/texture-8.png",
       "sourceSize": [
         444,
         448

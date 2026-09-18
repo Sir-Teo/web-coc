@@ -35587,7 +35587,7 @@
   ],
   "textures": {
     "8": {
-      "path": "assets/inferno-native/texture/texture-8.png",
+      "path": "assets/buildings/builder-hut-native/texture/texture-8.png",
       "width": 47,
       "height": 33
     },

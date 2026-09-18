@@ -27,11 +27,20 @@ export class XbowPresentation {
   readonly shadows = new Map<string, NativeMeshView>();
   constructor(
     private scene: Phaser.Scene,
-    audio: AudioManager,
+    private audio: AudioManager,
   ) {
-    for (const path of Object.keys(XBOW_SOUNDS))
-      audio.samples.register(sample(path), scene.cache.binary.get(sample(path)));
+    this.bindAudio();
   }
+  /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
+  bindAudio() {
+    for (const path of Object.keys(XBOW_SOUNDS)) {
+      const key = sample(path);
+      if (this.scene.cache.binary.exists(key))
+        this.audio.samples.register(key, this.scene.cache.binary.get(key));
+    }
+  }
+  /** Heavy textures arrive after boot; the fallback sprite covers until then. */
+  artReady = false;
   clear() {
     for (const view of [...this.towers.values(), ...this.bolts.values(), ...this.shadows.values()])
       view.destroy();
@@ -50,6 +59,7 @@ export class XbowPresentation {
     iso: (x: number, y: number) => Point,
     airLift: number,
   ): SampleCue[] {
+    if (!this.artReady) return [];
     const wanted = new Set<number>(),
       flights = new Set<string>();
     for (const tower of buildings) {
@@ -133,7 +143,8 @@ export class XbowPresentation {
         );
         shadowView.render(shadow, ground.x, ground.y, -839);
         const poses = nativeMeshPoses(XBOW_GRAPH, source.export, age, {}, root);
-        view.render(poses, x, y, 7200);
+        // Above flying units (7500) like every other projectile type.
+        view.render(poses, x, y, 7700);
         for (const mesh of view.meshes.values()) mesh.setData('xbowBolt', p.id);
       }
     for (const [id, view] of this.towers)

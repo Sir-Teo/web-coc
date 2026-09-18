@@ -171,14 +171,22 @@ for (const [name, packed, original] of [
   });
 
 it('ships the verified textures, thirteen source portraits and six original sounds', async () => {
-  const expected = [
+  const references = [
     ...Object.values(native.body.textures),
     ...Object.values(native.defender.textures),
     ...Object.values(native.particleArt.textures),
     ...Object.values(native.previews),
-  ].map((v) => v.path.replace('assets/buildings/bombtower-native/', ''));
+  ];
+  // Duplicate texture pages consolidate into shared files: the directory holds
+  // the unique locally-referenced entries.
+  const local = [...new Set(
+    references
+      .map((v) => v.path)
+      .filter((p) => p.startsWith('assets/buildings/bombtower-native/'))
+      .map((p) => p.replace('assets/buildings/bombtower-native/', '')),
+  )];
   for (const sound of Object.values(native.sounds)) {
-    expected.push(sound.path.split('/').at(-1)!);
+    local.push(sound.path.split('/').at(-1)!);
     const bytes = await readFile(`public/${sound.path}`);
     expect(bytes.subarray(0, 4).toString()).toBe('OggS');
     expect(hash(bytes)).toBe(sound.sha256);
@@ -194,5 +202,5 @@ it('ships the verified textures, thirteen source portraits and six original soun
         `${f.parentPath}/${f.name}`.replace('public/assets/buildings/bombtower-native/', ''),
       )
       .sort(),
-  ).toEqual(expected.sort());
+  ).toEqual(local.sort());
 });
