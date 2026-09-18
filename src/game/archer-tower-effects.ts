@@ -59,8 +59,13 @@ function archerTowerEventPoses(
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
   airLift = 46,
+  elapsed?: number,
 ): NativeParticlePose[] {
-  if (!battle?.nativeArcherTowers || battle.finished || reduced) return [];
+  // Without an explicit presentation time a finished battle shows nothing (the caller owns the
+  // after-finish grace; see presentation-clock).
+  if (!battle?.nativeArcherTowers || (battle.finished && elapsed === undefined) || reduced)
+    return [];
+  const now = elapsed ?? battle.elapsed;
   const result: NativeParticlePose[] = [];
   const events =
     kind === 'hit'
@@ -83,7 +88,7 @@ function archerTowerEventPoses(
       if (!name) return;
       const rows = emitters[name],
         row = rows[0];
-      const age = battle.elapsed - hit.at - Number(effect.EmitterDelayMs ?? 0) / 1000;
+      const age = now - hit.at - Number(effect.EmitterDelayMs ?? 0) / 1000;
       const duration = Number(row.EmissionTime) / 1000,
         count = Number(row.ParticleCount);
       if (age < 0 || age >= duration + Number(row.MaxLife) / 1000) return;
@@ -118,13 +123,15 @@ export function archerTowerHitPoses(
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
   airLift = 46,
+  elapsed?: number,
 ) {
-  return archerTowerEventPoses('hit', battle, reduced, iso, airLift);
+  return archerTowerEventPoses('hit', battle, reduced, iso, airLift, elapsed);
 }
 export function archerTowerDestructionPoses(
   battle: Battle | null | undefined,
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
+  elapsed?: number,
 ) {
-  return archerTowerEventPoses('destroy', battle, reduced, iso);
+  return archerTowerEventPoses('destroy', battle, reduced, iso, 46, elapsed);
 }

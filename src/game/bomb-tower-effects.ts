@@ -6,7 +6,7 @@ import { nativeParticleSampler, type NativeParticlePose } from './native-particl
 export { nativeParticleTravel as bombParticleTravel } from './native-particles';
 import { visualRandom } from './visual-random';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
-import { bombProjectilePose } from './bomb-tower-poses';
+import { bombFlightPoint } from './bomb-tower-poses';
 import type { BombTowerShot } from './bomb-tower-attack';
 import type { SampleCue } from './sample-audio';
 
@@ -153,9 +153,15 @@ export function bombTowerTrailPoses(
     to = iso(shot.x, shot.y);
   const angle = Math.atan2(to.y - from.y, to.x - from.x);
   const result: BombTowerEffectPose[] = [];
-  for (let i = 0; shot.at + i * interval < Math.min(elapsed + 1e-9, shot.impact); i++) {
+  // Start at the oldest birth that can still be alive, not at the first birth of the flight.
+  const life = n(row, 'MaxLife') / 1000;
+  for (
+    let i = Math.max(0, Math.ceil((elapsed - life - shot.at) / interval));
+    shot.at + i * interval < Math.min(elapsed + 1e-9, shot.impact);
+    i++
+  ) {
     const at = shot.at + i * interval,
-      point = bombProjectilePose(level, projectile, at, iso);
+      point = bombFlightPoint(projectile, at, iso);
     const pose = particle(
       `${id}:trail:${shot.index}:${i}`,
       'mortar_trail',

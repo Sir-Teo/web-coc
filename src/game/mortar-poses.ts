@@ -100,7 +100,8 @@ export function mortarBounds(level: number, state: MortarVisualState = 'setup') 
 
 /** Original projectile origin/height and artwork. The 115-pixel arc remains a local
  * projection until the native ballistic equation is corroborated; impact time is simulation-owned. */
-export function mortarProjectilePose(
+/** The shell's screen point alone (trail births need no projectile art). */
+export function mortarFlightPoint(
   level: number,
   shot: MortarShell,
   elapsed: number,
@@ -116,6 +117,23 @@ export function mortarProjectilePose(
   const origin = iso(shot.fromX + (dx / length) * offset, shot.fromY + (dy / length) * offset);
   const from = { x: origin.x, y: origin.y - Number(row.StartHeight) * MORTAR_ART.altitudeScale };
   const to = iso(shot.x, shot.y);
+  return {
+    t,
+    from,
+    to,
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t - Math.sin(t * Math.PI) * 115,
+  };
+}
+export function mortarProjectilePose(
+  level: number,
+  shot: MortarShell,
+  elapsed: number,
+  iso: (x: number, y: number) => { x: number; y: number },
+) {
+  const row = mortarProjectileRow(level),
+    age = Math.max(0, elapsed - shot.launched);
+  const { t, from, to, x, y } = mortarFlightPoint(level, shot, elapsed, iso);
   const ground = iso(
     shot.fromX + (shot.x - shot.fromX) * t,
     shot.fromY + (shot.y - shot.fromY) * t,
@@ -130,8 +148,8 @@ export function mortarProjectilePose(
     from,
     to,
     ground,
-    x: from.x + (to.x - from.x) * t,
-    y: from.y + (to.y - from.y) * t - Math.sin(t * Math.PI) * 115,
+    x,
+    y,
     export: row.ExportName,
     time,
     poses: nativeScenePoses(MORTAR_GRAPH, row.ExportName, time, {}, root),

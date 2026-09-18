@@ -17,7 +17,11 @@ import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import { battleTowerArcherPose } from './archer-tower-facing';
 import { ARCHER_TOWER_GRAPH, TOWER_ARCHER_GRAPH, archerTowerComposition } from './archer-tower-art';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { registerCachedSample, type SampleCue } from './sample-audio';
+import { guardRender } from './render-guard';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
   nativeMatrix,
@@ -32,15 +36,16 @@ const transform = (poses: NativeScenePose[]): NativeScenePose[] =>
       ? { ...p, group: transform(p.group) }
       : { ...p, matrix: nativeMatrix(ROOT, p.matrix) },
   );
+const towerState = (b: Building) =>
+  b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
 export function villageArcherTowerPoses(
   b: Building,
   seconds: number,
   battle?: Battle | null,
   reduced = false,
+  archer = battleTowerArcherPose(b, battle, seconds, reduced),
 ) {
-  const state =
-    b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'ready';
-  const archer = battleTowerArcherPose(b, battle, seconds, reduced);
+  const state = towerState(b);
   const poses = archerTowerComposition(b.level, state, seconds, false, archer, archer);
   return { body: transform(poses.body), residents: transform(poses.residents) };
 }
@@ -109,22 +114,25 @@ export class VillageArcherTowers {
             multiply: p.multiply.map((value, i) => value * (i === 1 || i === 2 ? 0x72 / 255 : 1)),
             add: p.add.map((value, i) => value * (i === 1 || i === 2 ? 0x72 / 255 : 1)),
           }));
-    this.ghost.body.render(tint(poses.body), x, y, 6001, 0.72);
-    this.ghost.resident.render(tint(poses.residents), x, y, 6001.01, 0.72);
+    // Above home-village flyers (6500), like the other placement previews.
+    this.ghost.body.render(tint(poses.body), x, y, 6601, 0.72);
+    this.ghost.resident.render(tint(poses.residents), x, y, 6601.01, 0.72);
   }
   readonly views = new Map<number, { body: NativeSceneView; resident: NativeSceneView }>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
+  private signatures = new Map<number, string>();
   private homeSequence = 0;
   private homeEvents: ArcherTowerHandlingEvent[] = [];
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'archer-tower-body', 'nativeArcherTowerEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(ARCHER_TOWER_SOUNDS))
-      audio.samples.register(
-        archerTowerSample(path),
-        scene.cache.binary.get(archerTowerSample(path)),
-      );
+      registerCachedSample(scene, audio.samples, archerTowerSample(path));
   }
   handling(id: number, kind: 'pickup' | 'place' | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
@@ -136,8 +144,8 @@ export class VillageArcherTowers {
   clear() {
     this.preview(undefined);
     this.homeEvents = [];
-    for (const view of this.effects.values()) view.destroy();
-    this.effects.clear();
+    this.fx.clear();
+    this.signatures.clear();
     for (const pair of this.views.values()) {
       pair.body.destroy();
       pair.resident.destroy();
@@ -152,7 +160,12 @@ export class VillageArcherTowers {
     reduced = false,
     battle?: Battle | null,
     airLift = 46,
-  ) {
+  ): SampleCue[] {
+    const live = presentationLive(battle);
+    // After the finish, hit and destruction bursts play out on the presentation clock.
+    const effectTime = battle && live ? presentationTime(battle) : undefined;
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     const wanted = new Set<number>();
     for (const b of buildings) {
       if (b.kind !== 'archertower') continue;
@@ -167,46 +180,47 @@ export class VillageArcherTowers {
           }),
         );
       const p = iso(b.x + 1.5, b.y + 1.5),
-        poses = villageArcherTowerPoses(b, seconds, battle, reduced);
+        archer = battleTowerArcherPose(b, battle, seconds, reduced);
+      // Body clips run at 24 or 30 fps (nested 30 fps clips inside 24 fps parents), the
+      // rooftop Archer at 24: redraw on those source frames only.
+      const frame = (t: number, fps: number) => Math.floor(t * fps + 1e-9);
+      const signature = `${b.level}:${towerState(b)}:${archer.direction}:${archer.flip}:${archer.action}:${frame(archer.time, 24)}:${frame(seconds, 24)}:${frame(seconds, 30)}:${p.x}:${p.y}:${zoom}`;
+      if (this.signatures.get(b.id) === signature) continue;
+      this.signatures.set(b.id, signature);
+      const poses = guardRender(
+        `Archer Tower level ${b.level}`,
+        () => villageArcherTowerPoses(b, seconds, battle, reduced, archer),
+        { body: [], residents: [] },
+      );
       pair.body.render(poses.body, p.x, p.y, p.y);
       pair.resident.render(poses.residents, p.x, p.y, p.y + 0.01);
-      for (const object of pair.resident.objects)
-        object.setData('nativeTowerArcher', {
-          id: b.id,
-          ...battleTowerArcherPose(b, battle, seconds, reduced),
-        });
+      const data = { id: b.id, ...archer };
+      for (const object of pair.resident.objects) object.setData('nativeTowerArcher', data);
     }
     for (const [id, pair] of this.views)
       if (!wanted.has(id)) {
         pair.body.destroy();
         pair.resident.destroy();
         this.views.delete(id);
+        this.signatures.delete(id);
       }
     this.homeEvents = this.homeEvents.filter((event) => soundTime - event.at < 5);
-    const wantedEffects = new Set<string>();
-    for (const pose of [
-      ...archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso),
-      ...archerTowerHitPoses(battle, reduced, iso, airLift),
-      ...archerTowerDestructionPoses(battle, reduced, iso),
-    ]) {
-      wantedEffects.add(pose.key);
-      let view = this.effects.get(pose.key);
-      if (!view)
-        this.effects.set(pose.key, (view = new NativeSceneView(this.scene, 'archer-tower-body')));
-      view.render(pose.poses, pose.x, pose.y, pose.depth);
-      for (const object of view.objects)
-        object.setData('nativeArcherTowerEffect', { key: pose.key, emitter: pose.emitter });
+    for (const pose of archerTowerHandlingPoses(this.homeEvents, soundTime, reduced, iso))
+      this.fx.show(pose);
+    if (effectTime !== undefined) {
+      for (const pose of archerTowerHitPoses(battle, reduced, iso, airLift, effectTime))
+        this.fx.show(pose);
+      for (const pose of archerTowerDestructionPoses(battle, reduced, iso, effectTime))
+        this.fx.show(pose);
     }
-    for (const [key, view] of this.effects)
-      if (!wantedEffects.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
-    return [
-      ...archerTowerHandlingCues(this.homeEvents),
-      ...archerTowerReleaseCues(battle),
-      ...archerTowerHitCues(battle),
-      ...archerTowerDestructionCues(battle),
-    ];
+    this.fx.sweep();
+    const cues = archerTowerHandlingCues(this.homeEvents);
+    if (effectTime !== undefined)
+      cues.push(
+        ...archerTowerReleaseCues(battle, effectTime),
+        ...archerTowerHitCues(battle, effectTime),
+        ...archerTowerDestructionCues(battle, effectTime),
+      );
+    return cues;
   }
 }

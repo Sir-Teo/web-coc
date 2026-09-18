@@ -41,7 +41,12 @@ export class NativeEffectViews {
       view.destroy();
       return;
     }
-    for (const object of view.objects) if (object.visible) object.setVisible(false);
+    // Parked objects stay on the display list: hide them and drop their effect tag so
+    // display-list scans only find live effects.
+    for (const object of view.objects) {
+      if (object.visible) object.setVisible(false);
+      object.data?.remove(this.dataName);
+    }
     this.spare.push({ prefix: this.prefixes.get(view) ?? this.prefix, view });
   }
   /** Renders one particle; `extra` fields join `{ key, emitter }` in its object data. */

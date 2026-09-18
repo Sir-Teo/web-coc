@@ -2,7 +2,7 @@ import type { Battle } from './model';
 import { archerTowerSource } from './archer-tower-art';
 import { visualRandom } from './visual-random';
 import source from '../../reference/archer-tower/sounds.json' with { type: 'json' };
-import type { SampleCue } from './sample-audio';
+import { cueAudible, type SampleCue } from './sample-audio';
 export const ARCHER_TOWER_SOUNDS = source.sounds;
 export const archerTowerSample = (path: string) => `archer-tower-${path.split('/').at(-1)}`;
 export interface ArcherTowerHandlingEvent {
@@ -28,11 +28,15 @@ export function archerTowerHandlingCues(events: readonly ArcherTowerHandlingEven
   });
 }
 
-/** Local deterministic selection among source variants; never consumes combat randomness. */
-export function archerTowerReleaseCues(battle?: Battle | null): SampleCue[] {
-  if (!battle?.nativeArcherTowers || battle.finished) return [];
+/**
+ * Local deterministic selection among source variants; never consumes combat randomness.
+ * `elapsed` is the presentation clock: when given, cues keep playing out after the finish.
+ */
+export function archerTowerReleaseCues(battle?: Battle | null, elapsed?: number): SampleCue[] {
+  if (!battle?.nativeArcherTowers || (battle.finished && elapsed === undefined)) return [];
+  const now = elapsed ?? battle.elapsed;
   return (battle.archerTowerReleases ?? []).flatMap((shot) => {
-    if (battle.elapsed - shot.at >= 2) return [];
+    if (now - shot.at >= 2) return [];
     const effect = archerTowerSource(shot.level).AttackEffect;
     const rows = (source.effects as unknown as Record<string, Record<string, string>[]>)[effect];
     const variants = rows.filter((row) => row.Sound);
@@ -55,10 +59,11 @@ export function archerTowerReleaseCues(battle?: Battle | null): SampleCue[] {
   });
 }
 
-export function archerTowerHitCues(battle?: Battle | null): SampleCue[] {
-  if (!battle?.nativeArcherTowers || battle.finished) return [];
+export function archerTowerHitCues(battle?: Battle | null, elapsed?: number): SampleCue[] {
+  if (!battle?.nativeArcherTowers || (battle.finished && elapsed === undefined)) return [];
+  const now = elapsed ?? battle.elapsed;
   return (battle.archerTowerHits ?? []).flatMap((hit) => {
-    if (battle.elapsed - hit.at >= 2) return [];
+    if (now - hit.at >= 2) return [];
     const effect = archerTowerSource(hit.level).HitEffect;
     const row = (source.effects as unknown as Record<string, Record<string, string>[]>)[effect][0];
     return [
@@ -77,9 +82,11 @@ export function archerTowerHitCues(battle?: Battle | null): SampleCue[] {
   });
 }
 
-export function archerTowerDestructionCues(battle?: Battle | null): SampleCue[] {
-  if (!battle?.nativeArcherTowers || battle.finished) return [];
-  return Object.entries(battle.archerTowerDestructions ?? {}).map(([id, event]) => {
+export function archerTowerDestructionCues(battle?: Battle | null, elapsed?: number): SampleCue[] {
+  if (!battle?.nativeArcherTowers || (battle.finished && elapsed === undefined)) return [];
+  const now = elapsed ?? battle.elapsed;
+  return Object.entries(battle.archerTowerDestructions ?? {}).flatMap(([id, event]) => {
+    if (!cueAudible(event.at, now)) return [];
     const row = source.effects['Building Destroyed'][0];
     if (!row.Sound) throw new Error('Missing original Archer Tower destruction sound');
     return {

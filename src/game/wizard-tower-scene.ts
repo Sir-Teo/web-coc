@@ -1,5 +1,8 @@
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
+import { guardRender } from './render-guard';
 import {
   WIZARD_TOWER_SOUNDS,
   wizardTowerSample,
@@ -15,7 +18,7 @@ import {
 } from './wizard-tower-effects';
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { WIZARD_TOWER_ART_LEVELS, wizardTowerAsset, wizardTowerTexture } from './wizard-tower-art';
 import {
@@ -43,7 +46,9 @@ export class WizardTowerPresentation {
   readonly towers = new Map<number, NativeSceneView>();
   readonly defenders = new Map<number, NativeSceneView>();
   readonly projectiles = new Map<string, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<string, string>();
   private homeSequence = 0;
   private homeEffects: {
@@ -58,11 +63,10 @@ export class WizardTowerPresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'wizardtower-effects', 'nativeWizardTowerEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(WIZARD_TOWER_SOUNDS))
-      audio.samples.register(
-        wizardTowerSample(path),
-        scene.cache.binary.get(wizardTowerSample(path)),
-      );
+      registerCachedSample(scene, audio.samples, wizardTowerSample(path));
   }
   handling(id: number, kind: WizardTowerHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((v) => v.id !== id);
@@ -72,7 +76,8 @@ export class WizardTowerPresentation {
     }
   }
   clear() {
-    for (const map of [this.towers, this.defenders, this.projectiles, this.effects]) {
+    this.fx.clear();
+    for (const map of [this.towers, this.defenders, this.projectiles]) {
       for (const view of map.values()) view.destroy();
       map.clear();
     }
@@ -90,22 +95,21 @@ export class WizardTowerPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift: number,
   ) {
+    const live = presentationLive(battle);
+    // After the finish, bolts in flight and bursts keep sampling on the presentation clock.
+    if (battle) elapsed = presentationTime(battle);
     const wanted = new Set<number>(),
       defending = new Set<number>(),
-      flying = new Set<string>(),
-      showing = new Set<string>();
+      flying = new Set<string>();
     const cues: SampleCue[] = [];
     const drawEffects = (poses: WizardTowerEffectPose[]) => {
-      for (const fx of poses) {
-        showing.add(fx.key);
-        let view = this.effects.get(fx.key);
-        if (!view) this.effects.set(fx.key, (view = new NativeSceneView(this.scene, fx.graph)));
-        view.render(fx.poses, fx.x, fx.y, fx.depth);
-        for (const object of view.objects)
-          object.setData('nativeWizardTowerEffect', { key: fx.key, emitter: fx.emitter });
-      }
+      for (const fx of poses) this.fx.show(fx, undefined, fx.graph);
     };
-    const zoom = `${this.scene.cameras.main.zoomX}:${this.scene.cameras.main.zoomY}`;
+    const sound = (id: number, event: string, index: number, effect: string, at: number) => {
+      if (cueAudible(at, elapsed)) cues.push(...wizardTowerSoundCues(id, event, index, effect, at));
+    };
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const tower of buildings) {
       if (tower.kind !== 'wizardtower') continue;
       wanted.add(tower.id);
@@ -124,7 +128,11 @@ export class WizardTowerPresentation {
         signature = `${tower.level}:${state}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(key) !== signature) {
         view.render(
-          wizardTowerPoses(tower.level, state),
+          guardRender(
+            `Wizard Tower level ${tower.level}`,
+            () => wizardTowerPoses(tower.level, state),
+            [],
+          ),
           p.x,
           p.y,
           p.y + (state === 'ruin' ? -2 : 0),
@@ -148,11 +156,11 @@ export class WizardTowerPresentation {
           this.signatures.set(key, signature);
         }
       }
-      if (battle && !battle.finished) {
+      if (battle && live) {
         const history = battle.wizardTowers?.[tower.id];
         for (const shot of history?.shots ?? []) {
           const effect = wizardTowerAttackEffect(tower.level);
-          cues.push(...wizardTowerSoundCues(tower.id, 'attack', shot.index, effect, shot.at));
+          sound(tower.id, 'attack', shot.index, effect, shot.at);
           const poses = wizardTowerEffectPoses(
             tower.id,
             'attack',
@@ -170,7 +178,7 @@ export class WizardTowerPresentation {
         for (const hit of history?.hits ?? []) {
           const effect = wizardTowerHitEffect(tower.level),
             ground = iso(hit.x, hit.y);
-          cues.push(...wizardTowerSoundCues(tower.id, 'hit', hit.index, effect, hit.at));
+          sound(tower.id, 'hit', hit.index, effect, hit.at);
           const poses = wizardTowerEffectPoses(
             tower.id,
             'hit',
@@ -185,15 +193,7 @@ export class WizardTowerPresentation {
           drawEffects(poses);
         }
         if (history?.destroyedAt !== undefined) {
-          cues.push(
-            ...wizardTowerSoundCues(
-              tower.id,
-              'destroy',
-              0,
-              'Building Destroyed',
-              history.destroyedAt,
-            ),
-          );
+          sound(tower.id, 'destroy', 0, 'Building Destroyed', history.destroyedAt);
           drawEffects(
             wizardTowerEffectPoses(
               tower.id,
@@ -227,8 +227,8 @@ export class WizardTowerPresentation {
         );
       }
     }
-    if (battle && !battle.finished && !reduced)
-      for (const shot of battle.projectiles ?? []) {
+    if (battle && live && !reduced)
+      for (const shot of presentationProjectiles(battle)) {
         if (shot.weapon !== 'arcane') continue;
         const tower = battleBuilding(battle, shot.sourceId);
         if (!tower) continue;
@@ -258,11 +258,7 @@ export class WizardTowerPresentation {
           map.delete(id);
           this.signatures.delete(`${prefix}:${id}`);
         }
-    for (const [key, view] of this.effects)
-      if (!showing.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    this.fx.sweep();
     for (const [id, view] of this.projectiles)
       if (!flying.has(id)) {
         view.destroy();

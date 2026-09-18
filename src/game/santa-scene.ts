@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import type { Battle } from './model';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { registerCachedSample, type SampleCue } from './sample-audio';
+import { presentationLive, presentationTime } from './presentation-clock';
 import {
   SANTA_GROUPS,
   SANTA_SOUNDS,
@@ -41,14 +42,13 @@ export class SantaPresentation {
   }
   /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
   bindAudio() {
-    for (const name of Object.keys(SANTA_SOUNDS)) {
-      const key = `santa-${name}`;
-      if (this.scene.cache.binary.exists(key))
-        this.audio.samples.register(key, this.scene.cache.binary.get(key));
-    }
+    for (const name of Object.keys(SANTA_SOUNDS))
+      registerCachedSample(this.scene, this.audio.samples, `santa-${name}`);
   }
   /** Heavy textures arrive after boot; the fallback sprite covers until then. */
   artReady = false;
+  /** True while the craters/flash graphics hold anything (skips clearing empty graphics). */
+  private marked = false;
   clear() {
     for (const mesh of this.meshes.values()) mesh.destroy();
     this.meshes.clear();
@@ -62,6 +62,11 @@ export class SantaPresentation {
     this.marks.destroy();
     this.flashes.destroy();
   }
+  /**
+   * Draws Santa's Surprise and plays every family's cues. `additionalCues` is the frame's merged
+   * cue list from the other presentations; it is extended in place, not copied. Sound never
+   * waits for the heavy Santa art: until it arrives only the Santa meshes and marks are skipped.
+   */
   render(
     battle: Battle | null,
     reduced: boolean,
@@ -71,17 +76,22 @@ export class SantaPresentation {
     additionalCues: SampleCue[] = [],
     homeTime = 0,
   ) {
-    if (!this.artReady) return;
     const wanted = new Set<string>(),
-      cues: SampleCue[] = [...additionalCues];
-    this.marks.clear();
-    this.flashes.clear();
-    if (battle && !battle.finished)
+      cues = additionalCues,
+      live = presentationLive(battle),
+      elapsed = battle ? presentationTime(battle) : homeTime;
+    if (this.marked) {
+      this.marks.clear();
+      this.flashes.clear();
+      this.marked = false;
+    }
+    if (battle && live)
       for (const [id, state] of Object.entries(battle.traps)) {
         if (!state.santa) continue;
         const p = iso(state.x, state.y);
         cues.push(...santaSoundCues(state, id));
-        for (const pose of santaPoses(state, battle.elapsed, reduced)) {
+        if (!this.artReady) continue;
+        for (const pose of santaPoses(state, elapsed, reduced)) {
           const key = `${id}:${pose.key}`,
             quad = santaQuad(pose);
           wanted.add(key);
@@ -99,15 +109,15 @@ export class SantaPresentation {
             this.meshes.set(key, mesh);
           }
           mesh.vertices = quad.vertices;
-          mesh
-            .setTexture(quad.texture)
-            .setPosition(p.x, p.y)
-            .setAlpha(pose.alpha)
-            .setDepth(pose.ground ? -848 : 7200 + p.y * 0.01);
+          // The raised sleigh flies above the air band (7500-7590), below effects (8000).
+          const depth = pose.ground ? -848 : 7650 + p.y * 0.01;
+          mesh.setTexture(quad.texture).setPosition(p.x, p.y).setAlpha(pose.alpha);
+          if (mesh.depth !== depth) mesh.setDepth(depth);
         }
         for (const strike of state.santa.strikes) {
-          const age = battle.elapsed - strike.hitAt;
+          const age = elapsed - strike.hitAt;
           if (age < 0 || age > 8) continue;
+          this.marked = true;
           const hit = iso(strike.x, strike.y);
           // Ground craters and flash are local effects; native explosion particles remain to reconstruct.
           this.marks.fillStyle(0x3a2818, 0.28 * (1 - age / 8)).fillEllipse(hit.x, hit.y, 36, 18);
@@ -128,11 +138,14 @@ export class SantaPresentation {
         mesh.destroy();
         this.meshes.delete(key);
       }
+    // After the finish, one-shot sounds already started play out on the presentation clock;
+    // loops stop with the battle.
+    const heard = battle?.finished ? cues.filter((cue) => !cue.loop) : cues;
     this.audio.samples.sync(
-      cues,
-      battle?.elapsed ?? homeTime,
+      heard,
+      elapsed,
       speed,
-      !battle?.finished && playing && !this.scene.sys.isPaused() && this.audio.enabled,
+      (!battle || live) && playing && !this.scene.sys.isPaused() && this.audio.enabled,
     );
   }
 }

@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { guardRender } from './render-guard';
 import type { Battle, Building } from './model';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
   SEEKING_MINE_ART_FAMILIES,
@@ -40,7 +43,9 @@ export class SeekingMinePresentation {
   readonly mines = new Map<number, NativeSceneView>();
   readonly projectiles = new Map<number, NativeSceneView>();
   readonly shadows = new Map<number, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<number, string>();
   private homeSequence = 0;
   private homeEffects: {
@@ -55,11 +60,10 @@ export class SeekingMinePresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'seeking-mine', 'nativeSeekingMineEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(SEEKING_MINE_SOUNDS))
-      audio.samples.register(
-        seekingMineSample(path),
-        scene.cache.binary.get(seekingMineSample(path)),
-      );
+      registerCachedSample(scene, audio.samples, seekingMineSample(path));
   }
   handling(id: number, kind: SeekingMineHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((e) => e.id !== id);
@@ -69,7 +73,8 @@ export class SeekingMinePresentation {
     }
   }
   clear() {
-    for (const map of [this.mines, this.projectiles, this.shadows, this.effects]) {
+    this.fx.clear();
+    for (const map of [this.mines, this.projectiles, this.shadows]) {
       for (const view of map.values()) view.destroy();
       map.clear();
     }
@@ -87,20 +92,14 @@ export class SeekingMinePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift: number,
   ) {
+    const live = presentationLive(battle);
+    // After the finish, mines in flight and blasts keep sampling on the presentation clock.
+    if (battle) elapsed = presentationTime(battle);
     const wanted = new Set<number>(),
       flying = new Set<number>(),
-      showing = new Set<string>(),
       cues: SampleCue[] = [];
     const drawEffects = (poses: NativeParticlePose[]) => {
-      for (const fx of poses) {
-        showing.add(fx.key);
-        let view = this.effects.get(fx.key);
-        if (!view)
-          this.effects.set(fx.key, (view = new NativeSceneView(this.scene, 'seeking-mine')));
-        view.render(fx.poses, fx.x, fx.y, fx.depth);
-        for (const object of view.objects)
-          object.setData('nativeSeekingMineEffect', { key: fx.key, emitter: fx.emitter });
-      }
+      for (const fx of poses) this.fx.show(fx);
     };
     const effect = (
       id: number,
@@ -110,10 +109,11 @@ export class SeekingMinePresentation {
       at: number,
       point: { x: number; y: number },
     ) => {
-      cues.push(...seekingMineSoundCues(id, event, index, name, at));
+      if (cueAudible(at, elapsed)) cues.push(...seekingMineSoundCues(id, event, index, name, at));
       drawEffects(seekingMineEffectPoses(id, event, index, name, at, elapsed, point, reduced));
     };
-    const zoom = `${this.scene.cameras.main.zoomX}:${this.scene.cameras.main.zoomY}`;
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const mine of buildings) {
       if (mine.kind !== 'seekingairmine') continue;
       wanted.add(mine.id);
@@ -132,7 +132,16 @@ export class SeekingMinePresentation {
       if (!view) this.mines.set(mine.id, (view = new NativeSceneView(this.scene, 'seeking-mine')));
       const signature = `${mine.level}:${state}:${Math.floor(pose.time * 24 + 1e-9)}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(mine.id) !== signature) {
-        view.render(seekingMinePoses(mine.level, state, pose.time), p.x, p.y, p.y);
+        view.render(
+          guardRender(
+            `Seeking Air Mine level ${mine.level}`,
+            () => seekingMinePoses(mine.level, state, pose.time),
+            [],
+          ),
+          p.x,
+          p.y,
+          p.y,
+        );
         for (const object of view.objects)
           object.setData('nativeSeekingMine', {
             id: mine.id,
@@ -142,7 +151,7 @@ export class SeekingMinePresentation {
           });
         this.signatures.set(mine.id, signature);
       }
-      if (!battle || battle.finished || !trap) continue;
+      if (!battle || !live || !trap) continue;
       // A concealed trap becomes visible when activated; both original reveal effects belong here.
       effect(mine.id, 'appear', 0, 'Bomb Appear', trap.activatedAt, p);
       effect(mine.id, 'trigger', 0, 'Small AirTrap', trap.activatedAt, p);
@@ -212,11 +221,7 @@ export class SeekingMinePresentation {
           view.destroy();
           map.delete(id);
         }
-    for (const [key, view] of this.effects)
-      if (!showing.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    this.fx.sweep();
     return cues;
   }
 }

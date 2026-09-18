@@ -62,7 +62,9 @@ export function presentationProjectiles(
   const state = observe(battle, now);
   if (!battle.finished) return battle.projectiles ?? [];
   if (!presentationLive(battle, now)) return [];
-  return state.projectiles ?? [];
+  // The simulation no longer removes landed shots: drop them at their impact time.
+  const at = presentationTime(battle, now);
+  return (state.projectiles ?? []).filter((shot) => shot.impact > at);
 }
 /** Ends the grace window at once (tests, and callers that tear the battle view down). */
 export function settlePresentation(battle: Battle) {

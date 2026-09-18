@@ -5,7 +5,7 @@ import { WIZARD_TOWER_ART } from './wizard-tower-art';
 import {
   WIZARD_TOWER_GRAPH,
   WIZARD_EFFECT_GRAPH,
-  wizardProjectilePose,
+  wizardFlightPoint,
   wizardProjectileRow,
 } from './wizard-tower-poses';
 import { wizardTowerStats } from './wizard-tower-stats';
@@ -162,7 +162,7 @@ export function wizardTowerTrailPoses(
     i++
   ) {
     const at = shot.at + i * interval,
-      point = wizardProjectilePose(level, projectile, at, iso, airLift);
+      point = wizardFlightPoint(level, projectile, at, iso, airLift);
     const pose = sample(
       `${id}:trail:${shot.index}:${i}`,
       name,

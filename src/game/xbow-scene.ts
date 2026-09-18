@@ -1,11 +1,15 @@
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
+import { quantizedDensity } from './native-scene-view';
+import { nativeFrameIndex } from './native-frame';
+import { guardRender } from './render-guard';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses, type NativeMatrix } from './native-mesh';
 import { XBOW_GRAPH, XBOW_SOUNDS, xbowPoses } from './xbow-poses';
-import { XBOW_ART, xbowAsset, xbowTexture, xbowDirection } from './xbow-art';
+import { XBOW_ART, xbowAsset, xbowExport, xbowTexture, xbowDirection } from './xbow-art';
 import { XBOW, XBOW_LEVELS, XBOW_PROJECTILES } from './xbow-stats';
 
 type Point = { x: number; y: number };
@@ -25,6 +29,7 @@ export class XbowPresentation {
   readonly towers = new Map<number, NativeMeshView>();
   readonly bolts = new Map<string, NativeMeshView>();
   readonly shadows = new Map<string, NativeMeshView>();
+  private signatures = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
     private audio: AudioManager,
@@ -33,11 +38,8 @@ export class XbowPresentation {
   }
   /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
   bindAudio() {
-    for (const path of Object.keys(XBOW_SOUNDS)) {
-      const key = sample(path);
-      if (this.scene.cache.binary.exists(key))
-        this.audio.samples.register(key, this.scene.cache.binary.get(key));
-    }
+    for (const path of Object.keys(XBOW_SOUNDS))
+      registerCachedSample(this.scene, this.audio.samples, sample(path));
   }
   /** Heavy textures arrive after boot; the fallback sprite covers until then. */
   artReady = false;
@@ -47,6 +49,7 @@ export class XbowPresentation {
     this.towers.clear();
     this.bolts.clear();
     this.shadows.clear();
+    this.signatures.clear();
   }
   destroy() {
     this.clear();
@@ -59,9 +62,16 @@ export class XbowPresentation {
     iso: (x: number, y: number) => Point,
     airLift: number,
   ): SampleCue[] {
-    if (!this.artReady) return [];
+    const live = presentationLive(battle);
+    // After the finish, bolts in flight and one-shot sounds play out on the presentation clock.
+    if (battle) elapsed = presentationTime(battle);
+    const cues = this.cues(battle, elapsed);
+    // Sound cues never depend on the heavy art; only the meshes wait for it.
+    if (!this.artReady) return cues;
     const wanted = new Set<number>(),
       flights = new Set<string>();
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const tower of buildings) {
       if (tower.kind !== 'xbow' || tower.hp <= 0) continue;
       wanted.add(tower.id);
@@ -74,25 +84,31 @@ export class XbowPresentation {
       const direction = state ? xbowDirection(state.aimX, state.aimY) : 0;
       const ammunition = state?.ammunition ?? XBOW.ammunition;
       const p = iso(tower.x + 1.5, tower.y + 1.5);
+      const mode = tower.xbowMode ?? 'ground',
+        upgrading = !!tower.upgradeEnd || !!tower.constructing,
+        seconds = reduced ? 0 : elapsed;
+      // The turret clip only changes on its own source frames: redraw on those, not per frame.
+      const frame = guardRender(
+        `X-Bow level ${tower.level}`,
+        () => nativeFrameIndex(XBOW_GRAPH, xbowExport(tower.level, mode, upgrading), seconds),
+        -1,
+      );
+      if (frame < 0) continue;
+      const signature = `${tower.level}:${mode}:${upgrading}:${!!tower.constructing}:${direction}:${ammunition > 0}:${frame}:${p.x}:${p.y}:${zoom}`;
+      if (this.signatures.get(tower.id) === signature) continue;
+      this.signatures.set(tower.id, signature);
       view.render(
-        xbowPoses(
-          tower.level,
-          tower.xbowMode ?? 'ground',
-          direction,
-          reduced ? 0 : elapsed,
-          ammunition,
-          !!tower.upgradeEnd || !!tower.constructing,
-        ),
+        xbowPoses(tower.level, mode, direction, seconds, ammunition, upgrading),
         p.x,
         p.y,
         p.y,
         tower.constructing ? 0.58 : 1,
       );
-      for (const mesh of view.meshes.values())
-        mesh.setData('xbow', { id: tower.id, direction, ammunition });
+      const data = { id: tower.id, direction, ammunition };
+      for (const mesh of view.meshes.values()) mesh.setData('xbow', data);
     }
-    if (battle && !battle.finished && !reduced)
-      for (const p of battle.projectiles ?? []) {
+    if (battle && live && !reduced)
+      for (const p of presentationProjectiles(battle)) {
         if (p.weapon !== 'xbowbolt') continue;
         flights.add(p.id);
         let view = this.bolts.get(p.id);
@@ -145,12 +161,14 @@ export class XbowPresentation {
         const poses = nativeMeshPoses(XBOW_GRAPH, source.export, age, {}, root);
         // Above flying units (7500) like every other projectile type.
         view.render(poses, x, y, 7700);
-        for (const mesh of view.meshes.values()) mesh.setData('xbowBolt', p.id);
+        for (const mesh of view.meshes.values())
+          if (mesh.getData('xbowBolt') !== p.id) mesh.setData('xbowBolt', p.id);
       }
     for (const [id, view] of this.towers)
       if (!wanted.has(id)) {
         view.destroy();
         this.towers.delete(id);
+        this.signatures.delete(id);
       }
     for (const [id, view] of this.bolts)
       if (!flights.has(id)) {
@@ -162,28 +180,34 @@ export class XbowPresentation {
         view.destroy();
         this.shadows.delete(id);
       }
+    return cues;
+  }
+  /** One-shot cues for shots, hits and the empty clack that can still be heard. */
+  private cues(battle: Battle | null, elapsed: number) {
     const cues: SampleCue[] = [];
-    if (battle && !battle.finished)
+    if (battle && presentationLive(battle))
       for (const [id, state] of Object.entries(battle.xbows ?? {})) {
         // Stable variation keeps the source pitch range identical through replay seeks.
         const pitch = (index: number) =>
           1.1 + (((Number(id) * 31 + index * 17) >>> 0) % 101) / 1000;
         for (const shot of state.shots)
-          cues.push({
-            key: `xbow:${id}:shot:${shot.index}`,
-            sample: 'xbow-bow_attack',
-            at: shot.at,
-            volume: 0.7,
-            pitch: pitch(shot.index),
-          });
+          if (cueAudible(shot.at, elapsed))
+            cues.push({
+              key: `xbow:${id}:shot:${shot.index}`,
+              sample: 'xbow-bow_attack',
+              at: shot.at,
+              volume: 0.7,
+              pitch: pitch(shot.index),
+            });
         for (const hit of state.hits)
-          cues.push({
-            key: `xbow:${id}:hit:${hit.index}`,
-            sample: 'xbow-generic_hit_01',
-            at: hit.at,
-            volume: 0.3,
-            pitch: pitch(hit.index) - 0.15,
-          });
+          if (cueAudible(hit.at, elapsed))
+            cues.push({
+              key: `xbow:${id}:hit:${hit.index}`,
+              sample: 'xbow-generic_hit_01',
+              at: hit.at,
+              volume: 0.3,
+              pitch: pitch(hit.index) - 0.15,
+            });
         if (state.emptyAt !== undefined)
           cues.push({
             key: `xbow:${id}:empty`,

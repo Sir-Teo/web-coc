@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
-import { NativeSceneView } from './native-scene-view';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { guardRender } from './render-guard';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses } from './native-mesh';
 import {
@@ -62,8 +64,7 @@ export class TeslaPresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
-    for (const [path] of sounds)
-      audio.samples.register(sample(path), scene.cache.binary.get(sample(path)));
+    for (const [path] of sounds) registerCachedSample(scene, audio.samples, sample(path));
   }
   clear() {
     for (const view of [
@@ -91,6 +92,11 @@ export class TeslaPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift = 46,
   ): SampleCue[] {
+    const live = presentationLive(battle);
+    // After the finish, arcs and bursts already started play out on the presentation clock.
+    if (battle) elapsed = presentationTime(battle);
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     const wanted = new Set<number>(),
       revealing = new Set<number>(),
       attacking = new Set<string>(),
@@ -119,13 +125,16 @@ export class TeslaPresentation {
         view = new NativeSceneView(this.scene, 'tesla');
         this.towers.set(tower.id, view);
       }
-      const camera = this.scene.cameras.main;
       const frame =
         !reduced && (state === 'setup' || state === 'reveal') ? Math.floor(age * 24 + 1e-9) : 0;
-      const signature = `${tower.level}:${state}:${frame}:${reduced}:${p.x}:${p.y}:${camera.zoomX}:${camera.zoomY}`;
+      const signature = `${tower.level}:${state}:${frame}:${reduced}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(tower.id) !== signature) {
         view.render(
-          teslaPoses(tower.level, state, age, reduced),
+          guardRender(
+            `Tesla level ${tower.level}`,
+            () => teslaPoses(tower.level, state, age, reduced),
+            [],
+          ),
           p.x,
           p.y,
           p.y + (state === 'ruin' ? -2 : 0),
@@ -134,9 +143,10 @@ export class TeslaPresentation {
           object.setData('nativeTesla', { id: tower.id, level: tower.level, state });
         this.signatures.set(tower.id, signature);
       }
-      if (battle && !battle.finished)
+      if (battle && live)
         for (const shot of battle.teslas?.[tower.id]?.shots ?? []) {
-          cues.push(...teslaAttackCues(tower.id, tower.level, shot));
+          if (cueAudible(shot.at, elapsed))
+            cues.push(...teslaAttackCues(tower.id, tower.level, shot));
           if (reduced || elapsed - shot.at > 1) continue;
           const target = battleUnit(battle, shot.targetId);
           const end = iso(target?.x ?? shot.x, target?.y ?? shot.y);
@@ -172,23 +182,30 @@ export class TeslaPresentation {
             }
             fx.render(effect.poses, effect.x, effect.y, 8000);
             for (const object of fx.objects) {
-              object.setData('nativeTeslaEffect', {
-                id: tower.id,
-                shot: shot.index,
-                role: effect.role,
-              });
-              if (effect.role === 'arc') object.setData('teslaZap', { from, to: end });
+              if (object.getData('nativeTeslaEffect')?.shot !== shot.index)
+                object.setData('nativeTeslaEffect', {
+                  id: tower.id,
+                  shot: shot.index,
+                  role: effect.role,
+                });
+              // The arc end follows its (moving) target: refresh the endpoints in place.
+              if (effect.role === 'arc') {
+                const zap = object.getData('teslaZap');
+                if (zap) Object.assign(zap, { from, to: end });
+                else object.setData('teslaZap', { from, to: end });
+              }
             }
           }
         }
-      if (at !== undefined && battle && !battle.finished) {
-        cues.push({
-          key: `tesla:${tower.id}:appear`,
-          sample: APPEAR_SAMPLE,
-          at,
-          volume: 0.7,
-          pitch: 1,
-        });
+      if (at !== undefined && battle && live) {
+        if (cueAudible(at, elapsed))
+          cues.push({
+            key: `tesla:${tower.id}:appear`,
+            sample: APPEAR_SAMPLE,
+            at,
+            volume: 0.7,
+            pitch: 1,
+          });
         if (!reduced)
           for (const effect of teslaRevealPoses(tower.id, at, elapsed, p)) {
             scattering.add(effect.key);
@@ -199,7 +216,8 @@ export class TeslaPresentation {
             }
             grass.render(effect.poses, effect.x, effect.y, effect.depth!);
             for (const object of grass.objects)
-              object.setData('nativeTeslaGrass', { id: tower.id });
+              if (!object.getData('nativeTeslaGrass'))
+                object.setData('nativeTeslaGrass', { id: tower.id });
           }
         if (!reduced && age < duration) {
           revealing.add(tower.id);
@@ -243,7 +261,8 @@ export class TeslaPresentation {
           }
           grass.render(effect.poses, effect.x, effect.y, effect.depth!);
           for (const object of grass.objects)
-            object.setData('nativeTeslaGrass', { id: event.id, kind: event.kind });
+            if (!object.getData('nativeTeslaGrass'))
+              object.setData('nativeTeslaGrass', { id: event.id, kind: event.kind });
         }
       }
     }
