@@ -66,7 +66,8 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
   const unitById = new Map(battle.units.map((u) => [u.id, u]));
   // Unit position grid for trigger searches: every unresolved trap scans for units
   // in its trigger circle each tick. Refs are shared so eligibility stays live;
-  // only positions can go stale, and the sole in-phase mover (fling) clears it.
+  // only positions can go stale. In-phase movers (bomb fling, native tornado
+  // pulls) clear it so later traps rebuild from live positions.
   const CELL = 4;
   let grid: Map<string, Unit[]> | null = null;
   const ensureGrid = () => {
@@ -99,8 +100,13 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       battle.catalog !== 'goblin-v1' &&
       (trap.kind === 'tornadotrap' || trap.kind === 'gigabomb')
     ) {
-      if (!trap.constructing && !trap.upgradeEnd)
-        changed = stepNativeTrap(battle, trap, effect) || changed;
+      if (!trap.constructing && !trap.upgradeEnd) {
+        if (stepNativeTrap(battle, trap, effect)) {
+          changed = true;
+          // A tornado pull moves units mid-loop; later traps rebuild from live positions.
+          grid = null;
+        }
+      }
       continue;
     }
     // Late campaign traps trigger in their own family phase.

@@ -239,7 +239,18 @@ export class VillageScene extends Phaser.Scene {
   onSelect = () => {};
   baseZoom = 1;
   private cameraViewport = { width: 0, height: 0, densityX: 1 };
-  wallLinks = new Map<string, { g: Phaser.GameObjects.Graphics; a: number; b: number }>();
+  wallLinks = new Map<
+    string,
+    {
+      g: Phaser.GameObjects.Graphics;
+      a: number;
+      b: number;
+      ax: number;
+      ay: number;
+      bx: number;
+      by: number;
+    }
+  >();
   private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
   private heroPrefetchSignature = '';
@@ -1832,13 +1843,32 @@ export class VillageScene extends Phaser.Scene {
         const key = b.id < next.id ? `${b.id}-${next.id}` : `${next.id}-${b.id}`;
         seen.add(key);
         const existing = this.wallLinks.get(key);
-        if (existing && existing.a === b.level && existing.b === next.level) continue;
+        // Moves, undo/redo and preset loads rewrite x/y in place with ids and
+        // levels intact, so positions are part of the reuse check too.
+        if (
+          existing &&
+          existing.a === b.level &&
+          existing.b === next.level &&
+          existing.ax === b.x &&
+          existing.ay === b.y &&
+          existing.bx === next.x &&
+          existing.by === next.y
+        )
+          continue;
         existing?.g.destroy();
         const p = iso(b.x + 0.5, b.y + 0.5),
           q = iso(next.x + 0.5, next.y + 0.5);
         const g = this.add.graphics().setDepth((p.y + q.y) / 2 - 0.5);
         this.paintWallLink(g, p, q, b.level, next.level);
-        this.wallLinks.set(key, { g, a: b.level, b: next.level });
+        this.wallLinks.set(key, {
+          g,
+          a: b.level,
+          b: next.level,
+          ax: b.x,
+          ay: b.y,
+          bx: next.x,
+          by: next.y,
+        });
       }
     }
     for (const [key, link] of this.wallLinks) {
@@ -2454,6 +2484,9 @@ export class VillageScene extends Phaser.Scene {
             im.setVisible(false);
             continue;
           }
+          // A culled sprite stays hidden until restored: the mesh layer hides it
+          // again below whenever it draws a mesh, so this cannot over-show.
+          if (!im.visible) im.setVisible(true);
         }
         const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
         // Local visual half-scale; health, collision space and projectile speed are unchanged.

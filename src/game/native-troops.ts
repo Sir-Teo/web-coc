@@ -583,10 +583,12 @@ export function stepNativeUnit(
   const next = u.path[0];
   if (!next) return;
   if (!jumping) {
-    const hit = ctx.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x));
-    const wall =
-      hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id)
-        ? hit
+    // Index-only: a miss means no wall on that tile, which is nearly every waypoint.
+    // The linear scan survives only for contexts built without the index (tests).
+    const hit =
+      ctx.wallTile?.get(Math.floor(next.y) * MAP_SIZE + Math.floor(next.x)) ??
+      (ctx.wallTile
+        ? undefined
         : battle.buildings.find(
             (v) =>
               v.kind === 'wall' &&
@@ -594,7 +596,8 @@ export function stepNativeUnit(
               !ctx.passableWalls.has(v.id) &&
               Math.floor(next.x) === v.x &&
               Math.floor(next.y) === v.y,
-          );
+          ));
+    const wall = hit && hit.hp > 0 && !ctx.passableWalls.has(hit.id) ? hit : undefined;
     if (wall && distanceTo(u, wall) <= s.range + 1e-6) {
       u.attacking = true;
       if (u.cooldown <= 0) {
