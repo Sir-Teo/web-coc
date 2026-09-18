@@ -10,6 +10,7 @@ import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { INFERNO_ROOT, infernoAsset, infernoTexture } from './inferno-art';
 import { INFERNO_GRAPH, infernoPoses } from './inferno-graph';
+import { battleUnit } from './battle-index';
 
 export function preloadInfernos(scene: Phaser.Scene) {
   for (const [path, sound] of Object.entries(INFERNO_SOUNDS))
@@ -101,10 +102,8 @@ export class InfernoPresentation {
       )
         continue;
       combat.scheduler.slots.forEach((slot, index) => {
-        const target = battle!.units.find(
-          (unit) => unit.id === slot.targetId && unit.hp > 0 && !unit.ejected,
-        );
-        if (!target) return;
+        const target = battleUnit(battle!, slot.targetId);
+        if (!target || target.hp <= 0 || target.ejected) return;
         const stage = infernoDamageStage(combat.scheduler.mode, slot.lockedMs, building.level);
         const profile = infernoBeamProfile(building.level, stage);
         const end = iso(target.x, target.y);

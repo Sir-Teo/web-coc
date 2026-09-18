@@ -3,6 +3,7 @@ import { infernoBeamProfile } from './inferno-beam';
 import { infernoDamageStage, infernoStats } from './inferno-weapon';
 import type { SampleCue } from './sample-audio';
 import type { Battle } from './model';
+import { battleUnit } from './battle-index';
 export const INFERNO_SOUNDS = source.sounds;
 export const infernoSample = (path: string) => `inferno-${path.split('/').at(-1)}`;
 
@@ -31,9 +32,10 @@ export function infernoSoundCues(battle: Battle | null): SampleCue[] {
     )
       continue;
     const state = battle.infernos?.[tower.id];
-    const slot = state?.scheduler.slots.find((slot) =>
-      battle.units.some((unit) => unit.id === slot.targetId && unit.hp > 0 && !unit.ejected),
-    );
+    const slot = state?.scheduler.slots.find((slot) => {
+      const unit = battleUnit(battle, slot.targetId);
+      return !!unit && unit.hp > 0 && !unit.ejected;
+    });
     if (!slot || !state) continue;
     const stage = infernoDamageStage(state.scheduler.mode, slot.lockedMs, tower.level);
     const profile = infernoBeamProfile(tower.level, stage);

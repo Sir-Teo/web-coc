@@ -13,6 +13,7 @@ import { WIZARD_TOWER_ART } from './wizard-tower-art';
 import { WIZARD_TOWER, wizardTowerStats } from './wizard-tower-stats';
 import type { Battle, Building } from './model';
 import type { CombatProjectile } from './projectiles';
+import { battleDefenseTarget } from './battle-index';
 
 export const WIZARD_TOWER_GRAPH = body as unknown as NativeMeshGraph;
 export const TOWER_WIZARD_GRAPH = defender as unknown as NativeMeshGraph;
@@ -66,11 +67,9 @@ export function towerWizardPose(
     actionFrame = Number(rows[1].ActionFrame);
   const clip = TOWER_WIZARD_GRAPH.clips[TOWER_WIZARD_GRAPH.exports[rows[1].ExportName + '_3']];
   const shot = battle?.wizardTowers?.[tower.id]?.shots.at(-1);
-  const current = battle?.units.find(
+  const current = [battle ? battleDefenseTarget(battle, tower.id) : undefined].find(
     (u) =>
-      u.id === battle.defenseTargets[tower.id] &&
-      u.hp > 0 &&
-      Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= WIZARD_TOWER.range,
+      !!u && u.hp > 0 && Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= WIZARD_TOWER.range,
   );
   const facing = current ?? shot;
   const pose: TowerWizardPose = {

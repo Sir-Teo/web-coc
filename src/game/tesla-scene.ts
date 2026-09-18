@@ -25,6 +25,7 @@ import { TROOPS } from './data';
 import { troopArt } from './troop-art';
 import { KING_ART } from './king-art';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaAsset, teslaTexture } from './tesla-art';
+import { battleUnit } from './battle-index';
 
 const APPEAR_SAMPLE = 'tesla-appear';
 const sounds = Object.entries(TESLA_SOUNDS);
@@ -137,7 +138,7 @@ export class TeslaPresentation {
         for (const shot of battle.teslas?.[tower.id]?.shots ?? []) {
           cues.push(...teslaAttackCues(tower.id, tower.level, shot));
           if (reduced || elapsed - shot.at > 1) continue;
-          const target = battle.units.find((u) => u.id === shot.targetId);
+          const target = battleUnit(battle, shot.targetId);
           const end = iso(target?.x ?? shot.x, target?.y ?? shot.y);
           const impact = iso(shot.x, shot.y);
           const lift =

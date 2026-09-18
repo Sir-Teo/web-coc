@@ -24,6 +24,7 @@ import {
   BUILDER_HUT_SOUNDS,
   builderHutSample,
 } from './builder-hut-effects';
+import { battleBuilding } from './battle-index';
 
 const PREFIX = 'builder-hut';
 
@@ -146,7 +147,7 @@ export class BuilderHutPresentation implements LatePresentation {
     }
     if (battle && !battle.finished && !reduced)
       for (const shot of battle.late?.builderHut?.projectiles ?? []) {
-        const hut = battle.buildings.find((v) => v.id === shot.sourceId);
+        const hut = battleBuilding(battle, shot.sourceId);
         if (!hut || elapsed < shot.launched || !builderHutWeapon(hut.level)) continue;
         flying.add(shot.id);
         const pose = builderHutNailPose(

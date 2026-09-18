@@ -10,6 +10,7 @@ import { sourcePoseBounds } from './spell-tower-effect-player';
 import { MONOLITH_ART } from './monolith-art';
 import { MONOLITH, monolithStats, monolithVariant, type MonolithVariant } from './monolith-stats';
 import type { MonolithProjectile, MonolithTowerState } from './monolith';
+import { battleUnit } from './battle-index';
 
 export const MONOLITH_GRAPH = runtime as unknown as NativeMeshGraph;
 export const MONOLITH_EFFECTS = runtime.effects as Record<string, Record<string, string>[]>;
@@ -27,11 +28,12 @@ export function monolithDirection(dx: number, dy: number) {
 const clip = (name: string) => MONOLITH_GRAPH.clips[MONOLITH_GRAPH.exports[name]];
 const ATTACK_FRAMES = MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].timeline.length;
 const ATTACK_FPS = MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].fps;
-const ORB = MONOLITH_GRAPH.clips[
-  MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].children[
-    MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].names.indexOf('projectile_0')
-  ]
-];
+const ORB =
+  MONOLITH_GRAPH.clips[
+    MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].children[
+      MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].names.indexOf('projectile_0')
+    ]
+  ];
 
 export interface MonolithPose {
   direction: number;
@@ -50,7 +52,7 @@ export function monolithPose(
 ): MonolithPose {
   const direction = state ? monolithDirection(state.aimX, state.aimY) : monolithDirection(1, 1);
   const target =
-    state && battle ? battle.units.find((u) => u.id === state.targetId && u.hp > 0) : undefined;
+    state && battle ? [battleUnit(battle, state.targetId)].find((u) => !!u && u.hp > 0) : undefined;
   const pose: MonolithPose = {
     direction,
     attack: 0,
@@ -61,7 +63,10 @@ export function monolithPose(
   const shot = state.shots.at(-1);
   const age = shot ? elapsed - shot.at : Infinity;
   if (shot && age >= 0 && age < (ATTACK_FRAMES - MONOLITH.actionFrame) / ATTACK_FPS) {
-    pose.attack = Math.min(ATTACK_FRAMES - 1, MONOLITH.actionFrame + Math.floor(age * ATTACK_FPS + 1e-9));
+    pose.attack = Math.min(
+      ATTACK_FRAMES - 1,
+      MONOLITH.actionFrame + Math.floor(age * ATTACK_FPS + 1e-9),
+    );
     pose.variant = shot.variant;
     return pose;
   }

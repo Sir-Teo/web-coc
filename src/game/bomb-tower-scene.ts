@@ -29,6 +29,7 @@ import {
   bombTowerDeathPoses,
   type BombTowerVisualState,
 } from './bomb-tower-poses';
+import { battleBuilding } from './battle-index';
 
 export function preloadBombTowers(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, BOMB_TOWER_GRAPH, 'bombtower');
@@ -252,7 +253,7 @@ export class BombTowerPresentation {
     if (battle && !battle.finished && !reduced)
       for (const shot of battle.projectiles ?? []) {
         if (shot.weapon !== 'towerbomb') continue;
-        const tower = battle.buildings.find((v) => v.id === shot.sourceId);
+        const tower = battleBuilding(battle, shot.sourceId);
         if (!tower) continue;
         flying.add(shot.id);
         const pose = bombProjectilePose(tower.level, shot, elapsed, iso);

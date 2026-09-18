@@ -28,6 +28,7 @@ import {
   wizardProjectilePose,
   type WizardTowerVisualState,
 } from './wizard-tower-poses';
+import { battleBuilding } from './battle-index';
 
 export function preloadWizardTowers(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, WIZARD_TOWER_GRAPH, 'wizardtower');
@@ -229,7 +230,7 @@ export class WizardTowerPresentation {
     if (battle && !battle.finished && !reduced)
       for (const shot of battle.projectiles ?? []) {
         if (shot.weapon !== 'arcane') continue;
-        const tower = battle.buildings.find((v) => v.id === shot.sourceId);
+        const tower = battleBuilding(battle, shot.sourceId);
         if (!tower) continue;
         flying.add(shot.id);
         const pose = wizardProjectilePose(tower.level, shot, elapsed, iso, airLift);

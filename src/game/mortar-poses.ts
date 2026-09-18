@@ -9,6 +9,7 @@ import { MORTAR_ART } from './mortar-art';
 import { MORTAR, MORTAR_BUILDING, mortarStats, mortarProjectileRow } from './mortar-stats';
 import type { Battle, Building, MortarShell } from './model';
 import { TROOPS } from './data';
+import { battleDefenseTarget } from './battle-index';
 
 export const MORTAR_GRAPH = raw as unknown as NativeMeshGraph;
 export type MortarVisualState = 'setup' | 'constructing' | 'upgrading' | 'ruin';
@@ -35,9 +36,9 @@ export function mortarPose(tower: Building, battle: Battle | null): MortarPose {
     battle &&
     !battle.finished &&
     (battle.defenseStuns[tower.id] ?? 0) <= battle.elapsed
-      ? battle.units.find(
+      ? [battleDefenseTarget(battle, tower.id)].find(
           (unit) =>
-            unit.id === battle.defenseTargets[tower.id] &&
+            !!unit &&
             unit.hp > 0 &&
             !TROOPS[unit.kind].flying &&
             Math.hypot(unit.x - tower.x - 1.5, unit.y - tower.y - 1.5) >= MORTAR.minRange &&
