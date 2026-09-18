@@ -1,6 +1,7 @@
 import { BUILDINGS } from './data';
 import type { Battle, Building, Unit } from './model';
 import type { NativeMeshGraph } from './native-mesh';
+import { unitIndex } from './battle-index';
 import { destroyedBuildings, weaponFor, type NativeDefenseState } from './native-defenses';
 import {
   isNativeDefenseKind,
@@ -68,8 +69,20 @@ export function nativeTurretFrame(bands: readonly number[], angle: number, frame
   return best;
 }
 
-/** Named child clip of an export, e.g. the turret or the activation timeline. */
+const namedCache = new WeakMap<NativeMeshGraph, Map<string, number>>();
+/** Named child clip of an export, e.g. the turret or the activation timeline (cached per graph). */
 export function nativeNamedChild(graph: NativeMeshGraph, exportName: string, name: string) {
+  let cache = namedCache.get(graph);
+  if (!cache) namedCache.set(graph, (cache = new Map()));
+  const key = `${exportName}\n${name}`;
+  let found = cache.get(key);
+  if (found === undefined) {
+    found = findNamedChild(graph, exportName, name) ?? -1;
+    cache.set(key, found);
+  }
+  return found < 0 ? undefined : found;
+}
+function findNamedChild(graph: NativeMeshGraph, exportName: string, name: string) {
   const root = graph.exports[exportName];
   if (root === undefined) return undefined;
   const seen = new Set<number>();
@@ -89,11 +102,23 @@ export function nativeNamedChild(graph: NativeMeshGraph, exportName: string, nam
   return walk(root);
 }
 
-/** Frame index of each label of a clip (`nativeNamedChild` id or an export root). */
-export function nativeLabels(graph: NativeMeshGraph, id: number | undefined) {
+const labelCache = new WeakMap<NativeMeshGraph, Map<number, Readonly<Record<string, number>>>>();
+const NO_LABELS: Readonly<Record<string, number>> = Object.freeze({});
+/** Frame index of each label of a clip (`nativeNamedChild` id or an export root); cached, read-only. */
+export function nativeLabels(
+  graph: NativeMeshGraph,
+  id: number | undefined,
+): Readonly<Record<string, number>> {
   const clip = id === undefined ? undefined : graph.clips[id];
-  const result: Record<string, number> = {};
-  for (const [frame, label] of clip?.labels ?? []) result[label] = frame;
+  if (!clip) return NO_LABELS;
+  let cache = labelCache.get(graph);
+  if (!cache) labelCache.set(graph, (cache = new Map()));
+  let result = cache.get(id!);
+  if (!result) {
+    const labels: Record<string, number> = {};
+    for (const [frame, label] of clip.labels ?? []) labels[label] = frame;
+    cache.set(id!, (result = Object.freeze(labels)));
+  }
   return result;
 }
 
@@ -125,8 +150,11 @@ export function nativeAttackFrame(
   return 0;
 }
 
-const liveUnit = (battle: Battle, id: number | undefined) =>
-  id === undefined ? undefined : battle.units.find((u) => u.id === id && u.hp > 0);
+const liveUnit = (battle: Battle, id: number | undefined) => {
+  if (id === undefined) return undefined;
+  const unit = unitIndex(battle).get(id);
+  return unit && unit.hp > 0 ? unit : undefined;
+};
 
 /** Unit the weapon currently points at, preferring its own state over the shared target map. */
 export function nativeDefenseTarget(battle: Battle, tower: Building): Unit | undefined {
@@ -143,7 +171,12 @@ export function nativeDefenseTarget(battle: Battle, tower: Building): Unit | und
 export const nativeFacingAngle = (direction: number | undefined) =>
   (Math.floor(((direction ?? 0) % 8) / 2) * 90) % 360;
 
-const segment = (labels: Record<string, number>, from: string, to: string, frames: number) => {
+const segment = (
+  labels: Readonly<Record<string, number>>,
+  from: string,
+  to: string,
+  frames: number,
+) => {
   const start = labels[from] ?? 0;
   const end = labels[to] ?? frames - 1;
   return { start, end: Math.max(start, end) };
@@ -264,9 +297,16 @@ const labels = (graph: NativeMeshGraph, exportName: string) =>
   nativeLabels(graph, graph.exports[exportName]);
 
 /** Direction children of a turret clip (`d1`..`dN`), which hold the per-direction attack frames. */
-export function directionNames(graph: NativeMeshGraph, turret: number) {
-  const clip = graph.clips[turret];
-  return (clip?.names ?? []).filter((n) => /^d\d+$/.test(n));
+const directionCache = new WeakMap<NativeMeshGraph, Map<number, readonly string[]>>();
+export function directionNames(graph: NativeMeshGraph, turret: number): readonly string[] {
+  let cache = directionCache.get(graph);
+  if (!cache) directionCache.set(graph, (cache = new Map()));
+  let names = cache.get(turret);
+  if (!names) {
+    const clip = graph.clips[turret];
+    cache.set(turret, (names = (clip?.names ?? []).filter((n) => /^d\d+$/.test(n))));
+  }
+  return names;
 }
 function firstDirectionClip(graph: NativeMeshGraph, turret: number) {
   const clip = graph.clips[turret];
@@ -287,7 +327,7 @@ function loadFrame(
   kind: NativeDefenseKind,
   state: NativeDefenseState,
   weapon: NonNullable<ReturnType<typeof weaponFor>>,
-  labels: Record<string, number>,
+  labels: Readonly<Record<string, number>>,
   info: { frames: number; fps: number },
   elapsed: number,
   tower: Building,
@@ -351,7 +391,7 @@ function loadFrame(
 /** Town Hall weapon bodies: deactivated idle, activation, combat idle and the TH17 attack. */
 export function townHallFrame(
   state: NativeDefenseState,
-  labels: Record<string, number>,
+  labels: Readonly<Record<string, number>>,
   info: { frames: number; fps: number },
   elapsed: number,
   tower: Building,
