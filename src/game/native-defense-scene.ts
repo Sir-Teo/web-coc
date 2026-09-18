@@ -21,6 +21,7 @@ import { nativeDirectionRoot } from './native-projectile-poses';
 import { nativeDefenseTarget, nativeLabels } from './native-defense-poses';
 import { weaponFor } from './native-defenses';
 import { nativeRow, text } from './native-data';
+import { buildingIndex, unitIndex } from './battle-index';
 
 type Point = { x: number; y: number };
 interface DefenderState {
@@ -48,8 +49,30 @@ export const nativeDefensePack = (kind: string) =>
 
 /** Local layout: several rooftop defenders stand a source pace apart across the platform. */
 const DEFENDER_SPREAD = 22;
-/** Recorded effect events are dropped once nothing can still be drawing them. */
+/** Lifetime of a recorded effect whose pack (and so its real duration) is not loaded yet. */
 const EVENT_LIFE = 6;
+/** Recorded events kept at once; expired events go first, then those ending soonest. */
+const MAX_EVENTS = 192;
+/** Transient effects keep playing this long on a presentation clock after the battle ends. */
+const FINISH_GRACE = 2;
+
+/**
+ * Defense or trap pack declaring each spell a defense casts (its `spells` table), so a cast only
+ * requests the one pack it needs. Checked against the packs by tests/native-defense-scene.test.ts.
+ */
+export const NATIVE_DEFENSE_SPELL_KIND: Readonly<Record<string, string>> = {
+  'Eagle Artillery Hit Spell': 'eagle',
+  'Scattershot Hit Spell': 'scattershot',
+  'Spell Tower Invisibility': 'spelltower',
+  'Spell Tower Poison': 'spelltower',
+  'Spell Tower Rage': 'spelltower',
+  'Spell Tower Earthquake': 'spelltower',
+  'Tornado Trap': 'tornadotrap',
+  'TH13 Frost': 'townhall',
+  'TH14 Poison': 'townhall',
+  'TH15 Poison': 'townhall',
+  TH17WeaponAreaDamage: 'townhall',
+};
 
 const center = (b: Building) => ({
   x: b.x + BUILDINGS[b.kind].size / 2,
@@ -98,6 +121,60 @@ export function nativeDefenseEffects(pack: NativeDefensePack, tower: Building) {
 
 interface Recorded extends NativeEffectEvent {
   expires: number;
+  /** True once `expires` follows the effect's real duration. */
+  timed: boolean;
+}
+
+/**
+ * Recorded one-shot effect events. Events may start in the future (a Town Hall activation is
+ * recorded at its wake time); they are dropped only once expired, never before they play.
+ */
+export class NativeDefenseEventLog {
+  events: Recorded[] = [];
+  private keys = new Set<string>();
+  constructor(private duration: (effect: string) => number | undefined = () => undefined) {}
+  record(event: NativeEffectEvent, now: number) {
+    if (this.keys.has(event.key)) return;
+    const real = this.duration(event.effect);
+    this.events.push({
+      ...event,
+      expires: event.at + (real ?? EVENT_LIFE) + 0.05,
+      timed: real !== undefined,
+    });
+    this.keys.add(event.key);
+    if (this.events.length > MAX_EVENTS) {
+      this.prune(now);
+      if (this.events.length > MAX_EVENTS) {
+        // Still full of live effects: drop the ones ending soonest.
+        this.events.sort((a, b) => b.expires - a.expires);
+        for (const dropped of this.events.splice(MAX_EVENTS)) this.keys.delete(dropped.key);
+      }
+    }
+  }
+  /** Drop expired events; resolve real durations once their packs have loaded. */
+  prune(now: number) {
+    let kept = 0;
+    for (const event of this.events) {
+      if (!event.timed) {
+        const real = this.duration(event.effect);
+        if (real !== undefined) {
+          event.expires = event.at + real + 0.05;
+          event.timed = true;
+        }
+      }
+      if (event.expires > now) this.events[kept++] = event;
+      else this.keys.delete(event.key);
+    }
+    this.events.length = kept;
+  }
+  /** Events that have started by `now` (future events wait for their start). */
+  *started(now: number) {
+    for (const event of this.events) if (event.at <= now + 1e-6) yield event;
+  }
+  clear() {
+    this.events = [];
+    this.keys.clear();
+  }
 }
 
 /**
@@ -108,18 +185,24 @@ export class NativeDefensePresentation {
   private packs: NativeArtPacks<NativeDefensePack>;
   private layer: NativeEffectLayer;
   private views = new Map<string, { prefix: string; view: NativeSceneView }>();
-  private events: Recorded[] = [];
+  private log: NativeDefenseEventLog;
   private fired = new Map<number, number>();
   private awake = new Map<number, number>();
-  private beams = new Map<string, number>();
+  /** Held Giga beams: tower id -> target unit id -> beam start time. */
+  private beams = new Map<number, Map<number, number>>();
   private pierced = new Map<string, number>();
   private sequence = 0;
+  /** Effect clock of the last render, for events recorded between frames. */
+  private now = 0;
+  /** Presentation clock after the battle ends: transient effects finish instead of freezing. */
+  private finish?: { battle: Battle; at: number; real: number };
   constructor(
     private scene: Phaser.Scene,
     effects: NativeArtPacks<NativeArtPack>,
   ) {
     this.packs = new NativeArtPacks<NativeDefensePack>(scene);
     this.layer = new NativeEffectLayer(scene, effects, 'defense');
+    this.log = new NativeDefenseEventLog((effect) => this.layer.duration(effect));
   }
   pack(kind: string) {
     const path = nativeDefensePack(kind);
@@ -129,7 +212,8 @@ export class NativeDefensePresentation {
     for (const { view } of this.views.values()) view.destroy();
     this.views.clear();
     this.layer.clear();
-    this.events = [];
+    this.log.clear();
+    this.finish = undefined;
     this.fired.clear();
     this.awake.clear();
     this.beams.clear();
@@ -143,10 +227,20 @@ export class NativeDefensePresentation {
   covers(kind: string | undefined) {
     return !!kind && !!this.pack(kind);
   }
-  private record(event: NativeEffectEvent, duration = EVENT_LIFE) {
-    if (this.events.some((e) => e.key === event.key)) return;
-    this.events.push({ ...event, expires: event.at + duration });
-    if (this.events.length > 96) this.events.shift();
+  private record(event: NativeEffectEvent) {
+    this.log.record(event, this.now);
+  }
+  /** Effect columns of a tower, cached by everything they depend on. */
+  private effectsFor(pack: NativeDefensePack, tower: Building) {
+    const effectsKey = `${tower.kind}:${tower.level}:${tower.weaponLevel ?? ''}:${tower.spellMode ?? ''}:${tower.gearMode ?? ''}`;
+    let effects = this.effectsCache.get(effectsKey);
+    if (!effects) {
+      effects = nativeDefenseEffects(pack, tower);
+      // Bound the cache; tower variety per battle is small.
+      if (this.effectsCache.size > 64) this.effectsCache.clear();
+      this.effectsCache.set(effectsKey, effects);
+    }
+    return effects;
   }
   /**
    * Model effects that carry their own geometry: chained zaps and native projectile impacts.
@@ -155,11 +249,11 @@ export class NativeDefensePresentation {
   note(fx: FX, battle: Battle | null, iso: (x: number, y: number) => Point, airLift: number) {
     if (!battle || battle.finished) return;
     const at = battle.elapsed;
-    const tower = battle.buildings.find((b) => b.id === fx.sourceId);
+    const tower = fx.sourceId === undefined ? undefined : buildingIndex(battle).get(fx.sourceId);
     if (fx.type === 'defense-zap' && tower) {
       const pack = this.pack(tower.kind);
       if (!pack) return;
-      const effects = nativeDefenseEffects(pack, tower);
+      const effects = this.effectsFor(pack, tower);
       const chain = fx.text === 'chain';
       const effect = chain ? (effects.attackAlt ?? effects.attack) : effects.attack;
       const from = chain
@@ -192,7 +286,7 @@ export class NativeDefensePresentation {
     }
     if (fx.type === 'impact' && fx.weapon === 'native' && tower) {
       const pack = this.pack(tower.kind);
-      const effects = pack ? nativeDefenseEffects(pack, tower) : undefined;
+      const effects = pack ? this.effectsFor(pack, tower) : undefined;
       if (!effects?.hit || fx.toX === undefined || fx.toY === undefined) return;
       const target = iso(fx.toX, fx.toY);
       this.record({
@@ -215,7 +309,7 @@ export class NativeDefensePresentation {
       );
       const pack = source ? this.pack(source.kind) : undefined;
       if (!source || !pack) return;
-      const effects = nativeDefenseEffects(pack, source);
+      const effects = this.effectsFor(pack, source);
       const ground = iso(fx.x, fx.y);
       for (const [i, effect] of [
         effects.death,
@@ -238,7 +332,19 @@ export class NativeDefensePresentation {
     this.layer.begin();
     const shown = new Set<string>();
     const live = battle && !battle.finished;
-    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    // Effects run on the battle clock (pausing and seeking with it). Once the battle ends that
+    // clock stops; transient effects then finish on real time instead of freezing mid-frame.
+    const clock = this.effectClock(battle, elapsed);
+    this.now = clock;
+    const cam = (
+      this.scene as unknown as {
+        cameras?: {
+          main?: {
+            worldView?: { centerX: number; centerY: number; width: number; height: number };
+          };
+        };
+      }
+    ).cameras?.main;
     const view = cam?.worldView;
     for (const tower of buildings) {
       const pack = this.pack(tower.kind);
@@ -252,14 +358,7 @@ export class NativeDefensePresentation {
       // Beam weapons draw their impact end at the target: a culled tower with a
       // visible beam endpoint must still run its beam passes.
       if (towerOut && !this.beamOnScreen(tower, battle, elapsed, iso, view!)) continue;
-      const effectsKey = `${tower.kind}:${tower.level}:${tower.weaponLevel ?? ''}:${tower.spellMode ?? ''}:${tower.gearMode ?? ''}`;
-      let effects = this.effectsCache.get(effectsKey);
-      if (!effects) {
-        effects = nativeDefenseEffects(pack, tower);
-        // Bound the cache; tower variety per battle is small.
-        if (this.effectsCache.size > 64) this.effectsCache.clear();
-        this.effectsCache.set(effectsKey, effects);
-      }
+      const effects = this.effectsFor(pack, tower);
       const state = battle?.nativeDefenses?.[tower.id];
       const target = live ? nativeDefenseTarget(battle, tower) : undefined;
       const aim = target
@@ -300,16 +399,24 @@ export class NativeDefensePresentation {
     }
     if (live) this.renderPiercingHits(battle!, iso);
     if (live) this.renderSpells(battle!, elapsed, iso, reduced);
-    this.events = this.events.filter(
-      (event) => event.at <= elapsed + 1e-6 && event.expires > elapsed,
-    );
-    for (const event of this.events) this.layer.play(event, elapsed, reduced);
+    // Filter on expiry only: an activation recorded at its future wake time must survive.
+    this.log.prune(clock);
+    for (const event of this.log.started(clock)) this.layer.play(event, clock, reduced);
     for (const [key, { view }] of this.views)
       if (!shown.has(key)) {
         view.destroy();
         this.views.delete(key);
       }
     this.layer.end();
+  }
+  private effectClock(battle: Battle | null, elapsed: number) {
+    if (!battle?.finished) {
+      this.finish = undefined;
+      return elapsed;
+    }
+    const real = this.scene.time?.now ?? performance.now();
+    if (!this.finish || this.finish.battle !== battle) this.finish = { battle, at: elapsed, real };
+    return this.finish.at + Math.min(FINISH_GRACE, Math.max(0, (real - this.finish.real) / 1000));
   }
   /** True when a held Giga beam or an in-flight Eagle shell of this tower can
    * draw on screen, so culling must not skip its beam passes. Over-approximates
@@ -325,9 +432,10 @@ export class NativeDefensePresentation {
     const onScreen = (p: Point) =>
       Math.abs(p.x - view.centerX) <= view.width / 2 + 420 &&
       Math.abs(p.y - view.centerY) <= view.height / 2 + 420;
+    const units = unitIndex(battle);
     for (const id of battle.nativeDefenses?.[tower.id]?.beams ?? []) {
-      const unit = battle.units.find((u) => u.id === id && u.hp > 0);
-      if (unit && onScreen(iso(unit.x, unit.y))) return true;
+      const unit = units.get(id);
+      if (unit && unit.hp > 0 && onScreen(iso(unit.x, unit.y))) return true;
     }
     for (const shot of battle.projectiles ?? []) {
       if (shot.sourceId !== tower.id || shot.weapon !== 'native') continue;
@@ -351,16 +459,21 @@ export class NativeDefensePresentation {
     reduced: boolean,
   ) {
     const state = battle.nativeDefenses?.[tower.id];
-    const held = new Set((state?.beams ?? []).map((id) => `${tower.id}:${id}`));
-    for (const key of this.beams.keys())
-      if (key.startsWith(`${tower.id}:`) && !held.has(key)) this.beams.delete(key);
-    if (!effects.attack || !state?.beams?.length) return;
-    for (const id of state.beams) {
-      const unit = battle.units.find((u) => u.id === id && u.hp > 0);
-      if (!unit) continue;
+    const beams = state?.beams ?? [];
+    let starts = this.beams.get(tower.id);
+    if (starts) {
+      for (const id of starts.keys()) if (!beams.includes(id)) starts.delete(id);
+      if (!starts.size) this.beams.delete(tower.id);
+    }
+    if (!effects.attack || !beams.length) return;
+    if (!starts?.size) this.beams.set(tower.id, (starts = new Map()));
+    const units = unitIndex(battle);
+    for (const id of beams) {
+      const unit = units.get(id);
+      if (!unit || unit.hp <= 0) continue;
       const key = `${tower.id}:${id}`;
-      const since = this.beams.get(key) ?? elapsed;
-      this.beams.set(key, since);
+      const since = starts.get(id) ?? elapsed;
+      starts.set(id, since);
       const target = iso(unit.x, unit.y);
       this.layer.play(
         {
@@ -475,12 +588,11 @@ export class NativeDefensePresentation {
     const count = Math.max(1, effects.defenderCount);
     const state = battle?.nativeDefenses?.[tower.id];
     const path = nativeDefensePack(tower.kind)!;
+    const units = battle && !battle.finished ? unitIndex(battle) : undefined;
     for (let i = 0; i < count; i++) {
       const targetId = state?.targets?.[i] ?? state?.target ?? state?.targets?.[0];
-      const unit =
-        battle && !battle.finished
-          ? battle.units.find((u) => u.id === targetId && u.hp > 0)
-          : undefined;
+      const found = targetId === undefined ? undefined : units?.get(targetId);
+      const unit = found && found.hp > 0 ? found : undefined;
       const aim = unit
         ? { x: unit.x - center(tower).x, y: unit.y - center(tower).y }
         : { x: 1, y: 1 };
@@ -525,18 +637,20 @@ export class NativeDefensePresentation {
   /** Firespitter balls report their hits through the shot record; each new one plays the hit effect. */
   private renderPiercingHits(battle: Battle, iso: (x: number, y: number) => Point) {
     const live = new Set<string>();
+    const buildings = buildingIndex(battle);
     for (const shot of battle.nativePiercing ?? []) {
       live.add(shot.id);
-      const tower = battle.buildings.find((b) => b.id === shot.sourceId);
-      const pack = tower ? this.pack(tower.kind) : undefined;
-      if (!tower || !pack) continue;
-      const effects = nativeDefenseEffects(pack, tower);
       const seen = this.pierced.get(shot.id) ?? 0;
       if (shot.hit.length <= seen) continue;
+      const tower = buildings.get(shot.sourceId);
+      const pack = tower ? this.pack(tower.kind) : undefined;
+      if (!tower || !pack) continue;
       this.pierced.set(shot.id, shot.hit.length);
+      const effects = this.effectsFor(pack, tower);
       if (!effects.hit) continue;
+      const units = unitIndex(battle);
       for (const id of shot.hit.slice(seen)) {
-        const unit = battle.units.find((u) => u.id === id);
+        const unit = units.get(id);
         if (!unit) continue;
         const ground = iso(unit.x, unit.y);
         this.record({
@@ -558,14 +672,11 @@ export class NativeDefensePresentation {
   ) {
     for (const cast of battle.nativeSpells ?? []) {
       if (cast.side !== 'defense') continue;
-      let rows: NativeRow[] | undefined;
-      for (const kind of Object.keys(index.kinds)) {
-        const pack = this.pack(kind);
-        if (pack?.spells[cast.name]) {
-          rows = pack.spells[cast.name];
-          break;
-        }
-      }
+      // Only the pack that declares this spell is requested (never every defense pack).
+      const kind = Object.hasOwn(NATIVE_DEFENSE_SPELL_KIND, cast.name)
+        ? NATIVE_DEFENSE_SPELL_KIND[cast.name]
+        : undefined;
+      const rows: NativeRow[] | undefined = kind ? this.pack(kind)?.spells[cast.name] : undefined;
       const row = rows?.[Math.max(0, Math.min(rows.length - 1, cast.level - 1))];
       if (!row) continue;
       const ground = iso(cast.x, cast.y);
