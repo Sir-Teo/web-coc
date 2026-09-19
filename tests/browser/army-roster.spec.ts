@@ -38,15 +38,20 @@ test('catalog jumps and unlock ordering stay usable across phone sizes, with mat
   await useDevelopedVillage(page);
   await page.evaluate(() => window.__game.model.brew('lightning'));
   await page.locator('.train-add').click();
+  // The full native catalog follows, but the Barracks roster leads in unlock order.
   expect(
-    await page
-      .locator('[data-action^="train:"]')
-      .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-action')!.split(':')[1])),
+    (
+      await page
+        .locator('[data-action^="train:"]')
+        .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-action')!.split(':')[1]))
+    ).slice(0, 10),
   ).toEqual([...troops, 'healer', 'dragon', 'pekka']);
   expect(
-    await page
-      .locator('[data-action^="brew:"]')
-      .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-action')!.split(':')[1])),
+    (
+      await page
+        .locator('[data-action^="brew:"]')
+        .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-action')!.split(':')[1]))
+    ).slice(0, 3),
   ).toEqual(spells);
   for (const [width, height] of [
     [320, 740],

@@ -1,11 +1,20 @@
-import { TROOP_KEYS, SPELL_KEYS, type SpellKind } from '../game/data';
+import { TROOP_KEYS, SPELL_KEYS, type SpellKind, type TroopKind } from '../game/data';
 import { TROOP_UNLOCK, SPELL_UNLOCK, spellFactory, troopFacility } from '../game/army-unlocks';
+import { superOriginal } from '../game/special-troops';
 
+// Elixir troops first, then dark troops, siege machines and finally super troops: each group
+// keeps its own facility order, so the shared hotkeys stay on the core barracks roster.
+const troopGroup = (kind: TroopKind) =>
+  superOriginal(kind)
+    ? 3
+    : troopFacility(kind) === 'workshop'
+      ? 2
+      : troopFacility(kind) === 'darkbarracks'
+        ? 1
+        : 0;
 // Presentation order follows facility progression without changing simulation or save order.
 export const TROOP_ORDER = [...TROOP_KEYS].sort(
-  (a, b) =>
-    Number(troopFacility(a) === 'darkbarracks') - Number(troopFacility(b) === 'darkbarracks') ||
-    TROOP_UNLOCK[a] - TROOP_UNLOCK[b],
+  (a, b) => troopGroup(a) - troopGroup(b) || TROOP_UNLOCK[a] - TROOP_UNLOCK[b],
 );
 export const SPELL_ORDER = [...SPELL_KEYS].sort(
   (a, b) =>
