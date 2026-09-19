@@ -11,6 +11,7 @@ import { BOMB_TOWER_ART } from './bomb-tower-art';
 import type { Battle, Building } from './model';
 import type { CombatProjectile } from './projectiles';
 import { TROOPS } from './data';
+import { battleDefenseTarget } from './battle-index';
 
 export const BOMB_TOWER_GRAPH = body as unknown as NativeMeshGraph;
 export const BOMBER_GRAPH = defender as unknown as NativeMeshGraph;
@@ -63,9 +64,9 @@ export function bomberPose(
   const actionFrame = Number(rows[1].ActionFrame);
   const clip = BOMBER_GRAPH.clips[BOMBER_GRAPH.exports[rows[1].ExportName + '_3']];
   const shot = battle?.bombTowers?.[tower.id]?.shots.at(-1);
-  const current = battle?.units.find(
+  const current = [battle ? battleDefenseTarget(battle, tower.id) : undefined].find(
     (u) =>
-      u.id === battle.defenseTargets[tower.id] &&
+      !!u &&
       u.hp > 0 &&
       !TROOPS[u.kind].flying &&
       Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= 6,
@@ -160,6 +161,22 @@ export function bombTowerMuzzle(from: { x: number; y: number }, to: { x: number;
   };
 }
 
+/** The bomb's screen point alone (trail births need no projectile art). */
+export function bombFlightPoint(
+  shot: Pick<CombatProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact'>,
+  elapsed: number,
+  iso: (x: number, y: number) => { x: number; y: number },
+) {
+  const age = Math.max(0, elapsed - shot.launched);
+  const t = Math.max(0, Math.min(1, age / Math.max(0.01, shot.impact - shot.launched)));
+  const target = iso(shot.x, shot.y),
+    from = bombTowerMuzzle(iso(shot.fromX, shot.fromY), target);
+  return {
+    t,
+    x: from.x + (target.x - from.x) * t,
+    y: from.y + (target.y - from.y) * t - Math.sin(t * Math.PI) * 42,
+  };
+}
 export function bombProjectilePose(
   level: number,
   shot: Pick<CombatProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact'>,
@@ -168,13 +185,11 @@ export function bombProjectilePose(
 ) {
   const row = body.projectiles[levelRow(level).projectile as keyof typeof body.projectiles][0];
   const age = Math.max(0, elapsed - shot.launched);
-  const t = Math.max(0, Math.min(1, age / Math.max(0.01, shot.impact - shot.launched)));
+  const { t, x, y } = bombFlightPoint(shot, elapsed, iso);
   const ground = iso(
     shot.fromX + (shot.x - shot.fromX) * t,
     shot.fromY + (shot.y - shot.fromY) * t,
   );
-  const target = iso(shot.x, shot.y),
-    from = bombTowerMuzzle(iso(shot.fromX, shot.fromY), target);
   const angle = t * Math.PI * 2,
     s = BOMB_TOWER_ART.scale;
   const root: NativeMatrix = [
@@ -188,8 +203,8 @@ export function bombProjectilePose(
   return {
     t,
     ground,
-    x: from.x + (target.x - from.x) * t,
-    y: from.y + (target.y - from.y) * t - Math.sin(t * Math.PI) * 42,
+    x,
+    y,
     poses: nativeScenePoses(BOMB_TOWER_GRAPH, row.ExportName, age, {}, root),
     shadow: nativeScenePoses(BOMB_TOWER_GRAPH, row.ShadowExportName, age, {}, [s, 0, 0, 0, s, 0]),
   };

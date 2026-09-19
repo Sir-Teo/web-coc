@@ -242,9 +242,31 @@ export function goblinArrowPose(
   };
 }
 
-/** Original fixed-point bomb with its shadow; arc height and spin are local presentation. */
-export function goblinBombPose(
-  p: Pick<LateProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact'>,
+/**
+ * A tracking projectile as presented after the battle finished: the simulation no longer
+ * advances it, so its flight point keeps moving toward the destination at its source speed
+ * (like `late-goblin-weapon` advance). Undefined once it would have landed.
+ */
+export function presentedLateFlight(
+  p: LateProjectile,
+  elapsed: number,
+): LateProjectile | undefined {
+  if (elapsed >= p.impact) return undefined;
+  const distance = Math.hypot(p.x - p.flightX, p.y - p.flightY);
+  const fraction = distance
+    ? Math.min(1, (Math.max(0, elapsed - p.flightAt) * p.speed) / distance)
+    : 1;
+  return {
+    ...p,
+    flightX: p.flightX + (p.x - p.flightX) * fraction,
+    flightY: p.flightY + (p.y - p.flightY) * fraction,
+    flightAt: Math.max(p.flightAt, elapsed),
+  };
+}
+type BombFlight = Pick<LateProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact'>;
+/** The bomb's fixed-point flight; arc height is local presentation. */
+export function goblinBombFlightPoint(
+  p: BombFlight,
   elapsed: number,
   iso: (x: number, y: number) => Point,
 ) {
@@ -256,12 +278,22 @@ export function goblinBombPose(
     startY = p.fromY + ((p.y - p.fromY) / length) * (row.startOffset / 100);
   const ground = iso(startX + (p.x - startX) * t, startY + (p.y - startY) * t);
   const lift = row.startHeight * LATE_GOBLIN_ALTITUDE * (1 - t);
+  return { t, age, ground, x: ground.x, y: ground.y - lift - Math.sin(t * Math.PI) * 42 };
+}
+/** Original bomb art with its shadow at the `goblinBombFlightPoint`; the spin is local. */
+export function goblinBombPose(
+  p: BombFlight,
+  elapsed: number,
+  iso: (x: number, y: number) => Point,
+) {
+  const row = GOBLIN_WEAPONS['goblin-boss-th'].source;
+  const { t, age, ground, x, y } = goblinBombFlightPoint(p, elapsed, iso);
   const angle = t * Math.PI * 2;
   return {
     t,
     ground,
-    x: ground.x,
-    y: ground.y - lift - Math.sin(t * Math.PI) * 42,
+    x,
+    y,
     poses: nativeScenePoses(LATE_GOBLIN_GRAPH, row.projectileExport, age, {}, [
       Math.cos(angle) * SCALE,
       -Math.sin(angle) * SCALE,

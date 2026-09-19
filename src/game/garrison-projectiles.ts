@@ -7,6 +7,7 @@ import { nativeScenePoses, type NativeScenePose } from './native-mesh';
 import type { GarrisonShot } from './garrison-combat';
 import type { Battle } from './model';
 import { isGarrisonDefender } from './defenders';
+import { presentationLive } from './presentation-clock';
 
 export interface GarrisonShotPose {
   key: string;
@@ -102,9 +103,12 @@ export function garrisonShotPoses(
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
   lift: number,
+  /** Presentation time; defaults to battle time. Pass `presentationTime(battle)` to let shots in
+   * flight at the finish land during the grace window. */
+  elapsed = battle?.elapsed ?? 0,
 ) {
   const result: GarrisonShotPose[] = [];
-  if (!battle || reduced || battle.finished) return result;
+  if (!battle || reduced || !presentationLive(battle)) return result;
   for (const defender of battle.defenders ?? []) {
     if (!isGarrisonDefender(defender) || !defender.shots?.length) continue;
     const flying = garrisonStats(defender.kind, defender.level).flying;
@@ -112,7 +116,7 @@ export function garrisonShotPoses(
       const pose = garrisonShotPose(
         shot,
         flying,
-        battle.elapsed,
+        elapsed,
         iso,
         lift,
         `garrison-shot:${defender.id}:${shot.n}`,

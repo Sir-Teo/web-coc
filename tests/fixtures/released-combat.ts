@@ -9,7 +9,12 @@ export function useReleasedCombat(model: GameModel) {
     delete recording.initial.defendingHeroes;
     model.battle = replayBattle(recording.initial, 51);
   } else {
+    // Strip every rule flag newer than version 51 so unrecorded battles match it too.
     delete model.battle.nativeContentExpansion;
+    delete model.battle.nativeHeroPassives;
+    delete model.battle.separationCap;
+    delete model.battle.stalledSupportEnds;
+    delete model.battle.dropFallenPaths;
     model.battle.defenders = model.battle.defenders?.filter((d) => d.kind !== 'hero');
   }
 }

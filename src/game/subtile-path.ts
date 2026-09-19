@@ -23,20 +23,100 @@ export function passableSubtilesAtEdge(b: Pick<Building, 'kind' | 'npc'>) {
   return b.npc === 'foreboding-cave' ? 2 : 1;
 }
 
-const blocked = new Uint8Array(CELLS),
-  wall = new Uint8Array(CELLS);
-/** Collision depends only on membership + aliveness (footprints are static). */
-let gridHash: number | undefined;
-/** Rebuild collision for the living, non-trap buildings the caller knows about. */
-function occupy(buildings: readonly Building[]) {
-  // One cheap hash replaces the full footprint loop when nothing changed; the
-  // hash is exact, so a match can never serve a stale grid.
-  let hash = buildings.length;
-  for (const b of buildings) hash = ((hash * 31 + b.id) | 0) ^ (b.hp > 0 ? 0x9e37 : 0);
-  if (gridHash === hash) return;
-  gridHash = hash;
-  blocked.fill(0);
-  wall.fill(0);
+/**
+ * Exact snapshot of what collision reads from a building list: each entry's identity,
+ * footprint (kind, npc, position) and whether it stands. Two lists match only when every
+ * entry matches, so a cached grid can never serve another battle's (or stage's) layout.
+ * The previous 32-bit hash of ids and alive flags collided across campaign stages of the
+ * same size (ids are 1000 + index), routing a new battle through the last one's buildings.
+ */
+export class BuildingListSnapshot {
+  private refs: Building[];
+  private kinds: string[];
+  private npcs: (string | undefined)[];
+  private coords: Float64Array;
+  private alive: Uint8Array;
+  constructor(buildings: readonly Building[]) {
+    const n = buildings.length;
+    this.refs = buildings.slice();
+    this.kinds = new Array(n);
+    this.npcs = new Array(n);
+    this.coords = new Float64Array(n * 2);
+    this.alive = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const b = buildings[i];
+      this.kinds[i] = b.kind;
+      this.npcs[i] = b.npc;
+      this.coords[i * 2] = b.x;
+      this.coords[i * 2 + 1] = b.y;
+      this.alive[i] = b.hp > 0 ? 1 : 0;
+    }
+  }
+  /** The last array object fully verified against this snapshot. */
+  private verified: readonly Building[] | null = null;
+  matches(buildings: readonly Building[]) {
+    const n = buildings.length;
+    if (n !== this.refs.length) return false;
+    const { refs, kinds, npcs, coords, alive } = this;
+    if (buildings === this.verified) {
+      // Same array, same length: the simulation never reassigns list slots or moves a
+      // footprint, so only standing/fallen can have changed since it was verified.
+      for (let i = 0; i < n; i++) if (alive[i] !== (buildings[i].hp > 0 ? 1 : 0)) return false;
+      return true;
+    }
+    for (let i = 0; i < n; i++) {
+      const b = buildings[i];
+      if (
+        refs[i] !== b ||
+        alive[i] !== (b.hp > 0 ? 1 : 0) ||
+        kinds[i] !== b.kind ||
+        coords[i * 2] !== b.x ||
+        coords[i * 2 + 1] !== b.y ||
+        npcs[i] !== b.npc
+      )
+        return false;
+    }
+    this.verified = buildings;
+    return true;
+  }
+}
+
+/** Result memo bound: a grid rarely lives long, but a quiet battle must not grow without end. */
+export const PATH_MEMO_LIMIT = 8192;
+
+/** One collision grid built for an exact building list, with the routes searched on it. */
+interface SubtileGrid {
+  key: BuildingListSnapshot;
+  blocked: Uint8Array;
+  wall: Uint8Array;
+  /** Exact search results by (start cell, goal, range): A* is a pure function of these. */
+  paths: Map<string, readonly { x: number; y: number }[]>;
+}
+/**
+ * Routes, crowd separation and movement effects alternate between a few lists every tick
+ * (known, solid, jump-filtered, defender structures); each keeps its own grid instead of
+ * rebuilding one shared grid whenever the caller changes. A rebuilt grid gets fresh arrays,
+ * so a collision test captured earlier keeps reading the snapshot it was made from.
+ */
+const GRID_SLOTS = 6;
+const grids: SubtileGrid[] = [];
+/** Drop every cached grid and route (new battle or replay runner). Never needed for results. */
+export function resetSubtileGrids() {
+  grids.length = 0;
+}
+/** Collision for the living, non-trap buildings the caller knows about. */
+function gridFor(buildings: readonly Building[]): SubtileGrid {
+  for (let i = 0; i < grids.length; i++) {
+    const grid = grids[i];
+    if (!grid.key.matches(buildings)) continue;
+    if (i) {
+      grids.splice(i, 1);
+      grids.unshift(grid);
+    }
+    return grid;
+  }
+  const blocked = new Uint8Array(CELLS),
+    wall = new Uint8Array(CELLS);
   for (const b of buildings) {
     if (b.hp <= 0 || isTrap(b.kind)) continue;
     const size = BUILDINGS[b.kind].size * SUBTILES;
@@ -46,21 +126,33 @@ function occupy(buildings: readonly Building[]) {
       for (let x = b.x * SUBTILES + edge; x < b.x * SUBTILES + size - edge; x++)
         target[y * SIZE + x] = 1;
   }
+  const grid: SubtileGrid = {
+    key: new BuildingListSnapshot(buildings),
+    blocked,
+    wall,
+    paths: new Map(),
+  };
+  grids.unshift(grid);
+  if (grids.length > GRID_SLOTS) grids.pop();
+  return grid;
 }
+/** The grid the current search reads (set at the start of every search). */
+let blocked: Uint8Array = new Uint8Array(CELLS),
+  wall: Uint8Array = new Uint8Array(CELLS);
 
-/** Point collision for ground movement (crowd separation, pushback, vortex pulls). */
+/**
+ * Point collision for ground movement (crowd separation, pushback, vortex pulls): any
+ * standing non-trap footprint sub-tile, walls included. Shares the route grid for the list.
+ */
 export function subtileSolid(buildings: readonly Building[]) {
-  const solid = new Set<number>();
-  for (const b of buildings) {
-    if (b.hp <= 0 || isTrap(b.kind)) continue;
-    const size = BUILDINGS[b.kind].size * SUBTILES;
-    const edge = size === SUBTILES ? 0 : passableSubtilesAtEdge(b);
-    for (let y = b.y * SUBTILES + edge; y < b.y * SUBTILES + size - edge; y++)
-      for (let x = b.x * SUBTILES + edge; x < b.x * SUBTILES + size - edge; x++)
-        solid.add(y * SIZE + x);
-  }
-  return (x: number, y: number) =>
-    solid.has(Math.floor(y * SUBTILES) * SIZE + Math.floor(x * SUBTILES));
+  const grid = gridFor(buildings);
+  const solidBlocked = grid.blocked,
+    solidWall = grid.wall;
+  return (x: number, y: number) => {
+    const n = Math.floor(y * SUBTILES) * SIZE + Math.floor(x * SUBTILES);
+    // Out-of-grid indices read undefined: not solid, exactly like the old Set lookup.
+    return solidBlocked[n] === 1 || solidWall[n] === 1;
+  };
 }
 
 // Reused search buffers: pathfinding is synchronous and each call resets what it reads.
@@ -75,15 +167,8 @@ const cost = new Float64Array(CELLS),
   stamp = new Uint32Array(CELLS);
 let epoch = 0;
 
-/** Neighbor offsets shared by every search instead of allocated per expansion. */
-const DIRS: ReadonlyArray<readonly [number, number]> = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-];
 /** Heap storage reused across searches (synchronous, no reentrancy). */
-const openHeap: number[] = [];
+const openHeap = new Int32Array(CELLS);
 
 const distanceTo = (u: { x: number; y: number }, b: Building | { x: number; y: number }) => {
   const s = 'kind' in b && b.kind in BUILDINGS ? BUILDINGS[(b as Building).kind].size : 0;
@@ -134,102 +219,117 @@ export function findSubtilePath(
   buildings: readonly Building[],
   range: number,
 ): { x: number; y: number }[] {
-  occupy(buildings);
+  const grid = gridFor(buildings);
+  blocked = grid.blocked;
+  wall = grid.wall;
   const sx = Math.max(0, Math.min(SIZE - 1, Math.floor(start.x * SUBTILES))),
     sy = Math.max(0, Math.min(SIZE - 1, Math.floor(start.y * SUBTILES))),
     first = sy * SIZE + sx;
+  const goalSize = 'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
+  // The start point matters only through its cell and whether it is already in range.
+  const far = distanceTo(start, target) > range;
+  const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
+  const known = grid.paths.get(key);
+  if (known) return copyPath(known);
+  const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far);
+  if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
+  grid.paths.set(key, copyPath(path));
+  return path;
+}
+/** Waypoints are fresh objects per caller: units shift and compare them by identity. */
+function copyPath(path: readonly { x: number; y: number }[]) {
+  const copy = new Array<{ x: number; y: number }>(path.length);
+  for (let i = 0; i < path.length; i++) copy[i] = { x: path[i].x, y: path[i].y };
+  return copy;
+}
+function searchSubtilePath(
+  first: number,
+  sx: number,
+  sy: number,
+  target: Building | { x: number; y: number },
+  goalSize: number,
+  range: number,
+  far: boolean,
+): { x: number; y: number }[] {
   if (epoch === 0xffffffff) {
     stamp.fill(0);
     epoch = 0;
   }
   const generation = ++epoch;
-  const fresh = (n: number) => {
-    if (stamp[n] !== generation) {
-      stamp[n] = generation;
-      cost[n] = Infinity;
-      prev[n] = -1;
-      closed[n] = 0;
-      heuristic[n] = NaN;
-      position[n] = -1;
-    }
-  };
-  const open: number[] = openHeap;
-  open.length = 0;
+  // The search below is the original closure-based A* with its helpers inlined: the same
+  // arithmetic in the same order, the same stable heap (priority, then insertion order).
+  const heap = openHeap;
+  let size = 0;
   let sequence = 0;
-  // Plain coordinates, not point objects: center() used to allocate one object
-  // per expanded node plus one per heap entry scored.
-  const centerX = (node: number) => ((node % SIZE) + 0.5) / SUBTILES;
-  const centerY = (node: number) => (Math.floor(node / SIZE) + 0.5) / SUBTILES;
-  const goalSize =
-    'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
-  const distGoal = (hx: number, hy: number) =>
-    distance2D(
-      Math.max(target.x - hx, 0, hx - target.x - goalSize),
-      Math.max(target.y - hy, 0, hy - target.y - goalSize),
-    );
-  const before = (a: number, b: number) =>
-    priority[a] < priority[b] || (priority[a] === priority[b] && order[a] < order[b]);
-  const queue = (node: number) => {
-    if (Number.isNaN(heuristic[node]))
-      heuristic[node] = distGoal(centerX(node), centerY(node));
-    priority[node] = cost[node] + heuristic[node];
-    let at = position[node];
-    if (at < 0) {
-      at = open.length;
-      open.push(node);
-      order[node] = sequence++;
-    }
-    while (at > 0) {
-      const parent = (at - 1) >> 1;
-      if (!before(node, open[parent])) break;
-      open[at] = open[parent];
-      position[open[at]] = at;
-      at = parent;
-    }
-    open[at] = node;
-    position[node] = at;
-  };
-  const take = () => {
-    const node = open[0],
-      last = open.pop()!;
-    position[node] = -1;
-    if (open.length) {
-      let at = 0;
-      while (at * 2 + 1 < open.length) {
-        let child = at * 2 + 1;
-        if (child + 1 < open.length && before(open[child + 1], open[child])) child++;
-        if (!before(open[child], last)) break;
-        open[at] = open[child];
-        position[open[at]] = at;
-        at = child;
-      }
-      open[at] = last;
-      position[last] = at;
-    }
-    return node;
-  };
+  const targetX = target.x,
+    targetY = target.y;
   const step = 1 / SUBTILES;
-  fresh(first);
+  stamp[first] = generation;
+  closed[first] = 0;
+  prev[first] = -1;
   cost[first] = 0;
-  queue(first);
+  {
+    const hx = ((first % SIZE) + 0.5) / SUBTILES,
+      hy = (Math.floor(first / SIZE) + 0.5) / SUBTILES;
+    heuristic[first] = distance2D(
+      Math.max(targetX - hx, 0, hx - targetX - goalSize),
+      Math.max(targetY - hy, 0, hy - targetY - goalSize),
+    );
+  }
+  priority[first] = cost[first] + heuristic[first];
+  order[first] = sequence++;
+  heap[size++] = first;
+  position[first] = 0;
   let goal = -1;
   let approach: { x: number; y: number } | undefined;
-  while (open.length) {
-    const current = take();
+  while (size) {
+    // take(): pop the root, sift the last entry down.
+    const current = heap[0];
+    const last = heap[--size];
+    position[current] = -1;
+    if (size) {
+      const lastPriority = priority[last],
+        lastOrder = order[last];
+      let at = 0;
+      while (at * 2 + 1 < size) {
+        let child = at * 2 + 1;
+        if (child + 1 < size) {
+          const right = heap[child + 1],
+            left = heap[child];
+          if (
+            priority[right] < priority[left] ||
+            (priority[right] === priority[left] && order[right] < order[left])
+          )
+            child++;
+        }
+        const node = heap[child];
+        if (!(
+          priority[node] < lastPriority ||
+          (priority[node] === lastPriority && order[node] < lastOrder)
+        ))
+          break;
+        heap[at] = node;
+        position[node] = at;
+        at = child;
+      }
+      heap[at] = last;
+      position[last] = at;
+    }
     closed[current] = 1;
     const x = current % SIZE,
       y = Math.floor(current / SIZE),
       hx = (x + 0.5) / SUBTILES,
       hy = (y + 0.5) / SUBTILES;
-    if (distGoal(hx, hy) <= range) {
-      if (current === first && distanceTo(start, target) > range) approach = { x: hx, y: hy };
+    // heuristic[current] is distGoal(hx, hy), computed when the node was queued.
+    if (heuristic[current] <= range) {
+      if (current === first && far) approach = { x: hx, y: hy };
       goal = current;
       break;
     }
     if (range < 0.5 && !blocked[current]) {
-      const s = 'kind' in target && target.kind in BUILDINGS ? BUILDINGS[target.kind].size : 0;
-      const tx = Math.max(target.x, Math.min(hx, target.x + s));
-      const ty = Math.max(target.y, Math.min(hy, target.y + s));
+      const s = goalSize;
+      const tx = Math.max(targetX, Math.min(hx, targetX + s));
+      const ty = Math.max(targetY, Math.min(hy, targetY + s));
       const dx = hx - tx,
         dy = hy - ty,
         distance = distance2D(dx, dy);
@@ -245,22 +345,63 @@ export function findSubtilePath(
         break;
       }
     }
-    for (const [dx, dy] of DIRS) {
-      const nx = x + dx,
-        ny = y + dy;
+    const base = cost[current];
+    // Neighbours in the original DIRS order: +x, -x, +y, -y.
+    for (let d = 0; d < 4; d++) {
+      let nx = x,
+        ny = y;
+      if (d === 0) nx++;
+      else if (d === 1) nx--;
+      else if (d === 2) ny++;
+      else ny--;
       if (nx < 0 || ny < 0 || nx >= SIZE || ny >= SIZE) continue;
       const n = ny * SIZE + nx;
       if (blocked[n]) continue;
-      fresh(n);
-      if (closed[n]) continue;
-      const next = cost[current] + step + (wall[n] ? 6 * step : 0);
+      if (stamp[n] !== generation) {
+        stamp[n] = generation;
+        cost[n] = Infinity;
+        prev[n] = -1;
+        closed[n] = 0;
+        heuristic[n] = NaN;
+        position[n] = -1;
+      } else if (closed[n]) continue;
+      const next = base + step + (wall[n] ? 6 * step : 0);
       if (next < cost[n]) {
         cost[n] = next;
         prev[n] = current;
-        queue(n);
+        // queue(n): score, then insert or decrease-key with a sift up.
+        if (Number.isNaN(heuristic[n])) {
+          const cx = (nx + 0.5) / SUBTILES,
+            cy = (ny + 0.5) / SUBTILES;
+          heuristic[n] = distance2D(
+            Math.max(targetX - cx, 0, cx - targetX - goalSize),
+            Math.max(targetY - cy, 0, cy - targetY - goalSize),
+          );
+        }
+        const score = next + heuristic[n];
+        priority[n] = score;
+        let at = position[n];
+        if (at < 0) {
+          at = size++;
+          order[n] = sequence++;
+        }
+        const nodeOrder = order[n];
+        while (at > 0) {
+          const parent = (at - 1) >> 1;
+          const above = heap[parent];
+          if (!(score < priority[above] || (score === priority[above] && nodeOrder < order[above])))
+            break;
+          heap[at] = above;
+          position[above] = at;
+          at = parent;
+        }
+        heap[at] = n;
+        position[n] = at;
       }
     }
   }
+  const centerX = (node: number) => ((node % SIZE) + 0.5) / SUBTILES;
+  const centerY = (node: number) => (Math.floor(node / SIZE) + 0.5) / SUBTILES;
   if (goal < 0) return [];
   // `LogicPathFinderNew.FindPath`: a clear sight line replaces the searched route with a single
   // straight walk to its end point, so open ground is crossed directly rather than in steps.

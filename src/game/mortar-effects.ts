@@ -1,7 +1,7 @@
 import raw from '../../reference/mortar/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
-import { MORTAR_GRAPH, mortarProjectilePose } from './mortar-poses';
+import { MORTAR_GRAPH, mortarFlightPoint } from './mortar-poses';
 import { mortarProjectileRow } from './mortar-stats';
 import type { MortarShot } from './mortar-attack';
 import { MORTAR_ART } from './mortar-art';
@@ -106,7 +106,7 @@ export function mortarTrailPoses(
     i++
   ) {
     const at = shot.launched + i * interval,
-      point = mortarProjectilePose(shot.level, shot, at, iso);
+      point = mortarFlightPoint(shot.level, shot, at, iso);
     const pose = particle(
       `${shot.sourceId}:trail:${shot.index}:${i}`,
       name,

@@ -9,6 +9,8 @@ import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
+import { recordBootResources, registerOfflineSupport } from './offline';
+recordBootResources();
 async function boot() {
   const releaseSession = await acquireVillage();
   try {
@@ -65,9 +67,12 @@ async function boot() {
         return;
       }
       // Battles mutate revision every step and collectors bump it every second:
-      // persist at most every 5s everywhere so full clone+stringify stays off the hot path.
-      // A forced persist (tab hidden) skips the time window but keeps the in-flight guard.
+      // persist at most every 5s so the full stringify stays off the hot path.
+      // During an attack or replay only transient battle state changes, so timed
+      // saves wait for the battle to settle (see the economy timer); a forced persist
+      // (tab hidden, battle finished) skips both gates but keeps the in-flight guard.
       const now = Date.now();
+      if (!force && (model.battle || model.replay)) return;
       if (!force && now - lastPersistAt < 5000) return;
       saving = true;
       try {
@@ -86,9 +91,17 @@ async function boot() {
         }
       }
     };
+    // 'none' | 'active' | 'finished': a finished raid's result and the return home
+    // are written as soon as they happen rather than on the next timed save.
+    const battlePhase = () =>
+      !model.battle ? 'none' : model.battle.finished ? 'finished' : 'active';
+    let lastBattlePhase = battlePhase();
     const economyTimer = setInterval(() => {
       model.tick(Date.now());
-      void persist();
+      const phase = battlePhase();
+      const settled = phase !== lastBattlePhase && phase !== 'active';
+      lastBattlePhase = phase;
+      void persist(settled);
     }, 1000);
     window.addEventListener('pagehide', () => {
       audio.samples.stop();
@@ -121,6 +134,8 @@ async function boot() {
     scene.onReady = () => {
       hud.showMapUpgrade();
       void saveGame(model.state);
+      // After the boot preload, on idle: the worker install must not compete with it.
+      if (!import.meta.env.DEV) registerOfflineSupport();
     };
     // Structured browser QA surface; no renderer internals in saved data.
     const debug = { model, scene, game, hud, audio };
@@ -249,8 +264,6 @@ async function boot() {
       const { installDeveloperTools } = await import('./dev/panel');
       installDeveloperTools(model, scene);
     }
-    if ('serviceWorker' in navigator && !import.meta.env.DEV)
-      void navigator.serviceWorker.register('/sw.js').catch((error) => console.warn(error));
   } catch (error) {
     releaseSession();
     throw error;

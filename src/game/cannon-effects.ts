@@ -101,8 +101,15 @@ export function cannonTrailPoses(
   const name = cannonProjectileRow(shot.level).ParticleEmitter;
   if (!name) return [];
   const rows = CANNON_EMITTERS[name],
-    result: NativeParticlePose[] = [];
-  for (const birth of shot.trail) {
+    result: NativeParticlePose[] = [],
+    life = n(rows[0], 'MaxLife') / 1000;
+  // Births are recorded in time order. Walk back from the newest and stop at the first one
+  // past the longest particle life: expired births build no key, point or random closure.
+  let first = shot.trail.length;
+  while (first > 0 && elapsed - shot.trail[first - 1].at < life) first--;
+  for (let i = first; i < shot.trail.length; i++) {
+    const birth = shot.trail[i];
+    if (birth.at > elapsed) break;
     const pose = particle(
       `${shot.sourceId}:trail:${shot.index}:${birth.index}`,
       name,

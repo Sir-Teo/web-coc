@@ -60,21 +60,66 @@ export function battleTrapStats(trap: Pick<Building, 'kind' | 'level' | 'npc'>, 
   return base;
 }
 
+/** Native-engine home traps (version 51+): stepped by `stepNativeTrap`, not below. */
+const nativeOwnedTrap = (battle: Battle, trap: Building) =>
+  !!battle.nativeRoster &&
+  !trap.npc &&
+  battle.catalog !== 'goblin-v1' &&
+  (trap.kind === 'tornadotrap' || trap.kind === 'gigabomb');
+/**
+ * The buildings stepTraps can act on, in list order, with their battle stats. Everything
+ * else (walls, defenses, late family traps) is skipped by the loop without side effects.
+ * Stats depend only on the trap row and the battle's catalog flags, so one row per battle
+ * replaces a freshly spread object per trap per tick.
+ */
+interface TrapIndex {
+  buildings: Building[];
+  length: number;
+  traps: { trap: Building; stats: ReturnType<typeof battleTrapStats> | null }[];
+}
+const trapIndexes = new WeakMap<Battle, TrapIndex>();
+function trapIndex(battle: Battle): TrapIndex {
+  const known = trapIndexes.get(battle);
+  if (known && known.buildings === battle.buildings && known.length === battle.buildings.length)
+    return known;
+  const traps: TrapIndex['traps'] = [];
+  for (const trap of battle.buildings) {
+    if (nativeOwnedTrap(battle, trap)) traps.push({ trap, stats: null });
+    else if (!isLateBuilding(trap) && battleTrapStats(trap, battle))
+      traps.push({ trap, stats: battleTrapStats(trap, battle) });
+  }
+  const index = { buildings: battle.buildings, length: battle.buildings.length, traps };
+  trapIndexes.set(battle, index);
+  return index;
+}
 export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) {
   if (battle.finished) return false;
   let changed = false;
-  const unitById = new Map(battle.units.map((u) => [u.id, u]));
+  // Id lookup over the units present when the phase began (built on first use: most ticks
+  // have no armed homing, air or spring trap to resolve).
+  const unitsAtStart = battle.units,
+    unitCount = unitsAtStart.length;
+  let units: Map<number, Unit> | undefined;
+  const unitById = (id: number) => {
+    if (!units) {
+      units = new Map();
+      for (let i = 0; i < unitCount; i++) units.set(unitsAtStart[i].id, unitsAtStart[i]);
+    }
+    return units.get(id);
+  };
   // Unit position grid for trigger searches: every unresolved trap scans for units
   // in its trigger circle each tick. Refs are shared so eligibility stays live;
   // only positions can go stale. In-phase movers (bomb fling, native tornado
   // pulls) clear it so later traps rebuild from live positions.
   const CELL = 4;
-  let grid: Map<string, Unit[]> | null = null;
+  // Numeric cell keys; units stay within a few tiles of the 48-tile map.
+  const cellKey = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
+  let grid: Map<number, Unit[]> | null = null;
   const ensureGrid = () => {
     if (grid) return grid;
     grid = new Map();
     for (const u of battle.units) {
-      const key = `${Math.floor(u.x / CELL)},${Math.floor(u.y / CELL)}`;
+      const key = cellKey(Math.floor(u.x / CELL), Math.floor(u.y / CELL));
       let list = grid.get(key);
       if (!list) grid.set(key, (list = []));
       list.push(u);
@@ -86,20 +131,15 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     const out: Unit[] = [];
     for (let cx = Math.floor((x - r) / CELL); cx <= Math.floor((x + r) / CELL); cx++)
       for (let cy = Math.floor((y - r) / CELL); cy <= Math.floor((y + r) / CELL); cy++) {
-        const list = g.get(`${cx},${cy}`);
-        if (list) out.push(...list);
+        const list = g.get(cellKey(cx, cy));
+        if (list) for (const u of list) out.push(u);
       }
     return out;
   };
-  for (const trap of battle.buildings) {
+  for (const { trap, stats } of trapIndex(battle).traps) {
     // From version 51 the native engine owns the Town Hall 11+ traps at home. A campaign
     // layout's own traps stay with the late family that has always stepped them.
-    if (
-      battle.nativeRoster &&
-      !trap.npc &&
-      battle.catalog !== 'goblin-v1' &&
-      (trap.kind === 'tornadotrap' || trap.kind === 'gigabomb')
-    ) {
+    if (stats === null) {
       if (!trap.constructing && !trap.upgradeEnd) {
         if (stepNativeTrap(battle, trap, effect)) {
           changed = true;
@@ -109,13 +149,10 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
       }
       continue;
     }
-    // Late campaign traps trigger in their own family phase.
-    if (isLateBuilding(trap)) continue;
-    // Cheap state checks before allocating stats rows for already-fired traps.
+    // Late campaign traps trigger in their own family phase (never indexed).
     let state = battle.traps[trap.id];
     if (trap.constructing || trap.upgradeEnd || state?.resolved) continue;
-    const d = battleTrapStats(trap, battle);
-    if (!d) continue;
+    const d = stats!;
     const mode = trap.kind === 'skeletontrap' ? (trap.skeletonMode ?? 'ground') : d.targets;
     const center = {
       x: trap.x + BUILDINGS[trap.kind].size / 2,
@@ -198,7 +235,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     if (d.homingSpeed) {
       const flight = (state.mine ??= { trail: [], nextTrail: 0 });
       // A mine follows one live air target; loss of that target consumes the shot.
-      const homing = unitById.get(state.targetId);
+      const homing = unitById(state.targetId);
       const target = homing && eligible(homing) ? homing : undefined;
       if (!target) {
         state.resolved = true;
@@ -260,7 +297,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     }
     if (d.targets === 'air') {
       if (battle.elapsed + 1e-9 < state.activatedAt + d.delay) continue;
-      const target = unitById.get(state.targetId);
+      const target = unitById(state.targetId);
       if (target) {
         const remaining = Math.max(dt, state.activatedAt + d.delay - battle.elapsed + dt);
         const fraction = Math.min(1, dt / remaining);
@@ -273,7 +310,7 @@ export function stepTraps(battle: Battle, dt: number, effect: (fx: FX) => void) 
     changed = true;
     const power = d.damage;
     if (d.springCapacity) {
-      const springing = unitById.get(state.targetId);
+      const springing = unitById(state.targetId);
       const target = springing && eligible(springing) ? springing : undefined;
       if (!target) continue;
       const outcome = target.hero

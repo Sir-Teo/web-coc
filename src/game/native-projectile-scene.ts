@@ -35,7 +35,16 @@ interface Snapshot {
   fromAir?: boolean;
   toAir?: boolean;
   piercing?: { dirX: number; dirY: number; length: number; speed: number };
+  /** Piercing shots: snapshot and line merged once for nativePiercingFlight. */
+  line?: Parameters<typeof nativePiercingFlight>[1];
+  /** Projected launch and landing points (the flight never changes once recorded). */
+  launchPoint?: Point;
+  landing?: Point;
+  landingAt?: number;
 }
+
+/** World pixels around the camera view within which shots are still sampled and drawn. */
+const SHOT_MARGIN = 360;
 
 /**
  * Draws client projectile rows with their original flight art, shadow, trail emitter and
@@ -92,6 +101,11 @@ export class NativeProjectilePresentation {
     entry.view.render(poses, x, y, depth);
     return key;
   }
+  /** False once a one-shot effect started at `at` has certainly finished drawing. */
+  private running(effect: string, at: number, elapsed: number) {
+    const duration = this.layer.duration(effect);
+    return duration === undefined || elapsed - at <= duration + 1e-6;
+  }
   render(
     battle: Battle | null,
     reduced: boolean,
@@ -114,11 +128,23 @@ export class NativeProjectilePresentation {
     }
     for (const p of battle.projectiles ?? []) {
       if (p.weapon !== 'native' || !p.native) continue;
+      const known = this.history.get(p.id);
+      // Recorded shots are immutable; keep the snapshot and its cached flight points.
+      if (
+        known &&
+        known.launched === p.launched &&
+        known.impact === p.impact &&
+        known.x === p.x &&
+        known.y === p.y
+      )
+        continue;
       const packPath = nativeProjectilePack(p.native.name);
       if (!packPath) continue;
       this.history.set(p.id, snapshot(p, packPath));
     }
     for (const shot of battle.nativePiercing ?? []) {
+      const seen = this.history.get(`pierce:${shot.id}`);
+      if (seen?.launched === shot.launched && seen.piercing?.length === shot.length) continue;
       const tower = battle.buildings.find((b) => b.id === shot.sourceId);
       const name = tower ? weaponFor(tower)?.projectile : undefined;
       const packPath = nativeProjectilePack(name);
@@ -146,17 +172,31 @@ export class NativeProjectilePresentation {
       const resolved = this.row(snap);
       if (!resolved?.row) continue;
       const { pack, row } = resolved;
-      const flight = snap.piercing
-        ? nativePiercingFlight(row, { ...snap, ...snap.piercing }, elapsed, iso)
-        : nativeProjectileFlight(row, snap, elapsed, { iso, airLift });
+      const line = snap.piercing ? (snap.line ??= { ...snap, ...snap.piercing }) : undefined;
+      const options = { iso, airLift };
+      const flightAt = (time: number) =>
+        line
+          ? nativePiercingFlight(row, line, time, iso)
+          : nativeProjectileFlight(row, snap, time, options);
+      const flight = flightAt(elapsed);
       covered.add(id);
       const facing = flight.direction;
       const pointAt = (time: number) => {
-        const at = snap.piercing
-          ? nativePiercingFlight(row, { ...snap, ...snap.piercing }, time, iso)
-          : nativeProjectileFlight(row, snap, time, { iso, airLift });
+        const at = flightAt(time);
         return { x: at.x, y: at.y };
       };
+      const launchPoint = (snap.launchPoint ??= pointAt(snap.launched));
+      if (snap.landingAt !== flight.end) {
+        snap.landing = pointAt(flight.end);
+        snap.landingAt = flight.end;
+      }
+      const landing = snap.landing!;
+      // Off-screen shots keep their history (and coverage) but are neither sampled nor drawn.
+      if (
+        !this.layer.spans(launchPoint, landing, SHOT_MARGIN) &&
+        !this.layer.visible(flight.x, flight.y, SHOT_MARGIN)
+      )
+        continue;
       const span = { launched: snap.launched, end: flight.end };
       if (elapsed <= flight.end) {
         const art = nativeProjectilePoses(pack, row, flight, elapsed, snap.launched);
@@ -205,8 +245,7 @@ export class NativeProjectilePresentation {
           facing,
           FLIGHT_DEPTH - 1,
         );
-      const launchPoint = pointAt(snap.launched);
-      if (row.SpawnEffect)
+      if (row.SpawnEffect && this.running(row.SpawnEffect, snap.launched, elapsed))
         this.layer.play(
           {
             key: `${id}:spawn`,
@@ -218,7 +257,11 @@ export class NativeProjectilePresentation {
           elapsed,
           reduced,
         );
-      if (snap.bounce > 0 && row.BounceEffect)
+      if (
+        snap.bounce > 0 &&
+        row.BounceEffect &&
+        this.running(row.BounceEffect, snap.launched, elapsed)
+      )
         this.layer.play(
           {
             key: `${id}:bounce`,
@@ -230,8 +273,11 @@ export class NativeProjectilePresentation {
           elapsed,
           reduced,
         );
-      if (row.DestroyedEffect && elapsed >= flight.end) {
-        const landing = pointAt(flight.end);
+      if (
+        row.DestroyedEffect &&
+        elapsed >= flight.end &&
+        this.running(row.DestroyedEffect, flight.end, elapsed)
+      ) {
         this.layer.play(
           {
             key: `${id}:hit`,

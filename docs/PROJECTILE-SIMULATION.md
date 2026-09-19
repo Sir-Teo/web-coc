@@ -21,7 +21,7 @@ These values are local game tuning, not verified live Clash of Clans statistics:
 | Arcane shot | 16 tiles/second |
 | Balloon bomb | 0.33 seconds, accelerating visually downward |
 
-Other shots have a minimum flight of 0.12 seconds. Direct homing shots use the launch distance to set their arrival time. The current simulation runs at 50 ms intervals during live play. Its renderer shares that clock; this pass does not introduce sub-step interpolation or certify exact live-game attack speed, splash radii, or targeting rules. The subsequent [Balloon bomb pass](BALLOON-BOMBS.md) adds attack splash; dedicated directional attack animation remains open.
+Other shots have a minimum flight of 0.12 seconds. Direct homing shots use the launch distance to set their arrival time. The current simulation runs at 50 ms intervals during live play. Its renderer shares that clock for shots and effects; unit and defender positions are drawn interpolated between the last two steps (`src/game/render-interpolation.ts`, presentation only, never fed back into the simulation or replays). This pass does not certify exact live-game attack speed, splash radii, or targeting rules. The subsequent [Balloon bomb pass](BALLOON-BOMBS.md) adds attack splash; dedicated directional attack animation remains open.
 
 ## Verification
 

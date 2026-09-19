@@ -35,9 +35,20 @@ export interface NativeEffectEvent {
   depth?: number;
 }
 
+/** Parsed numeric columns per (static) row; NaN marks blank or non-numeric cells. */
+const numbers = new WeakMap<NativeRow, Map<string, number>>();
 const n = (row: NativeRow | undefined, key: string, fallback = 0) => {
-  const value = Number(row?.[key]);
-  return row?.[key] === undefined || row[key] === '' || !Number.isFinite(value) ? fallback : value;
+  if (!row) return fallback;
+  let parsed = numbers.get(row);
+  if (!parsed) numbers.set(row, (parsed = new Map()));
+  let value = parsed.get(key);
+  if (value === undefined) {
+    const raw = row[key];
+    const number = Number(raw);
+    value = raw === undefined || raw === '' || !Number.isFinite(number) ? NaN : number;
+    parsed.set(key, value);
+  }
+  return value !== value ? fallback : value;
 };
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -50,7 +61,13 @@ export function nativeEffectSeed(key: string) {
 }
 
 /** Continuation rows only declare changed columns; everything but emitter/export identity inherits. */
+const effectRows = new WeakMap<readonly NativeRow[], NativeRow[]>();
 export function nativeEffectRow(rows: readonly NativeRow[], index: number): NativeRow {
+  let merged = effectRows.get(rows);
+  if (!merged) effectRows.set(rows, (merged = []));
+  return (merged[index] ??= mergeEffectRow(rows, index));
+}
+function mergeEffectRow(rows: readonly NativeRow[], index: number): NativeRow {
   const own = rows[index];
   const inherited = { ...rows[0], ...own };
   for (const key of [
@@ -196,11 +213,22 @@ function stretchedParticle(
         add: [0, 0, 0, 0],
       },
     ];
-  return poses.map((p) => ({ ...p, multiply: [...p.multiply.slice(0, 3), p.multiply[3] * alpha] }));
+  return alpha === 1 ? poses : withAlpha(poses, alpha);
+}
+
+/** Variant rows inherit the emitter's first row; merged once per (emitter, variant). */
+const variants = new WeakMap<readonly NativeRow[], NativeRow[]>();
+function emitterVariant(emitter: readonly NativeRow[], index: number): NativeRow {
+  let merged = variants.get(emitter);
+  if (!merged) variants.set(emitter, (merged = []));
+  return (merged[index] ??= { ...emitter[0], ...(emitter[index] ?? emitter[0]) });
 }
 
 const withAlpha = (poses: NativeScenePose[], alpha: number): NativeScenePose[] =>
-  poses.map((p) => ({ ...p, multiply: [...p.multiply.slice(0, 3), p.multiply[3] * alpha] }));
+  poses.map((p) => ({
+    ...p,
+    multiply: [p.multiply[0], p.multiply[1], p.multiply[2], p.multiply[3] * alpha],
+  }));
 
 /** Particle birth ages at `age` since emission start; looping rows keep emitting until `stop`. */
 export function nativeBirths(
@@ -299,8 +327,7 @@ export function nativeEffectPoses(
     const ending = after > 0 ? 1 - after / fade : 1;
     for (const birth of nativeBirths(emitter[0], age, looping, stop)) {
       const random = (slot: number) => visualRandom(seed, birth.index, index * 1000 + slot);
-      const variant = emitter[Math.floor(random(1) * emitter.length)] ?? emitter[0];
-      const config: NativeRow = { ...emitter[0], ...variant };
+      const config = emitterVariant(emitter, Math.floor(random(1) * emitter.length));
       const graph = pack.scenes[nativeSceneId(config.ParticleSwf)];
       const exportName = config.ParticleExportName;
       if (!graph || graph.exports[exportName] === undefined) continue;
@@ -358,7 +385,15 @@ export function nativeEffectPoses(
 }
 
 /** Longest time an effect record can keep drawing after it starts (non-looping rows). */
+const durations = new WeakMap<NativeArtPack, Map<string, number>>();
 export function nativeEffectDuration(pack: NativeArtPack, effect: string) {
+  let cache = durations.get(pack);
+  if (!cache) durations.set(pack, (cache = new Map()));
+  let duration = cache.get(effect);
+  if (duration === undefined) cache.set(effect, (duration = effectDuration(pack, effect)));
+  return duration;
+}
+function effectDuration(pack: NativeArtPack, effect: string) {
   let longest = 0;
   const rows = pack.effects[effect] ?? [];
   for (const index of rows.keys()) {
@@ -401,8 +436,7 @@ export function nativeTrailPoses(
   const result: NativeEffectPose[] = [];
   for (const birth of births) {
     const random = (slot: number) => visualRandom(seed, birth.index, slot);
-    const variant = emitter[Math.floor(random(1) * emitter.length)] ?? emitter[0];
-    const config: NativeRow = { ...emitter[0], ...variant };
+    const config = emitterVariant(emitter, Math.floor(random(1) * emitter.length));
     const graph = pack.scenes[nativeSceneId(config.ParticleSwf)];
     if (!graph || graph.exports[config.ParticleExportName] === undefined) continue;
     const pose = sampler(graph, NATIVE_ART_SCALE)(

@@ -425,6 +425,117 @@ const TUTORIAL: {
     done: (m) => m.state.stats.raids > 0,
   },
 ];
+/**
+ * A focused control, identified in a way that survives an innerHTML rebuild:
+ * by id, or by its data-action plus its position among controls sharing it
+ * (the Army drawer and quest list repeat the same action several times).
+ */
+type FocusMark = {
+  id?: string;
+  action?: string;
+  index: number;
+  selection?: [number, number, 'forward' | 'backward' | 'none'];
+};
+function focusMark(el: Element | null): FocusMark | null {
+  if (!(el instanceof HTMLElement) || el === document.body) return null;
+  let selection: FocusMark['selection'];
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    try {
+      if (el.selectionStart !== null && el.selectionEnd !== null)
+        selection = [el.selectionStart, el.selectionEnd, el.selectionDirection ?? 'none'];
+    } catch {
+      /* Range and other inputs have no caret. */
+    }
+  }
+  if (el.id) return { id: el.id, index: 0, selection };
+  const action = el.dataset.action;
+  if (!action) return null;
+  const same = Array.from(document.querySelectorAll<HTMLElement>('[data-action]')).filter(
+    (other) => other.dataset.action === action,
+  );
+  return { action, index: Math.max(0, same.indexOf(el)), selection };
+}
+function restoreFocusMark(mark: FocusMark | null) {
+  if (!mark) return;
+  let el: HTMLElement | undefined;
+  if (mark.id) el = document.getElementById(mark.id) ?? undefined;
+  else if (mark.action) {
+    const same = Array.from(document.querySelectorAll<HTMLElement>('[data-action]')).filter(
+      (other) => other.dataset.action === mark.action,
+    );
+    el = same[mark.index] ?? same[0];
+  }
+  if (!el || el === document.activeElement) return;
+  el.focus({ preventScroll: true });
+  if (mark.selection && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+    try {
+      el.setSelectionRange(...mark.selection);
+    } catch {
+      /* Not a text control. */
+    }
+}
+/** Drawer markup split at its stable structure, so an update can replace single tiles. */
+type DrawerParts = { open: string; head: string; body: string; items: string[]; foot: string };
+/** Elements updateLive() patches, looked up once per rebuild instead of every 250 ms. */
+type LiveRefs = {
+  heroTimers: HTMLElement[];
+  heroGems: HTMLElement[];
+  petTimers: HTMLElement[];
+  petGems: HTMLElement[];
+  nativeHeroCards: HTMLElement[];
+  legacyHeroCard: HTMLElement | null;
+  trayButtons: HTMLButtonElement[];
+  deployLabel: HTMLElement | null;
+  resources: HTMLElement[];
+  obstacleTimes: HTMLElement[];
+  upgrades: HTMLElement[];
+  finishes: HTMLElement[];
+  research: HTMLElement | null;
+  researchCost: HTMLElement | null;
+  queue: HTMLElement | null;
+  replayTime: HTMLElement | null;
+  replayProgress: HTMLInputElement | null;
+  battleTimer: HTMLElement | null;
+  destructionValue: HTMLElement | null;
+  destructionFill: HTMLElement | null;
+  battleStars: HTMLElement | null;
+  loot: Map<string, HTMLElement>;
+  lootBars: Map<string, HTMLElement>;
+};
+/** Sets text only when it differs, so unchanged values cost no DOM mutation. */
+function setText(el: Element | null | undefined, text: string) {
+  if (el && el.textContent !== text) el.textContent = text;
+}
+/** Horizontal fill as a compositor-only transform instead of a layout-triggering width. */
+const fillScale = (percent: number) =>
+  `scaleX(${(Math.max(0, Math.min(100, Number.isNaN(percent) ? 0 : percent)) / 100).toFixed(4)})`;
+/** Static per-stage data, computed once on first use rather than on every render. */
+let campaignPendingCache: boolean[] | null = null;
+const campaignPending = (index: number) =>
+  (campaignPendingCache ??= NATIVE_CAMPAIGN.map((_, i) => nativeCampaignIssues(i).length > 0))[
+    index
+  ];
+let campaignMapCache: string[] | null = null;
+/** The minimap SVG, rendered once per stage into an image URL instead of inline DOM. */
+function campaignMapSource(index: number) {
+  campaignMapCache ??= [];
+  let url = campaignMapCache[index];
+  if (url) return url;
+  const v = NATIVE_CAMPAIGN[index];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="3" fill="#637d43"/>${v.buildings
+    .filter(([id]) => id !== 1000019)
+    .map(
+      ([id, x, y]) =>
+        `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 || id === 1000017 || id === 1000069 ? '#f3c346' : '#e0cf97'}"/>`,
+    )
+    .join('')}</svg>`;
+  url =
+    typeof URL.createObjectURL === 'function' && typeof Blob === 'function'
+      ? URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+      : `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  campaignMapCache[index] = url;
+  return url;
+}
 export class HUD {
   private root: HTMLElement;
   private panel: Panel = null;
@@ -449,14 +560,33 @@ export class HUD {
   private contextMarkup = '';
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
-  private focusBefore: HTMLElement | null = null;
+  private focusBefore: FocusMark | null = null;
   private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
   private actionSource: HTMLElement | null = null;
   private dragging = false;
   private liveTimer: ReturnType<typeof setInterval> | undefined;
   private lastAnchorLeft = -1;
   private lastAnchorTop = -1;
+  /** The card the last anchor position was written to; a rebuilt card must be placed again. */
+  private anchorCard: HTMLElement | null = null;
   private replayScrubbing = false;
+  /** When the replay slider last reported an input; the live clock leaves it alone briefly. */
+  private replayInputAt = -Infinity;
+  private rafId = 0;
+  /** Which drawer the current #drawer markup shows, so an update does not replay its slide-in. */
+  private renderedDrawer: Drawer = null;
+  /** The pieces of the latest drawer markup, and those of the markup now in the DOM. */
+  private drawerParts: DrawerParts | null = null;
+  private renderedDrawerParts: DrawerParts | null = null;
+  /** Every document/window listener is registered against this and removed by destroy(). */
+  private readonly listeners = new AbortController();
+  /** Element references used by updateLive(); dropped whenever a region is rebuilt. */
+  private liveRefs: LiveRefs | null = null;
+  private safeInsets: { top: number; right: number; bottom: number; left: number } | null = null;
+  private readonly hudEl: HTMLElement;
+  private readonly contextEl: HTMLElement;
+  private readonly drawerEl: HTMLElement;
+  private readonly modalEl: HTMLElement;
   constructor(
     private model: GameModel,
     private scene: VillageScene,
@@ -464,71 +594,105 @@ export class HUD {
   ) {
     this.root = document.querySelector('#ui')!;
     this.root.innerHTML =
-      '<div id="hud"></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
-    this.root.addEventListener('click', (e) => {
-      const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
-      if (target && !(target as HTMLButtonElement).disabled) {
-        this.audio.play('click');
-        this.actionSource = target;
-        try {
-          this.action(target.dataset.action!);
-        } finally {
-          this.actionSource = null;
+      '<div id="hud"></div><div id="coach-ring" aria-hidden="true" hidden></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><div id="safe-probe" aria-hidden="true"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
+    this.hudEl = this.root.querySelector<HTMLElement>('#hud')!;
+    this.contextEl = this.root.querySelector<HTMLElement>('#context')!;
+    this.drawerEl = this.root.querySelector<HTMLElement>('#drawer')!;
+    this.modalEl = this.root.querySelector<HTMLElement>('#modal-root')!;
+    const signal = this.listeners.signal;
+    this.root.addEventListener(
+      'click',
+      (e) => {
+        const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+        if (target && !(target as HTMLButtonElement).disabled) {
+          this.audio.play('click');
+          this.actionSource = target;
+          try {
+            this.action(target.dataset.action!);
+          } finally {
+            this.actionSource = null;
+          }
         }
-      }
-    });
-    this.root.addEventListener('pointerdown', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-action]')) this.pressedActions.add(e.pointerId);
-      if (target.id === 'replay-progress' && this.model.replay) {
-        this.replayScrubbing = true;
-        this.model.replay.paused = true;
-      }
-      const card = target.closest<HTMLElement>('[data-drag]');
-      // The price button is a tap target; everything else on the tile is a drag handle.
-      if (card && !target.closest('button') && e.isPrimary)
-        this.beginDrawerDrag(card.dataset.drag as BuildingKind, e);
-    });
+      },
+      { signal },
+    );
+    this.root.addEventListener(
+      'pointerdown',
+      (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-action]')) this.pressedActions.add(e.pointerId);
+        if (target.id === 'replay-progress' && this.model.replay) {
+          this.replayScrubbing = true;
+          this.model.replay.paused = true;
+        }
+        const card = target.closest<HTMLElement>('[data-drag]');
+        // The price button is a tap target; everything else on the tile is a drag handle.
+        if (card && !target.closest('button') && e.isPrimary)
+          this.beginDrawerDrag(card.dataset.drag as BuildingKind, e);
+      },
+      { signal },
+    );
     const finishScrub = () => {
       if (!this.replayScrubbing) return;
       this.replayScrubbing = false;
       this.scheduleRender();
     };
-    document.addEventListener('pointerup', finishScrub);
-    document.addEventListener('pointercancel', finishScrub);
+    document.addEventListener('pointerup', finishScrub, { signal });
+    document.addEventListener('pointercancel', finishScrub, { signal });
     const releaseAction = (e: PointerEvent) => {
       this.pressedActions.delete(e.pointerId);
       // The browser dispatches click after pointerup; render on the next frame.
       if (!this.pressedActions.size && this.renderPending) this.scheduleRender();
     };
-    document.addEventListener('pointerup', releaseAction);
-    document.addEventListener('pointercancel', releaseAction);
-    window.addEventListener('blur', () => {
-      this.pressedActions.clear();
-      if (this.renderPending) this.scheduleRender();
-    });
-    this.root.addEventListener('change', (e) => {
-      const t = e.target as HTMLInputElement;
-      if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
-      if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
-      if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
-    });
-    this.root.addEventListener('input', (e) => {
-      const t = e.target as HTMLInputElement;
-      if (t.id === 'replay-progress' && this.model.replay) {
-        // Keep the slider mounted while the pointer or keyboard changes its value.
-        this.model.replay.paused = true;
-        const time = document.querySelector('#replay-time');
-        if (time)
-          time.textContent = `${clock(Number(t.value))} / ${clock(this.model.replay.duration)}`;
-        t.setAttribute('aria-valuetext', clock(Number(t.value)));
-        const status = document.querySelector('.replay-status strong');
-        if (status) status.textContent = 'Replay paused';
-      }
-      if (t.id.startsWith('preset-name-'))
-        this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
-    });
-    document.addEventListener('keydown', (e) => this.keydown(e));
+    document.addEventListener('pointerup', releaseAction, { signal });
+    document.addEventListener('pointercancel', releaseAction, { signal });
+    window.addEventListener(
+      'blur',
+      () => {
+        this.pressedActions.clear();
+        if (this.renderPending) this.scheduleRender();
+      },
+      { signal },
+    );
+    window.addEventListener(
+      'resize',
+      () => {
+        this.safeInsets = null;
+        this.markCoachTarget();
+      },
+      { signal },
+    );
+    this.root.addEventListener(
+      'change',
+      (e) => {
+        const t = e.target as HTMLInputElement;
+        if (t.id === 'import-file' && t.files?.[0]) void this.import(t.files[0]);
+        if (t.id === 'import-replay-file' && t.files?.[0]) void this.importReplay(t.files[0]);
+        if (t.id === 'replay-progress') this.model.seekReplay(Number(t.value));
+      },
+      { signal },
+    );
+    this.root.addEventListener(
+      'input',
+      (e) => {
+        const t = e.target as HTMLInputElement;
+        if (t.id === 'replay-progress' && this.model.replay) {
+          // Keep the slider mounted while the pointer or keyboard changes its value.
+          this.model.replay.paused = true;
+          this.replayInputAt = performance.now();
+          const time = document.querySelector('#replay-time');
+          if (time)
+            time.textContent = `${clock(Number(t.value))} / ${clock(this.model.replay.duration)}`;
+          t.setAttribute('aria-valuetext', clock(Number(t.value)));
+          const status = document.querySelector('.replay-status strong');
+          if (status) status.textContent = 'Replay paused';
+        }
+        if (t.id.startsWith('preset-name-'))
+          this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
+      },
+      { signal },
+    );
+    document.addEventListener('keydown', (e) => this.keydown(e), { signal });
     model.onChange = (passive) => (passive ? this.updateLive() : this.scheduleRender());
     model.onToast = (m) => this.toast(m);
     scene.onSelect = () => {
@@ -542,12 +706,15 @@ export class HUD {
   }
   destroy() {
     if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
-    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    if (this.raf) cancelAnimationFrame(this.rafId);
+    this.raf = false;
+    this.listeners.abort();
+    this.scene.events?.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
   }
   private scheduleRender() {
     if (this.raf) return;
     this.raf = true;
-    requestAnimationFrame(() => {
+    this.rafId = requestAnimationFrame(() => {
       this.raf = false;
       this.render();
     });
@@ -556,15 +723,40 @@ export class HUD {
   private trackAnchor() {
     // Reposition on Phaser's post-update, in the same frame after the camera
     // moved. A standalone rAF loop races Phaser's own frame and trails by one.
-    this.positionContext();
-    this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    // The HUD is built before Phaser boots the scene, so `events` may not exist yet.
+    this.scene.whenBooted(() => {
+      this.positionContext();
+      this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
+    });
+  }
+  /** env(safe-area-inset-*) in pixels, read from a probe element and refreshed on resize. */
+  private insets() {
+    if (!this.safeInsets) {
+      const probe = this.root.querySelector<HTMLElement>('#safe-probe');
+      const style = probe ? getComputedStyle(probe) : null;
+      const px = (v?: string) => parseFloat(v ?? '') || 0;
+      this.safeInsets = {
+        top: px(style?.paddingTop),
+        right: px(style?.paddingRight),
+        bottom: px(style?.paddingBottom),
+        left: px(style?.paddingLeft),
+      };
+    }
+    return this.safeInsets;
   }
   positionContext() {
-    const card = document.querySelector<HTMLElement>('.building-context[data-anchor]');
+    const card = this.contextEl.querySelector<HTMLElement>('.building-context[data-anchor]');
     if (!card) {
+      this.anchorCard = null;
       this.lastAnchorLeft = -1;
       this.lastAnchorTop = -1;
       return;
+    }
+    // #context is rebuilt with innerHTML: a new card has no inline position yet.
+    if (card !== this.anchorCard) {
+      this.anchorCard = card;
+      this.lastAnchorLeft = -1;
+      this.lastAnchorTop = -1;
     }
     const b = this.model.state.buildings.find((v) => v.id === Number(card.dataset.anchor));
     const o = this.model.selectedObstacle;
@@ -574,17 +766,27 @@ export class HUD {
     const p = this.scene.screenFor(target.x + size / 2, target.y + size / 2);
     const width = card.offsetWidth || 470,
       height = card.offsetHeight || 120;
-    const left = Math.min(Math.max(width / 2 + 12, p.x), window.innerWidth - width / 2 - 12);
+    const inset = this.insets();
+    const edgeLeft = Math.max(12, inset.left),
+      edgeRight = Math.max(12, inset.right),
+      edgeBottom = Math.max(12, inset.bottom);
+    const left = Math.min(
+      Math.max(width / 2 + edgeLeft, p.x),
+      window.innerWidth - width / 2 - edgeRight,
+    );
     const hudFloor = card.classList.contains('wall-context')
       ? Math.max(
           150,
           (document.querySelector('.resources')?.getBoundingClientRect().bottom ?? 0) + 8,
         )
       : 150;
-    const minTop = Math.min(hudFloor, Math.max(8, window.innerHeight - height - 12));
+    const minTop = Math.min(
+      hudFloor,
+      Math.max(Math.max(8, inset.top), window.innerHeight - height - edgeBottom),
+    );
     const maxTop = Math.max(
       minTop,
-      window.innerHeight - height - (window.innerHeight >= 650 ? 150 : 12),
+      window.innerHeight - height - (window.innerHeight >= 650 ? 150 + inset.bottom : edgeBottom),
     );
     const top = Math.min(Math.max(minTop, p.y - height - 62), maxTop);
     const leftPx = Math.round(left);
@@ -615,7 +817,7 @@ export class HUD {
     // Mouse/touch activation does not necessarily focus a button (notably in
     // WebKit). Remember the actual launcher before cancellation can redraw it.
     if (panel && !this.panel) {
-      this.focusBefore = this.actionSource ?? (document.activeElement as HTMLElement);
+      this.focusBefore = focusMark(this.actionSource ?? document.activeElement);
       const body = document.querySelector('.drawer-body');
       this.drawerBefore = this.drawerPanel
         ? { panel: this.drawerPanel, left: body?.scrollLeft ?? 0, top: body?.scrollTop ?? 0 }
@@ -650,11 +852,7 @@ export class HUD {
     this.render();
   }
   private restoreFocus() {
-    const action = this.focusBefore?.dataset.action;
-    if (action)
-      Array.from(document.querySelectorAll<HTMLElement>('[data-action]'))
-        .find((el) => el.dataset.action === action)
-        ?.focus({ preventScroll: true });
+    restoreFocusMark(this.focusBefore);
   }
   /**
    * Picks a building up out of the shop drawer and follows the pointer onto the
@@ -682,7 +880,9 @@ export class HUD {
       }
       const overDrawer = document
         .elementFromPoint(e.clientX, e.clientY)
-        ?.closest('#drawer, #hud, .modal-backdrop');
+        // Only controls count as "over the HUD": releasing over an info panel (which
+        // now catches taps itself) still drops the building on the village beneath.
+        ?.closest('#drawer, #hud button, #hud input, .modal-backdrop');
       if (overDrawer) {
         // Treated as a plain pick-up: close the sheet and let them tap the map.
         this.drawerPanel = null;
@@ -1020,8 +1220,8 @@ export class HUD {
         m.train(arg as TroopKind, 5);
         break;
       case 'brew':
+        // The model announces the change; its scheduled render covers the drawer.
         m.brew(arg as SpellKind);
-        this.render();
         break;
       case 'brew-five':
         m.brew(arg as SpellKind, 5);
@@ -1199,7 +1399,6 @@ export class HUD {
         break;
       case 'train':
         m.train(arg as TroopKind);
-        this.render();
         break;
       case 'attack':
         m.startCampaign(Number(arg));
@@ -1217,7 +1416,8 @@ export class HUD {
         m.activeHeroKind = null;
         m.activeTroop = arg as TroopKind;
         m.activeSpell = null;
-        this.render();
+        // Selection only moves the highlight and hint, which updateLive patches in place.
+        this.updateLive();
         document
           .querySelector(`[data-action="troop:${arg}"]`)
           ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -1227,7 +1427,7 @@ export class HUD {
         m.activeHero = false;
         m.activeHeroKind = null;
         m.activeSpell = m.activeSpell === arg ? null : (arg as SpellKind);
-        this.render();
+        this.updateLive();
         document
           .querySelector(`[data-action="spell:${arg}"]`)
           ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -1405,6 +1605,11 @@ export class HUD {
     if (e.key === '-') this.scene.zoomBy(1 / 1.15);
   }
   render() {
+    // Rendering now satisfies any render already queued for the next frame.
+    if (this.raf) {
+      cancelAnimationFrame(this.rafId);
+      this.raf = false;
+    }
     // A structural update must not remove a control between press and release.
     if (this.pressedActions.size) {
       this.renderPending = true;
@@ -1418,40 +1623,59 @@ export class HUD {
       this.updateLive();
       return;
     }
-    const modalScroll = document.querySelector('.modal-body')?.scrollTop ?? 0;
-    const drawerScroll = document.querySelector('.drawer-body')?.scrollLeft ?? 0;
-    const drawerScrollY = document.querySelector('.drawer-body')?.scrollTop ?? 0;
-    const categoryScroll = document.querySelector('.shop-tabs')?.scrollLeft ?? 0;
-    const armyScroll = document.querySelector('.army-tray')?.scrollLeft ?? 0;
-    const focused = (document.activeElement as HTMLElement)?.dataset?.action;
+    const drawerBody = this.drawerEl.querySelector('.drawer-body');
+    const modalScroll = this.modalEl.querySelector('.modal-body')?.scrollTop ?? 0;
+    const drawerScroll = drawerBody?.scrollLeft ?? 0;
+    const drawerScrollY = drawerBody?.scrollTop ?? 0;
+    const categoryScroll = this.drawerEl.querySelector('.shop-tabs')?.scrollLeft ?? 0;
+    const armyScroll = this.hudEl.querySelector('.army-tray')?.scrollLeft ?? 0;
+    const active = document.activeElement;
+    const focused = focusMark(active);
+    let rebuilt = false;
     const hudMarkup = b ? this.battleHUD() : this.homeHUD();
     if (hudMarkup !== this.hudMarkup) {
-      document.querySelector('#hud')!.innerHTML = hudMarkup;
+      this.hudEl.innerHTML = hudMarkup;
       this.hudMarkup = hudMarkup;
+      rebuilt = true;
+      this.syncLoops(this.hudEl);
     }
     const contextMarkup = this.context();
     if (contextMarkup !== this.contextMarkup) {
-      document.querySelector('#context')!.innerHTML = contextMarkup;
+      this.contextEl.innerHTML = contextMarkup;
       this.contextMarkup = contextMarkup;
+      rebuilt = true;
     }
     const drawerMarkup = this.drawer();
     const drawerChanged = drawerMarkup !== this.drawerMarkup;
     if (drawerChanged) {
-      document.querySelector('#drawer')!.innerHTML = drawerMarkup;
+      // Updating an open sheet (+ Add, Remove, a shop tab) must not slide it in again.
+      const updatingOpenDrawer =
+        !!this.drawerMarkup && !!this.drawerPanel && this.drawerPanel === this.renderedDrawer;
+      const next = drawerMarkup ? this.drawerParts : null;
+      if (!updatingOpenDrawer || !next || !this.patchDrawer(this.renderedDrawerParts, next)) {
+        this.drawerEl.innerHTML = drawerMarkup;
+        if (updatingOpenDrawer)
+          this.drawerEl
+            .querySelector<HTMLElement>('.drawer-sheet')
+            ?.style.setProperty('animation', 'none');
+      }
+      this.renderedDrawerParts = next;
       this.drawerMarkup = drawerMarkup;
+      this.renderedDrawer = drawerMarkup ? this.drawerPanel : null;
+      rebuilt = true;
     }
-    document.querySelector('#drawer')!.classList.toggle('dragging', this.dragging);
+    this.drawerEl.classList.toggle('dragging', this.dragging);
     // An open sheet owns the bottom of the screen, so the bars beneath it step aside.
     this.root.classList.toggle('drawer-open', !!this.drawerPanel && !b);
     const result = b?.finished && !m.replay;
     // Drawers deliberately leave the map live; only real dialogs block it.
     this.scene.uiBlocked = !!this.panel || !!result;
-    (document.querySelector('#hud') as HTMLElement).inert = this.scene.uiBlocked;
-    (document.querySelector('#context') as HTMLElement).inert = this.scene.uiBlocked;
-    (document.querySelector('#drawer') as HTMLElement).inert = this.scene.uiBlocked;
+    this.hudEl.inert = this.scene.uiBlocked;
+    this.contextEl.inert = this.scene.uiBlocked;
+    this.drawerEl.inert = this.scene.uiBlocked;
     const modalMarkup = result ? this.result() : this.panel ? this.modal() : '';
     if (modalMarkup !== this.modalMarkup) {
-      const root = document.querySelector('#modal-root')!;
+      const root = this.modalEl;
       const updatingOpenDialog =
         !!this.modalMarkup &&
         (result ? this.resultShown : this.panel !== null && this.panel === this.lastPanel);
@@ -1462,18 +1686,20 @@ export class HUD {
           el.style.animation = 'none';
         });
       this.modalMarkup = modalMarkup;
-      document.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+      root.querySelector('.modal-body')?.scrollTo(0, modalScroll);
+      rebuilt = true;
     }
-    const armyTray = document.querySelector('.army-tray');
-    if (armyTray) armyTray.scrollLeft = armyScroll;
-    const body = document.querySelector('.drawer-body');
+    if (rebuilt) this.liveRefs = null;
+    const armyTray = this.hudEl.querySelector('.army-tray');
+    if (armyTray && armyTray.scrollLeft !== armyScroll) armyTray.scrollLeft = armyScroll;
+    const body = this.drawerEl.querySelector('.drawer-body');
     if (body && drawerChanged) {
       body.scrollLeft = drawerScroll;
       body.scrollTop = drawerScrollY;
     }
-    const categories = document.querySelector<HTMLElement>('.shop-tabs');
+    const categories = this.drawerEl.querySelector<HTMLElement>('.shop-tabs');
     const activeCategory = categories?.querySelector<HTMLElement>('.active');
-    if (categories && activeCategory) {
+    if (categories && activeCategory && drawerChanged) {
       categories.scrollLeft = categoryScroll;
       const bounds = categories.getBoundingClientRect();
       const tab = activeCategory.getBoundingClientRect();
@@ -1487,23 +1713,59 @@ export class HUD {
       m.state.tutorial = true;
       this.toast('That is the whole loop, Chief. The valley is yours from here.');
     }
+    const drawerSwitched = this.drawerPanel !== this.lastDrawer;
+    this.lastDrawer = this.drawerPanel;
     if (this.panel !== this.lastPanel) {
-      document.querySelector<HTMLElement>('.modal [data-action="close"]')?.focus();
+      this.modalEl.querySelector<HTMLElement>('.modal [data-action="close"]')?.focus();
       this.lastPanel = this.panel;
-    } else if (this.drawerPanel !== this.lastDrawer) {
-      this.lastDrawer = this.drawerPanel;
-    } else if (focused && (this.panel || !this.scene.uiBlocked)) {
-      Array.from(document.querySelectorAll<HTMLElement>('[data-action]'))
-        .find((e) => e.dataset.action === focused)
-        ?.focus({ preventScroll: true });
+    } else if (drawerSwitched) {
+      // A different sheet opened or closed: nothing to restore.
+    } else if (focused && active && !active.isConnected && (this.panel || !this.scene.uiBlocked)) {
+      // The focused control (or text field, with its caret) was rebuilt: focus its replacement.
+      restoreFocusMark(focused);
     }
     if (result && !this.resultShown) {
       this.resultShown = true;
       this.countUp();
       this.audio.play('victory');
-      document.querySelector<HTMLElement>('[data-action="home"]')?.focus();
+      this.modalEl.querySelector<HTMLElement>('[data-action="home"]')?.focus();
     }
     this.updateLive();
+  }
+  /**
+   * Replaces only the drawer tiles whose markup changed (+ Add touches one tile and
+   * the counters, not the other seventy). Returns false when the structure differs
+   * and the caller must rebuild the whole sheet.
+   */
+  private patchDrawer(prev: DrawerParts | null, next: DrawerParts) {
+    const sheet = this.drawerEl.firstElementChild;
+    if (
+      !prev ||
+      !sheet ||
+      prev.open !== next.open ||
+      prev.body !== next.body ||
+      prev.items.length !== next.items.length ||
+      sheet.children.length !== 3
+    )
+      return false;
+    const [head, body, foot] = Array.from(sheet.children);
+    if (body.children.length !== prev.items.length) return false;
+    const tiles = Array.from(body.children);
+    if (prev.head !== next.head) head.outerHTML = next.head;
+    next.items.forEach((markup, i) => {
+      if (markup !== prev.items[i]) tiles[i].outerHTML = markup;
+    });
+    if (prev.foot !== next.foot) foot.outerHTML = next.foot;
+    return true;
+  }
+  /**
+   * Looping decorations (full storage glow) are restarted whenever #hud is rebuilt.
+   * Pin them to the document timeline so a rebuild continues the same phase.
+   */
+  private syncLoops(scope: HTMLElement) {
+    if (typeof scope.getAnimations !== 'function') return;
+    for (const animation of scope.getAnimations({ subtree: true }))
+      if ((animation as CSSAnimation).animationName === 'store-full') animation.startTime = 0;
   }
   /** The first unfinished coaching step, or -1 once there is nothing left to teach. */
   private get coachStep() {
@@ -1518,10 +1780,30 @@ export class HUD {
   }
   /** Rings the control the current step is about, without touching its layout. */
   private markCoachTarget() {
-    for (const el of Array.from(document.querySelectorAll('.coach-target')))
+    for (const el of Array.from(this.root.querySelectorAll('.coach-target')))
       el.classList.remove('coach-target');
-    const banner = document.querySelector<HTMLElement>('[data-coach]');
-    if (banner) document.querySelector(banner.dataset.coach!)?.classList.add('coach-target');
+    const banner = this.hudEl.querySelector<HTMLElement>('[data-coach]');
+    const target = banner ? this.hudEl.querySelector<HTMLElement>(banner.dataset.coach!) : null;
+    target?.classList.add('coach-target');
+    // The pulse lives on its own element outside #hud: it animates only transform and
+    // opacity (no per-frame repaint of box-shadow) and survives #hud rebuilds unrestarted.
+    const ring = this.root.querySelector<HTMLElement>('#coach-ring');
+    if (!ring) return;
+    const rect = target && !this.scene.uiBlocked ? target.getBoundingClientRect() : null;
+    if (!rect || !rect.width || !rect.height) {
+      ring.hidden = true;
+      return;
+    }
+    const radius = getComputedStyle(target!).borderRadius;
+    const next = `${Math.round(rect.left)}px,${Math.round(rect.top)}px,${Math.round(rect.width)}px,${Math.round(rect.height)}px,${radius}`;
+    if (ring.hidden) ring.hidden = false;
+    if (ring.dataset.box === next) return;
+    ring.dataset.box = next;
+    ring.style.left = `${Math.round(rect.left)}px`;
+    ring.style.top = `${Math.round(rect.top)}px`;
+    ring.style.width = `${Math.round(rect.width)}px`;
+    ring.style.height = `${Math.round(rect.height)}px`;
+    ring.style.borderRadius = radius;
   }
   private homeHUD() {
     const m = this.model,
@@ -1532,7 +1814,7 @@ export class HUD {
  <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
- <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !nativeCampaignIssues(i).length) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
+ <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
@@ -1799,10 +2081,10 @@ export class HUD {
       !m.replay &&
       lootKeys.some((k) => (b.lootRoom?.[k] ?? campaignAmount(v, k)) < campaignAmount(v, k));
     const lootBar = (k: CampaignResource) =>
-      `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="width:${pct((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
+      `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
     return `<div class="battle-enemy"><span class="eyebrow">${m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!b.practice ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${b.practice ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
- <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="width:${pct(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
+ <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
   ${
     m.replay
@@ -2353,7 +2635,10 @@ export class HUD {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
     const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
-    return `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}"><header class="drawer-head"><h2>${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>${body}</section>`;
+    const head = `<header class="drawer-head"><h2>${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
+    this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
+    return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;
   }
   private shop() {
     const m = this.model;
@@ -2386,9 +2671,12 @@ export class HUD {
             'disabled',
           )}</article>`;
         return `<article class="shop-tile ${full || locked ? 'unavailable' : ''}" ${full || locked ? '' : `data-drag="${k}"`}><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${locked ? `Town Hall ${unlockTownHall(k)}` : `${count}/${limit}`}</small>${button(`build:${k}`, locked ? `${icon('LockKeyhole', 13)} Locked` : full ? 'At limit' : price.cost === 0 ? 'Free' : `${resource(price.resource)} ${n(price.cost)}`, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
-      })
-      .join('');
-    return `<div class="drawer-body shop-strip">${cards}</div><footer class="drawer-foot">${icon('Hammer', 16)} ${m.builders - m.busy} of ${m.builders} builders free <span>Drag a building onto the village, or tap to pick it up</span></footer>`;
+      });
+    return {
+      body: '<div class="drawer-body shop-strip">',
+      items: cards,
+      foot: `<footer class="drawer-foot">${icon('Hammer', 16)} ${m.builders - m.busy} of ${m.builders} builders free <span>Drag a building onto the village, or tap to pick it up</span></footer>`,
+    };
   }
   private army() {
     const m = this.model;
@@ -2428,7 +2716,16 @@ export class HUD {
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
       return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
-    return `<div class="drawer-body army-strip"><div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armyReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.siegeCount || m.spellCount ? '' : 'disabled')}</div>${TROOP_ORDER.map(troopTile).join('')}<span class="tray-divider tall"></span>${SPELL_ORDER.map(spellTile).join('')}</div><footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`;
+    return {
+      body: '<div class="drawer-body army-strip">',
+      items: [
+        `<div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armyReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.siegeCount || m.spellCount ? '' : 'disabled')}</div>`,
+        ...TROOP_ORDER.map(troopTile),
+        '<span class="tray-divider tall"></span>',
+        ...SPELL_ORDER.map(spellTile),
+      ],
+      foot: `<footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`,
+    };
   }
 
   // ----------------------------------------------------------------- modals
@@ -2805,24 +3102,24 @@ export class HUD {
     return `<div class="modal-body research-body"><div class="research-banner"><img src="${hudAsset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
-    const v = NATIVE_CAMPAIGN[index];
-    return `<svg class="campaign-map" viewBox="0 0 48 48" role="img" aria-label="${v.name} base layout"><rect width="48" height="48" rx="3" fill="#637d43"/>${v.buildings
-      .filter(([id]) => id !== 1000019)
-      .map(
-        ([id, x, y]) =>
-          `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 || id === 1000017 || id === 1000069 ? '#f3c346' : '#e0cf97'}"/>`,
-      )
-      .join('')}</svg>`;
+    return `<img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" decoding="async" draggable="false">`;
   }
+  /** Card markup by stage; rebuilt only when that stage's stars, lock or loot change. */
+  private campaignCards = new Map<number, { key: string; markup: string }>();
   private campaign() {
     const stars = this.model.state.nativeCampaign?.stars ?? [];
     return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armyReady ? '' : 'disabled')}${icon('Map', 23)} <span>90 Goblin villages</span><b>${stars.reduce((a, b) => a + b, 0)} / 270 ${icon('Star', 17)}</b></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
         const loot = this.model.campaignLoot(i, 'goblin-v1');
-        const pending = nativeCampaignIssues(i).length > 0;
+        const pending = campaignPending(i);
         const locked = !nativeUnlocked(i, stars),
           score = stars[i] ?? 0;
-        return `<article class="campaign-card ${locked || pending ? 'locked' : ''}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+        const key = `${locked}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
+        const cached = this.campaignCards.get(i);
+        if (cached?.key === key) return cached.markup;
+        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+        this.campaignCards.set(i, { key, markup });
+        return markup;
       },
     ).join('')}</div>`;
   }
@@ -2931,210 +3228,219 @@ export class HUD {
       requestAnimationFrame(step);
     }
   }
+  /** Looks up every element updateLive() patches, once per rebuilt region. */
+  private collectLiveRefs(): LiveRefs {
+    const all = <T extends HTMLElement = HTMLElement>(selector: string) =>
+      Array.from(this.root.querySelectorAll<T>(selector));
+    const one = <T extends HTMLElement = HTMLElement>(selector: string) =>
+      this.root.querySelector<T>(selector);
+    const loot = new Map<string, HTMLElement>(),
+      lootBars = new Map<string, HTMLElement>();
+    for (const el of all('[data-loot]')) loot.set(el.dataset.loot!, el);
+    for (const el of all('[data-lootbar]')) lootBars.set(el.dataset.lootbar!, el);
+    const tray = this.hudEl.querySelector('.deploy-tray .army-tray');
+    return {
+      heroTimers: all('[data-hero-timer]'),
+      heroGems: all('[data-hero-gems]'),
+      petTimers: all('[data-pet-timer]'),
+      petGems: all('[data-pet-gems]'),
+      nativeHeroCards: all('.deploy-tray .hero-card[data-action^="hero-select:"]'),
+      legacyHeroCard: one('.hero-card'),
+      trayButtons: tray
+        ? Array.from(
+            tray.querySelectorAll<HTMLButtonElement>(
+              '[data-action^="troop:"],[data-action^="spell:"]',
+            ),
+          )
+        : [],
+      deployLabel: this.hudEl.querySelector<HTMLElement>('.deploy-label'),
+      resources: all('[data-resource]'),
+      obstacleTimes: all('[data-obstacle-time]'),
+      upgrades: all('[data-upgrade]'),
+      finishes: all('[data-finish]'),
+      research: one('[data-research]'),
+      researchCost: one('[data-research-cost]'),
+      queue: one('[data-queue]'),
+      replayTime: one('#replay-time'),
+      replayProgress: one<HTMLInputElement>('#replay-progress'),
+      battleTimer: one('#battle-timer'),
+      destructionValue: one('#destruction-value'),
+      destructionFill: one('#destruction-fill'),
+      battleStars: one('#battle-stars'),
+      loot,
+      lootBars,
+    };
+  }
   private updateLive() {
     const m = this.model;
-    const heroTimer = document.querySelector('[data-hero-timer]');
-    if (heroTimer && m.state.king?.upgradeEnd)
-      heroTimer.textContent = time((m.state.king.upgradeEnd - m.clock) / 1000);
-    const heroGems = document.querySelector('[data-hero-gems]');
-    if (heroGems && m.state.king?.upgradeEnd)
-      heroGems.textContent = String(
-        m.finishCost({ upgradeEnd: m.state.king.upgradeEnd } as Building),
-      );
-    // Per-hero upgrade timers in the roster panel.
-    document.querySelectorAll<HTMLElement>('[data-hero-timer]').forEach((el) => {
-      const kind = el.dataset.heroTimer as HeroKind | undefined;
-      if (!kind || !(HERO_KINDS as string[]).includes(kind)) return;
-      const progress = m.heroProgress(kind);
-      if (progress?.upgradeEnd) el.textContent = time((progress.upgradeEnd - m.clock) / 1000);
-    });
-    document.querySelectorAll<HTMLElement>('[data-pet-timer]').forEach((el) => {
-      const research = m.state.pets?.research;
-      if (research) el.textContent = time((research.end - m.clock) / 1000);
-    });
-    document.querySelectorAll<HTMLElement>('[data-pet-gems]').forEach((el) => {
-      const research = m.state.pets?.research;
-      if (research) el.textContent = String(m.finishCost({ upgradeEnd: research.end } as Building));
-    });
-    document.querySelectorAll<HTMLElement>('[data-hero-gems]').forEach((el) => {
-      const kind = el.dataset.heroGems as HeroKind | undefined;
-      if (!kind || !(HERO_KINDS as string[]).includes(kind)) return;
-      const progress = m.heroProgress(kind);
-      if (progress?.upgradeEnd)
-        el.textContent = String(m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building));
-    });
+    let refs = (this.liveRefs ??= this.collectLiveRefs());
+    // Legacy King and per-hero upgrade timers in the roster panel.
+    for (const el of refs.heroTimers) {
+      const kind = el.dataset.heroTimer;
+      const end =
+        kind && (HERO_KINDS as string[]).includes(kind)
+          ? m.heroProgress(kind as HeroKind)?.upgradeEnd
+          : m.state.king?.upgradeEnd;
+      if (end) setText(el, time((end - m.clock) / 1000));
+    }
+    for (const el of refs.heroGems) {
+      const kind = el.dataset.heroGems;
+      const end =
+        kind && (HERO_KINDS as string[]).includes(kind)
+          ? m.heroProgress(kind as HeroKind)?.upgradeEnd
+          : m.state.king?.upgradeEnd;
+      if (end) setText(el, String(m.finishCost({ upgradeEnd: end } as Building)));
+    }
+    const petResearch = m.state.pets?.research;
+    if (petResearch) {
+      for (const el of refs.petTimers) setText(el, time((petResearch.end - m.clock) / 1000));
+      for (const el of refs.petGems)
+        setText(el, String(m.finishCost({ upgradeEnd: petResearch.end } as Building)));
+    }
     // Native battle cards: refresh state transitions, otherwise just the health bars.
     if (m.battle?.nativeHeroes?.length) {
-      const cards = document.querySelectorAll<HTMLElement>(
-        '.deploy-tray .hero-card[data-action^="hero-select:"]',
-      );
-      cards.forEach((card) => {
+      let replaced = false;
+      for (const card of refs.nativeHeroCards) {
+        if (!card.isConnected) continue;
         const kind = card.dataset.action!.slice('hero-select:'.length) as HeroKind;
-        const hero = m.battle!.nativeHeroes!.find((h) => h.kind === kind);
-        if (!hero) return;
-        const unit = m.battle!.units.find((u) => u.id === hero.unitId);
+        const hero = m.battle.nativeHeroes.find((h) => h.kind === kind);
+        if (!hero) continue;
+        const unit = m.battle.units.find((u) => u.id === hero.unitId);
         const state = `${hero.kind}:${hero.unitId === null}:${!!unit && unit.hp <= 0}:${!!hero.abilityUsed}:${m.activeHeroKind === hero.kind}`;
         if (card.dataset.heroState !== state) {
           const focused = document.activeElement === card;
-          const order = m.battle!.nativeHeroes!.map((h) => h.kind);
+          const order = m.battle.nativeHeroes.map((h) => h.kind);
           card.outerHTML = this.nativeHeroCard(kind, order[0] === kind);
+          replaced = true;
           if (focused)
-            document
+            this.hudEl
               .querySelector<HTMLElement>(`[data-action="hero-select:${kind}"]`)
               ?.focus({ preventScroll: true });
-          const hint = document.querySelector('.deploy-label');
-          if (hint) hint.textContent = this.deployHint();
+          setText(refs.deployLabel, this.deployHint());
         } else {
           const health = card.querySelector<HTMLElement>('.hero-health i');
-          if (health && unit) health.style.width = pct((unit.hp / unit.maxHp) * 100);
+          if (health && unit) {
+            const width = pct((unit.hp / unit.maxHp) * 100);
+            if (health.style.width !== width) health.style.width = width;
+          }
         }
-      });
+      }
+      if (replaced) refs = this.liveRefs = this.collectLiveRefs();
     }
-    const heroCard = document.querySelector<HTMLElement>('.hero-card');
-    if (heroCard && m.battle?.hero && !m.battle?.nativeHeroes?.length) {
+    const heroCard = refs.legacyHeroCard;
+    if (heroCard?.isConnected && m.battle?.hero && !m.battle.nativeHeroes?.length) {
       const h = m.battle.hero;
       const u = m.battle.units.find((u) => u.id === h.unitId);
       const state = `${h.unitId === null}:${!!u && u.hp <= 0}:${h.abilityUsed}:${m.activeHero}`;
       if (heroCard.dataset.heroState !== state) {
         const focused = document.activeElement === heroCard;
         heroCard.outerHTML = this.heroCard();
-        if (m.activeHero) {
-          const hint = document.querySelector('.deploy-label');
-          if (hint) hint.textContent = this.kingDeploymentHint();
-        }
-        if (focused)
-          document.querySelector<HTMLElement>('.hero-card')?.focus({ preventScroll: true });
+        refs = this.liveRefs = this.collectLiveRefs();
+        if (m.activeHero) setText(refs.deployLabel, this.kingDeploymentHint());
+        if (focused) refs.legacyHeroCard?.focus({ preventScroll: true });
       } else {
         const health = heroCard.querySelector<HTMLElement>('.hero-health i');
-        if (health && u) health.style.width = pct((u.hp / u.maxHp) * 100);
+        if (health && u) {
+          const width = pct((u.hp / u.maxHp) * 100);
+          if (health.style.width !== width) health.style.width = width;
+        }
       }
     }
     // Deploy tray counts: patched live so each deploy doesn't rebuild the whole
     // HUD. Mirrors troopCard/spellCard state (count, empty, disabled, selected).
-    if (m.battle && !m.replay) {
+    if (m.battle && !m.replay && refs.trayButtons.length) {
       const b = m.battle;
-      const tray = document.querySelector('.army-tray');
-      if (tray) {
-        tray.querySelectorAll<HTMLElement>('[data-action]').forEach((el) => {
-          const action = el.dataset.action!;
-          const troop = action.startsWith('troop:')
-            ? (action.slice('troop:'.length) as TroopKind)
-            : null;
-          const spell = action.startsWith('spell:')
-            ? (action.slice('spell:'.length) as SpellKind)
-            : null;
-          if (!troop && !spell) return;
-          const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
-          const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
-          const selected = troop
-            ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
-            : m.activeSpell === spell;
-          const countEl = el.querySelector('.troop-count');
-          if (countEl && countEl.textContent !== `x${count}`) countEl.textContent = `x${count}`;
-          el.classList.toggle('empty', count === 0);
-          el.classList.toggle('selected', selected);
-          if (count === 0) el.setAttribute('disabled', '');
-          else el.removeAttribute('disabled');
-          const label = `${name}, ${count} available`;
-          if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
-        });
-        const hint = tray.parentElement?.querySelector<HTMLElement>('.deploy-label');
-        if (hint) {
-          const next = this.deployHint();
-          if (hint.textContent !== next) hint.textContent = next;
-        }
+      for (const el of refs.trayButtons) {
+        const action = el.dataset.action!;
+        const troop = action.startsWith('troop:')
+          ? (action.slice('troop:'.length) as TroopKind)
+          : null;
+        const spell = troop ? null : (action.slice('spell:'.length) as SpellKind);
+        const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
+        const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
+        const selected = troop
+          ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
+          : m.activeSpell === spell;
+        setText(el.querySelector('.troop-count'), `x${count}`);
+        if (el.classList.contains('empty') !== (count === 0)) el.classList.toggle('empty');
+        if (el.classList.contains('selected') !== selected) el.classList.toggle('selected');
+        if (el.disabled !== (count === 0)) el.disabled = count === 0;
+        const label = `${name}, ${count} available`;
+        if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
+      }
+      setText(refs.deployLabel, this.deployHint());
+    }
+    for (const el of refs.resources)
+      setText(el, n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']));
+    if (refs.obstacleTimes.length) {
+      const byId = new Map(m.obstacles.map((o) => [o.id, o]));
+      for (const el of refs.obstacleTimes) {
+        const o = byId.get(Number(el.dataset.obstacleTime));
+        if (o?.removeEnd) setText(el, time((o.removeEnd - m.clock) / 1000));
       }
     }
-    document.querySelectorAll<HTMLElement>('[data-resource]').forEach((el) => {
-      const next = n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']);
-      if (el.textContent !== next) el.textContent = next;
-    });
-    const obstacleTimes = document.querySelectorAll<HTMLElement>('[data-obstacle-time]');
-    if (obstacleTimes.length) {
-      const byId = new Map(m.obstacles.map((o) => [o.id, o]));
-      obstacleTimes.forEach((el) => {
-        const o = byId.get(Number(el.dataset.obstacleTime));
-        if (o?.removeEnd) {
-          const next = time((o.removeEnd - m.clock) / 1000);
-          if (el.textContent !== next) el.textContent = next;
-        }
-      });
-    }
-    const upgradeEls = document.querySelectorAll<HTMLElement>('[data-upgrade]');
-    const finishEls = document.querySelectorAll<HTMLElement>('[data-finish]');
-    if (upgradeEls.length || finishEls.length) {
+    if (refs.upgrades.length || refs.finishes.length) {
       const byId = new Map(m.state.buildings.map((v) => [v.id, v]));
-      upgradeEls.forEach((el) => {
+      for (const el of refs.upgrades) {
         const b = byId.get(Number(el.dataset.upgrade));
-        if (b?.upgradeEnd) {
-          const next = time((b.upgradeEnd - m.clock) / 1000);
-          if (el.textContent !== next) el.textContent = next;
-        }
-      });
-      finishEls.forEach((el) => {
+        if (b?.upgradeEnd) setText(el, time((b.upgradeEnd - m.clock) / 1000));
+      }
+      for (const el of refs.finishes) {
         const b = byId.get(Number(el.dataset.finish));
-        if (b?.upgradeEnd) {
-          const next = String(m.finishCost(b));
-          if (el.textContent !== next) el.textContent = next;
-        }
-      });
+        if (b?.upgradeEnd) setText(el, String(m.finishCost(b)));
+      }
     }
-    const research = document.querySelector('[data-research]');
-    if (research && m.state.research)
-      research.textContent = time((m.state.research.end - m.clock) / 1000);
-    const researchCost = document.querySelector('[data-research-cost]');
-    if (researchCost && m.state.research)
-      researchCost.textContent = String(
-        m.finishCost({ upgradeEnd: m.state.research.end } as Building),
+    if (m.state.research) {
+      setText(refs.research, time((m.state.research.end - m.clock) / 1000));
+      setText(
+        refs.researchCost,
+        String(m.finishCost({ upgradeEnd: m.state.research.end } as Building)),
       );
-    const queue = document.querySelector('[data-queue]');
-    if (queue) {
+    }
+    if (refs.queue) {
       let nextEnd = Infinity;
       for (const q of m.state.queue) if (q.end < nextEnd) nextEnd = q.end;
       for (const q of m.state.spellQueue) if (q.end < nextEnd) nextEnd = q.end;
-      if (nextEnd !== Infinity) {
-        const next = time((nextEnd - m.clock) / 1000);
-        if (queue.textContent !== next) queue.textContent = next;
-      }
+      if (nextEnd !== Infinity) setText(refs.queue, time((nextEnd - m.clock) / 1000));
     }
     const replay = m.replay;
-    if (replay) {
-      const time = document.querySelector('#replay-time');
-      const progress = document.querySelector<HTMLInputElement>('#replay-progress');
-      // Pointer scrubbing can continue without keyboard focus (notably Safari).
-      if (!this.replayScrubbing && document.activeElement !== progress) {
-        const value = replay.seeking ? replay.seekTarget : replay.time;
-        if (time) time.textContent = `${clock(value)} / ${clock(replay.duration)}`;
-        if (progress) {
-          progress.value = String(value);
-          progress.setAttribute('aria-valuetext', clock(value));
-        }
+    // Leave the slider to the pointer while scrubbing (and briefly after a value
+    // change); focus alone must not freeze the clock once playback resumes.
+    if (replay && !this.replayScrubbing && performance.now() - this.replayInputAt > 300) {
+      const value = replay.seeking ? replay.seekTarget : replay.time;
+      setText(refs.replayTime, `${clock(value)} / ${clock(replay.duration)}`);
+      const progress = refs.replayProgress;
+      if (progress && progress.value !== String(value)) {
+        progress.value = String(value);
+        progress.setAttribute('aria-valuetext', clock(value));
       }
     }
     const b = m.battle;
     if (b) {
-      const timer = document.querySelector('#battle-timer');
-      if (timer)
-        timer.textContent = b.practice
-          ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep)
-          : '∞';
-      const val = document.querySelector('#destruction-value');
-      if (val) val.textContent = `${b.destruction}%`;
-      const fill = document.querySelector<HTMLElement>('#destruction-fill');
-      if (fill) fill.style.width = pct(b.destruction);
-      const stars = document.querySelector('#battle-stars');
-      if (stars) {
-        const next = `${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span>`;
-        if (stars.innerHTML !== next) stars.innerHTML = next;
+      setText(
+        refs.battleTimer,
+        b.practice ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
+      );
+      setText(refs.destructionValue, `${b.destruction}%`);
+      const fill = refs.destructionFill;
+      if (fill) {
+        const next = fillScale(b.destruction);
+        if (fill.style.transform !== next) fill.style.transform = next;
       }
-      for (const k of campaignResourceKeys(b.availableLoot ?? { gold: 0, elixir: 0 })) {
-        const el = document.querySelector(`[data-loot="${k}"]`);
-        const available = b.availableLoot?.[k] ?? 0;
-        const left = Math.max(0, available - (b.lootTaken?.[k] ?? 0));
-        if (el) el.textContent = n(left);
-        const bar = document.querySelector<HTMLElement>(`[data-lootbar="${k}"]`);
-        if (bar) bar.style.width = pct((left / Math.max(1, available)) * 100);
+      const stars = refs.battleStars;
+      if (stars && stars.dataset.stars !== String(b.stars)) {
+        stars.dataset.stars = String(b.stars);
+        stars.innerHTML = `${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span>`;
       }
+      if (refs.loot.size || refs.lootBars.size)
+        for (const k of campaignResourceKeys(b.availableLoot ?? { gold: 0, elixir: 0 })) {
+          const available = b.availableLoot?.[k] ?? 0;
+          const left = Math.max(0, available - (b.lootTaken?.[k] ?? 0));
+          setText(refs.loot.get(k), n(left));
+          const bar = refs.lootBars.get(k);
+          const next = fillScale((left / Math.max(1, available)) * 100);
+          if (bar && bar.style.transform !== next) bar.style.transform = next;
+        }
     }
   }
 }

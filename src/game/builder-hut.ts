@@ -177,8 +177,12 @@ function stepHuts(battle: Battle, dt: number, state: BuilderHutBattleState) {
         s.aimY = aimed.y - from.y;
       }
     }
-    s.shots = s.shots.filter((shot) => shot.at >= battle.elapsed - HISTORY_SECONDS);
-    s.hits = s.hits.filter((hit) => hit.at >= battle.elapsed - HISTORY_SECONDS);
+    // Copy the history only when something actually expired.
+    const cutoff = battle.elapsed - HISTORY_SECONDS;
+    if (s.shots.some((shot) => !(shot.at >= cutoff)))
+      s.shots = s.shots.filter((shot) => shot.at >= cutoff);
+    if (s.hits.some((hit) => !(hit.at >= cutoff)))
+      s.hits = s.hits.filter((hit) => hit.at >= cutoff);
   }
 }
 

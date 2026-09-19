@@ -146,7 +146,9 @@ test('native X-Bow polygons, colors and additive layers match source pixels and 
   expect(report.singleTextureChanges).toBe(0);
   expect(report.contextChanges).toBe(0);
   expect(report.meshes).toBeGreaterThan(30);
-  expect(report.tintedTextures).toBeGreaterThan(3);
+  // Non-saturating source colors run in the triangle shader; only saturating ones bake the
+  // few texels their leaf samples (never whole pages).
+  expect(report.tintedTextures).toBeLessThanOrEqual(3);
   for (const c of report.cases) {
     expect(c.colored).toBeGreaterThan(100);
     expect(c.meanError, c.export).toBeLessThan(1);

@@ -16,7 +16,8 @@ it('settles Invaders source loot once and retains the complete 272-entity map th
   expect(towers).toHaveLength(1);
   for (let i = 0; i < 1600 && !m.battle!.finished; i++) m.step(0.05);
   expect(m.battle!.finished).toBe(true);
-  expect(m.battle!.result).toMatchObject({ stars: 2, destruction: 65, trophies: 0 });
+  // 65% before version 54 capped crowd separation.
+  expect(m.battle!.result).toMatchObject({ stars: 2, destruction: 60, trophies: 0 });
   expect(m.battle!.deathBombs![towers[0].id]).toMatchObject({ damage: 220, resolved: true });
   const progress = m.state.nativeCampaign!;
   expect(progress.stars[50]).toBe(2);

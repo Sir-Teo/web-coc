@@ -1,6 +1,33 @@
 import Phaser from 'phaser';
 
 const NAME = 'NativeGroupColor';
+/** Idle filter framebuffers older than this are destroyed by pruneFilterPool. */
+const IDLE_FILTER_MS = 4000;
+type PooledContext = Phaser.Renderer.WebGL.DrawingContext & { lastUsed: number };
+/**
+ * Filter passes take exact-size drawing contexts from Phaser's shared pool, which keeps up to
+ * 1024 idle framebuffers and only drops them past that cap (its own prune() and setMaxPoolSize
+ * do not help: lowering the cap reaches a Phaser 4.2.1 bug in DrawingContextPool.get that reads
+ * the wrong size bucket). Destroy contexts that have sat idle for a while instead.
+ */
+export function pruneFilterPool(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  const pool = renderer.drawingContextPool as unknown as {
+    agePool: PooledContext[];
+    sizePool: Record<string, PooledContext[]>;
+  };
+  if (!pool?.agePool.length) return;
+  const before = Date.now() - IDLE_FILTER_MS;
+  // agePool is ordered by release time: stale contexts form its head.
+  let stale = 0;
+  while (stale < pool.agePool.length && pool.agePool[stale].lastUsed < before) stale++;
+  if (!stale) return;
+  for (const context of pool.agePool.splice(0, stale)) {
+    const bucket = pool.sizePool[context.width + 'x' + context.height];
+    const at = bucket ? bucket.indexOf(context) : -1;
+    if (at >= 0) bucket.splice(at, 1);
+    context.destroy();
+  }
+}
 const registered = new WeakSet<Phaser.Renderer.WebGL.RenderNodes.RenderNodeManager>();
 const SOURCE = `
 #pragma phaserTemplate(shaderName)
@@ -44,7 +71,9 @@ export class NativeGroupColor extends Phaser.Filters.Controller {
     image.filters!.internal.add(this);
   }
   setColor(multiply: readonly number[], add: readonly number[]) {
-    this.multiply = multiply.slice(0, 3);
-    this.add = add.slice(0, 3);
+    for (let i = 0; i < 3; i++) {
+      this.multiply[i] = multiply[i];
+      this.add[i] = add[i];
+    }
   }
 }

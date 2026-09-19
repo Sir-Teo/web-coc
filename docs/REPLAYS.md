@@ -58,3 +58,14 @@ Version 44 adds the late single-player campaign families and levels (see [CAMPAI
 
 Versions 34–43 reject the new kinds, identities, fields, families and levels, keep their previous level ceilings and building limit, and keep whole-tile routes, so their recorded states replay unchanged. Portable replay files carry the Spell Tower weapon. Each family's replay tests record real deployments, export and import portable files, and compare complete battle states across backward seeks in separate viewers.
 
+## Version 54: crowd separation cap and stalled summons
+
+Version 54 changes two combat rules and one piece of stored state; versions 34–53 keep their previous behavior and replay unchanged (`replayBattle` sets the flags only from version 54).
+
+- `battle.separationCap`: crowd separation moves any one unit at most `SEPARATION_TILES_PER_SECOND` (2 tiles/s, 0.1 tile per 50 ms step). Each overlapping pair used to push up to 0.07 tiles with no per-unit bound, so a unit in a dense blob could jump 1.1–1.6 tiles in one step (a Barbarian walks 0.11).
+- `battle.stalledSupportEnds`: once nothing is left to deploy, summoned units alone end the battle after 30 seconds without damage to a building (Walls and traps aside) or defender. See [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md#timing-and-results). The stall clock is kept in `battle.progressAt`/`battle.progressHp`.
+- `battle.dropFallenPaths`: fallen units and skeletons drop their route waypoints (nothing reads them; a revived hero gets a fresh route), which keeps keyframe clones and saves smaller. Archived battle-state hashes include those waypoints, so older versions keep them.
+
+The same release made several simulation paths faster without changing any result: every version replays bit-identically. Route grids and exact A* results are cached per building list; the cache key now compares list identity, footprints and standing state instead of a 32-bit hash of ids, which collided between equal-size campaign stages (ids are `1000 + index`) and could route a new battle through the previous stage's buildings until its first building fell. That collision could make a live battle and its replay diverge; with the exact key both always search the battle's own layout.
+
+Playback no longer banks an unbounded backlog when a battle simulates slower than real time: the budget is capped at `MAX_REPLAY_BACKLOG_SECONDS` (0.25 s) after each update and cleared on seek, pause and speed change, so a heavy battle at 4× slows down instead of later fast-forwarding up to 100 steps in one frame. Replayed deployments report passive changes (a live HUD refresh), as live deployments do, rather than a full HUD render each.

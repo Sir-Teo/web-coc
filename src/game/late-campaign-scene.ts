@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { AudioManager } from './audio';
 import type { Battle, Building } from './model';
 import type { SampleCue } from './sample-audio';
+import { presentationTime } from './presentation-clock';
 import { BuilderHutPresentation, preloadBuilderHut } from './builder-hut-scene';
 import { DefendingBuilderPresentation } from './defending-builder-scene';
 import { EagleArtilleryPresentation, preloadEagleArtillery } from './eagle-artillery-scene';
@@ -20,7 +21,10 @@ export interface LateRenderContext {
   /** Buildings currently visible to the player (concealed traps are excluded). */
   buildings: Building[];
   battle: Battle | null;
-  /** Battle time, or the home render clock outside battle. */
+  /**
+   * Battle time (the presentation clock: it runs on for a short grace after the finish),
+   * or the home render clock outside battle.
+   */
   elapsed: number;
   reduced: boolean;
   iso: (x: number, y: number) => { x: number; y: number };
@@ -73,6 +77,8 @@ export class LateCampaignPresentation {
     return undefined;
   }
   render(context: LateRenderContext) {
+    // Transient effects play out on the presentation clock after the battle finishes.
+    if (context.battle) context = { ...context, elapsed: presentationTime(context.battle) };
     return this.families.flatMap((family) => family.render(context));
   }
   clear() {

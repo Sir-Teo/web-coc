@@ -36,20 +36,21 @@ export function weaponCandidates(
   profile: WeaponProfile,
   at: number,
 ) {
-  return battle.units
-    .filter(
-      (unit) =>
-        unit.hp > 0 &&
-        !unit.ejected &&
-        (unit.spawnedAt ?? 0) <= at + 1e-9 &&
-        (TROOPS[unit.kind].flying ? profile.air : profile.ground) &&
-        distance2D(unit.x - center.x, unit.y - center.y) <= profile.range,
+  // One distance per unit instead of two per comparison; the same values sort the same way.
+  const scored: { unit: Unit; dist: number }[] = [];
+  for (const unit of battle.units) {
+    if (
+      unit.hp <= 0 ||
+      unit.ejected ||
+      (unit.spawnedAt ?? 0) > at + 1e-9 ||
+      !(TROOPS[unit.kind].flying ? profile.air : profile.ground)
     )
-    .sort(
-      (a, b) =>
-        distance2D(a.x - center.x, a.y - center.y) - distance2D(b.x - center.x, b.y - center.y) ||
-        a.id - b.id,
-    );
+      continue;
+    const dist = distance2D(unit.x - center.x, unit.y - center.y);
+    if (dist <= profile.range) scored.push({ unit, dist });
+  }
+  scored.sort((a, b) => a.dist - b.dist || a.unit.id - b.unit.id);
+  return scored.map((entry) => entry.unit);
 }
 
 /**

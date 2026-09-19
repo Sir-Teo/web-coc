@@ -44,6 +44,8 @@ export interface SpellTowerTowerState {
 export interface SpellTowerBattleState {
   towers: Record<number, SpellTowerTowerState>;
   casts: SpellTowerCast[];
+  /** Last cast index handed out (monotonic; absent in older snapshots). */
+  lastCastIndex?: number;
   /** Next 64-ms hitpoint-component tick used for poison damage and decay. */
   poisonTick: number;
   /** Defending units enraged by a pulse: id → boost end. */
@@ -144,8 +146,11 @@ function cast(
   // filter when the oldest already expired.
   if (family.casts.length > 0 && castExpired(family.casts[0], at))
     family.casts = family.casts.filter((entry) => !castExpired(entry, at));
+  // Indices key the renderer's bottles, effects and sounds, so they must stay unique after
+  // pruning. Visual only: nothing in the simulation reads a cast index.
+  family.lastCastIndex ??= family.casts.reduce((last, entry) => Math.max(last, entry.index), 0);
   family.casts.push({
-    index: family.casts.length + 1,
+    index: ++family.lastCastIndex,
     sourceId: tower.id,
     weapon,
     level: tower.level,

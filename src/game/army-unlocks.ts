@@ -1,4 +1,4 @@
-import source from '../../reference/full-client/progression.json';
+import source from '../../reference/full-client/progression.json' with { type: 'json' };
 import type { Building } from './model';
 import { SPELL_KEYS, type TroopKind, type SpellKind } from './data';
 import { SPELL_NAMES, SPELL_ROSTER } from './troop-progression';

@@ -57,7 +57,23 @@ export function tickInfernoCombat(
     const dist = distance2D(unit.x - fromX, unit.y - fromY);
     if (dist <= range) scored.push({ unit, dist });
   }
-  scored.sort((a, b) => a.dist - b.dist || a.unit.id - b.unit.id);
+  // The scheduler reads candidates as a set (surviving beams) plus first-unused picks in
+  // order. At most one id per slot is ever used, so ordering only the nearest two per slot
+  // (distance, then id, like the old full sort) yields the same picks; the rest stay in.
+  const ordered = Math.min(scored.length, state.slots.length * 2);
+  for (let i = 0; i < ordered; i++) {
+    let best = i;
+    for (let j = i + 1; j < scored.length; j++) {
+      const a = scored[j],
+        b = scored[best];
+      if (a.dist < b.dist || (a.dist === b.dist && a.unit.id < b.unit.id)) best = j;
+    }
+    if (best !== i) {
+      const swap = scored[i];
+      scored[i] = scored[best];
+      scored[best] = swap;
+    }
+  }
   const targets = scored.map((s) => s.unit);
   const byId = new Map(targets.map((unit) => [unit.id, unit]));
   const hits: InfernoHit[] = [];

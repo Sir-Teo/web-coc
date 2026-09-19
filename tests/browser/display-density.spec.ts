@@ -288,8 +288,13 @@ test.describe('3x touch gestures', () => {
     await touch('touchEnd', 0, 0);
     const after = await view(page);
     expect(after.zoom).toBeCloseTo((before.zoom * 170) / 110, 5);
-    expect(after.x).toBeCloseTo(before.x, 5);
-    expect(after.y).toBeCloseTo(before.y, 5);
+    // Zoom anchors at the pinch midpoint (195, 430 CSS): the world point there stays put.
+    const mid = await page.evaluate(() => {
+      const r = window.__game.game.canvas.getBoundingClientRect();
+      return { x: 195 - (r.left + r.width / 2), y: 430 - (r.top + r.height / 2) };
+    });
+    expect(after.x + mid.x / after.zoom).toBeCloseTo(before.x + mid.x / before.zoom, 3);
+    expect(after.y + mid.y / after.zoom).toBeCloseTo(before.y + mid.y / before.zoom, 3);
     expect(await page.evaluate(() => window.__game.model.selected)).toBeNull();
   });
 });

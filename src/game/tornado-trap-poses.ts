@@ -49,21 +49,21 @@ export interface TornadoBodyPose {
   /** Triggered whirls lie on the ground; setup and spent boxes sort with buildings. */
   ground: boolean;
 }
-export function tornadoBodyPose(
+/**
+ * The body export and its quantized source time (a 24 fps frame): equal results sample identical
+ * art, so the scene re-renders only when the source frame changes.
+ */
+export function tornadoBodyFrame(
   level: number,
   vortex: TornadoVortex | undefined,
   elapsed: number,
   reduced = false,
   finished = false,
-): TornadoBodyPose {
+): Omit<TornadoBodyPose, 'poses'> & { time: number } {
   const tier = tornadoTrapTier(level);
   if (!vortex) {
     const name = `tornado_trap_setup_lvl${tier}`;
-    return {
-      export: name,
-      poses: nativeScenePoses(TORNADO_GRAPH, name, reduced ? 0 : loop(name, elapsed), {}, bodyRoot),
-      ground: false,
-    };
+    return { export: name, time: reduced ? 0 : loop(name, elapsed), ground: false };
   }
   const age = elapsed - vortex.activatedAt;
   if (!finished && !reduced && age >= 0 && elapsed < vortex.endAt) {
@@ -72,17 +72,23 @@ export function tornadoBodyPose(
     let frame = Math.floor(age * TRIGGER_FPS + 1e-9);
     if (frame >= ATTACK_FRAME)
       frame = ATTACK_FRAME + ((frame - ATTACK_FRAME) % (length - ATTACK_FRAME));
-    return {
-      export: name,
-      poses: nativeScenePoses(TORNADO_GRAPH, name, frame / TRIGGER_FPS, {}, bodyRoot),
-      ground: true,
-    };
+    return { export: name, time: frame / TRIGGER_FPS, ground: true };
   }
   const name = `tornado_trap_unarmed_lvl${tier}`;
+  return { export: name, time: reduced ? 0 : loop(name, elapsed), ground: false };
+}
+export function tornadoBodyPose(
+  level: number,
+  vortex: TornadoVortex | undefined,
+  elapsed: number,
+  reduced = false,
+  finished = false,
+): TornadoBodyPose {
+  const frame = tornadoBodyFrame(level, vortex, elapsed, reduced, finished);
   return {
-    export: name,
-    poses: nativeScenePoses(TORNADO_GRAPH, name, reduced ? 0 : loop(name, elapsed), {}, bodyRoot),
-    ground: false,
+    export: frame.export,
+    poses: nativeScenePoses(TORNADO_GRAPH, frame.export, frame.time, {}, bodyRoot),
+    ground: frame.ground,
   };
 }
 

@@ -13,17 +13,45 @@ const emitters = Object.fromEntries(
   ]),
 );
 const particle = nativeParticleSampler(INFERNO_GRAPH, 1.2);
+const lifetime = (effect: Row) => {
+  const row = emitters[effect.ParticleEmitter][0];
+  return (
+    Number(effect.EmitterDelayMs ?? 0) / 1000 +
+    Number(row.EmissionTime) / 1000 +
+    Number(row.MaxLife) / 1000
+  );
+};
+/** Seconds after which a hit's emitters are all past their last particle. */
+const finite = (value: number) => (Number.isFinite(value) ? value : Infinity);
+const hitHorizon = finite(Math.max(...effects.map(lifetime)));
+/** Upper bound for the stage transition emitters (their emission plus longest life). */
+const transitionHorizon = finite(
+  Math.max(
+    ...['DarkRay Up2', 'DarkRay Up3'].flatMap((name) =>
+      emitters[name].map((row) => (Number(row.EmissionTime || 0) + Number(row.MaxLife)) / 1000),
+    ),
+  ),
+);
 
-/** Detached source hit emitters, seeded by immutable pulse tick and beam slot. */
+/**
+ * Detached source hit emitters, seeded by immutable pulse tick and beam slot.
+ *
+ * `elapsed` is the presentation clock (see presentation-clock.ts): given, bursts keep sampling
+ * after the finish and the caller decides when the grace window ends. Omitted, it is
+ * `battle.elapsed` and a finished battle shows nothing.
+ */
 export function infernoImpactPoses(
   battle: Battle | null,
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
+  elapsed?: number,
 ): NativeParticlePose[] {
-  if (!battle || reduced || battle.finished) return [];
+  if (!battle || reduced || (elapsed === undefined && battle.finished)) return [];
+  const now = elapsed ?? battle.elapsed;
   const result: NativeParticlePose[] = [];
   for (const [id, state] of Object.entries(battle.infernos ?? {}))
     for (const hit of state.hits) {
+      if (hit.at > now || now - hit.at > hitHorizon) continue;
       const tick = Math.round((hit.at * 1000) / 64);
       const point = iso(hit.targetX, hit.targetY);
       const origin = { x: point.x, y: point.y - (hit.toAir ? 46 : 0) };
@@ -31,7 +59,7 @@ export function infernoImpactPoses(
         const name = effect.ParticleEmitter;
         const rows = emitters[name],
           row = rows[0];
-        const age = battle.elapsed - hit.at - Number(effect.EmitterDelayMs ?? 0) / 1000;
+        const age = now - hit.at - Number(effect.EmitterDelayMs ?? 0) / 1000;
         const duration = Number(row.EmissionTime) / 1000;
         if (age < 0 || age >= duration + Number(row.MaxLife) / 1000) return;
         const count = Number(row.ParticleCount);
@@ -57,13 +85,14 @@ export function infernoImpactPoses(
     }
   for (const [id, state] of Object.entries(battle.infernos ?? {}))
     for (const event of state.transitions ?? []) {
+      if (event.at > now || now - event.at > transitionHorizon) continue;
       const name = event.stage === 1 ? 'DarkRay Up2' : 'DarkRay Up3';
       const tick = Math.round((event.at * 1000) / 64);
       const pose = particle(
         `inferno:${id}:transition:${tick}:${event.slot}`,
         name,
         emitters[name],
-        battle.elapsed - event.at,
+        now - event.at,
         iso(event.x, event.y),
         (slot) => visualRandom(Number(id), tick, 2000000 + event.slot * 16 + slot),
         'Objects',

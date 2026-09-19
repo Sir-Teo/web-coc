@@ -179,6 +179,12 @@ for (const witness of witnesses)
         contextChanges: changed(restored),
         meshes: views.reduce((n, v) => n + v.meshes.size, 0),
         groups: views.reduce((n, v) => n + v.groups.size, 0),
+        // Isolated groups plus additive/screen leaves (single-leaf groups draw directly).
+        blended: views.reduce(
+          (n, v) =>
+            n + v.groups.size + [...v.meshes.values()].filter((m) => m.blendMode !== 0).length,
+          0,
+        ),
         tintedTextures: scene.textures
           .getTextureKeys()
           .filter((k) => k.startsWith('cannon-test') && k.includes(':color:')).length,
@@ -211,7 +217,7 @@ for (const witness of witnesses)
     expect(report.singleTextureChanges).toBe(0);
     expect(report.contextChanges).toBe(0);
     expect(report.meshes).toBeGreaterThan(0);
-    if (witness.category === 'effects') expect(report.groups).toBeGreaterThan(0);
+    if (witness.category === 'effects') expect(report.blended).toBeGreaterThan(0);
     expect(report.cases).toHaveLength(witness.cases.length);
     for (const c of report.cases) {
       if (c.empty) {

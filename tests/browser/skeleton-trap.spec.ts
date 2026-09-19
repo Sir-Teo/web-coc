@@ -257,7 +257,9 @@ test('coffins release ground and air defenders with six poses, body hits and sta
   expect(new Set(result.frames).size).toBe(6);
   expect(result.hit).toBe(true);
   expect(result.stable).toBe(true);
-  expect(result.airDepth).toBe(7500);
+  // Flyers are y-sorted inside the air band (unit-depth.ts), below defender bars at 7600.
+  expect(result.airDepth).toBeGreaterThanOrEqual(7500);
+  expect(result.airDepth).toBeLessThan(7600);
   expect(result.markerDepth).toBeGreaterThan(result.airDepth);
   expect(result.groundDepth).toBeLessThan(7500);
   expect(result.anchorBelowBalloonTop).toBe(true);

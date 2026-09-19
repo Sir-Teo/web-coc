@@ -192,6 +192,46 @@ export function defendingBuilderCandidates(battle: Battle, builder: DefendingBui
     );
 }
 
+/** Buildings by id for the battle's list (first entry wins, like `find`). */
+const buildingIndexes = new WeakMap<
+  readonly Building[],
+  { length: number; byId: Map<number, Building> }
+>();
+function buildingById(battle: Battle, id: number | null) {
+  const list = battle.buildings;
+  let index = buildingIndexes.get(list);
+  if (!index || index.length !== list.length) {
+    const byId = new Map<number, Building>();
+    for (const b of list) if (!byId.has(b.id)) byId.set(b.id, b);
+    index = { length: list.length, byId };
+    buildingIndexes.set(list, index);
+  }
+  return id === null ? undefined : index.byId.get(id);
+}
+/** First of `defendingBuilderCandidates` in one scan: the same order, no filtered copy. */
+function bestRepairCandidate(battle: Battle, builder: DefendingBuilder, hut: Building) {
+  const center = hutCenter(hut);
+  let best: Building | undefined;
+  let bestRatio = 0,
+    bestDistance = 0;
+  for (const b of battle.buildings) {
+    if (!repairable(battle, b) || distanceTo(center, b) > DEFENDING_BUILDER_REPAIR_RADIUS + EPSILON)
+      continue;
+    const ratio = b.hp / (b.maxHp || 1);
+    const distance = distanceTo(builder, b);
+    if (
+      best === undefined ||
+      ratio < bestRatio ||
+      (ratio === bestRatio &&
+        (distance < bestDistance || (distance === bestDistance && b.id < best.id)))
+    ) {
+      best = b;
+      bestRatio = ratio;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 /** LogicHitpointComponent.CauseDamage healer slot selection for one heal at `at`. */
 export function defendingBuilderHealSlot(
   state: DefendingBuilderBattleState,
@@ -292,7 +332,7 @@ function stepBuilder(
   builder.pathAt -= activeDt;
   builder.cooldown = Math.max(0, builder.cooldown - activeDt);
   builder.recovery = Math.max(0, builder.recovery - activeDt);
-  const hut = battle.buildings.find((b) => b.id === builder.hutId);
+  const hut = buildingById(battle, builder.hutId);
   if (!hut || hut.hp <= 0) {
     // His hut is gone: he stops repairing, returns to it and hides.
     builder.target = null;
@@ -312,10 +352,10 @@ function stepBuilder(
       builder.hiddenAt = battle.elapsed;
     return;
   }
-  let target = battle.buildings.find((b) => b.id === builder.target);
+  let target = buildingById(battle, builder.target);
   // Keep one target until it is fully repaired, destroyed or hidden.
   if (!target || !repairable(battle, target)) {
-    target = defendingBuilderCandidates(battle, builder)[0];
+    target = bestRepairCandidate(battle, builder, hut);
     if (builder.target !== (target?.id ?? null)) {
       builder.target = target?.id ?? null;
       delete builder.engaged;

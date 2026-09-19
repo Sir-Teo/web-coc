@@ -1,6 +1,6 @@
 import { nativeSuperLicence, nativeSuperLicences, num, text } from './native-data';
 import { TROOP_SOURCE } from './native-units';
-import source from '../../reference/full-client/progression.json';
+import source from '../../reference/full-client/progression.json' with { type: 'json' };
 import type { TroopKind } from './data';
 export const isSiege = (kind: string) =>
   (source.troopDefs as Record<string, { ProductionBuilding?: string }>)[kind]

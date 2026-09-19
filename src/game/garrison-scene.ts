@@ -15,6 +15,16 @@ import { GARRISON_EFFECT_GRAPH, garrisonImpactPoses } from './garrison-effects';
 import { garrisonShotPoses } from './garrison-projectiles';
 import { garrisonStats } from './garrison-kinds';
 import { GarrisonLateEffects } from './garrison-late-effects';
+import { NativeEffectViews } from './native-effect-views';
+import { registerCachedSample } from './sample-audio';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { unitDepth } from './unit-depth';
+import { guardRender } from './render-guard';
+
+/** Sets a data value only when it differs (every setData emits change events). */
+function tag(objects: readonly Phaser.GameObjects.GameObject[], name: string, value: unknown) {
+  for (const object of objects) if (object.getData(name) !== value) object.setData(name, value);
+}
 
 /** Local alpha for concealed defenders (no source transparency value is known). */
 export const GARRISON_CONCEALED_ALPHA = 0.55;
@@ -45,7 +55,9 @@ export function preloadLateGarrisonTroops(scene: Phaser.Scene) {
 export class GarrisonPresentation {
   readonly defenders = new Map<number, NativeSceneView>();
   readonly shadows = new Map<number, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live particle views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
   readonly shots = new Map<string, NativeSceneView>();
   private families = new Map<number, string>();
   /** Later families: local chain lightning, death bolts, aura pulses and summon glows. */
@@ -54,8 +66,10 @@ export class GarrisonPresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'garrison-effects', 'nativeGarrisonEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(GARRISON_SOUNDS))
-      audio.samples.register(garrisonSample(path), scene.cache.binary.get(garrisonSample(path)));
+      registerCachedSample(scene, audio.samples, garrisonSample(path));
     this.late = new GarrisonLateEffects(scene);
   }
   clear() {
@@ -65,8 +79,7 @@ export class GarrisonPresentation {
     for (const view of this.shadows.values()) view.destroy();
     this.shadows.clear();
     this.families.clear();
-    for (const view of this.effects.values()) view.destroy();
-    this.effects.clear();
+    this.fx.clear();
     for (const view of this.shots.values()) view.destroy();
     this.shots.clear();
   }
@@ -76,20 +89,12 @@ export class GarrisonPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     lift: number,
   ) {
-    const particles = garrisonImpactPoses(battle, reduced, iso, lift);
-    const effectKeys = new Set(particles.map((p) => p.key));
-    for (const p of particles) {
-      let view = this.effects.get(p.key);
-      if (!view)
-        this.effects.set(p.key, (view = new NativeSceneView(this.scene, 'garrison-effects')));
-      view.render(p.poses, p.x, p.y, p.depth);
-      for (const object of view.objects) object.setData('nativeGarrisonEffect', p.key);
-    }
-    for (const [key, view] of this.effects)
-      if (!effectKeys.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    // Bursts sample the presentation clock: they play out for the grace window after the
+    // finish, then clear, instead of freezing at the final battle time.
+    if (battle && presentationLive(battle))
+      for (const p of garrisonImpactPoses(battle, reduced, iso, lift, presentationTime(battle)))
+        this.fx.show(p);
+    this.fx.sweep();
     this.renderShots(battle, reduced, iso, lift);
     this.late.render(battle, reduced, iso, lift);
     const wanted = new Set<number>();
@@ -102,7 +107,12 @@ export class GarrisonPresentation {
       )
         continue;
       wanted.add(defender.id);
-      const layers = characterLayers(defender, battle!, reduced);
+      const guard = `garrison ${defender.kind} level ${defender.level}`;
+      const layers = guardRender(
+        guard,
+        () => characterLayers(defender, battle!, reduced),
+        undefined,
+      );
       const family =
         layers?.prefix ??
         this.families.get(defender.id) ??
@@ -120,20 +130,25 @@ export class GarrisonPresentation {
       let shadow = this.shadows.get(defender.id);
       if (!shadow)
         this.shadows.set(defender.id, (shadow = new NativeSceneView(this.scene, family)));
-      const flying = garrisonStats(defender.kind, defender.level).flying;
+      const flying = guardRender(
+        guard,
+        () => garrisonStats(defender.kind, defender.level).flying,
+        false,
+      );
       // Original shadows stay on the ground; flyers receive the local air lift and draw above
       // rooftops, while ground troops sort with buildings by their projected ground point.
       shadow.render(layers?.shadow ?? [], point.x, point.y, flying ? -839 : point.y + 1.05);
-      for (const object of shadow.objects) object.setData('nativeGarrisonShadow', defender.id);
+      tag(shadow.objects, 'nativeGarrisonShadow', defender.id);
       view.render(
         layers?.body ?? [],
         point.x,
         point.y - (flying ? lift : 0),
-        flying ? 7500 + point.y / 10000 : point.y + 1.1,
+        // Flyers sort inside the shared air band with the attacking air troops.
+        flying ? unitDepth(point.y, defender.id, true) : point.y + 1.1,
         // A concealed Royal Ghost is drawn translucent (local presentation of its stealth).
         (defender.stealthUntil ?? 0) > battle!.elapsed ? GARRISON_CONCEALED_ALPHA : 1,
       );
-      for (const object of view.objects) object.setData('nativeGarrisonDefender', defender.id);
+      tag(view.objects, 'nativeGarrisonDefender', defender.id);
     }
     for (const [id, view] of this.defenders)
       if (!wanted.has(id)) {
@@ -151,7 +166,13 @@ export class GarrisonPresentation {
     lift: number,
   ) {
     const wanted = new Set<string>();
-    for (const shot of garrisonShotPoses(battle, reduced, iso, lift)) {
+    for (const shot of garrisonShotPoses(
+      battle,
+      reduced,
+      iso,
+      lift,
+      battle ? presentationTime(battle) : undefined,
+    )) {
       const layers = [{ ...shot }];
       if (shot.shadow)
         layers.push({ ...shot, ...shot.shadow, key: `${shot.key}:shadow`, depth: -838 });
@@ -160,7 +181,7 @@ export class GarrisonPresentation {
         let view = this.shots.get(key);
         if (!view) this.shots.set(key, (view = new NativeSceneView(this.scene, prefix)));
         view.render(poses, x, y, depth);
-        for (const object of view.objects) object.setData('nativeGarrisonShot', key);
+        tag(view.objects, 'nativeGarrisonShot', key);
       }
     }
     for (const [key, view] of this.shots)

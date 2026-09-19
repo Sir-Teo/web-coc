@@ -1,7 +1,7 @@
 import type { BuildingKind } from './data';
 import { SOURCE_NAME, sourceCeiling, sourceCount, TOWNHALL_TIERS } from './townhall-catalog';
 import { EXTRA_BUILDING_KINDS } from './extra-buildings';
-import nativeProgressionSource from '../../reference/full-client/progression.json';
+import nativeProgressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 const nativeProgression = nativeProgressionSource as unknown as {
   buildings: Record<string, (typeof nativeProgressionSource.buildings)['townhall']>;
 };

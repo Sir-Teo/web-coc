@@ -353,12 +353,17 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
 }
 
 /** Group-following support units trail the nearest cluster of friendly housing. */
-const groupWeightCache = new WeakMap<Battle, { tick: number; weights: Map<number, number> }>();
+const groupWeightCache = new WeakMap<
+  Battle,
+  { tick: number; radius: number; weights: Map<number, number> }
+>();
 function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
   // Compute cluster weight once per tick instead of O(units) per candidate.
   let cached = groupWeightCache.get(battle);
-  if (!cached || cached.tick !== battle.elapsed) {
-    cached = { tick: battle.elapsed, weights: new Map() };
+  // Keyed by radius too: every group follower shares one radius today, but a unit with its
+  // own must not read weights measured with another's.
+  if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
+    cached = { tick: battle.elapsed, radius: s.groupRadius, weights: new Map() };
     groupWeightCache.set(battle, cached);
     const cell = Math.max(1, s.groupRadius);
     const grid = new Map<string, Unit[]>();
