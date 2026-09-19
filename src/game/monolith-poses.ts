@@ -10,6 +10,7 @@ import { sourcePoseBounds } from './spell-tower-effect-player';
 import { MONOLITH_ART } from './monolith-art';
 import { MONOLITH, monolithStats, monolithVariant, type MonolithVariant } from './monolith-stats';
 import type { MonolithProjectile, MonolithTowerState } from './monolith';
+import { battleUnit } from './battle-index';
 
 export const MONOLITH_GRAPH = runtime as unknown as NativeMeshGraph;
 export const MONOLITH_EFFECTS = runtime.effects as Record<string, Record<string, string>[]>;
@@ -27,11 +28,12 @@ export function monolithDirection(dx: number, dy: number) {
 const clip = (name: string) => MONOLITH_GRAPH.clips[MONOLITH_GRAPH.exports[name]];
 const ATTACK_FRAMES = MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].timeline.length;
 const ATTACK_FPS = MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].fps;
-const ORB = MONOLITH_GRAPH.clips[
-  MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].children[
-    MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].names.indexOf('projectile_0')
-  ]
-];
+const ORB =
+  MONOLITH_GRAPH.clips[
+    MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].children[
+      MONOLITH_GRAPH.clips[Object.values(runtime.turretViews)[0]].names.indexOf('projectile_0')
+    ]
+  ];
 
 export interface MonolithPose {
   direction: number;
@@ -50,7 +52,7 @@ export function monolithPose(
 ): MonolithPose {
   const direction = state ? monolithDirection(state.aimX, state.aimY) : monolithDirection(1, 1);
   const target =
-    state && battle ? battle.units.find((u) => u.id === state.targetId && u.hp > 0) : undefined;
+    state && battle ? [battleUnit(battle, state.targetId)].find((u) => !!u && u.hp > 0) : undefined;
   const pose: MonolithPose = {
     direction,
     attack: 0,
@@ -61,7 +63,10 @@ export function monolithPose(
   const shot = state.shots.at(-1);
   const age = shot ? elapsed - shot.at : Infinity;
   if (shot && age >= 0 && age < (ATTACK_FRAMES - MONOLITH.actionFrame) / ATTACK_FPS) {
-    pose.attack = Math.min(ATTACK_FRAMES - 1, MONOLITH.actionFrame + Math.floor(age * ATTACK_FPS + 1e-9));
+    pose.attack = Math.min(
+      ATTACK_FRAMES - 1,
+      MONOLITH.actionFrame + Math.floor(age * ATTACK_FPS + 1e-9),
+    );
     pose.variant = shot.variant;
     return pose;
   }
@@ -103,6 +108,21 @@ export function monolithPoses(
       : []),
   ];
 }
+/**
+ * What `monolithPoses` output depends on over time: the settled ruin's source frame, else the
+ * 30 fps display frame (the orb and construction clips animate continuously).
+ */
+export function monolithTimeKey(
+  level: number,
+  state: MonolithVisualState,
+  seconds: number,
+  ruinAge = Infinity,
+) {
+  if (state !== 'ruin') return Math.floor(seconds * 30 + 1e-9);
+  const ruin = clip(monolithStats(level).ruin);
+  const age = Math.min(Math.max(0, ruinAge), (ruin.timeline.length - 1) / ruin.fps);
+  return Math.floor(age * ruin.fps + 1e-9);
+}
 const boundsCache = new Map<string, [number, number, number, number]>();
 /** Registered source bounds relative to the ground center, for health and upgrade bars. */
 export function monolithBounds(level: number, state: MonolithVisualState = 'setup') {
@@ -118,12 +138,13 @@ export function monolithBounds(level: number, state: MonolithVisualState = 'setu
 }
 
 const projectileRow = (variant: MonolithVariant) => runtime.projectiles[variant - 1];
+type MonolithFlight = Pick<
+  MonolithProjectile,
+  'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir' | 'variant' | 'flight'
+>;
 /** Source StartHeight/StartOffset with the local altitude projection used by other native towers. */
-export function monolithProjectilePose(
-  p: Pick<
-    MonolithProjectile,
-    'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir' | 'variant' | 'flight'
-  >,
+export function monolithFlightPoint(
+  p: MonolithFlight,
   elapsed: number,
   iso: (x: number, y: number) => { x: number; y: number },
   airLift: number,
@@ -144,8 +165,17 @@ export function monolithProjectilePose(
     p.flight.y + (p.y - p.flight.y) * f + (dy / length) * offset,
   );
   const lift = row.startHeight * 0.8 * (1 - t) + (16 + (p.toAir ? airLift : 0)) * t;
-  const x = ground.x,
-    y = ground.y - lift;
+  return { t, age, x: ground.x, y: ground.y - lift };
+}
+/** The orb art at its `monolithFlightPoint`, pointed at the target. */
+export function monolithProjectilePose(
+  p: MonolithFlight,
+  elapsed: number,
+  iso: (x: number, y: number) => { x: number; y: number },
+  airLift: number,
+) {
+  const row = projectileRow(p.variant);
+  const { t, age, x, y } = monolithFlightPoint(p, elapsed, iso, airLift);
   const to = iso(p.x, p.y);
   const angle = Math.atan2(to.y - 16 - (p.toAir ? airLift : 0) - y, to.x - x) - Math.PI / 2;
   const s = (row.scale / 100) * MONOLITH_ART.scale;

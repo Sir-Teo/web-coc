@@ -26,6 +26,21 @@ const sample = nativeParticleSampler(FREEZE_GRAPH, scale, {
   staticEmitters: { Freeze_glow_blue_lvl1: 0 },
 });
 
+/**
+ * Source frame of the rising bottle, or -1 outside its trigger window (the body is static then).
+ * Equal frames sample identical art.
+ */
+export function freezeTrapFrame(
+  cast: FreezeCast | undefined,
+  elapsed: number,
+  reduced = false,
+  finished = false,
+) {
+  const age = cast ? elapsed - cast.activatedAt : 0;
+  return cast && !finished && !reduced && age >= 0 && age < FREEZE_TRIGGER_DURATION
+    ? Math.floor(age * trigger.fps + 1e-9)
+    : -1;
+}
 /** The compartment stays; the separate bottle rises through its 14 source frames. */
 export function freezeTrapPoses(
   cast: FreezeCast | undefined,
@@ -40,9 +55,11 @@ export function freezeTrapPoses(
     {},
     bodyRoot,
   );
-  const age = cast ? elapsed - cast.activatedAt : 0;
-  if (cast && !finished && !reduced && age >= 0 && age < FREEZE_TRIGGER_DURATION)
-    poses.push(...nativeScenePoses(FREEZE_GRAPH, 'Freeze_trap_trigger', age, {}, bodyRoot));
+  const frame = freezeTrapFrame(cast, elapsed, reduced, finished);
+  if (frame >= 0)
+    poses.push(
+      ...nativeScenePoses(FREEZE_GRAPH, 'Freeze_trap_trigger', frame / trigger.fps, {}, bodyRoot),
+    );
   return poses;
 }
 

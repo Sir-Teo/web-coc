@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { SHRINK_TRAP } from './shrink-trap';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { SHRINK_ART } from './shrink-trap-art';
 import {
@@ -12,7 +15,10 @@ import {
 } from './shrink-trap-poses';
 import type { Battle, Building } from './model';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+
+/** Source rate of the spring animation: the body is a still outside it. */
+const TRIGGER_FPS = SHRINK_GRAPH.clips[SHRINK_GRAPH.exports.Shrink_trap_trigger]?.fps ?? 1;
 
 export function preloadShrinkTraps(scene: Phaser.Scene) {
   scene.load.image(SHRINK_ART.texture, SHRINK_ART.asset);
@@ -22,19 +28,24 @@ export function preloadShrinkTraps(scene: Phaser.Scene) {
 }
 export class ShrinkTrapPresentation {
   readonly bodies = new Map<number, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
+  private signatures = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'shrink-trap', 'nativeShrinkEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(SHRINK_SOUNDS))
-      audio.samples.register(shrinkSample(path), scene.cache.binary.get(shrinkSample(path)));
+      registerCachedSample(scene, audio.samples, shrinkSample(path));
   }
   clear() {
-    for (const map of [this.bodies, this.effects]) {
-      for (const view of map.values()) view.destroy();
-      map.clear();
-    }
+    this.fx.clear();
+    for (const view of this.bodies.values()) view.destroy();
+    this.bodies.clear();
+    this.signatures.clear();
   }
   destroy() {
     this.clear();
@@ -46,46 +57,45 @@ export class ShrinkTrapPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
     const bodies = new Set<number>(),
-      effects = new Set<string>(),
       cues: SampleCue[] = [];
+    // Transient springs, bursts and cues play out on the presentation clock after the finish.
+    const live = presentationLive(battle);
+    const elapsed = battle ? (live ? presentationTime(battle) : battle.elapsed) : 0;
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const trap of buildings) {
       if (trap.npc !== 'shrink-trap') continue;
       bodies.add(trap.id);
-      const state = battle?.traps[trap.id],
-        elapsed = battle?.elapsed ?? 0;
+      const state = battle?.traps[trap.id];
       const point = iso(trap.x + 1, trap.y + 1);
       let view = this.bodies.get(trap.id);
       if (!view) this.bodies.set(trap.id, (view = new NativeSceneView(this.scene, 'shrink-trap')));
-      view.render(
-        shrinkTrapPoses(state, elapsed, reduced, battle?.finished),
-        point.x,
-        point.y,
-        point.y,
-      );
-      for (const object of view.objects)
-        object.setData('nativeShrinkTrap', { id: trap.id, activated: !!state });
-      if (!battle || battle.finished || !state) continue;
-      cues.push(...shrinkSoundCues(trap.id, state));
-      for (const fx of shrinkEffectPoses(trap.id, state, elapsed, point, reduced)) {
-        effects.add(fx.key);
-        let view = this.effects.get(fx.key);
-        if (!view)
-          this.effects.set(fx.key, (view = new NativeSceneView(this.scene, 'shrink-trap')));
-        view.render(fx.poses, fx.x, fx.y, fx.depth);
-        for (const object of view.objects)
-          object.setData('nativeShrinkEffect', { id: trap.id, key: fx.key, emitter: fx.emitter });
+      // Mirrors shrinkTrapPoses: a still armed/unarmed body, plus the spring while it plays.
+      const finished = !!battle?.finished && !live;
+      const age = state ? Math.max(0, elapsed - state.activatedAt) : 0;
+      const spring =
+        state && !finished && !reduced && age < SHRINK_TRAP.delay
+          ? Math.floor(age * TRIGGER_FPS + 1e-9)
+          : -1;
+      const signature = `${state ? 1 : 0}:${spring}:${point.x}:${point.y}:${zoom}`;
+      if (this.signatures.get(trap.id) !== signature) {
+        this.signatures.set(trap.id, signature);
+        view.render(shrinkTrapPoses(state, elapsed, reduced, finished), point.x, point.y, point.y);
+        const data = { id: trap.id, activated: !!state };
+        for (const object of view.objects) object.setData('nativeShrinkTrap', data);
       }
+      if (!battle || !live || !state) continue;
+      if (cueAudible(state.activatedAt, elapsed)) cues.push(...shrinkSoundCues(trap.id, state));
+      for (const fx of shrinkEffectPoses(trap.id, state, elapsed, point, reduced))
+        this.fx.show(fx, { id: trap.id });
     }
     for (const [id, view] of this.bodies)
       if (!bodies.has(id)) {
         view.destroy();
         this.bodies.delete(id);
+        this.signatures.delete(id);
       }
-    for (const [key, view] of this.effects)
-      if (!effects.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    this.fx.sweep();
     return cues;
   }
 }

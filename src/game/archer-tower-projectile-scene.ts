@@ -7,6 +7,7 @@ import {
 } from './archer-tower-projectile';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
+import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
 const PREFIX = 'archer-tower-projectile';
 export function preloadArcherTowerProjectiles(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, ARCHER_TOWER_PROJECTILE_GRAPH, PREFIX);
@@ -25,23 +26,30 @@ export class ArcherTowerProjectiles {
     targetHeight: (p: CombatProjectile) => number,
   ) {
     const wanted = new Set<string>();
-    if (battle && !battle.finished && !reduced)
-      for (const p of battle.projectiles ?? []) {
+    // Arrows in flight when the battle ends keep flying on the presentation clock.
+    if (battle && presentationLive(battle) && !reduced) {
+      const elapsed = presentationTime(battle);
+      for (const p of presentationProjectiles(battle)) {
         if (p.weapon !== 'arrow' || p.variant === undefined || !p.flight) continue;
-        const pose = archerTowerProjectilePose(p, battle.elapsed, iso, targetHeight(p));
+        const pose = archerTowerProjectilePose(p, elapsed, iso, targetHeight(p));
         wanted.add(p.id);
         let view = this.views.get(p.id);
         if (!view) this.views.set(p.id, (view = new NativeSceneView(this.scene, PREFIX)));
         view.render(pose.poses, pose.x, pose.y, 8000);
-        for (const object of view.objects)
-          object.setData('nativeTowerArrow', {
-            id: p.id,
-            level: p.variant,
-            export: pose.export,
-            x: pose.x,
-            y: pose.y,
-          });
+        for (const object of view.objects) {
+          const data = object.getData('nativeTowerArrow');
+          if (data?.id === p.id) Object.assign(data, { export: pose.export, x: pose.x, y: pose.y });
+          else
+            object.setData('nativeTowerArrow', {
+              id: p.id,
+              level: p.variant,
+              export: pose.export,
+              x: pose.x,
+              y: pose.y,
+            });
+        }
       }
+    }
     for (const [id, view] of this.views)
       if (!wanted.has(id)) {
         view.destroy();

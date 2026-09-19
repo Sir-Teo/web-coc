@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import type { AudioManager } from './audio';
-import type { SampleCue } from './sample-audio';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive, presentationTime } from './presentation-clock';
+import { guardRender } from './render-guard';
 import type { Battle, Building } from './model';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { MORTAR_ART_LEVELS, mortarAsset, mortarTexture } from './mortar-art';
 import { MORTAR_GRAPH, mortarPose, mortarPoses, mortarProjectilePose } from './mortar-poses';
@@ -28,7 +31,9 @@ export class MortarPresentation {
   readonly towers = new Map<number, NativeSceneView>();
   readonly projectiles = new Map<string, NativeSceneView>();
   readonly shadows = new Map<string, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<number, string>();
   private homeSequence = 0;
   private homeEffects: {
@@ -43,8 +48,10 @@ export class MortarPresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, 'mortar', 'nativeMortarEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(MORTAR_SOUNDS))
-      audio.samples.register(mortarSample(path), scene.cache.binary.get(mortarSample(path)));
+      registerCachedSample(scene, audio.samples, mortarSample(path));
   }
   handling(id: number, kind: MortarHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((e) => e.id !== id);
@@ -54,7 +61,8 @@ export class MortarPresentation {
     }
   }
   clear() {
-    for (const map of [this.towers, this.effects, this.projectiles, this.shadows]) {
+    this.fx.clear();
+    for (const map of [this.towers, this.projectiles, this.shadows]) {
       for (const view of map.values()) view.destroy();
       map.clear();
     }
@@ -71,8 +79,10 @@ export class MortarPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    const live = presentationLive(battle);
+    // After the finish, shells in flight and bursts keep sampling on the presentation clock.
+    if (battle) elapsed = presentationTime(battle);
     const wanted = new Set<number>(),
-      showing = new Set<string>(),
       flying = new Set<string>(),
       cues: SampleCue[] = [];
     const effect = (
@@ -83,17 +93,12 @@ export class MortarPresentation {
       at: number,
       point: { x: number; y: number },
     ) => {
-      cues.push(...mortarSoundCues(id, event, index, name, at));
-      for (const fx of mortarEffectPoses(id, event, index, name, at, elapsed, point, reduced)) {
-        showing.add(fx.key);
-        let view = this.effects.get(fx.key);
-        if (!view) this.effects.set(fx.key, (view = new NativeSceneView(this.scene, 'mortar')));
-        view.render(fx.poses, fx.x, fx.y, fx.depth);
-        for (const object of view.objects)
-          object.setData('nativeMortarEffect', { key: fx.key, emitter: fx.emitter });
-      }
+      if (cueAudible(at, elapsed)) cues.push(...mortarSoundCues(id, event, index, name, at));
+      for (const fx of mortarEffectPoses(id, event, index, name, at, elapsed, point, reduced))
+        this.fx.show(fx);
     };
-    const zoom = `${this.scene.cameras.main.zoomX}:${this.scene.cameras.main.zoomY}`;
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const tower of buildings) {
       if (tower.kind !== 'mortar') continue;
       wanted.add(tower.id);
@@ -104,7 +109,7 @@ export class MortarPresentation {
       const signature = `${tower.level}:${pose.state}:${pose.turret}:${p.x}:${p.y}:${zoom}`;
       if (this.signatures.get(tower.id) !== signature) {
         view.render(
-          mortarPoses(tower.level, pose),
+          guardRender(`Mortar level ${tower.level}`, () => mortarPoses(tower.level, pose), []),
           p.x,
           p.y,
           p.y + (pose.state === 'ruin' ? -2 : 0),
@@ -113,7 +118,7 @@ export class MortarPresentation {
           object.setData('nativeMortar', { id: tower.id, level: tower.level, ...pose });
         this.signatures.set(tower.id, signature);
       }
-      if (battle && !battle.finished) {
+      if (battle && live) {
         const history = battle.mortars?.[tower.id];
         for (const shot of history?.shots ?? []) {
           effect(
@@ -125,15 +130,7 @@ export class MortarPresentation {
             iso(shot.fromX, shot.fromY),
           );
           if (!reduced) {
-            for (const fx of mortarTrailPoses(shot, elapsed, iso)) {
-              showing.add(fx.key);
-              let trail = this.effects.get(fx.key);
-              if (!trail)
-                this.effects.set(fx.key, (trail = new NativeSceneView(this.scene, 'mortar')));
-              trail.render(fx.poses, fx.x, fx.y, fx.depth);
-              for (const object of trail.objects)
-                object.setData('nativeMortarEffect', { key: fx.key, emitter: fx.emitter });
-            }
+            for (const fx of mortarTrailPoses(shot, elapsed, iso)) this.fx.show(fx);
             if (
               elapsed >= shot.launched &&
               elapsed < shot.impact &&
@@ -187,11 +184,7 @@ export class MortarPresentation {
         this.towers.delete(id);
         this.signatures.delete(id);
       }
-    for (const [key, view] of this.effects)
-      if (!showing.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    this.fx.sweep();
     for (const map of [this.projectiles, this.shadows])
       for (const [key, view] of map)
         if (!flying.has(key)) {

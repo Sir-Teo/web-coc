@@ -13,6 +13,7 @@ import { WIZARD_TOWER_ART } from './wizard-tower-art';
 import { WIZARD_TOWER, wizardTowerStats } from './wizard-tower-stats';
 import type { Battle, Building } from './model';
 import type { CombatProjectile } from './projectiles';
+import { battleDefenseTarget } from './battle-index';
 
 export const WIZARD_TOWER_GRAPH = body as unknown as NativeMeshGraph;
 export const TOWER_WIZARD_GRAPH = defender as unknown as NativeMeshGraph;
@@ -66,11 +67,9 @@ export function towerWizardPose(
     actionFrame = Number(rows[1].ActionFrame);
   const clip = TOWER_WIZARD_GRAPH.clips[TOWER_WIZARD_GRAPH.exports[rows[1].ExportName + '_3']];
   const shot = battle?.wizardTowers?.[tower.id]?.shots.at(-1);
-  const current = battle?.units.find(
+  const current = [battle ? battleDefenseTarget(battle, tower.id) : undefined].find(
     (u) =>
-      u.id === battle.defenseTargets[tower.id] &&
-      u.hp > 0 &&
-      Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= WIZARD_TOWER.range,
+      !!u && u.hp > 0 && Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= WIZARD_TOWER.range,
   );
   const facing = current ?? shot;
   const pose: TowerWizardPose = {
@@ -154,8 +153,8 @@ export function wizardTowerBounds(level: number, state: WizardTowerVisualState =
   return result;
 }
 
-/** Fixed source/target registration survives target movement and source destruction. */
-export function wizardProjectilePose(
+/** The projectile's screen point alone (trail births need no projectile art). */
+export function wizardFlightPoint(
   level: number,
   shot: Pick<CombatProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir'>,
   elapsed: number,
@@ -176,6 +175,19 @@ export function wizardProjectilePose(
   };
   const ground = iso(shot.x, shot.y),
     to = { x: ground.x, y: ground.y - (shot.toAir ? airLift : 0) - 16 };
+  return { t, from, to, x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+}
+/** Fixed source/target registration survives target movement and source destruction. */
+export function wizardProjectilePose(
+  level: number,
+  shot: Pick<CombatProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir'>,
+  elapsed: number,
+  iso: (x: number, y: number) => { x: number; y: number },
+  airLift: number,
+) {
+  const row = wizardProjectileRow(level),
+    age = Math.max(0, elapsed - shot.launched);
+  const { t, from, to, x, y } = wizardFlightPoint(level, shot, elapsed, iso, airLift);
   // Original projectile artwork points along +Y; its trailing flame extends upward.
   const angle =
     row.UseRotate === 'TRUE' ? Math.atan2(to.y - from.y, to.x - from.x) - Math.PI / 2 : 0;
@@ -188,8 +200,8 @@ export function wizardProjectilePose(
     t,
     from,
     to,
-    x: from.x + (to.x - from.x) * t,
-    y: from.y + (to.y - from.y) * t,
+    x,
+    y,
     export: row.ExportName,
     rotation: angle,
     time,

@@ -5,6 +5,7 @@ import { CANNON, CANNON_BUILDING, cannonStats, cannonProjectileRow } from './can
 import type { Battle, Building } from './model';
 import type { CannonShot, CannonTrailPoint } from './cannon-attack';
 import { TROOPS } from './data';
+import { battleDefenseTarget } from './battle-index';
 
 export const CANNON_GRAPH = raw as unknown as NativeMeshGraph;
 export type CannonVisualState = 'setup' | 'constructing' | 'upgrading' | 'ruin';
@@ -36,9 +37,9 @@ export function cannonPose(
     battle &&
     !battle.finished &&
     (battle.defenseStuns[tower.id] ?? 0) <= battle.elapsed
-      ? battle.units.find(
+      ? [battleDefenseTarget(battle, tower.id)].find(
           (u) =>
-            u.id === battle.defenseTargets[tower.id] &&
+            !!u &&
             u.hp > 0 &&
             !TROOPS[u.kind].flying &&
             Math.hypot(u.x - tower.x - 1.5, u.y - tower.y - 1.5) <= CANNON.range,

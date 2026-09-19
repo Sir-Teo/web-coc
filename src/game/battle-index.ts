@@ -5,6 +5,7 @@ import type { Defender } from './defenders';
  * Id lookups shared by presentation layers within one rendered frame. Each index is rebuilt at
  * most once per simulation step (keyed by the array, its length and the battle clock), so a
  * render pass never pays a linear `find` per lookup and never reads a stale entry after a step.
+ * Read-only: nothing here mutates the battle or feeds back into the simulation.
  */
 interface Entry<T> {
   length: number;
@@ -31,3 +32,23 @@ export const unitIndex = (battle: Pick<Battle, 'units' | 'elapsed'>) =>
   index<Unit>(battle.units, battle.elapsed);
 export const defenderIndex = (battle: Pick<Battle, 'defenders' | 'elapsed'>) =>
   index<Defender>(battle.defenders ?? EMPTY, battle.elapsed);
+
+/** The battle unit with this id (any state), or undefined. */
+export function battleUnit(
+  battle: Pick<Battle, 'units' | 'elapsed'>,
+  id: number | null | undefined,
+): Unit | undefined {
+  return id === null || id === undefined ? undefined : unitIndex(battle).get(id);
+}
+/** The battle building with this id, or undefined. */
+export function battleBuilding(
+  battle: Pick<Battle, 'buildings' | 'elapsed'>,
+  id: number | null | undefined,
+): Building | undefined {
+  return id === null || id === undefined ? undefined : buildingIndex(battle).get(id);
+}
+/** The unit a defense currently targets, as `battle.defenseTargets` records it. */
+export const battleDefenseTarget = (
+  battle: Pick<Battle, 'units' | 'elapsed' | 'defenseTargets'>,
+  towerId: number,
+) => battleUnit(battle, battle.defenseTargets[towerId]);

@@ -10,6 +10,7 @@ import {
 import { defendingBuilderStats, type DefendingBuilder } from './defending-builder';
 import type { Battle } from './model';
 import { nativeScenePoses, type NativeScenePose } from './native-mesh';
+import { battleBuilding } from './battle-index';
 
 /** State-driven original poses: walk to a target, the looping `attack` (build) row, idle otherwise. */
 export function defendingBuilderPose(
@@ -21,7 +22,7 @@ export function defendingBuilderPose(
   const stats = defendingBuilderStats(builder.level);
   const states = animationStates(stats.animation);
   const art = characterArt(stats.animation);
-  const target = battle.buildings.find((b) => b.id === builder.target);
+  const target = battleBuilding(battle, builder.target);
   const aim =
     builder.path[0] ??
     (target

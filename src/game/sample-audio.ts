@@ -7,24 +7,59 @@ export interface SampleCue {
   loop?: boolean;
 }
 
+/**
+ * Registers a loaded sample from a scene's binary cache. A failed download leaves no cache
+ * entry; that sample then stays silent instead of throwing in a constructor or loader callback.
+ */
+export function registerCachedSample(
+  scene: { cache: { binary: { exists(key: string): boolean; get(key: string): unknown } } },
+  samples: { register(name: string, data: unknown): boolean },
+  key: string,
+) {
+  return scene.cache.binary.exists(key) && samples.register(key, scene.cache.binary.get(key));
+}
+
+/**
+ * One-shot cues older than this (battle seconds) are past every native sample's length, so
+ * presentations skip building them. `sync` would drop them anyway once decoded.
+ */
+export const CUE_HORIZON = 10;
+/** True while a one-shot cue fired at `at` can still be heard at `elapsed`. */
+export const cueAudible = (at: number, elapsed: number) => elapsed - at < CUE_HORIZON;
+
+/** Concurrent voices of one sample; further overlapping cues of it stay silent. */
+export const MAX_VOICES_PER_SAMPLE = 4;
+/** Concurrent sample voices in total (Web Audio mixes every source on the audio thread). */
+export const MAX_VOICES = 32;
+
 /** Short native samples synchronized to the simulation clock, including replay seeks. */
 export class SampleAudio {
   private encoded = new Map<string, ArrayBuffer>();
   private buffers = new Map<string, AudioBuffer>();
   private decoding = new Set<string>();
-  private active = new Map<string, { source: AudioBufferSourceNode; gain: GainNode }>();
+  private active = new Map<
+    string,
+    { source: AudioBufferSourceNode; gain: GainNode; sample: string }
+  >();
   private ended = new Set<string>();
   private last?: { elapsed: number; wall: number; speed: number };
   constructor(private context: () => AudioContext | null) {}
-  register(name: string, data: ArrayBuffer) {
+  /**
+   * Registers an encoded sample. Anything but an ArrayBuffer (a missing loader entry after a
+   * failed download) is ignored: a throw here would escape into the loader's completion
+   * callback and leave the art it gates unfinished.
+   */
+  register(name: string, data: unknown) {
+    if (!(data instanceof ArrayBuffer)) return false;
     this.encoded.set(name, data);
     this.decode();
+    return true;
   }
   decode() {
     const ctx = this.context();
     if (!ctx) return;
     for (const [name, data] of this.encoded)
-      if (!this.decoding.has(name)) {
+      if (!this.decoding.has(name) && data instanceof ArrayBuffer) {
         this.decoding.add(name);
         void ctx
           .decodeAudioData(data.slice(0))
@@ -64,6 +99,9 @@ export class SampleAudio {
       this.stop();
     this.last = { elapsed, wall: ctx.currentTime, speed };
     const wanted = new Set<string>();
+    const voices = new Map<string, number>();
+    for (const node of this.active.values())
+      voices.set(node.sample, (voices.get(node.sample) ?? 0) + 1);
     for (const cue of cues) {
       const buffer = this.buffers.get(cue.sample),
         age = (elapsed - cue.at) * cue.pitch;
@@ -74,6 +112,10 @@ export class SampleAudio {
       if (this.ended.has(cue.key)) continue;
       let node = this.active.get(cue.key);
       if (!node) {
+        const playing = voices.get(cue.sample) ?? 0;
+        // Big battles stack dozens of identical impacts: cap them rather than the mixer.
+        if (playing >= MAX_VOICES_PER_SAMPLE || this.active.size >= MAX_VOICES) continue;
+        voices.set(cue.sample, playing + 1);
         const source = ctx.createBufferSource(),
           gain = ctx.createGain();
         source.buffer = buffer;
@@ -82,7 +124,7 @@ export class SampleAudio {
         gain.connect(ctx.destination);
         gain.gain.value = cue.volume * 0.12;
         source.playbackRate.value = cue.pitch * speed;
-        node = { source, gain };
+        node = { source, gain, sample: cue.sample };
         this.active.set(cue.key, node);
         source.onended = () => {
           if (this.active.get(cue.key)?.source === source) {

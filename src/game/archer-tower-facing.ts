@@ -5,6 +5,7 @@ import {
   type TowerArcherFacing,
 } from './archer-tower-art';
 import { ARCHER_TOWER } from './archer-tower-stats';
+import { battleDefenseTarget } from './battle-index';
 
 /** Original clips face right. These projected angle sectors are a local interpretation. */
 export function towerArcherFacing(dx: number, dy: number): TowerArcherFacing {
@@ -20,10 +21,8 @@ export function battleTowerArcherFacing(
 ): TowerArcherFacing {
   const idle: TowerArcherFacing = { direction: 3, flip: false };
   if (!battle?.nativeArcherTowers || tower.hp <= 0 || tower.constructing) return idle;
-  const target = battle.units.find(
-    (unit) => unit.id === battle.defenseTargets[tower.id] && unit.hp > 0,
-  );
-  if (!target) return idle;
+  const target = battleDefenseTarget(battle, tower.id);
+  if (!target || target.hp <= 0) return idle;
   const dx = target.x - tower.x - 1.5,
     dy = target.y - tower.y - 1.5;
   return Math.hypot(dx, dy) <= ARCHER_TOWER.range ? towerArcherFacing(dx, dy) : idle;

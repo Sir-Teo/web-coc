@@ -3,14 +3,18 @@ import type { AudioManager } from './audio';
 import type { LatePresentation, LateRenderContext } from './late-campaign-scene';
 import type { Building } from './model';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { NativeSceneView } from './native-scene-view';
-import type { SampleCue } from './sample-audio';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeEffectViews } from './native-effect-views';
+import { presentationLive } from './presentation-clock';
+import { guardRender } from './render-guard';
+import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { TORNADO_TRAP_ART, tornadoTrapAsset, tornadoTrapTexture } from './tornado-trap-art';
 import {
   TORNADO_DEPTH,
   TORNADO_GRAPH,
   TORNADO_SOUNDS,
   TORNADO_VFX_GRAPH,
+  tornadoBodyFrame,
   tornadoBodyPose,
   tornadoEffectPoses,
   tornadoSample,
@@ -31,13 +35,18 @@ export function preloadTornadoTrap(scene: Phaser.Scene) {
 /** State-driven presentation; rendering reads battle histories so replay seeks stay exact. */
 export class TornadoTrapPresentation implements LatePresentation {
   readonly bodies = new Map<number, NativeSceneView>();
-  readonly effects = new Map<string, NativeSceneView>();
+  private fx: NativeEffectViews;
+  /** Live effect views by key (pooled; see NativeEffectViews). */
+  readonly effects: Map<string, NativeSceneView>;
+  private signatures = new Map<number, string>();
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.fx = new NativeEffectViews(scene, VFX_PREFIX, 'nativeTornadoEffect');
+    this.effects = this.fx.views;
     for (const path of Object.keys(TORNADO_SOUNDS))
-      audio.samples.register(tornadoSample(path), scene.cache.binary.get(tornadoSample(path)));
+      registerCachedSample(scene, audio.samples, tornadoSample(path));
   }
   /** Every Tornado Trap body is drawn from the retained source graph. */
   handles(b: Building) {
@@ -55,49 +64,69 @@ export class TornadoTrapPresentation implements LatePresentation {
   }
   render({ buildings, battle, elapsed, reduced, iso }: LateRenderContext): SampleCue[] {
     const bodies = new Set<number>(),
-      effects = new Set<string>(),
       cues: SampleCue[] = [];
+    // Effects play on the presentation clock through the finish grace; bodies hold battle time.
+    const live = presentationLive(battle);
+    const bodyTime = battle ? battle.elapsed : elapsed;
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const trap of buildings) {
       if (!this.handles(trap)) continue;
       bodies.add(trap.id);
       const vortex = battle?.late?.tornadoTrap?.vortices[trap.id];
       const point = iso(trap.x + 0.5, trap.y + 0.5);
-      const body = tornadoBodyPose(trap.level, vortex, elapsed, reduced, battle?.finished);
+      const key = `tornado trap level ${trap.level}`;
+      // The 24 fps source loop is sampled at display rate: redraw only on a new source frame.
+      const frame = guardRender(
+        key,
+        () => tornadoBodyFrame(trap.level, vortex, bodyTime, reduced, battle?.finished),
+        undefined,
+      );
       let view = this.bodies.get(trap.id);
       if (!view) this.bodies.set(trap.id, (view = new NativeSceneView(this.scene, PREFIX)));
-      view.render(body.poses, point.x, point.y, body.ground ? TORNADO_DEPTH.whirl : point.y);
-      for (const object of view.objects)
-        object.setData('nativeTornadoTrap', { id: trap.id, export: body.export });
-      if (!battle || battle.finished || !vortex) continue;
-      cues.push(...tornadoSoundCues(vortex));
-      for (const fx of tornadoEffectPoses(vortex, elapsed, point, reduced)) {
-        effects.add(fx.key);
-        const prefix =
-          fx.emitter === 'gen_appear_fx' || fx.emitter === 'Grass' ? PREFIX : VFX_PREFIX;
-        let effect = this.effects.get(fx.key);
-        if (!effect) this.effects.set(fx.key, (effect = new NativeSceneView(this.scene, prefix)));
-        effect.render(fx.poses, fx.x, fx.y, fx.depth);
-        for (const object of effect.objects)
-          object.setData('nativeTornadoEffect', { id: trap.id, key: fx.key, emitter: fx.emitter });
+      const signature = frame
+        ? `${frame.export}:${frame.time}:${frame.ground}:${point.x}:${point.y}:${zoom}`
+        : '';
+      if (frame && this.signatures.get(trap.id) !== signature) {
+        const body = guardRender(
+          key,
+          () => tornadoBodyPose(trap.level, vortex, bodyTime, reduced, battle?.finished),
+          undefined,
+        );
+        view.render(
+          body?.poses ?? [],
+          point.x,
+          point.y,
+          frame.ground ? TORNADO_DEPTH.whirl : point.y,
+        );
+        const data = { id: trap.id, export: frame.export };
+        for (const object of view.objects) object.setData('nativeTornadoTrap', data);
+        this.signatures.set(trap.id, signature);
       }
+      if (!battle || !live || !vortex) continue;
+      if (cueAudible(Math.max(vortex.activatedAt, vortex.castAt), elapsed))
+        cues.push(...tornadoSoundCues(vortex));
+      for (const fx of tornadoEffectPoses(vortex, elapsed, point, reduced))
+        this.fx.show(
+          fx,
+          { id: trap.id },
+          fx.emitter === 'gen_appear_fx' || fx.emitter === 'Grass' ? PREFIX : VFX_PREFIX,
+        );
     }
     for (const [id, view] of this.bodies)
       if (!bodies.has(id)) {
         view.destroy();
         this.bodies.delete(id);
+        this.signatures.delete(id);
       }
-    for (const [key, view] of this.effects)
-      if (!effects.has(key)) {
-        view.destroy();
-        this.effects.delete(key);
-      }
+    this.fx.sweep();
     return cues;
   }
   clear() {
-    for (const map of [this.bodies, this.effects]) {
-      for (const view of map.values()) view.destroy();
-      map.clear();
-    }
+    this.fx.clear();
+    for (const view of this.bodies.values()) view.destroy();
+    this.bodies.clear();
+    this.signatures.clear();
   }
   destroy() {
     this.clear();
