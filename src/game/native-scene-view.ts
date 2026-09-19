@@ -2,46 +2,101 @@ import Phaser from 'phaser';
 import { NativeMeshView } from './native-mesh-scene';
 import { nativeBlendMode, nativeMultiplyModes } from './native-blend';
 import { NativeGroupColor } from './native-group-color';
+import { PART_DEPTH_STEP } from './unit-depth';
+import { groupBufferPool, type NativeGroupBuffer } from './native-group-buffer';
 import {
+  includeNativeVertices,
   nativeMatrix,
-  nativeVertices,
+  type NativeGroupPose,
   type NativeMatrix,
-  type NativeMeshPose,
   type NativeScenePose,
 } from './native-mesh';
 
 type NativeObject = Phaser.GameObjects.Mesh2D | Phaser.GameObjects.Image;
+type Renderer = Phaser.Renderer.WebGL.WebGLRenderer;
 
-/** Quantize density to half steps so zoom gestures reuse isolated blend buffers. */
+/**
+ * Quantize density up to half steps: zoom gestures reuse isolated blend buffers, and a buffer is
+ * never rendered below the display density (zoom 1.24 renders at 1.5, not a blurry 1.0).
+ */
 export function quantizedDensity(density: number) {
-  return Math.max(1, Math.round(density * 2) / 2);
+  return Math.max(1, Math.ceil(density * 2 - 1e-6) / 2);
 }
-function groupSignature(poses: readonly NativeScenePose[], density: number): string {
-  // Value hash of everything baked into the isolated buffer: leaf geometry
-  // transforms, texture selection and per-texel colors. Group-level
-  // multiply/add use the GPU color filter on the composed image, and group
-  // blend/alpha/position are image state, so they are intentionally excluded
-  // and never force a render-target redraw by themselves.
-  const parts: string[] = [`d${density}`];
-  const walk = (list: readonly NativeScenePose[]) => {
-    for (const p of list) {
-      if ('group' in p) {
-        parts.push(`G${p.key}:${p.blend}:`);
-        walk(p.group);
-        parts.push(';');
-      } else {
-        parts.push(`${p.key}|${p.texture}|${p.blend}|`);
-        parts.push(p.matrix.join(','));
-        parts.push('|');
-        parts.push(p.multiply.join(','));
-        parts.push('|');
-        parts.push(p.add.join(','));
-        parts.push(';');
-      }
+
+// Numeric signature of everything baked into an isolated buffer: leaf keys (which select the
+// vertex strips), textures, blends, transforms and colors, including nested groups' colors,
+// blends and alpha. Two independent 32-bit hashes combine into one 53-bit number.
+const f64 = new Float64Array(1);
+const u32 = new Uint32Array(f64.buffer);
+let h1 = 0,
+  h2 = 0;
+const word = (v: number) => {
+  h1 = Math.imul(h1 ^ v, 0x01000193);
+  h2 = Math.imul(h2 ^ v, 0x5bd1e995);
+  h2 ^= h2 >>> 15;
+};
+const num = (v: number) => {
+  f64[0] = v;
+  word(u32[0]);
+  word(u32[1]);
+};
+const str = (s: string) => {
+  for (let i = 0; i < s.length; i++) word(s.charCodeAt(i));
+  word(0x2f2f);
+};
+const numbers = (list: readonly number[], count: number) => {
+  for (let i = 0; i < count; i++) num(list[i]);
+};
+function hashPoses(poses: readonly NativeScenePose[]) {
+  for (let i = 0; i < poses.length; i++) {
+    const p = poses[i];
+    if ('group' in p) {
+      word(0x4747);
+      str(p.key);
+      word(p.blend);
+      numbers(p.multiply, 4);
+      numbers(p.add, 4);
+      hashPoses(p.group);
+      word(0x3b3b);
+    } else {
+      word(0x4c4c);
+      str(p.key);
+      word(p.texture);
+      word(p.blend);
+      numbers(p.matrix, 6);
+      numbers(p.multiply, 4);
+      numbers(p.add, 4);
     }
-  };
-  walk(poses);
-  return parts.join('');
+  }
+}
+function groupSignature(pose: NativeGroupPose, density: number, colored: boolean): number {
+  h1 = 0x811c9dc5;
+  h2 = 0x9747b28c;
+  num(density);
+  // Group multiply/add are baked into colored buffers; alpha, blend and position are image state.
+  if (colored) {
+    numbers(pose.multiply, 3);
+    numbers(pose.add, 3);
+  } else word(0x5757);
+  hashPoses(pose.group);
+  return (h1 >>> 0) * 0x200000 + ((h2 >>> 0) & 0x1fffff);
+}
+
+const scratchBounds = [0, 0, 0, 0];
+function includeBounds(poses: readonly NativeScenePose[], bounds: number[]) {
+  for (let i = 0; i < poses.length; i++) {
+    const pose = poses[i];
+    if ('group' in pose) includeBounds(pose.group, bounds);
+    else includeNativeVertices(pose, bounds);
+  }
+}
+
+export function nativeSceneBounds(
+  poses: readonly NativeScenePose[],
+): [number, number, number, number] | undefined {
+  const bounds = [Infinity, Infinity, -Infinity, -Infinity];
+  includeBounds(poses, bounds);
+  return bounds[0] === Infinity ? undefined : [bounds[0], bounds[1], bounds[2], bounds[3]];
 }
 
 function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): NativeScenePose[] {
@@ -52,72 +107,165 @@ function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): N
   );
 }
 
-export function nativeSceneBounds(
-  poses: readonly NativeScenePose[],
-): [number, number, number, number] | undefined {
-  let left = Infinity,
-    top = Infinity,
-    right = -Infinity,
-    bottom = -Infinity;
-  for (const pose of poses) {
-    if ('group' in pose) {
-      const bounds = nativeSceneBounds(pose.group);
-      if (bounds) {
-        left = Math.min(left, bounds[0]);
-        top = Math.min(top, bounds[1]);
-        right = Math.max(right, bounds[2]);
-        bottom = Math.max(bottom, bounds[3]);
-      }
-    } else {
-      const v = nativeVertices(pose);
-      for (let i = 0; i < v.length; i += 4) {
-        left = Math.min(left, v[i]);
-        top = Math.min(top, v[i + 1]);
-        right = Math.max(right, v[i]);
-        bottom = Math.max(bottom, v[i + 1]);
-      }
-    }
+const white = (m: readonly number[]) => m[0] === 1 && m[1] === 1 && m[2] === 1;
+const colorless = (p: { multiply: readonly number[]; add: readonly number[] }) =>
+  white(p.multiply) && p.add[0] === 0 && p.add[1] === 0 && p.add[2] === 0;
+const IDENTITY_COLOR = [1, 1, 1, 1],
+  NO_ADD = [0, 0, 0, 0];
+
+/** Direct multiply leaves also need isolation before the two destination passes. */
+function isolateMultiplyLeaves(poses: readonly NativeScenePose[]): readonly NativeScenePose[] {
+  let found = false;
+  for (let i = 0; i < poses.length && !found; i++) {
+    const p = poses[i];
+    found = !('group' in p) && p.blend === 3;
   }
-  return left === Infinity ? undefined : [left, top, right, bottom];
+  if (!found) return poses;
+  return poses.map((p) =>
+    !('group' in p) && p.blend === 3
+      ? {
+          key: p.key,
+          blend: 3,
+          multiply: p.multiply,
+          add: p.add,
+          group: [{ ...p, blend: 0, multiply: IDENTITY_COLOR, add: NO_ADD }],
+        }
+      : p,
+  );
+}
+
+/**
+ * A screen/additive group holding one colorless-composited leaf needs no buffer: the leaf lands
+ * on a cleared buffer unchanged (normal, screen and additive all reduce to the source there), so
+ * compositing that buffer equals drawing the leaf with the group's blend and folded alpha. Group
+ * multiply is folded only when it has no color (the group color would clamp after the leaf's).
+ */
+export function flattenSingleLeafGroups(
+  poses: readonly NativeScenePose[],
+): readonly NativeScenePose[] {
+  let result: NativeScenePose[] | undefined;
+  for (let i = 0; i < poses.length; i++) {
+    const pose = poses[i];
+    if (
+      !('group' in pose) ||
+      pose.blend === 3 ||
+      pose.group.length !== 1 ||
+      'group' in pose.group[0] ||
+      pose.group[0].blend === 3 ||
+      !colorless(pose)
+    )
+      continue;
+    const leaf = pose.group[0];
+    result ??= poses.slice();
+    result[i] = {
+      key: pose.key,
+      texture: leaf.texture,
+      vertices: leaf.vertices,
+      matrix: leaf.matrix,
+      multiply: [
+        leaf.multiply[0],
+        leaf.multiply[1],
+        leaf.multiply[2],
+        leaf.multiply[3] * pose.multiply[3],
+      ],
+      add: leaf.add,
+      blend: pose.blend,
+    };
+  }
+  return result ?? poses;
+}
+
+/** Frames a shrinkable buffer must stay under a quarter used before it is swapped for a smaller one. */
+const SHRINK_FRAMES = 120;
+
+interface GroupEntry {
+  /** Composited buffer the scene (or an enclosing group) draws. */
+  buffer?: NativeGroupBuffer;
+  /** The drawn group image (`buffer.image`), kept for callers of the earlier API. */
+  image?: Phaser.GameObjects.RenderTexture;
+  /** Colored groups: children compose here first, then paint `buffer` through the color filter. */
+  source?: NativeGroupBuffer;
+  content: NativeSceneView;
+  multiplyImage?: Phaser.GameObjects.Image;
+  /** Crop (width * 65536 + height) last applied to multiplyImage. */
+  multiplyCrop: number;
+  signature: number;
+  stamp: number;
+  density: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  /** Consecutive frames the buffer was more than 4x the content area. */
+  oversized: number;
+  multiply: number[];
+  add: number[];
+}
+
+// One context-loss listener pair per renderer serves every live top-level view.
+const liveViews = new Map<Renderer, Set<NativeSceneView>>();
+function onContextLost(this: Renderer) {
+  // Phaser 4.2.1 otherwise deletes stale handles in the restored context.
+  // Filters also use pooled framebuffers outside the views' own textures.
+  // Every handle belongs to the lost context and is already invalidated;
+  // retain the wrappers/attachment descriptions so Phaser can recreate them.
+  for (const framebuffer of this.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
+}
+function onContextRestored(this: Renderer) {
+  // Restored buffers are empty: repaint every live group from its retained content now, since a
+  // caller may never call render() again while its own signature stays unchanged.
+  for (const view of liveViews.get(this) ?? []) view.repaint();
+}
+function track(renderer: Renderer, view: NativeSceneView) {
+  let views = liveViews.get(renderer);
+  if (!views) {
+    liveViews.set(renderer, (views = new Set()));
+    renderer.on(Phaser.Renderer.Events.LOSE_WEBGL, onContextLost, renderer);
+    renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, onContextRestored, renderer);
+  }
+  views.add(view);
+}
+function untrack(renderer: Renderer, view: NativeSceneView) {
+  const views = liveViews.get(renderer);
+  if (!views?.delete(view) || views.size) return;
+  liveViews.delete(renderer);
+  renderer.off(Phaser.Renderer.Events.LOSE_WEBGL, onContextLost, renderer);
+  renderer.off(Phaser.Renderer.Events.RESTORE_WEBGL, onContextRestored, renderer);
 }
 
 /** Retains native polygons and composites native blend groups in separate GPU buffers. */
 export class NativeSceneView {
   private leaves: NativeMeshView;
-  readonly groups = new Map<
-    string,
-    {
-      image: Phaser.GameObjects.RenderTexture;
-      content: NativeSceneView;
-      color?: NativeGroupColor;
-      multiplyImage?: Phaser.GameObjects.Image;
-      signature?: string;
-    }
-  >();
+  private renderer: Renderer;
+  private stamp = 0;
+  private tracked = false;
+  readonly groups = new Map<string, GroupEntry>();
+  /** Drawn objects in final order, rebuilt by every render(). */
   objects: NativeObject[] = [];
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
     private detached = false,
   ) {
-    this.leaves = new NativeMeshView(scene, prefix);
-    if (!detached)
-      scene.game.renderer.on(Phaser.Renderer.Events.LOSE_WEBGL, this.onContextLost, this);
+    this.renderer = scene.game.renderer as Renderer;
+    this.leaves = new NativeMeshView(scene, prefix, detached);
+    if (!detached) {
+      track(this.renderer, this);
+      this.tracked = true;
+    }
   }
-  private onContextLost() {
-    // Phaser 4.2.1 otherwise deletes stale handles in the restored context.
-    // Filters also use pooled framebuffers outside this view's own textures.
-    // Every handle belongs to the lost context and is already invalidated;
-    // retain the wrappers/attachment descriptions so Phaser can recreate them.
-    const renderer = this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-    for (const framebuffer of renderer.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
-    this.invalidate();
-  }
-  /** Force isolated buffers to repaint (context loss drops their pixels). */
+  /** Force isolated buffers to repaint on the next render. */
   invalidate() {
     for (const entry of this.groups.values()) {
-      entry.signature = undefined;
+      entry.signature = NaN;
       entry.content.invalidate();
+    }
+  }
+  /** Repaints every isolated buffer from retained content, innermost first. */
+  repaint() {
+    for (const entry of this.groups.values()) {
+      entry.content.repaint();
+      this.paint(entry);
     }
   }
   get meshes() {
@@ -132,170 +280,254 @@ export class NativeSceneView {
     density = Math.max(1, this.scene.cameras.main.zoomX, this.scene.cameras.main.zoomY),
   ) {
     density = quantizedDensity(density);
-    // Direct multiply leaves also need isolation before the two destination passes.
-    poses = poses.map((p) =>
-      !('group' in p) && p.blend === 3
-        ? {
-            key: p.key,
-            blend: 3,
-            multiply: p.multiply,
-            add: p.add,
-            group: [{ ...p, blend: 0, multiply: [1, 1, 1, 1], add: [0, 0, 0, 0] }],
+    poses = isolateMultiplyLeaves(flattenSingleLeafGroups(poses));
+    // Final depths are assigned below in full pose order (leaves interleaved
+    // with blend groups), not in leaf-list order.
+    this.leaves.render(poses, x, y, depth, alpha, false);
+    const objects = this.objects;
+    objects.length = 0;
+    const stamp = ++this.stamp;
+    if (this.groups.size) {
+      // Release vanished groups first, so new groups can reuse their pooled buffers.
+      let wanted = 0;
+      for (let i = 0; i < poses.length; i++) {
+        const pose = poses[i];
+        const entry = 'group' in pose ? this.groups.get(pose.key) : undefined;
+        if (entry) {
+          entry.stamp = stamp;
+          wanted++;
+        }
+      }
+      if (wanted !== this.groups.size)
+        for (const [key, entry] of this.groups)
+          if (entry.stamp !== stamp) {
+            this.release(entry);
+            this.groups.delete(key);
           }
-        : p,
-    );
-    // Color filters must run before the destination passes. Applying a filter to
-    // pass one would preserve the cleared filter buffer's zero alpha. Screen on
-    // a transparent isolated buffer is source-over, so this inner group colors
-    // the composed source once without changing its premultiplied result.
-    poses = poses.map((p) =>
-      'group' in p &&
-      p.blend === 3 &&
-      (p.multiply.slice(0, 3).some((v) => v !== 1) || p.add.some((v) => v !== 0))
-        ? {
-            ...p,
-            multiply: [1, 1, 1, p.multiply[3]],
-            add: [0, 0, 0, 0],
-            group: [
-              {
-                ...p,
-                key: p.key + ':multiply-color',
-                blend: 4,
-                multiply: [...p.multiply.slice(0, 3), 1],
-              },
-            ],
-          }
-        : p,
-    );
-    this.leaves.render(
-      poses.filter((p): p is NativeMeshPose => !('group' in p)),
-      x,
-      y,
-      depth,
-      alpha,
-      // Final depths are assigned below in full pose order (leaves interleaved
-      // with blend groups), not in leaf-list order.
-      false,
-    );
-    this.objects = [];
-    const wanted = new Set<string>();
-    for (const [order, pose] of poses.entries()) {
+    }
+    for (let order = 0; order < poses.length; order++) {
+      const pose = poses[order];
+      const wantDepth = depth + order * PART_DEPTH_STEP;
       let object: NativeObject;
+      let entry: GroupEntry | undefined;
       if ('group' in pose) {
-        const bounds = nativeSceneBounds(pose.group);
-        if (!bounds) continue;
-        wanted.add(pose.key);
-        // Pixel-aligned edges and a transparent guard texel avoid clipping the
-        // source strips. Buffers follow physical camera zoom, including retina.
-        // Bounds quantize outward to 16px cells: growing or drifting content
-        // (notably per-particle buffers) reuses the same GPU buffer instead of
-        // reallocating on every frame.
-        const left = Math.floor((bounds[0] * density) / 16) * 16 - 1,
-          top = Math.floor((bounds[1] * density) / 16) * 16 - 1;
-        const width = Math.ceil((bounds[2] * density) / 16) * 16 - left + 1,
-          height = Math.ceil((bounds[3] * density) / 16) * 16 - top + 1;
-        let entry = this.groups.get(pose.key);
+        entry = this.renderGroup(pose, x, y, alpha, density, stamp);
         if (!entry) {
-          entry = {
-            image: this.scene.add.renderTexture(0, 0, width, height),
-            content: new NativeSceneView(this.scene, this.prefix, true),
-          };
-          entry.image.setOrigin(0, 0);
-          this.groups.set(pose.key, entry);
+          // Nothing to draw (no vertices): give its buffer back.
+          const empty = this.groups.get(pose.key);
+          if (empty) {
+            this.release(empty);
+            this.groups.delete(pose.key);
+          }
+          continue;
         }
-        const renderer = this.scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-        entry.image.setBlendMode(
-          pose.blend === 3
-            ? nativeMultiplyModes(renderer)[0]
-            : nativeBlendMode(renderer, pose.blend),
-        );
-        if (pose.blend !== 3 && entry.multiplyImage) {
-          entry.multiplyImage.destroy();
-          entry.multiplyImage = undefined;
-        }
-        const colored =
-          pose.multiply.slice(0, 3).some((v) => v !== 1) || pose.add.some((v) => v !== 0);
-        if (colored && !entry.color) entry.color = new NativeGroupColor(entry.image);
-        if (entry.color) {
-          entry.color.active = colored;
-          entry.color.setColor(pose.multiply, pose.add);
-        }
-        // Idle groups reuse the same isolated pixels: skip the render-target
-        // switch, mesh re-upload and draw when nothing baked into the buffer
-        // changed. Image transform, blend, filter color and alpha still update
-        // below so fades and moves never stick.
-        const signature = groupSignature(pose.group, density);
-        const resized = entry.image.width !== width || entry.image.height !== height;
-        if (entry.signature !== signature || resized) {
-          entry.content.render(
-            transformed(pose.group, [density, 0, -left, 0, density, -top]),
-            0,
-            0,
-            0,
-            1,
-            1,
-          );
-          // Resize reallocates the GPU buffer: only do it when bounds actually change.
-          if (resized) entry.image.resize(width, height);
-          (entry.image.texture as Phaser.Textures.DynamicTexture).commandBuffer.length = 0;
-          entry.image.clear().draw(entry.content.objects).setRenderMode('all', true);
-          entry.signature = signature;
-        }
-        const wantX = x + left / density;
-        const wantY = y + top / density;
-        const wantScale = 1 / density;
-        const wantAlpha = alpha * pose.multiply[3];
-        if (entry.image.x !== wantX || entry.image.y !== wantY) entry.image.setPosition(wantX, wantY);
-        if (entry.image.scaleX !== wantScale || entry.image.scaleY !== wantScale)
-          entry.image.setScale(wantScale);
-        if (entry.image.alpha !== wantAlpha) entry.image.setAlpha(wantAlpha);
-        if (pose.blend === 3) {
-          if (!entry.multiplyImage)
-            entry.multiplyImage = this.scene.add.image(0, 0, entry.image.texture).setOrigin(0, 0);
-          const second = entry.multiplyImage;
-          const wantSecondDepth = depth + order * 0.0001 + 0.00005;
-          second
-            .setFrame(entry.image.frame.name)
-            .setPosition(entry.image.x, entry.image.y)
-            .setScale(1 / density)
-            .setAlpha(alpha * pose.multiply[3])
-            .setBlendMode(nativeMultiplyModes(renderer)[1]);
-          if (second.depth !== wantSecondDepth) second.setDepth(wantSecondDepth);
-          if (!second.visible) second.setVisible(true);
-          if (this.detached) second.removeFromDisplayList();
-        }
-        object = entry.image;
-      } else object = this.meshes.get(pose.key)!;
+        object = entry.buffer!.image;
+      } else object = this.leaves.meshes.get(pose.key)!;
       // Guard depth writes: any assignment queues a full stable sort of the display list.
-      const wantDepth = depth + order * 0.0001;
       if (object.depth !== wantDepth) object.setDepth(wantDepth);
       if (!object.visible) object.setVisible(true);
-      if (this.detached) object.removeFromDisplayList();
-      this.objects.push(object);
-      if ('group' in pose && pose.blend === 3)
-        this.objects.push(this.groups.get(pose.key)!.multiplyImage!);
-    }
-    for (const [key, entry] of this.groups)
-      if (!wanted.has(key)) {
-        entry.content.destroy();
-        entry.multiplyImage?.destroy();
-        entry.image.destroy();
-        this.groups.delete(key);
+      objects.push(object);
+      if (entry?.multiplyImage) {
+        const second = entry.multiplyImage;
+        const wantSecondDepth = wantDepth + PART_DEPTH_STEP / 2;
+        if (second.depth !== wantSecondDepth) second.setDepth(wantSecondDepth);
+        if (!second.visible) second.setVisible(true);
+        objects.push(second);
       }
+    }
+  }
+  private renderGroup(
+    pose: NativeGroupPose,
+    x: number,
+    y: number,
+    alpha: number,
+    density: number,
+    stamp: number,
+  ): GroupEntry | undefined {
+    const colored = !colorless(pose);
+    const signature = groupSignature(pose, density, colored);
+    let entry = this.groups.get(pose.key);
+    if (entry && entry.oversized > SHRINK_FRAMES) entry.signature = NaN;
+    if (!entry || entry.signature !== signature) {
+      const bounds = scratchBounds;
+      bounds[0] = bounds[1] = Infinity;
+      bounds[2] = bounds[3] = -Infinity;
+      includeBounds(pose.group, bounds);
+      if (bounds[0] === Infinity) return undefined;
+      // Keep the buffer within the GPU's texture limit: an oversized framebuffer fails its
+      // completeness check and Phaser throws out of the game loop.
+      const limit = this.renderer.getMaxTextureSize() - 8;
+      const span = Math.max(bounds[2] - bounds[0], bounds[3] - bounds[1], 1e-6);
+      const d = Math.min(density, limit / span);
+      // Pixel-aligned edges and a transparent guard texel avoid clipping the
+      // source strips. Buffers follow physical camera zoom, including retina.
+      const left = Math.floor(bounds[0] * d) - 1,
+        top = Math.floor(bounds[1] * d) - 1;
+      const width = Math.ceil(bounds[2] * d) - left + 1,
+        height = Math.ceil(bounds[3] * d) - top + 1;
+      if (!entry) {
+        entry = {
+          content: new NativeSceneView(this.scene, this.prefix, true),
+          multiplyCrop: 0,
+          signature: NaN,
+          stamp,
+          density: d,
+          left,
+          top,
+          width,
+          height,
+          oversized: 0,
+          multiply: [1, 1, 1],
+          add: [0, 0, 0],
+        };
+        this.groups.set(pose.key, entry);
+      }
+      Object.assign(entry, { density: d, left, top, width, height });
+      for (let i = 0; i < 3; i++) {
+        entry.multiply[i] = pose.multiply[i];
+        entry.add[i] = pose.add[i];
+      }
+      this.allocate(entry, colored);
+      entry.content.render(transformed(pose.group, [d, 0, -left, 0, d, -top]), 0, 0, 0, 1, 1);
+      this.paint(entry);
+      entry.signature = signature;
+    }
+    entry.stamp = stamp;
+    const buffer = entry.buffer!;
+    entry.oversized =
+      buffer.width * buffer.height > 4 * entry.width * entry.height ? entry.oversized + 1 : 0;
+    const image = buffer.image;
+    const blend =
+      pose.blend === 3
+        ? nativeMultiplyModes(this.renderer)[0]
+        : nativeBlendMode(this.renderer, pose.blend);
+    if (image.blendMode !== blend) image.setBlendMode(blend);
+    let wantX = x + entry.left / entry.density,
+      wantY = y + entry.top / entry.density;
+    if (!this.detached) {
+      // Snap the buffer to the device-pixel grid so its texels map 1:1 at matching zoom.
+      const camera = this.scene.cameras.main;
+      const zx = camera.zoomX,
+        zy = camera.zoomY;
+      const ox = camera.width * camera.originX,
+        oy = camera.height * camera.originY;
+      wantX = (Math.round(ox + (wantX - camera.scrollX - ox) * zx) - ox) / zx + camera.scrollX + ox;
+      wantY = (Math.round(oy + (wantY - camera.scrollY - oy) * zy) - oy) / zy + camera.scrollY + oy;
+    }
+    const wantScale = 1 / entry.density;
+    const wantAlpha = alpha * pose.multiply[3];
+    if (image.x !== wantX || image.y !== wantY) image.setPosition(wantX, wantY);
+    if (image.scaleX !== wantScale || image.scaleY !== wantScale) image.setScale(wantScale);
+    if (image.alpha !== wantAlpha) image.setAlpha(wantAlpha);
+    if (pose.blend === 3) {
+      let second = entry.multiplyImage;
+      if (!second) {
+        second = entry.multiplyImage = new Phaser.GameObjects.Image(
+          this.scene,
+          0,
+          0,
+          image.texture,
+        ).setOrigin(0, 0);
+        second.setBlendMode(nativeMultiplyModes(this.renderer)[1]);
+        if (!this.detached) this.scene.add.existing(second);
+      }
+      if (second.texture !== image.texture) {
+        // Phaser accepts a Texture instance here; its declaration only lists keys.
+        second.setTexture(image.texture as unknown as string);
+        entry.multiplyCrop = 0;
+      }
+      const crop = entry.width * 0x10000 + entry.height;
+      if (entry.multiplyCrop !== crop) {
+        second.setCrop(0, 0, entry.width, entry.height);
+        entry.multiplyCrop = crop;
+      }
+      if (second.x !== wantX || second.y !== wantY) second.setPosition(wantX, wantY);
+      if (second.scaleX !== wantScale || second.scaleY !== wantScale) second.setScale(wantScale);
+      if (second.alpha !== wantAlpha) second.setAlpha(wantAlpha);
+    } else if (entry.multiplyImage) {
+      entry.multiplyImage.destroy();
+      entry.multiplyImage = undefined;
+    }
+    return entry;
+  }
+  /** Grow-only buffers: reallocate when content outgrows them or stays far smaller for a while. */
+  private allocate(entry: GroupEntry, colored: boolean) {
+    const pool = groupBufferPool(this.scene);
+    const { width, height } = entry;
+    const current = entry.buffer;
+    const fits = current && current.width >= width && current.height >= height;
+    if (current && !fits) {
+      // Grow in place with headroom: same framebuffer wrapper, no pool churn while content grows.
+      pool.resize(
+        current,
+        Math.max(current.width, Math.ceil(width * 1.25)),
+        Math.max(current.height, Math.ceil(height * 1.25)),
+      );
+    } else if (!current || entry.oversized > SHRINK_FRAMES) {
+      if (current) pool.release(current);
+      entry.buffer = pool.acquire(width, height);
+      entry.image = entry.buffer.image;
+      const image = entry.buffer.image;
+      if (!this.detached) this.scene.add.existing(image);
+      image.setVisible(true);
+    }
+    entry.oversized = 0;
+    const buffer = entry.buffer!;
+    if (buffer.cropWidth !== width || buffer.cropHeight !== height) {
+      buffer.image.setCrop(0, 0, width, height);
+      buffer.cropWidth = width;
+      buffer.cropHeight = height;
+    }
+    if (colored) {
+      // The source only needs to cover the content; it is drawn unscaled at the buffer origin.
+      let source = entry.source;
+      if (!source || source.width < width || source.height < height) {
+        if (source) pool.release(source);
+        source = entry.source = pool.acquire(width, height, true);
+        const image = source.image;
+        image.setVisible(true).setPosition(0, 0).setScale(1).setAlpha(1);
+        image.setBlendMode(Phaser.BlendModes.NORMAL);
+        source.color ??= new NativeGroupColor(image);
+      }
+    } else if (entry.source) {
+      pool.release(entry.source);
+      entry.source = undefined;
+    }
+  }
+  /** Draws retained content into the group buffer (through the color filter when colored). */
+  private paint(entry: GroupEntry) {
+    const buffer = entry.buffer;
+    if (!buffer) return;
+    const target = buffer.image;
+    const content = entry.content.objects;
+    if (entry.source) {
+      const source = entry.source.image;
+      const color = entry.source.color!;
+      color.active = true;
+      color.setColor(entry.multiply, entry.add);
+      source.clear().draw(content).render();
+      target.clear().draw(source).render();
+    } else target.clear().draw(content).render();
+  }
+  private release(entry: GroupEntry) {
+    const pool = groupBufferPool(this.scene);
+    entry.content.destroy();
+    entry.multiplyImage?.destroy();
+    if (entry.buffer) pool.release(entry.buffer);
+    if (entry.source) pool.release(entry.source);
+    entry.buffer = entry.source = entry.multiplyImage = entry.image = undefined;
   }
   clear() {
     this.leaves.clear();
-    for (const entry of this.groups.values()) {
-      entry.content.destroy();
-      entry.multiplyImage?.destroy();
-      entry.image.destroy();
-    }
+    for (const entry of this.groups.values()) this.release(entry);
     this.groups.clear();
-    this.objects = [];
+    this.objects.length = 0;
   }
   destroy() {
-    if (!this.detached)
-      this.scene.game.renderer.off(Phaser.Renderer.Events.LOSE_WEBGL, this.onContextLost, this);
+    if (this.tracked) {
+      untrack(this.renderer, this);
+      this.tracked = false;
+    }
     this.clear();
   }
 }

@@ -86,18 +86,104 @@ export function nativeMeshPoses(
   controls: Readonly<Record<string, number | false>> = {},
   root: NativeMatrix = NATIVE_IDENTITY,
 ): NativeMeshPose[] {
-  return sampleNativeScene(graph, name, seconds, controls, root, false) as NativeMeshPose[];
+  return sampleNativeScene(graph, name, seconds, controls, root, false, 1) as NativeMeshPose[];
 }
 
-/** Retains screen/additive container boundaries instead of distributing their blend to leaves. */
+/**
+ * Retains screen/additive container boundaries instead of distributing their blend to leaves.
+ * `alpha` scales the root opacity: top-level leaves and groups carry it in `multiply[3]`, exactly
+ * as multiplying each returned pose's alpha afterwards would, without copying the poses.
+ */
 export function nativeScenePoses(
   graph: NativeMeshGraph,
   name: string,
   seconds: number,
   controls: Readonly<Record<string, number | false>> = {},
   root: NativeMatrix = NATIVE_IDENTITY,
+  alpha = 1,
 ): NativeScenePose[] {
-  return sampleNativeScene(graph, name, seconds, controls, root, true);
+  return sampleNativeScene(graph, name, seconds, controls, root, true, alpha);
+}
+
+/** Integer source frame an export plays at `seconds` (the sampling clock of sampleNativeScene). */
+function sourceFrame(graph: NativeMeshGraph, id: number, seconds: number) {
+  const fps = graph.clips[id]?.fps ?? 1;
+  return Math.floor((Number.isFinite(seconds) ? Math.max(0, seconds) : 0) * fps + 1e-9);
+}
+
+const SHARED_LIMIT = 512;
+const shared = new WeakMap<NativeMeshGraph, Map<string, NativeScenePose[]>>();
+function controlsKey(controls: Readonly<Record<string, number | false>>) {
+  let key = '';
+  for (const name in controls) {
+    const value = controls[name];
+    key +=
+      name +
+      '=' +
+      (value === false ? 'x' : Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 'n') +
+      ';';
+  }
+  return key;
+}
+function sharedPoses(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  controls: Readonly<Record<string, number | false>>,
+  root: NativeMatrix,
+  isolate: boolean,
+) {
+  const id = graph.exports[name];
+  if (id === undefined) throw Error(`Unknown native export: ${name}`);
+  let cache = shared.get(graph);
+  if (!cache) shared.set(graph, (cache = new Map()));
+  const key =
+    (isolate ? 's|' : 'm|') +
+    name +
+    '|' +
+    sourceFrame(graph, id, seconds) +
+    '|' +
+    controlsKey(controls) +
+    '|' +
+    root.join(',');
+  let poses = cache.get(key);
+  if (poses) {
+    // Refresh recency.
+    cache.delete(key);
+    cache.set(key, poses);
+    return poses;
+  }
+  poses = sampleNativeScene(graph, name, seconds, controls, root, isolate, 1);
+  cache.set(key, poses);
+  if (cache.size > SHARED_LIMIT) cache.delete(cache.keys().next().value!);
+  return poses;
+}
+
+/**
+ * Memoized nativeScenePoses: identical requests (same export, integer source frame, controls and
+ * root matrix) within and across frames return the same arrays, so identical units sample once.
+ * The result is shared and must be treated as immutable — no pushing into the array and no
+ * reassigning pose fields. Callers that edit poses must keep using nativeScenePoses.
+ */
+export function nativeScenePosesShared(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  controls: Readonly<Record<string, number | false>> = {},
+  root: NativeMatrix = NATIVE_IDENTITY,
+): readonly NativeScenePose[] {
+  return sharedPoses(graph, name, seconds, controls, root, true);
+}
+
+/** Memoized nativeMeshPoses with the same immutability contract as nativeScenePosesShared. */
+export function nativeMeshPosesShared(
+  graph: NativeMeshGraph,
+  name: string,
+  seconds: number,
+  controls: Readonly<Record<string, number | false>> = {},
+  root: NativeMatrix = NATIVE_IDENTITY,
+): readonly NativeMeshPose[] {
+  return sharedPoses(graph, name, seconds, controls, root, false) as NativeMeshPose[];
 }
 
 function sampleNativeScene(
@@ -107,6 +193,7 @@ function sampleNativeScene(
   controls: Readonly<Record<string, number | false>>,
   root: NativeMatrix,
   isolate: boolean,
+  alpha: number,
 ): NativeScenePose[] {
   const id = graph.exports[name];
   if (id === undefined) throw Error(`Unknown native export: ${name}`);
@@ -162,7 +249,12 @@ function sampleNativeScene(
         color[7] === 0;
       const nextMultiply = identity
         ? multiply
-        : [multiply[0] * color[0], multiply[1] * color[1], multiply[2] * color[2], multiply[3] * color[3]];
+        : [
+            multiply[0] * color[0],
+            multiply[1] * color[1],
+            multiply[2] * color[2],
+            multiply[3] * color[3],
+          ];
       const nextAdd = identity
         ? add
         : [
@@ -182,16 +274,7 @@ function sampleNativeScene(
           blend: mode,
         });
         ancestors.push(id);
-        walk(
-          child,
-          phase,
-          nextMatrix,
-          [1, 1, 1, 1],
-          [0, 0, 0, 0],
-          0,
-          `${path}/${slot}`,
-          group,
-        );
+        walk(child, phase, nextMatrix, [1, 1, 1, 1], [0, 0, 0, 0], 0, `${path}/${slot}`, group);
         ancestors.pop();
         continue;
       }
@@ -209,12 +292,11 @@ function sampleNativeScene(
       ancestors.pop();
     }
   };
-  const fps = graph.clips[id]?.fps ?? 1;
   walk(
     id,
-    Math.floor((Number.isFinite(seconds) ? Math.max(0, seconds) : 0) * fps + 1e-9),
+    sourceFrame(graph, id, seconds),
     root,
-    [1, 1, 1, 1],
+    [1, 1, 1, alpha],
     [0, 0, 0, 0],
     0,
     String(id),
@@ -230,11 +312,38 @@ export function nativeTriangles(vertices: readonly number[]) {
   let cached = triangleCache.get(quads);
   if (!cached) {
     cached = [];
-    for (let i = 0; i < quads; i++)
-      cached.push(i % 2 ? i + 1 : i, i % 2 ? i : i + 1, i + 2, 0);
+    for (let i = 0; i < quads; i++) cached.push(i % 2 ? i + 1 : i, i % 2 ? i : i + 1, i + 2, 0);
     triangleCache.set(quads, cached);
   }
   return cached;
+}
+
+/** Grows `bounds` ([left, top, right, bottom]) by a leaf's transformed vertices, allocation-free. */
+export function includeNativeVertices(pose: NativeMeshPose, bounds: number[]) {
+  const m = pose.matrix,
+    src = pose.vertices;
+  const a = m[0],
+    c = m[1],
+    x = m[2],
+    b = m[3],
+    d = m[4],
+    y = m[5];
+  let left = bounds[0],
+    top = bounds[1],
+    right = bounds[2],
+    bottom = bounds[3];
+  for (let i = 0; i < src.length; i += 4) {
+    const px = a * src[i] + c * src[i + 1] + x,
+      py = b * src[i] + d * src[i + 1] + y;
+    if (px < left) left = px;
+    if (px > right) right = px;
+    if (py < top) top = py;
+    if (py > bottom) bottom = py;
+  }
+  bounds[0] = left;
+  bounds[1] = top;
+  bounds[2] = right;
+  bounds[3] = bottom;
 }
 
 export function nativeVertices(pose: NativeMeshPose) {

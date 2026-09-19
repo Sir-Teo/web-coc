@@ -174,7 +174,8 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
   expect(report.meshes).toBeGreaterThan(300);
   expect(report.groups).toBe(0);
   // smoke01's source color transform requires one cached texture variant.
-  expect(report.tintedTextures).toBe(1);
+  // Source multiply/add colors run in the triangle shader; no recolored page copies are baked.
+  expect(report.tintedTextures).toBe(0);
   expect(report.cases).toHaveLength(witness.cases.length);
   for (const c of report.cases) {
     if (c.empty) {
