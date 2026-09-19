@@ -11,6 +11,7 @@ import { visualRandom } from './visual-random';
 import type { GarrisonDefender } from './defenders';
 import { isGarrisonDefender } from './defenders';
 import type { Battle } from './model';
+import { presentationLive, presentationTime } from './presentation-clock';
 
 /**
  * Local, restrained visuals for the later garrison mechanics whose original effects are particle
@@ -85,6 +86,7 @@ function chainShapes(
   reduced: boolean,
   iso: Iso,
   lift: number,
+  elapsed: number,
 ) {
   const shapes: LateEffectShape[] = [];
   const stats = garrisonStats(defender.kind, defender.level);
@@ -95,7 +97,7 @@ function chainShapes(
   };
   for (const attack of defender.attacks) {
     if (!attack.chain) continue;
-    const since = battle.elapsed - attack.at;
+    const since = elapsed - attack.at;
     if (since >= 0 && since < LATE_EFFECT_TIMES.chain) {
       // The primary bolt leaves the source `attack_pivot` locator of the attack row's action frame.
       const facing = characterFacing(attack.targetX - attack.x, attack.targetY - attack.y);
@@ -130,7 +132,7 @@ function chainShapes(
       });
     }
     for (const [index, jump] of attack.chain.entries()) {
-      const jumpSince = battle.elapsed - jump.at;
+      const jumpSince = elapsed - jump.at;
       if (jumpSince < 0 || jumpSince >= LATE_EFFECT_TIMES.chain) continue;
       const previous = index ? attack.chain[index - 1].air : attack.air;
       shapes.push({
@@ -152,21 +154,27 @@ function chainShapes(
   return shapes;
 }
 
+/**
+ * `elapsed` samples the transient shapes (chains, death bolts, summon glows): callers pass the
+ * presentation clock so shapes alive at the finish fade out instead of freezing. The aura ring
+ * of a living defender is a loop and stays on the battle clock.
+ */
 export function garrisonLateEffectShapes(
   battle: Battle | null,
   reduced: boolean,
   iso: Iso,
   lift: number,
+  elapsed = battle?.elapsed ?? 0,
 ): LateEffectShape[] {
   const shapes: LateEffectShape[] = [];
   if (!battle) return shapes;
   for (const defender of battle.defenders ?? []) {
     if (!isGarrisonDefender(defender) || battle.elapsed < defender.spawnedAt) continue;
     const stats = garrisonStats(defender.kind, defender.level);
-    if (stats.chain) shapes.push(...chainShapes(defender, battle, reduced, iso, lift));
+    if (stats.chain) shapes.push(...chainShapes(defender, battle, reduced, iso, lift, elapsed));
     const spell = defender.bolts ? garrisonDeathSpell(stats) : undefined;
     for (const [index, bolt] of (defender.bolts ?? []).entries()) {
-      const since = battle.elapsed - bolt.at;
+      const since = elapsed - bolt.at;
       if (!spell || since < 0 || since >= LATE_EFFECT_TIMES.bolt) continue;
       const ground = iso(bolt.x, bolt.y);
       const alpha = fade(since, LATE_EFFECT_TIMES.bolt);
@@ -219,7 +227,7 @@ export function garrisonLateEffectShapes(
       });
     }
     for (const event of defender.summon?.events ?? []) {
-      const since = battle.elapsed - event.at;
+      const since = elapsed - event.at;
       if (since < 0 || since >= LATE_EFFECT_TIMES.summon) continue;
       const point = iso(defender.x, defender.y);
       const alpha = fade(since, LATE_EFFECT_TIMES.summon);
@@ -240,13 +248,35 @@ export function garrisonLateEffectShapes(
   return shapes;
 }
 
+/** Everything a shape's Graphics draws, relative to its position. */
+function shapeSignature(shape: LateEffectShape) {
+  if (shape.kind === 'bolt') {
+    let points = '';
+    for (const point of shape.points) points += `${point.x},${point.y};`;
+    return `bolt:${shape.color}:${shape.width}:${shape.alpha}:${points}`;
+  }
+  return `ring:${shape.color}:${shape.width}:${shape.alpha}:${shape.fill}:${shape.rx}:${shape.ry}`;
+}
+
 /** One Graphics object per shape key; destroyed when the shape expires or the battle ends. */
 export class GarrisonLateEffects {
   private graphics = new Map<string, Phaser.GameObjects.Graphics>();
+  /** Last drawn signature per key: unchanged shapes (a resting aura) are not redrawn. */
+  private drawn = new Map<string, string>();
   constructor(private scene: Phaser.Scene) {}
   render(battle: Battle | null, reduced: boolean, iso: Iso, lift: number) {
     const wanted = new Set<string>();
-    for (const shape of garrisonLateEffectShapes(battle, reduced, iso, lift)) {
+    const shapes = battle
+      ? garrisonLateEffectShapes(
+          battle,
+          reduced,
+          iso,
+          lift,
+          // After the grace window every transient shape has expired (all last under 1 s).
+          presentationLive(battle) ? presentationTime(battle) : Infinity,
+        )
+      : [];
+    for (const shape of shapes) {
       wanted.add(shape.key);
       let g = this.graphics.get(shape.key);
       if (!g) {
@@ -254,19 +284,25 @@ export class GarrisonLateEffects {
         g.setData('nativeGarrisonLateEffect', shape.key);
         this.graphics.set(shape.key, g);
       }
-      g.clear().setDepth(shape.depth);
+      if (g.depth !== shape.depth) g.setDepth(shape.depth);
+      const x = shape.kind === 'bolt' ? 0 : shape.x,
+        y = shape.kind === 'bolt' ? 0 : shape.y;
+      if (g.x !== x || g.y !== y) g.setPosition(x, y);
+      const signature = shapeSignature(shape);
+      if (this.drawn.get(shape.key) === signature) continue;
+      this.drawn.set(shape.key, signature);
+      g.clear();
       if (shape.kind === 'bolt') {
-        g.setPosition(0, 0);
         const stroke = (width: number, color: number, alpha: number) => {
           g.lineStyle(width, color, alpha).beginPath();
           g.moveTo(shape.points[0].x, shape.points[0].y);
-          for (const point of shape.points.slice(1)) g.lineTo(point.x, point.y);
+          for (let i = 1; i < shape.points.length; i++)
+            g.lineTo(shape.points[i].x, shape.points[i].y);
           g.strokePath();
         };
         stroke(shape.width + 3, shape.color, shape.alpha * 0.35);
         stroke(shape.width, 0xffffff, shape.alpha);
       } else {
-        g.setPosition(shape.x, shape.y);
         g.fillStyle(shape.color, shape.fill).fillEllipse(0, 0, shape.rx * 2, shape.ry * 2);
         g.lineStyle(shape.width, shape.color, shape.alpha).strokeEllipse(
           0,
@@ -280,10 +316,12 @@ export class GarrisonLateEffects {
       if (!wanted.has(key)) {
         g.destroy();
         this.graphics.delete(key);
+        this.drawn.delete(key);
       }
   }
   clear() {
     for (const g of this.graphics.values()) g.destroy();
     this.graphics.clear();
+    this.drawn.clear();
   }
 }

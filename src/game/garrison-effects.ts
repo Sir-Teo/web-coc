@@ -25,12 +25,41 @@ const particle = nativeParticleSampler(GARRISON_EFFECT_GRAPH, GARRISON_SCALE, {
   orientTravelToParent: true,
 });
 
-/** Original emitters with the shared local particle projection and deterministic births. */
+/** Seconds after `at` when the last particle of an effect's emitters has expired. */
+const horizons = new Map<string, number>();
+function effectHorizon(name: string) {
+  let horizon = horizons.get(name);
+  if (horizon === undefined) {
+    horizon = 0;
+    for (const effectRow of effects[name] ?? []) {
+      const row = effectRow.ParticleEmitter ? emitters[effectRow.ParticleEmitter]?.[0] : undefined;
+      if (!row) continue;
+      horizon = Math.max(
+        horizon,
+        (number(effectRow, 'EmitterDelayMs') +
+          number(row, 'EmissionTime') +
+          number(row, 'MaxLife')) /
+          1000,
+      );
+    }
+    if (!Number.isFinite(horizon)) horizon = Infinity;
+    horizons.set(name, horizon);
+  }
+  return horizon;
+}
+
+/**
+ * Original emitters with the shared local particle projection and deterministic births.
+ *
+ * `elapsed` is the sampling clock: callers pass the presentation clock so bursts in flight at
+ * the finish play out (see presentation-clock.ts). It defaults to `battle.elapsed`.
+ */
 export function garrisonImpactPoses(
   battle: Battle | null,
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
   lift = 46,
+  elapsed = battle?.elapsed ?? 0,
 ): NativeParticlePose[] {
   if (!battle) return [];
   const result: NativeParticlePose[] = [];
@@ -45,6 +74,8 @@ export function garrisonImpactPoses(
     offset = { x: 0, y: 0 },
     facing = { x: 1, y: 0 },
   ) => {
+    // Expired and future events cost nothing: skip them before any projection or key string.
+    if (at > elapsed || elapsed - at >= effectHorizon(name)) return;
     const rows = effects[name];
     const point = iso(x, y);
     const origin = { x: point.x + offset.x, y: point.y + offset.y };
@@ -53,7 +84,7 @@ export function garrisonImpactPoses(
       if (!name) continue;
       const emitter = emitters[name],
         row = emitter[0];
-      const age = battle.elapsed - at - number(effectRow, 'EmitterDelayMs') / 1000;
+      const age = elapsed - at - number(effectRow, 'EmitterDelayMs') / 1000;
       const duration = number(row, 'EmissionTime') / 1000;
       if (age < 0 || age >= duration + number(row, 'MaxLife') / 1000) continue;
       const count = number(row, 'ParticleCount');
@@ -79,7 +110,7 @@ export function garrisonImpactPoses(
       defender.kind === 'skeleton' ||
       defender.kind === 'guardian' ||
       defender.kind === 'repairer' ||
-      battle.elapsed < defender.spawnedAt
+      elapsed < defender.spawnedAt
     )
       continue;
     if (defender.kind === 'dragon') {

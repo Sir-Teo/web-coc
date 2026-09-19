@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { Building } from './model';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { guardRender } from './render-guard';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { CASTLE_LEVELS, castleAsset, castleTexture } from './castle-art';
 import { CASTLE_GRAPH, castlePoses } from './castle-graph';
@@ -12,13 +13,18 @@ export function preloadCastles(scene: Phaser.Scene) {
 }
 export class CastlePresentation {
   readonly castles = new Map<number, NativeSceneView>();
+  /** Castle poses are stills (frame zero): redraw only when one of these inputs changes. */
+  private signatures = new Map<number, string>();
   constructor(private scene: Phaser.Scene) {}
   clear() {
     for (const view of this.castles.values()) view.destroy();
     this.castles.clear();
+    this.signatures.clear();
   }
   render(buildings: Building[], iso: (x: number, y: number) => { x: number; y: number }) {
     const wanted = new Set<number>();
+    const camera = this.scene.cameras.main;
+    const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const building of buildings) {
       // The Goblin Castle NPC keeps its own body/foundation/ruin in the late Goblin family.
       if (building.kind !== 'clancastle' || building.npc === 'goblin-castle') continue;
@@ -35,13 +41,28 @@ export class CastlePresentation {
             : building.upgradeEnd
               ? 'upgrading'
               : 'guard';
-      view.render(castlePoses(building.level, state), point.x, point.y, point.y);
-      for (const object of view.objects) object.setData('nativeCastle', building.id);
+      const signature = `${building.level}:${state}:${point.x}:${point.y}:${zoom}`;
+      if (this.signatures.get(building.id) === signature) continue;
+      this.signatures.set(building.id, signature);
+      view.render(
+        guardRender(
+          `clan castle level ${building.level}`,
+          () => castlePoses(building.level, state),
+          [],
+        ),
+        point.x,
+        point.y,
+        point.y,
+      );
+      for (const object of view.objects)
+        if (object.getData('nativeCastle') !== building.id)
+          object.setData('nativeCastle', building.id);
     }
     for (const [id, view] of this.castles)
       if (!wanted.has(id)) {
         view.destroy();
         this.castles.delete(id);
+        this.signatures.delete(id);
       }
   }
 }
