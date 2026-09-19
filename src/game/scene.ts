@@ -19,13 +19,7 @@ import {
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
 import type { LateCampaignPresentation } from './late-campaign-scene';
 import { hasLateArt, lateArt } from './late-campaign-art';
-import {
-  isLateBuilding,
-  isLateCampaignBuilding,
-  lateUnitFrozen,
-  lateUnitTimeLost,
-} from './late-campaign';
-import { FROZEN_TINT } from './freeze-trap-art';
+import { isLateBuilding, isLateCampaignBuilding, lateUnitTimeLost } from './late-campaign';
 import { darkDrillBounds } from './dark-drill-art';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
@@ -88,7 +82,7 @@ import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { teslaBodyBounds } from './tesla-poses';
 import { teslaRevealShake } from './tesla-shake';
 import { concealedTesla } from './hidden-tesla';
-import { CameraShakeLayer } from './camera-shake-layer';
+import { CameraShakeLayer, combineShakes } from './camera-shake-layer';
 import { SWEEPER_ART } from './air-control-art';
 import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
 import { sweeperBounds } from './air-sweeper-poses';
@@ -119,6 +113,9 @@ import {
   type BuildingKind,
 } from './data';
 import { GameModel, makeBuilding, type Building, type FX } from './model';
+import type { SampleCue } from './sample-audio';
+import { ShapeAtlas, ShapePool, applyShape, type BakedShape } from './shape-atlas';
+import { RenderInterpolation } from './render-interpolation';
 import { AudioManager } from './audio';
 import { ResourceFlights } from '../ui/resource-flight';
 import { CombatEffects } from './combat-effects';
@@ -131,10 +128,21 @@ import { configureQuadRendering } from './quad-renderer';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
+import { unitDepth } from './unit-depth';
+import { mergeEdges } from './boundary-edges';
+import { defenderIndex, unitIndex } from './battle-index';
+import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
+import { unitStatusTint } from './unit-status-tint';
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
-/** Wall links batch into one Graphics per band of this screen height. */
-const WALL_LINK_BAND = 64;
+/** Fixed simulation step, seconds. */
+const TICK = 0.05;
+/** Ruin ground renders at half resolution: soft, low-contrast ellipses. */
+const RUIN_DECAL_SCALE = 0.5;
+/** Radius of the baked dot shape, world pixels. */
+const DOT_RADIUS = 8;
+const NO_CUES: SampleCue[] = [];
+const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
 /** Stands in for the late campaign presentation until its art has loaded. */
 const INERT_LATE_CAMPAIGN = {
@@ -198,6 +206,22 @@ export const WORLD = {
 };
 export const iso = (x: number, y: number) =>
   new Phaser.Math.Vector2(WORLD.ox + (x - y) * 32, WORLD.oy + (x + y) * 16);
+/** Non-allocating `iso` for hot loops: writes into and returns `out`. */
+export const isoInto = <T extends { x: number; y: number }>(out: T, x: number, y: number) => {
+  out.x = WORLD.ox + (x - y) * 32;
+  out.y = WORLD.oy + (x + y) * 16;
+  return out;
+};
+/** Elements that own the keyboard: camera keys must not move the map while one has focus. */
+export function typingTarget(element: Element | null) {
+  if (!element) return false;
+  if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return true;
+  if (element instanceof HTMLInputElement)
+    return !['button', 'checkbox', 'radio', 'submit', 'reset', 'image', 'color', 'file'].includes(
+      element.type,
+    );
+  return element instanceof HTMLElement && element.isContentEditable;
+}
 export const uniso = (x: number, y: number) => ({
   x: ((x - WORLD.ox) / 32 + (y - WORLD.oy) / 16) / 2,
   y: ((y - WORLD.oy) / 16 - (x - WORLD.ox) / 32) / 2,
@@ -210,12 +234,12 @@ export class VillageScene extends Phaser.Scene {
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
   private ground!: Phaser.GameObjects.Container;
-  private ruinGround!: Phaser.GameObjects.Graphics;
   /** Ground-level markings that buildings must sit on top of. */
   private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
   private detail!: Phaser.GameObjects.Graphics;
   private defenderMarkers!: Phaser.GameObjects.Graphics;
+  private unitBars!: Phaser.GameObjects.Graphics;
   private ghost?: Phaser.GameObjects.Image;
   wallGhosts = new Map<number, Phaser.GameObjects.Image>();
   private wallGhostLinks?: Phaser.GameObjects.Graphics;
@@ -262,13 +286,30 @@ export class VillageScene extends Phaser.Scene {
       py: number;
       qx: number;
       qy: number;
+      /** Baked link art, inside its row's container (see `wallLinkRow`). */
+      image?: Phaser.GameObjects.Image;
     }
   >();
-  // One shared Graphics per 64px depth band paints every wall link in that band.
-  // Per-link Graphics objects interleaved with wall meshes in depth order, one
-  // draw call each with no batching; links are thin connectors, so band-center
-  // depth is visually identical.
-  private wallLinkBands = new Map<number, { g: Phaser.GameObjects.Graphics; sig: string }>();
+  /** Vector art baked once into shared texture pages (wall links, shadows, markers, effects). */
+  private shapes!: ShapeAtlas;
+  /** Per-frame unit shadows and fallback markers, ground-detail depth. */
+  private unitMarks!: ShapePool;
+  /** Trap arming dots, redrawn with the building pass. */
+  private detailMarks!: ShapePool;
+  /** Spell ring fills, just under the overlay strokes. */
+  private auraFills!: ShapePool;
+  /** Skeleton badges beside defender bars. */
+  private defenderDots!: ShapePool;
+  private interpolation = new RenderInterpolation((x, y, out) => isoInto(out, x, y));
+  /** Bumped by every sync pass; the battle frame memo keys on it. */
+  private syncCount = 0;
+  /** Ruined buildings already restyled, so a destroy restyles only the new ruins. */
+  private ruinSynced = new Set<number>();
+  /** Scan for new ruins on the next frame (a destroy event arrived). */
+  private ruinsDirty = false;
+  private ruinScan: { battle: unknown; elapsed: number } = { battle: null, elapsed: NaN };
+  /** Revision of the last `changed(true)` (resource ticks), for the cheap idle-village path. */
+  private passiveRevision = -1;
   private pendingFx: FX[] = [];
   private armyPrefetchSignature = '';
   private heroPrefetchSignature = '';
@@ -448,13 +489,25 @@ export class VillageScene extends Phaser.Scene {
       .image(WORLD.ox, WORLD.height / 2, 'terrain')
       .setDisplaySize(WORLD.width * TERRAIN_SCALE, WORLD.height * TERRAIN_SCALE)
       .setDepth(-1000);
-    this.ruinGround = this.add.graphics().setDepth(-875);
     this.groundMarks = this.add.graphics().setDepth(-850);
     this.campShadows = this.add.graphics().setDepth(-840);
     this.detail = this.add.graphics().setDepth(5000);
+    // Attacker bars share the defender bar layer so flyers (7500 band) never cover them.
     this.defenderMarkers = this.add.graphics().setDepth(7600);
-    this.overlay = this.add.graphics().setDepth(6000);
-    this.combatEffects = new CombatEffects(this, (config) => this.animateEffect(config));
+    this.unitBars = this.add.graphics().setDepth(7600);
+    // Selection, footprint and grid overlays sit above home flying camp units (6500).
+    this.overlay = this.add.graphics().setDepth(6600);
+    this.shapes = new ShapeAtlas(this, 'scene-shapes');
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.shapes.destroy());
+    this.unitMarks = new ShapePool(this, 5000);
+    this.detailMarks = new ShapePool(this, 5000);
+    this.auraFills = new ShapePool(this, 6599);
+    this.defenderDots = new ShapePool(this, 7600);
+    this.combatEffects = new CombatEffects(
+      this,
+      (config) => this.animateEffect(config),
+      this.shapes,
+    );
     this.santaPresentation = new SantaPresentation(this, this.audio);
     this.shrinkTrapPresentation = new ShrinkTrapPresentation(this, this.audio);
     this.goblinBuildingPresentation = new GoblinBuildingPresentation(this);
@@ -491,18 +544,42 @@ export class VillageScene extends Phaser.Scene {
     });
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
+    // Source shakes are pure functions of battle time: sample them once per tick, not on every
+    // camera preRender (each one walks and sorts its event table).
+    const shakeMemo = {
+      battle: null as GameModel['battle'],
+      elapsed: NaN,
+      reduced: false,
+      replay: false,
+      offset: { x: 0, y: 0 },
+    };
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
-      const reduced = this.model.state.settings.reducedMotion,
+      const battle = this.model.battle,
+        reduced = this.model.state.settings.reducedMotion,
         replay = !!this.model.replay;
-      const tesla = teslaRevealShake(this.model.battle, reduced, replay);
-      const bomb = bombTowerShake(this.model.battle, reduced, replay);
-      const mine = seekingMineShake(this.model.battle, reduced, replay);
-      const mortar = mortarShake(this.model.battle, reduced, replay);
-      const inferno = infernoShake(this.model.battle, reduced, replay);
-      return {
-        x: tesla.x + bomb.x + mine.x + mortar.x + inferno.x,
-        y: tesla.y + bomb.y + mine.y + mortar.y + inferno.y,
-      };
+      if (!battle) return ZERO;
+      if (
+        shakeMemo.battle !== battle ||
+        shakeMemo.elapsed !== battle.elapsed ||
+        shakeMemo.reduced !== reduced ||
+        shakeMemo.replay !== replay
+      ) {
+        shakeMemo.battle = battle;
+        shakeMemo.elapsed = battle.elapsed;
+        shakeMemo.reduced = reduced;
+        shakeMemo.replay = replay;
+        combineShakes(
+          [
+            teslaRevealShake(battle, reduced, replay),
+            bombTowerShake(battle, reduced, replay),
+            seekingMineShake(battle, reduced, replay),
+            mortarShake(battle, reduced, replay),
+            infernoShake(battle, reduced, replay),
+          ],
+          shakeMemo.offset,
+        );
+      }
+      return shakeMemo.offset;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.combatEffects.clear();
@@ -545,7 +622,10 @@ export class VillageScene extends Phaser.Scene {
       this.scale.off('resize', onResize);
     });
     this.input.addPointer(2);
-    this.focusKeys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<
+    // No global key capture: Phaser would preventDefault these keys at window level,
+    // so HUD text fields could not receive w/a/s/d and range sliders ignored arrows.
+    // (The body never scrolls, so uncaptured arrows move nothing but the camera.)
+    this.focusKeys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT', false) as Record<
       string,
       Phaser.Input.Keyboard.Key
     >;
@@ -598,7 +678,13 @@ export class VillageScene extends Phaser.Scene {
           pointers[1].x / this.scale.displayScale.x,
           pointers[1].y / this.scale.displayScale.y,
         );
-        if (this.pinchDistance) this.setZoom((this.viewZoom * dist) / this.pinchDistance);
+        // Zoom about the pinch midpoint so the content between the fingers stays put.
+        if (this.pinchDistance)
+          this.zoomAt(
+            (this.viewZoom * dist) / this.pinchDistance,
+            (pointers[0].x + pointers[1].x) / 2,
+            (pointers[0].y + pointers[1].y) / 2,
+          );
         this.pinchDistance = dist;
         this.dragged = true;
         this.gesture = 'pan';
@@ -664,11 +750,26 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('pointerdownoutside', cancelGesture);
     this.input.on('pointerupoutside', cancelGesture);
     this.game.canvas.addEventListener('pointercancel', cancelGesture);
-    const onWheel = (_p: unknown, _o: unknown, _dx: number, dy: number) => {
-      if (!this.uiBlocked) this.setZoom(this.viewZoom * (dy > 0 ? 0.92 : 1.08));
+    const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      if (this.uiBlocked || !dy) return;
+      // Proportional to the scroll distance (a notch of ~100 px is ~8%; trackpads send many
+      // small deltas) and anchored at the cursor.
+      const factor = Phaser.Math.Clamp(Math.exp(-dy * 0.0008), 0.7, 1.4);
+      this.zoomAt(this.viewZoom * factor, p.x, p.y);
     };
     this.input.on('wheel', onWheel);
     this.model.onEffect = (fx) => this.effect(fx);
+    // Note which revisions were passive resource ticks (see `passiveSync`). If another owner
+    // replaces onChange later, passiveRevision just stops matching and every change syncs fully.
+    const onChange = this.model.onChange;
+    const noteChange = (passive = false) => {
+      if (passive) this.passiveRevision = this.model.revision;
+      onChange(passive);
+    };
+    this.model.onChange = noteChange;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.model.onChange === noteChange) this.model.onChange = onChange;
+    });
     this.sync();
     this.ready = true;
     this.onReady();
@@ -804,12 +905,33 @@ export class VillageScene extends Phaser.Scene {
     });
     return this.heavyArt;
   }
+  private darkCapCache = { revision: -1, value: 0 };
+  /** Dark storage capacity, recomputed only when the village changes. */
+  private darkCap() {
+    const cache = this.darkCapCache;
+    if (cache.revision !== this.model.revision) {
+      cache.revision = this.model.revision;
+      cache.value = this.model.resourceCap('dark');
+    }
+    return cache.value;
+  }
+  private homeLate = { buildings: null as Building[] | null, revision: -1, needed: false };
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
     if (this.lateAssetsReady) return false;
     const battle = this.model.battle;
-    // A home village that owns a late family needs the same art outside battle.
-    if (!battle) return this.model.state.buildings.some(isLateCampaignBuilding);
+    // A home village that owns a late family needs the same art outside battle
+    // (checked once per village change, not every frame).
+    if (!battle) {
+      const home = this.homeLate,
+        buildings = this.model.state.buildings;
+      if (home.buildings !== buildings || home.revision !== this.model.revision) {
+        home.buildings = buildings;
+        home.revision = this.model.revision;
+        home.needed = buildings.some(isLateCampaignBuilding);
+      }
+      return home.needed;
+    }
     if (this.lateBattle.battle !== battle)
       this.lateBattle = { battle, needed: battle.buildings.some(isLateCampaignBuilding) };
     return this.lateBattle.needed;
@@ -948,6 +1070,16 @@ export class VillageScene extends Phaser.Scene {
     this.cameras.main.setZoom(zoom * this.scale.displayScale.x, zoom * this.scale.displayScale.y);
     this.clampCamera();
   }
+  /** Zooms so the world point under screen point (x, y), in canvas pixels, stays under it. */
+  zoomAt(value: number, x: number, y: number) {
+    const c = this.cameras.main;
+    const worldX = c.scrollX + c.width / 2 + (x - c.width / 2) / c.zoomX,
+      worldY = c.scrollY + c.height / 2 + (y - c.height / 2) / c.zoomY;
+    this.setZoom(value);
+    c.scrollX = worldX - c.width / 2 - (x - c.width / 2) / c.zoomX;
+    c.scrollY = worldY - c.height / 2 - (y - c.height / 2) / c.zoomY;
+    this.clampCamera();
+  }
   zoomBy(delta: number) {
     this.setZoom(this.viewZoom * delta);
   }
@@ -1056,18 +1188,21 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
-    const obstacle = !hit
-      ? [...this.obstacleSprites.entries()]
-          .sort((a, b) => b[1].depth - a[1].depth)
-          .find(
-            ([, im]) =>
-              im.visible &&
-              world.x > im.x - im.displayWidth * 0.4 &&
-              world.x < im.x + im.displayWidth * 0.4 &&
-              world.y > im.y - im.displayHeight * 0.83 &&
-              world.y < im.y + im.displayHeight * 0.06,
-          )
-      : undefined;
+    // Front-most (deepest) obstacle under the tap, without copying and sorting them all.
+    let obstacle: [number, Phaser.GameObjects.Image] | undefined;
+    if (!hit)
+      for (const entry of this.obstacleSprites) {
+        const im = entry[1];
+        if (
+          im.visible &&
+          (!obstacle || im.depth > obstacle[1].depth) &&
+          world.x > im.x - im.displayWidth * 0.4 &&
+          world.x < im.x + im.displayWidth * 0.4 &&
+          world.y > im.y - im.displayHeight * 0.83 &&
+          world.y < im.y + im.displayHeight * 0.06
+        )
+          obstacle = entry;
+      }
     this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
@@ -1228,7 +1363,7 @@ export class VillageScene extends Phaser.Scene {
         grid.y < b.y + BUILDINGS[b.kind].size,
     );
     if (groundTrap) return groundTrap;
-    const sorted = [...this.model.buildings]
+    const sorted = this.model.buildings
       .filter((b) => b.kind !== 'wall' && this.model.visibleBuilding(b))
       .sort((a, b) => b.x + b.y - (a.x + a.y));
     for (const b of sorted) {
@@ -1267,32 +1402,41 @@ export class VillageScene extends Phaser.Scene {
         grid.y < b.y + BUILDINGS[b.kind].size,
     );
   }
+  /** Troop kinds in the carried army, sorted. */
+  private wantedTroopArt() {
+    const army = this.model.state.army as Record<string, number> | undefined;
+    return Object.keys(army ?? {})
+      .filter((k) => (army?.[k] ?? 0) > 0)
+      .sort();
+  }
+  /** Baked hero and pet atlases for the current lineup. */
+  private wantedHeroArt() {
+    const wanted = new Set<string>();
+    for (const kind of this.model.heroLineup) wanted.add(`heroes-native/${kind}`);
+    for (const pet of Object.values(this.model.petProgress.assigned))
+      if (pet) wanted.add(`heroes-native/${pet}`);
+    return wanted;
+  }
+  /**
+   * Prefetch native packs for the carried army and hero lineup when they change (or after a
+   * release), not on first deploy, so the portrait window never opens mid-battle.
+   */
+  private prefetchArmyArt() {
+    const kinds = this.wantedTroopArt();
+    const signature = kinds.join(',');
+    if (signature !== this.armyPrefetchSignature) {
+      this.armyPrefetchSignature = signature;
+      if (kinds.length) this.troopNativePresentation?.prefetch(kinds);
+    }
+    const heroes = this.wantedHeroArt();
+    const heroSignature = [...heroes].sort().join(',');
+    if (heroSignature !== this.heroPrefetchSignature) {
+      this.heroPrefetchSignature = heroSignature;
+      if (heroes.size) this.heroNativePresentation?.prefetch(heroes);
+    }
+  }
   sync() {
     if (this.lateAssetsPending()) void this.loadLateAssets();
-    // Prefetch native packs for the carried army when the roster changes, not on
-    // first deploy, so the portrait window never opens mid-battle.
-    {
-      const army = this.model.state.army as Record<string, number> | undefined;
-      const kinds = Object.keys(army ?? {}).filter((k) => (army?.[k] ?? 0) > 0);
-      const signature = kinds.sort().join(',');
-      if (signature !== this.armyPrefetchSignature) {
-        this.armyPrefetchSignature = signature;
-        if (kinds.length) this.troopNativePresentation?.prefetch(kinds);
-      }
-    }
-    // Same for heroes and pets: fetch the baked atlases while scouting so the
-    // portrait fallback never opens mid-battle.
-    {
-      const wanted = new Set<string>();
-      for (const kind of this.model.heroLineup) wanted.add(`heroes-native/${kind}`);
-      for (const pet of Object.values(this.model.petProgress.assigned))
-        if (pet) wanted.add(`heroes-native/${pet}`);
-      const signature = [...wanted].sort().join(',');
-      if (signature !== this.heroPrefetchSignature) {
-        this.heroPrefetchSignature = signature;
-        if (wanted.size) this.heroNativePresentation?.prefetch(wanted);
-      }
-    }
     const reduced = this.model.state.settings.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -1324,21 +1468,19 @@ export class VillageScene extends Phaser.Scene {
       // Battle art accumulates forever otherwise: drop packs the new mode
       // cannot use (prefetch re-warms the rest before first deploy).
       {
+        // The carried army and hero lineup stay warm too: the prefetch below would
+        // otherwise fetch and decode them again right after they were dropped.
         const battle = mode === 'battle' ? this.model.battle : null;
-        const keepTroops = new Set<string>();
+        const keepTroops = new Set<string>(this.wantedTroopArt());
         if (battle) {
-          for (const [k, n] of Object.entries(battle.remaining ?? {}))
-            if (n > 0) keepTroops.add(k);
+          for (const [k, n] of Object.entries(battle.remaining ?? {})) if (n > 0) keepTroops.add(k);
           for (const u of battle.units) keepTroops.add(u.kind);
         }
         this.troopNativePresentation.releaseExcept(keepTroops);
-        const keepHeroes = new Set<string>();
-        if (battle) {
-          for (const kind of this.model.heroLineup) keepHeroes.add(`heroes-native/${kind}`);
-          for (const pet of Object.values(this.model.petProgress.assigned))
-            if (pet) keepHeroes.add(`heroes-native/${pet}`);
-        }
-        this.heroNativePresentation.releaseExcept(keepHeroes);
+        this.heroNativePresentation.releaseExcept(this.wantedHeroArt());
+        // Released packs must be fetched again: the prefetch below only runs on a
+        // signature change, so a second battle would otherwise open on portraits.
+        this.armyPrefetchSignature = this.heroPrefetchSignature = '';
       }
       this.nativeProjectiles.clear();
       this.nativeDefenses.clear();
@@ -1355,7 +1497,12 @@ export class VillageScene extends Phaser.Scene {
       const troops = new Set(this.unitSprites.values());
       for (const object of [...this.children.list]) {
         const display = object as Phaser.GameObjects.Image;
-        if (display.depth >= 7000 && !troops.has(display) && object !== this.defenderMarkers) {
+        if (
+          display.depth >= 7000 &&
+          !troops.has(display) &&
+          object !== this.defenderMarkers &&
+          object !== this.unitBars
+        ) {
           this.tweens.killTweensOf(display);
           display.destroy();
         }
@@ -1385,13 +1532,15 @@ export class VillageScene extends Phaser.Scene {
       this.bubbles.clear();
       for (const sprite of this.defenderSprites.values()) sprite.destroy();
       this.defenderSprites.clear();
-      for (const link of this.wallLinkBands.values()) link.g.destroy();
-      this.wallLinkBands.clear();
-      this.wallLinks.clear();
+      this.clearWallLinks();
+      this.ruinSynced.clear();
+      this.clearRuinGround();
+      this.interpolation.reset();
       this.pendingFx.length = 0;
       this.mode = mode;
       if (!keepCamera) this.resetCamera();
     }
+    this.prefetchArmyArt();
     const obstacleIds = new Set(this.model.obstacles.map((o) => o.id));
     for (const [id, im] of this.obstacleSprites) {
       if (!obstacleIds.has(id)) {
@@ -1422,192 +1571,7 @@ export class VillageScene extends Phaser.Scene {
         this.removeBubble(id);
       }
     }
-    for (const b of this.model.buildings) {
-      const d = BUILDINGS[b.kind],
-        p = iso(b.x + d.size / 2, b.y + d.size / 2);
-      let im = this.sprites.get(b.id);
-      if (!im) {
-        im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
-        this.sprites.set(b.id, im);
-      }
-      this.styleBuilding(
-        im,
-        b.kind,
-        b.level,
-        b.direction,
-        b.skeletonMode,
-        b.npc,
-        b.xbowMode,
-        b.spellTowerWeapon,
-      )
-        .setPosition(p.x, p.y)
-        .setDepth(p.y)
-        .setCrop();
-      im.setVisible(
-        this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
-      );
-      im.setData(
-        'intactHeight',
-        b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers)
-          ? villageArcherTowerBounds(
-              { ...b, hp: 1, constructing: false, upgradeEnd: undefined },
-              0,
-            )[3] -
-              villageArcherTowerBounds(
-                { ...b, hp: 1, constructing: false, upgradeEnd: undefined },
-                0,
-              )[1]
-          : b.kind === 'darkdrill'
-            ? darkDrillBounds({ ...b, hp: 1, constructing: false, upgradeEnd: undefined }, 0)[3] -
-              darkDrillBounds({ ...b, hp: 1, constructing: false, upgradeEnd: undefined }, 0)[1]
-            : b.kind === 'inferno'
-              ? infernoBounds(b.level, 'setup', 0, b.infernoMode)[3] -
-                infernoBounds(b.level, 'setup', 0, b.infernoMode)[1]
-              : b.kind === 'clancastle'
-                ? castleBounds(b.level)[3] - castleBounds(b.level)[1]
-                : b.kind === 'cannon' && !b.npc
-                  ? cannonBounds(b.level)[3] - cannonBounds(b.level)[1]
-                  : b.kind === 'mortar'
-                    ? mortarBounds(b.level)[3] - mortarBounds(b.level)[1]
-                    : b.kind === 'airsweeper'
-                      ? sweeperBounds(b.level)[3] - sweeperBounds(b.level)[1]
-                      : b.kind === 'bombtower'
-                        ? bombTowerBounds(b.level)[3] - bombTowerBounds(b.level)[1]
-                        : b.kind === 'wizardtower'
-                          ? wizardTowerBounds(b.level)[3] - wizardTowerBounds(b.level)[1]
-                          : im.displayHeight,
-      );
-      const trap = this.model.battle?.traps[b.id];
-      if (b.npc === 'pumpkin-bomb')
-        im.setFrame(
-          pumpkinFrame(
-            trap,
-            this.model.battle?.elapsed ?? 0,
-            this.model.state.settings.reducedMotion,
-          ),
-        );
-      im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
-      // Fallback sprites hide only once native bodies actually draw: X-Bow and
-      // Cannon art bundles in after boot (see loadHeavyArt).
-      const deferredNative = b.kind === 'xbow' || (b.kind === 'cannon' && !b.npc);
-      if (
-        (b.kind === 'clancastle' ||
-          b.kind === 'xbow' ||
-          b.kind === 'darkstorage' ||
-          b.kind === 'tesla' ||
-          b.kind === 'bombtower' ||
-          b.kind === 'wizardtower' ||
-          b.kind === 'airsweeper' ||
-          b.kind === 'mortar' ||
-          (b.kind === 'cannon' && !b.npc) ||
-          b.kind === 'seekingairmine' ||
-          b.npc === 'shrink-trap' ||
-          isGoblinBuilding(b.npc)) &&
-        b.hp > 0 &&
-        (!deferredNative || this.heavyArtReady)
-      )
-        im.setAlpha(0);
-      if (b.npc === 'santa-trap')
-        im.setFrame(
-          santaTrapFrame(
-            trap,
-            this.model.battle?.elapsed ?? 0,
-            this.model.state.settings.reducedMotion,
-          ),
-        ).setAlpha(1);
-      if (
-        !b.npc &&
-        b.level >= TIER3_LEVEL &&
-        b.kind !== 'wall' &&
-        b.kind !== 'mortar' &&
-        b.kind !== 'cannon' &&
-        b.kind !== 'camp' &&
-        b.kind !== 'inferno' &&
-        b.kind !== 'clancastle' &&
-        b.kind !== 'xbow' &&
-        b.kind !== 'darkstorage' &&
-        b.kind !== 'tesla' &&
-        b.kind !== 'bombtower' &&
-        b.kind !== 'wizardtower' &&
-        b.kind !== 'airsweeper' &&
-        b.kind !== 'seekingairmine'
-      )
-        im.setTint(0xffecc7);
-      else im.clearTint();
-      if (b.hp <= 0) {
-        this.renderRuin(b, im);
-      }
-      if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
-      // Late campaign families draw their own bodies, foundations and ruins; until their art has
-      // loaded, the fallback sprites have no texture to show either.
-      if (
-        this.lateCampaign.handles(b) ||
-        (!this.lateAssetsReady && this.model.battle && isLateCampaignBuilding(b))
-      )
-        im.setAlpha(0);
-      if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
-        im.setAlpha(0);
-      const shouldBubble =
-        !this.model.battle &&
-        b.id !== this.model.moving &&
-        (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
-        b.stored >= 100 &&
-        !b.upgradeEnd;
-      if (shouldBubble && !this.bubbles.has(b.id)) {
-        const c = this.add.container(p.x, p.y - im.displayHeight * 0.86 - 13).setDepth(p.y + 300);
-        const bg = this.add.graphics();
-        bg.fillStyle(0xfff6d7, 1);
-        bg.lineStyle(2, 0x846743, 1);
-        bg.fillRoundedRect(-17, -15, 34, 28, 8);
-        bg.strokeRoundedRect(-17, -15, 34, 28, 8);
-        bg.fillTriangle(-5, 12, 5, 12, 0, 19);
-        const icon = this.add
-          .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
-            fontFamily: 'Arial',
-            fontSize: '24px',
-            color:
-              b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
-            stroke:
-              b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
-            strokeThickness: 1,
-          })
-          .setOrigin(0.5);
-        c.add([bg, icon]);
-        c.setSize(38, 40).setInteractive();
-        c.on('pointerup', () => {
-          if (this.dragged || this.uiBlocked || this.model.placement) return;
-          this.model.collect(b.id);
-          this.audio.play('collect');
-        });
-        this.bubbles.set(b.id, c);
-      }
-      if (shouldBubble) {
-        const c = this.bubbles.get(b.id)!;
-        const y =
-          b.kind === 'darkdrill'
-            ? p.y + darkDrillBounds(b, 0)[1] - 13
-            : p.y - im.displayHeight * 0.86 - 13;
-        const reduced = this.model.state.settings.reducedMotion;
-        const anchor = `${p.x},${y},${reduced}`;
-        if (c.getData('anchor') !== anchor) {
-          this.tweens.killTweensOf(c);
-          c.setPosition(p.x, y)
-            .setDepth(p.y + 300)
-            .setData('anchor', anchor);
-          if (!reduced)
-            this.tweens.add({
-              targets: c,
-              y: y - 5,
-              duration: 1100,
-              yoyo: true,
-              repeat: -1,
-              ease: 'Sine.easeInOut',
-            });
-        }
-      } else {
-        this.removeBubble(b.id);
-      }
-    }
+    for (const b of this.model.buildings) this.syncBuilding(b);
     if (this.model.placement !== 'darkdrill') this.darkDrillPresentation.preview(undefined);
     if (this.model.placement !== 'archertower') this.villageArcherTowers.preview(undefined);
     if (this.model.placement) {
@@ -1642,6 +1606,229 @@ export class VillageScene extends Phaser.Scene {
     this.drawRuinGround();
     this.syncCampUnits();
     this.lastRevision = this.model.revision;
+    this.syncCount++;
+  }
+  /** Creates or restyles one building's fallback sprite, ruin and collector bubble. */
+  private syncBuilding(b: Building) {
+    const d = BUILDINGS[b.kind],
+      p = iso(b.x + d.size / 2, b.y + d.size / 2);
+    let im = this.sprites.get(b.id);
+    if (!im) {
+      im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
+      this.sprites.set(b.id, im);
+    }
+    this.styleBuilding(
+      im,
+      b.kind,
+      b.level,
+      b.direction,
+      b.skeletonMode,
+      b.npc,
+      b.xbowMode,
+      b.spellTowerWeapon,
+    )
+      .setPosition(p.x, p.y)
+      .setDepth(p.y)
+      .setCrop();
+    im.setVisible(
+      this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
+    );
+    im.setData('intactHeight', this.intactHeight(b, im));
+    const trap = this.model.battle?.traps[b.id];
+    if (b.npc === 'pumpkin-bomb')
+      im.setFrame(
+        pumpkinFrame(
+          trap,
+          this.model.battle?.elapsed ?? 0,
+          this.model.state.settings.reducedMotion,
+        ),
+      );
+    im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
+    // Fallback sprites hide only once native bodies actually draw: X-Bow and
+    // Cannon art bundles in after boot (see loadHeavyArt).
+    const deferredNative = b.kind === 'xbow' || (b.kind === 'cannon' && !b.npc);
+    if (
+      (b.kind === 'clancastle' ||
+        b.kind === 'xbow' ||
+        b.kind === 'darkstorage' ||
+        b.kind === 'tesla' ||
+        b.kind === 'bombtower' ||
+        b.kind === 'wizardtower' ||
+        b.kind === 'airsweeper' ||
+        b.kind === 'mortar' ||
+        (b.kind === 'cannon' && !b.npc) ||
+        b.kind === 'seekingairmine' ||
+        b.npc === 'shrink-trap' ||
+        isGoblinBuilding(b.npc)) &&
+      b.hp > 0 &&
+      (!deferredNative || this.heavyArtReady)
+    )
+      im.setAlpha(0);
+    if (b.npc === 'santa-trap')
+      im.setFrame(
+        santaTrapFrame(
+          trap,
+          this.model.battle?.elapsed ?? 0,
+          this.model.state.settings.reducedMotion,
+        ),
+      ).setAlpha(1);
+    if (
+      !b.npc &&
+      b.level >= TIER3_LEVEL &&
+      b.kind !== 'wall' &&
+      b.kind !== 'mortar' &&
+      b.kind !== 'cannon' &&
+      b.kind !== 'camp' &&
+      b.kind !== 'inferno' &&
+      b.kind !== 'clancastle' &&
+      b.kind !== 'xbow' &&
+      b.kind !== 'darkstorage' &&
+      b.kind !== 'tesla' &&
+      b.kind !== 'bombtower' &&
+      b.kind !== 'wizardtower' &&
+      b.kind !== 'airsweeper' &&
+      b.kind !== 'seekingairmine'
+    )
+      im.setTint(0xffecc7);
+    else im.clearTint();
+    if (b.hp <= 0) {
+      this.renderRuin(b, im);
+    }
+    if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
+    // Late campaign families draw their own bodies, foundations and ruins; until their art has
+    // loaded, the fallback sprites have no texture to show either.
+    if (
+      this.lateCampaign.handles(b) ||
+      (!this.lateAssetsReady && this.model.battle && isLateCampaignBuilding(b))
+    )
+      im.setAlpha(0);
+    if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
+      im.setAlpha(0);
+    this.syncBubble(b, p, im);
+    if (b.hp <= 0) this.ruinSynced.add(b.id);
+    else this.ruinSynced.delete(b.id);
+  }
+  private syncBubble(b: Building, p: { x: number; y: number }, im: Phaser.GameObjects.Image) {
+    const shouldBubble =
+      !this.model.battle &&
+      b.id !== this.model.moving &&
+      (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
+      b.stored >= 100 &&
+      !b.upgradeEnd;
+    if (shouldBubble && !this.bubbles.has(b.id)) {
+      const c = this.add.container(p.x, p.y - im.displayHeight * 0.86 - 13).setDepth(p.y + 300);
+      const bg = this.add.graphics();
+      bg.fillStyle(0xfff6d7, 1);
+      bg.lineStyle(2, 0x846743, 1);
+      bg.fillRoundedRect(-17, -15, 34, 28, 8);
+      bg.strokeRoundedRect(-17, -15, 34, 28, 8);
+      bg.fillTriangle(-5, 12, 5, 12, 0, 19);
+      const icon = this.add
+        .text(0, -2, b.kind === 'goldmine' ? '●' : '♦', {
+          fontFamily: 'Arial',
+          fontSize: '24px',
+          color: b.kind === 'goldmine' ? '#efaa10' : b.kind === 'darkdrill' ? '#514076' : '#c449e2',
+          stroke:
+            b.kind === 'goldmine' ? '#b87516' : b.kind === 'darkdrill' ? '#291d3e' : '#823b9c',
+          strokeThickness: 1,
+        })
+        .setOrigin(0.5);
+      c.add([bg, icon]);
+      c.setSize(38, 40).setInteractive();
+      c.on('pointerup', () => {
+        if (this.dragged || this.uiBlocked || this.model.placement) return;
+        this.model.collect(b.id);
+        this.audio.play('collect');
+      });
+      this.bubbles.set(b.id, c);
+    }
+    if (shouldBubble) {
+      const c = this.bubbles.get(b.id)!;
+      const y =
+        b.kind === 'darkdrill'
+          ? p.y + darkDrillBounds(b, 0)[1] - 13
+          : p.y - im.displayHeight * 0.86 - 13;
+      const reduced = this.model.state.settings.reducedMotion;
+      const anchor = `${p.x},${y},${reduced}`;
+      if (c.getData('anchor') !== anchor) {
+        this.tweens.killTweensOf(c);
+        c.setPosition(p.x, y)
+          .setDepth(p.y + 300)
+          .setData('anchor', anchor);
+        if (!reduced)
+          this.tweens.add({
+            targets: c,
+            y: y - 5,
+            duration: 1100,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+          });
+      }
+    } else {
+      this.removeBubble(b.id);
+    }
+  }
+  /** Standing height of a building's body, for projectile anchors; one bounds call per kind. */
+  private intactHeight(b: Building, im: Phaser.GameObjects.Image) {
+    const intact = { ...b, hp: 1, constructing: false, upgradeEnd: undefined };
+    const span = (bounds: readonly number[]) => bounds[3] - bounds[1];
+    if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
+      return span(villageArcherTowerBounds(intact, 0));
+    if (b.kind === 'darkdrill') return span(darkDrillBounds(intact, 0));
+    if (b.kind === 'inferno') return span(infernoBounds(b.level, 'setup', 0, b.infernoMode));
+    if (b.kind === 'clancastle') return span(castleBounds(b.level));
+    if (b.kind === 'cannon' && !b.npc) return span(cannonBounds(b.level));
+    if (b.kind === 'mortar') return span(mortarBounds(b.level));
+    if (b.kind === 'airsweeper') return span(sweeperBounds(b.level));
+    if (b.kind === 'bombtower') return span(bombTowerBounds(b.level));
+    if (b.kind === 'wizardtower') return span(wizardTowerBounds(b.level));
+    return im.displayHeight;
+  }
+  /**
+   * A resource tick at home (`changed(true)`) only moves stored amounts: refresh the collector
+   * bubbles instead of restyling the whole village every second.
+   */
+  private passiveSync() {
+    for (const b of this.model.state.buildings) {
+      const im = this.sprites.get(b.id);
+      if (!im) continue;
+      const d = BUILDINGS[b.kind];
+      this.syncBubble(b, iso(b.x + d.size / 2, b.y + d.size / 2), im);
+    }
+    this.lastRevision = this.model.revision;
+    this.syncCount++;
+  }
+  /** Whether every change since the last sync was a passive resource tick at home. */
+  private passiveOnly() {
+    return (
+      !this.model.battle &&
+      this.mode === 'home' &&
+      this.passiveRevision === this.model.revision &&
+      this.lastRevision === this.model.revision - 1
+    );
+  }
+  /**
+   * Destroyed buildings restyle one by one: their ruin sprite, the wall links around a fallen
+   * wall, and the ruin ground. A battle used to run a full sync (every building restyled, both
+   * bounds per building, wall links, ruin ground) on every destroy event.
+   */
+  private syncRuins(battle: NonNullable<GameModel['battle']>) {
+    this.ruinsDirty = false;
+    this.ruinScan.battle = battle;
+    this.ruinScan.elapsed = battle.elapsed;
+    let changed = false,
+      walls = false;
+    for (const b of battle.buildings) {
+      if (b.hp > 0 || this.ruinSynced.has(b.id) || !this.sprites.has(b.id)) continue;
+      this.syncBuilding(b);
+      changed = true;
+      if (b.kind === 'wall') walls = true;
+    }
+    if (!changed) return;
+    if (walls) this.syncWalls();
+    this.drawRuinGround();
+    this.syncCount++;
   }
   private styleBuilding(
     im: Phaser.GameObjects.Image,
@@ -1889,8 +2076,16 @@ export class VillageScene extends Phaser.Scene {
       .setDisplaySize(width, (width * im.height) / im.width)
       .setDepth(im.y - 2);
   }
+  private ruinDecals?: Phaser.GameObjects.RenderTexture;
+  /** Ruins already stamped into `ruinDecals`. */
+  private ruinStamped = new Set<number>();
+  /**
+   * Scorched ground under ruins. The ellipses are stamped into one half-resolution render
+   * texture as buildings fall (a new ruin stamps only itself), so the whole layer is a single
+   * quad per frame instead of two re-triangulated Graphics ellipses per ruin (walls included).
+   */
   private drawRuinGround() {
-    this.ruinGround.clear();
+    const wanted: Building[] = [];
     for (const b of this.model.buildings) {
       if (
         b.hp > 0 ||
@@ -1905,13 +2100,92 @@ export class VillageScene extends Phaser.Scene {
         this.lateCampaign.handles(b)
       )
         continue;
+      wanted.push(b);
+    }
+    if (!wanted.length) {
+      this.clearRuinGround();
+      return;
+    }
+    let rebuild = !this.ruinDecals?.scene || this.ruinDecalsLost;
+    if (!rebuild) {
+      // Ruins only accumulate within one battle; anything else (a seek backwards, a restyle)
+      // redraws the layer from scratch.
+      const ids = new Set(wanted.map((b) => b.id));
+      for (const id of this.ruinStamped)
+        if (!ids.has(id)) {
+          rebuild = true;
+          break;
+        }
+    }
+    const rt = rebuild ? this.resetRuinDecals() : this.ruinDecals!;
+    const ellipse = this.ellipseShape();
+    const frameWidth = 64 * ellipse.resolution,
+      frameHeight = 32 * ellipse.resolution;
+    let stamped = false;
+    for (const b of wanted) {
+      if (this.ruinStamped.has(b.id)) continue;
+      this.ruinStamped.add(b.id);
+      stamped = true;
       const d = BUILDINGS[b.kind];
-      const p = iso(b.x + d.size / 2, b.y + d.size / 2);
-      const width = (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12;
-      this.ruinGround.fillStyle(0x40331e, 0.3);
-      this.ruinGround.fillEllipse(p.x, p.y + 4, width, width * 0.46);
-      this.ruinGround.fillStyle(0x302719, 0.24);
-      this.ruinGround.fillEllipse(p.x, p.y, width * 0.76, width * 0.33);
+      const x = (WORLD.ox + (b.x - b.y) * 32 - WORLD.left) * RUIN_DECAL_SCALE,
+        y = (WORLD.oy + (b.x + b.y + d.size) * 16) * RUIN_DECAL_SCALE;
+      const width =
+        (b.kind === 'camp' ? campArt(b.level).width : d.width) * 1.12 * RUIN_DECAL_SCALE;
+      rt.stamp(ellipse.key, ellipse.frame, x, y + 4 * RUIN_DECAL_SCALE, {
+        scaleX: width / frameWidth,
+        scaleY: (width * 0.46) / frameHeight,
+        originX: ellipse.originX,
+        originY: ellipse.originY,
+        tint: 0x40331e,
+        alpha: 0.3,
+      });
+      rt.stamp(ellipse.key, ellipse.frame, x, y, {
+        scaleX: (width * 0.76) / frameWidth,
+        scaleY: (width * 0.33) / frameHeight,
+        originX: ellipse.originX,
+        originY: ellipse.originY,
+        tint: 0x302719,
+        alpha: 0.24,
+      });
+    }
+    if (stamped || rebuild) rt.render();
+    rt.setVisible(true);
+  }
+  private ruinDecalsLost = false;
+  private resetRuinDecals() {
+    this.ruinStamped.clear();
+    this.ruinDecalsLost = false;
+    let rt = this.ruinDecals;
+    if (!rt?.scene) {
+      rt = this.ruinDecals = this.add
+        .renderTexture(
+          WORLD.left,
+          0,
+          Math.ceil(WORLD.width * RUIN_DECAL_SCALE),
+          Math.ceil(WORLD.height * RUIN_DECAL_SCALE),
+        )
+        .setOrigin(0, 0)
+        .setScale(1 / RUIN_DECAL_SCALE)
+        .setDepth(-875);
+      // A lost context drops the texture's pixels: stamp everything again when restored.
+      const renderer = this.game.renderer;
+      const restore = () => {
+        this.ruinDecalsLost = true;
+        this.lastRevision = -1;
+      };
+      renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, restore);
+      rt.once(Phaser.GameObjects.Events.DESTROY, () =>
+        renderer.off(Phaser.Renderer.Events.RESTORE_WEBGL, restore),
+      );
+    }
+    rt.clear();
+    return rt;
+  }
+  private clearRuinGround() {
+    this.ruinStamped.clear();
+    if (this.ruinDecals?.scene && this.ruinDecals.visible) {
+      this.ruinDecals.clear().render();
+      this.ruinDecals.setVisible(false);
     }
   }
   private removeBubble(id: number) {
@@ -1922,22 +2196,18 @@ export class VillageScene extends Phaser.Scene {
     this.bubbles.delete(id);
   }
   syncWalls() {
-    const moving = new Set((this.model.wallMove?.source ?? []).map((w) => w.id));
-    const walls = this.model.buildings.filter(
-      (b) => b.kind === 'wall' && b.hp > 0 && !moving.has(b.id),
-    );
+    const moving = this.model.wallMove
+      ? new Set(this.model.wallMove.source.map((w) => w.id))
+      : undefined;
     // Tile index replaces the O(walls) find per wall; links persist across calls
     // so a wall death only rebuilds its own adjacencies instead of every link.
-    const tiles = new Map<string, (typeof walls)[number]>();
-    for (const w of walls) tiles.set(`${w.x},${w.y}`, w);
+    const tiles = new Map<number, Building>();
+    for (const b of this.model.buildings)
+      if (b.kind === 'wall' && b.hp > 0 && !moving?.has(b.id)) tiles.set(b.x * 4096 + b.y, b);
     const seen = new Set<string>();
-    const dirtyBands = new Set<number>();
-    for (const b of walls) {
-      for (const [dx, dy] of [
-        [1, 0],
-        [0, 1],
-      ]) {
-        const next = tiles.get(`${b.x + dx},${b.y + dy}`);
+    for (const b of tiles.values()) {
+      for (let axis = 0; axis < 2; axis++) {
+        const next = tiles.get((b.x + (axis === 0 ? 1 : 0)) * 4096 + b.y + (axis === 1 ? 1 : 0));
         if (!next) continue;
         const key = b.id < next.id ? `${b.id}-${next.id}` : `${next.id}-${b.id}`;
         seen.add(key);
@@ -1945,7 +2215,7 @@ export class VillageScene extends Phaser.Scene {
         // Moves, undo/redo and preset loads rewrite x/y in place with ids and
         // levels intact, so positions are part of the reuse check too.
         if (
-          existing &&
+          existing?.image?.scene &&
           existing.a === b.level &&
           existing.b === next.level &&
           existing.ax === b.x &&
@@ -1956,6 +2226,18 @@ export class VillageScene extends Phaser.Scene {
           continue;
         const p = iso(b.x + 0.5, b.y + 0.5),
           q = iso(next.x + 0.5, next.y + 0.5);
+        const shape = this.wallLinkShape(q.x > p.x ? 1 : -1, b.level, next.level);
+        // Every link between tiles with the same x + y shares one exact depth, just behind the
+        // nearer of its two walls, so links sort correctly against units and buildings in the
+        // neighbouring rows. One container per such row keeps the row's quads in one batch.
+        const row = this.wallLinkRow(b.x + b.y, (p.y + q.y) / 2 - 0.5);
+        let image = existing?.image;
+        if (!image?.scene || image.parentContainer !== row) {
+          image?.destroy();
+          image = new Phaser.GameObjects.Image(this, p.x, p.y, shape.key, shape.frame);
+          row.add(image);
+        }
+        applyShape(image, shape).setPosition(p.x, p.y);
         this.wallLinks.set(key, {
           a: b.level,
           b: next.level,
@@ -1967,53 +2249,58 @@ export class VillageScene extends Phaser.Scene {
           py: p.y,
           qx: q.x,
           qy: q.y,
+          image,
         });
-        dirtyBands.add(Math.floor((p.y + q.y) / 2 / WALL_LINK_BAND));
       }
     }
     for (const [key, link] of this.wallLinks) {
       if (!seen.has(key)) {
-        dirtyBands.add(Math.floor((link.py + link.qy) / 2 / WALL_LINK_BAND));
+        link.image?.destroy();
         this.wallLinks.delete(key);
       }
     }
-    for (const band of dirtyBands) {
-      const keys: string[] = [];
-      for (const [key, link] of this.wallLinks)
-        if (Math.floor((link.py + link.qy) / 2 / WALL_LINK_BAND) === band) keys.push(key);
-      keys.sort();
-      if (!keys.length) {
-        this.wallLinkBands.get(band)?.g.destroy();
-        this.wallLinkBands.delete(band);
-        continue;
+    for (const [row, container] of this.wallLinkRows)
+      if (!container.length) {
+        container.destroy();
+        this.wallLinkRows.delete(row);
       }
-      const sig = keys
-        .map((key) => {
-          const link = this.wallLinks.get(key)!;
-          return `${key}:${link.a}:${link.b}`;
-        })
-        .join('|');
-      let entry = this.wallLinkBands.get(band);
-      if (entry?.sig === sig) continue;
-      if (!entry) {
-        entry = { g: this.add.graphics(), sig: '' };
-        // Band-center depth keeps the whole band roughly where per-link depths were.
-        entry.g.setDepth(band * WALL_LINK_BAND + WALL_LINK_BAND / 2);
-        this.wallLinkBands.set(band, entry);
-      }
-      entry.g.clear();
-      for (const key of keys) {
-        const link = this.wallLinks.get(key)!;
-        this.paintWallLink(
-          entry.g,
-          new Phaser.Math.Vector2(link.px, link.py),
-          new Phaser.Math.Vector2(link.qx, link.qy),
-          link.a,
-          link.b,
-        );
-      }
-      entry.sig = sig;
+  }
+  /** Wall link rows by x + y of their nearer wall. */
+  private wallLinkRows = new Map<number, Phaser.GameObjects.Container>();
+  private wallLinkRow(row: number, depth: number) {
+    let container = this.wallLinkRows.get(row);
+    if (!container?.scene) {
+      container = this.add.container(0, 0).setDepth(depth);
+      this.wallLinkRows.set(row, container);
     }
+    return container;
+  }
+  private clearWallLinks() {
+    for (const container of this.wallLinkRows.values()) container.destroy();
+    this.wallLinkRows.clear();
+    this.wallLinks.clear();
+  }
+  /**
+   * One baked texture per link direction and level pair: every link on the map is a quad
+   * from a shared page, instead of Graphics paths re-triangulated every frame.
+   */
+  private wallLinkShape(direction: 1 | -1, fromLevel: number, toLevel: number): BakedShape {
+    const height = Math.max(wallArt(fromLevel).linkHeight, wallArt(toLevel).linkHeight);
+    return this.shapes.shape(
+      `wall-link:${direction}:${fromLevel}:${toLevel}`,
+      direction > 0 ? -4 : -36,
+      -height - 10,
+      40,
+      height + 10 + 20,
+      (g) =>
+        this.paintWallLink(
+          g,
+          new Phaser.Math.Vector2(0, 0),
+          new Phaser.Math.Vector2(direction * 32, 16),
+          fromLevel,
+          toLevel,
+        ),
+    );
   }
   /** Two material halves meet at the seam, including when neighbouring walls differ in level. */
   private paintWallLink(
@@ -2091,7 +2378,9 @@ export class VillageScene extends Phaser.Scene {
     }
     const blocked = !!this.model.wallPlacementIssue;
     const color = blocked ? 0xff7272 : 0xffffff;
-    const g = (this.wallGhostLinks ??= this.add.graphics().setDepth(6000));
+    // Previews sit above home flying camp units (6500), like the placement ghost.
+    const g = (this.wallGhostLinks ??= this.add.graphics().setDepth(6600));
+    const buildings = this.buildingMap(this.model.state.buildings);
     for (const w of preview) {
       const p = iso(w.x + 0.5, w.y + 0.5);
       let im = this.wallGhosts.get(w.id);
@@ -2099,13 +2388,13 @@ export class VillageScene extends Phaser.Scene {
         im = this.add.image(0, 0, 'wall').setOrigin(0.5, 0.88);
         this.wallGhosts.set(w.id, im);
       }
-      const level = this.model.state.buildings.find((b) => b.id === w.id)!.level,
+      const level = buildings.get(w.id)!.level,
         art = wallArt(level);
       im.setTexture(wallTexture(level))
         .setOrigin(0.5, 0.84)
         .setPosition(p.x, p.y)
         .setDisplaySize(art.height * 0.75, art.height)
-        .setDepth(6001 + p.y / 10000)
+        .setDepth(6601 + p.y / 10000)
         .setTint(color)
         .setAlpha(0.85);
       for (const [dx, dy] of [
@@ -2115,7 +2404,7 @@ export class VillageScene extends Phaser.Scene {
         const next = preview.find((v) => v.x === w.x + dx && v.y === w.y + dy);
         if (!next) continue;
         const q = iso(next.x + 0.5, next.y + 0.5);
-        const nextLevel = this.model.state.buildings.find((b) => b.id === next.id)!.level;
+        const nextLevel = buildings.get(next.id)!.level;
         this.paintWallLink(g, p, q, level, nextLevel, blocked);
       }
     }
@@ -2168,40 +2457,264 @@ export class VillageScene extends Phaser.Scene {
     );
     return { x, y, size: s, valid };
   }
+  /**
+   * Draws one presentation frame from the current simulation state. Direct calls (tests and
+   * tools) always redraw everything, uninterpolated; the game loop goes through `present`,
+   * which interpolates units between ticks and skips elapsed-driven work that cannot change.
+   */
   drawOverlay(time: number) {
+    this.present(time, false);
+  }
+  private present(time: number, live: boolean) {
+    // Culling (here and in every presentation) reads worldView: refresh it for this frame's
+    // scroll and zoom instead of using the one left by the previous render.
+    this.cameras.main.preRender();
+    const battle = this.model.battle;
+    if (battle) this.effectTimeline.update(this.effectClock(battle, true));
+    // Units draw between the last two ticks; the simulation itself is never touched.
+    if (live) this.interpolation.prepare(battle, this.tick / TICK);
+    else this.interpolation.disable();
+    const unchanged = live && !!battle && this.sameBattleFrame(battle);
+    this.fxDrained = false;
+    if (unchanged) this.renderSanta(this.lastCues);
+    else this.drawWorld();
+    if (!unchanged || !live || this.interpolation.moved) this.drawUnits();
+  }
+  /**
+   * `iso` for moving things: a unit's or defender's simulated position maps to the screen
+   * point of its interpolated position; any other point projects exactly like `iso`.
+   */
+  private project = (x: number, y: number) =>
+    this.interpolation.projectInto(new Phaser.Math.Vector2(), x, y);
+  /** Inputs of the last full battle frame; see `sameBattleFrame`. */
+  private frameKey = {
+    battle: null as GameModel['battle'],
+    elapsed: NaN,
+    finished: false,
+    revision: -1,
+    synced: -1,
+    selected: null as number | null,
+    reduced: false,
+    scrollX: NaN,
+    scrollY: NaN,
+    zoomX: NaN,
+    zoomY: NaN,
+    width: 0,
+    height: 0,
+    art: '',
+  };
+  /**
+   * True when nothing that drives buildings, defenses, traps, projectiles and effects changed
+   * since the last full frame: the battle clock did not advance (two of three frames at 60 Hz,
+   * and every frame of a paused replay), no event drained, and the camera did not move (the
+   * presentations cull and pick buffer density by it). Units draw separately every frame.
+   */
+  private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
+    const key = this.frameKey,
+      cam = this.cameras.main;
+    const art = `${this.heavyArtReady}:${this.lateAssetsReady}`;
+    const same =
+      !this.fxDrained &&
+      // The grace window after the finish animates on the presentation clock, not elapsed.
+      (!battle.finished || !presentationLive(battle)) &&
+      key.battle === battle &&
+      key.elapsed === battle.elapsed &&
+      key.finished === battle.finished &&
+      key.revision === this.model.revision &&
+      key.synced === this.syncCount &&
+      key.selected === this.model.selected &&
+      key.reduced === this.model.state.settings.reducedMotion &&
+      key.scrollX === cam.scrollX &&
+      key.scrollY === cam.scrollY &&
+      key.zoomX === cam.zoomX &&
+      key.zoomY === cam.zoomY &&
+      key.width === cam.width &&
+      key.height === cam.height &&
+      key.art === art;
+    key.battle = battle;
+    key.elapsed = battle.elapsed;
+    key.finished = battle.finished;
+    key.revision = this.model.revision;
+    key.synced = this.syncCount;
+    key.selected = this.model.selected;
+    key.reduced = this.model.state.settings.reducedMotion;
+    key.scrollX = cam.scrollX;
+    key.scrollY = cam.scrollY;
+    key.zoomX = cam.zoomX;
+    key.zoomY = cam.zoomY;
+    key.width = cam.width;
+    key.height = cam.height;
+    key.art = art;
+    return same;
+  }
+  /**
+   * Effect timeline clock: battle time, then the shared presentation clock's grace window after
+   * the battle ends (presentation-clock.ts), so final explosions finish with the building
+   * effects instead of snapping to their end state. Past the window, updates settle everything.
+   */
+  private effectClock(battle: NonNullable<GameModel['battle']>, forUpdate: boolean) {
+    if (!battle.finished) return battle.elapsed;
+    if (forUpdate && !presentationLive(battle)) return Infinity;
+    return presentationTime(battle);
+  }
+  private lastCues: SampleCue[] = [];
+  /** Sound cues only matter while the sample player can actually play. */
+  private audible() {
+    return this.audio.enabled && this.audio.context?.state === 'running';
+  }
+  private renderSanta(cues: SampleCue[]) {
+    this.santaPresentation.render(
+      this.model.battle,
+      this.model.state.settings.reducedMotion,
+      !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
+      this.model.replay?.speed ?? 1,
+      iso,
+      cues,
+      this.renderClock / 1000,
+    );
+  }
+  private visibleScratch: Building[] = [];
+  /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
+  private drawWorld() {
+    const battle = this.model.battle;
+    const reduced = this.model.state.settings.reducedMotion;
+    const clock = battle?.elapsed ?? this.renderClock / 1000;
     if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
       this.villageNativePresentation.preview();
-    if (this.model.battle)
-      this.effectTimeline.update(this.model.battle.finished ? Infinity : this.model.battle.elapsed);
     this.drawProjectiles();
     // One visible-building pass per frame; every presentation below filters by kind.
-    const visible = this.model.buildings.filter((v) => this.model.visibleBuilding(v));
+    const visible = this.visibleScratch;
+    visible.length = 0;
+    for (const v of this.model.buildings) if (this.model.visibleBuilding(v)) visible.push(v);
     const bombTowerCues = this.drawBombTowers(visible);
     const wizardTowerCues = this.wizardTowerPresentation.render(
       visible,
-      this.model.battle,
-      this.model.battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
+      battle,
+      clock,
+      reduced,
       iso,
       AIR_LIFT,
     );
+    this.drawSelection();
+    this.drawGroundMarks(battle);
+    this.drawBuildingDetail(battle, reduced);
+    const teslaCues = this.teslaPresentation.render(visible, battle, clock, reduced, iso, AIR_LIFT);
+    this.goblinBuildingPresentation.render(this.model.buildings, clock, reduced, iso);
+    this.darkStoragePresentation.render(
+      this.model.buildings,
+      battle,
+      this.model.state.dark,
+      this.darkCap(),
+      iso,
+    );
+    const xbowCues = this.xbowPresentation.render(visible, battle, clock, reduced, iso, AIR_LIFT);
+    const mineCues = this.seekingMinePresentation.render(
+      visible,
+      battle,
+      clock,
+      reduced,
+      iso,
+      AIR_LIFT,
+    );
+    const archerTowerCues = this.villageArcherTowers.render(
+      battle && !battle.nativeArcherTowers ? [] : visible,
+      reduced ? 0 : clock,
+      iso,
+      clock,
+      reduced,
+      battle,
+      AIR_LIFT,
+    );
+    this.villageNativePresentation.render(
+      this.model.wallMove
+        ? visible.filter((b) => !this.model.wallMove?.source.some((w) => w.id === b.id))
+        : visible,
+      battle,
+      reduced ? 0 : clock,
+      iso,
+      this.sprites,
+    );
+    this.nativeDefenses.render(visible, battle, clock, reduced, iso, AIR_LIFT);
+    const drillCues = this.darkDrillPresentation.render(
+      visible,
+      reduced ? 0 : clock,
+      iso,
+      clock,
+      reduced,
+      battle?.drillDestructions,
+    );
+    this.infernoPresentation.render(visible, reduced ? 0 : clock, battle ?? null, reduced, iso);
+    this.castlePresentation.render(visible, iso);
+    const cannonCues = this.cannonPresentation.render(visible, battle, clock, reduced, iso);
+    const mortarCues = this.mortarPresentation.render(visible, battle, clock, reduced, iso);
+    const sweeperCues = this.sweeperPresentation.render(visible, battle, clock, reduced, iso);
+    const lateCues = this.lateCampaign.render({
+      buildings: visible,
+      battle,
+      elapsed: clock,
+      reduced,
+      iso,
+      airLift: AIR_LIFT,
+    });
+    const shrinkCues = this.shrinkTrapPresentation.render(visible, battle, reduced, iso);
+    // Presentations still produce their cues; only the merge is skipped while silent.
+    const cues = this.audible()
+      ? [
+          ...xbowCues,
+          ...teslaCues,
+          ...bombTowerCues,
+          ...mineCues,
+          ...wizardTowerCues,
+          ...shrinkCues,
+          ...sweeperCues,
+          ...mortarCues,
+          ...drillCues,
+          ...archerTowerCues,
+          ...cannonCues,
+          ...garrisonSoundCues(battle),
+          ...infernoSoundCues(battle),
+          ...lateCues,
+        ]
+      : NO_CUES;
+    this.lastCues = cues;
+    this.renderSanta(cues);
+    this.drawGusts(battle, reduced);
+    this.drawTraps(battle, reduced);
+  }
+  private diamondPoints = [0, 1, 2, 3].map(() => new Phaser.Math.Vector2());
+  private diamond(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    s: number,
+    color: number,
+    alpha = 0.14,
+  ) {
+    const pts = this.diamondPoints;
+    isoInto(pts[0], x, y);
+    isoInto(pts[1], x + s, y);
+    isoInto(pts[2], x + s, y + s);
+    isoInto(pts[3], x, y + s);
+    g.fillStyle(color, alpha);
+    g.fillPoints(pts, true);
+    g.lineStyle(2, color, 0.85);
+    g.strokePoints(pts, true);
+  }
+  /** Selection, ranges, the edit grid and the placement footprint on the overlay layer. */
+  private drawSelection() {
     const g = this.overlay;
     g.clear();
-    const b = this.model.buildings.find((b) => b.id === this.model.selected);
-    const diamond = (x: number, y: number, s: number, color: number, alpha = 0.14) => {
-      const pts = [iso(x, y), iso(x + s, y), iso(x + s, y + s), iso(x, y + s)];
-      g.fillStyle(color, alpha);
-      g.fillPoints(pts, true);
-      g.lineStyle(2, color, 0.85);
-      g.strokePoints(pts, true);
-    };
+    const b =
+      this.model.selected === null
+        ? undefined
+        : this.buildingMap(this.model.buildings).get(this.model.selected);
     for (const wall of this.model.selectedWalls)
-      if (wall.id !== b?.id) diamond(wall.x, wall.y, 1, 0xffe8a0);
+      if (wall.id !== b?.id) this.diamond(g, wall.x, wall.y, 1, 0xffe8a0);
     const obstacle = this.model.selectedObstacle;
-    if (obstacle) diamond(obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
+    if (obstacle) this.diamond(g, obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
     if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
-      diamond(b.x, b.y, d.size, 0xffe8a0);
+      this.diamond(g, b.x, b.y, d.size, 0xffe8a0);
       if (d.range || d.trap) {
         const range =
           b.kind === 'inferno'
@@ -2219,15 +2732,15 @@ export class VillageScene extends Phaser.Scene {
           const angle = sweeperAngle(b.direction),
             x = b.x + 1,
             y = b.y + 1;
-          const arc = (radius: number, reverse = false) => {
-            const points: Phaser.Math.Vector2[] = new Array(49);
-            for (let i = 0; i < 49; i++) {
-              const a = angle + SWEEPER.cone * ((reverse ? 48 - i : i) / 48 - 0.5);
-              points[i] = iso(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
-            }
-            return points;
-          };
-          const points = [...arc(range), ...arc(SWEEPER.minRange, true)];
+          const points = this.sweeperArc;
+          for (let i = 0; i < 98; i++) {
+            // Outer arc out, inner arc back.
+            const outer = i < 49,
+              step = outer ? i : 97 - i,
+              radius = outer ? range : SWEEPER.minRange;
+            const a = angle + SWEEPER.cone * (step / 48 - 0.5);
+            isoInto(points[i], x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+          }
           g.fillStyle(0xcaf8ff, 0.1).fillPoints(points, true);
           g.lineStyle(2, 0xe1fbff, 0.8).strokePoints(points, true);
           const arrow = iso(x + Math.cos(angle) * 3, y + Math.sin(angle) * 3);
@@ -2239,33 +2752,90 @@ export class VillageScene extends Phaser.Scene {
         }
       }
     }
+    const grid =
+      !!this.model.wallMove ||
+      !!this.model.placement ||
+      (this.model.editing && !this.model.placement && !this.model.wallMove);
+    this.showGrid(grid);
     if (this.model.wallMove) {
-      this.drawGrid(g);
       const color = this.model.wallPlacementIssue ? 0xff6464 : 0x8fff73;
-      for (const w of this.model.wallMove.source) diamond(w.x, w.y, 1, 0xffe8a0, 0.06);
-      for (const w of this.model.wallPreview) diamond(w.x, w.y, 1, color, 0.3);
+      for (const w of this.model.wallMove.source) this.diamond(g, w.x, w.y, 1, 0xffe8a0, 0.06);
+      for (const w of this.model.wallPreview) this.diamond(g, w.x, w.y, 1, color, 0.3);
     }
-    if (this.model.editing && !this.model.placement && !this.model.wallMove) this.drawGrid(g);
     if (this.model.placement) {
-      this.drawGrid(g);
       // Camera motion and DOM drags can change the tile without a Phaser pointer event.
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());
       if (preview)
-        diamond(preview.x, preview.y, preview.size, preview.valid ? 0x8fff73 : 0xff6464, 0.28);
+        this.diamond(
+          g,
+          preview.x,
+          preview.y,
+          preview.size,
+          preview.valid ? 0x8fff73 : 0xff6464,
+          0.28,
+        );
     }
-    this.groundMarks.clear();
-    const active = this.model.battle;
-    if (active && !active.finished) {
-      // One continuous red line around everything the base denies you, painted on
-      // the grass so the base itself stays in front of it.
-      const edges = this.battleBoundary();
-      this.groundMarks.lineStyle(2.5, 0xff4d42, 0.92);
-      for (const [x0, y0, x1, y1] of edges) {
-        const a = iso(x0, y0),
-          b = iso(x1, y1);
-        this.groundMarks.lineBetween(a.x, a.y, b.x, b.y);
+  }
+  private sweeperArc = Array.from({ length: 98 }, () => new Phaser.Math.Vector2());
+  private gridLayer?: Phaser.GameObjects.Graphics;
+  /** The edit grid never changes: record it once and toggle it. */
+  private showGrid(visible: boolean) {
+    if (!visible) {
+      if (this.gridLayer?.visible) this.gridLayer.setVisible(false);
+      return;
+    }
+    if (!this.gridLayer) {
+      // Just below the overlay so footprints and selections draw over the lines.
+      const g = (this.gridLayer = this.add.graphics().setDepth(6599.5));
+      g.lineStyle(1, 0xffffff, 0.15);
+      for (let x = BUILD_MIN; x <= BUILD_MAX; x++) {
+        const p = iso(x, BUILD_MIN),
+          q = iso(x, BUILD_MAX);
+        g.lineBetween(p.x, p.y, q.x, q.y);
+        const r = iso(BUILD_MIN, x),
+          s = iso(BUILD_MAX, x);
+        g.lineBetween(r.x, r.y, s.x, s.y);
       }
+    }
+    if (!this.gridLayer.visible) this.gridLayer.setVisible(true);
+  }
+  private boundarySignature = NaN;
+  /**
+   * The red deploy boundary, painted on the grass under the base. It is re-recorded only when
+   * its outline changes (a structure falls or a Tesla is revealed), with collinear tile edges
+   * merged into long segments. Spell rings share the frame's aura pass.
+   */
+  private drawGroundMarks(battle: GameModel['battle']) {
+    const active = battle && !battle.finished;
+    const edges = active ? this.battleBoundary() : undefined;
+    const signature = edges ? this.boundary.signature : NaN;
+    if (!Object.is(signature, this.boundarySignature)) {
+      this.boundarySignature = signature;
+      const g = this.groundMarks.clear();
+      if (edges) {
+        g.lineStyle(2.5, 0xff4d42, 0.92);
+        for (const [x0, y0, x1, y1] of mergeEdges(edges)) {
+          g.lineBetween(
+            WORLD.ox + (x0 - y0) * 32,
+            WORLD.oy + (x0 + y0) * 16,
+            WORLD.ox + (x1 - y1) * 32,
+            WORLD.oy + (x1 + y1) * 16,
+          );
+        }
+      }
+    }
+    this.drawAuras(active ? battle : null);
+  }
+  /** Spell rings: fills are pooled baked ellipses, strokes stay on the overlay. */
+  private drawAuras(active: GameModel['battle']) {
+    const fills = this.auraFills;
+    fills.begin();
+    if (active) {
+      const g = this.overlay;
+      const ellipse = this.ellipseShape();
+      const reduced = this.model.state.settings.reducedMotion;
+      const p = this.auraPoint;
       for (const cast of active.nativeSpells ?? []) {
         if (cast.firstHit - 0.9 > active.elapsed) continue;
         const row = nativeRow('spells', cast.name, cast.level);
@@ -2273,53 +2843,58 @@ export class VillageScene extends Phaser.Scene {
         if (radius <= 0.2) continue;
         const color =
           NATIVE_SPELL_COLOR[cast.name] ?? (cast.side === 'defense' ? 0xff6a5c : 0xfff0c2);
-        const p = iso(cast.x, cast.y);
+        isoInto(p, cast.x, cast.y);
         const aura = cast.follow !== undefined;
-        const pulse = this.model.state.settings.reducedMotion
-          ? 1
-          : 1 + Math.sin((active.elapsed - cast.castAt) / 0.22) * 0.03;
-        g.fillStyle(color, aura ? 0.06 : 0.15);
-        g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+        const pulse = reduced ? 1 : 1 + Math.sin((active.elapsed - cast.castAt) / 0.22) * 0.03;
+        const w = radius * 128 * pulse,
+          h = radius * 64 * pulse;
+        fills.put(ellipse, p.x, p.y, w / 64, h / 32, color, aura ? 0.06 : 0.15);
         g.lineStyle(aura ? 1.5 : 2, color, aura ? 0.35 : 0.75);
-        g.strokeEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+        g.strokeEllipse(p.x, p.y, w, h);
       }
       for (const aura of active.auras) {
-        const p = iso(aura.x, aura.y),
-          radius = SPELLS[aura.kind].radius,
+        isoInto(p, aura.x, aura.y);
+        const radius = SPELLS[aura.kind].radius,
           color = SPELL_COLOR[aura.kind],
-          pulse = this.model.state.settings.reducedMotion
-            ? 1
-            : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
-        g.fillStyle(color, 0.17);
-        g.fillEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+          pulse = reduced ? 1 : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
+        const w = radius * 128 * pulse,
+          h = radius * 64 * pulse;
+        fills.put(ellipse, p.x, p.y, w / 64, h / 32, color, 0.17);
         g.lineStyle(2, color, 0.75);
-        g.strokeEllipse(p.x, p.y, radius * 128 * pulse, radius * 64 * pulse);
+        g.strokeEllipse(p.x, p.y, w, h);
       }
     }
+    fills.end();
+  }
+  private auraPoint = { x: 0, y: 0 };
+  /** Health and upgrade bars, skeleton coffins, and frozen or rooted footprints. */
+  private drawBuildingDetail(battle: GameModel['battle'], reduced: boolean) {
     this.detail.clear();
     for (const v of this.model.buildings) {
-      if (v.kind === 'skeletontrap')
-        this.sprites.get(v.id)?.setVisible(this.model.visibleBuilding(v));
-      if (v.hp <= 0 || !this.model.visibleBuilding(v)) continue;
-      const im = this.sprites.get(v.id)!;
+      const shown = this.model.visibleBuilding(v);
+      if (v.kind === 'skeletontrap') this.sprites.get(v.id)?.setVisible(shown);
+      if (v.hp <= 0 || !shown) continue;
+      const im = this.sprites.get(v.id);
+      if (!im) continue;
       if (v.kind === 'skeletontrap') {
-        const state = this.model.battle?.traps[v.id];
+        const state = battle?.traps[v.id];
         im.setFrame(
           skeletonTrapFrame(
             v.level,
             v.skeletonMode ?? 'ground',
             state,
-            this.model.battle?.elapsed ?? 0,
-            this.model.state.settings.reducedMotion,
+            battle?.elapsed ?? 0,
+            reduced,
           ),
-        )
-          .setCrop()
-          .setAlpha(1);
+        ).setCrop();
+        // Same construction / spent fades `sync` applies to every building.
+        const alpha = state?.resolved ? 0.35 : v.constructing ? 0.58 : 1;
+        if (im.alpha !== alpha) im.setAlpha(alpha);
       }
-      const needsBar = !!v.upgradeEnd || (!!this.model.battle && v.hp < v.maxHp);
-      // Bounds need the full pose (Archer Towers especially); skip the work when
-      // no bar is drawn for this building.
-      const nativeBounds = needsBar ? this.nativeBuildingBounds(v) : undefined;
+      const needsBar = !!v.upgradeEnd || (!!battle && v.hp < v.maxHp);
+      if (!needsBar) continue;
+      // Bounds need the full pose (Archer Towers especially); only bars pay for them.
+      const nativeBounds = this.nativeBuildingBounds(v);
       if (v.upgradeEnd) {
         const start = v.upgradeStart ?? v.upgradeEnd - 15000,
           duration = Math.max(1, v.upgradeEnd - start),
@@ -2341,7 +2916,7 @@ export class VillageScene extends Phaser.Scene {
           this.detail.lineBetween(p.x - 12, p.y - 10, p.x - 12, p.y - 60);
           this.detail.lineBetween(p.x - 12, p.y - 50, p.x + 22, p.y - 65);
         }
-      } else if (this.model.battle && v.hp < v.maxHp)
+      } else
         this.bar(
           im.x,
           nativeBounds
@@ -2356,217 +2931,81 @@ export class VillageScene extends Phaser.Scene {
           0xea654d,
         );
     }
-    const battle = this.model.battle;
     if (battle?.buildingEffects && !battle.finished)
       for (const v of this.model.buildings) {
         const e = battle.buildingEffects[v.id];
         if (!e || v.hp <= 0) continue;
-        const size = BUILDINGS[v.kind].size;
         const frozen = (e.frozenUntil ?? 0) > battle.elapsed;
         const rooted = (e.overgrownUntil ?? 0) > battle.elapsed;
         if (!frozen && !rooted) continue;
-        const pts = [
-          iso(v.x, v.y),
-          iso(v.x + size, v.y),
-          iso(v.x + size, v.y + size),
-          iso(v.x, v.y + size),
-        ];
+        const size = BUILDINGS[v.kind].size;
+        const pts = this.diamondPoints;
+        isoInto(pts[0], v.x, v.y);
+        isoInto(pts[1], v.x + size, v.y);
+        isoInto(pts[2], v.x + size, v.y + size);
+        isoInto(pts[3], v.x, v.y + size);
         this.detail.fillStyle(rooted ? 0x3f9f45 : 0xa8e6ff, rooted ? 0.35 : 0.3);
         this.detail.fillPoints(pts, true);
         this.detail.lineStyle(2, rooted ? 0x2f7a33 : 0xe6f8ff, 0.9);
         this.detail.strokePoints(pts, true);
       }
-    const teslaCues = this.teslaPresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-      AIR_LIFT,
-    );
-    this.goblinBuildingPresentation.render(
-      this.model.buildings,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    this.darkStoragePresentation.render(
-      this.model.buildings,
-      battle,
-      this.model.state.dark,
-      this.model.resourceCap('dark'),
-      iso,
-    );
-    const xbowCues = this.xbowPresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-      AIR_LIFT,
-    );
-    const mineCues = this.seekingMinePresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-      AIR_LIFT,
-    );
-    const archerTowerCues = this.villageArcherTowers.render(
-      battle && !battle.nativeArcherTowers ? [] : visible,
-      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
-      iso,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      battle,
-      AIR_LIFT,
-    );
-    this.villageNativePresentation.render(
-      this.model.wallMove
-        ? visible.filter((b) => !this.model.wallMove?.source.some((w) => w.id === b.id))
-        : visible,
-      battle,
-      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
-      iso,
-      this.sprites,
-    );
-    this.nativeDefenses.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-      AIR_LIFT,
-    );
-    const drillCues = this.darkDrillPresentation.render(
-      visible,
-      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
-      iso,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      battle?.drillDestructions,
-    );
-    this.infernoPresentation.render(
-      visible,
-      this.model.state.settings.reducedMotion ? 0 : (battle?.elapsed ?? this.renderClock / 1000),
-      battle ?? null,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    this.castlePresentation.render(visible, iso);
-    const cannonCues = this.cannonPresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    const mortarCues = this.mortarPresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    const sweeperCues = this.sweeperPresentation.render(
-      visible,
-      battle,
-      battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    const lateCues = this.lateCampaign.render({
-      buildings: visible,
-      battle,
-      elapsed: battle?.elapsed ?? this.renderClock / 1000,
-      reduced: this.model.state.settings.reducedMotion,
-      iso,
-      airLift: AIR_LIFT,
-    });
-    const shrinkCues = this.shrinkTrapPresentation.render(
-      visible,
-      battle,
-      this.model.state.settings.reducedMotion,
-      iso,
-    );
-    this.santaPresentation.render(
-      battle,
-      this.model.state.settings.reducedMotion,
-      !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
-      this.model.replay?.speed ?? 1,
-      iso,
-      [
-        ...xbowCues,
-        ...teslaCues,
-        ...bombTowerCues,
-        ...mineCues,
-        ...wizardTowerCues,
-        ...shrinkCues,
-        ...sweeperCues,
-        ...mortarCues,
-        ...drillCues,
-        ...archerTowerCues,
-        ...cannonCues,
-        ...garrisonSoundCues(battle),
-        ...infernoSoundCues(battle),
-        ...lateCues,
-      ],
-      this.renderClock / 1000,
-    );
-    if (battle && !battle.finished && !this.model.state.settings.reducedMotion) {
-      for (const gust of battle.gusts ?? []) {
-        const half = Math.min(
-          SWEEPER.waveCone / 2,
-          Math.asin(Math.min(1, SWEEPER.halfWidth / gust.radius)),
-        );
-        const alpha = 0.9 * Math.min(1, (SWEEPER.range - gust.radius) / 2);
-        for (let trail = 0; trail < 3; trail++) {
-          const radius = Math.max(1, gust.radius - trail * 0.24);
-          const baseAngle = Math.atan2(gust.directionY, gust.directionX);
-          const points: Phaser.Math.Vector2[] = new Array(21);
-          for (let i = 0; i < 21; i++) {
-            const a = baseAngle + half * (i / 10 - 1),
-              p = iso(gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius);
-            p.y -= AIR_LIFT;
-            points[i] = p;
-          }
-          this.detail.lineStyle(
-            trail ? 2 : 4,
-            trail ? 0x91dbe9 : 0xe4fbff,
-            alpha * (1 - trail * 0.25),
-          );
-          this.detail.strokePoints(points, false);
+  }
+  private gustPoints = Array.from({ length: 21 }, () => new Phaser.Math.Vector2());
+  private drawGusts(battle: GameModel['battle'], reduced: boolean) {
+    if (!battle || battle.finished || reduced) return;
+    const points = this.gustPoints;
+    for (const gust of battle.gusts ?? []) {
+      const half = Math.min(
+        SWEEPER.waveCone / 2,
+        Math.asin(Math.min(1, SWEEPER.halfWidth / gust.radius)),
+      );
+      const alpha = 0.9 * Math.min(1, (SWEEPER.range - gust.radius) / 2);
+      const baseAngle = Math.atan2(gust.directionY, gust.directionX);
+      for (let trail = 0; trail < 3; trail++) {
+        const radius = Math.max(1, gust.radius - trail * 0.24);
+        for (let i = 0; i < 21; i++) {
+          const a = baseAngle + half * (i / 10 - 1);
+          isoInto(points[i], gust.x + Math.cos(a) * radius, gust.y + Math.sin(a) * radius).y -=
+            AIR_LIFT;
         }
+        this.detail.lineStyle(
+          trail ? 2 : 4,
+          trail ? 0x91dbe9 : 0xe4fbff,
+          alpha * (1 - trail * 0.25),
+        );
+        this.detail.strokePoints(points, false);
       }
     }
-    if (battle) {
-      for (const trap of battle.finished ? [] : battle.buildings) {
+  }
+  /** Arming trap rings; Santa and Pumpkin traps advance their sprite frames here. */
+  private drawTraps(battle: GameModel['battle'], reduced: boolean) {
+    const dots = this.detailMarks;
+    dots.begin();
+    if (battle && !battle.finished) {
+      const dot = this.dotShape();
+      const p = this.auraPoint;
+      for (const trap of battle.buildings) {
         const state = battle.traps[trap.id];
+        // The cheap state lookup gates the stats derivation (most buildings are not traps).
+        if (!state) continue;
         const def = battleTrapStats(trap);
-        if (!def || !state) continue;
+        if (!def) continue;
         // Late campaign traps draw their own trigger and effect states.
         if (trap.npc === 'shrink-trap' || isLateBuilding(trap)) continue;
         if (trap.npc === 'santa-trap') {
           this.sprites
             .get(trap.id)
-            ?.setFrame(
-              santaTrapFrame(state, battle.elapsed, this.model.state.settings.reducedMotion),
-            )
+            ?.setFrame(santaTrapFrame(state, battle.elapsed, reduced))
             .setAlpha(1);
           continue;
         }
         if (trap.npc === 'pumpkin-bomb') {
-          this.sprites
-            .get(trap.id)
-            ?.setFrame(
-              pumpkinFrame(state, battle.elapsed, this.model.state.settings.reducedMotion),
-            );
+          this.sprites.get(trap.id)?.setFrame(pumpkinFrame(state, battle.elapsed, reduced));
           continue;
         }
         if (trap.kind === 'seekingairmine') continue;
         if (state.resolved || trap.kind === 'skeletontrap') continue;
-        const p = iso(state.x, state.y);
+        isoInto(p, state.x, state.y);
         const progress = Math.min(
           1,
           (battle.elapsed - state.activatedAt) / Math.max(0.01, def.delay),
@@ -2574,276 +3013,332 @@ export class VillageScene extends Phaser.Scene {
         const lift = def.targets === 'air' ? AIR_LIFT * progress : 0;
         this.detail.lineStyle(2, def.targets === 'air' ? 0xff746c : 0xffd175, 0.9);
         this.detail.strokeEllipse(p.x, p.y - lift, 20, 10);
-        this.detail.fillStyle(0xffdc85, 1);
-        this.detail.fillCircle(p.x, p.y - lift - 5, 3 + progress * 3);
-      }
-      // Reuse id maps for the whole unit pass instead of linear finds per unit.
-      const buildingById = new Map(battle.buildings.map((b) => [b.id, b]));
-      const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
-      const unitById = new Map(battle.units.map((v) => [v.id, v]));
-      void unitById;
-      const cam = this.cameras.main;
-      const worldView = cam.worldView;
-      const cullMargin = 80;
-      for (const u of battle.units) {
-        // Recalled units leave the battle at once; drop their sprite here instead
-        // of waiting for a mode change, or a frozen frame is left behind.
-        // (The mesh presentations skip/prune them in their own passes below.)
-        if (u.native?.recalled) {
-          const recalled = this.unitSprites.get(u.id);
-          if (recalled) {
-            recalled.destroy();
-            this.unitSprites.delete(u.id);
-          }
-          continue;
-        }
-        const art = troopArt(u.kind);
-        let im = this.unitSprites.get(u.id);
-        if (!im) {
-          const d = TROOPS[u.kind];
-          const walkKey = `${u.kind}-walk`;
-          const hasWalk = u.hero || this.textures.exists(walkKey);
-          // Legacy battles animate the procedural King; native heroes fall back to their own
-          // roster portrait until (and unless) the baked atlas arrives.
-          const legacyKing = !!u.hero && !!battle.hero;
-          const texKey = legacyKing
-            ? kingTexture('front-left')
-            : u.hero
-              ? `hero-fallback-${u.hero}`
-              : hasWalk
-                ? walkKey
-                : 'troop-fallback';
-          const frame = legacyKing || (!u.hero && hasWalk) ? 0 : undefined;
-          im = this.add
-            .image(0, 0, texKey, frame)
-            .setOrigin(0.5, u.hero ? KING_ART.baseline / KING_ART.cell : 122 / 128);
-          if (u.hero) im.setDisplaySize(KING_ART.width, KING_ART.width);
-          else im.setDisplaySize(d.width * art.displayScale, d.width * art.displayScale);
-          im.setData('isFallback', !hasWalk && !u.hero);
-          im.setData('nativeTroop', u.id);
-          this.unitSprites.set(u.id, im);
-          const spawn = iso(u.x, u.y);
-          im.setPosition(spawn.x, spawn.y - (TROOPS[u.kind].flying ? AIR_LIFT : 0));
-        }
-        // Viewport cull: skip off-screen units entirely (mesh layer culls itself).
-        // Cull against sprite extents, not the feet: flyers ride AIR_LIFT above
-        // their position, and tall sprites otherwise pop at the bottom edge.
-        {
-          const early = iso(u.x, u.y);
-          const marginX = cullMargin + im.displayWidth / 2;
-          const marginY =
-            cullMargin +
-            im.displayHeight / 2 +
-            (TROOPS[u.kind].flying ? AIR_LIFT : 0);
-          if (
-            Math.abs(early.x - worldView.centerX) > worldView.width / 2 + marginX ||
-            Math.abs(early.y - worldView.centerY) > worldView.height / 2 + marginY
-          ) {
-            im.setVisible(false);
-            continue;
-          }
-          // A culled sprite stays hidden until restored: the mesh layer hides it
-          // again below whenever it draws a mesh, so this cannot over-show.
-          if (!im.visible) im.setVisible(true);
-        }
-        const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
-        // Local visual half-scale; health, collision space and projectile speed are unchanged.
-        const shrinkScale = isShrunk(u, statusTime) ? 0.5 : 1;
-        const width =
-          (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
-        im.setDisplaySize(width, width).setData('shrinkScale', shrinkScale);
-        const defenderTarget =
-          u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
-        const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
-        const target = TROOPS[u.kind].healer
-          ? unitById.get(u.healTarget ?? -1)
-          : (liveDefender ?? buildingById.get(u.target ?? -1));
-        // Fallback sprites are invisible by design; draw a small ground marker so
-        // the unit still reads as a unit while its native mesh loads.
-        const isFallback = !!im.getData('isFallback');
-        if (u.hero && battle.hero) {
-          const king = kingPose(
-            u,
-            target,
-            statusTime - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, statusTime),
-            heroStats(battle.hero.level, battle.hero.townhall).rate,
-            this.model.state.settings.reducedMotion,
-            im.getData('kingDirection'),
-          );
-          im.setTexture(kingTexture(king.direction), king.frame)
-            .setFlipX(false)
-            .setData('kingDirection', king.direction)
-            .setData('facing', king.facing);
-        }
-        if (u.hp <= 0) {
-          const flying = !!TROOPS[u.kind].flying;
-          const at = u.defeatedAt ?? im.getData('defeatedAt') ?? battle.elapsed;
-          const pose = defeatPose(
-            battle.finished ? Infinity : battle.elapsed - at,
-            u.ejected ? 'spring' : flying ? 'air' : 'ground',
-            im.getData('facing') ?? -1,
-            this.model.state.settings.reducedMotion,
-            AIR_LIFT,
-          );
-          const p = iso(u.x, u.y);
-          // One-time death styling; the animated fade values below are guarded so
-          // a settled corpse writes nothing (any depth write re-sorts Phaser's
-          // whole display list).
-          const freshCorpse = !im.getData('dying');
-          im.setData('dying', true).setData('defeatedAt', at);
-          if (freshCorpse) {
-            im
-              .setTint(u.ejected ? 0xffe9ae : 0xa09482)
-              .setTintMode(Phaser.TintModes.MULTIPLY);
-          }
-          const corpseX = p.x + pose.x,
-            corpseY = p.y - (flying ? AIR_LIFT : 0) + pose.y,
-            corpseDepth = flying || u.ejected ? 7500 : p.y + 1;
-          if (im.x !== corpseX || im.y !== corpseY) im.setPosition(corpseX, corpseY);
-          if (im.depth !== corpseDepth) im.setDepth(corpseDepth);
-          if (im.angle !== pose.angle) im.setAngle(pose.angle);
-          if (im.alpha !== pose.alpha) im.setAlpha(pose.alpha);
-          if (im.visible !== pose.visible) im.setVisible(pose.visible);
-          continue;
-        }
-        const flying = !!TROOPS[u.kind].flying;
-        const sprung = (u.springUntil ?? 0) > battle.elapsed;
-        const springProgress =
-          1 -
-          Math.min(SPRING_AIRTIME, Math.max(0, (u.springUntil ?? 0) - battle.elapsed)) /
-            SPRING_AIRTIME;
-        const springLift =
-          sprung && !this.model.state.settings.reducedMotion
-            ? Math.sin(springProgress * Math.PI) * 45
-            : 0;
-        const pose = unitPose(u, target, im.getData('facing') ?? -1);
-        if (!u.hero) im.setData('facing', pose.facing).setFlipX(pose.flipX);
-        // Presentation shares battle time, so pause, playback speed and seeking agree.
-        // Frozen late campaign attackers hold their current frame and hover phase.
-        const animationTime =
-          (battle.elapsed - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, battle.elapsed)) * 1000;
-        // Guard every frame selection with a texture lookup: a miss would
-        // otherwise draw the entire baked atlas page / portrait card.
-        if (!u.hero && !isFallback && im.texture.frameTotal > 2) {
-          const frame = String(
-            sprung || (!pose.moving && !flying) || this.model.state.settings.reducedMotion
-              ? art.idleFrame
-              : Math.floor(animationTime / art.frameMs + u.id) % 4,
-          );
-          if (im.frame.name !== frame && im.texture.has(frame)) im.setFrame(frame);
-        }
-        const nativeEffects = u.native?.effects;
-        const frozen = lateUnitFrozen(u, battle.elapsed);
-        if (frozen) im.setTint(FROZEN_TINT);
-        else if (nativeEffects && (nativeEffects.frozenUntil ?? 0) > battle.elapsed)
-          im.setTint(0xa8e6ff);
-        else if (nativeEffects?.poison && nativeEffects.poison.until > battle.elapsed)
-          im.setTint(0xa6e57a);
-        else if ((u.spellRageUntil ?? 0) > battle.elapsed) im.setTint(0xf2b3ff);
-        else if (
-          (u.hero && (battle.hero?.rageUntil ?? 0) > battle.elapsed) ||
-          (u.summoned && (u.rageUntil ?? 0) > battle.elapsed) ||
-          // Native ability boosts (Rage Vial, puppet rage, Haste, ...) tint like legacy rage.
-          (nativeEffects?.boost?.until ?? 0) > battle.elapsed
-        )
-          im.setTint(0xffbd76);
-        else im.clearTint();
-        // Frozen late campaign attackers brighten toward ice; other tints multiply as before.
-        im.setTintMode(frozen ? Phaser.TintModes.SCREEN : Phaser.TintModes.MULTIPLY);
-        // The death fade above takes alpha to zero; a revived unit must restore
-        // it here (the cull above already restores visibility).
-        if (im.getData('dying')) im.setData('dying', false);
-        if (im.alpha !== 1) im.setAlpha(1);
-        const p = iso(u.x, u.y),
-          motion =
-            sprung || u.hero || this.model.state.settings.reducedMotion
-              ? 0
-              : flying
-                ? Math.sin(animationTime / 600 + u.id) * 2.2
-                : pose.moving
-                  ? Math.sin(animationTime / 80 + u.id) * art.bob
-                  : 0;
-        const lift = flying ? AIR_LIFT : springLift;
-        // Air troops draw above every rooftop, with a shadow left on the ground.
-        // Guard depth writes: Phaser queues a full display-list sort on any assignment.
-        const wantDepth = flying || sprung ? 7500 : p.y + 1;
-        im.setPosition(p.x, p.y + motion - lift);
-        if (im.depth !== wantDepth) im.setDepth(wantDepth);
-        im.setData('springLift', springLift);
-        if (flying || sprung) {
-          this.detail.fillStyle(0x1f2a16, 0.28);
-          this.detail.fillEllipse(p.x, p.y, 26 * shrinkScale, 13 * shrinkScale);
-        }
-        if (isFallback) {
-          // Invisible sprite + small ground marker reads as a unit, never a card.
-          this.detail.fillStyle(0x1f2a16, 0.32);
-          this.detail.fillEllipse(p.x, p.y, 22 * shrinkScale, 11 * shrinkScale);
-          this.detail.fillStyle(0xf3e9d2, 0.9);
-          this.detail.fillCircle(p.x, p.y - 10, 4 * shrinkScale);
-        }
-        const rate =
-          u.hero && battle.hero
-            ? heroStats(battle.hero.level, battle.hero.townhall).rate
-            : TROOPS[u.kind].rate;
-        const phase = 1 - Math.max(0, u.cooldown) / rate;
-        const impulse =
-          !u.hero && u.attacking && phase < 0.28 && !this.model.state.settings.reducedMotion
-            ? Math.sin((phase / 0.28) * Math.PI)
-            : 0;
-        const facing = pose.facing;
-        im.setX(p.x + facing * impulse * 4).setAngle(flying ? impulse * 4 : facing * impulse * 9);
-        if (u.hp < u.maxHp)
-          this.bar(
-            p.x,
-            p.y - lift - (u.hero ? KING_ART.healthHeight * shrinkScale : im.displayHeight),
-            22,
-            u.hp / u.maxHp,
-            0x8dea68,
-          );
+        dots.put(dot, p.x, p.y - lift - 5, (3 + progress * 3) / DOT_RADIUS, undefined, 0xffdc85, 1);
       }
     }
+    dots.end();
+  }
+  /** Units, their shadows, markers and bars; defenders; native troop and hero models. */
+  private drawUnits() {
+    const battle = this.model.battle;
+    const reduced = this.model.state.settings.reducedMotion;
+    this.unitMarks.begin();
+    this.unitBars.clear();
+    this.fallbackMarks.length = 0;
+    if (battle) this.drawBattleUnits(battle, reduced);
     this.troopNativePresentation.render(
       battle,
-      this.model.state.settings.reducedMotion,
-      iso,
+      reduced,
+      this.project,
       AIR_LIFT,
       this.unitSprites,
+      battle ? this.buildingMap(battle.buildings) : undefined,
     );
     this.drawDefenders();
     this.heroNativePresentation.render(
       battle,
-      this.model.state.settings.reducedMotion,
-      iso,
+      reduced,
+      this.project,
       AIR_LIFT,
       this.unitSprites,
       this.defenderSprites,
     );
+    // Troops without a walk sheet (and pets) have an invisible fallback sprite. The marker
+    // stands in only while no native model draws them; it used to cover every real model.
+    const marks = this.fallbackMarks;
+    if (marks.length) {
+      const ellipse = this.ellipseShape(),
+        dot = this.dotShape();
+      for (let i = 0; i < marks.length; i += 4) {
+        if (this.nativelyDrawn(marks[i])) continue;
+        const x = marks[i + 1],
+          y = marks[i + 2],
+          s = marks[i + 3];
+        this.unitMarks.put(ellipse, x, y, (22 * s) / 64, (11 * s) / 32, 0x1f2a16, 0.32);
+        this.unitMarks.put(dot, x, y - 10, (4 * s) / DOT_RADIUS, undefined, 0xf3e9d2, 0.9);
+      }
+    }
+    this.unitMarks.end();
+  }
+  /** Flat [id, x, y, scale] entries for fallback units drawn this frame. */
+  private fallbackMarks: number[] = [];
+  /** Whether a native troop mesh or baked hero/pet sprite drew this unit this frame. */
+  private nativelyDrawn(id: number) {
+    // The presentations keep their per-unit views private (WP2 owns them); read defensively.
+    const troops = (
+      this.troopNativePresentation as unknown as {
+        views?: Map<number, { view: { objects: readonly { visible: boolean }[] } }>;
+      }
+    ).views;
+    const troop = troops?.get(id);
+    if (troop && troop.view.objects.some((o) => o.visible)) return true;
+    const heroes = (
+      this.heroNativePresentation as unknown as {
+        sprites?: Map<number, { visible: boolean; alpha: number }>;
+      }
+    ).sprites;
+    const hero = heroes?.get(id);
+    return !!hero && hero.visible;
+  }
+  private unitPoint = { x: 0, y: 0 };
+  /** Units by id, shared with the native presentations and rebuilt once per sim step. */
+  private unitMap(battle: NonNullable<GameModel['battle']>) {
+    return unitIndex(battle);
+  }
+  private drawBattleUnits(battle: NonNullable<GameModel['battle']>, reduced: boolean) {
+    const buildingById = this.buildingMap(battle.buildings);
+    const defenderById = defenderIndex(battle);
+    const unitById = this.unitMap(battle);
+    const worldView = this.cameras.main.worldView;
+    const cullMargin = 80;
+    const marks = this.unitMarks;
+    const shadow = this.ellipseShape();
+    const p = this.unitPoint;
+    for (const u of battle.units) {
+      // Recalled units leave the battle at once; drop their sprite here instead
+      // of waiting for a mode change, or a frozen frame is left behind.
+      // (The mesh presentations skip/prune them in their own passes below.)
+      if (u.native?.recalled) {
+        const recalled = this.unitSprites.get(u.id);
+        if (recalled) {
+          recalled.destroy();
+          this.unitSprites.delete(u.id);
+        }
+        continue;
+      }
+      const art = troopArt(u.kind);
+      const flying = !!TROOPS[u.kind].flying;
+      this.interpolation.projectInto(p, u.x, u.y);
+      let im = this.unitSprites.get(u.id);
+      if (!im) {
+        const d = TROOPS[u.kind];
+        const walkKey = `${u.kind}-walk`;
+        const hasWalk = u.hero || this.textures.exists(walkKey);
+        // Legacy battles animate the procedural King; native heroes fall back to their own
+        // roster portrait until (and unless) the baked atlas arrives.
+        const legacyKing = !!u.hero && !!battle.hero;
+        const texKey = legacyKing
+          ? kingTexture('front-left')
+          : u.hero
+            ? `hero-fallback-${u.hero}`
+            : hasWalk
+              ? walkKey
+              : 'troop-fallback';
+        const frame = legacyKing || (!u.hero && hasWalk) ? 0 : undefined;
+        im = this.add
+          .image(0, 0, texKey, frame)
+          .setOrigin(0.5, u.hero ? KING_ART.baseline / KING_ART.cell : 122 / 128);
+        if (u.hero) im.setDisplaySize(KING_ART.width, KING_ART.width);
+        else im.setDisplaySize(d.width * art.displayScale, d.width * art.displayScale);
+        im.setData('isFallback', !hasWalk && !u.hero);
+        im.setData('nativeTroop', u.id);
+        this.unitSprites.set(u.id, im);
+        im.setPosition(p.x, p.y - (flying ? AIR_LIFT : 0));
+      }
+      // Viewport cull: skip off-screen units entirely (mesh layer culls itself).
+      // Cull against sprite extents, not the feet: flyers ride AIR_LIFT above
+      // their position, and tall sprites otherwise pop at the bottom edge.
+      {
+        const marginX = cullMargin + im.displayWidth / 2;
+        const marginY = cullMargin + im.displayHeight / 2 + (flying ? AIR_LIFT : 0);
+        if (
+          Math.abs(p.x - worldView.centerX) > worldView.width / 2 + marginX ||
+          Math.abs(p.y - worldView.centerY) > worldView.height / 2 + marginY
+        ) {
+          if (im.visible) im.setVisible(false);
+          continue;
+        }
+        // A culled sprite stays hidden until restored: the mesh layer hides it
+        // again below whenever it draws a mesh, so this cannot over-show.
+        if (!im.visible) im.setVisible(true);
+      }
+      const statusTime = u.hp <= 0 ? (u.defeatedAt ?? battle.elapsed) : battle.elapsed;
+      // Local visual half-scale; health, collision space and projectile speed are unchanged.
+      const shrinkScale = isShrunk(u, statusTime) ? 0.5 : 1;
+      const width =
+        (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
+      if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
+      if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
+      const defenderTarget =
+        u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
+      const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
+      const target = TROOPS[u.kind].healer
+        ? unitById.get(u.healTarget ?? -1)
+        : (liveDefender ?? buildingById.get(u.target ?? -1));
+      // Fallback sprites are invisible by design; a ground marker stands in (after the
+      // native pass, only if no mesh drew the unit).
+      const isFallback = !!im.getData('isFallback');
+      if (u.hero && battle.hero) {
+        const king = kingPose(
+          u,
+          target,
+          statusTime - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, statusTime),
+          heroStats(battle.hero.level, battle.hero.townhall).rate,
+          reduced,
+          im.getData('kingDirection'),
+        );
+        im.setTexture(kingTexture(king.direction), king.frame)
+          .setFlipX(false)
+          .setData('kingDirection', king.direction)
+          .setData('facing', king.facing);
+      }
+      if (u.hp <= 0) {
+        const at = u.defeatedAt ?? im.getData('defeatedAt') ?? battle.elapsed;
+        const pose = defeatPose(
+          battle.finished ? Infinity : battle.elapsed - at,
+          u.ejected ? 'spring' : flying ? 'air' : 'ground',
+          im.getData('facing') ?? -1,
+          reduced,
+          AIR_LIFT,
+        );
+        // One-time death styling; the animated fade values below are guarded so
+        // a settled corpse writes nothing (any depth write re-sorts Phaser's
+        // whole display list).
+        const freshCorpse = !im.getData('dying');
+        if (freshCorpse) {
+          im.setData('dying', true).setData('defeatedAt', at);
+          im.setTint(u.ejected ? 0xffe9ae : 0xa09482).setTintMode(Phaser.TintModes.MULTIPLY);
+        }
+        const corpseX = p.x + pose.x,
+          corpseY = p.y - (flying ? AIR_LIFT : 0) + pose.y,
+          corpseDepth = unitDepth(p.y, u.id, flying || !!u.ejected, 1);
+        if (im.x !== corpseX || im.y !== corpseY) im.setPosition(corpseX, corpseY);
+        if (im.depth !== corpseDepth) im.setDepth(corpseDepth);
+        if (im.angle !== pose.angle) im.setAngle(pose.angle);
+        if (im.alpha !== pose.alpha) im.setAlpha(pose.alpha);
+        if (im.visible !== pose.visible) im.setVisible(pose.visible);
+        continue;
+      }
+      const sprung = (u.springUntil ?? 0) > battle.elapsed;
+      const springProgress =
+        1 -
+        Math.min(SPRING_AIRTIME, Math.max(0, (u.springUntil ?? 0) - battle.elapsed)) /
+          SPRING_AIRTIME;
+      const springLift = sprung && !reduced ? Math.sin(springProgress * Math.PI) * 45 : 0;
+      const pose = unitPose(u, target, im.getData('facing') ?? -1);
+      if (!u.hero) {
+        if (im.getData('facing') !== pose.facing) im.setData('facing', pose.facing);
+        if (im.flipX !== pose.flipX) im.setFlipX(pose.flipX);
+      }
+      // Presentation shares battle time, so pause, playback speed and seeking agree.
+      // Frozen late campaign attackers hold their current frame and hover phase.
+      const animationTime =
+        (battle.elapsed - (u.shrink?.timeLost ?? 0) - lateUnitTimeLost(u, battle.elapsed)) * 1000;
+      // Guard every frame selection with a texture lookup: a miss would
+      // otherwise draw the entire baked atlas page / portrait card.
+      if (!u.hero && !isFallback && im.texture.frameTotal > 2) {
+        const frame = String(
+          sprung || (!pose.moving && !flying) || reduced
+            ? art.idleFrame
+            : Math.floor(animationTime / art.frameMs + u.id) % 4,
+        );
+        if (im.frame.name !== frame && im.texture.has(frame)) im.setFrame(frame);
+      }
+      // Shared status tint order with the native meshes (unit-status-tint.ts).
+      const status = unitStatusTint(u, battle);
+      const tint = status?.color ?? 0xffffff;
+      if (im.tintTopLeft !== tint || im.tintTopRight !== tint) {
+        if (tint === 0xffffff) im.clearTint();
+        else im.setTint(tint);
+      }
+      // Frozen late campaign attackers brighten toward ice (SCREEN); other tints multiply.
+      const tintMode = (status?.mode ?? Phaser.TintModes.MULTIPLY) as Phaser.TintModes;
+      if (im.tintMode !== tintMode) im.setTintMode(tintMode);
+      // The death fade above takes alpha to zero; a revived unit must restore
+      // it here (the cull above already restores visibility).
+      if (im.getData('dying')) im.setData('dying', false);
+      if (im.alpha !== 1) im.setAlpha(1);
+      const motion =
+        sprung || u.hero || reduced
+          ? 0
+          : flying
+            ? Math.sin(animationTime / 600 + u.id) * 2.2
+            : pose.moving
+              ? Math.sin(animationTime / 80 + u.id) * art.bob
+              : 0;
+      const lift = flying ? AIR_LIFT : springLift;
+      // Air troops draw above every rooftop, with a shadow left on the ground.
+      // Guard depth writes: Phaser queues a full display-list sort on any assignment.
+      const wantDepth = unitDepth(p.y, u.id, flying || sprung, 1);
+      if (im.depth !== wantDepth) im.setDepth(wantDepth);
+      if (im.getData('springLift') !== springLift) im.setData('springLift', springLift);
+      if (flying || sprung)
+        marks.put(
+          shadow,
+          p.x,
+          p.y,
+          (26 * shrinkScale) / 64,
+          (13 * shrinkScale) / 32,
+          0x1f2a16,
+          0.28,
+        );
+      if (isFallback) this.fallbackMarks.push(u.id, p.x, p.y, shrinkScale);
+      const rate =
+        u.hero && battle.hero
+          ? heroStats(battle.hero.level, battle.hero.townhall).rate
+          : TROOPS[u.kind].rate;
+      const phase = 1 - Math.max(0, u.cooldown) / rate;
+      const impulse =
+        !u.hero && u.attacking && phase < 0.28 && !reduced ? Math.sin((phase / 0.28) * Math.PI) : 0;
+      const facing = pose.facing;
+      const x = p.x + facing * impulse * 4,
+        y = p.y + motion - lift;
+      if (im.x !== x || im.y !== y) im.setPosition(x, y);
+      const angle = flying ? impulse * 4 : facing * impulse * 9;
+      if (im.angle !== angle) im.setAngle(angle);
+      if (u.hp < u.maxHp)
+        this.bar(
+          p.x,
+          p.y - lift - (u.hero ? KING_ART.healthHeight * shrinkScale : im.displayHeight),
+          22,
+          u.hp / u.maxHp,
+          0x8dea68,
+          this.unitBars,
+        );
+    }
+    // Units that left the battle (recall removes them outright) must not leave a frozen sprite.
+    if (this.unitSprites.size > unitById.size)
+      for (const [id, im] of this.unitSprites)
+        if (!unitById.has(id)) {
+          im.destroy();
+          this.unitSprites.delete(id);
+        }
   }
   private drawDefenders() {
     const markers = this.defenderMarkers.clear();
+    const dots = this.defenderDots;
+    dots.begin();
     const battle = this.model.battle,
       reduced = this.model.state.settings.reducedMotion;
-    this.garrisonPresentation.render(battle, reduced, iso, AIR_LIFT);
+    this.garrisonPresentation.render(battle, reduced, this.project, AIR_LIFT);
     const defenders = battle?.defenders ?? [];
-    // Tile index for the skeleton jump check below; was an O(buildings) scan
-    // per defender per frame.
-    const wallTiles = new Set<number>();
-    for (const v of battle?.buildings ?? [])
-      if (v.kind === 'wall' && v.hp > 0) wallTiles.add(v.x * 4096 + v.y);
+    if (!battle || (!defenders.length && !this.defenderSprites.size)) {
+      dots.end();
+      return;
+    }
+    const units = this.unitMap(battle);
+    const live = this.defenderIds;
+    live.clear();
+    for (const d of defenders) live.add(d.id);
     for (const [id, sprite] of this.defenderSprites)
-      if (!defenders.some((d) => d.id === id)) {
+      if (!live.has(id)) {
         sprite.destroy();
         this.defenderSprites.delete(id);
       }
+    // Wall tiles for the skeleton jump check, only built when a skeleton walks.
+    let wallTiles: Set<number> | undefined;
+    const shadow = this.ellipseShape(),
+      dot = this.dotShape();
+    const p = this.unitPoint;
     for (const d of defenders) {
       if (isGarrisonDefender(d)) {
-        if (battle!.elapsed >= d.spawnedAt && d.hp > 0) {
-          const point = iso(d.x, d.y);
+        if (battle.elapsed >= d.spawnedAt && d.hp > 0) {
+          this.interpolation.projectInto(p, d.x, d.y);
           // Garrison families: source-graph bar height; air lift only for flying troops.
           const stats = garrisonStats(d.kind, d.level);
           this.bar(
-            point.x,
-            point.y - (stats.flying ? AIR_LIFT : 0) - characterBarHeight(stats.animation),
+            p.x,
+            p.y - (stats.flying ? AIR_LIFT : 0) - characterBarHeight(stats.animation),
             28,
             d.hp / d.maxHp,
             0xea654d,
@@ -2854,8 +3349,8 @@ export class VillageScene extends Phaser.Scene {
       }
       const flying = d.mode === 'air',
         width = flying ? 68 : 40,
-        p = iso(d.x, d.y),
         stats = skeletonStats(d.mode, d.kind === 'skeleton' ? d.spawnLevel : undefined);
+      this.interpolation.projectInto(p, d.x, d.y);
       let sprite = this.defenderSprites.get(d.id);
       if (!sprite) {
         sprite = this.add
@@ -2865,7 +3360,8 @@ export class VillageScene extends Phaser.Scene {
           .setData('defender', d.id);
         this.defenderSprites.set(d.id, sprite);
       }
-      const target = battle!.units.find((u) => u.id === d.target && u.hp > 0),
+      const candidate = d.target == null ? undefined : units.get(d.target);
+      const target = candidate && candidate.hp > 0 ? candidate : undefined,
         waypoint = d.path[0];
       const heading = d.attacking || flying ? target : (waypoint ?? target);
       const dx = heading ? heading.x - d.x - (heading.y - d.y) : 0,
@@ -2877,69 +3373,71 @@ export class VillageScene extends Phaser.Scene {
       if (sprite.angle !== 0) sprite.setAngle(0);
       if (sprite.alpha !== 1) sprite.setAlpha(1);
       if (!sprite.visible) sprite.setVisible(true);
-      const defenderDepth = flying ? 7500 : p.y + 1.1;
+      const defenderDepth = unitDepth(p.y, d.id, flying, 1.1);
       if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);
       if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();
       if (d.hp <= 0) {
         const pose = defeatPose(
-          battle!.finished ? Infinity : battle!.elapsed - (d.defeatedAt ?? battle!.elapsed),
+          battle.finished ? Infinity : battle.elapsed - (d.defeatedAt ?? battle.elapsed),
           flying ? 'air' : 'ground',
           facing,
           reduced,
           AIR_LIFT,
         );
-        const dx = p.x + pose.x,
-          dy = p.y - (flying ? AIR_LIFT : 0) + pose.y;
-        if (sprite.x !== dx || sprite.y !== dy) sprite.setPosition(dx, dy);
+        const x = p.x + pose.x,
+          y = p.y - (flying ? AIR_LIFT : 0) + pose.y;
+        if (sprite.x !== x || sprite.y !== y) sprite.setPosition(x, y);
         if (sprite.angle !== pose.angle) sprite.setAngle(pose.angle);
         if (sprite.alpha !== pose.alpha) sprite.setAlpha(pose.alpha);
         if (sprite.visible !== pose.visible) sprite.setVisible(pose.visible);
         if (sprite.tintTopLeft !== 0xa09482) sprite.setTint(0xa09482);
         continue;
       }
-      const moving = !!target && !d.attacking && battle!.elapsed >= d.spawnedAt + 0.5;
+      const moving = !!target && !d.attacking && battle.elapsed >= d.spawnedAt + 0.5;
       const phase = stats.rate - d.cooldown;
       const frame =
-        reduced || battle!.finished
+        reduced || battle.finished
           ? 1
           : d.attacking && phase < 0.15
             ? 5
             : d.attacking && d.cooldown < 0.14
               ? 4
               : moving
-                ? Math.floor(battle!.elapsed / 0.11 + Math.abs(d.id)) % 4
+                ? Math.floor(battle.elapsed / 0.11 + Math.abs(d.id)) % 4
                 : 1;
-      const jumping = !flying && wallTiles.has(Math.floor(d.x) * 4096 + Math.floor(d.y));
+      if (!flying && !wallTiles) {
+        wallTiles = new Set<number>();
+        for (const v of battle.buildings)
+          if (v.kind === 'wall' && v.hp > 0) wallTiles.add(v.x * 4096 + v.y);
+      }
+      const jumping = !flying && wallTiles!.has(Math.floor(d.x) * 4096 + Math.floor(d.y));
       const lift = flying ? AIR_LIFT : jumping && !reduced ? 9 : 0;
       if (Number(sprite.frame.name) !== frame && sprite.texture.has(String(frame)))
         sprite.setFrame(frame);
       if (sprite.x !== p.x || sprite.y !== p.y - lift) sprite.setPosition(p.x, p.y - lift);
-      if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);
-      if (flying) {
-        this.detail.fillStyle(0x1f2a16, 0.25).fillEllipse(p.x, p.y, 16, 8);
-      }
+      if (flying) this.unitMarks.put(shadow, p.x, p.y, 16 / 64, 8 / 32, 0x1f2a16, 0.25);
       this.bar(p.x, p.y - lift - width * 0.9, 22, d.hp / d.maxHp, 0xea654d, markers);
       const sy = p.y - lift - width * 0.9;
-      markers
-        .fillStyle(0xfff0d0)
-        .fillCircle(p.x - 17, sy - 1, 3)
-        .fillRect(p.x - 19, sy + 1, 4, 3);
-      markers
-        .fillStyle(0x594739)
-        .fillCircle(p.x - 18, sy - 1, 0.7)
-        .fillCircle(p.x - 16, sy - 1, 0.7);
+      // Skull badge: baked dots instead of three triangulated circles per skeleton.
+      dots.put(dot, p.x - 17, sy - 1, 3 / DOT_RADIUS, undefined, 0xfff0d0, 1);
+      markers.fillStyle(0xfff0d0).fillRect(p.x - 19, sy + 1, 4, 3);
+      dots.put(dot, p.x - 18, sy - 1, 0.7 / DOT_RADIUS, undefined, 0x594739, 1);
+      dots.put(dot, p.x - 16, sy - 1, 0.7 / DOT_RADIUS, undefined, 0x594739, 1);
     }
+    dots.end();
   }
-  private drawGrid(g: Phaser.GameObjects.Graphics) {
-    for (let x = BUILD_MIN; x <= BUILD_MAX; x++) {
-      g.lineStyle(1, 0xffffff, 0.15);
-      const p = iso(x, BUILD_MIN),
-        q = iso(x, BUILD_MAX);
-      g.lineBetween(p.x, p.y, q.x, q.y);
-      const r = iso(BUILD_MIN, x),
-        s = iso(BUILD_MAX, x);
-      g.lineBetween(r.x, r.y, s.x, s.y);
-    }
+  private defenderIds = new Set<number>();
+  /** White filled ellipse, 64 x 32 world pixels, anchored at its center; tint and scale per use. */
+  private ellipseShape() {
+    return this.shapes.shape('ellipse', -32, -16, 64, 32, (g) =>
+      g.fillStyle(0xffffff, 1).fillEllipse(0, 0, 64, 32, 48),
+    );
+  }
+  /** White filled circle of radius `DOT_RADIUS`, anchored at its center. */
+  private dotShape() {
+    return this.shapes.shape('dot', -DOT_RADIUS, -DOT_RADIUS, DOT_RADIUS * 2, DOT_RADIUS * 2, (g) =>
+      g.fillStyle(0xffffff, 1).fillCircle(0, 0, DOT_RADIUS),
+    );
   }
   bar(x: number, y: number, w: number, p: number, color: number, graphics = this.detail) {
     // Plain rects: rounded rects expand to arcs + earcut triangulation every frame.
@@ -2954,7 +3452,8 @@ export class VillageScene extends Phaser.Scene {
       const { x, y, scale, scaleX, scaleY, ...stationary } = config;
       config = { ...stationary, delay: 0 };
     }
-    if (this.model.battle) this.effectTimeline.add(config, this.model.battle.elapsed);
+    if (this.model.battle)
+      this.effectTimeline.add(config, this.effectClock(this.model.battle, false));
     else this.tweens.add(config);
   }
   effect(fx: FX) {
@@ -2963,18 +3462,16 @@ export class VillageScene extends Phaser.Scene {
     // building lookup instead of scanning per event inside the sim tick.
     if (this.pendingFx.length < 4000) this.pendingFx.push(fx);
   }
-  /** Buildings by id captured once per drain for the find-gated branches below. */
-  private fxBattle: Map<number, { kind: string }> | null = null;
-  private fxHome: Map<number, { kind: string; npc?: unknown }> | null = null;
+  /** Buildings by id (battle buildings in battle), shared by every effect in one drain. */
+  private fxBuildings: Map<number, Building> = new Map();
+  /** Set when a drain handled any event this frame; the overlay memo must then redraw. */
+  private fxDrained = false;
   private drainEffects() {
     if (!this.pendingFx.length) return;
-    const battle = this.model.battle;
-    this.fxBattle = battle ? new Map(battle.buildings.map((b) => [b.id, b])) : null;
-    this.fxHome = new Map(this.model.buildings.map((b) => [b.id, b]));
+    this.fxBuildings = this.buildingMap(this.model.buildings);
+    this.fxDrained = true;
     for (const fx of this.pendingFx) this.renderEffect(fx);
     this.pendingFx.length = 0;
-    this.fxBattle = null;
-    this.fxHome = null;
   }
   private renderEffect(fx: FX) {
     // Native defense effects carry their own geometry; record them before the drawn fallbacks.
@@ -2983,9 +3480,9 @@ export class VillageScene extends Phaser.Scene {
     if (
       fx.type === 'defense-zap' &&
       this.nativeDefenses.covers(
-        (
-          this.fxBattle?.get(fx.sourceId!) ??
-          this.model.battle?.buildings.find((b) => b.id === fx.sourceId)
+        (this.model.battle && fx.sourceId !== undefined
+          ? this.fxBuildings.get(fx.sourceId)
+          : undefined
         )?.kind,
       )
     )
@@ -3017,9 +3514,9 @@ export class VillageScene extends Phaser.Scene {
     }
     if (
       (fx.type === 'trap' || fx.type === 'blast') &&
-      (
-        this.fxBattle?.get(fx.sourceId!) ??
-        this.model.battle?.buildings.find((b) => b.id === fx.sourceId)
+      (this.model.battle && fx.sourceId !== undefined
+        ? this.fxBuildings.get(fx.sourceId)
+        : undefined
       )?.kind === 'seekingairmine'
     )
       return;
@@ -3029,7 +3526,7 @@ export class VillageScene extends Phaser.Scene {
       (this.model.battle?.drillDestructions?.[fx.sourceId] ||
         this.model.battle?.archerTowerDestructions?.[fx.sourceId])
     ) {
-      this.lastRevision = -1;
+      this.ruinsDirty = true;
       return;
     }
     if (
@@ -3108,7 +3605,7 @@ export class VillageScene extends Phaser.Scene {
       (fx.weapon === 'towerbomb' || fx.weapon === 'arcane') &&
       ['projectile', 'impact', 'blast', 'destroy'].includes(fx.type)
     ) {
-      if (fx.type === 'destroy') this.lastRevision = -1;
+      if (fx.type === 'destroy') this.ruinsDirty = true;
       return;
     }
     if (
@@ -3175,16 +3672,18 @@ export class VillageScene extends Phaser.Scene {
       if (fx.type !== 'mortar-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
-    if (
-      fx.type === 'destroy' &&
-      this.model.buildings.some(
-        (b) =>
-          b.id === fx.sourceId &&
-          (b.kind === 'airsweeper' || b.kind === 'mortar' || (b.kind === 'cannon' && !b.npc)),
-      )
-    ) {
-      this.lastRevision = -1;
-      return;
+    if (fx.type === 'destroy' && fx.sourceId !== undefined) {
+      const source = this.fxBuildings.get(fx.sourceId);
+      // Player Cannons draw their native destruction only once the deferred art is in.
+      if (
+        source &&
+        (source.kind === 'airsweeper' ||
+          source.kind === 'mortar' ||
+          (source.kind === 'cannon' && !source.npc && this.cannonPresentation.artReady))
+      ) {
+        this.ruinsDirty = true;
+        return;
+      }
     }
     const p = iso(fx.x, fx.y);
     if (fx.type === 'quake') {
@@ -3342,7 +3841,7 @@ export class VillageScene extends Phaser.Scene {
       this.sparks(p.x, p.y - 20, color, 16);
       this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.state.settings.reducedMotion)
-        this.cameras.main.shake(140, 0.0022);
+        this.shakeCamera(140, 0.0022);
       return;
     }
     if (fx.type === 'blast' && fx.weapon === 'cannonball') return;
@@ -3364,21 +3863,20 @@ export class VillageScene extends Phaser.Scene {
       });
       this.sparks(p.x, p.y - 26 - lift, color, 14);
       this.audio.play('destroy');
-      if (!this.model.state.settings.reducedMotion) this.cameras.main.shake(80, 0.0016);
+      if (!this.model.state.settings.reducedMotion) this.shakeCamera(80, 0.0016);
       return;
     }
     if (fx.type === 'mortar-fire') return;
-    {
-      const cannon =
-        (this.fxHome?.get(fx.sourceId!) as { kind?: string; npc?: unknown } | undefined) ??
-        this.model.buildings.find((b) => b.id === fx.sourceId);
-      if (
-        fx.weapon === 'cannonball' &&
-        (fx.type === 'projectile' || fx.type === 'impact') &&
-        cannon?.kind === 'cannon' &&
-        !cannon.npc
-      )
-        return;
+    // Player Cannon and X-Bow shots belong to their native presentations, but only once
+    // the deferred heavy art has loaded; until then the drawn fallback shots stay visible.
+    if (
+      fx.weapon === 'cannonball' &&
+      (fx.type === 'projectile' || fx.type === 'impact') &&
+      this.cannonPresentation.artReady &&
+      fx.sourceId !== undefined
+    ) {
+      const cannon = this.fxBuildings.get(fx.sourceId);
+      if (cannon?.kind === 'cannon' && !cannon.npc) return;
     }
     if (fx.type === 'breath') {
       const { from, to } = this.projectileAnchors(fx);
@@ -3386,14 +3884,20 @@ export class VillageScene extends Phaser.Scene {
       this.audio.play('hit');
       return;
     }
-    if (fx.weapon === 'xbowbolt' && (fx.type === 'projectile' || fx.type === 'impact')) return;
+    if (
+      fx.weapon === 'xbowbolt' &&
+      (fx.type === 'projectile' || fx.type === 'impact') &&
+      this.xbowPresentation.artReady
+    )
+      return;
     if (
       fx.type === 'impact' &&
       this.model.battle?.archerTowerHits?.some((hit) => hit.id === fx.projectileId)
     )
       return;
     if (fx.type === 'projectile' && fx.projectileId) {
-      this.drawProjectiles();
+      // The flight itself is posed by the overlay pass later this frame (effects drain
+      // first); only the muzzle flash comes from the event, positioned from the event.
       if (!this.model.state.settings.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
@@ -3429,7 +3933,7 @@ export class VillageScene extends Phaser.Scene {
       this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
       this.audio.play('destroy');
       if (!this.model.state.settings.reducedMotion)
-        this.cameras.main.shake(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
+        this.shakeCamera(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
       this.animateEffect({
         targets: smoke,
@@ -3439,8 +3943,16 @@ export class VillageScene extends Phaser.Scene {
         duration: 650,
         onComplete: () => smoke.destroy(),
       });
-      this.lastRevision = -1;
+      this.ruinsDirty = true;
     } else this.sparks(p.x, p.y - 8, fx.type === 'spawn' ? 0xefffc5 : 0xffe1a0, 5);
+  }
+  /**
+   * Feedback shake. `intensity` keeps Phaser's `camera.shake` meaning on a 1x display at the
+   * current zoom, but the offset is applied in world units, so it no longer grows with the
+   * square of the device pixel ratio.
+   */
+  private shakeCamera(duration: number, intensity: number) {
+    this.cameraShake.shake(duration, intensity * this.scale.canvasBounds.width * this.viewZoom);
   }
   /**
    * Sends collected resources into the HUD counter that receives them. The dots
@@ -3502,9 +4014,9 @@ export class VillageScene extends Phaser.Scene {
           .setAlpha(1)
           .setScale(1)
           .setVisible(true)
-          .setActive(true)
-          .setDepth(8100);
+          .setActive(true);
       else dot = this.add.circle(x, y, radius, color, 0.9).setDepth(8100);
+      if (dot.depth !== 8100) dot.setDepth(8100);
       this.liveSparks.add(dot);
       const target = dot;
       this.animateEffect({
@@ -3595,29 +4107,55 @@ export class VillageScene extends Phaser.Scene {
       iso,
       AIR_LIFT,
     );
-    const shots =
-      !b || b.finished || this.model.state.settings.reducedMotion
-        ? []
-        : (b.projectiles ?? []).filter(
-            (p) =>
-              !native.has(p.id) &&
-              p.weapon !== 'xbowbolt' &&
-              p.weapon !== 'towerbomb' &&
-              p.weapon !== 'arcane' &&
-              !(p.weapon === 'arrow' && p.variant !== undefined && p.flight) &&
-              !(
-                p.weapon === 'cannonball' &&
-                b.buildings.some(
-                  (tower) => tower.id === p.sourceId && tower.kind === 'cannon' && !tower.npc,
-                )
-              ),
-          );
-    this.combatEffects.retainProjectiles(new Set(shots.map((p) => p.id)));
-    for (const p of shots) {
-      const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
-      const progress = Phaser.Math.Clamp((b!.elapsed - p.launched) / (p.impact - p.launched), 0, 1);
-      this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
+    const retained = this.retainedShots;
+    retained.clear();
+    const shots = b && !this.model.state.settings.reducedMotion ? presentationProjectiles(b) : [];
+    if (b && shots.length) {
+      const now = presentationTime(b);
+      const buildings = this.buildingMap(b.buildings);
+      // Deferred heavy art: fallback bolts and cannonballs fly until the native shots can.
+      const xbowNative = this.xbowPresentation.artReady,
+        cannonNative = this.cannonPresentation.artReady;
+      for (const p of shots) {
+        if (
+          native.has(p.id) ||
+          (p.weapon === 'xbowbolt' && xbowNative) ||
+          p.weapon === 'towerbomb' ||
+          p.weapon === 'arcane' ||
+          (p.weapon === 'arrow' && p.variant !== undefined && p.flight)
+        )
+          continue;
+        if (p.weapon === 'cannonball' && cannonNative && p.sourceId !== undefined) {
+          const tower = buildings.get(p.sourceId);
+          if (tower?.kind === 'cannon' && !tower.npc) continue;
+        }
+        retained.add(p.id);
+        const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
+        const progress = Phaser.Math.Clamp((now - p.launched) / (p.impact - p.launched), 0, 1);
+        this.combatEffects.poseProjectile(p.id, p.weapon, from, to, progress);
+      }
     }
+    this.combatEffects.retainProjectiles(retained);
+  }
+  private retainedShots = new Set<string>();
+  private buildingMaps = new WeakMap<
+    Building[],
+    { length: number; revision: number; map: Map<number, Building> }
+  >();
+  /**
+   * Buildings by id, cached per array instead of rebuilt every frame. Battle building ids are
+   * stable for the life of their array; home layouts also key on the model revision, and the
+   * length check catches pushes and splices either way.
+   */
+  private buildingMap(buildings: Building[]) {
+    const revision = buildings === this.model.state.buildings ? this.model.revision : -1;
+    let entry = this.buildingMaps.get(buildings);
+    if (!entry || entry.length !== buildings.length || entry.revision !== revision) {
+      entry = { length: buildings.length, revision, map: new Map() };
+      for (const v of buildings) entry.map.set(v.id, v);
+      this.buildingMaps.set(buildings, entry);
+    }
+    return entry.map;
   }
   private drawBombTowers(visible?: Building[]) {
     return this.bombTowerPresentation.render(
@@ -3633,7 +4171,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.paused) return;
     this.renderClock = time;
     const dt = Math.min(delta / 1000, 0.1);
-    if (!this.uiBlocked && !(document.activeElement instanceof HTMLInputElement)) {
+    if (!this.uiBlocked && !typingTarget(document.activeElement)) {
       let x = 0,
         y = 0;
       const k = this.focusKeys;
@@ -3651,39 +4189,28 @@ export class VillageScene extends Phaser.Scene {
     this.tick = this.lateAssetsPending() ? 0 : this.tick + dt;
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
-    while (this.tick >= 0.05) {
-      this.model.step(0.05);
-      this.tick -= 0.05;
+    while (this.tick >= TICK) {
+      // Positions before the step: the draw interpolates from here toward the result.
+      this.interpolation.capture(this.model.battle);
+      this.model.step(TICK);
+      this.tick -= TICK;
     }
+    const battle = this.model.battle;
     this.drainEffects();
-    if (this.lastRevision !== this.model.revision) this.sync();
-    if (this.model.battle)
-      for (const b of this.model.battle.buildings) {
-        const im = this.sprites.get(b.id);
-        if (
-          im &&
-          b.hp <= 0 &&
-          (b.kind === 'tesla'
-            ? !im.getData('nativeTeslaRuin')
-            : b.kind === 'bombtower'
-              ? !im.getData('nativeBombTowerRuin')
-              : b.kind === 'wizardtower'
-                ? !im.getData('nativeWizardTowerRuin')
-                : b.kind === 'airsweeper'
-                  ? !im.getData('nativeSweeperRuin')
-                  : b.kind === 'cannon' && !b.npc
-                    ? !im.getData('nativeCannonRuin')
-                    : b.kind === 'mortar'
-                      ? !im.getData('nativeMortarRuin')
-                      : !im.texture.key.startsWith('ruins-'))
-        ) {
-          this.renderRuin(b, im);
-          this.drawRuinGround();
-        }
-      }
-    if (!this.model.battle && !this.model.state.settings.reducedMotion) this.campTime += dt;
+    if (this.lastRevision !== this.model.revision) {
+      if (this.passiveOnly()) this.passiveSync();
+      else this.sync();
+    }
+    if (
+      battle &&
+      (this.ruinsDirty ||
+        this.ruinScan.battle !== battle ||
+        this.ruinScan.elapsed !== battle.elapsed)
+    )
+      this.syncRuins(battle);
+    if (!battle && !this.model.state.settings.reducedMotion) this.campTime += dt;
     this.drawCampUnits();
-    this.drawOverlay(time);
+    this.present(time, true);
   }
   screenFor(x: number, y: number) {
     const p = iso(x, y),

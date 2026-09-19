@@ -166,7 +166,13 @@ export class GarrisonPresentation {
     lift: number,
   ) {
     const wanted = new Set<string>();
-    for (const shot of garrisonShotPoses(battle, reduced, iso, lift)) {
+    for (const shot of garrisonShotPoses(
+      battle,
+      reduced,
+      iso,
+      lift,
+      battle ? presentationTime(battle) : undefined,
+    )) {
       const layers = [{ ...shot }];
       if (shot.shadow)
         layers.push({ ...shot, ...shot.shadow, key: `${shot.key}:shadow`, depth: -838 });
