@@ -1,4 +1,4 @@
-import native from '../../reference/full-client/progression.json';
+import native from '../../reference/full-client/progression.json' with { type: 'json' };
 import type { BuildingKind } from './data';
 import { namedLevels, sourceCount, TOWNHALL_TIERS } from './townhall-catalog';
 

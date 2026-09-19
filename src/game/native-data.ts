@@ -1,4 +1,4 @@
-import source from '../../reference/full-client/combat.json';
+import source from '../../reference/full-client/combat.json' with { type: 'json' };
 
 /**
  * Pinned client 18.400.21 Home Village combat tables (scripts/import-native-combat.py).

@@ -1,4 +1,4 @@
-import projectileArt from '../../reference/full-client/projectile-art.json';
+import projectileArt from '../../reference/full-client/projectile-art.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
 import { nativeSceneId, type NativeArtPack } from './native-art-pack';
 import { NATIVE_ALTITUDE, NATIVE_ART_SCALE, nativeClipDuration } from './native-effects';

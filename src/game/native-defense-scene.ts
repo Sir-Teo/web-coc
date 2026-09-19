@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import defenseArt from '../../reference/full-client/defense-art.json';
+import defenseArt from '../../reference/full-client/defense-art.json' with { type: 'json' };
 import { BUILDINGS } from './data';
 import type { Battle, Building, FX } from './model';
 import { nativeScenePoses, type NativeMatrix, type NativeMeshGraph } from './native-mesh';

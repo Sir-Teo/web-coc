@@ -8,7 +8,7 @@ import {
   type SpawnKind,
 } from './native-units';
 import { EXTRA_BUILDINGS, type ExtraBuildingKind } from './extra-buildings';
-import nativeProgressionSource from '../../reference/full-client/progression.json';
+import nativeProgressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 /** Every family shares one row shape, so one index signature serves the whole table. */
 const nativeProgression = nativeProgressionSource as unknown as {
   buildings: Record<string, (typeof nativeProgressionSource.buildings)['townhall']>;

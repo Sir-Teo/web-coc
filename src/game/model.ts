@@ -7,7 +7,7 @@ import {
   superLevelOffset,
 } from './special-troops';
 import { troopFacility } from './army-unlocks';
-import nativeProgression from '../../reference/full-client/progression.json';
+import nativeProgression from '../../reference/full-client/progression.json' with { type: 'json' };
 import { maxSpellLevel } from './spell-progression';
 import {
   stepArcherTower,

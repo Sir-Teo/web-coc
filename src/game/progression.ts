@@ -1,4 +1,4 @@
-import nativeProgressionSource from '../../reference/full-client/progression.json';
+import nativeProgressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
 import { BUILDING_LEVELS, WITHHELD } from './tiers';
 const nativeProgression = nativeProgressionSource as unknown as {
   buildings: Record<string, (typeof nativeProgressionSource.buildings)['townhall']>;

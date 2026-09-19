@@ -1,5 +1,5 @@
-import source from '../../reference/full-client/progression.json';
-import combat from '../../reference/full-client/combat.json';
+import source from '../../reference/full-client/progression.json' with { type: 'json' };
+import combat from '../../reference/full-client/combat.json' with { type: 'json' };
 import type { BuildingDef } from './data';
 /**
  * Families this game gained with the native roster. The Eagle Artillery, Scattershot, Spell

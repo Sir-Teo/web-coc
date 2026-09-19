@@ -1,4 +1,4 @@
-import source from '../../reference/full-client/progression.json';
+import source from '../../reference/full-client/progression.json' with { type: 'json' };
 import type { TroopDef } from './data';
 export const EXTRA_TROOP_KINDS = [
   'babydragon',
