@@ -17,7 +17,8 @@ it('reconstructs every Magic Practice trap and status across portable playback a
   // Version 44 native battles route P.E.K.K.As through client sub-tile building lanes and clear
   // sight lines; this fixed army reaches 23% (42% on the former whole-tile grid). The whole group
   // now turns south, so the northern Shrink Trap stays armed while both others pulse fully.
-  expect(m.battle!.result!.destruction).toBe(23);
+  // Version 54 caps crowd separation: 14% (23% under version 53).
+  expect(m.battle!.result!.destruction).toBe(14);
   expect(
     Object.entries(m.battle!.traps)
       .filter(([, s]) => s.shrink)

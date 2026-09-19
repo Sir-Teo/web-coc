@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 53;
+export const REPLAY_VERSION = 54;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -103,6 +103,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 50 ||
   version === 51 ||
   version === 52 ||
+  version === 53 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -247,6 +248,15 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    // Version 54: capped crowd separation, the stalled-summons battle end, and fallen units
+    // without route waypoints.
+    ...(version >= 54
+      ? {
+          separationCap: true as const,
+          stalledSupportEnds: true as const,
+          dropFallenPaths: true as const,
+        }
+      : {}),
     ...(version >= 53 ? { nativeHeroPassives: true as const } : {}),
     ...(version >= 52 ? { nativeContentExpansion: true as const } : {}),
     ...(version >= 52 && s.defendingHeroes?.length

@@ -20,18 +20,24 @@ export function prepareHealerTargets(battle: Battle) {
   const allies = battle.units.filter(groundAlly);
   if (!allies.length) return;
   const allyIds = new Set(allies.map((u) => u.id));
-  // Cluster housing once per tick via spatial hash instead of O(A²). Housing
-  // space is always an integer, so differently-ordered sums match exactly.
+  // Cluster housing is only read when a healer picks a new target, and only for allies that
+  // would win the pick: compute it lazily per ally from a spatial hash built on first use.
+  // Housing space is always an integer, so differently-ordered sums match exactly.
   const CELL = HEALER_RADIUS;
-  const cells = new Map<number, Unit[]>();
-  for (const u of allies) {
-    const key = Math.floor(u.x / CELL) * 4096 + Math.floor(u.y / CELL);
-    const bucket = cells.get(key);
-    if (bucket) bucket.push(u);
-    else cells.set(key, [u]);
-  }
+  let cells: Map<number, Unit[]> | undefined;
   const clusterSpace = new Map<number, number>();
-  for (const target of allies) {
+  const clusterOf = (target: Unit) => {
+    const known = clusterSpace.get(target.id);
+    if (known !== undefined) return known;
+    if (!cells) {
+      cells = new Map();
+      for (const u of allies) {
+        const key = Math.floor(u.x / CELL) * 4096 + Math.floor(u.y / CELL);
+        const bucket = cells.get(key);
+        if (bucket) bucket.push(u);
+        else cells.set(key, [u]);
+      }
+    }
     const cx = Math.floor(target.x / CELL),
       cy = Math.floor(target.y / CELL);
     let space = 0;
@@ -44,20 +50,26 @@ export function prepareHealerTargets(battle: Battle) {
             space += TROOPS[u.kind].space;
       }
     clusterSpace.set(target.id, space);
-  }
+    return space;
+  };
   for (const healer of battle.units) {
     if (!TROOPS[healer.kind].healer || healer.hp <= 0) continue;
     if (allyIds.has(healer.healTarget ?? -1)) continue;
-    // Min-scan with the old sort's winner (distance + injury penalty, then id).
+    // Min-scan with the old sort's winner (distance + injury penalty, then id). The cluster
+    // filter does not depend on the pick so far, so it runs only for would-be winners.
     let pick: Unit | undefined;
     let pickScore = Infinity;
     for (const target of allies) {
-      if (!target.hero && (clusterSpace.get(target.id) ?? 0) <= 2) continue;
       const score = distance(healer, target) + (target.hp < target.maxHp ? 0 : 0.75);
-      if (pick === undefined || score < pickScore || (score === pickScore && target.id < pick.id)) {
-        pick = target;
-        pickScore = score;
-      }
+      if (!(
+        pick === undefined ||
+        score < pickScore ||
+        (score === pickScore && target.id < pick.id)
+      ))
+        continue;
+      if (!target.hero && clusterOf(target) <= 2) continue;
+      pick = target;
+      pickScore = score;
     }
     healer.healTarget = pick?.id;
     healer.target = null;
