@@ -149,7 +149,8 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
   expect(report.singleTextureChanges).toBe(0);
   expect(report.contextChanges).toBe(0);
   expect(report.meshes).toBeGreaterThan(20);
-  expect(report.groups).toBe(8);
+  // Eight isolated groups; the single-leaf additive one draws directly without a buffer.
+  expect(report.groups).toBe(7);
   for (const c of report.cases) {
     expect(c.colored).toBeGreaterThan(100);
     expect(c.meanError, `${c.export}:${c.time}`).toBeLessThan(1);
@@ -172,6 +173,8 @@ test('isolated alpha composes once and Tesla buffers are released across idle, z
     const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
     const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
     const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
+    const { flushGroupBuffers } = await import('/src/game/native-group-buffer.ts');
+    flushGroupBuffers(scene);
     preloadNativeMeshes(scene, graph, 'tesla-lifecycle');
     await new Promise<void>((resolve) => {
       scene.load.once('complete', resolve);
@@ -237,11 +240,14 @@ test('isolated alpha composes once and Tesla buffers are released across idle, z
       await frame();
       errors.push(gl.getError());
       view.render(nativeScenePoses(graph, 'teslatower_lvl10_setup', 4), 200, 200, 0);
+      // Released buffers stay pooled for reuse until idle; flushing must free every one.
+      flushGroupBuffers(scene);
       if (view.groups.size || renderer.glFramebufferWrappers.length !== before.buffers)
         throw Error('Quiet Tesla retains an offscreen buffer');
     }
     view.clear();
     view.destroy();
+    flushGroupBuffers(scene);
     await frame();
     errors.push(gl.getError());
     return {

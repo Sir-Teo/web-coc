@@ -177,6 +177,12 @@ for (const witness of witnesses)
         contextChanges: changed(restored),
         meshes: views.reduce((n, v) => n + v.meshes.size, 0),
         groups: views.reduce((n, v) => n + v.groups.size, 0),
+        // Isolated groups plus additive/screen leaves (single-leaf groups draw directly).
+        blended: views.reduce(
+          (n, v) =>
+            n + v.groups.size + [...v.meshes.values()].filter((m) => m.blendMode !== 0).length,
+          0,
+        ),
         tintedTextures: scene.textures
           .getTextureKeys()
           .filter((k) => k.startsWith('mortar-test') && k.includes(':color:')).length,
@@ -210,7 +216,7 @@ for (const witness of witnesses)
     expect(report.contextChanges).toBe(0);
     expect(report.meshes).toBeGreaterThan(0);
     if (witness.sourceCategory === 'body') expect(report.groups).toBe(0);
-    else expect(report.groups).toBeGreaterThan(0);
+    else expect(report.blended).toBeGreaterThan(0);
     expect(report.cases).toHaveLength(witness.cases.length);
     for (const c of report.cases) {
       if (c.empty) {
