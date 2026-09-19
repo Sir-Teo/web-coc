@@ -869,18 +869,20 @@ export class VillageScene extends Phaser.Scene {
       shutdown = true;
     });
     this.heavyArt = new Promise<void>((resolve) => {
-      const done = () => {
+      const done = (failed: boolean) => {
         if (shutdown) {
           resolve();
           return;
         }
-        this.xbowPresentation.artReady = true;
-        this.santaPresentation.artReady = true;
-        this.cannonPresentation.artReady = true;
+        // Loader COMPLETE also fires after file errors. Keep the boot-time sprites when
+        // any required page failed instead of hiding them behind incomplete native meshes.
+        this.xbowPresentation.artReady = !failed;
+        this.santaPresentation.artReady = !failed;
+        this.cannonPresentation.artReady = !failed;
         this.xbowPresentation.bindAudio();
         this.santaPresentation.bindAudio();
         this.cannonPresentation.bindAudio();
-        this.heavyArtReady = true;
+        this.heavyArtReady = !failed;
         // Restyle: fallback sprites hide now that native bodies draw.
         this.lastRevision = -1;
         resolve();
@@ -892,7 +894,7 @@ export class VillageScene extends Phaser.Scene {
         this.load.once(Phaser.Loader.Events.COMPLETE, () => {
           this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
           if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
-          done();
+          done(failed);
         });
         preloadSanta(this);
         preloadXbows(this);
@@ -1864,6 +1866,15 @@ export class VillageScene extends Phaser.Scene {
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture = buildingTexture(kind, level, direction, xbowMode, 'single', spellTowerWeapon);
+    // Per-level cannon/X-Bow portraits arrive with deferred art. Keep a real boot texture
+    // on screen until then, including placement previews and retries after a load failure.
+    if ((kind === 'cannon' || kind === 'xbow') && !this.textures.exists(texture)) {
+      return im
+        .setTexture(kind)
+        .setOrigin(0.5, 0.88)
+        .setFlipX(false)
+        .setDisplaySize(BUILDINGS[kind].width, (BUILDINGS[kind].width * im.height) / im.width);
+    }
     if (im.texture.key !== texture) im.setTexture(texture);
     if (hasLateArt(kind)) {
       const art = lateArt(kind);

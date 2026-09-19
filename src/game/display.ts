@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { RenderQuality } from './render-quality';
 
 // Keep a single backbuffer below 16 megapixels (64 MB of color pixels before
 // depth/stencil and driver buffers). Ordinary Retina desktops and 3× phones
@@ -33,10 +34,17 @@ export function configureDisplay(game: Phaser.Game) {
     viewport[1],
   );
   const parent = game.canvas.parentElement!;
+  const quality = new RenderQuality();
+  quality.reset(performance.now());
   const resize = () => {
     const rect = parent.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    const size = displaySize(rect.width, rect.height, window.devicePixelRatio, maxDimension);
+    const size = displaySize(
+      rect.width,
+      rect.height,
+      window.devicePixelRatio * quality.scale,
+      maxDimension,
+    );
     if (game.scale.width !== size.width || game.scale.height !== size.height)
       game.scale.resize(size.width, size.height);
     else game.scale.refresh();
@@ -48,6 +56,8 @@ export function configureDisplay(game: Phaser.Game) {
   const watchDensity = () => {
     if (density === window.devicePixelRatio) return;
     density = window.devicePixelRatio;
+    quality.scale = 1;
+    quality.reset(performance.now());
     resolution?.removeEventListener('change', watchDensity);
     resolution = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     resolution.addEventListener('change', watchDensity);
@@ -58,6 +68,18 @@ export function configureDisplay(game: Phaser.Game) {
   // when a background window moves between displays; no allocation per frame.
   const checkDensity = () => {
     if (density !== window.devicePixelRatio) watchDensity();
+    // Resizing cancels active drags in the scene: defer quality changes until pointers are up.
+    const scenes = game.scene.scenes;
+    const active =
+      !document.hidden &&
+      !(game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).contextLost &&
+      scenes.some((scene) => scene.sys.isActive()) &&
+      scenes.every(
+        (scene) =>
+          !scene.load.isLoading() && !(scene as Phaser.Scene & { paused?: boolean }).paused,
+      ) &&
+      !game.input.pointers.some((pointer) => pointer.isDown);
+    if (quality.sample(performance.now(), active, density)) resize();
   };
   watchDensity();
   game.events.on('prestep', checkDensity);

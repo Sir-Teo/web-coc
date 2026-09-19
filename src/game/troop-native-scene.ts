@@ -75,24 +75,11 @@ export class TroopNativePresentation {
   }
   private async decodeTexture(key: string, path: string) {
     if (this.scene.textures.exists(key)) return;
-    // createImageBitmap decodes off the main thread; fall back to <img> decode.
-    try {
-      if (typeof createImageBitmap === 'function') {
-        const response = await fetch('/' + path);
-        if (!response.ok) throw Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
-        const bitmap = await createImageBitmap(blob);
-        if (this.alive && !this.scene.textures.exists(key))
-          this.scene.textures.addImage(key, bitmap as unknown as HTMLImageElement);
-        // Do not close the bitmap: Phaser retains it as the texture source for
-        // canvas colour bakes and WebGL context restore. Closing detaches its
-        // pixels, so the next colour bake (giants, wizards, wall breakers, ...)
-        // throws inside drawImage and ends the game loop.
-        return;
-      }
-    } catch {
-      // Fall through to <img> decode below.
-    }
+    // Keep a top-down image source, as Phaser's loader does. ImageBitmap uploads ignore
+    // WebGL's UNPACK_FLIP_Y_WEBGL and UNPACK_PREMULTIPLY_ALPHA_WEBGL flags: the old fast
+    // path sampled unrelated atlas regions, leaving troops as disconnected body fragments.
+    // decode() still completes asynchronously, and the retained image also works for color
+    // bakes and context restoration without a second, flipped copy of the texture page.
     const image = new Image();
     image.src = '/' + path;
     await image.decode();
