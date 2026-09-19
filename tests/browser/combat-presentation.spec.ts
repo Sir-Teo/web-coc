@@ -81,15 +81,17 @@ test('returning from a destroyed practice village restores every home building',
         .length,
       beforeArt,
       afterArt: presentation(),
-      groundCommands: scene.ruinGround.commandBuffer.length,
+      scars: scene.ruinStamped.size,
+      scarLayerShown: !!scene.ruinDecals?.visible,
     };
   });
   expect(result.rubble).toBeGreaterThan(30);
   expect(result.after).toEqual(result.before);
   expect(result.remainingRuins).toBe(0);
   expect(result.afterArt).toEqual(result.beforeArt);
-  // Phaser clear() may retain its line/fill setup, but no scar drawing commands.
-  expect(result.groundCommands).toBeLessThan(10);
+  // The ruin ground layer is emptied and hidden at home.
+  expect(result.scars).toBe(0);
+  expect(result.scarLayerShown).toBe(false);
 });
 
 test('real troop attacks draw distinct weapons and a scene transition cancels their impacts', async ({
