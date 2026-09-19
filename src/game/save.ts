@@ -500,14 +500,11 @@ export async function loadSave(): Promise<Save | undefined> {
 }
 export async function saveGame(state: Save): Promise<boolean> {
   let stored = false;
-  let copy: Save;
+  // No defensive structuredClone: both writes capture the state synchronously,
+  // before the first await (JSON.stringify here, and IndexedDB's put() clones its
+  // value when called inside the promise executor below).
   try {
-    copy = structuredClone(state);
-  } catch {
-    return false;
-  }
-  try {
-    localStorage.setItem(KEY, JSON.stringify(copy));
+    localStorage.setItem(KEY, JSON.stringify(state));
     stored = true;
   } catch {
     /* IndexedDB may still be available. */
@@ -516,7 +513,7 @@ export async function saveGame(state: Save): Promise<boolean> {
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = db!.transaction('saves', 'readwrite');
-        tx.objectStore('saves').put(copy, 'village');
+        tx.objectStore('saves').put(state, 'village');
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error);

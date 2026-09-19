@@ -25,12 +25,15 @@ for (const viewport of [
     await page.locator('.attack-btn').click();
     await expect(page.locator('.campaign-card')).toHaveCount(90);
     // Scouting thumbnails must conceal native Tesla placements as well as traps.
+    // Each minimap is one cached SVG image rather than inline DOM; count its tiles.
     const thumbnails = await page.evaluate(async () => {
       const { NATIVE_CAMPAIGN } = await import('/src/game/native-campaign.ts');
+      const maps = Array.from(
+        document.querySelectorAll<HTMLImageElement>('.campaign-card img.campaign-map'),
+      );
+      const svgs = await Promise.all(maps.map((img) => fetch(img.src).then((r) => r.text())));
       return NATIVE_CAMPAIGN.map((s, i) => ({
-        actual:
-          document.querySelectorAll('.campaign-card')[i].querySelectorAll('svg.campaign-map rect')
-            .length - 1,
+        actual: (svgs[i]?.match(/<rect /g)?.length ?? 0) - 1,
         expected: s.buildings.filter(([id]) => id !== 1000019).length,
       }));
     });

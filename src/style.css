@@ -67,12 +67,45 @@ button svg {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  /* viewport-fit=cover: every edge-anchored HUD surface keeps clear of notches. */
+  --hud-top: max(12px, env(safe-area-inset-top));
+  --hud-left: max(12px, env(safe-area-inset-left));
+  --hud-right: max(12px, env(safe-area-inset-right));
+  --hud-bottom: max(12px, env(safe-area-inset-bottom));
 }
 #ui button,
 #ui input,
 #ui .modal,
 #ui .result-modal {
   pointer-events: auto;
+}
+/* HUD panels own their whole box, padding and gaps included: a tap or swipe that
+   starts on them must not deploy troops or pan the camera beneath. Bare hint text
+   floating over the playfield (the deploy hint, the battle clock) stays click-through
+   so troops can still be dropped where it happens to sit. */
+#ui .army-tray,
+#ui .army-label,
+#ui .battle-enemy,
+#ui .destruction,
+#ui .battle-tip,
+#ui .prep-banner,
+#ui .resource-bar,
+#ui .coach-banner,
+#ui .placement-banner,
+#ui .wall-move-toolbar {
+  pointer-events: auto;
+}
+/* Reads env(safe-area-inset-*) as pixels for the anchored building card. */
+#safe-probe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 h1,
 h2,
@@ -1185,6 +1218,10 @@ h3 {
   padding: 15px;
   position: relative;
 }
+.campaign-list > .campaign-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 124px;
+}
 .campaign-card.locked {
   background: linear-gradient(110deg, #dedbcc, #e9e2ce);
   border-color: #d2c9b0;
@@ -1213,7 +1250,7 @@ h3 {
   height: 76px;
   object-fit: contain;
 }
-.locked > img {
+.locked > img:not(.campaign-map) {
   filter: grayscale(0.8);
   opacity: 0.6;
 }
@@ -1528,8 +1565,8 @@ h3 {
 }
 .battle-enemy {
   position: absolute;
-  top: 28px;
-  left: 30px;
+  top: calc(28px + env(safe-area-inset-top));
+  left: max(30px, env(safe-area-inset-left));
   text-shadow: 0 2px #243823;
 }
 .battle-enemy h2 {
@@ -1548,7 +1585,7 @@ h3 {
 }
 .battle-clock {
   position: absolute;
-  top: 28px;
+  top: calc(28px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
@@ -1569,8 +1606,8 @@ h3 {
 }
 .destruction {
   position: absolute;
-  right: 28px;
-  top: 28px;
+  right: max(28px, env(safe-area-inset-right));
+  top: calc(28px + env(safe-area-inset-top));
   text-align: center;
   text-shadow: 0 2px #293727;
 }
@@ -1593,9 +1630,9 @@ h3 {
 }
 .battle-bottom {
   position: absolute;
-  bottom: 32px;
-  left: 28px;
-  right: 28px;
+  bottom: calc(32px + env(safe-area-inset-bottom));
+  left: max(28px, env(safe-area-inset-left));
+  right: max(28px, env(safe-area-inset-right));
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -2429,8 +2466,8 @@ h3 {
     font-size: 27px;
   }
   .destruction {
-    right: 15px;
-    top: 20px;
+    right: max(15px, env(safe-area-inset-right));
+    top: calc(20px + env(safe-area-inset-top));
   }
   .destruction > span {
     font-size: 9px;
@@ -2442,9 +2479,9 @@ h3 {
     font-size: 20px;
   }
   .battle-bottom {
-    bottom: 16px;
-    left: 12px;
-    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: var(--hud-left);
+    right: var(--hud-right);
     height: 150px;
   }
   .end-battle {
@@ -2570,12 +2607,12 @@ h3 {
     bottom: 17px;
   }
   .battle-bottom {
-    bottom: 15px;
+    bottom: calc(15px + env(safe-area-inset-bottom));
   }
   .battle-enemy,
   .battle-clock,
   .destruction {
-    top: 16px;
+    top: calc(16px + env(safe-area-inset-top));
   }
   .deploy-tray .troop-card {
     height: 78px;
@@ -2681,10 +2718,11 @@ h3 {
   color: #5f8b30;
   font-style: normal;
 }
-.campaign-map {
+.campaign-card > .campaign-map {
   width: 94px;
   height: 94px;
   flex: 0 0 94px;
+  object-fit: fill;
   border: 3px solid #cabca0;
   border-radius: 13px;
   box-shadow: 0 3px 0 #b5a68a;
@@ -2717,7 +2755,7 @@ h3 {
   .research-stats > span {
     gap: 3px;
   }
-  .campaign-map {
+  .campaign-card > .campaign-map {
     width: 50px;
     height: 50px;
     flex-basis: 50px;
@@ -2779,7 +2817,8 @@ h3 {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 60px 8px 20px;
+  padding: 10px max(60px, calc(48px + env(safe-area-inset-right))) 8px
+    max(20px, env(safe-area-inset-left));
   border-bottom: 2px solid #cbb98e;
   position: relative;
 }
@@ -2792,7 +2831,7 @@ h3 {
 }
 .drawer-head .close-btn {
   position: absolute;
-  right: 12px;
+  right: var(--hud-right);
   top: 8px;
 }
 .drawer-head .shop-tabs {
@@ -2818,14 +2857,15 @@ h3 {
   gap: 11px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 14px 20px 12px;
+  padding: 14px max(20px, env(safe-area-inset-right)) 12px max(20px, env(safe-area-inset-left));
   scrollbar-width: thin;
 }
 .drawer-foot {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 20px 9px;
+  padding: 7px max(20px, env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
   border-top: 2px solid #cbb98e;
   font-size: 11px;
   font-weight: 800;
@@ -3054,8 +3094,10 @@ h3 {
 }
 .loot-track i {
   display: block;
+  width: 100%;
   height: 100%;
-  transition: width 0.3s ease;
+  transform-origin: left center;
+  transition: transform 0.3s ease;
 }
 .battle-clock.prep > b {
   color: #b7e8ff;
@@ -3071,10 +3113,12 @@ h3 {
 }
 .destruction-bar > i {
   display: block;
+  width: 100%;
   height: 100%;
   border-radius: 6px;
   background: linear-gradient(#ffd05c, #f07f36);
-  transition: width 0.3s ease;
+  transform-origin: left center;
+  transition: transform 0.3s ease;
 }
 .destruction-bar .notch {
   position: absolute;
@@ -3538,42 +3582,77 @@ h3 {
 .coach-skip:hover {
   background: #ffffff2e;
 }
-/* Outline and box-shadow only: the ring must not move or resize the control it marks. */
+/* A static outline marks the control without moving or resizing it. */
 .coach-target {
   outline: 3px solid #ffd05c;
   outline-offset: 3px;
+}
+/* The pulse is a separate element over the target (placed by the HUD). It animates
+   transform and opacity only, so it composites without repainting the canvas area,
+   and it lives outside #hud so rebuilding the HUD does not restart it. */
+#coach-ring {
+  position: fixed;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 3px solid #ffd05cd0;
+  box-shadow: 0 0 14px #ffd05c99;
   animation: coach-pulse 1.6s ease-out infinite;
+  will-change: transform, opacity;
+}
+#coach-ring[hidden] {
+  display: none;
 }
 @keyframes coach-pulse {
   0% {
-    box-shadow:
-      0 0 0 0 #ffd05cd0,
-      0 0 14px #ffd05c99;
+    transform: scale(1);
+    opacity: 1;
   }
   70% {
-    box-shadow:
-      0 0 0 18px #ffd05c00,
-      0 0 14px #ffd05c00;
+    transform: scale(1.3);
+    opacity: 0;
   }
   100% {
-    box-shadow:
-      0 0 0 0 #ffd05c00,
-      0 0 0 #ffd05c00;
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+.reduce-motion #coach-ring {
+  animation: none;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  #coach-ring {
+    opacity: 0;
+  }
+  .resource-bar.full .resource-fill::after {
+    animation: none;
   }
 }
 
 /* ============================================================
    Storage at capacity, and the profile stat grid
    ============================================================ */
-.resource-bar.full .resource-fill {
+/* A glow layer fades over the fill: opacity composites, where animating
+   filter: brightness repainted the bar every frame for as long as storage stayed full. */
+.resource-bar.full .resource-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  opacity: 0;
   animation: store-full 1.9s ease-in-out infinite;
+  will-change: opacity;
+}
+.reduce-motion .resource-bar.full .resource-fill::after {
+  animation: none;
 }
 .resource-bar.full .resource-topline {
   color: #ffd9a0;
 }
 @keyframes store-full {
   50% {
-    filter: brightness(1.45);
+    opacity: 0.32;
   }
 }
 .profile-stats {

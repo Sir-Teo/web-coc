@@ -1,10 +1,6 @@
 /* Compact village controls occupy separate rows above the bottom actions. */
+/* --hud-left/right/bottom (safe-area aware) are defined on #ui in style.css. */
 @media (max-height: 700px) {
-  #ui {
-    --hud-left: max(12px, env(safe-area-inset-left));
-    --hud-right: max(12px, env(safe-area-inset-right));
-    --hud-bottom: max(12px, env(safe-area-inset-bottom));
-  }
   .left-tools {
     left: var(--hud-left);
     top: auto;

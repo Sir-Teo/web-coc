@@ -171,7 +171,13 @@ test('campaign overview hides traps and scouting shows the new Wizard Tower', as
     window.__game.model.changed();
   });
   await page.locator('.attack-btn').click();
-  const rects = await page.locator('.campaign-map').nth(5).locator('rect').count();
+  const rects = await page
+    .locator('.campaign-map')
+    .nth(5)
+    .evaluate(
+      async (img: HTMLImageElement) =>
+        (await fetch(img.src).then((r) => r.text())).split('<rect ').length - 1,
+    );
   await page.locator('[data-action="attack:5"]').click();
   const counts = await page.evaluate(() => {
     const m = window.__game.model;
