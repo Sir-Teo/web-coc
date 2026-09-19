@@ -5,7 +5,7 @@ import {
   Hammer,
   Axe,
   ShieldCheck,
-  Map,
+  Map as MapGlyph,
   ScrollText,
   BookOpen,
   Settings,
@@ -54,6 +54,13 @@ import {
   Gauge,
   Radar,
   Ban,
+  Anvil,
+  PawPrint,
+  Eye,
+  Gem,
+  Scan,
+  HeartPulse,
+  Waves,
 } from 'lucide';
 const icons = {
   Circle,
@@ -61,7 +68,7 @@ const icons = {
   Hammer,
   Axe,
   ShieldCheck,
-  Map,
+  Map: MapGlyph,
   ScrollText,
   BookOpen,
   Settings,
@@ -110,16 +117,39 @@ const icons = {
   Gauge,
   Radar,
   Ban,
+  Anvil,
+  PawPrint,
+  Eye,
+  Gem,
+  Scan,
+  HeartPulse,
+  Waves,
 };
+const cache = new Map<string, string>();
+/**
+ * Serialized Lucide glyph. Rendering builds a real SVG element, so each
+ * (name, size) pair is built once and reused by every later HUD render.
+ */
 export function icon(name: string, size = 22) {
-  const component = icons[name as keyof typeof icons] ?? icons.Circle;
+  const key = `${name}:${size}`;
+  let markup = cache.get(key);
+  if (markup !== undefined) return markup;
+  let component = icons[name as keyof typeof icons];
+  if (!component) {
+    if (import.meta.env?.DEV) console.warn(`Unknown icon "${name}"; drawing a circle instead.`);
+    component = icons.Circle;
+  }
   const el = createElement(component);
   el.setAttribute('width', String(size));
   el.setAttribute('height', String(size));
   el.setAttribute('stroke-width', '2.4');
   el.setAttribute('aria-hidden', 'true');
-  return el.outerHTML;
+  markup = el.outerHTML;
+  cache.set(key, markup);
+  return markup;
 }
+/** Whether a glyph name is registered (used by tests to catch silent fallbacks). */
+export const hasIcon = (name: string) => name in icons;
 export const coin = '<span class="resource-icon coin" aria-hidden="true">✦</span>';
 export const elixir = '<span class="resource-icon elixir" aria-hidden="true"></span>';
 export const darkElixir = '<span class="resource-icon dark" aria-hidden="true"></span>';
