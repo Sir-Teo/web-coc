@@ -17,7 +17,14 @@ const FPS = 30;
 const VIEWS = 24;
 const FRAMES_PER_VIEW = 15;
 const { scale, anchorX, anchorY } = SCATTERSHOT_ART;
-export const SCATTERSHOT_ROOT: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
+export const SCATTERSHOT_ROOT: NativeMatrix = [
+  scale,
+  0,
+  -anchorX * scale,
+  0,
+  scale,
+  -anchorY * scale,
+];
 
 /** Calibrated like the X-Bow and Mortar turrets: frame 0 throws along +map X, 90 along +map Y. */
 export function scattershotView(dx: number, dy: number) {
@@ -28,7 +35,11 @@ export function scattershotView(dx: number, dy: number) {
  * Throw clip phase: AnimationActionFrame (5 at 30 fps) is aligned with the recorded release, so
  * the arm starts 5/30 s early. The pre-roll is predicted from the retained charge state.
  */
-export function scattershotThrowPhase(level: number, tower: ScattershotTowerState | undefined, t: number) {
+export function scattershotThrowPhase(
+  level: number,
+  tower: ScattershotTowerState | undefined,
+  t: number,
+) {
   if (!tower) return 0;
   const action = scattershotStats(level).animationActionFrame / FPS;
   for (let i = tower.shots.length - 1; i >= 0; i--) {
@@ -42,7 +53,8 @@ export function scattershotThrowPhase(level: number, tower: ScattershotTowerStat
     const ticks = Math.max(1, Math.ceil((SCATTERSHOT.chargeMs - tower.hitMs) / 64));
     const lastTick = Math.floor(t / 0.064 + 1e-9) * 0.064;
     const start = lastTick + ticks * 0.064 - action;
-    if (t + 1e-9 >= start) return Math.min(FRAMES_PER_VIEW - 1, Math.floor((t - start) * FPS + 1e-9));
+    if (t + 1e-9 >= start)
+      return Math.min(FRAMES_PER_VIEW - 1, Math.floor((t - start) * FPS + 1e-9));
   }
   return 0;
 }
@@ -52,7 +64,9 @@ export function scattershotTurret(
   t: number,
   reduced = false,
 ) {
-  const view = tower ? scattershotView(tower.aimX, tower.aimY) : SCATTERSHOT_PREVIEW_TURRET / FRAMES_PER_VIEW;
+  const view = tower
+    ? scattershotView(tower.aimX, tower.aimY)
+    : SCATTERSHOT_PREVIEW_TURRET / FRAMES_PER_VIEW;
   return view * FRAMES_PER_VIEW + (reduced ? 0 : scattershotThrowPhase(level, tower, t));
 }
 
@@ -69,7 +83,9 @@ export function scattershotPoses(level: number, state: ScattershotVisualState, t
   ];
 }
 /** Transformed vertex bounds of composed poses (renderer-free, so combat tests can import it). */
-export function scattershotPoseBounds(poses: readonly NativeScenePose[]): [number, number, number, number] | undefined {
+export function scattershotPoseBounds(
+  poses: readonly NativeScenePose[],
+): [number, number, number, number] | undefined {
   let left = Infinity,
     top = Infinity,
     right = -Infinity,
@@ -108,11 +124,10 @@ type Point = { x: number; y: number };
  * plus a local ballistic arc of one quarter of the screen distance (BallisticHeight is zero in
  * the source; the native default arc is unverified). Rotation follows the screen velocity.
  */
-export function scattershotProjectilePose(
-  p: ScattershotProjectile,
+export function scattershotProjectilePoint(
+  p: Pick<ScattershotProjectile, 'fromX' | 'fromY' | 'x' | 'y' | 'targetX' | 'targetY' | 'air'>,
   iso: (x: number, y: number) => Point,
   airLift: number,
-  t: number,
 ) {
   const flown = Math.hypot(p.x - p.fromX, p.y - p.fromY),
     left = Math.hypot(p.targetX - p.x, p.targetY - p.y),
@@ -121,12 +136,24 @@ export function scattershotProjectilePose(
     to = iso(p.targetX, p.targetY),
     ground = iso(p.x, p.y);
   const distance = Math.hypot(to.x - from.x, to.y - from.y);
-  const height = (1 - u) * SCATTERSHOT.startHeight * SCATTERSHOT_ART.altitudeScale + u * (p.air ? airLift : 0);
+  const height =
+    (1 - u) * SCATTERSHOT.startHeight * SCATTERSHOT_ART.altitudeScale + u * (p.air ? airLift : 0);
   const arc = Math.sin(u * Math.PI) * distance * 0.25;
-  const x = ground.x,
-    y = ground.y - height - arc;
+  return { u, x: ground.x, y: ground.y - height - arc, ground, from, to, distance };
+}
+let shadowPoses: NativeScenePose[] | undefined;
+/** The rock art and its static ground shadow at the `scattershotProjectilePoint`. */
+export function scattershotProjectilePose(
+  p: ScattershotProjectile,
+  iso: (x: number, y: number) => Point,
+  airLift: number,
+  t: number,
+) {
+  const { u, x, y, ground, from, to, distance } = scattershotProjectilePoint(p, iso, airLift);
   const slope =
-    -(p.air ? airLift : 0) + SCATTERSHOT.startHeight * SCATTERSHOT_ART.altitudeScale - Math.cos(u * Math.PI) * Math.PI * distance * 0.25;
+    -(p.air ? airLift : 0) +
+    SCATTERSHOT.startHeight * SCATTERSHOT_ART.altitudeScale -
+    Math.cos(u * Math.PI) * Math.PI * distance * 0.25;
   const angle = Math.atan2(to.y - from.y + slope, to.x - from.x || 1e-6);
   const c = Math.cos(angle) * scale,
     s = Math.sin(angle) * scale;
@@ -138,7 +165,13 @@ export function scattershotProjectilePose(
     y,
     ground,
     poses: nativeScenePoses(SCATTERSHOT_GRAPH, row.projectileExport, age, {}, [c, -s, 0, s, c, 0]),
-    shadow: nativeScenePoses(SCATTERSHOT_GRAPH, SCATTERSHOT_EXPORTS.shadow, 0, {}, [scale, 0, 0, 0, scale, 0]),
+    shadow: (shadowPoses ??= nativeScenePoses(
+      SCATTERSHOT_GRAPH,
+      SCATTERSHOT_EXPORTS.shadow,
+      0,
+      {},
+      [scale, 0, 0, 0, scale, 0],
+    )),
   };
 }
 
@@ -154,7 +187,8 @@ const CONE_GRAPH: NativeMeshGraph = {
 export function scattershotConePoses(dirX: number, dirY: number, age: number) {
   const degrees = ((Math.round((Math.atan2(dirY, dirX) * 180) / Math.PI) % 360) + 360) % 360;
   const rootPlacement = coneRoot.frames[coneRoot.timeline[0]].find((p) => p[0] === coneSlot)!;
-  const rotation = coneRotation.frames[coneRotation.timeline[degrees % coneRotation.timeline.length]][0];
+  const rotation =
+    coneRotation.frames[coneRotation.timeline[degrees % coneRotation.timeline.length]][0];
   const matrix = nativeMatrix(
     nativeMatrix([scale, 0, 0, 0, scale, 0], SCATTERSHOT_GRAPH.matrices[rootPlacement[1]]),
     SCATTERSHOT_GRAPH.matrices[rotation[1]],

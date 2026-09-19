@@ -3,7 +3,7 @@ import type { NativeMeshGraph } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import type { SampleCue } from './sample-audio';
-import { LATE_GOBLIN_GRAPH, goblinBombPose } from './late-goblin-buildings-poses';
+import { LATE_GOBLIN_GRAPH, goblinBombFlightPoint } from './late-goblin-buildings-poses';
 import { LATE_GOBLIN_SOURCE } from './late-goblin-buildings-stats';
 import type { LateProjectile } from './late-goblin-weapon';
 
@@ -108,15 +108,21 @@ export function goblinBombTrailPoses(
 ): NativeParticlePose[] {
   const rows = LATE_GOBLIN_EFFECT_PLAYER.emitters.mortar_trail,
     row = rows[0];
-  if (elapsed < shot.launched || elapsed >= shot.impact + n(row, 'MaxLife') / 1000) return [];
+  const life = Math.max(n(row, 'MinLife'), n(row, 'MaxLife')) / 1000;
+  if (elapsed < shot.launched || elapsed >= shot.impact + life) return [];
   const interval = n(row, 'EmissionTime') / 1000 / n(row, 'ParticleCount');
   const from = iso(shot.fromX, shot.fromY),
     to = iso(shot.x, shot.y);
   const angle = Math.atan2(to.y - from.y, to.x - from.x);
   const result: NativeParticlePose[] = [];
-  for (let i = 0; shot.launched + i * interval < Math.min(elapsed + 1e-9, shot.impact); i++) {
+  // Births older than the longest particle life are gone: start at the first live one.
+  for (
+    let i = Math.max(0, Math.ceil((elapsed - life - shot.launched) / interval - 1e-9));
+    shot.launched + i * interval < Math.min(elapsed + 1e-9, shot.impact);
+    i++
+  ) {
     const at = shot.launched + i * interval,
-      point = goblinBombPose(shot, at, iso);
+      point = goblinBombFlightPoint(shot, at, iso);
     const pose = LATE_GOBLIN_EFFECT_PLAYER.particle(
       `late-goblin:${shot.sourceId}:trail:${shot.index}:${i}`,
       'mortar_trail',

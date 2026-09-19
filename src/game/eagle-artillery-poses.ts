@@ -16,14 +16,25 @@ import {
   EAGLE_ARTILLERY_TURRET,
   eagleArtilleryStats,
 } from './eagle-artillery-stats';
-import type { EagleArtilleryShell, EagleArtilleryTowerState, EagleArtilleryVolley } from './eagle-artillery';
+import type {
+  EagleArtilleryShell,
+  EagleArtilleryTowerState,
+  EagleArtilleryVolley,
+} from './eagle-artillery';
 
 export const EAGLE_ARTILLERY_GRAPH = raw as unknown as NativeMeshGraph;
 export const EAGLE_ARTILLERY_BASE_GRAPH = baseRaw as unknown as NativeMeshGraph;
 export type EagleArtilleryVisualState = 'active' | 'upgrading' | 'ruin';
 const FPS = 24;
 const { scale, anchorX, anchorY } = EAGLE_ARTILLERY_ART;
-export const EAGLE_ARTILLERY_ROOT: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
+export const EAGLE_ARTILLERY_ROOT: NativeMatrix = [
+  scale,
+  0,
+  -anchorX * scale,
+  0,
+  scale,
+  -anchorY * scale,
+];
 
 export const eagleArtilleryLabels = (level: number) => {
   const turret = EAGLE_ARTILLERY_TURRET[String(level)];
@@ -88,9 +99,20 @@ export function eagleArtilleryTurretFrame(
   return frame;
 }
 
-export function eagleArtilleryPoses(level: number, state: EagleArtilleryVisualState, frame: number) {
+export function eagleArtilleryPoses(
+  level: number,
+  state: EagleArtilleryVisualState,
+  frame: number,
+) {
   const row = eagleArtilleryStats(level);
-  if (state === 'ruin') return nativeScenePoses(EAGLE_ARTILLERY_GRAPH, EAGLE_ARTILLERY_EXPORTS.ruin, 0, {}, EAGLE_ARTILLERY_ROOT);
+  if (state === 'ruin')
+    return nativeScenePoses(
+      EAGLE_ARTILLERY_GRAPH,
+      EAGLE_ARTILLERY_EXPORTS.ruin,
+      0,
+      {},
+      EAGLE_ARTILLERY_ROOT,
+    );
   return nativeScenePoses(
     EAGLE_ARTILLERY_GRAPH,
     state === 'upgrading' ? row.upgrade : row.body,
@@ -100,7 +122,13 @@ export function eagleArtilleryPoses(level: number, state: EagleArtilleryVisualSt
   );
 }
 export const eagleArtilleryBasePoses = () =>
-  nativeScenePoses(EAGLE_ARTILLERY_BASE_GRAPH, EAGLE_ARTILLERY_EXPORTS.base, 0, {}, EAGLE_ARTILLERY_ROOT);
+  nativeScenePoses(
+    EAGLE_ARTILLERY_BASE_GRAPH,
+    EAGLE_ARTILLERY_EXPORTS.base,
+    0,
+    {},
+    EAGLE_ARTILLERY_ROOT,
+  );
 
 /** Screen offset of the named `targeting_pivot` (the barrel light) from the ground center. */
 export function eagleArtilleryPivot(level: number, frame: number) {
@@ -114,9 +142,9 @@ export function eagleArtilleryPivot(level: number, frame: number) {
     turret.frames[turret.timeline[Math.min(frame, turret.timeline.length - 1)]].find(
       (p) => p[0] === pivotSlot,
     ) ??
-    turret.frames[turret.timeline[EAGLE_ARTILLERY_TURRET[String(level)].labels.battleidle_start]].find(
-      (p) => p[0] === pivotSlot,
-    )!;
+    turret.frames[
+      turret.timeline[EAGLE_ARTILLERY_TURRET[String(level)].labels.battleidle_start]
+    ].find((p) => p[0] === pivotSlot)!;
   const matrix = nativeMatrix(
     nativeMatrix(EAGLE_ARTILLERY_ROOT, EAGLE_ARTILLERY_GRAPH.matrices[placement[1]]),
     EAGLE_ARTILLERY_GRAPH.matrices[pivot[1]],
@@ -125,7 +153,9 @@ export function eagleArtilleryPivot(level: number, frame: number) {
 }
 
 /** Transformed vertex bounds of composed poses (renderer-free, so combat tests can import it). */
-export function eagleArtilleryPoseBounds(poses: readonly NativeScenePose[]): [number, number, number, number] | undefined {
+export function eagleArtilleryPoseBounds(
+  poses: readonly NativeScenePose[],
+): [number, number, number, number] | undefined {
   let left = Infinity,
     top = Infinity,
     right = -Infinity,
@@ -164,7 +194,12 @@ export function eagleArtilleryBounds(level: number) {
 
 type BeamKind = 'ExportNameBeamStart' | 'ExportNameBeamEnd';
 /** WarmUp from the volley start, Loop while active, then Fade once `endAt` passes. */
-export function eagleArtilleryBeamFrame(kind: BeamKind, startedAt: number, endAt: number | undefined, t: number) {
+export function eagleArtilleryBeamFrame(
+  kind: BeamKind,
+  startedAt: number,
+  endAt: number | undefined,
+  t: number,
+) {
   const { labels } = EAGLE_ARTILLERY_BEAMS[kind];
   if (t + 1e-9 < startedAt) return undefined;
   if (endAt !== undefined && t + 1e-9 >= endAt) {
@@ -193,7 +228,7 @@ type Point = { x: number; y: number };
  * (×0.8 screen altitude), landing on the tracked destination at the simulated arrival time.
  * TrajectoryStyle 1 and the native height conversion are unverified local interpretations.
  */
-export function eagleArtilleryShellPose(
+export function eagleArtilleryShellPoint(
   shell: EagleArtilleryShell,
   t: number,
   iso: (x: number, y: number) => Point,
@@ -209,6 +244,17 @@ export function eagleArtilleryShellPose(
   const peak = EAGLE_ARTILLERY.ballisticHeight * EAGLE_ARTILLERY_ART.altitudeScale;
   const x = from.x + (to.x - from.x) * u,
     y = from.y + (to.y - from.y) * u - 4 * peak * u * (1 - u);
+  return { u, x, y, from, to, peak };
+}
+/** The shell art at its `eagleArtilleryShellPoint`, rotated along the arc. */
+export function eagleArtilleryShellPose(
+  shell: EagleArtilleryShell,
+  t: number,
+  iso: (x: number, y: number) => Point,
+  pivot: Point,
+  airLift: number,
+) {
+  const { u, x, y, from, to, peak } = eagleArtilleryShellPoint(shell, t, iso, pivot, airLift);
   const angle = Math.atan2(to.y - from.y - 4 * peak * (1 - 2 * u), to.x - from.x || 1e-6);
   const c = Math.cos(angle) * scale,
     n = Math.sin(angle) * scale;
@@ -218,6 +264,12 @@ export function eagleArtilleryShellPose(
     x,
     y,
     ground: { x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u },
-    poses: nativeScenePoses(EAGLE_ARTILLERY_GRAPH, level.projectileExport, Math.max(0, t - shell.launchedAt), {}, [c, -n, 0, n, c, 0]) as NativeScenePose[],
+    poses: nativeScenePoses(
+      EAGLE_ARTILLERY_GRAPH,
+      level.projectileExport,
+      Math.max(0, t - shell.launchedAt),
+      {},
+      [c, -n, 0, n, c, 0],
+    ) as NativeScenePose[],
   };
 }

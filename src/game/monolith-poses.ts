@@ -108,6 +108,21 @@ export function monolithPoses(
       : []),
   ];
 }
+/**
+ * What `monolithPoses` output depends on over time: the settled ruin's source frame, else the
+ * 30 fps display frame (the orb and construction clips animate continuously).
+ */
+export function monolithTimeKey(
+  level: number,
+  state: MonolithVisualState,
+  seconds: number,
+  ruinAge = Infinity,
+) {
+  if (state !== 'ruin') return Math.floor(seconds * 30 + 1e-9);
+  const ruin = clip(monolithStats(level).ruin);
+  const age = Math.min(Math.max(0, ruinAge), (ruin.timeline.length - 1) / ruin.fps);
+  return Math.floor(age * ruin.fps + 1e-9);
+}
 const boundsCache = new Map<string, [number, number, number, number]>();
 /** Registered source bounds relative to the ground center, for health and upgrade bars. */
 export function monolithBounds(level: number, state: MonolithVisualState = 'setup') {
@@ -123,12 +138,13 @@ export function monolithBounds(level: number, state: MonolithVisualState = 'setu
 }
 
 const projectileRow = (variant: MonolithVariant) => runtime.projectiles[variant - 1];
+type MonolithFlight = Pick<
+  MonolithProjectile,
+  'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir' | 'variant' | 'flight'
+>;
 /** Source StartHeight/StartOffset with the local altitude projection used by other native towers. */
-export function monolithProjectilePose(
-  p: Pick<
-    MonolithProjectile,
-    'fromX' | 'fromY' | 'x' | 'y' | 'launched' | 'impact' | 'toAir' | 'variant' | 'flight'
-  >,
+export function monolithFlightPoint(
+  p: MonolithFlight,
   elapsed: number,
   iso: (x: number, y: number) => { x: number; y: number },
   airLift: number,
@@ -149,8 +165,17 @@ export function monolithProjectilePose(
     p.flight.y + (p.y - p.flight.y) * f + (dy / length) * offset,
   );
   const lift = row.startHeight * 0.8 * (1 - t) + (16 + (p.toAir ? airLift : 0)) * t;
-  const x = ground.x,
-    y = ground.y - lift;
+  return { t, age, x: ground.x, y: ground.y - lift };
+}
+/** The orb art at its `monolithFlightPoint`, pointed at the target. */
+export function monolithProjectilePose(
+  p: MonolithFlight,
+  elapsed: number,
+  iso: (x: number, y: number) => { x: number; y: number },
+  airLift: number,
+) {
+  const row = projectileRow(p.variant);
+  const { t, age, x, y } = monolithFlightPoint(p, elapsed, iso, airLift);
   const to = iso(p.x, p.y);
   const angle = Math.atan2(to.y - 16 - (p.toAir ? airLift : 0) - y, to.x - x) - Math.PI / 2;
   const s = (row.scale / 100) * MONOLITH_ART.scale;
