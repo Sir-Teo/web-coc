@@ -52,10 +52,18 @@ export class BuildingListSnapshot {
       this.alive[i] = b.hp > 0 ? 1 : 0;
     }
   }
+  /** The last array object fully verified against this snapshot. */
+  private verified: readonly Building[] | null = null;
   matches(buildings: readonly Building[]) {
     const n = buildings.length;
     if (n !== this.refs.length) return false;
     const { refs, kinds, npcs, coords, alive } = this;
+    if (buildings === this.verified) {
+      // Same array, same length: the simulation never reassigns list slots or moves a
+      // footprint, so only standing/fallen can have changed since it was verified.
+      for (let i = 0; i < n; i++) if (alive[i] !== (buildings[i].hp > 0 ? 1 : 0)) return false;
+      return true;
+    }
     for (let i = 0; i < n; i++) {
       const b = buildings[i];
       if (
@@ -68,6 +76,7 @@ export class BuildingListSnapshot {
       )
         return false;
     }
+    this.verified = buildings;
     return true;
   }
 }
