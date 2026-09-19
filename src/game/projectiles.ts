@@ -208,9 +208,25 @@ export function stepProjectiles(
   // Ricochets launched while resolving impacts join the list after this sample.
   const initial = battle.projectiles?.length ?? 0;
   // Id lookups once per sample instead of a linear scan per projectile.
-  const unitById = new Map((battle.units ?? []).map((u) => [u.id, u]));
-  const buildingById = new Map((battle.buildings ?? []).map((b) => [b.id, b]));
-  const defenderById = new Map((battle.defenders ?? []).map((d) => [d.id, d]));
+  // Built on first use: most samples carry no tracking or landing projectile at all.
+  // Contents are the lists as they stood when the sample began, exactly as before.
+  const lazyIndex = <T extends { id: number }>(list: readonly T[] | undefined) => {
+    const items = list ? list.slice() : [];
+    let map: Map<number, T> | undefined;
+    return {
+      get: (id: number) => {
+        if (!map) {
+          map = new Map();
+          for (const item of items) map.set(item.id, item);
+        }
+        return map.get(id);
+      },
+    };
+  };
+  const hasShots = initial > 0;
+  const unitById = lazyIndex(hasShots ? battle.units : undefined);
+  const buildingById = lazyIndex(hasShots ? battle.buildings : undefined);
+  const defenderById = lazyIndex(hasShots ? battle.defenders : undefined);
   const trackableByNative = new Map<string, boolean>();
   // Tracking bolts travel a bounded distance each sample. Moving a target does
   // not teleport the bolt or preserve an arrival deadline at its old position.
@@ -238,8 +254,7 @@ export function stepProjectiles(
   }
   const shots = battle.projectiles ?? [];
   // Snapshot semantics: ricochets launched mid-sample join after it, even when skipping the sort.
-  const ordered =
-    shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
+  const ordered = shots.length < 2 ? shots.slice() : [...shots].sort((a, b) => a.impact - b.impact);
   for (const p of ordered) {
     const target = p.targetDefender
       ? defenderById.get(p.targetId)

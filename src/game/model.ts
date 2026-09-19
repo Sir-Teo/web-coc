@@ -3613,7 +3613,7 @@ export class GameModel {
     // Wall-by-tile index shared with the native context above; hp verified live at each hit.
     const wallTile = shared.wallTile;
     // Memoize unit stats by kind+level for the tick.
-    const statsCache = new Map<string, ReturnType<GameModel['unitStats']>>();
+    const statsCache = new Map<string, Map<number, ReturnType<GameModel['unitStats']>>>();
     const routeBuildings = passableWalls?.size
       ? solidBuildings.filter((v) => !passableWalls.has(v.id))
       : solidBuildings;
@@ -3664,11 +3664,23 @@ export class GameModel {
       // always defined, and even an empty nativeHeroes array is truthy), so it
       // never hit.
       const perUnitStats = !!u.hero || isHeroUnitKind(u.kind) || isPetUnitKind(u.kind);
-      const statsKey = `${u.kind}:${u.level ?? b.troopLevels?.[u.kind as TroopKind] ?? this.state.troopLevels?.[u.kind as TroopKind] ?? 1}:${perUnitStats ? u.id : ''}`;
-      let unitBase = statsCache.get(statsKey);
-      if (!unitBase) {
-        unitBase = this.unitStats(u);
-        statsCache.set(statsKey, unitBase);
+      // Per-unit stats are read once per tick (each unit steps once), so they skip the memo;
+      // shared rows are keyed by kind, then level, without building a string per unit.
+      let unitBase: ReturnType<GameModel['unitStats']> | undefined;
+      if (perUnitStats) unitBase = this.unitStats(u);
+      else {
+        const level =
+          u.level ??
+          b.troopLevels?.[u.kind as TroopKind] ??
+          this.state.troopLevels?.[u.kind as TroopKind] ??
+          1;
+        let byLevel = statsCache.get(u.kind);
+        if (!byLevel) statsCache.set(u.kind, (byLevel = new Map()));
+        unitBase = byLevel.get(level);
+        if (!unitBase) {
+          unitBase = this.unitStats(u);
+          byLevel.set(level, unitBase);
+        }
       }
       const base =
         u.hero && b.hero && heroBaseStats

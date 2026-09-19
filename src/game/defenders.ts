@@ -202,7 +202,10 @@ function moveAlong(
   }
 }
 export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => void) {
-  const structures = battle.buildings.filter((b) => b.kind !== 'wall'); // Home defenders jump their own walls.
+  // Home defenders jump their own walls. Built on first route search, from the list as it
+  // stood at the start of the phase.
+  const buildingsAtStart = battle.buildings;
+  let structures: Building[] | undefined;
   for (const defender of battle.defenders ?? []) {
     if (defender.kind === 'guardian' || defender.kind === 'repairer' || defender.kind === 'hero')
       continue;
@@ -226,16 +229,30 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
         defender,
         skeletonStats(defender.mode, defender.spawnLevel),
       ),
-      eligible = battle.units.filter(
-        (u) => u.hp > 0 && !untargetable(battle, u) && !!TROOPS[u.kind].flying === stats.flying,
-      );
-    const target =
-      eligible.find((u) => u.id === defender.target) ??
-      eligible.sort(
-        (a, b) =>
-          distance2D(a.x - defender.x, a.y - defender.y) -
-            distance2D(b.x - defender.x, b.y - defender.y) || a.id - b.id,
-      )[0];
+      eligible = (u: Unit) =>
+        u.hp > 0 && !untargetable(battle, u) && !!TROOPS[u.kind].flying === stats.flying;
+    // The current target if still eligible, else the nearest (then lowest id): the winner of
+    // the old filter + full sort, found in one scan.
+    let target: Unit | undefined;
+    let nearest: Unit | undefined;
+    let nearestDist = Infinity;
+    for (const u of battle.units) {
+      if (!eligible(u)) continue;
+      if (u.id === defender.target) {
+        target = u;
+        break;
+      }
+      const dist = distance2D(u.x - defender.x, u.y - defender.y);
+      if (
+        nearest === undefined ||
+        dist < nearestDist ||
+        (dist === nearestDist && u.id < nearest.id)
+      ) {
+        nearest = u;
+        nearestDist = dist;
+      }
+    }
+    target ??= nearest;
     const cooling = defender.cooldown > 0;
     defender.cooldown -= activeDt;
     defender.pathAt -= activeDt;
@@ -278,7 +295,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
         defender.path = findPath(
           defender,
           target,
-          structures,
+          (structures ??= buildingsAtStart.filter((b) => b.kind !== 'wall')),
           stats.range,
           !!battle.nativeSubtiles,
         );
