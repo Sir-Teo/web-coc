@@ -147,6 +147,10 @@ export class HeroNativePresentation {
     this.alive = false;
     this.clear();
   }
+  /** Whether this hero/pet sprite drew this frame (scene.ts skips its fallback marker). */
+  drewUnit(id: number) {
+    return !!this.sprites.get(id)?.visible;
+  }
   render(
     battle: Battle | null,
     reduced: boolean,

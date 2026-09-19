@@ -146,6 +146,10 @@ export class TroopNativePresentation {
     this.alive = false;
     this.clear();
   }
+  /** Whether this unit's native mesh drew this frame (scene.ts skips its fallback marker). */
+  drewUnit(id: number) {
+    return !!this.views.get(id)?.view.objects.some((o) => o.visible);
+  }
   render(
     battle: Battle | null,
     reduced: boolean,

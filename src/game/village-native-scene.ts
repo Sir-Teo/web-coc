@@ -376,7 +376,7 @@ export class VillageNativePresentation {
         let entry = entries.get(key);
         if (!entry)
           entries.set(key, (entry = { view: new NativeSceneView(this.scene, group.prefix) }));
-        const depth = b.id === -1 ? 6000 + order++ * 0.01 : point.y + order++ * 0.01;
+        const depth = b.id === -1 ? 6600 + order++ * 0.01 : point.y + order++ * 0.01;
         const alpha = b.id === -1 ? 0.72 : b.constructing ? 0.8 : 1;
         const signature = `${group.signature}|${point.x},${point.y},${depth},${alpha},${density}`;
         // Static walls and idle buildings: nothing baked into the view changed, skip the

@@ -3064,21 +3064,7 @@ export class VillageScene extends Phaser.Scene {
   private fallbackMarks: number[] = [];
   /** Whether a native troop mesh or baked hero/pet sprite drew this unit this frame. */
   private nativelyDrawn(id: number) {
-    // The presentations keep their per-unit views private (WP2 owns them); read defensively.
-    const troops = (
-      this.troopNativePresentation as unknown as {
-        views?: Map<number, { view: { objects: readonly { visible: boolean }[] } }>;
-      }
-    ).views;
-    const troop = troops?.get(id);
-    if (troop && troop.view.objects.some((o) => o.visible)) return true;
-    const heroes = (
-      this.heroNativePresentation as unknown as {
-        sprites?: Map<number, { visible: boolean; alpha: number }>;
-      }
-    ).sprites;
-    const hero = heroes?.get(id);
-    return !!hero && hero.visible;
+    return this.troopNativePresentation.drewUnit(id) || this.heroNativePresentation.drewUnit(id);
   }
   private unitPoint = { x: 0, y: 0 };
   /** Units by id, shared with the native presentations and rebuilt once per sim step. */
