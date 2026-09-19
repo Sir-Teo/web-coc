@@ -9,6 +9,8 @@ import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
+import { recordBootResources, registerOfflineSupport } from './offline';
+recordBootResources();
 async function boot() {
   const releaseSession = await acquireVillage();
   try {
@@ -132,6 +134,8 @@ async function boot() {
     scene.onReady = () => {
       hud.showMapUpgrade();
       void saveGame(model.state);
+      // After the boot preload, on idle: the worker install must not compete with it.
+      if (!import.meta.env.DEV) registerOfflineSupport();
     };
     // Structured browser QA surface; no renderer internals in saved data.
     const debug = { model, scene, game, hud, audio };
@@ -260,8 +264,6 @@ async function boot() {
       const { installDeveloperTools } = await import('./dev/panel');
       installDeveloperTools(model, scene);
     }
-    if ('serviceWorker' in navigator && !import.meta.env.DEV)
-      void navigator.serviceWorker.register('/sw.js').catch((error) => console.warn(error));
   } catch (error) {
     releaseSession();
     throw error;
