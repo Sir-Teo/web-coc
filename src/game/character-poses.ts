@@ -11,6 +11,7 @@ import {
 import { visualRandom } from './visual-random';
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
+import { unitIndex } from './battle-index';
 
 /** Local world size; all source vertices, colors and nested timelines remain unchanged. */
 export const CHARACTER_SCALE = 0.6;
@@ -98,7 +99,8 @@ export function characterAttackTime(
   const follow = last ? pick(lastOrdinal) : undefined;
   const windup = pick(windupOrdinal);
   const windupActive = !!defender.engaged && defender.cooldown <= windup.actionTime;
-  const following = !!follow && since >= 0 && since < (follow.frames - follow.action) / follow.clip.fps;
+  const following =
+    !!follow && since >= 0 && since < (follow.frames - follow.action) / follow.clip.fps;
   const finalFrameHold = !!follow && follow.action === follow.frames - 1;
   if (following && (finalFrameHold || !windupActive))
     return {
@@ -127,7 +129,10 @@ function spawnOrSummonRow(
   if (spawn && defender.idleUntil !== undefined && elapsed < defender.idleUntil) {
     const clip = clipFor(animation, spawn, view);
     const last = (clip.timeline.length - 1) / clip.fps;
-    return { row: spawn, time: reduced ? last : Math.min(last, Math.max(0, elapsed - defender.spawnedAt)) };
+    return {
+      row: spawn,
+      time: reduced ? last : Math.min(last, Math.max(0, elapsed - defender.spawnedAt)),
+    };
   }
   const summon = states.attack2?.[0];
   const event = defender.summon?.events.at(-1);
@@ -147,7 +152,7 @@ export interface CharacterPose {
 }
 
 function heading(defender: GarrisonDefender, battle: Battle, flying: boolean) {
-  const target = battle.units.find((u) => u.id === defender.target);
+  const target = defender.target === null ? undefined : unitIndex(battle).get(defender.target);
   const last = defender.attacks.at(-1);
   const point = !flying && !defender.attacking && defender.path[0] ? defender.path[0] : target;
   return {
@@ -197,11 +202,19 @@ export function characterPose(
   const age = Math.max(0, battle.elapsed - defender.spawnedAt);
   const { dx, dy } = heading(defender, battle, stats.flying);
   const facing = characterFacing(dx, dy);
-  const special = spawnOrSummonRow(defender, battle.elapsed, animation, states, facing.view, reduced);
+  const special = spawnOrSummonRow(
+    defender,
+    battle.elapsed,
+    animation,
+    states,
+    facing.view,
+    reduced,
+  );
   const attack = special
     ? null
     : characterAttackTime(defender, battle.elapsed, animation, facing.view, reduced);
-  const target = battle.units.find((u) => u.id === defender.target && u.hp > 0);
+  const found = defender.target === null ? undefined : unitIndex(battle).get(defender.target);
+  const target = found && found.hp > 0 ? found : undefined;
   // A concealed Royal Ghost walks straight to its target without a path.
   const concealed = (defender.stealthUntil ?? 0) > battle.elapsed;
   const moving =
@@ -250,7 +263,8 @@ export function characterBarHeight(animation: string) {
     for (const item of items) {
       if ('group' in item) visit(item.group);
       else
-        for (const [i, v] of nativeVertices(item).entries()) if (i % 4 === 1) top = Math.min(top, v);
+        for (const [i, v] of nativeVertices(item).entries())
+          if (i % 4 === 1) top = Math.min(top, v);
     }
   };
   visit(poses);
@@ -270,7 +284,9 @@ export function characterLocator(
   const graph = characterArt(animation).graph;
   const clip = graph.clips[graph.exports[exportName]];
   const slot = clip.names.indexOf(name);
-  const placement = clip.frames[clip.timeline[frame % clip.timeline.length]].find((p) => p[0] === slot);
+  const placement = clip.frames[clip.timeline[frame % clip.timeline.length]].find(
+    (p) => p[0] === slot,
+  );
   if (slot < 0 || !placement) return undefined;
   const matrix = nativeMatrix([scale * mirror, 0, 0, 0, scale, 0], graph.matrices[placement[1]]);
   return { x: matrix[2], y: matrix[5] };

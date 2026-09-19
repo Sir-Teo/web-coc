@@ -89,11 +89,16 @@ export const PROJECTILE_GROUP_ART: Record<string, CharacterGraphEntry> = {
   bowler: entry(boulders, 'character-projectiles-bowler'),
   'lava-hound': entry(houndShots, 'character-projectiles-lava-hound'),
 };
+const projectileCache = new Map<string, CharacterGraphEntry>();
 /** The graph holding a projectile row's export: its later group, else its original file. */
 export function projectileArt(name: string, swf: string) {
+  const cacheKey = `${name}\n${swf}`;
+  const known = projectileCache.get(cacheKey);
+  if (known) return known;
   const group = Object.entries(PROJECTILE_GROUPS).find(([, names]) => names.includes(name))?.[0];
   const art = group ? PROJECTILE_GROUP_ART[group] : PROJECTILE_ART[swf];
   if (!art) throw Error(`Missing native projectile art: ${name}`);
+  projectileCache.set(cacheKey, art);
   return art;
 }
 /** Resolve graph aliases (GolemSmall_lvl6 names exactly the Golem_lvl6 exports). */
@@ -103,13 +108,19 @@ const aliasTarget = (animation: string) => {
   );
   return alias ? CHARACTER_GRAPHS[CHARACTER_GRAPH_ALIASES[alias]].animation! : animation;
 };
+// Several lookups per garrison defender per frame: resolve each animation name once.
+const artCache = new Map<string, CharacterGraphEntry>();
 export function characterArt(animation: string) {
+  const known = artCache.get(animation);
+  if (known) return known;
   const target = aliasTarget(animation);
   const key = Object.keys(CHARACTER_ART).find(
     (name) => name.replaceAll(' ', '') === target.replaceAll(' ', ''),
   );
   if (!key) throw Error(`Missing native character art: ${animation}`);
-  return CHARACTER_ART[key];
+  const art = CHARACTER_ART[key];
+  artCache.set(animation, art);
+  return art;
 }
 /** Imported previews (idle frame zero, two pixels per native unit) and their padded icons. */
 export function characterPreview(animation: string) {

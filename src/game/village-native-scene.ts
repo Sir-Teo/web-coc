@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import { BUILDINGS, type BuildingKind, sourceKind } from './data';
 import type { Building, Battle } from './model';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { nativeMeshTexture } from './native-mesh-scene';
 import {
   nativeScenePoses,
@@ -37,14 +37,78 @@ const packKey = (kind: string, variant?: string) =>
 const packPath = (kind: string, variant?: string) =>
   variant ? packs[sourceKind(kind)]?.variants?.[variant]?.path : packs[sourceKind(kind)]?.path;
 
+/** Frame count of a graph's `resource` slot (storage fill), or 0 without one. Cached per graph. */
+const resourceFrames = new WeakMap<NativeMeshGraph, number>();
+export function nativeResourceFrames(graph: NativeMeshGraph) {
+  let frames = resourceFrames.get(graph);
+  if (frames === undefined) {
+    frames = 0;
+    // Same resolution as before: the last `resource` slot found wins.
+    for (const clip of Object.values(graph.clips))
+      for (const [slot, name] of clip.names.entries())
+        if (name === 'resource') frames = graph.clips[clip.children[slot]]?.timeline.length ?? 1;
+    resourceFrames.set(graph, frames);
+  }
+  return frames;
+}
+
+/**
+ * True when every clip reachable from the export has a single frame: its pose is then the same
+ * at every clock (controls still apply and are part of the render signature).
+ */
+const staticExports = new WeakMap<NativeMeshGraph, Map<string, boolean>>();
+export function nativeStaticExport(graph: NativeMeshGraph, name: string) {
+  let cache = staticExports.get(graph);
+  if (!cache) staticExports.set(graph, (cache = new Map()));
+  let result = cache.get(name);
+  if (result === undefined) {
+    result = true;
+    const root = graph.exports[name];
+    const seen = new Set<number>();
+    const stack = root === undefined ? [] : [root];
+    while (stack.length && result) {
+      const id = stack.pop()!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const clip = graph.clips[id];
+      if (!clip) continue;
+      if (clip.timeline.length > 1) result = false;
+      for (const child of clip.children) stack.push(child);
+    }
+    cache.set(name, result);
+  }
+  return result;
+}
+
+const graphIds = new WeakMap<NativeMeshGraph, number>();
+let nextGraphId = 1;
+const graphId = (graph: NativeMeshGraph) => {
+  let id = graphIds.get(graph);
+  if (id === undefined) graphIds.set(graph, (id = nextGraphId++));
+  return id;
+};
+
+interface ViewEntry {
+  view: NativeSceneView;
+  /** Everything the last render depended on; an unchanged signature skips the render. */
+  signature?: string;
+  /** Object list tagged with the building id (first and last object, and count). */
+  tagged?: { first: unknown; last: unknown; count: number };
+}
+
 /** Source timelines are fetched only for families actually visible in the village or battle. */
 export class VillageNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
-  private views = new Map<string, NativeSceneView>();
+  /** Scene views per building id, then per pack scene. */
+  private views = new Map<number, Map<string, ViewEntry>>();
+  /** Buildings whose views are currently hidden by the viewport cull. */
+  private hidden = new Set<number>();
   private aims = new Map<number, Point>();
   private alive = true;
   private placement?: { building: Building; valid: boolean };
+  private seen = new Set<number>();
+  private used = new Set<string>();
   preview(building?: Building, valid = true) {
     this.placement =
       building && hasVillageNativeArt(building.kind)
@@ -56,7 +120,16 @@ export class VillageNativePresentation {
     private scene: Phaser.Scene,
     private notify: (message: string) => void,
     private storageFill: (resource: 'gold' | 'elixir') => number,
-  ) {}
+  ) {
+    // Skipped renders never repaint isolated group buffers: context loss must force them.
+    (
+      scene.game?.renderer as { on?: (event: string, fn: () => void, context?: unknown) => void }
+    )?.on?.('losewebgl', this.invalidate, this);
+  }
+  private invalidate() {
+    for (const entries of this.views.values())
+      for (const entry of entries.values()) entry.signature = undefined;
+  }
   private async load(kind: BuildingKind | string, variant?: string) {
     const key = packKey(kind, variant);
     const path = packPath(kind, variant);
@@ -88,13 +161,24 @@ export class VillageNativePresentation {
       console.error('Native village artwork', key, error);
     }
   }
+  private drop(id: number) {
+    const entries = this.views.get(id);
+    if (!entries) return;
+    for (const entry of entries.values()) entry.view.destroy();
+    this.views.delete(id);
+    this.hidden.delete(id);
+  }
   clear() {
-    for (const view of this.views.values()) view.destroy();
-    this.views.clear();
+    for (const id of [...this.views.keys()]) this.drop(id);
     this.aims.clear();
   }
   destroy() {
     this.alive = false;
+    (
+      this.scene.game?.renderer as {
+        off?: (event: string, fn: () => void, context?: unknown) => void;
+      }
+    )?.off?.('losewebgl', this.invalidate, this);
     this.clear();
   }
   render(
@@ -104,28 +188,55 @@ export class VillageNativePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
-    const wanted = new Set<string>();
-    const cam = (this.scene as unknown as { cameras?: { main?: { worldView?: { centerX: number; centerY: number; width: number; height: number } } } }).cameras?.main;
+    const seen = this.seen;
+    seen.clear();
+    const cam = (
+      this.scene as unknown as {
+        cameras?: {
+          main?: {
+            worldView?: { centerX: number; centerY: number; width: number; height: number };
+            zoomX?: number;
+            zoomY?: number;
+          };
+        };
+      }
+    ).cameras?.main;
     const camView = cam?.worldView;
+    // Group buffers follow the physical zoom (NativeSceneView's density): part of the signature.
+    const density = quantizedDensity(Math.max(1, cam?.zoomX ?? 1, cam?.zoomY ?? 1));
     const cx = camView?.centerX ?? 0;
     const cy = camView?.centerY ?? 0;
     const hw = (camView?.width ?? 0) / 2;
     const hh = (camView?.height ?? 0) / 2;
-    for (const b of [...buildings, ...(this.placement ? [this.placement.building] : [])]) {
+    const count = buildings.length + (this.placement ? 1 : 0);
+    for (let i = 0; i < count; i++) {
+      const b = i < buildings.length ? buildings[i] : this.placement!.building;
       if (!hasVillageNativeArt(b.kind) || b.npc) continue;
+      const size = BUILDINGS[b.kind].size;
       // Viewport cull before pose sampling; retain hidden views so scrolling
       // back never reallocates their RenderTextures.
-      const earlyPoint = iso(b.x + BUILDINGS[b.kind].size / 2, b.y + BUILDINGS[b.kind].size / 2);
+      const earlyPoint = iso(b.x + size / 2, b.y + size / 2);
       if (camView && b.id !== -1) {
         const margin = 450;
-        if (Math.abs(earlyPoint.x - cx) > hw + margin || Math.abs(earlyPoint.y - cy) > hh + margin) {
-          const prefix = `${b.id}:`;
-          for (const [key, existing] of this.views)
-            if (key.startsWith(prefix)) {
-              wanted.add(key);
-              for (const object of existing.objects) object.setVisible(false);
+        if (
+          Math.abs(earlyPoint.x - cx) > hw + margin ||
+          Math.abs(earlyPoint.y - cy) > hh + margin
+        ) {
+          const entries = this.views.get(b.id);
+          if (entries) {
+            seen.add(b.id);
+            if (!this.hidden.has(b.id)) {
+              this.hidden.add(b.id);
+              for (const entry of entries.values()) {
+                for (const object of entry.view.objects) object.setVisible(false);
+                // Reshow through a full render.
+                entry.signature = undefined;
+              }
             }
-          sprites.get(b.id)?.setVisible(true);
+            // The native views stand in for this building; its fallback stays hidden off screen.
+            const fallback = sprites.get(b.id);
+            if (fallback?.visible) fallback.setVisible(false);
+          }
           continue;
         }
       }
@@ -144,18 +255,16 @@ export class VillageNativePresentation {
         seconds - trap.activatedAt < nativeTrapValues(b.kind, b.level).duration;
       const fields =
         b.hp <= 0
-          ? ['ExportNameDamaged']
+          ? DAMAGED
           : trap?.resolved && !spinning
-            ? ['ExportNameBroken']
+            ? BROKEN
             : trap
-              ? ['ExportNameTriggered']
+              ? TRIGGERED
               : b.constructing
-                ? ['ExportNameBase', 'ExportNameConstruction']
-                : [
-                    'ExportNameBase',
-                    'ExportName',
-                    ...(b.upgradeEnd ? ['ExportNameBuildAnim'] : []),
-                  ];
+                ? CONSTRUCTION
+                : b.upgradeEnd
+                  ? UPGRADING
+                  : IDLE;
       // Battle bodies (turret aim, attack, activation and mode) of the Town Hall 11-18 defenses.
       const source = (field: string, variant?: string) => {
         const from = variant ? this.packs.get(packKey(b.kind, variant)) : pack;
@@ -183,8 +292,22 @@ export class VillageNativePresentation {
             )
           : undefined;
       if (body?.aim && b.id !== -1) this.aims.set(b.id, body.aim);
-      const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * BUILDINGS[b.kind].size];
-      const poses = new Map<string, { prefix: string; poses: NativeScenePose[] }>();
+      const root: NativeMatrix = [1.2, 0, 0, 0, 1.2, -32 * size];
+      const tintedPreview = b.id === -1 && !this.placement?.valid;
+      // Resolve fields to scene groups and their render signatures before sampling any pose.
+      const groups = new Map<
+        string,
+        {
+          prefix: string;
+          parts: {
+            graph: NativeMeshGraph;
+            name: string;
+            clock: number;
+            controls: Record<string, number | false>;
+          }[];
+          signature: string;
+        }
+      >();
       for (const field of fields) {
         const selected =
           field === 'ExportName' && body?.field ? source(body.field, body.variant) : source(field);
@@ -200,58 +323,109 @@ export class VillageNativePresentation {
               : trap
                 ? Math.max(0, seconds - trap.activatedAt)
                 : seconds;
-        let fraction = 0;
-        if (b.kind === 'goldstorage' || b.kind === 'elixirstorage')
-          fraction = this.storageFill(b.kind === 'goldstorage' ? 'gold' : 'elixir');
-        else
-          fraction =
-            b.stored /
-            Math.max(1, progression.buildings[b.kind].levels[b.level - 1]?.productionCapacity ?? 1);
         const controls: Record<string, number | false> =
           field === 'ExportName' && body ? { ...body.controls } : {};
-        for (const clip of Object.values(graph.clips))
-          for (const [slot, name] of clip.names.entries())
-            if (name === 'resource') {
-              const frames = graph.clips[clip.children[slot]]?.timeline.length ?? 1;
-              controls.resource = Math.round(Math.max(0, Math.min(1, fraction)) * (frames - 1));
-            }
-        const source_ = nativeScenePoses(graph, ref.export, clock, controls, root);
-        if (b.id === -1 && !this.placement?.valid)
-          for (const pose of source_)
-            pose.multiply = pose.multiply.map((v, channel) =>
-              channel === 1 || channel === 2 ? v * 0.45 : v,
-            );
+        const resource = nativeResourceFrames(graph);
+        if (resource) {
+          const fraction =
+            b.kind === 'goldstorage' || b.kind === 'elixirstorage'
+              ? this.storageFill(b.kind === 'goldstorage' ? 'gold' : 'elixir')
+              : b.stored /
+                Math.max(
+                  1,
+                  progression.buildings[b.kind].levels[b.level - 1]?.productionCapacity ?? 1,
+                );
+          controls.resource = Math.round(Math.max(0, Math.min(1, fraction)) * (resource - 1));
+        }
         const key = `${packKey(b.kind, variant)}:${ref.scene}`;
-        const entry = poses.get(key) ?? {
-          prefix: `village:${packKey(b.kind, variant)}:${ref.scene}`,
-          poses: [],
-        };
-        entry.poses.push(...source_);
-        poses.set(key, entry);
+        let group = groups.get(key);
+        if (!group)
+          groups.set(
+            key,
+            (group = {
+              prefix: `village:${packKey(b.kind, variant)}:${ref.scene}`,
+              parts: [],
+              signature: '',
+            }),
+          );
+        group.parts.push({ graph, name: ref.export, clock, controls });
+        // Poses depend only on the integer root frame (see sampleNativeScene) and controls;
+        // single-frame exports look the same at every clock.
+        const fps = graph.clips[graph.exports[ref.export]]?.fps ?? 1;
+        const frame = nativeStaticExport(graph, ref.export)
+          ? 0
+          : Math.floor((Number.isFinite(clock) ? Math.max(0, clock) : 0) * fps + 1e-9);
+        let controlKey = '';
+        for (const name in controls) controlKey += `${name}=${controls[name]},`;
+        group.signature += `${graphId(graph)}/${ref.export}/${frame}/${controlKey};`;
       }
-      if (!poses.size) continue;
-      sprites.get(b.id)?.setVisible(false);
+      if (!groups.size) continue;
+      seen.add(b.id);
+      this.hidden.delete(b.id);
+      const fallback = sprites.get(b.id);
+      if (fallback?.visible) fallback.setVisible(false);
       const point = earlyPoint;
+      let entries = this.views.get(b.id);
+      if (!entries) this.views.set(b.id, (entries = new Map()));
+      const used = this.used;
+      used.clear();
       let order = 0;
-      for (const [name, entry] of poses) {
-        const key = `${b.id}:${b.kind}:${name}`;
-        wanted.add(key);
-        let view = this.views.get(key);
-        if (!view) this.views.set(key, (view = new NativeSceneView(this.scene, entry.prefix)));
-        view.render(
-          entry.poses,
-          point.x,
-          point.y,
-          b.id === -1 ? 6000 + order++ * 0.01 : point.y + order++ * 0.01,
-          b.id === -1 ? 0.72 : b.constructing ? 0.8 : 1,
-        );
-        for (const object of view.objects) object.setData('nativeVillage', b.id);
+      for (const [name, group] of groups) {
+        const key = `${b.kind}:${name}`;
+        used.add(key);
+        let entry = entries.get(key);
+        if (!entry)
+          entries.set(key, (entry = { view: new NativeSceneView(this.scene, group.prefix) }));
+        const depth = b.id === -1 ? 6000 + order++ * 0.01 : point.y + order++ * 0.01;
+        const alpha = b.id === -1 ? 0.72 : b.constructing ? 0.8 : 1;
+        const signature = `${group.signature}|${point.x},${point.y},${depth},${alpha},${density}`;
+        // Static walls and idle buildings: nothing baked into the view changed, skip the
+        // resample, retessellation and object updates entirely. The placement preview (tinted
+        // per validity) always renders.
+        if (b.id !== -1 && entry.signature === signature) continue;
+        const poses: NativeScenePose[] = [];
+        for (const part of group.parts) {
+          const sampled = nativeScenePoses(part.graph, part.name, part.clock, part.controls, root);
+          if (tintedPreview)
+            for (const pose of sampled)
+              pose.multiply = pose.multiply.map((v, channel) =>
+                channel === 1 || channel === 2 ? v * 0.45 : v,
+              );
+          for (const pose of sampled) poses.push(pose);
+        }
+        entry.view.render(poses, point.x, point.y, depth, alpha);
+        entry.signature = b.id === -1 ? undefined : signature;
+        // Tag objects with the building id when the drawn object list changes.
+        const objects = entry.view.objects;
+        const tagged = entry.tagged;
+        if (
+          !tagged ||
+          tagged.count !== objects.length ||
+          tagged.first !== objects[0] ||
+          tagged.last !== objects[objects.length - 1]
+        ) {
+          for (const object of objects)
+            if (object.getData('nativeVillage') !== b.id) object.setData('nativeVillage', b.id);
+          entry.tagged = {
+            first: objects[0],
+            last: objects[objects.length - 1],
+            count: objects.length,
+          };
+        }
       }
+      for (const [key, entry] of entries)
+        if (!used.has(key)) {
+          entry.view.destroy();
+          entries.delete(key);
+        }
     }
-    for (const [key, view] of this.views)
-      if (!wanted.has(key)) {
-        view.destroy();
-        this.views.delete(key);
-      }
+    for (const id of this.views.keys()) if (!seen.has(id)) this.drop(id);
   }
 }
+
+const DAMAGED = ['ExportNameDamaged'];
+const BROKEN = ['ExportNameBroken'];
+const TRIGGERED = ['ExportNameTriggered'];
+const CONSTRUCTION = ['ExportNameBase', 'ExportNameConstruction'];
+const UPGRADING = ['ExportNameBase', 'ExportName', 'ExportNameBuildAnim'];
+const IDLE = ['ExportNameBase', 'ExportName'];

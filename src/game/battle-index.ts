@@ -1,63 +1,54 @@
 import type { Battle, Building, Unit } from './model';
+import type { Defender } from './defenders';
 
 /**
- * Per-frame id lookups for presentations. Every defense used to call `battle.units.find` (and
- * projectiles `battle.buildings.find`) each frame; this builds one map per simulation sample and
- * reuses it until `battle.elapsed` or the list itself changes. Read-only: nothing here mutates
- * the battle or feeds back into the simulation.
+ * Id lookups shared by presentation layers within one rendered frame. Each index is rebuilt at
+ * most once per simulation step (keyed by the array, its length and the battle clock), so a
+ * render pass never pays a linear `find` per lookup and never reads a stale entry after a step.
+ * Read-only: nothing here mutates the battle or feeds back into the simulation.
  */
-interface BattleIndex {
+interface Entry<T> {
+  length: number;
   elapsed: number;
-  unitList?: readonly Unit[];
-  unitCount: number;
-  units?: Map<number, Unit>;
-  buildingList?: readonly Building[];
-  buildingCount: number;
-  buildings?: Map<number, Building>;
+  map: Map<number, T>;
 }
-const indexes = new WeakMap<Battle, BattleIndex>();
+const caches = new WeakMap<object, Entry<unknown>>();
+const EMPTY: Defender[] = [];
 
-function index(battle: Battle) {
-  let entry = indexes.get(battle);
-  if (!entry || entry.elapsed !== battle.elapsed) {
-    entry = { elapsed: battle.elapsed, unitCount: -1, buildingCount: -1 };
-    indexes.set(battle, entry);
-  }
-  return entry;
+function index<T extends { id: number }>(list: readonly T[], elapsed: number): Map<number, T> {
+  const hit = caches.get(list) as Entry<T> | undefined;
+  if (hit && hit.length === list.length && hit.elapsed === elapsed) return hit.map;
+  const map = hit?.map ?? new Map<number, T>();
+  map.clear();
+  // First occurrence wins, as with Array.prototype.find.
+  for (const item of list) if (!map.has(item.id)) map.set(item.id, item);
+  caches.set(list, { length: list.length, elapsed, map });
+  return map;
 }
+
+export const buildingIndex = (battle: Pick<Battle, 'buildings' | 'elapsed'>) =>
+  index<Building>(battle.buildings, battle.elapsed);
+export const unitIndex = (battle: Pick<Battle, 'units' | 'elapsed'>) =>
+  index<Unit>(battle.units, battle.elapsed);
+export const defenderIndex = (battle: Pick<Battle, 'defenders' | 'elapsed'>) =>
+  index<Defender>(battle.defenders ?? EMPTY, battle.elapsed);
+
 /** The battle unit with this id (any state), or undefined. */
-export function battleUnit(battle: Battle, id: number | null | undefined): Unit | undefined {
-  if (id === null || id === undefined) return undefined;
-  const entry = index(battle);
-  // Tests and tools push units between samples; a changed list rebuilds the map.
-  if (!entry.units || entry.unitList !== battle.units || entry.unitCount !== battle.units.length) {
-    entry.units = new Map();
-    for (const unit of battle.units) if (!entry.units.has(unit.id)) entry.units.set(unit.id, unit);
-    entry.unitList = battle.units;
-    entry.unitCount = battle.units.length;
-  }
-  return entry.units.get(id);
+export function battleUnit(
+  battle: Pick<Battle, 'units' | 'elapsed'>,
+  id: number | null | undefined,
+): Unit | undefined {
+  return id === null || id === undefined ? undefined : unitIndex(battle).get(id);
 }
 /** The battle building with this id, or undefined. */
 export function battleBuilding(
-  battle: Battle,
+  battle: Pick<Battle, 'buildings' | 'elapsed'>,
   id: number | null | undefined,
 ): Building | undefined {
-  if (id === null || id === undefined) return undefined;
-  const entry = index(battle);
-  if (
-    !entry.buildings ||
-    entry.buildingList !== battle.buildings ||
-    entry.buildingCount !== battle.buildings.length
-  ) {
-    entry.buildings = new Map();
-    for (const building of battle.buildings)
-      if (!entry.buildings.has(building.id)) entry.buildings.set(building.id, building);
-    entry.buildingList = battle.buildings;
-    entry.buildingCount = battle.buildings.length;
-  }
-  return entry.buildings.get(id);
+  return id === null || id === undefined ? undefined : buildingIndex(battle).get(id);
 }
 /** The unit a defense currently targets, as `battle.defenseTargets` records it. */
-export const battleDefenseTarget = (battle: Battle, towerId: number) =>
-  battleUnit(battle, battle.defenseTargets[towerId]);
+export const battleDefenseTarget = (
+  battle: Pick<Battle, 'units' | 'elapsed' | 'defenseTargets'>,
+  towerId: number,
+) => battleUnit(battle, battle.defenseTargets[towerId]);
