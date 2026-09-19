@@ -29,7 +29,7 @@ Pumpkin Bombs deal 25 ground splash damage, trigger within 1.5 tiles and affect 
 
 ## Timing and results
 
-Campaign scouting waits indefinitely for the first troop, hero or spell. Combat has no timeout: destruction, exhaustion of usable attackers/spells, surrender or suspending a committed attack resolves it. Trophy balances are unchanged on wins, losses and surrender. Native dependency edges determine unlocks; Payback and Goblin Forest are always open. Later attempts can improve saved stars. Local practice retains its 30-second preparation and 180-second attack limit and does not consume troops, spells or campaign inventory.
+Campaign scouting waits indefinitely for the first troop, hero or spell. Combat has no timeout: destruction, exhaustion of usable attackers/spells, surrender or suspending a committed attack resolves it. From combat version 54, summoned units (Witch skeletons, hero and spell summons, units spawned by other units) cannot hold a battle open alone: once nothing is left to deploy and the only living fighters are summons, the battle ends after 30 seconds (`STALLED_BATTLE_SECONDS`) in which no building other than a Wall or trap, and no defender, lost hit points. Before this a level-1 skeleton could stand hitting a 7,000-hit-point Wall for several minutes with no way to finish the raid. Troops and heroes the player deployed are never timed out, and any damage to a structure or defender restarts the clock. Recordings before version 54 keep the old rule. Trophy balances are unchanged on wins, losses and surrender. Native dependency edges determine unlocks; Payback and Goblin Forest are always open. Later attempts can improve saved stars. Local practice retains its 30-second preparation and 180-second attack limit and does not consume troops, spells or campaign inventory.
 
 This follows Supercell's [Single Player Attacks](https://support.supercell.com/clash-of-clans/en/articles/single-player-attacks-2.html) rules for unlimited time, unchanged trophies and star-based progression. Multiple native dependencies are interpreted as alternative paths (OR). This matches the branching map interpretation but still needs direct native-client interaction verification; the source records alone do not establish the Boolean rule.
 
@@ -76,7 +76,6 @@ The native combat matrix exposed expensive route searches in Chimp in Armor and 
 ## Native verification
 
 825 model tests pass, including all 132 native battle combinations and full-layout/replay/save checks. Twelve final affected browser scenarios pass per engine at DPR 2. General and campaign production checks pass in Chromium and WebKit; Chromium additionally verifies offline reload and portable sharing with exact remaining loot. The source, runtime data, build cache, logs and known gaps are captured in `output/playtest/native-campaign-verification.json`. The complete game, remaining campaign mechanics, native pixel identity and physical-device qualification remain unfinished.
-
 
 ## Dark Elixir and defense mode groundwork
 

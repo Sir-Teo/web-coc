@@ -581,6 +581,21 @@ export interface Battle {
   nativeContentExpansion?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
+  /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
+  separationCap?: true;
+  /**
+   * Version 54: once nothing is left to deploy, summoned units alone cannot hold a battle
+   * open after STALLED_BATTLE_SECONDS without damage to a building or defender.
+   */
+  stalledSupportEnds?: true;
+  /**
+   * Version 54: fallen units and skeletons drop their route waypoints. Nothing reads them, but
+   * archived battle-state hashes include them, so older versions keep them.
+   */
+  dropFallenPaths?: true;
+  /** Version 54: last time a structure or defender lost hit points, and their total then. */
+  progressAt?: number;
+  progressHp?: number;
   siegeDeployed?: boolean;
   nativeSpells?: NativeSpellCast[];
   nativeSpellSequence?: number;
@@ -3962,7 +3977,12 @@ export class GameModel {
         }
       }
     }
-    separateUnits(b.units, solidBuildings, !!b.nativeSubtiles);
+    separateUnits(
+      b.units,
+      solidBuildings,
+      !!b.nativeSubtiles,
+      b.separationCap ? SEPARATION_TILES_PER_SECOND * dt : undefined,
+    );
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
     if (stepTraps(b, dt, this.onEffect)) this.changed();
     this.stepLate('traps', dt);
@@ -4153,6 +4173,9 @@ export class GameModel {
     for (const u of b.units) {
       if (u.hp > 0) continue;
       u.defeatedAt ??= b.elapsed;
+      // Nothing routes a fallen unit (a revived hero gets a fresh path), so its waypoints only
+      // weighed down every keyframe clone and save of the battle.
+      if (b.dropFallenPaths && u.path.length) u.path = [];
       if (u.spent) continue;
       u.spent = true;
       if (native && nativeBehavior(b, u.kind)) {
@@ -4179,6 +4202,7 @@ export class GameModel {
     if (native && b.units.some((u) => u.native?.recalled))
       b.units = b.units.filter((u) => !u.native?.recalled);
     this.refreshBattleScore();
+    const stalled = b.stalledSupportEnds ? this.trackBattleProgress(b) : false;
     if (
       b.destruction === 100 ||
       (b.practice && b.elapsed >= BATTLE_SECONDS) ||
@@ -4186,7 +4210,9 @@ export class GameModel {
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
         !lateCampaignPending(b) &&
-        !b.units.some((u) => u.hp > 0 && !this.supportOnly(b, u.kind)) &&
+        !b.units.some(
+          (u) => u.hp > 0 && !this.supportOnly(b, u.kind) && !(stalled && summonedUnit(u)),
+        ) &&
         !b.nativeDeaths?.some((blast) => !blast.resolved) &&
         !b.nativeChains?.length &&
         !b.nativePendingSpawns?.length &&
@@ -4200,6 +4226,18 @@ export class GameModel {
         !b.nativeHeroes?.some((hero) => hero.unitId === null))
     )
       this.finishBattle();
+  }
+  /**
+   * Version 54 stall clock: remembers when any building (walls and traps aside) or defender
+   * last lost hit points. True once that is STALLED_BATTLE_SECONDS ago.
+   */
+  private trackBattleProgress(b: Battle) {
+    let hp = 0;
+    for (const v of b.buildings) if (v.kind !== 'wall' && !isTrap(v.kind)) hp += Math.max(0, v.hp);
+    for (const d of b.defenders ?? []) hp += Math.max(0, d.hp);
+    if (b.progressHp === undefined || hp < b.progressHp) b.progressAt = b.elapsed;
+    b.progressHp = hp;
+    return b.elapsed - (b.progressAt ?? 0) >= STALLED_BATTLE_SECONDS;
   }
   /** Late campaign families run at fixed points in each simulation step. */
   private stepLate(phase: LatePhase, dt: number) {
@@ -5302,6 +5340,14 @@ function searchTilePath(
   return path;
 }
 
+/**
+ * Version 54: a battle whose only fighters are summons (Witch skeletons, hero and spell
+ * summons, spawned units) ends after this long without damaging a building or defender,
+ * once the player has nothing left to deploy. See docs/CAMPAIGN-RULES.md.
+ */
+export const STALLED_BATTLE_SECONDS = 30;
+/** Units the player did not deploy: spawned by another unit, a hero ability or a spell. */
+export const summonedUnit = (u: Unit) => !!u.summoned || u.native?.owner !== undefined;
 /** Version 54: the most crowd separation may move one unit in a second (tiles). */
 export const SEPARATION_TILES_PER_SECOND = 2;
 // Reused separation buckets: per (tile, layer) linked lists in insertion order.

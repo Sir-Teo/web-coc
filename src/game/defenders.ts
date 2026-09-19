@@ -214,7 +214,11 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       continue;
     }
     defender.attacking = false;
-    if (defender.hp <= 0) continue;
+    if (defender.hp <= 0) {
+      // A fallen skeleton never moves again; drop its waypoints from clones and saves.
+      if (battle.dropFallenPaths && defender.path.length) defender.path = [];
+      continue;
+    }
     const activeDt = Math.min(
       dt,
       Math.max(

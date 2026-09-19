@@ -266,7 +266,8 @@ describe('native defense combat', () => {
     const th = m.battle!.buildings.find((b) => b.kind === 'townhall')!;
     const units = deploy(m, 'swordsman', 41, 46, 6);
     expect(m.battle!.nativeDefenses?.[th.id]?.awakeAt).toBeUndefined();
-    run(m, 1);
+    // Version 54 caps crowd separation, so the stacked drop reaches the hall a step later.
+    run(m, 1.25);
     const awake = m.battle!.nativeDefenses?.[th.id]?.awakeAt;
     expect(awake).toBeDefined();
     run(m, 1.6);
