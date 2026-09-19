@@ -2,7 +2,7 @@ import { isPetUnitKind } from './native-units';
 import type Phaser from 'phaser';
 import { TROOPS, type TroopKind } from './data';
 import type { Battle, Building } from './model';
-import { nativeScenePoses, type NativeMeshGraph } from './native-mesh';
+import { nativeScenePosesShared, type NativeMeshGraph } from './native-mesh';
 import { nativeMeshTexture } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
 import { unitAttackIntervalScale } from './native-status';
@@ -298,7 +298,8 @@ export class TroopNativePresentation {
           (state.loop && clip ? unitAnimationPhase(u.id, clipSeconds(clip)) : 0);
       if (!state.loop && clip) seconds = Math.min(seconds, (clip.timeline.length - 1) / clip.fps);
       const scale = 0.6 * state.scale * (isShrunk(u, elapsed) ? 0.5 : 1);
-      const poses = nativeScenePoses(graph, name, seconds, {}, [
+      // Shared, read-only: units of one kind on the same frame reuse a single sample.
+      const poses = nativeScenePosesShared(graph, name, seconds, {}, [
         scale * (sx < 0 ? -1 : 1),
         0,
         0,
