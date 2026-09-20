@@ -29,6 +29,8 @@ interface State {
 interface Pack {
   levels: { level: number; states: Record<string, State> }[];
   scenes: Record<string, NativeMeshGraph>;
+  /** Rows by level (first match, as `find` returned), built when the pack is decoded. */
+  byLevel?: Map<number, Pack['levels'][number]>;
 }
 interface TroopView {
   scene: string;
@@ -147,7 +149,10 @@ export class TroopNativePresentation {
   }
   /** Whether this unit's native mesh drew this frame (scene.ts skips its fallback marker). */
   drewUnit(id: number) {
-    return !!this.views.get(id)?.view.objects.some((o) => o.visible);
+    const objects = this.views.get(id)?.view.objects;
+    if (!objects) return false;
+    for (let i = 0; i < objects.length; i++) if (objects[i].visible) return true;
+    return false;
   }
   /**
    * Whether a native view stands in for this unit: it drew or followed the unit last frame and
@@ -215,7 +220,7 @@ export class TroopNativePresentation {
       if (u.native?.recalled) {
         const owned = this.views.get(u.id);
         if (owned) {
-          owned.view.destroy();
+          owned.view.retire();
           this.views.delete(u.id);
         }
         sprites.get(u.id)?.setVisible(false);
@@ -265,9 +270,7 @@ export class TroopNativePresentation {
         sprites.get(u.id)?.setVisible(false);
         continue;
       }
-      const level = pack.levels.find(
-        (row) => row.level === (u.level ?? battle!.troopLevels?.[u.kind as TroopKind] ?? 1),
-      );
+      const level = levelRow(pack, u.level ?? battle!.troopLevels?.[u.kind as TroopKind] ?? 1);
       if (!level) continue;
       // Walk/idle and travel heading follow simulation steps, not rendered frames: the sim
       // runs at 20 Hz without interpolation, so most rendered frames see no displacement.
@@ -330,7 +333,7 @@ export class TroopNativePresentation {
       const mirror = sx < 0 ? -1 : 1;
       let owned = this.views.get(u.id);
       if (owned && owned.scene !== state.scene) {
-        owned.view.destroy();
+        owned.view.retire();
         this.views.delete(u.id);
         owned = undefined;
       }
@@ -401,9 +404,11 @@ export class TroopNativePresentation {
         if (object.getData('nativeTroop') !== u.id) object.setData('nativeTroop', u.id);
       owned.tagged = owned.view.objects.length;
     }
+    // Views of units that left the screen or died park their meshes for the next view: a
+    // camera pan across the army used to destroy and rebuild hundreds of meshes.
     for (const [id, { view }] of this.views)
       if (!wanted.has(id)) {
-        view.destroy();
+        view.retire();
         this.views.delete(id);
       }
     this.motion.prune(present);
@@ -418,6 +423,16 @@ export class TroopNativePresentation {
         ?.x ?? 1;
     return zoom / (density > 0 ? density : 1);
   }
+}
+
+/** The pack row for a level (first match, as `find` returned), through a map built on first use. */
+function levelRow(pack: Pack, level: number) {
+  let rows = pack.byLevel;
+  if (!rows) {
+    rows = pack.byLevel = new Map();
+    for (const row of pack.levels) if (!rows.has(row.level)) rows.set(row.level, row);
+  }
+  return rows.get(level);
 }
 
 const clipSeconds = (clip: { timeline: unknown[]; fps: number }) =>

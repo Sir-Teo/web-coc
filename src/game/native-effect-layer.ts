@@ -259,9 +259,10 @@ export class NativeEffectLayer {
     }
   }
   end() {
+    // Finished particles park their meshes in the scene pool for the next birth.
     for (const [key, view] of this.views)
       if (!this.used.has(key)) {
-        view.destroy();
+        view.retire();
         this.views.delete(key);
       }
     for (const key of this.trailPoints.keys())

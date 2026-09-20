@@ -98,7 +98,7 @@ export class NativeProjectilePresentation {
   ) {
     let entry = this.views.get(key);
     if (entry && entry.prefix !== prefix) {
-      entry.view.destroy();
+      entry.view.retire();
       this.views.delete(key);
       entry = undefined;
     }
@@ -128,7 +128,7 @@ export class NativeProjectilePresentation {
       this.history.clear();
       this.covered = covered;
       for (const [key, { view }] of this.views) {
-        view.destroy();
+        view.retire();
         this.views.delete(key);
       }
       this.layer.end();
@@ -301,9 +301,10 @@ export class NativeProjectilePresentation {
         );
       }
     }
+    // A landed or culled shot parks its meshes for the next one instead of splicing them out.
     for (const [key, { view }] of this.views)
       if (!shown.has(key)) {
-        view.destroy();
+        view.retire();
         this.views.delete(key);
       }
     this.layer.end();
