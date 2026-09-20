@@ -125,6 +125,7 @@ import { troopArt } from './troop-art';
 import { KING_ART, KING_DIRECTIONS, kingAtlas, kingTexture, kingPose } from './king-art';
 import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { configureQuadRendering } from './quad-renderer';
+import { RenderDetail } from './render-detail';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
@@ -255,6 +256,14 @@ export class VillageScene extends Phaser.Scene {
   private lastDeploy = { x: -99, y: -99 };
   private lastTap = { x: -99, y: -99, t: 0 };
   private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
+  /** Tile raster of the no-deploy zone, rebuilt with `boundary`. */
+  private blockedGrid = new Uint8Array(MAP_SIZE * MAP_SIZE);
+  /** Presentation detail level for this frame (see RenderDetail); the simulation ignores it. */
+  detailLevel = 0;
+  private detailGovernor = new RenderDetail();
+  /** CPU time of the previous frame's step and render submission, from the game loop events. */
+  private frameStartedAt = NaN;
+  private lastBusyMs = NaN;
   private pinchDistance = 0;
   private tick = 0;
   private renderClock = 0;
@@ -361,8 +370,9 @@ export class VillageScene extends Phaser.Scene {
   private effectTimeline = new EffectTimeline();
   private reducedCombatMotion = false;
   /** Pooled spark dots; live count is capped so heavy fights cannot spawn thousands of Arcs. */
-  private sparkPool: Phaser.GameObjects.Arc[] = [];
-  private liveSparks = new Set<Phaser.GameObjects.Arc>();
+  // Sparks are baked-dot images: Arc shapes each flush the batch (a filled path per dot).
+  private sparkPool: Phaser.GameObjects.Image[] = [];
+  private liveSparks = new Set<Phaser.GameObjects.Image>();
   constructor(model: GameModel, audio: AudioManager) {
     super('village');
     this.model = model;
@@ -475,6 +485,19 @@ export class VillageScene extends Phaser.Scene {
   }
   create() {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
+    // Frame CPU time feeds the detail governor: pre-step to post-render, not the vsync interval.
+    const frameStart = () => {
+      this.frameStartedAt = performance.now();
+    };
+    const frameEnd = () => {
+      this.lastBusyMs = performance.now() - this.frameStartedAt;
+    };
+    this.game.events.on('prestep', frameStart);
+    this.game.events.on('postrender', frameEnd);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off('prestep', frameStart);
+      this.game.events.off('postrender', frameEnd);
+    });
     // Transparent 1x1 fallback for troops without a walk sheet (TH8+ / siege /
     // super). Keeps the sprite pipeline alive without ever showing a roster card.
     if (!this.textures.exists('troop-fallback')) {
@@ -1275,10 +1298,22 @@ export class VillageScene extends Phaser.Scene {
       signature = ((signature * 31 + v.id) | 0) ^ (concealedTesla(b, v) ? 1 : 0);
     }
     if (signature === this.boundary.signature) return this.boundary.edges;
+    // Rasterize the no-deploy zone once per change with deployBlocked's rule (a tile center
+    // within 1.5 tiles of a standing, revealed, non-wall, non-trap building) instead of asking
+    // deployBlocked, an O(buildings) scan, for every tile and each of its neighbors.
+    const grid = this.blockedGrid;
+    grid.fill(0);
+    for (const v of b.buildings) {
+      if (v.hp <= 0 || v.kind === 'wall' || isTrap(v.kind) || concealedTesla(b, v)) continue;
+      const size = BUILDINGS[v.kind].size;
+      const x0 = Math.max(0, Math.floor(v.x - 2) + 1),
+        x1 = Math.min(MAP_SIZE - 1, Math.ceil(v.x + size + 1) - 1);
+      const y0 = Math.max(0, Math.floor(v.y - 2) + 1),
+        y1 = Math.min(MAP_SIZE - 1, Math.ceil(v.y + size + 1) - 1);
+      for (let y = y0; y <= y1; y++) grid.fill(1, y * MAP_SIZE + x0, y * MAP_SIZE + x1 + 1);
+    }
     const blocked = (x: number, y: number) =>
-      x < 1 || y < 1 || x > MAP_SIZE - 2 || y > MAP_SIZE - 2
-        ? true
-        : this.model.deployBlocked(x + 0.5, y + 0.5);
+      x < 1 || y < 1 || x > MAP_SIZE - 2 || y > MAP_SIZE - 2 || grid[y * MAP_SIZE + x] === 1;
     const edges: number[][] = [];
     for (let x = 1; x <= MAP_SIZE - 2; x++)
       for (let y = 1; y <= MAP_SIZE - 2; y++) {
@@ -1540,6 +1575,12 @@ export class VillageScene extends Phaser.Scene {
       this.interpolation.reset();
       this.pendingFx.length = 0;
       this.mode = mode;
+      // The ruin layer's texture is allocated during scouting, not on the first destroyed
+      // building mid-fight (a framebuffer completeness check stalls that frame).
+      if (mode === 'battle' && !this.ruinDecals?.scene) {
+        this.resetRuinDecals().setVisible(false);
+        this.ruinStamped.clear();
+      }
       if (!keepCamera) this.resetCamera();
     }
     this.prefetchArmyArt();
@@ -1800,6 +1841,33 @@ export class VillageScene extends Phaser.Scene {
     }
     this.lastRevision = this.model.revision;
     this.syncCount++;
+  }
+  /**
+   * Whether the one change since the last sync was a passive battle event: a deploy (the sprite
+   * pass creates unit sprites itself) or a sprung trap. Only trap sprites need restyling then.
+   */
+  private battlePassiveOnly() {
+    return (
+      !!this.model.battle &&
+      this.mode === 'battle' &&
+      this.passiveRevision === this.model.revision &&
+      this.lastRevision === this.model.revision - 1
+    );
+  }
+  /** The trap part of `syncBuilding`: spent fades and pumpkin frames follow the trap state. */
+  private syncTraps() {
+    const battle = this.model.battle!;
+    for (const b of battle.buildings) {
+      if (!isTrap(b.kind) && b.npc !== 'pumpkin-bomb') continue;
+      const im = this.sprites.get(b.id);
+      if (!im) continue;
+      const trap = battle.traps[b.id];
+      if (b.npc === 'pumpkin-bomb')
+        im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.state.settings.reducedMotion));
+      const alpha = trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1;
+      if (im.alpha !== alpha) im.setAlpha(alpha);
+    }
+    this.lastRevision = this.model.revision;
   }
   /** Whether every change since the last sync was a passive resource tick at home. */
   private passiveOnly() {
@@ -2497,6 +2565,10 @@ export class VillageScene extends Phaser.Scene {
    */
   private project = (x: number, y: number) =>
     this.interpolation.projectInto(new Phaser.Math.Vector2(), x, y);
+  /** `project` into a caller-owned point: no allocation per unit per frame. */
+  private projectInto = (out: { x: number; y: number }, x: number, y: number) => {
+    this.interpolation.projectInto(out, x, y);
+  };
   /** Inputs of the last full battle frame; see `sameBattleFrame`. */
   private frameKey = {
     battle: null as GameModel['battle'],
@@ -3044,6 +3116,8 @@ export class VillageScene extends Phaser.Scene {
       AIR_LIFT,
       this.unitSprites,
       battle ? this.buildingMap(battle.buildings) : undefined,
+      this.projectInto,
+      this.detailLevel,
     );
     this.drawDefenders();
     this.heroNativePresentation.render(
@@ -3156,6 +3230,43 @@ export class VillageScene extends Phaser.Scene {
         (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
       if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
       if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
+      // A native view stands in for this unit and hides its sprite every frame: only the
+      // shadow, the health bar (which the sprite pass owns) and the sprite's status tint
+      // (read as the unit's status by tools and specs) are kept up while it lasts.
+      if (!u.hero && u.hp > 0 && this.troopNativePresentation.hasView(u.id)) {
+        const status = unitStatusTint(u, battle);
+        const tint = status?.color ?? 0xffffff;
+        if (im.tintTopLeft !== tint || im.tintTopRight !== tint) {
+          if (tint === 0xffffff) im.clearTint();
+          else im.setTint(tint);
+        }
+        const tintMode = (status?.mode ?? Phaser.TintModes.MULTIPLY) as Phaser.TintModes;
+        if (im.tintMode !== tintMode) im.setTintMode(tintMode);
+        const sprung = (u.springUntil ?? 0) > battle.elapsed;
+        const lift = flying
+          ? AIR_LIFT
+          : sprung && !reduced
+            ? Math.sin(
+                (1 -
+                  Math.min(SPRING_AIRTIME, Math.max(0, (u.springUntil ?? 0) - battle.elapsed)) /
+                    SPRING_AIRTIME) *
+                  Math.PI,
+              ) * 45
+            : 0;
+        if (flying || sprung)
+          marks.put(
+            shadow,
+            p.x,
+            p.y,
+            (26 * shrinkScale) / 64,
+            (13 * shrinkScale) / 32,
+            0x1f2a16,
+            0.28,
+          );
+        if (u.hp < u.maxHp)
+          this.bar(p.x, p.y - lift - width, 22, u.hp / u.maxHp, 0x8dea68, this.unitBars);
+        continue;
+      }
       const defenderTarget =
         u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
       const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;
@@ -3993,9 +4104,11 @@ export class VillageScene extends Phaser.Scene {
     const remaining = MAX_SPARKS - this.liveSparks.size;
     if (remaining <= 0) return;
     const n = Math.min(count, remaining);
+    const shape = this.dotShape();
     for (let i = 0; i < n; i++) {
       const radius = 2 + Math.random() * 3;
-      let dot: Phaser.GameObjects.Arc | undefined;
+      const scale = radius / (DOT_RADIUS * shape.resolution);
+      let dot: Phaser.GameObjects.Image | undefined;
       while (this.sparkPool.length) {
         const candidate = this.sparkPool.pop()!;
         if ((candidate as unknown as { scene?: unknown }).scene) {
@@ -4005,14 +4118,20 @@ export class VillageScene extends Phaser.Scene {
       }
       if (dot)
         dot
-          .setRadius(radius)
-          .setFillStyle(color, 0.9)
+          .setScale(scale)
+          .setTint(color)
           .setPosition(x, y)
-          .setAlpha(1)
-          .setScale(1)
+          .setAlpha(0.9)
           .setVisible(true)
           .setActive(true);
-      else dot = this.add.circle(x, y, radius, color, 0.9).setDepth(8100);
+      else
+        dot = this.add
+          .image(x, y, shape.key, shape.frame)
+          .setOrigin(shape.originX, shape.originY)
+          .setScale(scale)
+          .setTint(color)
+          .setAlpha(0.9)
+          .setDepth(8100);
       if (dot.depth !== 8100) dot.setDepth(8100);
       this.liveSparks.add(dot);
       const target = dot;
@@ -4103,6 +4222,7 @@ export class VillageScene extends Phaser.Scene {
       this.model.state.settings.reducedMotion,
       iso,
       AIR_LIFT,
+      this.detailLevel,
     );
     const retained = this.retainedShots;
     retained.clear();
@@ -4167,6 +4287,11 @@ export class VillageScene extends Phaser.Scene {
   update(time: number, delta: number) {
     if (this.paused) return;
     this.renderClock = time;
+    this.detailLevel = this.detailGovernor.sample(
+      this.lastBusyMs,
+      this.model.battle && !this.model.battle.finished ? this.model.battle.units.length : 0,
+      delta,
+    );
     const dt = Math.min(delta / 1000, 0.1);
     if (!this.uiBlocked && !typingTarget(document.activeElement)) {
       let x = 0,
@@ -4196,6 +4321,7 @@ export class VillageScene extends Phaser.Scene {
     this.drainEffects();
     if (this.lastRevision !== this.model.revision) {
       if (this.passiveOnly()) this.passiveSync();
+      else if (this.battlePassiveOnly()) this.syncTraps();
       else this.sync();
     }
     if (

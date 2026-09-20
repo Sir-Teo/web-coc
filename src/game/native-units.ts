@@ -251,7 +251,16 @@ export interface NativeUnitStats {
 }
 const statsCache = new Map<string, NativeUnitStats>();
 /** Parsed once per character level; values keep client units converted to tiles and seconds. */
+/** Per (kind, requested level) front of statsCache: no key string or table lookup per call. */
+const statsByKind = new Map<string, Map<number, NativeUnitStats>>();
 export function nativeUnitStats(kind: string, level = 1): NativeUnitStats {
+  let byLevel = statsByKind.get(kind);
+  if (!byLevel) statsByKind.set(kind, (byLevel = new Map()));
+  let stats = byLevel.get(level);
+  if (!stats) byLevel.set(level, (stats = computeUnitStats(kind, level)));
+  return stats;
+}
+function computeUnitStats(kind: string, level: number): NativeUnitStats {
   const name = SOURCE[kind];
   if (!name) throw Error(`Unsupported native unit: ${kind}`);
   const table = UNIT_TABLE(kind);

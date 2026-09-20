@@ -1,7 +1,12 @@
 import Phaser from 'phaser';
 import { nativeBlendMode } from './native-blend';
 import { PART_DEPTH_STEP } from './unit-depth';
-import { configureNativeTriangleRendering, NATIVE_COLOR_TINT_MODE } from './quad-renderer';
+import {
+  configureNativeTriangleRendering,
+  NATIVE_ADDITIVE_TINT_MODE,
+  NATIVE_COLOR_TINT_MODE,
+} from './quad-renderer';
+import { nativeSceneStats } from './native-scene-flatten';
 import {
   nativeMeshTexture,
   nativeTriangles,
@@ -9,6 +14,7 @@ import {
   type NativeMeshPose,
   type NativeScenePose,
 } from './native-mesh';
+// NativeMeshPose is also the identity a drawn mesh remembers (NativeMesh.nativePose).
 
 export { nativeMeshTexture };
 
@@ -149,6 +155,7 @@ function tintedTexture(
     return { key, region };
   }
   tintTextures = scene.textures;
+  nativeSceneStats.bakes++;
   const canvas = document.createElement('canvas');
   canvas.width = region.width;
   canvas.height = region.height;
@@ -194,14 +201,45 @@ type NativeMesh = Phaser.GameObjects.Mesh2D & {
   blendMode: unknown;
   /** Render pass that last used this mesh; stale meshes are released. */
   nativeStamp: number;
+  /** The pose object last drawn: the same shared sample again needs only position and depth. */
+  nativePose?: NativeMeshPose;
+  /** Base color and blend of that pose, restored each frame before status tints combine with it. */
+  nativeTint: number;
+  nativeTint2: number;
+  nativeTintMode: number;
+  nativeBlend: number;
+  /** The real additive blend slot, for a status tint mode that must replace the additive tint. */
+  nativeAdditiveBlend?: number;
 };
+/**
+ * Parked meshes are interchangeable across views: one pool per scene bounds the hidden objects
+ * left on the display list, while a detached (group content) view keeps a few of its own.
+ */
+const sceneSpares = new WeakMap<Phaser.Scene, NativeMesh[]>();
+const SCENE_SPARE_LIMIT = 1024;
 
 /** Retained polygon meshes follow the caller's battle/replay clock, with no tweens. */
+/** Parked meshes kept per view; animation swaps a handful of leaf keys per frame at most. */
+const SPARE_LIMIT = 6;
+
 export class NativeMeshView {
   readonly meshes = new Map<string, Phaser.GameObjects.Mesh2D>();
+  private spare: NativeMesh[] = [];
   private textureKeys: string[] = [];
   private stamp = 0;
   private renderer: Phaser.Renderer.WebGL.WebGLRenderer;
+  /**
+   * Scene-attached additive leaves draw through the additive tint mode in the normal blend state
+   * (exact on the opaque backbuffer). Detached leaves compose into transparent buffers, whose
+   * alpha the real additive mode must keep, so they keep it.
+   */
+  private additiveTint: boolean;
+  /**
+   * Apply saturating leaf colors as a GPU tint (clamped after filtering) instead of baking the
+   * sampled texels: a per-color-step canvas bake and texture upload otherwise stalls the frame
+   * whenever many units flash at once. Off by default, where source fidelity wins.
+   */
+  gpuSaturate = false;
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
@@ -209,7 +247,7 @@ export class NativeMeshView {
     private detached = false,
   ) {
     this.renderer = scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-    configureNativeTriangleRendering(this.renderer);
+    this.additiveTint = configureNativeTriangleRendering(this.renderer) && !detached;
   }
   private baseTexture(id: number) {
     return (this.textureKeys[id] ??= nativeMeshTexture(this.prefix, id));
@@ -242,24 +280,35 @@ export class NativeMeshView {
       let tint = 0xffffff,
         tint2 = 0,
         mode = 0;
+      const additive = pose.blend === 8 && this.additiveTint;
+      if (additive) mode = NATIVE_ADDITIVE_TINT_MODE;
       let region: TintRegion | undefined;
       if (!identityMul || hasAdd) {
         if (
-          unit(m[0]) &&
-          unit(m[1]) &&
-          unit(m[2]) &&
-          a[0] >= 0 &&
-          a[1] >= 0 &&
-          a[2] >= 0 &&
-          // No texel can saturate, so transforming after bilinear filtering equals before.
-          m[0] + a[0] <= 1 &&
-          m[1] + a[1] <= 1 &&
-          m[2] + a[2] <= 1
+          // A folded group color applies after filtering, exactly as its group buffer's would.
+          pose.folded ||
+          (this.gpuSaturate &&
+            unit(m[0]) &&
+            unit(m[1]) &&
+            unit(m[2]) &&
+            unit(a[0]) &&
+            unit(a[1]) &&
+            unit(a[2])) ||
+          (unit(m[0]) &&
+            unit(m[1]) &&
+            unit(m[2]) &&
+            a[0] >= 0 &&
+            a[1] >= 0 &&
+            a[2] >= 0 &&
+            // No texel can saturate, so transforming after bilinear filtering equals before.
+            m[0] + a[0] <= 1 &&
+            m[1] + a[1] <= 1 &&
+            m[2] + a[2] <= 1)
         ) {
           tint = rgb(m);
           if (hasAdd) {
             tint2 = rgb(a);
-            mode = NATIVE_COLOR_TINT_MODE;
+            if (!additive) mode = NATIVE_COLOR_TINT_MODE;
           }
         } else {
           // Saturating colors clamp per texel before filtering: bake just those texels.
@@ -277,11 +326,34 @@ export class NativeMeshView {
         md = mat[4],
         my = mat[5];
       let mesh = this.meshes.get(pose.key) as NativeMesh | undefined;
+      if (mesh && mesh.nativePose === pose) {
+        // The same shared sample as last render: vertices, texture, blend and color are
+        // unchanged, so only the origin, depth and alpha can differ (and the base tint is
+        // restored under whatever a status tint combined into it).
+        mesh.nativeStamp = stamp;
+        if (mesh.tint !== mesh.nativeTint) mesh.tint = mesh.nativeTint;
+        if (mesh.tint2 !== mesh.nativeTint2) mesh.tint2 = mesh.nativeTint2;
+        if (mesh.tintMode !== mesh.nativeTintMode) mesh.tintMode = mesh.nativeTintMode;
+        if (mesh.blendMode !== mesh.nativeBlend) mesh.setBlendMode(mesh.nativeBlend);
+        if (mesh.x !== x || mesh.y !== y) mesh.setPosition(x, y);
+        if (assignDepth) {
+          const wantDepth = depth + order * PART_DEPTH_STEP;
+          if (mesh.depth !== wantDepth) mesh.setDepth(wantDepth);
+        }
+        const wantAlpha = alpha * pose.multiply[3];
+        if (mesh.alpha !== wantAlpha) mesh.setAlpha(wantAlpha);
+        if (!mesh.visible) mesh.setVisible(true);
+        continue;
+      }
+      // A leaf key that vanished a few frames ago left a parked mesh: reuse it instead of
+      // constructing a new one (and later destroying it: an O(n) display-list splice each).
+      const recycled = mesh ? undefined : this.takeSpare();
+      const holder = mesh ?? recycled;
       let vertices: number[];
-      if (!mesh) {
+      if (!holder) {
         vertices = new Array<number>(src.length);
       } else {
-        vertices = mesh.vertices as number[];
+        vertices = holder.vertices as number[];
         if (vertices.length !== src.length) vertices = new Array<number>(src.length);
       }
       // Written in place: the triangle batcher streams every vertex each frame regardless.
@@ -299,7 +371,15 @@ export class NativeMeshView {
           vertices[i + 3] = (src[i + 3] * region.pageHeight - region.y) / region.height;
         }
       const indices = nativeTriangles(vertices);
-      if (!mesh) {
+      if (recycled) {
+        mesh = recycled;
+        if (mesh.vertices !== vertices) mesh.vertices = vertices;
+        if (mesh.indices !== indices) mesh.indices = indices;
+        // Always rebind: a parked mesh may hold a baked page evicted while it sat idle.
+        mesh.setTexture(texture);
+        retainTint(texture);
+        this.meshes.set(pose.key, mesh);
+      } else if (!mesh) {
         mesh = new Phaser.GameObjects.Mesh2D(
           this.scene,
           x,
@@ -323,6 +403,10 @@ export class NativeMeshView {
         }
       }
       mesh.nativeStamp = stamp;
+      mesh.nativePose = pose;
+      mesh.nativeTint = tint;
+      mesh.nativeTint2 = tint2;
+      mesh.nativeTintMode = mode;
       if (mesh.tint !== tint) mesh.tint = tint;
       if (mesh.tint2 !== tint2) mesh.tint2 = tint2;
       if (mesh.tintMode !== mode) mesh.tintMode = mode;
@@ -334,17 +418,48 @@ export class NativeMeshView {
       const wantAlpha = alpha * m[3];
       if (mesh.alpha !== wantAlpha) mesh.setAlpha(wantAlpha);
       const wantBlend =
-        pose.blend === 0 ? Phaser.BlendModes.NORMAL : nativeBlendMode(this.renderer, pose.blend);
+        pose.blend === 0 || additive
+          ? Phaser.BlendModes.NORMAL
+          : nativeBlendMode(this.renderer, pose.blend);
       if (mesh.blendMode !== wantBlend) mesh.setBlendMode(wantBlend);
+      mesh.nativeBlend = wantBlend;
+      if (additive) mesh.nativeAdditiveBlend = nativeBlendMode(this.renderer, 8);
       if (!mesh.visible) mesh.setVisible(true);
     }
     if (seen !== this.meshes.size)
       for (const [key, mesh] of this.meshes)
         if ((mesh as NativeMesh).nativeStamp !== stamp) {
           releaseTint(mesh.texture.key);
-          mesh.destroy();
           this.meshes.delete(key);
+          this.park(mesh as NativeMesh);
         }
+  }
+  /** Hidden spares stay on the display list (no splice) until a new leaf key needs one. */
+  private park(mesh: NativeMesh) {
+    mesh.nativePose = undefined;
+    let pool = this.spare;
+    let limit = SPARE_LIMIT;
+    if (!this.detached) {
+      pool = sceneSpares.get(this.scene) ?? [];
+      if (!pool.length) sceneSpares.set(this.scene, pool);
+      limit = SCENE_SPARE_LIMIT;
+    }
+    if (pool.length >= limit) {
+      mesh.destroy();
+      return;
+    }
+    if (mesh.visible) mesh.setVisible(false);
+    pool.push(mesh);
+  }
+  private takeSpare(): NativeMesh | undefined {
+    if (this.detached) return this.spare.pop();
+    const pool = sceneSpares.get(this.scene);
+    while (pool?.length) {
+      const mesh = pool.pop()!;
+      // Skip meshes the scene has since destroyed (shutdown sweeps the display list).
+      if (mesh.scene === this.scene && mesh.displayList) return mesh;
+    }
+    return undefined;
   }
   clear() {
     for (const mesh of this.meshes.values()) {
@@ -352,6 +467,8 @@ export class NativeMeshView {
       mesh.destroy();
     }
     this.meshes.clear();
+    for (const mesh of this.spare) mesh.destroy();
+    this.spare.length = 0;
   }
   destroy() {
     this.clear();

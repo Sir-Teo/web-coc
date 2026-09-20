@@ -35,14 +35,16 @@ return vec4(0.0);
   }
 }
 
+import { NATIVE_ADDITIVE_TINT_MODE, NATIVE_COLOR_TINT_MODE } from './native-tint-modes';
+export { NATIVE_ADDITIVE_TINT_MODE, NATIVE_COLOR_TINT_MODE };
+
 /**
  * Triangle meshes extend Phaser's MULTIPLY tint mode with an additive term: `clamp(texel * tint +
  * tint2)` before premultiplication, i.e. the retained multiply/add color transform of a native
  * leaf, evaluated on the GPU instead of baking a recolored copy of its texture page. Mesh2D keeps
- * multiply in `tint` and add in `tint2` (0x000000 by default, which is plain MULTIPLY). Keeping the
- * mode number means callers that reset a mesh to MULTIPLY (status tints) keep its source color.
+ * multiply in `tint` and add in `tint2` (0x000000 by default, which is plain MULTIPLY). The
+ * additive mode draws additive parts in the normal blend state (see native-tint-modes.ts).
  */
-export const NATIVE_COLOR_TINT_MODE = 0;
 const NATIVE_COLOR_BRANCH = `
     if (tintMode == ${NATIVE_COLOR_TINT_MODE}.0) {
         vec3 source = texture.a > 0.0 ? texture.rgb / texture.a : vec3(0.0);
@@ -50,16 +52,24 @@ const NATIVE_COLOR_BRANCH = `
         float transformedAlpha = texture.a * outTint.a;
         return vec4(transformed * transformedAlpha, transformedAlpha);
     }
+    // The mode byte arrives denormalized (x 255.0): compare with a tolerance, not equality.
+    if (abs(tintMode - ${NATIVE_ADDITIVE_TINT_MODE}.0) < 0.5) {
+        vec3 source = texture.a > 0.0 ? texture.rgb / texture.a : vec3(0.0);
+        vec3 transformed = clamp(source * outTint.bgr + outTintEffect.bgr, 0.0, 1.0);
+        return vec4(transformed * texture.a * outTint.a, 0.0);
+    }
 `;
 
+/** Installs the native color branches; true when the node's tint shader carries them. */
 function nativeColorTint(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad) {
   const manager = node.programManager;
   const tint = manager.getAdditionsByTag('TINT')[0];
   const header = (tint?.additions as { fragmentHeader?: unknown } | undefined)?.fragmentHeader;
-  if (!tint || typeof header !== 'string' || header.includes('NativeColorTint')) return;
+  if (!tint || typeof header !== 'string') return false;
+  if (header.includes('NativeColorTint')) return true;
   const declaration = 'float tintMode = outTintEffect.a;';
   const at = header.indexOf(declaration);
-  if (at < 0) return;
+  if (at < 0) return false;
   const end = at + declaration.length;
   manager.replaceAddition(tint.name, {
     ...tint,
@@ -70,6 +80,7 @@ function nativeColorTint(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQua
       fragmentHeader: `// NativeColorTint\n${header.slice(0, end)}${NATIVE_COLOR_BRANCH}${header.slice(end)}`,
     },
   });
+  return true;
 }
 
 /**
@@ -158,21 +169,45 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
   };
 }
 
-const configuredTriangles = new WeakSet<Phaser.Renderer.WebGL.WebGLRenderer>();
+const configuredTriangles = new WeakMap<Phaser.Renderer.WebGL.WebGLRenderer, boolean>();
 /**
  * Native polygon meshes share the sprite sampler and need the same slot fix; they also get the
  * GPU source-color tint. Shader additions and the batcher override live on the render node (and
- * survive context restore), so this runs once per renderer.
+ * survive context restore), so this runs once per renderer. Returns whether the triangle shader
+ * carries the native tint branches (false for test doubles without a tint addition).
  */
 export function configureNativeTriangleRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
-  if (configuredTriangles.has(renderer)) return;
-  configuredTriangles.add(renderer);
+  const known = configuredTriangles.get(renderer);
+  if (known !== undefined) return known;
   const node = renderer.renderNodes.getNode(
     'BatchHandlerTri',
   ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
   stableTextureSampling(renderer, node);
-  nativeColorTint(node);
+  const supported = nativeColorTint(node);
   batchTrianglesWithTint2(node);
+  configuredTriangles.set(renderer, supported);
+  return supported;
+}
+
+const configuredQuadColor = new WeakMap<Phaser.Renderer.WebGL.WebGLRenderer, boolean>();
+/**
+ * Sprite quads (blend-group buffer images) get the same GPU multiply/add color as native meshes,
+ * so a colored group needs no filter pass. Returns false when the renderer's quad shader has no
+ * tint branch to extend (test doubles): callers then keep their filter path.
+ */
+export function configureNativeQuadColor(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  const known = configuredQuadColor.get(renderer);
+  if (known !== undefined) return known;
+  let supported = false;
+  try {
+    const node = renderer.renderNodes?.getNode('BatchHandlerQuad') as
+      Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad | undefined;
+    if (node?.programManager) supported = nativeColorTint(node);
+  } catch {
+    supported = false;
+  }
+  configuredQuadColor.set(renderer, supported);
+  return supported;
 }
 
 /** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */

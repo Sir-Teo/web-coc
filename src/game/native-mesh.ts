@@ -29,6 +29,11 @@ export interface NativeMeshPose {
   multiply: number[];
   add: number[];
   blend: NativeBlend;
+  /**
+   * A leaf lifted out of a disjoint blend group (flattenDisjointGroups): its color already
+   * includes the group's and applies on the GPU after filtering, as the group buffer's would.
+   */
+  folded?: boolean;
 }
 export interface NativeGroupPose {
   key: string;

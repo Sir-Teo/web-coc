@@ -45,6 +45,12 @@ interface Snapshot {
 
 /** World pixels around the camera view within which shots are still sampled and drawn. */
 const SHOT_MARGIN = 360;
+/** Stable parity of a shot id, to trail every other shot under reduced detail. */
+function hashId(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return h;
+}
 
 /**
  * Draws client projectile rows with their original flight art, shadow, trail emitter and
@@ -111,6 +117,8 @@ export class NativeProjectilePresentation {
     reduced: boolean,
     iso: (x: number, y: number) => Point,
     airLift: number,
+    /** Presentation detail (RenderDetail): 1 trails every other shot, 2 draws no trails. */
+    detail = 0,
   ) {
     const covered = new Set<string>();
     const shown = new Set<string>();
@@ -223,7 +231,8 @@ export class NativeProjectilePresentation {
             ),
           );
       }
-      if (row.ParticleEmitter)
+      const trails = detail >= 2 ? false : detail === 1 ? (hashId(id) & 1) === 0 : true;
+      if (row.ParticleEmitter && trails)
         this.layer.emitterTrail(
           row.ParticleEmitter,
           `${id}:trail`,
@@ -234,7 +243,7 @@ export class NativeProjectilePresentation {
           facing,
           FLIGHT_DEPTH - 1,
         );
-      if (row.Effect)
+      if (row.Effect && trails)
         this.layer.effectTrail(
           row.Effect,
           `${id}:fx`,

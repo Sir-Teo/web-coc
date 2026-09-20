@@ -176,6 +176,8 @@ export interface NativeTroopContext extends NativeSpellContext {
   routableBuildings?: Building[];
   nextId(): number;
   troopLevel(kind: TroopKind): number;
+  /** Route lists shared by every search this tick (see routeBuildings). */
+  routeCache?: { open: number; walker?: Building[]; jumper?: Building[] };
 }
 
 const NATIVE_TROOPS = new Set<string>(EXTRA_TROOP_KINDS);
@@ -333,76 +335,92 @@ function chooseTarget(ctx: NativeTroopContext, u: Unit, base: NativeUnitStats) {
     if (breach) return breach;
   }
   const targetable = ctx.isTargetable ?? ((v: Building) => targetableBuilding(battle, v));
-  const alive = ctx.buildings.filter((b) => b.kind !== 'wall' && targetable(b));
-  // A named favorite (Air Defense) falls back to any defense before any building.
-  let favorite =
-    s.preferredClass || s.preferredBuilding ? alive.filter((b) => matchesPreferred(s, b)) : [];
-  if (!favorite.length && s.preferredBuilding)
-    favorite = alive.filter((b) => isDefense(b.kind) && b.npc !== 'tutorial-cannon');
-  const pool = favorite.length ? favorite : alive;
+  // One pass over the known buildings keeps the nearest of three pools (same order and
+  // tie-break as filtering each pool): the preferred match, then (for a named favorite such as
+  // Air Defense) any defense, then any building.
+  const wantPreferred = !!(s.preferredClass || s.preferredBuilding);
+  const wantDefense = !!s.preferredBuilding;
   let best: Building | undefined,
-    distance = Infinity;
-  for (const b of pool) {
+    bestDistance = Infinity,
+    favorite: Building | undefined,
+    favoriteDistance = Infinity,
+    defense: Building | undefined,
+    defenseDistance = Infinity;
+  for (const b of ctx.buildings) {
+    if (b.kind === 'wall' || !targetable(b)) continue;
     const d = distanceTo(u, b);
-    if (d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && best && b.id < best.id)) {
+    if (nearer(d, bestDistance, b, best)) {
       best = b;
-      distance = d;
+      bestDistance = d;
+    }
+    if (wantPreferred && matchesPreferred(s, b) && nearer(d, favoriteDistance, b, favorite)) {
+      favorite = b;
+      favoriteDistance = d;
+    }
+    if (
+      wantDefense &&
+      isDefense(b.kind) &&
+      b.npc !== 'tutorial-cannon' &&
+      nearer(d, defenseDistance, b, defense)
+    ) {
+      defense = b;
+      defenseDistance = d;
     }
   }
-  return best;
+  return favorite ?? (wantDefense ? defense : undefined) ?? best;
 }
+const nearer = (d: number, distance: number, b: Building, best: Building | undefined) =>
+  d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && !!best && b.id < best.id);
 
 /** Group-following support units trail the nearest cluster of friendly housing. */
 const groupWeightCache = new WeakMap<
   Battle,
-  { tick: number; radius: number; weights: Map<number, number> }
+  { tick: number; radius: number; weights: Map<number, number>; anchors: Unit[] }
 >();
+/** Numeric cell keys; units stay within a few tiles of the 48-tile map. */
+const groupCell = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
 function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
   // Compute cluster weight once per tick instead of O(units) per candidate.
   let cached = groupWeightCache.get(battle);
   // Keyed by radius too: every group follower shares one radius today, but a unit with its
   // own must not read weights measured with another's.
   if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
-    cached = { tick: battle.elapsed, radius: s.groupRadius, weights: new Map() };
+    cached = { tick: battle.elapsed, radius: s.groupRadius, weights: new Map(), anchors: [] };
     groupWeightCache.set(battle, cached);
     const cell = Math.max(1, s.groupRadius);
-    const grid = new Map<string, Unit[]>();
+    const grid = new Map<number, Unit[]>();
     for (const other of battle.units) {
       if (other.hp <= 0) continue;
-      const key = `${Math.floor(other.x / cell)},${Math.floor(other.y / cell)}`;
+      const key = groupCell(Math.floor(other.x / cell), Math.floor(other.y / cell));
       let list = grid.get(key);
       if (!list) grid.set(key, (list = []));
       list.push(other);
     }
-    const nearby = (x: number, y: number): Unit[] => {
-      const out: Unit[] = [];
-      const cx = Math.floor(x / cell);
-      const cy = Math.floor(y / cell);
-      for (let dx = -1; dx <= 1; dx++)
-        for (let dy = -1; dy <= 1; dy++) {
-          const list = grid.get(`${cx + dx},${cy + dy}`);
-          if (list) out.push(...list);
-        }
-      return out;
-    };
     for (const ally of battle.units) {
       if (ally.hp <= 0) continue;
+      // Housing within the radius, summed over the 3x3 cells around the ally (integers: the
+      // sum is order-independent).
       let space = 0;
-      for (const other of nearby(ally.x, ally.y))
-        if (distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
-          space += TROOPS[other.kind].space;
+      const cx = Math.floor(ally.x / cell),
+        cy = Math.floor(ally.y / cell);
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dy = -1; dy <= 1; dy++) {
+          const list = grid.get(groupCell(cx + dx, cy + dy));
+          if (!list) continue;
+          for (const other of list)
+            if (distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
+              space += TROOPS[other.kind].space;
+        }
       cached.weights.set(ally.id, space);
+      // Anchor candidates in unit order: units that do not follow a group themselves. Units
+      // missing from the weights (spawned later this tick) could never win a weight of 0.
+      if (!nativeUnitStats(ally.kind, unitLevel(battle, ally)).groups) cached.anchors.push(ally);
     }
   }
   let best: Unit | undefined,
     weight = 0;
-  for (const ally of battle.units) {
-    if (
-      ally.id === u.id ||
-      ally.hp <= 0 ||
-      nativeUnitStats(ally.kind, unitLevel(battle, ally)).groups
-    )
-      continue;
+  for (const ally of cached.anchors) {
+    if (ally.id === u.id || ally.hp <= 0) continue;
     if (distance2D(ally.x - u.x, ally.y - u.y) > s.groupRange) continue;
     const space = cached.weights.get(ally.id) ?? 0;
     if (space > weight) {
@@ -411,6 +429,23 @@ function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
     }
   }
   return best;
+}
+/**
+ * The route list a unit searches on: the known buildings minus the walls it may cross (all of
+ * them for a jumper, Jump-opened ones for walkers). Shared per context (one tick), so every
+ * search this tick reads one list and the collision grid recognizes it without a rescan.
+ */
+function routeBuildings(ctx: NativeTroopContext, jumping: boolean) {
+  const cache = (ctx.routeCache ??= { open: -1 });
+  if (cache.open !== ctx.passableWalls.size) {
+    cache.open = ctx.passableWalls.size;
+    cache.walker = cache.jumper = undefined;
+  }
+  if (jumping) return (cache.jumper ??= ctx.buildings.filter((b) => b.kind !== 'wall'));
+  if (!ctx.passableWalls.size) return ctx.buildings;
+  return (cache.walker ??= ctx.buildings.filter(
+    (b) => b.kind !== 'wall' || !ctx.passableWalls.has(b.id),
+  ));
 }
 
 export interface NativeStepStats {
@@ -599,9 +634,7 @@ export function stepNativeUnit(
       u.path = findPath(
         u,
         target,
-        ctx.buildings.filter(
-          (b) => b.kind !== 'wall' || (!jumping && !ctx.passableWalls.has(b.id)),
-        ),
+        routeBuildings(ctx, jumping),
         s.range,
         !!ctx.battle.nativeSubtiles,
       );

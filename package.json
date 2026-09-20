@@ -43,7 +43,8 @@
     "test:asset-library": "node scripts/asset-library-check.mjs",
     "test:imports": "node scripts/check-test-imports.mjs",
     "test:army:browser": "node scripts/army-load-check.mjs",
-    "test:heroes:art": "node scripts/hero-redesign-assets.mjs --check"
+    "test:heroes:art": "node scripts/hero-redesign-assets.mjs --check",
+    "test:battle:load": "node scripts/battle-load-benchmark.mjs --army=roster --level=half --gl"
   },
   "dependencies": {
     "@fontsource/lilita-one": "^5.3.0",
