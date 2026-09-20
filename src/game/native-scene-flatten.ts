@@ -30,7 +30,14 @@ function nonSaturating(p: { multiply: readonly number[]; add: readonly number[] 
 }
 
 /** Dev-only counters (browser benchmarks read them): group renders, buffer paints, flattened groups. */
-export const nativeSceneStats = { renders: 0, groups: 0, paints: 0, lifted: 0, skipGroups: false };
+export const nativeSceneStats = {
+  renders: 0,
+  groups: 0,
+  paints: 0,
+  lifted: 0,
+  bakes: 0,
+  skipGroups: false,
+};
 if (import.meta.env.DEV)
   (globalThis as { __nativeSceneStats?: unknown }).__nativeSceneStats = nativeSceneStats;
 

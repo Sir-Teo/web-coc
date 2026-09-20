@@ -6,6 +6,7 @@ import {
   NATIVE_ADDITIVE_TINT_MODE,
   NATIVE_COLOR_TINT_MODE,
 } from './quad-renderer';
+import { nativeSceneStats } from './native-scene-flatten';
 import {
   nativeMeshTexture,
   nativeTriangles,
@@ -154,6 +155,7 @@ function tintedTexture(
     return { key, region };
   }
   tintTextures = scene.textures;
+  nativeSceneStats.bakes++;
   const canvas = document.createElement('canvas');
   canvas.width = region.width;
   canvas.height = region.height;
@@ -229,6 +231,12 @@ export class NativeMeshView {
    * alpha the real additive mode must keep, so they keep it.
    */
   private additiveTint: boolean;
+  /**
+   * Apply saturating leaf colors as a GPU tint (clamped after filtering) instead of baking the
+   * sampled texels: a per-color-step canvas bake and texture upload otherwise stalls the frame
+   * whenever many units flash at once. Off by default, where source fidelity wins.
+   */
+  gpuSaturate = false;
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
@@ -276,6 +284,13 @@ export class NativeMeshView {
         if (
           // A folded group color applies after filtering, exactly as its group buffer's would.
           pose.folded ||
+          (this.gpuSaturate &&
+            unit(m[0]) &&
+            unit(m[1]) &&
+            unit(m[2]) &&
+            unit(a[0]) &&
+            unit(a[1]) &&
+            unit(a[2])) ||
           (unit(m[0]) &&
             unit(m[1]) &&
             unit(m[2]) &&

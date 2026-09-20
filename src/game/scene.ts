@@ -3203,6 +3203,34 @@ export class VillageScene extends Phaser.Scene {
         (u.hero ? KING_ART.width : TROOPS[u.kind].width * art.displayScale) * shrinkScale;
       if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
       if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
+      // A native view stands in for this unit and hides its sprite every frame: only the
+      // shadow and the health bar (which the sprite pass owns) are needed while it lasts.
+      if (!u.hero && u.hp > 0 && this.troopNativePresentation.hasView(u.id)) {
+        const sprung = (u.springUntil ?? 0) > battle.elapsed;
+        const lift = flying
+          ? AIR_LIFT
+          : sprung && !reduced
+            ? Math.sin(
+                (1 -
+                  Math.min(SPRING_AIRTIME, Math.max(0, (u.springUntil ?? 0) - battle.elapsed)) /
+                    SPRING_AIRTIME) *
+                  Math.PI,
+              ) * 45
+            : 0;
+        if (flying || sprung)
+          marks.put(
+            shadow,
+            p.x,
+            p.y,
+            (26 * shrinkScale) / 64,
+            (13 * shrinkScale) / 32,
+            0x1f2a16,
+            0.28,
+          );
+        if (u.hp < u.maxHp)
+          this.bar(p.x, p.y - lift - width, 22, u.hp / u.maxHp, 0x8dea68, this.unitBars);
+        continue;
+      }
       const defenderTarget =
         u.defenderTarget !== undefined ? defenderById.get(u.defenderTarget) : undefined;
       const liveDefender = defenderTarget && defenderTarget.hp > 0 ? defenderTarget : undefined;

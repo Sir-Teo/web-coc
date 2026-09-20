@@ -283,6 +283,13 @@ export class NativeSceneView {
   flattenDisjoint = false;
   /** Keep a vanished group's buffer and content parked for PARK_FRAMES renders (animated units). */
   parkGroups = false;
+  /** Clamp saturating leaf colors on the GPU instead of baking texel copies (see NativeMeshView). */
+  get gpuSaturate() {
+    return this.leaves.gpuSaturate;
+  }
+  set gpuSaturate(value: boolean) {
+    this.leaves.gpuSaturate = value;
+  }
   /** The quad shader carries group colors, so colored groups need no filter pass. */
   private gpuColor: boolean;
   constructor(

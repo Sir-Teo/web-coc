@@ -35,22 +35,16 @@ return vec4(0.0);
   }
 }
 
+import { NATIVE_ADDITIVE_TINT_MODE, NATIVE_COLOR_TINT_MODE } from './native-tint-modes';
+export { NATIVE_ADDITIVE_TINT_MODE, NATIVE_COLOR_TINT_MODE };
+
 /**
  * Triangle meshes extend Phaser's MULTIPLY tint mode with an additive term: `clamp(texel * tint +
  * tint2)` before premultiplication, i.e. the retained multiply/add color transform of a native
  * leaf, evaluated on the GPU instead of baking a recolored copy of its texture page. Mesh2D keeps
- * multiply in `tint` and add in `tint2` (0x000000 by default, which is plain MULTIPLY). Keeping the
- * mode number means callers that reset a mesh to MULTIPLY (status tints) keep its source color.
+ * multiply in `tint` and add in `tint2` (0x000000 by default, which is plain MULTIPLY). The
+ * additive mode draws additive parts in the normal blend state (see native-tint-modes.ts).
  */
-export const NATIVE_COLOR_TINT_MODE = 0;
-/**
- * Additive drawing inside the normal (premultiplied source-over) blend state: the fragment keeps
- * its premultiplied color and reports zero alpha, so `ONE, ONE_MINUS_SRC_ALPHA` adds the color and
- * leaves the destination alpha alone. On the opaque backbuffer that is pixel for pixel the native
- * additive mode, without a blend-state change (Phaser finishes the batch on every change, twice).
- * Phaser 4.2.1 leaves tint mode 3 unused.
- */
-export const NATIVE_ADDITIVE_TINT_MODE = 3;
 const NATIVE_COLOR_BRANCH = `
     if (tintMode == ${NATIVE_COLOR_TINT_MODE}.0) {
         vec3 source = texture.a > 0.0 ? texture.rgb / texture.a : vec3(0.0);

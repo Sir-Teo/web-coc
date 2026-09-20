@@ -10,7 +10,7 @@ import { unitAttackIntervalScale } from './native-status';
 import { isShrunk } from './shrink-trap';
 import { buildingIndex } from './battle-index';
 import { unitDepth } from './unit-depth';
-import { NATIVE_ADDITIVE_TINT_MODE } from './quad-renderer';
+import { NATIVE_ADDITIVE_TINT_MODE } from './native-tint-modes';
 import { UnitMotionTracker, unitAnimationPhase } from './unit-motion';
 import {
   TINT_MULTIPLY,
@@ -148,6 +148,13 @@ export class TroopNativePresentation {
   /** Whether this unit's native mesh drew this frame (scene.ts skips its fallback marker). */
   drewUnit(id: number) {
     return !!this.views.get(id)?.view.objects.some((o) => o.visible);
+  }
+  /**
+   * Whether a native view stands in for this unit: it drew or followed the unit last frame and
+   * hides the fallback sprite every frame it exists, so the sprite needs no styling meanwhile.
+   */
+  hasView(id: number) {
+    return this.views.has(id);
   }
   render(
     battle: Battle | null,
@@ -357,6 +364,9 @@ export class TroopNativePresentation {
         const view = new NativeSceneView(this.scene, `troop:${u.kind}:${state.scene}`);
         // Disjoint screen/additive groups draw as plain leaves: exact, and no buffer per group.
         view.flattenDisjoint = true;
+        // Under reduced detail, saturating leaf colors (hit flashes) clamp on the GPU after
+        // filtering instead of baking a recolored texture copy per color step.
+        view.gpuSaturate = detail > 0;
         // Blinking groups (fire, glows) keep their buffers between appearances.
         view.parkGroups = true;
         owned = { scene: state.scene, view, state: requested, x: 0, y: 0, depth: 0, tagged: -1 };
@@ -364,6 +374,7 @@ export class TroopNativePresentation {
       }
       owned.state = requested;
       if (poses !== last?.poses) owned.sample = { graph, name, frame, scale, mirror, poses };
+      owned.view.gpuSaturate = detail > 0;
       wanted.add(u.id);
       sprites.get(u.id)?.setVisible(false);
       owned.x = point.x;
