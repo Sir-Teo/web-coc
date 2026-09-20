@@ -27,6 +27,12 @@ import { emptySpells, expandArmyRoster } from './army';
 import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
+/**
+ * Ceiling on stored buildings, and on the slots of a saved layout. A maxed Town Hall 18 village
+ * owns 483 pieces (158 buildings and 325 walls), so the former 400 could not hold one; the
+ * limit exists to bound a malformed or hostile save, not to cap legitimate progress.
+ */
+export const MAX_SAVED_BUILDINGS = 600;
 function finite(v: unknown) {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0;
 }
@@ -95,7 +101,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     (!s.mapUpgrade ||
       !Number.isInteger(s.mapUpgrade.moved) ||
       s.mapUpgrade.moved < 1 ||
-      s.mapUpgrade.moved > 400)
+      s.mapUpgrade.moved > MAX_SAVED_BUILDINGS)
   )
     return false;
   if (
@@ -106,7 +112,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       finite(s[k as keyof Save]),
     ) ||
     !Array.isArray(s.buildings) ||
-    s.buildings.length > 400 ||
+    s.buildings.length > MAX_SAVED_BUILDINGS ||
     s.buildings.length === 0 ||
     !s.army ||
     !s.spells ||
@@ -408,7 +414,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
           typeof l.name !== 'string' ||
           l.name.length > 40 ||
           !Array.isArray(l.slots) ||
-          l.slots.length > 400 ||
+          l.slots.length > MAX_SAVED_BUILDINGS ||
           l.slots.some(
             (v) =>
               !v ||
