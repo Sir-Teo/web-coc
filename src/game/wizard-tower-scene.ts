@@ -18,7 +18,7 @@ import {
 } from './wizard-tower-effects';
 import Phaser from 'phaser';
 import type { Battle, Building } from './model';
-import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeSceneView, effectSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { WIZARD_TOWER_ART_LEVELS, wizardTowerAsset, wizardTowerTexture } from './wizard-tower-art';
 import {
@@ -238,7 +238,7 @@ export class WizardTowerPresentation {
         if (!view)
           this.projectiles.set(
             shot.id,
-            (view = new NativeSceneView(this.scene, 'wizardtower-effects')),
+            (view = effectSceneView(this.scene, 'wizardtower-effects')),
           );
         view.render(pose.poses, pose.x, pose.y, 8000);
         for (const object of view.objects)

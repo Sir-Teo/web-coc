@@ -28,6 +28,21 @@ export function pruneFilterPool(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
     context.destroy();
   }
 }
+/**
+ * Phaser 4.2.1 hands out a pooled drawing context in this order: an exact-size spare, then the
+ * oldest spare *resized*, then a fresh context (while under the 1024 cap). Resizing recreates the
+ * framebuffer, and a framebuffer with the config's stencil renderbuffer runs
+ * `gl.checkFramebufferStatus` — a full pipeline sync that cost whole 30-50 ms frames once a
+ * battle showed effects at many different sizes. The aged-spare branch fires as soon as the
+ * oldest spare is older than `maxAge` (1 s by default), so in a busy battle nearly every filter
+ * pass took it. Never aging a spare sends every miss to the fresh-context branch instead: each
+ * distinct size is created once and then hits its exact-size bucket, and `pruneFilterPool` still
+ * destroys the ones that fall idle, so the pool stays bounded and far below the cap.
+ */
+export function holdFilterContexts(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  const pool = renderer.drawingContextPool as unknown as { maxAge: number } | undefined;
+  if (pool) pool.maxAge = Infinity;
+}
 const registered = new WeakSet<Phaser.Renderer.WebGL.RenderNodes.RenderNodeManager>();
 const SOURCE = `
 #pragma phaserTemplate(shaderName)

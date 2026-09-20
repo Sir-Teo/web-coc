@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import { NativeEffectLayer } from './native-effect-layer';
 import {
@@ -103,7 +103,7 @@ export class NativeProjectilePresentation {
       entry = undefined;
     }
     if (!entry)
-      this.views.set(key, (entry = { prefix, view: new NativeSceneView(this.scene, prefix) }));
+      this.views.set(key, (entry = { prefix, view: effectSceneView(this.scene, prefix) }));
     entry.view.render(poses, x, y, depth);
     return key;
   }

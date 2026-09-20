@@ -371,6 +371,10 @@ export class TroopNativePresentation {
         view.gpuSaturate = detail > 0;
         // Blinking groups (fire, glows) keep their buffers between appearances.
         view.parkGroups = true;
+        // A unit's parts that share one draw state are one mesh: a fraction of the display list.
+        view.mergeLeaves = true;
+        // Hit-flash texel bakes spread over frames instead of stalling the one they land on.
+        view.bakeBudget = true;
         owned = { scene: state.scene, view, state: requested, x: 0, y: 0, depth: 0, tagged: -1 };
         this.views.set(u.id, owned);
       }

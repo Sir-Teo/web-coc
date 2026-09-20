@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, effectSceneView } from './native-scene-view';
 import type { NativeParticlePose } from './native-particles';
 
 /** Parked views kept per layer for reuse; beyond this they are destroyed. */
@@ -32,7 +32,7 @@ export class NativeEffectViews {
     // Views are prefix-bound (texture keys); only reuse views of the same art.
     const index = this.spare.findIndex((entry) => entry.prefix === prefix);
     if (index >= 0) return this.spare.splice(index, 1)[0].view;
-    const view = new NativeSceneView(this.scene, prefix);
+    const view = effectSceneView(this.scene, prefix);
     this.prefixes.set(view, prefix);
     return view;
   }

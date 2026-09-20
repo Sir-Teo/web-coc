@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import effectArt from '../../reference/full-client/effect-art.json' with { type: 'json' };
-import { NativeSceneView } from './native-scene-view';
+import { NativeSceneView, effectSceneView } from './native-scene-view';
 import type { NativeMatrix, NativeScenePose } from './native-mesh';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
 import {
@@ -214,7 +214,7 @@ export class NativeEffectLayer {
   private sceneView(key: string, prefix: string) {
     this.used.add(key);
     let view = this.views.get(key);
-    if (!view) this.views.set(key, (view = new NativeSceneView(this.scene, prefix)));
+    if (!view) this.views.set(key, (view = effectSceneView(this.scene, prefix)));
     return view;
   }
   private draw(path: string, poses: NativeEffectPose[]) {
