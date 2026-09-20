@@ -24,8 +24,22 @@ for (const [name, engine] of [
   expect(await page.evaluate(() => JSON.parse(window.render_game_to_text()).resources.gems)).toBe(
     10000,
   );
+  await page.getByRole('tab', { name: 'Heroes', exact: true }).click();
   await page.getByRole('button', { name: 'Unlock King (TH4+)', exact: true }).click();
   expect(await page.evaluate(() => JSON.parse(window.render_game_to_text()).hero.level)).toBe(1);
+  // A maxed Town Hall preset rebuilds the whole village from the lazily loaded chunk.
+  await page.getByRole('tab', { name: 'Village', exact: true }).click();
+  await page.getByRole('button', { name: 'TH9 352' }).click();
+  await expect(page.locator('.developer-status')).toHaveText('Done.');
+  const maxed = await page.evaluate(() => {
+    const village = JSON.parse(window.render_game_to_text());
+    return {
+      townhall: village.buildings.find((b) => b.type === 'townhall').level,
+      hero: village.hero,
+    };
+  });
+  expect(maxed.townhall).toBe(9);
+  expect(maxed.hero.level).toBeGreaterThan(1);
   await page.screenshot({
     animations: 'disabled',
     path: `output/playtest/developer-production-${name}.png`,
@@ -58,6 +72,7 @@ for (const [name, engine] of [
     localOptIn: true,
     resources: true,
     hero: true,
+    maxedVillage: true,
     checkpointReload: true,
     remoteHostDisabled: true,
     errors,

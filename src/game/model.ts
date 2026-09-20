@@ -4274,7 +4274,8 @@ export class GameModel {
       damageBuilding: (target, power, at) => this.damage(target, power, at),
     });
   }
-  private refreshBattleScore() {
+  /** Recompute destruction, stars and loot from the buildings' current health. */
+  refreshBattleScore() {
     const b = this.battle!;
     // Single walk instead of re-walking buildings ~8 times per tick.
     let total = 0;
