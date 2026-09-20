@@ -4226,6 +4226,7 @@ export class VillageScene extends Phaser.Scene {
     this.detailLevel = this.detailGovernor.sample(
       this.lastBusyMs,
       this.model.battle && !this.model.battle.finished ? this.model.battle.units.length : 0,
+      delta,
     );
     const dt = Math.min(delta / 1000, 0.1);
     if (!this.uiBlocked && !typingTarget(document.activeElement)) {

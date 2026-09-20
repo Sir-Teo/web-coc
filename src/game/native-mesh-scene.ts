@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import { nativeBlendMode } from './native-blend';
 import { PART_DEPTH_STEP } from './unit-depth';
-import { configureNativeTriangleRendering, NATIVE_COLOR_TINT_MODE } from './quad-renderer';
+import {
+  configureNativeTriangleRendering,
+  NATIVE_ADDITIVE_TINT_MODE,
+  NATIVE_COLOR_TINT_MODE,
+} from './quad-renderer';
 import {
   nativeMeshTexture,
   nativeTriangles,
@@ -219,6 +223,12 @@ export class NativeMeshView {
   private textureKeys: string[] = [];
   private stamp = 0;
   private renderer: Phaser.Renderer.WebGL.WebGLRenderer;
+  /**
+   * Scene-attached additive leaves draw through the additive tint mode in the normal blend state
+   * (exact on the opaque backbuffer). Detached leaves compose into transparent buffers, whose
+   * alpha the real additive mode must keep, so they keep it.
+   */
+  private additiveTint: boolean;
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
@@ -226,7 +236,7 @@ export class NativeMeshView {
     private detached = false,
   ) {
     this.renderer = scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
-    configureNativeTriangleRendering(this.renderer);
+    this.additiveTint = configureNativeTriangleRendering(this.renderer) && !detached;
   }
   private baseTexture(id: number) {
     return (this.textureKeys[id] ??= nativeMeshTexture(this.prefix, id));
@@ -259,6 +269,8 @@ export class NativeMeshView {
       let tint = 0xffffff,
         tint2 = 0,
         mode = 0;
+      const additive = pose.blend === 8 && this.additiveTint;
+      if (additive) mode = NATIVE_ADDITIVE_TINT_MODE;
       let region: TintRegion | undefined;
       if (!identityMul || hasAdd) {
         if (
@@ -278,7 +290,7 @@ export class NativeMeshView {
           tint = rgb(m);
           if (hasAdd) {
             tint2 = rgb(a);
-            mode = NATIVE_COLOR_TINT_MODE;
+            if (!additive) mode = NATIVE_COLOR_TINT_MODE;
           }
         } else {
           // Saturating colors clamp per texel before filtering: bake just those texels.
@@ -387,7 +399,9 @@ export class NativeMeshView {
       const wantAlpha = alpha * m[3];
       if (mesh.alpha !== wantAlpha) mesh.setAlpha(wantAlpha);
       const wantBlend =
-        pose.blend === 0 ? Phaser.BlendModes.NORMAL : nativeBlendMode(this.renderer, pose.blend);
+        pose.blend === 0 || additive
+          ? Phaser.BlendModes.NORMAL
+          : nativeBlendMode(this.renderer, pose.blend);
       if (mesh.blendMode !== wantBlend) mesh.setBlendMode(wantBlend);
       if (!mesh.visible) mesh.setVisible(true);
     }

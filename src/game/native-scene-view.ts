@@ -4,7 +4,11 @@ import { nativeBlendMode, nativeMultiplyModes } from './native-blend';
 import { NativeGroupColor } from './native-group-color';
 import { PART_DEPTH_STEP } from './unit-depth';
 import { groupBufferPool, type NativeGroupBuffer } from './native-group-buffer';
-import { configureNativeQuadColor, NATIVE_COLOR_TINT_MODE } from './quad-renderer';
+import {
+  configureNativeQuadColor,
+  NATIVE_ADDITIVE_TINT_MODE,
+  NATIVE_COLOR_TINT_MODE,
+} from './quad-renderer';
 import {
   colorless,
   flattenDisjointGroups,
@@ -128,7 +132,7 @@ type ColoredImage = Phaser.GameObjects.Image & {
   nativeColored?: boolean;
 };
 /** Group multiply/add as the quad renderer's native color tint on the drawn buffer image. */
-function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: number) {
+function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: number, mode: number) {
   const colored = image as ColoredImage;
   colored.nativeColored = tint !== 0xffffff || tint2 !== 0;
   if (colored.tint !== tint) colored.setTint(tint);
@@ -138,7 +142,7 @@ function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: num
       colored.tint2BottomLeft =
       colored.tint2BottomRight =
         tint2;
-  if (colored.tintMode !== NATIVE_COLOR_TINT_MODE) colored.setTintMode(NATIVE_COLOR_TINT_MODE);
+  if (colored.tintMode !== mode) colored.setTintMode(mode);
 }
 
 /** Direct multiply leaves also need isolation before the two destination passes. */
@@ -279,11 +283,6 @@ export class NativeSceneView {
   flattenDisjoint = false;
   /** Keep a vanished group's buffer and content parked for PARK_FRAMES renders (animated units). */
   parkGroups = false;
-  /**
-   * When set, screen/additive parts take this depth (leaves) or this depth + 5 (group images)
-   * instead of their place in the unit, so consecutive units share one blend state.
-   */
-  additiveBand?: number;
   /** The quad shader carries group colors, so colored groups need no filter pass. */
   private gpuColor: boolean;
   constructor(
@@ -360,13 +359,9 @@ export class NativeSceneView {
             }
           }
     }
-    const band = this.additiveBand;
     for (let order = 0; order < poses.length; order++) {
       const pose = poses[order];
-      const banded = band !== undefined && (pose.blend === 4 || pose.blend === 8);
-      const wantDepth = banded
-        ? band + ('group' in pose ? 5 : 0) + order * PART_DEPTH_STEP
-        : depth + order * PART_DEPTH_STEP;
+      const wantDepth = depth + order * PART_DEPTH_STEP;
       let object: NativeObject;
       let entry: GroupEntry | undefined;
       if ('group' in pose) {
@@ -471,9 +466,19 @@ export class NativeSceneView {
     const image = buffer.image;
     const tint = colored && !filtered ? rgb(pose.multiply) : 0xffffff;
     const tint2 = colored && !filtered ? rgb(pose.add) : 0;
-    setGroupColor(image, tint, tint2);
-    const blend =
-      pose.blend === 3
+    // A scene-drawn additive group image uses the additive tint mode in the normal blend state
+    // (see NATIVE_ADDITIVE_TINT_MODE); nested ones compose into transparent buffers and keep the
+    // real mode.
+    const additive = pose.blend === 8 && this.gpuColor && !this.detached;
+    setGroupColor(
+      image,
+      tint,
+      tint2,
+      additive ? NATIVE_ADDITIVE_TINT_MODE : NATIVE_COLOR_TINT_MODE,
+    );
+    const blend = additive
+      ? Phaser.BlendModes.NORMAL
+      : pose.blend === 3
         ? nativeMultiplyModes(this.renderer)[0]
         : nativeBlendMode(this.renderer, pose.blend);
     if (image.blendMode !== blend) image.setBlendMode(blend);
@@ -516,7 +521,7 @@ export class NativeSceneView {
         second.setCrop(0, 0, entry.width, entry.height);
         entry.multiplyCrop = crop;
       }
-      setGroupColor(second, tint, tint2);
+      setGroupColor(second, tint, tint2, NATIVE_COLOR_TINT_MODE);
       if (second.x !== wantX || second.y !== wantY) second.setPosition(wantX, wantY);
       if (second.scaleX !== wantScale || second.scaleY !== wantScale) second.setScale(wantScale);
       if (second.alpha !== wantAlpha) second.setAlpha(wantAlpha);

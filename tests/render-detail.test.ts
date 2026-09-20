@@ -32,6 +32,20 @@ describe('RenderDetail', () => {
     for (let i = 0; i < RenderDetail.CALM_FRAMES - 1; i++) d.sample(2, 50);
     expect(d.level).toBe(1);
   });
+  it('counts a missed vsync as slow even when the CPU was idle (GPU-bound frames)', () => {
+    const d = new RenderDetail();
+    for (let i = 0; i < RenderDetail.WINDOW; i++) d.sample(5, 50, 33);
+    expect(d.level).toBe(1);
+    // Long frames also interrupt the calm streak; a tab-hidden gap does not count as slow.
+    for (let i = 0; i < RenderDetail.CALM_FRAMES - 1; i++) d.sample(2, 50, 16);
+    d.sample(2, 50, 40);
+    for (let i = 0; i < RenderDetail.CALM_FRAMES - 1; i++) d.sample(2, 50, 16);
+    expect(d.level).toBe(1);
+    d.sample(2, 50, 16);
+    expect(d.level).toBe(0);
+    for (let i = 0; i < RenderDetail.WINDOW; i++) d.sample(5, 50, 1000);
+    expect(d.level).toBe(0);
+  });
   it('ignores unknown frame times and never drops below the unit step', () => {
     const d = new RenderDetail();
     for (let i = 0; i < 1000; i++) d.sample(NaN, 50);

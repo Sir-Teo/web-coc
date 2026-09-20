@@ -9,7 +9,8 @@ import type { NativeScenePose } from './native-mesh';
 import { unitAttackIntervalScale } from './native-status';
 import { isShrunk } from './shrink-trap';
 import { buildingIndex } from './battle-index';
-import { ADDITIVE_BAND_DEPTH, unitDepth } from './unit-depth';
+import { unitDepth } from './unit-depth';
+import { NATIVE_ADDITIVE_TINT_MODE } from './quad-renderer';
 import { UnitMotionTracker, unitAnimationPhase } from './unit-motion';
 import {
   TINT_MULTIPLY,
@@ -363,7 +364,6 @@ export class TroopNativePresentation {
       }
       owned.state = requested;
       if (poses !== last?.poses) owned.sample = { graph, name, frame, scale, mirror, poses };
-      owned.view.additiveBand = detail ? ADDITIVE_BAND_DEPTH : undefined;
       wanted.add(u.id);
       sprites.get(u.id)?.setVisible(false);
       owned.x = point.x;
@@ -448,12 +448,14 @@ export function applyStatusTint(
       setTintMode?(mode: number): void;
       clearTint(): void;
     };
-    if (mode !== TINT_MULTIPLY) {
+    // Additive parts keep their mode (it is their blend); only the multiply color combines.
+    const additive = tinted.tintMode === NATIVE_ADDITIVE_TINT_MODE;
+    if (mode !== TINT_MULTIPLY && !additive) {
       if (tinted.tint !== status!.color) tinted.setTint(status!.color);
       if (tinted.tintMode !== mode) tinted.setTintMode?.(mode);
       continue;
     }
-    if (tinted.tintMode !== undefined && tinted.tintMode !== TINT_MULTIPLY)
+    if (tinted.tintMode !== undefined && tinted.tintMode !== TINT_MULTIPLY && !additive)
       tinted.setTintMode?.(TINT_MULTIPLY);
     // Leaf meshes (Mesh2D, which own vertices) and colored group images carry a renderer tint.
     if (tinted.vertices !== undefined || tinted.nativeColored) {

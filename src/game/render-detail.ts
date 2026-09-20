@@ -19,6 +19,8 @@ export class RenderDetail {
   static readonly UNIT_STEPS = [260, 440] as const;
   /** Per-frame CPU work that rules out a smooth frame rate. */
   static readonly SLOW_MS = 22;
+  /** A frame interval that missed the vsync: the GPU side may be the bottleneck. */
+  static readonly SLOW_FRAME_MS = 24;
   /** Per-frame CPU work with real headroom, below which pressure may ease. */
   static readonly CALM_MS = 11;
   /** Frames per pressure window, and calm frames needed before easing one step. */
@@ -27,14 +29,19 @@ export class RenderDetail {
   reset() {
     this.level = this.pressure = this.frames = this.slow = this.calm = 0;
   }
-  /** `busyMs`: CPU time of the previous frame (NaN when unknown, e.g. the first frame). */
-  sample(busyMs: number, units: number) {
+  /**
+   * `busyMs`: CPU time of the previous frame (NaN when unknown, e.g. the first frame).
+   * `frameMs`: interval since the previous frame; a long one with little CPU work means the GPU
+   * is behind, which also counts as slow. Gaps (tab hidden) are ignored.
+   */
+  sample(busyMs: number, units: number, frameMs = NaN) {
     const steps = RenderDetail.UNIT_STEPS;
     const base = units > steps[1] ? 2 : units > steps[0] ? 1 : 0;
     if (Number.isFinite(busyMs) && busyMs >= 0) {
       this.frames++;
-      if (busyMs > RenderDetail.SLOW_MS) this.slow++;
-      if (busyMs < RenderDetail.CALM_MS) this.calm++;
+      const frameSlow = frameMs > RenderDetail.SLOW_FRAME_MS && frameMs <= 250;
+      if (busyMs > RenderDetail.SLOW_MS || frameSlow) this.slow++;
+      if (busyMs < RenderDetail.CALM_MS && !frameSlow) this.calm++;
       else this.calm = 0;
       if (this.frames >= RenderDetail.WINDOW) {
         if (this.slow * 2 > this.frames) {
