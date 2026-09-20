@@ -173,7 +173,10 @@ self.addEventListener('install', (event) => {
         installing = false;
       }),
   );
-  self.skipWaiting();
+  // No skipWaiting: the new worker activates once every tab of the old version has closed.
+  // Activating under an open tab deleted that tab's cache while the host had already dropped
+  // its old hashed files, so the tab's first lazy chunk (the late campaign scene) came back
+  // as index.html and the battle stalled on "Village art could not load".
 });
 
 self.addEventListener('activate', (event) =>
