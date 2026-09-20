@@ -373,56 +373,95 @@ const nearer = (d: number, distance: number, b: Building, best: Building | undef
   d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && !!best && b.id < best.id);
 
 /** Group-following support units trail the nearest cluster of friendly housing. */
-const groupWeightCache = new WeakMap<
-  Battle,
-  { tick: number; radius: number; weights: Map<number, number>; anchors: Unit[] }
->();
+interface GroupWeights {
+  tick: number;
+  radius: number;
+  /** Living units' positions and housing as they stood when the first follower asked. */
+  x: Float64Array;
+  y: Float64Array;
+  space: Float64Array;
+  /** Cell → indices into the snapshot arrays. */
+  grid: Map<number, number[]>;
+  /** Snapshot index per living unit id. */
+  index: Map<number, number>;
+  /** Cluster weight per unit id, measured on demand from the snapshot. */
+  weights: Map<number, number>;
+  anchors: Unit[];
+}
+const groupWeightCache = new WeakMap<Battle, GroupWeights>();
 /** Numeric cell keys; units stay within a few tiles of the 48-tile map. */
 const groupCell = (cx: number, cy: number) => (cx + 1024) * 4096 + (cy + 1024);
 function groupAnchor(battle: Battle, u: Unit, s: NativeUnitStats) {
-  // Compute cluster weight once per tick instead of O(units) per candidate.
+  // Snapshot the living units once per tick; weigh an anchor only when a follower in range
+  // asks for it. Weights read the snapshot, so they equal what a full pass at that moment
+  // would have measured no matter how many units have moved since.
   let cached = groupWeightCache.get(battle);
   // Keyed by radius too: every group follower shares one radius today, but a unit with its
   // own must not read weights measured with another's.
   if (!cached || cached.tick !== battle.elapsed || cached.radius !== s.groupRadius) {
-    cached = { tick: battle.elapsed, radius: s.groupRadius, weights: new Map(), anchors: [] };
+    let living = 0;
+    for (const other of battle.units) if (other.hp > 0) living++;
+    cached = {
+      tick: battle.elapsed,
+      radius: s.groupRadius,
+      x: new Float64Array(living),
+      y: new Float64Array(living),
+      space: new Float64Array(living),
+      grid: new Map(),
+      index: new Map(),
+      weights: new Map(),
+      anchors: [],
+    };
     groupWeightCache.set(battle, cached);
     const cell = Math.max(1, s.groupRadius);
-    const grid = new Map<number, Unit[]>();
+    let i = 0;
     for (const other of battle.units) {
       if (other.hp <= 0) continue;
+      cached.x[i] = other.x;
+      cached.y[i] = other.y;
+      cached.space[i] = TROOPS[other.kind].space;
+      cached.index.set(other.id, i);
       const key = groupCell(Math.floor(other.x / cell), Math.floor(other.y / cell));
-      let list = grid.get(key);
-      if (!list) grid.set(key, (list = []));
-      list.push(other);
-    }
-    for (const ally of battle.units) {
-      if (ally.hp <= 0) continue;
-      // Housing within the radius, summed over the 3x3 cells around the ally (integers: the
-      // sum is order-independent).
-      let space = 0;
-      const cx = Math.floor(ally.x / cell),
-        cy = Math.floor(ally.y / cell);
-      for (let dx = -1; dx <= 1; dx++)
-        for (let dy = -1; dy <= 1; dy++) {
-          const list = grid.get(groupCell(cx + dx, cy + dy));
-          if (!list) continue;
-          for (const other of list)
-            if (distance2D(other.x - ally.x, other.y - ally.y) <= s.groupRadius)
-              space += TROOPS[other.kind].space;
-        }
-      cached.weights.set(ally.id, space);
+      let list = cached.grid.get(key);
+      if (!list) cached.grid.set(key, (list = []));
+      list.push(i);
       // Anchor candidates in unit order: units that do not follow a group themselves. Units
-      // missing from the weights (spawned later this tick) could never win a weight of 0.
-      if (!nativeUnitStats(ally.kind, unitLevel(battle, ally)).groups) cached.anchors.push(ally);
+      // missing from the snapshot (spawned later this tick) could never win a weight of 0.
+      if (!nativeUnitStats(other.kind, unitLevel(battle, other)).groups) cached.anchors.push(other);
+      i++;
     }
   }
+  const snapshot = cached;
+  const cell = Math.max(1, snapshot.radius);
+  const weightOf = (ally: Unit) => {
+    const known = snapshot.weights.get(ally.id);
+    if (known !== undefined) return known;
+    const at = snapshot.index.get(ally.id);
+    if (at === undefined) return 0;
+    // Housing within the radius, summed over the 3x3 cells around the ally (integers: the
+    // sum is order-independent).
+    let space = 0;
+    const ax = snapshot.x[at],
+      ay = snapshot.y[at];
+    const cx = Math.floor(ax / cell),
+      cy = Math.floor(ay / cell);
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++) {
+        const list = snapshot.grid.get(groupCell(cx + dx, cy + dy));
+        if (!list) continue;
+        for (const other of list)
+          if (distance2D(snapshot.x[other] - ax, snapshot.y[other] - ay) <= snapshot.radius)
+            space += snapshot.space[other];
+      }
+    snapshot.weights.set(ally.id, space);
+    return space;
+  };
   let best: Unit | undefined,
     weight = 0;
-  for (const ally of cached.anchors) {
+  for (const ally of snapshot.anchors) {
     if (ally.id === u.id || ally.hp <= 0) continue;
     if (distance2D(ally.x - u.x, ally.y - u.y) > s.groupRange) continue;
-    const space = cached.weights.get(ally.id) ?? 0;
+    const space = weightOf(ally);
     if (space > weight) {
       weight = space;
       best = ally;
@@ -560,12 +599,21 @@ export function stepNativeUnit(
     distance > s.range &&
     u.cooldown <= 0
   ) {
-    const passing =
-      u.kind === 'battleblimp'
-        ? ctx.buildings
-            .filter((b) => b.hp > 0 && !isTrap(b.kind) && distanceTo(u, b) <= s.range)
-            .sort((a, b) => distanceTo(u, a) - distanceTo(u, b) || a.id - b.id)[0]
-        : target;
+    let passing: Building | undefined = target;
+    if (u.kind === 'battleblimp') {
+      // Nearest standing structure in range, lowest id on a tie: the first of the old sort.
+      passing = undefined;
+      let best = Infinity;
+      for (const b of ctx.buildings) {
+        if (b.hp <= 0 || isTrap(b.kind)) continue;
+        const d = distanceTo(u, b);
+        if (d > s.range) continue;
+        if (d < best || (d === best && b.id < passing!.id)) {
+          best = d;
+          passing = b;
+        }
+      }
+    }
     if (passing) {
       u.cooldown = s.rate;
       strike(ctx, u, s, passing, damage);
@@ -693,14 +741,25 @@ function moveToward(u: Unit, point: { x: number; y: number }, travel: number) {
   u.y += (dy / len) * step;
 }
 
+/** `ActiveWhileAloneRadius` per ability row: read per unit per tick, so memoized. */
+const aloneRadii = new Map<string, Map<number, number>>();
+function aloneRadius(ability: string, level: number) {
+  let byLevel = aloneRadii.get(ability);
+  if (!byLevel) aloneRadii.set(ability, (byLevel = new Map()));
+  let radius = byLevel.get(level);
+  if (radius === undefined) {
+    radius = tiles(nativeRow('abilities', ability, level), 'ActiveWhileAloneRadius');
+    byLevel.set(level, radius);
+  }
+  return radius;
+}
 /** Abilities active while no other friendly unit is nearby (Baby Dragon). */
 function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUnitState) {
   // Version 53 hero passives feed the shared damage and attack-interval scales.
   // Keep the original path for Baby Dragons and historical recordings.
   if (battle.nativeHeroPassives && u.hero) return 1;
   if (!s.ability) return 1;
-  const row = nativeRow('abilities', s.ability, s.abilityLevel);
-  const radius = tiles(row, 'ActiveWhileAloneRadius');
+  const radius = aloneRadius(s.ability, s.abilityLevel);
   if (radius <= 0) return 1;
   const alone = !battle.units.some(
     (other) =>
@@ -713,6 +772,7 @@ function aloneScale(battle: Battle, u: Unit, s: NativeUnitStats, state: NativeUn
   );
   state.alone = alone;
   if (!alone) return 1;
+  const row = nativeRow('abilities', s.ability, s.abilityLevel);
   const attackBoost = num(row, 'BoostAttackSpeedPercentage') / 100;
   // Attack speed shortens the interval; damage per hit rises separately.
   if (attackBoost && u.cooldown > s.rate / (1 + attackBoost))
@@ -1118,11 +1178,7 @@ export function resolveNativeImpact(ctx: NativeTroopContext, p: CombatProjectile
 function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
   const battle = ctx.battle;
   const state = (u.native ??= {});
-  if (
-    !state.deploymentAbility &&
-    isSiege(u.kind) === false &&
-    text(nativeUnitRow(u.kind, s.level), 'EnabledBySuperLicence') === 'TRUE'
-  ) {
+  if (!state.deploymentAbility && isSiege(u.kind) === false && s.superLicence) {
     state.deploymentAbility = true;
     for (const ability of s.abilities) {
       const row = nativeRow('abilities', ability.name, ability.level);
@@ -1304,9 +1360,10 @@ function stepRuinWitch(
   const consumed = (battle.consumedRubble ??= []);
   let pile = battle.buildings.find((b) => b.id === ruin.rubble && !consumed.includes(b.id));
   if (!pile) {
+    const eaten = new Set(consumed);
     let best = Infinity;
     for (const b of battle.buildings) {
-      if (b.hp > 0 || b.kind === 'wall' || isTrap(b.kind) || consumed.includes(b.id)) continue;
+      if (b.hp > 0 || b.kind === 'wall' || isTrap(b.kind) || eaten.has(b.id)) continue;
       const d = distanceTo(u, b);
       if (d < best - 1e-9 || (Math.abs(d - best) <= 1e-9 && pile && b.id < pile.id)) {
         best = d;
@@ -1492,22 +1549,35 @@ function stepNativeHealer(
   dt: number,
 ) {
   const battle = ctx.battle;
-  const allies = battle.units.filter(
-    (a) => a.id !== u.id && a.hp > 0 && !a.ejected && (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9,
-  );
-  let target = allies.find((a) => a.id === u.healTarget);
+  const units = battle.units;
+  const ally = (a: Unit) =>
+    a.id !== u.id && a.hp > 0 && !a.ejected && (a.spawnedAt ?? 0) <= battle.elapsed + 1e-9;
+  let target: Unit | undefined;
+  if (u.healTarget !== undefined)
+    for (const a of units)
+      if (a.id === u.healTarget && ally(a)) {
+        target = a;
+        break;
+      }
   if (!target || target.hp >= target.maxHp) {
-    target = allies
-      .filter(
-        (a) =>
-          (s.airTargets || !TROOPS[a.kind].flying) && (s.groundTargets || TROOPS[a.kind].flying),
-      )
-      .sort(
-        (a, b) =>
-          Number(a.hp >= a.maxHp) - Number(b.hp >= b.maxHp) ||
-          distance2D(a.x - u.x, a.y - u.y) - distance2D(b.x - u.x, b.y - u.y) ||
-          a.id - b.id,
-      )[0];
+    // The first of the old sort by (already full, distance, id): a single pass over the
+    // roster keeps the same winner without the filtered copy and the O(n log n) sort.
+    target = undefined;
+    let bestFull = 1,
+      bestDistance = Infinity;
+    for (const a of units) {
+      if (!ally(a)) continue;
+      if (!((s.airTargets || !TROOPS[a.kind].flying) && (s.groundTargets || TROOPS[a.kind].flying)))
+        continue;
+      const full = Number(a.hp >= a.maxHp);
+      if (full > bestFull) continue;
+      const d = distance2D(a.x - u.x, a.y - u.y);
+      if (full < bestFull || d < bestDistance || (d === bestDistance && a.id < target!.id)) {
+        bestFull = full;
+        bestDistance = d;
+        target = a;
+      }
+    }
     u.healTarget = target?.id;
   }
   if (!target) {
@@ -1529,18 +1599,18 @@ function stepNativeHealer(
     4.5;
   for (let i = 1; i < Math.max(1, s.bounces + 1) && hits.length <= s.bounces; i++) {
     const last = hits[hits.length - 1];
-    const next = allies
-      .filter(
-        (a) =>
-          !hits.includes(a) &&
-          a.hp < a.maxHp &&
-          distance2D(a.x - last.x, a.y - last.y) <= bounceReach,
-      )
-      .sort(
-        (a, b) =>
-          distance2D(a.x - last.x, a.y - last.y) - distance2D(b.x - last.x, b.y - last.y) ||
-          a.id - b.id,
-      )[0];
+    // Nearest hurt ally within reach not yet hit, lowest id on a tie (the old sort's first).
+    let next: Unit | undefined;
+    let best = Infinity;
+    for (const a of units) {
+      if (!ally(a) || hits.includes(a) || a.hp >= a.maxHp) continue;
+      const d = distance2D(a.x - last.x, a.y - last.y);
+      if (d > bounceReach) continue;
+      if (d < best || (d === best && a.id < next!.id)) {
+        best = d;
+        next = a;
+      }
+    }
     if (!next) break;
     hits.push(next);
   }
