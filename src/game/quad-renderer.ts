@@ -90,7 +90,6 @@ function nativeColorTint(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQua
  */
 function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad) {
   const getTint = Phaser.Renderer.WebGL.Utils.getTintAppendFloatAlpha;
-  const point = new Phaser.Math.Vector2();
   type Batcher = {
     instanceCount: number;
     manager: { setCurrentBatchNode(node: unknown, context: unknown): void };
@@ -106,8 +105,9 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
     batchTriangles: unknown;
   };
   type Transformer = {
-    setupMatrix(context: unknown, object: unknown, parent: unknown): void;
-    transformVertex(point: Phaser.Math.Vector2): void;
+    setupMatrix(context: unknown, object: unknown, parent: unknown): { matrix: ArrayLike<number> };
+    /** Set by setupMatrix: whether this object's vertices snap to whole device pixels. */
+    _roundVertices: boolean;
   };
   type TriangleObject = {
     flipV: boolean;
@@ -134,7 +134,17 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
       this.run(drawingContext);
       this.updateShaderConfig();
     }
-    transformerNode.setupMatrix(drawingContext, gameObject, parentMatrix);
+    // setupMatrix returns the transform every vertex of this object shares. Reading it here and
+    // projecting inline keeps three method calls and a Vector2 round trip out of the per-vertex
+    // path; `transformVertex` does exactly this arithmetic.
+    const calc = transformerNode.setupMatrix(drawingContext, gameObject, parentMatrix).matrix;
+    const ma = calc[0],
+      mb = calc[1],
+      mc = calc[2],
+      md = calc[3],
+      mtx = calc[4],
+      mty = calc[5];
+    const round = transformerNode._roundVertices;
     const flipV = gameObject.flipV;
     const tint = getTint(gameObject.tint, gameObject.alpha);
     const tint2 = ((gameObject.tintMode << 24) | ((gameObject.tint2 ?? 0) & 0xffffff)) >>> 0;
@@ -145,17 +155,31 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
     const viewF32 = buffer.viewF32,
       viewU32 = buffer.viewU32;
     const triangles = (indices.length / 4) | 0;
+    // A mesh nearly always draws from one texture source: resolving the slot again per triangle
+    // is a call into the texture batcher for an answer that has not changed.
+    let lastSource = -1;
+    let textureDatum = 0;
     for (let i = 0; i < triangles; i++) {
       const i4 = i * 4;
-      const textureDatum = this.batchTextures(sources[indices[i4 + 3]].glTexture, renderOptions);
+      const source = indices[i4 + 3];
+      if (source !== lastSource) {
+        textureDatum = this.batchTextures(sources[source].glTexture, renderOptions);
+        lastSource = source;
+      }
       let offset = this.instanceCount * floatsPerInstance;
       for (let corner = 0; corner < 3; corner++) {
         const v = indices[i4 + corner] * 4;
-        point.set(vertices[v], vertices[v + 1]);
-        transformerNode.transformVertex(point);
+        const vx = vertices[v],
+          vy = vertices[v + 1];
+        let x = ma * vx + mc * vy + mtx,
+          y = mb * vx + md * vy + mty;
+        if (round) {
+          x = Math.round(x);
+          y = Math.round(y);
+        }
         const texV = vertices[v + 3];
-        viewF32[offset++] = point.x;
-        viewF32[offset++] = point.y;
+        viewF32[offset++] = x;
+        viewF32[offset++] = y;
         viewF32[offset++] = vertices[v + 2];
         viewF32[offset++] = flipV ? 1 - texV : texV;
         viewF32[offset++] = textureDatum;
@@ -164,7 +188,11 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
       }
       this.instanceCount++;
       this.currentBatchEntry.count++;
-      if (this.instanceCount === instancesPerBatch) this.run(drawingContext);
+      if (this.instanceCount === instancesPerBatch) {
+        this.run(drawingContext);
+        // A flush can rebind textures, so the cached slot no longer stands.
+        lastSource = -1;
+      }
     }
   };
 }

@@ -3,7 +3,7 @@ import type { AudioManager } from './audio';
 import type { LatePresentation, LateRenderContext } from './late-campaign-scene';
 import type { Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
-import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeSceneView, effectSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import type { NativeMeshPose } from './native-mesh';
@@ -105,7 +105,7 @@ export class EagleArtilleryPresentation implements LatePresentation {
       if (!flight)
         this.flights.set(
           key,
-          (flight = { view: new NativeSceneView(this.scene, PREFIX), data: {} }),
+          (flight = { view: effectSceneView(this.scene, PREFIX), data: {} }),
         );
       flight.view.render(poses, x, y, depth);
       Object.assign(flight.data, data);

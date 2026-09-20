@@ -125,6 +125,8 @@ import { troopArt } from './troop-art';
 import { KING_ART, KING_DIRECTIONS, kingAtlas, kingTexture, kingPose } from './king-art';
 import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { configureQuadRendering } from './quad-renderer';
+import { holdFilterContexts } from './native-group-color';
+import { useFastDepthSort } from './display-sort';
 import { RenderDetail } from './render-detail';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
@@ -485,6 +487,8 @@ export class VillageScene extends Phaser.Scene {
   }
   create() {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
+    holdFilterContexts(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
+    useFastDepthSort(this);
     // Frame CPU time feeds the detail governor: pre-step to post-render, not the vsync interval.
     const frameStart = () => {
       this.frameStartedAt = performance.now();

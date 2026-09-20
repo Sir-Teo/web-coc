@@ -6,7 +6,7 @@ import { infernoBeamAlpha, infernoBeamPoses, infernoBeamProfile } from './infern
 import { infernoDamageStage, infernoStats } from './inferno-weapon';
 import type Phaser from 'phaser';
 import type { Battle, Building } from './model';
-import { NativeSceneView, quantizedDensity } from './native-scene-view';
+import { NativeSceneView, effectSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { INFERNO_ROOT, infernoAsset, infernoTexture } from './inferno-art';
@@ -160,7 +160,7 @@ export class InfernoPresentation {
         if (!drawn) return;
         wantedBeams.add(key);
         let beam = this.beams.get(key);
-        if (!beam) this.beams.set(key, (beam = new NativeSceneView(this.scene, 'inferno')));
+        if (!beam) this.beams.set(key, (beam = effectSceneView(this.scene, 'inferno')));
         beam.render(drawn.poses, 0, 0, BEAM_DEPTH, drawn.alpha);
       });
     }

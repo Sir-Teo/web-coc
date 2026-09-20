@@ -272,6 +272,21 @@ function untrack(renderer: Renderer, view: NativeSceneView) {
   renderer.off(Phaser.Renderer.Events.RESTORE_WEBGL, onContextRestored, renderer);
 }
 
+/**
+ * A view for transient combat effects: beams, bursts, trails and projectiles.
+ *
+ * These carry their group colors as the quad renderer's GPU tint instead of a float filter pass.
+ * The filter costs a second offscreen buffer the size of the effect and a pooled drawing context
+ * per group per frame, and a beam that spans the base is a buffer of several hundred pixels a
+ * side; an effect has no source-pixel comparison to hold it to the float path, and the two agree
+ * within half a step per channel. Building bodies keep the plain view (and the filter).
+ */
+export function effectSceneView(scene: Phaser.Scene, prefix: string) {
+  const view = new NativeSceneView(scene, prefix);
+  view.gpuGroupColor = true;
+  return view;
+}
+
 /** Retains native polygons and composites native blend groups in separate GPU buffers. */
 export class NativeSceneView {
   private leaves: NativeMeshView;
