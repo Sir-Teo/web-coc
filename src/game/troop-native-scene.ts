@@ -5,10 +5,11 @@ import type { Battle, Building } from './model';
 import { nativeScenePosesShared, type NativeMeshGraph } from './native-mesh';
 import { nativeMeshTexture } from './native-mesh-scene';
 import { NativeSceneView } from './native-scene-view';
+import type { NativeScenePose } from './native-mesh';
 import { unitAttackIntervalScale } from './native-status';
 import { isShrunk } from './shrink-trap';
 import { buildingIndex } from './battle-index';
-import { unitDepth } from './unit-depth';
+import { ADDITIVE_BAND_DEPTH, unitDepth } from './unit-depth';
 import { UnitMotionTracker, unitAnimationPhase } from './unit-motion';
 import {
   TINT_MULTIPLY,
@@ -39,6 +40,15 @@ interface TroopView {
   depth: number;
   /** Object count when the view was last tagged with its unit id. */
   tagged: number;
+  /** The last shared sample drawn, so an unchanged source frame skips the shared-cache lookup. */
+  sample?: {
+    graph: object;
+    name: string;
+    frame: number;
+    scale: number;
+    mirror: number;
+    poses: readonly NativeScenePose[];
+  };
 }
 /** Source direction roots and native clip timing follow the deterministic battle clock. */
 // Viewport culling skips mesh work for off-screen units. LOD keeps distant units visible: their
@@ -64,6 +74,7 @@ export class TroopNativePresentation {
   private frame = 0;
   private wanted = new Set<number>();
   private present = new Set<number>();
+  private point = { x: 0, y: 0 };
   /** Units drawn from a kept pose this frame (LOD), for probes. */
   lodFrozen = 0;
   constructor(private scene: Phaser.Scene) {}
@@ -145,8 +156,13 @@ export class TroopNativePresentation {
     sprites: Map<number, Phaser.GameObjects.Image>,
     /** Optional prebuilt id index of `battle.buildings` (otherwise built once per sim step). */
     buildingById?: ReadonlyMap<number, Building>,
+    /** Allocation-free `iso`: projects into a scratch point the loop reads before its next call. */
+    projectInto?: (out: { x: number; y: number }, x: number, y: number) => void,
+    /** Presentation detail (RenderDetail): reduced levels widen and strengthen the LOD. */
+    detail = 0,
   ) {
     this.frame++;
+    const scratch = this.point;
     this.lodFrozen = 0;
     const wanted = this.wanted;
     const present = this.present;
@@ -169,10 +185,21 @@ export class TroopNativePresentation {
     const hh = (view?.height ?? 0) / 2;
     const total = battle?.units.length ?? 0;
     // LOD follows the density-independent view zoom, so retina and standard displays agree.
-    const lodActive = culling && total > LOD_UNIT_THRESHOLD && this.viewZoom(cam) < LOD_CLOSE_ZOOM;
-    const lodRadius = lodActive
-      ? Math.max(LOD_RADIUS_MIN, Math.min(view!.width, view!.height) * LOD_RADIUS_FRACTION)
-      : 0;
+    // Reduced detail applies it at any zoom, with a smaller close radius (none at level 2).
+    const lodActive =
+      culling &&
+      (detail > 0 || (total > LOD_UNIT_THRESHOLD && this.viewZoom(cam) < LOD_CLOSE_ZOOM));
+    const lodRadius = !lodActive
+      ? 0
+      : detail >= 2
+        ? 0
+        : Math.max(
+            detail ? LOD_RADIUS_MIN / 2 : LOD_RADIUS_MIN,
+            Math.min(view!.width, view!.height) *
+              (detail ? LOD_RADIUS_FRACTION * 0.7 : LOD_RADIUS_FRACTION),
+          );
+    // Near units resample every frame, or every other one under reduced detail.
+    const nearEvery = detail ? 2 : 1;
     const elapsed = battle?.elapsed ?? 0;
     for (const u of battle?.units ?? []) {
       if (u.hero || isPetUnitKind(u.kind) || u.ejected) continue;
@@ -188,7 +215,11 @@ export class TroopNativePresentation {
       }
       present.add(u.id);
       // Cull before pack fetch/decode so off-screen families never start loading.
-      const point = iso(u.x, u.y);
+      let point: { x: number; y: number };
+      if (projectInto) {
+        projectInto(scratch, u.x, u.y);
+        point = scratch;
+      } else point = iso(u.x, u.y);
       const air = !!TROOPS[u.kind].flying;
       if (culling) {
         const kept = this.views.get(u.id);
@@ -197,15 +228,18 @@ export class TroopNativePresentation {
           // Off-screen: leave the (now invisible) fallback as-is; it is off screen.
           continue;
         }
-        if (lodActive && kept && (this.frame + u.id) % LOD_RESAMPLE_EVERY !== 0) {
+        if (lodActive && kept) {
           const dx = point.x - cx;
           const dy = point.y - cy;
           const radius = lodRadius * LOD_HYSTERESIS;
+          const every = dx * dx + dy * dy > radius * radius ? LOD_RESAMPLE_EVERY : nearEvery;
           // A distant unit stays visible: between its staggered resamples the kept pose only
           // follows the unit's position and depth. It is never hidden.
-          if (dx * dx + dy * dy > radius * radius) {
+          if (every > 1 && (this.frame + u.id) % every !== 0) {
             wanted.add(u.id);
             this.lodFrozen++;
+            // The kept mesh stands in for the fallback sprite on these frames too.
+            sprites.get(u.id)?.setVisible(false);
             const deathAge = elapsed - (u.defeatedAt ?? elapsed);
             if (u.hp <= 0 && deathAge > 1.5) {
               for (const object of kept.view.objects) if (object.visible) object.setVisible(false);
@@ -285,34 +319,51 @@ export class TroopNativePresentation {
           (state.loop && clip ? unitAnimationPhase(u.id, clipSeconds(clip)) : 0);
       if (!state.loop && clip) seconds = Math.min(seconds, (clip.timeline.length - 1) / clip.fps);
       const scale = 0.6 * state.scale * (isShrunk(u, elapsed) ? 0.5 : 1);
-      // Shared, read-only: units of one kind on the same frame reuse a single sample.
-      const poses = nativeScenePosesShared(graph, name, seconds, {}, [
-        scale * (sx < 0 ? -1 : 1),
-        0,
-        0,
-        0,
-        scale,
-        0,
-      ]);
+      const mirror = sx < 0 ? -1 : 1;
       let owned = this.views.get(u.id);
       if (owned && owned.scene !== state.scene) {
         owned.view.destroy();
         this.views.delete(u.id);
         owned = undefined;
       }
+      // Shared, read-only: units of one kind on the same frame reuse a single sample. The
+      // sample only changes with the integer source frame (the sim's 20 Hz clock), so a view
+      // keeps its last one and skips even the shared-cache key on the frames between ticks.
+      const frame = Math.floor(
+        (Number.isFinite(seconds) ? Math.max(0, seconds) : 0) * (clip?.fps ?? 1) + 1e-9,
+      );
+      const last = owned?.sample;
+      let poses: readonly NativeScenePose[];
+      if (
+        last &&
+        last.graph === graph &&
+        last.name === name &&
+        last.frame === frame &&
+        last.scale === scale &&
+        last.mirror === mirror
+      )
+        poses = last.poses;
+      else
+        poses = nativeScenePosesShared(graph, name, seconds, {}, [
+          scale * mirror,
+          0,
+          0,
+          0,
+          scale,
+          0,
+        ]);
       if (!owned) {
-        owned = {
-          scene: state.scene,
-          view: new NativeSceneView(this.scene, `troop:${u.kind}:${state.scene}`),
-          state: requested,
-          x: 0,
-          y: 0,
-          depth: 0,
-          tagged: -1,
-        };
+        const view = new NativeSceneView(this.scene, `troop:${u.kind}:${state.scene}`);
+        // Disjoint screen/additive groups draw as plain leaves: exact, and no buffer per group.
+        view.flattenDisjoint = true;
+        // Blinking groups (fire, glows) keep their buffers between appearances.
+        view.parkGroups = true;
+        owned = { scene: state.scene, view, state: requested, x: 0, y: 0, depth: 0, tagged: -1 };
         this.views.set(u.id, owned);
       }
       owned.state = requested;
+      if (poses !== last?.poses) owned.sample = { graph, name, frame, scale, mirror, poses };
+      owned.view.additiveBand = detail ? ADDITIVE_BAND_DEPTH : undefined;
       wanted.add(u.id);
       sprites.get(u.id)?.setVisible(false);
       owned.x = point.x;
@@ -328,12 +379,10 @@ export class TroopNativePresentation {
           ((u.native?.effects?.invisibleUntil ?? 0) > elapsed ? 0.35 : 1),
       );
       applyStatusTint(owned.view, u.hp > 0 ? unitStatusTint(u, battle!) : undefined);
-      // Tag objects once; the object list only changes when the drawn parts change.
-      if (owned.tagged !== owned.view.objects.length) {
-        for (const object of owned.view.objects)
-          if (object.getData('nativeTroop') !== u.id) object.setData('nativeTroop', u.id);
-        owned.tagged = owned.view.objects.length;
-      }
+      // Tag every drawn object: recycled meshes may arrive from another unit's view.
+      for (const object of owned.view.objects)
+        if (object.getData('nativeTroop') !== u.id) object.setData('nativeTroop', u.id);
+      owned.tagged = owned.view.objects.length;
     }
     for (const [id, { view }] of this.views)
       if (!wanted.has(id)) {
@@ -393,6 +442,8 @@ export function applyStatusTint(
       tint: number;
       tintMode?: number;
       vertices?: unknown;
+      /** A blend-group image carrying its group color as a tint (native-scene-view). */
+      nativeColored?: boolean;
       setTint(color: number): void;
       setTintMode?(mode: number): void;
       clearTint(): void;
@@ -404,8 +455,8 @@ export function applyStatusTint(
     }
     if (tinted.tintMode !== undefined && tinted.tintMode !== TINT_MULTIPLY)
       tinted.setTintMode?.(TINT_MULTIPLY);
-    // Only leaf meshes (Mesh2D, which own vertices) carry a renderer shading tint.
-    if (tinted.vertices !== undefined) {
+    // Leaf meshes (Mesh2D, which own vertices) and colored group images carry a renderer tint.
+    if (tinted.vertices !== undefined || tinted.nativeColored) {
       if (!status) continue;
       const final = combineTint(tinted.tint ?? 0xffffff, status.color);
       if (tinted.tint === final) continue;

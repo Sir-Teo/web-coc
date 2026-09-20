@@ -9,6 +9,12 @@
  * same screen y. Parts of one unit stay well inside the gap between two tie-break slots.
  */
 export const AIR_DEPTH = 7500;
+/**
+ * Under reduced detail, screen/additive unit parts draw in this band above every unit body
+ * (and below the bars at 7600): additive draws commute, so grouping them costs nothing among
+ * themselves and spares the renderer a blend-mode switch (a flushed batch) per glowing unit.
+ */
+export const ADDITIVE_BAND_DEPTH = 7590;
 /** Depth step between the ordered parts of one native unit (up to 1000 parts per unit). */
 export const PART_DEPTH_STEP = 1e-6;
 const TIE_SLOTS = 40;

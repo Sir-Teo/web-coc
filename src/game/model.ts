@@ -3704,35 +3704,32 @@ export class GameModel {
               ...heroBaseStats,
             }
           : unitBase;
-      const d = {
-        ...base,
-        heal:
-          base.heal === undefined
-            ? undefined
-            : base.heal * (1 + (spellRage?.damageBoost ?? 0) / 100),
-        damage:
-          base.damage *
-          Math.max(
-            abilityRage ? (u.hero ? gear.damage : gear.summonDamage) : 1,
-            1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
-            u.native ? unitDamageScale(u, b.elapsed) : 1,
-          ),
-        // A late campaign vortex carries this attacker: it may attack in range but never moves itself.
-        speed: lateUnitRooted(b, u)
-          ? 0
-          : (base.speed +
-              Math.max(
-                abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
-                ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
-                u.native ? unitSpeedBonus(u, b.elapsed) : 0,
-              )) *
-            ((poison.move === 1 ? moveDt : moveDt * poison.move) / unitDt) *
-            (u.native ? unitSpeedScale(u, b.elapsed) : 1),
-      };
+      const heal =
+        base.heal === undefined ? undefined : base.heal * (1 + (spellRage?.damageBoost ?? 0) / 100);
+      const damage =
+        base.damage *
+        Math.max(
+          abilityRage ? (u.hero ? gear.damage : gear.summonDamage) : 1,
+          1 + ((spellRage?.damageBoost ?? 0) / 100) * heroScale,
+          u.native ? unitDamageScale(u, b.elapsed) : 1,
+        );
+      // A late campaign vortex carries this attacker: it may attack in range but never moves itself.
+      const speed = lateUnitRooted(b, u)
+        ? 0
+        : (base.speed +
+            Math.max(
+              abilityRage ? (u.hero ? gear.speedBoost : gear.summonSpeedBoost) : 0,
+              ((spellRage?.speedBoost ?? 0) / SPELL_SPEED_SCALE) * heroScale,
+              u.native ? unitSpeedBonus(u, b.elapsed) : 0,
+            )) *
+          ((poison.move === 1 ? moveDt : moveDt * poison.move) / unitDt) *
+          (u.native ? unitSpeedScale(u, b.elapsed) : 1);
       if (native && nativeBehavior(b, u.kind)) {
-        stepNativeUnit(native, u, d, unitDt);
+        // Native rules read only the boosted damage, speed and heal: no copy of the stats row.
+        stepNativeUnit(native, u, { damage, speed, heal }, unitDt);
         continue;
       }
+      const d = { ...base, heal, damage, speed };
       if (troop.healer) {
         stepHealer(b, u, d, unitDt, this.onEffect);
         continue;

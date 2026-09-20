@@ -175,6 +175,32 @@ export function configureNativeTriangleRendering(renderer: Phaser.Renderer.WebGL
   batchTrianglesWithTint2(node);
 }
 
+const configuredQuadColor = new WeakMap<Phaser.Renderer.WebGL.WebGLRenderer, boolean>();
+/**
+ * Sprite quads (blend-group buffer images) get the same GPU multiply/add color as native meshes,
+ * so a colored group needs no filter pass. Returns false when the renderer's quad shader has no
+ * tint branch to extend (test doubles): callers then keep their filter path.
+ */
+export function configureNativeQuadColor(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
+  const known = configuredQuadColor.get(renderer);
+  if (known !== undefined) return known;
+  let supported = false;
+  try {
+    const node = renderer.renderNodes?.getNode('BatchHandlerQuad') as
+      Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad | undefined;
+    if (node?.programManager) {
+      nativeColorTint(node);
+      const tint = node.programManager.getAdditionsByTag('TINT')[0];
+      const header = (tint?.additions as { fragmentHeader?: unknown } | undefined)?.fragmentHeader;
+      supported = typeof header === 'string' && header.includes('NativeColorTint');
+    }
+  } catch {
+    supported = false;
+  }
+  configuredQuadColor.set(renderer, supported);
+  return supported;
+}
+
 /** Keep Phaser's sprite batching, but avoid degenerate triangles between sprites. */
 export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRenderer) {
   const node = renderer.renderNodes.getNode(

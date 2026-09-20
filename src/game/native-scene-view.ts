@@ -4,6 +4,13 @@ import { nativeBlendMode, nativeMultiplyModes } from './native-blend';
 import { NativeGroupColor } from './native-group-color';
 import { PART_DEPTH_STEP } from './unit-depth';
 import { groupBufferPool, type NativeGroupBuffer } from './native-group-buffer';
+import { configureNativeQuadColor, NATIVE_COLOR_TINT_MODE } from './quad-renderer';
+import {
+  colorless,
+  flattenDisjointGroups,
+  inUnitRange,
+  nativeSceneStats,
+} from './native-scene-flatten';
 import {
   includeNativeVertices,
   nativeMatrix,
@@ -107,11 +114,32 @@ function transformed(poses: readonly NativeScenePose[], matrix: NativeMatrix): N
   );
 }
 
-const white = (m: readonly number[]) => m[0] === 1 && m[1] === 1 && m[2] === 1;
-const colorless = (p: { multiply: readonly number[]; add: readonly number[] }) =>
-  white(p.multiply) && p.add[0] === 0 && p.add[1] === 0 && p.add[2] === 0;
 const IDENTITY_COLOR = [1, 1, 1, 1],
   NO_ADD = [0, 0, 0, 0];
+const byte = (v: number) => Math.round(Math.max(0, Math.min(1, v)) * 255);
+const rgb = (c: readonly number[]) => (byte(c[0]) << 16) | (byte(c[1]) << 8) | byte(c[2]);
+type ColoredImage = Phaser.GameObjects.Image & {
+  tint2TopLeft: number;
+  tint2TopRight: number;
+  tint2BottomLeft: number;
+  tint2BottomRight: number;
+  tintMode: number;
+  /** Carries a group color in its tint (status tints combine with it, as on leaf meshes). */
+  nativeColored?: boolean;
+};
+/** Group multiply/add as the quad renderer's native color tint on the drawn buffer image. */
+function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: number) {
+  const colored = image as ColoredImage;
+  colored.nativeColored = tint !== 0xffffff || tint2 !== 0;
+  if (colored.tint !== tint) colored.setTint(tint);
+  if (colored.tint2TopLeft !== tint2)
+    colored.tint2TopLeft =
+      colored.tint2TopRight =
+      colored.tint2BottomLeft =
+      colored.tint2BottomRight =
+        tint2;
+  if (colored.tintMode !== NATIVE_COLOR_TINT_MODE) colored.setTintMode(NATIVE_COLOR_TINT_MODE);
+}
 
 /** Direct multiply leaves also need isolation before the two destination passes. */
 function isolateMultiplyLeaves(poses: readonly NativeScenePose[]): readonly NativeScenePose[] {
@@ -177,6 +205,8 @@ export function flattenSingleLeafGroups(
 
 /** Frames a shrinkable buffer must stay under a quarter used before it is swapped for a smaller one. */
 const SHRINK_FRAMES = 120;
+/** Renders a vanished group stays parked (hidden, buffer and meshes kept) before release. */
+const PARK_FRAMES = 30;
 
 interface GroupEntry {
   /** Composited buffer the scene (or an enclosing group) draws. */
@@ -200,6 +230,9 @@ interface GroupEntry {
   oversized: number;
   multiply: number[];
   add: number[];
+  /** The group pose object last hashed at `lastDensity`: the same object again is the same signature. */
+  lastPose?: NativeGroupPose;
+  lastDensity: number;
 }
 
 // One context-loss listener pair per renderer serves every live top-level view.
@@ -242,12 +275,24 @@ export class NativeSceneView {
   readonly groups = new Map<string, GroupEntry>();
   /** Drawn objects in final order, rebuilt by every render(). */
   objects: NativeObject[] = [];
+  /** Draw disjoint screen/additive groups as plain leaves (see flattenDisjointGroups). */
+  flattenDisjoint = false;
+  /** Keep a vanished group's buffer and content parked for PARK_FRAMES renders (animated units). */
+  parkGroups = false;
+  /**
+   * When set, screen/additive parts take this depth (leaves) or this depth + 5 (group images)
+   * instead of their place in the unit, so consecutive units share one blend state.
+   */
+  additiveBand?: number;
+  /** The quad shader carries group colors, so colored groups need no filter pass. */
+  private gpuColor: boolean;
   constructor(
     private scene: Phaser.Scene,
     private prefix: string,
     private detached = false,
   ) {
     this.renderer = scene.game.renderer as Renderer;
+    this.gpuColor = configureNativeQuadColor(this.renderer);
     this.leaves = new NativeMeshView(scene, prefix, detached);
     if (!detached) {
       track(this.renderer, this);
@@ -280,6 +325,7 @@ export class NativeSceneView {
     density = Math.max(1, this.scene.cameras.main.zoomX, this.scene.cameras.main.zoomY),
   ) {
     density = quantizedDensity(density);
+    if (this.flattenDisjoint) poses = flattenDisjointGroups(poses);
     poses = isolateMultiplyLeaves(flattenSingleLeafGroups(poses));
     // Final depths are assigned below in full pose order (leaves interleaved
     // with blend groups), not in leaf-list order.
@@ -287,6 +333,7 @@ export class NativeSceneView {
     const objects = this.objects;
     objects.length = 0;
     const stamp = ++this.stamp;
+    nativeSceneStats.renders++;
     if (this.groups.size) {
       // Release vanished groups first, so new groups can reuse their pooled buffers.
       let wanted = 0;
@@ -301,16 +348,30 @@ export class NativeSceneView {
       if (wanted !== this.groups.size)
         for (const [key, entry] of this.groups)
           if (entry.stamp !== stamp) {
-            this.release(entry);
-            this.groups.delete(key);
+            // A blinking group keeps its buffer and content meshes parked for a while: releasing
+            // and rebuilding them a frame later costs a full paint and mesh churn.
+            if (this.parkGroups && stamp - entry.stamp <= PARK_FRAMES) {
+              const image = entry.buffer?.image;
+              if (image?.visible) image.setVisible(false);
+              if (entry.multiplyImage?.visible) entry.multiplyImage.setVisible(false);
+            } else {
+              this.release(entry);
+              this.groups.delete(key);
+            }
           }
     }
+    const band = this.additiveBand;
     for (let order = 0; order < poses.length; order++) {
       const pose = poses[order];
-      const wantDepth = depth + order * PART_DEPTH_STEP;
+      const banded = band !== undefined && (pose.blend === 4 || pose.blend === 8);
+      const wantDepth = banded
+        ? band + ('group' in pose ? 5 : 0) + order * PART_DEPTH_STEP
+        : depth + order * PART_DEPTH_STEP;
       let object: NativeObject;
       let entry: GroupEntry | undefined;
       if ('group' in pose) {
+        nativeSceneStats.groups++;
+        if (nativeSceneStats.skipGroups) continue;
         entry = this.renderGroup(pose, x, y, alpha, density, stamp);
         if (!entry) {
           // Nothing to draw (no vertices): give its buffer back.
@@ -345,9 +406,17 @@ export class NativeSceneView {
     stamp: number,
   ): GroupEntry | undefined {
     const colored = !colorless(pose);
-    const signature = groupSignature(pose, density, colored);
+    // Group colors within 0..1 ride on the drawn image as a GPU tint; the filter pass (and its
+    // second buffer) stays only for other colors and for renderers without the tint branch.
+    const filtered = colored && !(this.gpuColor && inUnitRange(pose));
     let entry = this.groups.get(pose.key);
-    if (entry && entry.oversized > SHRINK_FRAMES) entry.signature = NaN;
+    if (entry && entry.oversized > SHRINK_FRAMES) {
+      entry.signature = NaN;
+      entry.lastPose = undefined;
+    }
+    // A shared sample drawn again at the same density hashes to the same signature: skip it.
+    const unchanged = !!entry && entry.lastPose === pose && entry.lastDensity === density;
+    const signature = unchanged ? entry!.signature : groupSignature(pose, density, filtered);
     if (!entry || entry.signature !== signature) {
       const bounds = scratchBounds;
       bounds[0] = bounds[1] = Infinity;
@@ -379,6 +448,7 @@ export class NativeSceneView {
           oversized: 0,
           multiply: [1, 1, 1],
           add: [0, 0, 0],
+          lastDensity: NaN,
         };
         this.groups.set(pose.key, entry);
       }
@@ -387,16 +457,21 @@ export class NativeSceneView {
         entry.multiply[i] = pose.multiply[i];
         entry.add[i] = pose.add[i];
       }
-      this.allocate(entry, colored);
+      this.allocate(entry, filtered);
       entry.content.render(transformed(pose.group, [d, 0, -left, 0, d, -top]), 0, 0, 0, 1, 1);
       this.paint(entry);
       entry.signature = signature;
     }
+    entry.lastPose = pose;
+    entry.lastDensity = density;
     entry.stamp = stamp;
     const buffer = entry.buffer!;
     entry.oversized =
       buffer.width * buffer.height > 4 * entry.width * entry.height ? entry.oversized + 1 : 0;
     const image = buffer.image;
+    const tint = colored && !filtered ? rgb(pose.multiply) : 0xffffff;
+    const tint2 = colored && !filtered ? rgb(pose.add) : 0;
+    setGroupColor(image, tint, tint2);
     const blend =
       pose.blend === 3
         ? nativeMultiplyModes(this.renderer)[0]
@@ -441,6 +516,7 @@ export class NativeSceneView {
         second.setCrop(0, 0, entry.width, entry.height);
         entry.multiplyCrop = crop;
       }
+      setGroupColor(second, tint, tint2);
       if (second.x !== wantX || second.y !== wantY) second.setPosition(wantX, wantY);
       if (second.scaleX !== wantScale || second.scaleY !== wantScale) second.setScale(wantScale);
       if (second.alpha !== wantAlpha) second.setAlpha(wantAlpha);
@@ -451,7 +527,7 @@ export class NativeSceneView {
     return entry;
   }
   /** Grow-only buffers: reallocate when content outgrows them or stays far smaller for a while. */
-  private allocate(entry: GroupEntry, colored: boolean) {
+  private allocate(entry: GroupEntry, filtered: boolean) {
     const pool = groupBufferPool(this.scene);
     const { width, height } = entry;
     const current = entry.buffer;
@@ -478,7 +554,7 @@ export class NativeSceneView {
       buffer.cropWidth = width;
       buffer.cropHeight = height;
     }
-    if (colored) {
+    if (filtered) {
       // The source only needs to cover the content; it is drawn unscaled at the buffer origin.
       let source = entry.source;
       if (!source || source.width < width || source.height < height) {
@@ -498,6 +574,7 @@ export class NativeSceneView {
   private paint(entry: GroupEntry) {
     const buffer = entry.buffer;
     if (!buffer) return;
+    nativeSceneStats.paints++;
     const target = buffer.image;
     const content = entry.content.objects;
     if (entry.source) {
