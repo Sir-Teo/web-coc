@@ -3981,7 +3981,10 @@ export class GameModel {
       b.separationCap ? SEPARATION_TILES_PER_SECOND * dt : undefined,
     );
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
-    if (stepTraps(b, dt, this.onEffect)) this.changed();
+    // A sprung trap only restyles itself and the HUD's live counters: a passive change, so
+    // the scene skips the full building restyle (and the HUD its rebuild) a busy battle
+    // would otherwise pay several times a second.
+    if (stepTraps(b, dt, this.onEffect)) this.changed(true);
     this.stepLate('traps', dt);
     stepMortarShells(b, this.onEffect);
     stepInfernos(b, dt);

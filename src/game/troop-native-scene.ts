@@ -364,6 +364,8 @@ export class TroopNativePresentation {
         const view = new NativeSceneView(this.scene, `troop:${u.kind}:${state.scene}`);
         // Disjoint screen/additive groups draw as plain leaves: exact, and no buffer per group.
         view.flattenDisjoint = true;
+        // Group colors ride on the buffer image as a tint: no filter framebuffer per group.
+        view.gpuGroupColor = true;
         // Under reduced detail, saturating leaf colors (hit flashes) clamp on the GPU after
         // filtering instead of baking a recolored texture copy per color step.
         view.gpuSaturate = detail > 0;
@@ -455,13 +457,19 @@ export function applyStatusTint(
       vertices?: unknown;
       /** A blend-group image carrying its group color as a tint (native-scene-view). */
       nativeColored?: boolean;
+      /** Set on parts drawn through the additive tint mode: their real additive blend slot. */
+      nativeAdditiveBlend?: number;
       setTint(color: number): void;
       setTintMode?(mode: number): void;
+      setBlendMode?(mode: number): void;
       clearTint(): void;
     };
-    // Additive parts keep their mode (it is their blend); only the multiply color combines.
+    // Additive parts keep their mode (it is their blend) under a multiply status; a screen
+    // status replaces the tint mode, so they go back to the real additive blend for it.
     const additive = tinted.tintMode === NATIVE_ADDITIVE_TINT_MODE;
-    if (mode !== TINT_MULTIPLY && !additive) {
+    if (mode !== TINT_MULTIPLY) {
+      if (additive && tinted.nativeAdditiveBlend !== undefined)
+        tinted.setBlendMode?.(tinted.nativeAdditiveBlend);
       if (tinted.tint !== status!.color) tinted.setTint(status!.color);
       if (tinted.tintMode !== mode) tinted.setTintMode?.(mode);
       continue;

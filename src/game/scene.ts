@@ -1842,6 +1842,33 @@ export class VillageScene extends Phaser.Scene {
     this.lastRevision = this.model.revision;
     this.syncCount++;
   }
+  /**
+   * Whether the one change since the last sync was a passive battle event: a deploy (the sprite
+   * pass creates unit sprites itself) or a sprung trap. Only trap sprites need restyling then.
+   */
+  private battlePassiveOnly() {
+    return (
+      !!this.model.battle &&
+      this.mode === 'battle' &&
+      this.passiveRevision === this.model.revision &&
+      this.lastRevision === this.model.revision - 1
+    );
+  }
+  /** The trap part of `syncBuilding`: spent fades and pumpkin frames follow the trap state. */
+  private syncTraps() {
+    const battle = this.model.battle!;
+    for (const b of battle.buildings) {
+      if (!isTrap(b.kind) && b.npc !== 'pumpkin-bomb') continue;
+      const im = this.sprites.get(b.id);
+      if (!im) continue;
+      const trap = battle.traps[b.id];
+      if (b.npc === 'pumpkin-bomb')
+        im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.state.settings.reducedMotion));
+      const alpha = trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1;
+      if (im.alpha !== alpha) im.setAlpha(alpha);
+    }
+    this.lastRevision = this.model.revision;
+  }
   /** Whether every change since the last sync was a passive resource tick at home. */
   private passiveOnly() {
     return (
@@ -3204,8 +3231,17 @@ export class VillageScene extends Phaser.Scene {
       if (im.displayWidth !== width || im.displayHeight !== width) im.setDisplaySize(width, width);
       if (im.getData('shrinkScale') !== shrinkScale) im.setData('shrinkScale', shrinkScale);
       // A native view stands in for this unit and hides its sprite every frame: only the
-      // shadow and the health bar (which the sprite pass owns) are needed while it lasts.
+      // shadow, the health bar (which the sprite pass owns) and the sprite's status tint
+      // (read as the unit's status by tools and specs) are kept up while it lasts.
       if (!u.hero && u.hp > 0 && this.troopNativePresentation.hasView(u.id)) {
+        const status = unitStatusTint(u, battle);
+        const tint = status?.color ?? 0xffffff;
+        if (im.tintTopLeft !== tint || im.tintTopRight !== tint) {
+          if (tint === 0xffffff) im.clearTint();
+          else im.setTint(tint);
+        }
+        const tintMode = (status?.mode ?? Phaser.TintModes.MULTIPLY) as Phaser.TintModes;
+        if (im.tintMode !== tintMode) im.setTintMode(tintMode);
         const sprung = (u.springUntil ?? 0) > battle.elapsed;
         const lift = flying
           ? AIR_LIFT
@@ -4285,6 +4321,7 @@ export class VillageScene extends Phaser.Scene {
     this.drainEffects();
     if (this.lastRevision !== this.model.revision) {
       if (this.passiveOnly()) this.passiveSync();
+      else if (this.battlePassiveOnly()) this.syncTraps();
       else this.sync();
     }
     if (

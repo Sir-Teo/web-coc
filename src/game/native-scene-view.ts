@@ -130,6 +130,8 @@ type ColoredImage = Phaser.GameObjects.Image & {
   tintMode: number;
   /** Carries a group color in its tint (status tints combine with it, as on leaf meshes). */
   nativeColored?: boolean;
+  /** The real additive blend slot, for a status tint mode that must replace the additive tint. */
+  nativeAdditiveBlend?: number;
 };
 /** Group multiply/add as the quad renderer's native color tint on the drawn buffer image. */
 function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: number, mode: number) {
@@ -283,6 +285,12 @@ export class NativeSceneView {
   flattenDisjoint = false;
   /** Keep a vanished group's buffer and content parked for PARK_FRAMES renders (animated units). */
   parkGroups = false;
+  /**
+   * Carry group colors as an 8-bit GPU tint on the drawn buffer instead of a float-precision
+   * filter pass (which takes a pooled framebuffer per group per frame). Within half a step per
+   * channel of the filter; on by the troop presentation, off where source pixels are compared.
+   */
+  gpuGroupColor = false;
   /** Clamp saturating leaf colors on the GPU instead of baking texel copies (see NativeMeshView). */
   get gpuSaturate() {
     return this.leaves.gpuSaturate;
@@ -410,7 +418,7 @@ export class NativeSceneView {
     const colored = !colorless(pose);
     // Group colors within 0..1 ride on the drawn image as a GPU tint; the filter pass (and its
     // second buffer) stays only for other colors and for renderers without the tint branch.
-    const filtered = colored && !(this.gpuColor && inUnitRange(pose));
+    const filtered = colored && !(this.gpuGroupColor && this.gpuColor && inUnitRange(pose));
     let entry = this.groups.get(pose.key);
     if (entry && entry.oversized > SHRINK_FRAMES) {
       entry.signature = NaN;
@@ -483,6 +491,7 @@ export class NativeSceneView {
       tint2,
       additive ? NATIVE_ADDITIVE_TINT_MODE : NATIVE_COLOR_TINT_MODE,
     );
+    if (additive) (image as ColoredImage).nativeAdditiveBlend = nativeBlendMode(this.renderer, 8);
     const blend = additive
       ? Phaser.BlendModes.NORMAL
       : pose.blend === 3

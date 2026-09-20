@@ -203,10 +203,13 @@ type NativeMesh = Phaser.GameObjects.Mesh2D & {
   nativeStamp: number;
   /** The pose object last drawn: the same shared sample again needs only position and depth. */
   nativePose?: NativeMeshPose;
-  /** Base color of that pose, restored each frame before status tints combine with it. */
+  /** Base color and blend of that pose, restored each frame before status tints combine with it. */
   nativeTint: number;
   nativeTint2: number;
   nativeTintMode: number;
+  nativeBlend: number;
+  /** The real additive blend slot, for a status tint mode that must replace the additive tint. */
+  nativeAdditiveBlend?: number;
 };
 /**
  * Parked meshes are interchangeable across views: one pool per scene bounds the hidden objects
@@ -331,6 +334,7 @@ export class NativeMeshView {
         if (mesh.tint !== mesh.nativeTint) mesh.tint = mesh.nativeTint;
         if (mesh.tint2 !== mesh.nativeTint2) mesh.tint2 = mesh.nativeTint2;
         if (mesh.tintMode !== mesh.nativeTintMode) mesh.tintMode = mesh.nativeTintMode;
+        if (mesh.blendMode !== mesh.nativeBlend) mesh.setBlendMode(mesh.nativeBlend);
         if (mesh.x !== x || mesh.y !== y) mesh.setPosition(x, y);
         if (assignDepth) {
           const wantDepth = depth + order * PART_DEPTH_STEP;
@@ -418,6 +422,8 @@ export class NativeMeshView {
           ? Phaser.BlendModes.NORMAL
           : nativeBlendMode(this.renderer, pose.blend);
       if (mesh.blendMode !== wantBlend) mesh.setBlendMode(wantBlend);
+      mesh.nativeBlend = wantBlend;
+      if (additive) mesh.nativeAdditiveBlend = nativeBlendMode(this.renderer, 8);
       if (!mesh.visible) mesh.setVisible(true);
     }
     if (seen !== this.meshes.size)
