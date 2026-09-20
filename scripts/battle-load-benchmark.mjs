@@ -136,12 +136,25 @@ const deployed = await page.evaluate(async () => {
     points.push([minX - 2, minY + (maxY - minY) * t], [minX + (maxX - minX) * t, minY - 2]);
     points.push([maxX + 2, minY + (maxY - minY) * t], [minX + (maxX - minX) * t, maxY + 2]);
   }
+  // Keep only drop points on the grass; a point the boundary covers is nudged outward.
+  const open = [];
+  for (const [px, py] of points) {
+    const cx = (v) => Math.min(47, Math.max(1, v));
+    let x = cx(px),
+      y = cx(py);
+    for (let tries = 0; m.deployBlocked(x, y) && tries < 6; tries++) {
+      x = cx(x + Math.sign(x - 24) * 1);
+      y = cx(y + Math.sign(y - 24) * 1);
+    }
+    if (!m.deployBlocked(x, y)) open.push([x, y]);
+  }
   let n = 0;
   for (const k of TROOP_KEYS) {
     m.activeTroop = k;
-    for (let i = 0; i < (b.remaining[k] ?? 0); i++) {
-      const [x, y] = points[n++ % points.length];
-      if (!m.deploy(Math.min(47, Math.max(1, x)), Math.min(47, Math.max(1, y)))) break;
+    const count = b.remaining[k] ?? 0;
+    for (let i = 0; i < count; i++) {
+      const [x, y] = open[n++ % open.length];
+      m.deploy(x, y);
     }
   }
   scene.resetCamera();

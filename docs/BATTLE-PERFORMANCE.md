@@ -104,6 +104,52 @@ sustained pressure.
 - Native units get a three-field boosted stats object rather than a copy of the stats row;
   unit stats memoize by kind and level without building a key string.
 
+## Second round: frame spikes and the display list
+
+Profiling the same 589-unit battle after the work above (`scripts/battle-load-benchmark.mjs`
+had been deploying only half of each troop kind: its loop re-read the shrinking `remaining`
+count, so earlier "589-unit" rows measured 295 units) found the remaining time in spikes rather
+than in the average frame:
+
+- **Framebuffer creation.** Every pooled drawing context Phaser creates runs
+  `gl.checkFramebufferStatus`, a pipeline sync worth ~10 ms on Metal. The Inferno Tower and
+  Eagle Artillery views never opted into the GPU group tint, so each beam and glow took the
+  filter pass, and the content views of nested groups inherited none of their parent's flags,
+  so colored groups inside effects took it too. With the idle prune dropping contexts after 4 s,
+  every intermittent effect re-created its framebuffer: 190 ms of the profile in 36 slow frames.
+- **Texel bakes.** A hit flash on a unit whose color saturates bakes a recolored texel region on a
+  canvas (`getImageData`, `putImageData`, `texImage2D`); several units flashing in one frame
+  stalled it for 20 ms.
+- **Display list size.** 7,000 objects per frame, of which 2,700 were hidden: the whole army's
+  camp sprites, fallback sprites under native meshes, and hidden building images. Four Inferno
+  Towers alone were 553 meshes.
+
+What changed:
+
+- Inferno and Eagle views carry group colors as the GPU tint (`gpuGroupColor`), and a group's
+  content view inherits every flag of its parent.
+- `NativeMeshView.mergeLeaves` (troop, effect and Inferno views): consecutive leaves that share
+  a texture, tint, blend and alpha draw as one mesh, strips concatenated in order, so the pixels
+  are unchanged and the display list shrinks (Inferno bodies from 138 meshes to a handful).
+- `NativeMeshView.bakeBudget` (troop and effect views): bakes past 1.5 ms in a frame are
+  deferred; the leaf clamps on the GPU until a later frame bakes it.
+- Camp sprites leave the display list for the duration of a battle instead of hiding.
+- The camera's visible-children scan is a plain loop (`useFastVisibleChildren`).
+
+Headless Chromium, 1440×960 at 2×, 589 max-level units, CPU time per game step:
+
+| Measure         | Before this round | After          |
+| --------------- | ----------------- | -------------- |
+| Mean / p50      | 15.6 / 10.5 ms    | 10.4 / 7.7 ms  |
+| p95 / p99       | 34.0 / 39.7 ms    | 25.2 / 29.6 ms |
+| Worst frame     | 108 ms            | 34 ms          |
+| Display objects | 7,037             | 5,893          |
+
+The slow frames that remain are simulation ticks (a 20 Hz tick lands on every third frame):
+sub-tile A* is ~40 % of a native unit's step and is already typed-array code with a per-tick
+search budget, so cutting it further means changing results, which the replay and historical
+suites forbid.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
@@ -114,3 +160,7 @@ sustained pressure.
 - Never add per-frame `destroy()` of display objects in the battle layer; park and reuse.
 - `nativeSceneStats` (`globalThis.__nativeSceneStats` in dev builds) counts renders, group
   paints, lifted groups and texel bakes per frame for quick checks in the browser console.
+- A new `NativeSceneView` flag must also be copied into group content views (see
+  `renderGroup`), or nested groups silently fall back to the slow path.
+- A view whose leaves a spec counts (`meshes.size` lower bounds) should not enable
+  `mergeLeaves` without rechecking that spec.

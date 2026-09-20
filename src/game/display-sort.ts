@@ -118,3 +118,28 @@ export function useFastDepthSort(scene: Phaser.Scene) {
     this.sortChildrenFlag = false;
   };
 }
+
+type CameraManager = Phaser.Cameras.Scene2D.CameraManager & {
+  getVisibleChildren(
+    children: Phaser.GameObjects.GameObject[],
+    camera: Phaser.Cameras.Scene2D.Camera,
+  ): Phaser.GameObjects.GameObject[];
+  fastVisibleChildren?: boolean;
+};
+/**
+ * Replaces the camera manager's visible-children scan (`Array.filter` with a closure over
+ * thousands of objects, every frame) with a plain loop. Same result, in the same order.
+ */
+export function useFastVisibleChildren(scene: Phaser.Scene) {
+  const cameras = scene.cameras as CameraManager | undefined;
+  if (!cameras || cameras.fastVisibleChildren) return;
+  cameras.fastVisibleChildren = true;
+  cameras.getVisibleChildren = function (children, camera) {
+    const visible: Phaser.GameObjects.GameObject[] = [];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child.willRender(camera)) visible.push(child);
+    }
+    return visible;
+  };
+}

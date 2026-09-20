@@ -103,10 +103,7 @@ export class EagleArtilleryPresentation implements LatePresentation {
       flying.add(key);
       let flight = this.flights.get(key);
       if (!flight)
-        this.flights.set(
-          key,
-          (flight = { view: effectSceneView(this.scene, PREFIX), data: {} }),
-        );
+        this.flights.set(key, (flight = { view: effectSceneView(this.scene, PREFIX), data: {} }));
       flight.view.render(poses, x, y, depth);
       Object.assign(flight.data, data);
       for (const object of flight.view.objects)
@@ -163,7 +160,12 @@ export class EagleArtilleryPresentation implements LatePresentation {
         this.baseSignatures.set(b.id, baseSignature);
       }
       let body = this.bodies.get(b.id);
-      if (!body) this.bodies.set(b.id, (body = new NativeSceneView(this.scene, PREFIX)));
+      if (!body) {
+        body = new NativeSceneView(this.scene, PREFIX);
+        // Glow colors sit within 0..1: a GPU tint instead of a filter framebuffer per group.
+        body.gpuGroupColor = true;
+        this.bodies.set(b.id, body);
+      }
       const ammunition = tower?.ammunition ?? EAGLE_ARTILLERY.ammunition,
         awake = tower?.awakeAt !== undefined;
       const signature = `${b.level}:${visual}:${frame}:${b.constructing ? 1 : 0}:${ammunition}:${awake}:${p.x}:${p.y}:${zoom}`;

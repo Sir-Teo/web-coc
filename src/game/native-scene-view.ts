@@ -284,6 +284,12 @@ function untrack(renderer: Renderer, view: NativeSceneView) {
 export function effectSceneView(scene: Phaser.Scene, prefix: string) {
   const view = new NativeSceneView(scene, prefix);
   view.gpuGroupColor = true;
+  // A blinking burst keeps its buffer parked between appearances instead of giving it back and
+  // painting a new one. Its groups stay groups (specs count them across context restoration).
+  view.parkGroups = true;
+  view.mergeLeaves = true;
+  // No bake budget here: an effect's mesh set must be the same whether a color bakes on its
+  // first frame or later (replay-seek specs compare the two), and a burst rarely saturates.
   return view;
 }
 
@@ -312,6 +318,20 @@ export class NativeSceneView {
   }
   set gpuSaturate(value: boolean) {
     this.leaves.gpuSaturate = value;
+  }
+  /** Draw consecutive same-state leaves as one mesh (see NativeMeshView.mergeLeaves). */
+  get mergeLeaves() {
+    return this.leaves.mergeLeaves;
+  }
+  set mergeLeaves(value: boolean) {
+    this.leaves.mergeLeaves = value;
+  }
+  /** Defer texel bakes past the frame's bake budget (see NativeMeshView.bakeBudget). */
+  get bakeBudget() {
+    return this.leaves.bakeBudget;
+  }
+  set bakeBudget(value: boolean) {
+    this.leaves.bakeBudget = value;
   }
   /** The quad shader carries group colors, so colored groups need no filter pass. */
   private gpuColor: boolean;
@@ -408,7 +428,12 @@ export class NativeSceneView {
           continue;
         }
         object = entry.buffer!.image;
-      } else object = this.leaves.meshes.get(pose.key)!;
+      } else {
+        // A leaf merged into an earlier run has no mesh of its own.
+        const mesh = this.leaves.meshes.get(pose.key);
+        if (!mesh) continue;
+        object = mesh;
+      }
       // Guard depth writes: any assignment queues a full stable sort of the display list.
       if (object.depth !== wantDepth) object.setDepth(wantDepth);
       if (!object.visible) object.setVisible(true);
@@ -460,8 +485,17 @@ export class NativeSceneView {
       const width = Math.ceil(bounds[2] * d) - left + 1,
         height = Math.ceil(bounds[3] * d) - top + 1;
       if (!entry) {
+        const content = new NativeSceneView(this.scene, this.prefix, true);
+        // Nested groups draw the way this view's do: a colored group inside an effect otherwise
+        // took the filter pass (and a pooled framebuffer) its parent had opted out of.
+        content.gpuGroupColor = this.gpuGroupColor;
+        content.flattenDisjoint = this.flattenDisjoint;
+        content.parkGroups = this.parkGroups;
+        content.mergeLeaves = this.mergeLeaves;
+        content.bakeBudget = this.bakeBudget;
+        content.gpuSaturate = this.gpuSaturate;
         entry = {
-          content: new NativeSceneView(this.scene, this.prefix, true),
+          content,
           multiplyCrop: 0,
           signature: NaN,
           stamp,

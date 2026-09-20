@@ -145,6 +145,9 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
       mtx = calc[4],
       mty = calc[5];
     const round = transformerNode._roundVertices;
+    // A camera with no rotation over an unrotated mesh — every native part in the battle — leaves
+    // the off-diagonal terms at zero, so each vertex is a scale and an offset per axis.
+    const upright = mb === 0 && mc === 0;
     const flipV = gameObject.flipV;
     const tint = getTint(gameObject.tint, gameObject.alpha);
     const tint2 = ((gameObject.tintMode << 24) | ((gameObject.tint2 ?? 0) & 0xffffff)) >>> 0;
@@ -171,8 +174,14 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
         const v = indices[i4 + corner] * 4;
         const vx = vertices[v],
           vy = vertices[v + 1];
-        let x = ma * vx + mc * vy + mtx,
+        let x: number, y: number;
+        if (upright) {
+          x = ma * vx + mtx;
+          y = md * vy + mty;
+        } else {
+          x = ma * vx + mc * vy + mtx;
           y = mb * vx + md * vy + mty;
+        }
         if (round) {
           x = Math.round(x);
           y = Math.round(y);

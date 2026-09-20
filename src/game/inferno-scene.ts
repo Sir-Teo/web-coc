@@ -89,7 +89,15 @@ export class InfernoPresentation {
       if (building.kind !== 'inferno') continue;
       wanted.add(building.id);
       let view = this.views.get(building.id);
-      if (!view) this.views.set(building.id, (view = new NativeSceneView(this.scene, 'inferno')));
+      if (!view) {
+        view = new NativeSceneView(this.scene, 'inferno');
+        // Beam and body colors sit within 0..1: as a GPU tint they need no filter pass, whose
+        // pooled framebuffer (created per beam size, dropped when idle) stalled whole frames.
+        view.gpuGroupColor = true;
+        // A tower body is over a hundred leaves, most sharing one draw state: draw them merged.
+        view.mergeLeaves = true;
+        this.views.set(building.id, view);
+      }
       const point = iso(building.x + 1, building.y + 1);
       const state =
         building.hp <= 0

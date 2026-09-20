@@ -126,7 +126,7 @@ import { KING_ART, KING_DIRECTIONS, kingAtlas, kingTexture, kingPose } from './k
 import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { configureQuadRendering } from './quad-renderer';
 import { holdFilterContexts } from './native-group-color';
-import { useFastDepthSort } from './display-sort';
+import { useFastDepthSort, useFastVisibleChildren } from './display-sort';
 import { RenderDetail } from './render-detail';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
@@ -489,6 +489,7 @@ export class VillageScene extends Phaser.Scene {
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     holdFilterContexts(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     useFastDepthSort(this);
+    useFastVisibleChildren(this);
     // Frame CPU time feeds the detail governor: pre-step to post-render, not the vsync interval.
     const frameStart = () => {
       this.frameStartedAt = performance.now();
@@ -2029,7 +2030,12 @@ export class VillageScene extends Phaser.Scene {
   }
   private syncCampUnits() {
     if (this.model.battle) {
-      for (const im of this.ambientUnits) im.setVisible(false);
+      // Off the display list, not just hidden: a big army's camp sprites otherwise sit in
+      // every battle frame's depth sort and visibility scan.
+      for (const im of this.ambientUnits) {
+        im.setVisible(false);
+        if (im.displayList) im.removeFromDisplayList();
+      }
       this.campShadows.clear();
       return;
     }
@@ -2096,6 +2102,7 @@ export class VillageScene extends Phaser.Scene {
         moving || (flying && !reduced)
           ? Math.floor((this.campTime * 550) / art.frameMs + actor.phase * 4) % 4
           : art.idleFrame;
+      if (!im.displayList) im.addToDisplayList();
       im.setVisible(true).setPosition(px, py - (flying ? AIR_LIFT : 0) + bob);
       if (im.depth !== depth) im.setDepth(depth);
       // Avoid rebuilding identical frame geometry and dispatching data events each frame.
