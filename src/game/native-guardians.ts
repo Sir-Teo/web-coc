@@ -1,3 +1,4 @@
+import { nonWallBuildings } from './building-lists';
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS } from './data';
 import type { Defender, GuardianDefender } from './defenders';
@@ -152,7 +153,14 @@ const live = (u: Unit, at: number) =>
 
 /** Town Hall 18 in version 45 battles houses its selected Guardian; nothing earlier does. */
 export function createGuardian(battle: Battle, th: Building, id: number): GuardianDefender | null {
-  if (!battle.nativeRoster || battle.catalog === 'goblin-v1' || th.kind !== 'townhall' || th.npc || th.level < 18) return null;
+  if (
+    !battle.nativeRoster ||
+    battle.catalog === 'goblin-v1' ||
+    th.kind !== 'townhall' ||
+    th.npc ||
+    th.level < 18
+  )
+    return null;
   const kind = th.guardian ?? 'longshot';
   const stats = guardianStats(kind, th.guardianLevel ?? 1);
   const home = center(th);
@@ -320,12 +328,7 @@ function moveToward(
 ) {
   if (!g.path.length || g.pathAt <= 0) {
     // Guardians cross their own walls like other home defenders.
-    g.path = findPath(
-      g,
-      goal,
-      battle.buildings.filter((b) => b.kind !== 'wall'),
-      range,
-    );
+    g.path = findPath(g, goal, nonWallBuildings(battle), range);
     g.pathAt = 0.3;
   }
   let travel = speed * dt;

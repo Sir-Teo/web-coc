@@ -37,6 +37,42 @@ const packKey = (kind: string, variant?: string) =>
 const packPath = (kind: string, variant?: string) =>
   variant ? packs[sourceKind(kind)]?.variants?.[variant]?.path : packs[sourceKind(kind)]?.path;
 
+/** The pack row for a level (first match, as `find` returned), through a per-pack map. */
+const levelRows = new WeakMap<Pack, Map<number, Pack['levels'][number]>>();
+function levelRow(pack: Pack, level: number) {
+  let rows = levelRows.get(pack);
+  if (!rows) {
+    rows = new Map();
+    for (const row of pack.levels) if (!rows.has(row.level)) rows.set(row.level, row);
+    levelRows.set(pack, rows);
+  }
+  return rows.get(level);
+}
+/**
+ * Whether every field of a level row resolves to a static, resource-free export in this pack:
+ * such a building's poses depend on nothing but its level and the field set. Cached per row
+ * and field set (the field sets are the shared constants below).
+ */
+const stillRows = new WeakMap<object, Map<readonly string[], boolean>>();
+function stillFields(pack: Pack, level: Pack['levels'][number], fields: readonly string[]) {
+  let byFields = stillRows.get(level);
+  if (!byFields) stillRows.set(level, (byFields = new Map()));
+  let still = byFields.get(fields);
+  if (still === undefined) {
+    still = true;
+    for (const field of fields) {
+      const ref = level.refs[field];
+      if (!ref) continue;
+      const graph = pack.scenes[ref.scene];
+      if (!graph || !nativeStaticExport(graph, ref.export) || nativeResourceFrames(graph)) {
+        still = false;
+        break;
+      }
+    }
+    byFields.set(fields, still);
+  }
+  return still;
+}
 /** Frame count of a graph's `resource` slot (storage fill), or 0 without one. Cached per graph. */
 const resourceFrames = new WeakMap<NativeMeshGraph, number>();
 export function nativeResourceFrames(graph: NativeMeshGraph) {
@@ -102,6 +138,12 @@ export class VillageNativePresentation {
   private pending = new Set<string>();
   /** Scene views per building id, then per pack scene. */
   private views = new Map<number, Map<string, ViewEntry>>();
+  /**
+   * Inputs of the last render of a still building (every field export static, no trap, no
+   * defense body, no resource fill): while they hold, nothing in its views can change, so the
+   * per-field signature strings are not even built. Walls are most of a large layout.
+   */
+  private still = new Map<number, { fields: readonly string[]; level: number; density: number }>();
   /** Buildings whose views are currently hidden by the viewport cull. */
   private hidden = new Set<number>();
   private aims = new Map<number, Point>();
@@ -167,6 +209,7 @@ export class VillageNativePresentation {
     for (const entry of entries.values()) entry.view.destroy();
     this.views.delete(id);
     this.hidden.delete(id);
+    this.still.delete(id);
   }
   clear() {
     for (const id of [...this.views.keys()]) this.drop(id);
@@ -227,6 +270,7 @@ export class VillageNativePresentation {
             seen.add(b.id);
             if (!this.hidden.has(b.id)) {
               this.hidden.add(b.id);
+              this.still.delete(b.id);
               for (const entry of entries.values()) {
                 for (const object of entry.view.objects) object.setVisible(false);
                 // Reshow through a full render.
@@ -245,7 +289,7 @@ export class VillageNativePresentation {
         void this.load(b.kind);
         continue;
       }
-      const level = pack.levels.find((row) => row.level === b.level);
+      const level = levelRow(pack, b.level);
       if (!level) continue;
       const trap = battle?.traps[b.id];
       // A resolved Tornado Trap keeps playing its triggered swirl for the spell's own duration.
@@ -265,6 +309,27 @@ export class VillageNativePresentation {
                 : b.upgradeEnd
                   ? UPGRADING
                   : IDLE;
+      if (
+        b.id !== -1 &&
+        !trap &&
+        !hasNativeDefenseBody(b.kind) &&
+        stillFields(pack, level, fields)
+      ) {
+        const last = this.still.get(b.id);
+        if (
+          last &&
+          last.fields === fields &&
+          last.level === b.level &&
+          last.density === density &&
+          this.views.has(b.id)
+        ) {
+          seen.add(b.id);
+          const fallback = sprites.get(b.id);
+          if (fallback?.visible) fallback.setVisible(false);
+          continue;
+        }
+        this.still.set(b.id, { fields, level: b.level, density });
+      }
       // Battle bodies (turret aim, attack, activation and mode) of the Town Hall 11-18 defenses.
       const source = (field: string, variant?: string) => {
         const from = variant ? this.packs.get(packKey(b.kind, variant)) : pack;

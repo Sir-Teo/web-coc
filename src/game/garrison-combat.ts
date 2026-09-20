@@ -1,5 +1,6 @@
 import { unitHidden } from './native-status';
 import { TROOPS } from './data';
+import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
 import {
   garrisonLongShots,
@@ -381,13 +382,19 @@ export function stepGarrisonDefender(
   // PreferHeroes (Headhunter) restricts the candidate pool to Heroes whenever one is valid.
   const heroes = stats.preferHeroes ? eligible.filter((unit) => unit.hero) : [];
   const pool = heroes.length ? heroes : eligible;
-  const target =
-    pool.find((unit) => unit.id === defender.target) ??
-    pool.sort(
-      (a, b) =>
-        distanceSquared2D(a.x - defender.x, a.y - defender.y) -
-          distanceSquared2D(b.x - defender.x, b.y - defender.y) || a.id - b.id,
-    )[0];
+  // The nearest unit, lowest id first on a tie: the same pick as sorting by (distance, id) and
+  // taking the first, without the O(n log n) sort per defender per tick.
+  let target = pool.find((unit) => unit.id === defender.target);
+  if (!target) {
+    let best = Infinity;
+    for (const unit of pool) {
+      const d = distanceSquared2D(unit.x - defender.x, unit.y - defender.y);
+      if (d < best || (d === best && unit.id < target!.id)) {
+        best = d;
+        target = unit;
+      }
+    }
+  }
   defender.cooldown = Math.max(0, defender.cooldown - attackDt);
   if (!target) {
     defender.target = null;
@@ -425,7 +432,7 @@ export function stepGarrisonDefender(
         defender.path = findPath(
           defender,
           target,
-          battle.buildings.filter((b) => b.kind !== 'wall'),
+          nonWallBuildings(battle),
           approach,
           !!battle.nativeSubtiles,
         );

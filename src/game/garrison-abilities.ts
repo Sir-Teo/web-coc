@@ -291,9 +291,9 @@ export function stepSummons(
     ids: [],
     events: [],
   });
-  state.ids = state.ids.filter((id) =>
-    (battle.defenders ?? []).some((d) => d.id === id && d.hp > 0),
-  );
+  const living = new Set<number>();
+  for (const d of battle.defenders ?? []) if (d.hp > 0) living.add(d.id);
+  state.ids = state.ids.filter((id) => living.has(id));
   state.timer = Math.max(0, state.timer - dt);
   if (state.timer <= EPSILON) {
     state.timer = source.cooldown;

@@ -171,9 +171,14 @@ function cast(
 }
 
 /** Attackers whose current attack lands on a damaged building inside the Invisibility area. */
-function attacksBuildingInside(battle: Battle, tower: Building, unit: Unit) {
+function attacksBuildingInside(
+  battle: Battle,
+  tower: Building,
+  unit: Unit,
+  buildingById: () => Map<number, Building>,
+) {
   if (!unit.attacking || unit.defenderTarget !== undefined || unit.target === null) return false;
-  const building = battle.buildings.find((b) => b.id === unit.target);
+  const building = buildingById().get(unit.target);
   if (!building || building.kind === 'wall' || building.hp <= 0 || building.hp >= building.maxHp)
     return false;
   const c = center(tower),
@@ -197,6 +202,16 @@ function attacksBuildingInside(battle: Battle, tower: Building, unit: Unit) {
  */
 function stepTowers({ battle, dt }: LateCombatContext) {
   const start = battle.elapsed - dt;
+  // Built on first use: only Invisibility towers with a damaged-building trigger read it.
+  let byId: Map<number, Building> | undefined;
+  const buildingById = () => {
+    if (!byId) {
+      byId = new Map();
+      // First occurrence wins, as with Array.prototype.find.
+      for (const b of battle.buildings) if (!byId.has(b.id)) byId.set(b.id, b);
+    }
+    return byId;
+  };
   for (const tower of battle.buildings) {
     if (tower.kind !== 'spelltower' || !tower.spellTowerWeapon) continue;
     if (nativeOwned(battle, tower)) continue;
@@ -222,7 +237,7 @@ function stepTowers({ battle, dt }: LateCombatContext) {
     const inRange = (unit: Unit) =>
       eligible(unit) &&
       (stats.hitBuildingTrigger
-        ? attacksBuildingInside(battle, tower, unit)
+        ? attacksBuildingInside(battle, tower, unit, buildingById)
         : distance2D(unit.x - c.x, unit.y - c.y) <= stats.range + 1e-9);
     const retained = battle.units.find(
       (u) => u.id === state.targetId && (stats.hitBuildingTrigger ? eligible(u) : inRange(u)),

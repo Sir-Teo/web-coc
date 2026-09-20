@@ -40,6 +40,13 @@ const idle = (callback: () => void) =>
  * the install never competes with the boot preload for bandwidth.
  */
 export function registerOfflineSupport() {
+  // A lazy chunk that no longer exists on the host (a deploy landed while this page was open
+  // and no worker served it from cache) is fatal to the page in every other way; reload onto
+  // the new version. The unload path settles any battle and stores the village first.
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    window.location.reload();
+  });
   if (!('serviceWorker' in navigator)) return;
   const container = navigator.serviceWorker;
   const post = (worker: ServiceWorker | null | undefined) =>

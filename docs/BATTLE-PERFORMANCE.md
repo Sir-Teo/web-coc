@@ -150,6 +150,71 @@ sub-tile A* is ~40 % of a native unit's step and is already typed-array code wit
 search budget, so cutting it further means changing results, which the replay and historical
 suites forbid.
 
+## Third round: simulation stepping, view churn and the home screen
+
+Profiling the same 589-unit battle again (Node CPU profile of the 20 Hz sim; browser CPU
+profile of the frame) after the two rounds above:
+
+- **Simulation.** The group-follower anchor search (`groupAnchor`) weighed every living unit
+  every tick for twelve Apprentice Wardens; healers and the Battle Blimp filtered and sorted
+  the roster per unit per tick; every unit read the `EnabledBySuperLicence` data row and
+  every ability unit its alone-radius row per tick; the static super-troop licence lookup ran
+  through `troopLevel` per unit step. Defenses scanned all 820 buildings per damage event
+  (Invisibility towers), per queued burst shot (`eligible().includes`), per Revenge Tower tick
+  and per launched shot (bomb aiming). Garrison defenders sorted the roster per tick and
+  rebuilt a non-wall route list per repath, which also defeated the collision grid's
+  identity check.
+- **Rendering.** Views that end (a unit leaving the screen or dying, a landed shot, a finished
+  particle) destroyed their meshes: an O(n) display-list splice each, hundreds per second. The
+  village presentation built per-field signature strings for every visible building every sim
+  tick, walls included (533 on stage 61). The scene view looked every leaf's mesh up through a
+  string-keyed map per frame; troop and village level rows came from a linear `find` per unit
+  per frame.
+- **Home screen.** Collector ticks bump the model revision every second, so the timed autosave
+  ran a full `JSON.stringify` plus a localStorage and an IndexedDB write every five seconds
+  while nothing structural had changed. The building card read `offsetWidth`/`offsetHeight`
+  every frame right after writing its position, a forced layout per frame while panning.
+
+What changed (results identical: replay, determinism and historical suites, and the Node
+end-state hash of the 589- and 400-unit battles, are unchanged):
+
+- `groupAnchor` snapshots living units once per tick and weighs an anchor only when a follower
+  in range asks; weights read the snapshot, so they equal a full pass at that moment.
+- Healer, Blimp and garrison target choice are single passes with the sort's exact tie-break
+  (distance, then id); the super-licence flag and alone radius are cached on the stats rows;
+  `superLicence`/`superOriginal` are memoized per kind.
+- Spell Towers come from a per-battle list; burst weapons test one unit; ruins are counted;
+  bombs alone look their building up; `nonWallBuildings` (`building-lists.ts`) is one shared
+  array per battle for garrison, guardian and builder routes.
+- `NativeSceneView.retire()` / `NativeMeshView.retire()`: an ending view parks its meshes in
+  the scene-wide spare pool (hidden, still listed) and releases its group buffers. The troop,
+  projectile and effect presentations retire instead of destroy.
+- The village presentation keeps a numeric record per still building (all field exports
+  static, no trap, defense body or resource fill) and skips the signature strings while it
+  holds. The mesh view publishes `runMeshes` (the mesh per pose index) for the scene view.
+- The same-sample fast path also compares texture, tint and blend (a GPU-clamp flag flip left
+  a mesh on its old texture until the next tick), and a `gpuSaturate` change reaches existing
+  group content views.
+- Timed saves follow `structuralRevision` (non-passive changes) and write collector drift once
+  a minute; the building card measures once per card and per resize.
+
+| Measure (Node sim, stage 61, half levels)   | Before     | After      |
+| ------------------------------------------- | ---------- | ---------- |
+| 589 units, 35 kinds: ms per tick mean / p95 | 8.1 / 11.8 | 6.2 / 10.0 |
+| 400 classic troops: ms per tick mean        | 1.69       | 1.53       |
+
+The browser benchmark (`npm run test:battle:load`) did not resolve the render-side changes:
+alternating `main` and this branch on the same machine gave the same CPU per step (17.3 ms
+mean on both in one pair), and thermal throttling moved the next pair by 7 ms. Measure the
+rendering changes with a CPU profile (inclusive time of `drawWorld`, `drawUnits` and the
+presentations) rather than the frame benchmark.
+
+A lesson from this round: a `WeakMap` keyed by pose objects is only free when the keys are
+long-lived shared samples. The effect, projectile and village callers build fresh poses every
+frame; caching merged-run indices and flattened lists by those keys fed the collector
+thousands of weak keys per frame and doubled the frame time until the caches were removed
+(or limited to `flattenDisjoint` views, which draw shared samples).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
@@ -157,7 +222,10 @@ suites forbid.
 - Anything that bumps the model revision every sim tick during a battle restyles every
   building; prefer `changed(true)` for battle events the frame draws already cover.
 - Depth writes queue a full display-list sort: guard them with `!==` comparisons.
-- Never add per-frame `destroy()` of display objects in the battle layer; park and reuse.
+- Never add per-frame `destroy()` of display objects in the battle layer; park and reuse
+  (`NativeSceneView.retire()` for a whole view).
+- Cache by object identity (`WeakMap`) only for shared, long-lived samples; fresh per-frame
+  poses as weak keys cost more in the collector than the lookup saves.
 - `nativeSceneStats` (`globalThis.__nativeSceneStats` in dev builds) counts renders, group
   paints, lifted groups and texel bakes per frame for quick checks in the browser console.
 - A new `NativeSceneView` flag must also be copied into group content views (see

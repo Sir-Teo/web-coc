@@ -12,15 +12,19 @@ import { developedSave } from './fixtures/developed-village';
 const playable = NATIVE_CAMPAIGN.flatMap((s, i) =>
   nativeCampaignIssues(i).length ? [] : [{ name: s.name, index: i }],
 );
-const armies = [
+export const armies = [
   { name: 'ground', units: { swordsman: 30, archer: 30, giant: 8, wizard: 8, wallbreaker: 4 } },
   { name: 'air', units: { balloon: 12, dragon: 4 } },
   { name: 'resources', units: { goblin: 40, giant: 8, wallbreaker: 6, healer: 2 } },
 ];
-describe.each(playable)('native combat: $name', ({ index }) => {
-  it.each(armies)(
-    'resolves a $name army on the complete native layout',
-    ({ units }) => {
+/**
+ * Every playable native stage against one army. Each army has its own test file, so the
+ * sweep (the longest job in the suite by far) runs on three workers instead of one.
+ */
+export function nativeCombatSweep(army: (typeof armies)[number]) {
+  describe.each(playable)('native combat: $name', ({ index }) => {
+    it(`resolves a ${army.name} army on the complete native layout`, () => {
+      const { units } = army;
       const began = performance.now();
       const m = new GameModel(developedSave());
       m.state.nativeCampaign = freshNativeCampaign();
@@ -96,7 +100,6 @@ describe.each(playable)('native combat: $name', ({ index }) => {
             ),
         ) ?? true,
       ).toBe(true);
-    },
-    15000,
-  );
-});
+    }, 15000);
+  });
+}

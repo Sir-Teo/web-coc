@@ -222,6 +222,8 @@ export interface NativeUnitStats {
   groups: boolean;
   groupRadius: number;
   groupRange: number;
+  /** `EnabledBySuperLicence`: the troop is a Super Troop with a deployment ability. */
+  superLicence: boolean;
   evolveTo: string;
   evolveTime: number;
   mergeTo: string;
@@ -340,6 +342,7 @@ function computeUnitStats(kind: string, level: number): NativeUnitStats {
     groups: flag(row, 'FightWithGroups'),
     groupRadius: tiles(row, 'TargetGroupsRadius'),
     groupRange: tiles(row, 'TargetGroupsRange'),
+    superLicence: text(row, 'EnabledBySuperLicence') === 'TRUE',
     evolveTo: text(row, 'EvolveToCharacter'),
     evolveTime: seconds(row, 'EvolveTime'),
     mergeTo: text(row, 'MergeToCharacter'),

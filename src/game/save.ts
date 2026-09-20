@@ -8,6 +8,7 @@ import { HERO_KINDS } from './native-hero-data';
 import { validGear, validHeroRoster, validPetProgress } from './native-hero-village';
 import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
+import { validSpellTowerWeapon } from './late-campaign';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
 import { validNativeCampaign } from './native-campaign';
 import { validCampaignLoot, validCampaignResources, campaignAmount } from './campaign-loot';
@@ -341,6 +342,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !validXbowMode(b.xbowMode) ||
       !validInfernoMode(b.infernoMode) ||
       !validSpellTowerMode(b.spellMode, b.kind, b.level) ||
+      !validSpellTowerWeapon(b.spellTowerWeapon) ||
       !validGearMode(b.gearMode, b.kind) ||
       !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
       (b.improving !== undefined &&
@@ -414,6 +416,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               !validSkeletonMode(v.skeletonMode) ||
               !validXbowMode(v.xbowMode) ||
               !validInfernoMode(v.infernoMode) ||
+              !validSpellTowerWeapon(v.spellTowerWeapon) ||
               !Number.isInteger(v.id) ||
               !Number.isInteger(v.x) ||
               !Number.isInteger(v.y) ||
@@ -467,12 +470,6 @@ export async function loadSave(): Promise<Save | undefined> {
   } catch {
     /* A valid local backup remains usable. */
   }
-  let primaryText: string | undefined;
-  try {
-    primaryText = primary == null ? undefined : JSON.stringify(primary, null, 2);
-  } catch {
-    primaryText = undefined;
-  }
   const originals = [primary, backup];
   primary = migrateSave(primary);
   backup = migrateSave(backup);
@@ -491,7 +488,14 @@ export async function loadSave(): Promise<Save | undefined> {
     return primary.lastTick > backup.lastTick ? primary : backup;
   if (!blocked && validateSave(primary)) return primary;
   if (!blocked && validateSave(backup)) return backup;
-  // Existing data must never be overwritten by the new-village autosave.
+  // Existing data must never be overwritten by the new-village autosave. The recovery copy is
+  // built only here: a pretty stringify of a multi-megabyte save on every boot bought nothing.
+  let primaryText: string | undefined;
+  try {
+    primaryText = originals[0] == null ? undefined : JSON.stringify(originals[0], null, 2);
+  } catch {
+    primaryText = undefined;
+  }
   const copies: SaveRecoveryError['copies'] = [];
   if (backupText !== null) copies.push({ source: 'backup', text: backupText });
   if (primaryText !== undefined) copies.push({ source: 'primary', text: primaryText });

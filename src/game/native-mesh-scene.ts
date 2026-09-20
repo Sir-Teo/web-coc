@@ -284,6 +284,12 @@ const SPARE_LIMIT = 6;
 
 export class NativeMeshView {
   readonly meshes = new Map<string, Phaser.GameObjects.Mesh2D>();
+  /**
+   * The mesh drawn for each pose index of the last render: the run head's mesh at its index,
+   * undefined for merged followers and groups. Lets the scene view find a leaf's object
+   * without a string-keyed lookup per leaf per frame.
+   */
+  readonly runMeshes: (Phaser.GameObjects.Mesh2D | undefined)[] = [];
   private spare: NativeMesh[] = [];
   private textureKeys: string[] = [];
   private stamp = 0;
@@ -425,10 +431,13 @@ export class NativeMeshView {
     // Pass 2: runs of consecutive leaves with one draw state, each drawn by one mesh under the
     // first leaf's key (every run is one leaf long unless leaves merge).
     const merge = this.mergeLeaves;
+    const runMeshes = this.runMeshes;
+    runMeshes.length = n;
     let drawn = 0;
     let order = 0;
     while (order < n) {
       if (!sLeaf[order]) {
+        runMeshes[order] = undefined;
         order++;
         continue;
       }
@@ -457,13 +466,21 @@ export class NativeMeshView {
       const wantAlpha = alpha * sAlpha[order];
       const wantDepth = depth + order * PART_DEPTH_STEP;
       drawn++;
+      for (let i = order + 1; i < end; i++) runMeshes[i] = undefined;
       let mesh = this.meshes.get(first.key) as NativeMesh | undefined;
+      runMeshes[order] = mesh;
       if (
         mesh &&
         mesh.nativePose === first &&
         mesh.nativeRunLast === last &&
         mesh.nativeRunLength === length &&
-        !(mesh.nativePending && !pending)
+        !(mesh.nativePending && !pending) &&
+        // A flag flip (GPU clamp vs bake) changes the draw state of an unchanged pose.
+        mesh.nativeTint === tint &&
+        mesh.nativeTint2 === tint2 &&
+        mesh.nativeTintMode === mode &&
+        mesh.nativeBlend === wantBlend &&
+        mesh.texture.key === texture
       ) {
         // The same shared sample as last render: vertices, texture, blend and color are
         // unchanged, so only the origin, depth and alpha can differ (and the base tint is
@@ -524,6 +541,7 @@ export class NativeMeshView {
       const indices = length === 1 ? nativeTriangles(vertices) : mergedTriangles(poses, order, end);
       if (recycled) {
         mesh = recycled;
+        runMeshes[order] = mesh;
         if (mesh.vertices !== vertices) mesh.vertices = vertices;
         if (mesh.indices !== indices) mesh.indices = indices;
         // Always rebind: a parked mesh may hold a baked page evicted while it sat idle.
@@ -543,6 +561,7 @@ export class NativeMeshView {
         mesh.setOrigin(0, 0).setRenderAsTriangles(true);
         if (!this.detached) this.scene.add.existing(mesh);
         this.meshes.set(first.key, mesh);
+        runMeshes[order] = mesh;
         retainTint(texture);
       } else {
         if (mesh.vertices !== vertices) mesh.vertices = vertices;
@@ -610,6 +629,18 @@ export class NativeMeshView {
       if (mesh.scene === this.scene && mesh.displayList) return mesh;
     }
     return undefined;
+  }
+  /**
+   * Hand every mesh to the spare pool instead of destroying it: a view that ends (an off-screen
+   * unit, a landed shot, a finished particle) costs no display-list splice, and the next view
+   * of any art takes the parked meshes back. Group content views (detached) still destroy.
+   */
+  retire() {
+    for (const mesh of this.meshes.values()) {
+      releaseTint(mesh.texture.key);
+      this.park(mesh as NativeMesh);
+    }
+    this.meshes.clear();
   }
   clear() {
     for (const mesh of this.meshes.values()) {

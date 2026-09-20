@@ -147,6 +147,19 @@ function setGroupColor(image: Phaser.GameObjects.Image, tint: number, tint2: num
   if (colored.tintMode !== mode) colored.setTintMode(mode);
 }
 
+/**
+ * Single-leaf group flattening and multiply-leaf isolation, once per shared pose list: shared
+ * samples are immutable, so the result is cached by list identity (like
+ * flattenDisjointGroups), which also keeps the pose objects stable for the mesh fast path.
+ */
+const preparedCache = new WeakMap<readonly NativeScenePose[], readonly NativeScenePose[]>();
+function prepared(poses: readonly NativeScenePose[]) {
+  const cached = preparedCache.get(poses);
+  if (cached) return cached;
+  const out = isolateMultiplyLeaves(flattenSingleLeafGroups(poses));
+  preparedCache.set(poses, out);
+  return out;
+}
 /** Direct multiply leaves also need isolation before the two destination passes. */
 function isolateMultiplyLeaves(poses: readonly NativeScenePose[]): readonly NativeScenePose[] {
   let found = false;
@@ -317,7 +330,10 @@ export class NativeSceneView {
     return this.leaves.gpuSaturate;
   }
   set gpuSaturate(value: boolean) {
+    if (this.leaves.gpuSaturate === value) return;
     this.leaves.gpuSaturate = value;
+    // Group content views copy the flag when they are created; a flip must reach them too.
+    for (const entry of this.groups.values()) entry.content.gpuSaturate = value;
   }
   /** Draw consecutive same-state leaves as one mesh (see NativeMeshView.mergeLeaves). */
   get mergeLeaves() {
@@ -374,8 +390,11 @@ export class NativeSceneView {
     density = Math.max(1, this.scene.cameras.main.zoomX, this.scene.cameras.main.zoomY),
   ) {
     density = quantizedDensity(density);
-    if (this.flattenDisjoint) poses = flattenDisjointGroups(poses);
-    poses = isolateMultiplyLeaves(flattenSingleLeafGroups(poses));
+    // Views drawing shared samples (flattenDisjoint) keep the flattened list per sample, so
+    // the pose objects stay stable for the mesh fast path. Other callers build fresh poses
+    // per frame: caching by those would only feed the collector a weak key per render.
+    if (this.flattenDisjoint) poses = prepared(flattenDisjointGroups(poses));
+    else poses = isolateMultiplyLeaves(flattenSingleLeafGroups(poses));
     // Final depths are assigned below in full pose order (leaves interleaved
     // with blend groups), not in leaf-list order.
     this.leaves.render(poses, x, y, depth, alpha, false);
@@ -430,7 +449,7 @@ export class NativeSceneView {
         object = entry.buffer!.image;
       } else {
         // A leaf merged into an earlier run has no mesh of its own.
-        const mesh = this.leaves.meshes.get(pose.key);
+        const mesh = this.leaves.runMeshes[order];
         if (!mesh) continue;
         object = mesh;
       }
@@ -676,5 +695,20 @@ export class NativeSceneView {
       this.tracked = false;
     }
     this.clear();
+  }
+  /**
+   * Ends the view like `destroy`, but its meshes park in the scene-wide spare pool (hidden,
+   * still listed) for the next view instead of being spliced out of the display list one by
+   * one. Group buffers return to their pool as they do on destroy.
+   */
+  retire() {
+    if (this.tracked) {
+      untrack(this.renderer, this);
+      this.tracked = false;
+    }
+    this.leaves.retire();
+    for (const entry of this.groups.values()) this.release(entry);
+    this.groups.clear();
+    this.objects.length = 0;
   }
 }
