@@ -368,7 +368,9 @@ it('keeps new-family combat, projectiles and poison deterministic through JSON r
   advance(battle, 6);
   advance(restored, 6);
   expect(restored).toEqual(battle);
-  expect(battle.defenders!.every((d) => d.kind === 'skeleton' || d.attacks.length <= 16)).toBe(
-    true,
-  );
+  expect(
+    battle.defenders!.every(
+      (d) => d.kind === 'skeleton' || ('attacks' in d && d.attacks.length <= 16),
+    ),
+  ).toBe(true);
 });

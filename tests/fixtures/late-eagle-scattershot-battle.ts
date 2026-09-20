@@ -55,17 +55,12 @@ export function isolatedSetup(
   return lateSetup(index, army, spells, [defense, hall]);
 }
 
-export type Deployment = Omit<
-  Extract<ReplayAction, { type: 'troop' | 'spell' | 'hero' }>,
-  'step'
-> & {
-  step: number;
-};
+export type Deployment = Extract<ReplayAction, { type: 'troop' | 'spell' | 'hero' }>;
 
 /** Live model that applies deployments before the recorded fixed step, like the replay runner. */
 export function liveBattle(setup: ReplaySetup) {
   const model = new GameModel();
-  model.recordBattles = false;
+  model['recordBattles'] = false;
   model.state.army = { ...setup.army };
   model.state.spells = { ...setup.spells };
   model.state.troopLevels = { ...setup.troopLevels };

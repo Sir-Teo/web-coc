@@ -1,4 +1,3 @@
-import { unitHidden } from './native-status';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';

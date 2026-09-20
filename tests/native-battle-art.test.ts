@@ -240,9 +240,12 @@ describe('native defense bodies', () => {
     const kind = sourceKind(buildingKind);
     return read(
       variant
-        ? (villageArt.buildings as Record<string, { variants: Record<string, { path: string }> }>)[
-            kind
-          ].variants[variant].path
+        ? (
+            villageArt.buildings as unknown as Record<
+              string,
+              { variants: Record<string, { path: string }> }
+            >
+          )[kind].variants[variant].path
         : (villageArt.buildings as Record<string, { path: string }>)[kind].path,
     ) as {
       levels: { level: number; refs: Record<string, { scene: string; export: string }> }[];

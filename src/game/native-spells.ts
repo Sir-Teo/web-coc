@@ -189,7 +189,7 @@ function resolvePulse(ctx: NativeSpellContext, cast: NativeSpellCast, at: number
     if (flag(row, 'Overgrowth')) overgrow(battle, row, at, x, y, radius);
     if (num(row, 'DuplicateHousing')) cloneUnits(ctx, cast, row, at, radius);
     if (num(row, 'RecallHousing')) recallUnits(ctx, cast, at, radius);
-    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, at, x, y);
+    if (num(row, 'ResurrectHitpointPercentage')) reviveHero(ctx, row, x, y);
     const chain = text(row, 'ChainSpell');
     if (chain && cast.hits === 0)
       castNativeSpell(battle, chain, num(row, 'ChainSpellLevel', 1) || 1, cast.side, x, y, { at });
@@ -547,7 +547,7 @@ function recallUnits(ctx: NativeSpellContext, cast: NativeSpellCast, at: number,
   }
 }
 
-function reviveHero(ctx: NativeSpellContext, row: NativeRow, at: number, x: number, y: number) {
+function reviveHero(ctx: NativeSpellContext, row: NativeRow, x: number, y: number) {
   const reach = tiles(row, 'TargetingRadius');
   const fallen = ctx.battle.units
     .filter(

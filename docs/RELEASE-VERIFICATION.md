@@ -1,15 +1,69 @@
-# Release verification
+# Release and hosting
 
-`npm run build && npm run test:production` checks the actual static build. The runner starts its own Vite preview on an available loopback port, passes that origin to the smoke checks, and shuts down the server on success or failure. It cannot silently attach to an older preview already running on port 4173. Browser checks have a three-minute process timeout.
+## Verify a release
 
-The production smoke checks exercise Chromium and WebKit: village boot, collection animation and cleanup, required replacement artwork requests, shop, research, and transfer of save ownership between tabs. Chromium additionally reloads offline and opens the army drawer. Browser errors, console errors, missing required art and failed HTTP responses fail verification. Results go to `output/playtest/production-report.json`.
+Use Node.js 24 and a clean dependency install:
 
-On macOS, Chromium uses Metal, matching the campaign production runner and Retina browser checks. The practice recording includes six seconds of actual scouting time so the Pause check has a usable interval even when the deployed troop's attack is very short. The campaign runner separately verifies the native Santa replay and requires its five atlas pages and four original Ogg files, including after Chromium's offline reload.
+```sh
+npm ci
+npx playwright install chromium webkit
+npm run check
+npm run test:production
+```
 
-Install the test browsers once with `npx playwright install chromium webkit`. The existing direct command, `node scripts/production-check.mjs`, still works with a preview at `http://127.0.0.1:4173`; `PRODUCTION_BASE_URL` can select another preview origin.
+`check` builds `dist/`. The production runner requires that build, starts its own
+preview on an available loopback port, and stops it on success or failure. It has a
+three-minute process timeout and cannot silently attach to an old preview server.
 
-## GitHub Actions
+The smoke suite covers village boot, collection, required artwork, shop, research,
+replay controls and transfer of save ownership between tabs in Chromium and WebKit.
+Chromium also checks offline reload and cached gameplay flows. Console errors,
+failed HTTP responses and missing required assets fail the check. The report is
+`output/playtest/production-report.json`.
 
-The deployment workflow now requires simulation tests, a production build, all Chromium gameplay scenarios, the focused WebKit visual-feedback scenarios, and the production/offline smoke checks before publishing. Browser traces, screenshots and reports are retained for seven days. Both pull requests and manual workflow runs on other branches perform verification without deploying. Concurrency is scoped to each Git ref, so a pull-request run cannot cancel the live main-branch release.
+Run relevant gameplay specs for the feature being released. The on-demand
+`browser-regression.yml` workflow shards the broader Chromium/WebKit suite and
+runs additional asset and production checks. Passing smoke tests alone does not
+qualify every map, device or browser.
 
-The browser-install and artifact steps follow the primary [Playwright CI guidance](https://playwright.dev/docs/ci-intro) and [GitHub artifact action documentation](https://github.com/actions/upload-artifact). This configuration has been reviewed and its test commands run locally; a hosted GitHub Actions run is still needed to verify the Linux runner itself. Physical-device testing and server-authoritative online systems remain separate production requirements.
+## Feature-specific production runners
+
+The `test:*:production` scripts in `package.json` target individual systems. Most
+expect a separately running preview at port 4173; check the script's header and
+`PRODUCTION_BASE_URL` support before running one. Only `test:production` guarantees
+that it starts and owns an isolated preview server.
+
+## Deployment
+
+The GitHub deployment workflow runs on pull requests to `main`, pushes to `main`
+and manual dispatch. It requires `npm run check` and the production smoke suite
+before publishing. Only a main-branch run can deploy. Reports and failure evidence
+are retained for seven days; broad browser regression is a separate manual workflow.
+
+The repository targets Firebase Hosting site `coc-teozeng` in project
+`personal-website-3bc37`, serving <https://coc.teozeng.dev>. CI needs the repository's
+`FIREBASE_TOKEN` secret. Never commit credentials.
+
+`npm run deploy` performs the local checks and smoke suite, then deploys to that
+same site using an authenticated Firebase CLI. It publishes immediately. For a
+fork, change `firebase.json`, `.firebaserc`, the package command and workflow target
+before using it. Other static hosts can serve `dist/` with equivalent routing and
+cache headers.
+
+## Cache and rollback
+
+`firebase.json` revalidates HTML and `sw.js`, gives hashed JS/CSS/font assets a long
+cache lifetime and caches images for one day. Build-generated service-worker
+manifests track content hashes. Keep the build and its assets together when releasing.
+
+To roll back, restore the previous Hosting release through Firebase, or build and
+deploy a known-good Git revision through the same checks. Verify an existing browser
+session updates correctly as well as a fresh load. Do not delete a user's stored
+village as an update workaround; storage migrations must remain compatible.
+
+## Readiness limits
+
+This is a client-only fan game: saves and results are user-controlled, and there is
+no server-side trust boundary. Physical-device performance, the hosted Linux
+workflow and rights to distribute third-party artwork require their own
+verification; local checks do not establish them.

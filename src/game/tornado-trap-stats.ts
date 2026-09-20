@@ -1,5 +1,5 @@
 import source from '../../reference/tornado-trap/combat.json' with { type: 'json' };
-import { TROOPS, type TroopKind, type UnitKind } from './data';
+import { TROOPS, type UnitKind } from './data';
 
 const n = (value: string | undefined) => {
   const result = Number(value);

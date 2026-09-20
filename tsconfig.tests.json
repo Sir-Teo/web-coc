@@ -5,7 +5,9 @@
     "strict": false,
     "noImplicitAny": false,
     "allowJs": true,
-    "checkJs": false
+    "checkJs": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src", "tests/*.test.ts", "tests/fixtures"]
 }

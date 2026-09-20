@@ -501,7 +501,7 @@ describe('native defense combat', () => {
     expect(validateReplay(record)).toBe(true);
     const replay = new GameModel();
     replay.openReplay(structuredClone(record));
-    for (let i = 0; i < 4000 && !replay.replay?.finished; i++) replay.step(0.05);
+    for (let i = 0; i < 4000 && !replay.replay?.complete; i++) replay.step(0.05);
     expect(replay.battle?.destruction).toBe(m.state.raidLog![0].result.destruction);
   });
 

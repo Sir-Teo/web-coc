@@ -366,7 +366,7 @@ export function validNativeCampaign(value: unknown): value is NativeCampaignProg
     Array.isArray(v.stars) &&
     v.stars.length === NATIVE_CAMPAIGN.length &&
     NATIVE_CAMPAIGN.every(
-      (s, i) => Number.isInteger(v.stars[i]) && v.stars[i] >= 0 && v.stars[i] <= 3,
+      (_, i) => Number.isInteger(v.stars[i]) && v.stars[i] >= 0 && v.stars[i] <= 3,
     ) &&
     Array.isArray(v.remaining) &&
     v.remaining.length === NATIVE_CAMPAIGN.length &&

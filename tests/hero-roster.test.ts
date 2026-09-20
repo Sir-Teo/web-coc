@@ -10,7 +10,7 @@ import {
   heroSourceCeiling,
   heroUnlock,
   type HeroKey,
-} from '../src/game/hero-roster';
+} from './fixtures/hero-roster';
 import { KING_LEVELS } from '../src/game/king-progression';
 
 describe('native hero roster', () => {

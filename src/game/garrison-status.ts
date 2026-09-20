@@ -55,7 +55,7 @@ export function applyGarrisonFrost(
  * belongs to its repeated cloud pulses and is not applied to on-hit poison.
  */
 export function applyGarrisonPoison(
-  battle: Battle,
+  _battle: Battle,
   unit: Unit,
   poison: PoisonOnHit,
   sourceId: number,

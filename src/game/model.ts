@@ -8,7 +8,6 @@ import {
 } from './special-troops';
 import { troopFacility } from './army-unlocks';
 import nativeProgression from '../../reference/full-client/progression.json' with { type: 'json' };
-import { maxSpellLevel } from './spell-progression';
 import {
   stepArcherTower,
   recordArcherTowerShot,
@@ -284,7 +283,6 @@ import {
   hurtUnit,
   unitDamageScale,
   unitFrozen,
-  unitHidden,
   unitSpeedBonus,
   unitSpeedScale,
   type BuildingEffects,
@@ -380,7 +378,7 @@ import {
   type NativeBattleHero,
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
-import { HERO_UNIT } from './native-hero-data';
+
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
   npc?: NpcBuildingKind;

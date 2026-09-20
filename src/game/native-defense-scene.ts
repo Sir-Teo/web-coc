@@ -327,7 +327,7 @@ export class NativeDefensePresentation {
     elapsed: number,
     reduced: boolean,
     iso: (x: number, y: number) => Point,
-    airLift: number,
+    _airLift: number,
   ) {
     this.layer.begin();
     const shown = new Set<string>();
@@ -391,7 +391,7 @@ export class NativeDefensePresentation {
               facing: aim,
             });
         }
-        this.renderBeams(tower, pack, effects, battle!, elapsed, point, iso, airLift, reduced);
+        this.renderBeams(tower, effects, battle!, elapsed, point, iso, reduced);
       }
       if (effects.defender && pack.defenders[effects.defender])
         this.renderDefenders(tower, pack, effects, battle, elapsed, point, shown, reduced);
@@ -449,13 +449,11 @@ export class NativeDefensePresentation {
   /** Giga Inferno beams: one continuous attack effect per held beam target. */
   private renderBeams(
     tower: Building,
-    pack: NativeDefensePack,
     effects: ReturnType<typeof nativeDefenseEffects>,
     battle: Battle,
     elapsed: number,
     point: Point,
     iso: (x: number, y: number) => Point,
-    airLift: number,
     reduced: boolean,
   ) {
     const state = battle.nativeDefenses?.[tower.id];

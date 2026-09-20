@@ -173,6 +173,7 @@ describe('combat', () => {
     m.startBattle(0);
     m.state.spells = emptySpells();
     m.battle!.spells = {
+      ...emptySpells(),
       rage: 0,
       heal: 0,
       lightning: 0,

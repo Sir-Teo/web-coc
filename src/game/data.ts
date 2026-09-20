@@ -71,7 +71,7 @@ import {
   reviveFraction,
 } from './spell-progression';
 import { nativeRow, num, seconds as nativeSeconds, tiles as nativeTiles } from './native-data';
-import { FACILITY_LEVELS, FACILITY_COUNTS, facilityProgression } from './facility-progression';
+import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
@@ -207,7 +207,6 @@ export interface BuildingDef {
   };
   singleArtwork?: boolean;
 }
-const ALWAYS = (n: number) => Object.freeze(Array<number>(8).fill(n));
 export { MAX_TOWNHALL, BUILDING_COUNTS } from './tiers';
 /** Progression key of a family the client names differently from its building kind. */
 const SOURCE_KIND: Partial<Record<BuildingKind, string>> = { eagleartillery: 'eagle' };

@@ -139,7 +139,7 @@ export const bombTowerHandlingPoses = (
 /** Continuous trail births remain at their sampled flight positions after landing. */
 export function bombTowerTrailPoses(
   id: number,
-  level: number,
+  _level: number,
   shot: BombTowerShot,
   elapsed: number,
   iso: (x: number, y: number) => Point,

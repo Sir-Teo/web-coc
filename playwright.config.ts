@@ -12,6 +12,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   reporter: 'list',
-  webServer: { command: 'npm run dev', url: 'http://localhost:5173', reuseExistingServer: true },
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+  },
   outputDir: 'output/test-results',
 });

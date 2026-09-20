@@ -5,7 +5,6 @@ import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-d
 import { superchargeCount } from './native-supercharge';
 import { guardianLevels, validGuardian } from './native-guardians';
 import {
-  HERO_KINDS,
   heroMaxLevel,
   itemHero,
   itemMaxLevel,
@@ -47,14 +46,13 @@ import {
   MAX_TROOP_LEVEL,
   maxTroopLevel,
   SPELL_KEYS,
-  LEGACY_SPELL_KEYS,
   TROOP_KEYS,
   LEGACY_TROOP_KEYS,
   PRE_EXPANSION_TROOP_KEYS,
   type SpellKind,
 } from './data';
 import type { Army, Battle, Building, SpellBook } from './model';
-import { MAX_SPELL_LEVEL, maxSpellLevel, maxSpellLevelFor } from './spell-progression';
+import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
 import {
   EQUIPMENT_LEVEL_BEFORE_47,
   EQUIPMENT_MAX_LEVEL,

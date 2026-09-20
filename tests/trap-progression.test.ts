@@ -221,7 +221,7 @@ it('Giant Bomb radius grows at levels 2 and 4', () => {
 it('Spring Trap levels apply half hero damage and stun in place, including zero damage at level 1', () => {
   for (let level = 1; level <= 5; level++) {
     const { b, u } = arena('springtrap', level);
-    u.hero = true;
+    u.hero = 'king';
     b.elapsed = 0.05;
     stepTraps(b, 0.05, () => {});
     expect(u.hp).toBe(u.maxHp - expected.springtrap.damage[level - 1] / 2);
@@ -231,7 +231,7 @@ it('Spring Trap levels apply half hero damage and stun in place, including zero 
 
 it('a stunned hero still receives healing while movement and attacks are suspended', () => {
   const { m, b, u } = arena('springtrap', 1);
-  u.hero = true;
+  u.hero = 'king';
   u.hp = 1000;
   u.springUntil = 1;
   u.attacking = true;

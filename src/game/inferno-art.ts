@@ -1,5 +1,5 @@
 import portraits from '../../reference/inferno/portraits.json' with { type: 'json' };
-import { infernoStats, type InfernoMode } from './inferno-weapon';
+import { type InfernoMode } from './inferno-weapon';
 import { type NativeMatrix } from './native-mesh';
 
 export type InfernoArtState = 'active' | 'empty' | 'constructing' | 'upgrading' | 'ruin';

@@ -7,7 +7,18 @@ import { spellBottleFlightPoint, spellBottlePose } from '../src/game/spell-tower
 import type { SpellTowerCast } from '../src/game/spell-tower';
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
-const shot = { fromX: 10, fromY: 12, x: 18, y: 15, launched: 2, impact: 3.2, toAir: true };
+const shot = {
+  sourceId: 1,
+  damage: 100,
+  radius: 1,
+  fromX: 10,
+  fromY: 12,
+  x: 18,
+  y: 15,
+  launched: 2,
+  impact: 3.2,
+  toAir: true,
+};
 const times = [1.9, 2, 2.37, 2.9, 3.2, 4];
 
 it('trail flight points match the full projectile poses they replace', () => {

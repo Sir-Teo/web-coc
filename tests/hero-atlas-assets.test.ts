@@ -12,7 +12,9 @@ for (const manifest of [heroes, guardians])
         atlasBytes = fs.readFileSync(file);
       expect(createHash('sha256').update(atlasBytes).digest('hex')).toBe(row.atlas.sha256);
       const atlas = JSON.parse(atlasBytes.toString()) as { states: Record<string, BakedState> };
-      for (const [name, image] of Object.entries(row.images)) {
+      for (const [name, image] of Object.entries(
+        row.images as Record<string, { sha256: string }>,
+      )) {
         const bytes = fs.readFileSync(path.join(path.dirname(file), name));
         expect(createHash('sha256').update(bytes).digest('hex')).toBe(image.sha256);
       }

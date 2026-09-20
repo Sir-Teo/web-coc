@@ -46,7 +46,12 @@ export function lateTrapArena(buildings: Building[], index = 66) {
   );
   const b = m.battle;
   b.started = true;
-  const unit = (kind: Unit['kind'], x: number, y: number, extra: Partial<Unit> = {}) => {
+  const unit = (
+    kind: import('../../src/game/data').TroopKind,
+    x: number,
+    y: number,
+    extra: Partial<Unit> = {},
+  ) => {
     const stats = m.troopStats(kind);
     const u: Unit = {
       id: 10000 + b.units.length,
@@ -74,7 +79,7 @@ export function lateTrapVillage(index: number, army: Partial<Army>) {
   save.nativeCampaign = freshNativeCampaign();
   save.nativeCampaign.stars.fill(1);
   save.army = { ...emptyArmy(), ...army };
-  save.spells = { lightning: 0, heal: 0, rage: 0 };
+  save.spells = { ...emptySpells(), lightning: 0, heal: 0, rage: 0 };
   save.king = undefined;
   save.troopLevels = maxTroopLevels();
   const m = new GameModel(save);
@@ -139,7 +144,7 @@ export function coldFlameReplay(steps = 1200) {
 /** Live stepping with the replay runner's isolated inputs, for gated villages. */
 export function liveNativeBattle(setup: ReplaySetup, deployments: [keyof Army, number, number][]) {
   const live = new GameModel();
-  live.recordBattles = false;
+  live['recordBattles'] = false;
   live.state.army = { ...setup.army };
   live.state.spells = { ...setup.spells };
   live.state.troopLevels = { ...setup.troopLevels };
@@ -181,7 +186,8 @@ export function nativeSetup(index: number, army: Partial<Army>): ReplaySetup {
     buildings: nativeLayout(index),
     army: { ...emptyArmy(), ...army },
     spells: emptySpells(),
-    spellLevels: { lightning: 1, heal: 1, rage: 1 },
+    // Version 44 predates the expanded spell roster; retain its original serialized shape.
+    spellLevels: { lightning: 1, heal: 1, rage: 1 } as import('../../src/game/model').SpellBook,
     troopLevels: maxTroopLevels(),
     nextId: 100000,
     availableLoot: loot,

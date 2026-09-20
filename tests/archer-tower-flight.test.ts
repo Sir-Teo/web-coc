@@ -27,6 +27,7 @@ function arena(version = 41, level = 1) {
     hp: 10000,
     maxHp: 10000,
     cooldown: 1000,
+    target: null,
     path: [],
     pathAt: 1000,
     attacking: false,

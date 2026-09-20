@@ -117,7 +117,9 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
             // Town Hall Guardians and Defending Builders belong to the building they came from.
             ((d.kind === 'guardian' || d.kind === 'repairer') &&
               b.buildings.some((v) => v.id === d.sourceId)) ||
-            (d.parentId !== undefined && b.defenders!.some((p) => p.id === d.parentId)) ||
+            ('parentId' in d &&
+              d.parentId !== undefined &&
+              b.defenders!.some((p) => p.id === d.parentId)) ||
             b.garrisons?.some(
               (g) =>
                 g.castleId === d.sourceId &&

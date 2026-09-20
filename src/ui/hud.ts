@@ -1,5 +1,4 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
-import { maxSpellLevel } from '../game/spell-progression';
 import { archerTowerPortrait } from './archer-tower-portrait';
 import { darkDrillProduction } from '../game/dark-drill-production';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
@@ -29,7 +28,6 @@ import {
   type EquipmentKind,
   type OreKind,
 } from '../game/equipment';
-import { isDefense } from '../game/data';
 import { campCapacity } from '../game/camp-stats';
 import { spellFactoryCapacity } from '../game/facility-progression';
 import { BOMB_TOWER, bombTowerDeathDamage } from '../game/bomb-tower';
@@ -109,14 +107,12 @@ import {
   TROOP_HOTKEYS,
   SPELL_HOTKEYS,
   maxTroopLevel,
-  researchLaboratory,
   researchLevelForLab,
   asset,
   defenseDamage,
   defenseDps,
   trapDamage,
   trapStats,
-  isTrap,
   isSpellKind,
   springCapacity,
   unlockTownHall,
@@ -159,8 +155,6 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
   invisibility: 'Invisibility',
   earthquake: 'Earthquake',
 };
-/** Title-cased weapon name for the campaign Spell Tower selector. */
-const spellTowerLabel = (weapon = 'rage') => weapon[0].toUpperCase() + weapon.slice(1);
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
@@ -1830,7 +1824,7 @@ export class HUD {
     return `
  <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart <span class="online-dot"></span></div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
- <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k, i) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
+ <div class="resources">${(['gold', 'elixir', ...(m.townhallLevel >= 7 || s.dark > 0 ? ['dark' as const] : []), 'gems'] as const).map((k) => `<div class="resource-bar ${k} ${k !== 'gems' && m.resourceCap(k) > 0 && s[k] >= m.resourceCap(k) ? 'full' : ''}"><div class="resource-fill" style="width:${k === 'gems' ? pct((s.gems / 500) * 100) : pct((s[k] / m.resourceCap(k)) * 100)}"></div><div class="resource-topline">${k === 'gems' ? 'Gems' : `Max: ${n(m.resourceCap(k))}`}</div><span class="resource-amount" data-resource="${k}">${n(s[k])}</span>${resource(k)}<button class="resource-plus" data-action="${k !== 'gems' ? 'collect' : 'achievements'}" aria-label="${k !== 'gems' ? 'Collect resources' : 'View achievements'}">+</button></div>`).join('')}</div>
  <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>

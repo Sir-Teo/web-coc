@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GameModel, makeBuilding, type Unit, type FX } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
 
-function arena(kind: Unit['kind'] = 'archer') {
+function arena(kind: import('../src/game/data').TroopKind = 'archer') {
   const m = new GameModel();
   m.startBattle(0, true);
   const b = m.battle!;

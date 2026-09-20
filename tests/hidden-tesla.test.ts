@@ -196,6 +196,7 @@ describe('concealment', () => {
     launchProjectile(
       b,
       {
+        sourceId: 9001,
         fromX: 12,
         fromY: 11,
         x: 12,

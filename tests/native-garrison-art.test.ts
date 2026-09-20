@@ -41,7 +41,7 @@ it('preserves 27 source exports, all three additive scene graphs and exact catal
 });
 
 it('keeps Castle root patterns, independent treasury controls and original empty clan fields', () => {
-  const graph = castle as NativeMeshGraph;
+  const graph = castle as unknown as NativeMeshGraph;
   const coinNames = [
     'CoinsBackFull',
     'CoinsBackHalf',
@@ -83,7 +83,7 @@ it('keeps Castle root patterns, independent treasury controls and original empty
 });
 
 it('retains nested Dragon wing/glow animation, attack locators and every Balloon attack/death frame', () => {
-  const dragon = dragon7 as NativeMeshGraph;
+  const dragon = dragon7 as unknown as NativeMeshGraph;
   expect(dragon7.emptyTextBounds['219']).toMatchObject({
     text: '',
     font: 'Times New Roman',
@@ -100,7 +100,7 @@ it('retains nested Dragon wing/glow animation, attack locators and every Balloon
       nativeScenePoses(dragon, name, 7 / 24),
     );
   }
-  const balloon = balloon8 as NativeMeshGraph;
+  const balloon = balloon8 as unknown as NativeMeshGraph;
   expect(balloon.clips[balloon.exports.balloon_lvl8_attack1].timeline).toHaveLength(34);
   expect(balloon.clips[balloon.exports.balloon_lvl8_die1].timeline).toHaveLength(11);
   expect(balloon.clips['68'].timeline).toHaveLength(37);
@@ -233,7 +233,9 @@ it('ships six source textures and nineteen distinct portraits with exact padded 
   ).toEqual(
     // Duplicate texture pages consolidate into shared files: the directory
     // holds the unique locally-referenced entries.
-    [...new Set(assets.map((p) => p.path).filter((p) => p.startsWith('assets/garrison-native/')))].sort(),
+    [
+      ...new Set(assets.map((p) => p.path).filter((p) => p.startsWith('assets/garrison-native/'))),
+    ].sort(),
   );
 });
 

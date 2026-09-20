@@ -11,3 +11,11 @@ art/source/native-client-*/files/
 playwright.local-*.config.ts
 scripts/_boot-*.mjs
 scripts/_deferred-probe.mjs
+
+# Local tooling and reports
+.venv/
+coverage/
+playwright-report/
+.env
+.env.*
+!.env.example

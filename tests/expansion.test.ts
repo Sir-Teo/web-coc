@@ -175,6 +175,7 @@ describe('spells', () => {
   it('lightning damages every building inside its radius, once', () => {
     const m = new GameModel();
     m.state.spells = {
+      ...emptySpells(),
       rage: 0,
       heal: 0,
       lightning: 1,
@@ -191,6 +192,7 @@ describe('spells', () => {
       ['cannon', 22, 22, 1],
     ]);
     battle.spells = {
+      ...emptySpells(),
       rage: 0,
       heal: 0,
       lightning: 1,
@@ -215,6 +217,7 @@ describe('spells', () => {
     const damageOver = (raged: boolean) => {
       const m = new GameModel();
       m.state.spells = {
+        ...emptySpells(),
         rage: 1,
         heal: 0,
         lightning: 0,
@@ -227,6 +230,7 @@ describe('spells', () => {
       };
       const battle = arena(m, [['townhall', 12, 12, 1]]);
       battle.spells = {
+        ...emptySpells(),
         rage: 1,
         heal: 0,
         lightning: 0,
@@ -254,6 +258,7 @@ describe('spells', () => {
   it('healing restores wounded troops standing inside it', () => {
     const m = new GameModel();
     m.state.spells = {
+      ...emptySpells(),
       rage: 0,
       heal: 1,
       lightning: 0,
@@ -266,6 +271,7 @@ describe('spells', () => {
     };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
     battle.spells = {
+      ...emptySpells(),
       rage: 0,
       heal: 1,
       lightning: 0,
@@ -289,6 +295,7 @@ describe('spells', () => {
   it('auras expire and stop applying', () => {
     const m = new GameModel();
     m.state.spells = {
+      ...emptySpells(),
       rage: 1,
       heal: 0,
       lightning: 0,
@@ -301,6 +308,7 @@ describe('spells', () => {
     };
     const battle = arena(m, [['townhall', 20, 20, 1]]);
     battle.spells = {
+      ...emptySpells(),
       rage: 1,
       heal: 0,
       lightning: 0,

@@ -32,7 +32,7 @@ it('retains every original Dark Elixir Drill tier, building state and effect exp
 
 it('preserves source geometry while remapping texture coordinates', () => {
   for (const [id, commands] of Object.entries(raw.shapes)) {
-    const original = (source.graph.shapes as Record<string, [number, number[]][]>)[id];
+    const original = (source.graph.shapes as unknown as Record<string, [number, number[]][]>)[id];
     expect(commands).toHaveLength(original.length);
     for (let c = 0; c < commands.length; c++) {
       const [texture, vertices] = commands[c] as [number, number[]];

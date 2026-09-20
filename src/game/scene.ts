@@ -236,7 +236,6 @@ export class VillageScene extends Phaser.Scene {
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
-  private ground!: Phaser.GameObjects.Container;
   /** Ground-level markings that buildings must sit on top of. */
   private groundMarks!: Phaser.GameObjects.Graphics;
   private overlay!: Phaser.GameObjects.Graphics;
@@ -1004,7 +1003,7 @@ export class VillageScene extends Phaser.Scene {
       stencilCompositeCheck: false,
     });
     // Keep stencil application and removal together so later village objects stay unclipped.
-    this.ground = this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
+    this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
   }
   private campaignScenery: Phaser.GameObjects.Image[] = [];
   private homeDecorations: Phaser.GameObjects.Image[] = [];
@@ -2555,7 +2554,7 @@ export class VillageScene extends Phaser.Scene {
   drawOverlay(time: number) {
     this.present(time, false);
   }
-  private present(time: number, live: boolean) {
+  private present(_time: number, live: boolean) {
     // Culling (here and in every presentation) reads worldView: refresh it for this frame's
     // scroll and zoom instead of using the one left by the previous render.
     this.cameras.main.preRender();

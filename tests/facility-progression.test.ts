@@ -150,6 +150,7 @@ describe('native army facility progression', () => {
     ]);
     const old = developedSave();
     old.spells = {
+      ...emptySpells(),
       rage: 2,
       heal: 2,
       lightning: 0,

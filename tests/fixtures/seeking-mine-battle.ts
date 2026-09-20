@@ -1,3 +1,4 @@
+import { emptySpells } from '../../src/game/army';
 import { GameModel } from '../../src/game/model';
 import { BUILDINGS, TROOP_KEYS, researchLevelForLab } from '../../src/game/data';
 import { emptyArmy } from '../../src/game/army';
@@ -16,6 +17,7 @@ export function seekingMineVillage() {
     save.troopLevels[kind] = researchLevelForLab(kind, 6);
   save.king = undefined;
   save.spells = {
+    ...emptySpells(),
     lightning: 0,
     heal: 0,
     rage: 0,

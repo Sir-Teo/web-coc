@@ -1,6 +1,5 @@
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
-import { maxSpellLevel } from './spell-progression';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
@@ -24,7 +23,7 @@ import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
 import { validStarBonus } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { emptySpells, expandArmyRoster } from './army';
-import { MAX_SPELL_LEVEL, maxSpellLevelFor } from './spell-progression';
+import { maxSpellLevelFor } from './spell-progression';
 import { initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 /**

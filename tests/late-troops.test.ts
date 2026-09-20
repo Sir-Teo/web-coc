@@ -261,7 +261,7 @@ describe('Healer support', () => {
 
   it('Rage boosts the casting Healer and heroes receive 55% without a second patient Rage bonus', () => {
     const { m, patient, healer } = arena();
-    patient.hero = true;
+    patient.hero = 'king';
     patient.spellRageUntil = 5;
     healer.spellRageUntil = 5;
     m.step(0.05);
@@ -276,6 +276,7 @@ describe('Healer support', () => {
       b.units = [healer];
       b.remaining = { ...emptyArmy(), healer: 1, swordsman: reserve === 'troop' ? 1 : 0 };
       b.spells = {
+        ...emptySpells(),
         rage: 1,
         heal: 1,
         lightning: reserve === 'lightning' ? 1 : 0,

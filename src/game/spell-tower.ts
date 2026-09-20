@@ -172,7 +172,6 @@ function cast(
 
 /** Attackers whose current attack lands on a damaged building inside the Invisibility area. */
 function attacksBuildingInside(
-  battle: Battle,
   tower: Building,
   unit: Unit,
   buildingById: () => Map<number, Building>,
@@ -237,7 +236,7 @@ function stepTowers({ battle, dt }: LateCombatContext) {
     const inRange = (unit: Unit) =>
       eligible(unit) &&
       (stats.hitBuildingTrigger
-        ? attacksBuildingInside(battle, tower, unit, buildingById)
+        ? attacksBuildingInside(tower, unit, buildingById)
         : distance2D(unit.x - c.x, unit.y - c.y) <= stats.range + 1e-9);
     const retained = battle.units.find(
       (u) => u.id === state.targetId && (stats.hitBuildingTrigger ? eligible(u) : inRange(u)),

@@ -35,9 +35,14 @@ function compare(actual: NativeScenePose[], expected: NativeScenePose[]) {
 }
 it.each(witness.cases)('matches the independent source composition for $export at $time', (c) => {
   compare(
-    nativeScenePoses(graph, c.export, c.time, {}, c.root as NativeMatrix).map((p) =>
-      c.particleBlend === null ? p : { ...p, blend: c.particleBlend as 0 | 8 },
-    ),
+    nativeScenePoses(graph, c.export, c.time, {}, c.root as NativeMatrix).map((p) => {
+      if (c.particleBlend === null) return p;
+      if ('group' in p) {
+        expect(c.particleBlend).toBe(8);
+        return { ...p, blend: 8 as const };
+      }
+      return { ...p, blend: c.particleBlend as 0 | 8 };
+    }),
     c.poses as NativeScenePose[],
   );
 });

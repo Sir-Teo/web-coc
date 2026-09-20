@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps --only-shell ${{ matrix.browser }}
@@ -55,7 +55,7 @@ jobs:
           python scripts/import-native-leagues.py --check
           python scripts/import-native-heroes.py --check
           python scripts/content-inventory.py --check
-          node scripts/check-test-imports.mjs
+          npm run typecheck:tests
 
       - name: Run browser regressions
         run: npx playwright test --browser=${{ matrix.browser }} --fully-parallel --shard=${{ matrix.shard }}/4 --workers=1 --reporter=line

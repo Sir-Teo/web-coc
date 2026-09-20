@@ -47,7 +47,10 @@ describe('flattenDisjointGroups', () => {
     expect(a.folded).toBe(true);
     expect(a.multiply).toEqual([0.5, 0.5, 1, 0.4]);
     expect(a.add).toEqual([0, 0, 0.25, 0]);
-    expect(a.vertices).toBe(poses[1].group[0].vertices);
+    const parent = poses[1];
+    if (!('group' in parent) || !('vertices' in parent.group[0]))
+      throw new Error('Expected a group containing a mesh');
+    expect(a.vertices).toBe(parent.group[0].vertices);
     expect(out[0]).toBe(poses[0]);
   });
   it('keeps groups whose leaves overlap, multiply groups and nested colored groups isolated', () => {

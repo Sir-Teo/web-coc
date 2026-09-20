@@ -1,3 +1,4 @@
+import { emptyArmy, emptySpells } from '../../src/game/army';
 import { initialSave, makeBuilding } from '../../src/game/model';
 
 /** Explicit veteran fixture for tests of combat, advanced armies and research. */
@@ -18,6 +19,7 @@ export function developedSave() {
     save.buildings.push(makeBuilding(save.nextId++, kind, x, y, level));
   save.buildings.find((b) => b.kind === 'camp')!.level = 6;
   save.army = {
+    ...emptyArmy(),
     swordsman: 12,
     archer: 10,
     giant: 2,
@@ -30,6 +32,7 @@ export function developedSave() {
     pekka: 0,
   };
   save.spells = {
+    ...emptySpells(),
     rage: 1,
     heal: 1,
     lightning: 0,

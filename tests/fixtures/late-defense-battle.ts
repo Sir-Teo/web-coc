@@ -42,7 +42,8 @@ export function lateSetup(
     army: { ...emptyArmy(), ...army },
     spells: emptySpells(),
     troopLevels: maxLevels(),
-    spellLevels: { lightning: 1, heal: 1, rage: 1 },
+    // Version 44 predates the expanded spell roster; retain its original serialized shape.
+    spellLevels: { lightning: 1, heal: 1, rage: 1 } as import('../../src/game/model').SpellBook,
     nextId: 100000,
     availableLoot: loot,
     lootRoom: loot,

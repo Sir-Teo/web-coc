@@ -163,7 +163,8 @@ it('campaign has a viable opening, a progression gate and a reachable final fort
           'goblin',
         ] as const) {
           m.activeTroop = kind;
-          while (m.battle!.remaining[kind] > 0) expect(m.deploy(...approaches[side])).toBe(true);
+          while (m.battle!.remaining[kind] > 0)
+            expect(m.deploy(approaches[side][0], approaches[side][1])).toBe(true);
         }
         for (let step = 0; step < 12000 && !m.battle!.finished; step++) m.step(0.05);
         if (!m.battle!.finished)
@@ -204,7 +205,7 @@ it('the actual starter army can win the opening raid without spells or upgrades'
     m.startBattle(0);
     for (const kind of ['swordsman', 'archer'] as const) {
       m.activeTroop = kind;
-      while (m.battle!.remaining[kind]) expect(m.deploy(...approach)).toBe(true);
+      while (m.battle!.remaining[kind]) expect(m.deploy(approach[0], approach[1])).toBe(true);
     }
     for (let step = 0; step < 12000 && !m.battle!.finished; step++) m.step(0.05);
     expect(m.battle!.finished).toBe(true);

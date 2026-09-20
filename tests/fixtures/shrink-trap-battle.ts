@@ -1,3 +1,4 @@
+import { emptySpells } from '../../src/game/army';
 import { GameModel } from '../../src/game/model';
 import { emptyArmy } from '../../src/game/army';
 import { freshNativeCampaign } from '../../src/game/native-campaign';
@@ -11,6 +12,7 @@ export function shrinkTrapVillage() {
   save.army = { ...emptyArmy(), pekka: 4, dragon: 5 };
   save.king = undefined;
   save.spells = {
+    ...emptySpells(),
     lightning: 0,
     heal: 0,
     rage: 0,

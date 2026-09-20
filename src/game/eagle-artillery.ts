@@ -1,7 +1,7 @@
 import { groundCollision, type GroundCollision } from './subtile-path';
 import type { LateCombatContext } from './late-campaign';
 import type { Battle, Building, Unit } from './model';
-import { BUILDINGS, TROOPS, isTrap } from './data';
+import { TROOPS } from './data';
 import { MAP_SIZE } from './grid';
 import { spellTowerDefenseBoost } from './spell-tower';
 import { untargetable } from './spell-effects';

@@ -1,5 +1,5 @@
 import { groundCollision, type GroundCollision } from './subtile-path';
-import { BUILDINGS, TROOPS, isTrap } from './data';
+import { BUILDINGS, TROOPS } from './data';
 import { distance2D } from './distance';
 import { MAP_SIZE } from './grid';
 import { concealedTesla } from './hidden-tesla';

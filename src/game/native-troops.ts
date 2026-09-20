@@ -12,7 +12,7 @@ import {
   type UnitKind,
 } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
-import { damageDefenders, hurtDefender, stepAttackerVsDefenders } from './defenders';
+import { damageDefenders, stepAttackerVsDefenders } from './defenders';
 import { MAP_SIZE } from './grid';
 import { targetableBuilding } from './hidden-tesla';
 import { flag, nativeRow, num, seconds as nativeSeconds, text, tiles } from './native-data';
@@ -20,13 +20,9 @@ import { castNativeSpell, stepNativeSpells, type NativeSpellContext } from './na
 import {
   buildingEffects,
   healUnit,
-  hurtUnit,
   unitAttackIntervalScale,
-  unitDamageScale,
   unitEffects,
   unitFrozen,
-  unitSpeedBonus,
-  unitSpeedScale,
   type UnitEffects,
 } from './native-status';
 import { heroStatsFor } from './native-heroes';
@@ -41,15 +37,7 @@ import {
   type NativeUnitStats,
 } from './native-units';
 import { launchProjectile, type CombatProjectile } from './projectiles';
-import {
-  breachTarget,
-  distanceTo,
-  findPath,
-  type Battle,
-  type Building,
-  type FX,
-  type Unit,
-} from './model';
+import { breachTarget, distanceTo, findPath, type Battle, type Building, type Unit } from './model';
 
 /** Version 45+ native roster behavior state, created lazily on the unit. */
 export interface NativeUnitState {
@@ -1215,7 +1203,7 @@ function stepLifecycle(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at:
   if (s.summon && s.summonCooldown > 0 && !s.consumeDebris) stepSummons(ctx, u, s, at);
   if (s.bunker && s.bunkerCount > 0) stepBunker(ctx, u, s, at);
   if (s.evolveTo && s.evolveTime > 0 && at + 1e-9 >= (u.spawnedAt ?? 0) + s.evolveTime && u.hp > 0)
-    evolve(ctx, u, s, at);
+    evolve(ctx, u, s);
   if (s.spawnWhenDamaged > 0 && s.ability) stepDamageSpawns(ctx, u, s, at, false);
 }
 
@@ -1432,7 +1420,7 @@ function stepPendingSpawns(ctx: NativeTroopContext) {
   }
 }
 
-function evolve(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats, at: number) {
+function evolve(ctx: NativeTroopContext, u: Unit, s: NativeUnitStats) {
   const kind = unitKindForName(s.evolveTo) as UnitKind | undefined;
   if (!kind) return;
   const fraction = u.maxHp > 0 ? u.hp / u.maxHp : 1;

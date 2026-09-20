@@ -1,4 +1,3 @@
-import { unitHidden } from './native-status';
 import { distance2D } from './distance';
 import type { Battle, Building, FX } from './model';
 import { TROOPS } from './data';

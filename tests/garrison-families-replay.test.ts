@@ -118,7 +118,7 @@ it('portably reconstructs mixed garrison families on the original Goblin Castle 
   const released = late.defenders!.filter((d) => d.kind !== 'skeleton');
   expect(released.length).toBeGreaterThanOrEqual(6);
   expect(new Set(released.map((d) => d.kind)).size).toBeGreaterThanOrEqual(4);
-  expect(released.some((d) => d.kind !== 'skeleton' && d.attacks.length > 0)).toBe(true);
+  expect(released.some((d) => 'attacks' in d && d.attacks.length > 0)).toBe(true);
   const early = seek(3);
   expect(early.defenders!.length).toBeLessThan(late.defenders!.length);
   expect(seek(20)).toEqual(late);

@@ -215,7 +215,7 @@ describe('campaign Tornado Trap', () => {
   });
 
   it('carries attackers clockwise toward the inner radius, weaker for heavy tiers and stronger in the air', () => {
-    const displacement = (kind: Unit['kind'], dx: number, dy: number) => {
+    const displacement = (kind: import('../src/game/data').TroopKind, dx: number, dy: number) => {
       const { b, unit } = lateTrapArena([trapAt(1)]);
       const u = unit(kind, 20.5 + dx, 20.5 + dy);
       phase(b, 0, 'traps');

@@ -1,6 +1,6 @@
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
-import { hurtUnit, unitHidden } from './native-status';
+import { hurtUnit } from './native-status';
 import { distance2D } from './distance';
 import { stepGarrisonDefender, type GarrisonAttack, type GarrisonShot } from './garrison-combat';
 // Later garrison families: spawning summons and concealed Royal Ghosts cannot be selected.

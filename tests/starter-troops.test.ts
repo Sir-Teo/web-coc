@@ -88,7 +88,9 @@ describe('Home Village starter troop progression', () => {
     save.troopLevels!.swordsman = 4;
     save.research = { kind: 'swordsman', end: save.lastTick + 300000 };
     const elixir = save.elixir;
-    const restored = new GameModel(migrateSave(structuredClone(save)));
+    const migrated = migrateSave(structuredClone(save));
+    if (!validateSave(migrated)) throw new Error('Invalid migrated fixture');
+    const restored = new GameModel(migrated);
     expect(validateSave(restored.state)).toBe(true);
     expect(restored.state.research?.end).toBe(save.research.end);
     restored.tick(save.research.end);
@@ -115,7 +117,7 @@ describe('Home Village starter troop progression', () => {
   });
 });
 
-const add = (m: GameModel, kind: Unit['kind'], x: number, y: number) => {
+const add = (m: GameModel, kind: import('../src/game/data').TroopKind, x: number, y: number) => {
   const d = m.troopStats(kind);
   const u: Unit = {
     id: m.state.nextId++,

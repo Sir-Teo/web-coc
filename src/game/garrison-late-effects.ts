@@ -82,7 +82,6 @@ const fade = (since: number, duration: number) => Math.max(0, 1 - since / durati
 
 function chainShapes(
   defender: GarrisonDefender,
-  battle: Battle,
   reduced: boolean,
   iso: Iso,
   lift: number,
@@ -171,7 +170,7 @@ export function garrisonLateEffectShapes(
   for (const defender of battle.defenders ?? []) {
     if (!isGarrisonDefender(defender) || battle.elapsed < defender.spawnedAt) continue;
     const stats = garrisonStats(defender.kind, defender.level);
-    if (stats.chain) shapes.push(...chainShapes(defender, battle, reduced, iso, lift, elapsed));
+    if (stats.chain) shapes.push(...chainShapes(defender, reduced, iso, lift, elapsed));
     const spell = defender.bolts ? garrisonDeathSpell(stats) : undefined;
     for (const [index, bolt] of (defender.bolts ?? []).entries()) {
       const since = elapsed - bolt.at;

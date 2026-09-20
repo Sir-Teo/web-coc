@@ -1,5 +1,5 @@
 import { BUILDINGS, TROOPS, isDefense, isTrap } from './data';
-import { num, text, seconds, tiles, flag, nativeRow } from './native-data';
+import { num, text, seconds, tiles, flag } from './native-data';
 import { heroAbilities, type NativeBattleHero, type HeroAbility } from './native-heroes';
 import { castNativeSpell } from './native-spells';
 import { healUnit, unitEffects } from './native-status';

@@ -267,8 +267,11 @@ export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRend
   // Element-buffer bindings belong to the active VAO. Upload outside any VAO
   // and force the binding, so initialization after an earlier draw is safe too.
   renderer.glWrapper.update(
-    // @ts-expect-error Phaser accepts null to unbind a VAO; its declaration omits null.
-    { vao: null, bindings: { elementArrayBuffer: node.indexBuffer } },
+    // Phaser accepts null to unbind a VAO; its declaration omits null.
+    {
+      vao: null as unknown as Phaser.Renderer.WebGL.Wrappers.WebGLVAOWrapper,
+      bindings: { elementArrayBuffer: node.indexBuffer },
+    },
     true,
   );
   node.indexBuffer.update();

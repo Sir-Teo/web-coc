@@ -16,8 +16,8 @@ type Clip = {
   labels: (string | number)[][];
 };
 const clips = native.graph.clips as Record<string, Clip>;
-const shapes = native.graph.shapes as Record<string, [number, number[]][]>;
-const compact = runtime.shapes as Record<string, [number, number[]][]>;
+const shapes = native.graph.shapes as unknown as Record<string, [number, number[]][]>;
+const compact = runtime.shapes as unknown as Record<string, [number, number[]][]>;
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 it('retains the home X-Bow identity, cadence, ammunition and both targeting modes', () => {
@@ -198,5 +198,7 @@ it('ships exact source sampling regions and native sound bytes in a bounded asse
     expect(preview.direction).toBe(225);
     expect(hash(data)).toBe(preview.rgbaSha256);
   }
-  expect((await readdir('public/assets/buildings/xbow-native')).sort()).toEqual([...new Set(expected)].sort());
+  expect((await readdir('public/assets/buildings/xbow-native')).sort()).toEqual(
+    [...new Set(expected)].sort(),
+  );
 });

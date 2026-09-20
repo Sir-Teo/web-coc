@@ -198,7 +198,7 @@ export function hurtUnit(
   unit.hp -= amount;
   return amount;
 }
-export function healUnit(battle: Battle, unit: Unit, amount: number) {
+export function healUnit(_battle: Battle, unit: Unit, amount: number) {
   if (!(amount > 0) || unit.hp <= 0) return 0;
   const before = unit.hp;
   unit.hp = Math.min(unit.maxHp, unit.hp + amount);

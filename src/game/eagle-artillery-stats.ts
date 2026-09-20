@@ -1,13 +1,5 @@
 import source from '../../reference/eagle-artillery/combat.json' with { type: 'json' };
-import {
-  TROOPS,
-  SPELLS,
-  SPELL_KEYS,
-  TROOP_KEYS,
-  type SpellKind,
-  type TroopKind,
-  type UnitKind,
-} from './data';
+import { TROOPS, SPELLS, SPELL_KEYS, TROOP_KEYS, type SpellKind, type UnitKind } from './data';
 import type { Battle } from './model';
 
 export const EAGLE_ARTILLERY_LEVELS = source.levels;
