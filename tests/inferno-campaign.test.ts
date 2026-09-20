@@ -28,7 +28,7 @@ it('maps every captured active Inferno mode and ammo using the original normal/a
       count++;
     }
   }
-  expect(count).toBe(182);
+  expect(count).toBe(191);
   for (let level = 1; level <= 12; level++)
     expect(defenseDps('inferno', level)).toBeCloseTo(infernoStats(level).weapon.dps[0], 10);
 });

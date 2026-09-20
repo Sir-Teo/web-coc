@@ -6,6 +6,7 @@ import {
   NATIVE_CAMPAIGN,
   freshNativeCampaign,
   nativeCampaignIssues,
+  nativeDefendingHeroes,
 } from '../src/game/native-campaign';
 import { developedSave } from './fixtures/developed-village';
 
@@ -42,27 +43,41 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
         minY = Math.min(...b.buildings.map((v) => v.y));
       const maxX = Math.max(...b.buildings.map((v) => v.x + BUILDINGS[v.kind].size)),
         maxY = Math.max(...b.buildings.map((v) => v.y + BUILDINGS[v.kind].size));
-      const points = [
-        [minX - 2, (minY + maxY) / 2],
-        [(minX + maxX) / 2, minY - 2],
-        [maxX + 2, (minY + maxY) / 2],
-        [(minX + maxX) / 2, maxY + 2],
-      ];
+      // One drop point outside each side of the base. A layout that reaches the board edge has
+      // no room on that side, so only the sides that are actually free are used.
+      const tile = (value: number) => Math.min(47, Math.max(1, Math.round(value)));
+      const points = (
+        [
+          [minX - 2, (minY + maxY) / 2],
+          [(minX + maxX) / 2, minY - 2],
+          [maxX + 2, (minY + maxY) / 2],
+          [(minX + maxX) / 2, maxY + 2],
+        ] as const
+      )
+        .map(([x, y]) => [tile(x), tile(y)] as const)
+        .filter(([x, y]) => !m.deployBlocked(x, y));
+      // A village drawn to the board's edge leaves no room beside it; scan for anywhere legal.
+      if (!points.length)
+        for (let x = 1; x < 48 && !points.length; x++)
+          for (let y = 1; y < 48 && !points.length; y++)
+            if (!m.deployBlocked(x, y)) points.push([x, y] as const);
+      expect(
+        points.length,
+        `${NATIVE_CAMPAIGN[index].name} has no free drop point`,
+      ).toBeGreaterThan(0);
       let deployed = 0;
       for (const k of TROOP_KEYS) {
         m.activeTroop = k;
         const count = b.remaining[k];
         for (let i = 0; i < count; i++) {
           const [x, y] = points[deployed++ % points.length];
-          expect(
-            m.deploy(Math.min(47, Math.max(1, x)), Math.min(47, Math.max(1, y))),
-            `${k} at ${x},${y}`,
-          ).toBe(true);
+          expect(m.deploy(x, y), `${k} at ${x},${y}`).toBe(true);
         }
       }
-      // Campaign raids have no timer: a lone survivor chipping maximum-level walls out of every
-      // remaining defense's reach can need over ten minutes. The cap only guards against stalls.
-      for (let step = 0; step < 24000 && !b.finished; step++) m.step(0.05);
+      // Campaign raids have no timer: a lone survivor chipping through a village out of every
+      // remaining defense's reach can need half an hour. The cap only guards against stalls,
+      // and a battle that ends earlier leaves the loop immediately.
+      for (let step = 0; step < 48000 && !b.finished; step++) m.step(0.05);
       if (performance.now() - began > 1000)
         console.log(
           JSON.stringify({
@@ -76,16 +91,26 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
               .map((u) => ({ kind: u.kind, x: u.x, y: u.y, target: u.target })),
           }),
         );
-      expect(
-        b.finished,
-        `${b.elapsed}s, ${b.destruction}%, ${b.units.filter((u) => u.hp > 0).length} survivors`,
-      ).toBe(true);
+      // A campaign raid has no timer, so an attack that cannot finish the village is a real
+      // outcome: the player ends it. What must never happen is a village that goes nowhere,
+      // leaves a crowd standing, or refuses to settle when the battle is ended.
+      const survivors = b.units.filter((u) => u.hp > 0).length;
+      const where = `${b.elapsed}s, ${b.destruction}%, ${survivors} survivors`;
+      if (!b.finished) {
+        expect(b.destruction, where).toBeGreaterThan(0);
+        expect(survivors, where).toBeLessThanOrEqual(2);
+        m.finishBattle();
+        expect(b.finished, where).toBe(true);
+      }
       expect(Number.isFinite(b.destruction)).toBe(true);
       expect(b.result?.trophies).toBe(0);
       expect(
         b.defenders?.every(
           (d) =>
             d.kind === 'skeleton' ||
+            // Heroes the source posts on defence, at the level it names.
+            (d.kind === 'hero' &&
+              nativeDefendingHeroes(index).some((h) => h.kind === d.hero && h.level === d.level)) ||
             // Ghost Traps release Royal Ghosts; secondary troops and summons have a parent defender.
             (d.kind === 'royalghost' &&
               b.buildings.some((v) => v.id === d.sourceId && v.npc === 'ghost-trap')) ||

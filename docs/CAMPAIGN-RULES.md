@@ -1,6 +1,33 @@
 # Single-player campaign rules
 
-Updated September 13, 2026. The campaign screen lists the native 90 villages from the pinned public client bundle, and **all 90 are playable** with their complete source layouts: every building, trap, level, defending roster and scenery object, from Payback to M.O.M.M.A's Madhouse. Names, initial loot, buildings, traps, levels, hitpoints and scenery positions come from [reference/campaign](../reference/campaign/README.md). There is no authored health or defense multiplier in native attacks. All 90 are reachable along the map's dependency paths under the alternative-dependency interpretation below.
+Updated September 20, 2026. The campaign runs **150 villages** in three families, all playable and all in one list:
+
+| Villages | Family     | Source                                                               |
+| -------- | ---------- | -------------------------------------------------------------------- |
+| 1–90     | Goblin map | The pinned client's `npc1`–`npc90`, complete.                        |
+| 91–103   | Challenge  | 13 of the client's 19 single-player Challenges.                      |
+| 104–150  | Forged     | This project's own, built by `scripts/generate-campaign-stages.mjs`. |
+
+## Challenge villages (91–103)
+
+The client ships 19 Challenge maps beside the Goblin map — ordinary Home Villages from Town Hall 4 to 13, each with its own layout, loot and defending heroes. They carry no `MapInstanceName` and no `MapDependencies`, so they are open from the start; their Town Hall comes from the record name, the only place the source states it. Their Goblin-map GlobalIDs are read as ordinary Home buildings: a Challenge Town Hall is a Town Hall, not a Goblin Hall.
+
+Two source facts these villages introduced:
+
+- **Defending heroes.** The rows name a hero and a level but never a position, so the battle stands them around the Hero Hall exactly as a practice attack on your own village stands yours, clamped inside the board.
+- **Geared defenses and loaded X-Bows.** A Cannon, Archer Tower or Mortar marked `gear=1` with the Alt attack is geared up. An X-Bow carrying at least the ammunition this game simulates is a loaded X-Bow; a shorter load is a starting state the simulation does not represent, and still closes the village.
+
+Six Challenges are withheld rather than shipped locked, each for a stated reason (`withheld` in `reference/campaign/catalog.json`): three post Clan Castle defenders at levels whose animation graphs were never captured (Balloon 5, Lava Hound 5, Ice Golem 5), and three are drawn on the client's larger `UseFullMapSize` board and reach one tile past the 48-tile simulation grid. Shifting, rescaling or substituting any of them is not allowed.
+
+## Forged villages (104–150)
+
+The client has no more Home Village maps, so the tail past 103 is this project's own. `scripts/generate-campaign-stages.mjs` builds all 47 deterministically into `reference/campaign/generated.json`, and `--check` proves a rerun reproduces them byte for byte. The constraint that keeps them honest: **a forged village may place only a `(GlobalID, level)` pair that an imported village already places**, so every hitpoint, damage figure and piece of artwork is one the pinned source already proved. They carry no Goblin-only or late family, so none needs a source mode, inferno or late state.
+
+Each is an ordinary walled base: a Town Hall in the middle, the garrison grown outward with a tile of walking room, half of each defensive family posted on the rim so a besieger cannot stand outside unopposed, traps in the gaps, and three wall rings inside a three-tile deployment margin. The tier climbs from Town Hall 9 to 16 and the loot with it; each opens on a star from the one before. `tests/forged-campaign.test.ts` holds the invariants.
+
+## The Goblin map (1–90)
+
+The native 90 villages come from the pinned public client bundle, and **all 90 are playable** with their complete source layouts: every building, trap, level, defending roster and scenery object, from Payback to M.O.M.M.A's Madhouse. Names, initial loot, buildings, traps, levels, hitpoints and scenery positions come from [reference/campaign](../reference/campaign/README.md). There is no authored health or defense multiplier in native attacks. All 90 are reachable along the map's dependency paths under the alternative-dependency interpretation below.
 
 Goblin Picnic includes its hidden Santa Trap, original animated components and five timed strikes; [the Santa implementation](SANTA-TRAP.md) separates source facts from engine and particle interpretations. Obsidian Tower includes its five level-three Skeleton Traps and all twenty defending skeletons. Rat Valley, Brute Force, Bouncy Castle and Full Frontal include their native Pumpkin Bomb placements, damage and reconstructed animation. Invaders includes its level-3 Bomb Tower, four X-Bows (two in each targeting mode), source Town Hall 9 recommendation and 300,000 gold/300,000 elixir/2,000 Dark Elixir treasury. Cross and Bows, Forest Outing and Skeleton Run retain all 59 level-three Seeking Air Mines with their source 2,100 single-target damage. No Flight Zone includes its original Castle, Dragon 7 and three Balloons 8; see the [garrison fidelity notes](../reference/garrison/README.md). Magic Practice includes all eight original Shrink Traps; see [its documented local timing and recovery rules](SHRINK-TRAP.md). Unsupported entities are still never replaced, dropped or level-clamped: the gate keeps closing any village that gains an unknown entity or a level above an implemented source table.
 

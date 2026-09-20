@@ -1,10 +1,19 @@
 {
   "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "withheld": {
+    "CHALLENGE_TH8_GOWIVA": "Balloon 5 garrison",
+    "CHALLENGE_TH12_YETI": "Lava Hound 5 and Baby Dragon 6 garrison",
+    "CHALLENGE_TH13_HYBRID": "Ice Golem 5 garrison",
+    "CHALLENGE_TH9_BABYDQW": "UseFullMapSize layout exceeds the 48-tile grid",
+    "CHALLENGE_TH10_MINER": "UseFullMapSize layout exceeds the 48-tile grid",
+    "CHALLENGE_TH12_DRAGBAT": "UseFullMapSize layout exceeds the 48-tile grid"
+  },
   "stages": [
     {
       "stage": 1,
       "id": "TutorialNPC",
       "name": "Payback",
+      "family": "goblin",
       "dependencies": [],
       "gold": 500,
       "elixir": 500,
@@ -30,6 +39,7 @@
       "stage": 2,
       "id": "TutorialNPC2",
       "name": "Goblin Forest",
+      "family": "goblin",
       "dependencies": [
         1
       ],
@@ -58,6 +68,7 @@
       "stage": 3,
       "id": "NPC1",
       "name": "Goblin Outpost",
+      "family": "goblin",
       "dependencies": [
         2
       ],
@@ -85,6 +96,7 @@
       "stage": 4,
       "id": "NPC2",
       "name": "Rocky Fort",
+      "family": "goblin",
       "dependencies": [
         3
       ],
@@ -111,6 +123,7 @@
       "stage": 5,
       "id": "NPC3",
       "name": "Goblin Gauntlet",
+      "family": "goblin",
       "dependencies": [
         4
       ],
@@ -138,6 +151,7 @@
       "stage": 6,
       "id": "NPC4",
       "name": "Cannonball Run",
+      "family": "goblin",
       "dependencies": [
         5
       ],
@@ -164,6 +178,7 @@
       "stage": 7,
       "id": "NPC5",
       "name": "Two Smoking Barrels",
+      "family": "goblin",
       "dependencies": [
         6
       ],
@@ -191,6 +206,7 @@
       "stage": 8,
       "id": "NPC6",
       "name": "Gold Rush",
+      "family": "goblin",
       "dependencies": [
         7
       ],
@@ -217,6 +233,7 @@
       "stage": 9,
       "id": "NPC7",
       "name": "Maginot Line",
+      "family": "goblin",
       "dependencies": [
         8
       ],
@@ -243,6 +260,7 @@
       "stage": 10,
       "id": "NPC8",
       "name": "Rat Valley",
+      "family": "goblin",
       "dependencies": [
         9
       ],
@@ -269,6 +287,7 @@
       "stage": 11,
       "id": "NPC9",
       "name": "Brute Force",
+      "family": "goblin",
       "dependencies": [
         10
       ],
@@ -295,6 +314,7 @@
       "stage": 12,
       "id": "NPC10",
       "name": "Gobbotown",
+      "family": "goblin",
       "dependencies": [
         11
       ],
@@ -322,6 +342,7 @@
       "stage": 13,
       "id": "NPC11",
       "name": "M is for Mortar",
+      "family": "goblin",
       "dependencies": [
         12
       ],
@@ -349,6 +370,7 @@
       "stage": 14,
       "id": "NPC12",
       "name": "Megablaster",
+      "family": "goblin",
       "dependencies": [
         13
       ],
@@ -376,6 +398,7 @@
       "stage": 15,
       "id": "NPC13",
       "name": "Immovable Object",
+      "family": "goblin",
       "dependencies": [
         14
       ],
@@ -402,6 +425,7 @@
       "stage": 16,
       "id": "NPC14",
       "name": "Fort Knobs",
+      "family": "goblin",
       "dependencies": [
         15
       ],
@@ -428,6 +452,7 @@
       "stage": 17,
       "id": "NPC15",
       "name": "Watchtower",
+      "family": "goblin",
       "dependencies": [
         16,
         13
@@ -459,6 +484,7 @@
       "stage": 18,
       "id": "NPC16",
       "name": "Fool's Gold",
+      "family": "goblin",
       "dependencies": [
         17
       ],
@@ -485,6 +511,7 @@
       "stage": 19,
       "id": "NPC17",
       "name": "Thoroughfare",
+      "family": "goblin",
       "dependencies": [
         18
       ],
@@ -511,6 +538,7 @@
       "stage": 20,
       "id": "NPC18",
       "name": "Bouncy Castle",
+      "family": "goblin",
       "dependencies": [
         19
       ],
@@ -537,6 +565,7 @@
       "stage": 21,
       "id": "NPC19",
       "name": "Fikova",
+      "family": "goblin",
       "dependencies": [
         20
       ],
@@ -563,6 +592,7 @@
       "stage": 22,
       "id": "NPC20",
       "name": "Gobbo Campus",
+      "family": "goblin",
       "dependencies": [
         21
       ],
@@ -589,6 +619,7 @@
       "stage": 23,
       "id": "NPC21",
       "name": "Danny Boy",
+      "family": "goblin",
       "dependencies": [
         22
       ],
@@ -615,6 +646,7 @@
       "stage": 24,
       "id": "NPC22",
       "name": "Ommahha Beech",
+      "family": "goblin",
       "dependencies": [
         23
       ],
@@ -641,6 +673,7 @@
       "stage": 25,
       "id": "NPC23",
       "name": "Walls of Steel",
+      "family": "goblin",
       "dependencies": [
         24
       ],
@@ -668,6 +701,7 @@
       "stage": 26,
       "id": "NPC24",
       "name": "Sicilian Defense",
+      "family": "goblin",
       "dependencies": [
         25
       ],
@@ -695,6 +729,7 @@
       "stage": 27,
       "id": "NPC25",
       "name": "Obsidian Tower",
+      "family": "goblin",
       "dependencies": [
         26
       ],
@@ -722,6 +757,7 @@
       "stage": 28,
       "id": "NPC26",
       "name": "Arrow Head",
+      "family": "goblin",
       "dependencies": [
         27
       ],
@@ -749,6 +785,7 @@
       "stage": 29,
       "id": "NPC27",
       "name": "Red Carpet",
+      "family": "goblin",
       "dependencies": [
         28
       ],
@@ -776,6 +813,7 @@
       "stage": 30,
       "id": "NPC28",
       "name": "Natural Defense",
+      "family": "goblin",
       "dependencies": [
         29
       ],
@@ -803,6 +841,7 @@
       "stage": 31,
       "id": "NPC29",
       "name": "Steel Gauntlet",
+      "family": "goblin",
       "dependencies": [
         30
       ],
@@ -830,6 +869,7 @@
       "stage": 32,
       "id": "NPC30",
       "name": "Queen's Gambit",
+      "family": "goblin",
       "dependencies": [
         31
       ],
@@ -857,6 +897,7 @@
       "stage": 33,
       "id": "NPC31",
       "name": "Full Frontal",
+      "family": "goblin",
       "dependencies": [
         32
       ],
@@ -884,6 +925,7 @@
       "stage": 34,
       "id": "NPC32",
       "name": "Chimp in Armor",
+      "family": "goblin",
       "dependencies": [
         33
       ],
@@ -910,6 +952,7 @@
       "stage": 35,
       "id": "NPC33",
       "name": "Faulty Towers",
+      "family": "goblin",
       "dependencies": [
         34
       ],
@@ -936,6 +979,7 @@
       "stage": 36,
       "id": "NPC34",
       "name": "Point Man",
+      "family": "goblin",
       "dependencies": [
         35
       ],
@@ -962,6 +1006,7 @@
       "stage": 37,
       "id": "NPC35",
       "name": "Triple A",
+      "family": "goblin",
       "dependencies": [
         36
       ],
@@ -988,6 +1033,7 @@
       "stage": 38,
       "id": "NPC36",
       "name": "Goblin Picnic",
+      "family": "goblin",
       "dependencies": [
         37
       ],
@@ -1014,6 +1060,7 @@
       "stage": 39,
       "id": "NPC37",
       "name": "Bait 'n Switch",
+      "family": "goblin",
       "dependencies": [
         38
       ],
@@ -1040,6 +1087,7 @@
       "stage": 40,
       "id": "NPC38",
       "name": "Collateral Damage",
+      "family": "goblin",
       "dependencies": [
         39
       ],
@@ -1066,6 +1114,7 @@
       "stage": 41,
       "id": "NPC39",
       "name": "Choose Wisely",
+      "family": "goblin",
       "dependencies": [
         40
       ],
@@ -1092,6 +1141,7 @@
       "stage": 42,
       "id": "NPC40",
       "name": "Mega Evil",
+      "family": "goblin",
       "dependencies": [
         41
       ],
@@ -1118,6 +1168,7 @@
       "stage": 43,
       "id": "NPC41",
       "name": "Crystal Crust",
+      "family": "goblin",
       "dependencies": [
         42
       ],
@@ -1144,6 +1195,7 @@
       "stage": 44,
       "id": "NPC42",
       "name": "Cold as Ice",
+      "family": "goblin",
       "dependencies": [
         43
       ],
@@ -1170,6 +1222,7 @@
       "stage": 45,
       "id": "NPC43",
       "name": "Jump Around",
+      "family": "goblin",
       "dependencies": [
         44
       ],
@@ -1196,6 +1249,7 @@
       "stage": 46,
       "id": "NPC44",
       "name": "Kitchen Sink",
+      "family": "goblin",
       "dependencies": [
         45,
         41
@@ -1227,6 +1281,7 @@
       "stage": 47,
       "id": "NPC45",
       "name": "Rolling Terror",
+      "family": "goblin",
       "dependencies": [
         46
       ],
@@ -1254,6 +1309,7 @@
       "stage": 48,
       "id": "NPC46",
       "name": "Megamansion",
+      "family": "goblin",
       "dependencies": [
         47
       ],
@@ -1280,6 +1336,7 @@
       "stage": 49,
       "id": "NPC47",
       "name": "P.E.K.K.A's Playhouse",
+      "family": "goblin",
       "dependencies": [
         48
       ],
@@ -1307,6 +1364,7 @@
       "stage": 50,
       "id": "NPC48",
       "name": "Sherbet Towers",
+      "family": "goblin",
       "dependencies": [
         49
       ],
@@ -1334,6 +1392,7 @@
       "stage": 51,
       "id": "NPC51",
       "name": "Invaders",
+      "family": "goblin",
       "dependencies": [
         50
       ],
@@ -1362,6 +1421,7 @@
       "stage": 52,
       "id": "NPC52",
       "name": "Cross and Bows",
+      "family": "goblin",
       "dependencies": [
         51
       ],
@@ -1390,6 +1450,7 @@
       "stage": 53,
       "id": "NPC53",
       "name": "Forest Outing",
+      "family": "goblin",
       "dependencies": [
         52
       ],
@@ -1417,6 +1478,7 @@
       "stage": 54,
       "id": "NPC54",
       "name": "Skeleton Run",
+      "family": "goblin",
       "dependencies": [
         53
       ],
@@ -1445,6 +1507,7 @@
       "stage": 55,
       "id": "NPC55",
       "name": "Magic Practice",
+      "family": "goblin",
       "dependencies": [
         54
       ],
@@ -1472,6 +1535,7 @@
       "stage": 56,
       "id": "NPC56",
       "name": "High Pressure",
+      "family": "goblin",
       "dependencies": [
         55
       ],
@@ -1499,6 +1563,7 @@
       "stage": 57,
       "id": "NPC57",
       "name": "No Flight Zone",
+      "family": "goblin",
       "dependencies": [
         56
       ],
@@ -1534,6 +1599,7 @@
       "stage": 58,
       "id": "NPC58",
       "name": "Graduation Ceremony",
+      "family": "goblin",
       "dependencies": [
         57
       ],
@@ -1561,6 +1627,7 @@
       "stage": 59,
       "id": "NPC59",
       "name": "Midnight Oil",
+      "family": "goblin",
       "dependencies": [
         58
       ],
@@ -1588,6 +1655,7 @@
       "stage": 60,
       "id": "NPC60",
       "name": "All Angle Attack",
+      "family": "goblin",
       "dependencies": [
         59
       ],
@@ -1615,6 +1683,7 @@
       "stage": 61,
       "id": "NPC61",
       "name": "Burning Sensation",
+      "family": "goblin",
       "dependencies": [
         59
       ],
@@ -1642,6 +1711,7 @@
       "stage": 62,
       "id": "NPC62",
       "name": "Underground Workaround",
+      "family": "goblin",
       "dependencies": [
         60
       ],
@@ -1669,6 +1739,7 @@
       "stage": 63,
       "id": "NPC63",
       "name": "Teamwork Opportunity",
+      "family": "goblin",
       "dependencies": [
         61
       ],
@@ -1696,6 +1767,7 @@
       "stage": 64,
       "id": "NPC64",
       "name": "Bowling Alley",
+      "family": "goblin",
       "dependencies": [
         63
       ],
@@ -1724,6 +1796,7 @@
       "stage": 65,
       "id": "NPC65",
       "name": "Keep Your Cool",
+      "family": "goblin",
       "dependencies": [
         64
       ],
@@ -1751,6 +1824,7 @@
       "stage": 66,
       "id": "NPC66",
       "name": "Where Eagles Dare",
+      "family": "goblin",
       "dependencies": [
         65
       ],
@@ -1778,6 +1852,7 @@
       "stage": 67,
       "id": "NPC67",
       "name": "Fireworks Inc.",
+      "family": "goblin",
       "dependencies": [
         66
       ],
@@ -1805,6 +1880,7 @@
       "stage": 68,
       "id": "NPC68",
       "name": "Goblin Capital",
+      "family": "goblin",
       "dependencies": [
         67
       ],
@@ -1835,6 +1911,7 @@
       "stage": 69,
       "id": "NPC69",
       "name": "Pick Your Poison",
+      "family": "goblin",
       "dependencies": [
         68
       ],
@@ -1862,6 +1939,7 @@
       "stage": 70,
       "id": "NPC70",
       "name": "The Arena",
+      "family": "goblin",
       "dependencies": [
         68
       ],
@@ -1927,6 +2005,7 @@
       "stage": 71,
       "id": "NPC71",
       "name": "Paper Map",
+      "family": "goblin",
       "dependencies": [
         70
       ],
@@ -1954,6 +2033,7 @@
       "stage": 72,
       "id": "NPC72",
       "name": "Flagged for Traps",
+      "family": "goblin",
       "dependencies": [
         71
       ],
@@ -1981,6 +2061,7 @@
       "stage": 73,
       "id": "NPC73",
       "name": "Grand Avenue",
+      "family": "goblin",
       "dependencies": [
         72
       ],
@@ -2011,6 +2092,7 @@
       "stage": 74,
       "id": "NPC74",
       "name": "Besieged",
+      "family": "goblin",
       "dependencies": [
         73
       ],
@@ -2041,6 +2123,7 @@
       "stage": 75,
       "id": "NPC75",
       "name": "Dragon's Lair",
+      "family": "goblin",
       "dependencies": [
         74
       ],
@@ -2071,6 +2154,7 @@
       "stage": 76,
       "id": "NPC76",
       "name": "Go to Bat",
+      "family": "goblin",
       "dependencies": [
         75
       ],
@@ -2098,6 +2182,7 @@
       "stage": 77,
       "id": "NPC77",
       "name": "Ring of Power",
+      "family": "goblin",
       "dependencies": [
         76
       ],
@@ -2138,6 +2223,7 @@
       "stage": 78,
       "id": "NPC78",
       "name": "Suspicious Gap",
+      "family": "goblin",
       "dependencies": [
         77
       ],
@@ -2173,6 +2259,7 @@
       "stage": 79,
       "id": "NPC79",
       "name": "Stay on Target",
+      "family": "goblin",
       "dependencies": [
         78
       ],
@@ -2200,6 +2287,7 @@
       "stage": 80,
       "id": "NPC80",
       "name": "Such a Tease",
+      "family": "goblin",
       "dependencies": [
         79
       ],
@@ -2227,6 +2315,7 @@
       "stage": 81,
       "id": "NPC81",
       "name": "Titanic",
+      "family": "goblin",
       "dependencies": [
         80
       ],
@@ -2255,6 +2344,7 @@
       "stage": 82,
       "id": "NPC82",
       "name": "Cold Flame",
+      "family": "goblin",
       "dependencies": [
         81
       ],
@@ -2283,6 +2373,7 @@
       "stage": 83,
       "id": "NPC83",
       "name": "Corner Case",
+      "family": "goblin",
       "dependencies": [
         82
       ],
@@ -2311,6 +2402,7 @@
       "stage": 84,
       "id": "NPC84",
       "name": "Path to Pain",
+      "family": "goblin",
       "dependencies": [
         83
       ],
@@ -2341,6 +2433,7 @@
       "stage": 85,
       "id": "NPC85",
       "name": "Builderopolis",
+      "family": "goblin",
       "dependencies": [
         84
       ],
@@ -2368,6 +2461,7 @@
       "stage": 86,
       "id": "NPC86",
       "name": "Monolithic",
+      "family": "goblin",
       "dependencies": [
         85
       ],
@@ -2396,6 +2490,7 @@
       "stage": 87,
       "id": "NPC87",
       "name": "Raging Headache",
+      "family": "goblin",
       "dependencies": [
         86
       ],
@@ -2423,6 +2518,7 @@
       "stage": 88,
       "id": "NPC88",
       "name": "Toxic Town Square",
+      "family": "goblin",
       "dependencies": [
         87
       ],
@@ -2450,6 +2546,7 @@
       "stage": 89,
       "id": "NPC89",
       "name": "Disappearing Dilemma",
+      "family": "goblin",
       "dependencies": [
         88
       ],
@@ -2477,6 +2574,7 @@
       "stage": 90,
       "id": "NPC90",
       "name": "M.O.M.M.A's Madhouse",
+      "family": "goblin",
       "dependencies": [
         89
       ],
@@ -2500,6 +2598,1434 @@
           "AllianceUnitType": "MOMMA",
           "AllianceUnitLevel": "1",
           "AllianceUnitCount": "1"
+        }
+      ]
+    },
+    {
+      "stage": 91,
+      "id": "CHALLENGE_TH4_GIANT",
+      "name": "Giant Smash",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 100000,
+      "elixir": 100000,
+      "darkElixir": 0,
+      "recommendedTownHall": 4,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH4_GIANT",
+          "TID": "TID_CHALLENGE_TH4_GIANT",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "4",
+          "TutorialTHLevel": "4",
+          "LevelFile": "level/challenge_th4_giant.json",
+          "Gold": "100000",
+          "Elixir": "100000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Giant",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "13",
+          "DeploySteps": "TH4_Giant_Giants1",
+          "UseFullMapSize": "TRUE",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "FixedArmyUnitType": "Goblin",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "11",
+          "DeploySteps": "TH4_Giant_WallBreakers"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH4_Giant_Giants2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH4_Giant_Goblins"
+        }
+      ]
+    },
+    {
+      "stage": 92,
+      "id": "CHALLENGE_TH5_LOON",
+      "name": "Balloon Parade",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 125000,
+      "elixir": 125000,
+      "darkElixir": 0,
+      "recommendedTownHall": 5,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH5_LOON",
+          "TID": "TID_CHALLENGE_TH5_LOON",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "5",
+          "TutorialTHLevel": "5",
+          "LevelFile": "level/challenge_th5_loon.json",
+          "Gold": "125000",
+          "Elixir": "125000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "27",
+          "DeploySteps": "TH5_Loon_Loons1",
+          "UseFullMapSize": "TRUE",
+          "VillageBackground": "60000000"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH5_Loon_Loons2"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH5_Loon_Loons3"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH5_Loon_Loons4"
+        }
+      ]
+    },
+    {
+      "stage": 93,
+      "id": "CHALLENGE_TH6_GIWIWA",
+      "name": "Meat Shield",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 150000,
+      "elixir": 150000,
+      "darkElixir": 0,
+      "recommendedTownHall": 6,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH6_GIWIWA",
+          "TID": "TID_CHALLENGE_TH6_GIWIWA",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "6",
+          "TutorialTHLevel": "6",
+          "LevelFile": "level/challenge_th6_giwiwa.json",
+          "Gold": "150000",
+          "Elixir": "150000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Giant",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "14",
+          "DeploySteps": "TH6_Giwiwa_Giant1",
+          "UseFullMapSize": "TRUE",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "16",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "8",
+          "DeploySteps": "TH6_Giwiwa_WallBreakers1"
+        },
+        {
+          "FixedArmyUnitType": "Healing",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Giant2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Heal1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Wizards1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_WallBreakers2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Wizards2"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Wait_For_Heal"
+        },
+        {
+          "DeploySteps": "TH6_Giwiwa_Heal2"
+        }
+      ]
+    },
+    {
+      "stage": 94,
+      "id": "CHALLENGE_TH7_DRAGON",
+      "name": "Hot Stuff",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 200000,
+      "elixir": 200000,
+      "darkElixir": 0,
+      "recommendedTownHall": 7,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH7_DRAGON",
+          "TID": "TID_CHALLENGE_TH7_DRAGON",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "7",
+          "TutorialTHLevel": "7",
+          "LevelFile": "level/challenge_th7_dragon.json",
+          "Gold": "200000",
+          "Elixir": "200000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Dragon",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "10",
+          "DeploySteps": "TH7_Dragon_Info_AirSweeper",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "5",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Lightning",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "6",
+          "DeploySteps": "TH7_Dragon_Lightning"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH7_Dragon_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH7_Dragon_Dragons1"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH7_Dragon_Dragons2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH7_Dragon_Dragons3"
+        }
+      ]
+    },
+    {
+      "stage": 95,
+      "id": "CHALLENGE_TH7_HOG",
+      "name": "Hog Rush",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 200000,
+      "elixir": 200000,
+      "darkElixir": 0,
+      "recommendedTownHall": 7,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH7_HOG",
+          "TID": "TID_CHALLENGE_TH7_HOG",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "7",
+          "TutorialTHLevel": "7",
+          "LevelFile": "level/challenge_th7_hog.json",
+          "Gold": "200000",
+          "Elixir": "200000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Hog Rider",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "36",
+          "DeploySteps": "TH7_Hog_BarbarianKing",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "5",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH7_Hog_Wizards"
+        },
+        {
+          "FixedArmyUnitType": "Healing",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH7_Hog_Hogs"
+        },
+        {
+          "DeploySteps": "KingHealthLow"
+        },
+        {
+          "DeploySteps": "TH7_Hog_Wait_For_Heal"
+        },
+        {
+          "DeploySteps": "TH7_Hog_Heal1"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH7_Hog_Heal2"
+        }
+      ]
+    },
+    {
+      "stage": 96,
+      "id": "CHALLENGE_TH7_MINION",
+      "name": "Air Raid",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 200000,
+      "elixir": 200000,
+      "darkElixir": 0,
+      "recommendedTownHall": 7,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH7_MINION",
+          "TID": "TID_CHALLENGE_TH7_MINION",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "7",
+          "TutorialTHLevel": "7",
+          "LevelFile": "level/challenge_th7_minion.json",
+          "Gold": "200000",
+          "Elixir": "200000",
+          "DarkElixir": "0",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "30",
+          "DeploySteps": "TH7_Minion_Info_AirSweeper",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "5",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Minion",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "25",
+          "DeploySteps": "TH7_Minion_Balloons"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH7_Minion_Rage1"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH7_Minion_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH7_Minion_Minions"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH7_Minion_Rage2"
+        }
+      ]
+    },
+    {
+      "stage": 97,
+      "id": "CHALLENGE_TH8_GOWIPE",
+      "name": "Heavy Hitters",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 250000,
+      "elixir": 250000,
+      "darkElixir": 1500,
+      "recommendedTownHall": 8,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH8_GOWIPE",
+          "TID": "TID_CHALLENGE_TH8_GOWIPE",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "8",
+          "TutorialTHLevel": "8",
+          "LevelFile": "level/challenge_th8_gowipe.json",
+          "Gold": "250000",
+          "Elixir": "250000",
+          "DarkElixir": "1500",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Golem",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH8_Gowipe_Earthquake",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "10",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "PEKKA",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "16",
+          "DeploySteps": "TH8_Gowipe_Funnel_Pekkas"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Archer",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH8_Gowipe_Wizards1"
+        },
+        {
+          "FixedArmyUnitType": "Healing",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH8_Gowipe_Golem"
+        },
+        {
+          "FixedArmyUnitType": "Earthquake",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "10",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH8_Gowipe_WallBreakers"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Support_Pekkas"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Wizards2"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Heal1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Rage"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Heal2"
+        },
+        {
+          "DeploySteps": "TH8_Gowipe_Clean_Up"
+        }
+      ]
+    },
+    {
+      "stage": 98,
+      "id": "CHALLENGE_TH9_LAVALOON",
+      "name": "Lava & Loons",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 300000,
+      "elixir": 300000,
+      "darkElixir": 3000,
+      "recommendedTownHall": 9,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH9_LAVALOON",
+          "TID": "TID_CHALLENGE_TH9_LAVALOON",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "9",
+          "TutorialTHLevel": "9",
+          "LevelFile": "level/challenge_th9_lavaloon.json",
+          "Gold": "300000",
+          "Elixir": "300000",
+          "DarkElixir": "3000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Lava Hound",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH9_Lavaloon_BarbarianKing_1",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "30",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "26",
+          "DeploySteps": "TH9_Lavaloon_BarbarianKing_2",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "30"
+        },
+        {
+          "FixedArmyUnitType": "Baby Dragon",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH9_Lavaloon_BarbarianKing_3"
+        },
+        {
+          "FixedArmyUnitType": "Minion",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH9_Lavaloon_KingAbility"
+        },
+        {
+          "FixedArmyUnitType": "Haste",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Freeze",
+          "FixedArmyUnitLevel": "1",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Lavaloon_ArcherQueen"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Lavaloon_Wait_For_Hounds"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Lavaloon_Haste1"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Hounds"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Balloons"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Freeze"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Rage1"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Rage2"
+        },
+        {
+          "DeploySteps": "Wait_500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_Haste2"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH9_Lavaloon_CleanUp"
+        }
+      ]
+    },
+    {
+      "stage": 99,
+      "id": "CHALLENGE_TH9_WITCH",
+      "name": "Witch Slap",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 300000,
+      "elixir": 300000,
+      "darkElixir": 3000,
+      "recommendedTownHall": 9,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH9_WITCH",
+          "TID": "TID_CHALLENGE_TH9_WITCH",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "9",
+          "TutorialTHLevel": "9",
+          "LevelFile": "level/challenge_th9_witch.json",
+          "Gold": "300000",
+          "Elixir": "300000",
+          "DarkElixir": "3000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Witch_FunnelWizard",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "30",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "30"
+        },
+        {
+          "FixedArmyUnitType": "Witch",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "8",
+          "DeploySteps": "TH9_Witch_ArcherQueen"
+        },
+        {
+          "FixedArmyUnitType": "Golem",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH9_Witch_Healers"
+        },
+        {
+          "FixedArmyUnitType": "Healer",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH9_Witch_Wait_For_Earthquake"
+        },
+        {
+          "FixedArmyUnitType": "Earthquake",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH9_Witch_Earthquake"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Witch_Wait_For_Deploy"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH9_Witch_Golems"
+        },
+        {
+          "FixedArmyUnitType": "Jump",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Witches1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Witches2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Rage"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Poison"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Wait_For_Jump"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Jump"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH9_Witch_Wizard"
+        }
+      ]
+    },
+    {
+      "stage": 100,
+      "id": "CHALLENGE_TH10_BOBAT",
+      "name": "Bowling with Bats",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 400000,
+      "elixir": 400000,
+      "darkElixir": 4000,
+      "recommendedTownHall": 10,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH10_BOBAT",
+          "TID": "TID_CHALLENGE_TH10_BOBAT",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "10",
+          "TutorialTHLevel": "10",
+          "LevelFile": "level/challenge_th10_bobat.json",
+          "Gold": "400000",
+          "Elixir": "400000",
+          "DarkElixir": "4000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "40",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH10_Bobat_ArcherQueen",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "40",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "40",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_2500ms",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "40"
+        },
+        {
+          "FixedArmyUnitType": "PEKKA",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH10_Bobat_Healers"
+        },
+        {
+          "FixedArmyUnitType": "Bowler",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "11",
+          "DeploySteps": "TH10_Bobat_Wait_For_Rage"
+        },
+        {
+          "FixedArmyUnitType": "Healer",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH10_Bobat_Rage1"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "Wall Wrecker",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH10_Bobat_WallBreakers"
+        },
+        {
+          "FixedArmyUnitType": "Giant",
+          "FixedArmyUnitLevel": "9",
+          "FixedArmyUnitCountOrStage": "2",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "PEKKA",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "1",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "TH10_Bobat_WallWrecker"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Freeze",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH10_Bobat_BarbarianKing"
+        },
+        {
+          "FixedArmyUnitType": "Bat Spell",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH10_Bobat_PEKKAs"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH10_Bobat_Bowlers"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH10_Bobat_Rage2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH10_Bobat_Batwave"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH10_Bobat_Freezes"
+        }
+      ]
+    },
+    {
+      "stage": 101,
+      "id": "CHALLENGE_TH11_EDRAG",
+      "name": "Electro Surgery",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 500000,
+      "elixir": 500000,
+      "darkElixir": 5000,
+      "recommendedTownHall": 11,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH11_EDRAG",
+          "TID": "TID_CHALLENGE_TH11_EDRAG",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "11",
+          "TutorialTHLevel": "11",
+          "LevelFile": "level/challenge_th11_edrag.json",
+          "Gold": "500000",
+          "Elixir": "500000",
+          "DarkElixir": "5000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "50",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Edrag_FunnelEdrag1",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "50",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "50",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Edrag_Wait_For_Queen",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "50"
+        },
+        {
+          "FixedArmyUnitType": "Grand Warden",
+          "FixedArmyUnitLevel": "20",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Edrag_ArcherQueen",
+          "DefendingHero": "Grand Warden",
+          "DefendingHeroLevel": "20"
+        },
+        {
+          "FixedArmyUnitType": "Battle Blimp",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Edrag_Wait_For_Blimp"
+        },
+        {
+          "FixedArmyUnitType": "Electro Dragon",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "TH11_Edrag_BattleBlimp"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "1",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "FixedArmyUnitType": "Electro Dragon",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "8",
+          "DeploySteps": "TH11_Edrag_Rage1"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH11_Edrag_Clones"
+        },
+        {
+          "FixedArmyUnitType": "Haste",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Clone",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH11_Edrag_Deploy_Blimp"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_FunnelEdrag2"
+        },
+        {
+          "DeploySteps": "Wait_5000ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_Edrags"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_GrandWarden"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_Balloons"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_BarbarianKing"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_Rage2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "WardenAbility"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH11_Edrag_Clean_Up"
+        }
+      ]
+    },
+    {
+      "stage": 102,
+      "id": "CHALLENGE_TH11_LAVALOON",
+      "name": "Lava & More Loons",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 500000,
+      "elixir": 500000,
+      "darkElixir": 5000,
+      "recommendedTownHall": 11,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH11_LAVALOON",
+          "TID": "TID_CHALLENGE_TH11_LAVALOON",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "11",
+          "TutorialTHLevel": "11",
+          "LevelFile": "level/challenge_th11_lavaloon.json",
+          "Gold": "500000",
+          "Elixir": "500000",
+          "DarkElixir": "5000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "29",
+          "DeploySteps": "TH11_Lavaloon_Info_Eagle",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "50",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Minion",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH11_Lavaloon_Info_Queen",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "50"
+        },
+        {
+          "FixedArmyUnitType": "Lava Hound",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH11_Lavaloon_Jump",
+          "DefendingHero": "Grand Warden",
+          "DefendingHeroLevel": "20"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Haste",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "4",
+          "DeploySteps": "TH11_Lavaloon_IceGolem"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "50",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Lavaloon_BarbarianKing"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "50",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Grand Warden",
+          "FixedArmyUnitLevel": "20",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Lavaloon_ArcherQueen"
+        },
+        {
+          "FixedArmyUnitType": "Jump",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Lavaloon_Wait_For_KingAbility"
+        },
+        {
+          "FixedArmyUnitType": "Ice Golem",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH11_Lavaloon_KingAbility"
+        },
+        {
+          "FixedArmyUnitType": "Stone Slammer",
+          "FixedArmyUnitLevel": "2",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "7",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "TH11_Lavaloon_Poison"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Haste1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Hounds1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Balloons1"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_GrandWarden"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_StoneSlammer"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Balloons2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Hounds2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Balloons3"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Rage"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_WardenAbility"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Haste2"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH11_Lavaloon_Minions"
+        }
+      ]
+    },
+    {
+      "stage": 103,
+      "id": "CHALLENGE_TH12_BOWIGI",
+      "name": "Bowling with Witches",
+      "family": "challenge",
+      "dependencies": [],
+      "gold": 600000,
+      "elixir": 600000,
+      "darkElixir": 6000,
+      "recommendedTownHall": 12,
+      "nativeRows": [
+        {
+          "Name": "CHALLENGE_TH12_BOWIGI",
+          "TID": "TID_CHALLENGE_TH12_BOWIGI",
+          "Type": "TUTORIAL",
+          "TutorialUnlockTHLevel": "12",
+          "TutorialTHLevel": "12",
+          "LevelFile": "level/challenge_th12_bowigi.json",
+          "Gold": "600000",
+          "Elixir": "600000",
+          "DarkElixir": "6000",
+          "SinglePlayer": "TRUE",
+          "FixedArmyUnitType": "Giant",
+          "FixedArmyUnitLevel": "9",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH12_Bowigi_Balloon1",
+          "UseFullMapSize": "TRUE",
+          "DefendingHero": "Barbarian King",
+          "DefendingHeroLevel": "40",
+          "VillageBackground": "60000000"
+        },
+        {
+          "FixedArmyUnitType": "Wall Breaker",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "7",
+          "DeploySteps": "Wait_2500ms",
+          "DefendingHero": "Archer Queen",
+          "DefendingHeroLevel": "40"
+        },
+        {
+          "FixedArmyUnitType": "Balloon",
+          "FixedArmyUnitLevel": "8",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH12_Bowigi_Healers",
+          "DefendingHero": "Grand Warden",
+          "DefendingHeroLevel": "20"
+        },
+        {
+          "FixedArmyUnitType": "Wizard",
+          "FixedArmyUnitLevel": "9",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Healer",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "5",
+          "DeploySteps": "TH12_Bowigi_ArcherQueen"
+        },
+        {
+          "FixedArmyUnitType": "Baby Dragon",
+          "FixedArmyUnitLevel": "6",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Witch",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Bowler",
+          "FixedArmyUnitLevel": "4",
+          "FixedArmyUnitCountOrStage": "15",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Wall Wrecker",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Bowigi_Rage1"
+        },
+        {
+          "FixedArmyUnitType": "Giant",
+          "FixedArmyUnitLevel": "9",
+          "FixedArmyUnitCountOrStage": "8",
+          "FixedArmyUnitAlliance": "TRUE",
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "FixedArmyUnitType": "Barbarian King",
+          "FixedArmyUnitLevel": "60",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "FixedArmyUnitType": "Archer Queen",
+          "FixedArmyUnitLevel": "60",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Bowigi_Giants"
+        },
+        {
+          "FixedArmyUnitType": "Grand Warden",
+          "FixedArmyUnitLevel": "30",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "FixedArmyUnitType": "Rage",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "3",
+          "DeploySteps": "TH12_Bowigi_WallWrecker"
+        },
+        {
+          "FixedArmyUnitType": "Jump",
+          "FixedArmyUnitLevel": "3",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "TH12_Bowigi_GrandWarden"
+        },
+        {
+          "FixedArmyUnitType": "Freeze",
+          "FixedArmyUnitLevel": "7",
+          "FixedArmyUnitCountOrStage": "2",
+          "DeploySteps": "TH12_Bowigi_BarbarianKing"
+        },
+        {
+          "FixedArmyUnitType": "Poison",
+          "FixedArmyUnitLevel": "5",
+          "FixedArmyUnitCountOrStage": "1",
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Witches"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Bowlers"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_WallBreakers"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Freeze1"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Freeze2"
+        },
+        {
+          "DeploySteps": "Wait_1000ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Rage2"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_Jump"
+        },
+        {
+          "DeploySteps": "Wait_2500ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_KingAbility"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_WaitForWarden"
+        },
+        {
+          "DeploySteps": "WardenAbility"
+        },
+        {
+          "DeploySteps": "Wait_7500ms"
+        },
+        {
+          "DeploySteps": "TH12_Bowigi_CleanUp"
         }
       ]
     }
@@ -2552,6 +4078,48 @@
       "Width": "3",
       "Height": "3",
       "TID": "TID_BUILDING_DARK_ELIXIR_PUMP"
+    },
+    "1000000": {
+      "Name": "Army Camp",
+      "Width": "4",
+      "Height": "4",
+      "TID": "TID_BUILDING_HOUSING"
+    },
+    "1000007": {
+      "Name": "Laboratory",
+      "Width": "3",
+      "Height": "3",
+      "TID": "TID_BUILDING_LABORATORY"
+    },
+    "1000006": {
+      "Name": "Barracks",
+      "Width": "3",
+      "Height": "3",
+      "TID": "TID_BUILDING_BARRACK"
+    },
+    "1000026": {
+      "Name": "Dark Barracks",
+      "Width": "3",
+      "Height": "3",
+      "TID": "TID_DARK_ELIXIR_BARRACK"
+    },
+    "1000020": {
+      "Name": "Spell Factory",
+      "Width": "3",
+      "Height": "3",
+      "TID": "TID_BUILDING_SPELL_FORGE"
+    },
+    "1000029": {
+      "Name": "Dark Spell Factory",
+      "Width": "3",
+      "Height": "3",
+      "TID": "TID_BUILDING_MINI_SPELL_FACTORY"
+    },
+    "1000071": {
+      "Name": "Hero Hall",
+      "Width": "4",
+      "Height": "4",
+      "TID": "TID_HERO_TAVERN"
     },
     "1000015": {
       "Name": "Builders Hut",

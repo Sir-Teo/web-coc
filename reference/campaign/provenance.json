@@ -99,6 +99,19 @@
     "level/npc86.json": "4df305e14f48c9cb4e6438331475891470bb124c14bfe9f64687a813f53a5cc8",
     "level/npc87.json": "b8adae99aaea4a56febdf5c0c236a3307fdb277e9b58cac52160ea5b317e081e",
     "level/npc88.json": "0d95076b27684819a67b2952074495e814e81b86ab182761ce0c56213f156579",
+    "level/challenge_th4_giant.json": "a9fe72489b190d8a619bcb96edb5280a7e7279891a09dc2d7fb7af3f6b3233a3",
+    "level/challenge_th5_loon.json": "71f1edb8065d043dd9c2d343891fb7bac5c1e3b9f8da67440d0fe9fc635b4805",
+    "level/challenge_th6_giwiwa.json": "fafbc0d4f9944a15be65282dc045fb37b78fd002819eaf9da5a507e778e570ab",
+    "level/challenge_th7_dragon.json": "1cd05abadf7cbde036a5f0bb5163715b38a3e630c06a0f5fe0f58972920589a4",
+    "level/challenge_th7_hog.json": "5157101770b43b78ec736e3ba94231a56240a2ea92cac3e100ef94d080f93986",
+    "level/challenge_th7_minion.json": "4f6dea4a68666f54dddcd030feffa3631783d76a565c4d700775092207a32649",
+    "level/challenge_th8_gowipe.json": "fb8748b50764f942485e84766d700fa70b54d5b8376fc52019f3778c32480200",
+    "level/challenge_th9_lavaloon.json": "a42a19c8848a80106e84917bd0ee25d46849ea41d776d51edd68213d04dc5f63",
+    "level/challenge_th9_witch.json": "607bf53b2bfe4c59a45938bdc40e542982df5444eebac0d96f9da08fd1d1c4b7",
+    "level/challenge_th10_bobat.json": "5b7299cdb8ea754ab8a2b71f4465399ea53ce51dbaadf037f6d7f0a4bb8e14e8",
+    "level/challenge_th11_edrag.json": "61211573fc5a6a7e886365aee7cdf086920f4086cb0dcd854de25827a880fcad",
+    "level/challenge_th11_lavaloon.json": "dab1d5da5fe30fdd0ca33a4d3c49f118a50f2d07569591b51d5a2a1b633d3aaf",
+    "level/challenge_th12_bowigi.json": "82999c8f11303688405afe92464e59901119b0df89d05b0dcf2913b589917ec5",
     "logic/obstacles.csv": "d79e96e2a973402f1a6b24f5e41c2de9ce2e8143479318a346ba2e299268044f",
     "logic/decos.csv": "b60242541efc630279e7ca2b9d91b66ef752eb054d15f561e53d389886eb8173"
   },
@@ -106,9 +119,9 @@
     "level/npc22.json": "help_opened\":false,\"bool_layout_edit_shown_erase\":false}"
   },
   "outputs": {
-    "catalog.json": "469e8ba60d555d3053857ad36f64793102992343603faae2aaf809d5520b373d",
-    "layouts.jsonl": "7671fc814545929ac65d64ec58506957549c0a89260409a261a1dba61971dd7d",
+    "catalog.json": "0a4e39d6cb795904e9b1007104928de172a4a86f976e282d4e754b6ba4dd4cf4",
+    "layouts.jsonl": "db5064d42e1020c2efe06aee0754eddccd3628a07111872810b8f4f7b081f202",
     "npc-buildings.json": "b5842b5cd783cc4b24d879351d2927aff75aeb77e8aee9c2dab24579e52d4c2d",
-    "runtime.json": "da9041d1a163b345a9fac62d1b5ff00359b1f2838f5f43725a63594fef88a1ef"
+    "runtime.json": "6b02678afb6db578969570e4e74555f561326a5fa193d56eea7d94ad1a81f5b2"
   }
 }

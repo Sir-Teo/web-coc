@@ -84,6 +84,7 @@ import {
   freshNativeCampaign,
   nativeBuildings,
   nativeCampaignIssues,
+  nativeDefendingHeroes,
   nativeScenery,
   nativeUnlocked,
   type NativeCampaignProgress,
@@ -3124,14 +3125,21 @@ export class GameModel {
       !practice && catalog === 'goblin-v1' ? campaignGarrisonSetup(index, buildings) : undefined;
     const home =
       buildings.find((b) => b.kind === 'herohall') ?? buildings.find((b) => b.kind === 'townhall')!;
-    const defendingHeroes = practice
-      ? heroes.map((h, i) => ({
-          kind: h.kind,
-          level: h.level,
-          x: home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3,
-          y: home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3,
-        }))
-      : [];
+    // Practice defends with your own heroes; a campaign village defends with the heroes its
+    // source names. Both stand around the Hero Hall, because neither source states a position.
+    const defenders = practice
+      ? heroes.map((h) => ({ kind: h.kind, level: h.level }))
+      : catalog === 'goblin-v1'
+        ? nativeDefendingHeroes(index)
+        : [];
+    // A hall against the edge would otherwise post a hero off the board.
+    const inside = (value: number) => Math.min(BUILD_MAX, Math.max(BUILD_MIN, value));
+    const defendingHeroes = defenders.map((h, i) => ({
+      kind: h.kind,
+      level: h.level,
+      x: inside(home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3),
+      y: inside(home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3),
+    }));
     const initial = {
       ...(defendingHeroes.length ? { defendingHeroes } : {}),
       ...(garrisons ? { garrisons } : {}),

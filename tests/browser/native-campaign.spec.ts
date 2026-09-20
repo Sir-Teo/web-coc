@@ -23,7 +23,8 @@ for (const viewport of [
       m.changed();
     });
     await page.locator('.attack-btn').click();
-    await expect(page.locator('.campaign-card')).toHaveCount(90);
+    // The Goblin map, the Challenges the client ships and the forged tail after them.
+    await expect(page.locator('.campaign-card')).toHaveCount(150);
     // Scouting thumbnails must conceal native Tesla placements as well as traps.
     // Each minimap is one cached SVG image rather than inline DOM; count its tiles.
     const thumbnails = await page.evaluate(async () => {
