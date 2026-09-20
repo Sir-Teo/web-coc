@@ -39,6 +39,7 @@ import { gearFromLegacy, unlockCommonItems } from '../game/native-hero-village';
 import { heroLevelCap as kingLevelCap } from '../game/heroes';
 import { migrateSave, validateSave, MAX_SAVED_BUILDINGS } from '../game/save';
 import { distributeArmy, distributeSpells, singleArmy } from './loadout';
+import { readVillageSlots, writeVillageSlot } from './slots';
 import { maxVillagePlan, packVillage, plannedTotal } from './village';
 
 const balances = ['gold', 'elixir', 'dark', 'gems'] as const;
@@ -522,6 +523,26 @@ export class DeveloperControls {
   unlockCampaign() {
     this.edit((m) => unlockCampaign(m, 1));
   }
+  /**
+   * Enter any campaign stage directly. The path to it is unlocked first (existing higher star
+   * counts are kept), because a locked stage refuses to start.
+   */
+  startStage(index: number, catalog: CampaignCatalog = 'valley-v1', practice = false) {
+    if (this.model.battle) throw Error('Return home before starting another attack.');
+    const stages = catalog === 'goblin-v1' ? NATIVE_CAMPAIGN.length : CAMPAIGN.length;
+    integer(index, 0, stages - 1);
+    if (!practice) this.edit((m) => unlockCampaign(m, 1));
+    this.model.startBattle(index, practice, catalog);
+    if (!this.model.battle)
+      throw Error('That stage refused to start. Prepare an army, or try another stage.');
+  }
+  /** Clear every obstacle, freeing the tiles they hold. */
+  clearObstacles() {
+    this.edit((m) => {
+      m.state.obstacles = [];
+      if (m.selected !== null && m.selected < 0) m.selected = null;
+    });
+  }
   /** Give every stage of one (or both) catalogs a star count. */
   setCampaignStars(stars: number, catalog?: CampaignCatalog) {
     integer(stars, 0, 3);
@@ -549,11 +570,26 @@ export class DeveloperControls {
     }
     const migrated = migrateSave(parsed);
     if (!validateSave(migrated)) throw Error('That save is not a valid village.');
-    if (this.model.battle) throw Error('Return home before importing a village.');
+    this.adopt(migrated);
+  }
+  /** Keep the current village under a name, so several bases can be switched between. */
+  saveVillageSlot(name: string) {
+    if (this.model.battle) throw Error('Return home before saving this village.');
+    return writeVillageSlot(name, this.model.state);
+  }
+  /** Switch to a stored village. Its own audio and accessibility settings are not restored. */
+  loadVillageSlot(name: string) {
+    const slot = readVillageSlots().find((entry) => entry.name === name);
+    if (!slot) throw Error('That saved village is gone.');
+    this.adopt(slot.save);
+  }
+  /** Adopt a validated save as the live village, keeping the player's current settings. */
+  private adopt(save: Save) {
+    if (this.model.battle) throw Error('Return home before switching villages.');
     const settings = structuredClone(this.model.state.settings);
     this.model.returnHome();
     this.model.endEdit();
-    this.model.state = { ...structuredClone(migrated), settings };
+    this.model.state = { ...structuredClone(save), settings };
     this.model.cancel();
     this.model.tick(Date.now());
     this.model.changed();

@@ -9,6 +9,7 @@ import {
   singleArmy,
   writeArmyConfig,
 } from '../src/dev/loadout';
+import { readVillageSlots, writeVillageSlot } from '../src/dev/slots';
 import { GameModel } from '../src/game/model';
 import { MAX_SAVED_BUILDINGS, validateSave } from '../src/game/save';
 import {
@@ -251,4 +252,60 @@ it('keeps developer army configurations in storage, rejecting malformed entries'
   expect(readArmyConfigs(storage)).toEqual([]);
   store.set('crown-clan-developer-armies', JSON.stringify([{ name: 'bad', army: { archer: -1 } }]));
   expect(readArmyConfigs(storage)).toEqual([]);
+});
+
+it('keeps whole villages under a name and switches between them', () => {
+  const store = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => void store.set(key, value),
+  } as unknown as Storage;
+  const m = new GameModel();
+  const dev = new DeveloperControls(m);
+  dev.maxTownHall(13);
+  writeVillageSlot('Thirteen', m.state, storage);
+  dev.maxTownHall(5);
+  expect(m.townhallLevel).toBe(5);
+  const slots = readVillageSlots(storage);
+  expect(slots.map((s) => [s.name, s.townhall])).toEqual([['Thirteen', 13]]);
+  dev.importSave(JSON.stringify(slots[0].save));
+  expect(m.townhallLevel).toBe(13);
+  expect(validateSave(m.state)).toBe(true);
+  expect(() => writeVillageSlot(' ', m.state, storage)).toThrow();
+  // A stored village that no longer validates is dropped rather than offered.
+  store.set(
+    'crown-clan-developer-villages',
+    JSON.stringify([{ name: 'broken', save: { version: 4 } }]),
+  );
+  expect(readVillageSlots(storage)).toEqual([]);
+  store.set('crown-clan-developer-villages', 'nonsense');
+  expect(readVillageSlots(storage)).toEqual([]);
+});
+
+it('enters any campaign stage directly, unlocking the path without lowering stars', () => {
+  const m = new GameModel();
+  const dev = new DeveloperControls(m);
+  dev.maxTownHall(9);
+  m.state.stars[0] = 3;
+  dev.startStage(6);
+  expect(m.battle!.index).toBe(6);
+  expect(m.state.stars[0]).toBe(3);
+  m.returnHome();
+  dev.startStage(20, 'goblin-v1');
+  expect(m.battle!.index).toBe(20);
+  expect(m.battle!.catalog).toBe('goblin-v1');
+  m.returnHome();
+  expect(() => dev.startStage(999)).toThrow();
+  dev.startStage(0, 'valley-v1', true);
+  expect(m.battle!.practice).toBe(true);
+  expect(() => dev.startStage(1)).toThrow('Return home');
+});
+
+it('clears obstacles so their tiles are free again', () => {
+  const m = new GameModel();
+  const dev = new DeveloperControls(m);
+  expect(m.obstacles.length).toBeGreaterThan(0);
+  dev.clearObstacles();
+  expect(m.obstacles).toEqual([]);
+  expect(validateSave(m.state)).toBe(true);
 });

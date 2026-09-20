@@ -23,6 +23,8 @@ The panel is organised into six tabs — **Village**, **Army**, **Levels**, **He
 | Set balances                    | Set gold, elixir, dark elixir and gems independently, including above storage capacity.                                                                                                     |
 | Fill storage                    | Fill actual gold/elixir/dark storage capacities and set gems to 10,000. Dark capacity remains zero without a storage building.                                                              |
 | Fill ores                       | Fill shiny, glowy and starry ore to the Blacksmith's capacity.                                                                                                                              |
+| Clear obstacles                 | Remove every obstacle, freeing the tiles they hold.                                                                                                                                         |
+| Saved villages                  | Keep the current village under a name (up to eight in this browser) and switch back to it later, customisation and all.                                                                     |
 | Set trophies and XP             | Set both counters directly.                                                                                                                                                                 |
 
 ### Maxed village presets
@@ -56,7 +58,7 @@ Unlock the King, level any hero within its Town Hall and Hero Hall cap, level an
 
 ## World
 
-Campaign stars for both catalogs (12 Valley stages, 90 Goblin stages), and time travel: **+1 hour**, **+1 day**, **+7 days** or an arbitrary number of hours. Time travel moves every timer and production clock back by the chosen span and settles the village, so collectors, builders, research and hero upgrades advance exactly that far without the wall clock moving. Production lands in the mines and collectors, which still have to be collected.
+Campaign stars for both catalogs, a launcher that enters any of the 12 Valley or 90 Goblin stages directly (unlocking the path to it, keeping higher star counts already earned) or practises on the current village, and time travel: **+1 hour**, **+1 day**, **+7 days** or an arbitrary number of hours. Time travel moves every timer and production clock back by the chosen span and settles the village, so collectors, builders, research and hero upgrades advance exactly that far without the wall clock moving. Production lands in the mines and collectors, which still have to be collected.
 
 ## Battle & save
 
@@ -91,6 +93,10 @@ __dev.setPetLevel('lassi', 10);
 __dev.setItemLevel('barbarian-puppet', 18);
 __dev.advanceTime(24 * 3600); // one day of production and timers
 __dev.setCampaignStars(3);
+__dev.startStage(30, 'goblin-v1'); // enter any stage directly
+__dev.saveVillageSlot('TH12 test base');
+__dev.loadVillageSlot('TH12 test base');
+__dev.clearObstacles();
 __dev.damageBattle(75);
 __dev.exportSave();
 __dev.importSave(json);
@@ -103,7 +109,7 @@ Partial resource/army records leave unspecified types unchanged. `checkpoint()` 
 
 The URL must explicitly include `devtools=1`. The toolbox is allowed in Vite development builds, including LAN testing, on exact loopback production-preview hosts (`localhost`, `127.0.0.1`, `::1`), and on `coc.teozeng.dev`. It stays disabled on other deployed hosts even with the query parameter. There is no secret password, saved admin flag, account bypass, or remote endpoint. This is a testing convenience in a client-controlled game, not a server authorization mechanism.
 
-`src/dev/access.ts` owns availability, `controls.ts` owns atomic save mutations, `village.ts` owns the maxed-village plan and its layout, `loadout.ts` owns army composition and the stored configurations, and `panel.ts` owns the optional dialog/console API. The panel loads as a separate chunk only when enabled. No core gameplay rules depend on the toolbox.
+`src/dev/access.ts` owns availability, `controls.ts` owns atomic save mutations, `village.ts` owns the maxed-village plan and its layout, `loadout.ts` owns army composition and the stored configurations, `slots.ts` owns the named village snapshots (each re-validated on read, so a stale one is dropped rather than offered), and `panel.ts` owns the optional dialog/console API. The panel loads as a separate chunk only when enabled. No core gameplay rules depend on the toolbox.
 
 Verification: `tests/developer.test.ts`, `tests/developer-village.test.ts`, `tests/browser/developer.spec.ts`, and `scripts/developer-check.mjs`. Run the production script with a built game served on port 4173.
 

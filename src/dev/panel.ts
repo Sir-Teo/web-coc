@@ -33,6 +33,7 @@ import { VillageScene } from '../game/scene';
 import { DeveloperControls, type MaxVillageOptions } from './controls';
 import { maxVillagePlan, plannedTotal } from './village';
 import { readArmyConfigs, writeArmyConfig, deleteArmyConfig, type ArmyConfig } from './loadout';
+import { deleteVillageSlot, readVillageSlots, type VillageSlot } from './slots';
 import './style.css';
 
 const checkpointKey = 'crown-clan-developer-checkpoint';
@@ -76,6 +77,7 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
   dialog.setAttribute('aria-labelledby', 'developer-title');
   let tab: Tab = 'village';
   let configs: ArmyConfig[] = readArmyConfigs();
+  let villages: VillageSlot[] = readVillageSlots();
 
   const field = (name: string, label: string, value: number, max: number, min = 0) =>
     `<label>${label}<input name="${name}" type="number" min="${min}" max="${max}" step="1" value="${value}" required></label>`;
@@ -112,9 +114,22 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
         ${field('tier', 'Town Hall', model.townhallLevel, MAX_TOWNHALL, 1)}<button>Build maxed village</button>
       </form>
       <p class="developer-note">Town Hall ${model.townhallLevel} holds ${plan.total} pieces. ${escape(summary)}</p>
+      <h2>Saved villages</h2>
+      <p class="developer-note">Keep whole villages in this browser and switch between them, customisation and all. Up to eight.</p>
+      <div class="developer-actions">${
+        villages.length
+          ? villages
+              .map(
+                (slot, index) =>
+                  `<span class="developer-config"><button type="button" data-dev="loadvillage" data-index="${index}">${escape(slot.name)} <small>TH${slot.townhall}</small></button><button type="button" data-dev="deletevillage" data-index="${index}" aria-label="Delete ${escape(slot.name)}">×</button></span>`,
+              )
+              .join('')
+          : '<em>No saved villages yet.</em>'
+      }</div>
+      <form data-form="savevillage" class="developer-actions"><label>Name<input name="name" type="text" maxlength="32" placeholder="TH12 test base" required></label><button>Save this village</button></form>
       <h2>Buildings</h2>
       <form data-form="townhall" class="developer-actions">${field('townhall', 'Town Hall', model.townhallLevel, MAX_TOWNHALL, 1)}<button>Set Town Hall</button></form>
-      <div class="developer-actions">${button('max', 'Max existing buildings at this TH')}${button('timers', 'Finish all timers')}</div>
+      <div class="developer-actions">${button('max', 'Max existing buildings at this TH')}${button('timers', 'Finish all timers')}${button('obstacles', 'Clear obstacles')}</div>
       <form data-form="building" class="developer-actions">
         <label>Building<select name="kind">${options(
           BUILDING_KEYS.filter((kind) => model.countOf(kind) > 0).map((kind) => [
@@ -262,6 +277,19 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
     `<h2>Campaign</h2>
       <p class="developer-note">${CAMPAIGN.length} Valley stages and ${NATIVE_CAMPAIGN.length} Goblin stages.</p>
       <div class="developer-actions">${button('campaign', 'Unlock campaign')}${button('stars3', 'Three-star every stage')}${button('stars0', 'Clear all stars')}</div>
+      <form data-form="stage" class="developer-actions">
+        <label>Stage<select name="stage">${options([
+          ...CAMPAIGN.map(
+            (stage, index) =>
+              [`valley-v1:${index}`, `Valley ${index + 1} — ${stage.name}`] as const,
+          ),
+          ...NATIVE_CAMPAIGN.map(
+            (stage, index) =>
+              [`goblin-v1:${index}`, `Goblin ${index + 1} — ${stage.name}`] as const,
+          ),
+        ])}</select></label><button>Attack this stage</button>${button('practice', 'Practice on my own village')}
+      </form>
+      <p class="developer-note">Starting a stage unlocks the path to it, keeping any higher star counts already earned.</p>
       <h2>Time travel</h2>
       <p class="developer-note">Runs production, builders, research and hero upgrades forward by a span without touching the clock on the wall.</p>
       <div class="developer-actions">${button('hour', '+1 hour')}${button('day', '+1 day')}${button('week', '+7 days')}</div>
@@ -300,6 +328,7 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
   const open = () => {
     if (dialog.open) return;
     configs = readArmyConfigs();
+    villages = readVillageSlots();
     render();
     resume = scene.sys.isActive();
     if (resume) scene.scene.pause();
@@ -379,6 +408,17 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
           Object.fromEntries(SPELL_KEYS.map((k) => [k, 0])),
         ),
       fillarmy: () => controls.fillArmy(),
+      obstacles: () => controls.clearObstacles(),
+      practice: () => controls.startStage(0, 'valley-v1', true),
+      loadvillage: () => {
+        const slot = villages[Number(control!.dataset.index)];
+        if (!slot) throw Error('That saved village is gone.');
+        controls.loadVillageSlot(slot.name);
+      },
+      deletevillage: () => {
+        const slot = villages[Number(control!.dataset.index)];
+        if (slot) villages = deleteVillageSlot(slot.name);
+      },
       loadconfig: () => {
         const config = configs[Number(control!.dataset.index)];
         if (!config) throw Error('That configuration is gone.');
@@ -477,6 +517,14 @@ export function installDeveloperTools(model: GameModel, scene: VillageScene) {
           case 'single':
             controls.fillArmy({ troop: values.troop as TroopKind });
             break;
+          case 'savevillage':
+            villages = controls.saveVillageSlot(values.name);
+            break;
+          case 'stage': {
+            const [catalog, index] = values.stage.split(':');
+            controls.startStage(Number(index), catalog as 'valley-v1' | 'goblin-v1');
+            break;
+          }
           case 'saveconfig':
             configs = writeArmyConfig({
               name: values.name,
