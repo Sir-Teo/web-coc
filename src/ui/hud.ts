@@ -569,6 +569,9 @@ export class HUD {
   private lastAnchorTop = -1;
   /** The card the last anchor position was written to; a rebuilt card must be placed again. */
   private anchorCard: HTMLElement | null = null;
+  private anchorWidth = 470;
+  private anchorHeight = 120;
+  private anchorFloor = 150;
   private replayScrubbing = false;
   /** When the replay slider last reported an input; the live clock leaves it alone briefly. */
   private replayInputAt = -Infinity;
@@ -658,6 +661,8 @@ export class HUD {
       'resize',
       () => {
         this.safeInsets = null;
+        // The card's size and the HUD floor are measured again on the next frame.
+        this.anchorCard = null;
         this.markCoachTarget();
       },
       { signal },
@@ -752,11 +757,21 @@ export class HUD {
       this.lastAnchorTop = -1;
       return;
     }
-    // #context is rebuilt with innerHTML: a new card has no inline position yet.
+    // #context is rebuilt with innerHTML: a new card has no inline position yet. Its size and
+    // the HUD floor are measured once per card (and per resize): reading them every frame
+    // right after the previous frame's position write forced a layout per frame while panning.
     if (card !== this.anchorCard) {
       this.anchorCard = card;
       this.lastAnchorLeft = -1;
       this.lastAnchorTop = -1;
+      this.anchorWidth = card.offsetWidth || 470;
+      this.anchorHeight = card.offsetHeight || 120;
+      this.anchorFloor = card.classList.contains('wall-context')
+        ? Math.max(
+            150,
+            (document.querySelector('.resources')?.getBoundingClientRect().bottom ?? 0) + 8,
+          )
+        : 150;
     }
     const b = this.model.state.buildings.find((v) => v.id === Number(card.dataset.anchor));
     const o = this.model.selectedObstacle;
@@ -764,8 +779,8 @@ export class HUD {
     const target = b ?? o!;
     const size = b ? BUILDINGS[b.kind].size : OBSTACLES[o!.kind].size;
     const p = this.scene.screenFor(target.x + size / 2, target.y + size / 2);
-    const width = card.offsetWidth || 470,
-      height = card.offsetHeight || 120;
+    const width = this.anchorWidth,
+      height = this.anchorHeight;
     const inset = this.insets();
     const edgeLeft = Math.max(12, inset.left),
       edgeRight = Math.max(12, inset.right),
@@ -774,12 +789,7 @@ export class HUD {
       Math.max(width / 2 + edgeLeft, p.x),
       window.innerWidth - width / 2 - edgeRight,
     );
-    const hudFloor = card.classList.contains('wall-context')
-      ? Math.max(
-          150,
-          (document.querySelector('.resources')?.getBoundingClientRect().bottom ?? 0) + 8,
-        )
-      : 150;
+    const hudFloor = this.anchorFloor;
     const minTop = Math.min(
       hudFloor,
       Math.max(Math.max(8, inset.top), window.innerHeight - height - edgeBottom),
@@ -805,7 +815,10 @@ export class HUD {
     clearTimeout(this.toastTimer);
     if (message) this.toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
   }
+  private saveOk: boolean | undefined;
   setSaveState(ok: boolean) {
+    if (ok === this.saveOk) return;
+    this.saveOk = ok;
     document.querySelector('#save-state')!.textContent = ok
       ? ''
       : 'Saving is unavailable. Export your village in Settings.';
@@ -1567,6 +1580,13 @@ export class HUD {
       }
     }
     if (this.panel || e.target instanceof HTMLInputElement) return;
+    if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      this.action(e.shiftKey ? 'redo' : 'undo');
+      return;
+    }
+    // Browser chords (Cmd/Ctrl+R reload, Cmd+1..9 tabs, Cmd+plus zoom) are never game keys.
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (this.model.wallMove) {
       if (e.key.toLowerCase() === 'r') {
         e.preventDefault();
@@ -1582,7 +1602,8 @@ export class HUD {
       e.preventDefault();
       return;
     }
-    if (this.model.replay && e.code === 'Space') {
+    // Space activates a focused control (Restart, Back, speed); otherwise it pauses the replay.
+    if (this.model.replay && e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) {
       e.preventDefault();
       this.model.toggleReplay();
       return;
@@ -1596,10 +1617,6 @@ export class HUD {
       if (troopIndex >= 0) this.action(`troop:${TROOP_ORDER[troopIndex]}`);
       const spellIndex = SPELL_HOTKEYS.indexOf(e.key);
       if (spellIndex >= 0) this.action(`spell:${SPELL_ORDER[spellIndex]}`);
-    }
-    if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-      e.preventDefault();
-      this.action(e.shiftKey ? 'redo' : 'undo');
     }
     if (e.key === '+' || e.key === '=') this.scene.zoomBy(1.15);
     if (e.key === '-') this.scene.zoomBy(1 / 1.15);

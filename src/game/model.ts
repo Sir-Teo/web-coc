@@ -837,8 +837,15 @@ export class GameModel {
   }
   changed(passive = false) {
     this.revision++;
+    if (!passive) this.structuralRevision++;
     this.onChange(passive);
   }
+  /**
+   * Counts non-passive changes only. Collector ticks bump `revision` every second, which used
+   * to drive a full save (stringify plus two storage writes) every five seconds at home; a save
+   * made for passive drift buys nothing, since production is recomputed from `lastTick` on load.
+   */
+  structuralRevision = 0;
   notify(message: string) {
     this.onToast(message);
   }
@@ -972,6 +979,7 @@ export class GameModel {
     merged.upgradeStart = this.clock;
     merged.upgradeEnd = this.clock + quote.seconds * 1000;
     this.state.buildings.push(merged);
+    this.state.stats.built = (this.state.stats.built ?? 0) + 1;
     this.selected = merged.id;
     this.notify(`Merging into ${BUILDINGS[result].name} — ${formatTime(quote.seconds)}.`);
     this.changed();
@@ -1164,6 +1172,7 @@ export class GameModel {
     this.changed();
   }
   finishResearch() {
+    if (this.battle) return;
     const r = this.state.research;
     if (!r) return;
     const cost = gemCost((r.end - this.clock) / 1000);
@@ -1913,6 +1922,7 @@ export class GameModel {
     return true;
   }
   finish(id: number) {
+    if (this.battle) return;
     const b = this.state.buildings.find((b) => b.id === id);
     if (!b?.upgradeEnd) return;
     const cost = this.finishCost(b);
@@ -2255,7 +2265,7 @@ export class GameModel {
       this.troopLevel(superOriginal(kind)!) < superMinimum(kind)
     )
       return this.notify('Requires Town Hall 11 and the original troop at its required level.');
-    const now = Date.now();
+    const now = this.clock;
     if ((this.state.superBoosts?.[kind] ?? 0) > now) return;
     if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)
       return this.notify('Two super troop boosts are already active.');
@@ -2270,7 +2280,7 @@ export class GameModel {
       superOriginal(kind) &&
       (this.townhallLevel < 11 ||
         this.troopLevel(superOriginal(kind)!) < superMinimum(kind) ||
-        (this.state.superBoosts?.[kind] ?? 0) <= Date.now())
+        (this.state.superBoosts?.[kind] ?? 0) <= this.clock)
     )
       return false;
     return facilityLevel(this.state.buildings, troopFacility(kind)) >= TROOP_UNLOCK[kind];
@@ -3596,10 +3606,23 @@ export class GameModel {
       native.routableBuildings = passableWalls!.size
         ? knownBuildings.filter((v) => v.kind !== 'wall' || !passableWalls!.has(v.id))
         : undefined;
-      // Numeric version instead of joining every wall id into a string per tick.
+      // Numeric version instead of joining every wall id into a string per tick; the change
+      // itself is decided by comparing the sets, so two open-wall sets that hash alike can
+      // never leave units on routes computed for the other.
       let jumpVersion = passableWalls!.size;
       for (const id of passableWalls!) jumpVersion = (jumpVersion * 31 + id) | 0;
-      if (jumpVersion !== (b.jumpVersion ?? 0)) {
+      const seen = this.jumpWallsSeen.get(b);
+      let sameWalls = seen
+        ? seen.size === passableWalls!.size
+        : (b.jumpVersion ?? 0) === 0 && !passableWalls!.size;
+      if (sameWalls && seen)
+        for (const id of passableWalls!)
+          if (!seen.has(id)) {
+            sameWalls = false;
+            break;
+          }
+      if (!sameWalls) {
+        this.jumpWallsSeen.set(b, new Set(passableWalls));
         b.jumpVersion = jumpVersion;
         b.jumpSignature = String(jumpVersion);
         for (const u of b.units) {
@@ -4639,6 +4662,8 @@ export class GameModel {
     if (!this.replayData || !this.replay) return false;
     return this.openReplay(this.replayData, this.replay.recordId);
   }
+  /** Jump-opened wall ids as of the last tick, per battle (see the jump version below). */
+  private jumpWallsSeen = new WeakMap<object, Set<number>>();
   /** Reconstruct silently in bounded chunks; dragging never blocks the browser for a whole raid. */
   seekReplay(seconds: number) {
     const r = this.replay;
@@ -4669,6 +4694,9 @@ export class GameModel {
         r.time = 0;
         this.resetReplayRunner();
       }
+      // A long backward seek draws for several frames before it completes: show the restored
+      // battle at once rather than the pre-seek one.
+      if (this.replayRunner) this.battle = this.replayRunner.battle;
     }
     this.applyReplayActions();
     this.advanceReplaySeek();

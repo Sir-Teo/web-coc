@@ -54,7 +54,10 @@ async function boot() {
     });
     let ownsSession = true;
     let lastSavedRevision = -1;
+    let lastSavedStructural = -1;
     let lastPersistAt = 0;
+    /** Collector drift alone (no structural change) is written this often, not every 5 s. */
+    const PASSIVE_SAVE_MS = 60_000;
     let saving = false;
     // A forced save (tab hidden) that arrives while a persist is in flight.
     let pendingForce = false;
@@ -74,14 +77,21 @@ async function boot() {
       const now = Date.now();
       if (!force && (model.battle || model.replay)) return;
       if (!force && now - lastPersistAt < 5000) return;
+      // Only collector ticks since the last save: production is recomputed from lastTick on
+      // load, so the full stringify and two storage writes wait for a real change or a minute.
+      const structural = model.structuralRevision;
+      if (!force && structural === lastSavedStructural && now - lastPersistAt < PASSIVE_SAVE_MS)
+        return;
       saving = true;
       try {
         const revision = model.revision;
         const ok = await saveGame(model.state);
         hud.setSaveState(ok);
+        // A failed write waits for the next window too, instead of retrying every second.
+        lastPersistAt = now;
         if (ok) {
           lastSavedRevision = revision;
-          lastPersistAt = now;
+          lastSavedStructural = structural;
         }
       } finally {
         saving = false;
