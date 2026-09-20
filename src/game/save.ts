@@ -10,7 +10,7 @@ import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
 import { validSpellTowerWeapon } from './late-campaign';
 import { campaignStage, campaignStages, validCampaignCatalog } from './campaign-catalog';
-import { validNativeCampaign } from './native-campaign';
+import { expandNativeCampaign, validNativeCampaign } from './native-campaign';
 import { validCampaignLoot, validCampaignResources, campaignAmount } from './campaign-loot';
 import { validDirection } from './air-control-stats';
 import { validSkeletonMode } from './skeleton-stats';
@@ -59,6 +59,7 @@ export function migrateSave(input: unknown): unknown {
   const s = structuredClone(input) as Record<string, unknown> & Omit<Partial<Save>, 'version'>;
   const version: GridVersion = raw.version === 4 ? 4 : raw.version === 3 ? 3 : 2;
   expandArmyRoster(s);
+  expandNativeCampaign(s.nativeCampaign);
   if (version === 4) return validateVersion(s, version) ? s : input;
   const record = (value: unknown) =>
     value && typeof value === 'object' ? (value as Record<string, number>) : undefined;

@@ -10,10 +10,23 @@ const layouts = read('layouts.jsonl')
   .split('\n')
   .map((v) => JSON.parse(v));
 
-it('keeps all 90 native villages and their source-verified opening, branches and bosses', () => {
+it('keeps every native village and its source-verified opening, branches and bosses', () => {
+  const goblin = catalog.stages.filter((s: any) => s.family === 'goblin');
+  const challenges = catalog.stages.filter((s: any) => s.family === 'challenge');
+  expect(goblin).toHaveLength(90);
+  // Six Challenges are withheld: three for garrison defenders this game cannot field, three
+  // for layouts drawn past the simulation grid.
+  expect(challenges).toHaveLength(13);
+  expect(Object.keys(catalog.withheld)).toHaveLength(6);
   expect(catalog.stages.map((s: any) => s.stage)).toEqual(
-    Array.from({ length: 90 }, (_, i) => i + 1),
+    Array.from({ length: 103 }, (_, i) => i + 1),
   );
+  // The Challenge tail is ordered by the Town Hall its record name states.
+  expect(challenges.map((s: any) => s.recommendedTownHall)).toEqual([
+    ...challenges.map((s: any) => s.recommendedTownHall).sort((a: number, b: number) => a - b),
+  ]);
+  expect(challenges[0].name).toBe('Giant Smash');
+  expect(challenges.at(-1).name).toBe('Bowling with Witches');
   expect(layouts.map((s) => s.stage)).toEqual(catalog.stages.map((s: any) => s.stage));
   expect(catalog.stages.slice(0, 4).map((s: any) => [s.name, s.gold, s.elixir])).toEqual([
     ['Payback', 500, 500],
@@ -41,7 +54,7 @@ it('keeps all 90 native villages and their source-verified opening, branches and
 
 it('detects reference drift offline against the committed source manifest', () => {
   const provenance = JSON.parse(read('provenance.json'));
-  expect(Object.keys(provenance.sources)).toHaveLength(97);
+  expect(Object.keys(provenance.sources)).toHaveLength(110);
   for (const [file, sha] of Object.entries(provenance.outputs)) {
     expect(createHash('sha256').update(read(file)).digest('hex'), file).toBe(sha);
   }

@@ -98,7 +98,7 @@ async function files(folder: string) {
 }
 
 describe('original Tornado Trap source', () => {
-  it('retains all three pinned levels, the named spell and the four campaign villages', () => {
+  it('retains all three pinned levels, the named spell and every campaign village that traps', () => {
     expect(Object.keys(tornadoNative.sources)).toHaveLength(14);
     expect(tornadoNative.clientVersion).toBe('18.400.21');
     const [one, two, three] = tornadoCombat.trap;
@@ -156,6 +156,9 @@ describe('original Tornado Trap source', () => {
       [76, 1],
       ...Array(2).fill([81, 3]),
       ...Array(4).fill([82, 3]),
+      // Two more on the Challenge villages the same client ships.
+      [100, 2],
+      [101, 2],
     ]);
   });
 

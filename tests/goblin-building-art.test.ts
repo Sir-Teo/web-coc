@@ -7,7 +7,7 @@ import {
 } from '../src/game/goblin-building-poses';
 import { GOBLIN_BUILDING_ART } from '../src/game/goblin-building-art';
 import { nativeMeshPoses, nativeVertices, type NativeMatrix } from '../src/game/native-mesh';
-import { NATIVE_CAMPAIGN } from '../src/game/native-campaign';
+import { NATIVE_CAMPAIGN, goblinMap } from '../src/game/native-campaign';
 import { makeNpcBuilding } from '../src/game/model';
 
 it.each(witness.cases)('matches independent Python source poses for $export at $time', (c) => {
@@ -68,10 +68,11 @@ it('registers the original foundation geometry to the local tile diamond without
   }
 });
 
-it('covers every native campaign Town Hall level while refusing the first weapon-bearing Hall', () => {
+it('covers every Goblin map Town Hall level while refusing the first weapon-bearing Hall', () => {
   let count = 0,
     highest = 0;
-  for (const stage of NATIVE_CAMPAIGN)
+  // Goblin Halls belong to the Goblin map; a Challenge village is an ordinary Home Village.
+  for (const stage of NATIVE_CAMPAIGN.filter(goblinMap))
     for (const [id, x, y, level] of stage.buildings)
       if (id === 1000001) {
         const b = makeNpcBuilding(1000, 'goblin-townhall', x + 2, y + 2, level);

@@ -2,7 +2,9 @@ import { nativeInfernoStates } from './inferno-campaign-state';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { MAX_DARK_DRILL_LEVEL } from './dark-drill-stats';
 import raw from '../../reference/campaign/runtime.json' with { type: 'json' };
+import forged from '../../reference/campaign/generated.json' with { type: 'json' };
 import { BUILDINGS, defenseDamage, type BuildingKind } from './data';
+import { HERO_KINDS, HERO_SOURCE, heroMaxLevel } from './native-hero-data';
 import { BUILD_MIN } from './grid';
 import { NPC_BUILDINGS, type NpcBuildingKind } from './npc-buildings';
 import type { Building } from './model';
@@ -14,6 +16,11 @@ export type NativePlacement = [data: number, x: number, y: number, level: number
 export interface NativeStage {
   stage: number;
   name: string;
+  /**
+   * Where the village came from: the client's Goblin map, one of its Challenges, or this
+   * project's own forged tail (see scripts/generate-campaign-stages.mjs).
+   */
+  family?: 'goblin' | 'challenge' | 'forged';
   dependencies: number[];
   alwaysUnlocked: boolean;
   gold: number;
@@ -21,6 +28,8 @@ export interface NativeStage {
   darkElixir: number;
   recommendedTownHall: number | null;
   allianceDefenders: unknown[];
+  /** Heroes the source posts on defence, named with a level but never a position. */
+  defendingHeroes?: { hero: string; level: number }[];
   activeModes: unknown[];
   infernoStates?: unknown[];
   /** Late campaign weapon, ammunition and bunker selections. */
@@ -45,7 +54,15 @@ const source = raw as unknown as {
     }
   >;
 };
-export const NATIVE_CAMPAIGN = source.stages;
+/**
+ * The whole campaign: the client's 90 Goblin map villages, the 13 Challenges this game can
+ * field, and the forged tail that carries it to 150. Every forged village places only
+ * entities and levels an imported one already proves, so all three share the same tables.
+ */
+export const NATIVE_CAMPAIGN: NativeStage[] = [
+  ...source.stages,
+  ...(forged as unknown as { stages: NativeStage[] }).stages,
+];
 export const NATIVE_SCENERY = source.scenery;
 export const NATIVE_COMBAT = source.combat;
 const KINDS: Record<number, BuildingKind> = {
@@ -79,6 +96,15 @@ const KINDS: Record<number, BuildingKind> = {
   1000021: 'xbow',
   1000023: 'darkdrill',
   1000024: 'darkstorage',
+  // Army facilities. The Goblin map has none; the Challenge maps are ordinary villages.
+  1000000: 'camp',
+  1000006: 'barracks',
+  1000007: 'laboratory',
+  1000020: 'spellfactory',
+  1000026: 'darkbarracks',
+  1000029: 'darkspellfactory',
+  1000059: 'workshop',
+  1000071: 'herohall',
   1000027: 'inferno',
   1000028: 'airsweeper',
   1000032: 'bombtower',
@@ -110,10 +136,12 @@ const NPC_IDS: Partial<Record<number, NpcBuildingKind>> = {
 };
 const placementKey = (data: number, x: number, y: number, level: number) =>
   `${data}:${x}:${y}:${level}`;
+/** Cannon, Archer Tower and Mortar: the three families the client lets a village gear up. */
+const GEARED_IDS = new Set([1000008, 1000009, 1000013]);
 export function nativeDefenseModes(stage: NativeStage) {
   const modes = new Map<
     string,
-    Pick<Building, 'xbowMode' | 'skeletonMode' | 'infernoMode' | 'infernoAmmo'>
+    Pick<Building, 'xbowMode' | 'skeletonMode' | 'infernoMode' | 'infernoAmmo' | 'geared'>
   >();
   const issues = new Set<string>();
   let infernos: ReturnType<typeof nativeInfernoStates> = [];
@@ -142,8 +170,13 @@ export function nativeDefenseModes(stage: NativeStage) {
       issues.add('Unmatched or duplicate defense mode');
       continue;
     }
-    if (data === 1000021 && v.attack_mode === true && v.ammo === XBOW.ammunition)
+    // An X-Bow loaded at or above the capacity this game models behaves exactly as the loaded
+    // one it simulates; a shorter load is a starting state the simulation does not represent.
+    if (data === 1000021 && v.attack_mode === true && (v.ammo as number) >= XBOW.ammunition)
       modes.set(key, { xbowMode: 'both' });
+    // A geared-up Cannon, Archer Tower or Mortar: the source marks the gear and the Alt attack.
+    else if (v.gear === 1 && v.attack_mode === true && GEARED_IDS.has(data))
+      modes.set(key, { geared: true });
     else if (
       data === 1000027 &&
       v.attack_mode === true &&
@@ -166,9 +199,13 @@ export function nativeDefenseModes(stage: NativeStage) {
   return { modes, issues };
 }
 /** Never substitute a different weapon, clamp a native level or discard a defender. */
+/** A Goblin map village, as opposed to a client Challenge that uses ordinary Home art. */
+export const goblinMap = (stage: NativeStage) => (stage.family ?? 'goblin') === 'goblin';
+
 export function nativeCampaignIssues(index: number): string[] {
   const stage = NATIVE_CAMPAIGN[index];
   if (!stage) return ['Unknown village'];
+  const npcIds = goblinMap(stage) ? NPC_IDS : {};
   const issues = new Set<string>();
   if (stage.allianceDefenders.length && !resolvedCampaignGarrison(index))
     issues.add('Garrison defenders');
@@ -177,10 +214,11 @@ export function nativeCampaignIssues(index: number): string[] {
   for (const issue of lateCampaignIssues(placements)) issues.add(issue);
   for (const issue of lateNativeFields(placements, stage.lateStates ?? []).issues)
     issues.add(issue);
+  for (const issue of defendingHeroIssues(index)) issues.add(issue);
   for (const [id, , , level] of [...stage.buildings, ...stage.traps]) {
     const kind = KINDS[id],
       stats = source.combat[id],
-      npc = NPC_IDS[id];
+      npc = npcIds[id];
     if (!kind) {
       issues.add(stats?.name ?? `Building ${id}`);
       continue;
@@ -218,10 +256,13 @@ export function nativeBuildings(index: number): Building[] {
 export function nativeLayout(index: number): Building[] {
   const s = NATIVE_CAMPAIGN[index];
   if (!s) throw Error('Unknown village');
+  // Goblin identities (Goblin Hall, Goblin Hut, Tutorial Cannon) belong to the Goblin map.
+  // A Challenge village shares those GlobalIDs as ordinary Home Village buildings.
+  const npcIds = goblinMap(s) ? NPC_IDS : {};
   const modes = nativeDefenseModes(s).modes;
   const late = lateNativeFields([...s.buildings, ...s.traps], s.lateStates ?? []).fields;
   return [...s.buildings, ...s.traps].map(([data, x, y, level], i) => {
-    const npc = NPC_IDS[data],
+    const npc = npcIds[data],
       hp = source.combat[data].hp[level - 1];
     return {
       id: 1000 + i,
@@ -255,6 +296,29 @@ export function nativeScenery(index: number): CampaignScenery[] {
     y: y + BUILD_MIN,
   }));
 }
+/**
+ * Heroes the source posts on defence for a village. The source names the hero and its level
+ * but never a position, so the battle stands them around the Hero Hall exactly as a practice
+ * attack on your own village stands yours.
+ */
+export function nativeDefendingHeroes(index: number) {
+  const stage = NATIVE_CAMPAIGN[index];
+  const rows = stage?.defendingHeroes ?? [];
+  return rows.flatMap(({ hero, level }) => {
+    const kind = HERO_KINDS.find((k) => HERO_SOURCE[k] === hero);
+    // A hero or level this game has no rows for is a gated village, not a quietly clamped one.
+    return kind && level >= 1 && level <= heroMaxLevel(kind) ? [{ kind, level }] : [];
+  });
+}
+/** Defending heroes the source names but this game cannot field. */
+export function defendingHeroIssues(index: number): string[] {
+  const stage = NATIVE_CAMPAIGN[index];
+  const rows = stage?.defendingHeroes ?? [];
+  return rows.flatMap(({ hero, level }) => {
+    const kind = HERO_KINDS.find((k) => HERO_SOURCE[k] === hero);
+    return kind && level >= 1 && level <= heroMaxLevel(kind) ? [] : [`${hero} level ${level}`];
+  });
+}
 export function nativeUnlocked(index: number, stars: readonly number[]) {
   const s = NATIVE_CAMPAIGN[index];
   // Dependency edges are alternative paths on the campaign map, not a linear index gate.
@@ -271,6 +335,22 @@ export interface NativeCampaignProgress {
   stars: number[];
   remaining: { gold: number; elixir: number; dark: number }[];
 }
+/**
+ * Extend a village's Goblin progress to cover villages added since it was saved. Existing
+ * stars and remaining loot are untouched; only the new tail is appended.
+ */
+export function expandNativeCampaign(value: unknown) {
+  if (!value || typeof value !== 'object') return;
+  const progress = value as Partial<NativeCampaignProgress>;
+  if (!Array.isArray(progress.stars) || !Array.isArray(progress.remaining)) return;
+  if (progress.stars.length >= NATIVE_CAMPAIGN.length) return;
+  for (let index = progress.stars.length; index < NATIVE_CAMPAIGN.length; index++)
+    progress.stars.push(0);
+  for (let index = progress.remaining.length; index < NATIVE_CAMPAIGN.length; index++) {
+    const stage = NATIVE_CAMPAIGN[index];
+    progress.remaining.push({ gold: stage.gold, elixir: stage.elixir, dark: stage.darkElixir });
+  }
+}
 export function freshNativeCampaign(): NativeCampaignProgress {
   return {
     catalog: 'goblin-v1',
@@ -284,12 +364,12 @@ export function validNativeCampaign(value: unknown): value is NativeCampaignProg
   return (
     v.catalog === 'goblin-v1' &&
     Array.isArray(v.stars) &&
-    v.stars.length === 90 &&
+    v.stars.length === NATIVE_CAMPAIGN.length &&
     NATIVE_CAMPAIGN.every(
       (s, i) => Number.isInteger(v.stars[i]) && v.stars[i] >= 0 && v.stars[i] <= 3,
     ) &&
     Array.isArray(v.remaining) &&
-    v.remaining.length === 90 &&
+    v.remaining.length === NATIVE_CAMPAIGN.length &&
     NATIVE_CAMPAIGN.every((s, i) => {
       const r = v.remaining[i];
       return (

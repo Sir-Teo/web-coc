@@ -25,7 +25,7 @@ const ring = (): Building[] => {
 };
 
 describe('client sub-tile building collision', () => {
-  it('matches max(1, Width − BuildingW) for every building in all 90 source layouts', () => {
+  it('matches max(1, Width − BuildingW) for every building in every source layout', () => {
     for (const [index] of NATIVE_CAMPAIGN.entries())
       for (const b of nativeLayout(index)) {
         if (b.kind === 'wall' || isTrap(b.kind)) continue;
@@ -40,12 +40,15 @@ describe('client sub-tile building collision', () => {
       (typeof NATIVE_COMBAT)[number] & { collision?: number },
     ][])
       if (c.collision !== undefined) edges.set(id, Math.max(1, c.size - c.collision));
-    // Every campaign building leaves one passable sub-tile, except the Foreboding Cave's two.
-    expect(new Set([...edges].filter(([id]) => id !== '1000062').map(([, edge]) => edge))).toEqual(
-      new Set([1]),
-    );
-    expect(edges.get('1000062')).toBe(2);
+    // Every campaign building leaves one passable sub-tile, except the two Camp families:
+    // the Army Camp and the Foreboding Cave, which the source builds on the Camp record.
+    const wide = ['1000000', '1000062'];
+    expect(
+      new Set([...edges].filter(([id]) => !wide.includes(id)).map(([, edge]) => edge)),
+    ).toEqual(new Set([1]));
+    for (const id of wide) expect(edges.get(id), id).toBe(2);
     expect(passableSubtilesAtEdge(makeNpcBuilding(1, 'foreboding-cave', 10, 10))).toBe(2);
+    expect(passableSubtilesAtEdge(makeBuilding(1, 'camp', 10, 10, 1))).toBe(2);
     expect(passableSubtilesAtEdge(makeNpcBuilding(1, 'goblin-hut', 10, 10))).toBe(1);
     expect(passableSubtilesAtEdge(makeBuilding(1, 'cannon', 10, 10, 1))).toBe(1);
   });

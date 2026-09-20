@@ -20,7 +20,10 @@ const CELLS = SIZE * SIZE;
 /** `LogicBuilding.PassableSubtilesAtEdge`; every native campaign building except the cave uses 1. */
 export function passableSubtilesAtEdge(b: Pick<Building, 'kind' | 'npc'>) {
   if (b.kind === 'wall') return 0;
-  return b.npc === 'foreboding-cave' ? 2 : 1;
+  // max(1, Width − BuildingW) from the client's own tables: the Army Camp and the Foreboding
+  // Cave (a Camp in the source) are the only families whose collision core is two sub-tiles
+  // narrower than their footprint on each side.
+  return b.kind === 'camp' ? 2 : 1;
 }
 
 /**
