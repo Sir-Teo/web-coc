@@ -171,8 +171,12 @@ export function launchProjectile(
       ? { flight: { x: shot.fromX, y: shot.fromY, at } }
       : {}),
   };
-  const target = shot.targetBuilding && battle.buildings.find((b) => b.id === shot.targetId);
-  if (target && shot.weapon === 'bomb') Object.assign(projectile, buildingAim(shot, target));
+  // Only bombs aim at the footprint, so every other shot skips the O(buildings) lookup.
+  const target =
+    shot.weapon === 'bomb' && shot.targetBuilding
+      ? battle.buildings.find((b) => b.id === shot.targetId)
+      : undefined;
+  if (target) Object.assign(projectile, buildingAim(shot, target));
   (battle.projectiles ??= []).push(projectile);
   emit(projectileEffect(projectile, 'projectile'));
   return projectile;

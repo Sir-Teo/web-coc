@@ -154,8 +154,8 @@ export function noteBuildingDamage(battle: Battle, b: Building, at: number, spel
       state.awakeAt = at + activation.delay;
   }
   if (spell || b.kind === 'wall') return;
-  for (const tower of battle.buildings) {
-    if (tower.kind !== 'spelltower' || tower.hp <= 0 || tower.npc) continue;
+  for (const tower of spellTowers(battle)) {
+    if (tower.hp <= 0 || tower.npc) continue;
     if ((tower.spellMode ?? 'rage') !== 'invisibility') continue;
     const weapon = weaponFor(tower);
     if (!weapon) continue;
@@ -175,23 +175,52 @@ export function noteBuildingDamage(battle: Battle, b: Building, at: number, spel
   }
 }
 
+/** The layout's Spell Towers in building order; kinds never change during a battle. */
+const spellTowerLists = new WeakMap<
+  Battle,
+  { buildings: Building[]; length: number; towers: Building[] }
+>();
+function spellTowers(battle: Battle) {
+  const known = spellTowerLists.get(battle);
+  if (known && known.buildings === battle.buildings && known.length === battle.buildings.length)
+    return known.towers;
+  const towers = battle.buildings.filter((b) => b.kind === 'spelltower');
+  spellTowerLists.set(battle, {
+    buildings: battle.buildings,
+    length: battle.buildings.length,
+    towers,
+  });
+  return towers;
+}
+
+/** Whether one unit is a valid target for the weapon right now (`c` is the tower center). */
+function eligibleUnit(
+  tower: Building,
+  weapon: NativeWeapon,
+  at: number,
+  c: { x: number; y: number },
+  u: Unit,
+) {
+  if (!liveTarget(u, at)) return false;
+  if (u.kind === 'totem' && tower.kind === 'spelltower') return false;
+  const flying = air(u);
+  if (u.kind !== 'totem' && (flying ? !weapon.air : !weapon.ground)) return false;
+  const d = distance2D(u.x - c.x, u.y - c.y);
+  return d <= weapon.range + EPS && d >= weapon.minRange - EPS;
+}
 function eligible(battle: Battle, tower: Building, weapon: NativeWeapon, at: number) {
   const c = center(tower);
-  return battle.units.filter((u) => {
-    if (!liveTarget(u, at)) return false;
-    if (u.kind === 'totem' && tower.kind === 'spelltower') return false;
-    const flying = air(u);
-    if (u.kind !== 'totem' && (flying ? !weapon.air : !weapon.ground)) return false;
-    const d = distance2D(u.x - c.x, u.y - c.y);
-    return d <= weapon.range + EPS && d >= weapon.minRange - EPS;
-  });
+  return battle.units.filter((u) => eligibleUnit(tower, weapon, at, c, u));
 }
 const byDistance = (from: { x: number; y: number }) => (a: Unit, b: Unit) =>
   distance2D(a.x - from.x, a.y - from.y) - distance2D(b.x - from.x, b.y - from.y) || a.id - b.id;
 
 /** Destroyed non-wall structures, for Revenge Tower stages. */
-export const destroyedBuildings = (battle: Battle) =>
-  battle.buildings.filter((b) => b.hp <= 0 && b.kind !== 'wall' && !isTrap(b.kind)).length;
+export const destroyedBuildings = (battle: Battle) => {
+  let count = 0;
+  for (const b of battle.buildings) if (b.hp <= 0 && b.kind !== 'wall' && !isTrap(b.kind)) count++;
+  return count;
+};
 
 /** Step one native defense. Returns early for levels without a weapon. */
 export function stepNativeDefense(ctx: NativeDefenseContext, tower: Building, dt: number) {
@@ -381,7 +410,7 @@ function stepQueue(
     if (
       !target ||
       !liveTarget(target, at) ||
-      !eligible(battle, tower, weapon, at).includes(target)
+      !eligibleUnit(tower, weapon, at, center(tower), target)
     ) {
       // Burst weapons stop and retarget when their unit dies or leaves range.
       state.queue = [];

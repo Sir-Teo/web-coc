@@ -7,6 +7,7 @@ import {
 } from './character-catalog';
 import { builderHutActivation } from './builder-hut';
 import { BUILDINGS, isTrap } from './data';
+import { nonWallBuildings } from './building-lists';
 import { distance2D } from './distance';
 import { splitTiming } from './garrison-kinds';
 import { lateBuildingHidden, lateDefenderStats, type LateCombatContext } from './late-campaign';
@@ -281,7 +282,7 @@ function walk(
     builder.path = findPath(
       builder,
       goal,
-      battle.buildings.filter((b) => b.kind !== 'wall'),
+      nonWallBuildings(battle),
       range,
       !!battle.nativeSubtiles,
     );

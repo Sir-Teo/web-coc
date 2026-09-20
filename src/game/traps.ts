@@ -85,8 +85,10 @@ function trapIndex(battle: Battle): TrapIndex {
   const traps: TrapIndex['traps'] = [];
   for (const trap of battle.buildings) {
     if (nativeOwnedTrap(battle, trap)) traps.push({ trap, stats: null });
-    else if (!isLateBuilding(trap) && battleTrapStats(trap, battle))
-      traps.push({ trap, stats: battleTrapStats(trap, battle) });
+    else if (!isLateBuilding(trap)) {
+      const stats = battleTrapStats(trap, battle);
+      if (stats) traps.push({ trap, stats });
+    }
   }
   const index = { buildings: battle.buildings, length: battle.buildings.length, traps };
   trapIndexes.set(battle, index);
