@@ -48,7 +48,7 @@ describe('content expansion', () => {
     expect(m.state.dark).toBe(75000);
     expect(m.troopLevel('superbarbarian')).toBe(maxTroopLevel('superbarbarian'));
     expect(m.troopUnlocked('superbarbarian')).toBe(true);
-    m.state.superBoosts!.superbarbarian = Date.now() - 1;
+    m.state.superBoosts!.superbarbarian = m.clock - 1;
     expect(m.troopUnlocked('superbarbarian')).toBe(false);
   });
   it('Troop Launcher fires a barrel and releases the source mixed troop group', () => {

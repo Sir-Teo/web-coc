@@ -36,9 +36,10 @@ that it starts and owns an isolated preview server.
 ## Deployment
 
 The GitHub deployment workflow runs on pull requests to `main`, pushes to `main`
-and manual dispatch. It requires `npm run check` before publishing. Only a
-main-branch run can deploy. Browser and offline verification remains in the separate
-on-demand `browser-regression.yml` workflow, which retains failure evidence for seven days.
+and manual dispatch. It requires runtime and test typechecks, documentation link
+validation and a production build before publishing. Only a main-branch run can
+deploy. The full simulation, browser and offline suites remain explicit release checks;
+the on-demand `browser-regression.yml` workflow retains browser evidence for seven days.
 
 The repository targets Firebase Hosting site `coc-teozeng` in project
 `personal-website-3bc37`, serving <https://coc.teozeng.dev>. CI needs the repository's

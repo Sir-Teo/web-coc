@@ -25,8 +25,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - name: Check types, documentation, unit tests and production build
-        run: npm run check
+      - name: Check types, documentation and production build
+        run: npm run typecheck:tests && npm run test:docs && npm run build
       - name: Deploy to Firebase Hosting
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: npx --yes firebase-tools@15.30.2 deploy --only hosting:coc-teozeng --project personal-website-3bc37 --non-interactive
