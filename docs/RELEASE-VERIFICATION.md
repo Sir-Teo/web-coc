@@ -36,9 +36,9 @@ that it starts and owns an isolated preview server.
 ## Deployment
 
 The GitHub deployment workflow runs on pull requests to `main`, pushes to `main`
-and manual dispatch. It requires `npm run check` and the production smoke suite
-before publishing. Only a main-branch run can deploy. Reports and failure evidence
-are retained for seven days; broad browser regression is a separate manual workflow.
+and manual dispatch. It requires `npm run check` before publishing. Only a
+main-branch run can deploy. Browser and offline verification remains in the separate
+on-demand `browser-regression.yml` workflow, which retains failure evidence for seven days.
 
 The repository targets Firebase Hosting site `coc-teozeng` in project
 `personal-website-3bc37`, serving <https://coc.teozeng.dev>. CI needs the repository's
