@@ -151,6 +151,12 @@ export function nativeDefenseModes(stage: NativeStage) {
     issues.add('Invalid Inferno state');
   }
   const placements = [...stage.buildings, ...stage.traps];
+  // How many placements share each key, counted once instead of per active mode.
+  const placed = new Map<string, number>();
+  for (const p of placements) {
+    const key = placementKey(...p);
+    placed.set(key, (placed.get(key) ?? 0) + 1);
+  }
   for (const raw of stage.activeModes) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       issues.add('Invalid defense mode');
@@ -166,7 +172,7 @@ export function nativeDefenseModes(stage: NativeStage) {
       y = v.y as number,
       level = (v.lvl as number) + 1;
     const key = placementKey(data, x, y, level);
-    if (modes.has(key) || placements.filter((p) => placementKey(...p) === key).length !== 1) {
+    if (modes.has(key) || placed.get(key) !== 1) {
       issues.add('Unmatched or duplicate defense mode');
       continue;
     }

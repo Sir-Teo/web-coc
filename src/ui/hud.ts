@@ -503,12 +503,13 @@ function setText(el: Element | null | undefined, text: string) {
 /** Horizontal fill as a compositor-only transform instead of a layout-triggering width. */
 const fillScale = (percent: number) =>
   `scaleX(${(Math.max(0, Math.min(100, Number.isNaN(percent) ? 0 : percent)) / 100).toFixed(4)})`;
-/** Static per-stage data, computed once on first use rather than on every render. */
-let campaignPendingCache: boolean[] | null = null;
+/**
+ * Static per-stage data, computed per stage on first use rather than on every render. The home
+ * screen's campaign badge stops at the first open stage, so boot validates one stage, not 150.
+ */
+const campaignPendingCache: (boolean | undefined)[] = [];
 const campaignPending = (index: number) =>
-  (campaignPendingCache ??= NATIVE_CAMPAIGN.map((_, i) => nativeCampaignIssues(i).length > 0))[
-    index
-  ];
+  (campaignPendingCache[index] ??= nativeCampaignIssues(index).length > 0);
 let campaignMapCache: string[] | null = null;
 /** The minimap SVG, rendered once per stage into an image URL instead of inline DOM. */
 function campaignMapSource(index: number) {
