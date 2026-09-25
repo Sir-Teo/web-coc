@@ -1743,11 +1743,9 @@ export class VillageScene extends Phaser.Scene {
     }
     if (b.kind === 'clancastle' || b.kind === 'inferno' || b.kind === 'darkdrill') im.setAlpha(0);
     // Late campaign families draw their own bodies, foundations and ruins; until their art has
-    // loaded, the fallback sprites have no texture to show either.
-    if (
-      this.lateCampaign.handles(b) ||
-      (!this.lateAssetsReady && this.model.battle && isLateCampaignBuilding(b))
-    )
+    // loaded (in battle or in a home village that owns one), the fallback sprites have no
+    // texture to show either.
+    if (this.lateCampaign.handles(b) || (!this.lateAssetsReady && isLateCampaignBuilding(b)))
       im.setAlpha(0);
     if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
       im.setAlpha(0);

@@ -11,6 +11,9 @@ import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
 import { recordBootResources, registerOfflineSupport } from './offline';
 recordBootResources();
+/** A 1×1 fully transparent PNG. */
+const TRANSPARENT_PIXEL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==';
 async function boot() {
   const releaseSession = await acquireVillage();
   try {
@@ -51,6 +54,9 @@ async function boot() {
       input: { activePointers: 3 },
       scene: [scene],
       fps: { target: 60, smoothStep: true },
+      // Phaser's stock placeholder for a texture that has not loaded (lazy art still in
+      // flight, a failed fetch) is an opaque black square; draw nothing instead.
+      images: { missing: TRANSPARENT_PIXEL },
     });
     let ownsSession = true;
     let lastSavedRevision = -1;
