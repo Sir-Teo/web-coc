@@ -151,6 +151,11 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+/** How long a visible page waits for the browser to restore a lost WebGL context. */
+const CONTEXT_RESTORE_WAIT_MS = 5000;
+/** A context-loss reload happens at most once in this window per tab. */
+const RELOAD_GUARD_MS = 120_000;
+const CONTEXT_RELOAD_KEY = 'crown-clan:context-reload';
 /** Longest the loading screen waits, after the preload, for the home village's native art. */
 const HOME_ART_WAIT_MS = 2500;
 /** Stands in for the late campaign presentation until its art has loaded. */
@@ -848,15 +853,47 @@ export class VillageScene extends Phaser.Scene {
     };
     void this.homeArt.then(() => this.time.delayedCall(0, reveal));
     setTimeout(reveal, HOME_ART_WAIT_MS);
+    // A browser may never restore a lost context (Chrome blocks WebGL for a page after repeated
+    // GPU resets), which left the canvas black for good. Past a wait while the page is visible,
+    // reload: the unload path settles any battle and saves the village first. At most once per
+    // RELOAD_GUARD_MS per tab, so a device that keeps losing its context cannot loop.
+    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+    const watchRestore = () => {
+      clearTimeout(restoreTimer);
+      if (document.hidden || !this.paused) return;
+      restoreTimer = setTimeout(() => {
+        if (document.hidden || !this.paused) return;
+        let last = 0;
+        try {
+          last = Number(sessionStorage.getItem(CONTEXT_RELOAD_KEY)) || 0;
+        } catch {
+          /* Storage unavailable: treat as never reloaded. */
+        }
+        if (Date.now() - last < RELOAD_GUARD_MS) {
+          this.model.notify('Graphics stopped responding. Refresh the page to continue.');
+          return;
+        }
+        try {
+          sessionStorage.setItem(CONTEXT_RELOAD_KEY, String(Date.now()));
+        } catch {
+          /* Storage unavailable: reload anyway. */
+        }
+        window.location.reload();
+      }, CONTEXT_RESTORE_WAIT_MS);
+    };
     const onContextLost = (e: Event) => {
       e.preventDefault();
       this.paused = true;
       this.audio.samples.stop();
       this.model.notify('Graphics paused. Restoring your village…');
+      watchRestore();
     };
     const onContextRestored = () => {
+      clearTimeout(restoreTimer);
       this.paused = false;
     };
+    // Hidden pages lose contexts routinely and restore them when shown: wait from then.
+    document.addEventListener('visibilitychange', watchRestore);
     this.game.canvas.addEventListener('webglcontextlost', onContextLost);
     this.game.canvas.addEventListener('webglcontextrestored', onContextRestored);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -869,6 +906,8 @@ export class VillageScene extends Phaser.Scene {
       this.game.canvas.removeEventListener('pointercancel', cancelGesture);
       this.game.canvas.removeEventListener('webglcontextlost', onContextLost);
       this.game.canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      document.removeEventListener('visibilitychange', watchRestore);
+      clearTimeout(restoreTimer);
       if (this.model.onEffect !== undefined) this.model.onEffect = () => {};
     });
   }
