@@ -62,11 +62,14 @@ await Promise.all(Array.from({ length: Math.max(1, cpus().length) }, worker));
 // Every PNG under assets/ now has a WebP beside it, so any path to one can switch, including
 // template literals whose tail is `.png` (`.../level-${level}.png`).
 const REFERENCE = /(\/?assets\/[^"'`\s()<>\\]*?)\.png(?=["'`)\s\\])/g;
+// A whole template literal under assets/ whose expressions call functions or hold nested
+// template literals (`/assets/.../troop-${name.replace(/x/g, `-`)}.png`).
+const TEMPLATE = /(`\/?assets\/(?:[^`$]|\$\{(?:[^{}]|\{[^{}]*\})*\})*?)\.png`/g;
 let rewritten = 0;
 for (const file of files) {
   if (!/\.(js|json|css|html)$/.test(file)) continue;
   const text = await fs.readFile(file, 'utf8');
-  const next = text.replace(REFERENCE, '$1.webp');
+  const next = text.replace(REFERENCE, '$1.webp').replace(TEMPLATE, '$1.webp`');
   if (next !== text) {
     await fs.writeFile(file, next);
     rewritten++;
