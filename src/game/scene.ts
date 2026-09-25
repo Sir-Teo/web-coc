@@ -228,7 +228,11 @@ interface ArtFamily {
  */
 const EAGER_FAMILIES =
   import.meta.env.DEV && typeof location !== 'undefined' && !location.search.includes('lazyart');
+const XBOW_FAMILY: ArtFamily = { draws: (b) => b.kind === 'xbow', preload: preloadXbows };
+const SANTA_FAMILY: ArtFamily = { draws: (b) => b.npc === 'santa-trap', preload: preloadSanta };
 const ART_FAMILIES: ArtFamily[] = [
+  XBOW_FAMILY,
+  SANTA_FAMILY,
   { draws: (b) => b.kind === 'darkstorage', preload: preloadDarkStorages },
   { draws: (b) => isGoblinBuilding(b.npc), preload: preloadGoblinBuildings },
   { draws: (b) => b.kind === 'tesla', preload: preloadTeslas },
@@ -445,9 +449,9 @@ export class VillageScene extends Phaser.Scene {
     // The home village's native building art is fetched outside the Phaser loader; start it now
     // so it downloads alongside the preload instead of popping in after the village appears.
     this.homeArt = prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
-    // Santa, X-Bow and Cannon pages are heavy and rarely seen at boot; they
-    // bundle in after startup (see loadHeavyArt) with fallback sprites covering.
-    // So does every other defense family the home village does not own.
+    // Cannon pages are heavy; they bundle in after startup (see loadHeavyArt) with fallback
+    // sprites covering. Defense families the home village does not own (X-Bow and Santa
+    // included) load when something first draws them (see loadFamilies).
     const home = this.model.buildings;
     this.deferredFamilies = [];
     for (const family of ART_FAMILIES)
@@ -619,6 +623,9 @@ export class VillageScene extends Phaser.Scene {
     });
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
+    // Families the boot preload carried (the home village draws them) have already landed.
+    for (const family of ART_FAMILIES)
+      if (!this.deferredFamilies.includes(family)) this.familyLanded(family, false);
     // Source shakes are pure functions of battle time: sample them once per tick, not on every
     // camera preRender (each one walks and sorts its event table).
     const shakeMemo = {
@@ -1088,6 +1095,22 @@ export class VillageScene extends Phaser.Scene {
   private deferredArtPending() {
     return this.missingFamilies().length > 0;
   }
+  /**
+   * Families whose presentation keeps a fallback until its art is in (X-Bow, Santa) switch to the
+   * native art once it has landed, whether in the boot preload or a later batch. A failed page
+   * keeps the fallback sprites rather than hiding them behind incomplete meshes.
+   */
+  private familyLanded(family: ArtFamily, failed: boolean) {
+    const presentation =
+      family === XBOW_FAMILY
+        ? this.xbowPresentation
+        : family === SANTA_FAMILY
+          ? this.santaPresentation
+          : undefined;
+    if (!presentation) return;
+    presentation.artReady = !failed;
+    presentation.bindAudio();
+  }
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
     return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
@@ -1118,6 +1141,7 @@ export class VillageScene extends Phaser.Scene {
             for (const family of wanted) {
               this.requestedFamilies.delete(family);
               this.loadedFamilies.add(family);
+              this.familyLanded(family, failed);
             }
             for (const key of this.cache.binary.getKeys())
               registerCachedSample(this, this.audio.samples, key);
@@ -1151,11 +1175,7 @@ export class VillageScene extends Phaser.Scene {
         }
         // Loader COMPLETE also fires after file errors. Keep the boot-time sprites when
         // any required page failed instead of hiding them behind incomplete native meshes.
-        this.xbowPresentation.artReady = !failed;
-        this.santaPresentation.artReady = !failed;
         this.cannonPresentation.artReady = !failed;
-        this.xbowPresentation.bindAudio();
-        this.santaPresentation.bindAudio();
         this.cannonPresentation.bindAudio();
         this.deferredArtSettled = true;
         this.heavyArtReady = !failed;
@@ -1172,8 +1192,6 @@ export class VillageScene extends Phaser.Scene {
           if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
           done(failed);
         });
-        preloadSanta(this);
-        preloadXbows(this);
         preloadCannons(this);
         this.load.start();
         // The dev server (and so every browser spec) loads every family now, as all of them
