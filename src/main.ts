@@ -57,6 +57,14 @@ async function boot() {
       // Phaser's stock placeholder for a texture that has not loaded (lazy art still in
       // flight, a failed fetch) is an opaque black square; draw nothing instead.
       images: { missing: TRANSPARENT_PIXEL },
+      loader: {
+        // Hundreds of boot images: let the browser fetch and decode them as plain images
+        // instead of XHR → Blob → object URL → Image, which copies every file twice on the
+        // main thread. Phaser caps Android at 6 parallel requests (an HTTP/1.1 heuristic);
+        // the host serves HTTP/2, so the boot queue should not drain six files at a time.
+        imageLoadType: 'HTMLImageElement',
+        maxParallelDownloads: 32,
+      },
     });
     let ownsSession = true;
     let lastSavedRevision = -1;
