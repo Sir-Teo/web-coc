@@ -74,7 +74,7 @@ export class ShapeAtlas {
     g.generateTexture(page.texture.getSourceImage() as HTMLCanvasElement, this.size, this.size);
     g.clear();
     page.texture.add(name, 0, page.x, page.y, w, h);
-    page.texture.refresh();
+    this.markDirty(page);
     page.x += w;
     page.row = Math.max(page.row, h);
     const shape = {
@@ -86,6 +86,22 @@ export class ShapeAtlas {
     };
     this.shapes.set(name, shape);
     return shape;
+  }
+
+  /**
+   * Uploads a changed page once, just before the frame renders. Refreshing after every bake
+   * re-uploaded the whole page (4 MB at 1024²) per new shape: the first battle bakes dozens of
+   * wall links in one sync, which was dozens of full-page uploads in a single frame.
+   */
+  private dirty = new Set<Page>();
+  private markDirty(page: Page) {
+    if (!this.dirty.size)
+      this.scene.game.events.once(Phaser.Core.Events.PRE_RENDER, this.flush, this);
+    this.dirty.add(page);
+  }
+  private flush() {
+    for (const page of this.dirty) if (this.scene.textures.exists(page.key)) page.texture.refresh();
+    this.dirty.clear();
   }
 
   private allocate(w: number, h: number) {
@@ -106,6 +122,8 @@ export class ShapeAtlas {
   }
 
   destroy() {
+    this.scene.game.events.off(Phaser.Core.Events.PRE_RENDER, this.flush, this);
+    this.dirty.clear();
     this.painter?.destroy();
     this.painter = undefined;
     for (const page of this.pages)
