@@ -25,6 +25,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Restore production WebP encodings
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/webp-dist
+          key: webp-dist-${{ hashFiles('public/assets/**/*.png', 'scripts/webp-dist.mjs') }}
+          restore-keys: webp-dist-
       - name: Check types, documentation and production build
         run: npm run typecheck:tests && npm run test:docs && npm run build
       - name: Deploy to Firebase Hosting

@@ -70,7 +70,11 @@ A Web Lock coordinates tabs so only one owns the village. Save loading validates
 and migrates stored data; changes must preserve recoverability. Use a separate
 browser profile for destructive testing.
 
-The production build generates `sw.js` and a content-hashed manifest. The service
+The production build writes a lossless WebP beside every PNG under `dist/assets` and
+points the built code, packs and styles at it (`scripts/webp-dist.mjs`): about a
+quarter fewer bytes, byte-identical WebGL textures. The repository, the dev server
+and the specs keep reading the PNGs. The production build also generates `sw.js`
+and a content-hashed manifest. The service
 worker precaches the application shell, warms assets observed during boot and caches
 other assets as they are fetched. Offline availability therefore depends on what
 has already been loaded; it does not mean every campaign asset is downloaded at install.
