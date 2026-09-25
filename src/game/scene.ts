@@ -480,9 +480,10 @@ export class VillageScene extends Phaser.Scene {
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
-    for (const k of TROOP_KEYS.filter(
+    const classicTroops = TROOP_KEYS.filter(
       (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
-    ))
+    );
+    for (const k of classicTroops)
       this.load.spritesheet(
         `${k}-walk`,
         walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`),
@@ -491,12 +492,11 @@ export class VillageScene extends Phaser.Scene {
           frameHeight: 128,
         },
       );
-    // Extra / siege / super troops have no walk spritesheet. Their portrait stays
-    // under the roster key (`k`) only; the walk key is intentionally left missing
-    // so a portrait can never collide with a walk sheet on one texture key.
-    // Battle and camp sprites fall back to the transparent `troop-fallback`
-    // texture (plus a ground marker) until the native mesh is ready.
-    for (const k of [...TROOP_KEYS, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
+    // Extra / siege / super troops have no walk spritesheet and no scene texture: battle and
+    // camp sprites fall back to the transparent `troop-fallback` texture (plus a ground marker)
+    // until the native mesh is ready, and the HUD shows their roster portraits as plain images.
+    // Loading those 62 portraits here cost 4.4 MB of boot download that nothing drew.
+    for (const k of [...classicTroops, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
     this.load.off('progress');
     this.load.off('loaderror');
