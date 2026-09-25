@@ -151,6 +151,8 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+/** Home time after a battle before defense families the village does not draw are released. */
+const FAMILY_RELEASE_MS = 20_000;
 /** Home time after a late battle before the late campaign art is released. */
 const LATE_RELEASE_MS = 20_000;
 /** How long a visible page waits for the browser to restore a lost WebGL context. */
@@ -1036,6 +1038,56 @@ export class VillageScene extends Phaser.Scene {
   private deferredFamilies: ArtFamily[] = [];
   /** Deferred families whose load has finished (a failed file does not hold a battle forever). */
   private loadedFamilies = new Set<ArtFamily>();
+  /** Texture keys each on-demand family added, for releasing it again. */
+  private familyTextures = new Map<ArtFamily, string[]>();
+  /** Home time (ms, game clock) since which no battle has needed the loaded families. */
+  private familyIdleSince?: number;
+  private familyCheckAt = 0;
+  /**
+   * Releases the on-demand families the home village does not draw once the player has been
+   * home for FAMILY_RELEASE_MS, as the late campaign art is: a few battles otherwise left every
+   * defense family resident for the rest of the session. A later battle loads them again under
+   * the usual hold. Dev pages keep every family (EAGER_FAMILIES).
+   */
+  private releaseIdleFamilies(time: number) {
+    if (
+      EAGER_FAMILIES ||
+      this.model.battle ||
+      this.model.replay ||
+      this.requestedFamilies.size ||
+      this.load.isLoading()
+    ) {
+      this.familyIdleSince = undefined;
+      return;
+    }
+    // Nothing to release, or a decision made less than a second ago: skip the scan.
+    if (!this.familyTextures.size || time < this.familyCheckAt) return;
+    this.familyCheckAt = time + 1000;
+    const buildings = this.model.buildings,
+      placement = this.model.placement;
+    const idle = [...this.loadedFamilies].filter(
+      (family) =>
+        this.familyTextures.has(family) &&
+        !buildings.some(family.draws) &&
+        !(placement && family.draws({ kind: placement } as Building)),
+    );
+    if (!idle.length) {
+      this.familyIdleSince = undefined;
+      return;
+    }
+    this.familyIdleSince ??= time;
+    if (time - this.familyIdleSince < FAMILY_RELEASE_MS) return;
+    this.familyIdleSince = undefined;
+    for (const family of idle) {
+      for (const key of this.familyTextures.get(family)!)
+        if (this.textures.exists(key)) this.textures.remove(key);
+      this.familyTextures.delete(family);
+      this.loadedFamilies.delete(family);
+      if (family === XBOW_FAMILY) this.xbowPresentation.artReady = false;
+      if (family === SANTA_FAMILY) this.santaPresentation.artReady = false;
+    }
+    this.lastRevision = -1;
+  }
   /** Deferred families queued or loading. */
   private requestedFamilies = new Set<ArtFamily>();
   /** Chain of family loads, one loader batch after another. */
@@ -1149,7 +1201,20 @@ export class VillageScene extends Phaser.Scene {
             this.lastRevision = -1;
             resolve();
           });
-          for (const family of wanted) family.preload(this);
+          for (const family of wanted) {
+            const queued = new Set(this.load.list);
+            family.preload(this);
+            // The texture keys this family added (keys already resident are never listed).
+            this.familyTextures.set(
+              family,
+              [...this.load.list]
+                .filter(
+                  (file) =>
+                    !queued.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
+                )
+                .map((file) => file.key),
+            );
+          }
           this.load.start();
         };
         // Another batch may own the loader; queue behind it.
@@ -4595,6 +4660,7 @@ export class VillageScene extends Phaser.Scene {
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     this.releaseLateAssetsWhenIdle(time);
+    this.releaseIdleFamilies(time);
     while (this.tick >= TICK) {
       // Positions before the step: the draw interpolates from here toward the result.
       this.interpolation.capture(this.model.battle);

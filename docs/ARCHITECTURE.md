@@ -56,8 +56,9 @@ family the village does not own (`ART_FAMILIES` in `scene.ts`) loads the first t
 the home village, a battle or a placement draws it; a battle that needs one holds
 its clock and input until it lands, as it does for late campaign art. The dev
 server loads every family right after boot instead (the browser specs rely on it);
-`?lazyart` gives a dev page the production behavior. Late campaign art is released
-again after the player has been home for a while. Native village packs are fetched outside the
+`?lazyart` gives a dev page the production behavior. Families the home village
+does not draw, and the late campaign art, are released again after the player has
+been home for a while. Native village packs are fetched outside the
 Phaser loader: the home village's packs download alongside the preload, and the
 loading screen waits for them briefly; a battle's packs download when it starts.
 Images are decoded off the main thread before upload (`image-decode.ts`), and a

@@ -56,3 +56,41 @@ test('a family loads on first use and holds the battle that needs it', async ({ 
   expect(drawn).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+test('families the home village does not draw are released after a while and load again', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const attack = () =>
+    page.evaluate(async () => {
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+      const m = window.__game.model;
+      m.state.army = { ...emptyArmy(), swordsman: 20 };
+      m.state.nativeCampaign = freshNativeCampaign();
+      m.state.nativeCampaign.stars.fill(1);
+      m.changed();
+      m.startCampaign(40);
+    });
+  await attack();
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await page.evaluate(loaded('mortar'))).toBe(true);
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.suspendBattle();
+    m.returnHome();
+    window.__game.scene.sync();
+  });
+  // Released after 20 s at home: the starter village draws no Mortar.
+  await page.waitForFunction(`!(${loaded('mortar')})`, null, { timeout: 40_000 });
+  await attack();
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await page.evaluate(loaded('mortar'))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.__game.scene.mortarPresentation.towers.size))
+    .toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
