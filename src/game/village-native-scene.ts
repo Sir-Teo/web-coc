@@ -37,6 +37,51 @@ const packKey = (kind: string, variant?: string) =>
 const packPath = (kind: string, variant?: string) =>
   variant ? packs[sourceKind(kind)]?.variants?.[variant]?.path : packs[sourceKind(kind)]?.path;
 
+/** A pack's graph and every texture it draws, decoded and ready to upload. */
+interface FetchedPack {
+  pack: Pack;
+  images: Map<string, HTMLImageElement>;
+}
+/** In-flight and finished pack downloads by pack key, shared by every presentation. */
+const fetched = new Map<string, Promise<FetchedPack>>();
+function fetchPack(key: string, path: string) {
+  let pending = fetched.get(key);
+  if (pending) return pending;
+  pending = (async () => {
+    const response = await fetch('/' + path);
+    if (!response.ok) throw Error(`HTTP ${response.status}`);
+    const pack = (await response.json()) as Pack;
+    const images = new Map<string, HTMLImageElement>();
+    await Promise.all(
+      Object.entries(pack.scenes).flatMap(([name, graph]) =>
+        Object.entries(graph.textures).map(async ([id, texture]) => {
+          const image = new Image();
+          image.src = '/' + texture.path;
+          await image.decode();
+          images.set(nativeMeshTexture(`village:${key}:${name}`, id), image);
+        }),
+      ),
+    );
+    return { pack, images };
+  })();
+  // A failed download is retried by the next request instead of failing for good.
+  pending.catch(() => fetched.delete(key));
+  fetched.set(key, pending);
+  return pending;
+}
+/**
+ * Starts downloading the packs of these building kinds without waiting for a scene, so a boot
+ * can fetch the home village's art alongside the Phaser preload rather than after it.
+ */
+export function prefetchVillageArt(kinds: Iterable<string>) {
+  const started: Promise<unknown>[] = [];
+  for (const kind of kinds) {
+    const path = hasVillageNativeArt(kind) ? packPath(kind) : undefined;
+    if (path) started.push(fetchPack(packKey(kind), path).catch(() => undefined));
+  }
+  return Promise.all(started).then(() => undefined);
+}
+
 /** The pack row for a level (first match, as `find` returned), through a per-pack map. */
 const levelRows = new WeakMap<Pack, Map<number, Pack['levels'][number]>>();
 function levelRow(pack: Pack, level: number) {
@@ -178,22 +223,11 @@ export class VillageNativePresentation {
     if (!path || this.pending.has(key) || this.packs.has(key)) return;
     this.pending.add(key);
     try {
-      const response = await fetch('/' + path);
-      if (!response.ok) throw Error(`HTTP ${response.status}`);
-      const pack = (await response.json()) as Pack;
-      await Promise.all(
-        Object.entries(pack.scenes).flatMap(([name, graph]) =>
-          Object.entries(graph.textures).map(async ([id, texture]) => {
-            const textureKey = nativeMeshTexture(`village:${key}:${name}`, id);
-            if (this.scene.textures.exists(textureKey)) return;
-            const image = new Image();
-            image.src = '/' + texture.path;
-            await image.decode();
-            if (this.alive && !this.scene.textures.exists(textureKey))
-              this.scene.textures.addImage(textureKey, image);
-          }),
-        ),
-      );
+      const { pack, images } = await fetchPack(key, path);
+      if (!this.alive) return;
+      for (const [textureKey, image] of images)
+        if (!this.scene.textures.exists(textureKey))
+          this.scene.textures.addImage(textureKey, image);
       if (this.alive) this.packs.set(key, pack);
     } catch (error) {
       if (this.alive && !variant)

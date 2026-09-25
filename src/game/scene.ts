@@ -2,7 +2,11 @@ import { HeroNativePresentation } from './hero-native-scene';
 import { HERO_KINDS, heroPortraitImage } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
-import { VillageNativePresentation, hasVillageNativeArt } from './village-native-scene';
+import {
+  VillageNativePresentation,
+  hasVillageNativeArt,
+  prefetchVillageArt,
+} from './village-native-scene';
 import { NativeArtPacks, type NativeArtPack } from './native-art-pack';
 import { NativeProjectilePresentation } from './native-projectile-scene';
 import { NativeDefensePresentation } from './native-defense-scene';
@@ -147,6 +151,8 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+/** Longest the loading screen waits, after the preload, for the home village's native art. */
+const HOME_ART_WAIT_MS = 2500;
 /** Stands in for the late campaign presentation until its art has loaded. */
 const INERT_LATE_CAMPAIGN = {
   handles: () => false,
@@ -273,6 +279,8 @@ export class VillageScene extends Phaser.Scene {
   uiBlocked = false;
   ready = false;
   onReady = () => {};
+  /** Download of the home village's native building art, started in `preload`. */
+  private homeArt: Promise<void> = Promise.resolve();
   onSelect = () => {};
   /** Callbacks waiting for Phaser to inject `events` (the HUD is built before the game boots). */
   private bootWaiters: (() => void)[] = [];
@@ -381,6 +389,9 @@ export class VillageScene extends Phaser.Scene {
   }
   preload() {
     for (const callback of this.bootWaiters.splice(0)) callback();
+    // The home village's native building art is fetched outside the Phaser loader; start it now
+    // so it downloads alongside the preload instead of popping in after the village appears.
+    this.homeArt = prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
     // Santa, X-Bow and Cannon pages are heavy and rarely seen at boot; they
     // bundle in after startup (see loadHeavyArt) with fallback sprites covering.
     preloadDarkStorages(this);
@@ -800,8 +811,17 @@ export class VillageScene extends Phaser.Scene {
     this.sync();
     this.ready = true;
     this.onReady();
-    document.querySelector('#loading')?.classList.add('loaded');
-    setTimeout(() => document.querySelector('#loading')?.remove(), 500);
+    // Lift the loading screen once the home village's native art is in, so the first frame
+    // players see is the finished village rather than fallback sprites swapping to native art.
+    // A slow or failed pack never holds the boot for long: its fallback sprite covers it.
+    const reveal = () => {
+      const loading = document.querySelector('#loading');
+      if (!loading || loading.classList.contains('loaded')) return;
+      loading.classList.add('loaded');
+      setTimeout(() => loading.remove(), 500);
+    };
+    void this.homeArt.then(() => this.time.delayedCall(0, reveal));
+    setTimeout(reveal, HOME_ART_WAIT_MS);
     // Rare, heavy art (Santa/XBow/Cannon) bundles in after boot instead of
     // blocking it; battles trigger it immediately (see update) so scout time
     // covers the fetch.
