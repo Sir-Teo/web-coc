@@ -151,6 +151,8 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+/** Home time after a late battle before the late campaign art is released. */
+const LATE_RELEASE_MS = 20_000;
 /** How long a visible page waits for the browser to restore a lost WebGL context. */
 const CONTEXT_RESTORE_WAIT_MS = 5000;
 /** A context-loss reload happens at most once in this window per tab. */
@@ -952,8 +954,16 @@ export class VillageScene extends Phaser.Scene {
             this.lastRevision = -1;
             resolve();
           });
+          const queued = new Set(this.load.list);
           preloadLateCampaign(this);
           preloadLateGarrisonTroops(this);
+          // Texture keys only this bundle brought in (shared keys already loaded are skipped by the
+          // loader and never listed), so releaseLateAssets removes exactly what it added.
+          this.lateTextureKeys = [...this.load.list]
+            .filter(
+              (file) => !queued.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
+            )
+            .map((file) => file.key);
           this.load.start();
         }),
       () => {
@@ -965,6 +975,43 @@ export class VillageScene extends Phaser.Scene {
       },
     );
     return this.lateAssets;
+  }
+  /** Texture keys the late campaign bundle added (see loadLateAssets). */
+  private lateTextureKeys: string[] = [];
+  /** Home time (ms, game clock) since which the late bundle has gone unused, or undefined. */
+  private lateIdleSince?: number;
+  /**
+   * Drops the late campaign bundle (about 300 MB of GPU textures with an ordinary army) once the
+   * player has been home for LATE_RELEASE_MS and the home village owns no late family: it stayed
+   * resident for the rest of the session after one late battle, and on phones that pressure ends
+   * in a lost WebGL context. A later battle that needs it loads it again under the usual hold.
+   */
+  private releaseLateAssetsWhenIdle(time: number) {
+    if (
+      !this.lateAssetsReady ||
+      this.model.battle ||
+      this.model.replay ||
+      this.lateAssetsPending()
+    ) {
+      this.lateIdleSince = undefined;
+      return;
+    }
+    if (this.model.buildings.some(isLateCampaignBuilding)) {
+      this.lateIdleSince = undefined;
+      return;
+    }
+    this.lateIdleSince ??= time;
+    if (time - this.lateIdleSince < LATE_RELEASE_MS) return;
+    this.lateIdleSince = undefined;
+    this.lateCampaign.destroy();
+    this.lateCampaign = INERT_LATE_CAMPAIGN;
+    this.garrisonPresentation.clear();
+    for (const key of this.lateTextureKeys)
+      if (this.textures.exists(key)) this.textures.remove(key);
+    this.lateTextureKeys = [];
+    this.lateAssets = undefined;
+    this.lateAssetsReady = false;
+    this.lastRevision = -1;
   }
   private heavyArt?: Promise<void>;
   heavyArtReady = false;
@@ -4443,6 +4490,7 @@ export class VillageScene extends Phaser.Scene {
     this.tick = this.battleArtPending() ? 0 : this.tick + dt;
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
+    this.releaseLateAssetsWhenIdle(time);
     while (this.tick >= TICK) {
       // Positions before the step: the draw interpolates from here toward the result.
       this.interpolation.capture(this.model.battle);
