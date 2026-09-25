@@ -206,6 +206,71 @@ function batchTrianglesWithTint2(node: Phaser.Renderer.WebGL.RenderNodes.BatchHa
   };
 }
 
+/** The texture count a sub-batch's shader is compiled for: a power of two, capped at `max`. */
+export function textureBucket(count: number, max: number) {
+  if (count <= 1) return 1;
+  return Math.min(max, 2 ** Math.ceil(Math.log2(count)));
+}
+
+type ShaderAddition = { name: string; tags?: string[]; disable?: boolean };
+type BucketedNode = {
+  finalizeTextureCount(count: number): void;
+  programManager: {
+    currentConfig: { base: unknown; additions: ShaderAddition[]; features: string[] };
+    getCurrentProgramSuite(): unknown;
+  };
+  textureBuckets?: true;
+};
+/**
+ * Phaser compiles its batch shader once for every texture count a sub-batch happens to use (1 up
+ * to the GPU's limit, usually 16), and each is a blocking program link the first time that count
+ * occurs: in play, when a busier battle first puts more textures in one batch. Counts round up
+ * to a power of two instead, which is always safe: every sampler slot is bound to a texture unit
+ * at startup and each vertex carries the index of the one it reads, so extra slots are never
+ * sampled. The first draw with a new shader configuration also links all of its buckets at once,
+ * so for the configurations the village uses the links land behind the loading screen.
+ */
+function bucketTextureCounts(
+  renderer: Phaser.Renderer.WebGL.WebGLRenderer,
+  target: Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad,
+) {
+  const node = target as unknown as BucketedNode;
+  if (node.textureBuckets || typeof node.finalizeTextureCount !== 'function') return;
+  node.textureBuckets = true;
+  const finalize = node.finalizeTextureCount;
+  const max = Math.max(1, renderer.maxTextures);
+  const buckets: number[] = [];
+  for (let count = 1; count < max; count *= 2) buckets.push(count);
+  buckets.push(max);
+  const factory = renderer.shaderProgramFactory as unknown as {
+    getKey(base: unknown, additions: ShaderAddition[], features: string[]): string;
+  };
+  const warmed = new Set<string>();
+  node.finalizeTextureCount = function (this: BucketedNode, count: number) {
+    const bucket = textureBucket(count, max);
+    finalize.call(this, bucket);
+    const manager = this.programManager;
+    const config = manager.currentConfig;
+    if (!config) return;
+    // The configuration without its texture-count additions.
+    const signature = factory.getKey(
+      config.base,
+      config.additions.filter(
+        (addition) => !addition.tags?.some((tag) => tag === 'TexCount' || tag === 'TEXTURE'),
+      ),
+      [...(config.features ?? [])],
+    );
+    if (warmed.has(signature)) return;
+    warmed.add(signature);
+    for (const other of buckets) {
+      if (other === bucket) continue;
+      finalize.call(this, other);
+      manager.getCurrentProgramSuite();
+    }
+    finalize.call(this, bucket);
+  };
+}
+
 const configuredTriangles = new WeakMap<Phaser.Renderer.WebGL.WebGLRenderer, boolean>();
 /**
  * Native polygon meshes share the sprite sampler and need the same slot fix; they also get the
@@ -220,6 +285,7 @@ export function configureNativeTriangleRendering(renderer: Phaser.Renderer.WebGL
     'BatchHandlerTri',
   ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
   stableTextureSampling(renderer, node);
+  bucketTextureCounts(renderer, node);
   const supported = nativeColorTint(node);
   batchTrianglesWithTint2(node);
   configuredTriangles.set(renderer, supported);
@@ -253,6 +319,7 @@ export function configureQuadRendering(renderer: Phaser.Renderer.WebGL.WebGLRend
     'BatchHandlerQuad',
   ) as Phaser.Renderer.WebGL.RenderNodes.BatchHandlerQuad;
   stableTextureSampling(renderer, node);
+  bucketTextureCounts(renderer, node);
   if (node.topology === renderer.gl.TRIANGLES) return;
 
   // Phaser 4.2.1 stores each quad as BL, TL, BR, TR. Its default strip uses
