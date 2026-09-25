@@ -1524,6 +1524,9 @@ export class VillageScene extends Phaser.Scene {
       this.infernoPresentation.clear();
       this.darkDrillPresentation.clear();
       this.villageNativePresentation.clear();
+      // Fetch every native pack the new village draws now, while scouting, rather than as each
+      // building first scrolls into view (which swapped fallback sprites to native art in view).
+      void prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
