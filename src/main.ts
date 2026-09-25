@@ -10,7 +10,9 @@ import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
 import { recordBootResources, registerOfflineSupport } from './offline';
+import { decodeLoadedImages } from './game/image-decode';
 recordBootResources();
+decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
 const TRANSPARENT_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==';
