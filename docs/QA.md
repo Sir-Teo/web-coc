@@ -39,9 +39,11 @@ that port before testing. The Retina configuration runs its selected specs at 2Ã
 device scale. Traces and failure screenshots go under `output/`.
 
 Specs wait for `window.__game.scene.artSettled` rather than `scene.ready`: `ready`
-turns true once the home village can draw, before the deferred art batch has
-loaded the families it does not own (see [the architecture guide](ARCHITECTURE.md)).
-Wait on `ready` only to test that window itself.
+turns true once the home village can draw, before the post-boot art batch has
+loaded. On the dev server every defense family loads right after boot; add
+`?lazyart` to a spec's URL to test production's load-on-first-use behavior (see
+[the architecture guide](ARCHITECTURE.md)). Wait on `ready` only to test that
+window itself.
 
 For visible changes, inspect desktop and phone layouts, pointer/touch input,
 reduced motion and relevant replay pause/seek behavior. Automated pixel or layout
