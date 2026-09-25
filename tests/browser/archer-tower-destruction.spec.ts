@@ -5,7 +5,7 @@ test('native tower destruction replaces generic effects and retires into the rui
 }) => {
   await page.setViewportSize({ width: 950, height: 620 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;

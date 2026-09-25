@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 test('research is usable on desktop and mobile and survives reloading', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.evaluate(() => {
     const m = window.__game.model;
@@ -22,7 +22,7 @@ test('research is usable on desktop and mobile and survives reloading', async ({
   await page.screenshot({ path: 'output/playtest/research-desktop.png' });
   await page.waitForTimeout(1200);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('.train-add').click();
   await page.locator('[data-action="research"]').click();
   await expect(page.locator('[data-research]')).toBeVisible();
@@ -45,7 +45,7 @@ test('a second tab waits and receives the latest village after the owner closes'
   context,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   const second = await context.newPage();
   await second.goto('/');
@@ -54,18 +54,18 @@ test('a second tab waits and receives the latest village after the owner closes'
   await page.locator('[data-action="collect"]').last().click();
   const gold = await page.evaluate(() => window.__game.model.state.gold);
   await page.close();
-  await second.waitForFunction(() => window.__game?.scene.ready);
+  await second.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await second.evaluate(() => window.__game.model.state.gold)).toBe(gold);
   await expect(second.locator('.shop-btn')).toBeVisible();
   await second.reload();
-  await second.waitForFunction(() => window.__game?.scene.ready);
+  await second.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await second.evaluate(() => window.__game.model.state.gold)).toBe(gold);
 });
 test('WebGL loss pauses combat and restoration keeps the village interactive', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.evaluate(() => {
     const { game, model } = window.__game;
@@ -96,7 +96,7 @@ test('WebGL loss pauses combat and restoration keeps the village interactive', a
 test('twenty raid transitions release scene objects and keep saves valid', async ({ page }) => {
   test.setTimeout(60000);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   const counts = [];
   for (let i = 0; i < 20; i++) {
@@ -136,6 +136,6 @@ test('twenty raid transitions release scene objects and keep saves valid', async
   expect(await page.evaluate(() => window.__game.model.state.stats.raids)).toBe(20);
   await page.waitForTimeout(1200);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await page.evaluate(() => window.__game.model.state.stats.raids)).toBe(20);
 });

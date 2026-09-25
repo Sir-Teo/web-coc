@@ -5,7 +5,7 @@ test('original arrow variants face ground and airborne targets in every quadrant
 }) => {
   await page.setViewportSize({ width: 850, height: 770 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const result = await page.evaluate(async () => {
     const { scene, game } = window.__game;

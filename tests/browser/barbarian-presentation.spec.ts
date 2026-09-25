@@ -5,7 +5,7 @@ test('starter army, troop details and saved additions use the Barbarian presenta
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const card = page.getByRole('button', { name: /^Barbarian, / });
   await expect(card).toHaveAccessibleName(/Barbarian/);
@@ -29,7 +29,7 @@ test('starter army, troop details and saved additions use the Barbarian presenta
     await saveGame(window.__game.model.state);
   });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await page.evaluate(() => window.__game.model.state.army.swordsman)).toBe(13);
   await expect(card).toHaveAccessibleName(/Barbarian/);
   await expect(page.locator('body')).not.toContainText('Swordsman');
@@ -41,7 +41,7 @@ test('camp Barbarians use the new atlas and rest on a fixed frame with reduced m
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
   const result = await page.evaluate(() => {

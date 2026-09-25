@@ -13,7 +13,7 @@ for (const viewport of [
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.evaluate(() => {
@@ -105,7 +105,7 @@ for (const viewport of [
     await page.locator('[data-action="home"]').click();
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     expect(await page.evaluate(() => window.__game.model.state.nativeCampaign)).toEqual(
       result.native,
@@ -137,7 +137,7 @@ test('native scenery and Goblin Huts survive large-map and home transitions', as
   page.on('pageerror', (e) => errors.push(e.message));
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.evaluate(() => window.__game.model.startCampaign(1));

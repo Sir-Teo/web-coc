@@ -12,7 +12,7 @@ await page.goto('http://localhost:5173');
 await page.waitForTimeout(3000);
 console.log(
   await page.evaluate(() => ({
-    ready: window.__game?.scene.ready,
+    ready: window.__game?.scene.artSettled,
     canvases: document.querySelectorAll('canvas').length,
     text: document.body.innerText.slice(0, 500),
   })),

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
 });
@@ -126,7 +126,7 @@ for (const [kind, hp, nextHp, cost, seconds, label, townhall] of [
     }, id);
     expect(end).toEqual({ end: end.end, duration: seconds * 1000, gold: 0, hp, busy: 1 });
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     const restored = await page.evaluate((id) => {
       const m = window.__game.model,
         b = m.state.buildings.find((b) => b.id === id)!;
@@ -261,7 +261,7 @@ test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the T
     return b.upgradeEnd;
   }, id);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.evaluate(
     ({ id, end }) => {
       const m = window.__game.model,

@@ -6,7 +6,7 @@ test('baked heroes, pets and Guardians render without missing assets', async ({ 
     if (r.status() >= 400 && r.url().includes('/assets/')) errors.push(r.url());
   });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async () => {
     const { makeBuilding } = await import('/src/game/model.ts');
@@ -59,7 +59,7 @@ test('Workshop and super boost controls prepare their new troops', async ({ page
     if (e.type() === 'error' || e.text().includes('has no frame')) errors.push(e.text());
   });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async () => {
     const { makeBuilding } = await import('/src/game/model.ts');

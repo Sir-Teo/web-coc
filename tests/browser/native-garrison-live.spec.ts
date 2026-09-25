@@ -7,7 +7,7 @@ test('renders released original garrison troops and clamps Balloon death to its 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;

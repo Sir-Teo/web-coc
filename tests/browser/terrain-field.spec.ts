@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('every buildable tile center sits on grass in the shipping terrain', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(() => {
     const s = window.__game.scene;
     const terrain = s.children.list.find((c) => c.texture?.key === 'terrain');
@@ -41,7 +41,7 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { scene: s, game } = window.__game;
     document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
@@ -173,7 +173,7 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
   const cases = [];

@@ -50,6 +50,17 @@ Vite splits the engine, shared libraries, UI, startup tables and scene graphs.
 Dynamic imports keep developer tools and late campaign presentation out of the
 initial import graph. Check `vite.config.ts` before changing module boundaries.
 
+The boot preload only carries what the home village draws. Defense families the
+village does not own (`ART_FAMILIES` in `scene.ts`), and the rarely seen Santa,
+X-Bow and Cannon pages, load in one deferred batch shortly after the village
+appears; a battle that needs one holds its clock and input until the batch lands,
+as it does for late campaign art. Native village packs are fetched outside the
+Phaser loader: the home village's packs download alongside the preload, and the
+loading screen waits for them briefly; a battle's packs download when it starts.
+Images are decoded off the main thread before upload (`image-decode.ts`), and a
+texture that has not arrived yet draws nothing rather than Phaser's black
+placeholder.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates

@@ -1,7 +1,9 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: 'tests/browser',
-  timeout: 30000,
+  // Specs wait for the deferred art batch (scene.artSettled) as well as the boot, and several
+  // boot twice; software-rendered runners upload that art slowly.
+  timeout: 60000,
   fullyParallel: false,
   workers: 1,
   use: {

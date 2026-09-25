@@ -117,7 +117,7 @@ import {
   type BuildingKind,
 } from './data';
 import { GameModel, makeBuilding, type Building, type FX } from './model';
-import type { SampleCue } from './sample-audio';
+import { registerCachedSample, type SampleCue } from './sample-audio';
 import { ShapeAtlas, ShapePool, applyShape, type BakedShape } from './shape-atlas';
 import { RenderInterpolation } from './render-interpolation';
 import { AudioManager } from './audio';
@@ -204,6 +204,42 @@ const TERRAIN_SCALE = 1.35;
 const CAMERA_MARGIN = 224;
 /** Live spark cap: heavy fights previously held ~1,900 Arc tweens at once. */
 const MAX_SPARKS = 240;
+/**
+ * Boot art of the defense families, by the buildings that draw it. A family the home village
+ * does not own (and the campaign-only ones) loads with the deferred art after the village
+ * appears instead of in the boot preload: a young village would otherwise download every
+ * late defense before it could show itself. A battle that needs one waits for it.
+ */
+const ART_FAMILIES: { draws: (b: Building) => boolean; preload: (scene: Phaser.Scene) => void }[] =
+  [
+    { draws: (b) => b.kind === 'darkstorage', preload: preloadDarkStorages },
+    { draws: (b) => isGoblinBuilding(b.npc), preload: preloadGoblinBuildings },
+    { draws: (b) => b.kind === 'tesla', preload: preloadTeslas },
+    { draws: (b) => b.kind === 'bombtower', preload: preloadBombTowers },
+    { draws: (b) => b.kind === 'wizardtower', preload: preloadWizardTowers },
+    { draws: (b) => b.kind === 'airsweeper', preload: preloadSweepers },
+    { draws: (b) => b.kind === 'mortar', preload: preloadMortars },
+    { draws: (b) => b.kind === 'clancastle', preload: preloadCastles },
+    { draws: (b) => b.kind === 'inferno', preload: preloadInfernos },
+    { draws: (b) => b.kind === 'darkdrill', preload: preloadDarkDrills },
+    { draws: (b) => b.kind === 'seekingairmine', preload: preloadSeekingMines },
+    { draws: (b) => b.npc === 'shrink-trap', preload: preloadShrinkTraps },
+    {
+      draws: (b) => b.kind === 'skeletontrap',
+      preload: (scene) => {
+        for (const level of SKELETON_ART_TIERS) {
+          const art = skeletonTrapArt(level);
+          scene.load.spritesheet(art.texture, art.asset, {
+            frameWidth: art.frameWidth,
+            frameHeight: art.frameHeight,
+            endFrame: art.frames - 1,
+          });
+          for (const mode of ['ground', 'air', 'spent'] as const)
+            scene.load.image(skeletonTrapTexture(mode, level), skeletonTrapAsset(mode, level));
+        }
+      },
+    },
+  ];
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
   width: MAP_SIZE * 64,
@@ -394,32 +430,16 @@ export class VillageScene extends Phaser.Scene {
     this.homeArt = prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
     // Santa, X-Bow and Cannon pages are heavy and rarely seen at boot; they
     // bundle in after startup (see loadHeavyArt) with fallback sprites covering.
-    preloadDarkStorages(this);
-    preloadGoblinBuildings(this);
-    preloadTeslas(this);
-    preloadBombTowers(this);
-    preloadWizardTowers(this);
-    preloadSweepers(this);
-    preloadMortars(this);
+    // So does every other defense family the home village does not own.
+    const home = this.model.buildings;
+    this.deferredFamilies = [];
+    for (const family of ART_FAMILIES)
+      if (home.some(family.draws)) family.preload(this);
+      else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     preloadGarrisonTroops(this);
-    preloadCastles(this);
-    preloadInfernos(this);
-    preloadDarkDrills(this);
     preloadVillageArcherTowers(this);
     preloadArcherTowerProjectiles(this);
-    preloadSeekingMines(this);
-    preloadShrinkTraps(this);
-    for (const level of SKELETON_ART_TIERS) {
-      const art = skeletonTrapArt(level);
-      this.load.spritesheet(art.texture, art.asset, {
-        frameWidth: art.frameWidth,
-        frameHeight: art.frameHeight,
-        endFrame: art.frames - 1,
-      });
-      for (const mode of ['ground', 'air', 'spent'] as const)
-        this.load.image(skeletonTrapTexture(mode, level), skeletonTrapAsset(mode, level));
-    }
     for (const mode of ['ground', 'air'] as const)
       this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
         frameWidth: 128,
@@ -814,18 +834,20 @@ export class VillageScene extends Phaser.Scene {
     // Lift the loading screen once the home village's native art is in, so the first frame
     // players see is the finished village rather than fallback sprites swapping to native art.
     // A slow or failed pack never holds the boot for long: its fallback sprite covers it.
+    // Rare, heavy art (Santa/XBow/Cannon) and the defense families the village does not own
+    // bundle in once the village is on screen instead of blocking the boot; images decode off
+    // the main thread, so the batch does not stall the first frames. Battles also trigger it
+    // (see update) so scout time covers the fetch.
     const reveal = () => {
       const loading = document.querySelector('#loading');
-      if (!loading || loading.classList.contains('loaded')) return;
-      loading.classList.add('loaded');
-      setTimeout(() => loading.remove(), 500);
+      if (loading && !loading.classList.contains('loaded')) {
+        loading.classList.add('loaded');
+        setTimeout(() => loading.remove(), 500);
+      }
+      void this.loadHeavyArt();
     };
     void this.homeArt.then(() => this.time.delayedCall(0, reveal));
     setTimeout(reveal, HOME_ART_WAIT_MS);
-    // Rare, heavy art (Santa/XBow/Cannon) bundles in after boot instead of
-    // blocking it; battles trigger it immediately (see update) so scout time
-    // covers the fetch.
-    setTimeout(() => void this.loadHeavyArt(), 1500);
     const onContextLost = (e: Event) => {
       e.preventDefault();
       this.paused = true;
@@ -907,6 +929,39 @@ export class VillageScene extends Phaser.Scene {
   }
   private heavyArt?: Promise<void>;
   heavyArtReady = false;
+  /** Defense families left out of the boot preload (see ART_FAMILIES). */
+  private deferredFamilies: (typeof ART_FAMILIES)[number][] = [];
+  /** Set once the deferred batch has finished, whether or not every file arrived. */
+  private deferredArtSettled = false;
+  /**
+   * True once the boot preload and the deferred art batch have both finished: from then on every
+   * family's art is loaded (or failed), as it was right after boot before families were deferred.
+   * Browser QA waits for this rather than `ready`.
+   */
+  get artSettled() {
+    return this.ready && this.deferredArtSettled;
+  }
+  private deferredBattle: { battle: unknown; needed: boolean } = { battle: null, needed: false };
+  /**
+   * True while the current battle, or the home village, draws a family whose deferred art is
+   * still loading. A battle holds its clock and input until it lands, as for late campaign art.
+   */
+  private deferredArtPending() {
+    if (this.deferredArtSettled || !this.deferredFamilies.length) return false;
+    const battle = this.model.battle;
+    if (!battle)
+      return this.model.buildings.some((b) => this.deferredFamilies.some((f) => f.draws(b)));
+    if (this.deferredBattle.battle !== battle)
+      this.deferredBattle = {
+        battle,
+        needed: battle.buildings.some((b) => this.deferredFamilies.some((f) => f.draws(b))),
+      };
+    return this.deferredBattle.needed;
+  }
+  /** Any art the current battle waits for: late campaign families or deferred defenses. */
+  private battleArtPending() {
+    return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
+  }
   /** Santa, X-Bow and Cannon pages are heavy and rarely needed at boot; they
    * bundle in afterwards while fallback sprites cover, then restyle. */
   loadHeavyArt(): Promise<void> {
@@ -929,6 +984,10 @@ export class VillageScene extends Phaser.Scene {
         this.xbowPresentation.bindAudio();
         this.santaPresentation.bindAudio();
         this.cannonPresentation.bindAudio();
+        // Deferred families registered their samples before the files existed.
+        for (const key of this.cache.binary.getKeys())
+          registerCachedSample(this, this.audio.samples, key);
+        this.deferredArtSettled = true;
         this.heavyArtReady = !failed;
         // Restyle: fallback sprites hide now that native bodies draw.
         this.lastRevision = -1;
@@ -946,6 +1005,7 @@ export class VillageScene extends Phaser.Scene {
         preloadSanta(this);
         preloadXbows(this);
         preloadCannons(this);
+        for (const family of this.deferredFamilies) family.preload(this);
         this.load.start();
       };
       // The late-campaign bundle may own the loader; wait for it first.
@@ -1159,7 +1219,7 @@ export class VillageScene extends Phaser.Scene {
       !b.finished &&
       !this.model.placement &&
       !this.model.activeSpell &&
-      !this.lateAssetsPending()
+      !this.battleArtPending()
     ) {
       // A deliberate press then drag paints troops; a quick flick still pans.
       const deliberate = performance.now() - (this.down?.t ?? 0) >= 160;
@@ -1203,7 +1263,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (this.model.battle) {
-      if (this.lateAssetsPending()) {
+      if (this.battleArtPending()) {
         this.model.notify(LOADING_LATE_ART);
         return;
       }
@@ -1498,6 +1558,7 @@ export class VillageScene extends Phaser.Scene {
   }
   sync() {
     if (this.lateAssetsPending()) void this.loadLateAssets();
+    if (this.deferredArtPending()) void this.loadHeavyArt();
     const reduced = this.model.state.settings.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -2626,7 +2687,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.lateAssetsReady}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -4338,8 +4399,9 @@ export class VillageScene extends Phaser.Scene {
         this.clampCamera();
       }
     }
-    // A battle waiting for late campaign art keeps its clock, replay and deployments on hold.
-    this.tick = this.lateAssetsPending() ? 0 : this.tick + dt;
+    // A battle waiting for late campaign or deferred art keeps its clock, replay and deployments
+    // on hold.
+    this.tick = this.battleArtPending() ? 0 : this.tick + dt;
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     while (this.tick >= TICK) {

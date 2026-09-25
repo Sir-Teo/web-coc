@@ -58,7 +58,7 @@ async function positions(page: Page, ids: number[]) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').tap();
   await expect(page.locator('#loading')).toBeHidden();
 });
@@ -100,7 +100,7 @@ test('touch rotates and places a whole row atomically, with ghost cleanup and sa
     ),
   ).toBe(true);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await positions(page, ids)).toEqual(preview);
   expect(await page.evaluate(() => window.__game.model.wallMove)).toBeNull();
 });

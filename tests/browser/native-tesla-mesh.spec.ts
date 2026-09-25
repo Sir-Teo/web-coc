@@ -8,7 +8,7 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async (reference) => {
     const { scene, game } = window.__game;
     const { default: graph } = await import('/reference/tesla/runtime.json');
@@ -162,7 +162,7 @@ test('isolated alpha composes once and Tesla buffers are released across idle, z
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
     scene.paused = true;

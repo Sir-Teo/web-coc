@@ -6,7 +6,7 @@ test('the phone shop places a full-size Cannon at the far corner and persists it
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const before = await page.evaluate(() => {
     const { model: m } = window.__game;
@@ -44,7 +44,7 @@ test('the phone shop places a full-size Cannon at the far corner and persists it
     )
     .toBe(43);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => {
       const m = window.__game.model,
@@ -89,7 +89,7 @@ test('an existing version-2 village expands once, discloses relocation and retai
     sessionStorage.setItem('native-grid-seeded', 'yes');
   }, old);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#toast')).toContainText('1 building moved to clear ground');
   const snapshot = () =>
     page.evaluate((id) => {
@@ -117,7 +117,7 @@ test('an existing version-2 village expands once, discloses relocation and retai
   expect([before.building.x, before.building.y]).not.toEqual([9, 10]);
   expect(before.ids).toEqual(old.buildings.map((b) => b.id));
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await snapshot()).toEqual(before);
   await expect(page.locator('#toast')).not.toContainText('building moved');
 });
@@ -126,7 +126,7 @@ test('an overlapping imported village is refused while the current village remai
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const original = await page.evaluate(() => structuredClone(window.__game.model.state));
   const invalid = structuredClone(original);

@@ -9,7 +9,7 @@ test('native Seeking Air Mine clips and Info match source pixels and survive con
 }) => {
   test.setTimeout(60000);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async (reference) => {
     const { scene, game } = window.__game;
     const { default: world } = await import('/reference/seeking-mine/runtime.json');

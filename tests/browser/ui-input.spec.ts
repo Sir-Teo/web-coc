@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('a cancelled shop drag leaves resources and buildings untouched', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async () => {
@@ -51,7 +51,7 @@ test('a cancelled shop drag leaves resources and buildings untouched', async ({ 
 
 test('a canvas press released onto a DOM control cancels the village gesture', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.mouse.move(700, 400);
   await page.mouse.down();
@@ -81,7 +81,7 @@ test('a queued redraw cannot detach a pressed Save button or interrupt an army c
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('.train-add').click();
   await page.locator('[data-action="army-presets"]').click();

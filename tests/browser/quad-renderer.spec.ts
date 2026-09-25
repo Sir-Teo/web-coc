@@ -5,7 +5,7 @@ for (const reference of ['triangle strip', 'single texture', 'restored context']
     page,
   }) => {
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     const result = await page.evaluate(async (reference) => {
       const { scene, game } = window.__game;

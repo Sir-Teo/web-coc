@@ -3,7 +3,7 @@ import { campArt } from '../../src/game/camp-art';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
 });
@@ -134,7 +134,7 @@ test('a paid camp upgrade updates Info and village art, then moves with the same
   ).toEqual({ width: appearance.width, originX: appearance.originX, originY: appearance.originY });
   await page.keyboard.press('Escape');
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => window.__game.scene.sprites.get(id).texture.key, before.id),
   ).toBe('camp-level-3');

@@ -3,7 +3,7 @@ import { useDevelopedVillage } from './developed-village';
 
 const boot = async (page: Page) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#loading')).toBeHidden();
 };
 const select = async (page: Page, kind: string) =>
@@ -79,7 +79,7 @@ for (const viewport of [
       };
     });
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await expect(page.locator('#loading')).toBeHidden();
     expect(
       await page.evaluate(() => {
@@ -229,7 +229,7 @@ test('imported duplicate factories retain spells while using one factory capacit
     await saveGame(m.state);
   });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#loading')).toBeHidden();
   await page.locator('.train-add').click();
   await expect(page.locator('[data-action="army-jump:spells"]')).toHaveAttribute(

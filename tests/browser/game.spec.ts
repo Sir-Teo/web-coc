@@ -2,7 +2,7 @@ import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.evaluate(() => {
     window.__game.audio?.enabled && (window.__game.audio.enabled = false);
   });
@@ -38,7 +38,7 @@ test('collects, upgrades, finishes and persists through reload', async ({ page }
   await expect(page.locator('.context-info > span')).toContainText('Level 3');
   await page.waitForTimeout(1200);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate(
       () => window.__game.model.state.buildings.find((b) => b.kind === 'townhall').level,
@@ -270,7 +270,7 @@ test('touch input selects buildings and opens menus', async ({ browser }) => {
   });
   const page = await context.newPage();
   await page.goto('http://localhost:5173');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.waitForTimeout(4500);
   const point = await page.evaluate(() => {
     const { model, scene } = window.__game;

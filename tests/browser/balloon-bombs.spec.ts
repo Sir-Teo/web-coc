@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();

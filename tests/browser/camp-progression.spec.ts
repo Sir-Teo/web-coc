@@ -3,7 +3,7 @@ import { initialSave, makeBuilding } from '../../src/game/model';
 
 const boot = async (page) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#loading')).toBeHidden();
 };
 
@@ -42,7 +42,7 @@ test('the camp Info panel shows native capacity, health, cost and time and prese
     before.id,
   );
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => {
       const m = window.__game.model;
@@ -107,7 +107,7 @@ test('legacy over-capacity armies remain visible, reload intact, and recover cap
   }, old);
   await boot(page);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => {
       const m = window.__game.model;

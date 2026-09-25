@@ -39,7 +39,7 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await page.clock.setFixedTime(new Date('2026-09-12T12:00:00Z'));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     const errors: string[] = [];
@@ -228,7 +228,7 @@ test('a frozen original shell, trail and smoke survive WebGL context restoration
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
     const { mortarBattle } = await import('/tests/fixtures/mortar-battle.ts');

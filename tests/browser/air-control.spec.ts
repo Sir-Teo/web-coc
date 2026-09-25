@@ -4,7 +4,7 @@ test.use({ hasTouch: true });
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
 });
@@ -120,7 +120,7 @@ for (const width of [1440, 390, 320])
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.waitForTimeout(800);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     expect(
       await page.evaluate(
         () => window.__game.model.state.buildings.find((b) => b.kind === 'airsweeper').direction,

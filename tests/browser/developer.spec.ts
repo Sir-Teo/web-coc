@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 async function boot(page: Page, enabled = true) {
   await page.goto(enabled ? '/?devtools=1' : '/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 }
 async function open(page: Page) {
@@ -22,7 +22,7 @@ test('tools are absent by default, opted in explicitly, and edits/checkpoints su
   await expect(page.locator('.developer-launch')).toHaveCount(0);
   expect(await page.evaluate(() => '__dev' in window)).toBe(false);
   await page.goto('/?devtools=1');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await open(page);
   const initial = await page.evaluate(() => window.__game.model.state.gold);
   await page.locator('.developer-panel input[name="gold"]').fill('9876543');
@@ -34,7 +34,7 @@ test('tools are absent by default, opted in explicitly, and edits/checkpoints su
   expect(await page.evaluate(() => window.__game.model.state.army.giant)).toBe(20);
   await page.waitForTimeout(1200);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await open(page);
   await expect(page.locator('.developer-panel input[name="gold"]')).toHaveValue('9876543');
   await page.getByRole('button', { name: 'Restore checkpoint', exact: true }).click();

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('all original Inferno samples decode in the browser audio engine', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const durations = await page.evaluate(async () => {
     const { INFERNO_SOUNDS, infernoSample } = await import('/src/game/inferno-sounds.ts');
     const context = new AudioContext();

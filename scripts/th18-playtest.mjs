@@ -14,7 +14,7 @@ for (const [name, type] of [
     if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`);
   });
   await page.goto(base + '/?devtools=1');
-  await page.waitForFunction(() => window.__game?.scene.ready, {}, { timeout: 120000 });
+  await page.waitForFunction(() => window.__game?.scene.artSettled, {}, { timeout: 120000 });
   await page.evaluate(async () => {
     const { makeBuilding } = await import('/src/game/model.ts');
     const { BUILDINGS, maxLevelFor } = await import('/src/game/data.ts');

@@ -7,7 +7,7 @@ for (const width of [390, 320])
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {
       const { wizardTowerVillage } = await import('/tests/fixtures/wizard-tower-battle.ts');
@@ -76,7 +76,7 @@ for (const width of [390, 320])
     });
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.evaluate(() => {
       const m = window.__game.model;
       m.selected = 6;

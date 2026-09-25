@@ -4,7 +4,7 @@ test('the tutorial Cannon retains its earlier image and distinct presentation', 
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const state = await page.evaluate(async () => {
     const { model: m, scene } = window.__game;
@@ -49,7 +49,7 @@ test('every original Cannon level retains its bounds, preview, scaffolds and rub
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
     const { cannonVillage } = await import('/tests/fixtures/cannon-battle.ts');

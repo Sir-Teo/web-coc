@@ -13,7 +13,7 @@ async function boot(page: Page) {
   page.on('pageerror', (error) => errors.push(error.message));
   await fs.mkdir(OUT, { recursive: true });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   // Late campaign art loads on first use; these checks render it directly.
   await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 for (const index of [58, 59, 60, 62])
   test(`original campaign village ${index} renders its Infernos`, async ({ page, browserName }) => {
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     const report = await page.evaluate(async (index) => {
       const { model, scene, game } = window.__game;

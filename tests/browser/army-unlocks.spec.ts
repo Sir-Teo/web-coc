@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
@@ -58,7 +58,7 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
   expect(await page.evaluate(() => window.__game.model.state.army.giant)).toBe(1);
   await expect(page.locator('[data-action="train:goblin"]')).toBeDisabled();
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('.train-add').click();
   // The first Giant leaves 27/30 spaces occupied. It stays unlocked, but a
   // second five-space Giant cannot fit until the player makes room.

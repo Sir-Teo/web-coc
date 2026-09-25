@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function boot(page: Page, smith = true) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async (smith) => {
@@ -91,7 +91,7 @@ for (const [width, height] of [
     ).toBe(true);
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('.train-add').click();
     await page.locator('[data-action="heroes"]').click();
     await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText(

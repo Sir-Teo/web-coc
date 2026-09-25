@@ -13,7 +13,7 @@ for (const witness of [bodyWitness, defenderWitness, effectWitness])
   }) => {
     test.setTimeout(90000);
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     const report = await page.evaluate(async (reference) => {
       const { scene, game } = window.__game;
       const { default: body } = await import('/reference/wizard-tower/body.json');

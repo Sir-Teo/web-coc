@@ -2,7 +2,7 @@ import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.evaluate(() => {
     window.__game.audio?.enabled && (window.__game.audio.enabled = false);
   });
@@ -196,7 +196,7 @@ test('first-run coaching walks the loop, rings its target, and can be skipped', 
   await expect(banner).toHaveCount(0);
   await page.waitForTimeout(1500);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('.coach-banner')).toHaveCount(0);
 });
 

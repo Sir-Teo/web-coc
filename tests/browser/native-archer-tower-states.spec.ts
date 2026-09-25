@@ -6,7 +6,7 @@ for (const first of [1, 8, 15])
   }) => {
     await page.setViewportSize({ width: 1100, height: 780 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     const result = await page.evaluate(async (first) => {
       const { scene, game } = window.__game;

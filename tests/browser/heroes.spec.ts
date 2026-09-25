@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function boot(page: Page) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 }
 async function unlock(page: Page, th = 7) {
@@ -93,7 +93,7 @@ test('hero upgrade charges once, persists through reload, and finishes through t
   expect(await page.evaluate(() => window.__game.model.state.dark)).toBe(5000);
   await page.waitForTimeout(400);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await heroes(page);
   await expect(page.locator('[data-hero-timer]')).toBeVisible();
   await page.locator('[data-action="hero-finish:king"]').click();
@@ -196,6 +196,6 @@ test('dark elixir collection updates its own HUD counter and survives reload', a
   });
   await page.waitForTimeout(400);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('.resource-bar [data-resource="dark"]')).toHaveText('20');
 });

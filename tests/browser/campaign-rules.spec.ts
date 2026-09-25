@@ -14,7 +14,7 @@ for (const viewport of [
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await useDevelopedVillage(page);
     await page.locator('[data-action="skip-tutorial"]').click();
@@ -93,7 +93,7 @@ for (const viewport of [
     await page.locator('[data-action="home"]').click();
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     expect(await page.evaluate(() => window.__game.model.state.nativeCampaign)).toEqual(
       saved.inventory,
@@ -120,7 +120,7 @@ test('campaigns depleted of loot stay attackable and show a clean zero-loot resu
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async () => {

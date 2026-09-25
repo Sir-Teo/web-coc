@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
@@ -32,7 +32,7 @@ test('new troop portraits, tactical details, training and reload persistence', a
   await page.waitForTimeout(350);
   await page.screenshot({ path: 'output/playtest/specialist-army-desktop.png' });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect.poll(() => page.evaluate(() => window.__game.model.state.army.wallbreaker)).toBe(2);
   expect(errors).toEqual([]);
 });

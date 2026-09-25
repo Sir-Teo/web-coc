@@ -10,7 +10,7 @@ for (const width of [1440, 390])
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {
@@ -177,7 +177,7 @@ for (const width of [390, 320])
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {

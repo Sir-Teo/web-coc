@@ -5,7 +5,7 @@ test('original Drill state layers render across all eleven tiers', async ({
 }) => {
   await page.setViewportSize({ width: 1250, height: 1050 });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const result = await page.evaluate(async () => {
     const { scene, game } = window.__game;

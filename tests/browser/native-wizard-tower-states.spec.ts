@@ -5,7 +5,7 @@ test('every original Wizard Tower level retains its bounds, preview, scaffolds a
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
     const { wizardTowerVillage } = await import('/tests/fixtures/wizard-tower-battle.ts');

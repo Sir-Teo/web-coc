@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
@@ -95,7 +95,7 @@ for (const [kind, cost, upgrade, seconds, th, damage, nextDamage] of [
     }, state.id);
     expect(end).toMatchObject({ duration: seconds * 1000, gold: 0, busy: 1 });
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     expect(
       await page.evaluate(
         (id) => window.__game.model.state.buildings.find((b) => b.id === id).upgradeEnd,

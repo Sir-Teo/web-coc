@@ -9,7 +9,7 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
 }) => {
   test.setTimeout(90000);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async (reference) => {
     const { scene, game } = window.__game;
     const { default: world } = await import('/reference/air-sweeper/runtime.json');

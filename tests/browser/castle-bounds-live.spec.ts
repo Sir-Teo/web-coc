@@ -4,7 +4,7 @@ test('Castle selection follows each original tier and construction state', async
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const results = await page.evaluate(async () => {
     const { scene } = window.__game;

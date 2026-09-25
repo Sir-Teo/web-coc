@@ -4,7 +4,7 @@ async function setup(page: Page) {
   // Keep the independent home-economy timestamp stable during multi-turn replay comparisons.
   await page.clock.setFixedTime(new Date('2026-09-12T12:00:00Z'));
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(async () => {

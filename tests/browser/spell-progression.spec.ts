@@ -3,7 +3,7 @@ import { useDevelopedVillage } from './developed-village';
 
 async function boot(page: Page) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#loading')).toBeHidden();
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
@@ -58,7 +58,7 @@ for (const viewport of [
     });
     expect(paid.elixir).toBe(1825000);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await expect(page.locator('#loading')).toBeHidden();
     expect(
       await page.evaluate(() => {

@@ -4,7 +4,7 @@ test('exhausted Inferno restores empty native artwork and silences its beams', a
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const active = await page.evaluate(async () => {
     const { model, scene } = window.__game;
@@ -96,7 +96,7 @@ test('exhausted Inferno restores empty native artwork and silences its beams', a
 });
 test('explicit empty setup renders before the first combat tick', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
     const { model, scene, game } = window.__game;

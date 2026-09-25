@@ -6,7 +6,7 @@ test('all seventeen live Wizard Tower assemblies match their independent origina
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');

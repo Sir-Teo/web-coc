@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function boot(page: Page) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 }
 async function placeBomb(page: Page) {
@@ -77,7 +77,7 @@ test('build, inspect, upgrade and reload a trap through the village controls', a
   }, id);
   await page.waitForTimeout(300);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate(
       (id) => window.__game.model.state.buildings.find((b) => b.id === id)?.level,

@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.use({ hasTouch: true });
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
 });
@@ -76,7 +76,7 @@ for (const width of [1440, 390, 320])
     ).toEqual([39500, 79200, 1, false]);
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await panel(page);
     await expect(page.locator('[data-hero-timer]')).toBeVisible();
     await page.locator('[data-action="hero-finish:king"]').scrollIntoViewIfNeeded();

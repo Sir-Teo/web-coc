@@ -8,7 +8,7 @@ test('native Goblin flags and foundations match source pixels and survive contex
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async (reference) => {
     const { scene, game } = window.__game;
     const { default: graph } = await import('/reference/goblin-buildings/runtime.json');

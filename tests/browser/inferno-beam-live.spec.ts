@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('live Inferno beams follow six targets and clear on freeze', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
     const { model, scene, game } = window.__game;

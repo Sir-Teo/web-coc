@@ -7,7 +7,7 @@ for (const width of [390, 320])
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {
       const { makeBuilding } = await import('/src/game/model.ts');

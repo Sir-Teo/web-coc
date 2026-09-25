@@ -8,7 +8,7 @@ test('all 56 live Air Sweeper assemblies match their independent original-source
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');

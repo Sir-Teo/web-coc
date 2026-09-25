@@ -30,7 +30,7 @@ for (const witness of witnesses)
     test.setTimeout(90000);
     await page.setViewportSize({ width: 1250, height: Math.ceil(witness.height / 2) + 50 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     const report = await page.evaluate(async (reference) => {
       const { scene, game } = window.__game;
       const { default: world } = await import('/reference/mortar/runtime.json');

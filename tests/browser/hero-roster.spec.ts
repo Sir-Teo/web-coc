@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function boot(page: Page) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 }
 

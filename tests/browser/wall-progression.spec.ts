@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
 });
@@ -45,7 +45,7 @@ test('the wall Info panel shows destination health and cost, then persists the u
     }, id),
   ).toEqual({ gold: 0, hp: 400, maxHp: 400, level: 3, timer: false });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => {
       const m = window.__game.model,
@@ -125,7 +125,7 @@ test('an empty treasury can place a free wall run up to the count limit and relo
   expect(placed.walls).toHaveLength(2);
   for (const wall of placed.walls) expect(wall).toMatchObject({ hp: 100, timer: false });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await snapshot()).toEqual(placed);
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Defenses"]').click();
@@ -167,7 +167,7 @@ test('TH5 can select and instantly upgrade level 4 walls using only elixir', asy
   });
   await upgrade.click();
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((ids) => {
       const m = window.__game.model;

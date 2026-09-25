@@ -35,7 +35,7 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await page.clock.setFixedTime(new Date('2026-09-12T12:00:00Z'));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));

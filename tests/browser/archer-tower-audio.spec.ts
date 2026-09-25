@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('all original Archer Tower samples decode in the browser audio engine', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const durations = await page.evaluate(async () => {
     const { ARCHER_TOWER_SOUNDS, archerTowerSample } =
       await import('/src/game/archer-tower-sounds.ts');
@@ -23,7 +23,7 @@ test('all original Archer Tower samples decode in the browser audio engine', asy
 
 test('handling audio survives reduced motion and cancels pending events', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { scene, model } = window.__game;
     const { iso } = await import('/src/game/scene.ts');
@@ -76,7 +76,7 @@ test('model placement uses native cues without duplicate generic audio', async (
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   const result = await page.evaluate(async () => {
@@ -124,7 +124,7 @@ test('model placement uses native cues without duplicate generic audio', async (
 
 test('native release audio overlaps, deduplicates and stops on pause', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { SampleAudio } = await import('/src/game/sample-audio.ts');
     const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
@@ -168,7 +168,7 @@ test('native release audio overlaps, deduplicates and stops on pause', async ({ 
 
 test('recorded tower impacts use native cues without synthetic hit audio', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { scene } = window.__game;
     const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
@@ -63,7 +63,7 @@ test('named quick armies save, safely render names, and restore after reload', a
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'output/playtest/quick-armies-desktop.png' });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('.train-add').click();
   await page.locator('[data-action="clear-army"]').click();
   await page.locator('[data-action="army-presets"]').click();
@@ -129,7 +129,7 @@ test('practice uses real pointer deployment, preserves the army, and resets on r
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/battle-log-desktop.png' });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="battle-log"]').click();
   await expect(page.locator('.raid-record')).toHaveCount(1);
   expect(errors).toEqual([]);

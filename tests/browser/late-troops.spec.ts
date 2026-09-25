@@ -3,7 +3,7 @@ import { useDevelopedVillage } from './developed-village';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();

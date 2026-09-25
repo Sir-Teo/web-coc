@@ -23,7 +23,7 @@ async function selectWall(page: Page) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
   await page.evaluate(() => {
@@ -63,7 +63,7 @@ test('a touched wall selects its connected row, upgrades it instantly and surviv
   expect(after.busy).toBe(before.busy);
   expect(after.walls).toEqual(Array(5).fill({ level: 3, timer: false }));
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate(
       (ids) =>

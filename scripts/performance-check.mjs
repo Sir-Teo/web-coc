@@ -21,7 +21,7 @@ if (metal && process.platform !== 'darwin') throw Error('--metal requires macOS.
 const browser = await chromium.launch(metal ? { args: ['--use-angle=metal'] } : {});
 const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: density });
 await page.goto('http://localhost:5173');
-await page.waitForFunction(() => window.__game?.scene.ready);
+await page.waitForFunction(() => window.__game?.scene.artSettled);
 await page.locator('[data-action="skip-tutorial"]').click();
 const renderer = await page.evaluate(() => {
   const gl = window.__game.game.renderer.gl;

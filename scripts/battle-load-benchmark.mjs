@@ -43,7 +43,7 @@ page.on('pageerror', (e) =>
   ),
 );
 await page.goto(base + '/?devtools=1');
-await page.waitForFunction(() => window.__game?.scene.ready, {}, { timeout: 180000 });
+await page.waitForFunction(() => window.__game?.scene.artSettled, {}, { timeout: 180000 });
 await page
   .locator('[data-action="skip-tutorial"]')
   .click({ timeout: 5000 })

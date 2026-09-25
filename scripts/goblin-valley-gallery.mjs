@@ -20,7 +20,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 await page.goto(url);
-await page.waitForFunction(() => window.__game?.scene.ready, null, { timeout: 120000 });
+await page.waitForFunction(() => window.__game?.scene.artSettled, null, { timeout: 120000 });
 await page.locator('#loading').waitFor({ state: 'detached', timeout: 120000 });
 // Keep the battlefield visible after a staged battle resolves.
 await page.addStyleTag({ content: '.result-backdrop { display: none !important; }' });

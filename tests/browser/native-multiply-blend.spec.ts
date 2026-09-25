@@ -5,7 +5,7 @@ test('multiply groups preserve source-over alpha on transparent and colored back
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const report = await page.evaluate(async () => {

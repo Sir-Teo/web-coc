@@ -13,7 +13,7 @@ for (const [width, height] of [
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {
@@ -60,7 +60,7 @@ for (const [width, height] of [
     await page.screenshot({ path: `output/playtest/dark-loot-result-${width}-${browserName}.png` });
     await page.waitForTimeout(1100);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     expect(
       await page.evaluate(() => ({
         dark: window.__game.model.state.dark,

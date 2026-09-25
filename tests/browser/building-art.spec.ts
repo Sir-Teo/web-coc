@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
 });
@@ -139,7 +139,7 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
   await page.mouse.click(destination.x, destination.y);
   await expect.poll(() => page.evaluate(() => window.__game.model.moving)).toBeNull();
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await appearance(page, original.id)).toEqual(placed);
   expect(
     await page.evaluate((id) => {

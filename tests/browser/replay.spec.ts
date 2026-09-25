@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
@@ -42,7 +42,7 @@ for (const mobile of [false, true])
     await expect(page.getByRole('button', { name: 'Watch replay' })).toBeVisible();
     await page.locator('[data-action="home"]').click();
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="battle-log"]').click();
     const baseline = await page.evaluate(() => {
       const s = window.__game.model.state;

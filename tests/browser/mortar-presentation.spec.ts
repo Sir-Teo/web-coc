@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function prepare(page, reduced = false) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.setViewportSize({ width: 1000, height: 720 });
   await page.evaluate((reduced) => {

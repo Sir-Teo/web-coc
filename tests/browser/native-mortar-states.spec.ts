@@ -5,7 +5,7 @@ test('every original Mortar level retains its bounds, preview, scaffolds and rub
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
     const { mortarVillage } = await import('/tests/fixtures/mortar-battle.ts');

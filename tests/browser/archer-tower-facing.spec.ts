@@ -6,7 +6,7 @@ for (const action of ['idle', 'attack'] as const)
   }) => {
     await page.setViewportSize({ width: 900, height: 950 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     const report = await page.evaluate(async (action) => {
       const { scene, game } = window.__game;

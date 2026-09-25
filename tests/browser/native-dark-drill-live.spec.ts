@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 test('live native Drills render and use source selection bounds', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {

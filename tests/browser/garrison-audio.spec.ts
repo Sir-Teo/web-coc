@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('decodes every original garrison sample and verifies delivery bytes', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const reports = await page.evaluate(async () => {
     const { GARRISON_SOUNDS } = await import('/src/game/garrison-sounds.ts');
     const context = new AudioContext();

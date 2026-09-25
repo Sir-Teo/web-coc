@@ -13,7 +13,7 @@ for (const viewport of [
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.evaluate(async () => {
@@ -84,7 +84,7 @@ test('native flag time, retained meshes, pointer selection and destruction follo
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   const initial = await page.evaluate(async () => {

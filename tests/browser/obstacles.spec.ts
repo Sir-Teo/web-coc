@@ -25,7 +25,7 @@ async function selectTree(page: Page, id: number) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
 });
 
@@ -50,7 +50,7 @@ test('phone obstacle removal works with busy builders, cancels, reloads and free
   expect(await page.evaluate(() => window.__game.model.state.elixir)).toBe(setup.elixir);
   await page.locator(`[data-action="obstacle-remove:${setup.id}"]`).click();
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await selectTree(page, setup.id);
   await expect(page.locator('[data-obstacle-time]')).toBeVisible();
   await expect(page.locator(`[data-action="obstacle-finish:${setup.id}"]`)).toBeInViewport({
@@ -86,7 +86,7 @@ test('phone obstacle removal works with busy builders, cancels, reloads and free
     ),
   ).toBe(true);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => window.__game.model.obstacles.some((o) => o.id === id), setup.id),
   ).toBe(false);
@@ -138,7 +138,7 @@ test('offline regrowth renders a persistent selectable tree with saved identity 
     return { id: g.nextId, count: m.obstacles.length };
   });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect
     .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id))
     .toBe(true);
@@ -168,7 +168,7 @@ test('offline regrowth renders a persistent selectable tree with saved identity 
   ).toBeVisible();
   await page.screenshot({ path: `output/playtest/tree-regrowth-${test.info().project.name}.png` });
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate(
       (id) => ({
@@ -185,7 +185,7 @@ test('offline regrowth renders a persistent selectable tree with saved identity 
     .poll(() => page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id))
     .toBe(false);
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(
     await page.evaluate((id) => window.__game.model.obstacles.some((o) => o.id === id), setup.id),
   ).toBe(false);

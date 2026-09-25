@@ -7,7 +7,7 @@ for (const width of [1440, 390])
     test.setTimeout(120000);
     await page.setViewportSize({ width, height: width === 1440 ? 960 : 844 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     for (let level = 1; level <= 21; level++) {

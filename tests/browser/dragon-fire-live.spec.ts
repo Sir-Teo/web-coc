@@ -7,7 +7,7 @@ test('renders original Dragon fire in all six body orientations and clears it on
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.evaluate(async () => {
     const { scene } = window.__game;

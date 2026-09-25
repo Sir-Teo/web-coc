@@ -21,7 +21,7 @@ test('late campaign art loads on first use and holds deployment until it renders
     await route.continue();
   });
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
   expect(requested).toEqual([]);

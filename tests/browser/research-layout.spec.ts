@@ -39,7 +39,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await expect(page.locator('#loading')).toBeHidden();
     await useDevelopedVillage(page);
     await page.locator('[data-action="skip-tutorial"]').click();

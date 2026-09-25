@@ -4,7 +4,7 @@ test('tower arrow graphics follow physical turns and retire with their projectil
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const result = await page.evaluate(async () => {
     const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');

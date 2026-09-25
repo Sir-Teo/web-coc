@@ -10,7 +10,7 @@ for (const [kind, width, cost] of [
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
     const before = await page.evaluate(() => {
       const m = window.__game.model;
@@ -59,7 +59,7 @@ for (const [kind, width, cost] of [
       )
       .toBe(42);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     expect(
       await page.evaluate((id) => {
         const { model: m, scene } = window.__game;
@@ -96,7 +96,7 @@ test('a version-3 village migrates camps and the Hero Hall once and preserves pa
     sessionStorage.setItem('army-footprint-seeded', 'yes');
   }, old);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await expect(page.locator('#toast')).toContainText('2 buildings moved to clear ground');
   const snapshot = () =>
     page.evaluate(() => {
@@ -121,7 +121,7 @@ test('a version-3 village migrates camps and the Hero Hall once and preserves pa
     expect({ ...b, x: original.x, y: original.y }).toEqual(original);
   }
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await snapshot()).toEqual(migrated);
   await expect(page.locator('#toast')).not.toContainText('buildings moved');
   await page.locator('#import-file').setInputFiles({

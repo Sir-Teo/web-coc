@@ -11,7 +11,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await useDevelopedVillage(page);
     await page.locator('[data-action="skip-tutorial"]').click();
@@ -46,7 +46,7 @@ for (const viewport of [
     expect(before.remaining).toBeGreaterThan(1795000);
     expect(before.remaining).toBeLessThanOrEqual(1800000);
     await page.reload();
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('.train-add').click();
     await page.locator('[data-action="research"]').click();

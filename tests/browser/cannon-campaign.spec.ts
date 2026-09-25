@@ -10,7 +10,7 @@ for (const width of [1440, 390])
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto('/');
-    await page.waitForFunction(() => window.__game?.scene.ready);
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('#loading').waitFor({ state: 'detached' });
     await page.locator('[data-action="skip-tutorial"]').click();
     await page.evaluate(async () => {
@@ -94,7 +94,7 @@ for (const width of [1440, 390])
 
 test('the Cannon Info card enforces the original Town Hall two requirement', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   const id = await page.evaluate(() => {
     const { model: m, scene } = window.__game;

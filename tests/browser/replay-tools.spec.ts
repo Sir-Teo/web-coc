@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(() => {
@@ -200,7 +200,7 @@ test('downloads a recording, opens it without replacing the village, and rejects
   await upload(bytes);
   await expect(page.locator('.battle-enemy')).toContainText('SHARED REPLAY');
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await page.evaluate(() => window.__game.model.replay)).toBe(null);
   await page.locator('[data-action="battle-log"]').click();
   await expect(page.locator('.raid-record')).toHaveCount(1);

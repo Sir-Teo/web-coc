@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.evaluate(() => {
@@ -42,7 +42,7 @@ test('upgrading facilities keep phone army editing and saved presets available',
   await page.locator('#preset-name-0').fill('Ready during upgrades');
   await page.locator('[data-action="preset-save:0"]').click();
   await page.reload();
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('.train-add').click();
   await page.locator('[data-action="clear-army"]').click();
   await page.locator('[data-action="army-presets"]').click();

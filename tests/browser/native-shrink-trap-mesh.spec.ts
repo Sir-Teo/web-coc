@@ -9,7 +9,7 @@ test('native Shrink Trap clips and original particles match source pixels and su
 }) => {
   test.setTimeout(60000);
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async (reference) => {
     const { scene, game } = window.__game;
     const { default: world } = await import('/reference/shrink-trap/runtime.json');

@@ -5,7 +5,7 @@ test('screen groups preserve alpha and apply clamped colors after child composit
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const report = await page.evaluate(async () => {

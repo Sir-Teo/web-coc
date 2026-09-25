@@ -13,7 +13,7 @@ type Stage = {
 /** Stage a complete ungated late village and deploy real troops near one anchor tower. */
 async function stage(page: Page, { index, army, anchor }: Stage) {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   // Late campaign art loads on first use; these checks render it directly.
   await page.evaluate(() => window.__game.scene.loadLateAssets());
   await page.locator('#loading').waitFor({ state: 'detached' });

@@ -3,7 +3,7 @@ test('all original Dark Elixir Drill samples decode in the browser audio engine'
   page,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const durations = await page.evaluate(async () => {
     const { DARK_DRILL_SOUNDS, darkDrillSample } = await import('/src/game/dark-drill-sounds.ts');
     const context = new AudioContext();
@@ -24,7 +24,7 @@ test('all original Dark Elixir Drill samples decode in the browser audio engine'
 
 test('handling audio survives reduced motion and cancels pending events', async ({ page }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { scene, model } = window.__game;
     const { iso } = await import('/src/game/scene.ts');
@@ -74,7 +74,7 @@ test('destruction views reconstruct after seeking and retire without stale parti
   browserName,
 }) => {
   await page.goto('/');
-  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   await page.locator('[data-action="skip-tutorial"]').click();
   const result = await page.evaluate(async () => {
