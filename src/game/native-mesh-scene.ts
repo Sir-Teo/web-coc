@@ -110,6 +110,72 @@ function leafRegion(vertices: readonly number[], pageWidth: number, pageHeight: 
  * keyed by page, region and byte-quantized color, so animated colors reuse a bounded set of small
  * textures instead of re-baking whole 8-64 MB pages. The caller remaps UVs into the region.
  */
+/**
+ * CPU copies of the source pages bakes read, least recently used first. Reading a region back
+ * from a canvas makes the browser decode the whole source image again (a software canvas
+ * rasterizes lazily), so every bake of a page paid for decoding all of it. Pages over PAGE_LIMIT
+ * are cropped asynchronously instead (regionCrop).
+ */
+const SOURCE_PIXELS = new Map<string, { image: CanvasImageSource; data: ImageData }>();
+const SOURCE_BUDGET = 32 << 20;
+const PAGE_LIMIT = 4 << 20;
+let sourceBytes = 0;
+function sourcePixels(key: string, image: HTMLImageElement): ImageData | undefined {
+  const cached = SOURCE_PIXELS.get(key);
+  if (cached && cached.image === image) {
+    SOURCE_PIXELS.delete(key);
+    SOURCE_PIXELS.set(key, cached);
+    return cached.data;
+  }
+  if (cached) {
+    SOURCE_PIXELS.delete(key);
+    sourceBytes -= cached.data.data.length;
+  }
+  const bytes = image.width * image.height * 4;
+  if (!bytes || bytes > PAGE_LIMIT) return undefined;
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return undefined;
+  ctx.drawImage(image, 0, 0);
+  const data = ctx.getImageData(0, 0, image.width, image.height);
+  SOURCE_PIXELS.set(key, { image, data });
+  sourceBytes += bytes;
+  for (const [oldest, entry] of SOURCE_PIXELS) {
+    if (sourceBytes <= SOURCE_BUDGET) break;
+    SOURCE_PIXELS.delete(oldest);
+    sourceBytes -= entry.data.data.length;
+  }
+  return data;
+}
+/** Region crops of large pages by page and region: a bitmap once decoded, null while pending. */
+const REGION_CROPS = new Map<string, ImageBitmap | null>();
+const MAX_REGION_CROPS = 64;
+function regionCrop(key: string, image: HTMLImageElement, region: TintRegion) {
+  const cropKey = `${key}:${region.x},${region.y},${region.width},${region.height}`;
+  const crop = REGION_CROPS.get(cropKey);
+  if (crop) return crop;
+  if (crop === null || typeof createImageBitmap !== 'function') return undefined;
+  REGION_CROPS.set(cropKey, null);
+  // From a Blob the browser decodes off the main thread; from the <img> itself Chrome decodes
+  // synchronously. The file is already in the HTTP cache.
+  fetch(image.currentSrc || image.src)
+    .then((response) => response.blob())
+    .then((blob) => createImageBitmap(blob, region.x, region.y, region.width, region.height))
+    .then(
+      (bitmap) => {
+        REGION_CROPS.set(cropKey, bitmap);
+        for (const [oldest, entry] of REGION_CROPS) {
+          if (REGION_CROPS.size <= MAX_REGION_CROPS) break;
+          REGION_CROPS.delete(oldest);
+          entry?.close();
+        }
+      },
+      () => REGION_CROPS.delete(cropKey),
+    );
+  return undefined;
+}
 function tintedTexture(
   scene: Phaser.Scene,
   original: string,
@@ -158,6 +224,15 @@ function tintedTexture(
   }
   if (!bake) return undefined;
   const started = performance.now();
+  const source = sourcePixels(original, image);
+  // A page too large to keep a CPU copy of is cropped off the main thread first: a synchronous
+  // read-back decodes the whole page (700 ms for a 2552x4056 Cannon page under a phone-class
+  // CPU). Until the crop is ready the leaf clamps on the GPU, as it does past the bake budget.
+  let crop: ImageBitmap | undefined;
+  if (!source) {
+    crop = regionCrop(original, image, region);
+    if (!crop) return undefined;
+  }
   tintTextures = scene.textures;
   nativeSceneStats.bakes++;
   const canvas = document.createElement('canvas');
@@ -165,18 +240,19 @@ function tintedTexture(
   canvas.height = region.height;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw Error('Native color transform needs a 2D canvas');
-  ctx.drawImage(
-    image,
-    region.x,
-    region.y,
-    region.width,
-    region.height,
-    0,
-    0,
-    region.width,
-    region.height,
-  );
-  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let pixels: ImageData;
+  if (source) {
+    // Crop the cached page: the same texels a region draw and read-back would return.
+    pixels = ctx.createImageData(region.width, region.height);
+    const rowBytes = region.width * 4;
+    for (let row = 0; row < region.height; row++) {
+      const from = ((region.y + row) * source.width + region.x) * 4;
+      pixels.data.set(source.data.subarray(from, from + rowBytes), row * rowBytes);
+    }
+  } else {
+    ctx.drawImage(crop!, 0, 0);
+    pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
   const data = pixels.data;
   const mul = [mul0, mul1, mul2],
     add = [add0 * 255, add1 * 255, add2 * 255];
