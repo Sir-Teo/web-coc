@@ -34,7 +34,14 @@ export class ArcherTowerProjectiles {
         const pose = archerTowerProjectilePose(p, elapsed, iso, targetHeight(p));
         wanted.add(p.id);
         let view = this.views.get(p.id);
-        if (!view) this.views.set(p.id, (view = new NativeSceneView(this.scene, PREFIX)));
+        if (!view) {
+          view = new NativeSceneView(this.scene, PREFIX);
+          // Every arrow is a new view: its trail colors (within 0..1) ride on the drawn buffer
+          // as a GPU tint. The float filter pass resized a pooled drawing context per arrow,
+          // and each resize created a framebuffer whose completeness check stalls the GPU.
+          view.gpuGroupColor = true;
+          this.views.set(p.id, view);
+        }
         view.render(pose.poses, pose.x, pose.y, 8000);
         for (const object of view.objects) {
           const data = object.getData('nativeTowerArrow');
