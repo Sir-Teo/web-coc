@@ -224,6 +224,17 @@ const clock = (seconds: number) => {
 };
 const button = (action: string, label: string, cls = 'game-btn green', extra = '') =>
   `<button class="${cls}" data-action="${action}" ${extra}>${label}</button>`;
+/**
+ * One Army drawer action. Narrow screens show only the icon (see .modern-army-actions in the
+ * stylesheet) so the troop catalog keeps the width; the label stays for tooltips and readers.
+ */
+const armyAction = (action: string, glyph: string, label: string, tone: string, disabled = false) =>
+  button(
+    action,
+    `${icon(glyph, 17)}<span class="army-action-label">${label}</span>`,
+    `game-btn ${tone}`,
+    `title="${label}" aria-label="${label}"${disabled ? ' disabled' : ''}`,
+  );
 const html = (value: string) =>
   value.replace(
     /[&<>"']/g,
@@ -2652,7 +2663,7 @@ export class HUD {
     return {
       body: '<div class="drawer-body army-strip">',
       items: [
-        `<div class="army-actions modern-army-actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${button('heroes', `${icon('ShieldCheck', 17)} Heroes`, 'game-btn blue')}${button('progression', `${icon('Layers', 17)} Progression`, 'game-btn stone')}${button('army-presets', `${icon('Save', 17)} Quick armies`, 'game-btn green')}${button('retrain', `${icon('RotateCcw', 17)} Last army`, 'game-btn stone', m.state.lastArmy ? '' : 'disabled')}${button('research', `${icon('FlaskConical', 17)} Research`, 'game-btn blue')}${button('practice', `${icon('ShieldCheck', 17)} Practice`, 'game-btn blue', m.armyReady ? '' : 'disabled')}${button('clear-army', `${icon('X', 17)} Clear army`, 'game-btn stone', m.armySize || m.siegeCount || m.spellCount ? '' : 'disabled')}</div>`,
+        `<div class="army-actions modern-army-actions" role="toolbar" aria-label="Army actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${armyAction('heroes', 'ShieldCheck', 'Heroes', 'blue')}${armyAction('progression', 'Layers', 'Progression', 'stone')}${armyAction('army-presets', 'Save', 'Quick armies', 'green')}${armyAction('retrain', 'RotateCcw', 'Last army', 'stone', !m.state.lastArmy)}${armyAction('research', 'FlaskConical', 'Research', 'blue')}${armyAction('practice', 'Swords', 'Practice', 'blue', !m.armyReady)}${armyAction('clear-army', 'X', 'Clear army', 'stone', !(m.armySize || m.siegeCount || m.spellCount))}</div>`,
         ...TROOP_ORDER.map(troopTile),
         '<span class="tray-divider tall"></span>',
         ...SPELL_ORDER.map(spellTile),

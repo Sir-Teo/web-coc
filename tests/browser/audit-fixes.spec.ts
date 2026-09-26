@@ -322,3 +322,21 @@ test('an idle home village lowers its frame rate until the player acts', async (
   await page.waitForTimeout(7000);
   expect(await page.evaluate(() => window.__game.game.loop.fpsLimit)).toBe(0);
 });
+
+test('on a phone the Army drawer gives the troop catalog most of its width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.train-add').click();
+  const layout = await page.evaluate(() => {
+    const width = (s: string) => document.querySelector(s)!.getBoundingClientRect().width;
+    const sheet = width('.drawer-sheet');
+    const tiles = [...document.querySelectorAll('.army-tile')].filter((tile) => {
+      const box = tile.getBoundingClientRect();
+      return box.left >= 0 && box.right <= innerWidth;
+    }).length;
+    return { share: width('.army-actions') / sheet, tiles };
+  });
+  expect(layout.share).toBeLessThan(0.3);
+  expect(layout.tiles).toBeGreaterThanOrEqual(2);
+  // Icon-only actions keep their names.
+  await expect(page.getByRole('button', { name: 'Quick armies' })).toBeVisible();
+});

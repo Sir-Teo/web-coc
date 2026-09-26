@@ -4352,9 +4352,26 @@ h3 {
   .campaign-summary .game-btn {
     flex-basis: 100%;
   }
+  /* Icon-only actions: the troop catalog keeps most of a phone's width. */
   .modern-army-actions {
-    width: 260px;
-    min-width: 260px;
+    width: 104px;
+    min-width: 104px;
+    gap: 5px;
+  }
+  .modern-army-actions .army-ready-label {
+    display: none;
+  }
+  .modern-army-actions .game-btn {
+    padding: 8px 0;
+    justify-content: center;
+  }
+  .modern-army-actions .army-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
