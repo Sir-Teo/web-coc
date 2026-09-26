@@ -160,7 +160,9 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
     !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']])) ||
-    !(['built', 'trained'] as const).every((k) => s.stats[k] === undefined || finite(s.stats[k]))
+    !(['built', 'trained', 'wins'] as const).every(
+      (k) => s.stats[k] === undefined || finite(s.stats[k]),
+    )
   )
     return false;
   if (

@@ -3077,7 +3077,8 @@ export class HUD {
     const s = this.model.state;
     return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div>${this.starBonusCard()}<div class="profile-stats">${(
       [
-        ['Swords', 'Raids won', n(s.stats.raids)],
+        ['Swords', 'Raids won', n(s.stats.wins ?? 0)],
+        ['Flag', 'Raids completed', n(s.stats.raids)],
         ['Castle', 'Buildings destroyed', n(s.stats.destroyed)],
         ['Coins', 'Resources collected', n(s.stats.collected)],
         [

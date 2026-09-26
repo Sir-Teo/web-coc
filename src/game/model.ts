@@ -520,7 +520,16 @@ export interface Save {
   armyPresets?: (ArmyPreset | null)[];
   raidLog?: RaidRecord[];
   settings: { sound: boolean; music: boolean; reducedMotion: boolean };
-  stats: { raids: number; destroyed: number; collected: number; built?: number; trained?: number };
+  stats: {
+    /** Campaign raids completed, whatever their result. */
+    raids: number;
+    /** Campaign raids that earned at least one star. */
+    wins?: number;
+    destroyed: number;
+    collected: number;
+    built?: number;
+    trained?: number;
+  };
 }
 export interface Unit {
   id: number;
@@ -838,6 +847,12 @@ export class GameModel {
     this.state = saved ?? initialSave();
     expandArmyRoster(this.state);
     this.migrateLegacyEquipment();
+    // Saves from before victories were counted apart from attempts: every village holding a
+    // star was won at least once, the closest lower bound the save can support.
+    this.state.stats.wins ??= [
+      ...this.state.stars,
+      ...(this.state.nativeCampaign?.stars ?? []),
+    ].filter((stars) => stars > 0).length;
     this.state.dark ??= 0;
     this.tick(Date.now());
   }
@@ -4497,6 +4512,7 @@ export class GameModel {
       const stars = b.catalog === 'goblin-v1' ? this.state.nativeCampaign!.stars : this.state.stars;
       stars[b.index] = Math.max(stars[b.index] ?? 0, b.stars);
       this.state.stats.raids++;
+      if (b.stars > 0) this.state.stats.wins = (this.state.stats.wins ?? 0) + 1;
       this.state.stats.destroyed += b.buildings.filter(
         (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
       ).length;
@@ -4961,7 +4977,7 @@ export function initialSave(): Save {
     nextId: id,
     tutorial: false,
     settings: { sound: true, music: false, reducedMotion: false },
-    stats: { raids: 0, destroyed: 0, collected: 0 },
+    stats: { raids: 0, wins: 0, destroyed: 0, collected: 0 },
   };
 }
 export function makeNpcBuilding(
