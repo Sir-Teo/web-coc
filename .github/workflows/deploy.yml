@@ -15,9 +15,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_and_deploy:
+  unit:
+    name: Types, documentation and unit tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -25,14 +26,39 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Check types and documentation
+        run: npm run typecheck:tests && npm run test:docs
+      - name: Run unit tests
+        run: npm test
+
+  build_and_deploy:
+    name: Production build, smoke test and deploy
+    # Nothing is published unless the unit suite passed on the same commit.
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps --only-shell chromium
       - name: Restore production WebP encodings
         uses: actions/cache@v4
         with:
           path: node_modules/.cache/webp-dist
           key: webp-dist-${{ hashFiles('public/assets/**/*.png', 'scripts/webp-dist.mjs') }}
           restore-keys: webp-dist-
-      - name: Check types, documentation and production build
-        run: npm run typecheck:tests && npm run test:docs && npm run build
+      - name: Build production bundle
+        run: npm run build
+      # Boot, art, save/reload and offline checks against the built bundle, as a release needs.
+      - name: Smoke-test the production bundle
+        timeout-minutes: 4
+        run: npm run test:production
+        env:
+          PRODUCTION_BROWSER: chromium
       - name: Deploy to Firebase Hosting
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: npx --yes firebase-tools@15.30.2 deploy --only hosting:coc-teozeng --project personal-website-3bc37 --non-interactive
