@@ -66,7 +66,10 @@ its clock and input until it lands, as it does for late campaign art. The dev
 server loads every family right after boot instead (the browser specs rely on it);
 `?lazyart` gives a dev page the production behavior. Families the home village
 does not draw, and the late campaign art, are released again after the player has
-been home for a while. Native village packs are fetched outside the
+been home for a while. A family can also be needed by something other than a
+building (`needed`): the Clan Castle garrison defenders load when a campaign battle with
+a garrison opens, and the procedural King sheets only for recordings made before the hero
+roster. Native village packs are fetched outside the
 Phaser loader: the home village's packs download alongside the preload, and the
 loading screen waits for them briefly; a battle's packs download when it starts.
 Images are decoded off the main thread before upload (`image-decode.ts`), and a

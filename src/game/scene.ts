@@ -31,6 +31,7 @@ import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
 import { infernoBounds } from './inferno-graph';
 import {
+  preloadGarrisonCharacters,
   preloadGarrisonTroops,
   preloadLateGarrisonTroops,
   GarrisonPresentation,
@@ -222,6 +223,8 @@ const MAX_SPARKS = 240;
  */
 interface ArtFamily {
   draws: (b: Building) => boolean;
+  /** Art needed by something other than a building (legacy recordings, campaign garrisons). */
+  needed?: (model: GameModel) => boolean;
   /** Fetches what `preload` needs first (a render graph kept out of the startup bundle). */
   prepare?: () => Promise<unknown>;
   /** Whether `prepare` has finished; families without it are always prepared. */
@@ -244,8 +247,27 @@ const XBOW_FAMILY: ArtFamily = {
   preload: preloadXbows,
 };
 const SANTA_FAMILY: ArtFamily = { draws: (b) => b.npc === 'santa-trap', preload: preloadSanta };
+/** The procedural King sheets draw only in recordings made before the hero roster. */
+const LEGACY_KING_FAMILY: ArtFamily = {
+  draws: () => false,
+  needed: (model) => !!model.battle?.hero,
+  preload: (scene) => {
+    for (const direction of KING_DIRECTIONS)
+      scene.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
+        frameWidth: KING_ART.cell,
+        frameHeight: KING_ART.cell,
+      });
+  },
+};
 const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
+  LEGACY_KING_FAMILY,
+  {
+    // Campaign Clan Castle defenders; a home Castle holds no reinforcements.
+    draws: () => false,
+    needed: (model) => !!model.battle?.garrisons?.length,
+    preload: preloadGarrisonCharacters,
+  },
   SANTA_FAMILY,
   { draws: (b) => b.kind === 'darkstorage', preload: preloadDarkStorages },
   { draws: (b) => isGoblinBuilding(b.npc), preload: preloadGoblinBuildings },
@@ -486,7 +508,8 @@ export class VillageScene extends Phaser.Scene {
     this.deferredFamilies = [];
     // A family whose graph could not be fetched before boot joins the on-demand ones.
     for (const family of ART_FAMILIES)
-      if (home.some(family.draws) && (family.prepared?.() ?? true)) family.preload(this);
+      if ((home.some(family.draws) || family.needed?.(this.model)) && (family.prepared?.() ?? true))
+        family.preload(this);
       else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     preloadGarrisonTroops(this);
@@ -508,11 +531,6 @@ export class VillageScene extends Phaser.Scene {
     this.load.image('king', asset('king'));
     for (const kind of HERO_KINDS)
       this.load.image(`hero-fallback-${kind}`, heroPortraitImage(kind));
-    for (const direction of KING_DIRECTIONS)
-      this.load.spritesheet(kingTexture(direction), kingAtlas(direction), {
-        frameWidth: KING_ART.cell,
-        frameHeight: KING_ART.cell,
-      });
     for (const kind of SCENERY_SPRITES) this.load.image(`campaign-${kind}`, sceneryAsset(kind));
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
@@ -1110,6 +1128,7 @@ export class VillageScene extends Phaser.Scene {
       (family) =>
         this.familyTextures.has(family) &&
         !buildings.some(family.draws) &&
+        !family.needed?.(this.model) &&
         !(placement && family.draws({ kind: placement } as Building)),
     );
     if (!idle.length) {
@@ -1177,6 +1196,7 @@ export class VillageScene extends Phaser.Scene {
           !this.loadedFamilies.has(family) &&
           !this.failedFamilies.has(family) &&
           (buildings.some(family.draws) ||
+            !!family.needed?.(this.model) ||
             (!!placement && family.draws({ kind: placement } as Building))),
       );
     }
@@ -1246,6 +1266,7 @@ export class VillageScene extends Phaser.Scene {
           failure.retryAt <= now &&
           !this.requestedFamilies.has(family) &&
           (this.model.buildings.some(family.draws) ||
+            !!family.needed?.(this.model) ||
             (!!this.model.placement && family.draws({ kind: this.model.placement } as Building))),
       )
       .map(([family]) => family);

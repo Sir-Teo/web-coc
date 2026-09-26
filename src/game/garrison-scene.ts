@@ -32,14 +32,20 @@ export const GARRISON_CONCEALED_ALPHA = 0.55;
 /** No Flight Zone's Dragon 7 and Balloon 8 are the only defenders outside the late villages. */
 const BOOT_CHARACTERS = new Set(['Dragon7', 'Balloon Goblin8']);
 
-/** Boot-time garrison art: effects, sounds, the No Flight Zone troops and the shared death. */
+/** Boot-time garrison art: effects, sounds and the shared death. */
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, GARRISON_EFFECT_GRAPH, 'garrison-effects');
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
+  preloadNativeMeshes(scene, COMMON_DEATH_ART.graph, COMMON_DEATH_ART.prefix);
+}
+/**
+ * The No Flight Zone troops, loaded as an art family when a battle with a garrison opens: the
+ * home village never draws them.
+ */
+export function preloadGarrisonCharacters(scene: Phaser.Scene) {
   for (const name of BOOT_CHARACTERS)
     preloadNativeMeshes(scene, CHARACTER_ART[name].graph, CHARACTER_ART[name].prefix);
-  preloadNativeMeshes(scene, COMMON_DEATH_ART.graph, COMMON_DEATH_ART.prefix);
 }
 /** Every later defending character and projectile file, loaded with the late campaign art. */
 export function preloadLateGarrisonTroops(scene: Phaser.Scene) {

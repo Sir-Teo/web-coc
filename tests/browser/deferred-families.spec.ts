@@ -159,3 +159,32 @@ test('a family whose art failed keeps its fallback and loads once the network re
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect.poll(fallback, { timeout: 30_000 }).toBe(0);
 });
+
+test('garrison defenders and the legacy King load only when a battle draws them', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  // The home village draws neither: the boot preload no longer carries them.
+  expect(await page.evaluate(loaded('garrison-dragon'))).toBe(false);
+  expect(await page.evaluate(() => window.__game.game.textures.exists('king-front-left'))).toBe(
+    false,
+  );
+  // No Flight Zone posts a Clan Castle garrison; its battle holds until the art lands.
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 20 };
+    m.state.nativeCampaign = freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    m.changed();
+    m.startCampaign(56);
+  });
+  expect(await page.evaluate(() => window.__game.model.battle.garrisons.length)).toBeGreaterThan(0);
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await page.evaluate(loaded('garrison-dragon'))).toBe(true);
+  expect(errors).toEqual([]);
+});
