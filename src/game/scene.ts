@@ -236,6 +236,11 @@ interface ArtFamily {
  * browser specs were written against (all families resident once boot settles); `?lazyart`
  * opts a dev page into the production behavior of loading each family on first use.
  */
+/** Idle home frame-rate ceiling (see VillageScene.updateIdleRate). */
+const IDLE_AFTER_MS = 5000;
+const IDLE_FPS = 30;
+const IDLE_FPS_REDUCED = 15;
+const IDLE_WAKE_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'] as const;
 /** Bounded backoff for a failed art request: 5 s, 10 s, 20 s ... capped at five minutes. */
 const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
 const EAGER_FAMILIES =
@@ -713,8 +718,11 @@ export class VillageScene extends Phaser.Scene {
       return shakeMemo.offset;
     });
     window.addEventListener('online', this.retryArtNow);
+    for (const type of IDLE_WAKE_EVENTS)
+      window.addEventListener(type, this.wake, { passive: true });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener('online', this.retryArtNow);
+      for (const type of IDLE_WAKE_EVENTS) window.removeEventListener(type, this.wake);
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.santaPresentation.destroy();
@@ -4770,8 +4778,49 @@ export class VillageScene extends Phaser.Scene {
     );
   }
 
+  /** When the player last did anything (performance.now ms); see `updateIdleRate`. */
+  private activeAt = performance.now();
+  /** Structural revision seen by the idle check: a real change counts as activity. */
+  private idleRevision = -1;
+  /** The frame-rate ceiling now applied (0: none). */
+  idleFrameRate = 0;
+  /** Input of any kind restores the full frame rate at once. */
+  private wake = () => {
+    this.activeAt = performance.now();
+    if (this.idleFrameRate) this.setIdleFrameRate(0);
+  };
+  private setIdleFrameRate(rate: number) {
+    this.idleFrameRate = rate;
+    this.game.loop.setFPSLimit(rate);
+  }
+  /**
+   * An idle home village redraws everything each frame, although its clips run at 24-30 fps and
+   * nothing else moves. After IDLE_AFTER_MS without input, a battle, a placement or a real change,
+   * the loop is capped (lower still under reduced motion, where nothing animates); any input
+   * lifts the cap before the next frame.
+   */
+  private updateIdleRate() {
+    const m = this.model;
+    if (m.structuralRevision !== this.idleRevision) {
+      this.idleRevision = m.structuralRevision;
+      this.activeAt = performance.now();
+    }
+    const busy =
+      !!m.battle || !!m.replay || !!m.placement || !!m.wallMove || m.editing || this.uiBlocked;
+    if (busy) this.activeAt = performance.now();
+    const rate =
+      performance.now() - this.activeAt < IDLE_AFTER_MS
+        ? 0
+        : m.reducedMotion
+          ? IDLE_FPS_REDUCED
+          : IDLE_FPS;
+    // Applied outside the step: changing the limit restarts the loop's frame scheduling.
+    if (rate !== this.idleFrameRate) setTimeout(() => this.setIdleFrameRate(rate), 0);
+    this.idleFrameRate = rate;
+  }
   update(time: number, delta: number) {
     if (this.paused) return;
+    this.updateIdleRate();
     this.renderClock = time;
     this.detailLevel = this.detailGovernor.sample(
       this.lastBusyMs,

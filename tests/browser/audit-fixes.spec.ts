@@ -304,3 +304,21 @@ test('a recording survives reload though the village is saved without it', async
     1,
   );
 });
+
+test('an idle home village lowers its frame rate until the player acts', async ({ page }) => {
+  await page.mouse.move(700, 500);
+  await expect
+    .poll(() => page.evaluate(() => window.__game.game.loop.fpsLimit), { timeout: 15_000 })
+    .toBe(30);
+  await page.mouse.move(720, 520);
+  await expect.poll(() => page.evaluate(() => window.__game.game.loop.fpsLimit)).toBe(0);
+  // A battle never runs capped.
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.startCampaign(0);
+  });
+  await page.waitForTimeout(7000);
+  expect(await page.evaluate(() => window.__game.game.loop.fpsLimit)).toBe(0);
+});

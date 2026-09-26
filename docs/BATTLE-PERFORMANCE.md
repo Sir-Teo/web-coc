@@ -170,6 +170,11 @@ profile of the frame) after the two rounds above:
   tick, walls included (533 on stage 61). The scene view looked every leaf's mesh up through a
   string-keyed map per frame; troop and village level rows came from a linear `find` per unit
   per frame.
+- **Idle home screen.** Profiling (2026-09-26) put the home presentation pass at about 0.14 ms
+  of CPU per frame; the cost of an idle village is the full-canvas render every frame. After
+  five seconds without input, a battle, a placement, an open dialog or a structural change,
+  `VillageScene.updateIdleRate` caps the loop at 30 fps (15 under reduced motion, where nothing
+  animates); the home clips run at 24–30 fps, and any input lifts the cap before the next frame.
 - **Home screen.** Collector ticks bump the model revision every second, so the timed autosave
   ran a full `JSON.stringify` plus a localStorage and an IndexedDB write every five seconds
   while nothing structural had changed. The building card read `offsetWidth`/`offsetHeight`
