@@ -26,6 +26,10 @@ Use explicit iteration limits and assert that timer-driven helpers make progress
 Never pass a missing completion timestamp to `GameModel.tick`; it rejects non-finite
 time. The native campaign sweep is split by army so the largest workload can run
 across workers. Its shared helper lives in `tests/native-campaign-combat-sweep.ts`.
+The sweep keeps its simulation bounds (a 48,000-step cap and a ten-minute no-destruction
+stalemate bound) separate from its wall-clock budget, a measured per-stage timeout. A
+stage that reaches either bound is a legitimate unfinished raid, not a failure: on
+Warden's Folly a Defending Builder repairs the last Archer's damage as fast as it lands.
 
 Do not turn off isolation globally: suites with `vi.mock` need independent module
 state. Increasing worker count can increase memory and contention without improving
