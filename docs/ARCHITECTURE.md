@@ -85,9 +85,11 @@ validator allows come to about 6.3 MB, so an export fits; anything larger drops 
 oldest first, and says so. Settings also offers a backup without recordings.
 
 The production build writes a lossless WebP beside every PNG under `dist/assets` and
-points the built code, packs and styles at it (`scripts/webp-dist.mjs`): about a
-quarter fewer bytes, byte-identical WebGL textures. The repository, the dev server
-and the specs keep reading the PNGs. The production build also generates `sw.js`
+points the built code, packs, atlases and styles at it (`scripts/webp-dist.mjs`): about a
+quarter fewer bytes, byte-identical WebGL textures. It then audits every built text file for
+PNG names still in use; when none remains it removes the PNG copies from `dist` (about 556 MB
+of a 993 MB build), and otherwise keeps them all and lists the names it could not resolve.
+The repository, the dev server and the specs keep reading the PNGs. The production build also generates `sw.js`
 and a content-hashed manifest. The service
 worker precaches the application shell (the page and only the bundles its entry imports
 statically, read from Vite's build manifest; lazy chunks such as the late campaign scene and

@@ -5,10 +5,16 @@
  * The repository keeps PNG sources (asset scripts regenerate and byte-check them, and dev/specs
  * read them), so this runs on the build output only. The encoding is lossless with `exact`, so
  * every RGBA value, including colors under zero alpha, survives; the shipped PNGs carry no gamma
- * or color-profile chunks, so browsers decode both formats to the same pixels. PNGs stay in dist
- * for any reference the rewrite cannot see. Encodings are cached by source hash.
+ * or color-profile chunks, so browsers decode both formats to the same pixels. Encodings are
+ * cached by source hash.
+ *
+ * After the rewrite every built text file is audited for PNG names still in use. Only when none
+ * remains (a URL assembled at runtime from a bare `name.png` would be one) are the PNG copies of
+ * converted textures removed from dist, roughly halving what is deployed and hashed; otherwise
+ * every PNG stays and the unresolved names are listed. The repository keeps its PNG sources.
  *
  *   node scripts/webp-dist.mjs            # after `vite build`, before scripts/build-sw.mjs
+ *   KEEP_PNG=1 node scripts/webp-dist.mjs # keep the PNG copies regardless
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -65,19 +71,58 @@ const REFERENCE = /(\/?assets\/[^"'`\s()<>\\]*?)\.png(?=["'`)\s\\])/g;
 // A whole template literal under assets/ whose expressions call functions or hold nested
 // template literals (`/assets/.../troop-${name.replace(/x/g, `-`)}.png`).
 const TEMPLATE = /(`\/?assets\/(?:[^`$]|\$\{(?:[^{}]|\{[^{}]*\})*\})*?)\.png`/g;
+// A JSON file under assets/ can name a texture relative to its own directory (hero atlases list
+// `"image": "idle.png"`, joined to their directory at runtime): switch those whose sibling WebP
+// exists.
+const SIBLING = /"([^"/\\]+)\.png"/g;
+const converted = new Set(pngs);
 let rewritten = 0;
 for (const file of files) {
   if (!/\.(js|json|css|html)$/.test(file)) continue;
   const text = await fs.readFile(file, 'utf8');
-  const next = text.replace(REFERENCE, '$1.webp').replace(TEMPLATE, '$1.webp`');
+  let next = text.replace(REFERENCE, '$1.webp').replace(TEMPLATE, '$1.webp`');
+  if (file.endsWith('.json') && file.startsWith(assets + path.sep))
+    next = next.replace(SIBLING, (match, name) =>
+      converted.has(path.join(path.dirname(file), name + '.png')) ? `"${name}.webp"` : match,
+    );
   if (next !== text) {
     await fs.writeFile(file, next);
     rewritten++;
   }
 }
 
+// Reference audit: any string still naming a PNG. Phaser's own format table (a bare ".png"
+// extension) names no file and is ignored.
+const PNG_NAME = /[\w@%$./{}-]+\.png(?![\w])/g;
+const unresolved = new Map();
+for (const file of files) {
+  if (!/\.(js|json|css|html)$/.test(file)) continue;
+  const text = await fs.readFile(file, 'utf8');
+  for (const [name] of text.matchAll(PNG_NAME)) {
+    if (name === '.png') continue;
+    if (!unresolved.has(name)) unresolved.set(name, path.relative(dist, file));
+  }
+}
+let removed = 0,
+  removedBytes = 0;
+if (process.env.KEEP_PNG) console.log('KEEP_PNG is set: PNG copies stay in dist.');
+else if (unresolved.size) {
+  console.warn(
+    `PNG copies kept: ${unresolved.size} PNG name(s) still referenced, e.g. ` +
+      [...unresolved]
+        .slice(0, 5)
+        .map(([name, file]) => `${name} (${file})`)
+        .join(', '),
+  );
+} else
+  for (const file of pngs) {
+    removedBytes += (await fs.stat(file)).size;
+    await fs.rm(file);
+    removed++;
+  }
+
 console.log(
   `WebP textures: ${pngs.length} files, ${(pngBytes / 1e6).toFixed(1)} MB PNG -> ` +
     `${(webpBytes / 1e6).toFixed(1)} MB WebP (${encoded} encoded, ${pngs.length - encoded} cached); ` +
-    `${rewritten} files point at WebP`,
+    `${rewritten} files point at WebP; ${removed} PNG copies removed (${(removedBytes / 1e6).toFixed(1)} MB)`,
 );
