@@ -1851,6 +1851,37 @@ export class GameModel {
   finishCost(b: Building) {
     return b.upgradeEnd ? gemCost((b.upgradeEnd - this.clock) / 1000) : 0;
   }
+  /**
+   * Why a building cannot start its next level now, in the order `upgrade` checks, or null when
+   * it can. `merge` names the building a Town Hall merge needs, so the card can point at it.
+   */
+  upgradeIssue(b: Building): { reason: string; merge?: BuildingKind } | null {
+    if (b.upgradeEnd) return { reason: 'Already upgrading.' };
+    if (b.level >= BUILDINGS[b.kind].maxLevel)
+      return { reason: 'This building is at its maximum level.' };
+    if (b.level >= this.maxLevel(b.kind))
+      return { reason: `Upgrade your Town Hall to raise this past level ${b.level}.` };
+    if (b.kind !== 'wall' && this.busy >= this.builders)
+      return { reason: `All ${this.builders} builders are busy.` };
+    if (b.kind === 'townhall') {
+      const issue = this.townHallMergeIssue(b.level);
+      if (issue) {
+        const merge =
+          MERGED_KINDS.find((kind) => issue.includes(BUILDINGS[kind].name)) ??
+          townHallMergeInputs(b.level + 1).find((input) =>
+            issue.includes(BUILDINGS[input.kind].name),
+          )?.kind;
+        return { reason: issue, ...(merge ? { merge } : {}) };
+      }
+    }
+    const resource = BUILDINGS[b.kind].resource,
+      cost = this.upgradeCost(b);
+    if (this.state[resource] < cost)
+      return {
+        reason: `Need ${(cost - this.state[resource]).toLocaleString()} more ${resource === 'dark' ? 'dark elixir' : resource}.`,
+      };
+    return null;
+  }
   upgrade(id: number) {
     if (this.battle) return;
     if (this.state.buildings.find((b) => b.id === id)?.kind === 'wall') {

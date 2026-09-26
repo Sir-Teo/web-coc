@@ -5746,3 +5746,29 @@ h3 {
     max-width: 120px;
   }
 }
+
+/* Upgrade readiness on the building card. */
+.upgrade-control {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  max-width: 220px;
+}
+.upgrade-facts {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.upgrade-facts i {
+  opacity: 0.6;
+  font-style: normal;
+}
+.upgrade-blocker {
+  color: #8a3b1f;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-shadow: none;
+}

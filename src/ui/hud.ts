@@ -1286,6 +1286,15 @@ export class HUD {
       case 'army':
         this.showDrawer('army');
         break;
+      case 'select-building': {
+        const id = Number(arg);
+        if (!m.state.buildings.some((v) => v.id === id) || m.battle) break;
+        m.cancel();
+        m.selected = id;
+        this.scene.focusBuilding(id);
+        m.changed();
+        break;
+      }
       case 'campaign-scout':
         this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
         this.show('campaign-scout');
@@ -2169,13 +2178,28 @@ export class HUD {
           ? '<span class="max-level">★ Max level</span>'
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
-            : button(
-                `upgrade:${b.id}`,
-                `<span>${icon('ArrowBigUp', 19)} Upgrade</span><small>${resource(d.resource)} ${n(m.upgradeCost(b))}</small>`,
-              )
+            : this.upgradeControl(b)
     }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
+  /**
+   * Upgrade with everything that decides it in view: cost, duration and free builders, and the
+   * exact blocker when there is one (with a way to the building a Town Hall merge needs).
+   */
+  private upgradeControl(b: Building) {
+    const m = this.model,
+      d = BUILDINGS[b.kind];
+    const issue = m.upgradeIssue(b);
+    const free = m.builders - m.busy;
+    const facts = `<small class="upgrade-facts">${resource(d.resource)} ${n(m.upgradeCost(b))} <i>·</i> ${icon('Clock3', 12)} ${time(m.upgradeSeconds(b))} <i>·</i> ${icon('Hammer', 12)} ${free}/${m.builders}</small>`;
+    const target = issue?.merge ? m.state.buildings.find((v) => v.kind === issue.merge) : undefined;
+    return `<span class="upgrade-control">${button(
+      `upgrade:${b.id}`,
+      `<span>${icon('ArrowBigUp', 19)} Upgrade</span>${facts}`,
+      `game-btn ${issue ? 'stone' : 'green'}`,
+      issue ? `aria-describedby="upgrade-blocker-${b.id}"` : '',
+    )}${issue ? `<small class="upgrade-blocker" id="upgrade-blocker-${b.id}" role="note">${icon('Info', 12)} ${html(issue.reason)}${target ? ` ${button(`select-building:${target.id}`, `Show ${BUILDINGS[target.kind].name}`, 'replay-link')}` : ''}</small>` : ''}</span>`;
+  }
   private wallMoveContext() {
     const m = this.model,
       move = m.wallMove!;

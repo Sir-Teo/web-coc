@@ -485,3 +485,29 @@ test('a Quick army card lists its heroes and what loading it here would change',
   await expect(card.locator('.preset-heroes')).toContainText('L.A.S.S.I');
   await expect(card).toContainText('When used here: L.A.S.S.I is not researched yet');
 });
+
+test('the building card shows upgrade cost, time, builders and the exact blocker', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const { model, scene } = window.__game;
+    const th = model.state.buildings.find((b) => b.kind === 'townhall');
+    model.state.gold = 0;
+    model.selected = th.id;
+    scene.focusBuilding(th.id);
+    model.changed();
+  });
+  const card = page.locator('.building-context');
+  await expect(card.locator('.upgrade-facts')).toContainText('30m');
+  await expect(card.locator('.upgrade-blocker')).toContainText('more gold');
+  await expect(card.locator('[data-action^="upgrade:"]')).toHaveAttribute(
+    'aria-describedby',
+    /upgrade-blocker-/,
+  );
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.gold = m.resourceCap('gold');
+    m.changed();
+  });
+  await expect(card.locator('.upgrade-blocker')).toHaveCount(0);
+});

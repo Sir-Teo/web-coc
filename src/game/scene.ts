@@ -1580,6 +1580,15 @@ export class VillageScene extends Phaser.Scene {
     } else this.cameras.main.centerOn(896, 570);
     this.clampCamera();
   }
+  /** Centres the camera on a building (keyboard and card navigation). */
+  focusBuilding(id: number) {
+    const b = this.model.buildings.find((v) => v.id === id);
+    if (!b) return;
+    const size = BUILDINGS[b.kind].size,
+      p = iso(b.x + size / 2, b.y + size / 2);
+    this.cameras.main.centerOn(p.x, p.y);
+    this.clampCamera();
+  }
   private resizeCamera() {
     this.model.endDrag(true);
     const c = this.cameras.main;

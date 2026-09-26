@@ -179,3 +179,24 @@ it('Quick armies keep the hero lineup, items and pets and report substitutions',
   expect(plan.lineup.map((h) => h.kind)).toEqual(['king']);
   expect(plan.changes.join()).toContain('Archer Queen');
 });
+
+it('explains why an upgrade cannot start, in the order upgrade() checks', () => {
+  const m = new GameModel();
+  const th = m.townhall!;
+  m.state.gold = 0;
+  expect(m.upgradeIssue(th)?.reason).toMatch(/^Need [\d,]+ more gold\.$/);
+  m.state.gold = m.resourceCap('gold');
+  expect(m.upgradeIssue(th)).toBeNull();
+  // Every builder busy outranks the price.
+  const others = m.state.buildings.filter((b) => b.kind === 'cannon').slice(0, m.builders);
+  for (const b of others) {
+    b.upgradeStart = m.clock;
+    b.upgradeEnd = m.clock + 60_000;
+  }
+  expect(m.upgradeIssue(th)?.reason).toBe(`All ${m.builders} builders are busy.`);
+  // The card and the action agree: upgrade() refuses for the same reason.
+  const gold = m.state.gold;
+  m.upgrade(th.id);
+  expect(th.upgradeEnd).toBeUndefined();
+  expect(m.state.gold).toBe(gold);
+});
