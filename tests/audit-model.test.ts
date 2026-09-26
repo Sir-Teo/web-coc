@@ -200,3 +200,15 @@ it('explains why an upgrade cannot start, in the order upgrade() checks', () => 
   expect(th.upgradeEnd).toBeUndefined();
   expect(m.state.gold).toBe(gold);
 });
+
+it('collects a single resource when asked', () => {
+  const m = new GameModel();
+  const mines = m.state.buildings.filter((b) => b.kind === 'goldmine');
+  const pumps = m.state.buildings.filter((b) => b.kind === 'collector');
+  for (const b of [...mines, ...pumps]) b.stored = 100;
+  m.state.gold = m.state.elixir = 0;
+  m.collect(undefined, 'gold');
+  expect(m.state.gold).toBe(100 * mines.length);
+  expect(m.state.elixir).toBe(0);
+  expect(pumps.every((b) => b.stored === 100)).toBe(true);
+});

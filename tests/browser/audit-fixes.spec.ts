@@ -551,3 +551,24 @@ test('overwriting a saved layout or Quick army can be undone', async ({ page }) 
   expect(await page.evaluate(() => window.__game.model.state.armyPresets[0].name)).toBe('First');
   await expect(page.locator('[data-action="preset-undo:0"]')).toHaveCount(0);
 });
+
+test('each resource button collects its own resource and the gem button says what it does', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    for (const b of m.state.buildings)
+      if (b.kind === 'goldmine' || b.kind === 'collector') b.stored = 100;
+    m.state.gold = m.state.elixir = 0;
+    m.changed();
+  });
+  await page.locator('.resource-bar.gold [data-action="collect:gold"]').click();
+  expect(
+    await page.evaluate(() => [window.__game.model.state.gold, window.__game.model.state.elixir]),
+  ).toEqual([expect.any(Number), 0]);
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBeGreaterThan(0);
+  await expect(page.locator('.resource-bar.gems .resource-plus')).toHaveAttribute(
+    'aria-label',
+    'Earn gems from achievements',
+  );
+});

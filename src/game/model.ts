@@ -1527,7 +1527,8 @@ export class GameModel {
     this.state.lastTick = now;
     if (changed) this.changed(!structural);
   }
-  collect(id?: number) {
+  /** Collects from one building (`id`), one resource (`only`), or every collector. */
+  collect(id?: number, only?: Resource) {
     let gold = 0,
       elixir = 0,
       dark = 0;
@@ -1537,7 +1538,7 @@ export class GameModel {
     for (const b of this.state.buildings) {
       if (id !== undefined && b.id !== id) continue;
       const k = producedResource(b.kind);
-      if (!k || b.stored < 1) continue;
+      if (!k || b.stored < 1 || (only && k !== only)) continue;
       // A building still being raised or upgraded keeps what it holds.
       if (b.upgradeEnd) {
         unfinished = true;

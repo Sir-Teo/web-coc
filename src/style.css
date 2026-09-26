@@ -5772,3 +5772,12 @@ h3 {
   line-height: 1.25;
   text-shadow: none;
 }
+
+/* The gem button earns gems (achievements) rather than collecting: it says so with a trophy. */
+.resource-plus.gems-earn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: linear-gradient(#ffe38a, #e6a634);
+  border-color: #8a5a17;
+}
