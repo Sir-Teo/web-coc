@@ -717,6 +717,16 @@ export class HUD {
         }
         if (t.id.startsWith('preset-name-'))
           this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
+        if (t.id === 'campaign-filter') {
+          this.campaignFilter = t.value as typeof this.campaignFilter;
+          this.render();
+          this.modalEl.querySelector('.campaign-list')?.scrollTo(0, 0);
+        }
+        if (t.id === 'campaign-section' && t.value) {
+          this.campaignFilter = 'all';
+          this.render();
+          this.scrollToStage(Number(t.value), true);
+        }
         if (t.id === 'army-search' || t.id === 'army-show' || t.id === 'army-family') {
           if (t.id === 'army-search') this.armyFilter.query = t.value.slice(0, 40);
           else if (t.id === 'army-show') this.armyFilter.show = t.value as ArmyShow;
@@ -855,7 +865,38 @@ export class HUD {
       ? ''
       : 'Saving is unavailable. Export your village in Settings.';
   }
+  /** Keeps the campaign list's position for the next time it opens. */
+  private rememberCampaign() {
+    if (this.panel !== 'campaign') return;
+    const list = this.modalEl.querySelector<HTMLElement>('.campaign-list');
+    if (list) this.campaignScroll = list.scrollTop;
+  }
+  /** The next village worth attacking: the first open one without a star, else short of three. */
+  private nextCampaignStage() {
+    const stars = this.model.state.nativeCampaign?.stars ?? [];
+    const open = NATIVE_CAMPAIGN.map((_, i) => i).filter(
+      (i) => nativeUnlocked(i, stars) && !campaignPending(i),
+    );
+    return open.find((i) => !stars[i]) ?? open.find((i) => (stars[i] ?? 0) < 3) ?? null;
+  }
+  /** Opens the list where the player left it, or at the next village on a first visit. */
+  private positionCampaign() {
+    const list = this.modalEl.querySelector<HTMLElement>('.campaign-list');
+    if (!list) return;
+    if (this.campaignScroll !== null) list.scrollTop = this.campaignScroll;
+    else this.scrollToStage(this.nextCampaignStage(), false);
+  }
+  private scrollToStage(index: number | null, focus: boolean) {
+    if (index === null) return;
+    const card = this.modalEl.querySelector<HTMLElement>(`#campaign-stage-${index}`);
+    const list = this.modalEl.querySelector<HTMLElement>('.campaign-list');
+    if (!card || !list) return;
+    list.scrollTop += card.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
+    if (focus)
+      card.querySelector<HTMLElement>('[data-action^="attack:"]')?.focus({ preventScroll: true });
+  }
   private show(panel: Panel) {
+    this.rememberCampaign();
     // The info sheet describes the selected building, so it is the one panel that
     // must survive the cancel that clears placement state.
     const selected = this.model.selected;
@@ -877,6 +918,7 @@ export class HUD {
     this.render();
   }
   private closePanel() {
+    this.rememberCampaign();
     this.panel = null;
     const previous = this.drawerBefore;
     this.drawerBefore = null;
@@ -1200,6 +1242,9 @@ export class HUD {
         break;
       case 'army':
         this.showDrawer('army');
+        break;
+      case 'campaign-continue':
+        this.scrollToStage(this.nextCampaignStage(), true);
         break;
       case 'army-filter-clear':
         this.armyFilter = { query: '', show: 'all', family: 'all' };
@@ -1774,6 +1819,7 @@ export class HUD {
     }
     const drawerSwitched = this.drawerPanel !== this.lastDrawer;
     this.lastDrawer = this.drawerPanel;
+    if (this.panel === 'campaign' && this.lastPanel !== 'campaign') this.positionCampaign();
     if (this.panel !== this.lastPanel) {
       this.modalEl.querySelector<HTMLElement>('.modal [data-action="close"]')?.focus();
       this.lastPanel = this.panel;
@@ -3122,12 +3168,35 @@ export class HUD {
   private campaignMap(index: number) {
     return `<img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" loading="lazy" decoding="async" draggable="false">`;
   }
+  /** Campaign list filter and position; kept between visits. */
+  private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';
+  private campaignScroll: number | null = null;
   /** Card markup by stage; rebuilt only when that stage's stars, lock or loot change. */
   private campaignCards = new Map<number, { key: string; markup: string }>();
   private campaign() {
     const stars = this.model.state.nativeCampaign?.stars ?? [];
-    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armyReady ? '' : 'disabled')}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} Goblin villages</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
+    const next = this.nextCampaignStage();
+    const filter = this.campaignFilter;
+    const option = (value: string, label: string) =>
+      `<option value="${value}"${value === filter ? ' selected' : ''}>${label}</option>`;
+    // Where each part of the map begins, for the section jump.
+    const sections = (['goblin', 'challenge', 'forged'] as const)
+      .map(
+        (family) =>
+          [family, NATIVE_CAMPAIGN.findIndex((v) => (v.family ?? 'goblin') === family)] as const,
+      )
+      .filter(([, i]) => i >= 0);
+    const sectionName = { goblin: 'Goblin map', challenge: 'Challenges', forged: 'Later villages' };
+    const shown = (i: number) => {
+      const score = stars[i] ?? 0;
+      if (filter === 'open') return nativeUnlocked(i, stars) && !campaignPending(i) && !score;
+      if (filter === 'stars') return nativeUnlocked(i, stars) && !campaignPending(i) && score < 3;
+      if (filter === 'done') return score === 3;
+      return true;
+    };
+    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armyReady ? '' : 'disabled')}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} Goblin villages</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
+        if (!shown(i)) return '';
         const loot = this.model.campaignLoot(i, 'goblin-v1');
         const pending = campaignPending(i);
         const locked = !nativeUnlocked(i, stars),
@@ -3135,7 +3204,7 @@ export class HUD {
         const key = `${locked}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
         const cached = this.campaignCards.get(i);
         if (cached?.key === key) return cached.markup;
-        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.family === 'challenge' ? 'A single-player Challenge. Open from the start.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.family === 'challenge' ? 'A single-player Challenge. Open from the start.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
         this.campaignCards.set(i, { key, markup });
         return markup;
       },

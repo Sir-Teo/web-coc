@@ -5638,3 +5638,30 @@ h3 {
   color: #6b5a33;
   font-weight: 700;
 }
+
+/* Campaign navigation: continue, progress filter and section jump. */
+.campaign-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 0 16px 8px;
+}
+.campaign-nav select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #c8b98c;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #4b3b1c;
+  font:
+    700 13px/1 'Nunito Sans',
+    sans-serif;
+}
+.campaign-nav .game-btn {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

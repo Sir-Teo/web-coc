@@ -376,3 +376,36 @@ test('the Army catalog can be searched and filtered by readiness and family', as
   await page.locator('[data-action="army-filter-clear"]').click();
   await expect.poll(async () => (await names()).length).toBe(all);
 });
+
+test('the campaign opens at the next village, continues there and remembers its place', async ({
+  page,
+}) => {
+  const next = await page.evaluate(async () => {
+    const { freshNativeCampaign, NATIVE_CAMPAIGN, nativeUnlocked } =
+      await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.nativeCampaign = freshNativeCampaign();
+    for (let i = 0; i < 30; i++) m.state.nativeCampaign.stars[i] = 3;
+    m.changed();
+    const stars = m.state.nativeCampaign.stars;
+    return NATIVE_CAMPAIGN.findIndex((_, i) => nativeUnlocked(i, stars) && !stars[i]);
+  });
+  await page.evaluate(() => window.__game.hud.show('campaign'));
+  const card = page.locator(`#campaign-stage-${next}`);
+  await expect(card).toBeInViewport();
+  await expect(page.locator('[data-action="campaign-continue"]')).toBeVisible();
+  // Scroll away, then Continue brings the next village back with its Attack focused.
+  await page.locator('.campaign-list').evaluate((el) => (el.scrollTop = 0));
+  await page.locator('[data-action="campaign-continue"]').click();
+  await expect(card).toBeInViewport();
+  await expect(card.locator('[data-action^="attack:"]')).toBeFocused();
+  // Filters narrow the list; the place is kept between visits.
+  await page.locator('#campaign-filter').selectOption('done');
+  await expect(page.locator('.campaign-card')).toHaveCount(30);
+  await page.locator('#campaign-filter').selectOption('all');
+  await page.locator('.campaign-list').evaluate((el) => (el.scrollTop = 1234));
+  const kept = await page.locator('.campaign-list').evaluate((el) => el.scrollTop);
+  await page.locator('[data-action="close"]').click();
+  await page.evaluate(() => window.__game.hud.show('campaign'));
+  await expect.poll(() => page.locator('.campaign-list').evaluate((el) => el.scrollTop)).toBe(kept);
+});
