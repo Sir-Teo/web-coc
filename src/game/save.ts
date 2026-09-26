@@ -545,6 +545,35 @@ export async function loadSave(): Promise<Save | undefined> {
   if (copies.length) throw new SaveRecoveryError(copies);
   return undefined;
 }
+/**
+ * Keeps the unreadable stored copies under their own keys before a recovery import replaces the
+ * village, so nothing is lost if the damaged save turns out to matter. True when at least one
+ * store kept them.
+ */
+export async function preserveDamagedSave(copies: SaveRecoveryError['copies']) {
+  const record = { at: Date.now(), copies };
+  let kept = false;
+  try {
+    localStorage.setItem(KEY + '-damaged', JSON.stringify(record));
+    kept = true;
+  } catch {
+    /* IndexedDB may still hold it. */
+  }
+  if (db)
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db!.transaction('saves', 'readwrite');
+        tx.objectStore('saves').put(record, 'damaged');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+      kept = true;
+    } catch {
+      /* The local copy, if any, remains. */
+    }
+  return kept;
+}
 export async function saveGame(state: Save): Promise<boolean> {
   let stored = false;
   // Every commit outranks every earlier one in either store, whatever its economy clock says.

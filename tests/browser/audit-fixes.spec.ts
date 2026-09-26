@@ -207,3 +207,50 @@ test('hiding the tab mid-raid stores the raid settled, and the raid continues', 
     .toBe(1);
   expect(await page.evaluate(() => window.__game.model.battle?.finished)).toBe(false);
 });
+
+test('an unreadable save can be restored from a backup on the recovery screen', async ({
+  page,
+}) => {
+  const backup = await page.evaluate(() => {
+    const state = structuredClone(window.__game.model.state);
+    state.gold = 777;
+    return JSON.stringify(state);
+  });
+  // Both stores hold something that cannot be opened.
+  await page.evaluate(async () => {
+    localStorage.setItem('crown-clan-save-v1', '{broken');
+    await new Promise<void>((resolve) => {
+      const request = indexedDB.open('crown-and-clan', 1);
+      request.onsuccess = () => {
+        const tx = request.result.transaction('saves', 'readwrite');
+        tx.objectStore('saves').put({ version: 4, broken: true }, 'village');
+        tx.oncomplete = () => resolve();
+      };
+    });
+    // Stop this page from saving its healthy village over them on unload.
+    window.addEventListener('pagehide', (e) => e.stopImmediatePropagation(), { capture: true });
+    document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), {
+      capture: true,
+    });
+    Storage.prototype.setItem = () => {};
+    IDBObjectStore.prototype.put = function () {
+      throw new DOMException('blocked for this test', 'InvalidStateError');
+    };
+  });
+  await page.reload();
+  await expect(page.locator('.save-recovery-actions')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await page.locator('#recovery-import-file').setInputFiles({
+    name: 'village.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(777);
+  // The damaged copy was kept aside, not overwritten.
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('crown-clan-save-v1-damaged')!).copies,
+    ),
+  ).toContainEqual({ source: 'backup', text: '{broken' });
+});

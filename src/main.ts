@@ -4,7 +4,14 @@ import './ui/compact-hud.css';
 import { GameModel } from './game/model';
 import { VillageScene } from './game/scene';
 import { AudioManager } from './game/audio';
-import { loadSave, saveGame, SaveRecoveryError } from './game/save';
+import {
+  loadSave,
+  parseSaveFile,
+  preserveDamagedSave,
+  saveGame,
+  SaveRecoveryError,
+  MAX_SAVE_FILE_BYTES,
+} from './game/save';
 import { acquireVillage, SessionUnavailableError } from './game/session';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
@@ -316,6 +323,7 @@ boot().catch((error) => {
       button.className = 'game-btn blue';
       button.textContent = `Download ${copy.source}`;
       button.onclick = () => {
+        recoveryDownloaded = true;
         const url = URL.createObjectURL(new Blob([copy.text], { type: 'application/json' }));
         const link = document.createElement('a');
         link.href = url;
@@ -325,6 +333,57 @@ boot().catch((error) => {
       };
       actions.append(button);
     }
+    actions.append(recoveryImport(error), recoveryRetry());
     document.querySelector('#loading')?.append(actions);
   }
 });
+
+/** The player downloaded the damaged copies from the recovery screen. */
+let recoveryDownloaded = false;
+/** Try loading again, for a save another tab or a storage hiccup had made unreadable. */
+function recoveryRetry() {
+  const retry = document.createElement('button');
+  retry.className = 'game-btn stone';
+  retry.textContent = 'Try again';
+  retry.onclick = () => window.location.reload();
+  return retry;
+}
+
+/**
+ * Restore a village from a backup file without reaching Settings. The damaged copies are kept
+ * under their own keys first; the backup is validated exactly as the Settings import does.
+ */
+function recoveryImport(error: SaveRecoveryError) {
+  const label = document.querySelector('#load-label');
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json,.json';
+  input.hidden = true;
+  input.id = 'recovery-import-file';
+  const button = document.createElement('button');
+  button.className = 'game-btn green';
+  button.textContent = 'Import backup';
+  button.onclick = () => input.click();
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const data =
+      file.size <= MAX_SAVE_FILE_BYTES ? parseSaveFile(await file.text().catch(() => '')) : null;
+    const say = (message: string) => {
+      if (label) label.textContent = message;
+    };
+    if (!data) return say('That backup is not a valid Crown & Clan village.');
+    // A copy the player downloaded counts as kept.
+    if (!(await preserveDamagedSave(error.copies)) && !recoveryDownloaded)
+      return say('The damaged save could not be kept aside. Download it first, then import again.');
+    if (!(await saveGame(data)))
+      return say(
+        'The backup could not be saved in this browser. Check your storage and try again.',
+      );
+    window.location.reload();
+  };
+  const wrapper = document.createElement('span');
+  wrapper.append(button, input);
+  return wrapper;
+}
