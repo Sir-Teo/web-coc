@@ -2519,7 +2519,10 @@ export class GameModel {
     this.state.ores = ores;
     bonus.stars -= STAR_BONUS_STARS;
     bonus.readyAt = this.clock + STAR_BONUS_COOLDOWN;
-    this.state.stats.collected = (this.state.stats.collected ?? 0) + 1;
+    // 'Resources collected' counts gold, elixir and dark elixir as collectors do; ore is not a
+    // village resource and has its own balance.
+    this.state.stats.collected =
+      (this.state.stats.collected ?? 0) + taken.gold! + taken.elixir! + taken.dark!;
     this.notify(`${this.league.name} Star Bonus collected.`);
     this.changed();
     return taken;

@@ -56,8 +56,13 @@ describe('league Star Bonus', () => {
     m.state.gold = m.state.elixir = m.state.dark = 0;
     m.state.ores = { shiny: 0, glowy: 0, starry: 0 };
     const reward = starBonusReward(m.state.trophies);
+    const collectedBefore = m.state.stats.collected;
     const taken = m.collectStarBonus();
     expect(taken).toBeTruthy();
+    // The statistic grows by the resources received, not by one per collection.
+    const received = taken ? taken.gold! + taken.elixir! + taken.dark! : 0;
+    expect(received).toBeGreaterThan(1);
+    expect(m.state.stats.collected).toBe(collectedBefore + received);
     for (const k of ORE_KEYS) expect(m.ores[k], k).toBe(reward[k]);
     expect(m.state.dark).toBe(Math.min(reward.dark, m.resourceCap('dark')));
     expect(m.starBonus.stars).toBe(banked - STAR_BONUS_STARS);
