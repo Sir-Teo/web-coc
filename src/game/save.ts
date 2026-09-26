@@ -48,6 +48,8 @@ const QUEST_IDS = [
   'master-builder',
   'drill-sergeant',
   'town-planner',
+  'goblin-raider',
+  // Retired (it asked for trophies no attack awards); kept so saves that list it stay valid.
   'high-flier',
 ];
 /**

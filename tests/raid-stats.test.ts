@@ -65,3 +65,17 @@ it('the battle log names every deployed hero rather than a single King', () => {
     { kind: 'king', level: 5, abilityUsed: true },
   ]);
 });
+
+it('every quest can be completed through normal play', () => {
+  const m = new GameModel();
+  const ids = m.quests.map((q) => q.id);
+  expect(ids).not.toContain('high-flier');
+  const raider = m.quests.find((q) => q.id === 'goblin-raider')!;
+  m.state.stats.wins = raider.target;
+  expect(m.quests.find((q) => q.id === 'goblin-raider')!.progress).toBe(raider.target);
+  expect(m.claimQuest('goblin-raider')).toBeTruthy();
+  expect(validateSave(m.state)).toBe(true);
+  // A save that claimed the retired quest still loads.
+  m.state.claimedQuests = [...(m.state.claimedQuests ?? []), 'high-flier'];
+  expect(validateSave(m.state)).toBe(true);
+});

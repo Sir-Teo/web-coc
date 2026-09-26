@@ -1278,12 +1278,14 @@ export class GameModel {
         reward: 50,
         icon: 'LayoutGrid',
       },
+      // Single-player attacks never change trophies, so a trophy target could not be met; the
+      // retired 'high-flier' quest is replaced by a goal normal play reaches.
       {
-        id: 'high-flier',
-        title: 'High flier',
-        description: 'Climb to 1,500 trophies',
-        progress: this.state.trophies,
-        target: 1500,
+        id: 'goblin-raider',
+        title: 'Goblin raider',
+        description: 'Win 20 campaign raids',
+        progress: this.state.stats.wins ?? 0,
+        target: 20,
         reward: 45,
         icon: 'Trophy',
       },
