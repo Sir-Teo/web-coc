@@ -2459,9 +2459,13 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Whether the current army has anything a Quick army could hold: troops or siege machines. */
+  get canSaveArmyPreset() {
+    return this.armySize > 0 || this.siegeCount > 0;
+  }
   saveArmyPreset(slot: number, name?: string) {
     if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return;
-    if (!this.armySize && !this.siegeCount) return this.notify('Add troops before saving an army.');
+    if (!this.canSaveArmyPreset) return this.notify('Add troops before saving an army.');
     this.state.armyPresets ??= [null, null, null];
     this.state.armyPresets[slot] = {
       name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),

@@ -158,3 +158,20 @@ test('the Army drawer takes focus when opened and returns it to Train on Escape'
   await expect(page.locator('.drawer-sheet')).toHaveCount(0);
   await expect(page.locator('.train-add')).toBeFocused();
 });
+
+test('a siege-only army can be saved as a Quick army', async ({ page }) => {
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { model, hud } = window.__game;
+    model.state.army = { ...emptyArmy(), wallwrecker: 1 };
+    model.changed();
+    hud.show('army-presets');
+  });
+  const save = page.locator('[data-action="preset-save:0"]');
+  await expect(save).toBeEnabled();
+  await save.click();
+  await expect(page.locator('.preset-card').first()).toContainText('1 siege');
+  expect(await page.evaluate(() => window.__game.model.state.armyPresets[0].army.wallwrecker)).toBe(
+    1,
+  );
+});

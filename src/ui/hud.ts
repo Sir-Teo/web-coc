@@ -182,6 +182,9 @@ type Panel =
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
+/** Siege machines in a stored army: they use the siege reserve, not troop housing. */
+const presetSiege = (army: Record<string, number>) =>
+  Object.entries(army).reduce((sum, [k, count]) => sum + (isSiege(k as TroopKind) ? count : 0), 0);
 const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
   `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
@@ -2742,7 +2745,7 @@ export class HUD {
         const fits =
           p && armySpace(p.army) <= m.capacity && spellSpace(p.spells) <= m.spellCapacity;
         const issue = p ? m.armyPreparationIssue(p.army, p.spells) : null;
-        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.armySize ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
+        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
       })
       .join(
         '',
