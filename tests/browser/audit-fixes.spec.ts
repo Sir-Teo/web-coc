@@ -254,3 +254,25 @@ test('an unreadable save can be restored from a backup on the recovery screen', 
     ),
   ).toContainEqual({ source: 'backup', text: '{broken' });
 });
+
+test('the campaign list fetches map thumbnails only as they scroll into view', async ({ page }) => {
+  await page.evaluate(() => window.__game.hud.show('campaign'));
+  await expect(page.locator('.campaign-card')).toHaveCount(
+    await page.evaluate(
+      async () => (await import('/src/game/native-campaign.ts')).NATIVE_CAMPAIGN.length,
+    ),
+  );
+  // Generated SVG thumbnails: a lazy one outside the view is not decoded yet.
+  const fetched = () =>
+    page.evaluate(
+      () =>
+        [...document.querySelectorAll<HTMLImageElement>('img.campaign-map')].filter(
+          (img) => img.complete && img.naturalWidth > 0,
+        ).length,
+    );
+  await page.waitForTimeout(1500);
+  const first = await fetched();
+  expect(first).toBeLessThan(40);
+  await page.locator('.campaign-card').last().scrollIntoViewIfNeeded();
+  await expect.poll(fetched).toBeGreaterThan(first);
+});
