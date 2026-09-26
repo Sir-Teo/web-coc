@@ -24,7 +24,8 @@ async function boot(page: Page, smith = true) {
   }, smith);
   await page.locator('.train-add').click();
   await page.locator('[data-action="heroes"]').click();
-  await page.locator('[data-action="equipment-view:puppet"]').click();
+  // The King card links each equipped item to the Blacksmith, which edits the King's gear.
+  await page.locator('[data-hero="king"] [data-action="native-slot:barbarian-puppet"]').click();
 }
 for (const [width, height] of [
   [1440, 960],
@@ -42,17 +43,16 @@ for (const [width, height] of [
     await boot(page);
     await expect(page.locator('.ore-wallet')).toContainText('120');
     await expect(page.locator('.ore-wallet')).toContainText('Starry Ore');
-    await expect(page.locator('.equipment-detail')).toContainText('309');
-    await expect(page.locator('.equipment-detail')).toContainText('385');
-    await page.locator('[data-action="equipment-upgrade:puppet,1"]').click();
+    await expect(page.locator('.equipment-detail')).toContainText('Barbarian Puppet');
+    await page.locator('[data-action="native-upgrade:barbarian-puppet,1"]').click();
     await expect(page.locator('.equipment-detail-heading')).toContainText('Level 2');
     expect(
       await page.evaluate(() => [window.__game.model.ores.shiny, window.__game.model.state.gems]),
     ).toEqual([0, 1000]);
-    await page.locator('[data-action="equipment-upgrade:puppet,2"]').click();
+    await page.locator('[data-action="native-upgrade:barbarian-puppet,2"]').click();
     await expect(page.locator('.missing-ores')).toContainText('240');
     await expect(page.locator('.missing-ores')).toContainText('20');
-    await expect(page.locator('[data-action="ore-buy"]')).toContainText('340');
+    await expect(page.locator('[data-action="native-ore-buy"]')).toContainText('340');
     await expect(page.locator('#toast')).not.toHaveClass(/show/);
     await page.screenshot({
       animations: 'disabled',
@@ -60,12 +60,12 @@ for (const [width, height] of [
     });
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     expect(await page.evaluate(() => window.__game.model.state.gems)).toBe(1000);
-    await page.locator('[data-action="equipment-upgrade:puppet,2"]').click();
-    await page.locator('[data-action="ore-buy"]').click();
+    await page.locator('[data-action="native-upgrade:barbarian-puppet,2"]').click();
+    await page.locator('[data-action="native-ore-buy"]').click();
     await expect(page.locator('.equipment-detail-heading')).toContainText('Level 3');
     expect(await page.evaluate(() => window.__game.model.state.gems)).toBe(660);
-    await page.locator('.equipment-card[data-action="equipment-view:boots"]').click();
-    await page.locator('[data-action="equipment-equip:boots,0"]').click();
+    await page.locator('.equipment-card[data-action="native-item:earthquake-boots"]').click();
+    await page.locator('[data-action="native-equip:earthquake-boots,0"]').click();
     await expect(page.locator('.equipment-slots')).toContainText('Earthquake Boots');
     await expect(page.locator('.equipped-label')).toContainText('slot 1');
     await page.locator('.ore-wallet').scrollIntoViewIfNeeded();
@@ -112,7 +112,7 @@ test('locked and unaffordable upgrades are explained without losing resources', 
 }) => {
   await boot(page, false);
   await expect(page.locator('.equipment-locked')).toContainText('Town Hall 8');
-  await expect(page.locator('[data-action="equipment-upgrade:puppet,1"]')).toBeDisabled();
+  await expect(page.locator('[data-action="native-upgrade:barbarian-puppet,1"]')).toBeDisabled();
   await page.evaluate(async () => {
     const { makeBuilding } = await import('/src/game/model.ts');
     const m = window.__game.model;
@@ -121,9 +121,9 @@ test('locked and unaffordable upgrades are explained without losing resources', 
     m.state.gems = 0;
     m.changed();
   });
-  await page.locator('[data-action="equipment-upgrade:puppet,1"]').click();
+  await page.locator('[data-action="native-upgrade:barbarian-puppet,1"]').click();
   await expect(page.locator('.ore-insufficient')).toContainText('Not enough gems');
-  await expect(page.locator('[data-action="ore-buy"]')).toBeDisabled();
+  await expect(page.locator('[data-action="native-ore-buy"]')).toBeDisabled();
   expect(await page.evaluate(() => window.__game.model.kingEquipment.levels.puppet)).toBe(1);
 });
 

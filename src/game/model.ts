@@ -104,16 +104,12 @@ import {
 } from './campaign-loot';
 import { concealedTesla, presentBuilding, targetableBuilding, revealTeslas } from './hidden-tesla';
 import {
-  defaultEquipment,
   emptyOres,
   oreCapacity,
   equipmentBonuses,
-  equipmentQuote,
   validEquipmentKind,
-  EQUIPMENT,
-  EQUIPMENT_MAX_LEVEL,
   EQUIPMENT_LEVELS,
-  equipmentBlacksmith,
+  EQUIPMENT_KEYS,
   ORE_KEYS,
   ORES,
   type KingEquipment,
@@ -347,6 +343,8 @@ import {
 } from './native-hero-data';
 import {
   gearFromLegacy,
+  mergeLegacyEquipment,
+  LEGACY_ITEM,
   unlockCommonItems,
   type HeroGear,
   type HeroRosterProgress,
@@ -831,6 +829,7 @@ export class GameModel {
   constructor(saved?: Save) {
     this.state = saved ?? initialSave();
     expandArmyRoster(this.state);
+    this.migrateLegacyEquipment();
     this.state.dark ??= 0;
     this.tick(Date.now());
   }
@@ -2413,8 +2412,19 @@ export class GameModel {
   get blacksmith() {
     return this.state.buildings.find((b) => b.kind === 'blacksmith' && !b.constructing);
   }
-  get kingEquipment() {
-    return this.state.equipment ?? defaultEquipment();
+  /**
+   * The King's three original items in the classic record's shape, read from `gear`. A view only:
+   * equipping and upgrading write `gear`, which is also what battles carry.
+   */
+  get kingEquipment(): { levels: Record<EquipmentKind, number>; loadout: EquipmentKind[] } {
+    const gear = this.gear;
+    const levels = Object.fromEntries(
+      EQUIPMENT_KEYS.map((k) => [k, gear.levels[LEGACY_ITEM[k]] ?? 1]),
+    ) as Record<EquipmentKind, number>;
+    const loadout = (gear.loadouts.king ?? []).flatMap((slug) =>
+      EQUIPMENT_KEYS.filter((k) => LEGACY_ITEM[k] === slug),
+    );
+    return { levels, loadout };
   }
   get ores() {
     return this.state.ores ?? emptyOres();
@@ -2467,58 +2477,15 @@ export class GameModel {
     const forge = this.blacksmith?.level ?? 0;
     return forge ? EQUIPMENT_LEVELS.filter((row) => row.blacksmith <= forge).length : 0;
   }
+  /** Classic King slots: the same `gear` loadout the King's native panel and battles use. */
   equipKing(kind: EquipmentKind, slot: number) {
-    if (
-      this.battle ||
-      !this.blacksmith ||
-      !this.state.king ||
-      !validEquipmentKind(kind) ||
-      (slot !== 0 && slot !== 1)
-    )
-      return false;
-    const gear = structuredClone(this.kingEquipment);
-    const previous = gear.loadout[slot];
-    if (previous === kind) return false;
-    const other = slot === 0 ? 1 : 0;
-    if (gear.loadout[other] === kind) gear.loadout[other] = previous;
-    gear.loadout[slot] = kind;
-    this.state.equipment = gear;
-    this.changed();
-    return true;
+    if (this.battle || !this.state.king || !validEquipmentKind(kind)) return false;
+    return this.equipItem('king', LEGACY_ITEM[kind], slot);
   }
-  /** An explicit level and gem ceiling make a stale/double-clicked confirmation harmless. */
+  /** Classic King upgrade: the same `gear` level the native item upgrade raises. */
   upgradeEquipment(kind: EquipmentKind, expectedLevel: number, maxGems = 0) {
-    if (
-      this.battle ||
-      !this.blacksmith ||
-      !validEquipmentKind(kind) ||
-      !Number.isInteger(maxGems) ||
-      maxGems < 0
-    )
-      return false;
-    const gear = structuredClone(this.kingEquipment),
-      level = gear.levels[kind];
-    if (level !== expectedLevel || level >= EQUIPMENT_MAX_LEVEL) return false;
-    if (level + 1 > this.equipmentCeiling) {
-      this.notify(`Upgrade the Blacksmith to level ${equipmentBlacksmith(level + 1)} first.`);
-      return false;
-    }
-    const quote = equipmentQuote(level + 1, this.ores)!;
-    if (quote.gems > maxGems || quote.gems > this.state.gems) {
-      this.notify(
-        quote.gems > this.state.gems ? 'Not enough gems.' : 'More ore is needed for this upgrade.',
-      );
-      return false;
-    }
-    const ores = { ...this.ores };
-    for (const k of ORE_KEYS) ores[k] -= Math.min(ores[k], quote.cost[k]);
-    this.state.ores = ores;
-    this.state.gems -= quote.gems;
-    gear.levels[kind]++;
-    this.state.equipment = gear;
-    this.notify(`${EQUIPMENT[kind].name} upgraded to level ${level + 1}.`);
-    this.changed();
-    return true;
+    if (!validEquipmentKind(kind)) return false;
+    return this.upgradeItem(LEGACY_ITEM[kind], expectedLevel, maxGems);
   }
   get heroHall() {
     return this.state.buildings.find((b) => b.kind === 'herohall' && !b.constructing);
@@ -2550,11 +2517,25 @@ export class GameModel {
   get heroSlotCount() {
     return this.heroHall ? heroSlots(this.heroHallLevel) : 0;
   }
-  /** Gear derived from the original King equipment record until the full roster writes it. */
+  /** Every hero's items and loadouts: the one record panels, upgrades and battles read. */
   get gear(): HeroGear {
-    const gear = this.state.gear ?? gearFromLegacy(this.state.equipment);
+    this.migrateLegacyEquipment();
+    const gear = this.state.gear ?? gearFromLegacy();
     unlockCommonItems(gear, this.blacksmithLevel);
     return gear;
+  }
+  /**
+   * Saves from before the hero roster kept the King's items in `equipment`; later ones could
+   * hold both, and the two drifted apart. Fold the original record into `gear` once and drop it,
+   * whichever way the state arrived (construction, import or a test replacing it).
+   */
+  private migrateLegacyEquipment() {
+    const legacy = this.state.equipment;
+    if (!legacy) return;
+    this.state.gear = this.state.gear
+      ? mergeLegacyEquipment(this.state.gear, legacy)
+      : gearFromLegacy(legacy);
+    delete this.state.equipment;
   }
   get petProgress(): PetProgress {
     return this.state.pets ?? { levels: {}, assigned: {} };

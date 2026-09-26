@@ -58,6 +58,18 @@ export function gearFromLegacy(equipment?: KingEquipment): HeroGear {
   }
   return { levels, loadouts };
 }
+/**
+ * Folds an original King record into gear that already exists. Levels keep the higher of the two
+ * (ore spent through either panel stays spent); the loadout stays the one battles already used.
+ */
+export function mergeLegacyEquipment(gear: HeroGear, equipment: KingEquipment) {
+  for (const [key, slug] of Object.entries(LEGACY_ITEM))
+    gear.levels[slug] = Math.max(
+      gear.levels[slug] ?? 0,
+      equipment.levels[key as keyof typeof LEGACY_ITEM],
+    );
+  return gear;
+}
 /** Every Common item the Blacksmith level unlocks, plus the heroes' starting pairs. */
 export function unlockCommonItems(gear: HeroGear, blacksmith: number) {
   let changed = false;

@@ -11,6 +11,7 @@ import {
   type EquipmentKind,
 } from '../src/game/equipment';
 import { heroStatsFor } from '../src/game/native-heroes';
+import { gearFromLegacy } from '../src/game/native-hero-village';
 import { heroAbilityHeal } from '../src/game/native-heroes';
 import { validateSave, migrateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
@@ -95,8 +96,10 @@ describe('Blacksmith economy and persistence', () => {
   );
   it('requires an explicit affordable gem ceiling and refuses stale or repeated purchases', () => {
     const m = village();
-    m.state.equipment = defaultEquipment();
-    m.state.equipment.levels.puppet = 2;
+    m.state.gear = gearFromLegacy({
+      ...defaultEquipment(),
+      levels: { puppet: 2, vial: 1, boots: 1 },
+    });
     m.state.ores = { shiny: 230, glowy: 18, starry: 100 };
     m.state.gems = 19;
     const before = structuredClone(m.state);
@@ -120,11 +123,41 @@ describe('Blacksmith economy and persistence', () => {
     m.startBattle(0, true);
     expect(m.equipKing('puppet', 1)).toBe(false);
     expect(m.upgradeEquipment('boots', 1, 120)).toBe(false);
-    m.state.equipment!.levels.boots = 9;
+    m.state.gear!.levels['earthquake-boots'] = 9;
     // The battle keeps the loadout snapshot taken when it started.
     expect(
       m.battle!.nativeHeroes![0].items.find((item) => item.slug === 'earthquake-boots')!.level,
     ).toBe(1);
+  });
+  it('keeps the classic King record and native gear as one loadout for panels and battles', () => {
+    const m = village();
+    // The native King panel equips Earthquake Boots; the classic slots see the same loadout.
+    expect(m.equipItem('king', 'earthquake-boots', 0)).toBe(true);
+    expect(m.kingEquipment.loadout).toEqual(['boots', 'vial']);
+    // A classic swap now changes what the next battle carries.
+    expect(m.equipKing('puppet', 0)).toBe(true);
+    expect(m.gear.loadouts.king).toEqual(['barbarian-puppet', 'rage-vial']);
+    m.state.ores = { shiny: 1000, glowy: 100, starry: 0 };
+    expect(m.upgradeEquipment('puppet', 1)).toBe(true);
+    expect(m.gear.levels['barbarian-puppet']).toBe(2);
+    m.startBattle(0, true);
+    expect(m.battle!.nativeHeroes![0].items).toEqual([
+      { slug: 'barbarian-puppet', level: 2 },
+      { slug: 'rage-vial', level: 1 },
+    ]);
+  });
+  it('folds a drifted classic record into gear once, keeping ore already spent', () => {
+    const m = village();
+    const state = structuredClone(m.state);
+    state.gear = gearFromLegacy();
+    state.gear.loadouts.king = ['earthquake-boots', 'rage-vial'];
+    state.equipment = { levels: { puppet: 4, vial: 1, boots: 1 }, loadout: ['puppet', 'vial'] };
+    const loaded = new GameModel(state);
+    expect(loaded.state.equipment).toBeUndefined();
+    expect(loaded.gear.levels['barbarian-puppet']).toBe(4);
+    // The loadout battles already used wins.
+    expect(loaded.gear.loadouts.king).toEqual(['earthquake-boots', 'rage-vial']);
+    expect(validateSave(loaded.state)).toBe(true);
   });
   it('retains legacy defaults, pre-Blacksmith ore and imported upgrades; rejects malformed gear', () => {
     const legacy = village(false).state;
