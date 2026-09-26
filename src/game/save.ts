@@ -741,6 +741,39 @@ export function parseSaveFile(text: string): Save | null {
   }
   return validateSave(data) ? data : null;
 }
+/**
+ * The village an import replaced, kept (without recordings) so the import can be undone, even
+ * after a reload. One is kept at a time.
+ */
+const REPLACED_KEY = KEY + '-before-import';
+export function keepReplacedVillage(state: Save) {
+  try {
+    localStorage.setItem(
+      REPLACED_KEY,
+      JSON.stringify({ at: Date.now(), state: villageSnapshot(state) }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+export function replacedVillage(): { at: number; state: Save } | null {
+  try {
+    const kept = JSON.parse(localStorage.getItem(REPLACED_KEY) ?? 'null');
+    if (!kept || typeof kept.at !== 'number') return null;
+    const state = migrateSave(kept.state);
+    return validateSave(state) ? { at: kept.at, state } : null;
+  } catch {
+    return null;
+  }
+}
+export function forgetReplacedVillage() {
+  try {
+    localStorage.removeItem(REPLACED_KEY);
+  } catch {
+    /* Nothing to forget. */
+  }
+}
 export function exportSave(state: Save, recordings = true) {
   const file = saveFileText(state, recordings);
   const url = URL.createObjectURL(new Blob([file.text], { type: 'application/json' }));

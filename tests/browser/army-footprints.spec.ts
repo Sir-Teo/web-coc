@@ -129,6 +129,8 @@ test('a version-3 village migrates camps and the Hero Hall once and preserves pa
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(old)),
   });
+  // Imports are reviewed before they replace the village.
+  await page.locator('[data-action="import-confirm"]').click();
   await expect(page.locator('#toast')).toContainText('2 buildings moved to clear ground');
   expect(await snapshot()).toEqual(migrated);
 });

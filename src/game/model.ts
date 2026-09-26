@@ -2325,12 +2325,48 @@ export class GameModel {
         name: `Layout ${this.state.layouts.length + 1}`,
         slots: [],
       });
+    if (this.state.layouts[slot].slots.length)
+      this.overwritten.layouts.set(slot, structuredClone(this.state.layouts[slot]));
     this.state.layouts[slot] = {
       name: this.state.layouts[slot].name,
       slots: this.positions(),
     };
     this.notify(`Saved to ${this.state.layouts[slot].name}.`);
     this.changed();
+  }
+  /**
+   * What a save replaced in each filled layout or Quick army slot this session, so the overwrite
+   * can be undone from the same card.
+   */
+  private overwritten = {
+    layouts: new Map<number, Layout>(),
+    presets: new Map<number, ArmyPreset>(),
+  };
+  /** A different village (an import) has its own slots: nothing of this one to undo. */
+  clearSlotHistory() {
+    this.overwritten.layouts.clear();
+    this.overwritten.presets.clear();
+  }
+  canUndoSlot(kind: 'layout' | 'preset', slot: number) {
+    return (kind === 'layout' ? this.overwritten.layouts : this.overwritten.presets).has(slot);
+  }
+  undoSlot(kind: 'layout' | 'preset', slot: number) {
+    if (this.battle) return false;
+    if (kind === 'layout') {
+      const layout = this.overwritten.layouts.get(slot);
+      if (!layout || !this.state.layouts?.[slot]) return false;
+      this.state.layouts[slot] = layout;
+      this.overwritten.layouts.delete(slot);
+      this.notify(`${layout.name} restored.`);
+    } else {
+      const preset = this.overwritten.presets.get(slot);
+      if (!preset || !this.state.armyPresets) return false;
+      this.state.armyPresets[slot] = preset;
+      this.overwritten.presets.delete(slot);
+      this.notify(`${preset.name} restored.`);
+    }
+    this.changed();
+    return true;
   }
   loadLayout(slot: number) {
     const layout = this.state.layouts?.[slot];
@@ -2558,6 +2594,8 @@ export class GameModel {
     if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return;
     if (!this.canSaveArmyPreset) return this.notify('Add troops before saving an army.');
     this.state.armyPresets ??= [null, null, null];
+    const previous = this.state.armyPresets[slot];
+    if (previous) this.overwritten.presets.set(slot, structuredClone(previous));
     const gear = this.gear,
       pets = this.petProgress;
     const heroes = this.heroLineup.map((kind) => ({

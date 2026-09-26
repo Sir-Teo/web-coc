@@ -113,7 +113,9 @@ test('imports an older village backup and preserves its gold and existing army',
     mimeType: 'application/json',
     buffer: Buffer.from(backup),
   });
-  await expect(page.locator('#toast')).toHaveText('Village restored successfully.');
+  // Imports are reviewed before they replace the village.
+  await page.locator('[data-action="import-confirm"]').click();
+  await expect(page.locator('#toast')).toContainText('Village restored successfully.');
   expect(
     await page.evaluate(() => ({
       gold: window.__game.model.state.gold,
@@ -143,5 +145,7 @@ test('scouting a mortar shows its range without starting the battle', async ({ p
   await expect(page.locator('#toast')).toContainText('Range 4–11 tiles');
   expect(await page.evaluate(() => window.__game.model.battle.started)).toBe(false);
   await page.waitForTimeout(350);
-  await page.screenshot({ path: `output/playtest/mortar-scouting-${test.info().project.name}.png` });
+  await page.screenshot({
+    path: `output/playtest/mortar-scouting-${test.info().project.name}.png`,
+  });
 });

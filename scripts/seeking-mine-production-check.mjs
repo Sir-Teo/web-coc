@@ -115,6 +115,8 @@ try {
         mimeType: 'application/json',
         buffer: Buffer.from(villageFile),
       });
+      // Imports are reviewed before they replace the village.
+      await page.locator('[data-action="import-confirm"]').click();
       await expect(page.locator('#toast')).toContainText('Village restored');
       await page.locator('.attack-btn').click();
       for (const fixture of fixtures) {

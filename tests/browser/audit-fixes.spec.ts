@@ -42,6 +42,8 @@ test('an import that cannot be saved says so instead of reporting success', asyn
     mimeType: 'application/json',
     buffer: Buffer.from(backup),
   });
+  // Imports are reviewed before they replace the village.
+  await page.locator('[data-action="import-confirm"]').click();
   await expect(page.locator('#toast')).toContainText('session only');
   await expect(page.locator('#toast')).not.toContainText('successfully');
   await expect(page.locator('#save-state')).toContainText('Saving is unavailable');
@@ -510,4 +512,42 @@ test('the building card shows upgrade cost, time, builders and the exact blocker
     m.changed();
   });
   await expect(card.locator('.upgrade-blocker')).toHaveCount(0);
+});
+
+test('an import is reviewed first and can be undone from Settings', async ({ page }) => {
+  const backup = await page.evaluate(() => {
+    const state = structuredClone(window.__game.model.state);
+    state.gold = 1234;
+    return JSON.stringify(state);
+  });
+  const before = await page.evaluate(() => window.__game.model.state.gold);
+  await page.locator('#import-file').setInputFiles({
+    name: 'village.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await expect(page.locator('#modal-title')).toHaveText('Replace this village?');
+  await expect(page.locator('.import-review')).toContainText('1,234');
+  // Nothing changes until the player confirms.
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(before);
+  await page.locator('[data-action="import-confirm"]').click();
+  await expect(page.locator('#toast')).toContainText('Undo it from Settings');
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(1234);
+  await page.evaluate(() => window.__game.hud.show('settings'));
+  await page.locator('[data-action="import-undo"]').click();
+  await expect(page.locator('#toast')).toContainText('previous village is back');
+  expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(before);
+});
+
+test('overwriting a saved layout or Quick army can be undone', async ({ page }) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.saveArmyPreset(0, 'First');
+    m.state.army.swordsman = 1;
+    m.saveArmyPreset(0, 'Second');
+    window.__game.hud.show('army-presets');
+  });
+  await page.locator('[data-action="preset-undo:0"]').click();
+  expect(await page.evaluate(() => window.__game.model.state.armyPresets[0].name)).toBe('First');
+  await expect(page.locator('[data-action="preset-undo:0"]')).toHaveCount(0);
 });

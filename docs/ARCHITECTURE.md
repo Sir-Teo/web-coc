@@ -91,7 +91,11 @@ any that no longer validate. A village read from the local backup alone has no r
 Village backups share one contract (`saveFileText` / `parseSaveFile` in `save.ts`): compact
 JSON no larger than `MAX_SAVE_FILE_BYTES` (16 MiB). Five of the longest recordings the replay
 validator allows come to about 6.3 MB, so an export fits; anything larger drops recordings,
-oldest first, and says so. Settings also offers a backup without recordings.
+oldest first, and says so. Settings also offers a backup without recordings. An import is
+shown for review (the backup beside the current village) before it replaces anything; the
+replaced village is kept under its own key, without recordings, so Settings can undo the import
+even after a reload. Saving over a filled layout or Quick army slot can be undone from the same
+card for the rest of the session.
 
 The production build writes a lossless WebP beside every PNG under `dist/assets` and
 points the built code, packs, atlases and styles at it (`scripts/webp-dist.mjs`): about a

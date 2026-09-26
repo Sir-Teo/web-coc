@@ -216,6 +216,8 @@ test('exported villages restore through the file import control', async ({ page 
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(expected)),
   });
+  // Imports are reviewed before they replace the village.
+  await page.locator('[data-action="import-confirm"]').click();
   await expect(page.locator('#toast')).toContainText('Village restored');
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(expected.gold);
   await page.locator('[data-action="settings"]').click();
@@ -250,6 +252,8 @@ test('an imported village cannot smuggle markup into the layout panel', async ({
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(village)),
   });
+  // Imports are reviewed before they replace the village.
+  await page.locator('[data-action="import-confirm"]').click();
   await expect(page.locator('#toast')).toContainText('Village restored');
   await page.locator('[data-action="edit"]').click();
   await page.locator('[data-action="layouts"]').click();

@@ -159,7 +159,15 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
 };
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
-import { exportSave, parseSaveFile, saveGame, MAX_SAVE_FILE_BYTES } from '../game/save';
+import {
+  exportSave,
+  forgetReplacedVillage,
+  keepReplacedVillage,
+  replacedVillage,
+  parseSaveFile,
+  saveGame,
+  MAX_SAVE_FILE_BYTES,
+} from '../game/save';
 import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
@@ -173,6 +181,7 @@ type Panel =
   | 'campaign'
   | 'campaign-scout'
   | 'settings'
+  | 'import-confirm'
   | 'achievements'
   | 'star-bonus'
   | 'help'
@@ -1617,6 +1626,36 @@ export class HUD {
         retryOfflineWarm();
         this.render();
         break;
+      case 'import-cancel':
+        this.pendingImport = null;
+        this.show('settings');
+        break;
+      case 'import-confirm': {
+        const data = this.pendingImport;
+        this.pendingImport = null;
+        if (!data || m.battle) break;
+        const kept = keepReplacedVillage(m.state);
+        void this.applyVillage(
+          data,
+          kept
+            ? 'Village restored successfully. Undo it from Settings.'
+            : 'Village restored successfully.',
+        );
+        break;
+      }
+      case 'import-undo': {
+        const replaced = replacedVillage();
+        if (!replaced || m.battle) break;
+        forgetReplacedVillage();
+        void this.applyVillage(replaced.state, 'Your previous village is back.');
+        break;
+      }
+      case 'layout-undo':
+        m.undoSlot('layout', Number(arg));
+        break;
+      case 'preset-undo':
+        m.undoSlot('preset', Number(arg));
+        break;
       case 'export':
       case 'export-village': {
         const file = exportSave(m.state, verb === 'export');
@@ -1660,6 +1699,8 @@ export class HUD {
       document.querySelector<HTMLInputElement>('#import-replay-file')!.value = '';
     }
   }
+  /** A parsed backup waiting for the player to confirm it replaces this village. */
+  private pendingImport: Save | null = null;
   private async import(file: File) {
     let data: Save | null = null;
     try {
@@ -1673,7 +1714,28 @@ export class HUD {
       this.toast('That backup is not a valid Crown & Clan village.');
       return;
     }
+    // Review before anything is replaced.
+    this.pendingImport = data;
+    this.show('import-confirm');
+  }
+  /** What a backup holds, beside the village it would replace. */
+  private importConfirm() {
+    const data = this.pendingImport;
+    if (!data) return `<div class="modal-body">${button('settings', 'Back to settings')}</div>`;
+    const summary = (state: Save) => {
+      const th = state.buildings.find((b) => b.kind === 'townhall')?.level ?? 1;
+      return `Town Hall ${th} · ${n(state.buildings.length)} buildings · ${coin} ${n(state.gold)} ${elixir} ${n(state.elixir)} ${gem} ${n(state.gems)}`;
+    };
+    const when = new Date(data.lastTick).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+    return `<div class="modal-body confirm-body import-review"><h3>Backup</h3><p>${summary(data)}</p><p><small>Last played ${html(when)} · ${data.raidLog?.length ?? 0} raids in its log</small></p><h3>Your current village</h3><p>${summary(this.model.state)}</p><p class="confirm-line">${icon('ShieldCheck', 20)} Your current village is kept, so you can undo this import from Settings.</p><div class="confirm-actions">${button('import-cancel', 'Cancel', 'game-btn stone')}${button('import-confirm', `${icon('Upload', 18)} Replace village`, 'game-btn green')}</div></div>`;
+  }
+  /** Makes `data` the village: resets transient state, then saves it and says whether it stuck. */
+  private async applyVillage(data: Save, done: string) {
     this.model.state = data;
+    this.model.clearSlotHistory();
     this.presetNames.clear();
     this.model.returnHome();
     this.model.endEdit();
@@ -1696,7 +1758,7 @@ export class HUD {
       this.toast(
         'Village restored for this session only: it could not be saved in this browser. Export it from Settings to keep it.',
       );
-    else if (!this.showMapUpgrade()) this.toast('Village restored successfully.');
+    else if (!this.showMapUpgrade()) this.toast(done);
   }
   showMapUpgrade() {
     const moved = this.model.state.mapUpgrade?.moved;
@@ -2874,6 +2936,7 @@ export class HUD {
       campaign: 'The Goblin Valley',
       'campaign-scout': 'Scout village',
       settings: 'Settings',
+      'import-confirm': 'Replace this village?',
       achievements: 'Your legacy',
       help: 'Welcome, Chief',
       info: 'Building details',
@@ -2893,6 +2956,7 @@ export class HUD {
       campaign: 'Beyond the forest, a whole valley is waiting.',
       'campaign-scout': 'Study the layout before you attack.',
       settings: 'Make yourself at home.',
+      'import-confirm': 'Check the backup before it replaces your village.',
       achievements: 'Small victories. A growing legend.',
       help: 'Your village. Your army. Your adventure.',
       info: 'What this level gives you, and what the next one adds.',
@@ -2924,17 +2988,19 @@ export class HUD {
                           ? this.campaignScout()
                           : this.panel === 'settings'
                             ? this.settings()
-                            : this.panel === 'achievements'
-                              ? this.achievements()
-                              : this.panel === 'research'
-                                ? this.research()
-                                : this.panel === 'info'
-                                  ? this.info()
-                                  : this.panel === 'layouts'
-                                    ? this.layoutPanel()
-                                    : this.panel === 'surrender'
-                                      ? this.surrender()
-                                      : this.help();
+                            : this.panel === 'import-confirm'
+                              ? this.importConfirm()
+                              : this.panel === 'achievements'
+                                ? this.achievements()
+                                : this.panel === 'research'
+                                  ? this.research()
+                                  : this.panel === 'info'
+                                    ? this.info()
+                                    : this.panel === 'layouts'
+                                      ? this.layoutPanel()
+                                      : this.panel === 'surrender'
+                                        ? this.surrender()
+                                        : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -2977,7 +3043,7 @@ export class HUD {
         const fits =
           p && armySpace(p.army) <= m.capacity && spellSpace(p.spells) <= m.spellCapacity;
         const issue = p ? m.armyPreparationIssue(p.army, p.spells) : null;
-        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}${p?.heroes?.length ? this.presetHeroes(p) : ''}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
+        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}${p?.heroes?.length ? this.presetHeroes(p) : ''}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${m.canUndoSlot('preset', slot) ? button(`preset-undo:${slot}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
       })
       .join(
         '',
@@ -3198,7 +3264,7 @@ export class HUD {
       .map((i) => {
         const layout = m.layouts[i];
         const filled = !!layout?.slots.length;
-        return `<article class="layout-row"><div class="layout-icon">${icon('LayoutGrid', 24)}</div><div><h3>${html(layout?.name ?? `Layout ${i + 1}`)}</h3><p>${filled ? `${layout!.slots.length} buildings stored` : 'Empty slot'}</p></div><div class="layout-actions">${button(`layout-save:${i}`, `${icon('Save', 16)} Save`, 'game-btn stone')}${button(`layout-load:${i}`, `${icon('RotateCcw', 16)} Restore`, 'game-btn green', filled ? '' : 'disabled')}</div></article>`;
+        return `<article class="layout-row"><div class="layout-icon">${icon('LayoutGrid', 24)}</div><div><h3>${html(layout?.name ?? `Layout ${i + 1}`)}</h3><p>${filled ? `${layout!.slots.length} buildings stored` : 'Empty slot'}</p></div><div class="layout-actions">${button(`layout-save:${i}`, `${icon('Save', 16)} Save`, 'game-btn stone')}${m.canUndoSlot('layout', i) ? button(`layout-undo:${i}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`layout-load:${i}`, `${icon('RotateCcw', 16)} Restore`, 'game-btn green', filled ? '' : 'disabled')}</div></article>`;
       })
       .join('')}</div>`;
   }
@@ -3358,7 +3424,16 @@ export class HUD {
       )
       .join(
         '',
-      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">${this.offlineNote()}<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
+      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}${(() => {
+      const replaced = replacedVillage();
+      return replaced
+        ? button(
+            'import-undo',
+            `${icon('RotateCcw', 18)} Undo import (${new Date(replaced.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`,
+            'game-btn stone',
+          )
+        : '';
+    })()}</div></div><div class="settings-note">${this.offlineNote()}<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
   }
   /** What offline play covers right now, from the service worker's own report. */
   private offlineNote() {
