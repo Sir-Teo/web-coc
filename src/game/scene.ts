@@ -639,7 +639,7 @@ export class VillageScene extends Phaser.Scene {
     };
     this.cameraShake = new CameraShakeLayer(this.cameras.main, () => {
       const battle = this.model.battle,
-        reduced = this.model.state.settings.reducedMotion,
+        reduced = this.model.reducedMotion,
         replay = !!this.model.replay;
       if (!battle) return ZERO;
       if (
@@ -1704,18 +1704,14 @@ export class VillageScene extends Phaser.Scene {
     if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
       return villageArcherTowerBounds(
         b,
-        this.model.state.settings.reducedMotion
-          ? 0
-          : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+        this.model.reducedMotion ? 0 : (this.model.battle?.elapsed ?? this.renderClock / 1000),
         this.model.battle,
-        this.model.state.settings.reducedMotion,
+        this.model.reducedMotion,
       );
     if (b.kind === 'darkdrill')
       return darkDrillBounds(
         b,
-        this.model.state.settings.reducedMotion
-          ? 0
-          : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+        this.model.reducedMotion ? 0 : (this.model.battle?.elapsed ?? this.renderClock / 1000),
       );
     const sample =
       b.kind === 'inferno'
@@ -1744,7 +1740,7 @@ export class VillageScene extends Phaser.Scene {
       const pose = seekingMineBodyState(
         this.model.battle?.traps[b.id],
         this.model.battle?.elapsed ?? 0,
-        this.model.state.settings.reducedMotion,
+        this.model.reducedMotion,
         !!this.model.battle?.finished,
       );
       return seekingMineBounds(b.level, pose.state);
@@ -1753,9 +1749,7 @@ export class VillageScene extends Phaser.Scene {
       return infernoBounds(
         b.level,
         state,
-        this.model.state.settings.reducedMotion
-          ? 0
-          : (this.model.battle?.elapsed ?? this.renderClock / 1000),
+        this.model.reducedMotion ? 0 : (this.model.battle?.elapsed ?? this.renderClock / 1000),
         b.infernoMode ?? 'single',
       );
     return sample(b.level, state);
@@ -1847,13 +1841,13 @@ export class VillageScene extends Phaser.Scene {
   sync() {
     if (this.lateAssetsPending()) void this.loadLateAssets();
     if (this.deferredArtPending()) void this.loadFamilies(this.missingFamilies());
-    const reduced = this.model.state.settings.reducedMotion;
+    const reduced = this.model.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
       this.effectTimeline.clear();
     }
     this.reducedCombatMotion = reduced;
-    if (this.model.state.settings.reducedMotion) this.resourceFlights.clear();
+    if (this.model.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
@@ -2041,13 +2035,7 @@ export class VillageScene extends Phaser.Scene {
     im.setData('intactHeight', this.intactHeight(b, im));
     const trap = this.model.battle?.traps[b.id];
     if (b.npc === 'pumpkin-bomb')
-      im.setFrame(
-        pumpkinFrame(
-          trap,
-          this.model.battle?.elapsed ?? 0,
-          this.model.state.settings.reducedMotion,
-        ),
-      );
+      im.setFrame(pumpkinFrame(trap, this.model.battle?.elapsed ?? 0, this.model.reducedMotion));
     im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
     // Fallback sprites hide only once native bodies actually draw: X-Bow and
     // Cannon art bundles in after boot (see loadHeavyArt).
@@ -2072,11 +2060,7 @@ export class VillageScene extends Phaser.Scene {
       im.setAlpha(0);
     if (b.npc === 'santa-trap')
       im.setFrame(
-        santaTrapFrame(
-          trap,
-          this.model.battle?.elapsed ?? 0,
-          this.model.state.settings.reducedMotion,
-        ),
+        santaTrapFrame(trap, this.model.battle?.elapsed ?? 0, this.model.reducedMotion),
       ).setAlpha(1);
     if (
       !b.npc &&
@@ -2152,7 +2136,7 @@ export class VillageScene extends Phaser.Scene {
         b.kind === 'darkdrill'
           ? p.y + darkDrillBounds(b, 0)[1] - 13
           : p.y - im.displayHeight * 0.86 - 13;
-      const reduced = this.model.state.settings.reducedMotion;
+      const reduced = this.model.reducedMotion;
       const anchor = `${p.x},${y},${reduced}`;
       if (c.getData('anchor') !== anchor) {
         this.tweens.killTweensOf(c);
@@ -2224,7 +2208,7 @@ export class VillageScene extends Phaser.Scene {
       if (!im) continue;
       const trap = battle.traps[b.id];
       if (b.npc === 'pumpkin-bomb')
-        im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.state.settings.reducedMotion));
+        im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.reducedMotion));
       const alpha = trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1;
       if (im.alpha !== alpha) im.setAlpha(alpha);
     }
@@ -2439,7 +2423,7 @@ export class VillageScene extends Phaser.Scene {
   private drawCampUnits() {
     this.campShadows.clear();
     if (this.model.battle) return;
-    const reduced = this.model.state.settings.reducedMotion;
+    const reduced = this.model.reducedMotion;
     this.campShadows.fillStyle(0x1f2a16, 0.26);
     for (let i = 0; i < this.campActors.length; i++) {
       const actor = this.campActors[i],
@@ -2973,7 +2957,7 @@ export class VillageScene extends Phaser.Scene {
       key.revision === this.model.revision &&
       key.synced === this.syncCount &&
       key.selected === this.model.selected &&
-      key.reduced === this.model.state.settings.reducedMotion &&
+      key.reduced === this.model.reducedMotion &&
       key.scrollX === cam.scrollX &&
       key.scrollY === cam.scrollY &&
       key.zoomX === cam.zoomX &&
@@ -2987,7 +2971,7 @@ export class VillageScene extends Phaser.Scene {
     key.revision = this.model.revision;
     key.synced = this.syncCount;
     key.selected = this.model.selected;
-    key.reduced = this.model.state.settings.reducedMotion;
+    key.reduced = this.model.reducedMotion;
     key.scrollX = cam.scrollX;
     key.scrollY = cam.scrollY;
     key.zoomX = cam.zoomX;
@@ -3015,7 +2999,7 @@ export class VillageScene extends Phaser.Scene {
   private renderSanta(cues: SampleCue[]) {
     this.santaPresentation.render(
       this.model.battle,
-      this.model.state.settings.reducedMotion,
+      this.model.reducedMotion,
       !document.hidden && !this.paused && !this.model.replay?.paused && !this.model.replay?.seeking,
       this.model.replay?.speed ?? 1,
       iso,
@@ -3027,7 +3011,7 @@ export class VillageScene extends Phaser.Scene {
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
   private drawWorld() {
     const battle = this.model.battle;
-    const reduced = this.model.state.settings.reducedMotion;
+    const reduced = this.model.reducedMotion;
     const clock = battle?.elapsed ?? this.renderClock / 1000;
     if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
       this.villageNativePresentation.preview();
@@ -3284,7 +3268,7 @@ export class VillageScene extends Phaser.Scene {
     if (active) {
       const g = this.overlay;
       const ellipse = this.ellipseShape();
-      const reduced = this.model.state.settings.reducedMotion;
+      const reduced = this.model.reducedMotion;
       const p = this.auraPoint;
       for (const cast of active.nativeSpells ?? []) {
         if (cast.firstHit - 0.9 > active.elapsed) continue;
@@ -3471,7 +3455,7 @@ export class VillageScene extends Phaser.Scene {
   /** Units, their shadows, markers and bars; defenders; native troop and hero models. */
   private drawUnits() {
     const battle = this.model.battle;
-    const reduced = this.model.state.settings.reducedMotion;
+    const reduced = this.model.reducedMotion;
     this.unitMarks.begin();
     this.unitBars.clear();
     this.fallbackMarks.length = 0;
@@ -3784,7 +3768,7 @@ export class VillageScene extends Phaser.Scene {
     const dots = this.defenderDots;
     dots.begin();
     const battle = this.model.battle,
-      reduced = this.model.state.settings.reducedMotion;
+      reduced = this.model.reducedMotion;
     this.garrisonPresentation.render(battle, reduced, this.project, AIR_LIFT);
     const defenders = battle?.defenders ?? [];
     if (!battle || (!defenders.length && !this.defenderSprites.size)) {
@@ -3922,7 +3906,7 @@ export class VillageScene extends Phaser.Scene {
     graphics.fillRect(x - w / 2, y, Math.max(0, w * p), 3);
   }
   private animateEffect(config: EffectTween) {
-    if (this.model.state.settings.reducedMotion) {
+    if (this.model.reducedMotion) {
       // Phaser treats present-but-undefined properties as tween definitions.
       const { x, y, scale, scaleX, scaleY, ...stationary } = config;
       config = { ...stationary, delay: 0 };
@@ -4162,14 +4146,14 @@ export class VillageScene extends Phaser.Scene {
     }
     const p = iso(fx.x, fx.y);
     if (fx.type === 'quake') {
-      this.combatEffects.quake(p, fx.radius ?? 8, this.model.state.settings.reducedMotion);
+      this.combatEffects.quake(p, fx.radius ?? 8, this.model.reducedMotion);
       this.audio.play('hit');
       return;
     }
     if (fx.type === 'tesla-zap' || fx.type === 'tesla-reveal') return;
     if (fx.type === 'gust') return;
     if (fx.type === 'trap' || fx.type === 'spring') {
-      const reduced = this.model.state.settings.reducedMotion;
+      const reduced = this.model.reducedMotion;
       const label = this.add
         .text(p.x, p.y - 38, fx.text ?? 'SPRUNG!', {
           fontFamily: 'Trebuchet MS',
@@ -4235,7 +4219,7 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (fx.type === 'spell-native') {
-      if (this.model.state.settings.reducedMotion) return;
+      if (this.model.reducedMotion) return;
       const color = NATIVE_SPELL_COLOR[fx.text ?? ''] ?? 0xfff0c2;
       const radius = Math.max(0.6, fx.radius ?? 1) * 64;
       const ring = this.add
@@ -4315,8 +4299,7 @@ export class VillageScene extends Phaser.Scene {
       }
       this.sparks(p.x, p.y - 20, color, 16);
       this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
-      if (fx.spell === 'lightning' && !this.model.state.settings.reducedMotion)
-        this.shakeCamera(140, 0.0022);
+      if (fx.spell === 'lightning' && !this.model.reducedMotion) this.shakeCamera(140, 0.0022);
       return;
     }
     if (fx.type === 'blast' && fx.weapon === 'cannonball') return;
@@ -4338,7 +4321,7 @@ export class VillageScene extends Phaser.Scene {
       });
       this.sparks(p.x, p.y - 26 - lift, color, 14);
       this.audio.play('destroy');
-      if (!this.model.state.settings.reducedMotion) this.shakeCamera(80, 0.0016);
+      if (!this.model.reducedMotion) this.shakeCamera(80, 0.0016);
       return;
     }
     if (fx.type === 'mortar-fire') return;
@@ -4355,7 +4338,7 @@ export class VillageScene extends Phaser.Scene {
     }
     if (fx.type === 'breath') {
       const { from, to } = this.projectileAnchors(fx);
-      this.combatEffects.breath(from, to, this.model.state.settings.reducedMotion);
+      this.combatEffects.breath(from, to, this.model.reducedMotion);
       this.audio.play('hit');
       return;
     }
@@ -4373,7 +4356,7 @@ export class VillageScene extends Phaser.Scene {
     if (fx.type === 'projectile' && fx.projectileId) {
       // The flight itself is posed by the overlay pass later this frame (effects drain
       // first); only the muzzle flash comes from the event, positioned from the event.
-      if (!this.model.state.settings.reducedMotion)
+      if (!this.model.reducedMotion)
         this.combatEffects.muzzle(fx.weapon!, this.projectileAnchors(fx).from);
       return;
     }
@@ -4382,7 +4365,7 @@ export class VillageScene extends Phaser.Scene {
       fx.toX !== undefined
     ) {
       const { from, to } = this.projectileAnchors(fx);
-      const reduced = this.model.state.settings.reducedMotion;
+      const reduced = this.model.reducedMotion;
       if (fx.type === 'impact' && fx.weapon === 'bomb' && fx.radius)
         this.combatEffects.groundBlast(iso(fx.toX, fx.toY!), fx.radius, reduced, fx.weapon);
       else if (fx.type === 'impact') this.combatEffects.impact(fx.weapon!, to, reduced);
@@ -4407,7 +4390,7 @@ export class VillageScene extends Phaser.Scene {
     if (fx.type === 'destroy') {
       this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
       this.audio.play('destroy');
-      if (!this.model.state.settings.reducedMotion)
+      if (!this.model.reducedMotion)
         this.shakeCamera(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
       this.animateEffect({
@@ -4434,7 +4417,7 @@ export class VillageScene extends Phaser.Scene {
    * are pinned to the screen, so panning mid-flight cannot pull them off course.
    */
   flyToHud(sx: number, sy: number, resource: 'gold' | 'elixir' | 'dark') {
-    if (this.model.state.settings.reducedMotion) return;
+    if (this.model.reducedMotion) return;
     const target = document.querySelector<HTMLElement>(`[data-resource="${resource}"]`);
     if (!target) return;
     const box = target.getBoundingClientRect(),
@@ -4456,7 +4439,7 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   sparks(x: number, y: number, color: number, count: number) {
-    if (this.model.state.settings.reducedMotion) return;
+    if (this.model.reducedMotion) return;
     // Off-screen impacts never need dots; the battle layer already culled them.
     const camView = this.cameras.main.worldView;
     if (
@@ -4579,21 +4562,21 @@ export class VillageScene extends Phaser.Scene {
     const b = this.model.battle;
     this.archerTowerProjectiles.render(
       b ?? null,
-      this.model.state.settings.reducedMotion,
+      this.model.reducedMotion,
       iso,
       (p) => iso(p.x, p.y).y - this.projectileAnchors(projectileEffect(p, 'projectile')).to.y,
     );
     // Original client flight art, trails and impact effects; drawn shots keep the fallback.
     const native = this.nativeProjectiles.render(
       b ?? null,
-      this.model.state.settings.reducedMotion,
+      this.model.reducedMotion,
       iso,
       AIR_LIFT,
       this.detailLevel,
     );
     const retained = this.retainedShots;
     retained.clear();
-    const shots = b && !this.model.state.settings.reducedMotion ? presentationProjectiles(b) : [];
+    const shots = b && !this.model.reducedMotion ? presentationProjectiles(b) : [];
     if (b && shots.length) {
       const now = presentationTime(b);
       const buildings = this.buildingMap(b.buildings);
@@ -4646,7 +4629,7 @@ export class VillageScene extends Phaser.Scene {
       visible ?? this.model.buildings.filter((v) => this.model.visibleBuilding(v)),
       this.model.battle,
       this.model.battle?.elapsed ?? this.renderClock / 1000,
-      this.model.state.settings.reducedMotion,
+      this.model.reducedMotion,
       iso,
     );
   }
@@ -4701,7 +4684,7 @@ export class VillageScene extends Phaser.Scene {
         this.ruinScan.elapsed !== battle.elapsed)
     )
       this.syncRuins(battle);
-    if (!battle && !this.model.state.settings.reducedMotion) this.campTime += dt;
+    if (!battle && !this.model.reducedMotion) this.campTime += dt;
     this.drawCampUnits();
     this.present(time, true);
   }

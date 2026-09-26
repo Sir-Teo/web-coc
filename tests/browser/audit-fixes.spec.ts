@@ -122,3 +122,25 @@ test('troop shortcuts never pan the camera', async ({ page }) => {
   }
   expect(await camera()).toEqual(before);
 });
+
+test('the system reduced-motion preference reaches the canvas, with an explicit override', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await page.evaluate(() => window.__game.model.reducedMotion)).toBe(true);
+  await expect(page.locator('html')).toHaveClass(/reduce-motion/);
+  // The saved switch is untouched: the preference belongs to the device.
+  expect(await page.evaluate(() => window.__game.model.state.settings.reducedMotion)).toBe(false);
+  await page.evaluate(() => window.__game.hud.show('settings'));
+  const toggle = page.locator('[data-action="motion"]');
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await toggle.click();
+  await expect(page.locator('[data-action="motion"]')).toHaveAttribute('aria-checked', 'false');
+  expect(await page.evaluate(() => window.__game.model.reducedMotion)).toBe(false);
+  await expect(page.locator('html')).toHaveClass(/full-motion/);
+  // Following the device again once it stops asking.
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect.poll(() => page.evaluate(() => window.__game.model.systemReducedMotion)).toBe(false);
+});

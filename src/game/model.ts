@@ -527,7 +527,13 @@ export interface Save {
   layouts?: Layout[];
   armyPresets?: (ArmyPreset | null)[];
   raidLog?: RaidRecord[];
-  settings: { sound: boolean; music: boolean; reducedMotion: boolean };
+  settings: {
+    sound: boolean;
+    music: boolean;
+    reducedMotion: boolean;
+    /** Full motion although the operating system asks to reduce it (an explicit override). */
+    fullMotion?: boolean;
+  };
   stats: {
     /** Campaign raids completed, whatever their result. */
     raids: number;
@@ -863,6 +869,28 @@ export class GameModel {
     ].filter((stars) => stars > 0).length;
     this.state.dark ??= 0;
     this.tick(Date.now());
+  }
+  /** The operating system asks for reduced motion. Set by the page; never saved. */
+  systemReducedMotion = false;
+  /**
+   * Reduced motion as every presentation layer applies it: the player's own switch, or the
+   * system preference unless the player has explicitly asked for full motion.
+   */
+  get reducedMotion() {
+    const s = this.state.settings;
+    return s.reducedMotion || (this.systemReducedMotion && !s.fullMotion);
+  }
+  /** The Reduced motion switch: flips the effective value, overriding the system if needed. */
+  toggleReducedMotion() {
+    const s = this.state.settings;
+    if (this.reducedMotion) {
+      s.reducedMotion = false;
+      if (this.systemReducedMotion) s.fullMotion = true;
+    } else {
+      s.reducedMotion = true;
+      delete s.fullMotion;
+    }
+    this.changed();
   }
   changed(passive = false) {
     this.revision++;

@@ -11,6 +11,7 @@ import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
 import { recordBootResources, registerOfflineSupport } from './offline';
 import { decodeLoadedImages } from './game/image-decode';
+import { watchSystemMotion } from './ui/motion';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -29,7 +30,7 @@ async function boot() {
     const model = new GameModel(saved);
     const audio = new AudioManager();
     audio.enabled = model.state.settings.sound;
-    document.documentElement.classList.toggle('reduce-motion', model.state.settings.reducedMotion);
+    watchSystemMotion(model);
     document.addEventListener(
       'pointerdown',
       () => {

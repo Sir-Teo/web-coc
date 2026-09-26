@@ -79,3 +79,19 @@ it('every quest can be completed through normal play', () => {
   m.state.claimedQuests = [...(m.state.claimedQuests ?? []), 'high-flier'];
   expect(validateSave(m.state)).toBe(true);
 });
+
+it('reduced motion combines the device preference with an explicit override', () => {
+  const m = new GameModel();
+  expect(m.reducedMotion).toBe(false);
+  m.systemReducedMotion = true;
+  expect(m.reducedMotion).toBe(true);
+  m.toggleReducedMotion();
+  expect(m.reducedMotion).toBe(false);
+  expect(m.state.settings.fullMotion).toBe(true);
+  expect(validateSave(m.state)).toBe(true);
+  m.toggleReducedMotion();
+  expect(m.reducedMotion).toBe(true);
+  expect(m.state.settings.fullMotion).toBeUndefined();
+  m.systemReducedMotion = false;
+  expect(m.reducedMotion).toBe(true);
+});

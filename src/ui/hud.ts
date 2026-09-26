@@ -159,6 +159,7 @@ import { AudioManager } from '../game/audio';
 import { exportSave, parseSaveFile, saveGame, MAX_SAVE_FILE_BYTES } from '../game/save';
 import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
+import { applyMotionPreference } from './motion';
 type Panel =
   | 'blacksmith'
   | 'heroes'
@@ -1171,7 +1172,7 @@ export class HUD {
             parseFloat(getComputedStyle(body).paddingLeft);
           body.scrollTo({
             left,
-            behavior: m.state.settings.reducedMotion ? 'instant' : 'smooth',
+            behavior: m.reducedMotion ? 'instant' : 'smooth',
           });
         }
         break;
@@ -1448,9 +1449,8 @@ export class HUD {
         m.changed();
         break;
       case 'motion':
-        m.state.settings.reducedMotion = !m.state.settings.reducedMotion;
-        document.documentElement.classList.toggle('reduce-motion', m.state.settings.reducedMotion);
-        m.changed();
+        m.toggleReducedMotion();
+        applyMotionPreference(m);
         break;
       case 'claim':
         if (m.claimQuest(arg)) this.audio.play('collect');
@@ -1516,7 +1516,7 @@ export class HUD {
     this.model.returnHome();
     this.model.endEdit();
     this.model.tick(Date.now());
-    document.documentElement.classList.toggle('reduce-motion', data.settings.reducedMotion);
+    applyMotionPreference(this.model);
     this.audio.enabled = data.settings.sound;
     this.audio.music(data.settings.music);
     let saved = false;
@@ -3052,7 +3052,14 @@ export class HUD {
       [
         ['sound', 'Sound effects', 'Little sounds for big moments.', s.sound],
         ['music', 'Ambient tones', 'A quiet background harmony.', s.music],
-        ['motion', 'Reduced motion', 'Less camera shake and decorative movement.', s.reducedMotion],
+        [
+          'motion',
+          'Reduced motion',
+          this.model.systemReducedMotion
+            ? `Less camera shake and decorative movement. Your device asks for reduced motion${s.fullMotion ? '; full motion is on by your choice' : ''}.`
+            : 'Less camera shake and decorative movement.',
+          this.model.reducedMotion,
+        ],
       ] as const
     )
       .map(
@@ -3143,7 +3150,7 @@ export class HUD {
   private countUp() {
     for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-count]'))) {
       const target = Number(el.dataset.count);
-      if (!Number.isFinite(target) || this.model.state.settings.reducedMotion) {
+      if (!Number.isFinite(target) || this.model.reducedMotion) {
         el.textContent = n(target || 0);
         continue;
       }

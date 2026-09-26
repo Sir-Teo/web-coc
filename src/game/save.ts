@@ -161,6 +161,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     !['sound', 'music', 'reducedMotion'].every(
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
+    (s.settings.fullMotion !== undefined && typeof s.settings.fullMotion !== 'boolean') ||
     !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']])) ||
     !(['built', 'trained', 'wins'] as const).every(
       (k) => s.stats[k] === undefined || finite(s.stats[k]),
