@@ -148,7 +148,12 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
 };
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
-import { exportSave, migrateSave, validateSave, saveGame } from '../game/save';
+import {
+  exportSave,
+  parseSaveFile,
+  saveGame,
+  MAX_SAVE_FILE_BYTES,
+} from '../game/save';
 import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
@@ -1445,9 +1450,17 @@ export class HUD {
         if (m.claimQuest(arg)) this.audio.play('collect');
         break;
       case 'export':
-        exportSave(m.state);
-        this.toast('Your village backup has been exported.');
+      case 'export-village': {
+        const file = exportSave(m.state, verb === 'export');
+        this.toast(
+          verb === 'export-village'
+            ? 'Your village backup has been exported without recordings.'
+            : file.droppedRecordings
+              ? `Your village backup has been exported. ${file.droppedRecordings} oldest recording${file.droppedRecordings === 1 ? ' was' : 's were'} left out to fit the file limit.`
+              : 'Your village backup has been exported.',
+        );
         break;
+      }
       case 'import':
         document.querySelector<HTMLInputElement>('#import-file')!.click();
         break;
@@ -1481,9 +1494,9 @@ export class HUD {
   }
   private async import(file: File) {
     try {
-      if (file.size > 1000000) throw Error();
-      const data = migrateSave(JSON.parse(await file.text()));
-      if (!validateSave(data)) throw Error();
+      if (file.size > MAX_SAVE_FILE_BYTES) throw Error();
+      const data = parseSaveFile(await file.text());
+      if (!data) throw Error();
       this.model.state = data;
       this.presetNames.clear();
       this.model.returnHome();
@@ -3007,7 +3020,7 @@ export class HUD {
       )
       .join(
         '',
-      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
+      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
   }
   /** The league's own daily bonus, which is where ore comes from. */
   private starBonusCard() {

@@ -534,15 +534,59 @@ export async function saveGame(state: Save): Promise<boolean> {
     }
   return stored;
 }
-export function exportSave(state: Save) {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }),
-  );
+/**
+ * Largest village backup the importer accepts. Exports are built to fit it: a village carrying
+ * five of the longest recordings the replay validator allows stays well inside it once written
+ * compactly, and anything larger drops recordings (oldest first) rather than producing a file
+ * the importer refuses.
+ */
+export const MAX_SAVE_FILE_BYTES = 16 * 1024 * 1024;
+const byteLength = (text: string) => new TextEncoder().encode(text).length;
+/** Recordings removed to fit a backup, or excluded by a village-only backup. */
+export interface SaveFile {
+  text: string;
+  droppedRecordings: number;
+}
+/** The backup file for `state`: compact JSON, within MAX_SAVE_FILE_BYTES. */
+export function saveFileText(state: Save, recordings = true): SaveFile {
+  const log = state.raidLog ?? [];
+  const recorded = log.filter((record) => record.replay).length;
+  let copy: Save = state;
+  if (!recordings && recorded) copy = { ...state, raidLog: log.map(({ replay: _, ...r }) => r) };
+  let text = JSON.stringify(copy);
+  let dropped = recordings ? 0 : recorded;
+  if (byteLength(text) > MAX_SAVE_FILE_BYTES) {
+    const trimmed = structuredClone(copy);
+    for (const record of [...(trimmed.raidLog ?? [])].reverse()) {
+      if (!record.replay) continue;
+      delete record.replay;
+      dropped++;
+      text = JSON.stringify(trimmed);
+      if (byteLength(text) <= MAX_SAVE_FILE_BYTES) break;
+    }
+  }
+  return { text, droppedRecordings: dropped };
+}
+/** Migrates and validates a backup's text; null when it is not a usable village. */
+export function parseSaveFile(text: string): Save | null {
+  if (byteLength(text) > MAX_SAVE_FILE_BYTES) return null;
+  let data: unknown;
+  try {
+    data = migrateSave(JSON.parse(text));
+  } catch {
+    return null;
+  }
+  return validateSave(data) ? data : null;
+}
+export function exportSave(state: Save, recordings = true) {
+  const file = saveFileText(state, recordings);
+  const url = URL.createObjectURL(new Blob([file.text], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'crown-and-clan-village.json';
+  a.download = recordings ? 'crown-and-clan-village.json' : 'crown-and-clan-village-only.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return file;
 }
 export function freshSave() {
   return initialSave();

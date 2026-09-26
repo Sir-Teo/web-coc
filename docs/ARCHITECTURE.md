@@ -71,6 +71,11 @@ A Web Lock coordinates tabs so only one owns the village. Save loading validates
 and migrates stored data; changes must preserve recoverability. Use a separate
 browser profile for destructive testing.
 
+Village backups share one contract (`saveFileText` / `parseSaveFile` in `save.ts`): compact
+JSON no larger than `MAX_SAVE_FILE_BYTES` (16 MiB). Five of the longest recordings the replay
+validator allows come to about 6.3 MB, so an export fits; anything larger drops recordings,
+oldest first, and says so. Settings also offers a backup without recordings.
+
 The production build writes a lossless WebP beside every PNG under `dist/assets` and
 points the built code, packs and styles at it (`scripts/webp-dist.mjs`): about a
 quarter fewer bytes, byte-identical WebGL textures. The repository, the dev server
