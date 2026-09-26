@@ -18,6 +18,8 @@ const dist = process.argv[2] ?? 'dist';
 async function walk(dir) {
   const result = [];
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+    // Dotfiles (Vite's .vite/manifest.json) are build metadata; Hosting ignores them too.
+    if (entry.name.startsWith('.')) continue;
     const p = path.join(dir, entry.name);
     if (entry.isDirectory()) result.push(...(await walk(p)));
     else result.push(p);
@@ -28,7 +30,8 @@ const toUrl = (file) => '/' + path.relative(dist, file).split(path.sep).join('/'
 
 // Vite's chunk graph (build.manifest): the files the entry imports statically, which is all a
 // boot needs. Lazily imported chunks (the late campaign scene, the developer panel) are cached
-// when first used instead of downloaded by every install. The manifest is not deployed.
+// when first used instead of downloaded by every install. The manifest stays in dist/.vite,
+// which firebase.json's dotfile rule keeps out of the deploy, so this script can run again.
 const viteManifestPath = path.join(dist, '.vite', 'manifest.json');
 const viteManifest = JSON.parse(await fs.readFile(viteManifestPath, 'utf8'));
 const bootFiles = new Set();
@@ -46,7 +49,6 @@ const bootFiles = new Set();
   for (const [key, chunk] of Object.entries(viteManifest)) if (chunk.isEntry) visit(key);
   if (!bootFiles.size) throw new Error('The Vite manifest lists no entry chunk.');
 }
-await fs.rm(path.join(dist, '.vite'), { recursive: true, force: true });
 
 // Drop the output of an earlier run so it is neither hashed nor listed.
 for (const file of await fs.readdir(dist))
