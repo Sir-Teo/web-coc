@@ -122,6 +122,7 @@ import {
   BATTLE_SECONDS,
   EPIC_ITEM_GEMS,
   type Building,
+  type Save,
 } from '../game/model';
 import {
   spellTowerModes,
@@ -148,12 +149,7 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
 };
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
-import {
-  exportSave,
-  parseSaveFile,
-  saveGame,
-  MAX_SAVE_FILE_BYTES,
-} from '../game/save';
+import { exportSave, parseSaveFile, saveGame, MAX_SAVE_FILE_BYTES } from '../game/save';
 import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 type Panel =
@@ -1493,27 +1489,42 @@ export class HUD {
     }
   }
   private async import(file: File) {
+    let data: Save | null = null;
     try {
-      if (file.size > MAX_SAVE_FILE_BYTES) throw Error();
-      const data = parseSaveFile(await file.text());
-      if (!data) throw Error();
-      this.model.state = data;
-      this.presetNames.clear();
-      this.model.returnHome();
-      this.model.endEdit();
-      this.model.tick(Date.now());
-      document.documentElement.classList.toggle('reduce-motion', data.settings.reducedMotion);
-      this.audio.enabled = data.settings.sound;
-      this.audio.music(data.settings.music);
-      if (!this.showMapUpgrade()) this.toast('Village restored successfully.');
-      await saveGame(data);
-      this.panel = null;
-      this.render();
+      if (file.size <= MAX_SAVE_FILE_BYTES) data = parseSaveFile(await file.text());
     } catch {
-      this.toast('That backup is not a valid Crown & Clan village.');
+      data = null;
     } finally {
       document.querySelector<HTMLInputElement>('#import-file')!.value = '';
     }
+    if (!data) {
+      this.toast('That backup is not a valid Crown & Clan village.');
+      return;
+    }
+    this.model.state = data;
+    this.presetNames.clear();
+    this.model.returnHome();
+    this.model.endEdit();
+    this.model.tick(Date.now());
+    document.documentElement.classList.toggle('reduce-motion', data.settings.reducedMotion);
+    this.audio.enabled = data.settings.sound;
+    this.audio.music(data.settings.music);
+    let saved = false;
+    try {
+      saved = await saveGame(data);
+    } catch {
+      saved = false;
+    }
+    this.setSaveState(saved);
+    // A structural change keeps the timed save retrying until a write succeeds.
+    this.model.changed();
+    this.panel = null;
+    this.render();
+    if (!saved)
+      this.toast(
+        'Village restored for this session only: it could not be saved in this browser. Export it from Settings to keep it.',
+      );
+    else if (!this.showMapUpgrade()) this.toast('Village restored successfully.');
   }
   showMapUpgrade() {
     const moved = this.model.state.mapUpgrade?.moved;
