@@ -4760,9 +4760,9 @@ h3 {
   display: none;
 }
 
-/* Army navigation stays visible while the catalog scrolls. */
+/* Army navigation stays visible while the catalog scrolls; the sheet grows by the filter row. */
 .drawer-sheet:has(.army-strip) {
-  max-height: min(65dvh, 400px);
+  max-height: min(65dvh, 440px);
 }
 .army-strip {
   overflow-y: auto;
@@ -5718,4 +5718,19 @@ h3 {
 .campaign-scout-note {
   color: #796d52;
   font-size: 12px;
+}
+@media (max-height: 520px) {
+  /* Short landscape: the filters share the header row, leaving the height to the tiles. */
+  .drawer-head.army-head {
+    flex-wrap: nowrap;
+  }
+  .army-filters {
+    flex: 1 1 auto;
+  }
+  .army-filters input {
+    flex: 1 1 80px;
+  }
+  .army-filters select {
+    max-width: 120px;
+  }
 }
