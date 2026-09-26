@@ -45,6 +45,14 @@ loaded. On the dev server every defense family loads right after boot; add
 [the architecture guide](ARCHITECTURE.md)). Wait on `ready` only to test that
 window itself.
 
+`artSettled` only says nothing is still loading; it does not prove anything drew.
+Rendering changes that touch deferred families need a `?lazyart` case that asserts
+the drawn output too (see `tests/browser/deferred-families.spec.ts`): a first visit
+that scouts before the family lands (native meshes must not keep Phaser's missing
+texture), and a failed page (the fallback sprite stays visible, the battle is not
+held, and the family loads once the network returns). The eager dev default missed
+an invisible first-campaign Town Hall that only the production path produced.
+
 For visible changes, inspect desktop and phone layouts, pointer/touch input,
 reduced motion and relevant replay pause/seek behavior. Automated pixel or layout
 checks do not replace reviewing the actual rendered result.
