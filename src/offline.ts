@@ -54,13 +54,50 @@ export function registerOfflineSupport() {
   container.addEventListener('message', (event: MessageEvent) => {
     if (event.data?.type === 'warmed') document.documentElement.dataset.offline = 'ready';
   });
+  let updating = false;
   // Files fetched before this page came under the worker's control never passed
-  // through it; list them again once it takes over.
-  container.addEventListener('controllerchange', () => post(container.controller));
+  // through it; list them again once it takes over. An update the player accepted
+  // reloads the page onto the release its new worker serves.
+  container.addEventListener('controllerchange', () => {
+    if (updating) window.location.reload();
+    else post(container.controller);
+  });
   idle(() => {
     container
       .register('/sw.js')
-      .then((registration) => post(registration.installing ?? container.controller))
+      .then((registration) => {
+        post(registration.installing ?? container.controller);
+        // Pages stay on the release their worker serves; a newer one waits until offered.
+        const offer = () => {
+          const waiting = registration.waiting;
+          if (!waiting || !container.controller) return;
+          offerUpdate(() => {
+            updating = true;
+            waiting.postMessage({ type: 'activate-update' });
+          });
+        };
+        offer();
+        registration.addEventListener('updatefound', () => {
+          const next = registration.installing;
+          next?.addEventListener('statechange', () => {
+            if (next.state === 'installed') offer();
+          });
+        });
+      })
       .catch((error) => console.warn(error));
   });
+}
+
+/** A small prompt to reload onto a downloaded update; the village is saved on unload. */
+function offerUpdate(accept: () => void) {
+  if (document.getElementById('update-ready')) return;
+  const prompt = document.createElement('button');
+  prompt.id = 'update-ready';
+  prompt.type = 'button';
+  prompt.textContent = 'Update ready · Reload';
+  prompt.addEventListener('click', () => {
+    prompt.disabled = true;
+    accept();
+  });
+  document.body.append(prompt);
 }

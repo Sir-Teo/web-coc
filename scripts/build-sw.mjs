@@ -104,6 +104,23 @@ async function download(url, expected) {
     headers: response.headers,
   });
 }
+/**
+ * Stores a runtime fetch only when its bytes are this version's: an asset path the host answered
+ * with index.html, or a file already replaced by a newer deploy, is served but never cached.
+ */
+async function putVerified(cache, url, response, expected) {
+  const bytes = await response.arrayBuffer();
+  const actual = hex(await crypto.subtle.digest('SHA-256', bytes)).slice(0, expected.length);
+  if (actual !== expected) return;
+  await cache.put(
+    url,
+    new Response(bytes, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    }),
+  );
+}
 async function inBatches(items, size, task) {
   for (let i = 0; i < items.length; i += size) await Promise.all(items.slice(i, i + size).map(task));
 }
@@ -194,6 +211,11 @@ self.addEventListener('activate', (event) =>
 
 self.addEventListener('message', (event) => {
   const data = event.data;
+  // The page asks a waiting update to take over only when it is about to reload onto it.
+  if (data?.type === 'activate-update') {
+    self.skipWaiting();
+    return;
+  }
   if (!data || data.type !== 'warm' || !Array.isArray(data.urls)) return;
   const urls = data.urls.filter((url) => typeof url === 'string');
   // During (or just before) this worker's install, the list feeds the install's warm-up.
@@ -214,8 +236,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
+    // The page comes from this worker's own release, so it always pairs with the assets this
+    // cache holds; a newer deploy installs beside it and the page offers to reload onto it.
     event.respondWith(
-      fetch(request).catch(async () => (await caches.match('/index.html', { ignoreVary: true })) ?? Response.error()),
+      (async () => {
+        const cache = await caches.open(CACHE);
+        const page = await cache.match('/index.html', { ignoreVary: true });
+        if (page) return page;
+        return fetch(request).catch(
+          async () => (await caches.match('/index.html', { ignoreVary: true })) ?? Response.error(),
+        );
+      })(),
     );
     return;
   }
@@ -225,15 +256,17 @@ self.addEventListener('fetch', (event) => {
       const hit = await cache.match(request, { ignoreVary: true });
       if (hit) return hit;
       const response = await fetch(request);
-      // Cache-first for build files: fetched once, then served offline.
+      // Cache-first for build files: fetched once, then served offline. Only bytes matching
+      // this version's manifest are stored, so the cache never mixes releases.
+      const expected = (await loadManifest())[url.pathname];
       if (
         response.status === 200 &&
         response.type === 'basic' &&
         !request.headers.has('range') &&
         !url.search &&
-        (await loadManifest())[url.pathname]
+        expected
       )
-        event.waitUntil(cache.put(url.pathname, response.clone()).catch(() => {}));
+        event.waitUntil(putVerified(cache, url.pathname, response.clone(), expected).catch(() => {}));
       return response;
     })(),
   );

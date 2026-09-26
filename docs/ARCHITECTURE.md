@@ -84,3 +84,10 @@ and a content-hashed manifest. The service
 worker precaches the application shell, warms assets observed during boot and caches
 other assets as they are fetched. Offline availability therefore depends on what
 has already been loaded; it does not mean every campaign asset is downloaded at install.
+
+Each worker serves one release: navigations get the `index.html` its own cache holds, and a
+runtime fetch is cached only when its bytes match that release's manifest hash (a host
+fallback page or a newer deploy's file is served but never stored). A newer deploy installs
+beside it and waits; the page then shows "Update ready · Reload", which activates the new
+worker and reloads onto its release. Unhashed asset URLs are therefore never paired with
+another release's page.

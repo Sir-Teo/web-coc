@@ -5564,3 +5564,22 @@ h3 {
     width: 0;
   }
 }
+
+/* Service-worker update prompt (src/offline.ts). */
+#update-ready {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 10px 18px;
+  border: 2px solid #1d3b12;
+  border-radius: 999px;
+  background: #4f9a2c;
+  color: #fff;
+  font:
+    700 15px/1.2 'Nunito Sans',
+    sans-serif;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+  cursor: pointer;
+}
