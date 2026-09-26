@@ -409,3 +409,17 @@ test('the campaign opens at the next village, continues there and remembers its 
   await page.evaluate(() => window.__game.hud.show('campaign'));
   await expect.poll(() => page.locator('.campaign-list').evaluate((el) => el.scrollTop)).toBe(kept);
 });
+
+test('a campaign thumbnail opens an enlarged scouting preview', async ({ page }) => {
+  await page.evaluate(() => window.__game.hud.show('campaign'));
+  await page.locator('[data-action="campaign-scout:2"]').click();
+  await expect(page.locator('#modal-title')).toHaveText('Scout village');
+  await expect(page.locator('.campaign-scout h2')).toHaveText('Goblin Outpost');
+  await expect(page.locator('.campaign-scout-defenses')).toContainText('Cannon');
+  await expect(page.locator('.campaign-scout')).toContainText('SUGGESTED TOWN HALL 2');
+  // Locked until a star opens its path; hidden defenses stay hidden.
+  await expect(page.locator('.campaign-scout [data-action="attack:2"]')).toBeDisabled();
+  await expect(page.locator('.campaign-scout-defenses')).not.toContainText('Tesla');
+  await page.locator('.campaign-scout [data-action="campaign"]').click();
+  await expect(page.locator('#modal-title')).toHaveText('The Goblin Valley');
+});

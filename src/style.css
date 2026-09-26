@@ -5665,3 +5665,57 @@ h3 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Campaign thumbnails open a scouting preview. */
+.campaign-map-button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.campaign-map-button > .campaign-map {
+  display: block;
+  width: 94px;
+  height: 94px;
+  border: 3px solid #cabca0;
+  border-radius: 13px;
+  box-shadow: 0 3px 0 #b5a68a;
+}
+@media (max-width: 700px) {
+  .campaign-map-button > .campaign-map {
+    width: 64px;
+    height: 64px;
+    border-width: 2px;
+    border-radius: 9px;
+  }
+}
+.campaign-scout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.campaign-scout-map {
+  width: min(320px, 100%);
+  height: auto;
+  aspect-ratio: 1;
+  border: 3px solid #cabca0;
+  border-radius: 14px;
+}
+.campaign-scout-info {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.campaign-scout-defenses {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+  padding: 0;
+  margin: 6px 0;
+  list-style: none;
+}
+.campaign-scout-note {
+  color: #796d52;
+  font-size: 12px;
+}

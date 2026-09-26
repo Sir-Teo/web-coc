@@ -9,6 +9,7 @@ import { campaignAmount, campaignResourceKeys, type CampaignResource } from '../
 import {
   NATIVE_CAMPAIGN,
   NATIVE_COMBAT,
+  nativeBuildings,
   nativeCampaignIssues,
   nativeUnlocked,
 } from '../game/native-campaign';
@@ -118,6 +119,7 @@ import {
   storageCapacity,
   upgradeSeconds,
   upgradeCost as costFor,
+  isDefense,
   type BuildingKind,
   type TroopKind,
   type SpellKind,
@@ -169,6 +171,7 @@ type Panel =
   | 'progression'
   | 'research'
   | 'campaign'
+  | 'campaign-scout'
   | 'settings'
   | 'achievements'
   | 'star-bonus'
@@ -545,8 +548,18 @@ function campaignMapSource(index: number) {
   let url = campaignMapCache[index];
   if (url) return url;
   const v = NATIVE_CAMPAIGN[index];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="3" fill="#637d43"/>${v.buildings
-    .filter(([id]) => id !== 1000019)
+  // Frame the village itself: early bases fill a few tiles of the 48-tile board. The square
+  // view keeps at least 14 tiles so a one-building village still reads as a village.
+  const shown = v.buildings.filter(([id]) => id !== 1000019);
+  const size = (id: number) => NATIVE_COMBAT[id].size;
+  const minX = Math.min(...shown.map(([, x]) => x + 2)),
+    minY = Math.min(...shown.map(([, , y]) => y + 2)),
+    maxX = Math.max(...shown.map(([id, x]) => x + 2 + size(id))),
+    maxY = Math.max(...shown.map(([id, , y]) => y + 2 + size(id)));
+  const side = shown.length ? Math.max(14, maxX - minX + 3, maxY - minY + 3) : 48;
+  const left = shown.length ? (minX + maxX - side) / 2 : 0,
+    top = shown.length ? (minY + maxY - side) / 2 : 0;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${left} ${top} ${side} ${side}"><rect x="${left}" y="${top}" width="${side}" height="${side}" fill="#637d43"/>${shown
     .map(
       ([id, x, y]) =>
         `<rect x="${x + 2}" y="${y + 2}" width="${NATIVE_COMBAT[id].size - 0.18}" height="${NATIVE_COMBAT[id].size - 0.18}" rx=".25" fill="${id === 1000010 ? '#b9ada0' : id === 1000001 || id === 1000017 || id === 1000069 ? '#f3c346' : '#e0cf97'}"/>`,
@@ -1242,6 +1255,10 @@ export class HUD {
         break;
       case 'army':
         this.showDrawer('army');
+        break;
+      case 'campaign-scout':
+        this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
+        this.show('campaign-scout');
         break;
       case 'campaign-continue':
         this.scrollToStage(this.nextCampaignStage(), true);
@@ -2787,6 +2804,7 @@ export class HUD {
       progression: 'Town Hall progression',
       research: 'The laboratory',
       campaign: 'The Goblin Valley',
+      'campaign-scout': 'Scout village',
       settings: 'Settings',
       achievements: 'Your legacy',
       help: 'Welcome, Chief',
@@ -2805,6 +2823,7 @@ export class HUD {
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
       campaign: 'Beyond the forest, a whole valley is waiting.',
+      'campaign-scout': 'Study the layout before you attack.',
       settings: 'Make yourself at home.',
       achievements: 'Small victories. A growing legend.',
       help: 'Your village. Your army. Your adventure.',
@@ -2833,19 +2852,21 @@ export class HUD {
                       ? this.troopInfo()
                       : this.panel === 'campaign'
                         ? this.campaign()
-                        : this.panel === 'settings'
-                          ? this.settings()
-                          : this.panel === 'achievements'
-                            ? this.achievements()
-                            : this.panel === 'research'
-                              ? this.research()
-                              : this.panel === 'info'
-                                ? this.info()
-                                : this.panel === 'layouts'
-                                  ? this.layoutPanel()
-                                  : this.panel === 'surrender'
-                                    ? this.surrender()
-                                    : this.help();
+                        : this.panel === 'campaign-scout'
+                          ? this.campaignScout()
+                          : this.panel === 'settings'
+                            ? this.settings()
+                            : this.panel === 'achievements'
+                              ? this.achievements()
+                              : this.panel === 'research'
+                                ? this.research()
+                                : this.panel === 'info'
+                                  ? this.info()
+                                  : this.panel === 'layouts'
+                                    ? this.layoutPanel()
+                                    : this.panel === 'surrender'
+                                      ? this.surrender()
+                                      : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -3166,7 +3187,29 @@ export class HUD {
     return `<div class="modal-body research-body"><div class="research-banner"><img src="${hudAsset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
-    return `<img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" loading="lazy" decoding="async" draggable="false">`;
+    return `<button class="campaign-map-button" data-action="campaign-scout:${index}" aria-label="Scout ${html(NATIVE_CAMPAIGN[index].name)}"><img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" loading="lazy" decoding="async" draggable="false"></button>`;
+  }
+  /** The stage a scouting preview shows. */
+  private scoutedStage = 0;
+  /**
+   * An enlarged look at a campaign village before attacking: its layout, the defenses on show
+   * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.
+   */
+  private campaignScout() {
+    const m = this.model,
+      i = this.scoutedStage,
+      v = NATIVE_CAMPAIGN[i];
+    const stars = m.state.nativeCampaign?.stars ?? [];
+    const locked = !nativeUnlocked(i, stars) || campaignPending(i);
+    const loot = m.campaignLoot(i, 'goblin-v1');
+    const counts = new Map<string, number>();
+    for (const b of nativeBuildings(i))
+      if (isDefense(b.kind) && b.kind !== 'tesla') {
+        const name = BUILDINGS[b.kind].name;
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+    const defenses = [...counts].sort((a, b) => b[1] - a[1]);
+    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p><h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';
