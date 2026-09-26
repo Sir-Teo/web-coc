@@ -1,6 +1,7 @@
 import source from '../../reference/full-client/progression.json' with { type: 'json' };
 import type { Building } from './model';
-import { SPELL_KEYS, type TroopKind, type SpellKind } from './data';
+import { SPELL_KEYS, TROOP_KEYS, type TroopKind, type SpellKind } from './data';
+import { superOriginal } from './special-troops';
 import { SPELL_NAMES, SPELL_ROSTER } from './troop-progression';
 
 /** Supported Home Village unlocks. References: docs/ARMY-UNLOCKS.md. */
@@ -46,3 +47,12 @@ export const troopFacility = (kind: TroopKind) =>
       : 'barracks';
 /** Re-exported for callers that ask a spell where it is prepared. */
 export { spellFactory } from './spell-progression';
+/**
+ * Troops that a production building's `level` first unlocks: those it trains itself, never a
+ * super troop (a super troop is opened by a boost on its original troop, not a building level).
+ */
+export const facilityUnlocks = (facility: string, level: number) =>
+  TROOP_KEYS.filter(
+    (kind) =>
+      troopFacility(kind) === facility && TROOP_UNLOCK[kind] === level && !superOriginal(kind),
+  );

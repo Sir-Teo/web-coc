@@ -52,7 +52,13 @@ import {
 import { OBSTACLES } from '../game/obstacles';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
-import { TROOP_UNLOCK, SPELL_UNLOCK, spellFactory, troopFacility } from '../game/army-unlocks';
+import {
+  TROOP_UNLOCK,
+  SPELL_UNLOCK,
+  facilityUnlocks,
+  spellFactory,
+  troopFacility,
+} from '../game/army-unlocks';
 import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
 import { compatibleReplayVersion } from '../game/replay';
 import { heroNextRequirement, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
@@ -2894,8 +2900,10 @@ export class HUD {
       ? []
       : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode, b.supercharge);
     const nextUnlocks =
-      b.kind === 'barracks'
-        ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
+      b.kind === 'barracks' || b.kind === 'darkbarracks' || b.kind === 'workshop'
+        ? TROOP_ORDER.filter((k) => facilityUnlocks(b.kind, b.level + 1).includes(k)).map(
+            (k) => TROOPS[k].name,
+          )
         : b.kind === 'spellfactory' || b.kind === 'darkspellfactory'
           ? SPELL_ORDER.filter(
               (k) => spellFactory(k) === b.kind && SPELL_UNLOCK[k] === b.level + 1,

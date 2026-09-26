@@ -1,6 +1,6 @@
 import { superOriginal } from '../src/game/special-troops';
 import { spellFactory } from '../src/game/army-unlocks';
-import { troopFacility } from '../src/game/army-unlocks';
+import { facilityUnlocks, troopFacility } from '../src/game/army-unlocks';
 import { describe, it, expect } from 'vitest';
 import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, makeBuilding } from '../src/game/model';
@@ -114,5 +114,20 @@ describe('army unlock progression', () => {
     expect(m.state.spells.rage).toBe(0);
     m.startBattle(0);
     expect(m.battle!.remaining.wizard).toBe(before.wizard);
+  });
+});
+
+describe('building upgrade unlock lists', () => {
+  it('name only the troops the building itself trains', () => {
+    // The audit's starter Barracks promised Valkyrie, Stone Slammer and super troops at level 3.
+    expect(facilityUnlocks('barracks', 3)).toEqual(['giant']);
+    expect(facilityUnlocks('darkbarracks', 3)).toEqual(['valkyrie']);
+    expect(facilityUnlocks('workshop', 3)).toEqual(['stoneslammer']);
+    for (let level = 1; level <= 20; level++)
+      for (const facility of ['barracks', 'darkbarracks', 'workshop'])
+        for (const kind of facilityUnlocks(facility, level)) {
+          expect(troopFacility(kind)).toBe(facility);
+          expect(superOriginal(kind)).toBeUndefined();
+        }
   });
 });
