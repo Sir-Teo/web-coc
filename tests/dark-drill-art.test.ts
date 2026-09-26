@@ -1,6 +1,12 @@
-import { expect, it } from 'vitest';
-import { darkDrillPoses, type DarkDrillArtState } from '../src/game/dark-drill-art';
+import { beforeAll, expect, it } from 'vitest';
+import {
+  darkDrillPoses,
+  loadDarkDrillArt,
+  type DarkDrillArtState,
+} from '../src/game/dark-drill-art';
 import { nativeVertices } from '../src/game/native-mesh';
+// The Drill graph loads with its art family; the game awaits it the same way.
+beforeAll(() => loadDarkDrillArt());
 
 it('renders every original tier and state with finite native geometry', () => {
   for (let level = 1; level <= 11; level++)

@@ -12,7 +12,7 @@ import type { Building, Battle } from './model';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { preloadNativeMeshes } from './native-mesh-scene';
-import { DARK_DRILL_GRAPH, darkDrillBuildingPoses } from './dark-drill-art';
+import { darkDrillArtLoaded, darkDrillGraph, darkDrillBuildingPoses } from './dark-drill-art';
 import { darkDrillStats } from './dark-drill-stats';
 import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
@@ -41,22 +41,24 @@ function drillSignature(building: Building, seconds: number) {
   const reservoir = Math.min(99, Math.floor((Math.max(0, building.stored) / capacity) * 100));
   let frame = 0;
   if (state === 'working') {
-    const id = DARK_DRILL_GRAPH.exports[art.ExportName];
-    const fps = (id === undefined ? undefined : DARK_DRILL_GRAPH.clips[id]?.fps) ?? 1;
+    const graph = darkDrillGraph();
+    const id = graph.exports[art.ExportName];
+    const fps = (id === undefined ? undefined : graph.clips[id]?.fps) ?? 1;
     frame = Math.floor(Math.max(0, seconds) * fps + 1e-9);
   }
   return `${building.level}:${state}:${reservoir}:${frame}`;
 }
 
 export function preloadDarkDrills(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, DARK_DRILL_GRAPH, 'darkdrill');
+  preloadNativeMeshes(scene, darkDrillGraph(), 'darkdrill');
   for (const [path, sound] of Object.entries(DARK_DRILL_SOUNDS))
     scene.load.binary(darkDrillSample(path), '/' + sound.path);
 }
 export class DarkDrillPresentation {
   ghost?: NativeSceneView;
   preview(building: Building | undefined, x = 0, y = 0, valid = true) {
-    if (!building) {
+    // The placement ghost waits for the Drill's graph; its family is loading meanwhile.
+    if (!building || !darkDrillArtLoaded()) {
       this.ghost?.destroy();
       this.ghost = undefined;
       return;
@@ -132,7 +134,8 @@ export class DarkDrillPresentation {
     const camera = this.scene.cameras.main;
     const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     for (const building of buildings) {
-      if (building.kind !== 'darkdrill') continue;
+      // Until the family's graph arrives the fallback sprite stands in for the native body.
+      if (building.kind !== 'darkdrill' || !darkDrillArtLoaded()) continue;
       wanted.add(building.id);
       let view = this.drills.get(building.id);
       if (!view)

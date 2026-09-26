@@ -1,4 +1,5 @@
-import { expect, it } from 'vitest';
+import { beforeAll, expect, it } from 'vitest';
+import { loadDarkDrillArt } from '../src/game/dark-drill-art';
 import { GameModel } from '../src/game/model';
 import type { Battle } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
@@ -9,6 +10,8 @@ import {
   presentationLive,
   presentationTime,
 } from '../src/game/presentation-clock';
+// The Drill graph loads with its art family; the game awaits it the same way.
+beforeAll(() => loadDarkDrillArt());
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 /** What the presentations draw at wall time `now` (ms): gated by the grace window. */

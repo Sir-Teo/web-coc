@@ -81,6 +81,15 @@ for (const url of bootFiles)
   if (!hashes[url]) throw new Error(`Boot file ${url} is missing from ${dist}.`);
 let shellBytes = 0;
 for (const url of shell) if (url !== '/') shellBytes += (await fs.stat(path.join(dist, url))).size;
+// Startup budget: everything a first visit must download and parse before the village draws.
+// Render graphs belong with their art family (see src/game/lazy-graph.ts); a build that grows
+// the shell past this fails here rather than slowing every player's boot unnoticed.
+const STARTUP_BUDGET = 11 * 1048576;
+if (shellBytes > STARTUP_BUDGET)
+  throw new Error(
+    `Startup shell is ${(shellBytes / 1048576).toFixed(1)} MB, over its ${STARTUP_BUDGET / 1048576} MB budget. ` +
+      'Move data only some villages draw behind a dynamic import.',
+  );
 
 const version = crypto
   .createHash('sha256')

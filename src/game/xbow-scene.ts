@@ -8,7 +8,7 @@ import { nativeFrameIndex } from './native-frame';
 import { guardRender } from './render-guard';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses, type NativeMatrix } from './native-mesh';
-import { XBOW_GRAPH, XBOW_SOUNDS, xbowPoses } from './xbow-poses';
+import { xbowGraph, xbowSounds, xbowPoses } from './xbow-poses';
 import { XBOW_ART, xbowAsset, xbowExport, xbowTexture, xbowDirection } from './xbow-art';
 import { XBOW, XBOW_LEVELS, XBOW_PROJECTILES } from './xbow-stats';
 
@@ -16,11 +16,11 @@ type Point = { x: number; y: number };
 const sample = (path: string) => `xbow-${path.split('/').at(-1)!.replace('.ogg', '')}`;
 
 export function preloadXbows(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, XBOW_GRAPH, 'xbow');
+  preloadNativeMeshes(scene, xbowGraph(), 'xbow');
   for (const { level } of XBOW_LEVELS)
     for (const mode of ['ground', 'both'] as const)
       scene.load.image(xbowTexture(level, mode), xbowAsset(level, mode));
-  for (const [path, sound] of Object.entries(XBOW_SOUNDS))
+  for (const [path, sound] of Object.entries(xbowSounds()))
     scene.load.binary(sample(path), '/' + sound.path);
 }
 
@@ -38,7 +38,7 @@ export class XbowPresentation {
   }
   /** Heavy art bundles in after boot; sounds bind when the binaries arrive. */
   bindAudio() {
-    for (const path of Object.keys(XBOW_SOUNDS))
+    for (const path of Object.keys(xbowSounds()))
       registerCachedSample(this.scene, this.audio.samples, sample(path));
   }
   /** Heavy textures arrive after boot; the fallback sprite covers until then. */
@@ -90,7 +90,7 @@ export class XbowPresentation {
       // The turret clip only changes on its own source frames: redraw on those, not per frame.
       const frame = guardRender(
         `X-Bow level ${tower.level}`,
-        () => nativeFrameIndex(XBOW_GRAPH, xbowExport(tower.level, mode, upgrading), seconds),
+        () => nativeFrameIndex(xbowGraph(), xbowExport(tower.level, mode, upgrading), seconds),
         -1,
       );
       if (frame < 0) continue;
@@ -151,14 +151,14 @@ export class XbowPresentation {
           this.shadows.set(p.id, shadowView);
         }
         const shadow = nativeMeshPoses(
-          XBOW_GRAPH,
+          xbowGraph(),
           'bolt_projectile_shadow',
           age,
           {},
           [0.6, 0, 0, 0, 0.6, 0],
         );
         shadowView.render(shadow, ground.x, ground.y, -839);
-        const poses = nativeMeshPoses(XBOW_GRAPH, source.export, age, {}, root);
+        const poses = nativeMeshPoses(xbowGraph(), source.export, age, {}, root);
         // Above flying units (7500) like every other projectile type.
         view.render(poses, x, y, 7700);
         for (const mesh of view.meshes.values())

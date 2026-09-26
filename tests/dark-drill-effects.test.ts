@@ -1,5 +1,8 @@
-import { expect, it } from 'vitest';
+import { beforeAll, expect, it } from 'vitest';
+import { loadDarkDrillArt } from '../src/game/dark-drill-art';
 import { darkDrillHandlingPoses } from '../src/game/dark-drill-effects';
+// The Drill graph loads with its art family; the game awaits it the same way.
+beforeAll(() => loadDarkDrillArt());
 const iso = (x: number, y: number) => ({ x: x * 32, y: y * 16 });
 const event = { id: 2, index: 1, kind: 'pickup' as const, at: 10, x: 12, y: 14 };
 it('emits all three original grass particles for both handling actions', () => {

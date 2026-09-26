@@ -9,14 +9,16 @@ test('original Drill state layers render across all eleven tiers', async ({
   await page.locator('#loading').waitFor({ state: 'detached' });
   const result = await page.evaluate(async () => {
     const { scene, game } = window.__game;
-    const { DARK_DRILL_GRAPH, darkDrillPoses } = await import('/src/game/dark-drill-art.ts');
+    const { darkDrillPoses, loadDarkDrillArt } = await import('/src/game/dark-drill-art.ts');
+    // The Drill graph loads with its art family rather than at startup.
+    const graph = await loadDarkDrillArt();
     const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
     const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
     scene.paused = true;
     document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
     for (const child of scene.children.list) child.setVisible(false);
     scene.cameras.main.setScroll(0, 0).setZoom(1).setBackgroundColor('#304135');
-    preloadNativeMeshes(scene, DARK_DRILL_GRAPH, 'drill-states');
+    preloadNativeMeshes(scene, graph, 'drill-states');
     await new Promise<void>((resolve) => {
       scene.load.once('complete', resolve);
       scene.load.start();

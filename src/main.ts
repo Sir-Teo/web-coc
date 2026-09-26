@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import './style.css';
 import './ui/compact-hud.css';
 import { GameModel } from './game/model';
-import { VillageScene } from './game/scene';
+import { VillageScene, prepareHomeArt } from './game/scene';
 import { AudioManager } from './game/audio';
 import {
   loadSave,
@@ -46,6 +46,8 @@ async function boot() {
       },
       { once: true },
     );
+    // Graphs kept out of the startup bundle, for the families this village already owns.
+    await prepareHomeArt(model.buildings);
     const scene = new VillageScene(model, audio);
     const hud = new HUD(model, scene, audio);
     const game = new Phaser.Game({

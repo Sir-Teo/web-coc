@@ -49,6 +49,14 @@ packs. Asset names are often constructed at runtime. See [assets](ASSETS.md).
 Vite splits the engine, shared libraries, UI, startup tables and scene graphs.
 Dynamic imports keep developer tools and late campaign presentation out of the
 initial import graph. Check `vite.config.ts` before changing module boundaries.
+Render graphs that only some villages draw can leave the startup bundle the same way:
+a family wraps its JSON in a `LazyGraph` (`src/game/lazy-graph.ts`) and names it as the
+family's `prepare` step, which `loadFamilies` awaits before queueing textures (and
+`prepareHomeArt` before boot, for families the home village owns). The X-Bow and Dark
+Elixir Drill graphs, about 1.7 MB of the old 7.6 MB `scene-graphs` chunk, load this way;
+their presentations draw nothing until the graph is in, leaving the fallback sprite. The
+production build fails when the precached startup shell outgrows its budget
+(`STARTUP_BUDGET` in `scripts/build-sw.mjs`).
 
 The boot preload only carries what the home village draws. The rarely seen Santa,
 X-Bow and Cannon pages load in one batch once the village appears. Each defense

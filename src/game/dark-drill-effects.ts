@@ -1,5 +1,5 @@
 import source from '../../reference/dark-drill/native.json' with { type: 'json' };
-import { DARK_DRILL_GRAPH } from './dark-drill-art';
+import { darkDrillArtLoaded, darkDrillGraph } from './dark-drill-art';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import type { Battle } from './model';
@@ -10,7 +10,10 @@ const emitters = Object.fromEntries(
     rows.map((row) => ({ ...rows[0], ...row }) as Record<string, string>),
   ]),
 );
-const particle = nativeParticleSampler(DARK_DRILL_GRAPH, 1.2);
+/** Built on first use: the Drill graph arrives with its art family. */
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+const particle: ReturnType<typeof nativeParticleSampler> = (...args) =>
+  (sampler ??= nativeParticleSampler(darkDrillGraph(), 1.2))(...args);
 
 /** Original handling emitters using the shared local particle-motion interpretation. */
 export function darkDrillHandlingPoses(
@@ -45,7 +48,8 @@ function drillPoses(
   reduced: boolean,
   iso: (x: number, y: number) => { x: number; y: number },
 ): NativeParticlePose[] {
-  if (reduced) return [];
+  // No emitters to draw until the Drill's art family (and its graph) has arrived.
+  if (reduced || !darkDrillArtLoaded()) return [];
   const result: NativeParticlePose[] = [];
   for (const event of events) {
     const effects = source.effects[

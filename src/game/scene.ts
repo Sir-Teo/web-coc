@@ -24,7 +24,8 @@ import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
 import type { LateCampaignPresentation } from './late-campaign-scene';
 import { hasLateArt, lateArt } from './late-campaign-art';
 import { isLateBuilding, isLateCampaignBuilding, lateUnitTimeLost } from './late-campaign';
-import { darkDrillBounds } from './dark-drill-art';
+import { darkDrillArtLoaded, darkDrillBounds, loadDarkDrillArt } from './dark-drill-art';
+import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
@@ -221,6 +222,10 @@ const MAX_SPARKS = 240;
  */
 interface ArtFamily {
   draws: (b: Building) => boolean;
+  /** Fetches what `preload` needs first (a render graph kept out of the startup bundle). */
+  prepare?: () => Promise<unknown>;
+  /** Whether `prepare` has finished; families without it are always prepared. */
+  prepared?: () => boolean;
   preload: (scene: Phaser.Scene) => void;
 }
 /**
@@ -232,7 +237,12 @@ interface ArtFamily {
 const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
 const EAGER_FAMILIES =
   import.meta.env.DEV && typeof location !== 'undefined' && !location.search.includes('lazyart');
-const XBOW_FAMILY: ArtFamily = { draws: (b) => b.kind === 'xbow', preload: preloadXbows };
+const XBOW_FAMILY: ArtFamily = {
+  draws: (b) => b.kind === 'xbow',
+  prepare: loadXbowArt,
+  prepared: xbowArtLoaded,
+  preload: preloadXbows,
+};
 const SANTA_FAMILY: ArtFamily = { draws: (b) => b.npc === 'santa-trap', preload: preloadSanta };
 const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
@@ -246,7 +256,12 @@ const ART_FAMILIES: ArtFamily[] = [
   { draws: (b) => b.kind === 'mortar', preload: preloadMortars },
   { draws: (b) => b.kind === 'clancastle', preload: preloadCastles },
   { draws: (b) => b.kind === 'inferno', preload: preloadInfernos },
-  { draws: (b) => b.kind === 'darkdrill', preload: preloadDarkDrills },
+  {
+    draws: (b) => b.kind === 'darkdrill',
+    prepare: loadDarkDrillArt,
+    prepared: darkDrillArtLoaded,
+    preload: preloadDarkDrills,
+  },
   { draws: (b) => b.kind === 'seekingairmine', preload: preloadSeekingMines },
   { draws: (b) => b.npc === 'shrink-trap', preload: preloadShrinkTraps },
   {
@@ -265,6 +280,17 @@ const ART_FAMILIES: ArtFamily[] = [
     },
   },
 ];
+/**
+ * Fetches the graphs of the families the home village draws, before the scene's synchronous
+ * preload queues their textures. One that fails simply loads on demand later.
+ */
+export async function prepareHomeArt(buildings: Building[]) {
+  await Promise.allSettled(
+    ART_FAMILIES.filter((family) => family.prepare && buildings.some(family.draws)).map((family) =>
+      family.prepare!(),
+    ),
+  );
+}
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
   width: MAP_SIZE * 64,
@@ -458,8 +484,9 @@ export class VillageScene extends Phaser.Scene {
     // included) load when something first draws them (see loadFamilies).
     const home = this.model.buildings;
     this.deferredFamilies = [];
+    // A family whose graph could not be fetched before boot joins the on-demand ones.
     for (const family of ART_FAMILIES)
-      if (home.some(family.draws)) family.preload(this);
+      if (home.some(family.draws) && (family.prepared?.() ?? true)) family.preload(this);
       else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     preloadGarrisonTroops(this);
@@ -1251,8 +1278,28 @@ export class VillageScene extends Phaser.Scene {
     for (const family of wanted) this.requestedFamilies.add(family);
     let shutdown = false;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => (shutdown = true));
-    const run = () =>
-      new Promise<void>((resolve) => {
+    const run = async () => {
+      // Graphs first: a family whose graph cannot be fetched fails like a failed page.
+      const prepared = await Promise.all(
+        wanted.map((family) =>
+          (family.prepare?.() ?? Promise.resolve()).then(
+            () => true,
+            () => false,
+          ),
+        ),
+      );
+      for (const [i, family] of wanted.entries())
+        if (!prepared[i]) {
+          this.requestedFamilies.delete(family);
+          const attempts = (this.failedFamilies.get(family)?.attempts ?? 0) + 1;
+          this.failedFamilies.set(family, {
+            attempts,
+            retryAt: performance.now() + artRetryDelay(attempts),
+          });
+        }
+      const ready = wanted.filter((_, i) => prepared[i]);
+      if (!ready.length) return;
+      await new Promise<void>((resolve) => {
         if (shutdown) return resolve();
         const kick = () => {
           const failedKeys = new Set<string>();
@@ -1262,10 +1309,10 @@ export class VillageScene extends Phaser.Scene {
             this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
             if (shutdown) return resolve();
             // Attribute each failed file to its family; a file no family claims fails them all.
-            const claimed = new Set(wanted.flatMap((f) => this.familyTextures.get(f) ?? []));
+            const claimed = new Set(ready.flatMap((f) => this.familyTextures.get(f) ?? []));
             const unclaimed = [...failedKeys].some((key) => !claimed.has(key));
             let anyFailed = false;
-            for (const family of wanted) {
+            for (const family of ready) {
               this.requestedFamilies.delete(family);
               const failed =
                 unclaimed || (this.familyTextures.get(family) ?? []).some((k) => failedKeys.has(k));
@@ -1293,7 +1340,7 @@ export class VillageScene extends Phaser.Scene {
             this.lastRevision = -1;
             resolve();
           });
-          for (const family of wanted) {
+          for (const family of ready) {
             const queued = new Set(this.load.list);
             family.preload(this);
             // The texture keys this family added (keys already resident are never listed).
@@ -1314,6 +1361,7 @@ export class VillageScene extends Phaser.Scene {
         if (this.load.isLoading()) this.load.once(Phaser.Loader.Events.COMPLETE, kick);
         else kick();
       });
+    };
     this.familyLoad = (this.familyLoad ?? Promise.resolve()).then(run);
     return this.familyLoad;
   }

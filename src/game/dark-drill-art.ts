@@ -1,7 +1,7 @@
 import type { Building } from './model';
 import { nativeVertices } from './native-mesh';
-import raw from '../../reference/dark-drill/art-runtime.json' with { type: 'json' };
 import { darkDrillStats } from './dark-drill-stats';
+import { LazyGraph } from './lazy-graph';
 import {
   NATIVE_IDENTITY,
   nativeScenePoses,
@@ -9,7 +9,14 @@ import {
   type NativeMeshGraph,
 } from './native-mesh';
 
-export const DARK_DRILL_GRAPH = raw as unknown as NativeMeshGraph;
+/** The Drill graph (about 3 MB of JSON) loads with the Drill art family, not at startup. */
+const DARK_DRILL_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Dark Elixir Drill',
+  () => import('../../reference/dark-drill/art-runtime.json'),
+);
+export const loadDarkDrillArt = () => DARK_DRILL_SOURCE.load();
+export const darkDrillArtLoaded = () => DARK_DRILL_SOURCE.loaded;
+export const darkDrillGraph = () => DARK_DRILL_SOURCE.get();
 export type DarkDrillArtState = 'working' | 'idle' | 'constructing' | 'upgrading' | 'ruin';
 
 /** Original source layers with an explicit reservoir frame, independent of the body clock.
@@ -28,7 +35,7 @@ export function darkDrillPoses(
   if (!Number.isInteger(resourceFrame) || resourceFrame < 0 || resourceFrame >= 100)
     throw new Error('Invalid Drill reservoir frame');
   const sample = (name: string, time = 0) =>
-    nativeScenePoses(DARK_DRILL_GRAPH, name, time, { resource: resourceFrame }, root);
+    nativeScenePoses(darkDrillGraph(), name, time, { resource: resourceFrame }, root);
   if (state === 'ruin') return sample(art.ExportNameDamaged);
   const base = sample(art.ExportNameBase);
   if (state === 'constructing') return [...base, ...sample(art.ExportNameConstruction)];
@@ -58,7 +65,10 @@ export function darkDrillBuildingPoses(building: Building, seconds: number) {
   const frame = Math.min(99, Math.floor((Math.max(0, building.stored) / capacity) * 100));
   return darkDrillPoses(building.level, state, seconds, frame, DARK_DRILL_ROOT);
 }
+/** Screen box of the fallback Drill sprite, used until the native graph has loaded. */
+const FALLBACK_BOUNDS = [-58, -128, 58, 8];
 export function darkDrillBounds(building: Building, seconds: number) {
+  if (!DARK_DRILL_SOURCE.loaded) return [...FALLBACK_BOUNDS];
   const bounds = [Infinity, Infinity, -Infinity, -Infinity];
   for (const pose of darkDrillBuildingPoses(building, seconds)) {
     if ('group' in pose) throw new Error('Unexpected Drill blend group');
