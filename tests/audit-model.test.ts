@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { GameModel, initialSave, raidHeroes } from '../src/game/model';
+import { GameModel, initialSave, makeBuilding, raidHeroes } from '../src/game/model';
 import { emptyArmy } from '../src/game/army';
 import { validateSave } from '../src/game/save';
 import { freshNativeCampaign } from '../src/game/native-campaign';
@@ -124,4 +124,24 @@ it('checkpoints an open raid as settled without touching the live battle', () =>
   scouting.state.army = { ...emptyArmy(), swordsman: 5 };
   scouting.startCampaign(0);
   expect(scouting.settledState()).toEqual(scouting.state);
+});
+
+it('fills the remaining room and removes every unit of a type in one step', () => {
+  const m = new GameModel();
+  m.clearArmy();
+  const room = m.troopRoom('swordsman');
+  expect(room).toBe(m.capacity);
+  expect(m.fillTroop('swordsman')).toBe(room);
+  expect(m.state.army.swordsman).toBe(room);
+  expect(m.troopRoom('archer')).toBe(0);
+  expect(m.fillTroop('archer')).toBe(0);
+  m.removeTroop('swordsman', Infinity);
+  expect(m.state.army.swordsman).toBe(0);
+  // Spells fill their own housing.
+  m.state.buildings.push(makeBuilding(9100, 'spellfactory', 40, 40, 3));
+  const spells = m.spellRoom('lightning');
+  expect(spells).toBeGreaterThan(0);
+  expect(m.fillSpell('lightning')).toBe(spells);
+  m.removeSpell('lightning', Infinity);
+  expect(m.state.spells.lightning).toBe(0);
 });

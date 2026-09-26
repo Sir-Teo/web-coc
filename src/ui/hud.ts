@@ -516,6 +516,7 @@ type LiveRefs = {
   researchCost: HTMLElement | null;
   starBonusStatus: HTMLElement | null;
   boostTimers: HTMLElement[];
+  armyCounts: HTMLElement[];
   starBonusButton: HTMLButtonElement | null;
   queue: HTMLElement | null;
   replayTime: HTMLElement | null;
@@ -587,6 +588,27 @@ export class HUD {
   private resultShown = false;
   private raf = false;
   private pressedActions = new Set<number>();
+  /** Hold-to-repeat on Add and Remove: a short delay, then steady repeats until release. */
+  private repeatTimer?: ReturnType<typeof setTimeout>;
+  private repeatedClick = false;
+  private startRepeat(control: HTMLButtonElement) {
+    this.stopRepeat();
+    const action = control.dataset.action!;
+    const tick = () => {
+      if (!control.isConnected || control.disabled) return this.stopRepeat();
+      this.repeatedClick = true;
+      this.action(action);
+      this.updateLive();
+      this.repeatTimer = setTimeout(tick, 110);
+    };
+    this.repeatTimer = setTimeout(tick, 450);
+  }
+  private stopRepeat() {
+    clearTimeout(this.repeatTimer);
+    this.repeatTimer = undefined;
+    // The click that follows this release (if any) runs first; later clicks count again.
+    if (this.repeatedClick) setTimeout(() => (this.repeatedClick = false), 0);
+  }
   private renderPending = false;
   private drawerMarkup = '';
   private modalMarkup = '';
@@ -643,6 +665,11 @@ export class HUD {
       'click',
       (e) => {
         const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+        // A hold that already repeated its action has done the work of this click.
+        if (this.repeatedClick) {
+          this.repeatedClick = false;
+          if (target?.hasAttribute('data-repeat')) return;
+        }
         if (target && !(target as HTMLButtonElement).disabled) {
           this.audio.play('click');
           this.actionSource = target;
@@ -660,6 +687,8 @@ export class HUD {
       (e) => {
         const target = e.target as HTMLElement;
         if (target.closest('[data-action]')) this.pressedActions.add(e.pointerId);
+        const repeat = target.closest<HTMLButtonElement>('[data-repeat]');
+        if (repeat && !repeat.disabled && e.isPrimary) this.startRepeat(repeat);
         if (target.id === 'replay-progress' && this.model.replay) {
           this.replayScrubbing = true;
           this.model.replay.paused = true;
@@ -679,6 +708,7 @@ export class HUD {
     document.addEventListener('pointerup', finishScrub, { signal });
     document.addEventListener('pointercancel', finishScrub, { signal });
     const releaseAction = (e: PointerEvent) => {
+      this.stopRepeat();
       this.pressedActions.delete(e.pointerId);
       // The browser dispatches click after pointerup; render on the next frame.
       if (!this.pressedActions.size && this.renderPending) this.scheduleRender();
@@ -1341,6 +1371,18 @@ export class HUD {
         break;
       case 'remove-spell':
         m.removeSpell(arg as SpellKind);
+        break;
+      case 'remove-all-troop':
+        m.removeTroop(arg as TroopKind, Infinity);
+        break;
+      case 'remove-all-spell':
+        m.removeSpell(arg as SpellKind, Infinity);
+        break;
+      case 'train-fill':
+        m.fillTroop(arg as TroopKind);
+        break;
+      case 'brew-fill':
+        m.fillSpell(arg as SpellKind);
         break;
       case 'clear-army':
         m.clearArmy();
@@ -2757,18 +2799,20 @@ export class HUD {
     const troopTile = (k: TroopKind) => {
       const d = m.troopStats(k);
       const unlocked = m.troopUnlocked(k);
+      const room = m.troopRoom(k);
       const blocked =
         !unlocked ||
         (isSiege(k)
           ? TROOP_KEYS.filter(isSiege).reduce((n, kind) => n + (m.state.army[kind] ?? 0), 0) >= 3
           : m.armySize + m.queuedSize + d.space > m.capacity);
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopDisplayLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${superOriginal(k) && unlocked && m.state.superBoosts?.[k] ? `<small class="boost-left">${icon('Clock3', 11)} Boosted · <b data-boost-end="${m.state.superBoosts[k]}">${time((m.state.superBoosts[k]! - m.clock) / 1000)}</b> left</small>` : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', m.townhallLevel < 11 || m.troopLevel(superOriginal(k)!) < superMinimum(k) ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${button(`train:${k}`, unlocked ? `+ Add` : `${icon('LockKeyhole', 13)} ${BUILDINGS[troopFacility(k)].name} ${TROOP_UNLOCK[k]}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, blocked ? 'disabled' : '')}${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || isSiege(k) || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.army[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.army[k]} ready · ${isSiege(k) ? `Siege reserve ${m.siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopDisplayLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${superOriginal(k) && unlocked && m.state.superBoosts?.[k] ? `<small class="boost-left">${icon('Clock3', 11)} Boosted · <b data-boost-end="${m.state.superBoosts[k]}">${time((m.state.superBoosts[k]! - m.clock) / 1000)}</b> left</small>` : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', m.townhallLevel < 11 || m.troopLevel(superOriginal(k)!) < superMinimum(k) ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${button(`train:${k}`, unlocked ? `+ Add` : `${icon('LockKeyhole', 13)} ${BUILDINGS[troopFacility(k)].name} ${TROOP_UNLOCK[k]}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || isSiege(k) || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`train-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}${isSiege(k) ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}"`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${isSiege(k) ? `Siege reserve ${m.siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
       const d = m.spellStats(k);
       const unlocked = m.spellUnlocked(k);
+      const room = m.spellRoom(k);
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, `${blocked || !m.spellCapacity ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}${button(`brew-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}, ${room * d.space} spell space${room * d.space === 1 ? '' : 's'}"`)}<span class="army-bulk">${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.spells[k] ? '' : 'disabled'}`)}${button(`remove-all-spell:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.spells[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="spell:${k}">${m.state.spells[k]}</b> ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
     const troopTiles = TROOP_ORDER.filter((k) => this.armyShown(k, false)).map(troopTile);
     const spellTiles = SPELL_ORDER.filter((k) => this.armyShown(k, true)).map(spellTile);
@@ -3417,6 +3461,7 @@ export class HUD {
       researchCost: one('[data-research-cost]'),
       starBonusStatus: one('[data-star-bonus-status]'),
       boostTimers: all('[data-boost-end]'),
+      armyCounts: all('[data-army-count]'),
       starBonusButton: one<HTMLButtonElement>('.star-bonus [data-action="star-bonus"]'),
       queue: one('[data-queue]'),
       replayTime: one('#replay-time'),
@@ -3530,6 +3575,18 @@ export class HUD {
     }
     for (const el of refs.resources)
       setText(el, n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']));
+    // Army tile counts, patched while a held Add or Remove defers the drawer's redraw.
+    for (const el of refs.armyCounts) {
+      const [type, kind] = el.dataset.armyCount!.split(':');
+      setText(
+        el,
+        String(
+          type === 'troop'
+            ? (m.state.army[kind as TroopKind] ?? 0)
+            : (m.state.spells[kind as SpellKind] ?? 0),
+        ),
+      );
+    }
     for (const el of refs.boostTimers)
       setText(el, time(Math.max(0, Number(el.dataset.boostEnd) - m.clock) / 1000));
     // The Star Bonus cooldown ends without a structural change: count down and enable here.

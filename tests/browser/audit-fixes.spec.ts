@@ -423,3 +423,32 @@ test('a campaign thumbnail opens an enlarged scouting preview', async ({ page })
   await page.locator('.campaign-scout [data-action="campaign"]').click();
   await expect(page.locator('#modal-title')).toHaveText('The Goblin Valley');
 });
+
+test('an army can be filled, emptied per type and grown by holding Add', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__game.model.clearArmy();
+  });
+  await page.locator('.train-add').click();
+  const count = () => page.evaluate(() => window.__game.model.state.army.swordsman);
+  const capacity = await page.evaluate(() => window.__game.model.capacity);
+  await expect(page.locator('[data-action="train-fill:swordsman"]')).toContainText(`+${capacity}`);
+  await page.locator('[data-action="train-fill:swordsman"]').click();
+  expect(await count()).toBe(capacity);
+  await page.locator('[data-action="remove-all-troop:swordsman"]').click();
+  expect(await count()).toBe(0);
+  // Holding + Add keeps adding and the count on the card follows while held.
+  const add = page.locator('[data-action="train:swordsman"]');
+  const box = (await add.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect
+    .poll(() => page.locator('[data-army-count="troop:swordsman"]').innerText())
+    .not.toBe('0');
+  await page.waitForTimeout(600);
+  await page.mouse.up();
+  const held = await count();
+  expect(held).toBeGreaterThan(2);
+  // Releasing does not add one more on top of the repeats.
+  await page.waitForTimeout(300);
+  expect(await count()).toBe(held);
+});

@@ -2409,14 +2409,73 @@ export class GameModel {
     this.state.spells[kind] += count;
     this.changed();
   }
-  removeTroop(kind: TroopKind) {
+  /** How many more of a troop fit: the camps' housing, or the three-machine siege reserve. */
+  troopRoom(kind: TroopKind) {
+    if (this.battle || !TROOP_KEYS.includes(kind) || !this.troopUnlocked(kind)) return 0;
+    if (isSiege(kind)) return Math.max(0, 3 - this.siegeCount);
+    return Math.max(
+      0,
+      Math.floor((this.capacity - this.armySize - this.queuedSize) / TROOPS[kind].space),
+    );
+  }
+  /** How many more of a spell fit in spell housing. */
+  spellRoom(kind: SpellKind) {
+    if (this.battle || !SPELL_KEYS.includes(kind) || !this.spellUnlocked(kind)) return 0;
+    return Math.max(
+      0,
+      Math.floor(
+        (this.spellCapacity - this.spellHousing - this.queuedSpellHousing) / SPELLS[kind].space,
+      ),
+    );
+  }
+  /** Adds as many of a troop as the remaining room allows, in one step. */
+  fillTroop(kind: TroopKind) {
+    if (this.battle || !TROOP_KEYS.includes(kind)) return 0;
+    if (!this.troopUnlocked(kind)) {
+      this.train(kind);
+      return 0;
+    }
+    const count = this.troopRoom(kind);
+    if (!count) {
+      this.notify(
+        isSiege(kind)
+          ? 'The siege reserve holds three machines.'
+          : 'Army camps are full. Remove troops or upgrade a camp.',
+      );
+      return 0;
+    }
+    this.state.army[kind] = (this.state.army[kind] ?? 0) + count;
+    this.state.stats.trained = (this.state.stats.trained ?? 0) + count;
+    this.changed();
+    return count;
+  }
+  /** Adds as many of a spell as the remaining spell housing allows. */
+  fillSpell(kind: SpellKind) {
+    if (this.battle || !SPELL_KEYS.includes(kind)) return 0;
+    if (!this.spellUnlocked(kind)) {
+      this.brew(kind);
+      return 0;
+    }
+    const count = this.spellRoom(kind);
+    if (!count) {
+      this.notify('Not enough spell housing. Remove a spell or upgrade the factory.');
+      return 0;
+    }
+    this.state.spells[kind] += count;
+    this.changed();
+    return count;
+  }
+  /** Removes `count` of a troop (every one of them when `count` is Infinity). */
+  removeTroop(kind: TroopKind, count = 1) {
     if (this.battle || !TROOP_KEYS.includes(kind) || this.state.army[kind] <= 0) return;
-    this.state.army[kind]--;
+    if (!(count >= 1)) return;
+    this.state.army[kind] -= Math.min(this.state.army[kind], Math.floor(count));
     this.changed();
   }
-  removeSpell(kind: SpellKind) {
+  removeSpell(kind: SpellKind, count = 1) {
     if (this.battle || !SPELL_KEYS.includes(kind) || this.state.spells[kind] <= 0) return;
-    this.state.spells[kind]--;
+    if (!(count >= 1)) return;
+    this.state.spells[kind] -= Math.min(this.state.spells[kind], Math.floor(count));
     this.changed();
   }
   clearArmy() {

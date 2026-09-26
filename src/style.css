@@ -5719,6 +5719,18 @@ h3 {
   color: #796d52;
   font-size: 12px;
 }
+
+/* Army tile bulk controls: ×5 / Fill and Remove / All share a row. */
+.army-bulk {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.army-bulk > .shop-buy.tiny,
+.army-bulk > .army-remove {
+  flex: 1 1 0;
+  min-width: 0;
+}
 @media (max-height: 520px) {
   /* Short landscape: the filters share the header row, leaving the height to the tiles. */
   .drawer-head.army-head {
