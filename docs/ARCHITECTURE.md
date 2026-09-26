@@ -82,6 +82,12 @@ A Web Lock coordinates tabs so only one owns the village. Save loading validates
 and migrates stored data; changes must preserve recoverability. Use a separate
 browser profile for destructive testing.
 
+Saves keep recordings apart from the village: both stores get the village without them
+(small enough to stringify on every save and on unload), and each recording is written to
+IndexedDB once, under its raid record's id and time, in the same transaction as the first
+village that lists it; it is deleted with the last one. Loading attaches them again, dropping
+any that no longer validate. A village read from the local backup alone has no recordings.
+
 Village backups share one contract (`saveFileText` / `parseSaveFile` in `save.ts`): compact
 JSON no larger than `MAX_SAVE_FILE_BYTES` (16 MiB). Five of the longest recordings the replay
 validator allows come to about 6.3 MB, so an export fits; anything larger drops recordings,

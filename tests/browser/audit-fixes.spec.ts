@@ -276,3 +276,31 @@ test('the campaign list fetches map thumbnails only as they scroll into view', a
   await page.locator('.campaign-card').last().scrollIntoViewIfNeeded();
   await expect.poll(fetched).toBeGreaterThan(first);
 });
+
+test('a recording survives reload though the village is saved without it', async ({ page }) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.spells.lightning = 1;
+    m.startBattle(0, true);
+    m.activeSpell = 'lightning';
+    m.castSpell(10, 10);
+    m.step(0.05);
+    m.finishBattle();
+    m.returnHome();
+  });
+  expect(await page.evaluate(() => !!window.__game.model.state.raidLog[0].replay)).toBe(true);
+  // The settled raid is saved within a second; the backup copy carries no recording.
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem('crown-clan-save-v1')!).raidLog?.length),
+    )
+    .toBe(1);
+  expect(
+    await page.evaluate(() => localStorage.getItem('crown-clan-save-v1')!.includes('"steps"')),
+  ).toBe(false);
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(await page.evaluate(() => window.__game.model.state.raidLog[0].replay?.steps.length)).toBe(
+    1,
+  );
+});

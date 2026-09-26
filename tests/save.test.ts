@@ -1,7 +1,7 @@
 import { it, expect, vi, afterEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
-import { initialSave } from '../src/game/model';
-import { loadSave, saveGame, SaveRecoveryError } from '../src/game/save';
+import { GameModel, initialSave } from '../src/game/model';
+import { loadSave, saveGame, SaveRecoveryError, validateSave } from '../src/game/save';
 import { overfullArmyVillage } from './fixtures/legacy-army-village';
 afterEach(() => vi.unstubAllGlobals());
 async function storePrimary(factory: IDBFactory, save: unknown) {
@@ -132,4 +132,48 @@ it('keeps revisions increasing after an older backup is imported', async () => {
   await saveGame(imported);
   expect(imported.saveRevision).toBeGreaterThan(current.saveRevision!);
   expect((await loadSave())?.gold).toBe(4242);
+});
+it('keeps recordings out of the village snapshot and stores each one once', async () => {
+  const factory = new IDBFactory();
+  vi.stubGlobal('indexedDB', factory);
+  const local = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => local.get(key) ?? null,
+    setItem: (key: string, value: string) => local.set(key, value),
+  });
+  await loadSave();
+  const m = new GameModel();
+  m.state.spells.lightning = 2;
+  for (let i = 0; i < 2; i++) {
+    m.startBattle(0, true);
+    m.activeSpell = 'lightning';
+    m.castSpell(10, 10);
+    m.step(0.05);
+    m.finishBattle();
+    m.returnHome();
+  }
+  expect(m.state.raidLog!.filter((r) => r.replay)).toHaveLength(2);
+  expect(await saveGame(m.state)).toBe(true);
+  // Neither store's village carries a recording; the backup stays small.
+  expect(local.get('crown-clan-save-v1')).not.toContain('"steps"');
+  const keys = async () =>
+    new Promise<IDBValidKey[]>((resolve) => {
+      const request = factory.open('crown-and-clan', 1);
+      request.onsuccess = () => {
+        const req = request.result.transaction('saves').objectStore('saves').getAllKeys();
+        req.onsuccess = () => {
+          request.result.close();
+          resolve(req.result);
+        };
+      };
+    });
+  expect((await keys()).filter((k) => String(k).startsWith('replay:'))).toHaveLength(2);
+  // Loading attaches them again, identical to what was recorded.
+  const loaded = await loadSave();
+  expect(loaded!.raidLog!.map((r) => r.replay)).toEqual(m.state.raidLog!.map((r) => r.replay));
+  expect(validateSave(loaded)).toBe(true);
+  // A recording that leaves the log leaves the store with it.
+  m.state.raidLog = m.state.raidLog!.slice(0, 1);
+  await saveGame(m.state);
+  expect((await keys()).filter((k) => String(k).startsWith('replay:'))).toHaveLength(1);
 });

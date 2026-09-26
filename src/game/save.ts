@@ -472,6 +472,59 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
 let db: IDBDatabase | null = null;
 /** Highest commit revision either store held at load, or this session has written since. */
 let commitRevision = 0;
+/**
+ * Recordings live apart from the village. A save writes the village without them (small enough
+ * to stringify on every save and on unload); each recording is written to IndexedDB once, under
+ * its raid record's id, in the same transaction as the village that first lists it, and deleted
+ * with the last village that lists it. Loading attaches them again.
+ */
+// Keyed by record id and time: an imported village may reuse an id for a different raid.
+const REPLAY_KEY = (record: { id: number; at: number }) => `replay:${record.id}:${record.at}`;
+/** Keys of the recordings IndexedDB already holds. A recording never changes once written. */
+const storedReplays = new Set<string>();
+/** The village without its recordings; the in-memory state keeps them. */
+export function villageSnapshot(state: Save): Save {
+  if (!state.raidLog?.some((record) => record.replay)) return state;
+  return {
+    ...state,
+    raidLog: state.raidLog.map((record) => {
+      if (!record.replay) return record;
+      const { replay: _, ...rest } = record;
+      return rest;
+    }),
+  };
+}
+/** Reattaches stored recordings to a loaded village, keeping only ones that still validate. */
+async function attachReplays(save: Save): Promise<Save> {
+  const wanted = (save.raidLog ?? []).filter(
+    (record) => !record.replay && storedReplays.has(REPLAY_KEY(record)),
+  );
+  if (!db || !wanted.length) return save;
+  let replays: unknown[];
+  try {
+    const store = db.transaction('saves').objectStore('saves');
+    replays = await Promise.all(
+      wanted.map(
+        (record) =>
+          new Promise<unknown>((resolve, reject) => {
+            const req = store.get(REPLAY_KEY(record));
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          }),
+      ),
+    );
+  } catch {
+    return save;
+  }
+  const full = structuredClone(save);
+  for (const [i, record] of wanted.entries()) {
+    const target = full.raidLog!.find((r) => r.id === record.id)!;
+    if (replays[i]) target.replay = replays[i] as NonNullable<typeof target.replay>;
+    // A recording that no longer fits its record is dropped rather than failing the village.
+    if (!validateSave(full)) delete target.replay;
+  }
+  return full;
+}
 /** Whether `a` is a later commit than `b`: revision first, then the economy clock. */
 const newer = (a: Save, b: Save) =>
   (a.saveRevision ?? 0) !== (b.saveRevision ?? 0)
@@ -507,6 +560,14 @@ export async function loadSave(): Promise<Save | undefined> {
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+      const req = db!.transaction('saves').objectStore('saves').getAllKeys();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    storedReplays.clear();
+    for (const key of keys)
+      if (typeof key === 'string' && key.startsWith('replay:')) storedReplays.add(key);
   } catch {
     /* A valid local backup remains usable. */
   }
@@ -528,9 +589,9 @@ export async function loadSave(): Promise<Save | undefined> {
   });
   if (!blocked && validateSave(primary) && validateSave(backup))
     // IndexedDB wins a full tie: it is the primary store and the last to be written.
-    return newer(backup, primary) ? backup : primary;
-  if (!blocked && validateSave(primary)) return primary;
-  if (!blocked && validateSave(backup)) return backup;
+    return attachReplays(newer(backup, primary) ? backup : primary);
+  if (!blocked && validateSave(primary)) return attachReplays(primary);
+  if (!blocked && validateSave(backup)) return attachReplays(backup);
   // Existing data must never be overwritten by the new-village autosave. The recovery copy is
   // built only here: a pretty stringify of a multi-megabyte save on every boot bought nothing.
   let primaryText: string | undefined;
@@ -578,11 +639,19 @@ export async function saveGame(state: Save): Promise<boolean> {
   let stored = false;
   // Every commit outranks every earlier one in either store, whatever its economy clock says.
   state.saveRevision = ++commitRevision;
+  const village = villageSnapshot(state);
+  const listed = new Map(
+    (state.raidLog ?? []).flatMap((record) =>
+      record.replay ? [[REPLAY_KEY(record), record.replay] as const] : [],
+    ),
+  );
+  const added = [...listed.keys()].filter((id) => !storedReplays.has(id));
+  const dropped = [...storedReplays].filter((id) => !listed.has(id));
   // No defensive structuredClone: both writes capture the state synchronously,
   // before the first await (JSON.stringify here, and IndexedDB's put() clones its
   // value when called inside the promise executor below).
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(KEY, JSON.stringify(village));
     stored = true;
   } catch {
     /* IndexedDB may still be available. */
@@ -591,8 +660,15 @@ export async function saveGame(state: Save): Promise<boolean> {
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = db!.transaction('saves', 'readwrite');
-        tx.objectStore('saves').put(state, 'village');
-        tx.oncomplete = () => resolve();
+        const store = tx.objectStore('saves');
+        store.put(village, 'village');
+        for (const key of added) store.put(listed.get(key), key);
+        for (const key of dropped) store.delete(key);
+        tx.oncomplete = () => {
+          for (const key of added) storedReplays.add(key);
+          for (const key of dropped) storedReplays.delete(key);
+          resolve();
+        };
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error);
       });
