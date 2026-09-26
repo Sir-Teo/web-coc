@@ -126,3 +126,36 @@ test('a campaign building drawn before its family lands appears once the art is 
     .toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('a family whose art failed keeps its fallback and loads once the network returns', async ({
+  page,
+}) => {
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  // The Mortar's level pages fail, as they would offline.
+  await page.route('**/assets/buildings/mortar-native/**', (route) => route.abort());
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 20 };
+    m.state.nativeCampaign = freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    m.changed();
+    m.startCampaign(40);
+  });
+  // A failed family never holds the battle, and its fallback sprite stays visible.
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  const fallback = () =>
+    page.evaluate(() => {
+      const { model, scene } = window.__game;
+      const mortar = model.battle.buildings.find((b) => b.kind === 'mortar');
+      return scene.sprites.get(mortar.id).alpha;
+    });
+  expect(await fallback()).toBeGreaterThan(0);
+  expect(await page.evaluate(loaded('mortar'))).toBe(true);
+  // Back online: the family is requested again without a refresh.
+  await page.unroute('**/assets/buildings/mortar-native/**');
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect.poll(fallback, { timeout: 30_000 }).toBe(0);
+});

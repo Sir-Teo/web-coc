@@ -228,6 +228,8 @@ interface ArtFamily {
  * browser specs were written against (all families resident once boot settles); `?lazyart`
  * opts a dev page into the production behavior of loading each family on first use.
  */
+/** Bounded backoff for a failed art request: 5 s, 10 s, 20 s ... capped at five minutes. */
+const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
 const EAGER_FAMILIES =
   import.meta.env.DEV && typeof location !== 'undefined' && !location.search.includes('lazyart');
 const XBOW_FAMILY: ArtFamily = { draws: (b) => b.kind === 'xbow', preload: preloadXbows };
@@ -665,7 +667,9 @@ export class VillageScene extends Phaser.Scene {
       }
       return shakeMemo.offset;
     });
+    window.addEventListener('online', this.retryArtNow);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('online', this.retryArtNow);
       this.combatEffects.clear();
       this.effectTimeline.clear();
       this.santaPresentation.destroy();
@@ -1033,11 +1037,21 @@ export class VillageScene extends Phaser.Scene {
     this.lastRevision = -1;
   }
   private heavyArt?: Promise<void>;
+  private heavyArtAttempts = 0;
+  private artRetryCheckAt = 0;
   heavyArtReady = false;
   /** Defense families left out of the boot preload (see ART_FAMILIES). */
   private deferredFamilies: ArtFamily[] = [];
-  /** Deferred families whose load has finished (a failed file does not hold a battle forever). */
+  /** Deferred families whose pages all loaded. */
   private loadedFamilies = new Set<ArtFamily>();
+  /**
+   * Deferred families with a page that failed to load, and when to try again (performance.now
+   * ms). A failed family never holds a battle; it keeps its fallback sprites and retries with a
+   * bounded backoff, or at once when the browser comes back online.
+   */
+  private failedFamilies = new Map<ArtFamily, { attempts: number; retryAt: number }>();
+  /** The Cannon batch failed: when to request it again. */
+  private heavyArtRetryAt?: number;
   /** Texture keys each on-demand family added, for releasing it again. */
   private familyTextures = new Map<ArtFamily, string[]>();
   /** Home time (ms, game clock) since which no battle has needed the loaded families. */
@@ -1125,15 +1139,16 @@ export class VillageScene extends Phaser.Scene {
       memo.buildings !== buildings ||
       memo.revision !== revision ||
       memo.placement !== placement ||
-      memo.loaded !== this.loadedFamilies.size
+      memo.loaded !== this.loadedFamilies.size + this.failedFamilies.size * 1000
     ) {
       memo.buildings = buildings;
       memo.revision = revision;
       memo.placement = placement;
-      memo.loaded = this.loadedFamilies.size;
+      memo.loaded = this.loadedFamilies.size + this.failedFamilies.size * 1000;
       memo.missing = this.deferredFamilies.filter(
         (family) =>
           !this.loadedFamilies.has(family) &&
+          !this.failedFamilies.has(family) &&
           (buildings.some(family.draws) ||
             (!!placement && family.draws({ kind: placement } as Building))),
       );
@@ -1193,6 +1208,33 @@ export class VillageScene extends Phaser.Scene {
     this.darkDrillPresentation.clear();
     this.seekingMinePresentation.clear();
   }
+  /**
+   * Requests failed art again once its backoff has passed: deferred families something on the
+   * map still draws, and the Cannon batch. Called from sync and on a slow timer from update.
+   */
+  private retryFailedArt(now = performance.now()) {
+    const due = [...this.failedFamilies]
+      .filter(
+        ([family, failure]) =>
+          failure.retryAt <= now &&
+          !this.requestedFamilies.has(family) &&
+          (this.model.buildings.some(family.draws) ||
+            (!!this.model.placement && family.draws({ kind: this.model.placement } as Building))),
+      )
+      .map(([family]) => family);
+    if (due.length) void this.loadFamilies(due);
+    if (this.heavyArtRetryAt !== undefined && this.heavyArtRetryAt <= now) {
+      this.heavyArtRetryAt = undefined;
+      this.heavyArt = undefined;
+      void this.loadHeavyArt();
+    }
+  }
+  /** Back online: every failed request is due now. */
+  private retryArtNow = () => {
+    for (const failure of this.failedFamilies.values()) failure.retryAt = 0;
+    if (this.heavyArtRetryAt !== undefined) this.heavyArtRetryAt = 0;
+    this.retryFailedArt();
+  };
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
     return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
@@ -1213,18 +1255,35 @@ export class VillageScene extends Phaser.Scene {
       new Promise<void>((resolve) => {
         if (shutdown) return resolve();
         const kick = () => {
-          let failed = false;
-          const failure = () => (failed = true);
+          const failedKeys = new Set<string>();
+          const failure = (file: Phaser.Loader.File) => failedKeys.add(file.key);
           this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
           this.load.once(Phaser.Loader.Events.COMPLETE, () => {
             this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
             if (shutdown) return resolve();
-            if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
+            // Attribute each failed file to its family; a file no family claims fails them all.
+            const claimed = new Set(wanted.flatMap((f) => this.familyTextures.get(f) ?? []));
+            const unclaimed = [...failedKeys].some((key) => !claimed.has(key));
+            let anyFailed = false;
             for (const family of wanted) {
               this.requestedFamilies.delete(family);
-              this.loadedFamilies.add(family);
+              const failed =
+                unclaimed || (this.familyTextures.get(family) ?? []).some((k) => failedKeys.has(k));
+              if (failed) {
+                anyFailed = true;
+                const attempts = (this.failedFamilies.get(family)?.attempts ?? 0) + 1;
+                this.failedFamilies.set(family, {
+                  attempts,
+                  retryAt: performance.now() + artRetryDelay(attempts),
+                });
+              } else {
+                this.failedFamilies.delete(family);
+                this.loadedFamilies.add(family);
+              }
               this.familyLanded(family, failed);
             }
+            if (anyFailed)
+              this.model.notify('Some village art could not load. It will retry automatically.');
             for (const key of this.cache.binary.getKeys())
               registerCachedSample(this, this.audio.samples, key);
             // Views drawn while the pages were missing cached their poses against absent
@@ -1238,15 +1297,16 @@ export class VillageScene extends Phaser.Scene {
             const queued = new Set(this.load.list);
             family.preload(this);
             // The texture keys this family added (keys already resident are never listed).
-            this.familyTextures.set(
-              family,
-              [...this.load.list]
-                .filter(
-                  (file) =>
-                    !queued.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
-                )
-                .map((file) => file.key),
-            );
+            const added = [...this.load.list]
+              .filter(
+                (file) =>
+                  !queued.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
+              )
+              .map((file) => file.key);
+            // A retry lists only the pages still missing; keep the ones already resident too.
+            this.familyTextures.set(family, [
+              ...new Set([...(this.familyTextures.get(family) ?? []), ...added]),
+            ]);
           }
           this.load.start();
         };
@@ -1277,6 +1337,11 @@ export class VillageScene extends Phaser.Scene {
         this.cannonPresentation.bindAudio();
         this.deferredArtSettled = true;
         this.heavyArtReady = !failed;
+        // A failed batch is requested again later; the fallback sprites cover meanwhile.
+        if (failed) {
+          this.heavyArtAttempts++;
+          this.heavyArtRetryAt = performance.now() + artRetryDelay(this.heavyArtAttempts);
+        } else this.heavyArtRetryAt = undefined;
         // Restyle: fallback sprites hide now that native bodies draw.
         this.lastRevision = -1;
         resolve();
@@ -1287,7 +1352,8 @@ export class VillageScene extends Phaser.Scene {
         this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
         this.load.once(Phaser.Loader.Events.COMPLETE, () => {
           this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
-          if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
+          if (failed)
+            this.model.notify('Some village art could not load. It will retry automatically.');
           done(failed);
         });
         preloadCannons(this);
@@ -1841,6 +1907,7 @@ export class VillageScene extends Phaser.Scene {
   sync() {
     if (this.lateAssetsPending()) void this.loadLateAssets();
     if (this.deferredArtPending()) void this.loadFamilies(this.missingFamilies());
+    this.retryFailedArt();
     const reduced = this.model.reducedMotion;
     if (reduced && !this.reducedCombatMotion) {
       this.combatEffects.clear();
@@ -4664,6 +4731,13 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     this.releaseLateAssetsWhenIdle(time);
     this.releaseIdleFamilies(time);
+    if (
+      (this.failedFamilies.size || this.heavyArtRetryAt !== undefined) &&
+      time >= this.artRetryCheckAt
+    ) {
+      this.artRetryCheckAt = time + 1000;
+      this.retryFailedArt();
+    }
     while (this.tick >= TICK) {
       // Positions before the step: the draw interpolates from here toward the result.
       this.interpolation.capture(this.model.battle);

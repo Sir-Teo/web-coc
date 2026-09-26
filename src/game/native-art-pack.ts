@@ -24,20 +24,30 @@ export const nativePackPrefix = (path: string, scene: string) => `pack:${path}:$
 export class NativeArtPacks<T extends { scenes: Record<string, NativeMeshGraph> }> {
   private packs = new Map<string, T>();
   private pending = new Set<string>();
-  private failed = new Set<string>();
+  /** Packs whose last request failed, and when (performance.now ms) to request them again. */
+  private failed = new Map<string, { attempts: number; retryAt: number }>();
   private alive = true;
-  constructor(private scene: Phaser.Scene) {}
+  /** Back online: every failed pack is due for another request. */
+  private online = () => {
+    for (const failure of this.failed.values()) failure.retryAt = 0;
+  };
+  constructor(private scene: Phaser.Scene) {
+    if (typeof window !== 'undefined') window.addEventListener('online', this.online);
+  }
   get(path: string): T | undefined {
     const pack = this.packs.get(path);
     if (!pack) void this.load(path);
     return pack;
   }
-  /** True when a pack could not be fetched; callers keep their drawn fallback. */
+  /** True while a pack's last request failed; callers keep their drawn fallback meanwhile. */
   unavailable(path: string) {
     return this.failed.has(path);
   }
   private async load(path: string) {
-    if (this.pending.has(path) || this.failed.has(path)) return;
+    if (this.pending.has(path)) return;
+    // A failed pack is requested again after a bounded backoff (5 s doubling to five minutes).
+    const failure = this.failed.get(path);
+    if (failure && performance.now() < failure.retryAt) return;
     this.pending.add(path);
     try {
       const response = await fetch('/' + path);
@@ -56,9 +66,16 @@ export class NativeArtPacks<T extends { scenes: Record<string, NativeMeshGraph> 
           }),
         ),
       );
-      if (this.alive) this.packs.set(path, pack);
+      if (this.alive) {
+        this.packs.set(path, pack);
+        this.failed.delete(path);
+      }
     } catch (error) {
-      this.failed.add(path);
+      const attempts = (failure?.attempts ?? 0) + 1;
+      this.failed.set(path, {
+        attempts,
+        retryAt: performance.now() + Math.min(300_000, 5000 * 2 ** (attempts - 1)),
+      });
       console.error('Native battle artwork', path, error);
     } finally {
       this.pending.delete(path);
@@ -66,5 +83,6 @@ export class NativeArtPacks<T extends { scenes: Record<string, NativeMeshGraph> 
   }
   destroy() {
     this.alive = false;
+    if (typeof window !== 'undefined') window.removeEventListener('online', this.online);
   }
 }
