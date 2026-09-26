@@ -94,3 +94,35 @@ test('families the home village does not draw are released after a while and loa
     .toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+test('a campaign building drawn before its family lands appears once the art is in', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  // The first Goblin village scouts while its Town Hall's family is still loading.
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 20 };
+    m.changed();
+    m.startCampaign(0);
+  });
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  // Views are redrawn against the landed textures: no mesh keeps Phaser's missing texture.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const views = [...window.__game.scene.goblinBuildingPresentation.buildings.values()];
+        const meshes = views.flatMap((view) => [...view.meshes.values()]);
+        return (
+          meshes.length > 0 &&
+          meshes.every((mesh) => mesh.texture.key !== '__MISSING' && mesh.visible)
+        );
+      }),
+    )
+    .toBe(true);
+  expect(errors).toEqual([]);
+});

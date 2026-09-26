@@ -1163,6 +1163,36 @@ export class VillageScene extends Phaser.Scene {
     presentation.artReady = !failed;
     presentation.bindAudio();
   }
+  /**
+   * Whether the deferred family that draws this building, if any, has its pages resident. Until
+   * then the fallback sprite stays visible: the native view has nothing to draw with.
+   */
+  private familyArtReady(b: Building) {
+    const family = this.deferredFamilies.find((f) => f.draws(b));
+    return !family || this.loadedFamilies.has(family);
+  }
+  /**
+   * Drops every deferred-family building view. Each redraws from scratch on its next render,
+   * which is what a mode change needs and what a family landing needs: views drawn before the
+   * family's textures existed keep blank meshes behind an unchanged pose signature.
+   */
+  private clearBuildingPresentations() {
+    this.santaPresentation.clear();
+    this.shrinkTrapPresentation.clear();
+    this.xbowPresentation.clear();
+    this.darkStoragePresentation.clear();
+    this.goblinBuildingPresentation.clear();
+    this.teslaPresentation.clear();
+    this.lateCampaign.clear();
+    this.bombTowerPresentation.clear();
+    this.wizardTowerPresentation.clear();
+    this.sweeperPresentation.clear();
+    this.mortarPresentation.clear();
+    this.castlePresentation.clear();
+    this.infernoPresentation.clear();
+    this.darkDrillPresentation.clear();
+    this.seekingMinePresentation.clear();
+  }
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
     return this.lateAssetsPending() || (!!this.model.battle && this.deferredArtPending());
@@ -1197,6 +1227,9 @@ export class VillageScene extends Phaser.Scene {
             }
             for (const key of this.cache.binary.getKeys())
               registerCachedSample(this, this.audio.samples, key);
+            // Views drawn while the pages were missing cached their poses against absent
+            // textures; their signatures would keep them blank until the building changed.
+            this.clearBuildingPresentations();
             // Restyle: fallback sprites hide now that native bodies draw.
             this.lastRevision = -1;
             resolve();
@@ -1824,21 +1857,8 @@ export class VillageScene extends Phaser.Scene {
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
       this.combatEffects.clear();
-      this.santaPresentation.clear();
-      this.shrinkTrapPresentation.clear();
-      this.xbowPresentation.clear();
-      this.darkStoragePresentation.clear();
-      this.goblinBuildingPresentation.clear();
-      this.teslaPresentation.clear();
-      this.lateCampaign.clear();
-      this.bombTowerPresentation.clear();
-      this.wizardTowerPresentation.clear();
-      this.sweeperPresentation.clear();
-      this.mortarPresentation.clear();
+      this.clearBuildingPresentations();
       this.garrisonPresentation.clear();
-      this.castlePresentation.clear();
-      this.infernoPresentation.clear();
-      this.darkDrillPresentation.clear();
       this.villageNativePresentation.clear();
       // Fetch every native pack the new village draws now, while scouting, rather than as each
       // building first scrolls into view (which swapped fallback sprites to native art in view).
@@ -1867,7 +1887,6 @@ export class VillageScene extends Phaser.Scene {
       this.villageArcherTowers.clear();
       this.archerTowerProjectiles.clear();
       this.cannonPresentation.clear();
-      this.seekingMinePresentation.clear();
       this.effectTimeline.clear();
       this.resourceFlights.clear();
       const keepCamera = !!this.model.replay && this.renderedReplay === this.model.replay;
@@ -2047,7 +2066,8 @@ export class VillageScene extends Phaser.Scene {
         b.npc === 'shrink-trap' ||
         isGoblinBuilding(b.npc)) &&
       b.hp > 0 &&
-      (!deferredNative || this.heavyArtReady)
+      (!deferredNative || this.heavyArtReady) &&
+      this.familyArtReady(b)
     )
       im.setAlpha(0);
     if (b.npc === 'santa-trap')
