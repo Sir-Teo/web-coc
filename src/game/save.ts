@@ -1,6 +1,11 @@
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
-import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
+import {
+  SPELL_TOWER_MODES,
+  validGearMode,
+  validSpellTowerMode,
+  validWeaponLevel,
+} from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
 import { HERO_KINDS } from './native-hero-data';
@@ -425,6 +430,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               !validXbowMode(v.xbowMode) ||
               !validInfernoMode(v.infernoMode) ||
               !validSpellTowerWeapon(v.spellTowerWeapon) ||
+              (v.spellMode !== undefined && !SPELL_TOWER_MODES.includes(v.spellMode)) ||
+              (v.gearMode !== undefined && v.gearMode !== 'long' && v.gearMode !== 'fast') ||
               !Number.isInteger(v.id) ||
               !Number.isInteger(v.x) ||
               !Number.isInteger(v.y) ||

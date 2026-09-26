@@ -437,6 +437,9 @@ export interface Layout {
     xbowMode?: XbowMode;
     spellTowerWeapon?: SpellTowerWeapon;
     infernoMode?: InfernoMode;
+    /** Active Spell Tower spell and Multi-Gear Tower mode (absent in older layouts). */
+    spellMode?: SpellTowerMode;
+    gearMode?: GearMode;
   }[];
 }
 export type Army = Record<TroopKind, number>;
@@ -1983,7 +1986,10 @@ export class GameModel {
       ...(b.kind === 'skeletontrap' ? { skeletonMode: b.skeletonMode ?? 'ground' } : {}),
       ...(b.kind === 'inferno' ? { infernoMode: b.infernoMode ?? 'single' } : {}),
       ...(b.kind === 'xbow' ? { xbowMode: b.xbowMode ?? 'ground' } : {}),
-      ...(b.kind === 'spelltower' ? { spellTowerWeapon: b.spellTowerWeapon ?? 'rage' } : {}),
+      ...(b.kind === 'spelltower'
+        ? { spellTowerWeapon: b.spellTowerWeapon ?? 'rage', spellMode: b.spellMode ?? 'rage' }
+        : {}),
+      ...(b.kind === 'multigeartower' ? { gearMode: b.gearMode ?? 'long' } : {}),
     }));
   }
   toggleSkeletonMode() {
@@ -2022,6 +2028,7 @@ export class GameModel {
     if (!b || b.kind !== 'spelltower' || b.constructing) return false;
     const modes = spellTowerModes(b.level);
     if (modes.length < 2) return false;
+    if (this.editing) this.recordPositions();
     b.spellMode = modes[(modes.indexOf(b.spellMode ?? 'rage') + 1) % modes.length];
     this.changed();
     return true;
@@ -2031,6 +2038,7 @@ export class GameModel {
     if (this.battle || this.placement || this.wallMove) return false;
     const b = this.state.buildings.find((v) => v.id === this.selected);
     if (!b || b.kind !== 'multigeartower' || b.constructing) return false;
+    if (this.editing) this.recordPositions();
     b.gearMode = b.gearMode === 'fast' ? 'long' : 'fast';
     this.changed();
     return true;
@@ -2108,8 +2116,16 @@ export class GameModel {
       if (b.kind === 'inferno')
         b.infernoMode = moved.get(b.id)?.infernoMode ?? b.infernoMode ?? 'single';
       if (b.kind === 'xbow') b.xbowMode = moved.get(b.id)?.xbowMode ?? b.xbowMode ?? 'ground';
-      if (b.kind === 'spelltower')
+      if (b.kind === 'spelltower') {
         b.spellTowerWeapon = moved.get(b.id)?.spellTowerWeapon ?? b.spellTowerWeapon ?? 'rage';
+        // Older layouts carry no spell; a spell the tower's level has not opened is ignored.
+        const spell = moved.get(b.id)?.spellMode;
+        if (spell && spellTowerModes(b.level).includes(spell)) b.spellMode = spell;
+      }
+      if (b.kind === 'multigeartower') {
+        const gear = moved.get(b.id)?.gearMode;
+        if (gear) b.gearMode = gear;
+      }
     }
     return true;
   }

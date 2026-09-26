@@ -69,7 +69,7 @@ Builder's Huts are sold the way the original sells them: all five are available 
 
 The Inferno Tower, Eagle Artillery, Scattershot, Monolith, Spell Tower and Tornado Trap were already implemented — combat, original artwork and audio — but only ran inside Goblin Map villages. They are now buildable at home at their original tiers, and home and practice battles step late-family state exactly as campaign battles do. Their artwork, about 40 MB, loads on first use as it always has; a home village that owns one pulls it in outside battle too.
 
-A home Spell Tower is placed carrying the Rage spell and its context panel cycles through the three original weapons — Rage, Poison and Invisibility — the way the X-Bow cycles its targeting mode. The choice survives saves, edit undo/redo and layout presets, and travels in recordings.
+A home Spell Tower is placed carrying the Rage spell and its context panel cycles through the three original weapons — Rage, Poison and Invisibility — the way the X-Bow cycles its targeting mode. The choice survives saves, edit undo/redo and layout presets, and travels in recordings; so do the Spell Tower's active spell and the Multi-Gear Tower's Long Range/Fast Attack mode.
 
 The armed Builder's Hut now fights at home too. From Town Hall 14 a hut buys the nail turret the campaign huts already carried, and its turret, Defending Builders and repair behaviour step in home and practice battles exactly as they do in the campaign. A level-one hut stays passive, as it does in the original. The home hut stops at level 4 with the campaign huts, since those are the tiers whose artwork and weapon this game reconstructs.
 
