@@ -145,3 +145,37 @@ it('fills the remaining room and removes every unit of a type in one step', () =
   m.removeSpell('lightning', Infinity);
   expect(m.state.spells.lightning).toBe(0);
 });
+
+it('Quick armies keep the hero lineup, items and pets and report substitutions', () => {
+  const m = new GameModel();
+  m.state.obstacles = [];
+  m.state.buildings = [
+    makeBuilding(1, 'townhall', 20, 20, 9),
+    makeBuilding(2, 'herohall', 4, 4, 3),
+    makeBuilding(3, 'builder', 30, 30),
+    makeBuilding(4, 'blacksmith', 8, 4),
+    makeBuilding(5, 'camp', 12, 12, 5),
+  ];
+  m.state.nextId = 10;
+  m.state.king = { level: 10 };
+  m.state.heroes = { queen: { level: 5 } };
+  m.state.army = { ...emptyArmy(), swordsman: 5 };
+  m.state.heroLineup = ['queen', 'king'];
+  expect(m.equipItem('king', 'earthquake-boots', 0)).toBe(true);
+  m.saveArmyPreset(0, 'Heroes');
+  const preset = m.state.armyPresets![0]!;
+  expect(preset.heroes!.map((h) => h.kind)).toEqual(['queen', 'king']);
+  expect(preset.heroes![1].items).toEqual(['earthquake-boots', 'rage-vial']);
+  expect(validateSave(m.state)).toBe(true);
+  // Change everything, then load the preset back.
+  m.state.heroLineup = ['king', 'queen'];
+  m.equipItem('king', 'barbarian-puppet', 0);
+  m.loadArmyPreset(0);
+  expect(m.heroLineup).toEqual(['queen', 'king']);
+  expect(m.gear.loadouts.king).toEqual(['earthquake-boots', 'rage-vial']);
+  // A hero this village no longer has is named rather than silently dropped.
+  delete m.state.heroes!.queen;
+  const plan = m.presetHeroPlan(preset);
+  expect(plan.lineup.map((h) => h.kind)).toEqual(['king']);
+  expect(plan.changes.join()).toContain('Archer Queen');
+});

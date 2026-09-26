@@ -8,7 +8,7 @@ import {
 } from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
-import { HERO_KINDS, heroMaxLevel } from './native-hero-data';
+import { HERO_KINDS, heroMaxLevel, itemHero, validItem, validPet } from './native-hero-data';
 import { validGear, validHeroRoster, validPetProgress } from './native-hero-village';
 import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
@@ -37,6 +37,24 @@ const KEY = 'crown-clan-save-v1';
  * limit exists to bound a malformed or hostile save, not to cap legitimate progress.
  */
 export const MAX_SAVED_BUILDINGS = 600;
+/** A Quick army's hero lineup: known heroes, once each, with their own items and a known pet. */
+function validPresetHeroes(heroes: unknown) {
+  return (
+    Array.isArray(heroes) &&
+    heroes.length <= HERO_KINDS.length &&
+    new Set(heroes.map((h) => h?.kind)).size === heroes.length &&
+    heroes.every(
+      (h) =>
+        h &&
+        HERO_KINDS.includes(h.kind) &&
+        Array.isArray(h.items) &&
+        h.items.length <= 2 &&
+        new Set(h.items).size === h.items.length &&
+        h.items.every((slug: unknown) => validItem(slug) && itemHero(slug) === h.kind) &&
+        (h.pet === undefined || validPet(h.pet)),
+    )
+  );
+}
 function finite(v: unknown) {
   return typeof v === 'number' && Number.isFinite(v) && v >= 0;
 }
@@ -254,7 +272,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
             typeof p.name !== 'string' ||
             p.name.length > 32 ||
             !armyRecord(p.army) ||
-            !spellRecord(p.spells)),
+            !spellRecord(p.spells) ||
+            (p.heroes !== undefined && !validPresetHeroes(p.heroes))),
       ))
   )
     return false;

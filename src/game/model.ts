@@ -217,6 +217,7 @@ import {
   defaultSpellLevels,
   expandArmyRoster,
   type ArmyPreset,
+  type PresetHero,
 } from './army';
 import { stepTraps, type TrapState } from './traps';
 import { shrinkStepTime, type ShrinkStatus } from './shrink-trap';
@@ -2526,18 +2527,84 @@ export class GameModel {
     if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return;
     if (!this.canSaveArmyPreset) return this.notify('Add troops before saving an army.');
     this.state.armyPresets ??= [null, null, null];
+    const gear = this.gear,
+      pets = this.petProgress;
+    const heroes = this.heroLineup.map((kind) => ({
+      kind,
+      items: (gear.loadouts[kind] ?? []).filter((slug) => gear.levels[slug] !== undefined),
+      ...(pets.assigned[kind] ? { pet: pets.assigned[kind] } : {}),
+    }));
     this.state.armyPresets[slot] = {
       name: (name?.trim() || this.state.armyPresets[slot]?.name || `Army ${slot + 1}`).slice(0, 32),
       army: { ...this.state.army },
       spells: { ...this.state.spells },
+      ...(heroes.length ? { heroes } : {}),
     };
     this.notify('Army saved.');
     this.changed();
   }
+  /**
+   * What loading a Quick army's heroes would do here: the lineup that fits this Hero Hall, and a
+   * note for everything that cannot be restored as saved (a hero, item or pet not available, or
+   * no slot for it). Shown before loading and applied by `loadArmyPreset`.
+   */
+  presetHeroPlan(preset: ArmyPreset) {
+    const changes: string[] = [];
+    const gear = this.gear,
+      pets = this.petProgress;
+    const lineup: PresetHero[] = [];
+    for (const hero of preset.heroes ?? []) {
+      const name = HERO_SOURCE[hero.kind];
+      if (!this.heroProgress(hero.kind)) {
+        changes.push(`${name} is not in this village`);
+        continue;
+      }
+      if (lineup.length >= this.heroSlotCount) {
+        changes.push(`No Hero Hall slot for ${name}`);
+        continue;
+      }
+      const items = hero.items.filter(
+        (slug) =>
+          validItem(slug) && itemHero(slug) === hero.kind && gear.levels[slug] !== undefined,
+      );
+      for (const slug of hero.items)
+        if (!items.includes(slug))
+          changes.push(`${name} keeps the current item for ${itemName(slug)}`);
+      if (items.length && !this.blacksmith) changes.push(`${name}'s items need a Blacksmith`);
+      const pet = hero.pet && pets.levels[hero.pet] !== undefined ? hero.pet : undefined;
+      if (hero.pet && !pet) changes.push(`${PET_DISPLAY[hero.pet]} is not researched yet`);
+      else if (pet && !this.petHouse) changes.push(`${PET_DISPLAY[pet]} needs a Pet House`);
+      lineup.push({ kind: hero.kind, items, ...(pet ? { pet } : {}) });
+    }
+    return { lineup, changes };
+  }
   loadArmyPreset(slot: number) {
     const preset = this.state.armyPresets?.[slot];
     if (!preset) return this.notify('Save an army in this slot first.');
-    if (this.prepareArmy(preset.army, preset.spells)) this.notify('Your army is ready.');
+    if (!this.prepareArmy(preset.army, preset.spells)) return;
+    if (preset.heroes?.length) {
+      const { lineup, changes } = this.presetHeroPlan(preset);
+      if (lineup.length) this.state.heroLineup = lineup.map((hero) => hero.kind);
+      if (this.blacksmith) {
+        const gear = structuredClone(this.gear);
+        for (const hero of lineup)
+          if (hero.items.length) gear.loadouts[hero.kind] = [...hero.items];
+        this.state.gear = gear;
+      }
+      if (this.petHouse) {
+        const pets = structuredClone(this.petProgress);
+        for (const hero of lineup) {
+          if (!hero.pet) continue;
+          for (const [other, assigned] of Object.entries(pets.assigned))
+            if (assigned === hero.pet) delete pets.assigned[other as HeroKind];
+          pets.assigned[hero.kind] = hero.pet;
+        }
+        this.state.pets = pets;
+      }
+      this.changed();
+      if (changes.length) return this.notify(`Your army is ready · ${changes.join(' · ')}.`);
+    }
+    this.notify('Your army is ready.');
   }
   retrain() {
     if (!this.state.lastArmy) {

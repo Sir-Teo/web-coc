@@ -2,11 +2,20 @@ import { isSiege } from './special-troops';
 import { TROOPS, SPELLS, TROOP_KEYS, SPELL_KEYS, LATE_TROOP_KEYS } from './data';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import type { Army, SpellBook, Save } from './model';
+import type { HeroKind, PetKind } from './native-hero-data';
 
+/** A hero a Quick army attacks with: its two items and its pet, as they were saved. */
+export interface PresetHero {
+  kind: HeroKind;
+  items: string[];
+  pet?: PetKind;
+}
 export interface ArmyPreset {
   name: string;
   army: Army;
   spells: SpellBook;
+  /** The hero lineup, in slot order (absent in presets saved before heroes were kept). */
+  heroes?: PresetHero[];
 }
 export const armySpace = (army: Army) =>
   TROOP_KEYS.reduce((n, k) => n + (isSiege(k) ? 0 : (army[k] ?? 0) * TROOPS[k].space), 0);

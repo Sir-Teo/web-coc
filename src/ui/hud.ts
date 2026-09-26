@@ -95,7 +95,7 @@ import {
 import { LEGACY_ITEM } from '../game/native-hero-village';
 import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
-import { armySpace, spellSpace } from '../game/army';
+import { armySpace, spellSpace, type ArmyPreset } from '../game/army';
 import {
   BUILDINGS,
   buildPrice,
@@ -2929,6 +2929,20 @@ export class HUD {
       )
       .join('')}</div>`;
   }
+  /** A Quick army's heroes, items and pets, and what loading it here would change. */
+  private presetHeroes(preset: ArmyPreset) {
+    const plan = this.model.presetHeroPlan(preset);
+    const heroes = preset
+      .heroes!.map((hero) => {
+        const extras = [
+          ...hero.items.map((slug) => nativeItemName(slug)),
+          ...(hero.pet ? [PET_DISPLAY[hero.pet as keyof typeof PET_DISPLAY] ?? hero.pet] : []),
+        ];
+        return `<b>${HERO_SOURCE[hero.kind]}</b>${extras.length ? ` (${extras.map(html).join(', ')})` : ''}`;
+      })
+      .join(' · ');
+    return `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>${plan.changes.length ? `<p class="preset-empty">When used here: ${plan.changes.map(html).join(' · ')}.</p>` : ''}`;
+  }
   private armyPresets() {
     const m = this.model;
     return `<div class="modal-body preset-body"><p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${[
@@ -2939,7 +2953,7 @@ export class HUD {
         const fits =
           p && armySpace(p.army) <= m.capacity && spellSpace(p.spells) <= m.spellCapacity;
         const issue = p ? m.armyPreparationIssue(p.army, p.spells) : null;
-        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
+        return `<article class="preset-card"><div class="preset-title"><span class="preset-number">${slot + 1}</span><label for="preset-name-${slot}">Army name<input id="preset-name-${slot}" maxlength="32" value="${html(this.presetNames.get(slot) ?? p?.name ?? `Army ${slot + 1}`)}"></label><small>${p ? `${armySpace(p.army)} troop · ${spellSpace(p.spells)} spell spaces${presetSiege(p.army) ? ` · ${presetSiege(p.army)} siege` : ''}` : 'Empty slot'}</small></div>${p ? this.composition(p.army, p.spells) : '<p class="preset-empty">Build an army in the Army drawer, then save it here.</p>'}${p?.heroes?.length ? this.presetHeroes(p) : ''}<div class="preset-actions">${button(`preset-save:${slot}`, `${icon('Save', 16)} ${p ? 'Save current army' : 'Save army'}`, 'game-btn stone', m.canSaveArmyPreset ? '' : 'disabled')}${button(`preset-load:${slot}`, `${icon('Check', 16)} ${p && !fits ? 'Needs more housing' : issue ? 'Locked composition' : 'Use army'}`, 'game-btn green', fits && !issue ? '' : 'disabled')}</div>${issue ? `<p class="preset-empty">${issue}</p>` : ''}</article>`;
       })
       .join(
         '',

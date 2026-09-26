@@ -452,3 +452,36 @@ test('an army can be filled, emptied per type and grown by holding Add', async (
   await page.waitForTimeout(300);
   expect(await count()).toBe(held);
 });
+
+test('a Quick army card lists its heroes and what loading it here would change', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.obstacles = [];
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 20, 20, 9),
+      makeBuilding(2, 'herohall', 4, 4, 3),
+      makeBuilding(3, 'builder', 30, 30),
+      makeBuilding(4, 'blacksmith', 8, 4),
+      makeBuilding(5, 'camp', 12, 12, 5),
+    ];
+    m.state.nextId = 10;
+    m.state.king = { level: 10 };
+    m.state.heroes = { queen: { level: 5 } };
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.state.heroLineup = ['queen', 'king'];
+    m.saveArmyPreset(0, 'Heroes');
+    // A pet this village has not researched is named, not silently dropped.
+    m.state.armyPresets[0].heroes[0].pet = 'lassi';
+    m.changed();
+    window.__game.hud.show('army-presets');
+  });
+  const card = page.locator('.preset-card').first();
+  await expect(card.locator('.preset-heroes')).toContainText('Barbarian King');
+  await expect(card.locator('.preset-heroes')).toContainText('Archer Queen');
+  await expect(card.locator('.preset-heroes')).toContainText('L.A.S.S.I');
+  await expect(card).toContainText('When used here: L.A.S.S.I is not researched yet');
+});
