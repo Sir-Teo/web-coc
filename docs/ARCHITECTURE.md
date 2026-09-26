@@ -91,3 +91,8 @@ fallback page or a newer deploy's file is served but never stored). A newer depl
 beside it and waits; the page then shows "Update ready · Reload", which activates the new
 worker and reloads onto its release. Unhashed asset URLs are therefore never paired with
 another release's page.
+
+Settings reports what offline play covers from the worker's own answer: "Preparing" until it
+has stored this page's boot art, "Ready offline" once it has (the village and art already
+seen; unvisited campaign villages still need a connection), or a partial state with a Retry
+link when some of that art could not be stored.

@@ -30,6 +30,32 @@ function loadedPaths() {
   return [...paths];
 }
 
+/**
+ * What offline play can rely on right now: 'unsupported' (no service worker, or a development
+ * page), 'preparing' until the worker has stored this page's boot art, 'ready' once it has, or
+ * 'partial' when some of that art could not be stored (a retry is offered).
+ */
+export type OfflineStatus = 'unsupported' | 'preparing' | 'ready' | 'partial';
+let status: OfflineStatus = 'unsupported';
+let onStatus: (status: OfflineStatus) => void = () => {};
+export const offlineStatus = () => status;
+/** The HUD redraws its Settings note when the status changes. */
+export function watchOfflineStatus(listener: (status: OfflineStatus) => void) {
+  onStatus = listener;
+}
+function setStatus(next: OfflineStatus) {
+  status = next;
+  document.documentElement.dataset.offline = next;
+  onStatus(next);
+}
+/** Asks the active worker to store this page's art again (after a partial warm-up). */
+export function retryOfflineWarm() {
+  const worker = 'serviceWorker' in navigator ? navigator.serviceWorker.controller : null;
+  if (!worker) return;
+  setStatus('preparing');
+  worker.postMessage({ type: 'warm', urls: loadedPaths() });
+}
+
 const idle = (callback: () => void) =>
   'requestIdleCallback' in window
     ? requestIdleCallback(callback, { timeout: 4000 })
@@ -48,11 +74,12 @@ export function registerOfflineSupport() {
     window.location.reload();
   });
   if (!('serviceWorker' in navigator)) return;
+  setStatus('preparing');
   const container = navigator.serviceWorker;
   const post = (worker: ServiceWorker | null | undefined) =>
     worker?.postMessage({ type: 'warm', urls: loadedPaths() });
   container.addEventListener('message', (event: MessageEvent) => {
-    if (event.data?.type === 'warmed') document.documentElement.dataset.offline = 'ready';
+    if (event.data?.type === 'warmed') setStatus(event.data.failed ? 'partial' : 'ready');
   });
   let updating = false;
   // Files fetched before this page came under the worker's control never passed

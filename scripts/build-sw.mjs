@@ -127,7 +127,8 @@ async function inBatches(items, size, task) {
 /** Best-effort: files the page already loaded, limited to build files not cached yet. */
 async function warm(cache, hashes, urls) {
   const wanted = [...new Set(urls)].filter((url) => hashes[url]);
-  let added = 0;
+  let added = 0,
+    failed = 0;
   await inBatches(wanted, 4, async (url) => {
     if (await cache.match(url)) return;
     try {
@@ -135,9 +136,10 @@ async function warm(cache, hashes, urls) {
       added++;
     } catch {
       /* Fetched again (and cached) the next time the game asks for it. */
+      failed++;
     }
   });
-  return added;
+  return { added, failed };
 }
 
 // The registering page posts the files its boot used; the install waits briefly for them
@@ -224,8 +226,10 @@ self.addEventListener('message', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      const added = await warm(cache, await loadManifest(), urls);
-      event.source?.postMessage({ type: 'warmed', version: VERSION, added });
+      const { added, failed } = await warm(cache, await loadManifest(), urls);
+      // The shell is complete by construction (the install requires it); failed counts the
+      // boot art that could not be stored, so the page can say what offline play lacks.
+      event.source?.postMessage({ type: 'warmed', version: VERSION, added, failed });
     })(),
   );
 });

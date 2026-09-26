@@ -160,6 +160,7 @@ import { exportSave, parseSaveFile, saveGame, MAX_SAVE_FILE_BYTES } from '../gam
 import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
+import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 type Panel =
   | 'blacksmith'
   | 'heroes'
@@ -698,6 +699,9 @@ export class HUD {
     );
     document.addEventListener('keydown', (e) => this.keydown(e), { signal });
     model.onChange = (passive) => (passive ? this.updateLive() : this.scheduleRender());
+    watchOfflineStatus(() => {
+      if (this.panel === 'settings') this.scheduleRender();
+    });
     model.onToast = (m) => this.toast(m);
     scene.onSelect = () => {
       this.panel = null;
@@ -1462,6 +1466,10 @@ export class HUD {
         break;
       case 'claim':
         if (m.claimQuest(arg)) this.audio.play('collect');
+        break;
+      case 'offline-retry':
+        retryOfflineWarm();
+        this.render();
         break;
       case 'export':
       case 'export-village': {
@@ -3081,7 +3089,18 @@ export class HUD {
       )
       .join(
         '',
-      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
+      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">${this.offlineNote()}<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
+  }
+  /** What offline play covers right now, from the service worker's own report. */
+  private offlineNote() {
+    const status = offlineStatus();
+    if (status === 'unsupported')
+      return 'Frontend-only · Offline play is not available in this browser session';
+    if (status === 'preparing') return 'Frontend-only · Preparing offline play…';
+    const scope =
+      'your village and the art you have already seen are saved; campaign villages you have not visited yet need a connection';
+    if (status === 'ready') return `Frontend-only · Ready offline: ${scope}`;
+    return `Frontend-only · Some art could not be saved for offline play (${scope}). ${button('offline-retry', 'Retry', 'replay-link')}`;
   }
   /** The league's own daily bonus, which is where ore comes from. */
   /** The Star Bonus line: stars still needed, the cooldown, or ready. */
