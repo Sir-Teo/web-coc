@@ -81,7 +81,9 @@ points the built code, packs and styles at it (`scripts/webp-dist.mjs`): about a
 quarter fewer bytes, byte-identical WebGL textures. The repository, the dev server
 and the specs keep reading the PNGs. The production build also generates `sw.js`
 and a content-hashed manifest. The service
-worker precaches the application shell, warms assets observed during boot and caches
+worker precaches the application shell (the page and only the bundles its entry imports
+statically, read from Vite's build manifest; lazy chunks such as the late campaign scene and
+the developer panel are cached when first used), warms assets observed during boot and caches
 other assets as they are fetched. Offline availability therefore depends on what
 has already been loaded; it does not mean every campaign asset is downloaded at install.
 

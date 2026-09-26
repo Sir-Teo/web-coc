@@ -28,6 +28,9 @@ const SCENE_GRAPH =
 
 export default defineConfig({
   build: {
+    // scripts/build-sw.mjs reads the chunk graph to precache only what the entry imports
+    // statically, then removes the manifest from dist.
+    manifest: true,
     chunkSizeWarningLimit: 1500,
     assetsInlineLimit: 4096,
     rollupOptions: {

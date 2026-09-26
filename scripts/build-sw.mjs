@@ -26,6 +26,28 @@ async function walk(dir) {
 }
 const toUrl = (file) => '/' + path.relative(dist, file).split(path.sep).join('/');
 
+// Vite's chunk graph (build.manifest): the files the entry imports statically, which is all a
+// boot needs. Lazily imported chunks (the late campaign scene, the developer panel) are cached
+// when first used instead of downloaded by every install. The manifest is not deployed.
+const viteManifestPath = path.join(dist, '.vite', 'manifest.json');
+const viteManifest = JSON.parse(await fs.readFile(viteManifestPath, 'utf8'));
+const bootFiles = new Set();
+{
+  const seen = new Set();
+  const visit = (key) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    const chunk = viteManifest[key];
+    if (!chunk) return;
+    bootFiles.add('/' + chunk.file);
+    for (const css of chunk.css ?? []) bootFiles.add('/' + css);
+    for (const imported of chunk.imports ?? []) visit(imported);
+  };
+  for (const [key, chunk] of Object.entries(viteManifest)) if (chunk.isEntry) visit(key);
+  if (!bootFiles.size) throw new Error('The Vite manifest lists no entry chunk.');
+}
+await fs.rm(path.join(dist, '.vite'), { recursive: true, force: true });
+
 // Drop the output of an earlier run so it is neither hashed nor listed.
 for (const file of await fs.readdir(dist))
   if (file === 'sw.js' || /^sw-manifest\.[0-9a-f]+\.json$/.test(file))
@@ -41,7 +63,7 @@ for (const file of (await walk(dist)).sort()) {
 // Navigations to the root are served by index.html.
 hashes['/'] = hashes['/index.html'];
 
-// The shell: the page, the Vite bundles at the top of /assets (fonts load at
+// The shell: the page, the bundles the entry imports statically (fonts load at
 // runtime and are warmed with the boot set) and root-level static files other
 // than the developer asset catalog.
 const shell = Object.keys(hashes)
@@ -49,10 +71,12 @@ const shell = Object.keys(hashes)
     (url) =>
       url === '/' ||
       url === '/index.html' ||
-      /^\/assets\/[^/]+\.(?:js|css)$/.test(url) ||
+      bootFiles.has(url) ||
       (/^\/[^/]+$/.test(url) && url !== '/asset-catalog.html'),
   )
   .sort();
+for (const url of bootFiles)
+  if (!hashes[url]) throw new Error(`Boot file ${url} is missing from ${dist}.`);
 let shellBytes = 0;
 for (const url of shell) if (url !== '/') shellBytes += (await fs.stat(path.join(dist, url))).size;
 
