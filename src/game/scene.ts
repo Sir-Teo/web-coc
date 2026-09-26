@@ -91,7 +91,7 @@ import { SWEEPER_ART } from './air-control-art';
 import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
 import { sweeperBounds } from './air-sweeper-poses';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
-import { isDefense } from './data';
+import { CAMERA_KEYS, isDefense } from './data';
 import { CAMP_ART_LEVELS, campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART } from './mortar-art';
@@ -709,10 +709,10 @@ export class VillageScene extends Phaser.Scene {
     // No global key capture: Phaser would preventDefault these keys at window level,
     // so HUD text fields could not receive w/a/s/d and range sliders ignored arrows.
     // (The body never scrolls, so uncaptured arrows move nothing but the camera.)
-    this.focusKeys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT', false) as Record<
-      string,
-      Phaser.Input.Keyboard.Key
-    >;
+    this.focusKeys = this.input.keyboard!.addKeys(
+      [...CAMERA_KEYS.map((k) => k.toUpperCase()), 'UP', 'DOWN', 'LEFT', 'RIGHT'].join(','),
+      false,
+    ) as Record<string, Phaser.Input.Keyboard.Key>;
     const onPointerDown = (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
       this.audio.unlock();

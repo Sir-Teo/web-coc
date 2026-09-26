@@ -77,8 +77,8 @@ for (const [width, height] of [
     await page.locator('[data-action="attack:0"]').click();
     for (const [kind, key] of [
       ['healer', 'q'],
-      ['dragon', 'w'],
-      ['pekka', 'e'],
+      ['dragon', 'e'],
+      ['pekka', 'z'],
     ]) {
       await page.keyboard.press(key);
       const card = page.locator(`[data-action="troop:${kind}"]`);

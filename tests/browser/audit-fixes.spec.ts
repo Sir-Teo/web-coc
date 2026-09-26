@@ -97,3 +97,28 @@ test('the achievements star total matches the campaign screen', async ({ page })
   await expect(page.locator('.modal')).toContainText(`/ ${total}`);
   await expect(page.locator('.modal')).not.toContainText('/ 270');
 });
+
+test('troop shortcuts never pan the camera', async ({ page }) => {
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { TROOP_HOTKEYS } = await import('/src/game/data.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.startCampaign(0);
+    window.__keys = TROOP_HOTKEYS;
+  });
+  const keys: string[] = await page.evaluate(() => window.__keys);
+  const camera = () =>
+    page.evaluate(() => {
+      const c = window.__game.scene.cameras.main;
+      return [Math.round(c.scrollX), Math.round(c.scrollY)];
+    });
+  await page.mouse.click(5, 5);
+  const before = await camera();
+  for (const key of keys) {
+    await page.keyboard.down(key);
+    await page.waitForTimeout(150);
+    await page.keyboard.up(key);
+  }
+  expect(await camera()).toEqual(before);
+});

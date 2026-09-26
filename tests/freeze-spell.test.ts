@@ -1,7 +1,14 @@
 import { ReleasedGameModel as GameModel, useReleasedCombat } from './fixtures/released-combat';
 import { describe, expect, it } from 'vitest';
 import { makeBuilding } from '../src/game/model';
-import { SPELLS, SPELL_KEYS, SPELL_HOTKEYS, TROOP_HOTKEYS, spellStatsAt } from '../src/game/data';
+import {
+  RESERVED_KEYS,
+  SPELLS,
+  SPELL_KEYS,
+  SPELL_HOTKEYS,
+  TROOP_HOTKEYS,
+  spellStatsAt,
+} from '../src/game/data';
 import { SPELL_UNLOCK } from '../src/game/army-unlocks';
 import { freezeSeconds, FREEZE_RADIUS, maxSpellLevelFor } from '../src/game/spell-progression';
 import { SPELL_ROSTER } from '../src/game/troop-progression';
@@ -107,6 +114,13 @@ describe('the Freeze Spell', () => {
     expect(shared).toEqual([]);
     expect(SPELL_HOTKEYS).toHaveLength(SPELL_KEYS.length);
     expect(new Set(SPELL_HOTKEYS).size).toBe(SPELL_HOTKEYS.length);
+  });
+
+  it('never binds a troop or spell to a camera, hero or zoom key', () => {
+    // W once selected the tenth troop and panned the camera with the same press.
+    const bound = [...TROOP_HOTKEYS, ...SPELL_HOTKEYS].map((k) => k.toLowerCase());
+    expect(bound.filter((k) => RESERVED_KEYS.includes(k))).toEqual([]);
+    expect(new Set(bound).size).toBe(bound.length);
   });
 
   it('keeps the spell book key order, which archived battles are hashed by', () => {

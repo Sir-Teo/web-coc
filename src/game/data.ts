@@ -1027,8 +1027,14 @@ const BASE_TROOPS: Record<LegacyTroopKind, TroopDef> = {
     research: troopProgression('pekka', 2)!.seconds,
   },
 };
+/**
+ * Keys the battle camera pans with (always active, lowercase). Every other binding must avoid
+ * them, as must H (hero) and the zoom keys; the cards' shortcut hints read the lists below.
+ */
+export const CAMERA_KEYS = ['w', 'a', 's', 'd'] as const;
+export const RESERVED_KEYS = [...CAMERA_KEYS, 'h', '+', '=', '-'];
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
-export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'w', 'e'];
+export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'e', 'z'];
 // The two lists share one keyboard and are compared lowercase, so no key may appear in both.
 export const SPELL_HOTKEYS = [
   '8',
