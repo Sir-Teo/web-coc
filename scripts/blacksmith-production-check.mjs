@@ -73,18 +73,19 @@ try {
       await expect(page.locator('#toast')).toContainText('Village restored');
       await page.locator('.train-add').click();
       await page.locator('[data-action="heroes"]').click();
-      await page.locator('[data-action="equipment-view:puppet"]').click();
-      await page.locator('[data-action="equipment-upgrade:puppet,1"]').click();
+      // The King card's items open the King's native gear in the Blacksmith.
+      await page.locator('[data-hero="king"] [data-action="native-slot:barbarian-puppet"]').click();
+      await page.locator('[data-action="native-upgrade:barbarian-puppet,1"]').click();
       await expect(page.locator('.equipment-detail-heading')).toContainText('Level 2');
-      await page.locator('[data-action="equipment-upgrade:puppet,2"]').click();
-      await expect(page.locator('[data-action="ore-buy"]')).toContainText('340');
-      await page.locator('[data-action="ore-buy"]').click();
+      await page.locator('[data-action="native-upgrade:barbarian-puppet,2"]').click();
+      await expect(page.locator('[data-action="native-ore-buy"]')).toContainText('340');
+      await page.locator('[data-action="native-ore-buy"]').click();
       await expect(page.locator('.equipment-detail-heading')).toContainText('Level 3');
       expect(
         await page.evaluate(() => JSON.parse(window.render_game_to_text()).resources.gems),
       ).toBe(660);
-      await page.locator('.equipment-card[data-action="equipment-view:boots"]').click();
-      await page.locator('[data-action="equipment-equip:boots,1"]').click();
+      await page.locator('.equipment-card[data-action="native-item:earthquake-boots"]').click();
+      await page.locator('[data-action="native-equip:earthquake-boots,1"]').click();
       await expect(page.locator('.equipped-label')).toContainText('slot 2');
       await page.locator('.ore-wallet').scrollIntoViewIfNeeded();
       await expect(page.locator('#toast')).not.toHaveClass(/show/);
@@ -144,8 +145,8 @@ try {
       await page.keyboard.press('h');
       // Level-3 Barbarian Puppet uses ability level 2: sixteen Barbarians.
       await expect.poll(summoned).toBe(16);
-      const hero = await page.evaluate(
-        () => JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
+      const hero = await page.evaluate(() =>
+        JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
       );
       expect(hero.items).toEqual([
         { slug: 'barbarian-puppet', level: 3 },
@@ -160,8 +161,8 @@ try {
       await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
       await page.getByRole('slider', { name: 'Replay position' }).press('End');
       await expect(page.locator('.replay-status')).toContainText('Replay complete');
-      const replayHero = await page.evaluate(
-        () => JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
+      const replayHero = await page.evaluate(() =>
+        JSON.parse(window.render_game_to_text()).battle.heroes.find((h) => h.kind === 'king'),
       );
       expect(replayHero.items).toEqual(hero.items);
       expect(replayHero.abilityUsed).toBe(true);

@@ -149,8 +149,8 @@ test('native forge equips, upgrades with ore or gems, and sells epics', async ({
   await page.locator('.equipment-catalog [data-action="native-item:frozen-arrow"]').click();
   await page.locator('[data-action="epic-buy:frozen-arrow"]').click();
   expect(await page.evaluate(() => window.__game.model.gear.levels['frozen-arrow'])).toBe(1);
-  // The original King view is untouched.
-  await page.locator('[data-action="blacksmith-hero:legacy"]').click();
+  // The King's tab edits the same gear the King's battles carry.
+  await page.locator('[data-action="blacksmith-hero:king"]').click();
   await expect(page.locator('.blacksmith-body')).toContainText('BARBARIAN KING');
   expect(errors).toEqual([]);
 });
