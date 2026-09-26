@@ -5600,3 +5600,41 @@ h3 {
   box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
   cursor: pointer;
 }
+
+/* Army catalog search and filters (second row of the Army drawer header). */
+.drawer-head.army-head {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.army-filters {
+  display: flex;
+  flex: 1 1 100%;
+  gap: 6px;
+  min-width: 0;
+}
+.army-filters input,
+.army-filters select {
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #c8b98c;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #4b3b1c;
+  font:
+    700 13px/1 'Nunito Sans',
+    sans-serif;
+}
+.army-filters input {
+  flex: 1 1 140px;
+}
+.army-filters select {
+  flex: 0 1 auto;
+}
+.army-empty {
+  align-self: center;
+  margin: 0 auto;
+  padding: 0 16px;
+  color: #6b5a33;
+  font-weight: 700;
+}

@@ -485,6 +485,17 @@ function restoreFocusMark(mark: FocusMark | null) {
 /** Drawer markup split at its stable structure, so an update can replace single tiles. */
 type DrawerParts = { open: string; head: string; body: string; items: string[]; foot: string };
 /** Elements updateLive() patches, looked up once per rebuild instead of every 250 ms. */
+type ArmyShow = 'all' | 'unlocked' | 'ready';
+type ArmyFamily = 'all' | 'elixir' | 'dark' | 'super' | 'siege' | 'spells';
+/** A troop's catalog family: where it is trained, or a boost for super troops. */
+const troopFamily = (kind: TroopKind): Exclude<ArmyFamily, 'all' | 'spells'> =>
+  superOriginal(kind)
+    ? 'super'
+    : troopFacility(kind) === 'workshop'
+      ? 'siege'
+      : troopFacility(kind) === 'darkbarracks'
+        ? 'dark'
+        : 'elixir';
 type LiveRefs = {
   heroTimers: HTMLElement[];
   heroGems: HTMLElement[];
@@ -706,6 +717,12 @@ export class HUD {
         }
         if (t.id.startsWith('preset-name-'))
           this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
+        if (t.id === 'army-search' || t.id === 'army-show' || t.id === 'army-family') {
+          if (t.id === 'army-search') this.armyFilter.query = t.value.slice(0, 40);
+          else if (t.id === 'army-show') this.armyFilter.show = t.value as ArmyShow;
+          else this.armyFilter.family = t.value as ArmyFamily;
+          this.render();
+        }
       },
       { signal },
     );
@@ -1183,6 +1200,10 @@ export class HUD {
         break;
       case 'army':
         this.showDrawer('army');
+        break;
+      case 'army-filter-clear':
+        this.armyFilter = { query: '', show: 'all', family: 'all' };
+        this.render();
         break;
       case 'army-jump': {
         if (arg !== 'troops' && arg !== 'spells') break;
@@ -2575,11 +2596,37 @@ export class HUD {
       },
     ).join('')}</div>`;
   }
+  /** Army catalog search and filters; kept while the drawer is closed and reopened. */
+  private armyFilter = { query: '', show: 'all' as ArmyShow, family: 'all' as ArmyFamily };
+  private armyFilters() {
+    const f = this.armyFilter;
+    const option = (value: string, label: string, current: string) =>
+      `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
+    return `<div class="army-filters" role="search"><input id="army-search" type="search" placeholder="Search army" aria-label="Search troops and spells" autocomplete="off" value="${html(f.query)}"><select id="army-show" aria-label="Show">${option('all', 'All', f.show)}${option('unlocked', 'Unlocked', f.show)}${option('ready', 'Ready', f.show)}</select><select id="army-family" aria-label="Family">${option('all', 'Every family', f.family)}${option('elixir', 'Elixir troops', f.family)}${option('dark', 'Dark troops', f.family)}${option('super', 'Super troops', f.family)}${option('siege', 'Siege machines', f.family)}${option('spells', 'Spells', f.family)}</select></div>`;
+  }
+  /** Whether a catalog tile passes the Army drawer's search and filters. */
+  private armyShown(kind: TroopKind | SpellKind, spell: boolean) {
+    const m = this.model,
+      f = this.armyFilter;
+    const name = (spell ? SPELLS[kind as SpellKind] : TROOPS[kind as TroopKind]).name;
+    const query = f.query.trim().toLowerCase();
+    if (query && !name.toLowerCase().includes(query)) return false;
+    const unlocked = spell
+      ? m.spellUnlocked(kind as SpellKind)
+      : m.troopUnlocked(kind as TroopKind);
+    const ready = spell
+      ? m.state.spells[kind as SpellKind] > 0
+      : m.state.army[kind as TroopKind] > 0;
+    if ((f.show === 'unlocked' && !unlocked) || (f.show === 'ready' && !ready)) return false;
+    if (f.family === 'all') return true;
+    if (spell) return f.family === 'spells';
+    return troopFamily(kind as TroopKind) === f.family;
+  }
   private drawer() {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
     const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
-    const head = `<header class="drawer-head"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
     return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;
@@ -2660,13 +2707,22 @@ export class HUD {
       const blocked = !unlocked || m.spellHousing + d.space > m.spellCapacity;
       return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="spells"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false"></div><h3>${d.name.replace(' Spell', '')} <small>★${m.spellLevel(k)}</small></h3>${button(`spell-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${d.effect}</small>${button(`brew:${k}`, unlocked ? '+ Add' : `${icon('LockKeyhole', 13)} ${spellFactory(k) === 'darkspellfactory' ? 'Dark ' : ''}Factory ${SPELL_UNLOCK[k]}`, `game-btn ${blocked || !m.spellCapacity ? 'stone' : 'green'} shop-buy`, blocked || !m.spellCapacity ? 'disabled' : '')}${button(`remove-spell:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" ${m.state.spells[k] ? '' : 'disabled'}`)}<small class="shop-note">${m.state.spells[k]} ready · ${d.space} spell space${d.space === 1 ? '' : 's'}</small></article>`;
     };
+    const troopTiles = TROOP_ORDER.filter((k) => this.armyShown(k, false)).map(troopTile);
+    const spellTiles = SPELL_ORDER.filter((k) => this.armyShown(k, true)).map(spellTile);
     return {
       body: '<div class="drawer-body army-strip">',
       items: [
         `<div class="army-actions modern-army-actions" role="toolbar" aria-label="Army actions"><span class="army-ready-label">READY WHEN YOU ARE</span>${armyAction('heroes', 'ShieldCheck', 'Heroes', 'blue')}${armyAction('progression', 'Layers', 'Progression', 'stone')}${armyAction('army-presets', 'Save', 'Quick armies', 'green')}${armyAction('retrain', 'RotateCcw', 'Last army', 'stone', !m.state.lastArmy)}${armyAction('research', 'FlaskConical', 'Research', 'blue')}${armyAction('practice', 'Swords', 'Practice', 'blue', !m.armyReady)}${armyAction('clear-army', 'X', 'Clear army', 'stone', !(m.armySize || m.siegeCount || m.spellCount))}</div>`,
-        ...TROOP_ORDER.map(troopTile),
-        '<span class="tray-divider tall"></span>',
-        ...SPELL_ORDER.map(spellTile),
+        ...troopTiles,
+        ...(troopTiles.length && spellTiles.length
+          ? ['<span class="tray-divider tall"></span>']
+          : []),
+        ...spellTiles,
+        ...(troopTiles.length || spellTiles.length
+          ? []
+          : [
+              `<p class="army-empty">No troops or spells match. ${button('army-filter-clear', 'Clear filters', 'replay-link')}</p>`,
+            ]),
       ],
       foot: `<footer class="drawer-foot ${overCapacity ? 'army-over-capacity' : ''}">${icon(overCapacity ? 'UsersRound' : 'Check', 17)} ${overCapacity ? 'Over capacity' : preparationLabel} <span>${preparationNote}</span></footer>`,
     };

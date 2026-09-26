@@ -340,3 +340,39 @@ test('on a phone the Army drawer gives the troop catalog most of its width', asy
   // Icon-only actions keep their names.
   await expect(page.getByRole('button', { name: 'Quick armies' })).toBeVisible();
 });
+
+test('the Army catalog can be searched and filtered by readiness and family', async ({ page }) => {
+  await page.locator('.train-add').click();
+  const names = () =>
+    page
+      .locator('.army-tile h3')
+      .evaluateAll((els) => els.map((el) => el.firstChild!.textContent!.trim()));
+  const all = (await names()).length;
+  await page.locator('#army-search').fill('drag');
+  await expect.poll(async () => (await names()).every((n) => /drag/i.test(n))).toBe(true);
+  expect((await names()).length).toBeGreaterThan(0);
+  // Typing keeps the field focused and never pans the camera.
+  await expect(page.locator('#army-search')).toBeFocused();
+  await page.locator('#army-search').fill('');
+  await page.locator('#army-family').selectOption('siege');
+  await expect.poll(async () => (await names()).length).toBeLessThan(all);
+  expect(
+    await page
+      .locator('.army-tile [data-action^="train:"]')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-action'))),
+  ).toContain('train:wallwrecker');
+  await page.locator('#army-family').selectOption('all');
+  await page.locator('#army-show').selectOption('ready');
+  const ready = await page.evaluate(() => {
+    const m = window.__game.model;
+    return (
+      Object.values(m.state.army).filter((n) => n > 0).length +
+      Object.values(m.state.spells).filter((n) => n > 0).length
+    );
+  });
+  await expect.poll(async () => (await names()).length).toBe(ready);
+  await page.locator('#army-search').fill('zzzz');
+  await expect(page.locator('.army-empty')).toBeVisible();
+  await page.locator('[data-action="army-filter-clear"]').click();
+  await expect.poll(async () => (await names()).length).toBe(all);
+});
