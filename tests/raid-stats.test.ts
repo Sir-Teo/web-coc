@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { GameModel, initialSave } from '../src/game/model';
+import { GameModel, initialSave, raidHeroes } from '../src/game/model';
 import { emptyArmy } from '../src/game/army';
 import { validateSave } from '../src/game/save';
 import { freshNativeCampaign } from '../src/game/native-campaign';
@@ -36,4 +36,32 @@ it('seeds victories for older saves from the villages that hold a star', () => {
   save.nativeCampaign.stars[1] = 1;
   const m = new GameModel(save);
   expect(m.state.stats.wins).toBe(2);
+});
+
+it('the battle log names every deployed hero rather than a single King', () => {
+  const m = new GameModel();
+  m.state.army = { ...emptyArmy(), swordsman: 1 };
+  m.startBattle(0, true);
+  m.battle!.nativeHeroRoster = true;
+  m.battle!.nativeHeroes = [
+    { kind: 'queen', level: 3, items: [], unitId: null },
+    { kind: 'prince', level: 2, items: [], unitId: null },
+    { kind: 'warden', level: 1, items: [], unitId: null },
+  ];
+  const edge = [0.5, 1, 1.5, 2]
+    .flatMap((x) => [0.5, 1, 1.5, 2, 45, 46].map((y) => [x, y]))
+    .filter(([x, y]) => !m.deployBlocked(x, y));
+  expect(m.deployNativeHero('queen', edge[0][0], edge[0][1])).toBe(true);
+  expect(m.deployNativeHero('prince', edge[1][0], edge[1][1])).toBe(true);
+  m.finishBattle();
+  const record = m.state.raidLog![0];
+  expect(record.hero).toBeUndefined();
+  expect(raidHeroes(record)).toEqual([
+    { kind: 'queen', level: 3, abilityUsed: false },
+    { kind: 'prince', level: 2, abilityUsed: false },
+  ]);
+  // An entry written before the roster reads as the Barbarian King.
+  expect(raidHeroes({ hero: { level: 5, abilityUsed: true } })).toEqual([
+    { kind: 'king', level: 5, abilityUsed: true },
+  ]);
 });

@@ -8,7 +8,7 @@ import {
 } from './native-defense-stats';
 import { isGearable } from './native-merges';
 import { superchargeCount } from './native-supercharge';
-import { HERO_KINDS } from './native-hero-data';
+import { HERO_KINDS, heroMaxLevel } from './native-hero-data';
 import { validGear, validHeroRoster, validPetProgress } from './native-hero-village';
 import { guardianLevels, validGuardian } from './native-guardians';
 import { validInfernoMode } from './inferno-weapon';
@@ -284,6 +284,19 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               r.hero.level < 1 ||
               r.hero.level > HERO_MAX_LEVEL ||
               typeof r.hero.abilityUsed !== 'boolean')) ||
+          (r.heroes !== undefined &&
+            (!Array.isArray(r.heroes) ||
+              r.heroes.length > HERO_KINDS.length ||
+              new Set(r.heroes.map((h) => h?.kind)).size !== r.heroes.length ||
+              r.heroes.some(
+                (h) =>
+                  !h ||
+                  !HERO_KINDS.includes(h.kind) ||
+                  !Number.isInteger(h.level) ||
+                  h.level < 1 ||
+                  h.level > heroMaxLevel(h.kind) ||
+                  typeof h.abilityUsed !== 'boolean',
+              ))) ||
           (r.replay !== undefined &&
             (!validateReplay(r.replay) ||
               r.index !== r.replay.initial.index ||

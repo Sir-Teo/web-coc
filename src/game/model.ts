@@ -464,9 +464,17 @@ export interface RaidRecord {
   result: BattleResult;
   deployed: Army;
   spells: SpellBook;
+  /** The King of a battle before the hero roster (older records of any hero read as the King). */
   hero?: { level: number; abilityUsed: boolean };
+  /** Every hero deployed in a roster battle, in lineup order. */
+  heroes?: RaidHero[];
   replay?: ReplayData;
   replayUnavailable?: 'limit';
+}
+export interface RaidHero {
+  kind: HeroKind;
+  level: number;
+  abilityUsed: boolean;
 }
 export interface Save {
   superBoosts?: Partial<Record<TroopKind, number>>;
@@ -4884,14 +4892,16 @@ export function formatTime(seconds: number) {
   }
   return `${s}s`;
 }
-/**
- * Version 46 raid summary of the hero roster. The log keeps one entry, so it reports the King
- * when it fought and otherwise the first hero that was deployed.
- */
-function nativeHeroRecord(b: Battle) {
-  const deployed = (b.nativeHeroes ?? []).filter((hero) => hero.deployed);
-  const hero = deployed.find((h) => h.kind === 'king') ?? deployed[0];
-  return hero ? { hero: { level: hero.level, abilityUsed: !!hero.abilityUsed } } : {};
+/** Version 46 raid summary of the hero roster: every deployed hero, named, in lineup order. */
+function nativeHeroRecord(b: Battle): { heroes?: RaidHero[] } {
+  const heroes = (b.nativeHeroes ?? [])
+    .filter((hero) => hero.deployed)
+    .map((hero) => ({ kind: hero.kind, level: hero.level, abilityUsed: !!hero.abilityUsed }));
+  return heroes.length ? { heroes } : {};
+}
+/** The heroes a log entry names; an entry from before the roster names the Barbarian King. */
+export function raidHeroes(record: Pick<RaidRecord, 'hero' | 'heroes'>): RaidHero[] {
+  return record.heroes ?? (record.hero ? [{ kind: 'king', ...record.hero }] : []);
 }
 export function makeBuilding(
   id: number,

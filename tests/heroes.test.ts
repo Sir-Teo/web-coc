@@ -177,7 +177,9 @@ describe('hero combat', () => {
     expect(m.activateHeroAbility()).toBe(false);
     expect(m.state.army).toEqual(emptyArmy());
     m.finishBattle();
-    expect(m.state.raidLog!.at(-1)!.hero).toEqual({ level: 1, abilityUsed: true });
+    expect(m.state.raidLog!.at(-1)!.heroes).toEqual([
+      { kind: 'king', level: 1, abilityUsed: true },
+    ]);
     expect(m.state.raidLog!.at(-1)!.deployed).toEqual(emptyArmy());
     expect(validateSave(m.state)).toBe(true);
   });
