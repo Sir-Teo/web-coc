@@ -476,6 +476,8 @@ type LiveRefs = {
   finishes: HTMLElement[];
   research: HTMLElement | null;
   researchCost: HTMLElement | null;
+  starBonusStatus: HTMLElement | null;
+  starBonusButton: HTMLButtonElement | null;
   queue: HTMLElement | null;
   replayTime: HTMLElement | null;
   replayProgress: HTMLInputElement | null;
@@ -3034,11 +3036,22 @@ export class HUD {
       )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}</div></div><div class="settings-note">Frontend-only · Playable offline after your first visit<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
   }
   /** The league's own daily bonus, which is where ore comes from. */
+  /** The Star Bonus line: stars still needed, the cooldown, or ready. */
+  private starBonusStatus() {
+    const m = this.model,
+      bonus = m.starBonus,
+      waiting = Math.max(0, bonus.readyAt - m.clock);
+    const short = Math.max(0, STAR_BONUS_STARS - bonus.stars);
+    return short
+      ? `${short} more ${short === 1 ? 'star' : 'stars'}`
+      : waiting
+        ? `Ready in ${time(waiting / 1000)}`
+        : 'Ready to collect';
+  }
   private starBonusCard() {
     const m = this.model,
       bonus = m.starBonus,
-      reward = starBonusReward(m.state.trophies),
-      waiting = Math.max(0, bonus.readyAt - m.clock);
+      reward = starBonusReward(m.state.trophies);
     const parts = (['gold', 'elixir', 'dark'] as const)
       .filter((k) => reward[k] > 0)
       .map((k) => `<span>${resource(k)} ${n(reward[k])}</span>`)
@@ -3048,13 +3061,8 @@ export class HUD {
         ),
       )
       .join('');
-    const short = Math.max(0, STAR_BONUS_STARS - bonus.stars);
-    const status = short
-      ? `${short} more ${short === 1 ? 'star' : 'stars'}`
-      : waiting
-        ? `Ready in ${time(waiting / 1000)}`
-        : 'Ready to collect';
-    return `<div class="star-bonus"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
+    const status = this.starBonusStatus();
+    return `<div class="star-bonus"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small data-star-bonus-status>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
   }
   private achievements() {
     const s = this.model.state;
@@ -3152,6 +3160,8 @@ export class HUD {
       finishes: all('[data-finish]'),
       research: one('[data-research]'),
       researchCost: one('[data-research-cost]'),
+      starBonusStatus: one('[data-star-bonus-status]'),
+      starBonusButton: one<HTMLButtonElement>('.star-bonus [data-action="star-bonus"]'),
       queue: one('[data-queue]'),
       replayTime: one('#replay-time'),
       replayProgress: one<HTMLInputElement>('#replay-progress'),
@@ -3264,6 +3274,16 @@ export class HUD {
     }
     for (const el of refs.resources)
       setText(el, n(m.state[el.dataset.resource as 'gold' | 'elixir' | 'dark' | 'gems']));
+    // The Star Bonus cooldown ends without a structural change: count down and enable here.
+    if (refs.starBonusStatus?.isConnected) {
+      const bonus = m.starBonus;
+      setText(
+        refs.starBonusStatus,
+        `${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${this.starBonusStatus()}`,
+      );
+      const button = refs.starBonusButton;
+      if (button && button.disabled === m.starBonusReady) button.disabled = !m.starBonusReady;
+    }
     if (refs.obstacleTimes.length) {
       const byId = new Map(m.obstacles.map((o) => [o.id, o]));
       for (const el of refs.obstacleTimes) {

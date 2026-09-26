@@ -47,3 +47,20 @@ test('an import that cannot be saved says so instead of reporting success', asyn
   await expect(page.locator('#save-state')).toContainText('Saving is unavailable');
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(4321);
 });
+
+test('the Star Bonus becomes collectable when its cooldown ends with the panel open', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const { model, hud } = window.__game;
+    model.state.starBonus = { stars: 5, readyAt: model.clock + 1000 };
+    hud.show('achievements');
+  });
+  const collect = page.locator('.star-bonus [data-action="star-bonus"]');
+  await expect(collect).toBeDisabled();
+  await expect(page.locator('.star-bonus')).toContainText('Ready in');
+  // Only the clock moves: no structural redraw happens.
+  await page.evaluate(() => window.__game.model.tick(window.__game.model.clock + 1500));
+  await expect(collect).toBeEnabled();
+  await expect(page.locator('.star-bonus')).toContainText('Ready to collect');
+});
