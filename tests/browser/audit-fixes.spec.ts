@@ -64,3 +64,26 @@ test('the Star Bonus becomes collectable when its cooldown ends with the panel o
   await expect(collect).toBeEnabled();
   await expect(page.locator('.star-bonus')).toContainText('Ready to collect');
 });
+
+test('an expired super boost locks the troop and offers the boost again', async ({ page }) => {
+  await page.evaluate(async () => {
+    const { TROOP_KEYS, maxTroopLevel } = await import('/src/game/data.ts');
+    const { model } = window.__game;
+    model.townhall.level = 11;
+    model.state.dark = 100000;
+    model.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]));
+    model.boostSuperTroop('superbarbarian');
+  });
+  await page.locator('.train-add').click();
+  const tile = page.locator('.army-tile', {
+    has: page.locator('[data-action="train:superbarbarian"]'),
+  });
+  await expect(tile.locator('[data-action="train:superbarbarian"]')).toBeEnabled();
+  await expect(tile.locator('.boost-left')).toContainText('left');
+  await page.evaluate(() => {
+    const { model } = window.__game;
+    model.tick(model.state.superBoosts.superbarbarian);
+  });
+  await expect(tile.locator('[data-action="train:superbarbarian"]')).toBeDisabled();
+  await expect(tile.locator('[data-action="boost-super:superbarbarian"]')).toBeVisible();
+});

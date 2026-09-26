@@ -51,6 +51,29 @@ describe('content expansion', () => {
     m.state.superBoosts!.superbarbarian = m.clock - 1;
     expect(m.troopUnlocked('superbarbarian')).toBe(false);
   });
+  it('an expiring super troop boost is a structural change that frees the boost slot', () => {
+    const m = new GameModel();
+    m.townhall!.level = 11;
+    m.state.dark = 100000;
+    m.state.troopLevels = Object.fromEntries(TROOP_KEYS.map((k) => [k, maxTroopLevel(k)])) as any;
+    m.boostSuperTroop('superbarbarian');
+    const end = m.state.superBoosts!.superbarbarian!;
+    const toasts: string[] = [];
+    m.onToast = (message) => toasts.push(message);
+    const changes: boolean[] = [];
+    m.onChange = (passive) => changes.push(passive);
+    m.tick(end - 1);
+    expect(m.troopUnlocked('superbarbarian')).toBe(true);
+    changes.length = 0;
+    m.tick(end);
+    expect(m.troopUnlocked('superbarbarian')).toBe(false);
+    expect(m.state.superBoosts!.superbarbarian).toBeUndefined();
+    // A structural (non-passive) notification redraws the army cards.
+    expect(changes).toContain(false);
+    expect(toasts.at(-1)).toContain('boost has ended');
+    m.boostSuperTroop('superbarbarian');
+    expect(m.troopUnlocked('superbarbarian')).toBe(true);
+  });
   it('Troop Launcher fires a barrel and releases the source mixed troop group', () => {
     const m = arena();
     m.activeTroop = 'trooplauncher';

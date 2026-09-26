@@ -1462,6 +1462,14 @@ export class GameModel {
       structural = true;
       changed = true;
     }
+    // A super troop's boost ends on the clock alone: the army cards must lock it again and offer
+    // a new boost, so the expiry is a structural change.
+    for (const [kind, end] of Object.entries(this.state.superBoosts ?? {}) as [TroopKind, number][])
+      if (end <= now) {
+        delete this.state.superBoosts![kind];
+        structural = changed = true;
+        this.notify(`The ${TROOPS[kind].name} boost has ended.`);
+      }
     this.state.lastTick = now;
     if (changed) this.changed(!structural);
   }
