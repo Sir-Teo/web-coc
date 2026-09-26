@@ -102,7 +102,10 @@ async function boot() {
       saving = true;
       try {
         const revision = model.revision;
-        const ok = await saveGame(model.state);
+        // A raid in progress has spent its deployed troops but settles only on pagehide, which a
+        // discarded hidden tab may never fire. Store the raid settled at its current score; if
+        // the player returns, the raid continues and its real result is saved over it.
+        const ok = await saveGame(model.battle ? model.settledState() : model.state);
         hud.setSaveState(ok);
         // A failed write waits for the next window too, instead of retrying every second.
         lastPersistAt = now;

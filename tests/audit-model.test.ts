@@ -95,3 +95,33 @@ it('reduced motion combines the device preference with an explicit override', ()
   m.systemReducedMotion = false;
   expect(m.reducedMotion).toBe(true);
 });
+
+it('checkpoints an open raid as settled without touching the live battle', () => {
+  const m = new GameModel();
+  m.state.army = { ...emptyArmy(), swordsman: 5 };
+  m.startCampaign(0);
+  m.activeTroop = 'swordsman';
+  const [x, y] = [
+    [2, 2],
+    [2, 45],
+    [45, 2],
+    [45, 45],
+  ].find(([x, y]) => !m.deployBlocked(x, y))!;
+  expect(m.deploy(x, y)).toBe(true);
+  for (let i = 0; i < 40; i++) m.step(0.05);
+  const live = structuredClone(m.state);
+  const checkpoint = m.settledState();
+  // The checkpoint records the raid: its log entry and the spent troop.
+  expect(checkpoint.raidLog).toHaveLength(1);
+  expect(checkpoint.stats.raids).toBe(1);
+  expect(checkpoint.army.swordsman).toBe(4);
+  expect(validateSave(checkpoint)).toBe(true);
+  // The running raid carries on untouched.
+  expect(m.state).toEqual(live);
+  expect(m.battle?.finished).toBe(false);
+  // Scouting alone commits nothing.
+  const scouting = new GameModel();
+  scouting.state.army = { ...emptyArmy(), swordsman: 5 };
+  scouting.startCampaign(0);
+  expect(scouting.settledState()).toEqual(scouting.state);
+});

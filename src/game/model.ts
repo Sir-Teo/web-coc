@@ -857,7 +857,7 @@ export class GameModel {
   onToast = (_message: string) => {};
   revision = 0;
   clock = Date.now();
-  constructor(saved?: Save) {
+  constructor(saved?: Save, now = Date.now()) {
     this.state = saved ?? initialSave();
     expandArmyRoster(this.state);
     this.migrateLegacyEquipment();
@@ -868,7 +868,7 @@ export class GameModel {
       ...(this.state.nativeCampaign?.stars ?? []),
     ].filter((stars) => stars > 0).length;
     this.state.dark ??= 0;
-    this.tick(Date.now());
+    this.tick(now);
   }
   /** The operating system asks for reduced motion. Set by the page; never saved. */
   systemReducedMotion = false;
@@ -4626,6 +4626,19 @@ export class GameModel {
     this.activeSpell = null;
     this.activeHero = false;
     this.activeHeroKind = null;
+  }
+  /**
+   * The village as it would stand if the open raid were settled now, for a checkpoint written
+   * while the page may be discarded (a hidden tab). This model and its battle are untouched:
+   * if the player returns, the raid carries on and its real result replaces the checkpoint.
+   * A raid that has committed nothing yet checkpoints as the village itself.
+   */
+  settledState(): Save {
+    if (!this.battle || this.replay || this.battle.finished) return this.state;
+    const copy = new GameModel(structuredClone(this.state), this.clock);
+    copy.battle = structuredClone(this.battle);
+    copy.suspendBattle();
+    return copy.state;
   }
   /** Toolbox mutations are not player inputs and cannot produce faithful recordings. */
   discardRecording() {

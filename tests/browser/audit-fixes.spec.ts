@@ -175,3 +175,35 @@ test('a siege-only army can be saved as a Quick army', async ({ page }) => {
     1,
   );
 });
+
+test('hiding the tab mid-raid stores the raid settled, and the raid continues', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.startCampaign(0);
+    m.activeTroop = 'swordsman';
+    for (const [x, y] of [
+      [2, 2],
+      [2, 45],
+      [45, 2],
+      [45, 45],
+    ])
+      if (!m.deployBlocked(x, y)) {
+        m.deploy(x, y);
+        break;
+      }
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => JSON.parse(localStorage.getItem('crown-clan-save-v1') ?? '{}').raidLog?.length ?? 0,
+      ),
+    )
+    .toBe(1);
+  expect(await page.evaluate(() => window.__game.model.battle?.finished)).toBe(false);
+});
