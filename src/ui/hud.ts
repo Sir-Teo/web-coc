@@ -3083,7 +3083,7 @@ export class HUD {
         [
           'Star',
           'Campaign stars',
-          `${(s.nativeCampaign?.stars ?? []).reduce((a, b) => a + b, 0)} / 270`,
+          `${(s.nativeCampaign?.stars ?? []).reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3}`,
         ],
         ['LayoutGrid', 'Town Hall', `Level ${this.model.townhallLevel}`],
         ['Hammer', 'Builders', String(this.model.builders)],

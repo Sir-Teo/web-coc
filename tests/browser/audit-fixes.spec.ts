@@ -87,3 +87,13 @@ test('an expired super boost locks the troop and offers the boost again', async 
   await expect(tile.locator('[data-action="train:superbarbarian"]')).toBeDisabled();
   await expect(tile.locator('[data-action="boost-super:superbarbarian"]')).toBeVisible();
 });
+
+test('the achievements star total matches the campaign screen', async ({ page }) => {
+  const total = await page.evaluate(async () => {
+    const { NATIVE_CAMPAIGN } = await import('/src/game/native-campaign.ts');
+    window.__game.hud.show('achievements');
+    return NATIVE_CAMPAIGN.length * 3;
+  });
+  await expect(page.locator('.modal')).toContainText(`/ ${total}`);
+  await expect(page.locator('.modal')).not.toContainText('/ 270');
+});

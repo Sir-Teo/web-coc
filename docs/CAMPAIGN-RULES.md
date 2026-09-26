@@ -66,7 +66,7 @@ Each village has a persistent gold/elixir/Dark Elixir inventory. Villages withou
 
 `Save.nativeCampaign` has the explicit `goblin-v1` identifier, 90 star entries and 90 remaining-resource entries, including reserved Dark Elixir balances. It is initialized when a native result settles. The old twelve-village `Save.campaignLoot` (`valley-v1`), stars and result history remain intact. Old progress is never reassigned to a similarly numbered native village. Old results retain their original names; prior incompatible recordings remain summaries. The campaign UI now opens native villages, while legacy internal fixtures preserve the authored catalog.
 
-Quest eligibility uses the larger of native or legacy total stars to preserve prior eligibility without double-counting both campaigns. Profile progress shows the native 270-star total.
+Quest eligibility uses the larger of native or legacy total stars to preserve prior eligibility without double-counting both campaigns. Profile progress shows the native star total, three stars for each village the campaign screen lists.
 
 Supercell's [TH14 patch notes](https://supercell.com/en/games/clashofclans/blog/release-notes/full-patch-notes-th14-update/) establish that campaign storage presentation reflects remaining level loot. [Community campaign documentation](https://clashofclans.fandom.com/wiki/Single_Player_Campaign) explicitly describes one-time resources and repaired buildings. Full-storage overflow is consistent with [reported single-player behavior](https://www.reddit.com/r/ClashOfClans/comments/dlchk5/ask_question_regarding_single_player_missions/); a current primary-source description of its precise accounting remains unavailable.
 
