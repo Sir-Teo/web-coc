@@ -71,6 +71,7 @@ import {
   heroLevelCap as nativeHeroLevelCap,
   heroPortraitImage,
   heroSlots as nativeHeroSlots,
+  heroTownHallScale,
   heroUnlockHall,
   heroUnlockTownHall,
   heroUpgradeQuote as nativeHeroUpgradeQuote,
@@ -2319,8 +2320,13 @@ export class HUD {
           ...(required.townhall > m.townhallLevel ? [`Town Hall ${required.townhall}`] : []),
           ...(required.hall > hall.level ? [`Hero Hall ${required.hall}`] : []),
         ];
-    const stat = (label: string, value: number, suffix = '') =>
-      `<div>${label}<b>${damageNumber(value)}${suffix}</b></div>`;
+    // The next level's stats, when there is one, so an upgrade shows what it buys.
+    const upcoming = capped
+      ? null
+      : heroStatsFor({ ...setup, level: progress.level + 1 }, m.townhallLevel);
+    const stat = (label: string, value: number, next?: number, suffix = '') =>
+      `<div>${label}<b>${damageNumber(value)}${suffix}${next === undefined || damageNumber(next) === damageNumber(value) ? '' : ` → ${damageNumber(next)}${suffix}`}</b></div>`;
+    const scale = heroTownHallScale(kind, m.townhallLevel);
     const upgradeCostText = isKing
       ? `${resource('dark')} ${n(heroUpgradeCost(progress.level))} · Upgrade to ${progress.level + 1}`
       : quote
@@ -2337,8 +2343,10 @@ export class HUD {
         ? time(quote.seconds)
         : '';
     return `<section class="hero-section" data-hero="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${isKing ? hudAsset('king') : heroPortrait(kind)}" alt="${name}"></div><div><span class="eyebrow">HERO HALL ${hall.level}${inLineup ? ` · SLOT ${m.heroLineup.indexOf(kind) + 1} OF ${nativeHeroSlots(hall.level)}` : ' · BENCHED'}</span><h2>${name}</h2><p>Level ${progress.level} / ${max} · ${progress.upgradeEnd ? 'Upgrading' : inLineup ? 'In battle lineup' : 'Benched'}${pet ? ` · ${PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet}` : ''}</p></div></article>
-      ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp)}${stat('Damage per second', native.dps)}${stat('Damage per hit', native.damage)}${stat('Attack interval', native.rate, 's')}</div>
-      <p class="hero-stats-note">Native stats with equipped items · Recover ${damageNumber(heal)} hitpoints on activation.</p>
+      ${`<div class="hero-stat-grid">${stat('Hitpoints', native.hp, upcoming?.hp)}${stat('Damage per second', native.dps, upcoming?.dps)}${stat('Damage per hit', native.damage, upcoming?.damage)}${stat('Attack interval', native.rate, undefined, 's')}${stat('Attack range', native.range, undefined, native.range === 1 ? ' tile' : ' tiles')}${stat('Movement', native.speed, undefined, ' tiles/s')}</div>
+      ${scale < 1 ? `<p class="hero-scaling">Town Hall ${m.townhallLevel} strength: ${scale * 100}% health, damage and recovery. Full strength at Town Hall 6.</p>` : ''}
+      <p class="hero-stats-note">Stats include the equipped items below.</p>
+      <p class="hero-activation"><b>Recover ${damageNumber(heal)} hitpoints on activation.</b> Tap the deployed hero's card or press H to use both items once per attack.</p>
       ${
         loadout.length
           ? `<div class="hero-equipment">${loadout

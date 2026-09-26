@@ -52,7 +52,7 @@ for (const width of [1440, 390, 320])
       'Barbarian Puppet',
     );
     await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText('Rage Vial');
-    await expect(page.locator('.hero-activation')).toContainText('570 hitpoints');
+    await expect(page.locator('[data-hero="king"] .hero-activation')).toContainText('570 hitpoints');
     await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('10,500');
     await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('22h');
     await expect(page.locator('#toast')).not.toHaveClass(/show/);
@@ -95,10 +95,10 @@ test('TH4 King can activate both default items by touch while permanent upgrades
   await page.setViewportSize({ width: 390, height: 844 });
   await fixture(page, 4, 1);
   await panel(page);
-  await expect(page.locator('.hero-scaling')).toContainText('50%');
+  await expect(page.locator('[data-hero="king"] .hero-scaling')).toContainText('50%');
   await expect(page.locator('[data-hero="king"] .hero-stat-grid')).toContainText('877');
   await expect(page.locator('[data-hero="king"] .hero-stat-grid')).toContainText('59.5');
-  await expect(page.locator('.hero-activation')).toContainText('230 hitpoints');
+  await expect(page.locator('[data-hero="king"] .hero-activation')).toContainText('230 hitpoints');
   await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText(
     'Hero upgrades unlock at Town Hall 7',
   );
