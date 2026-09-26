@@ -1,9 +1,9 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
 import { archerTowerPortrait } from './archer-tower-portrait';
-import { darkDrillProduction } from '../game/dark-drill-production';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
+import { collectorProduction, isCollector } from '../game/collector-production';
 import { campaignStage } from '../game/campaign-catalog';
 import { campaignAmount, campaignResourceKeys, type CampaignResource } from '../game/campaign-loot';
 import {
@@ -232,6 +232,7 @@ function statRows(
   level: number,
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
+  supercharge = 0,
 ): [string, string, string][] {
   const d = BUILDINGS[kind];
   const rows: [string, string, string][] = [['Heart', 'Hitpoints', n(buildingHp(kind, level))]];
@@ -340,18 +341,16 @@ function statRows(
       ['Eye', 'Automatic reveal', '51% destruction'],
       ['Target', 'Damage type', 'Single target'],
     );
-  if (kind === 'goldmine' || kind === 'collector')
+  if (isCollector(kind)) {
+    // The simulation's own rates, supercharges included.
+    const production = collectorProduction(kind, level, supercharge);
     rows.push(
-      ['Timer', 'Production', `${3 * level} / second`],
-      ['Layers', 'Holds', n(darkStorageCapacity(level))],
+      ['Timer', 'Production', `${n(production.perHour)} / hour`],
+      ['Layers', 'Holds', n(production.capacity)],
     );
+  }
   if (kind === 'goldstorage' || kind === 'elixirstorage')
     rows.push(['Layers', 'Adds capacity', `+${n(storageCapacity(level))}`]);
-  if (kind === 'darkdrill')
-    rows.push(
-      ['Timer', 'Production', `${n(darkDrillProduction(level).perHour)} / hour`],
-      ['Layers', 'Holds', n(darkDrillProduction(level).capacity)],
-    );
   if (kind === 'darkstorage')
     rows.push(['Layers', 'Dark elixir capacity', n(darkStorageCapacity(level))]);
   if (kind === 'herohall')
@@ -3008,8 +3007,10 @@ export class HUD {
     const d = BUILDINGS[b.kind];
     const capped = b.level >= d.maxLevel;
     const gated = !capped && b.level >= m.maxLevel(b.kind);
-    const now = statRows(b.kind, b.level, b.xbowMode, b.infernoMode);
-    const next = capped ? [] : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode);
+    const now = statRows(b.kind, b.level, b.xbowMode, b.infernoMode, b.supercharge);
+    const next = capped
+      ? []
+      : statRows(b.kind, b.level + 1, b.xbowMode, b.infernoMode, b.supercharge);
     const nextUnlocks =
       b.kind === 'barracks'
         ? TROOP_ORDER.filter((k) => TROOP_UNLOCK[k] === b.level + 1).map((k) => TROOPS[k].name)
