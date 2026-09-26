@@ -5,6 +5,7 @@ import { fundedVillage } from './fixtures/funded-village';
 import { GameModel, initialSave, makeBuilding, findPath, distanceTo } from '../src/game/model';
 import { BUILDINGS, TROOP_KEYS, TROOPS } from '../src/game/data';
 import { validateSave } from '../src/game/save';
+import { collectorProduction } from '../src/game/collector-production';
 describe('village progression', () => {
   it('starts with valid, non-overlapping buildings and an army within capacity', () => {
     const m = new GameModel();
@@ -117,12 +118,13 @@ describe('village progression', () => {
     const m = new GameModel();
     const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;
     mine.stored = 0;
+    const { capacity } = collectorProduction('goldmine', mine.level);
     m.tick(m.clock + 24 * 3600000);
-    expect(mine.stored).toBe(10000 * mine.level);
+    expect(mine.stored).toBe(capacity);
     m.state.gold = m.resourceCap('gold') - 5;
     m.collect(mine.id);
     expect(m.state.gold).toBe(m.resourceCap('gold'));
-    expect(mine.stored).toBe(10000 * mine.level - 5);
+    expect(mine.stored).toBe(capacity - 5);
   });
   it('prepares instantly for free and respects camp capacity', () => {
     const m = new GameModel(developedSave());
@@ -229,7 +231,9 @@ describe('late progression and combat quality', () => {
     m.upgrade(mine.id);
     const end = mine.upgradeEnd!;
     m.tick(end + 10000);
-    expect(mine.stored).toBe(10 * 3 * mine.level);
+    expect(mine.stored).toBeCloseTo(
+      (10 * collectorProduction('goldmine', mine.level).perHour) / 3600,
+    );
     expect(m.clock).toBeGreaterThan(start);
   });
   it('crowded units separate without entering a solid building', () => {

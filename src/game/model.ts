@@ -13,7 +13,6 @@ import {
   recordArcherTowerShot,
   type ArcherTowerWindup,
 } from './archer-tower-attack';
-import { produceDarkElixir } from './dark-drill-production';
 import {
   BuildingListSnapshot,
   PATH_MEMO_LIMIT,
@@ -304,6 +303,7 @@ import {
   type NativePiercingShot,
 } from './native-defenses';
 import { buildingMaxHp, superchargeBonus, superchargeQuote } from './native-supercharge';
+import { isCollector, produceCollector } from './collector-production';
 import {
   MERGED_KINDS,
   consumedByMerges,
@@ -1379,23 +1379,9 @@ export class GameModel {
         });
         changed = true;
       }
-      if (
-        (b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill') &&
-        !b.upgradeEnd
-      ) {
+      if (isCollector(b.kind) && !b.upgradeEnd) {
         const before = b.stored;
-        const production = nativeProgression.buildings[b.kind].levels[b.level - 1];
-        const charged = superchargeBonus(b.kind, b.supercharge);
-        b.stored =
-          b.kind === 'darkdrill'
-            ? produceDarkElixir(b.level, b.stored, productionSeconds, charged)
-            : b.level > 12 && production
-              ? Math.min(
-                  production.productionCapacity + charged.capacity,
-                  b.stored +
-                    (productionSeconds * (production.production + charged.production)) / 3600,
-                )
-              : Math.min(10000 * b.level, b.stored + productionSeconds * 3 * b.level);
+        b.stored = produceCollector(b.kind, b.level, b.stored, productionSeconds, b.supercharge);
         if (Math.floor(before) !== Math.floor(b.stored) && !inBattle) changed = true;
       }
     }

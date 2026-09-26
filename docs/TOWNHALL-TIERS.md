@@ -61,6 +61,8 @@ That capacity is what makes the ladder work rather than merely what limits it: e
 
 Because storage now holds the original allowance, a prototype-sized purse would overflow it several times over, so a new village is granted the original's own opening amounts — 750 gold, 750 elixir and the 250 gems this game already gave — with its mines and collectors still holding produce to collect. Raid loot is capped by the room left at home, which is the original rule and now actually binds.
 
+Gold Mines, Elixir Collectors and Dark Elixir Drills produce at the original hourly rate and hold the original capacity at every level (`src/game/collector-production.ts`); the simulation, Info panel and fill artwork read the same rows. Produce a save earned under the old prototype curve above the new capacity is kept until collected rather than clipped.
+
 Builder's Huts are sold the way the original sells them: all five are available from Town Hall 1, and each costs gems rather than gold — the second free, then 500, 1,000 and 2,000. `WORKER_COST_2ND` through `WORKER_COST_5TH` are pinned from the client's own globals table, as are the starting grants.
 
 ## Late families at home
