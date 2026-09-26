@@ -500,6 +500,11 @@ export interface Save {
   stars: number[];
   campaignLoot?: CampaignLoot;
   lastTick: number;
+  /**
+   * Storage commit counter, higher on every write. Loading prefers the store holding the higher
+   * revision: `lastTick` follows the economy clock and can tie between an old and a new write.
+   */
+  saveRevision?: number;
   nextId: number;
   tutorial: boolean;
   claimedQuests?: string[];

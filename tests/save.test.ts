@@ -1,7 +1,7 @@
 import { it, expect, vi, afterEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { initialSave } from '../src/game/model';
-import { loadSave, SaveRecoveryError } from '../src/game/save';
+import { loadSave, saveGame, SaveRecoveryError } from '../src/game/save';
 import { overfullArmyVillage } from './fixtures/legacy-army-village';
 afterEach(() => vi.unstubAllGlobals());
 async function storePrimary(factory: IDBFactory, save: unknown) {
@@ -93,4 +93,43 @@ it('recovers the local backup when IndexedDB is unavailable', async () => {
   });
   vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(expected) });
   expect((await loadSave())?.gold).toBe(65432);
+});
+it('prefers the newer commit when both stores share an economy clock', async () => {
+  vi.stubGlobal('indexedDB', new IDBFactory());
+  const local = new Map<string, string>();
+  let localFails = false;
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => local.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      if (localFails) throw new Error('QuotaExceededError');
+      local.set(key, value);
+    },
+  });
+  expect(await loadSave()).toBeUndefined();
+  const state = initialSave();
+  state.gold = 100;
+  expect(await saveGame(state)).toBe(true);
+  // The next commit reaches IndexedDB only; lastTick has not moved.
+  localFails = true;
+  state.gold = 200;
+  expect(await saveGame(state)).toBe(true);
+  const loaded = await loadSave();
+  expect(loaded?.gold).toBe(200);
+  expect(loaded?.saveRevision).toBeGreaterThan(JSON.parse([...local.values()][0]).saveRevision);
+});
+it('keeps revisions increasing after an older backup is imported', async () => {
+  vi.stubGlobal('indexedDB', new IDBFactory());
+  const local = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => local.get(key) ?? null,
+    setItem: (key: string, value: string) => local.set(key, value),
+  });
+  await loadSave();
+  const current = initialSave();
+  for (let i = 0; i < 3; i++) await saveGame(current);
+  // A backup exported long ago carries a low revision of its own.
+  const imported = { ...initialSave(), gold: 4242, saveRevision: 1 };
+  await saveGame(imported);
+  expect(imported.saveRevision).toBeGreaterThan(current.saveRevision!);
+  expect((await loadSave())?.gold).toBe(4242);
 });

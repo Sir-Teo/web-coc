@@ -104,6 +104,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       s.mapUpgrade.moved > MAX_SAVED_BUILDINGS)
   )
     return false;
+  if (s.saveRevision !== undefined && (!Number.isSafeInteger(s.saveRevision) || s.saveRevision < 0))
+    return false;
   if (
     (s.version as number) !== version ||
     typeof s.tutorial !== 'boolean' ||
@@ -443,6 +445,13 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   );
 }
 let db: IDBDatabase | null = null;
+/** Highest commit revision either store held at load, or this session has written since. */
+let commitRevision = 0;
+/** Whether `a` is a later commit than `b`: revision first, then the economy clock. */
+const newer = (a: Save, b: Save) =>
+  (a.saveRevision ?? 0) !== (b.saveRevision ?? 0)
+    ? (a.saveRevision ?? 0) > (b.saveRevision ?? 0)
+    : a.lastTick > b.lastTick;
 export class SaveRecoveryError extends Error {
   constructor(public readonly copies: { source: string; text: string }[]) {
     super('Your saved village could not be opened. Download your saved data before trying again.');
@@ -480,7 +489,9 @@ export async function loadSave(): Promise<Save | undefined> {
   primary = migrateSave(primary);
   backup = migrateSave(backup);
   const migrated = [primary, backup];
-  const newestValid = Math.max(-1, ...migrated.filter(validateSave).map((s) => s.lastTick));
+  const valid = migrated.filter(validateSave);
+  commitRevision = Math.max(commitRevision, ...valid.map((s) => s.saveRevision ?? 0));
+  const newestValid = Math.max(-1, ...valid.map((s) => s.lastTick));
   const blocked = originals.some((s, i) => {
     const old = s as { version?: number; lastTick?: number } | undefined;
     return (
@@ -491,7 +502,8 @@ export async function loadSave(): Promise<Save | undefined> {
     );
   });
   if (!blocked && validateSave(primary) && validateSave(backup))
-    return primary.lastTick > backup.lastTick ? primary : backup;
+    // IndexedDB wins a full tie: it is the primary store and the last to be written.
+    return newer(backup, primary) ? backup : primary;
   if (!blocked && validateSave(primary)) return primary;
   if (!blocked && validateSave(backup)) return backup;
   // Existing data must never be overwritten by the new-village autosave. The recovery copy is
@@ -510,6 +522,8 @@ export async function loadSave(): Promise<Save | undefined> {
 }
 export async function saveGame(state: Save): Promise<boolean> {
   let stored = false;
+  // Every commit outranks every earlier one in either store, whatever its economy clock says.
+  state.saveRevision = ++commitRevision;
   // No defensive structuredClone: both writes capture the state synchronously,
   // before the first await (JSON.stringify here, and IndexedDB's put() clones its
   // value when called inside the promise executor below).
