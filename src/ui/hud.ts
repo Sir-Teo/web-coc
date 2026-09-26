@@ -555,6 +555,8 @@ export class HUD {
   private lastPanel: Panel = null;
   private lastDrawer: Drawer = null;
   private focusBefore: FocusMark | null = null;
+  /** The control that opened the current drawer, focused again when it closes. */
+  private drawerLauncher: FocusMark | null = null;
   private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
   private actionSource: HTMLElement | null = null;
   private dragging = false;
@@ -852,6 +854,9 @@ export class HUD {
     this.restoreFocus();
   }
   private showDrawer(drawer: Drawer) {
+    // Remember the launcher (the Train or Shop button) so closing the sheet can return to it.
+    if (!this.drawerPanel)
+      this.drawerLauncher = focusMark(this.actionSource ?? document.activeElement);
     this.drawerPanel = this.drawerPanel === drawer ? null : drawer;
     this.panel = null;
     this.drawerBefore = null;
@@ -1729,7 +1734,12 @@ export class HUD {
       this.modalEl.querySelector<HTMLElement>('.modal [data-action="close"]')?.focus();
       this.lastPanel = this.panel;
     } else if (drawerSwitched) {
-      // A different sheet opened or closed: nothing to restore.
+      // Opening moves focus into the sheet; closing returns it to the launcher if it was lost
+      // (the launcher itself may have been rebuilt meanwhile).
+      if (this.drawerPanel && !b)
+        this.drawerEl.querySelector<HTMLElement>('.drawer-head h2')?.focus({ preventScroll: true });
+      else if (!document.activeElement?.isConnected || document.activeElement === document.body)
+        restoreFocusMark(this.drawerLauncher);
     } else if (focused && active && !active.isConnected && (this.panel || !this.scene.uiBlocked)) {
       // The focused control (or text field, with its caret) was rebuilt: focus its replacement.
       restoreFocusMark(focused);
@@ -2539,7 +2549,7 @@ export class HUD {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
     const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
-    const head = `<header class="drawer-head"><h2>${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const head = `<header class="drawer-head"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
     return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;

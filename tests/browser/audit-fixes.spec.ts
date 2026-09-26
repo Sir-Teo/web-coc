@@ -144,3 +144,17 @@ test('the system reduced-motion preference reaches the canvas, with an explicit 
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect.poll(() => page.evaluate(() => window.__game.model.systemReducedMotion)).toBe(false);
 });
+
+test('the Army drawer takes focus when opened and returns it to Train on Escape', async ({
+  page,
+}) => {
+  await page.locator('.train-add').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.drawer-sheet')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => !!document.activeElement?.closest('.drawer-sheet')))
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.drawer-sheet')).toHaveCount(0);
+  await expect(page.locator('.train-add')).toBeFocused();
+});
