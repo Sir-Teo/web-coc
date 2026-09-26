@@ -1032,7 +1032,18 @@ const BASE_TROOPS: Record<LegacyTroopKind, TroopDef> = {
  * them, as must H (hero) and the zoom keys; the cards' shortcut hints read the lists below.
  */
 export const CAMERA_KEYS = ['w', 'a', 's', 'd'] as const;
-export const RESERVED_KEYS = [...CAMERA_KEYS, 'h', '+', '=', '-'];
+/** Map cursor (see VillageScene.keyCursor) and the accessible building list. */
+export const MAP_CURSOR_KEY = 'm';
+export const BUILDING_LIST_KEY = 'b';
+export const RESERVED_KEYS = [
+  ...CAMERA_KEYS,
+  'h',
+  '+',
+  '=',
+  '-',
+  MAP_CURSOR_KEY,
+  BUILDING_LIST_KEY,
+];
 /** Stable keyboard assignments shared by the cards and keyboard handler. */
 export const TROOP_HOTKEYS = ['1', '2', '3', '4', '5', '6', '7', 'q', 'e', 'z'];
 // The two lists share one keyboard and are compared lowercase, so no key may appear in both.

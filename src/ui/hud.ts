@@ -120,6 +120,9 @@ import {
   upgradeSeconds,
   upgradeCost as costFor,
   isDefense,
+  producedResource,
+  MAP_CURSOR_KEY,
+  BUILDING_LIST_KEY,
   type BuildingKind,
   type TroopKind,
   type SpellKind,
@@ -182,6 +185,7 @@ type Panel =
   | 'campaign-scout'
   | 'settings'
   | 'import-confirm'
+  | 'buildings'
   | 'achievements'
   | 'star-bonus'
   | 'help'
@@ -664,7 +668,7 @@ export class HUD {
   ) {
     this.root = document.querySelector('#ui')!;
     this.root.innerHTML =
-      '<div id="hud"></div><div id="coach-ring" aria-hidden="true" hidden></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><div id="safe-probe" aria-hidden="true"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
+      '<div id="hud"></div><div id="coach-ring" aria-hidden="true" hidden></div><div id="context"></div><div id="drawer"></div><div id="modal-root"></div><div id="toast" role="status" aria-live="polite"></div><div id="save-state" aria-live="polite"></div><div id="map-announcer" class="visually-hidden" aria-live="polite"></div><button class="skip-link" data-action="buildings">Building list (B) · Map cursor (M)</button><div id="safe-probe" aria-hidden="true"></div><input id="import-file" type="file" accept="application/json,.json" hidden><input id="import-replay-file" type="file" accept="application/json,.json" hidden>';
     this.hudEl = this.root.querySelector<HTMLElement>('#hud')!;
     this.contextEl = this.root.querySelector<HTMLElement>('#context')!;
     this.drawerEl = this.root.querySelector<HTMLElement>('#drawer')!;
@@ -1298,12 +1302,20 @@ export class HUD {
       case 'select-building': {
         const id = Number(arg);
         if (!m.state.buildings.some((v) => v.id === id) || m.battle) break;
+        this.panel = null;
         m.cancel();
         m.selected = id;
         this.scene.focusBuilding(id);
         m.changed();
+        this.render();
+        this.contextEl
+          .querySelector<HTMLElement>('.building-context [data-action="info"]')
+          ?.focus();
         break;
       }
+      case 'buildings':
+        this.show('buildings');
+        break;
       case 'campaign-scout':
         this.scoutedStage = Math.max(0, Math.min(NATIVE_CAMPAIGN.length - 1, Number(arg) || 0));
         this.show('campaign-scout');
@@ -1763,6 +1775,91 @@ export class HUD {
       );
     else if (!this.showMapUpgrade()) this.toast(done);
   }
+  /**
+   * Keyboard map access: M toggles a tile cursor that arrows (or WASD) move and Enter or Space
+   * acts on (select, place, deploy), and B opens the building list. True when the key was used.
+   */
+  private mapKeys(e: KeyboardEvent) {
+    const key = e.key.toLowerCase();
+    if (key === BUILDING_LIST_KEY && !this.model.battle) {
+      e.preventDefault();
+      this.show('buildings');
+      return true;
+    }
+    if (key === MAP_CURSOR_KEY) {
+      e.preventDefault();
+      this.scene.toggleKeyCursor();
+      this.announce(
+        this.scene.keyCursor
+          ? `Map cursor on. ${this.scene.describeKeyCursor()}. Arrows move, Enter acts, Escape leaves.`
+          : 'Map cursor off',
+      );
+      return true;
+    }
+    if (!this.scene.keyCursor) return false;
+    // Buttons keep their own Enter and Space.
+    if (e.target instanceof HTMLButtonElement) return false;
+    const moves: Record<string, [number, number]> = {
+      arrowup: [0, -1],
+      w: [0, -1],
+      arrowdown: [0, 1],
+      s: [0, 1],
+      arrowleft: [-1, 0],
+      a: [-1, 0],
+      arrowright: [1, 0],
+      d: [1, 0],
+    };
+    const move = moves[key];
+    if (move) {
+      e.preventDefault();
+      this.scene.moveKeyCursor(move[0], move[1]);
+      this.announce(this.scene.describeKeyCursor());
+      return true;
+    }
+    if (key === 'enter' || key === ' ') {
+      e.preventDefault();
+      this.scene.activateKeyCursor();
+      // A selected building's card is keyboard-reachable at once.
+      requestAnimationFrame(() =>
+        this.contextEl
+          .querySelector<HTMLElement>('.building-context [data-action="info"]')
+          ?.focus(),
+      );
+      return true;
+    }
+    return false;
+  }
+  /** Polite screen-reader announcement for keyboard map actions. */
+  private announce(text: string) {
+    const region = this.root.querySelector<HTMLElement>('#map-announcer');
+    if (region) region.textContent = text;
+  }
+  /** Every building, with its state and a way to select it: the keyboard's way into the map. */
+  private buildingList() {
+    const m = this.model;
+    const rows = [...m.state.buildings]
+      .sort(
+        (a, b) =>
+          BUILDINGS[a.kind].category.localeCompare(BUILDINGS[b.kind].category) ||
+          BUILDINGS[a.kind].name.localeCompare(BUILDINGS[b.kind].name) ||
+          b.level - a.level,
+      )
+      .map((b) => {
+        const d = BUILDINGS[b.kind];
+        const status = b.constructing
+          ? 'Being built'
+          : b.upgradeEnd
+            ? `Upgrading · ${time((b.upgradeEnd - m.clock) / 1000)} left`
+            : b.stored >= 1 && producedResource(b.kind)
+              ? `${n(b.stored)} ready to collect`
+              : m.upgradeIssue(b)
+                ? 'Ready'
+                : 'Can upgrade';
+        return `<li>${button(`select-building:${b.id}`, `<b>${d.name}</b><span>Level ${b.level} · ${status}</span>`, 'building-list-item', `aria-label="${d.name}, level ${b.level}, ${status}"`)}</li>`;
+      })
+      .join('');
+    return `<div class="modal-body building-list-body"><p class="settings-note">Choose a building to select it on the map. Press M for a map cursor (arrows move it, Enter selects, places or deploys) and B for this list.</p><ul class="building-list">${rows}</ul></div>`;
+  }
   showMapUpgrade() {
     const moved = this.model.state.mapUpgrade?.moved;
     if (!moved) return false;
@@ -1774,6 +1871,11 @@ export class HUD {
     return true;
   }
   private keydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && !this.panel && this.scene.keyCursor) {
+      this.scene.toggleKeyCursor(false);
+      this.announce('Map cursor off');
+      return;
+    }
     if (e.key === 'Escape') {
       if (this.panel) {
         this.closePanel();
@@ -1800,6 +1902,7 @@ export class HUD {
       }
     }
     if (this.panel || e.target instanceof HTMLInputElement) return;
+    if (!e.metaKey && !e.ctrlKey && !e.altKey && this.mapKeys(e)) return;
     if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       this.action(e.shiftKey ? 'redo' : 'undo');
@@ -2956,6 +3059,7 @@ export class HUD {
       'campaign-scout': 'Scout village',
       settings: 'Settings',
       'import-confirm': 'Replace this village?',
+      buildings: 'Buildings',
       achievements: 'Your legacy',
       help: 'Welcome, Chief',
       info: 'Building details',
@@ -2976,6 +3080,7 @@ export class HUD {
       'campaign-scout': 'Study the layout before you attack.',
       settings: 'Make yourself at home.',
       'import-confirm': 'Check the backup before it replaces your village.',
+      buildings: 'Every building in your village, for keyboard and screen reader play.',
       achievements: 'Small victories. A growing legend.',
       help: 'Your village. Your army. Your adventure.',
       info: 'What this level gives you, and what the next one adds.',
@@ -3009,17 +3114,19 @@ export class HUD {
                             ? this.settings()
                             : this.panel === 'import-confirm'
                               ? this.importConfirm()
-                              : this.panel === 'achievements'
-                                ? this.achievements()
-                                : this.panel === 'research'
-                                  ? this.research()
-                                  : this.panel === 'info'
-                                    ? this.info()
-                                    : this.panel === 'layouts'
-                                      ? this.layoutPanel()
-                                      : this.panel === 'surrender'
-                                        ? this.surrender()
-                                        : this.help();
+                              : this.panel === 'buildings'
+                                ? this.buildingList()
+                                : this.panel === 'achievements'
+                                  ? this.achievements()
+                                  : this.panel === 'research'
+                                    ? this.research()
+                                    : this.panel === 'info'
+                                      ? this.info()
+                                      : this.panel === 'layouts'
+                                        ? this.layoutPanel()
+                                        : this.panel === 'surrender'
+                                          ? this.surrender()
+                                          : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -3520,7 +3627,7 @@ export class HUD {
       )}</div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
   }
   private help() {
-    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Single-player attacks have no time limit or trophy changes. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
+    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Single-player attacks have no time limit or trophy changes. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
   private result() {
     const b = this.model.battle!,

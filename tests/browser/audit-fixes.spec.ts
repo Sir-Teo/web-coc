@@ -572,3 +572,55 @@ test('each resource button collects its own resource and the gem button says wha
     'Earn gems from achievements',
   );
 });
+
+test('buildings can be found and selected from the keyboard alone', async ({ page }) => {
+  await page.keyboard.press('b');
+  await expect(page.locator('#modal-title')).toHaveText('Buildings');
+  const item = page.locator('.building-list-item', { hasText: 'Town Hall' }).first();
+  await item.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.building-context h2')).toHaveText('Town Hall');
+  await expect(page.locator('.building-context [data-action="info"]')).toBeFocused();
+});
+
+test('the map cursor selects, and deploys in battle, from the keyboard', async ({ page }) => {
+  // Home: the cursor moves over the Town Hall and Enter selects it.
+  const th = await page.evaluate(() => {
+    const b = window.__game.model.state.buildings.find((v) => v.kind === 'townhall');
+    return { x: b.x, y: b.y };
+  });
+  await page.keyboard.press('m');
+  await expect(page.locator('#map-announcer')).toContainText('Map cursor on');
+  const start = await page.evaluate(() => window.__game.scene.keyCursor);
+  const dx = th.x - start.x,
+    dy = th.y - start.y;
+  for (let i = 0; i < Math.abs(dx); i++)
+    await page.keyboard.press(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+  for (let i = 0; i < Math.abs(dy); i++)
+    await page.keyboard.press(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+  await expect(page.locator('#map-announcer')).toContainText('Town Hall');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.building-context h2')).toHaveText('Town Hall');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  // Battle: pick a troop with its shortcut, walk the cursor off the base and deploy.
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.startCampaign(0);
+  });
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  await page.keyboard.press('1');
+  await page.keyboard.press('m');
+  // Walk toward the board's edge until the cursor reaches deployable ground.
+  for (let i = 0; i < 40; i++) {
+    if ((await page.locator('#map-announcer').innerText()).includes('open ground')) break;
+    await page.keyboard.press(i % 2 ? 'ArrowUp' : 'ArrowLeft');
+  }
+  await expect(page.locator('#map-announcer')).toContainText('open ground');
+  await page.keyboard.press('Enter');
+  await expect
+    .poll(() => page.evaluate(() => window.__game.model.battle.remaining.swordsman))
+    .toBe(4);
+});

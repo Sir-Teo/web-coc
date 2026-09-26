@@ -53,6 +53,11 @@ texture), and a failed page (the fallback sprite stays visible, the battle is no
 held, and the family loads once the network returns). The eager dev default missed
 an invisible first-campaign Town Hall that only the production path produced.
 
+Map actions must stay reachable without a pointer: B opens a list of every building
+(selecting one focuses its card), and M toggles a tile cursor that arrows or WASD move and
+Enter or Space act on (select, place, deploy), announced through `#map-announcer`.
+`RESERVED_KEYS` in `src/game/data.ts` keeps troop and spell shortcuts off these keys.
+
 For visible changes, inspect desktop and phone layouts, pointer/touch input,
 reduced motion and relevant replay pause/seek behavior. Automated pixel or layout
 checks do not replace reviewing the actual rendered result.

@@ -772,6 +772,8 @@ export class VillageScene extends Phaser.Scene {
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     const onPointerDown = (p: Phaser.Input.Pointer) => {
       if (this.uiBlocked) return;
+      // Pointer input takes over from the keyboard map cursor.
+      if (this.keyCursor) this.toggleKeyCursor(false);
       this.audio.unlock();
       const world = this.cameras.main.getWorldPoint(p.x, p.y),
         grid = uniso(world.x, world.y);
@@ -1579,6 +1581,133 @@ export class VillageScene extends Phaser.Scene {
       this.cameras.main.centerOn(x, y - (portrait ? 50 / this.viewZoom : 0));
     } else this.cameras.main.centerOn(896, 570);
     this.clampCamera();
+  }
+  /** Keyboard map cursor: the tile the arrow keys move and Enter acts on; null when hidden. */
+  keyCursor: { x: number; y: number } | null = null;
+  private cursorGraphics?: Phaser.GameObjects.Graphics;
+  private drawnCursor = '';
+  /** Shows the cursor at the tile in the middle of the view, or hides it. */
+  toggleKeyCursor(on = !this.keyCursor) {
+    if (!on) {
+      this.keyCursor = null;
+      this.drawKeyCursor();
+      return null;
+    }
+    const c = this.cameras.main;
+    const centre = uniso(c.worldView.centerX, c.worldView.centerY);
+    const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(0, Math.floor(v)));
+    this.keyCursor = { x: clamp(centre.x), y: clamp(centre.y) };
+    this.afterCursorMove();
+    return this.keyCursor;
+  }
+  moveKeyCursor(dx: number, dy: number) {
+    if (!this.keyCursor) return null;
+    const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(0, v));
+    this.keyCursor = { x: clamp(this.keyCursor.x + dx), y: clamp(this.keyCursor.y + dy) };
+    this.afterCursorMove();
+    return this.keyCursor;
+  }
+  private afterCursorMove() {
+    const cursor = this.keyCursor!;
+    const p = iso(cursor.x + 0.5, cursor.y + 0.5),
+      view = this.cameras.main.worldView;
+    // Keep the cursor clear of the view's edges: the camera follows it.
+    const inset = Math.min(view.width, view.height) * 0.2;
+    if (
+      p.x < view.x + inset ||
+      p.x > view.right - inset ||
+      p.y < view.y + inset ||
+      p.y > view.bottom - inset
+    ) {
+      this.cameras.main.centerOn(p.x, p.y);
+      this.clampCamera();
+    }
+    if (this.model.placement) this.updateGhost(this.pointerScreen());
+    this.drawKeyCursor();
+  }
+  private drawKeyCursor() {
+    const cursor = this.keyCursor;
+    const key = cursor ? `${cursor.x},${cursor.y}` : '';
+    if (key === this.drawnCursor) return;
+    this.drawnCursor = key;
+    this.cursorGraphics ??= this.add.graphics().setDepth(6650);
+    const g = this.cursorGraphics.clear();
+    if (!cursor) return;
+    const corners = [
+      iso(cursor.x, cursor.y),
+      iso(cursor.x + 1, cursor.y),
+      iso(cursor.x + 1, cursor.y + 1),
+      iso(cursor.x, cursor.y + 1),
+    ];
+    g.lineStyle(3, 0xffe066, 1).strokePoints(corners, true, true);
+    g.fillStyle(0xffe066, 0.18).fillPoints(corners, true, true);
+  }
+  /** What stands on a tile: the building or obstacle covering it, if any. */
+  private occupant(x: number, y: number) {
+    const building = this.model.buildings.find((b) => {
+      const size = BUILDINGS[b.kind].size;
+      return (
+        this.model.visibleBuilding(b) && x >= b.x && x < b.x + size && y >= b.y && y < b.y + size
+      );
+    });
+    if (building) return { building };
+    const obstacle = this.model.obstacles.find((o) => {
+      const size = OBSTACLES[o.kind].size;
+      return x >= o.x && x < o.x + size && y >= o.y && y < o.y + size;
+    });
+    return obstacle ? { obstacle } : {};
+  }
+  /** A short description of the cursor tile, for the HUD to announce. */
+  describeKeyCursor() {
+    const cursor = this.keyCursor;
+    if (!cursor) return 'Map cursor off';
+    const { building, obstacle } = this.occupant(cursor.x, cursor.y);
+    const what = building
+      ? `${BUILDINGS[building.kind].name} level ${building.level}`
+      : obstacle
+        ? OBSTACLES[obstacle.kind].name
+        : this.model.placement
+          ? this.model.canPlace(
+              this.model.placement,
+              cursor.x,
+              cursor.y,
+              this.model.moving ?? undefined,
+            )
+            ? 'clear ground'
+            : 'blocked'
+          : this.model.battle
+            ? this.model.deployBlocked(cursor.x + 0.5, cursor.y + 0.5)
+              ? 'no deploying here'
+              : 'open ground'
+            : 'open ground';
+    return `Tile ${cursor.x + 1}, ${cursor.y + 1}: ${what}`;
+  }
+  /**
+   * Enter on the cursor tile does what a tap there does: place the building being placed, move a
+   * wall row, deploy the selected troop, spell or hero, or select what stands there.
+   */
+  activateKeyCursor() {
+    const cursor = this.keyCursor;
+    if (!cursor || this.uiBlocked) return;
+    const { x, y } = cursor;
+    if (this.model.wallMove) return void this.model.previewWallMove(x, y);
+    if (this.model.placement) {
+      this.placeBuilding(x, y);
+      return;
+    }
+    if (this.model.battle) {
+      if (this.battleArtPending()) return void this.model.notify(LOADING_LATE_ART);
+      if (this.model.activeSpell) {
+        if (this.model.castSpell(x + 0.5, y + 0.5)) this.audio.play('deploy');
+        return;
+      }
+      if (this.model.deploy(x + 0.5, y + 0.5)) this.audio.play('deploy');
+      return;
+    }
+    const { building, obstacle } = this.occupant(x, y);
+    this.model.selected = building?.id ?? (obstacle ? -obstacle.id : null);
+    this.model.changed();
+    this.onSelect();
   }
   /** Centres the camera on a building (keyboard and card navigation). */
   focusBuilding(id: number) {
@@ -2995,7 +3124,7 @@ export class VillageScene extends Phaser.Scene {
   updateGhost(p: { x: number; y: number }) {
     if (!this.ghost || !this.model.placement) return;
     const point = this.cameras.main.getWorldPoint(p.x, p.y),
-      grid = uniso(point.x, point.y),
+      grid = this.keyCursor ?? uniso(point.x, point.y),
       x = Math.floor(grid.x),
       y = Math.floor(grid.y),
       s = BUILDINGS[this.model.placement].size,
@@ -4837,7 +4966,8 @@ export class VillageScene extends Phaser.Scene {
       delta,
     );
     const dt = Math.min(delta / 1000, 0.1);
-    if (!this.uiBlocked && !typingTarget(document.activeElement)) {
+    // With the map cursor on, the same keys move the cursor (the camera follows it).
+    if (!this.uiBlocked && !typingTarget(document.activeElement) && !this.keyCursor) {
       let x = 0,
         y = 0;
       const k = this.focusKeys;
