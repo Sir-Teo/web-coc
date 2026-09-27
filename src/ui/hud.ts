@@ -3559,7 +3559,7 @@ export class HUD {
             'game-btn stone',
           )
         : '';
-    })()}</div></div><div class="settings-note">${this.offlineNote()}<br>Version 0.2 · Original artwork created for Crown & Clan</div></div>`;
+    })()}</div></div><div class="settings-note">${this.offlineNote()}<br>Version 0.2 · Independent fan project · Clash of Clans assets and trademarks belong to Supercell</div></div>`;
   }
   /** What offline play covers right now, from the service worker's own report. */
   private offlineNote() {
