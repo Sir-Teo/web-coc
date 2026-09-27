@@ -444,7 +444,7 @@ const TUTORIAL: {
   },
   {
     title: 'Raid the valley',
-    body: 'Tap Attack! and take the Goblin Outpost.',
+    body: 'Tap Attack! and raid Payback, the first Goblin village.',
     target: '.attack-btn',
     done: (m) => m.state.stats.raids > 0,
   },
