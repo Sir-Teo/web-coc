@@ -136,6 +136,29 @@ test('rotation preserves world focus and zoom, and recenter remains explicit', a
   });
 });
 
+test('a village that boots with no visible area frames itself once it is shown', async ({
+  page,
+}) => {
+  // A background tab or collapsed pane can start the game before its container has a size.
+  await page.addInitScript(() => {
+    const hidden = new CSSStyleSheet();
+    hidden.replaceSync('#game { display: none !important; }');
+    document.adoptedStyleSheets = [hidden];
+  });
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.ready);
+  await page.evaluate(() => (document.adoptedStyleSheets = []));
+  await page.waitForFunction(() => window.__game.scene.cameras.main.width > 1);
+  const view = await page.evaluate(() => {
+    const { scene } = window.__game;
+    const c = scene.cameras.main;
+    return { zoom: scene.viewZoom, base: scene.baseZoom, x: c.scrollX + c.width / 2 };
+  });
+  expect(view.zoom).toBeGreaterThan(0);
+  expect(view.zoom).toBeCloseTo(view.base);
+  expect(view.x).toBe(896);
+});
+
 test('resizing cancels an in-progress pan and clamps zoom to the new viewport limits', async ({
   page,
 }) => {
