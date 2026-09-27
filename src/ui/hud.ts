@@ -2868,7 +2868,7 @@ export class HUD {
       </section>`
           : '<p class="hero-stats-note">Select an item to inspect it.</p>'
       }
-      <p class="ore-source-note">Missing ore can be purchased with gems during an upgrade. Star Bonus, Clan War and Hero Journey rewards are not yet available in this village.</p>
+      <p class="ore-source-note">Ore comes from the Star Bonus (collect it under Your legacy), and missing ore can be purchased with gems during an upgrade. Clan War and Hero Journey rewards are not yet available in this village.</p>
     </div>`;
   }
   /**
