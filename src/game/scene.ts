@@ -1554,8 +1554,19 @@ export class VillageScene extends Phaser.Scene {
     const c = this.cameras.main;
     this.cameraViewport = { width: c.width, height: c.height, densityX: this.scale.displayScale.x };
   }
+  /** False until the camera has been framed on a canvas with a visible area. */
+  private cameraFramed = false;
+  /** True while the canvas has no visible area, so the camera cannot be framed yet. */
+  private get viewportEmpty() {
+    const { width, height } = this.scale.canvasBounds;
+    return !(width > 0 && height > 0);
+  }
   resetCamera() {
     if (!this.cameras) return;
+    // A background tab or collapsed pane can boot with no area; framing it would divide by
+    // zero and leave the camera at NaN. The first real resize frames the village instead.
+    if (this.viewportEmpty) return;
+    this.cameraFramed = true;
     this.updateBaseZoom();
     this.rememberViewport();
     this.setZoom(this.baseZoom);
@@ -1725,11 +1736,18 @@ export class VillageScene extends Phaser.Scene {
     const x = c.scrollX + this.cameraViewport.width / 2;
     const y = c.scrollY + this.cameraViewport.height / 2;
     const zoom = this.viewZoom;
-    this.updateBaseZoom();
-    this.rememberViewport();
-    this.setZoom(zoom);
-    c.centerOn(x, y);
-    this.clampCamera();
+    if (this.viewportEmpty) {
+      // Nothing to frame yet; keep the last view.
+    } else if (!this.cameraFramed || ![x, y, zoom].every(Number.isFinite) || !(zoom > 0)) {
+      // The canvas had no area when the camera was last framed: frame it now.
+      this.resetCamera();
+    } else {
+      this.updateBaseZoom();
+      this.rememberViewport();
+      this.setZoom(zoom);
+      c.centerOn(x, y);
+      this.clampCamera();
+    }
     // A pointer's old screen coordinates no longer describe the resized playfield.
     this.down = undefined;
     this.gesture = 'none';
