@@ -27,6 +27,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
+  // The starter village holds 750 of each resource; a tree costs 2,000 Elixir to clear.
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.gold = m.state.elixir = 100_000;
+    m.changed();
+  });
 });
 
 test('phone obstacle removal works with busy builders, cancels, reloads and frees buildable ground', async ({
