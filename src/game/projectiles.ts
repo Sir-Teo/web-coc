@@ -72,6 +72,10 @@ export interface NativeDefenseShot {
   scatter?: { level: number; angle: number };
   /** Spell released where the shot lands (Spell Tower, Inferno Artillery pools). */
   spell?: { name: string; level: number };
+  /** Hero Hunter: poison left on the struck unit. */
+  poison?: { level: number; seconds: number };
+  /** Cake-A-Pult: a bomb left where the cake lands, hitting both layers after a delay. */
+  bomb?: { damage: number; radius: number; delay: number };
 }
 
 // Tiles/second. Wizard fireballs and Bomb Tower bombs use client values;

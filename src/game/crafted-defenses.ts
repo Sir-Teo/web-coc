@@ -152,3 +152,50 @@ export function validCrafting(value: unknown): value is CraftingState {
     Object.keys(modules).every((k) => validCraftedKind(k))
   );
 }
+
+/**
+ * A building's Crafting Station fields: only a station carries them, module levels are 1-10,
+ * and a module job names a module still below its maximum.
+ */
+export function validCraftedFields(b: {
+  kind: string;
+  crafted?: unknown;
+  craftedModules?: unknown;
+  moduleUpgrade?: unknown;
+  improving?: unknown;
+  upgradeEnd?: unknown;
+}) {
+  const station = b.kind === 'craftingstation';
+  if (!station)
+    return (
+      b.crafted === undefined && b.craftedModules === undefined && b.moduleUpgrade === undefined
+    );
+  if (b.crafted !== undefined && !validCraftedKind(b.crafted)) return false;
+  const modules = b.craftedModules;
+  if (modules !== undefined) {
+    if (!modules || typeof modules !== 'object' || Array.isArray(modules)) return false;
+    for (const [kind, levels] of Object.entries(modules))
+      if (
+        !validCraftedKind(kind) ||
+        !Array.isArray(levels) ||
+        levels.length !== 3 ||
+        !levels.every((l) => Number.isInteger(l) && l >= 1 && l <= MODULE_MAX_LEVEL)
+      )
+        return false;
+  }
+  const job = b.moduleUpgrade as { kind?: unknown; module?: unknown } | undefined;
+  if ((job !== undefined) !== (b.improving === 'module')) return false;
+  if (job === undefined) return true;
+  if (
+    !job ||
+    typeof job !== 'object' ||
+    !validCraftedKind(job.kind) ||
+    !Number.isInteger(job.module) ||
+    (job.module as number) < 0 ||
+    (job.module as number) > 2 ||
+    b.upgradeEnd === undefined
+  )
+    return false;
+  const levels = (modules as Partial<Record<CraftedKind, ModuleLevels>> | undefined)?.[job.kind];
+  return (levels?.[job.module as number] ?? 1) < MODULE_MAX_LEVEL;
+}

@@ -1,5 +1,6 @@
 import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
 import { validLadderMatch, type LadderMatch } from './ladder';
+import { validCraftedFields } from './crafted-defenses';
 import { isSiege, superOriginal } from './special-troops';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
@@ -584,6 +585,9 @@ export function validateReplay(value: unknown): value is ReplayData {
       !validInfernoMode(b.infernoMode) ||
       !validLateBuilding(b as Building, value.version, s.practice) ||
       !validInfernoAmmo(b.infernoAmmo, b.level) ||
+      !validCraftedFields(b as Building) ||
+      // The Crafting Station arrived in version 54 recordings.
+      (b.kind === 'craftingstation' && value.version < 54) ||
       ((b.spellMode !== undefined ||
         b.gearMode !== undefined ||
         b.weaponLevel !== undefined ||

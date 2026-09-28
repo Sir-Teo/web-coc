@@ -23,8 +23,16 @@ import {
   buildingDamageScale,
   buildingImmune,
   hurtUnit,
+  unitEffects,
   unitHidden,
 } from './native-status';
+import {
+  candleTargets,
+  craftedLevel,
+  craftedStats,
+  type CraftedKind,
+  type ModuleLevels,
+} from './crafted-defenses';
 import { nativeUnitStats, TROOP_SOURCE } from './native-units';
 import { launchProjectile, type CombatProjectile, type NativeDefenseShot } from './projectiles';
 import type { NativeTroopContext } from './native-troops';
@@ -66,6 +74,12 @@ export interface NativeDefenseState {
   /** Presentation: beams currently held by a Giga Inferno. */
   beams?: number[];
   firedAt?: number;
+  /** Hot Candle: battle time its melt timer started (the first destroyed building). */
+  meltFrom?: number;
+  /** Cake-A-Pult bombs waiting to explode. */
+  bombs?: { at: number; x: number; y: number; damage: number; radius: number }[];
+  /** Hero Hunter poison still ticking on units. */
+  poisons?: { unit: number; until: number; dps: number; tickAt: number }[];
 }
 export interface NativeDefenseContext extends NativeTroopContext {
   /** Campaign difficulty multiplier; 1 in practice and native campaign battles. */
@@ -97,10 +111,12 @@ export const nativeDefense = (battle: Battle, tower: Building): boolean =>
   // family is running, so one hut is never armed and repaired by both engines.
   !(tower.kind === 'builder' && !!battle.late) &&
   (isNativeDefenseKind(tower.kind) ||
+    (tower.kind === 'craftingstation' && !!tower.crafted) ||
     (!!tower.geared &&
       (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')));
 
 export function weaponFor(tower: Building): NativeWeapon | null {
+  if (tower.kind === 'craftingstation') return craftedWeapon(tower);
   if (
     tower.geared &&
     (tower.kind === 'cannon' || tower.kind === 'archertower' || tower.kind === 'mortar')
@@ -117,6 +133,130 @@ export function weaponFor(tower: Building): NativeWeapon | null {
   if (kind === 'townhall')
     return nativeWeapon(kind, tower.level, { weaponLevel: tower.weaponLevel ?? 1 });
   return nativeWeapon(kind, tower.level, { supercharge });
+}
+
+// ------------------------------------------------------------ Crafting Station
+const craftedLevels = (tower: Building, kind: CraftedKind): ModuleLevels =>
+  tower.craftedModules?.[kind] ?? [1, 1, 1];
+/** Client projectile rows the crafted shots borrow for flight speed and drawing. */
+const CRAFTED_PROJECTILE: Record<CraftedKind, (levels: ModuleLevels) => string> = {
+  candle: () => 'Tower Arrow Fire3',
+  hunter: (levels) => `Headhunter_Card_lvl${Math.min(4, Math.ceil(levels[1] / 2.5))}`,
+  cake: () => 'Mortar Ammo1',
+};
+/** The chosen Crafted Defense as a native weapon, from its three module levels. */
+function craftedWeapon(tower: Building): NativeWeapon | null {
+  const kind = tower.crafted;
+  if (!kind) return null;
+  const levels = craftedLevels(tower, kind);
+  const stats = craftedStats(kind, levels);
+  return {
+    source: 'Crafting Station',
+    level: craftedLevel(levels),
+    range: stats.range,
+    minRange: stats.minRange,
+    air: true,
+    ground: true,
+    interval: stats.attackSeconds,
+    windup: 0,
+    retarget: 0,
+    damage: stats.damage,
+    burst: 1,
+    burstDelay: 0,
+    projectile: CRAFTED_PROJECTILE[kind](levels),
+    splash: 0,
+    targets: stats.stageTargets?.[0] ?? 1,
+    sharedTargets: kind === 'candle',
+    bounces: 0,
+    hpPermil: 0,
+    pushback: 0,
+    pushbackHousing: 0,
+    wakeSpace: 0,
+    wakeDelay: 0,
+    groupRadius: 0,
+    ammo: 0,
+    cone: 0,
+    randomTarget: false,
+    ...(kind === 'hunter'
+      ? {
+          preferHeroes: true,
+          heroMultiplier: stats.heroMultiplier,
+          poison: { level: stats.poisonLevel!, seconds: stats.poisonSeconds! },
+        }
+      : {}),
+    ...(kind === 'cake'
+      ? {
+          layerSplash: stats.splashRadius,
+          bomb: { damage: stats.bombDamage!, radius: stats.bombRadius!, delay: stats.bombDelay! },
+        }
+      : {}),
+  };
+}
+const defenseStateById = (battle: Battle, id: number): NativeDefenseState =>
+  ((battle.nativeDefenses ??= {})[id] ??= { clock: 0, readyAt: 0 });
+/**
+ * Hero Hunter poison: the slow and attack slow of a Poison Spell of the module's level for the
+ * poison's seconds, and its damage per second, ticked by the defense that left it.
+ */
+function poisonUnit(
+  battle: Battle,
+  sourceId: number,
+  unit: Unit,
+  poison: { level: number; seconds: number },
+  at: number,
+) {
+  const row = nativeRow('spells', 'Poison', poison.level);
+  const e = unitEffects(unit);
+  const until = at + poison.seconds;
+  e.poison = {
+    until: Math.max(e.poison?.until ?? 0, until),
+    speed: Math.min(
+      e.poison && e.poison.until > at ? e.poison.speed : 0,
+      num(row, 'SpeedBoost') / 100,
+    ),
+    attackSpeed: Math.min(
+      e.poison && e.poison.until > at ? e.poison.attackSpeed : 0,
+      num(row, 'AttackSpeedBoost') / 100,
+    ),
+    dps: Math.max(num(row, 'PoisonDPS'), e.poison && e.poison.until > at ? e.poison.dps : 0),
+    since: e.poison && e.poison.until > at ? e.poison.since : at,
+  };
+  const state = defenseStateById(battle, sourceId);
+  const list = (state.poisons ??= []);
+  const held = list.find((p) => p.unit === unit.id);
+  if (held) {
+    held.until = Math.max(held.until, until);
+    held.dps = Math.max(held.dps, num(row, 'PoisonDPS'));
+  } else list.push({ unit: unit.id, until, dps: num(row, 'PoisonDPS'), tickAt: at });
+}
+/** Cake bombs that are due explode on both layers; poison ticks up to now. */
+function stepCraftedEffects(ctx: NativeDefenseContext, tower: Building, state: NativeDefenseState) {
+  const battle = ctx.battle;
+  const at = battle.elapsed;
+  if (state.poisons?.length) {
+    for (const p of state.poisons) {
+      const unit = battle.units.find((u) => u.id === p.unit);
+      const end = Math.min(at, p.until);
+      if (unit && unit.hp > 0 && end > p.tickAt)
+        hurtUnit(battle, unit, p.dps * (end - p.tickAt), end, tower.id);
+      p.tickAt = end;
+    }
+    state.poisons = state.poisons.filter((p) => p.until > at + EPS);
+  }
+  if (!state.bombs?.length) return;
+  const due = state.bombs.filter((bomb) => bomb.at <= at + EPS);
+  if (!due.length) return;
+  state.bombs = state.bombs.filter((bomb) => bomb.at > at + EPS);
+  for (const bomb of due) {
+    for (const u of battle.units)
+      if (
+        liveTarget(u, bomb.at) &&
+        !u.native?.burrowed &&
+        distance2D(u.x - bomb.x, u.y - bomb.y) <= bomb.radius + EPS
+      )
+        hurtUnit(battle, u, bomb.damage * ctx.defenseScale, bomb.at, tower.id);
+    ctx.effect({ type: 'blast', x: bomb.x, y: bomb.y, radius: bomb.radius, color: 0xff8fc4 });
+  }
 }
 
 /** Counts deployed housing toward Eagle Artillery and Builder's Hut activation. */
@@ -227,6 +367,8 @@ export function stepNativeDefense(ctx: NativeDefenseContext, tower: Building, dt
   const battle = ctx.battle;
   const state = defenseState(battle, tower);
   const at = battle.elapsed;
+  // A cake's bomb and a card's poison outlive the defense that left them.
+  if (tower.kind === 'craftingstation') stepCraftedEffects(ctx, tower, state);
   if (tower.hp <= 0) {
     if (!state.destroyed) {
       state.destroyed = true;
@@ -257,6 +399,20 @@ export function stepNativeDefense(ctx: NativeDefenseContext, tower: Building, dt
     delete state.queue;
     delete state.beams;
     return;
+  }
+  if (tower.kind === 'craftingstation' && tower.crafted === 'candle') {
+    // The melt timer starts with the first destroyed building (client InfernoCandleEffectAbility
+    // ActiveAfterNumBuildingsDestroyed 1); each stage fires fewer flames.
+    if (state.meltFrom === undefined && destroyedBuildings(battle) > 0) state.meltFrom = at;
+    const stats = craftedStats('candle', craftedLevels(tower, 'candle'));
+    const targets = candleTargets(stats, state.meltFrom === undefined ? 0 : at - state.meltFrom);
+    return stepMultiTarget(
+      ctx,
+      tower,
+      state,
+      { ...weapon, targets, sharedTargets: targets > 3 },
+      battleTime,
+    );
   }
   const kind = tower.kind as NativeDefenseKind;
   if (kind === 'spelltower') return stepSpellTower(ctx, tower, state, weapon, battleTime);
@@ -337,7 +493,10 @@ function stepSingle(
             spellRandom(battle.seed ^ tower.id, Math.floor(state.clock * 1000)) * candidates.length,
           )
         ]
-      : candidates.sort(byDistance(c))[0];
+      : (weapon.preferHeroes && candidates.some((u) => u.hero)
+          ? candidates.filter((u) => u.hero)
+          : candidates
+        ).sort(byDistance(c))[0];
     if (!target) {
       delete state.target;
       delete state.releaseAt;
@@ -432,7 +591,10 @@ function fire(
 ) {
   const battle = ctx.battle;
   const c = center(tower);
-  const damage = weapon.damage * damageScale(ctx, tower, at);
+  const damage =
+    weapon.damage *
+    damageScale(ctx, tower, at) *
+    (weapon.heroMultiplier && target.hero ? weapon.heroMultiplier : 1);
   if (weapon.pierce) return firePiercing(ctx, tower, weapon, target, at, damage);
   if (weapon.chain) {
     hurtUnit(battle, target, damage, at, tower.id);
@@ -495,6 +657,9 @@ function fire(
     bounceFactor: 1 - num(row, 'BounceDamageReductionPercent') / 100,
     ...(weapon.hpPermil ? { hpPermil: weapon.hpPermil } : {}),
     ...(tower.kind === 'mortar' && weapon.splash ? { splash: weapon.splash } : {}),
+    ...(weapon.layerSplash ? { layerSplash: weapon.layerSplash } : {}),
+    ...(weapon.poison ? { poison: { ...weapon.poison } } : {}),
+    ...(weapon.bomb ? { bomb: { ...weapon.bomb } } : {}),
     ...(tower.kind === 'scattershot' ? { scatter: { level: tower.level, angle: 0 } } : {}),
     ...(text(row, 'HitSpell') && tower.kind !== 'scattershot'
       ? { spell: { name: text(row, 'HitSpell'), level: num(row, 'HitSpellLevel', 1) || 1 } }
@@ -841,6 +1006,15 @@ export function resolveDefenseImpact(ctx: NativeTroopContext, p: CombatProjectil
     ctx.effect({ type: 'blast', x: p.x, y: p.y, radius: shot.shock.outer, color: 0xffc04a });
   }
   if (shot.scatter && struck) scatter(battle, p, target!, shot, at);
+  if (shot.poison && struck) poisonUnit(battle, p.sourceId, target!, shot.poison, at);
+  if (shot.bomb)
+    (defenseStateById(battle, p.sourceId).bombs ??= []).push({
+      at: at + shot.bomb.delay,
+      x: p.x,
+      y: p.y,
+      damage: shot.bomb.damage,
+      radius: shot.bomb.radius,
+    });
   if (shot.layerSplash && struck) {
     const layer = air(target!);
     for (const u of battle.units)

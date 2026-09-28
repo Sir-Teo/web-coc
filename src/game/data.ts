@@ -75,6 +75,7 @@ import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
+import { CRAFTING_STATION } from './crafted-defenses';
 import { BLACKSMITH_MAX_LEVEL } from './equipment';
 /** Original level-one construction rows for the buildings that had no source table. */
 const sourceBuild = (kind: BuildingKind) => sourceLevel(kind, 1)!;
@@ -95,6 +96,7 @@ const SOURCE_BUILD = {
 };
 export type BuildingKind = LegacyBuildingKind | ExtraBuildingKind;
 export type LegacyBuildingKind =
+  | 'craftingstation'
   | 'eagleartillery'
   | 'scattershot'
   | 'monolith'
@@ -362,6 +364,20 @@ const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
     range: XBOW.groundRange,
     rate: XBOW.interval,
     targets: 'ground',
+    singleArtwork: true,
+  },
+  craftingstation: {
+    name: 'Crafting Station',
+    description:
+      'Choose one Crafted Defense to stand on it, switch whenever you like, and upgrade each defense’s three modules.',
+    size: CRAFTING_STATION.size,
+    width: 162,
+    hp: CRAFTING_STATION.hp,
+    cost: 0,
+    resource: 'gold',
+    category: 'Defenses',
+    maxLevel: 1,
+    build: 0,
     singleArtwork: true,
   },
   blacksmith: {
@@ -1413,10 +1429,16 @@ export const isDefense = (kind: BuildingKind) =>
   kind === 'eagleartillery' ||
   kind === 'scattershot' ||
   kind === 'monolith' ||
-  kind === 'spelltower';
+  kind === 'spelltower' ||
+  // An empty Crafting Station already counts as a defense for defense-targeting troops.
+  kind === 'craftingstation';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
-/** Traps and Builder's Huts (sold for gems, built instantly) are placed without a free builder. */
-export const needsBuilder = (kind: BuildingKind) => !isTrap(kind) && kind !== 'builder';
+/**
+ * Traps, Builder's Huts (sold for gems, built instantly) and the free, instant Crafting Station
+ * are placed without a free builder.
+ */
+export const needsBuilder = (kind: BuildingKind) =>
+  !isTrap(kind) && kind !== 'builder' && kind !== 'craftingstation';
 /** First tier that permits one. A withheld building still shows its original requirement. */
 export const unlockTownHall = (kind: BuildingKind) =>
   kind === 'clancastle'
@@ -1480,6 +1502,9 @@ export const asset = (
   infernoMode: InfernoMode = 'single',
   spellTowerWeapon?: string,
 ) => {
+  // The empty platform is client art; the Crafted Defenses on it are authored (see ASSETS.md).
+  if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
+  if (kind.startsWith('crafted-')) return `/assets/crafted/${kind.slice('crafted-'.length)}.png`;
   // The late campaign families keep the artwork they shipped with.
   if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);
   if (kind in EXTRA_TROOPS)

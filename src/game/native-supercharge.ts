@@ -1,4 +1,5 @@
 import { buildingHp, type BuildingKind } from './data';
+import { craftedStats, type CraftedKind, type ModuleLevels } from './crafted-defenses';
 import {
   durationSeconds,
   list,
@@ -89,5 +90,14 @@ export function superchargeQuote(kind: BuildingKind, charges = 0) {
 }
 
 /** Stored maximum hitpoints: the level's value plus supercharge hitpoints. */
-export const buildingMaxHp = (b: { kind: BuildingKind; level: number; supercharge?: number }) =>
-  buildingHp(b.kind, b.level) + superchargeBonus(b.kind, b.supercharge).hp;
+export const buildingMaxHp = (b: {
+  kind: BuildingKind;
+  level: number;
+  supercharge?: number;
+  crafted?: CraftedKind;
+  craftedModules?: Partial<Record<CraftedKind, ModuleLevels>>;
+}) =>
+  // A Crafting Station takes its chosen defense's hitpoints module.
+  b.kind === 'craftingstation' && b.crafted
+    ? craftedStats(b.crafted, b.craftedModules?.[b.crafted] ?? [1, 1, 1]).hp
+    : buildingHp(b.kind, b.level) + superchargeBonus(b.kind, b.supercharge).hp;

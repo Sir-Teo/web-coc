@@ -98,6 +98,14 @@ export interface NativeWeapon {
   randomTarget: boolean;
   pierce?: { radius: number; extra: number; hits: number; spread: number };
   death?: { damage: number; radius: number; delay: number; spell: string };
+  /** Hero Hunter: new targets are heroes when any are in range, and heroes take extra damage. */
+  preferHeroes?: boolean;
+  heroMultiplier?: number;
+  /** Hero Hunter: each hit poisons its target like a Poison Spell of this level. */
+  poison?: { level: number; seconds: number };
+  /** Cake-A-Pult: splash on the target's layer, then a bomb that hits both layers. */
+  layerSplash?: number;
+  bomb?: { damage: number; radius: number; delay: number };
 }
 
 const cache = new Map<string, NativeWeapon | null>();
