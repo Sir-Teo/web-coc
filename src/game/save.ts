@@ -30,7 +30,7 @@ import { validStarBonus } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { emptySpells, expandArmyRoster } from './army';
 import { maxSpellLevelFor } from './spell-progression';
-import { initialSave, type Save } from './model';
+import { BATTLE_SPEEDS, initialSave, type Save } from './model';
 const KEY = 'crown-clan-save-v1';
 /**
  * Ceiling on stored buildings, and on the slots of a saved layout. A maxed Town Hall 18 village
@@ -181,6 +181,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
     (s.settings.fullMotion !== undefined && typeof s.settings.fullMotion !== 'boolean') ||
+    (s.settings.battleSpeed !== undefined && !BATTLE_SPEEDS.includes(s.settings.battleSpeed)) ||
     !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']])) ||
     !(['built', 'trained', 'wins'] as const).every(
       (k) => s.stats[k] === undefined || finite(s.stats[k]),
