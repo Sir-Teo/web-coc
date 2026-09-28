@@ -2717,12 +2717,16 @@ h3 {
   border-radius: 13px;
   box-shadow: 0 3px 0 #b5a68a;
 }
-.campaign-recommendation {
+.campaign-recommendation,
+.campaign-fan-made {
   display: block;
   color: #796d52;
   font-size: 11px;
   font-weight: 800;
   margin: 6px 0;
+}
+.campaign-fan-made {
+  color: #8a5a2b;
 }
 @media (max-width: 700px) {
   .research-banner {
@@ -2756,7 +2760,8 @@ h3 {
     display: block;
     font-size: 11px;
   }
-  .campaign-recommendation {
+  .campaign-recommendation,
+  .campaign-fan-made {
     font-size: 10px;
   }
 }
