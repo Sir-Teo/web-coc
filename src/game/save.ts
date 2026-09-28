@@ -455,6 +455,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.ladderSeed !== undefined && (!Number.isSafeInteger(s.ladderSeed) || s.ladderSeed < 0))
     return false;
   if (s.journey !== undefined && !validJourney(s.journey)) return false;
+  if (s.goblinRaidSeen !== undefined && typeof s.goblinRaidSeen !== 'boolean') return false;
   if (s.magicItems !== undefined && !validMagicItems(s.magicItems)) return false;
   if (
     s.obstacleGemIndex !== undefined &&

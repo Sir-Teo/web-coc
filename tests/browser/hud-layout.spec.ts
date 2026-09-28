@@ -185,6 +185,7 @@ test('compact first-run coaching leaves Collect, Shop and Skip actionable', asyn
     await page.evaluate(() => {
       const m = window.__game.model;
       m.state.tutorial = false;
+      m.state.goblinRaidSeen = true;
       m.state.stats.collected = 0;
       m.state.stats.built = 0;
       m.state.gold = 0;
