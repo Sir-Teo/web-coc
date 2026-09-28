@@ -544,6 +544,8 @@ export interface Save {
   saveRevision?: number;
   nextId: number;
   tutorial: boolean;
+  /** The opening Goblin raid on this village has been watched (or skipped). */
+  goblinRaidSeen?: boolean;
   claimedQuests?: string[];
   troopLevels?: Record<TroopKind, number>;
   spellLevels?: Record<SpellKind, number>;
@@ -835,6 +837,9 @@ export type FX = {
 };
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
+/** The opening Goblin raid: how many goblins, and the step its recording advances by. */
+export const GOBLIN_RAID_SIZE = 10;
+const GOBLIN_RAID_TICK = 0.05;
 export const BATTLE_SPEEDS = [1, 2, 4] as const;
 export type BattleSpeed = (typeof BATTLE_SPEEDS)[number];
 /** Practice and ladder matches scout for 30 seconds and fight for three minutes. */
@@ -844,6 +849,8 @@ export class GameModel {
   state: Save;
   battle: Battle | null = null;
   replay: ReplayPlayback | null = null;
+  /** True while the replay on screen is the opening Goblin raid. */
+  goblinRaid = false;
   private recording: ReplayData | null = null;
   private recordingLimitReached = false;
   private recordBattles = true;
@@ -5087,6 +5094,73 @@ export class GameModel {
     }
     return this.openReplay(record.replay, recordId);
   }
+  /**
+   * The opening Goblin raid: goblins attack this village and its own defenses answer. It is
+   * a practice attack recorded on a copy of the village, played back with the replay viewer,
+   * so nothing here is spent, damaged or logged. Ten goblins land in three waves from three
+   * sides; the tutorial's own scripted raid is client data this build does not have.
+   */
+  goblinRaidRecording(): ReplayData | null {
+    const runner = new GameModel(structuredClone(this.state), this.clock);
+    runner.state.army = { ...emptyArmy(), goblin: GOBLIN_RAID_SIZE };
+    runner.state.spells = emptySpells();
+    runner.state.troopLevels = { ...runner.state.troopLevels!, goblin: 1 };
+    runner.startBattle(0, true);
+    const b = runner.battle;
+    if (!b) return null;
+    const home = this.townhall;
+    const cx = home ? home.x + BUILDINGS[home.kind].size / 2 : MAP_SIZE / 2,
+      cy = home ? home.y + BUILDINGS[home.kind].size / 2 : MAP_SIZE / 2;
+    // Walk out from the Town Hall until the grass allows a deployment.
+    const landing = (angle: number) => {
+      for (let r = 2; r < MAP_SIZE; r += 0.5) {
+        const x = cx + Math.cos(angle) * r,
+          y = cy + Math.sin(angle) * r;
+        if (x < 1 || y < 1 || x > MAP_SIZE - 1 || y > MAP_SIZE - 1) return null;
+        if (!runner.deployBlocked(x, y)) return { x, y };
+      }
+      return null;
+    };
+    const waves = [
+      { at: 0, angle: 0.4, count: 4 },
+      { at: 60, angle: 2.5, count: 3 },
+      { at: 120, angle: 4.4, count: 3 },
+    ];
+    runner.activeTroop = 'goblin';
+    let step = 0;
+    for (const wave of waves) {
+      while (step < wave.at && !b.finished) {
+        runner.step(GOBLIN_RAID_TICK);
+        step++;
+      }
+      const spot = landing(wave.angle) ?? landing(wave.angle + Math.PI);
+      if (!spot) continue;
+      for (let i = 0; i < wave.count; i++) {
+        const x = spot.x + (i % 2) * 0.6,
+          y = spot.y + i * 0.4;
+        runner.deploy(
+          ...(runner.deployBlocked(x, y) ? ([spot.x, spot.y] as const) : ([x, y] as const)),
+        );
+      }
+    }
+    for (let t = 0; t < BATTLE_SECONDS / GOBLIN_RAID_TICK && !b.finished; t++)
+      runner.step(GOBLIN_RAID_TICK);
+    if (!b.finished) runner.finishBattle();
+    return runner.state.raidLog?.[0]?.replay ?? null;
+  }
+  /** Watch the opening Goblin raid; leaving it marks it seen. */
+  watchGoblinRaid() {
+    if (this.battle) return false;
+    const data = this.goblinRaidRecording();
+    if (!data || !this.openReplay(data)) {
+      this.state.goblinRaidSeen = true;
+      this.changed();
+      return false;
+    }
+    this.goblinRaid = true;
+    this.changed();
+    return true;
+  }
   /** Imported recordings are transient and never enter the home result log. */
   openReplay(data: ReplayData, recordId: number | null = null) {
     if (
@@ -5328,6 +5402,10 @@ export class GameModel {
     this.replayBudget = Math.min(this.replayBudget, MAX_REPLAY_BACKLOG_SECONDS);
   }
   returnHome() {
+    if (this.goblinRaid) {
+      this.goblinRaid = false;
+      this.state.goblinRaidSeen = true;
+    }
     this.replay = null;
     this.replayRunner = null;
     this.replayData = null;

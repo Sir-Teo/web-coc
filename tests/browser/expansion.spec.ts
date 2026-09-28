@@ -174,6 +174,11 @@ test('first-run coaching walks the loop, rings its target, and can be skipped', 
   page,
 }) => {
   const banner = page.locator('.coach-banner');
+  await expect(banner).toContainText('Goblins are raiding!');
+  await expect(page.locator('.coach-watch.coach-target')).toBeVisible();
+  await page.locator('.coach-watch').click();
+  await expect(page.locator('.battle-enemy .eyebrow')).toHaveText('GOBLIN RAID');
+  await page.locator('[data-action="replay-exit"]').click();
   await expect(banner).toContainText('Collect what your village made');
   await expect(page.locator('.collect-btn.coach-target')).toBeVisible();
   await page.waitForTimeout(300);

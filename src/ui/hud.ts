@@ -435,6 +435,12 @@ const TUTORIAL: {
   done: (m: GameModel) => boolean;
 }[] = [
   {
+    title: 'Goblins are raiding!',
+    body: 'Watch your defenses hold them off, then build up and strike back.',
+    target: '.coach-watch',
+    done: (m) => !!m.state.goblinRaidSeen || m.state.stats.raids > 0,
+  },
+  {
     title: 'Collect what your village made',
     body: 'Tap Collect, or any bubble floating over a mine.',
     target: '.collect-btn',
@@ -1477,10 +1483,22 @@ export class HUD {
       case 'replay-import':
         document.querySelector<HTMLInputElement>('#import-replay-file')!.click();
         break;
-      case 'replay-exit':
+      case 'replay-exit': {
+        const raid = m.goblinRaid;
         m.returnHome();
         this.resultShown = false;
-        this.show('battle-log');
+        // The opening raid hands back to the coach; other replays return to the log.
+        if (raid) {
+          this.panel = null;
+          this.render();
+        } else this.show('battle-log');
+        break;
+      }
+      case 'goblin-raid':
+        m.watchGoblinRaid();
+        this.panel = null;
+        this.drawerPanel = null;
+        this.render();
         break;
       case 'ladder':
         m.startLadder();
@@ -2156,7 +2174,7 @@ export class HUD {
     const index = this.coachStep;
     if (index < 0) return '';
     const step = TUTORIAL[index];
-    return `<div class="coach-banner" data-coach="${step.target}"><span class="coach-step">${index + 1}<i>/${TUTORIAL.length}</i></span><div><b>${step.title}</b><small>${step.body}</small></div>${button('skip-tutorial', 'Skip', 'coach-skip')}</div>`;
+    return `<div class="coach-banner" data-coach="${step.target}"><span class="coach-step">${index + 1}<i>/${TUTORIAL.length}</i></span><div><b>${step.title}</b><small>${step.body}</small></div>${step.target === '.coach-watch' ? button('goblin-raid', `${icon('Play', 16)} Watch`, 'game-btn orange coach-watch') : ''}${button('skip-tutorial', 'Skip', 'coach-skip')}</div>`;
   }
   /** Rings the control the current step is about, without touching its layout. */
   private markCoachTarget() {
@@ -2554,7 +2572,7 @@ export class HUD {
       b = m.battle!,
       v = b.practice
         ? {
-            name: m.replay?.recordId === null ? 'Shared village' : 'Your village',
+            name: m.replay?.recordId === null && !m.goblinRaid ? 'Shared village' : 'Your village',
             gold: 0,
             elixir: 0,
           }
@@ -2568,7 +2586,7 @@ export class HUD {
       lootKeys.some((k) => (b.lootRoom?.[k] ?? campaignAmount(v, k)) < campaignAmount(v, k));
     const lootBar = (k: CampaignResource) =>
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
-    return `<div class="battle-enemy"><span class="eyebrow">${m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
+    return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!timedBattle(b) ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
@@ -2599,6 +2617,12 @@ export class HUD {
   // ----------------------------------------------------------------- drawer
   private replayControls() {
     const r = this.model.replay!;
+    // The opening raid is something to watch, not study: status, speed and the way home.
+    if (this.model.goblinRaid)
+      return `<section class="replay-controls goblin-raid-controls" aria-label="Goblin raid">
+      <div class="replay-status"><strong>${r.complete ? 'The raid is over' : 'Goblins attacking…'}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
+      <div class="replay-buttons"><div class="replay-speeds" role="group" aria-label="Playback speed">${[1, 2, 4].map((speed) => button(`replay-speed:${speed}`, `${speed}×`, `game-btn ${r.speed === speed ? 'green' : 'stone'}`, `aria-pressed="${r.speed === speed}"`)).join('')}</div>${button('replay-exit', `${icon('House', 17)} Back to village`, `game-btn ${r.complete ? 'green' : 'stone'}`)}</div>
+    </section>`;
     return `<section class="replay-controls" aria-label="Replay playback">
       <div class="replay-status"><strong>${r.seeking ? 'Seeking…' : r.complete ? 'Replay complete' : r.paused ? 'Replay paused' : 'Watching replay'}</strong><span id="replay-time">${clock(r.time)} / ${clock(r.duration)}</span></div>
       <input id="replay-progress" data-action="replay-position" type="range" aria-label="Replay position" aria-valuetext="${clock(r.time)}" min="0" max="${r.duration || 1}" step="any" value="${r.seeking ? r.seekTarget : r.time}" ${r.seeking || !r.duration ? 'disabled' : ''}><div class="replay-shortcuts">${button('replay-jump:-10', '−10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-jump:10', '+10s', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-skip', 'First deployment', 'replay-link', r.seeking ? 'disabled' : '')}${button('replay-export', `${icon('Download', 14)} Export replay`, 'replay-link')}</div>

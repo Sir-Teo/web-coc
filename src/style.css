@@ -6039,3 +6039,14 @@ h3 {
     padding: 6px 10px;
   }
 }
+
+/* The opening raid's Watch button sits in the coach banner, thumb-sized on phones. */
+.coach-banner .coach-watch {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+}
