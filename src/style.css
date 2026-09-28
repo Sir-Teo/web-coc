@@ -4312,6 +4312,25 @@ h3 {
   font-size: 11px;
   padding: 8px 10px;
 }
+.campaign-summary .game-btn small {
+  margin-left: 4px;
+  opacity: 0.85;
+}
+.ladder-stake {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: #ffe6a3;
+}
+.ladder-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0;
+  font-size: 15px;
+}
 @media (max-width: 700px) {
   .preset-card,
   .raid-record {

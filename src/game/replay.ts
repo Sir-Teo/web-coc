@@ -1,4 +1,5 @@
 import { defendingHero, type DefendingHeroSetup } from './defending-heroes';
+import { validLadderMatch, type LadderMatch } from './ladder';
 import { isSiege, superOriginal } from './special-troops';
 import { MAX_ARCHER_TOWER_LEVEL } from './archer-tower-stats';
 import { validGearMode, validSpellTowerMode, validWeaponLevel } from './native-defense-stats';
@@ -212,6 +213,8 @@ export interface ReplaySetup {
   scenery?: CampaignScenery[];
   index: number;
   practice: boolean;
+  /** Version 54+: a ladder match (timed, trophies at stake, no loot). */
+  ladder?: LadderMatch;
   buildings: Building[];
   army: Army;
   spells: SpellBook;
@@ -308,6 +311,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     ...(s.scenery ? { scenery: structuredClone(s.scenery) } : {}),
     index: s.index,
     practice: s.practice,
+    ...(s.ladder ? { ladder: { ...s.ladder } } : {}),
     buildings: structuredClone(s.buildings),
     carriedArmy: { ...s.army },
     remaining: { ...s.army },
@@ -327,7 +331,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     defenseStuns: {},
     traps: {},
     elapsed: 0,
-    prep: s.practice ? 30 : 0,
+    prep: s.practice || s.ladder ? 30 : 0,
     started: false,
     finished: false,
     destruction: 0,
@@ -450,6 +454,17 @@ export function validateReplay(value: unknown): value is ReplayData {
           integer(o.x, 0, 48 - NATIVE_SCENERY[o.data].size) &&
           integer(o.y, 0, 48 - NATIVE_SCENERY[o.data].size),
       ))
+  )
+    return false;
+  // A ladder match fights a native layout with nothing to loot.
+  if (
+    s.ladder !== undefined &&
+    (value.version < 54 ||
+      !validLadderMatch(s.ladder) ||
+      s.practice ||
+      s.catalog !== 'goblin-v1' ||
+      !object(s.availableLoot) ||
+      Object.values(s.availableLoot).some((amount) => amount !== 0))
   )
     return false;
   if (

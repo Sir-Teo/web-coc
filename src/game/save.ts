@@ -1,3 +1,4 @@
+import { validLadderMatch } from './ladder';
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
 import {
@@ -323,6 +324,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
             (!validateReplay(r.replay) ||
               r.index !== r.replay.initial.index ||
               r.practice !== r.replay.initial.practice ||
+              JSON.stringify(r.ladder) !== JSON.stringify(r.replay.initial.ladder) ||
               (r.catalog ?? 'valley-v1') !== (r.replay.initial.catalog ?? 'valley-v1'))) ||
           !r.result ||
           (r.result.lostLoot !== undefined &&
@@ -335,8 +337,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
               r.result.dark >
                 (r.practice ? 0 : campaignAmount(campaignStage(r.index, r.catalog), 'dark')))) ||
           !Number.isInteger(r.result.trophies) ||
-          r.result.trophies < -10 ||
-          r.result.trophies > 24 ||
+          // Only a ladder match moves trophies; older valley records kept their -10..24 range.
+          (r.ladder !== undefined
+            ? !validLadderMatch(r.ladder) ||
+              r.practice ||
+              r.catalog !== 'goblin-v1' ||
+              r.result.trophies < -r.ladder.loss ||
+              r.result.trophies > r.ladder.win
+            : r.result.trophies < -10 || r.result.trophies > 24) ||
           !Number.isInteger(r.result.stars) ||
           r.result.stars < 0 ||
           r.result.stars > 3 ||
@@ -440,6 +448,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     s.obstacleGrowth !== undefined &&
     (!Array.isArray(s.obstacles) || !validObstacleGrowth(s.obstacleGrowth, s.obstacles))
   )
+    return false;
+  if (s.ladderSeed !== undefined && (!Number.isSafeInteger(s.ladderSeed) || s.ladderSeed < 0))
     return false;
   if (
     s.obstacleGemIndex !== undefined &&
