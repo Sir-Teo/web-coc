@@ -100,6 +100,19 @@ import {
   type JourneyReward,
 } from '../game/heroes-journey';
 import { MAGIC_ITEMS, MAGIC_ITEM_KINDS } from '../game/magic-items';
+import {
+  CRAFTED_KINDS,
+  MODULE_MAX_LEVEL,
+  craftedArt,
+  craftedLevel,
+  craftedModules,
+  craftedName,
+  craftedStats,
+  moduleUpgrade,
+  validCraftedKind,
+  type CraftedKind,
+  type ModuleLevels,
+} from '../game/crafted-defenses';
 import { LEGACY_ITEM } from '../game/native-hero-village';
 import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
@@ -188,6 +201,7 @@ type Panel =
   | 'blacksmith'
   | 'heroes'
   | 'journey'
+  | 'crafting'
   | 'pets'
   | 'progression'
   | 'research'
@@ -1219,6 +1233,21 @@ export class HUD {
       case 'journey':
         this.show('journey');
         break;
+      case 'crafting':
+        this.craftingStation = Number(arg);
+        this.show('crafting');
+        break;
+      case 'craft-choose':
+        if (this.craftingStation !== null && validCraftedKind(arg))
+          m.chooseCrafted(this.craftingStation, arg);
+        break;
+      case 'craft-module': {
+        const [kind, module] = arg.split('-');
+        if (this.craftingStation !== null && validCraftedKind(kind))
+          if (m.upgradeCraftedModule(this.craftingStation, kind, Number(module)))
+            this.audio.play('build');
+        break;
+      }
       case 'journey-claim':
         m.claimJourney(Number(arg));
         break;
@@ -2273,6 +2302,62 @@ export class HUD {
   }
 
   /** Town Hall 18: Guardian choice and upgrades. */
+  /** The Crafting Station card opens its panel. */
+  private craftingButton(b: Building) {
+    if (b.kind !== 'craftingstation') return '';
+    return button(
+      `crafting:${b.id}`,
+      `<span>${icon('Hammer', 19)} ${b.crafted ? craftedName(b.crafted) : 'Choose a defense'}</span><small>Crafting</small>`,
+      'game-btn orange',
+    );
+  }
+  /** Crafting Station id the open panel belongs to. */
+  private craftingStation: number | null = null;
+  /** Each Crafted Defense with its three modules, the one on the platform first. */
+  private crafting() {
+    const m = this.model;
+    const b = m.state.buildings.find((v) => v.id === this.craftingStation);
+    if (!b || b.kind !== 'craftingstation')
+      return '<div class="modal-body"><p>This Crafting Station is gone.</p></div>';
+    const busy = !!b.upgradeEnd;
+    const job = b.moduleUpgrade;
+    const cards = CRAFTED_KINDS.map((kind) => {
+      const levels = b.craftedModules?.[kind] ?? [1, 1, 1];
+      const on = b.crafted === kind;
+      const modules = craftedModules(kind)
+        .map((mod, i) => {
+          const next = moduleUpgrade(kind, i, levels[i]);
+          const running = job?.kind === kind && job.module === i;
+          const action = running
+            ? `<span class="crafted-state">${icon('Clock3', 15)} <span data-crafting-timer>${time((b.upgradeEnd! - m.clock) / 1000)}</span></span>`
+            : !next
+              ? '<span class="crafted-state">Max</span>'
+              : next.townHall > m.townhallLevel
+                ? `<span class="crafted-state">Town Hall ${next.townHall}</span>`
+                : button(
+                    `craft-module:${kind}-${i}`,
+                    `<span>${resource(next.resource)} ${n(next.cost)}</span><small>${time(next.seconds)}</small>`,
+                    'game-btn green',
+                    `aria-label="Upgrade ${craftedName(kind)} ${mod.name} to level ${next.level}" ${busy || m.busy >= m.builders || m.state[next.resource] < next.cost ? 'disabled' : ''}`,
+                  );
+          return `<li class="crafted-module"><span><b>${mod.name}</b><small>Level ${levels[i]} / ${MODULE_MAX_LEVEL} · ${this.craftedValue(kind, i, levels[i])}</small></span>${action}</li>`;
+        })
+        .join('');
+      return `<article class="crafted-card ${on ? 'on' : ''}"><header><img src="${craftedArt(kind)}" alt="" width="72" height="72"><div><h3>${craftedName(kind)}</h3><small>Level ${craftedLevel(levels)} / 30</small></div>${on ? `<span class="crafted-state on">${icon('Check', 16)} On the platform</span>` : button(`craft-choose:${kind}`, 'Place', 'game-btn blue')}</header><ul>${modules}</ul></article>`;
+    });
+    return `<div class="modal-body crafting-body"><p class="crafting-note">Switching is free and instant; each defense keeps its modules. One module upgrades at a time and needs a free builder.</p>${cards.join('')}<p class="crafting-note">Numbers from the pinned client tables. The defense art is this game’s own.</p></div>`;
+  }
+  private craftedValue(kind: CraftedKind, module: number, level: number) {
+    const levels: ModuleLevels = [1, 1, 1];
+    levels[module] = level;
+    const s = craftedStats(kind, levels);
+    if (module === 0) return `${n(s.hp)} hitpoints`;
+    if (module === 1)
+      return `${n(s.damage)} per ${kind === 'candle' ? 'flame' : kind === 'hunter' ? 'card' : 'cake'}`;
+    if (kind === 'candle') return `melts at ${s.stageStarts![0]} s and ${s.stageStarts![1]} s`;
+    if (kind === 'hunter') return `Poison level ${s.poisonLevel}`;
+    return `${n(s.bombDamage!)} bomb damage`;
+  }
   private guardianButtons(b: Building) {
     if (b.kind !== 'townhall' || b.level < 18) return '';
     const kind = b.guardian ?? 'longshot';
@@ -2415,7 +2500,7 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   /**
@@ -3186,6 +3271,7 @@ export class HUD {
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
       journey: 'Hero’s Journey',
+      crafting: 'Crafting Station',
       pets: 'Pet House',
       progression: 'Town Hall progression',
       research: 'The laboratory',
@@ -3208,6 +3294,7 @@ export class HUD {
       blacksmith: 'Forge your King’s abilities.',
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
+      crafting: 'One platform, three defenses. Switch any time.',
       pets: 'A companion for every hero.',
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
@@ -3231,39 +3318,41 @@ export class HUD {
           ? this.heroes()
           : this.panel === 'journey'
             ? this.journey()
-            : this.panel === 'pets'
-              ? this.pets()
-              : this.panel === 'progression'
-                ? this.progression()
-                : this.panel === 'army-presets'
-                  ? this.armyPresets()
-                  : this.panel === 'battle-log'
-                    ? this.battleLog()
-                    : this.panel === 'spell-info'
-                      ? this.spellInfo()
-                      : this.panel === 'troop-info'
-                        ? this.troopInfo()
-                        : this.panel === 'campaign'
-                          ? this.campaign()
-                          : this.panel === 'campaign-scout'
-                            ? this.campaignScout()
-                            : this.panel === 'settings'
-                              ? this.settings()
-                              : this.panel === 'import-confirm'
-                                ? this.importConfirm()
-                                : this.panel === 'buildings'
-                                  ? this.buildingList()
-                                  : this.panel === 'achievements'
-                                    ? this.achievements()
-                                    : this.panel === 'research'
-                                      ? this.research()
-                                      : this.panel === 'info'
-                                        ? this.info()
-                                        : this.panel === 'layouts'
-                                          ? this.layoutPanel()
-                                          : this.panel === 'surrender'
-                                            ? this.surrender()
-                                            : this.help();
+            : this.panel === 'crafting'
+              ? this.crafting()
+              : this.panel === 'pets'
+                ? this.pets()
+                : this.panel === 'progression'
+                  ? this.progression()
+                  : this.panel === 'army-presets'
+                    ? this.armyPresets()
+                    : this.panel === 'battle-log'
+                      ? this.battleLog()
+                      : this.panel === 'spell-info'
+                        ? this.spellInfo()
+                        : this.panel === 'troop-info'
+                          ? this.troopInfo()
+                          : this.panel === 'campaign'
+                            ? this.campaign()
+                            : this.panel === 'campaign-scout'
+                              ? this.campaignScout()
+                              : this.panel === 'settings'
+                                ? this.settings()
+                                : this.panel === 'import-confirm'
+                                  ? this.importConfirm()
+                                  : this.panel === 'buildings'
+                                    ? this.buildingList()
+                                    : this.panel === 'achievements'
+                                      ? this.achievements()
+                                      : this.panel === 'research'
+                                        ? this.research()
+                                        : this.panel === 'info'
+                                          ? this.info()
+                                          : this.panel === 'layouts'
+                                            ? this.layoutPanel()
+                                            : this.panel === 'surrender'
+                                              ? this.surrender()
+                                              : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

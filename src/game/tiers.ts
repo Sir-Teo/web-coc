@@ -1,4 +1,5 @@
 import type { BuildingKind } from './data';
+import { CRAFTING_STATION } from './crafted-defenses';
 import { SOURCE_NAME, sourceCeiling, sourceCount, TOWNHALL_TIERS } from './townhall-catalog';
 import { EXTRA_BUILDING_KINDS } from './extra-buildings';
 import nativeProgressionSource from '../../reference/full-client/progression.json' with { type: 'json' };
@@ -65,6 +66,15 @@ for (const kind of HOME_KINDS) {
   const { counts, levels } = tierColumns(kind);
   BUILDING_COUNTS[kind] = counts;
   BUILDING_LEVELS[kind] = levels;
+}
+// The Crafting Station has no progression row: client townhall_levels counts one only at
+// Town Hall 18 (the live game's Town Hall 11 access came after the pinned client).
+{
+  const station = Array.from({ length: MAX_TOWNHALL }, (_, i) =>
+    i + 1 >= CRAFTING_STATION.townHall ? 1 : 0,
+  );
+  BUILDING_COUNTS.craftingstation = station;
+  BUILDING_LEVELS.craftingstation = station;
 }
 // The families the native roster added carry their own tier columns from the client, which
 // already state a count and a ceiling for each of the eighteen Town Halls.

@@ -1,6 +1,7 @@
 import { validLadderMatch } from './ladder';
 import { validJourney } from './heroes-journey';
 import { validMagicItems } from './magic-items';
+import { validCraftedFields } from './crafted-defenses';
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
 import {
@@ -406,12 +407,14 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       !validSpellTowerWeapon(b.spellTowerWeapon) ||
       !validGearMode(b.gearMode, b.kind) ||
       !validWeaponLevel(b.weaponLevel, b.kind, b.level) ||
+      !validCraftedFields(b) ||
       (b.improving !== undefined &&
         (b.upgradeEnd === undefined ||
           !(
             (b.improving === 'weapon' && b.kind === 'townhall') ||
             (b.improving === 'gearup' && isGearable(b.kind) && !b.geared) ||
             (b.improving === 'guardian' && b.kind === 'townhall' && b.level >= 18) ||
+            (b.improving === 'module' && b.kind === 'craftingstation') ||
             (b.improving === 'supercharge' &&
               b.level === BUILDINGS[b.kind].maxLevel &&
               (b.supercharge ?? 0) < superchargeCount(b.kind))

@@ -19,6 +19,7 @@ notes in those references are not current release guarantees.
 - [Single-player campaign rules](CAMPAIGN-RULES.md)
 - [Ladder matches](LADDER.md)
 - [Hero's Journey](HEROES-JOURNEY.md)
+- [Crafting Station](CRAFTING-STATION.md)
 - [Town Hall tiers](TOWNHALL-TIERS.md)
 - [Army unlock progression](ARMY-UNLOCKS.md)
 - [Home Village troop progression](TROOP-PROGRESSION.md)

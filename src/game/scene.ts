@@ -1,4 +1,5 @@
 import { HeroNativePresentation } from './hero-native-scene';
+import { CRAFTED_KINDS, type CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
@@ -146,6 +147,9 @@ import { unitStatusTint } from './unit-status-tint';
 const AIR_LIFT = 46;
 /** Fixed simulation step, seconds. */
 const TICK = 0.05;
+/** Crafting Station art: the client platform and the authored defenses drawn on it. */
+const STATION_WIDTH = 178;
+const CRAFTED_WIDTH = 212;
 /** Stepping budget per frame for a sped-up attack. */
 const MAX_STEP_MS = 10;
 /** Ruin ground renders at half resolution: soft, low-contrast ellipses. */
@@ -565,6 +569,7 @@ export class VillageScene extends Phaser.Scene {
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     for (const k of SPELL_KEYS) this.load.image(k, asset(k));
+    for (const k of CRAFTED_KINDS) this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
     const classicTroops = TROOP_KEYS.filter(
       (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
     );
@@ -2378,6 +2383,7 @@ export class VillageScene extends Phaser.Scene {
       b.npc,
       b.xbowMode,
       b.spellTowerWeapon,
+      b.crafted,
     )
       .setPosition(p.x, p.y)
       .setDepth(p.y)
@@ -2607,7 +2613,19 @@ export class VillageScene extends Phaser.Scene {
     npc?: NpcBuildingKind,
     xbowMode: XbowMode = 'ground',
     spellTowerWeapon?: string,
+    crafted?: CraftedKind,
   ) {
+    // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
+    if (kind === 'craftingstation') {
+      const texture = crafted ? `crafted-${crafted}` : 'craftingstation';
+      if (im.texture.key !== texture) im.setTexture(texture);
+      return crafted
+        ? im.setOrigin(0.5, 0.74).setFlipX(false).setDisplaySize(CRAFTED_WIDTH, CRAFTED_WIDTH)
+        : im
+            .setOrigin(0.5, 0.8)
+            .setFlipX(false)
+            .setDisplaySize(STATION_WIDTH, (STATION_WIDTH * im.height) / im.width);
+    }
     if (kind === 'skeletontrap') {
       const art = skeletonTrapArt(level);
       return im

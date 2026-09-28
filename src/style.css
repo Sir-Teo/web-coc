@@ -6050,3 +6050,85 @@ h3 {
   gap: 5px;
   font-size: 13px;
 }
+
+/* Crafting Station: one card per Crafted Defense, modules as compact rows. */
+.crafting-body {
+  display: grid;
+  gap: 12px;
+}
+.crafting-note {
+  margin: 0;
+  font-size: 12px;
+  color: #8b7c5f;
+}
+.crafted-card {
+  border-radius: 12px;
+  background: #efe6cc;
+  border: 2px solid #ddcca2;
+  padding: 10px 12px;
+}
+.crafted-card.on {
+  background: #fff6da;
+  border-color: #f0c35a;
+}
+.crafted-card header {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.crafted-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.crafted-card ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.crafted-module {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-top: 1px solid #e0d2ad;
+  padding-top: 6px;
+}
+.crafted-module > span:first-child {
+  display: grid;
+  min-width: 0;
+}
+.crafted-module small {
+  color: #7d6c4b;
+}
+.crafted-module .game-btn {
+  min-height: 40px;
+  padding: 4px 10px;
+  display: grid;
+  justify-items: center;
+  font-size: 12px;
+}
+.crafted-state {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #7d6c4b;
+  white-space: nowrap;
+}
+.crafted-state.on {
+  color: #4f7a1e;
+}
+@media (max-width: 700px) {
+  .crafted-card header {
+    grid-template-columns: 56px 1fr auto;
+  }
+  .crafted-card header img {
+    width: 56px;
+    height: 56px;
+  }
+}

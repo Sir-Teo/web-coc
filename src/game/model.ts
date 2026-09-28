@@ -14,6 +14,14 @@ import {
 } from './heroes-journey';
 import { MAX_MAGIC_ITEMS, type MagicItemKind, type MagicItems } from './magic-items';
 import {
+  craftedModules,
+  craftedName,
+  moduleUpgrade,
+  validCraftedKind,
+  type CraftedKind,
+  type ModuleLevels,
+} from './crafted-defenses';
+import {
   isSiege,
   superLicence,
   superOriginal,
@@ -427,7 +435,13 @@ export interface Building {
   /** Town Hall 17 Inferno Artillery weapon level; absent means 1. */
   weaponLevel?: number;
   /** A running builder job that improves the building without raising its level. */
-  improving?: 'weapon' | 'gearup' | 'supercharge' | 'guardian';
+  improving?: 'weapon' | 'gearup' | 'supercharge' | 'guardian' | 'module';
+  /** Crafting Station: the Crafted Defense on the platform (absent while it stands empty). */
+  crafted?: CraftedKind;
+  /** Crafting Station: module levels of each Crafted Defense, kept when switching. */
+  craftedModules?: Partial<Record<CraftedKind, ModuleLevels>>;
+  /** Crafting Station: the module a running `improving: 'module'` job raises. */
+  moduleUpgrade?: { kind: CraftedKind; module: number };
   /** Completed supercharges at the building's maximum level. */
   supercharge?: number;
   /** Town Hall 18 Guardian selection and its level. */
@@ -1473,8 +1487,14 @@ export class GameModel {
         else if (b.improving === 'gearup') b.geared = true;
         else if (b.improving === 'supercharge') b.supercharge = (b.supercharge ?? 0) + 1;
         else if (b.improving === 'guardian') b.guardianLevel = (b.guardianLevel ?? 1) + 1;
-        else if (!b.constructing) b.level++;
+        else if (b.improving === 'module' && b.moduleUpgrade) {
+          const { kind, module } = b.moduleUpgrade;
+          const levels = [...(b.craftedModules?.[kind] ?? [1, 1, 1])] as ModuleLevels;
+          levels[module]++;
+          b.craftedModules = { ...b.craftedModules, [kind]: levels };
+        } else if (b.improving !== 'module' && !b.constructing) b.level++;
         delete b.improving;
+        delete b.moduleUpgrade;
         b.constructing = false;
         b.upgradeEnd = undefined;
         b.upgradeStart = undefined;
@@ -1986,6 +2006,55 @@ export class GameModel {
     }
     th.guardian = kind;
     this.notify(`${GUARDIAN_NAMES[kind]} now guards your Town Hall.`);
+    this.changed();
+    return true;
+  }
+  /**
+   * Crafting Station: put a Crafted Defense on the platform. Switching is free and instant, and
+   * each defense keeps its own modules, as in the original.
+   */
+  chooseCrafted(id: number, kind: CraftedKind) {
+    const b = this.state.buildings.find((v) => v.id === id);
+    if (this.battle || !b || b.kind !== 'craftingstation' || !validCraftedKind(kind)) return false;
+    if (b.crafted === kind) return true;
+    b.crafted = kind;
+    const hp = buildingMaxHp(b);
+    b.hp = b.maxHp > 0 ? Math.min(1, b.hp / b.maxHp) * hp : hp;
+    b.maxHp = hp;
+    this.notify(`${craftedName(kind)} is on the Crafting Station.`);
+    this.changed();
+    return true;
+  }
+  /** Crafting Station: raise one module of one Crafted Defense with a builder. */
+  upgradeCraftedModule(id: number, kind: CraftedKind, module: number) {
+    const b = this.state.buildings.find((v) => v.id === id);
+    if (this.battle || !b || b.kind !== 'craftingstation' || b.upgradeEnd || b.constructing)
+      return false;
+    if (!validCraftedKind(kind) || !Number.isInteger(module) || module < 0 || module > 2)
+      return false;
+    const level = b.craftedModules?.[kind]?.[module] ?? 1;
+    const next = moduleUpgrade(kind, module, level);
+    if (!next) return false;
+    if (next.townHall > this.townhallLevel) {
+      this.notify(`Requires Town Hall ${next.townHall}.`);
+      return false;
+    }
+    if (this.busy >= this.builders) {
+      this.notify('All builders are busy.');
+      return false;
+    }
+    if (this.state[next.resource] < next.cost) {
+      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      return false;
+    }
+    this.state[next.resource] -= next.cost;
+    b.improving = 'module';
+    b.moduleUpgrade = { kind, module };
+    b.upgradeStart = this.clock;
+    b.upgradeEnd = this.clock + next.seconds * 1000;
+    this.notify(
+      `Upgrading ${craftedName(kind)} ${craftedModules(kind)[module].name} to level ${next.level}.`,
+    );
     this.changed();
     return true;
   }
