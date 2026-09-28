@@ -1,4 +1,5 @@
 import { stepDefendingHeroes } from './defending-heroes';
+import { ladderOpponent, ladderTrophies, type LadderMatch } from './ladder';
 import {
   isSiege,
   superLicence,
@@ -462,6 +463,8 @@ export interface RaidRecord {
   at: number;
   index: number;
   practice: boolean;
+  /** A ladder match: the opponent's trophies and the stake (see ladder.ts). */
+  ladder?: LadderMatch;
   duration: number;
   result: BattleResult;
   deployed: Army;
@@ -506,6 +509,8 @@ export interface Save {
   obstacles?: Obstacle[];
   obstacleGemIndex?: number;
   obstacleGrowth?: ObstacleGrowth;
+  /** Ladder matches played; seeds the next opponent. */
+  ladderSeed?: number;
   army: Army;
   queue: QueueItem[];
   spells: SpellBook;
@@ -661,6 +666,8 @@ export interface Battle {
   spellLevels?: SpellBook;
   index: number;
   practice: boolean;
+  /** A ladder match against a native layout: timed, trophies at stake, no loot. */
+  ladder?: LadderMatch;
   carriedArmy: Army;
   buildings: Building[];
   units: Unit[];
@@ -807,6 +814,9 @@ export type FX = {
 };
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
+/** Practice and ladder matches scout for 30 seconds and fight for three minutes. */
+export const timedBattle = (b: { practice: boolean; ladder?: LadderMatch }) =>
+  b.practice || !!b.ladder;
 export class GameModel {
   state: Save;
   battle: Battle | null = null;
@@ -3344,20 +3354,39 @@ export class GameModel {
   startCampaign(index: number) {
     this.startBattle(index, false, 'goblin-v1');
   }
-  startBattle(index: number, practice = false, catalog: CampaignCatalog = 'valley-v1') {
+  /** The next ladder opponent: a native layout near your Town Hall and trophies near yours. */
+  get ladderPreview() {
+    return ladderOpponent(this.state.ladderSeed ?? 0, this.townhallLevel, this.state.trophies);
+  }
+  /** Attack the next ladder opponent. Each match started moves on to a new opponent. */
+  startLadder() {
+    if (this.battle) return;
+    const { index, match } = this.ladderPreview;
+    this.startBattle(index, false, 'goblin-v1', match);
+    // startBattle may refuse (no army); the same opponent then waits for the next try.
+    if ((this.battle as Battle | null)?.ladder)
+      this.state.ladderSeed = (this.state.ladderSeed ?? 0) + 1;
+  }
+  startBattle(
+    index: number,
+    practice = false,
+    catalog: CampaignCatalog = 'valley-v1',
+    ladder?: LadderMatch,
+  ) {
     if (this.battle) return;
     if (
       !validCampaignCatalog(catalog) ||
       !Number.isInteger(index) ||
       index < 0 ||
       index >= campaignStages(catalog).length ||
-      (practice && catalog !== 'valley-v1')
+      (practice && catalog !== 'valley-v1') ||
+      (ladder && (practice || catalog !== 'goblin-v1'))
     )
       return;
     if (!practice && catalog === 'goblin-v1') {
       const issues = nativeCampaignIssues(index);
       if (issues.length) return this.notify('This village is still being prepared.');
-      if (!nativeUnlocked(index, this.state.nativeCampaign?.stars ?? []))
+      if (!ladder && !nativeUnlocked(index, this.state.nativeCampaign?.stars ?? []))
         return this.notify('Earn a star along the path to unlock this village.');
     }
     if (!practice && catalog === 'valley-v1' && index > 0 && !this.state.stars[index - 1])
@@ -3399,10 +3428,16 @@ export class GameModel {
       x: inside(home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3),
       y: inside(home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3),
     }));
+    // A ladder layout carries no loot: only trophies are at stake.
+    const noLoot = campaignResources(
+      { gold: 0, elixir: 0, dark: 0 },
+      this.campaignLoot(index, catalog).dark !== undefined,
+    );
     const initial = {
       ...(defendingHeroes.length ? { defendingHeroes } : {}),
       ...(garrisons ? { garrisons } : {}),
       ...(catalog === 'goblin-v1' ? { catalog, scenery: nativeScenery(index) } : {}),
+      ...(ladder ? { ladder: { ...ladder } } : {}),
       index,
       practice,
       buildings,
@@ -3411,7 +3446,8 @@ export class GameModel {
       troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
       spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, this.spellLevel(k)])) as SpellBook,
       nextId: this.state.nextId,
-      ...(!practice
+      ...(ladder ? { availableLoot: noLoot, lootRoom: { ...noLoot } } : {}),
+      ...(!practice && !ladder
         ? {
             availableLoot: this.campaignLoot(index, catalog),
             lootRoom: {
@@ -3764,7 +3800,7 @@ export class GameModel {
     const b = this.battle;
     if (!b || b.finished) return;
     // Untimed campaign scouting changes no combat state and needs no replay frames.
-    if (!b.practice && !b.started) return;
+    if (!timedBattle(b) && !b.started) return;
     if (this.recording) {
       if (this.recording.steps.length >= MAX_REPLAY_STEPS || dt > 10 || dt < 0.000001) {
         this.recording = null;
@@ -3780,8 +3816,8 @@ export class GameModel {
       }
       return;
     }
-    // Practice has a deadline; single-player combat continues until resolved or ended.
-    if (b.practice) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
+    // Practice and ladder matches have a deadline; campaign combat continues until resolved or ended.
+    if (timedBattle(b)) dt = Math.min(dt, Math.max(0, BATTLE_SECONDS - b.elapsed));
     b.elapsed += dt;
     this.spawnHeroSummons();
     if (revealTeslas(b, this.onEffect, (u) => this.teslaDiverts(b, u))) this.changed();
@@ -4495,7 +4531,7 @@ export class GameModel {
     const stalled = b.stalledSupportEnds ? this.trackBattleProgress(b) : false;
     if (
       b.destruction === 100 ||
-      (b.practice && b.elapsed >= BATTLE_SECONDS) ||
+      (timedBattle(b) && b.elapsed >= BATTLE_SECONDS) ||
       (!b.shells.length &&
         !b.projectiles?.some((p) => p.weapon !== 'healing') &&
         !Object.values(b.deathBombs ?? {}).some((bomb) => !bomb.resolved && !bomb.cancelled) &&
@@ -4712,7 +4748,7 @@ export class GameModel {
     b.projectiles = [];
     b.shells = [];
     for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
-    const trophies = 0;
+    const trophies = b.ladder ? ladderTrophies(b.ladder, b.stars) : 0;
     const overflow = (gold: number, elixir: number, dark = 0) => {
       const lost = {
         gold: Math.max(0, (b.lootTaken?.gold ?? 0) - gold),
@@ -4750,7 +4786,8 @@ export class GameModel {
     this.state.gold += gold;
     this.state.elixir += elixir;
     this.state.dark += dark;
-    if (!b.practice) {
+    if (b.ladder) this.state.trophies = Math.max(0, this.state.trophies + trophies);
+    if (!b.practice && !b.ladder) {
       if (b.catalog === 'goblin-v1') this.state.nativeCampaign ??= freshNativeCampaign();
       else this.state.campaignLoot ??= freshCampaignLoot();
       const remaining =
@@ -4761,6 +4798,8 @@ export class GameModel {
         remaining[k] = Math.max(0, (remaining[k] ?? 0) - (b.lootTaken?.[k] ?? 0));
       const stars = b.catalog === 'goblin-v1' ? this.state.nativeCampaign!.stars : this.state.stars;
       stars[b.index] = Math.max(stars[b.index] ?? 0, b.stars);
+    }
+    if (!b.practice) {
       this.state.stats.raids++;
       if (b.stars > 0) this.state.stats.wins = (this.state.stats.wins ?? 0) + 1;
       this.state.stats.destroyed += b.buildings.filter(
@@ -4793,6 +4832,7 @@ export class GameModel {
         ...(b.catalog ? { catalog: b.catalog } : {}),
         index: b.index,
         practice: b.practice,
+        ...(b.ladder ? { ladder: { ...b.ladder } } : {}),
         duration: b.elapsed,
         ...(this.recordingLimitReached ? { replayUnavailable: 'limit' as const } : {}),
         result: { ...b.result },

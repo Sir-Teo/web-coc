@@ -132,6 +132,7 @@ import {
   GameModel,
   formatTime,
   BATTLE_SECONDS,
+  timedBattle,
   EPIC_ITEM_GEMS,
   raidHeroes,
   type Building,
@@ -1460,6 +1461,16 @@ export class HUD {
         this.resultShown = false;
         this.show('battle-log');
         break;
+      case 'ladder':
+        m.startLadder();
+        if (m.battle) {
+          this.panel = null;
+          this.drawerPanel = null;
+          this.resultShown = false;
+          this.audio.play('deploy');
+        }
+        this.render();
+        break;
       case 'practice':
         m.startBattle(0, true);
         if (m.battle) {
@@ -1478,7 +1489,9 @@ export class HUD {
           this.showDrawer('army');
           break;
         }
-        m.startBattle(battle.index, battle.practice, battle.catalog);
+        // Another ladder match meets a new opponent, not the one just fought.
+        if (battle.ladder) m.startLadder();
+        else m.startBattle(battle.index, battle.practice, battle.catalog);
         this.resultShown = false;
         this.panel = null;
         this.render();
@@ -2459,8 +2472,8 @@ export class HUD {
       lootKeys.some((k) => (b.lootRoom?.[k] ?? campaignAmount(v, k)) < campaignAmount(v, k));
     const lootBar = (k: CampaignResource) =>
       `<div class="loot-row ${k}" aria-label="${k === 'dark' ? 'Dark Elixir' : k} remaining">${resource(k)}<div class="loot-track"><i data-lootbar="${k}" style="transform:${fillScale((lootLeft(k) / Math.max(1, campaignAmount(v, k))) * 100)}"></i></div><b data-loot="${k}">${n(lootLeft(k))}</b></div>`;
-    return `<div class="battle-enemy"><span class="eyebrow">${m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
- <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!b.practice ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${b.practice ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
+    return `<div class="battle-enemy"><span class="eyebrow">${m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
+ <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!timedBattle(b) ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
  ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
   ${
@@ -3182,7 +3195,7 @@ export class HUD {
         ? log
             .map(
               (r) =>
-                `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : campaignStage(r.index, r.catalog).name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)}${r.result.dark !== undefined ? ` ${resource('dark')} ${n(r.result.dark)}` : ''} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${compatibleReplayVersion(r.replay?.version) ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${raidHeroes(
+                `<article class="raid-record"><div class="raid-record-head"><div><small>${r.practice ? 'PRACTICE' : r.ladder ? 'LADDER' : 'CAMPAIGN'} · ${new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</small><h3>${r.practice ? 'Your village' : campaignStage(r.index, r.catalog).name}</h3></div><div class="raid-score"><b>${r.result.destruction}%</b><span aria-label="${r.result.stars} stars">${'★'.repeat(r.result.stars)}<i>${'★'.repeat(3 - r.result.stars)}</i></span></div></div><p class="raid-loot">${r.practice ? 'Practice · no army losses or rewards' : `${coin} ${n(r.result.gold)} ${elixir} ${n(r.result.elixir)}${r.result.dark !== undefined ? ` ${resource('dark')} ${n(r.result.dark)}` : ''} ${r.result.trophies ? `${icon('Trophy', 16)} ${r.result.trophies > 0 ? '+' : ''}${r.result.trophies}` : ''}`}<span>${time(r.duration)}</span></p><small class="deployed-label">TROOPS &amp; SPELLS DEPLOYED</small>${this.composition(r.deployed, r.spells)}${compatibleReplayVersion(r.replay?.version) ? button(`replay:${r.id}`, `${icon('Play', 16)} Watch replay`, 'game-btn blue replay-watch') + button(`replay-export:${r.id}`, `${icon('Download', 16)} Export replay`, 'game-btn stone') : `<p class="replay-unavailable">${r.replay ? 'Replay unavailable · Recorded before a combat update.' : r.replayUnavailable === 'limit' ? 'Replay unavailable · This attack exceeded the recording limit.' : 'Replay unavailable · Recordings kept for the latest five attacks.'}</p>`}${raidHeroes(
                   r,
                 )
                   .map(
@@ -3191,7 +3204,7 @@ export class HUD {
                   )
                   .join(
                     '',
-                  )}${r.practice || r.catalog === 'goblin-v1' ? button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armyReady ? '' : 'disabled') : ''}</article>`,
+                  )}${r.ladder ? button('ladder', `${icon('Swords', 15)} Next ladder match`, 'game-btn stone', this.model.armyReady ? '' : 'disabled') : r.practice || r.catalog === 'goblin-v1' ? button(r.practice ? 'practice' : `attack:${r.index}`, `${icon('Swords', 15)} ${r.practice ? 'Practice again' : 'Attack village'}`, 'game-btn stone', this.model.armyReady ? '' : 'disabled') : ''}</article>`,
             )
             .join('')
         : `<div class="empty-log">${icon('ScrollText', 48)}<h2>Your story starts here</h2><p>Complete a campaign or practice attack to record its result and the army you deployed.</p>${button('practice', 'Practice your defense', 'game-btn blue', this.model.armyReady ? '' : 'disabled')}</div>`
@@ -3517,7 +3530,8 @@ export class HUD {
       if (filter === 'done') return score === 3;
       return true;
     };
-    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armyReady ? '' : 'disabled')}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">No time limit · No trophy changes · Loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
+    const ladder = this.model.ladderPreview.match;
+    return `<div class="campaign-summary">${button('practice', `${icon('ShieldCheck', 17)} Practice your defense`, 'game-btn blue', this.model.armyReady ? '' : 'disabled')}${button('ladder', `${icon('Trophy', 17)} Ladder match <small>+${ladder.win} / −${ladder.loss}</small>`, 'game-btn orange', `${this.model.armyReady ? '' : 'disabled'} aria-label="Ladder match: win up to ${ladder.win} trophies, lose ${ladder.loss}"`)}${icon('Map', 23)} <span>${NATIVE_CAMPAIGN.length} villages · ${forged} fan-made</span><b>${stars.reduce((a, b) => a + b, 0)} / ${NATIVE_CAMPAIGN.length * 3} ${icon('Star', 17)}</b></div><div class="campaign-nav">${next === null ? '' : button('campaign-continue', `${icon('ArrowRight', 17)} Continue · ${html(NATIVE_CAMPAIGN[next].name)}`, 'game-btn orange')}<select id="campaign-filter" aria-label="Show villages">${option('all', 'All villages')}${option('open', 'Not yet won')}${option('stars', 'Missing stars')}${option('done', 'Three stars')}</select><select id="campaign-section" aria-label="Jump to">${'<option value="">Jump to…</option>'}${sections.map(([family, i]) => `<option value="${i}">${sectionName[family]} · ${NATIVE_CAMPAIGN[i].stage}+</option>`).join('')}</select></div><p class="campaign-rules">Campaign villages: no time limit · no trophy changes · loot does not replenish</p><div class="modal-body campaign-list">${NATIVE_CAMPAIGN.map(
       (v, i) => {
         if (!shown(i)) return '';
         const loot = this.model.campaignLoot(i, 'goblin-v1');
@@ -3633,7 +3647,7 @@ export class HUD {
       )}</div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
   }
   private help() {
-    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Single-player attacks have no time limit or trophy changes. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
+    return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Campaign attacks have no time limit or trophy changes. Ladder matches, this game's own stand-in for multiplayer, pit you against a native layout for trophies: 30 seconds to scout, three minutes to attack, no loot. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;
   }
   private result() {
     const b = this.model.battle!,
@@ -3641,18 +3655,20 @@ export class HUD {
     return `<div class="modal-backdrop result-backdrop"><section class="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="result-rays"></div><span class="result-eyebrow">BATTLE COMPLETE</span><h1 id="result-title">${b.practice ? 'Practice complete' : r.stars ? 'Victory!' : 'A brave attempt'}</h1><div class="result-stars">${[0, 1, 2].map((i) => `<span class="${i < r.stars ? 'earned' : ''}">★</span>`).join('')}</div><p>${r.destruction}% destruction <span>·</span> ${b.practice ? 'Your village' : campaignStage(b.index, b.catalog).name}</p>${
       b.practice
         ? '<p class="practice-result-note">Your village, troops and spells are unchanged.<br>Rearrange your defenses and try a different approach.</p>'
-        : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold received</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir received</small></div>${r.dark !== undefined ? `<div>${resource('dark')}<b data-count="${r.dark}">0</b><small>Dark Elixir received</small></div>` : ''}</div>${
-            r.lostLoot
-              ? `<p class="loot-overflow-note">Storages full: ${campaignResourceKeys(r.lostLoot)
-                  .filter((k) => campaignAmount(r.lostLoot!, k) > 0)
-                  .map(
-                    (k) =>
-                      `${n(campaignAmount(r.lostLoot!, k))} ${k === 'dark' ? 'Dark Elixir' : k}`,
-                  )
-                  .join(', ')} could not be stored.</p>`
-              : ''
-          }`
-    }<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
+        : b.ladder
+          ? ''
+          : `<div class="result-loot"><div>${coin}<b data-count="${r.gold}">0</b><small>Gold received</small></div><div>${elixir}<b data-count="${r.elixir}">0</b><small>Elixir received</small></div>${r.dark !== undefined ? `<div>${resource('dark')}<b data-count="${r.dark}">0</b><small>Dark Elixir received</small></div>` : ''}</div>${
+              r.lostLoot
+                ? `<p class="loot-overflow-note">Storages full: ${campaignResourceKeys(r.lostLoot)
+                    .filter((k) => campaignAmount(r.lostLoot!, k) > 0)
+                    .map(
+                      (k) =>
+                        `${n(campaignAmount(r.lostLoot!, k))} ${k === 'dark' ? 'Dark Elixir' : k}`,
+                    )
+                    .join(', ')} could not be stored.</p>`
+                : ''
+            }`
+    }${b.ladder ? `<p class="ladder-result">${icon('Trophy', 20)} <b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b> trophies · now ${n(this.model.state.trophies)} · ${this.model.league.name}</p>` : ''}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : b.ladder ? 'Next ladder match' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : b.ladder ? 'Undeployed troops return home. Ladder matches are this game’s own stand-in for multiplayer.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
   }
   /** Runs the result screen's loot numbers up from zero, once. */
   private countUp() {
@@ -3891,7 +3907,7 @@ export class HUD {
     if (b) {
       setText(
         refs.battleTimer,
-        b.practice ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
+        timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞',
       );
       setText(refs.destructionValue, `${b.destruction}%`);
       const fill = refs.destructionFill;
