@@ -146,6 +146,8 @@ import { unitStatusTint } from './unit-status-tint';
 const AIR_LIFT = 46;
 /** Fixed simulation step, seconds. */
 const TICK = 0.05;
+/** Stepping budget per frame for a sped-up attack. */
+const MAX_STEP_MS = 10;
 /** Ruin ground renders at half resolution: soft, low-contrast ellipses. */
 const RUIN_DECAL_SCALE = 0.5;
 /** Radius of the baked dot shape, world pixels. */
@@ -5053,7 +5055,9 @@ export class VillageScene extends Phaser.Scene {
     }
     // A battle waiting for late campaign or deferred art keeps its clock, replay and deployments
     // on hold.
-    this.tick = this.battleArtPending() ? 0 : this.tick + dt;
+    // A live attack at 2× or 4× runs more fixed steps per frame; recordings see the same steps.
+    const speed = this.model.battle && !this.model.battle.finished ? this.model.battleSpeed : 1;
+    this.tick = this.battleArtPending() ? 0 : this.tick + dt * speed;
     // Battles trigger the deferred heavy art immediately so scout time covers it.
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     this.releaseLateAssetsWhenIdle(time);
@@ -5065,11 +5069,17 @@ export class VillageScene extends Phaser.Scene {
       this.artRetryCheckAt = time + 1000;
       this.retryFailedArt();
     }
+    const deadline = performance.now() + MAX_STEP_MS;
     while (this.tick >= TICK) {
       // Positions before the step: the draw interpolates from here toward the result.
       this.interpolation.capture(this.model.battle);
       this.model.step(TICK);
       this.tick -= TICK;
+      // A phone that cannot keep up at 4× slows the battle down rather than stalling a frame.
+      if (speed > 1 && performance.now() > deadline) {
+        this.tick = Math.min(this.tick, TICK);
+        break;
+      }
     }
     const battle = this.model.battle;
     this.drainEffects();

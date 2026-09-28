@@ -5583,6 +5583,26 @@ h3 {
   }
 }
 
+/* Live attack speed: 1×, 2×, 4×. A thumb-sized control above the army's right end. */
+.battle-bottom > .battle-speed {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  min-width: 64px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+@media (max-width: 700px) {
+  .battle-bottom > .battle-speed {
+    bottom: 112px;
+    min-height: 40px;
+    padding: 6px 10px;
+  }
+}
+
 /* Keep the end-attack control outside a horizontally scrolling army at tablet widths. */
 .battle-bottom > .end-battle {
   flex-shrink: 0;

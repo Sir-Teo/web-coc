@@ -538,6 +538,8 @@ export interface Save {
     sound: boolean;
     music: boolean;
     reducedMotion: boolean;
+    /** Live attack speed (1×, 2× or 4×); absent means 1×. Replays keep their own speed. */
+    battleSpeed?: BattleSpeed;
     /** Full motion although the operating system asks to reduce it (an explicit override). */
     fullMotion?: boolean;
   };
@@ -814,6 +816,8 @@ export type FX = {
 };
 export const PREP_SECONDS = 30;
 export const BATTLE_SECONDS = 180;
+export const BATTLE_SPEEDS = [1, 2, 4] as const;
+export type BattleSpeed = (typeof BATTLE_SPEEDS)[number];
 /** Practice and ladder matches scout for 30 seconds and fight for three minutes. */
 export const timedBattle = (b: { practice: boolean; ladder?: LadderMatch }) =>
   b.practice || !!b.ladder;
@@ -5088,6 +5092,16 @@ export class GameModel {
     if (!this.replay || this.replay.complete || this.replay.seeking) return;
     this.replay.paused = !this.replay.paused;
     this.replayBudget = 0;
+    this.changed();
+  }
+  /** How fast a live attack runs: more fixed steps per frame, never longer steps. */
+  get battleSpeed(): BattleSpeed {
+    return this.replay ? 1 : (this.state.settings.battleSpeed ?? 1);
+  }
+  /** Steps through 1×, 2× and 4×. The choice is kept for the next attack. */
+  cycleBattleSpeed() {
+    const at = BATTLE_SPEEDS.indexOf(this.state.settings.battleSpeed ?? 1);
+    this.state.settings.battleSpeed = BATTLE_SPEEDS[(at + 1) % BATTLE_SPEEDS.length];
     this.changed();
   }
   setReplaySpeed(speed: number) {
