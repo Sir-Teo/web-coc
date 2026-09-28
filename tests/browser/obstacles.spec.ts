@@ -35,7 +35,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('phone obstacle removal works with busy builders, cancels, reloads and frees buildable ground', async ({
+test('phone obstacle removal holds a builder, cancels, reloads and frees buildable ground', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -48,12 +48,21 @@ test('phone obstacle removal works with busy builders, cancels, reloads and free
     return { id: o.id, x: o.x, y: o.y, elixir: m.state.elixir };
   });
   await selectTree(page, setup.id);
-  await expect(page.locator('.obstacle-context')).toContainText('No builder needed');
+  await expect(page.locator('.obstacle-context')).toContainText('Needs a free builder');
+  // Both builders are busy, so clearing waits until one is free.
+  await expect(page.locator(`[data-action="obstacle-remove:${setup.id}"]`)).toBeDisabled();
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    delete m.state.buildings[0].upgradeEnd;
+    m.changed();
+  });
   await page.locator(`[data-action="obstacle-remove:${setup.id}"]`).click();
   expect(await page.evaluate(() => window.__game.model.busy)).toBe(2);
   expect(await page.evaluate(() => window.__game.model.state.elixir)).toBe(setup.elixir - 2000);
   await page.locator(`[data-action="obstacle-cancel:${setup.id}"]`).click();
   expect(await page.evaluate(() => window.__game.model.state.elixir)).toBe(setup.elixir);
+  // Hold the wall clock so the ten-second clearing outlasts the reload below.
+  await page.clock.setFixedTime(await page.evaluate(() => Date.now()));
   await page.locator(`[data-action="obstacle-remove:${setup.id}"]`).click();
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.artSettled);
@@ -70,7 +79,7 @@ test('phone obstacle removal works with busy builders, cancels, reloads and free
   expect(await page.evaluate((id) => window.__game.scene.obstacleSprites.has(id), setup.id)).toBe(
     false,
   );
-  expect(await page.evaluate(() => window.__game.model.busy)).toBe(2);
+  expect(await page.evaluate(() => window.__game.model.busy)).toBe(1);
   await page.evaluate(() => {
     const m = window.__game.model;
     for (const b of m.state.buildings) delete b.upgradeEnd;

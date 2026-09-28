@@ -5,7 +5,7 @@ import { validateSave } from '../src/game/save';
 import { OBSTACLES, OBSTACLE_GEMS } from '../src/game/obstacles';
 
 describe('village obstacles', () => {
-  it('blocks building, moving and saved layouts until removal completes without reserving a builder', () => {
+  it('blocks building, moving and saved layouts until removal completes, holding a builder', () => {
     const m = fundedVillage();
     const o = m.obstacles.find((o) => o.x === 2 && o.y === 2)!;
     const camp = m.state.buildings.find((b) => b.kind === 'camp')!;
@@ -18,6 +18,13 @@ describe('village obstacles', () => {
     const before = { x: camp.x, y: camp.y };
     m.loadLayout(0);
     expect({ x: camp.x, y: camp.y }).toEqual(before);
+    // As in the original, clearing needs a free builder and keeps it until the obstacle is gone.
+    const gold = m.state.gold;
+    expect(m.removeObstacle(o.id)).toBe(false);
+    expect(o.removeEnd).toBeUndefined();
+    expect(m.state.gold).toBe(gold);
+    delete m.state.buildings[0].upgradeEnd;
+    expect(m.busy).toBe(m.builders - 1);
     expect(m.removeObstacle(o.id)).toBe(true);
     expect(m.removeObstacle(o.id)).toBe(false);
     expect(m.busy).toBe(m.builders);
@@ -25,6 +32,7 @@ describe('village obstacles', () => {
     m.selected = -o.id;
     const gems = m.state.gems;
     m.tick(o.removeEnd!);
+    expect(m.busy).toBe(m.builders - 1);
     expect(m.state.gems).toBe(gems + 6);
     expect(m.selected).toBeNull();
     expect(m.canPlace('wall', o.x, o.y)).toBe(true);
