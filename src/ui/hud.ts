@@ -92,6 +92,14 @@ import {
   type HeroKind,
   type PetKind,
 } from '../game/native-hero-data';
+import {
+  JOURNEY_QUEST_STARS,
+  JOURNEY_TIERS,
+  JOURNEY_TOWN_HALL,
+  questTarget,
+  type JourneyReward,
+} from '../game/heroes-journey';
+import { MAGIC_ITEMS, MAGIC_ITEM_KINDS } from '../game/magic-items';
 import { LEGACY_ITEM } from '../game/native-hero-village';
 import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
@@ -179,6 +187,7 @@ import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline'
 type Panel =
   | 'blacksmith'
   | 'heroes'
+  | 'journey'
   | 'pets'
   | 'progression'
   | 'research'
@@ -1200,6 +1209,15 @@ export class HUD {
         break;
       case 'heroes':
         this.show('heroes');
+        break;
+      case 'journey':
+        this.show('journey');
+        break;
+      case 'journey-claim':
+        m.claimJourney(Number(arg));
+        break;
+      case 'book-of-heroes':
+        if ((HERO_KINDS as string[]).includes(arg)) m.useBookOfHeroes(arg as HeroKind);
         break;
       case 'progression':
         this.show('progression');
@@ -2379,7 +2397,7 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   /**
@@ -2455,6 +2473,81 @@ export class HUD {
       <p class="wall-note">${m.editing ? 'Select a row to move or rotate it together.' : note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
   }
 
+  /** Hero's Journey: progress, the running quest, magic items and the reward track. */
+  private journey() {
+    const m = this.model,
+      j = m.journey,
+      points = m.journeyPoints;
+    if (!m.journeyOpen)
+      return `<div class="modal-body journey-body"><p class="journey-locked">${icon('LockKeyhole', 22)} Hero’s Journey opens at Town Hall ${JOURNEY_TOWN_HALL} with a Hero Hall.</p></div>`;
+    const next = JOURNEY_TIERS.find((t) => t.level > points);
+    const claimable = new Set(m.journeyClaimable);
+    const quest = j.quest;
+    const questCard = quest
+      ? `<article class="journey-quest"><span class="eyebrow">HERO QUEST</span><h3>${quest.item ? `${nativeItemImage(quest.item, 'journey-icon')} ${nativeItemName(quest.item)}` : `<img class="journey-icon" src="${heroPortrait(quest.hero)}" alt=""> ${HERO_SOURCE[quest.hero]}`}</h3><p>Win <b>${quest.stars} / ${JOURNEY_QUEST_STARS}</b> stars in ladder matches with ${quest.item ? `${HERO_SOURCE[quest.hero]} carrying it` : 'this hero deployed'} · <span data-journey-quest>${time((quest.ends - m.clock) / 1000)}</span> left</p><div class="journey-bar"><i style="transform:${fillScale((quest.stars / JOURNEY_QUEST_STARS) * 100)}"></i></div></article>`
+      : '';
+    const items = MAGIC_ITEM_KINDS.filter((k) => (m.state.magicItems?.[k] ?? 0) > 0);
+    const upgrading = HERO_KINDS.filter((k) => m.heroProgress(k)?.upgradeEnd);
+    const inventory = items.length
+      ? `<section class="journey-items"><h3>Magic items</h3>${items
+          .map(
+            (k) =>
+              `<div class="journey-item"><b>${n(m.state.magicItems![k]!)}×</b><span><strong>${MAGIC_ITEMS[k].name}</strong><small>${MAGIC_ITEMS[k].description}</small></span>${
+                k === 'book-of-heroes'
+                  ? upgrading.length
+                    ? upgrading
+                        .map((h) =>
+                          button(
+                            `book-of-heroes:${h}`,
+                            `Finish ${HERO_SOURCE[h]}`,
+                            'game-btn green',
+                          ),
+                        )
+                        .join('')
+                    : '<small class="journey-hint">Use it while a hero upgrades.</small>'
+                  : ''
+              }</div>`,
+          )
+          .join('')}</section>`
+      : '';
+    const rows = JOURNEY_TIERS.map((tier, i) => {
+      const taken = j.claimed.includes(i),
+        reached = tier.level <= points;
+      const done = j.completed?.includes(i);
+      const state = taken
+        ? `<span class="journey-state">${icon('Check', 16)} ${tier.reward.type === 'quest' ? (done ? 'Quest done' : quest?.tier === i ? 'In progress' : 'Quest ended') : 'Claimed'}</span>`
+        : claimable.has(i)
+          ? button(
+              `journey-claim:${i}`,
+              tier.reward.type === 'quest' ? 'Start' : 'Claim',
+              'game-btn green',
+            )
+          : reached
+            ? '<span class="journey-state">Finish your quest first</span>'
+            : `<span class="journey-state locked">${n(tier.level - points)} more</span>`;
+      return `<li class="journey-tier ${taken ? 'taken' : reached ? 'reached' : ''}" id="journey-tier-${i}"><b class="journey-level">${tier.level}</b><span class="journey-reward">${this.journeyReward(tier.reward)}</span>${state}</li>`;
+    }).join('');
+    return `<div class="modal-body journey-body"><header class="journey-progress"><div><b>${n(points)}</b><small>Hero levels</small></div><div class="journey-bar"><i style="transform:${fillScale(next ? (points / next.level) * 100 : 100)}"></i></div><small>${next ? `Next reward at ${n(next.level)}` : 'Track complete'}</small></header>${questCard}${inventory}<ol class="journey-track">${rows}</ol><p class="journey-note">From the Hero’s Journey wiki track. Ladder matches stand in for multiplayer stars.</p></div>`;
+  }
+  private journeyReward(r: JourneyReward) {
+    switch (r.type) {
+      case 'elixir':
+      case 'dark':
+        return `${resource(r.type)} ${n(r.amount)} ${r.type === 'dark' ? 'Dark Elixir' : 'Elixir'}`;
+      case 'ore':
+        return `${gearImage(r.ore)} ${n(r.amount)} ${ORES[r.ore].name}`;
+      case 'item':
+        return `${icon('Sparkles', 18)} ${r.count}× ${r.item}`;
+      case 'quest': {
+        const target = questTarget(JOURNEY_TIERS.findIndex((t) => t.reward === r));
+        return `${icon('Swords', 18)} Quest · ${target?.item ? nativeItemName(target.item) : target ? HERO_SOURCE[target.hero] : r.equipment}`;
+      }
+      case 'equipment':
+        return `${icon('Anvil', 18)} ${HERO_SOURCE[r.hero]} Epic item · level ${r.level}`;
+      case 'skin':
+        return `${icon('Crown', 18)} Majestic ${HERO_SOURCE[r.hero]} skin`;
+    }
+  }
   // ----------------------------------------------------------------- battle
   private battleHUD() {
     const m = this.model,
@@ -2884,7 +2977,7 @@ export class HUD {
       </section>`
           : '<p class="hero-stats-note">Select an item to inspect it.</p>'
       }
-      <p class="ore-source-note">Ore comes from the Star Bonus (collect it under Your legacy), and missing ore can be purchased with gems during an upgrade. Clan War and Hero Journey rewards are not yet available in this village.</p>
+      <p class="ore-source-note">Ore comes from the Star Bonus (collect it under Your legacy), and missing ore can be purchased with gems during an upgrade. Hero’s Journey quests (Hero Hall, Town Hall 7+) open Ore Chests. Clan War rewards are not available in this village.</p>
     </div>`;
   }
   /**
@@ -3068,6 +3161,7 @@ export class HUD {
       'battle-log': 'Battle log',
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
+      journey: 'Hero’s Journey',
       pets: 'Pet House',
       progression: 'Town Hall progression',
       research: 'The laboratory',
@@ -3089,6 +3183,7 @@ export class HUD {
       'battle-log': 'Your last twenty attacks, kept with your village.',
       blacksmith: 'Forge your King’s abilities.',
       heroes: 'A champion for every attack.',
+      journey: 'Every hero level moves you along the track.',
       pets: 'A companion for every hero.',
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
@@ -3110,39 +3205,41 @@ export class HUD {
         ? this.blacksmith()
         : this.panel === 'heroes'
           ? this.heroes()
-          : this.panel === 'pets'
-            ? this.pets()
-            : this.panel === 'progression'
-              ? this.progression()
-              : this.panel === 'army-presets'
-                ? this.armyPresets()
-                : this.panel === 'battle-log'
-                  ? this.battleLog()
-                  : this.panel === 'spell-info'
-                    ? this.spellInfo()
-                    : this.panel === 'troop-info'
-                      ? this.troopInfo()
-                      : this.panel === 'campaign'
-                        ? this.campaign()
-                        : this.panel === 'campaign-scout'
-                          ? this.campaignScout()
-                          : this.panel === 'settings'
-                            ? this.settings()
-                            : this.panel === 'import-confirm'
-                              ? this.importConfirm()
-                              : this.panel === 'buildings'
-                                ? this.buildingList()
-                                : this.panel === 'achievements'
-                                  ? this.achievements()
-                                  : this.panel === 'research'
-                                    ? this.research()
-                                    : this.panel === 'info'
-                                      ? this.info()
-                                      : this.panel === 'layouts'
-                                        ? this.layoutPanel()
-                                        : this.panel === 'surrender'
-                                          ? this.surrender()
-                                          : this.help();
+          : this.panel === 'journey'
+            ? this.journey()
+            : this.panel === 'pets'
+              ? this.pets()
+              : this.panel === 'progression'
+                ? this.progression()
+                : this.panel === 'army-presets'
+                  ? this.armyPresets()
+                  : this.panel === 'battle-log'
+                    ? this.battleLog()
+                    : this.panel === 'spell-info'
+                      ? this.spellInfo()
+                      : this.panel === 'troop-info'
+                        ? this.troopInfo()
+                        : this.panel === 'campaign'
+                          ? this.campaign()
+                          : this.panel === 'campaign-scout'
+                            ? this.campaignScout()
+                            : this.panel === 'settings'
+                              ? this.settings()
+                              : this.panel === 'import-confirm'
+                                ? this.importConfirm()
+                                : this.panel === 'buildings'
+                                  ? this.buildingList()
+                                  : this.panel === 'achievements'
+                                    ? this.achievements()
+                                    : this.panel === 'research'
+                                      ? this.research()
+                                      : this.panel === 'info'
+                                        ? this.info()
+                                        : this.panel === 'layouts'
+                                          ? this.layoutPanel()
+                                          : this.panel === 'surrender'
+                                            ? this.surrender()
+                                            : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

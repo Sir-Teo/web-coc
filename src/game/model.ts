@@ -1,6 +1,19 @@
 import { stepDefendingHeroes } from './defending-heroes';
 import { ladderOpponent, ladderTrophies, type LadderMatch } from './ladder';
 import {
+  JOURNEY_ALL_OWNED_STARRY,
+  JOURNEY_QUEST_MS,
+  JOURNEY_QUEST_STARS,
+  JOURNEY_TIERS,
+  JOURNEY_TOWN_HALL,
+  journeyMagicItem,
+  nextJourneyEpic,
+  questChests,
+  questTarget,
+  type JourneyState,
+} from './heroes-journey';
+import { MAX_MAGIC_ITEMS, type MagicItemKind, type MagicItems } from './magic-items';
+import {
   isSiege,
   superLicence,
   superOriginal,
@@ -334,6 +347,8 @@ import {
   itemHero,
   itemLevelCap,
   itemName,
+  itemMaxLevel,
+  heroDefaultItems,
   itemRarity,
   itemUpgradeCost,
   petLevelCap,
@@ -511,6 +526,10 @@ export interface Save {
   obstacleGrowth?: ObstacleGrowth;
   /** Ladder matches played; seeds the next opponent. */
   ladderSeed?: number;
+  /** Hero's Journey: tiers taken and the running Hero Quest. */
+  journey?: JourneyState;
+  /** Magic items held, by kind. */
+  magicItems?: MagicItems;
   army: Army;
   queue: QueueItem[];
   spells: SpellBook;
@@ -1497,6 +1516,12 @@ export class GameModel {
       this.notify(`Barbarian King reached level ${this.state.king.level}!`);
     }
     if (this.advanceHeroRoster(now)) structural = changed = true;
+    const quest = this.state.journey?.quest;
+    if (quest && now >= quest.ends) {
+      delete this.state.journey!.quest;
+      structural = changed = true;
+      this.notify('Your Hero Quest ran out of time.');
+    }
     // Older saves may still contain paid training queues. Complete those once;
     // new armies are prepared immediately and never create queue entries.
     // Paid queues complete even over cap (tests rely on this); caps apply to new training only.
@@ -2797,6 +2822,142 @@ export class GameModel {
   }
   get heroHall() {
     return this.state.buildings.find((b) => b.kind === 'herohall' && !b.constructing);
+  }
+  // ------------------------------------------------------------ Hero's Journey
+  /** Open from Town Hall 7 with a Hero Hall. */
+  get journeyOpen() {
+    return this.townhallLevel >= JOURNEY_TOWN_HALL && !!this.heroHall;
+  }
+  /** Journey progress: every hero's level added together. */
+  get journeyPoints() {
+    return HERO_KINDS.reduce((sum, kind) => sum + (this.heroProgress(kind)?.level ?? 0), 0);
+  }
+  get journey(): JourneyState {
+    return this.state.journey ?? { claimed: [] };
+  }
+  /** Tiers reached and not yet taken; a quest tier waits while another quest runs. */
+  get journeyClaimable() {
+    const j = this.journey;
+    return JOURNEY_TIERS.flatMap((tier, i) =>
+      tier.level <= this.journeyPoints &&
+      !j.claimed.includes(i) &&
+      !(tier.reward.type === 'quest' && (j.quest || !questTarget(i)))
+        ? [i]
+        : [],
+    );
+  }
+  /** Take a reached tier's reward, or start its Hero Quest. */
+  claimJourney(tier: number) {
+    if (this.battle || !this.journeyOpen || !this.journeyClaimable.includes(tier)) return false;
+    const j = (this.state.journey ??= { claimed: [] });
+    const reward = JOURNEY_TIERS[tier].reward;
+    let note = '';
+    switch (reward.type) {
+      case 'elixir':
+      case 'dark': {
+        const room = Math.max(
+          0,
+          Math.floor(this.resourceCap(reward.type) - this.state[reward.type]),
+        );
+        const taken = Math.min(room, reward.amount);
+        this.state[reward.type] += taken;
+        note = `+${taken.toLocaleString()} ${reward.type === 'dark' ? 'Dark Elixir' : 'Elixir'}${taken < reward.amount ? ` · ${(reward.amount - taken).toLocaleString()} did not fit` : ''}`;
+        break;
+      }
+      case 'ore': {
+        const ores = { ...this.ores };
+        const taken = Math.min(
+          reward.amount,
+          Math.max(0, this.oreCapacity[reward.ore] - ores[reward.ore]),
+        );
+        ores[reward.ore] += taken;
+        this.state.ores = ores;
+        note = `+${taken.toLocaleString()} ${ORES[reward.ore].name}${taken < reward.amount ? ` · ${(reward.amount - taken).toLocaleString()} did not fit` : ''}`;
+        break;
+      }
+      case 'item': {
+        const kind = journeyMagicItem(reward.item);
+        if (!kind) return false;
+        this.addMagicItem(kind, reward.count);
+        note = `+${reward.count} ${reward.item}`;
+        break;
+      }
+      case 'equipment': {
+        const gear = structuredClone(this.gear);
+        const slug = nextJourneyEpic(reward.hero, (s) => gear.levels[s] !== undefined);
+        if (slug) {
+          gear.levels[slug] = Math.min(reward.level, itemMaxLevel(slug));
+          this.state.gear = gear;
+          note = `${itemName(slug)} level ${gear.levels[slug]} unlocked`;
+        } else {
+          const ores = { ...this.ores };
+          ores.starry += Math.min(
+            JOURNEY_ALL_OWNED_STARRY,
+            Math.max(0, this.oreCapacity.starry - ores.starry),
+          );
+          this.state.ores = ores;
+          note = `Every Epic item is owned: +${JOURNEY_ALL_OWNED_STARRY} Starry Ore`;
+        }
+        break;
+      }
+      case 'skin':
+        note = 'Skin recorded (skins are not drawn in this game)';
+        break;
+      case 'quest': {
+        const target = questTarget(tier)!;
+        j.quest = { tier, ...target, stars: 0, ends: this.clock + JOURNEY_QUEST_MS };
+        note = `Hero Quest started: ${JOURNEY_QUEST_STARS} stars in ladder matches with ${target.item ? itemName(target.item) : HERO_SOURCE[target.hero]}`;
+        break;
+      }
+    }
+    j.claimed.push(tier);
+    this.notify(note);
+    this.changed();
+    return true;
+  }
+  /** Stars a ladder match earns toward the running Hero Quest, then its Ore Chests. */
+  private advanceJourneyQuest(b: Battle) {
+    const quest = this.state.journey?.quest;
+    if (!quest || !b.ladder || !b.stars || this.clock >= quest.ends) return;
+    const hero = b.nativeHeroes?.find((h) => h.kind === quest.hero && h.deployed);
+    // An item quest whose Epic is not owned asks for the hero's starting item instead.
+    const item =
+      quest.item && this.gear.levels[quest.item] === undefined
+        ? heroDefaultItems(quest.hero)[0]
+        : quest.item;
+    if (!hero || (item && !hero.items.some((carried) => carried.slug === item))) return;
+    quest.stars = Math.min(JOURNEY_QUEST_STARS, quest.stars + b.stars);
+    if (quest.stars < JOURNEY_QUEST_STARS) return;
+    const chests = questChests(
+      this.townhallLevel,
+      quest.tier * 7919 + Math.floor(quest.ends / 1000),
+    );
+    const ores = { ...this.ores },
+      capacity = this.oreCapacity;
+    for (const k of ORE_KEYS) ores[k] += Math.min(chests[k], Math.max(0, capacity[k] - ores[k]));
+    this.state.ores = ores;
+    const j = this.state.journey!;
+    (j.completed ??= []).push(quest.tier);
+    delete j.quest;
+    this.notify(
+      `Hero Quest complete! Ore Chests: ${chests.shiny} Shiny, ${chests.glowy} Glowy, ${chests.starry} Starry`,
+    );
+  }
+  addMagicItem(kind: MagicItemKind, count = 1) {
+    const items = (this.state.magicItems ??= {});
+    items[kind] = Math.min(MAX_MAGIC_ITEMS, (items[kind] ?? 0) + count);
+  }
+  /** Book of Heroes: finish one hero's upgrade now. */
+  useBookOfHeroes(kind: HeroKind) {
+    const books = this.state.magicItems?.['book-of-heroes'] ?? 0;
+    const progress = this.heroProgress(kind);
+    if (this.battle || !books || !progress?.upgradeEnd) return false;
+    this.state.magicItems!['book-of-heroes'] = books - 1;
+    progress.upgradeEnd = this.clock;
+    this.tick(this.clock);
+    this.notify(`Book of Heroes used: ${HERO_SOURCE[kind]} upgrade finished.`);
+    this.changed();
+    return true;
   }
   // ------------------------------------------------------------ complete hero roster
   get heroHallLevel() {
@@ -4850,6 +5011,7 @@ export class GameModel {
       ...(this.state.raidLog ?? []),
     ].slice(0, 20);
     for (const old of this.state.raidLog.slice(REPLAY_LIMIT)) delete old.replay;
+    this.advanceJourneyQuest(b);
     this.recording = null;
     this.changed();
   }

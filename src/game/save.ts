@@ -1,4 +1,6 @@
 import { validLadderMatch } from './ladder';
+import { validJourney } from './heroes-journey';
+import { validMagicItems } from './magic-items';
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
 import {
@@ -452,6 +454,8 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     return false;
   if (s.ladderSeed !== undefined && (!Number.isSafeInteger(s.ladderSeed) || s.ladderSeed < 0))
     return false;
+  if (s.journey !== undefined && !validJourney(s.journey)) return false;
+  if (s.magicItems !== undefined && !validMagicItems(s.magicItems)) return false;
   if (
     s.obstacleGemIndex !== undefined &&
     (!Number.isInteger(s.obstacleGemIndex) ||
