@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="stoneTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b9b3a6"/><stop offset="1" stop-color="#8f897c"/>
+    </linearGradient>
+    <linearGradient id="stoneLeft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d675c"/><stop offset="1" stop-color="#7d776b"/>
+    </linearGradient>
+    <linearGradient id="stoneRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b564d"/><stop offset="1" stop-color="#4a463f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3b0" stop-opacity="0.95"/><stop offset="0.45" stop-color="#ffb43a" stop-opacity="0.75"/><stop offset="1" stop-color="#ff6a00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 3x3 stone platform, shared by every Crafted Defense -->
+  <g stroke="#2f2b25" stroke-width="2" stroke-linejoin="round">
+    <path d="M90 92 L172 133 L90 174 L8 133 Z" fill="url(#stoneTop)"/>
+    <path d="M8 133 L90 174 L90 180 L8 139 Z" fill="url(#stoneLeft)"/>
+    <path d="M90 174 L172 133 L172 139 L90 180 Z" fill="url(#stoneRight)"/>
+  </g>
+  <g stroke="#6f695d" stroke-width="1.4" opacity="0.8" fill="none">
+    <path d="M36 119 L118 160"/><path d="M63 105 L145 146"/><path d="M36 147 L118 106"/><path d="M63 161 L145 120"/>
+  </g>
+
+  <defs>
+    <linearGradient id="towerL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b3b63"/><stop offset="1" stop-color="#6b5690"/>
+    </linearGradient>
+    <linearGradient id="towerR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a2d4e"/><stop offset="1" stop-color="#2b2139"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#c98a16"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffdf4"/><stop offset="1" stop-color="#e3d7b8"/>
+    </linearGradient>
+  </defs>
+  <!-- purple stone tower -->
+  <g stroke="#1d1626" stroke-width="2.2" stroke-linejoin="round">
+    <path d="M58 132 L58 64 L90 50 L90 146 Z" fill="url(#towerL)"/>
+    <path d="M90 146 L90 50 L122 64 L122 132 Z" fill="url(#towerR)"/>
+    <path d="M52 64 L90 46 L128 64 L90 82 Z" fill="#8a73b0"/>
+  </g>
+  <!-- gold trim -->
+  <g stroke="#6e4a08" stroke-width="1.6" fill="url(#gold)">
+    <path d="M52 64 L90 82 L128 64 L128 70 L90 88 L52 70 Z"/>
+    <path d="M58 128 L90 142 L122 128 L122 134 L90 148 L58 134 Z"/>
+  </g>
+  <!-- card launcher: a fan of three cards -->
+  <g stroke="#5b4a2a" stroke-width="1.8">
+    <rect x="70" y="18" width="24" height="34" rx="3" fill="url(#card)" transform="rotate(-18 82 35)"/>
+    <rect x="86" y="18" width="24" height="34" rx="3" fill="url(#card)" transform="rotate(18 98 35)"/>
+    <rect x="78" y="12" width="24" height="36" rx="3" fill="url(#card)"/>
+  </g>
+  <!-- crown on the front card -->
+  <path d="M82 38 L84 26 L88 32 L90 23 L92 32 L96 26 L98 38 Z" fill="url(#gold)" stroke="#6e4a08" stroke-width="1.4"/>
+  <circle cx="90" cy="22" r="2.4" fill="#d6203a"/>
+  <!-- banner with a crown crest -->
+  <g stroke="#1d1626" stroke-width="1.6">
+    <path d="M66 86 L84 94 L84 124 L75 117 L66 116 Z" fill="#c21f4a"/>
+    <path d="M69 104 L71 96 L74 100 L75 94 L77 100 L80 97 L81 106 Z" fill="url(#gold)"/>
+  </g>
+  <!-- windows -->
+  <path d="M104 98 Q109 93 114 96 L114 110 L104 114 Z" fill="#ffcf5a" stroke="#1d1626" stroke-width="1.6"/>
+</svg>
