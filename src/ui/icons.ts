@@ -62,10 +62,12 @@ import {
   HeartPulse,
   Waves,
   FastForward,
+  Crown,
 } from 'lucide';
 const icons = {
   Circle,
   FastForward,
+  Crown,
   Trophy,
   Hammer,
   Axe,
