@@ -568,7 +568,8 @@ const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
     resource: 'gold',
     category: 'Army',
     maxLevel: BUILDER_HUT_LEVELS.length,
-    build: 30,
+    // The client builds a hut instantly (Builders Hut level 1 BuildTime is zero).
+    build: 0,
   },
   mortar: {
     name: 'Mortar',
@@ -1414,6 +1415,8 @@ export const isDefense = (kind: BuildingKind) =>
   kind === 'monolith' ||
   kind === 'spelltower';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
+/** Traps and Builder's Huts (sold for gems, built instantly) are placed without a free builder. */
+export const needsBuilder = (kind: BuildingKind) => !isTrap(kind) && kind !== 'builder';
 /** First tier that permits one. A withheld building still shows its original requirement. */
 export const unlockTownHall = (kind: BuildingKind) =>
   kind === 'clancastle'

@@ -114,6 +114,29 @@ describe('village progression', () => {
     expect(m.busy).toBe(1);
     expect(validateSave(m.state)).toBe(true);
   });
+  it("buys a Builder's Hut instantly while every builder is busy", () => {
+    const m = new GameModel();
+    m.state.obstacles = [];
+    m.state.gold = 9_000_000;
+    m.state.gems = 10_000;
+    const cannons = m.state.buildings.filter((b) => b.kind === 'cannon');
+    m.upgrade(cannons[0].id);
+    m.upgrade(cannons[1].id);
+    expect(m.busy).toBe(m.builders);
+    const builders = m.builders,
+      gems = m.state.gems;
+    m.beginBuild('builder');
+    expect(m.placement).toBe('builder');
+    expect(m.place(2, 2)).toBe(true);
+    const hut = m.state.buildings.at(-1)!;
+    expect(hut.kind).toBe('builder');
+    expect(hut.constructing).toBeFalsy();
+    expect(hut.upgradeEnd).toBeUndefined();
+    expect(m.state.gems).toBeLessThan(gems);
+    expect(m.builders).toBe(builders + 1);
+    expect(m.busy).toBe(builders);
+    expect(validateSave(m.state)).toBe(true);
+  });
   it('limits offline generation and prevents collecting beyond storage capacity', () => {
     const m = new GameModel();
     const mine = m.state.buildings.find((b) => b.kind === 'goldmine')!;

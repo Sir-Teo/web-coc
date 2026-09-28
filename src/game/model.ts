@@ -235,6 +235,7 @@ import {
   defenseDamage,
   isResourceBuilding,
   isTrap,
+  needsBuilder,
   gemCost,
   maxCountFor,
   maxLevelFor,
@@ -1614,7 +1615,7 @@ export class GameModel {
     const price = buildPrice(kind, this.countOf(kind));
     if (this.state[price.resource] < price.cost)
       return this.notify(`Not enough ${price.resource}.`);
-    if (!isTrap(kind) && this.busy >= this.builders)
+    if (needsBuilder(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
     this.cancelNativeHandling();
     this.selected = null;
@@ -1649,7 +1650,7 @@ export class GameModel {
       isMergedKind(kind) ||
       this.state[price.resource] < price.cost ||
       this.countOf(kind) >= this.maxCount(kind) ||
-      (!isTrap(kind) && this.busy >= this.builders)
+      (needsBuilder(kind) && this.busy >= this.builders)
     ) {
       this.notify('Unable to build. Check your resources and builders.');
       return false;
