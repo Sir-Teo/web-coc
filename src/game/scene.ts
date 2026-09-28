@@ -153,6 +153,12 @@ const DOT_RADIUS = 8;
 const NO_CUES: SampleCue[] = [];
 const ZERO = Object.freeze({ x: 0, y: 0 });
 const LOADING_LATE_ART = 'Loading village art…';
+/** Press and hold: the first troop drops after this still press, the stream then speeds up. */
+export const HOLD_DEPLOY_DELAY_MS = 260;
+const HOLD_DEPLOY_FIRST_MS = 180;
+const HOLD_DEPLOY_FASTEST_MS = 70;
+/** Milliseconds the interval shrinks per millisecond held. */
+const HOLD_DEPLOY_RAMP = 0.1;
 /** Home time after a battle before defense families the village does not draw are released. */
 const FAMILY_RELEASE_MS = 20_000;
 /** Home time after a late battle before the late campaign art is released. */
@@ -376,6 +382,8 @@ export class VillageScene extends Phaser.Scene {
   private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' | 'drag-wall' = 'none';
   private lastDeploy = { x: -99, y: -99 };
   private lastTap = { x: -99, y: -99, t: 0 };
+  /** Press-and-hold deployment: when the next troop of the held stream drops. */
+  private holdNext = 0;
   private boundary: { signature: number; edges: number[][] } = { signature: -1, edges: [] };
   /** Tile raster of the no-deploy zone, rebuilt with `boundary`. */
   private blockedGrid = new Uint8Array(MAP_SIZE * MAP_SIZE);
@@ -803,6 +811,7 @@ export class VillageScene extends Phaser.Scene {
       this.dragged = false;
       this.gesture = 'none';
       this.lastDeploy = { x: -99, y: -99 };
+      this.holdNext = 0;
       if (held) {
         this.model.beginDrag();
         this.model.selected = held.id;
@@ -1819,6 +1828,48 @@ export class VillageScene extends Phaser.Scene {
         return 'deploy';
     }
     return 'pan';
+  }
+  /** True when a press on the battlefield may deploy the selected troop. */
+  private canHoldDeploy() {
+    const b = this.model.battle;
+    return (
+      !!b &&
+      !this.model.replay &&
+      !b.finished &&
+      !this.model.placement &&
+      !this.model.activeSpell &&
+      !this.model.activeHero &&
+      !this.model.activeHeroKind &&
+      b.remaining[this.model.activeTroop] > 0 &&
+      !this.battleArtPending()
+    );
+  }
+  /**
+   * Press and hold: a finger held still keeps dropping the selected troop, slowly at first
+   * and then faster, as in Clash. Moving the held finger paints troops along the drag instead.
+   */
+  private stepHoldDeploy(now: number) {
+    const down = this.down;
+    if (!down || this.uiBlocked || (this.gesture !== 'none' && this.gesture !== 'deploy')) return;
+    if (this.input.manager.pointers.filter((v) => v.isDown).length !== 1) return;
+    if (now - down.t < HOLD_DEPLOY_DELAY_MS || !this.canHoldDeploy()) return;
+    if (this.gesture === 'none') {
+      // The release must not also count as a tap.
+      this.gesture = 'deploy';
+      this.dragged = true;
+      this.holdNext = now;
+    }
+    if (now < this.holdNext) return;
+    const grid = this.gridAtPointer(this.input.activePointer);
+    const held = now - down.t - HOLD_DEPLOY_DELAY_MS;
+    this.holdNext =
+      now + Math.max(HOLD_DEPLOY_FASTEST_MS, HOLD_DEPLOY_FIRST_MS - held * HOLD_DEPLOY_RAMP);
+    if (this.model.deployBlocked(grid.x, grid.y)) return;
+    if (this.model.deploy(grid.x, grid.y)) {
+      this.lastDeploy = { x: grid.x, y: grid.y };
+      this.model.selected = null;
+      this.audio.play('deploy');
+    }
   }
   private dragDeploy(p: Phaser.Input.Pointer) {
     const grid = this.gridAtPointer(p);
@@ -4984,6 +5035,7 @@ export class VillageScene extends Phaser.Scene {
       delta,
     );
     const dt = Math.min(delta / 1000, 0.1);
+    if (this.down && this.model.battle) this.stepHoldDeploy(performance.now());
     // With the map cursor on, the same keys move the cursor (the camera follows it).
     if (!this.uiBlocked && !typingTarget(document.activeElement) && !this.keyCursor) {
       let x = 0,
