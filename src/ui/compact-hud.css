@@ -306,3 +306,14 @@
     display: none;
   }
 }
+
+/* iOS Safari zooms the whole page when a field under 16px takes focus, and leaves it
+   zoomed after the keyboard closes. Touch screens get 16px text in the army search and
+   the army and campaign pickers. */
+@media (pointer: coarse) {
+  .army-filters input,
+  .army-filters select,
+  .campaign-nav select {
+    font-size: 16px;
+  }
+}

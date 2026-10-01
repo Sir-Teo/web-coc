@@ -64,6 +64,9 @@ async function boot() {
       callbacks: { postBoot: configureDisplay },
       render: { pixelArt: false, antialias: true },
       input: { activePointers: 3 },
+      // A long press on a phone (streaming troops, holding a building) fires contextmenu;
+      // the canvas has no menu of its own to offer.
+      disableContextMenu: true,
       scene: [scene],
       fps: { target: 60, smoothStep: true },
       // Phaser's stock placeholder for a texture that has not loaded (lazy art still in
