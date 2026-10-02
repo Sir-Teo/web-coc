@@ -94,12 +94,19 @@ for (const file of files) {
 // Reference audit: any string still naming a PNG. Phaser's own format table (a bare ".png"
 // extension) names no file and is ignored.
 const PNG_NAME = /[\w@%$./{}-]+\.png(?![\w])/g;
+// PNGs outside assets/ (the home-screen icons) are never converted and always ship, so naming
+// one by its root path cannot point at a removed copy.
+const shipped = new Set(
+  files
+    .filter((f) => f.endsWith('.png') && !f.startsWith(assets + path.sep))
+    .map((f) => '/' + path.relative(dist, f).split(path.sep).join('/')),
+);
 const unresolved = new Map();
 for (const file of files) {
   if (!/\.(js|json|css|html)$/.test(file)) continue;
   const text = await fs.readFile(file, 'utf8');
   for (const [name] of text.matchAll(PNG_NAME)) {
-    if (name === '.png') continue;
+    if (name === '.png' || shipped.has(name)) continue;
     if (!unresolved.has(name)) unresolved.set(name, path.relative(dist, file));
   }
 }
