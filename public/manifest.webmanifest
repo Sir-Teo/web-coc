@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "Crown & Clan",
+  "short_name": "Crown & Clan",
+  "description": "Build your village. Raise an army. Conquer the valley.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#45623d",
+  "theme_color": "#3d542d",
+  "icons": [
+    { "src": "/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    {
+      "src": "/app-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
