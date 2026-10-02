@@ -12,6 +12,18 @@ The previous HUD positioned side tools using a percentage of screen height while
 
 The new rules preserve the existing game actions, modal/drawer behavior, art, camera coordinates, economy, save format and combat rules. Views taller than 700 CSS pixels retain their previous HUD layouts.
 
+## Tall phones
+
+The compact rules stop at 700 pixels high, so most phones in portrait (390×844 and taller) still used the narrow-width layout. An October 2026 audit at 390×844 found a 33×35 Settings button, 29×30 camera buttons, 19×24 resource "+" buttons, 33×35 dialog close buttons and 49×27 Settings switches.
+
+With a coarse pointer and a view taller than 700 pixels, Settings and the three camera buttons are now 44×44. Some controls have no room for bigger art, so a transparent `::after` grows the area a finger can press instead. The insets include each button's own border, because `::after` is placed from the padding edge.
+
+- Resource "+": 43×38, stopping short of the bar and of the next row, 39 pixels away.
+- Dialog close buttons: 45×47. A drawer's close button does not reach left over its scrolling tabs.
+- Settings switches: 53×45, within their own setting row.
+
+Mouse layouts are unchanged. `tests/browser/touch-targets.spec.ts` hit-tests points just outside each drawn control. It checks that neighbouring "+" buttons do not overlap, and taps beside the art with a real touch. Without the rules, both cases fail. The dense touch case above still passes with the larger areas. Army tile buttons (25–32 pixels tall in a dense grid) and 30-pixel shop tabs remain below 44 pixels and are left for a later pass.
+
 ## Verification
 
 `tests/browser/hud-layout.spec.ts` checks 19 viewports for both starter and developed villages, including both sides of the 700/701-pixel width and 799/800-pixel aspect-ratio boundaries. Five points inside each main HUD control must hit that control. Each viewport also clicks the measured center of Zoom out and requires a zoom change. Representative small views open Settings and collect resources without changing zoom. Side tools must remain at least 44 pixels in each dimension; short starter trays must not acquire unused trailing width.
