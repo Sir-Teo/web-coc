@@ -102,6 +102,23 @@ about half a minute fell to one pixel per CSS pixel and never recovered while th
 A capped battle would also have dropped to minimal detail. A change of cap restarts the
 current measurement window.
 
+### Frame time on very slow devices
+
+Phaser's frame smoothing used to hold the game back on slow devices in two ways. For 120
+frames after boot, after the window regained focus, and after the page became visible again
+(`panicMax`), it capped every frame's time at about 16 ms. Below 5 FPS (`min`), it replaced
+each frame's time with an old value. On a device drawing three frames a second, game time
+therefore advanced about 0.05 seconds per real second for most of a minute. The production
+smoke test, with a 2× canvas on CI's software renderer, saw a practice raid's 30-second
+countdown not move for 15 seconds. Every deploy failed on it from run 48 onward.
+
+`main.ts` now sets `fps: { min: 1, panicMax: 0 }`, so real frame times up to a second reach the
+scene. Longer ones, such as the first frame back from a hidden tab, still get a sane
+substitute. `VillageScene.update` caps one frame at 0.25 s instead of 0.1 s, so a 4 FPS device
+keeps battle time in step with the clock. Battles still advance in fixed `TICK` steps, now at
+most five per frame, so results and replays are unchanged. At 3 FPS in local software rendering,
+the countdown went from barely moving to 0.75 game seconds per real second.
+
 ### Simulation, identical results
 
 - Target choice is one pass over the known buildings with three "nearest" trackers instead

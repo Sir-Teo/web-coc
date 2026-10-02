@@ -5131,7 +5131,10 @@ export class VillageScene extends Phaser.Scene {
       delta,
       1000 / (this.game.loop.fpsLimit || 60),
     );
-    const dt = Math.min(delta / 1000, 0.1);
+    // At most a quarter second per frame: a device drawing 4 FPS stays in step with the clock,
+    // while battles still advance in fixed TICK steps (five at most here) and a long stall
+    // cannot fast-forward the game.
+    const dt = Math.min(delta / 1000, 0.25);
     if (this.down && this.model.battle) this.stepHoldDeploy(performance.now());
     // With the map cursor on, the same keys move the cursor (the camera follows it).
     if (!this.uiBlocked && !typingTarget(document.activeElement) && !this.keyCursor) {

@@ -78,7 +78,13 @@ async function boot() {
       // the canvas has no menu of its own to offer.
       disableContextMenu: true,
       scene: [scene],
-      fps: { target: 60, smoothStep: true },
+      // Phaser held every frame to ~16 ms for 120 frames after boot, focus or a return to the page
+      // (panicMax), and below 5 FPS swapped each frame's time for an old one (min). On a device
+      // drawing a few frames a second, battles and the practice countdown then crawled for most
+      // of a minute. Real frame times now reach the scene up to a second (longer ones, such as the
+      // first frame back from a hidden tab, still get a sane substitute), and the scene caps how
+      // far one frame advances the game.
+      fps: { target: 60, smoothStep: true, min: 1, panicMax: 0 },
       // Phaser's stock placeholder for a texture that has not loaded (lazy art still in
       // flight, a failed fetch) is an opaque black square; draw nothing instead.
       images: { missing: TRANSPARENT_PIXEL },
