@@ -19,6 +19,7 @@ import { configureDisplay, displaySize } from './game/display';
 import { recordBootResources, registerOfflineSupport } from './offline';
 import { decodeLoadedImages } from './game/image-decode';
 import { watchSystemMotion } from './ui/motion';
+import { ScreenAwake } from './ui/screen-awake';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -138,12 +139,18 @@ async function boot() {
     const battlePhase = () =>
       !model.battle ? 'none' : model.battle.finished ? 'finished' : 'active';
     let lastBattlePhase = battlePhase();
+    const screenAwake = new ScreenAwake();
     const economyTimer = setInterval(() => {
       model.tick(Date.now());
       const phase = battlePhase();
       const settled = phase !== lastBattlePhase && phase !== 'active';
       lastBattlePhase = phase;
       void persist(settled);
+      // A live raid or a playing replay (the first-run Goblin raid is one) keeps the
+      // phone's screen on; the village and a finished raid's results do not.
+      screenAwake.hold(
+        model.replay ? !model.replay.paused && !model.replay.complete : phase === 'active',
+      );
     }, 1000);
     window.addEventListener('pagehide', () => {
       audio.samples.stop();
