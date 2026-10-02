@@ -102,6 +102,8 @@ points the built code, packs, atlases and styles at it (`scripts/webp-dist.mjs`)
 quarter fewer bytes, byte-identical WebGL textures. It then audits every built text file for
 PNG names still in use; when none remains it removes the PNG copies from `dist` (about 556 MB
 of a 993 MB build), and otherwise keeps them all and lists the names it could not resolve.
+A root path naming a PNG outside `assets/`, such as the home-screen icons, does not count:
+those files are never converted and always ship.
 The repository, the dev server and the specs keep reading the PNGs. The production build also generates `sw.js`
 and a content-hashed manifest. The service
 worker precaches the application shell (the page and only the bundles its entry imports
@@ -121,3 +123,19 @@ Settings reports what offline play covers from the worker's own answer: "Prepari
 has stored this page's boot art, "Ready offline" once it has (the village and art already
 seen; unvisited campaign villages still need a connection), or a partial state with a Retry
 link when some of that art could not be stored.
+
+### Home-screen install
+
+`public/manifest.webmanifest` lets Android browsers install the game. It launches full
+screen and falls back to standalone, with splash colors matching the page. `index.html`
+gives iOS an Apple touch icon, the home-screen app tags and a translucent status bar. The
+HUD's safe-area insets keep controls clear of that bar. `scripts/app-icons.mjs`
+(`npm run app-icons`) renders all four icons from `public/favicon.svg`.
+`tests/app-manifest.test.ts` checks the manifest, the page tags, the icon sizes, the opaque
+Apple icon and the maskable safe zone, and that the committed icons match a fresh render.
+The manifest and icons sit at the root, so the service worker precaches them with the shell.
+
+On Android an installed game shares the browser's storage, so the same village opens and the
+tab lock still lets only one copy own it. iOS gives a home-screen app storage separate from
+Safari's. A village started in Safari therefore does not appear in the installed app; use
+the save export and import in Settings to move it.
