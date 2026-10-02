@@ -1718,6 +1718,9 @@ export class HUD {
       case 'battery':
         m.toggleBatterySaver();
         break;
+      case 'haptics':
+        m.toggleHaptics();
+        break;
       case 'claim':
         if (m.claimQuest(arg)) this.audio.play('collect');
         break;
@@ -3784,6 +3787,17 @@ export class HUD {
           'Draws 30 frames a second at no more than 2× sharpness, so phones run cooler and last longer.',
           !!s.batterySaver,
         ],
+        // Only where the browser can vibrate (not iOS Safari).
+        ...(typeof navigator.vibrate === 'function'
+          ? ([
+              [
+                'haptics',
+                'Vibration',
+                'A light tap when your troops land, buildings fall and stars are won.',
+                s.haptics !== false,
+              ],
+            ] as const)
+          : []),
       ] as const
     )
       .map(

@@ -20,6 +20,7 @@ import { recordBootResources, registerOfflineSupport } from './offline';
 import { decodeLoadedImages } from './game/image-decode';
 import { watchSystemMotion } from './ui/motion';
 import { ScreenAwake } from './ui/screen-awake';
+import { Haptics } from './ui/haptics';
 recordBootResources();
 decodeLoadedImages();
 /** A 1×1 fully transparent PNG. */
@@ -38,6 +39,14 @@ async function boot() {
     const model = new GameModel(saved);
     const audio = new AudioManager();
     audio.enabled = model.state.settings.sound;
+    // Vibration for the player's own raid: replays (the first-run Goblin raid among them) stay
+    // still, and victory buzzes only when the raid earned a star.
+    const haptics = new Haptics();
+    audio.feedback = (cue) => {
+      if (model.replay || model.state.settings.haptics === false) return;
+      if (cue === 'deploy' || cue === 'destroy') haptics.pulse(cue);
+      else if (cue === 'victory' && (model.battle?.stars ?? 0) > 0) haptics.pulse(cue);
+    };
     watchSystemMotion(model);
     document.addEventListener(
       'pointerdown',

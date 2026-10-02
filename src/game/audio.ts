@@ -1,5 +1,5 @@
 import { SampleAudio } from './sample-audio';
-type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
+export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
 export class AudioManager {
   context: AudioContext | null = null;
   /**
@@ -43,7 +43,10 @@ export class AudioManager {
     this.unlocked = true;
     this.updateContext();
   }
+  /** Called for every cue, sound on or off (vibration follows the same moments). */
+  feedback: (kind: Tone) => void = () => {};
   play(kind: Tone) {
+    this.feedback(kind);
     if (!this.enabled) return;
     // Battles can emit dozens of blips per second; throttle per kind
     // so overlapping volleys don't thrash the mixer.
