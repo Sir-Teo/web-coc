@@ -48,4 +48,20 @@ describe('adaptive canvas density', () => {
     d.run(15000, 1000 / 60);
     expect(d.quality.scale).toBe(1);
   });
+  it('reads a deliberate frame cap as its pace, not as pressure', () => {
+    const d = driver(3);
+    d.quality.setFrameInterval(1000 / 30, 0);
+    d.run(60000, 1000 / 30);
+    expect(d.quality.scale).toBe(1);
+    // Real overload under the cap still lowers density...
+    d.run(7500, 80);
+    expect(d.quality.scale).toBe(0.75);
+    // ...and a steady capped pace restores it.
+    d.run(25000, 1000 / 30);
+    expect(d.quality.scale).toBe(1);
+    // Without the cap, the same 30 FPS pace counts as pressure.
+    const uncapped = driver(3);
+    uncapped.run(7500, 1000 / 30);
+    expect(uncapped.quality.scale).toBe(0.75);
+  });
 });
