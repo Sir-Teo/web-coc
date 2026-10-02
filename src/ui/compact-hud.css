@@ -358,3 +358,21 @@
     inset: -10px -3px;
   }
 }
+
+/* Army tiles on tall touch screens: an unlocked tile is taller than its content (287 against
+   248 pixels at 390×844), so the 25–27 pixel bulk rows and the Add button grow into that room
+   instead of relying on fingertip precision, and "All" sits further from "Remove". Locked
+   tiles (already the tallest, their controls disabled) keep their size, so the strip scrolls
+   no further than before. */
+@media (pointer: coarse) and (min-height: 701px) {
+  .army-tile:not(.army-locked) > :is([data-action^='train:'], [data-action^='brew:']) {
+    min-height: 40px;
+  }
+  .army-tile:not(.army-locked) > .shop-buy.tiny,
+  .army-tile:not(.army-locked) .army-bulk > :is(.shop-buy.tiny, .army-remove) {
+    min-height: 36px;
+  }
+  .army-tile:not(.army-locked) .army-bulk:has(> .army-remove) {
+    gap: 8px;
+  }
+}
