@@ -62,6 +62,12 @@ For visible changes, inspect desktop and phone layouts, pointer/touch input,
 reduced motion and relevant replay pause/seek behavior. Automated pixel or layout
 checks do not replace reviewing the actual rendered result.
 
+Touch-only styles (finger-sized controls, larger touch text and hit areas, the share sheet) key on
+`(pointer: coarse)`. A spec that depends on it checks `matchMedia('(pointer: coarse)')` after boot. If an
+engine's touch emulation does not report a coarse pointer, the spec skips with that reason rather than
+failing in WebKit CI. Mouse cases skip in the opposite situation. Specs that inject native touches or
+safe-area insets use CDP or constructed `Touch` objects, and run in Chromium only.
+
 ## Production and offline checks
 
 ```sh

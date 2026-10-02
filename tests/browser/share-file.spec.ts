@@ -33,6 +33,9 @@ async function stubShare(page: Page, mode: 'share' | 'cancel' | 'no-json') {
 const shared = (page: Page) =>
   page.evaluate(() => (window as unknown as { shared: Shared[] }).shared);
 
+/** Touch rules key on (pointer: coarse), which not every engine's touch emulation reports. */
+const coarsePointer = (page: Page) => page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+
 async function boot(page: Page) {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
@@ -53,6 +56,7 @@ test.describe('phone', () => {
   }) => {
     await stubShare(page, 'share');
     await boot(page);
+    test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
     let downloaded = false;
     page.on('download', () => (downloaded = true));
 
@@ -105,6 +109,7 @@ test.describe('phone', () => {
   test('closing the share sheet exports nothing and says nothing', async ({ page }) => {
     await stubShare(page, 'cancel');
     await boot(page);
+    test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
     let downloaded = false;
     page.on('download', () => (downloaded = true));
     await exportVillage(page);
@@ -126,6 +131,7 @@ test.describe('phone', () => {
 test('a mouse downloads even where the browser could share', async ({ page }) => {
   await stubShare(page, 'share');
   await boot(page);
+  test.skip(await coarsePointer(page), 'This engine reports a coarse pointer without touch.');
   const download = page.waitForEvent('download');
   await exportVillage(page);
   expect((await download).suggestedFilename()).toBe('crown-and-clan-village.json');

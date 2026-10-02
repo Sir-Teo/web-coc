@@ -7,6 +7,9 @@ test.use({
   hasTouch: true,
 });
 
+/** Touch rules key on (pointer: coarse), which not every engine's touch emulation reports. */
+const coarsePointer = (page: Page) => page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+
 async function boot(page: Page) {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
@@ -69,6 +72,7 @@ const lastPress = (page: Page) =>
 
 test('tall phone HUD controls take a 44-pixel finger', async ({ page }) => {
   await boot(page);
+  test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
   for (const action of ['settings', 'zoom-in', 'recenter', 'zoom-out']) {
     const box = (await page.locator(`.right-tools [data-action="${action}"]`).boundingBox())!;
     expect(box.width, action).toBeGreaterThanOrEqual(44);
@@ -99,6 +103,7 @@ test('dialog close buttons and settings switches take presses beside their art',
   page,
 }) => {
   await boot(page);
+  test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
   await page.locator('[data-action="settings"]').first().tap();
   const close = '.modal [data-action="close"]';
   await expect(page.locator(close)).toBeVisible();
