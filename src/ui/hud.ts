@@ -1715,6 +1715,9 @@ export class HUD {
         m.toggleReducedMotion();
         applyMotionPreference(m);
         break;
+      case 'battery':
+        m.toggleBatterySaver();
+        break;
       case 'claim':
         if (m.claimQuest(arg)) this.audio.play('collect');
         break;
@@ -3774,6 +3777,12 @@ export class HUD {
             ? `Less camera shake and decorative movement. Your device asks for reduced motion${s.fullMotion ? '; full motion is on by your choice' : ''}.`
             : 'Less camera shake and decorative movement.',
           this.model.reducedMotion,
+        ],
+        [
+          'battery',
+          'Battery saver',
+          'Draws 30 frames a second at no more than 2× sharpness, so phones run cooler and last longer.',
+          !!s.batterySaver,
         ],
       ] as const
     )

@@ -134,6 +134,7 @@ import { campPlan, campPose, type CampActor } from './camp-presentation';
 import { configureQuadRendering } from './quad-renderer';
 import { holdFilterContexts } from './native-group-color';
 import { useFastDepthSort, useFastVisibleChildren } from './display-sort';
+import { setMaxDensity } from './display';
 import { RenderDetail } from './render-detail';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
@@ -252,6 +253,9 @@ interface ArtFamily {
 const IDLE_AFTER_MS = 5000;
 const IDLE_FPS = 30;
 const IDLE_FPS_REDUCED = 15;
+/** Battery saver: the frame cap in play (never above the idle caps) and canvas density ceiling. */
+const SAVER_FPS = 30;
+const SAVER_MAX_DENSITY = 2;
 const IDLE_WAKE_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'] as const;
 /** Bounded backoff for a failed art request: 5 s, 10 s, 20 s ... capped at five minutes. */
 const artRetryDelay = (attempts: number) => Math.min(300_000, 5000 * 2 ** (attempts - 1));
@@ -5009,12 +5013,18 @@ export class VillageScene extends Phaser.Scene {
   private activeAt = performance.now();
   /** Structural revision seen by the idle check: a real change counts as activity. */
   private idleRevision = -1;
-  /** The frame-rate ceiling now applied (0: none). */
+  /** The frame-rate ceiling now applied (0: none): the idle cap, or the battery saver's in play. */
   idleFrameRate = 0;
-  /** Input of any kind restores the full frame rate at once. */
+  /** The battery saver choice the canvas density was last set for. */
+  private batterySaver = false;
+  /** The ceiling in play: none, or the battery saver's. */
+  private get playFrameRate() {
+    return this.model.state.settings.batterySaver ? SAVER_FPS : 0;
+  }
+  /** Input of any kind restores the play frame rate at once. */
   private wake = () => {
     this.activeAt = performance.now();
-    if (this.idleFrameRate) this.setIdleFrameRate(0);
+    if (this.idleFrameRate !== this.playFrameRate) this.setIdleFrameRate(this.playFrameRate);
   };
   private setIdleFrameRate(rate: number) {
     this.idleFrameRate = rate;
@@ -5024,10 +5034,16 @@ export class VillageScene extends Phaser.Scene {
    * An idle home village redraws everything each frame, although its clips run at 24-30 fps and
    * nothing else moves. After IDLE_AFTER_MS without input, a battle, a placement or a real change,
    * the loop is capped (lower still under reduced motion, where nothing animates); any input
-   * lifts the cap before the next frame.
+   * lifts the cap before the next frame. The battery saver caps play too, and lowers density.
    */
   private updateIdleRate() {
     const m = this.model;
+    const saver = !!m.state.settings.batterySaver;
+    if (saver !== this.batterySaver) {
+      this.batterySaver = saver;
+      // Resizing mid-step would reallocate the canvas under this frame's draw.
+      setTimeout(() => setMaxDensity(this.game, saver ? SAVER_MAX_DENSITY : Infinity), 0);
+    }
     if (m.structuralRevision !== this.idleRevision) {
       this.idleRevision = m.structuralRevision;
       this.activeAt = performance.now();
@@ -5037,7 +5053,7 @@ export class VillageScene extends Phaser.Scene {
     if (busy) this.activeAt = performance.now();
     const rate =
       performance.now() - this.activeAt < IDLE_AFTER_MS
-        ? 0
+        ? this.playFrameRate
         : m.reducedMotion
           ? IDLE_FPS_REDUCED
           : IDLE_FPS;

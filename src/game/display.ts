@@ -22,6 +22,18 @@ export function displaySize(width: number, height: number, density: number, maxD
   };
 }
 
+const densityCeilings = new WeakMap<Phaser.Game, number>();
+const resizers = new WeakMap<Phaser.Game, () => void>();
+/**
+ * Caps canvas density (battery saver: 2, so a 3× phone draws 4/9 of its native pixels).
+ * `Infinity` restores native density. Applies at once, or when `configureDisplay` runs.
+ */
+export function setMaxDensity(game: Phaser.Game, maxDensity: number) {
+  if ((densityCeilings.get(game) ?? Infinity) === maxDensity) return;
+  densityCeilings.set(game, maxDensity);
+  resizers.get(game)?.();
+}
+
 /** Phaser's NONE scale mode maps DOM input into the physical canvas buffer. */
 export function configureDisplay(game: Phaser.Game) {
   const gl = (game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).gl;
@@ -36,13 +48,15 @@ export function configureDisplay(game: Phaser.Game) {
   const parent = game.canvas.parentElement!;
   const quality = new RenderQuality();
   quality.reset(performance.now());
+  const targetDensity = () =>
+    Math.min(window.devicePixelRatio, densityCeilings.get(game) ?? Infinity);
   const resize = () => {
     const rect = parent.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     const size = displaySize(
       rect.width,
       rect.height,
-      window.devicePixelRatio * quality.scale,
+      targetDensity() * quality.scale,
       maxDimension,
     );
     if (game.scale.width !== size.width || game.scale.height !== size.height)
@@ -81,11 +95,18 @@ export function configureDisplay(game: Phaser.Game) {
       !game.input.pointers.some((pointer) => pointer.isDown);
     // The idle village caps the loop; frames are judged against that pace, not 60 FPS.
     const interval = 1000 / (game.loop.fpsLimit || 60);
-    if (quality.sample(performance.now(), active, density, interval)) resize();
+    if (quality.sample(performance.now(), active, targetDensity(), interval)) resize();
   };
+  // A new ceiling starts adaptive density afresh at full scale.
+  resizers.set(game, () => {
+    quality.scale = 1;
+    quality.reset(performance.now());
+    resize();
+  });
   watchDensity();
   game.events.on('prestep', checkDensity);
   game.events.once('destroy', () => {
+    resizers.delete(game);
     observer.disconnect();
     resolution.removeEventListener('change', watchDensity);
     game.events.off('prestep', checkDensity);
