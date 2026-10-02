@@ -79,7 +79,9 @@ export function configureDisplay(game: Phaser.Game) {
           !scene.load.isLoading() && !(scene as Phaser.Scene & { paused?: boolean }).paused,
       ) &&
       !game.input.pointers.some((pointer) => pointer.isDown);
-    if (quality.sample(performance.now(), active, density)) resize();
+    // The idle village caps the loop; frames are judged against that pace, not 60 FPS.
+    const interval = 1000 / (game.loop.fpsLimit || 60);
+    if (quality.sample(performance.now(), active, density, interval)) resize();
   };
   watchDensity();
   game.events.on('prestep', checkDensity);

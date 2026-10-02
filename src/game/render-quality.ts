@@ -1,7 +1,7 @@
 /** Sustained frame pressure lowers only canvas density; CSS layout and world zoom stay fixed. */
 export class RenderQuality {
   scale = 1;
-  /** The frame interval the loop aims for; an FPS cap (battery saver) lengthens it. */
+  /** The frame interval the loop aims for; a frame cap lengthens it. */
   private interval = 1000 / 60;
   private previous = 0;
   private elapsed = 0;
@@ -16,14 +16,17 @@ export class RenderQuality {
     this.settleUntil = now + 5000;
   }
 
-  /** Judges frames against a new target interval, so a deliberate cap is not read as load. */
-  setFrameInterval(interval: number, now: number) {
-    this.interval = interval;
-    this.reset(now);
-  }
-
-  /** Returns true only when a new backbuffer size is needed. Ignore loading, pauses and gaps. */
-  sample(now: number, enabled: boolean, density: number) {
+  /**
+   * Returns true only when a new backbuffer size is needed. Ignore loading, pauses and gaps.
+   * `interval` is the loop's target frame time: a deliberate cap (the idle village's) restarts
+   * the measurement at its own pace instead of reading as load.
+   */
+  sample(now: number, enabled: boolean, density: number, interval = 1000 / 60) {
+    if (interval !== this.interval) {
+      this.interval = interval;
+      this.reset(now);
+      return false;
+    }
     const delta = now - this.previous;
     this.previous = now;
     if (!enabled || delta <= 0 || delta > 250) {

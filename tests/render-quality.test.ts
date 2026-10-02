@@ -7,9 +7,9 @@ function driver(density = 2) {
   quality.reset(now);
   return {
     quality,
-    run(duration: number, delta: number, enabled = true) {
+    run(duration: number, delta: number, enabled = true, interval?: number) {
       const end = now + duration;
-      while (now < end) quality.sample((now += delta), enabled, density);
+      while (now < end) quality.sample((now += delta), enabled, density, interval);
     },
   };
 }
@@ -49,19 +49,23 @@ describe('adaptive canvas density', () => {
     expect(d.quality.scale).toBe(1);
   });
   it('reads a deliberate frame cap as its pace, not as pressure', () => {
+    const capped = 1000 / 30;
     const d = driver(3);
-    d.quality.setFrameInterval(1000 / 30, 0);
-    d.run(60000, 1000 / 30);
+    // The idle village caps the loop at 30 FPS: a phone left alone keeps native density.
+    d.run(60000, capped, true, capped);
     expect(d.quality.scale).toBe(1);
     // Real overload under the cap still lowers density...
-    d.run(7500, 80);
+    d.run(7500, 80, true, capped);
     expect(d.quality.scale).toBe(0.75);
-    // ...and a steady capped pace restores it.
-    d.run(25000, 1000 / 30);
+    // ...a steady capped pace restores it...
+    d.run(25000, capped, true, capped);
+    expect(d.quality.scale).toBe(1);
+    // ...and lifting the cap restarts the measurement instead of counting the switch.
+    d.run(4000, 1000 / 60);
     expect(d.quality.scale).toBe(1);
     // Without the cap, the same 30 FPS pace counts as pressure.
     const uncapped = driver(3);
-    uncapped.run(7500, 1000 / 30);
+    uncapped.run(7500, capped);
     expect(uncapped.quality.scale).toBe(0.75);
   });
 });
