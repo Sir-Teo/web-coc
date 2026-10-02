@@ -577,6 +577,8 @@ export interface Save {
     battleSpeed?: BattleSpeed;
     /** Full motion although the operating system asks to reduce it (an explicit override). */
     fullMotion?: boolean;
+    /** Battery saver: 30 FPS in play and at most 2× canvas density; absent means off. */
+    batterySaver?: boolean;
   };
   stats: {
     /** Campaign raids completed, whatever their result. */
@@ -935,6 +937,13 @@ export class GameModel {
   get reducedMotion() {
     const s = this.state.settings;
     return s.reducedMotion || (this.systemReducedMotion && !s.fullMotion);
+  }
+  /** The Battery saver switch; off is stored as absent. */
+  toggleBatterySaver() {
+    const s = this.state.settings;
+    if (s.batterySaver) delete s.batterySaver;
+    else s.batterySaver = true;
+    this.changed();
   }
   /** The Reduced motion switch: flips the effective value, overriding the system if needed. */
   toggleReducedMotion() {

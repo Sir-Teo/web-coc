@@ -184,6 +184,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       (k) => typeof s.settings[k as keyof Save['settings']] === 'boolean',
     ) ||
     (s.settings.fullMotion !== undefined && typeof s.settings.fullMotion !== 'boolean') ||
+    (s.settings.batterySaver !== undefined && typeof s.settings.batterySaver !== 'boolean') ||
     (s.settings.battleSpeed !== undefined && !BATTLE_SPEEDS.includes(s.settings.battleSpeed)) ||
     !['raids', 'destroyed', 'collected'].every((k) => finite(s.stats[k as keyof Save['stats']])) ||
     !(['built', 'trained', 'wins'] as const).every(
