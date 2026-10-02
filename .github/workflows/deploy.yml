@@ -55,7 +55,7 @@ jobs:
         run: npm run build
       # Boot, art, save/reload and offline checks against the built bundle, as a release needs.
       - name: Smoke-test the production bundle
-        timeout-minutes: 4
+        timeout-minutes: 6
         run: npm run test:production
         env:
           PRODUCTION_BROWSER: chromium

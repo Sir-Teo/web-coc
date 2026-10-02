@@ -13,7 +13,8 @@ npm run test:production
 
 `check` builds `dist/`. The production runner requires that build, starts its own
 preview on an available loopback port, and stops it on success or failure. It has a
-three-minute process timeout and cannot silently attach to an old preview server.
+five-minute process timeout (its CI steps allow six) and cannot silently attach to an old
+preview server.
 
 The smoke suite covers village boot, collection, required artwork, shop, research,
 replay controls and transfer of save ownership between tabs in Chromium and WebKit.

@@ -76,7 +76,7 @@ jobs:
         run: npm run build
       - name: Verify production bundle
         if: matrix.shard == 1
-        timeout-minutes: 3
+        timeout-minutes: 6
         run: npm run test:production
         env:
           PRODUCTION_BROWSER: ${{ matrix.browser }}

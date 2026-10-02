@@ -19,7 +19,9 @@ try {
     stdio: 'inherit',
     env: { ...process.env, PRODUCTION_BASE_URL: baseURL },
   });
-  const timeout = setTimeout(() => child.kill('SIGTERM'), 180_000);
+  // About 2.2 minutes locally and longer on a CI runner's software renderer, which reached the
+  // last offline step at three minutes once the raid's clock ran in real time.
+  const timeout = setTimeout(() => child.kill('SIGTERM'), 300_000);
   try {
     await new Promise((resolve, reject) => {
       child.once('error', reject);
