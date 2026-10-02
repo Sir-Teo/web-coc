@@ -46,6 +46,7 @@
     "test:imports": "npm run typecheck:tests",
     "test:army:browser": "node scripts/army-load-check.mjs",
     "test:heroes:art": "node scripts/hero-redesign-assets.mjs --check",
+    "app-icons": "node scripts/app-icons.mjs",
     "test:battle:load": "node scripts/battle-load-benchmark.mjs --army=roster --level=half --gl",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
