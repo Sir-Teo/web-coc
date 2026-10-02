@@ -411,3 +411,25 @@
     gap: 8px;
   }
 }
+
+/* The top status chips (26–28 pixels tall) sit 4 pixels apart, so with a finger they grow only
+   up and down, into the brand title and open map: 44 or more. The 20-pixel trophy pill grows
+   the same way; beside it is the level shield, which opens the same Achievements. Insets
+   include the 1-pixel borders. */
+@media (pointer: coarse) {
+  .status-chips button,
+  .trophy-pill {
+    position: relative;
+  }
+  .status-chips button::after,
+  .trophy-pill::after {
+    content: '';
+    position: absolute;
+  }
+  .status-chips button::after {
+    inset: -10px -1px;
+  }
+  .trophy-pill::after {
+    inset: -13px -1px;
+  }
+}

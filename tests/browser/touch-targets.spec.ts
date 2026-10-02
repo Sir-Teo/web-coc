@@ -165,3 +165,27 @@ test('the building card closes with a finger beside its × in landscape', async 
   await page.touchscreen.tap(box.x - 8, box.y + box.height / 2);
   await expect.poll(() => page.evaluate(() => window.__game.model.selected)).toBeNull();
 });
+
+for (const [label, width, height] of [
+  ['portrait', 390, 844],
+  ['landscape', 844, 390],
+] as const)
+  test(`${label}: the top status chips and trophy pill take a finger above and below`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await boot(page);
+    test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
+    for (const [selector, action] of [
+      ['.status-chips [data-action="shop"]', 'shop'],
+      ['.status-chips [data-action="help"]', 'help'],
+      ['.trophy-pill', 'achievements'],
+    ]) {
+      const { center, up, down } = await probes(page, selector, { x: 0, y: 8 });
+      expect(await hits(page, { center, up, down }), selector).toEqual({
+        center: action,
+        up: action,
+        down: action,
+      });
+    }
+  });
