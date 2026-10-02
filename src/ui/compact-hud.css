@@ -334,6 +334,7 @@
 @media (pointer: coarse) {
   .resource-plus::after,
   .close-btn::after,
+  .building-context:not(.wall-context) .context-close::after,
   .toggle::after {
     content: '';
     position: absolute;
@@ -352,6 +353,10 @@
   }
   .drawer-head .close-btn::after {
     left: 0;
+  }
+  /* The building card's borderless × (24×28 in landscape): 44×48 of open card around it. */
+  .building-context:not(.wall-context) .context-close::after {
+    inset: -10px;
   }
   /* 49×27 switches: 53×45, within their own setting row. */
   .toggle::after {

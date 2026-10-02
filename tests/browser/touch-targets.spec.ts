@@ -35,6 +35,7 @@ type Point = { x: number; y: number };
 /** The center and points just outside the drawn box on each side (off-screen sides omitted). */
 async function probes(page: Page, selector: string, reach: { x: number; y: number }) {
   const box = (await page.locator(selector).first().boundingBox())!;
+  const { width } = page.viewportSize()!;
   const cx = box.x + box.width / 2,
     cy = box.y + box.height / 2;
   const sides: Record<string, Point> = {
@@ -45,7 +46,7 @@ async function probes(page: Page, selector: string, reach: { x: number; y: numbe
     down: { x: cx, y: box.y + box.height + reach.y },
   };
   return Object.fromEntries(
-    Object.entries(sides).filter(([, p]) => p.x >= 0 && p.x < 390 && p.y >= 0),
+    Object.entries(sides).filter(([, p]) => p.x >= 0 && p.x < width && p.y >= 0),
   );
 }
 
@@ -144,4 +145,23 @@ test('dialog close buttons and settings switches take presses beside their art',
     down: 'close-drawer',
   });
   expect(left).not.toBe('close-drawer');
+});
+
+test('the building card closes with a finger beside its × in landscape', async ({ page }) => {
+  await page.setViewportSize({ width: 667, height: 375 });
+  await boot(page);
+  test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.selected = m.state.buildings.find((b) => b.kind === 'townhall')!.id;
+    m.changed();
+  });
+  const close = '.building-context [data-action="cancel"]';
+  await expect(page.locator(close)).toBeVisible();
+  const points = await probes(page, close, { x: 8, y: 8 });
+  expect(Object.keys(points)).toEqual(['center', 'left', 'right', 'up', 'down']);
+  expect(await hits(page, points)).toEqual(all(points, 'cancel'));
+  const box = (await page.locator(close).boundingBox())!;
+  await page.touchscreen.tap(box.x - 8, box.y + box.height / 2);
+  await expect.poll(() => page.evaluate(() => window.__game.model.selected)).toBeNull();
 });
