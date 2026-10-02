@@ -579,6 +579,8 @@ export interface Save {
     fullMotion?: boolean;
     /** Battery saver: 30 FPS in play and at most 2× canvas density; absent means off. */
     batterySaver?: boolean;
+    /** Vibration on phones that support it; absent means on. */
+    haptics?: boolean;
   };
   stats: {
     /** Campaign raids completed, whatever their result. */
@@ -937,6 +939,13 @@ export class GameModel {
   get reducedMotion() {
     const s = this.state.settings;
     return s.reducedMotion || (this.systemReducedMotion && !s.fullMotion);
+  }
+  /** The Vibration switch; on is stored as absent. */
+  toggleHaptics() {
+    const s = this.state.settings;
+    if (s.haptics === false) delete s.haptics;
+    else s.haptics = false;
+    this.changed();
   }
   /** The Battery saver switch; off is stored as absent. */
   toggleBatterySaver() {

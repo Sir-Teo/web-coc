@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Haptics } from '../src/ui/haptics';
+import { GameModel } from '../src/game/model';
+import { validateSave } from '../src/game/save';
 
 function recorder(activated = true) {
   const calls: (number | number[])[] = [];
@@ -45,5 +47,19 @@ describe('Haptics', () => {
     const none = new Haptics(null, () => true);
     expect(none.supported).toBe(false);
     expect(none.pulse('deploy', 0)).toBe(false);
+  });
+
+  it('is a saved setting that defaults to on', () => {
+    const m = new GameModel();
+    expect(m.state.settings.haptics).toBeUndefined();
+    m.toggleHaptics();
+    expect(m.state.settings.haptics).toBe(false);
+    const saved = JSON.parse(JSON.stringify(m.state));
+    expect(validateSave(saved)).toBe(true);
+    expect(new GameModel(saved).state.settings.haptics).toBe(false);
+    m.toggleHaptics();
+    expect('haptics' in m.state.settings).toBe(false);
+    saved.settings.haptics = 'off';
+    expect(validateSave(saved)).toBe(false);
   });
 });
