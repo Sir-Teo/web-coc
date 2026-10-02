@@ -1036,13 +1036,20 @@ h3 {
   background: #152419e6;
   pointer-events: auto;
   z-index: 20;
-  padding: 30px;
+  /* Dialogs keep clear of a notch, the Dynamic Island and the home indicator (the page uses
+     viewport-fit=cover, and the installed app draws under the status bar). */
+  --backdrop-pad: 30px;
+  padding: max(var(--backdrop-pad), env(safe-area-inset-top))
+    max(var(--backdrop-pad), env(safe-area-inset-right))
+    max(var(--backdrop-pad), env(safe-area-inset-bottom))
+    max(var(--backdrop-pad), env(safe-area-inset-left));
   animation: backdrop-in 0.18s ease-out;
 }
 .modal {
   width: 820px;
   max-width: 100%;
-  max-height: min(800px, calc(100dvh - 60px));
+  /* The backdrop's padded box: the viewport less its margins and any safe-area insets. */
+  max-height: min(800px, 100%);
   display: flex;
   flex-direction: column;
   background: var(--cream);
@@ -1684,7 +1691,7 @@ h3 {
   position: relative;
   width: 500px;
   max-width: 100%;
-  max-height: calc(100dvh - 32px);
+  max-height: min(calc(100dvh - 32px), 100%);
   overflow: hidden auto;
   text-align: center;
   padding: 40px 35px 30px;
@@ -2254,10 +2261,10 @@ h3 {
     font-size: 9px;
   }
   .modal-backdrop {
-    padding: 12px;
+    --backdrop-pad: 12px;
   }
   .modal {
-    max-height: calc(100dvh - 24px);
+    max-height: 100%;
     border-width: 3px;
     border-bottom-width: 5px;
     border-radius: 14px;
@@ -2600,10 +2607,10 @@ h3 {
     transform-origin: right center;
   }
   .modal-backdrop {
-    padding: 10px;
+    --backdrop-pad: 10px;
   }
   .modal {
-    max-height: calc(100dvh - 20px);
+    max-height: 100%;
   }
   .modal-header {
     padding: 12px 22px;
