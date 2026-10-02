@@ -26,6 +26,8 @@ export class RenderDetail {
   /** Frames per pressure window, and calm frames needed before easing one step. */
   static readonly WINDOW = 60;
   static readonly CALM_FRAMES = 360;
+  /** The loop's target frame time; the millisecond limits above are for 60 FPS. */
+  private interval = 1000 / 60;
   reset() {
     this.level = this.pressure = this.frames = this.slow = this.calm = 0;
   }
@@ -33,15 +35,22 @@ export class RenderDetail {
    * `busyMs`: CPU time of the previous frame (NaN when unknown, e.g. the first frame).
    * `frameMs`: interval since the previous frame; a long one with little CPU work means the GPU
    * is behind, which also counts as slow. Gaps (tab hidden) are ignored.
+   * `interval`: the loop's target frame time. Under a frame cap (battery saver) each frame has
+   * that much more time, so the limits scale with it; a change restarts the current window.
    */
-  sample(busyMs: number, units: number, frameMs = NaN) {
+  sample(busyMs: number, units: number, frameMs = NaN, interval = 1000 / 60) {
     const steps = RenderDetail.UNIT_STEPS;
     const base = units > steps[1] ? 2 : units > steps[0] ? 1 : 0;
+    if (interval !== this.interval) {
+      this.interval = interval;
+      this.frames = this.slow = this.calm = 0;
+    }
+    const pace = this.interval / (1000 / 60);
     if (Number.isFinite(busyMs) && busyMs >= 0) {
       this.frames++;
-      const frameSlow = frameMs > RenderDetail.SLOW_FRAME_MS && frameMs <= 250;
-      if (busyMs > RenderDetail.SLOW_MS || frameSlow) this.slow++;
-      if (busyMs < RenderDetail.CALM_MS && !frameSlow) this.calm++;
+      const frameSlow = frameMs > RenderDetail.SLOW_FRAME_MS * pace && frameMs <= 250;
+      if (busyMs > RenderDetail.SLOW_MS * pace || frameSlow) this.slow++;
+      if (busyMs < RenderDetail.CALM_MS * pace && !frameSlow) this.calm++;
       else this.calm = 0;
       if (this.frames >= RenderDetail.WINDOW) {
         if (this.slow * 2 > this.frames) {

@@ -53,4 +53,18 @@ describe('RenderDetail', () => {
     for (let i = 0; i < 1000; i++) d.sample(1, RenderDetail.UNIT_STEPS[1] + 1);
     expect(d.level).toBe(2);
   });
+  it('judges frames under a 30 FPS cap against that pace', () => {
+    const capped = 1000 / 30;
+    const d = new RenderDetail();
+    // Two simulation ticks and a 33 ms interval per frame: steady, not slow.
+    for (let i = 0; i < RenderDetail.WINDOW * 5; i++) d.sample(14, 50, capped, capped);
+    expect(d.level).toBe(0);
+    // A real miss under the cap still raises pressure.
+    for (let i = 0; i < RenderDetail.WINDOW; i++) d.sample(14, 50, 70, capped);
+    expect(d.level).toBe(1);
+    // Uncapped, the same frames count as slow.
+    const uncapped = new RenderDetail();
+    for (let i = 0; i < RenderDetail.WINDOW; i++) uncapped.sample(14, 50, capped);
+    expect(uncapped.level).toBe(1);
+  });
 });

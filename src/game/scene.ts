@@ -5053,6 +5053,7 @@ export class VillageScene extends Phaser.Scene {
       this.lastBusyMs,
       this.model.battle && !this.model.battle.finished ? this.model.battle.units.length : 0,
       delta,
+      1000 / (this.game.loop.fpsLimit || 60),
     );
     const dt = Math.min(delta / 1000, 0.1);
     if (this.down && this.model.battle) this.stepHoldDeploy(performance.now());
