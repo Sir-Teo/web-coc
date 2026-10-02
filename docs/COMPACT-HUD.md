@@ -22,7 +22,7 @@ With a coarse pointer and a view taller than 700 pixels, Settings and the three 
 - Dialog close buttons: 45×47. A drawer's close button does not reach left over its scrolling tabs.
 - Settings switches: 53×45, within their own setting row.
 
-Mouse layouts are unchanged. `tests/browser/touch-targets.spec.ts` hit-tests points just outside each drawn control. It checks that neighbouring "+" buttons do not overlap, and taps beside the art with a real touch. Without the rules, both cases fail. The dense touch case above still passes with the larger areas. Army tile buttons (25–32 pixels tall in a dense grid) and 30-pixel shop tabs remain below 44 pixels and are left for a later pass.
+Mouse layouts are unchanged. `tests/browser/touch-targets.spec.ts` hit-tests points just outside each drawn control. It checks that neighbouring "+" buttons do not overlap, and taps beside the art with a real touch. Without the rules, both cases fail. The dense touch case above still passes with the larger areas. Unlocked army tiles stretch taller than their content (287 against 248 pixels at 390×844). On tall touch views, Add and Brew grow to 40 pixels into that room, ×5, Fill, Remove and All grow to 36, and Remove and All sit 8 pixels apart. Locked tiles keep their size: they are already the tallest, and their controls are disabled. The army strip therefore scrolls no further than before (338 pixels of content in a 306-pixel strip, before and after). `tests/browser/army-touch.spec.ts` checks the sizes on every unlocked tile of a developed village, and checks that no tile's content spills out of its box. It also trains a troop with a tap and confirms mouse layouts keep the compact tiles. The 30-pixel shop tabs remain below 44 pixels.
 
 ## Verification
 
