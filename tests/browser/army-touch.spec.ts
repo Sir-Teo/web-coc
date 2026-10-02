@@ -78,3 +78,23 @@ test('a mouse keeps the compact army tiles', async ({ page }) => {
   expect(heights['train-five']).toBeLessThan(30);
   expect(heights['remove-troop']).toBeLessThan(30);
 });
+
+test.describe('shorter touch screens', () => {
+  test.use({ isMobile: true, hasTouch: true });
+  for (const [width, height, size] of [
+    [844, 390, 31],
+    [667, 375, 31],
+    [375, 667, 33],
+  ])
+    test(`army tile rows grow to ${size} pixels where ${width}×${height} has room`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await openArmy(page);
+      test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
+      const { heights, spilled } = await measure(page);
+      for (const kind of ['train-five', 'train-fill', 'remove-troop', 'remove-all-troop'])
+        expect(heights[kind], kind).toBeGreaterThanOrEqual(size);
+      expect(spilled).toEqual([]);
+    });
+});

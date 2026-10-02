@@ -390,3 +390,24 @@
     min-height: 44px;
   }
 }
+
+/* Shorter touch screens have less room in an army tile (measured with a developed village:
+   13–64 spare pixels in landscape from 375 pixels high, 18 on a 375×667 portrait phone, none
+   below), so the 25–27 pixel bulk and remove rows grow only by what fits. */
+@media (pointer: coarse) and (orientation: landscape) and (min-height: 370px) and (max-height: 700px) {
+  .army-tile:not(.army-locked) > .shop-buy.tiny,
+  .army-tile:not(.army-locked) .army-bulk > :is(.shop-buy.tiny, .army-remove) {
+    min-height: 31px;
+  }
+}
+@media (pointer: coarse) and (orientation: portrait) and (min-height: 660px) and (max-height: 700px) {
+  .army-tile:not(.army-locked) > .shop-buy.tiny,
+  .army-tile:not(.army-locked) .army-bulk > :is(.shop-buy.tiny, .army-remove) {
+    min-height: 33px;
+  }
+}
+@media (pointer: coarse) and (min-height: 370px) and (max-height: 700px) {
+  .army-tile:not(.army-locked) .army-bulk:has(> .army-remove) {
+    gap: 8px;
+  }
+}
