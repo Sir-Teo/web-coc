@@ -94,6 +94,14 @@ window of mostly slow frames and eases only after a long calm. The simulation ne
 `RenderQuality` (canvas density) is unchanged and still lowers the backbuffer resolution under
 sustained pressure.
 
+Both governors judge frames against the loop's target interval, read from Phaser's FPS
+limit. Their limits (24 ms missed frames, 22 and 11 ms of frame work, and `RenderQuality`'s
+18 ms fast average) are for 60 FPS. Under a 30 FPS cap, from the idle village or the battery
+saver, they double. Before this, every capped frame counted as slow. A phone left idle for
+about half a minute fell to one pixel per CSS pixel and never recovered while the cap held.
+A capped battle would also have dropped to minimal detail. A change of cap restarts the
+current measurement window.
+
 ### Simulation, identical results
 
 - Target choice is one pass over the known buildings with three "nearest" trackers instead
@@ -175,6 +183,7 @@ profile of the frame) after the two rounds above:
   five seconds without input, a battle, a placement, an open dialog or a structural change,
   `VillageScene.updateIdleRate` caps the loop at 30 fps (15 under reduced motion, where nothing
   animates); the home clips run at 24–30 fps, and any input lifts the cap before the next frame.
+  With the battery saver on, input lowers the cap to 30 FPS instead of lifting it.
 - **Home screen.** Collector ticks bump the model revision every second, so the timed autosave
   ran a full `JSON.stringify` plus a localStorage and an IndexedDB write every five seconds
   while nothing structural had changed. The building card read `offsetWidth`/`offsetHeight`

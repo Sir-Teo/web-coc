@@ -6,6 +6,10 @@ The village now renders into the screen's available physical pixels. Previously 
 
 The buffer has a 16-million-pixel budget, equivalent to 64 MB of RGBA color pixels before depth/stencil, antialiasing and driver allocations. Each side is also bounded by 8192 and the GPU's reported texture, renderbuffer and viewport limits. Very large displays therefore render at a lower effective density. Integer buffer dimensions are rounded down, with separate horizontal/vertical camera scales preventing fractional-density rounding from stretching the world. This is a bounded allocation policy, not a claim about total GPU memory consumption.
 
+## Battery saver
+
+Settings → Battery saver (`settings.batterySaver`, absent means off) caps canvas density at 2× and play at 30 FPS. A 3× phone then draws 4/9 of its native pixels per frame, and half as many frames. `VillageScene.updateIdleRate` applies both. The frame cap goes through the same Phaser limit as the idle cap, and idle still drops to 30 or 15 FPS. `setMaxDensity` in `display.ts` sets the density ceiling outside the game step, then restarts adaptive density at full scale under the new ceiling. Turning the saver off restores native density and uncapped play at once. The setting never enters simulation or replays. `tests/browser/battery-saver.spec.ts` checks the switch, the 2× buffer at 3×, the cap during a raid, and the restore. `tests/battery-saver.test.ts` checks the save field. Battery and heat savings on physical phones have not been measured.
+
 ## Coordinates and resizing
 
 The camera operates in physical buffer coordinates. `viewZoom`, `baseZoom` and `setZoom` use CSS pixels per world pixel, preserving the existing view at every density. Phaser converts canvas input into buffer coordinates. DOM shop drags use the same conversion explicitly; `screenFor` returns DOM coordinates for context cards and browser pointer actions. Pan movement divides by each camera axis's zoom. Tap tolerances and pinch distances use CSS pixels, so a small finger wobble does not become a drag on a dense screen. Resource flights use the same physical-to-CSS mapping when leaving a producer for its HUD counter.
