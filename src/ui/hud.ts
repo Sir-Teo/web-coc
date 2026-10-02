@@ -60,7 +60,13 @@ import {
   spellFactory,
   troopFacility,
 } from '../game/army-unlocks';
-import { exportReplayFile, parseReplayFile, MAX_REPLAY_FILE_BYTES } from '../game/replay-file';
+import {
+  parseReplayFile,
+  replayFileText,
+  MAX_REPLAY_FILE_BYTES,
+  REPLAY_FILE_NAME,
+} from '../game/replay-file';
+import { deliverFile } from './share-file';
 import { compatibleReplayVersion } from '../game/replay';
 import { heroNextRequirement, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
 import {
@@ -185,7 +191,8 @@ const SPELL_TOWER_LABEL: Record<SpellTowerMode, string> = {
 import { VillageScene } from '../game/scene';
 import { AudioManager } from '../game/audio';
 import {
-  exportSave,
+  saveFileName,
+  saveFileText,
   forgetReplacedVillage,
   keepReplacedVillage,
   replacedVillage,
@@ -1502,7 +1509,7 @@ export class HUD {
       case 'replay-export': {
         try {
           const data = m.replayRecording(arg ? Number(arg) : undefined);
-          if (data) exportReplayFile(data);
+          if (data) void deliverFile(replayFileText(data), REPLAY_FILE_NAME, 'Crown & Clan replay');
           else this.toast('This recording is no longer available.');
         } catch (error) {
           this.toast(error instanceof Error ? error.message : 'Could not export this replay.');
@@ -1760,13 +1767,20 @@ export class HUD {
         break;
       case 'export':
       case 'export-village': {
-        const file = exportSave(m.state, verb === 'export');
-        this.toast(
-          verb === 'export-village'
-            ? 'Your village backup has been exported without recordings.'
-            : file.droppedRecordings
-              ? `Your village backup has been exported. ${file.droppedRecordings} oldest recording${file.droppedRecordings === 1 ? ' was' : 's were'} left out to fit the file limit.`
-              : 'Your village backup has been exported.',
+        const recordings = verb === 'export';
+        const file = saveFileText(m.state, recordings);
+        // A share sheet the player closed exported nothing, so it gets no confirmation.
+        void deliverFile(file.text, saveFileName(recordings), 'Crown & Clan village').then(
+          (delivery) => {
+            if (delivery === 'cancelled') return;
+            this.toast(
+              !recordings
+                ? 'Your village backup has been exported without recordings.'
+                : file.droppedRecordings
+                  ? `Your village backup has been exported. ${file.droppedRecordings} oldest recording${file.droppedRecordings === 1 ? ' was' : 's were'} left out to fit the file limit.`
+                  : 'Your village backup has been exported.',
+            );
+          },
         );
         break;
       }

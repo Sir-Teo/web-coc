@@ -795,16 +795,8 @@ export function forgetReplacedVillage() {
     /* Nothing to forget. */
   }
 }
-export function exportSave(state: Save, recordings = true) {
-  const file = saveFileText(state, recordings);
-  const url = URL.createObjectURL(new Blob([file.text], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = recordings ? 'crown-and-clan-village.json' : 'crown-and-clan-village-only.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return file;
-}
+export const saveFileName = (recordings: boolean) =>
+  recordings ? 'crown-and-clan-village.json' : 'crown-and-clan-village-only.json';
 export function freshSave() {
   return initialSave();
 }

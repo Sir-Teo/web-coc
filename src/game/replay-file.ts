@@ -161,14 +161,11 @@ export function parseReplayFile(text: string): ReplayData {
     throw Error('Choose a Crown & Clan replay file, not a village backup.');
   return makeReplayFile(file.replay).replay;
 }
-export function exportReplayFile(data: ReplayData) {
+export const REPLAY_FILE_NAME = 'crown-and-clan.crown-replay.json';
+/** The shareable file for a recording; throws when it is over the import limit. */
+export function replayFileText(data: ReplayData) {
   const text = JSON.stringify(makeReplayFile(data));
   if (new TextEncoder().encode(text).length > MAX_REPLAY_FILE_BYTES)
     throw Error('This recording is too large to share.');
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'crown-and-clan.crown-replay.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return text;
 }
