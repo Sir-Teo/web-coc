@@ -35,3 +35,21 @@ October 2, 2026. Phones dim and lock the screen after their idle timeout, which 
 `src/ui/screen-awake.ts` wraps the [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API). The one-second economy timer in `src/main.ts` asks it to keep the screen on while a raid is live or a replay is playing. The Goblin raid plays as a replay. The lock is released in the village, on a finished raid's results, and while a replay is paused or complete. Browsers drop the lock when the page is hidden, so it is requested again when the page returns. If a lock arrives after the raid has ended, it is released immediately. A browser without the API, or one that refuses the request (battery saver, a permissions policy), keeps the device's usual timeout. The lock never enters saves, simulation or replays.
 
 `tests/screen-awake.test.ts` covers holding and releasing, repeated requests, re-requesting after the page is hidden, late grants, refusals and a missing API. `tests/browser/screen-awake.spec.ts` replaces the browser's wake lock with a recorder, because headless browsers refuse real locks. It checks that the village requests nothing, a raid holds one lock across timer ticks, a finished raid releases it, and a replay holds it only while playing. The spec fails without the timer wiring. Whether a phone actually stays on still needs checking on physical devices.
+
+## Pan momentum on touch screens
+
+October 2, 2026. The camera used to stop the instant a finger lifted, even after a quick swipe. Phones scroll with momentum, so it felt abrupt.
+
+`src/game/pan-fling.ts` measures the finger's speed over the last 100 ms of a one-finger pan. On release the camera keeps moving and slows exponentially, with a 325 ms time constant. A release at speed v travels about v × 325 ms. A finger that rested for 50 ms before lifting, a release slower than 0.25 CSS pixels per ms, and a tap produce no glide. Speed is capped at 4 pixels per ms. The decay is integrated exactly, so a glide covers the same distance at 30, 60 or 120 FPS.
+
+`VillageScene` stops the glide in these cases:
+
+- A finger touches the map. A pinch's second finger clears the pan's samples, so pinches end without momentum.
+- Anything else moves the camera: the zoom buttons, recenter, or focusing a building.
+- A dialog blocks the map.
+- The canvas resizes.
+- Reduced motion is on.
+
+The glide runs on wall-clock time, like the finger it continues: on slow or throttled frames, Phaser substitutes and caps frame deltas. Mouse dragging has no momentum, so desktop panning is unchanged. The camera never enters saves, simulation or replays.
+
+`tests/pan-fling.test.ts` covers the glide distance and stop, frame-rate independence, slow and resting releases, the end-of-drag window, the speed cap and direction. `tests/browser/pan-fling.spec.ts` dispatches `TouchEvent`s inside the page, because scripted input from outside the page arrives one slow software-rendered frame apart. It checks that a quick swipe glides and settles, and that a resting finger, a tap, a pinch and the zoom buttons each stop the glide. A reduced-motion case checks there is no momentum. Removing the stop on a new press makes it fail. The spec constructs `Touch` objects and runs these cases in Chromium only.

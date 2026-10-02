@@ -140,7 +140,7 @@ test('a quick touch pan glides on, and a resting finger, a tap or a pinch stop i
   page,
   browserName,
 }) => {
-  test.skip(browserName !== 'chromium', 'Constructing Touch objects requires Chromium.');
+  test.skip(browserName !== 'chromium', 'The spec constructs Touch objects in Chromium only.');
   await boot(page);
 
   // A quick leftward swipe: the camera keeps moving right after the finger lifts.
@@ -201,7 +201,7 @@ test('a quick touch pan glides on, and a resting finger, a tap or a pinch stop i
 });
 
 test('reduced motion pans without momentum', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Constructing Touch objects requires Chromium.');
+  test.skip(browserName !== 'chromium', 'The spec constructs Touch objects in Chromium only.');
   await boot(page);
   await page.evaluate(() => {
     const m = window.__game.model;
