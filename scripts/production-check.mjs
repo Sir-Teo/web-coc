@@ -123,7 +123,12 @@ for (const [name, engine] of Object.entries(engines)) {
     });
     page.on('response', (response) => {
       if (response.status() >= 400) errors.push(`HTTP ${response.status()}: ${response.url()}`);
-      if (response.ok()) requiredArt.delete(new URL(response.url()).pathname);
+      if (response.ok()) {
+        const path = new URL(response.url()).pathname;
+        requiredArt.delete(path);
+        // The production build ships converted PNGs as WebP (scripts/webp-dist.mjs).
+        if (path.endsWith('.webp')) requiredArt.delete(path.slice(0, -5) + '.png');
+      }
     });
   };
   observe(page);
@@ -230,6 +235,21 @@ for (const [name, engine] of Object.entries(engines)) {
   if (JSON.stringify(afterReplay) !== JSON.stringify(home))
     throw Error('Replay changed the production village.');
   await page.setViewportSize({ width: 1440, height: 960 });
+  // Production loads each defense family the first time something draws it (ART_FAMILIES in
+  // scene.ts), so this session never asks for the families its starter village and practice raid
+  // do not draw. They must still be deployed: fetch whatever the session did not, accepting the
+  // WebP that ships in place of a converted PNG. The host answers an unknown path with the page
+  // itself (200, text/html), so only an image or audio response counts.
+  for (const path of [...requiredArt]) {
+    const shipped = path.endsWith('.png') ? [path.slice(0, -4) + '.webp', path] : [path];
+    for (const candidate of shipped) {
+      const response = await page.request.get(baseURL + candidate);
+      if (response.ok() && /^(image|audio)\//.test(response.headers()['content-type'] ?? '')) {
+        requiredArt.delete(path);
+        break;
+      }
+    }
+  }
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
   report[name] = {
     displayDensity: 2,

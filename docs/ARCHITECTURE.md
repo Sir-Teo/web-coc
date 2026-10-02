@@ -58,9 +58,9 @@ their presentations draw nothing until the graph is in, leaving the fallback spr
 production build fails when the precached startup shell outgrows its budget
 (`STARTUP_BUDGET` in `scripts/build-sw.mjs`).
 
-The boot preload only carries what the home village draws. The rarely seen Santa,
-X-Bow and Cannon pages load in one batch once the village appears. Each defense
-family the village does not own (`ART_FAMILIES` in `scene.ts`) loads the first time
+The boot preload only carries what the home village draws. The rarely seen Cannon
+pages load in one batch once the village appears. Each defense family the village
+does not own (`ART_FAMILIES` in `scene.ts`, the X-Bow and Santa among them) loads the first time
 the home village, a battle or a placement draws it; a battle that needs one holds
 its clock and input until it lands, as it does for late campaign art. The dev
 server loads every family right after boot instead (the browser specs rely on it);

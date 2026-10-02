@@ -21,6 +21,13 @@ Chromium also checks offline reload and cached gameplay flows. Console errors,
 failed HTTP responses and missing required assets fail the check. The report is
 `output/playtest/production-report.json`.
 
+Production loads each defense family the first time something draws it, and ships
+converted PNGs as WebP. So the required-art list counts a WebP response as its PNG.
+At the end of the session, the check fetches any listed file that the session did
+not draw. The host answers an unknown path with the page itself (200, `text/html`),
+so only an image or audio response counts as deployed. Deleting a deployed file
+from `dist` fails the check.
+
 Run relevant gameplay specs for the feature being released. The on-demand
 `browser-regression.yml` workflow shards the broader Chromium/WebKit suite and
 runs additional asset and production checks. Passing smoke tests alone does not
