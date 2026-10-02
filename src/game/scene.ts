@@ -135,6 +135,7 @@ import { configureQuadRendering } from './quad-renderer';
 import { holdFilterContexts } from './native-group-color';
 import { useFastDepthSort, useFastVisibleChildren } from './display-sort';
 import { setMaxDensity } from './display';
+import { PanFling } from './pan-fling';
 import { RenderDetail } from './render-detail';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
@@ -390,6 +391,13 @@ export class VillageScene extends Phaser.Scene {
   private dragged = false;
   /** Which role the current pointer gesture has committed to. */
   private gesture: 'none' | 'pan' | 'deploy' | 'drag-building' | 'drag-wall' = 'none';
+  /**
+   * Momentum after a touch pan, the camera it last left (other moves end the glide) and when.
+   * The glide runs on wall-clock time like the finger it continues: Phaser substitutes and caps
+   * frame deltas on slow or throttled frames.
+   */
+  private fling = new PanFling();
+  private flingCamera?: { x: number; y: number; zoom: number; t: number };
   private lastDeploy = { x: -99, y: -99 };
   private lastTap = { x: -99, y: -99, t: 0 };
   /** Press-and-hold deployment: when the next troop of the held stream drops. */
@@ -774,6 +782,7 @@ export class VillageScene extends Phaser.Scene {
     this.resetCamera();
     const onResize = () => {
       this.resourceFlights.clear();
+      this.fling.stop();
       this.resizeCamera();
     };
     this.scale.on('resize', onResize);
@@ -790,6 +799,9 @@ export class VillageScene extends Phaser.Scene {
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     const onPointerDown = (p: Phaser.Input.Pointer) => {
+      // A finger on the map catches a gliding camera; a second one makes the gesture a pinch,
+      // which clears the pan's samples so it ends without momentum.
+      this.fling.stop();
       if (this.uiBlocked) return;
       // Pointer input takes over from the keyboard map cursor.
       if (this.keyCursor) this.toggleKeyCursor(false);
@@ -865,6 +877,12 @@ export class VillageScene extends Phaser.Scene {
           this.cameras.main.scrollX = this.down.cx - dx / this.cameras.main.zoomX;
           this.cameras.main.scrollY = this.down.cy - dy / this.cameras.main.zoomY;
           this.clampCamera();
+          if (p.wasTouch)
+            this.fling.track(
+              p.x / this.scale.displayScale.x,
+              p.y / this.scale.displayScale.y,
+              performance.now(),
+            );
         } else if (this.gesture === 'deploy') this.dragDeploy(p);
         else if (this.gesture === 'drag-building') this.dragBuilding(p);
         else if (this.gesture === 'drag-wall' && this.wallDragOffset) {
@@ -884,6 +902,23 @@ export class VillageScene extends Phaser.Scene {
       this.gesture = 'none';
       const down = this.down;
       this.down = undefined;
+      // A touch pan glides on as phones scroll; a pinch, a cancel or reduced motion stops dead.
+      if (
+        gesture === 'pan' &&
+        p.wasTouch &&
+        !this.uiBlocked &&
+        !this.model.reducedMotion &&
+        !p.event.type.includes('cancel') &&
+        this.fling.release(performance.now())
+      ) {
+        const camera = this.cameras.main;
+        this.flingCamera = {
+          x: camera.scrollX,
+          y: camera.scrollY,
+          zoom: camera.zoomX,
+          t: performance.now(),
+        };
+      } else this.fling.stop();
       this.model.endDrag(
         this.uiBlocked ||
           !down ||
@@ -904,6 +939,7 @@ export class VillageScene extends Phaser.Scene {
     // Phaser sends DOM releases through a separate event. A control can move
     // under a held pointer when a drawer opens or rerenders.
     const cancelGesture = () => {
+      this.fling.stop();
       this.model.endDrag(true);
       this.down = undefined;
       this.gesture = 'none';
@@ -5061,6 +5097,30 @@ export class VillageScene extends Phaser.Scene {
     if (rate !== this.idleFrameRate) setTimeout(() => this.setIdleFrameRate(rate), 0);
     this.idleFrameRate = rate;
   }
+  /** Moves the camera along a touch pan's glide; anything else moving it ends the glide. */
+  private stepFling() {
+    const camera = this.cameras.main;
+    const at = this.flingCamera;
+    if (
+      this.uiBlocked ||
+      this.model.reducedMotion ||
+      !at ||
+      camera.scrollX !== at.x ||
+      camera.scrollY !== at.y ||
+      camera.zoomX !== at.zoom
+    ) {
+      this.fling.stop();
+      return;
+    }
+    const now = performance.now();
+    const moved = this.fling.step(now - at.t);
+    camera.scrollX -= (moved.x * this.scale.displayScale.x) / camera.zoomX;
+    camera.scrollY -= (moved.y * this.scale.displayScale.y) / camera.zoomY;
+    this.clampCamera();
+    // Against the map's edge in both directions there is nothing left to glide.
+    if (camera.scrollX === at.x && camera.scrollY === at.y) this.fling.stop();
+    this.flingCamera = { x: camera.scrollX, y: camera.scrollY, zoom: camera.zoomX, t: now };
+  }
   update(time: number, delta: number) {
     if (this.paused) return;
     this.updateIdleRate();
@@ -5088,6 +5148,7 @@ export class VillageScene extends Phaser.Scene {
         this.clampCamera();
       }
     }
+    if (this.fling.active) this.stepFling();
     // A battle waiting for late campaign or deferred art keeps its clock, replay and deployments
     // on hold.
     // A live attack at 2× or 4× runs more fixed steps per frame; recordings see the same steps.
