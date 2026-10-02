@@ -376,3 +376,12 @@
     gap: 8px;
   }
 }
+
+/* The Shop's category tabs were 30 pixels tall on phones. The sheet sizes to its content
+   (274 pixels at 390×844, under its 380 cap), so on tall touch views the tabs take a 44-pixel
+   finger and the drawer grows by 14 pixels; the tile strip keeps its height. */
+@media (pointer: coarse) and (min-height: 701px) {
+  .drawer-head .shop-tabs .tab {
+    min-height: 44px;
+  }
+}

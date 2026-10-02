@@ -119,6 +119,18 @@ test('dialog close buttons and settings switches take presses beside their art',
   await page.locator('.shop-btn').tap();
   const drawerClose = '.drawer-head [data-action="close-drawer"]';
   await expect(page.locator(drawerClose)).toBeVisible();
+  // Its category tabs take a finger too, and the building tiles keep their room.
+  const shop = await page.evaluate(() => {
+    const tabs = [...document.querySelectorAll('.drawer-head .shop-tabs .tab')];
+    const strip = document.querySelector('.shop-strip')!.getBoundingClientRect();
+    const tile = document.querySelector('.shop-tile')!.getBoundingClientRect();
+    return {
+      shortestTab: Math.min(...tabs.map((t) => t.getBoundingClientRect().height)),
+      tileInside: tile.top >= strip.top && tile.bottom <= strip.bottom,
+    };
+  });
+  expect(shop.shortestTab).toBeGreaterThanOrEqual(44);
+  expect(shop.tileInside).toBe(true);
   const { left, ...rest } = await hits(page, await probes(page, drawerClose, { x: 4, y: 4 }));
   expect(rest).toEqual({
     center: 'close-drawer',
