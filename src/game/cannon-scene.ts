@@ -26,8 +26,11 @@ import {
  * a level's own pages load when a Cannon of that level first draws.
  */
 export function preloadCannons(scene: Phaser.Scene, levels: Iterable<number> = []) {
-  NativeLevelPages.preload(scene, CANNON_GRAPH, 'cannon', levels);
-  for (const level of CANNON_ART_LEVELS) scene.load.image(cannonTexture(level), cannonAsset(level));
+  const wanted = [...levels];
+  NativeLevelPages.preload(scene, CANNON_GRAPH, 'cannon', wanted);
+  // Fallback sprites of other levels load when a Cannon of them first draws (see the scene).
+  for (const level of CANNON_ART_LEVELS)
+    if (wanted.includes(level)) scene.load.image(cannonTexture(level), cannonAsset(level));
   for (const [path, sound] of Object.entries(CANNON_SOUNDS))
     scene.load.binary(cannonSample(path), '/' + sound.path);
 }

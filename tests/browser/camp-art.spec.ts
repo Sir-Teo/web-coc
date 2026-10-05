@@ -13,7 +13,7 @@ test('eight open fire-pit levels retain their ground anchors, materials and four
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  const appearances = await page.evaluate(() => {
+  const appearances = await page.evaluate(async () => {
     const { model: m, scene } = window.__game;
     const template = m.state.buildings.find((b) => b.kind === 'camp');
     m.state.buildings = Array.from({ length: 8 }, (_, i) => ({
@@ -23,6 +23,8 @@ test('eight open fire-pit levels retain their ground anchors, materials and four
       x: 8 + (i % 4) * 5 + Math.floor(i / 4) * 5,
       y: 23 - (i % 4) * 5 + Math.floor(i / 4) * 5,
     }));
+    // Levels the starter village does not own load on demand.
+    await scene.prefetchDeferredArt(m.state.buildings);
     m.state.nextId = 9008;
     m.state.obstacles = [];
     for (const k of Object.keys(m.state.army)) m.state.army[k] = 0;
@@ -194,13 +196,14 @@ test('troops gather on open camp tiles, avoid the fire and reroute around a new 
 test('destroyed wooden and standing-rock camps retain their ground position and level-sized ruins', async ({
   page,
 }) => {
-  const snapshots = await page.evaluate(() => {
+  const snapshots = await page.evaluate(async () => {
     const { model: m, scene } = window.__game;
     const template = m.state.buildings.find((b) => b.kind === 'camp');
     m.state.buildings = [
       { ...template, id: 9100, x: 10, y: 10, level: 2 },
       { ...template, id: 9101, x: 15, y: 10, level: 8 },
     ];
+    await scene.prefetchDeferredArt(m.state.buildings);
     m.state.obstacles = [];
     for (const k of Object.keys(m.state.army)) m.state.army[k] = 0;
     m.state.army.swordsman = 1;
