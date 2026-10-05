@@ -1,4 +1,5 @@
 import { stepDefendingHeroes } from './defending-heroes';
+import { chiefProgress, completionXp, finishTimerNow } from './experience';
 import { ladderOpponent, ladderTrophies, type LadderMatch } from './ladder';
 import {
   JOURNEY_ALL_OWNED_STARRY,
@@ -1406,13 +1407,25 @@ export class GameModel {
     this.state.claimedQuests ??= [];
     this.state.claimedQuests.push(id);
     this.state.gems += quest.reward;
-    this.state.xp += 20;
     this.notify(`${quest.title} complete! +${quest.reward} gems`);
+    this.gainXp(20);
     this.changed();
     return true;
   }
   get chiefLevel() {
-    return Math.max(1, Math.floor(this.state.xp / 100));
+    return chiefProgress(this.state.xp).level;
+  }
+  /** The chief level and how far its XP bar has filled, on the client's experience curve. */
+  get chiefProgress() {
+    return chiefProgress(this.state.xp);
+  }
+  /** Add experience, announcing each chief level it crosses. */
+  private gainXp(amount: number) {
+    if (!(amount > 0)) return;
+    const before = this.chiefLevel;
+    this.state.xp += amount;
+    const after = this.chiefLevel;
+    if (after > before) this.notify(`Chief level ${after}!`);
   }
 
   get builders() {
@@ -1501,6 +1514,7 @@ export class GameModel {
         ? Math.max(0, Math.min(productionInterval, (now - b.upgradeEnd) / 1000))
         : productionInterval;
       if (b.upgradeEnd && b.upgradeEnd <= now) {
+        const xp = completionXp(b.upgradeStart, b.upgradeEnd);
         if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;
         else if (b.improving === 'gearup') b.geared = true;
         else if (b.improving === 'supercharge') b.supercharge = (b.supercharge ?? 0) + 1;
@@ -1519,7 +1533,8 @@ export class GameModel {
         b.maxHp = buildingMaxHp(b);
         b.hp = b.maxHp;
         structural = true;
-        this.notify(`${BUILDINGS[b.kind].name} is ready!`);
+        this.notify(`${BUILDINGS[b.kind].name} is ready!${xp ? ` +${xp} XP` : ''}`);
+        this.gainXp(xp);
         this.onEffect({
           type: 'upgrade',
           x: b.x + BUILDINGS[b.kind].size / 2,
@@ -1543,9 +1558,9 @@ export class GameModel {
       const gems = OBSTACLE_GEMS[this.state.obstacleGemIndex ?? 0];
       this.state.obstacleGemIndex = ((this.state.obstacleGemIndex ?? 0) + 1) % OBSTACLE_GEMS.length;
       this.state.gems += gems;
-      this.state.xp += 3;
       structural = changed = true;
       this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
+      this.gainXp(3);
       if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1 });
     }
     if (this.heroHall && !this.state.king) {
@@ -1554,11 +1569,15 @@ export class GameModel {
       this.notify('The Barbarian King has joined your village!');
     }
     if (this.state.king?.upgradeEnd && this.state.king.upgradeEnd <= now) {
+      const xp = completionXp(this.state.king.upgradeStart, this.state.king.upgradeEnd);
       this.state.king.level++;
       delete this.state.king.upgradeEnd;
       delete this.state.king.upgradeStart;
       structural = changed = true;
-      this.notify(`Barbarian King reached level ${this.state.king.level}!`);
+      this.notify(
+        `Barbarian King reached level ${this.state.king.level}!${xp ? ` +${xp} XP` : ''}`,
+      );
+      this.gainXp(xp);
     }
     if (this.advanceHeroRoster(now)) structural = changed = true;
     const quest = this.state.journey?.quest;
@@ -1604,7 +1623,6 @@ export class GameModel {
         name = TROOPS[kind].name;
       }
       delete this.state.research;
-      this.state.xp += 30;
       this.notify(`${name} upgraded to level ${level}!`);
       structural = true;
       changed = true;
@@ -2156,7 +2174,7 @@ export class GameModel {
     const cost = this.finishCost(b);
     if (this.state.gems < cost) return this.notify('Not enough gems.');
     this.state.gems -= cost;
-    b.upgradeEnd = this.clock;
+    finishTimerNow(b, this.clock);
     this.tick(this.clock);
     this.changed();
   }
@@ -3047,7 +3065,7 @@ export class GameModel {
     const progress = this.heroProgress(kind);
     if (this.battle || !books || !progress?.upgradeEnd) return false;
     this.state.magicItems!['book-of-heroes'] = books - 1;
-    progress.upgradeEnd = this.clock;
+    finishTimerNow(progress, this.clock);
     this.tick(this.clock);
     this.notify(`Book of Heroes used: ${HERO_SOURCE[kind]} upgrade finished.`);
     this.changed();
@@ -3130,10 +3148,12 @@ export class GameModel {
       HeroRosterProgress,
     ][]) {
       if (!hero.upgradeEnd || hero.upgradeEnd > now) continue;
+      const xp = completionXp(hero.upgradeStart, hero.upgradeEnd);
       hero.level++;
       delete hero.upgradeEnd;
       delete hero.upgradeStart;
-      this.notify(`${HERO_SOURCE[kind]} reached level ${hero.level}!`);
+      this.notify(`${HERO_SOURCE[kind]} reached level ${hero.level}!${xp ? ` +${xp} XP` : ''}`);
+      this.gainXp(xp);
       changed = true;
     }
     const house = this.petHouse?.level ?? 0;
@@ -3195,7 +3215,7 @@ export class GameModel {
       return false;
     }
     this.state.gems -= cost;
-    hero.upgradeEnd = this.clock;
+    finishTimerNow(hero, this.clock);
     this.tick(this.clock);
     this.changed();
     return true;
@@ -3372,7 +3392,7 @@ export class GameModel {
       return false;
     }
     this.state.gems -= cost;
-    king.upgradeEnd = this.clock;
+    finishTimerNow(king, this.clock);
     this.tick(this.clock);
     this.changed();
     return true;
@@ -5064,7 +5084,9 @@ export class GameModel {
       this.state.stats.destroyed += b.buildings.filter(
         (v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind),
       ).length;
-      this.state.xp += b.stars * 15;
+      // The original pays experience for the Town Hall alone: one point per level destroyed.
+      const hall = b.buildings.find((v) => v.kind === 'townhall' && v.hp <= 0);
+      if (hall) this.gainXp(hall.level);
       // Stars bank toward the daily bonus and are allowed to overflow past its price.
       if (b.stars > 0) {
         const bonus = (this.state.starBonus ??= emptyStarBonus());
