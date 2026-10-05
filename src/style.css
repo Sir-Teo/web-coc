@@ -1454,6 +1454,12 @@ h3 {
   align-items: center;
   gap: 6px;
 }
+/* Ore art ships large; hold it to the resource icons' size beside it. */
+.star-bonus-reward img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
 .quest-list {
   display: grid;
   gap: 18px;
