@@ -1,4 +1,5 @@
 import { SampleAudio } from './sample-audio';
+import { MusicPlayer, type MusicScene } from './music';
 export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
 export class AudioManager {
   context: AudioContext | null = null;
@@ -11,7 +12,8 @@ export class AudioManager {
   /** Set by the first user gesture; a context is only created after one. */
   private unlocked = false;
   private musicOn = false;
-  private ambient: { osc: OscillatorNode; gain: GainNode }[] = [];
+  /** The original client's Home and battle music; plays only while music is on. */
+  readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
   private lastPlay: Partial<Record<Tone, number>> = {};
   constructor() {
     if (typeof document !== 'undefined')
@@ -88,38 +90,13 @@ export class AudioManager {
     };
   }
   music(on: boolean) {
-    for (const { osc, gain } of this.ambient) {
-      try {
-        osc.stop();
-      } catch {
-        // Already stopped.
-      }
-      osc.disconnect();
-      gain.disconnect();
-    }
-    this.ambient = [];
     this.musicOn = on;
-    if (!on) {
-      this.updateContext();
-      return;
-    }
-    this.unlock();
-    const ctx = this.context;
-    if (!ctx) return;
-    for (const f of [130.81, 196, 261.63]) {
-      const o = ctx.createOscillator(),
-        g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.value = 0.006;
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start();
-      o.onended = () => {
-        o.disconnect();
-        g.disconnect();
-      };
-      this.ambient.push({ osc: o, gain: g });
-    }
+    if (on) this.unlock();
+    else this.updateContext();
+    this.tracks.setEnabled(on);
+  }
+  /** Follow the screen: Home, battle planning, combat, or the result's sting. */
+  musicScene(scene: MusicScene) {
+    this.tracks.setScene(scene);
   }
 }

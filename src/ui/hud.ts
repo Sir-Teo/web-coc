@@ -205,6 +205,7 @@ import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
+import { musicScene } from '../game/music';
 type Panel =
   | 'blacksmith'
   | 'heroes'
@@ -3812,7 +3813,7 @@ export class HUD {
     return `<div class="modal-body settings-body">${(
       [
         ['sound', 'Sound effects', 'Little sounds for big moments.', s.sound],
-        ['music', 'Ambient tones', 'A quiet background harmony.', s.music],
+        ['music', 'Music', 'The original Home theme and battle music.', s.music],
         [
           'motion',
           'Reduced motion',
@@ -4028,6 +4029,7 @@ export class HUD {
   }
   private updateLive() {
     const m = this.model;
+    this.audio.musicScene(musicScene(m.battle));
     let refs = (this.liveRefs ??= this.collectLiveRefs());
     // Legacy King and per-hero upgrade timers in the roster panel.
     for (const el of refs.heroTimers) {
