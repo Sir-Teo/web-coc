@@ -183,6 +183,8 @@ test('all twenty-one original projectiles retain their airborne position after l
       scene.paused = true;
       m.returnHome();
       const fixture = cannonBattle(level);
+      // A fixture battle bypasses the scouting prefetch: load this level's pages first.
+      await scene.cannonPresentation.prefetchLevels([level]);
       m.battle = fixture.battle;
       m.state.settings.reducedMotion = false;
       m.step(0.05);

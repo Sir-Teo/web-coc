@@ -35,6 +35,8 @@ test('all 21 live Cannon assemblies match their independent original-texture com
       return { x: ((i % 7) * 440 + 217) / zoom, y: (Math.floor(i / 7) * 370 + 222) / zoom };
     };
     const live = scene.cannonPresentation;
+    // Level pages load as a Cannon of that level first draws; this composition draws all 21.
+    await live.prefetchLevels(towers.map((t) => t.level));
     live.render(towers, null, 0, false, position);
     const gl = game.renderer.gl,
       width = 3080,

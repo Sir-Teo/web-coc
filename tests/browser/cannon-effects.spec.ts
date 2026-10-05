@@ -48,6 +48,8 @@ for (const [width, height] of [
       const { model: m, scene, audio } = window.__game;
       scene.paused = true;
       m.state = cannonVillage(15);
+      // A replaced village's Cannon level loads its pages when first drawn: load them now.
+      await scene.cannonPresentation.prefetchLevels([15]);
       audio.unlock();
       scene.sync();
       scene.drawOverlay();
@@ -233,6 +235,7 @@ test('a frozen original shot, trail and smoke survive WebGL context restoration 
     scene.paused = true;
     scene.tweens.pauseAll();
     const m = cannonBattle(21);
+    await scene.cannonPresentation.prefetchLevels([21]);
     for (let i = 0; i < 6; i++) m.step(0.05);
     document.querySelector('#ui').style.display = 'none';
     for (const o of scene.children.list) o.setVisible(false);

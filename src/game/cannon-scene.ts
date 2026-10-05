@@ -27,9 +27,11 @@ import {
  */
 const levelTextures = (level: number) =>
   Object.entries(CANNON_GRAPH.textures).filter(([, t]) => t.levels?.includes(level));
-export function preloadCannons(scene: Phaser.Scene) {
+export function preloadCannons(scene: Phaser.Scene, levels: Iterable<number> = []) {
+  const wanted = new Set(levels);
   for (const [id, texture] of Object.entries(CANNON_GRAPH.textures))
-    if (!texture.levels) scene.load.image(nativeMeshTexture('cannon', id), '/' + texture.path);
+    if (!texture.levels || texture.levels.some((level) => wanted.has(level)))
+      scene.load.image(nativeMeshTexture('cannon', id), '/' + texture.path);
   for (const level of CANNON_ART_LEVELS) scene.load.image(cannonTexture(level), cannonAsset(level));
   for (const [path, sound] of Object.entries(CANNON_SOUNDS))
     scene.load.binary(cannonSample(path), '/' + sound.path);
@@ -68,7 +70,7 @@ export class CannonPresentation {
   artReady = false;
   /** Levels whose pages are uploaded, loads in flight, and when a failed level may retry. */
   private levels = new Set<number>();
-  private pendingLevels = new Set<number>();
+  private loads = new Map<number, Promise<void>>();
   private levelRetryAt = new Map<number, number>();
   /** Increments whenever a level's pages arrive, so the scene restyles fallback sprites. */
   artRevision = 0;
@@ -89,10 +91,26 @@ export class CannonPresentation {
     void this.loadLevel(level, missing);
     return false;
   }
-  private async loadLevel(level: number, textures: ReturnType<typeof levelTextures>) {
-    if (this.pendingLevels.has(level) || (this.levelRetryAt.get(level) ?? 0) > performance.now())
-      return;
-    this.pendingLevels.add(level);
+  /** Loads these levels' pages now (a new battle's Cannons while scouting); resolves when in. */
+  prefetchLevels(levels: Iterable<number>) {
+    return Promise.all(
+      [...new Set(levels)].map((level) => {
+        const missing = levelTextures(level).filter(
+          ([id]) => !this.scene.textures.exists(nativeMeshTexture('cannon', id)),
+        );
+        return missing.length ? this.loadLevel(level, missing) : undefined;
+      }),
+    ).then(() => undefined);
+  }
+  private loadLevel(level: number, textures: ReturnType<typeof levelTextures>) {
+    const pending = this.loads.get(level);
+    if (pending) return pending;
+    if ((this.levelRetryAt.get(level) ?? 0) > performance.now()) return Promise.resolve();
+    const job = this.fetchLevel(level, textures).finally(() => this.loads.delete(level));
+    this.loads.set(level, job);
+    return job;
+  }
+  private async fetchLevel(level: number, textures: ReturnType<typeof levelTextures>) {
     try {
       const images = await Promise.all(
         textures.map(async ([id, texture]) => {
@@ -109,8 +127,6 @@ export class CannonPresentation {
     } catch (error) {
       this.levelRetryAt.set(level, performance.now() + 5000);
       console.error('Native cannon artwork', level, error);
-    } finally {
-      this.pendingLevels.delete(level);
     }
   }
   handling(id: number, kind: CannonHandling | 'cancel', at: number, x: number, y: number) {

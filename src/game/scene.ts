@@ -1492,7 +1492,11 @@ export class VillageScene extends Phaser.Scene {
             this.model.notify('Some village art could not load. It will retry automatically.');
           done(failed);
         });
-        preloadCannons(this);
+        // The village's own Cannon levels load with the batch; others load as they first draw.
+        preloadCannons(
+          this,
+          this.model.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
+        );
         this.load.start();
         // The dev server (and so every browser spec) loads every family now, as all of them
         // once loaded at boot; production loads each one when something first draws it.
@@ -2257,6 +2261,10 @@ export class VillageScene extends Phaser.Scene {
       // Fetch every native pack the new village draws now, while scouting, rather than as each
       // building first scrolls into view (which swapped fallback sprites to native art in view).
       void prefetchVillageArt(this.model.buildings);
+      if (this.cannonPresentation.artReady)
+        void this.cannonPresentation.prefetchLevels(
+          this.model.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
+        );
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
