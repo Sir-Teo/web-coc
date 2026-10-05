@@ -9,6 +9,8 @@ test('live native Archer Towers render and use source selection bounds', async (
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
     const { model, scene, game } = window.__game;
+    // Tower bodies are level-paged; load every level this spec draws.
+    await scene.villageArcherTowers.prefetchLevels(Array.from({ length: 21 }, (_, i) => i + 1));
     const { makeBuilding } = await import('/src/game/model.ts');
     const { villageArcherTowerBounds } = await import('/src/game/archer-tower-scene.ts');
     const { iso } = await import('/src/game/scene.ts');
@@ -96,6 +98,8 @@ test('current battles render native tower bodies and retire destroyed residents'
   await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
+    // Tower bodies are level-paged; load every level this spec draws.
+    await scene.villageArcherTowers.prefetchLevels(Array.from({ length: 21 }, (_, i) => i + 1));
     const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
     const { makeBuilding } = await import('/src/game/model.ts');
     const { villageArcherTowerBounds } = await import('/src/game/archer-tower-scene.ts');

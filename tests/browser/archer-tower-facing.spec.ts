@@ -10,6 +10,8 @@ for (const action of ['idle', 'attack'] as const)
     await page.locator('#loading').waitFor({ state: 'detached' });
     const report = await page.evaluate(async (action) => {
       const { scene, game } = window.__game;
+      // Tower bodies are level-paged; load every level this spec draws.
+      await scene.villageArcherTowers.prefetchLevels(Array.from({ length: 21 }, (_, i) => i + 1));
       const { archerTowerBattle } = await import('/tests/fixtures/archer-tower-battle.ts');
       const { villageArcherTowerPoses } = await import('/src/game/archer-tower-scene.ts');
       const { NativeSceneView } = await import('/src/game/native-scene-view.ts');

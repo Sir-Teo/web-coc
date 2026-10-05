@@ -545,7 +545,11 @@ export class VillageScene extends Phaser.Scene {
       else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     preloadGarrisonTroops(this);
-    preloadVillageArcherTowers(this);
+    // Level 1 too: a tower bought from the Shop draws natively from its first frame.
+    preloadVillageArcherTowers(this, [
+      1,
+      ...home.filter((b) => b.kind === 'archertower').map((b) => b.level),
+    ]);
     preloadArcherTowerProjectiles(this);
     for (const mode of ['ground', 'air'] as const)
       this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
@@ -2265,6 +2269,9 @@ export class VillageScene extends Phaser.Scene {
         void this.cannonPresentation.prefetchLevels(
           this.model.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
         );
+      void this.villageArcherTowers.prefetchLevels(
+        this.model.buildings.filter((b) => b.kind === 'archertower').map((b) => b.level),
+      );
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
@@ -2500,7 +2507,11 @@ export class VillageScene extends Phaser.Scene {
     // texture to show either.
     if (this.lateCampaign.handles(b) || (!this.lateAssetsReady && isLateCampaignBuilding(b)))
       im.setAlpha(0);
-    if (b.kind === 'archertower' && (!this.model.battle || this.model.battle.nativeArcherTowers))
+    if (
+      b.kind === 'archertower' &&
+      (!this.model.battle || this.model.battle.nativeArcherTowers) &&
+      this.villageArcherTowers.drawsLevel(b.level)
+    )
       im.setAlpha(0);
     this.syncBubble(b, p, im);
     if (b.hp <= 0) this.ruinSynced.add(b.id);
@@ -3295,11 +3306,12 @@ export class VillageScene extends Phaser.Scene {
         makeBuilding(-1, 'darkdrill', x, y, 1);
       this.darkDrillPresentation.preview(building, screen.x, screen.y, valid);
     } else if (this.model.placement === 'archertower') {
-      this.ghost.setAlpha(0);
       const building =
         this.model.state.buildings.find((b) => b.id === this.model.moving) ??
         makeBuilding(-1, 'archertower', x, y, 1);
-      this.villageArcherTowers.preview(building, screen.x, screen.y, valid);
+      this.ghost.setAlpha(
+        this.villageArcherTowers.preview(building, screen.x, screen.y, valid) ? 0 : 0.72,
+      );
     } else {
       this.ghost.setAlpha(0.72);
       this.darkDrillPresentation.preview(undefined);
@@ -3377,7 +3389,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -5212,9 +5224,11 @@ export class VillageScene extends Phaser.Scene {
     }
     const battle = this.model.battle;
     this.drainEffects();
-    // A Cannon level's pages arrived: restyle so its fallback sprite gives way to native art.
-    if (this.cannonArtSeen !== this.cannonPresentation.artRevision) {
-      this.cannonArtSeen = this.cannonPresentation.artRevision;
+    // A Cannon or Archer Tower level's pages arrived: restyle so its fallback sprite gives way
+    // to native art.
+    const pages = this.cannonPresentation.artRevision + this.villageArcherTowers.artRevision;
+    if (this.cannonArtSeen !== pages) {
+      this.cannonArtSeen = pages;
       this.lastRevision = -1;
     }
     if (this.lastRevision !== this.model.revision) {

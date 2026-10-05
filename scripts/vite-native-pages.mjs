@@ -16,12 +16,15 @@ import sharp from 'sharp';
 import { pageNativeGraph, pageNativePack } from './native-pages.mjs';
 
 const PACK = /^\/assets\/(?:village-native|troops-native)\/.+\/graph\.json$/;
+/** An export's level from its name (`basic_turret_lvl7`, `tower_turret_lvl10_down`). */
+const levelInName = (name) => {
+  const match = /_lvl(\d+)(?:_|$)/.exec(name);
+  return match ? Number(match[1]) : undefined;
+};
 /** Graphs bundled into the code, paged as they are imported; exports name their level. */
 const BUNDLED = {
-  'reference/cannon/runtime.json': (name) => {
-    const match = /_lvl(\d+)(?:_|$)/.exec(name);
-    return match ? Number(match[1]) : undefined;
-  },
+  'reference/cannon/runtime.json': levelInName,
+  'reference/archer-tower/buildings-runtime.json': levelInName,
 };
 const PAGES = '/assets/native-pages/';
 

@@ -81,6 +81,8 @@ test('model placement uses native cues without duplicate generic audio', async (
   await page.locator('[data-action="skip-tutorial"]').click();
   const result = await page.evaluate(async () => {
     const { scene, model } = window.__game;
+    // Tower bodies are level-paged; load every level this spec draws.
+    await scene.villageArcherTowers.prefetchLevels(Array.from({ length: 21 }, (_, i) => i + 1));
     const { makeBuilding } = await import('/src/game/model.ts');
     const { iso } = await import('/src/game/scene.ts');
     scene.paused = true;

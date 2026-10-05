@@ -23,6 +23,7 @@ import { presentationLive, presentationTime } from './presentation-clock';
 import { registerCachedSample, type SampleCue } from './sample-audio';
 import { guardRender } from './render-guard';
 import { preloadNativeMeshes } from './native-mesh-scene';
+import { NativeLevelPages } from './native-level-pages';
 import {
   nativeMatrix,
   nativeVertices,
@@ -86,20 +87,26 @@ export function villageArcherTowerBounds(
   archerBoundsCache.set(key, bounds);
   return bounds;
 }
-export function preloadVillageArcherTowers(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, ARCHER_TOWER_GRAPH, 'archer-tower-body');
+/**
+ * The tower body is level-paged (scripts/native-pages.mjs): shared pages (base, construction,
+ * ruins, hit and destruction effects) and the home village's levels load at boot; any other
+ * level loads when a tower of it first draws, behind its fallback sprite.
+ */
+export function preloadVillageArcherTowers(scene: Phaser.Scene, levels: Iterable<number> = []) {
+  NativeLevelPages.preload(scene, ARCHER_TOWER_GRAPH, 'archer-tower-body', levels);
   preloadNativeMeshes(scene, TOWER_ARCHER_GRAPH, 'archer-tower-resident');
   for (const [path, sound] of Object.entries(ARCHER_TOWER_SOUNDS))
     scene.load.binary(archerTowerSample(path), '/' + sound.path);
 }
 export class VillageArcherTowers {
   ghost?: { body: NativeSceneView; resident: NativeSceneView };
+  /** Draws the placement preview natively; false when its level's pages are not in yet. */
   preview(building: Building | undefined, x = 0, y = 0, valid = true) {
-    if (!building) {
+    if (!building || !this.drawsLevel(building.level)) {
       this.ghost?.body.destroy();
       this.ghost?.resident.destroy();
       this.ghost = undefined;
-      return;
+      return false;
     }
     this.ghost ??= {
       body: new NativeSceneView(this.scene, 'archer-tower-body'),
@@ -117,6 +124,7 @@ export class VillageArcherTowers {
     // Above home-village flyers (6500), like the other placement previews.
     this.ghost.body.render(tint(poses.body), x, y, 6601, 0.72);
     this.ghost.resident.render(tint(poses.residents), x, y, 6601.01, 0.72);
+    return true;
   }
   readonly views = new Map<number, { body: NativeSceneView; resident: NativeSceneView }>();
   private fx: NativeEffectViews;
@@ -131,8 +139,22 @@ export class VillageArcherTowers {
   ) {
     this.fx = new NativeEffectViews(scene, 'archer-tower-body', 'nativeArcherTowerEffect');
     this.effects = this.fx.views;
+    this.pages = new NativeLevelPages(scene, ARCHER_TOWER_GRAPH, 'archer-tower-body');
     for (const path of Object.keys(ARCHER_TOWER_SOUNDS))
       registerCachedSample(scene, audio.samples, archerTowerSample(path));
+  }
+  private pages: NativeLevelPages;
+  /** Increments whenever a level's pages arrive, so the scene restyles fallback sprites. */
+  get artRevision() {
+    return this.pages.revision;
+  }
+  /** Whether a tower of this level draws natively now; missing pages start loading. */
+  drawsLevel(level: number) {
+    return this.pages.has(level);
+  }
+  /** Loads these levels' pages now (a new battle's towers while scouting); resolves when in. */
+  prefetchLevels(levels: Iterable<number>) {
+    return this.pages.prefetch(levels);
   }
   handling(id: number, kind: 'pickup' | 'place' | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
@@ -168,7 +190,8 @@ export class VillageArcherTowers {
     const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));
     const wanted = new Set<number>();
     for (const b of buildings) {
-      if (b.kind !== 'archertower') continue;
+      // Until its level's pages arrive, the scene shows the tower's fallback sprite.
+      if (b.kind !== 'archertower' || !this.drawsLevel(b.level)) continue;
       wanted.add(b.id);
       let pair = this.views.get(b.id);
       if (!pair)
