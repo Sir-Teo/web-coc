@@ -13,7 +13,7 @@ ordinary development needs only `npm ci` and `npm run dev`.
 | `native-*-fixtures.py`, `native-*-catalog.py` | Reference renders, catalogs and verification fixtures                  |
 | `native_art/`, `native3d/`                    | Shared native format readers and rendering utilities                   |
 | `check-doc-links.mjs`                         | Local documentation links, checked by `npm run check`                  |
-| `split-village-art.mjs`                       | Per-level idle packs cropped from village family packs (`--check`)     |
+| `native-pages.mjs`, `vite-native-pages.mjs`   | Level texture pages for village and troop packs (dev server and build) |
 | `app-icons.mjs`                               | Render the home-screen icons from `public/favicon.svg` (`--check`)     |
 | `content-inventory.py`                        | Generate/check the content inventory                                   |
 

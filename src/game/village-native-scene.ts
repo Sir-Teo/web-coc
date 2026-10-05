@@ -16,7 +16,6 @@ const progression = progressionSource as unknown as {
   buildings: Record<string, (typeof progressionSource.buildings)['townhall']>;
 };
 import index from '../../reference/full-client/village-art.json' with { type: 'json' };
-import levelIndex from '../../reference/full-client/village-levels.json' with { type: 'json' };
 
 interface Reference {
   scene: string;
@@ -37,78 +36,76 @@ const packKey = (kind: string, variant?: string) =>
   variant ? `${sourceKind(kind)}/${variant}` : sourceKind(kind);
 const packPath = (kind: string, variant?: string) =>
   variant ? packs[sourceKind(kind)]?.variants?.[variant]?.path : packs[sourceKind(kind)]?.path;
-/**
- * Per-level idle packs (scripts/split-village-art.mjs): the idle exports of one level with
- * atlases cropped to the source pixels they sample. A family atlas holds every level, so a
- * village of low-level buildings would otherwise download and upload all of them.
- */
-const levelPacks = levelIndex.levels as Record<string, number[]>;
-const failedLevelPacks = new Set<string>();
-const levelPackKey = (kind: string, level: number) => `${sourceKind(kind)}@${level}`;
-const hasLevelPack = (kind: string, level: number) =>
-  !!levelPacks[sourceKind(kind)]?.includes(level) &&
-  !failedLevelPacks.has(levelPackKey(kind, level));
-const levelPackPath = (kind: string, level: number) =>
-  `assets/village-levels/${sourceKind(kind)}/${level}.json`;
-/** A home building showing only its idle exports, which its level pack holds. */
-const idleAtHome = (b: Pick<Building, 'constructing' | 'upgradeEnd' | 'hp'>) =>
-  !b.constructing && !b.upgradeEnd && b.hp > 0;
 
-/** A pack's graph and every texture it draws, decoded and ready to upload. */
-interface FetchedPack {
-  pack: Pack;
-  images: Map<string, HTMLImageElement>;
-}
 /** In-flight and finished pack downloads by pack key, shared by every presentation. */
-const fetched = new Map<string, Promise<FetchedPack>>();
+const fetched = new Map<string, Promise<Pack>>();
 function fetchPack(key: string, path: string) {
   let pending = fetched.get(key);
   if (pending) return pending;
   pending = (async () => {
     const response = await fetch('/' + path);
     if (!response.ok) throw Error(`HTTP ${response.status}`);
-    const pack = (await response.json()) as Pack;
-    const images = new Map<string, HTMLImageElement>();
-    await Promise.all(
-      Object.entries(pack.scenes).flatMap(([name, graph]) =>
-        Object.entries(graph.textures).map(async ([id, texture]) => {
-          const image = new Image();
-          image.src = '/' + texture.path;
-          await image.decode();
-          images.set(nativeMeshTexture(`village:${key}:${name}`, id), image);
-        }),
-      ),
-    );
-    return { pack, images };
+    return (await response.json()) as Pack;
   })();
   // A failed download is retried by the next request instead of failing for good.
   pending.catch(() => fetched.delete(key));
   fetched.set(key, pending);
   return pending;
 }
+/** Decoded texture images by texture key, shared by every presentation. */
+const decoded = new Map<string, Promise<HTMLImageElement>>();
 /**
- * Starts downloading the packs these buildings draw without waiting for a scene, so a boot can
- * fetch the home village's art alongside the Phaser preload rather than after it. Idle home
- * buildings fetch their level packs; a battle fetches whole families, since its buildings change
- * to damaged exports as they fall.
+ * The textures one level of a pack draws, decoded and ready to upload. A paged pack (see
+ * scripts/native-pages.mjs) tags each page with the levels that draw it, so a village fetches
+ * only its own levels' art; every texture of an unpaged pack serves every level.
  */
-export function prefetchVillageArt(
-  buildings: Iterable<Pick<Building, 'kind' | 'level' | 'constructing' | 'upgradeEnd' | 'hp'>>,
-  battle = false,
-) {
-  const keys = new Map<string, string>();
+function fetchLevel(key: string, pack: Pack, level: number) {
+  const images = new Map<string, HTMLImageElement>();
+  return Promise.all(
+    Object.entries(pack.scenes).flatMap(([name, graph]) =>
+      Object.entries(graph.textures)
+        .filter(([, texture]) => !texture.levels || texture.levels.includes(level))
+        .map(async ([id, texture]) => {
+          const textureKey = nativeMeshTexture(`village:${key}:${name}`, id);
+          let image = decoded.get(textureKey);
+          if (!image) {
+            image = (async () => {
+              const element = new Image();
+              element.src = '/' + texture.path;
+              await element.decode();
+              return element;
+            })();
+            image.catch(() => decoded.delete(textureKey));
+            decoded.set(textureKey, image);
+          }
+          images.set(textureKey, await image);
+        }),
+    ),
+  ).then(() => images);
+}
+/**
+ * Starts downloading the packs and level pages these buildings draw without waiting for a scene,
+ * so a boot can fetch the home village's art alongside the Phaser preload rather than after it.
+ */
+export function prefetchVillageArt(buildings: Iterable<Pick<Building, 'kind' | 'level'>>) {
+  const levels = new Map<string, Set<number>>();
   for (const b of buildings) {
     if (!hasVillageNativeArt(b.kind)) continue;
-    if (!battle && idleAtHome(b) && hasLevelPack(b.kind, b.level))
-      keys.set(levelPackKey(b.kind, b.level), levelPackPath(b.kind, b.level));
-    else {
-      const path = packPath(b.kind);
-      if (path) keys.set(packKey(b.kind), path);
-    }
+    if (!levels.has(b.kind)) levels.set(b.kind, new Set());
+    levels.get(b.kind)!.add(b.level);
   }
-  return Promise.all(
-    [...keys].map(([key, path]) => fetchPack(key, path).catch(() => undefined)),
-  ).then(() => undefined);
+  const started: Promise<unknown>[] = [];
+  for (const [kind, wanted] of levels) {
+    const path = packPath(kind);
+    if (!path) continue;
+    const key = packKey(kind);
+    started.push(
+      fetchPack(key, path)
+        .then((pack) => Promise.all([...wanted].map((level) => fetchLevel(key, pack, level))))
+        .catch(() => undefined),
+    );
+  }
+  return Promise.all(started).then(() => undefined);
 }
 
 /** The pack row for a level (first match, as `find` returned), through a per-pack map. */
@@ -210,6 +207,11 @@ interface ViewEntry {
 export class VillageNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
+  /** Levels whose textures are uploaded, by pack key, and level loads in flight. */
+  private levelsReady = new Map<string, Set<number>>();
+  private pendingLevels = new Set<string>();
+  /** A level whose pages failed waits this long (performance.now ms) before asking again. */
+  private levelRetryAt = new Map<string, number>();
   /** Scene views per building id, then per pack scene. */
   private views = new Map<number, Map<string, ViewEntry>>();
   /**
@@ -232,9 +234,12 @@ export class VillageNativePresentation {
         : undefined;
     return (
       !!building &&
-      (this.packs.has(packKey(building.kind)) ||
-        this.packs.has(levelPackKey(building.kind, building.level)))
+      this.packs.has(building.kind) &&
+      this.ready(packKey(building.kind), building.level)
     );
+  }
+  private ready(key: string, level: number) {
+    return !!this.levelsReady.get(key)?.has(level);
   }
   constructor(
     private scene: Phaser.Scene,
@@ -250,31 +255,44 @@ export class VillageNativePresentation {
     for (const entries of this.views.values())
       for (const entry of entries.values()) entry.signature = undefined;
   }
-  private async load(kind: BuildingKind | string, variant?: string, level?: number) {
-    const key = level !== undefined ? levelPackKey(kind, level) : packKey(kind, variant);
-    const path = level !== undefined ? levelPackPath(kind, level) : packPath(kind, variant);
+  private async load(kind: BuildingKind | string, variant?: string) {
+    const key = packKey(kind, variant);
+    const path = packPath(kind, variant);
     if (!path || this.pending.has(key) || this.packs.has(key)) return;
     this.pending.add(key);
     try {
-      const { pack, images } = await fetchPack(key, path);
-      if (!this.alive) return;
-      for (const [textureKey, image] of images)
-        if (!this.scene.textures.exists(textureKey))
-          this.scene.textures.addImage(textureKey, image);
+      const pack = await fetchPack(key, path);
       if (this.alive) this.packs.set(key, pack);
     } catch (error) {
-      // A missing level pack falls back to the family pack, which draws every level.
-      if (level !== undefined) {
-        failedLevelPacks.add(key);
-        this.pending.delete(key);
-        void this.load(kind);
-        return;
-      }
       if (this.alive && !variant)
         this.notify(
           `Could not load ${BUILDINGS[kind as BuildingKind].name} animation. Refresh to retry.`,
         );
       console.error('Native village artwork', key, error);
+    }
+  }
+  /** Upload the pages one level of a loaded pack draws. */
+  private async loadLevel(kind: BuildingKind | string, variant: string | undefined, level: number) {
+    const key = packKey(kind, variant);
+    const pack = this.packs.get(key);
+    const job = `${key}#${level}`;
+    if (!pack || this.pendingLevels.has(job) || this.ready(key, level)) return;
+    if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
+    this.pendingLevels.add(job);
+    try {
+      const images = await fetchLevel(key, pack, level);
+      if (!this.alive) return;
+      for (const [textureKey, image] of images)
+        if (!this.scene.textures.exists(textureKey))
+          this.scene.textures.addImage(textureKey, image);
+      if (!this.levelsReady.has(key)) this.levelsReady.set(key, new Set());
+      this.levelsReady.get(key)!.add(level);
+    } catch (error) {
+      // A frame drawing this level asks again after a pause; the fallback sprite covers.
+      this.levelRetryAt.set(job, performance.now() + 5000);
+      console.error('Native village artwork', job, error);
+    } finally {
+      this.pendingLevels.delete(job);
     }
   }
   private drop(id: number) {
@@ -358,13 +376,24 @@ export class VillageNativePresentation {
           continue;
         }
       }
+      const pack = this.packs.get(b.kind);
+      if (!pack) {
+        void this.load(b.kind);
+        continue;
+      }
+      const level = levelRow(pack, b.level);
+      if (!level) continue;
+      if (!this.ready(packKey(b.kind), b.level)) {
+        void this.loadLevel(b.kind, undefined, b.level);
+        continue;
+      }
       const trap = battle?.traps[b.id];
       // A resolved Tornado Trap keeps playing its triggered swirl for the spell's own duration.
       const spinning =
         b.kind === 'tornadotrap' &&
         trap &&
         seconds - trap.activatedAt < nativeTrapValues(b.kind, b.level).duration;
-      let fields =
+      const fields =
         b.hp <= 0
           ? DAMAGED
           : trap?.resolved && !spinning
@@ -376,26 +405,6 @@ export class VillageNativePresentation {
                 : b.upgradeEnd
                   ? UPGRADING
                   : IDLE;
-      // The family pack draws every level and state; at home an idle building can make do with
-      // its level pack, and keeps its idle look from it while the family pack downloads.
-      let drawKey = packKey(b.kind);
-      let pack = this.packs.get(drawKey);
-      if (!pack) {
-        const levelKey =
-          !battle && hasLevelPack(b.kind, b.level) ? levelPackKey(b.kind, b.level) : undefined;
-        if (levelKey && fields === IDLE) {
-          pack = this.packs.get(levelKey);
-          if (!pack) void this.load(b.kind, undefined, b.level);
-        } else {
-          void this.load(b.kind);
-          pack = levelKey ? this.packs.get(levelKey) : undefined;
-          if (pack) fields = IDLE;
-        }
-        if (!pack) continue;
-        if (levelKey && pack === this.packs.get(levelKey)) drawKey = levelKey;
-      }
-      const level = levelRow(pack, b.level);
-      if (!level) continue;
       if (
         b.id !== -1 &&
         !trap &&
@@ -424,9 +433,12 @@ export class VillageNativePresentation {
           if (variant) void this.load(b.kind, variant);
           return undefined;
         }
-        const ref = (from.levels.find((row) => row.level === b.level) ?? from.levels[0])?.refs[
-          field
-        ];
+        const row = from.levels.find((r) => r.level === b.level) ?? from.levels[0];
+        if (variant && row && !this.ready(packKey(b.kind, variant), row.level)) {
+          void this.loadLevel(b.kind, variant, row.level);
+          return undefined;
+        }
+        const ref = row?.refs[field];
         const graph = ref ? from.scenes[ref.scene] : undefined;
         return ref && graph ? { ref, graph, variant } : undefined;
       };
@@ -489,14 +501,13 @@ export class VillageNativePresentation {
                 );
           controls.resource = Math.round(Math.max(0, Math.min(1, fraction)) * (resource - 1));
         }
-        const from = variant ? packKey(b.kind, variant) : drawKey;
-        const key = `${from}:${ref.scene}`;
+        const key = `${packKey(b.kind, variant)}:${ref.scene}`;
         let group = groups.get(key);
         if (!group)
           groups.set(
             key,
             (group = {
-              prefix: `village:${from}:${ref.scene}`,
+              prefix: `village:${packKey(b.kind, variant)}:${ref.scene}`,
               parts: [],
               signature: '',
             }),

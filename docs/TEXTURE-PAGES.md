@@ -1,0 +1,36 @@
+# Level texture pages
+
+A native family pack (`graph.json` under `public/assets/village-native/` or `public/assets/troops-native/`) draws every level of a building or troop from shared atlases. The Town Hall's main atlas is 3002×3066 texels, about 37 MB of GPU memory, and a Level 2 Town Hall samples about 4% of it; a Level 1 Barbarian loaded the art of all thirteen Barbarian levels. Phones paid for every level they did not draw, in download, decode time and texture memory.
+
+`scripts/native-pages.mjs` regroups each pack's shapes by the set of levels that draw them and packs each group into its own pages. Each page records those levels, and the village and troop loaders upload only the pages of the levels they draw. Nothing is stored twice: each shape lives on exactly one page.
+
+## Where it runs
+
+Nothing generated is committed. `scripts/vite-native-pages.mjs` is a Vite plugin:
+
+- The dev server answers each pack request with the paged pack and serves its pages from `/assets/native-pages/<key>/`, cached in `node_modules/.cache/native-pages` by the pack's bytes and its textures' sizes and times. The dev server and every browser spec draw what production draws.
+- `vite build` rewrites each pack in `dist` and writes its pages under `dist/assets/native-pages/`, before `scripts/webp-dist.mjs` compresses them. `NATIVE_PAGES=0` skips it.
+
+A pack is paged only when its average level needs at most 60% of the family's texels and no level needs more than the family atlases held. Overlapping source regions drawn at different levels are copied once per group, so heavily shared families (Battle Drill, the super troops) would cost more than they save and stay as they are.
+
+## What stays exact
+
+Each shape's source rectangle is copied with a two-texel border of its original neighbors; overlapping rectangles of a group merge first. Where a rectangle meets the atlas edge, the border repeats the edge texel, as the atlas's clamp-to-edge sampling did. The atlases have no mipmaps, so bilinear filtering reads exactly the texels it read before. Texture coordinates move by whole texels; positions, clips, matrices, colors and blend modes are unchanged. Shapes no level row reaches join a page every level loads.
+
+`tests/native-pages.test.ts` pages the Town Hall, Builder's Hut, Gold Mine and Scattershot packs and the Barbarian, Archer and Giant packs. For every level, export and three clocks, each pose keeps its key, matrix, color and blend; each vertex keeps its position and moves its texture coordinate by whole texels; every texel filtering can read, borders included, equals the source texel; and every page a level draws is tagged with that level. A low level must need less than half of the family's texels, and the Super Dragon pack must stay unpaged.
+
+## Loading
+
+- Village buildings: the pack's JSON loads once per family, then each level's pages decode and upload when a building of that level first draws; the fallback sprite covers until then. Boot prefetches the home village's levels, and a new battle prefetches its buildings' levels while scouting. Every state of a level (idle, construction, upgrade, damaged, trap) draws from the same pages.
+- Troops: the carried army prefetches its pack and its research level's pages; a unit of another level loads its pages when it first draws.
+- A page that fails to load is asked for again after five seconds.
+
+`tests/browser/native-pages.spec.ts` checks that a starter village draws its buildings and a deployed Barbarian from pages without fetching the Town Hall or Barbarian family atlases. `tests/browser/troop-texture-upload.spec.ts` compares the paged troop uploads with ordinary image uploads, in both facings and after a lost graphics context.
+
+## Effect
+
+Production measurements are pending; see the next update of this page.
+
+The cannon, Archer Tower and other defenses with their own renderers draw from graphs bundled into the code, so their atlases are not paged yet; the Cannon's 2552×4056 atlas is now the largest download at boot.
+
+This replaces the per-level idle packs committed briefly on October 5, 2026 (`public/assets/village-levels/`), which duplicated shared art in every level and covered buildings only.

@@ -69,6 +69,14 @@ const LOD_RESAMPLE_EVERY = 4;
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
+  /**
+   * Levels whose textures are uploaded, by kind, and level loads in flight. A paged pack (see
+   * scripts/native-pages.mjs) tags each page with the levels that draw it, so a Level 1
+   * Barbarian uploads its own art rather than all thirteen levels'.
+   */
+  private levelsReady = new Map<string, Set<number>>();
+  private pendingLevels = new Set<string>();
+  private levelRetryAt = new Map<string, number>();
   private views = new Map<number, TroopView>();
   private motion = new UnitMotionTracker();
   private facings = new Map<number, { dx: number; dy: number }>();
@@ -81,11 +89,9 @@ export class TroopNativePresentation {
   /** Units drawn from a kept pose this frame (LOD), for probes. */
   lodFrozen = 0;
   constructor(private scene: Phaser.Scene) {}
-  /** Prefetch packs for the carried army when the roster changes, not on first deploy. */
-  prefetch(kinds: Iterable<string>) {
-    for (const kind of kinds) {
-      if (!this.packs.has(kind)) void this.load(kind);
-    }
+  /** Prefetch packs and level pages for the carried army when it changes, not on first deploy. */
+  prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number) {
+    for (const kind of kinds) void this.load(kind).then(() => this.loadLevel(kind, levelOf(kind)));
   }
   private async decodeTexture(key: string, path: string) {
     if (this.scene.textures.exists(key)) return;
@@ -106,19 +112,40 @@ export class TroopNativePresentation {
       const response = await fetch(`/assets/troops-native/${kind}/graph.json`);
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Pack;
-      await Promise.all(
-        Object.entries(pack.scenes).flatMap(([name, g]) =>
-          Object.entries(g.textures).map(async ([id, t]) =>
-            this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path),
-          ),
-        ),
-      );
       if (this.alive) this.packs.set(kind, pack);
     } catch (error) {
       console.error('Native troop animation', kind, error);
     } finally {
       // A failed load must retry next frame instead of pinning the portrait fallback.
       this.pending.delete(kind);
+    }
+  }
+  /** Upload the pages one level of a loaded pack draws. */
+  private async loadLevel(kind: string, level: number) {
+    const pack = this.packs.get(kind);
+    const job = `${kind}#${level}`;
+    if (!pack || this.pendingLevels.has(job) || this.levelsReady.get(kind)?.has(level)) return;
+    if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
+    this.pendingLevels.add(job);
+    try {
+      await Promise.all(
+        Object.entries(pack.scenes).flatMap(([name, g]) =>
+          Object.entries(g.textures)
+            .filter(([, t]) => !t.levels || t.levels.includes(level))
+            .map(([id, t]) =>
+              this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path),
+            ),
+        ),
+      );
+      if (this.alive && this.packs.get(kind) === pack) {
+        if (!this.levelsReady.has(kind)) this.levelsReady.set(kind, new Set());
+        this.levelsReady.get(kind)!.add(level);
+      }
+    } catch (error) {
+      this.levelRetryAt.set(job, performance.now() + 5000);
+      console.error('Native troop animation', job, error);
+    } finally {
+      this.pendingLevels.delete(job);
     }
   }
   clear() {
@@ -141,6 +168,7 @@ export class TroopNativePresentation {
           if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
         }
       this.packs.delete(kind);
+      this.levelsReady.delete(kind);
     }
   }
   destroy() {
@@ -272,6 +300,11 @@ export class TroopNativePresentation {
       }
       const level = levelRow(pack, u.level ?? battle!.troopLevels?.[u.kind as TroopKind] ?? 1);
       if (!level) continue;
+      if (!this.levelsReady.get(u.kind)?.has(level.level)) {
+        void this.loadLevel(u.kind, level.level);
+        sprites.get(u.id)?.setVisible(false);
+        continue;
+      }
       // Walk/idle and travel heading follow simulation steps, not rendered frames: the sim
       // runs at 20 Hz without interpolation, so most rendered frames see no displacement.
       const motion = this.motion.update(u.id, u.x, u.y, elapsed, !u.attacking && u.path.length > 0);

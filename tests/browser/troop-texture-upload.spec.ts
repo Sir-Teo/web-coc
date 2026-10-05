@@ -22,6 +22,15 @@ test('battle troop atlases match ordinary image uploads in both facings and surv
     const kinds = ['swordsman', 'archer', 'giant', 'wallbreaker', 'dragon', 'minion'];
     const presentation = scene.troopNativePresentation;
     await Promise.all(kinds.map((kind) => presentation.load(kind)));
+    // Pages upload per level: the first and last levels are the ones drawn below.
+    await Promise.all(
+      kinds.flatMap((kind) => {
+        const levels = presentation.packs.get(kind).levels;
+        return [levels[0], levels[levels.length - 1]].map((row) =>
+          presentation.loadLevel(kind, row.level),
+        );
+      }),
+    );
     const cases = [];
     for (const [i, kind] of kinds.entries()) {
       const pack = presentation.packs.get(kind);

@@ -17,7 +17,8 @@ export interface NativeMeshGraph {
   >;
   matrices: number[][];
   colors: number[][];
-  textures: Record<string, { path: string; width: number; height: number }>;
+  /** `levels`: a level page (scripts/native-pages.mjs) drawn only by these pack levels. */
+  textures: Record<string, { path: string; width: number; height: number; levels?: number[] }>;
 }
 export type NativeMatrix = [number, number, number, number, number, number];
 export type NativeBlend = 0 | 3 | 4 | 8;

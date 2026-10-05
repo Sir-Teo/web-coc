@@ -145,7 +145,16 @@ const archerPack = JSON.parse(
 );
 const troops = (scene = fakeScene()) => {
   const p = new TroopNativePresentation(scene);
-  (p as unknown as { packs: Map<string, unknown> }).packs.set('archer', archerPack);
+  const internals = p as unknown as {
+    packs: Map<string, unknown>;
+    levelsReady: Map<string, Set<number>>;
+  };
+  internals.packs.set('archer', archerPack);
+  // Its textures count as uploaded for every level, as a finished level load leaves them.
+  internals.levelsReady.set(
+    'archer',
+    new Set(archerPack.levels.map((row: { level: number }) => row.level)),
+  );
   return p;
 };
 type Views = Map<
