@@ -1,0 +1,28 @@
+# Achievements
+
+The profile's achievement list now holds the client's own Home Village achievements in place of this build's eight invented quests. The [native catalog](../reference/achievements/README.md) gives each its tiers, targets, gems and XP. Claiming a finished tier pays both and fills one of its stars; tiers are claimed in order, once each. The Awards button beside the campaign map shows how many tiers are waiting, and claimable tiers sort to the top of the list.
+
+## What counts
+
+35 of the 51 achievements can be earned in this offline village.
+
+| Action | Achievements | Counted from |
+| --- | --- | --- |
+| Building level | Bigger & Better, Bigger Coffers, Empire Builder | The highest finished Town Hall, Gold Storage or Clan Castle. |
+| Unit unlock | Discover New Troops | Whether the Archer, Wall Breaker or Dragon is unlocked. |
+| Campaign stars | Get those Goblins!, Get those other Goblins!, Get even more Goblins! | Stars on the 90 Goblin map villages; Challenges and fan-made villages are not the Campaign Map. |
+| Campaign bosses | Dragon Slayer, Ungrateful Child | Defeating the Golden Dragon or M.O.M.M.A garrison in a Goblin village. |
+| Loot | Gold Grab, Elixir Escapade, Heroic Heist | Loot taken in campaign raids and ladder matches, before storage limits; practice takes none. |
+| Trophies | Sweet Victory! | The most trophies held. |
+| Multiplayer | Conqueror and the 17 destroy achievements | Ladder matches, this build's stand-in for multiplayer: wins with at least one star, and destroyed buildings by kind. A level in the row asks for the weaponized form (Town Hall 12+, Builder's Hut 2+). A Town Hall 17+ also counts toward Anti-Artillery, because its weapon is the Inferno Artillery the achievement names. |
+| Village work | Nice and Tidy, Supercharger, Crafting Connoisseur, Superb Work | Obstacles cleared, supercharges finished, Crafted Defense module upgrades finished and super troop boosts started. |
+
+Event counts start when this version first runs; nothing earlier was recorded. Levels, unlocks, Goblin stars and trophies are read from the village, so they count in full at once. A new village holds 1,248 trophies, so the first two Sweet Victory tiers are ready immediately.
+
+The other 16 need systems this village does not have: donations, Clan Wars and War Leagues, Clan Games, Season Challenges, defending against real attackers, the 2025 ranked leagues and account binding. The list says so in one line rather than showing goals nobody can reach.
+
+## Saves
+
+`achievements` holds per-achievement event counts and claimed tiers, keyed by achievement id. Validation rejects unknown ids, negative or non-integer counts and claims beyond an achievement's tiers. Older saves keep their `claimedQuests` list, which still validates but no longer pays or shows anything.
+
+Verified October 5, 2026: `tests/achievements.test.ts` covers the catalog, in-order claiming and its save round trip, Sweet Victory, obstacle, loot and ladder counting, weaponized and merged matches, and save validation. `tests/browser/achievements.spec.ts` claims a tier from the Awards button at desktop and phone widths.

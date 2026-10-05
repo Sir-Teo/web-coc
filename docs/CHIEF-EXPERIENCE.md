@@ -10,7 +10,7 @@ The chief level beside the village name now follows the client's own experience 
 | Finishing a hero upgrade | ⌊√ scheduled seconds⌋ | Hero upgrades hold a builder like a building upgrade; this build pays them the same way. |
 | Destroying a Town Hall in a campaign attack or ladder match | The hall's level | clash-wiki Experience: destroying a Town Hall "gives experience equal to the level of the Town Hall", in multiplayer and in the single-player campaign. |
 | Clearing a tree or rock | 3 | See [obstacles](OBSTACLES.md). |
-| Claiming one of the eight local quests | 20 | This build's own stand-in for achievements. |
+| Claiming an achievement tier | The tier's prize, 10 to 5,000 | The client's achievement rows; see [achievements](ACHIEVEMENTS.md). |
 
 Instant work earns nothing because its square root is zero: walls, trap placement and a gem-bought Builder's Hut. Laboratory and Pet House research, practice attacks and stars earn nothing either; none of them appears among the original's XP sources. Finishing early with gems or a Book of Heroes still pays the whole scheduled duration, because the original derives the award from the level's build time, not from the time waited. Older saves whose timers carry no start time finish without XP.
 
@@ -22,6 +22,6 @@ The save keeps one lifetime XP total, so nothing is migrated: the level is deriv
 
 ## Not implemented
 
-Donations (1 XP per housing space), tiered achievements and their 10–1,000 XP rewards, and decorations, the only thing the original gates on chief level.
+Donations (1 XP per housing space), the achievements that need clans, wars or accounts, and decorations, the only thing the original gates on chief level.
 
 Verified October 5, 2026: `tests/experience.test.ts` covers the curve and its cap, the square-root rule, normal and gem-finished upgrades, instant walls, research, the level-up toast, and Town Hall XP in raids and practice.
