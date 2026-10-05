@@ -531,7 +531,7 @@ export class VillageScene extends Phaser.Scene {
     for (const callback of this.bootWaiters.splice(0)) callback();
     // The home village's native building art is fetched outside the Phaser loader; start it now
     // so it downloads alongside the preload instead of popping in after the village appears.
-    this.homeArt = prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
+    this.homeArt = prefetchVillageArt(this.model.buildings, !!this.model.battle);
     // Cannon pages are heavy; they bundle in after startup (see loadHeavyArt) with fallback
     // sprites covering. Defense families the home village does not own (X-Bow and Santa
     // included) load when something first draws them (see loadFamilies).
@@ -2254,7 +2254,7 @@ export class VillageScene extends Phaser.Scene {
       this.villageNativePresentation.clear();
       // Fetch every native pack the new village draws now, while scouting, rather than as each
       // building first scrolls into view (which swapped fallback sprites to native art in view).
-      void prefetchVillageArt(new Set(this.model.buildings.map((b) => b.kind)));
+      void prefetchVillageArt(this.model.buildings, !!this.model.battle);
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
