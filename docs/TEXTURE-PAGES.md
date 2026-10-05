@@ -29,7 +29,16 @@ Each shape's source rectangle is copied with a two-texel border of its original 
 
 ## Effect
 
-Production measurements are pending; see the next update of this page.
+The production build pages 40 of the 120 village and troop packs into 564 pages. Measured October 5, 2026 on a production build at Pixel 7 size in headless Chromium (software rendering, not a physical phone):
+
+| Starter village boot | Before | Paged |
+| --- | --- | --- |
+| Downloaded | 36.5 MB | 21.5 MB |
+| Barbarian art | 3.3 MB atlas | 239 KB page |
+| Time to a playable village | 4.5 s | 3.1 s (three runs) |
+| Same at a 4× CPU slowdown | 9.8 s | 7.4 s |
+
+The original atlases of paged packs stay in `dist`, unrequested, so the deployed files grow; nothing a player downloads does.
 
 The cannon, Archer Tower and other defenses with their own renderers draw from graphs bundled into the code, so their atlases are not paged yet; the Cannon's 2552×4056 atlas is now the largest download at boot.
 
