@@ -387,6 +387,7 @@ export class VillageScene extends Phaser.Scene {
   private renderedBattle: GameModel['battle'] = null;
   private renderedReplay: GameModel['replay'] = null;
   private lastRevision = -1;
+  private cannonArtSeen = 0;
   private down?: { x: number; y: number; cx: number; cy: number; t: number; id: number | null };
   private dragged = false;
   /** Which role the current pointer gesture has committed to. */
@@ -2454,7 +2455,8 @@ export class VillageScene extends Phaser.Scene {
         b.npc === 'shrink-trap' ||
         isGoblinBuilding(b.npc)) &&
       b.hp > 0 &&
-      (!deferredNative || this.heavyArtReady) &&
+      (!deferredNative ||
+        (b.kind === 'cannon' ? this.cannonPresentation.drawsLevel(b.level) : this.heavyArtReady)) &&
       this.familyArtReady(b)
     )
       im.setAlpha(0);
@@ -3358,7 +3360,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.
@@ -4550,7 +4552,9 @@ export class VillageScene extends Phaser.Scene {
         source &&
         (source.kind === 'airsweeper' ||
           source.kind === 'mortar' ||
-          (source.kind === 'cannon' && !source.npc && this.cannonPresentation.artReady))
+          (source.kind === 'cannon' &&
+            !source.npc &&
+            this.cannonPresentation.drawsLevel(source.level)))
       ) {
         this.ruinsDirty = true;
         return;
@@ -4742,11 +4746,15 @@ export class VillageScene extends Phaser.Scene {
     if (
       fx.weapon === 'cannonball' &&
       (fx.type === 'projectile' || fx.type === 'impact') &&
-      this.cannonPresentation.artReady &&
       fx.sourceId !== undefined
     ) {
       const cannon = this.fxBuildings.get(fx.sourceId);
-      if (cannon?.kind === 'cannon' && !cannon.npc) return;
+      if (
+        cannon?.kind === 'cannon' &&
+        !cannon.npc &&
+        this.cannonPresentation.drawsLevel(cannon.level)
+      )
+        return;
     }
     if (fx.type === 'breath') {
       const { from, to } = this.projectileAnchors(fx);
@@ -4993,8 +5001,7 @@ export class VillageScene extends Phaser.Scene {
       const now = presentationTime(b);
       const buildings = this.buildingMap(b.buildings);
       // Deferred heavy art: fallback bolts and cannonballs fly until the native shots can.
-      const xbowNative = this.xbowPresentation.artReady,
-        cannonNative = this.cannonPresentation.artReady;
+      const xbowNative = this.xbowPresentation.artReady;
       for (const p of shots) {
         if (
           native.has(p.id) ||
@@ -5004,9 +5011,14 @@ export class VillageScene extends Phaser.Scene {
           (p.weapon === 'arrow' && p.variant !== undefined && p.flight)
         )
           continue;
-        if (p.weapon === 'cannonball' && cannonNative && p.sourceId !== undefined) {
+        if (p.weapon === 'cannonball' && p.sourceId !== undefined) {
           const tower = buildings.get(p.sourceId);
-          if (tower?.kind === 'cannon' && !tower.npc) continue;
+          if (
+            tower?.kind === 'cannon' &&
+            !tower.npc &&
+            this.cannonPresentation.drawsLevel(tower.level)
+          )
+            continue;
         }
         retained.add(p.id);
         const { from, to } = this.projectileAnchors(projectileEffect(p, 'projectile'));
@@ -5183,6 +5195,11 @@ export class VillageScene extends Phaser.Scene {
     }
     const battle = this.model.battle;
     this.drainEffects();
+    // A Cannon level's pages arrived: restyle so its fallback sprite gives way to native art.
+    if (this.cannonArtSeen !== this.cannonPresentation.artRevision) {
+      this.cannonArtSeen = this.cannonPresentation.artRevision;
+      this.lastRevision = -1;
+    }
     if (this.lastRevision !== this.model.revision) {
       if (this.passiveOnly()) this.passiveSync();
       else if (this.battlePassiveOnly()) this.syncTraps();

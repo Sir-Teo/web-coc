@@ -6,7 +6,7 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { presentationLive, presentationTime } from './presentation-clock';
 import { guardRender } from './render-guard';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { nativeMeshTexture } from './native-mesh-scene';
 import { CANNON_ART_LEVELS, cannonAsset, cannonTexture } from './cannon-art';
 import { CANNON_GRAPH, cannonPose, cannonPoses, cannonProjectilePose } from './cannon-poses';
 import { cannonStats } from './cannon-stats';
@@ -20,8 +20,16 @@ import {
   type CannonHandling,
 } from './cannon-effects';
 
+/**
+ * Level pages (scripts/native-pages.mjs): the bundled graph tags each page with the Cannon levels
+ * that draw it. Shared pages (ammunition, debris, upgrade animations) load with the heavy art;
+ * a level's own pages load when a Cannon of that level first draws.
+ */
+const levelTextures = (level: number) =>
+  Object.entries(CANNON_GRAPH.textures).filter(([, t]) => t.levels?.includes(level));
 export function preloadCannons(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, CANNON_GRAPH, 'cannon');
+  for (const [id, texture] of Object.entries(CANNON_GRAPH.textures))
+    if (!texture.levels) scene.load.image(nativeMeshTexture('cannon', id), '/' + texture.path);
   for (const level of CANNON_ART_LEVELS) scene.load.image(cannonTexture(level), cannonAsset(level));
   for (const [path, sound] of Object.entries(CANNON_SOUNDS))
     scene.load.binary(cannonSample(path), '/' + sound.path);
@@ -58,6 +66,53 @@ export class CannonPresentation {
   }
   /** Heavy textures arrive after boot; the fallback sprite covers until then. */
   artReady = false;
+  /** Levels whose pages are uploaded, loads in flight, and when a failed level may retry. */
+  private levels = new Set<number>();
+  private pendingLevels = new Set<number>();
+  private levelRetryAt = new Map<number, number>();
+  /** Increments whenever a level's pages arrive, so the scene restyles fallback sprites. */
+  artRevision = 0;
+  /**
+   * Whether a Cannon of this level draws natively now. A level whose pages are missing starts
+   * loading them, and its fallback sprite and shots stay meanwhile.
+   */
+  drawsLevel(level: number) {
+    if (!this.artReady) return false;
+    if (this.levels.has(level)) return true;
+    const missing = levelTextures(level).filter(
+      ([id]) => !this.scene.textures.exists(nativeMeshTexture('cannon', id)),
+    );
+    if (!missing.length) {
+      this.levels.add(level);
+      return true;
+    }
+    void this.loadLevel(level, missing);
+    return false;
+  }
+  private async loadLevel(level: number, textures: ReturnType<typeof levelTextures>) {
+    if (this.pendingLevels.has(level) || (this.levelRetryAt.get(level) ?? 0) > performance.now())
+      return;
+    this.pendingLevels.add(level);
+    try {
+      const images = await Promise.all(
+        textures.map(async ([id, texture]) => {
+          const image = new Image();
+          image.src = '/' + texture.path;
+          await image.decode();
+          return [nativeMeshTexture('cannon', id), image] as const;
+        }),
+      );
+      for (const [key, image] of images)
+        if (!this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
+      this.levels.add(level);
+      this.artRevision++;
+    } catch (error) {
+      this.levelRetryAt.set(level, performance.now() + 5000);
+      console.error('Native cannon artwork', level, error);
+    } finally {
+      this.pendingLevels.delete(level);
+    }
+  }
   handling(id: number, kind: CannonHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((e) => e.id !== id);
     else {
@@ -90,6 +145,7 @@ export class CannonPresentation {
     // After the finish, transient effects keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);
     const wanted = new Set<number>(),
+      drawn = new Set<number>(),
       flying = new Set<string>(),
       cues: SampleCue[] = [];
     const effect = (
@@ -125,7 +181,8 @@ export class CannonPresentation {
       if (tower.kind !== 'cannon' || tower.npc) continue;
       const p = iso(tower.x + 1.5, tower.y + 1.5);
       wanted.add(tower.id);
-      if (art) {
+      if (art && this.drawsLevel(tower.level)) {
+        drawn.add(tower.id);
         const pose = cannonPose(tower, battle, elapsed, reduced);
         let view = this.towers.get(tower.id);
         if (!view) this.towers.set(tower.id, (view = new NativeSceneView(this.scene, 'cannon')));
@@ -154,7 +211,7 @@ export class CannonPresentation {
             iso(shot.fromX, shot.fromY),
             { x: shot.aimX - shot.fromX, y: shot.aimY - shot.fromY },
           );
-          if (!reduced && art) {
+          if (!reduced && art && drawn.has(tower.id)) {
             for (const fx of cannonTrailPoses(shot, elapsed, iso)) this.fx.show(fx);
             if (
               elapsed >= shot.launched &&
@@ -200,7 +257,7 @@ export class CannonPresentation {
         effect(e.id, `home-${e.kind}`, e.index, cannonHandlingEffect(e.kind), e.at, iso(e.x, e.y));
     }
     for (const [id, view] of this.towers)
-      if (!wanted.has(id) || !art) {
+      if (!wanted.has(id) || !art || !drawn.has(id)) {
         view.destroy();
         this.towers.delete(id);
         this.signatures.delete(id);

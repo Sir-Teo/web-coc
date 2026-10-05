@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import index from '../reference/full-client/village-art.json' with { type: 'json' };
-import { pageNativePack } from '../scripts/native-pages.mjs';
+import { pageNativeGraph, pageNativePack } from '../scripts/native-pages.mjs';
+import cannonGraph from '../reference/cannon/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   type NativeMeshGraph,
@@ -91,7 +92,7 @@ describe('level-paged native packs', () => {
               const fromTexture = from.textures[p.texture];
               const toTexture = to.textures[q.texture];
               // The loader fetches only pages tagged with the level it draws.
-              expect(toTexture.levels).toContain(row.level);
+              if (toTexture.levels) expect(toTexture.levels).toContain(row.level);
               const src = await read(fromTexture.path);
               const dst = pages.get(toTexture.path)!;
               expect([dst.width, dst.height]).toEqual([toTexture.width, toTexture.height]);
@@ -140,10 +141,63 @@ describe('level-paged native packs', () => {
       const first = Math.min(...family.levels.map((r) => r.level));
       const firstTexels = Object.values(paged.scenes)
         .flatMap((g) => Object.values(g.textures))
-        .filter((t) => t.levels!.includes(first))
+        .filter((t) => !t.levels || t.levels.includes(first))
         .reduce((n, t) => n + t.width * t.height, 0);
       expect(firstTexels).toBeLessThan(total * 0.5);
     }, 120000);
+
+  it('pages the bundled Cannon graph by the level its export names carry', async () => {
+    const graph = cannonGraph as unknown as NativeMeshGraph;
+    const levelOf = (name: string) => {
+      const match = /_lvl(\d+)(?:_|$)/.exec(name);
+      return match ? Number(match[1]) : undefined;
+    };
+    const result = await pageNativeGraph(graph, levelOf, read, 'assets/native-pages/test');
+    expect(result).not.toBeNull();
+    const paged = result!.graph as NativeMeshGraph;
+    const pages = new Map<string, Image>(
+      result!.pages.map((p: { path: string; pixels: Buffer; width: number; height: number }) => [
+        p.path,
+        { data: p.pixels, width: p.width, height: p.height },
+      ]),
+    );
+    let compared = 0;
+    for (const name of Object.keys(graph.exports)) {
+      const level = levelOf(name);
+      const a = leaves(nativeScenePoses(graph, name, 0.4, {}, ROOT));
+      const b = leaves(nativeScenePoses(paged, name, 0.4, {}, ROOT));
+      expect(b.length).toBe(a.length);
+      for (let i = 0; i < a.length; i++) {
+        const from = graph.textures[a[i].texture];
+        const to = paged.textures[b[i].texture];
+        // Level exports draw from their level's pages; shared ones from untagged pages.
+        if (level === undefined) expect(to.levels).toBeUndefined();
+        else if (to.levels) expect(to.levels).toContain(level);
+        expect(b[i].vertices.filter((_, k) => k % 4 < 2)).toEqual(
+          a[i].vertices.filter((_, k) => k % 4 < 2),
+        );
+        // The vertex at the shape's first corner samples the same source texel.
+        const src = await read(from.path);
+        const dst = pages.get(to.path)!;
+        const sx = Math.floor(a[i].vertices[2] * from.width),
+          sy = Math.floor(a[i].vertices[3] * from.height);
+        const dx = Math.floor(b[i].vertices[2] * to.width + 1e-6),
+          dy = Math.floor(b[i].vertices[3] * to.height + 1e-6);
+        expect(dst.data.readUInt32LE((dy * dst.width + dx) * 4)).toBe(
+          src.data.readUInt32LE(
+            (Math.min(sy, from.height - 1) * src.width + Math.min(sx, from.width - 1)) * 4,
+          ),
+        );
+        compared++;
+      }
+    }
+    expect(compared).toBeGreaterThan(0);
+    // A Level 1 Cannon fetches a small share of the 2552×4056 atlas.
+    const level1 = Object.values(paged.textures)
+      .filter((t) => !t.levels || t.levels.includes(1))
+      .reduce((n, t) => n + t.width * t.height, 0);
+    expect(level1).toBeLessThan(2552 * 4056 * 0.1);
+  }, 120000);
 
   it('leaves a pack whose levels share most of their art unpaged', async () => {
     const file = 'assets/troops-native/superdragon/graph.json';

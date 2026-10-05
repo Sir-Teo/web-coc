@@ -13,9 +13,16 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import { pageNativePack } from './native-pages.mjs';
+import { pageNativeGraph, pageNativePack } from './native-pages.mjs';
 
 const PACK = /^\/assets\/(?:village-native|troops-native)\/.+\/graph\.json$/;
+/** Graphs bundled into the code, paged as they are imported; exports name their level. */
+const BUNDLED = {
+  'reference/cannon/runtime.json': (name) => {
+    const match = /_lvl(\d+)(?:_|$)/.exec(name);
+    return match ? Number(match[1]) : undefined;
+  },
+};
 const PAGES = '/assets/native-pages/';
 
 /** Reads source textures as RGBA bytes, once per path, from `dir`. */
@@ -52,12 +59,12 @@ async function page(dir, packFile, key) {
 }
 
 /** Cache key: the pack's bytes and the size and time of each texture it draws. */
-async function packKey(dir, packFile) {
-  const text = await fs.readFile(path.join(dir, packFile));
+async function packKey(dir, packFile, contents) {
+  const text = contents ?? (await fs.readFile(path.join(dir, packFile)));
   const hash = createHash('sha256').update(text);
   const pack = JSON.parse(text.toString('utf8'));
   const files = new Set();
-  for (const graph of Object.values(pack.scenes))
+  for (const graph of pack.scenes ? Object.values(pack.scenes) : [pack])
     for (const t of Object.values(graph.textures)) files.add(t.path);
   for (const file of [...files].sort()) {
     const stat = await fs.stat(path.join(dir, file));
@@ -70,12 +77,45 @@ export function nativePages() {
   let root = process.cwd();
   let publicDir = path.join(root, 'public');
   let outDir = path.join(root, 'dist');
+  let serving = false;
+  const encode = (p) =>
+    sharp(p.pixels, { raw: { width: p.width, height: p.height, channels: 4 } })
+      .png({ compressionLevel: 6 })
+      .toBuffer();
   return {
     name: 'native-pages',
+    enforce: 'pre',
     configResolved(config) {
+      serving = config.command === 'serve';
       root = config.root;
       publicDir = config.publicDir || path.join(root, 'public');
       outDir = path.resolve(root, config.build.outDir);
+    },
+    async transform(code, id) {
+      const file = path.relative(root, id.split('?')[0]).split(path.sep).join('/');
+      const levelOf = BUNDLED[file];
+      if (!levelOf || process.env.NATIVE_PAGES === '0') return;
+      const key = await packKey(publicDir, file, code);
+      const result = await pageNativeGraph(
+        JSON.parse(code),
+        levelOf,
+        imageReader(publicDir),
+        `assets/native-pages/${key}`,
+      );
+      if (!result) return;
+      for (const p of result.pages) {
+        if (serving) {
+          const target = path.join(
+            root,
+            'node_modules/.cache/native-pages',
+            p.path.slice('assets/native-pages/'.length),
+          );
+          if (await fs.stat(target).catch(() => null)) continue;
+          await fs.mkdir(path.dirname(target), { recursive: true });
+          await fs.writeFile(target, await encode(p));
+        } else this.emitFile({ type: 'asset', fileName: p.path, source: await encode(p) });
+      }
+      return { code: JSON.stringify(result.graph), map: null };
     },
     configureServer(server) {
       const cacheDir = path.join(root, 'node_modules/.cache/native-pages');

@@ -6,7 +6,8 @@
  * whole 3002×3066 Town Hall atlas, about 37 MB of GPU memory, to sample 4% of it. This transform
  * regroups each pack's shapes by the set of levels that draw them and packs each group into its
  * own pages. Every page records those levels, so a loader fetches only the pages of the levels it
- * draws. Nothing is stored twice: each shape lives on exactly one page.
+ * draws; a page every level draws carries no tag. Nothing is stored twice: each shape lives on
+ * exactly one page.
  *
  * Exactness: each shape's source rectangle is copied with a two-texel border of its original
  * neighbors, so bilinear filtering (the atlases have no mipmaps) reads exactly the texels it read
@@ -216,7 +217,13 @@ export async function pageNativePack(source, readImage, prefix) {
           }
           item.pageId = id;
         }
-        textures[id] = { path: file, width: page.width, height: page.height, levels: group.levels };
+        // A page every level draws carries no tag: loaders fetch untagged pages for any level.
+        textures[id] = {
+          path: file,
+          width: page.width,
+          height: page.height,
+          ...(group.levels.length < levels.length ? { levels: group.levels } : {}),
+        };
         pages.push({ path: file, width: page.width, height: page.height, pixels });
         for (const level of group.levels)
           need.set(level, need.get(level) + page.width * page.height);
@@ -246,4 +253,22 @@ export async function pageNativePack(source, readImage, prefix) {
   const max = Math.max(...need.values());
   if (mean > total * PAGE_WORTH || max > total) return null;
   return { pack: out, pages, stats: { total, mean, max } };
+}
+
+/**
+ * Pages a single bundled graph whose exports name their level (`basic_turret_lvl7`): `levelOf`
+ * returns an export's level, or undefined for exports every level shares (ammunition, debris,
+ * upgrade animations), whose shapes land on pages every level loads.
+ */
+export async function pageNativeGraph(graph, levelOf, readImage, prefix) {
+  const byLevel = new Map();
+  for (const name of Object.keys(graph.exports)) {
+    const level = levelOf(name);
+    if (level === undefined) continue;
+    if (!byLevel.has(level)) byLevel.set(level, {});
+    byLevel.get(level)[name] = { scene: 'graph', export: name };
+  }
+  const levels = [...byLevel].sort(([a], [b]) => a - b).map(([level, refs]) => ({ level, refs }));
+  const result = await pageNativePack({ levels, scenes: { graph } }, readImage, prefix);
+  return result && { graph: result.pack.scenes.graph, pages: result.pages, stats: result.stats };
 }
