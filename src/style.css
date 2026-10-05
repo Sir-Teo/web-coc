@@ -215,7 +215,10 @@ h3 {
   position: relative;
   width: 66px;
   height: 76px;
-  background: linear-gradient(120deg, #9ce5ff, #439ed5 40%, #246aaf);
+  /* The part above the XP earned toward the next level is dimmed, so the shield fills up. */
+  background:
+    linear-gradient(to top, transparent var(--xp, 0%), #0b2c5270 var(--xp, 0%)),
+    linear-gradient(120deg, #9ce5ff, #439ed5 40%, #246aaf);
   clip-path: polygon(4% 7%, 50% 0, 96% 7%, 94% 72%, 50% 100%, 6% 72%);
   font-family: var(--heading);
   font-size: 35px;
@@ -1418,6 +1421,19 @@ h3 {
   font-size: 12px;
   color: #9b9275;
   margin-top: 6px;
+}
+.chief-xp {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  max-width: 260px;
+}
+.chief-xp .journey-bar > i {
+  background: linear-gradient(90deg, #7fd8ff, #3d94d6);
+}
+.chief-xp small {
+  font-size: 11px;
+  color: #8a8268;
 }
 .star-bonus {
   display: grid;

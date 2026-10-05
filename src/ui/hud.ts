@@ -2252,13 +2252,23 @@ export class HUD {
     ring.style.height = `${Math.round(rect.height)}px`;
     ring.style.borderRadius = radius;
   }
+  /** The chief's level; the shield fills from the bottom as XP for the next level builds. */
+  private levelShield() {
+    const { level, into, needed } = this.model.chiefProgress;
+    const xp = needed ? `${n(into)} of ${n(needed)} XP to level ${level + 1}` : 'Maximum level';
+    return `<button class="level-shield" data-action="achievements" aria-label="Chief level ${level}, ${xp}" title="${xp}" style="--xp:${needed ? ((into / needed) * 100).toFixed(1) : 100}%">${level}</button>`;
+  }
+  private chiefXpLine() {
+    const { level, into, needed } = this.model.chiefProgress;
+    return `<div class="chief-xp"><div class="journey-bar"><i style="transform:${fillScale(needed ? (into / needed) * 100 : 100)}"></i></div><small>${needed ? `${n(into)} / ${n(needed)} XP to level ${level + 1}` : 'Maximum chief level'}</small></div>`;
+  }
   private homeHUD() {
     const m = this.model,
       s = m.state;
     if (m.editing) return this.editHUD();
     const free = m.builders - m.busy;
     return `
- <header class="player-hud"><button class="level-shield" data-action="achievements" aria-label="Chief level ${m.chiefLevel}">${m.chiefLevel}</button><div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
+ <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
  <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(
    [
@@ -3873,7 +3883,7 @@ export class HUD {
   }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p></div></div>${this.starBonusCard()}<div class="profile-stats">${(
+    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p>${this.chiefXpLine()}</div></div>${this.starBonusCard()}<div class="profile-stats">${(
       [
         ['Swords', 'Raids won', n(s.stats.wins ?? 0)],
         ['Flag', 'Raids completed', n(s.stats.raids)],
