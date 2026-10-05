@@ -42,7 +42,8 @@ must be obtained separately and are ignored by Git.
 
 Native mesh packs preserve polygons, transforms and animation data. Runtime packs
 under `public/assets/village-native/` and `public/assets/troops-native/` can be fetched
-on demand. Browse `/asset-catalog.html` on the dev server to inspect catalog assets.
+on demand. After changing a village family pack, run `node scripts/split-village-art.mjs`
+to regenerate its per-level packs (see [per-level building art](LEVEL-PACKS.md)). Browse `/asset-catalog.html` on the dev server to inspect catalog assets.
 
 ## Changing or removing assets
 

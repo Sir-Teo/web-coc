@@ -73,6 +73,7 @@ notes in those references are not current release guarantees.
 - [Compact village controls](COMPACT-HUD.md)
 - [Canvas gesture cancellation](INPUT-GESTURES.md)
 - [Native-density rendering](DISPLAY-DENSITY.md)
+- [Per-level building art](LEVEL-PACKS.md)
 - [Village scenery and camera coverage](TERRAIN-CAMERA.md)
 - [Sprite rendering](SPRITE-RENDERING.md)
 - [Village grid and building footprints](NATIVE-GRID.md)
