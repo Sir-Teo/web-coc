@@ -26,6 +26,19 @@ import {
 } from './heroes-journey';
 import { MAX_MAGIC_ITEMS, type MagicItemKind, type MagicItems } from './magic-items';
 import {
+  HELPER_KINDS,
+  advanceHelper,
+  helperLevel,
+  helperName,
+  helperReady,
+  helperWorking,
+  startHelperJob,
+  type HelperKind,
+  type HelperTarget,
+  type HelperTimer,
+  type Helpers,
+} from './helpers';
+import {
   craftedModules,
   craftedName,
   moduleUpgrade,
@@ -558,6 +571,8 @@ export interface Save {
   journey?: JourneyState;
   /** Magic items held, by kind. */
   magicItems?: MagicItems;
+  /** Helper Hut helpers bought with gems; see helpers.ts. */
+  helpers?: Helpers;
   army: Army;
   queue: QueueItem[];
   spells: SpellBook;
@@ -1452,6 +1467,14 @@ export class GameModel {
       this.state.obstacleGemIndex ??= 0;
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
       structural = changed = true;
+    }
+    // Helpers run their jobs' timers before any timer completes this tick.
+    for (const kind of HELPER_KINDS) {
+      const h = this.state.helpers?.[kind];
+      const result = h && advanceHelper(kind, h, now, (target) => this.helperTimer(target));
+      if (result) changed = true;
+      if (result === 'state' || result === 'ready') structural = true;
+      if (result === 'ready' && !inBattle) this.notify(`${helperName(kind)} is ready to work!`);
     }
     const elapsedHomeSeconds = Math.max(0, now - this.state.lastTick) / 1000;
     const dt = Math.min(elapsedHomeSeconds, 8 * 3600);
@@ -3043,6 +3066,140 @@ export class GameModel {
     finishTimerNow(progress, this.clock);
     this.tick(this.clock);
     this.notify(`Book of Heroes used: ${HERO_SOURCE[kind]} upgrade finished.`);
+    this.changed();
+    return true;
+  }
+  // ------------------------------------------------------------ Helper Hut
+  get helperHut() {
+    return this.state.buildings.find((b) => b.kind === 'helperhut' && !b.constructing);
+  }
+  helper(kind: HelperKind) {
+    return this.state.helpers?.[kind];
+  }
+  /** The level a gem purchase would buy next, or undefined at the last level. */
+  helperNext(kind: HelperKind) {
+    return helperLevel(kind, (this.helper(kind)?.level ?? 0) + 1);
+  }
+  /** Why the next helper level cannot be bought now, or undefined when it can. */
+  helperBlocker(kind: HelperKind): string | undefined {
+    const next = this.helperNext(kind);
+    if (!next) return 'Maximum level reached.';
+    if (!this.helperHut) return 'Build the Helper Hut first.';
+    if (this.townhallLevel < next.townHall) return `Requires Town Hall level ${next.townHall}.`;
+    // TID_LAB_ASSISTANT_CANT_UPGRADE_WORKING
+    if (helperWorking(kind, this.helper(kind)))
+      return `You cannot upgrade the ${helperName(kind)} while he is working. Try again when he is resting!`;
+    if (this.state.gems < next.cost) return 'Not enough gems.';
+    return undefined;
+  }
+  /** Unlocks a helper or buys its next level with gems. */
+  buyHelper(kind: HelperKind) {
+    if (this.battle) return false;
+    const blocker = this.helperBlocker(kind);
+    if (blocker) {
+      this.notify(blocker);
+      return false;
+    }
+    const next = this.helperNext(kind)!;
+    this.state.gems -= next.cost;
+    const helpers = (this.state.helpers ??= {});
+    const h = helpers[kind];
+    if (h) h.level = next.level;
+    else helpers[kind] = { level: next.level };
+    this.notify(
+      next.level === 1
+        ? `${helperName(kind)} Unlocked!`
+        : `${helperName(kind)} upgraded to level ${next.level}!`,
+    );
+    this.changed();
+    return true;
+  }
+  /** Jobs a helper can take now: running upgrades for the apprentice, research for the lab. */
+  helperJobs(kind: HelperKind): { target: HelperTarget; name: string; end: number }[] {
+    const now = this.clock;
+    if (kind === 'lab') {
+      const r = this.state.research;
+      if (!r || r.end <= now) return [];
+      const name = isSpellKind(r.kind) ? SPELLS[r.kind].name : TROOPS[r.kind].name;
+      return [
+        { target: { research: r.kind, level: this.researchLevel(r.kind) }, name, end: r.end },
+      ];
+    }
+    const jobs: { target: HelperTarget; name: string; end: number }[] = [];
+    for (const b of this.state.buildings)
+      if (b.upgradeEnd && b.upgradeEnd > now)
+        jobs.push({
+          target: { building: b.id, level: b.level },
+          name: BUILDINGS[b.kind].name,
+          end: b.upgradeEnd,
+        });
+    for (const kind of HERO_KINDS) {
+      const hero = this.heroProgress(kind);
+      if (hero?.upgradeEnd && hero.upgradeEnd > now)
+        jobs.push({
+          target: { hero: kind, level: hero.level },
+          name: HERO_SOURCE[kind],
+          end: hero.upgradeEnd,
+        });
+    }
+    return jobs.sort((a, b) => a.end - b.end);
+  }
+  /** The running timer a helper target names, or undefined once it has completed or changed. */
+  private helperTimer(target: HelperTarget): HelperTimer | undefined {
+    let timer: { upgradeStart?: number; upgradeEnd?: number } | undefined;
+    if ('building' in target) {
+      const b = this.state.buildings.find((b) => b.id === target.building);
+      if (b?.level === target.level) timer = b;
+    } else if ('hero' in target) {
+      const hero = this.heroProgress(target.hero);
+      if (hero?.level === target.level) timer = hero;
+    } else {
+      const r = this.state.research;
+      if (r?.kind !== target.research || this.researchLevel(r.kind) !== target.level) return;
+      return {
+        get end() {
+          return r.end;
+        },
+        move: (ms) => (r.end -= ms),
+      };
+    }
+    if (!timer?.upgradeEnd) return undefined;
+    const t = timer;
+    return {
+      get end() {
+        return t.upgradeEnd ?? 0;
+      },
+      // Both ends move, so the scheduled length and its completion XP are kept.
+      move: (ms) => {
+        t.upgradeEnd! -= ms;
+        if (t.upgradeStart !== undefined) t.upgradeStart -= ms;
+      },
+    };
+  }
+  /** Sends a rested helper to work on a running job, optionally every day until it completes. */
+  assignHelper(kind: HelperKind, target: HelperTarget, repeat = false) {
+    if (this.battle || !this.helperHut) return false;
+    const h = this.helper(kind);
+    if (!h) {
+      this.notify(`Unlock the ${helperName(kind)} to assign him to an upgrade.`);
+      return false;
+    }
+    if (!helperReady(h, this.clock)) {
+      this.notify(`The ${helperName(kind)} is resting right now. Come back later!`);
+      return false;
+    }
+    const timer = this.helperTimer(target);
+    if (!timer || timer.end <= this.clock) return false;
+    startHelperJob(kind, h, structuredClone(target), this.clock, repeat);
+    this.notify(`${helperName(kind)} is at work.`);
+    this.changed();
+    return true;
+  }
+  /** Stops a recurring assignment; today's work, if any, still finishes. */
+  stopHelperRepeat(kind: HelperKind) {
+    const job = this.helper(kind)?.job;
+    if (this.battle || !job?.repeat) return false;
+    delete job.repeat;
     this.changed();
     return true;
   }

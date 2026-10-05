@@ -2,6 +2,7 @@ import { validLadderMatch } from './ladder';
 import { validJourney } from './heroes-journey';
 import { validAchievements } from './achievements';
 import { validMagicItems } from './magic-items';
+import { validHelpers } from './helpers';
 import { validCraftedFields } from './crafted-defenses';
 import { superLicence } from './special-troops';
 import type { TroopKind } from './data';
@@ -464,6 +465,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.journey !== undefined && !validJourney(s.journey)) return false;
   if (s.goblinRaidSeen !== undefined && typeof s.goblinRaidSeen !== 'boolean') return false;
   if (s.magicItems !== undefined && !validMagicItems(s.magicItems)) return false;
+  if (s.helpers !== undefined && !validHelpers(s.helpers)) return false;
   if (
     s.obstacleGemIndex !== undefined &&
     (!Number.isInteger(s.obstacleGemIndex) ||
