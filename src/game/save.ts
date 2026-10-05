@@ -1,5 +1,6 @@
 import { validLadderMatch } from './ladder';
 import { validJourney } from './heroes-journey';
+import { validAchievements } from './achievements';
 import { validMagicItems } from './magic-items';
 import { validCraftedFields } from './crafted-defenses';
 import { superLicence } from './special-troops';
@@ -201,6 +202,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
       new Set(s.claimedQuests).size !== s.claimedQuests.length)
   )
     return false;
+  if (s.achievements !== undefined && !validAchievements(s.achievements)) return false;
   if (s.nativeCampaign !== undefined && !validNativeCampaign(s.nativeCampaign)) return false;
   if (s.campaignLoot !== undefined && !validCampaignLoot(s.campaignLoot)) return false;
   if (s.dark !== undefined && !finite(s.dark)) return false;

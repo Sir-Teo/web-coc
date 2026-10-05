@@ -204,6 +204,7 @@ import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
+import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
 type Panel =
   | 'blacksmith'
   | 'heroes'
@@ -235,6 +236,21 @@ const n = (v: number) => Math.floor(v).toLocaleString('en-US');
 const presetSiege = (army: Record<string, number>) =>
   Object.entries(army).reduce((sum, [k, count]) => sum + (isSiege(k as TroopKind) ? count : 0), 0);
 const damageNumber = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+/** One glyph per achievement action. */
+const ACHIEVEMENT_ICONS: Record<string, string> = {
+  upgrade: 'Hammer',
+  unit_unlock: 'UsersRound',
+  loot: 'Coins',
+  clear_obstacles: 'Axe',
+  victory_points: 'Trophy',
+  win_pvp_attack: 'Swords',
+  destroy: 'Castle',
+  npc_stars: 'Star',
+  slay: 'Crown',
+  supercharge: 'Zap',
+  seasonal_defense: 'Anvil',
+  activate_super_licence: 'Sparkles',
+};
 const gearImage = (kind: EquipmentKind | OreKind, cls = '') =>
   `<img class="${cls}" src="/assets/equipment/${kind}-v1.webp" alt="">`;
 /** Matching hero portraits; the legacy King alias uses the same approved art. */
@@ -1729,7 +1745,7 @@ export class HUD {
         m.toggleHaptics();
         break;
       case 'claim':
-        if (m.claimQuest(arg)) this.audio.play('collect');
+        if (m.claimAchievement(arg)) this.audio.play('collect');
         break;
       case 'offline-retry':
         retryOfflineWarm();
@@ -2287,7 +2303,7 @@ export class HUD {
        }</div>`,
    )
    .join('')}</div>
- <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements">${icon('ScrollText', 27)}<span class="tool-label">Quests</span></button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
+ <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${m.achievementsReady ? `, ${m.achievementsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${m.achievementsReady ? `<span class="notification">${m.achievementsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
@@ -3902,9 +3918,24 @@ export class HUD {
         ([ic, label, value]) =>
           `<div class="profile-stat">${icon(ic, 18)}<b>${value}</b><small>${label}</small></div>`,
       )
-      .join(
-        '',
-      )}</div><div class="quest-list">${this.model.quests.map((q) => `<article class="quest"><div class="quest-icon">${icon(q.icon, 28)}</div><div><h3>${q.title} ${q.claimed ? '<span class="completed">Claimed</span>' : ''}</h3><p>${q.description}</p><div class="quest-progress"><i style="width:${pct((q.progress / q.target) * 100)}"></i></div><small class="quest-count">${n(Math.min(q.progress, q.target))} / ${n(q.target)}</small></div>${q.claimed ? `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>` : button(`claim:${q.id}`, `${gem} ${q.reward}`, 'game-btn green quest-claim', q.progress < q.target ? 'disabled' : '')}</article>`).join('')}</div></div>`;
+      .join('')}</div>${this.achievementList()}</div>`;
+  }
+  private achievementList() {
+    const list = [...this.model.achievements].sort(
+      (a, b) =>
+        Number(b.ready) - Number(a.ready) ||
+        Number(!a.next) - Number(!b.next) ||
+        ACHIEVEMENTS.indexOf(a.def) - ACHIEVEMENTS.indexOf(b.def),
+    );
+    const cards = list.map(({ def, claimed, next, value, ready }) => {
+      const stars = def.tiers
+        .map((_, i) => `<i class="${i < claimed ? 'won' : ''}">★</i>`)
+        .join('');
+      const shown = Math.min(value, next?.count ?? value);
+      return `<article class="quest achievement" data-achievement="${def.id}"><div class="quest-icon">${icon(ACHIEVEMENT_ICONS[def.action] ?? 'Star', 28)}</div><div><h3>${def.title} <span class="achievement-stars" aria-label="${claimed} of ${def.tiers.length} stars">${stars}</span></h3><p>${next ? next.info : (def.completed ?? 'Complete')}</p>${next ? `<div class="quest-progress"><i style="width:${pct((shown / next.count) * 100)}"></i></div><small class="quest-count">${n(shown)} / ${n(next.count)} · +${n(next.xp)} XP</small>` : ''}</div>${next ? button(`claim:${def.id}`, `${gem} ${n(next.gems)}`, 'game-btn green quest-claim', ready ? '' : 'disabled') : `<b class="claimed-check">${icon('ShieldCheck', 23)}</b>`}</article>`;
+    });
+    const ready = this.model.achievementsReady;
+    return `<h3 class="achievement-heading">Achievements${ready ? ` <small>${ready} ready</small>` : ''}</h3><div class="quest-list">${cards.join('')}</div><p class="achievement-note">${UNAVAILABLE_ACHIEVEMENTS.length} more of the original's achievements need clans, wars, Clan Games, Season Challenges, ranked leagues, defenses or a Supercell ID, which this offline village does not have.</p>`;
   }
   private help() {
     return `<div class="modal-body help-body"><div class="guide-hero"><img src="${hudAsset('swordsman')}" alt="Your Barbarian guide"><div><h2>Good to see you, Chief!</h2><p>The builders are ready, the gold is flowing, and your troops are itching for an adventure. Let's make this village a kingdom.</p></div></div><div class="help-steps"><article><b>1</b><div><h3>Build and rearrange</h3><p>Open the Shop and drag a building straight onto the village. Use Edit mode to drag anything already built — with undo, redo and three saved layouts.</p></div></article><article><b>2</b><div><h3>Grow past the Town Hall</h3><p>Buildings have distinct Town Hall requirements. Open Progression from the Army drawer to see the level caps and unlocks for each tier. Collectors keep working while you're away, up to 8 hours.</p></div></article><article><b>3</b><div><h3>Raise an army. Raid the valley.</h3><p>Prepare troops and spells instantly for free, save Quick armies, then attack. Practice against your own village from Army or the campaign map, and review your attacks in the Battle log. Campaign attacks have no time limit or trophy changes. Ladder matches, this game's own stand-in for multiplayer, pit you against a native layout for trophies: 30 seconds to scout, three minutes to attack, no loot. Each village has a finite supply of loot; any loot beyond your storage capacity is lost. Practice gives you 30 seconds to scout and three minutes to attack. Balloons fly over walls; Archer Towers and Air Defenses can hit them. Send Giants first, Wall Breakers to open a breach, then Goblins to steal resources. Mortars cannot fire within 4 tiles; moving troops can dodge their shells. Wizard Towers splash one troop layer at a time. Buy hidden traps from the Shop, place them in likely approaches, and test them in Practice. Traps are armed again for each new attack.</p></div></article></div><div class="help-controls"><span>Drag <b>Move camera</b></span><span>Hold <b>Stream troops</b></span><span>Hold &amp; drag <b>Spread troops</b></span><span>Double-tap <b>Deploy five</b></span><span>Esc <b>Close / cancel</b></span><span>M <b>Map cursor · Enter acts</b></span><span>B <b>Building list</b></span></div>${button('tutorial', `Let's build ${icon('ArrowRight', 19)}`, 'game-btn green start-btn')}</div>`;

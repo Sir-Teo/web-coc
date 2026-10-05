@@ -1,5 +1,16 @@
 import { stepDefendingHeroes } from './defending-heroes';
 import { chiefProgress, completionXp, finishTimerNow } from './experience';
+import {
+  ACHIEVEMENTS,
+  LOOT_RESOURCES,
+  SLAIN_KINDS,
+  achievementById,
+  achievementValue,
+  destroyCounts,
+  emptyAchievements,
+  type AchievementDef,
+  type AchievementState,
+} from './achievements';
 import { ladderOpponent, ladderTrophies, type LadderMatch } from './ladder';
 import {
   JOURNEY_ALL_OWNED_STARRY,
@@ -102,7 +113,9 @@ import {
   type CampaignCatalog,
 } from './campaign-catalog';
 import {
+  NATIVE_CAMPAIGN,
   freshNativeCampaign,
+  goblinMap,
   nativeBuildings,
   nativeCampaignIssues,
   nativeDefendingHeroes,
@@ -561,7 +574,9 @@ export interface Save {
   tutorial: boolean;
   /** The opening Goblin raid on this village has been watched (or skipped). */
   goblinRaidSeen?: boolean;
+  /** Retired local quests; kept so older saves still load. */
   claimedQuests?: string[];
+  achievements?: AchievementState;
   troopLevels?: Record<TroopKind, number>;
   spellLevels?: Record<SpellKind, number>;
   research?: { kind: ResearchKind; end: number };
@@ -1317,100 +1332,55 @@ export class GameModel {
     r.end = this.clock;
     this.tick(this.clock);
   }
-  get quests() {
-    return [
-      {
-        id: 'gold-rush',
-        title: 'Gold rush',
-        description: 'Collect 10,000 resources',
-        progress: this.state.stats.collected,
-        target: 10000,
-        reward: 15,
-        icon: 'Coins',
-      },
-      {
-        id: 'first-raid',
-        title: 'First blood',
-        description: 'Complete your first raid',
-        progress: this.state.stats.raids,
-        target: 1,
-        reward: 20,
-        icon: 'Swords',
-      },
-      {
-        id: 'wall-breaker',
-        title: 'Wall breaker',
-        description: 'Destroy 25 enemy buildings',
-        progress: this.state.stats.destroyed,
-        target: 25,
-        reward: 25,
-        icon: 'Castle',
-      },
-      {
-        id: 'valley-explorer',
-        title: 'Valley explorer',
-        description: 'Earn 12 campaign stars',
-        progress: Math.max(
-          this.state.stars.reduce((a, b) => a + b, 0),
-          (this.state.nativeCampaign?.stars ?? []).reduce((a, b) => a + b, 0),
-        ),
-        target: 12,
-        reward: 40,
-        icon: 'Star',
-      },
-      {
-        id: 'master-builder',
-        title: 'Master builder',
-        description: 'Raise 15 buildings',
-        progress: this.state.stats.built ?? 0,
-        target: 15,
-        reward: 30,
-        icon: 'Hammer',
-      },
-      {
-        id: 'drill-sergeant',
-        title: 'Drill sergeant',
-        description: 'Train 100 troops',
-        progress: this.state.stats.trained ?? 0,
-        target: 100,
-        reward: 35,
-        icon: 'UsersRound',
-      },
-      {
-        id: 'town-planner',
-        title: 'Town planner',
-        description: 'Reach Town Hall level 4',
-        progress: this.townhallLevel,
-        target: 4,
-        reward: 50,
-        icon: 'LayoutGrid',
-      },
-      // Single-player attacks never change trophies, so a trophy target could not be met; the
-      // retired 'high-flier' quest is replaced by a goal normal play reaches.
-      {
-        id: 'goblin-raider',
-        title: 'Goblin raider',
-        description: 'Win 20 campaign raids',
-        progress: this.state.stats.wins ?? 0,
-        target: 20,
-        reward: 45,
-        icon: 'Trophy',
-      },
-    ].map((q) => ({
-      ...q,
-      claimed: this.state.claimedQuests?.includes(q.id) ?? false,
-    }));
+  /** The client's Home Village achievements this village can count, with their progress. */
+  get achievements() {
+    const state = this.state.achievements ?? emptyAchievements();
+    const village = {
+      counts: state.counts,
+      buildingLevel: (kind: BuildingKind) =>
+        this.state.buildings
+          .filter((b) => b.kind === kind && !b.constructing)
+          .reduce((top, b) => Math.max(top, b.level), 0),
+      troopUnlocked: (kind: TroopKind) => this.troopUnlocked(kind),
+      goblinStars: NATIVE_CAMPAIGN.reduce(
+        (n, stage, i) => n + (goblinMap(stage) ? (this.state.nativeCampaign?.stars[i] ?? 0) : 0),
+        0,
+      ),
+      trophies: this.state.trophies,
+    };
+    return ACHIEVEMENTS.map((def) => {
+      const claimed = Math.min(state.claimed[def.id] ?? 0, def.tiers.length);
+      const next = def.tiers[claimed];
+      const value = achievementValue(def, claimed, village);
+      return { def, claimed, next, value, ready: !!next && value >= next.count };
+    });
   }
-  claimQuest(id: string) {
-    const quest = this.quests.find((q) => q.id === id);
-    if (!quest || quest.claimed || quest.progress < quest.target) return false;
-    this.state.claimedQuests ??= [];
-    this.state.claimedQuests.push(id);
-    this.state.gems += quest.reward;
-    this.notify(`${quest.title} complete! +${quest.reward} gems`);
-    this.gainXp(20);
+  /** Finished tiers waiting to be claimed. */
+  get achievementsReady() {
+    return this.achievements.filter((a) => a.ready).length;
+  }
+  claimAchievement(id: string) {
+    const entry = this.achievements.find((a) => a.def.id === id);
+    if (!entry?.ready || !entry.next) return false;
+    const state = (this.state.achievements ??= emptyAchievements());
+    state.claimed[id] = entry.claimed + 1;
+    this.state.gems += entry.next.gems;
+    this.notify(
+      `${entry.def.title} ${'★'.repeat(entry.claimed + 1)} · +${entry.next.gems} gems · +${entry.next.xp} XP`,
+    );
+    this.gainXp(entry.next.xp);
     this.changed();
     return true;
+  }
+  /** Add to every counted achievement of an action that `matches`. */
+  private countAchievements(action: string, amount: number | ((a: AchievementDef) => number) = 1) {
+    for (const def of ACHIEVEMENTS) {
+      if (def.action !== action) continue;
+      const add = typeof amount === 'number' ? amount : amount(def);
+      if (!(add > 0)) continue;
+      const counts = (this.state.achievements ??= emptyAchievements()).counts;
+      counts[def.id] = Math.min(Number.MAX_SAFE_INTEGER, (counts[def.id] ?? 0) + add);
+    }
   }
   get chiefLevel() {
     return chiefProgress(this.state.xp).level;
@@ -1517,13 +1487,16 @@ export class GameModel {
         const xp = completionXp(b.upgradeStart, b.upgradeEnd);
         if (b.improving === 'weapon') b.weaponLevel = (b.weaponLevel ?? 1) + 1;
         else if (b.improving === 'gearup') b.geared = true;
-        else if (b.improving === 'supercharge') b.supercharge = (b.supercharge ?? 0) + 1;
-        else if (b.improving === 'guardian') b.guardianLevel = (b.guardianLevel ?? 1) + 1;
+        else if (b.improving === 'supercharge') {
+          b.supercharge = (b.supercharge ?? 0) + 1;
+          this.countAchievements('supercharge');
+        } else if (b.improving === 'guardian') b.guardianLevel = (b.guardianLevel ?? 1) + 1;
         else if (b.improving === 'module' && b.moduleUpgrade) {
           const { kind, module } = b.moduleUpgrade;
           const levels = [...(b.craftedModules?.[kind] ?? [1, 1, 1])] as ModuleLevels;
           levels[module]++;
           b.craftedModules = { ...b.craftedModules, [kind]: levels };
+          this.countAchievements('seasonal_defense');
         } else if (b.improving !== 'module' && !b.constructing) b.level++;
         delete b.improving;
         delete b.moduleUpgrade;
@@ -1561,6 +1534,7 @@ export class GameModel {
       structural = changed = true;
       this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
       this.gainXp(3);
+      this.countAchievements('clear_obstacles');
       if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1 });
     }
     if (this.heroHall && !this.state.king) {
@@ -2568,6 +2542,7 @@ export class GameModel {
     if (this.state.dark < cost) return this.notify('Not enough dark elixir.');
     this.state.dark -= cost;
     (this.state.superBoosts ??= {})[kind] = now + Number(row.DurationH) * 3600000;
+    this.countAchievements('activate_super_licence');
     this.changed();
   }
   troopUnlocked(kind: TroopKind) {
@@ -5087,6 +5062,25 @@ export class GameModel {
       // The original pays experience for the Town Hall alone: one point per level destroyed.
       const hall = b.buildings.find((v) => v.kind === 'townhall' && v.hp <= 0);
       if (hall) this.gainXp(hall.level);
+      this.countAchievements('loot', (a) => b.lootTaken?.[LOOT_RESOURCES[a.data!]] ?? 0);
+      // Ladder matches stand in for the original's multiplayer battles.
+      if (b.ladder) {
+        if (b.stars > 0) this.countAchievements('win_pvp_attack');
+        const ruins = b.buildings.filter((v) => v.hp <= 0 && !isTrap(v.kind));
+        this.countAchievements('destroy', (a) => ruins.filter((v) => destroyCounts(a, v)).length);
+        const best = achievementById('victory_points');
+        if (best) {
+          const counts = (this.state.achievements ??= emptyAchievements()).counts;
+          counts[best.id] = Math.max(counts[best.id] ?? 0, this.state.trophies);
+        }
+      }
+      if (b.catalog === 'goblin-v1')
+        this.countAchievements('slay', (a) =>
+          (b.defenders ?? []).some((d) => d.kind === SLAIN_KINDS[a.data!] && d.hp <= 0) &&
+          !(this.state.achievements?.counts[a.id] ?? 0)
+            ? 1
+            : 0,
+        );
       // Stars bank toward the daily bonus and are allowed to overflow past its price.
       if (b.stars > 0) {
         const bonus = (this.state.starBonus ??= emptyStarBonus());

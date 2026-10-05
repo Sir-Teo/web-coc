@@ -282,17 +282,3 @@ describe('late progression and combat quality', () => {
       ).toBe(false);
   });
 });
-
-it('awards quest gems once and preserves claims in saved state', () => {
-  const m = new GameModel();
-  const gems = m.state.gems;
-  expect(m.claimQuest('first-raid')).toBe(false);
-  m.state.stats.raids = 1;
-  expect(m.claimQuest('first-raid')).toBe(true);
-  expect(m.state.gems).toBe(gems + 20);
-  expect(m.claimQuest('first-raid')).toBe(false);
-  expect(m.state.gems).toBe(gems + 20);
-  const restored = new GameModel(structuredClone(m.state));
-  expect(restored.claimQuest('first-raid')).toBe(false);
-  expect(validateSave(restored.state)).toBe(true);
-});
