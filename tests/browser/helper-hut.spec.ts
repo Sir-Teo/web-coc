@@ -37,7 +37,7 @@ for (const viewport of [
     await expect(open).toContainText('Helpers');
     await open.click();
     await expect(page.locator('#modal-title')).toHaveText('Helper Hut');
-    await expect(page.locator('.helper-card')).toHaveCount(2);
+    await expect(page.locator('.helper-card')).toHaveCount(3);
     await expect(page.locator('.helper-card').first()).toContainText('Locked');
     expect(
       await page.locator('.helpers-body').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
@@ -64,3 +64,46 @@ for (const viewport of [
     expect(id).toBeGreaterThan(0);
   });
 }
+
+test('the Alchemist converts Gold into Elixir at phone width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  await page.locator('#loading').waitFor({ state: 'detached' });
+  await page.evaluate(async () => {
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const m = window.__game.model;
+    m.state.obstacles = [];
+    m.townhall!.level = 11;
+    const hut = makeBuilding(m.state.nextId++, 'helperhut', 24, 14);
+    m.state.buildings.push(hut);
+    m.state.gold = 1_000_000;
+    m.state.elixir = 0;
+    m.state.gems = 500;
+    m.selected = hut.id;
+    m.changed();
+  });
+  await page.locator('.building-context [data-action="helpers"]').click();
+  await page.locator('[data-action="helper-buy:alchemist"]').click();
+  const card = page.locator('.helper-card').nth(2);
+  await expect(card).toContainText('Ready to work!');
+  await expect(card.locator('[data-action="alchemy-to:gold"]')).toBeDisabled();
+  const slider = card.locator('#alchemy-amount');
+  await expect(slider).toHaveAttribute('max', '1000000');
+  await slider.fill('500000');
+  await expect(card.locator('[data-alchemy-out]')).toHaveText('505,000');
+  expect(
+    await page.locator('.helpers-body').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+  ).toBe(true);
+  await card.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'output/playtest/helper-hut-alchemist-390.png' });
+  await card.locator('[data-action="alchemy-convert"]').click();
+  await expect(card).toContainText('Available in');
+  const state = await page.evaluate(() => {
+    const m = window.__game.model;
+    return { gold: m.state.gold, elixir: m.state.elixir };
+  });
+  expect(state.gold).toBe(500_000);
+  expect(state.elixir).toBe(505_000);
+});

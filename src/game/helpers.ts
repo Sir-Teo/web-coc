@@ -8,9 +8,10 @@ import { HERO_KINDS, type HeroKind } from './native-hero-data';
  * working seconds the job's timer runs `multiplier` extra seconds each second, then the helper
  * rests VILLAGERS_COOLDOWN_TIME, so it works one hour a day. With `repeat` (the client's "Keep
  * assigned until upgrade is complete") it returns to the job each time it has rested. The
- * Alchemist and Prospector convert resources and are not modelled.
+ * Alchemist takes no job: once rested she converts one resource into another, instantly, then
+ * rests. The Prospector converts ores and is a Gold Pass reward; it is not modelled.
  */
-export const HELPER_KINDS = ['builder', 'lab'] as const;
+export const HELPER_KINDS = ['builder', 'lab', 'alchemist'] as const;
 export type HelperKind = (typeof HELPER_KINDS)[number];
 export interface HelperLevel {
   level: number;
@@ -21,12 +22,24 @@ export interface HelperLevel {
   seconds: number;
   /** Gems that buy this level. */
   cost: number;
+  /** Converters: the base caps scale by this percentage. */
+  capPercent?: number;
+  /** Converters: the output is this percentage of the exchanged amount. */
+  ratePercent?: number;
 }
 const ROWS = Object.fromEntries(
   catalog.helpers
     .filter((h) => (HELPER_KINDS as readonly string[]).includes(h.id))
     .map((h) => [h.id, h]),
-) as unknown as Record<HelperKind, { name: string; info: string; levels: HelperLevel[] }>;
+) as unknown as Record<
+  HelperKind,
+  {
+    name: string;
+    info: string;
+    levels: HelperLevel[];
+    conversion?: { resources: string[]; caps: number[] };
+  }
+>;
 /** Rest after each assignment's work. */
 export const HELPER_COOLDOWN_SECONDS = catalog.cooldownSeconds;
 
@@ -36,6 +49,35 @@ export const helperLevels = (kind: HelperKind): readonly HelperLevel[] => ROWS[k
 export const helperMaxLevel = (kind: HelperKind) => ROWS[kind].levels.length;
 export const helperLevel = (kind: HelperKind, level: number): HelperLevel | undefined =>
   ROWS[kind].levels[level - 1];
+
+export type ConvertResource = 'gold' | 'elixir' | 'dark';
+export const CONVERT_RESOURCES: readonly ConvertResource[] = ['gold', 'elixir', 'dark'];
+const CLIENT_RESOURCE: Record<ConvertResource, string> = {
+  gold: 'Gold',
+  elixir: 'Elixir',
+  dark: 'DarkElixir',
+};
+/** The Alchemist's base cap for a resource: 1.5M Gold or Elixir, or 10,000 Dark Elixir. */
+const baseCap = (resource: ConvertResource) => {
+  const { resources, caps } = ROWS.alchemist.conversion!;
+  return caps[resources.indexOf(CLIENT_RESOURCE[resource])];
+};
+/** The most of `from` one conversion takes at this Alchemist level. */
+export const alchemistCap = (level: number, from: ConvertResource) =>
+  Math.floor((baseCap(from) * helperLevel('alchemist', level)!.capPercent!) / 100);
+/**
+ * What `amount` of `from` becomes in `to`: the resources trade at the ratio of their base caps
+ * (1:1 between Gold and Elixir, 150:1 against Dark Elixir), plus the level's conversion bonus.
+ */
+export const alchemistOutput = (
+  level: number,
+  from: ConvertResource,
+  to: ConvertResource,
+  amount: number,
+) =>
+  Math.floor(
+    (amount * baseCap(to) * helperLevel('alchemist', level)!.ratePercent!) / (baseCap(from) * 100),
+  );
 
 /** What a helper works on, with the level being upgraded so a later job is never mistaken for it. */
 export type HelperTarget =
@@ -168,6 +210,8 @@ export function validHelpers(value: unknown): value is Helpers {
     if (h.readyAt !== undefined && !finite(h.readyAt)) return false;
     if (h.saved !== undefined && (!finite(h.saved) || h.saved < 0)) return false;
     if (h.job === undefined) return true;
+    // The Alchemist converts; she never holds a job.
+    if (kind === 'alchemist') return false;
     const job = h.job;
     const end = job?.start + workSeconds(kind as HelperKind, h) * 1000;
     return (

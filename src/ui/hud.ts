@@ -108,7 +108,10 @@ import {
 import { MAGIC_ITEMS, MAGIC_ITEM_KINDS } from '../game/magic-items';
 import {
   HELPER_COOLDOWN_SECONDS,
+  CONVERT_RESOURCES,
   HELPER_KINDS,
+  alchemistCap,
+  alchemistOutput,
   helperInfo,
   helperLevel,
   helperMaxLevel,
@@ -116,6 +119,7 @@ import {
   helperReady,
   helperWorkEnd,
   helperWorking,
+  type ConvertResource,
   type HelperKind,
   type HelperTarget,
 } from '../game/helpers';
@@ -300,6 +304,9 @@ const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
+/** 1.5M, 10K: an amount short enough for a stat box. */
+const short = (v: number) =>
+  v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e4 ? `${+(v / 1e3).toFixed(1)}K` : n(v);
 /** A helper job's id in actions: `b.<building>`, `h.<hero>` or `r.<research>`. */
 const helperJobId = (t: HelperTarget) =>
   'building' in t ? `b.${t.building}` : 'hero' in t ? `h.${t.hero}` : `r.${t.research}`;
@@ -833,6 +840,15 @@ export class HUD {
       'input',
       (e) => {
         const t = e.target as HTMLInputElement;
+        if (t.id === 'alchemy-amount') {
+          this.alchemyAmount = Number(t.value);
+          const { take, out, lost } = this.alchemyPreview();
+          setText(this.root.querySelector<HTMLElement>('[data-alchemy-in]'), n(take));
+          setText(this.root.querySelector<HTMLElement>('[data-alchemy-out]'), n(out));
+          this.root
+            .querySelector<HTMLElement>('[data-alchemy-warn]')
+            ?.toggleAttribute('hidden', !lost);
+        }
         if (t.id === 'replay-progress' && this.model.replay) {
           // Keep the slider mounted while the pointer or keyboard changes its value.
           this.model.replay.paused = true;
@@ -1292,6 +1308,24 @@ export class HUD {
           const kind = arg as HelperKind;
           this.helperRepeat[kind] = !this.helperRepeat[kind];
           this.render();
+        }
+        break;
+      case 'alchemy-from':
+      case 'alchemy-to':
+        if ((CONVERT_RESOURCES as readonly string[]).includes(arg)) {
+          const r = arg as ConvertResource;
+          if (verb === 'alchemy-from') {
+            this.alchemyFrom = r;
+            this.alchemyAmount = null;
+            if (this.alchemyTo === r) this.alchemyTo = CONVERT_RESOURCES.find((v) => v !== r)!;
+          } else if (r !== this.alchemyFrom) this.alchemyTo = r;
+          this.render();
+        }
+        break;
+      case 'alchemy-convert':
+        if (m.convertResources(this.alchemyFrom, this.alchemyTo, this.alchemyTake())) {
+          this.alchemyAmount = null;
+          this.audio.play('collect');
         }
         break;
       case 'helper-stop':
@@ -2443,7 +2477,55 @@ export class HUD {
     return `<div class="modal-body crafting-body"><p class="crafting-note">Switching is free and instant; each defense keeps its modules. One module upgrades at a time and needs a free builder.</p>${cards.join('')}<p class="crafting-note">Numbers from the pinned client tables. The defense art is this game’s own.</p></div>`;
   }
   /** "Keep assigned until upgrade is complete" for the next assignment of each helper. */
-  private helperRepeat: Record<HelperKind, boolean> = { builder: false, lab: false };
+  private helperRepeat: Record<HelperKind, boolean> = {
+    builder: false,
+    lab: false,
+    alchemist: false,
+  };
+  /** The Alchemist's chosen conversion; a null amount means as much as she can take. */
+  private alchemyFrom: ConvertResource = 'gold';
+  private alchemyTo: ConvertResource = 'elixir';
+  private alchemyAmount: number | null = null;
+  /** The most the Alchemist can take of the chosen resource now. */
+  private alchemyMax() {
+    const h = this.model.helper('alchemist');
+    if (!h) return 0;
+    return Math.max(
+      0,
+      Math.min(
+        alchemistCap(h.level, this.alchemyFrom),
+        Math.floor(this.model.state[this.alchemyFrom]),
+      ),
+    );
+  }
+  private alchemyTake() {
+    const max = this.alchemyMax();
+    return Math.min(max, this.alchemyAmount ?? max);
+  }
+  /** Conversion preview text: what goes in, what comes out, and whether storage overflows. */
+  private alchemyPreview() {
+    const m = this.model;
+    const h = m.helper('alchemist')!;
+    const take = this.alchemyTake();
+    const out = alchemistOutput(h.level, this.alchemyFrom, this.alchemyTo, take);
+    const room = Math.max(0, Math.floor(m.resourceCap(this.alchemyTo) - m.state[this.alchemyTo]));
+    return { take, out, lost: out > room };
+  }
+  /** The Alchemist's controls: source, target, amount and the client's warnings. */
+  private alchemy() {
+    const name = (r: ConvertResource) =>
+      r === 'dark' ? 'Dark Elixir' : r === 'gold' ? 'Gold' : 'Elixir';
+    const choice = (verb: string, r: ConvertResource, on: boolean, disabled = false) =>
+      button(
+        `${verb}:${r}`,
+        `${resource(r)} ${name(r)}`,
+        `alchemy-choice ${on ? 'on' : ''}`,
+        `aria-pressed="${on}" ${disabled ? 'disabled title="Cannot convert to the same resource"' : ''}`,
+      );
+    const max = this.alchemyMax();
+    const { take, out, lost } = this.alchemyPreview();
+    return `<small class="helper-heading">Choose a resource to convert:</small><div class="alchemy-row">${CONVERT_RESOURCES.map((r) => choice('alchemy-from', r, r === this.alchemyFrom)).join('')}</div><small class="helper-heading">Convert ${name(this.alchemyFrom)} to:</small><div class="alchemy-row">${CONVERT_RESOURCES.map((r) => choice('alchemy-to', r, r === this.alchemyTo, r === this.alchemyFrom)).join('')}</div><input id="alchemy-amount" class="alchemy-amount" type="range" min="0" max="${max}" step="1" value="${take}" aria-label="Amount of ${name(this.alchemyFrom)} to convert" ${max ? '' : 'disabled'}><p class="alchemy-preview">${resource(this.alchemyFrom)} <b data-alchemy-in>${n(take)}</b> ${icon('ArrowRight', 15)} ${resource(this.alchemyTo)} <b data-alchemy-out>${n(out)}</b></p><p class="alchemy-warn" data-alchemy-warn ${lost ? '' : 'hidden'}>Your storage is almost full and some of the resources will be lost.</p>${button('alchemy-convert', 'Convert', 'game-btn green alchemy-convert', take > 0 ? '' : 'disabled')}`;
+  }
   /** Each helper with the client's status line, its stats and the jobs it can take. */
   private helpers() {
     const m = this.model;
@@ -2489,9 +2571,14 @@ export class HUD {
             `${blocker ? 'disabled' : ''}`,
           ) + (blocker ? `<small class="helper-gate">${blocker}</small>` : '')
         : '<small class="helper-gate">Maximum level</small>';
-      return `<article class="helper-card ${!h ? 'locked' : working ? 'working' : ready ? 'ready' : 'resting'}"><header><span class="helper-glyph">${icon(kind === 'lab' ? 'FlaskConical' : 'Hammer', 30)}</span><div><h3>${helperName(kind)}</h3><small>${h ? `Level ${h.level} / ${helperMaxLevel(kind)}` : `Town Hall ${row.townHall}`}</small></div><span class="helper-status">${status}</span></header><p class="helper-info">${helperInfo(kind)}</p><dl class="helper-stats"><div><dt>Working time</dt><dd>${time(row.seconds)}</dd></div><div><dt>Cooldown</dt><dd>${time(HELPER_COOLDOWN_SECONDS)}</dd></div><div><dt>Working speed</dt><dd>×${row.multiplier}</dd></div>${h?.saved ? `<div><dt>Total saved time</dt><dd>${time(h.saved)}</dd></div>` : ''}</dl>${job}${list}<footer>${buy}</footer></article>`;
+      const stats =
+        kind === 'alchemist'
+          ? `<div><dt>Resource Conversion Max</dt><dd>${resource('gold')} ${short(alchemistCap(row.level, 'gold'))} ${resource('dark')} ${short(alchemistCap(row.level, 'dark'))}</dd></div><div><dt>Conversion bonus</dt><dd>+${row.ratePercent! - 100}%</dd></div><div><dt>Cooldown</dt><dd>${time(HELPER_COOLDOWN_SECONDS)}</dd></div>`
+          : `<div><dt>Working time</dt><dd>${time(row.seconds)}</dd></div><div><dt>Cooldown</dt><dd>${time(HELPER_COOLDOWN_SECONDS)}</dd></div><div><dt>Working speed</dt><dd>×${row.multiplier}</dd></div>${h?.saved ? `<div><dt>Total saved time</dt><dd>${time(h.saved)}</dd></div>` : ''}`;
+      const body = kind === 'alchemist' ? (h && ready ? this.alchemy() : '') : `${job}${list}`;
+      return `<article class="helper-card ${!h ? 'locked' : working ? 'working' : ready ? 'ready' : 'resting'}"><header><span class="helper-glyph">${icon(kind === 'lab' ? 'FlaskConical' : kind === 'alchemist' ? 'Sparkles' : 'Hammer', 30)}</span><div><h3>${helperName(kind)}</h3><small>${h ? `Level ${h.level} / ${helperMaxLevel(kind)}` : `Town Hall ${row.townHall}`}</small></div><span class="helper-status">${status}</span></header><p class="helper-info">${helperInfo(kind)}</p><dl class="helper-stats">${stats}</dl>${body}<footer>${buy}</footer></article>`;
     });
-    return `<div class="modal-body helpers-body">${cards.join('')}<p class="crafting-note">Helpers work one hour a day, then rest. Levels, speeds and gem costs are the pinned client’s.</p></div>`;
+    return `<div class="modal-body helpers-body">${cards.join('')}<p class="crafting-note">Helpers work once a day, then rest. Levels, speeds, conversion rates and gem costs are the pinned client’s.</p></div>`;
   }
   private craftedValue(kind: CraftedKind, module: number, level: number) {
     const levels: ModuleLevels = [1, 1, 1];

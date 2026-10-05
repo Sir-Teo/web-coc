@@ -26,13 +26,17 @@ import {
 } from './heroes-journey';
 import { MAX_MAGIC_ITEMS, type MagicItemKind, type MagicItems } from './magic-items';
 import {
+  HELPER_COOLDOWN_SECONDS,
   HELPER_KINDS,
   advanceHelper,
+  alchemistCap,
+  alchemistOutput,
   helperLevel,
   helperName,
   helperReady,
   helperWorking,
   startHelperJob,
+  type ConvertResource,
   type HelperKind,
   type HelperTarget,
   type HelperTimer,
@@ -3125,6 +3129,7 @@ export class GameModel {
   /** Jobs a helper can take now: running upgrades for the apprentice, research for the lab. */
   helperJobs(kind: HelperKind): { target: HelperTarget; name: string; end: number }[] {
     const now = this.clock;
+    if (kind === 'alchemist') return [];
     if (kind === 'lab') {
       const r = this.state.research;
       if (!r || r.end <= now) return [];
@@ -3200,6 +3205,37 @@ export class GameModel {
     if (!timer || timer.end <= this.clock) return false;
     startHelperJob(kind, h, structuredClone(target), this.clock, repeat);
     this.notify(`${helperName(kind)} is at work.`);
+    this.changed();
+    return true;
+  }
+  /**
+   * The Alchemist converts `amount` of one resource into another at once, then rests. Output
+   * beyond the target's storage is lost, as the client warns.
+   */
+  convertResources(from: ConvertResource, to: ConvertResource, amount: number) {
+    if (this.battle || !this.helperHut) return false;
+    const h = this.helper('alchemist');
+    const name = (r: ConvertResource) =>
+      r === 'dark' ? 'Dark Elixir' : r === 'gold' ? 'Gold' : 'Elixir';
+    // The client's TID_ALCHEMIST_* and TID_VILLAGER_ALCHEMIST_* messages.
+    const refuse = (message: string) => (this.notify(message), false);
+    if (!h) return refuse('You need to unlock the Alchemist first!');
+    if (!helperReady(h, this.clock))
+      return refuse('The Alchemist is resting right now. Come back later!');
+    if (from === to) return refuse('Cannot convert to the same resource');
+    const take = Math.floor(amount);
+    if (!(take > 0)) return refuse('You need to select a resource to convert!');
+    if (take > alchemistCap(h.level, from) || take > this.state[from])
+      return refuse(`Not enough ${name(from)}`);
+    const made = alchemistOutput(h.level, from, to, take);
+    const kept = Math.min(made, Math.max(0, Math.floor(this.resourceCap(to) - this.state[to])));
+    this.state[from] -= take;
+    this.state[to] += kept;
+    h.readyAt =
+      this.clock + (helperLevel('alchemist', h.level)!.seconds + HELPER_COOLDOWN_SECONDS) * 1000;
+    this.notify(
+      `Converted ${Math.floor(take).toLocaleString('en-US')} ${name(from)} into ${kept.toLocaleString('en-US')} ${name(to)}.`,
+    );
     this.changed();
     return true;
   }

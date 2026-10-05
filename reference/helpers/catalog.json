@@ -179,51 +179,77 @@
           "townHall": 11,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 100
+          "cost": 100,
+          "capPercent": 100,
+          "ratePercent": 101
         },
         {
           "level": 2,
           "townHall": 12,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 250
+          "cost": 250,
+          "capPercent": 150,
+          "ratePercent": 102
         },
         {
           "level": 3,
           "townHall": 13,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 500
+          "cost": 500,
+          "capPercent": 200,
+          "ratePercent": 104
         },
         {
           "level": 4,
           "townHall": 14,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1000
+          "cost": 1000,
+          "capPercent": 300,
+          "ratePercent": 105
         },
         {
           "level": 5,
           "townHall": 15,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1000
+          "cost": 1000,
+          "capPercent": 400,
+          "ratePercent": 107
         },
         {
           "level": 6,
           "townHall": 16,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1500
+          "cost": 1500,
+          "capPercent": 500,
+          "ratePercent": 109
         },
         {
           "level": 7,
           "townHall": 17,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1500
+          "cost": 1500,
+          "capPercent": 700,
+          "ratePercent": 110
         }
-      ]
+      ],
+      "conversion": {
+        "resources": [
+          "Gold",
+          "Elixir",
+          "DarkElixir"
+        ],
+        "caps": [
+          1500000,
+          1500000,
+          10000
+        ]
+      }
     },
     {
       "id": "prospector",
@@ -237,51 +263,77 @@
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 100
+          "cost": 100,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 2,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 250
+          "cost": 250,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 3,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 500
+          "cost": 500,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 4,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1000
+          "cost": 1000,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 5,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1000
+          "cost": 1000,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 6,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1500
+          "cost": 1500,
+          "capPercent": 100,
+          "ratePercent": 100
         },
         {
           "level": 7,
           "townHall": 10,
           "multiplier": 0,
           "seconds": 4,
-          "cost": 1500
+          "cost": 1500,
+          "capPercent": 100,
+          "ratePercent": 100
         }
-      ]
+      ],
+      "conversion": {
+        "resources": [
+          "CommonOre",
+          "RareOre",
+          "EpicOre"
+        ],
+        "caps": [
+          2000,
+          120,
+          2
+        ]
+      }
     }
   ]
 }

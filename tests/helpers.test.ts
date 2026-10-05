@@ -6,6 +6,8 @@ import { upgradeSeconds } from '../src/game/data';
 import {
   HELPER_COOLDOWN_SECONDS,
   advanceHelper,
+  alchemistCap,
+  alchemistOutput,
   helperLevels,
   helperReady,
   helperWorking,
@@ -61,6 +63,21 @@ describe('helper tables', () => {
     expect(lab[0]).toMatchObject({ townHall: 9, multiplier: 1, cost: 0 });
     expect(lab[11]).toMatchObject({ townHall: 16, multiplier: 12, cost: 1000 });
     expect(catalog.helpers.map((h) => h.id)).toEqual(['builder', 'lab', 'alchemist', 'prospector']);
+  });
+
+  it('reads the Alchemist conversion caps and rates', () => {
+    const alchemist = helperLevels('alchemist');
+    expect(alchemist.map((l) => l.townHall)).toEqual([11, 12, 13, 14, 15, 16, 17]);
+    expect(alchemist.map((l) => l.capPercent)).toEqual([100, 150, 200, 300, 400, 500, 700]);
+    expect(alchemist.map((l) => l.ratePercent)).toEqual([101, 102, 104, 105, 107, 109, 110]);
+    expect(alchemistCap(1, 'gold')).toBe(1_500_000);
+    expect(alchemistCap(1, 'dark')).toBe(10_000);
+    expect(alchemistCap(7, 'elixir')).toBe(10_500_000);
+    expect(alchemistOutput(1, 'gold', 'elixir', 1_000_000)).toBe(1_010_000);
+    expect(alchemistOutput(1, 'gold', 'dark', 1_500_000)).toBe(10_100);
+    expect(alchemistOutput(7, 'dark', 'gold', 70_000)).toBe(11_550_000);
+    expect(alchemistOutput(1, 'elixir', 'dark', 148)).toBe(0);
+    expect(alchemistOutput(1, 'elixir', 'dark', 149)).toBe(1);
   });
 });
 
@@ -191,9 +208,46 @@ describe('Helper Hut in the village', () => {
       { builder: { level: 9 } },
       { builder: { level: 1, job: { target: { building: 1 }, start: 0, applied: 0 } } },
       { builder: { level: 1, job: { target: { building: 1, level: 1 }, start: 0, applied: 0 } } },
-      { alchemist: { level: 1 } },
+      { prospector: { level: 1 } },
+      { alchemist: { level: 8 } },
+      {
+        alchemist: {
+          level: 1,
+          readyAt: 1,
+          job: { target: { building: 1, level: 1 }, start: 0, applied: 0 },
+        },
+      },
     ])
       expect(validHelpers(bad)).toBe(false);
     expect(validateSave({ ...saved, helpers: { lab: { level: 0 } } })).toBe(false);
+  });
+
+  it('lets the Alchemist convert once a day, losing what storage cannot hold', () => {
+    const m = village(11);
+    m.state.gems = 10_000;
+    expect(m.convertResources('gold', 'elixir', 1000)).toBe(false); // Locked.
+    expect(m.buyHelper('alchemist')).toBe(true);
+    expect(m.state.gems).toBe(10_000 - 100);
+    expect(m.helperJobs('alchemist')).toEqual([]);
+    m.state.gold = 2_000_000;
+    m.state.elixir = 0;
+    expect(m.convertResources('gold', 'gold', 1000)).toBe(false);
+    expect(m.convertResources('gold', 'elixir', 1_500_001)).toBe(false); // Over the cap.
+    const room = m.resourceCap('elixir');
+    expect(m.convertResources('gold', 'elixir', 1_000_000)).toBe(true);
+    expect(m.state.gold).toBe(1_000_000);
+    expect(m.state.elixir).toBe(Math.min(room, 1_010_000));
+    expect(m.convertResources('gold', 'elixir', 1000)).toBe(false); // Resting.
+    const h = m.helper('alchemist')!;
+    expect(h.readyAt).toBe(m.clock + (4 + 82_800) * 1000);
+    m.tick(h.readyAt!);
+    expect(helperReady(m.helper('alchemist'), m.clock)).toBe(true);
+    // A full target keeps nothing of the output.
+    m.state.dark = m.resourceCap('dark');
+    const gold = m.state.gold;
+    expect(m.convertResources('gold', 'dark', 150_000)).toBe(true);
+    expect(m.state.gold).toBe(gold - 150_000);
+    expect(m.state.dark).toBe(m.resourceCap('dark'));
+    expect(validateSave(JSON.parse(JSON.stringify(m.state)))).toBe(true);
   });
 });

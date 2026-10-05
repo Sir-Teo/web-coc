@@ -5,7 +5,9 @@
 is how long one assignment works and `BoostMultiplier` how many extra seconds of progress each
 working second adds; `Cost` (in `CostResource`, gems) buys that level. `VILLAGERS_COOLDOWN_TIME`
 in `logic/globals.csv` is the rest after each assignment. English names and help text come from
-`localization/texts.csv`.
+`localization/texts.csv`. The Alchemist and Prospector convert instead: `SourceResource` and
+`MaxSourceResource` name the resources and their base caps, `MaxSourceResourceMultiplier` scales
+the caps per level and `ResourceConvertionMultiplier` is the output rate, both in percent.
 
 Sources are read from the local client archive when present
 (art/source/native-client-18.400.21/files), otherwise downloaded from the pinned bundle, and must
@@ -78,15 +80,28 @@ def build():
             current = dict(id=IDS[row['Type']], name=texts[row['TID']],
                            info=texts[row['InfoTID']], type=row['Type'],
                            costResource=row['CostResource'], levels=[])
+            if row['SourceResource']:
+                # Converters name the same resources on both sides, each with its base cap.
+                resources = row['SourceResource'].split(';')
+                caps = [int(v) for v in row['MaxSourceResource'].split(';')]
+                require(row['TargetResource'].split(';') == resources, 'Uneven conversion sides')
+                require([int(v) for v in row['MaxTargetResource'].split(';')] == caps,
+                        'Uneven conversion caps')
+                current['conversion'] = dict(resources=resources, caps=caps)
             helpers.append(current)
         require(current is not None, 'Level row before its helper')
-        current['levels'].append(dict(
+        level = dict(
             level=len(current['levels']) + 1,
             townHall=int(row['RequiredTownHallLevel']),
             multiplier=int(row['BoostMultiplier'] or 0),
             seconds=int(row['BoostTimeSeconds'] or 0),
             cost=int(row['Cost'] or 0),
-        ))
+        )
+        if 'conversion' in current:
+            # Percentages: the base caps scale by `capPercent`, the output by `ratePercent`.
+            level['capPercent'] = int(row['MaxSourceResourceMultiplier'])
+            level['ratePercent'] = int(row['ResourceConvertionMultiplier'])
+        current['levels'].append(level)
     return dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE,
                 sources={p: pins[p] for p in FILES}, cooldownSeconds=cooldown, helpers=helpers)
 
