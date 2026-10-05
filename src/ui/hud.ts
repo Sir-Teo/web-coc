@@ -107,6 +107,19 @@ import {
 } from '../game/heroes-journey';
 import { MAGIC_ITEMS, MAGIC_ITEM_KINDS } from '../game/magic-items';
 import {
+  HELPER_COOLDOWN_SECONDS,
+  HELPER_KINDS,
+  helperInfo,
+  helperLevel,
+  helperMaxLevel,
+  helperName,
+  helperReady,
+  helperWorkEnd,
+  helperWorking,
+  type HelperKind,
+  type HelperTarget,
+} from '../game/helpers';
+import {
   CRAFTED_KINDS,
   MODULE_MAX_LEVEL,
   craftedArt,
@@ -211,6 +224,7 @@ type Panel =
   | 'heroes'
   | 'journey'
   | 'crafting'
+  | 'helpers'
   | 'pets'
   | 'progression'
   | 'research'
@@ -286,6 +300,9 @@ const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
+/** A helper job's id in actions: `b.<building>`, `h.<hero>` or `r.<research>`. */
+const helperJobId = (t: HelperTarget) =>
+  'building' in t ? `b.${t.building}` : 'hero' in t ? `h.${t.hero}` : `r.${t.research}`;
 const button = (action: string, label: string, cls = 'game-btn green', extra = '') =>
   `<button class="${cls}" data-action="${action}" ${extra}>${label}</button>`;
 /**
@@ -568,6 +585,8 @@ const troopFamily = (kind: TroopKind): Exclude<ArmyFamily, 'all' | 'spells'> =>
         : 'elixir';
 type LiveRefs = {
   heroTimers: HTMLElement[];
+  helperTimers: HTMLElement[];
+  helperJobTimes: HTMLElement[];
   heroGems: HTMLElement[];
   petTimers: HTMLElement[];
   petGems: HTMLElement[];
@@ -1261,6 +1280,35 @@ export class HUD {
         this.craftingStation = Number(arg);
         this.show('crafting');
         break;
+      case 'helpers':
+        this.show('helpers');
+        break;
+      case 'helper-buy':
+        if ((HELPER_KINDS as readonly string[]).includes(arg) && m.buyHelper(arg as HelperKind))
+          this.audio.play('build');
+        break;
+      case 'helper-repeat':
+        if ((HELPER_KINDS as readonly string[]).includes(arg)) {
+          const kind = arg as HelperKind;
+          this.helperRepeat[kind] = !this.helperRepeat[kind];
+          this.render();
+        }
+        break;
+      case 'helper-stop':
+        if ((HELPER_KINDS as readonly string[]).includes(arg))
+          m.stopHelperRepeat(arg as HelperKind);
+        break;
+      case 'helper-assign': {
+        const [kind, id] = [arg.slice(0, arg.indexOf('.')), arg.slice(arg.indexOf('.') + 1)];
+        if (!(HELPER_KINDS as readonly string[]).includes(kind)) break;
+        const job = m.helperJobs(kind as HelperKind).find((j) => helperJobId(j.target) === id);
+        if (
+          job &&
+          m.assignHelper(kind as HelperKind, job.target, this.helperRepeat[kind as HelperKind])
+        )
+          this.audio.play('build');
+        break;
+      }
       case 'craft-choose':
         if (this.craftingStation !== null && validCraftedKind(arg))
           m.chooseCrafted(this.craftingStation, arg);
@@ -2394,6 +2442,57 @@ export class HUD {
     });
     return `<div class="modal-body crafting-body"><p class="crafting-note">Switching is free and instant; each defense keeps its modules. One module upgrades at a time and needs a free builder.</p>${cards.join('')}<p class="crafting-note">Numbers from the pinned client tables. The defense art is this game’s own.</p></div>`;
   }
+  /** "Keep assigned until upgrade is complete" for the next assignment of each helper. */
+  private helperRepeat: Record<HelperKind, boolean> = { builder: false, lab: false };
+  /** Each helper with the client's status line, its stats and the jobs it can take. */
+  private helpers() {
+    const m = this.model;
+    if (!m.helperHut) return '<div class="modal-body"><p>Build the Helper Hut first.</p></div>';
+    const cards = HELPER_KINDS.map((kind) => {
+      const h = m.helper(kind);
+      const row = h ? helperLevel(kind, h.level)! : helperLevel(kind, 1)!;
+      const next = m.helperNext(kind);
+      const working = helperWorking(kind, h);
+      const ready = helperReady(h, m.clock);
+      const jobs = m.helperJobs(kind);
+      const status = !h
+        ? `${icon('LockKeyhole', 15)} Locked`
+        : working
+          ? `${icon('Hammer', 15)} Time left: <b data-helper-timer="${kind}">${time((helperWorkEnd(kind, h)! - m.clock) / 1000)}</b>`
+          : ready
+            ? `${icon('Check', 15)} Ready to work!`
+            : `${icon('Clock3', 15)} Available in: <b data-helper-timer="${kind}">${time((h.readyAt! - m.clock) / 1000)}</b>`;
+      const current =
+        h?.job && jobs.find((j) => helperJobId(j.target) === helperJobId(h.job!.target));
+      const job = h?.job
+        ? `<p class="helper-job">${working ? 'Working on' : 'Returns to'} <b>${current?.name ?? 'an upgrade'}</b>${h.job.repeat ? ' every day until it completes.' : '.'}</p>${h.job.repeat ? button(`helper-stop:${kind}`, 'Stop recurrence', 'game-btn stone') : ''}`
+        : '';
+      const list =
+        h && ready && !h.job
+          ? jobs.length
+            ? `<small class="helper-heading">${kind === 'lab' ? 'Ongoing research:' : 'Ongoing upgrades:'}</small><ul class="helper-jobs">${jobs
+                .map(
+                  (j) =>
+                    `<li><span><b>${j.name}</b><small><span data-helper-job="${kind}.${helperJobId(j.target)}">${time((j.end - m.clock) / 1000)}</span> left · saves ${time(Math.min(row.multiplier * row.seconds, ((j.end - m.clock) / 1000) * (row.multiplier / (1 + row.multiplier))))}</small></span>${button(`helper-assign:${kind}.${helperJobId(j.target)}`, 'Assign', 'game-btn green', `aria-label="Assign the ${helperName(kind)} to ${j.name}"`)}</li>`,
+                )
+                .join(
+                  '',
+                )}</ul>${button(`helper-repeat:${kind}`, `${icon(this.helperRepeat[kind] ? 'Check' : 'Circle', 16)} Keep assigned until upgrade is complete`, `helper-repeat ${this.helperRepeat[kind] ? 'on' : ''}`, `aria-pressed="${this.helperRepeat[kind]}"`)}`
+            : `<p class="helper-job">${kind === 'lab' ? 'Start a Laboratory research upgrade to assign the Lab Assistant.' : 'Start a Builder upgrade to assign the Builder’s Apprentice.'}</p>`
+          : '';
+      const blocker = next ? m.helperBlocker(kind) : undefined;
+      const buy = next
+        ? button(
+            `helper-buy:${kind}`,
+            `<span>${h ? `Upgrade to level ${next.level}` : 'Unlock'}</span><small>${next.cost ? `${gem} ${n(next.cost)}` : 'Free'}</small>`,
+            'game-btn green helper-buy',
+            `${blocker ? 'disabled' : ''}`,
+          ) + (blocker ? `<small class="helper-gate">${blocker}</small>` : '')
+        : '<small class="helper-gate">Maximum level</small>';
+      return `<article class="helper-card ${!h ? 'locked' : working ? 'working' : ready ? 'ready' : 'resting'}"><header><span class="helper-glyph">${icon(kind === 'lab' ? 'FlaskConical' : 'Hammer', 30)}</span><div><h3>${helperName(kind)}</h3><small>${h ? `Level ${h.level} / ${helperMaxLevel(kind)}` : `Town Hall ${row.townHall}`}</small></div><span class="helper-status">${status}</span></header><p class="helper-info">${helperInfo(kind)}</p><dl class="helper-stats"><div><dt>Working time</dt><dd>${time(row.seconds)}</dd></div><div><dt>Cooldown</dt><dd>${time(HELPER_COOLDOWN_SECONDS)}</dd></div><div><dt>Working speed</dt><dd>×${row.multiplier}</dd></div>${h?.saved ? `<div><dt>Total saved time</dt><dd>${time(h.saved)}</dd></div>` : ''}</dl>${job}${list}<footer>${buy}</footer></article>`;
+    });
+    return `<div class="modal-body helpers-body">${cards.join('')}<p class="crafting-note">Helpers work one hour a day, then rest. Levels, speeds and gem costs are the pinned client’s.</p></div>`;
+  }
   private craftedValue(kind: CraftedKind, module: number, level: number) {
     const levels: ModuleLevels = [1, 1, 1];
     levels[module] = level;
@@ -2547,7 +2646,7 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   /**
@@ -3319,6 +3418,7 @@ export class HUD {
       heroes: 'Hero Hall',
       journey: 'Hero’s Journey',
       crafting: 'Crafting Station',
+      helpers: 'Helper Hut',
       pets: 'Pet House',
       progression: 'Town Hall progression',
       research: 'The laboratory',
@@ -3342,6 +3442,7 @@ export class HUD {
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
       crafting: 'One platform, three defenses. Switch any time.',
+      helpers: 'Assign Helpers to jobs around the village.',
       pets: 'A companion for every hero.',
       progression: 'See what each Town Hall unlocks.',
       research: 'A little elixir. A stronger army.',
@@ -3367,39 +3468,41 @@ export class HUD {
             ? this.journey()
             : this.panel === 'crafting'
               ? this.crafting()
-              : this.panel === 'pets'
-                ? this.pets()
-                : this.panel === 'progression'
-                  ? this.progression()
-                  : this.panel === 'army-presets'
-                    ? this.armyPresets()
-                    : this.panel === 'battle-log'
-                      ? this.battleLog()
-                      : this.panel === 'spell-info'
-                        ? this.spellInfo()
-                        : this.panel === 'troop-info'
-                          ? this.troopInfo()
-                          : this.panel === 'campaign'
-                            ? this.campaign()
-                            : this.panel === 'campaign-scout'
-                              ? this.campaignScout()
-                              : this.panel === 'settings'
-                                ? this.settings()
-                                : this.panel === 'import-confirm'
-                                  ? this.importConfirm()
-                                  : this.panel === 'buildings'
-                                    ? this.buildingList()
-                                    : this.panel === 'achievements'
-                                      ? this.achievements()
-                                      : this.panel === 'research'
-                                        ? this.research()
-                                        : this.panel === 'info'
-                                          ? this.info()
-                                          : this.panel === 'layouts'
-                                            ? this.layoutPanel()
-                                            : this.panel === 'surrender'
-                                              ? this.surrender()
-                                              : this.help();
+              : this.panel === 'helpers'
+                ? this.helpers()
+                : this.panel === 'pets'
+                  ? this.pets()
+                  : this.panel === 'progression'
+                    ? this.progression()
+                    : this.panel === 'army-presets'
+                      ? this.armyPresets()
+                      : this.panel === 'battle-log'
+                        ? this.battleLog()
+                        : this.panel === 'spell-info'
+                          ? this.spellInfo()
+                          : this.panel === 'troop-info'
+                            ? this.troopInfo()
+                            : this.panel === 'campaign'
+                              ? this.campaign()
+                              : this.panel === 'campaign-scout'
+                                ? this.campaignScout()
+                                : this.panel === 'settings'
+                                  ? this.settings()
+                                  : this.panel === 'import-confirm'
+                                    ? this.importConfirm()
+                                    : this.panel === 'buildings'
+                                      ? this.buildingList()
+                                      : this.panel === 'achievements'
+                                        ? this.achievements()
+                                        : this.panel === 'research'
+                                          ? this.research()
+                                          : this.panel === 'info'
+                                            ? this.info()
+                                            : this.panel === 'layouts'
+                                              ? this.layoutPanel()
+                                              : this.panel === 'surrender'
+                                                ? this.surrender()
+                                                : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -3993,6 +4096,8 @@ export class HUD {
     const tray = this.hudEl.querySelector('.deploy-tray .army-tray');
     return {
       heroTimers: all('[data-hero-timer]'),
+      helperTimers: all('[data-helper-timer]'),
+      helperJobTimes: all('[data-helper-job]'),
       heroGems: all('[data-hero-gems]'),
       petTimers: all('[data-pet-timer]'),
       petGems: all('[data-pet-gems]'),
@@ -4047,6 +4152,24 @@ export class HUD {
           ? m.heroProgress(kind as HeroKind)?.upgradeEnd
           : m.state.king?.upgradeEnd;
       if (end) setText(el, String(m.finishCost({ upgradeEnd: end } as Building)));
+    }
+    // Helper Hut: a working helper's hour, a resting one's rest, and each job's time left.
+    for (const el of refs.helperTimers) {
+      const kind = el.dataset.helperTimer as HelperKind;
+      const h = m.helper(kind);
+      const end = h && (helperWorking(kind, h) ? helperWorkEnd(kind, h) : h.readyAt);
+      if (end) setText(el, time((end - m.clock) / 1000));
+    }
+    if (refs.helperJobTimes.length) {
+      const ends = new Map<string, number>(
+        HELPER_KINDS.flatMap((kind) =>
+          m.helperJobs(kind).map((j) => [`${kind}.${helperJobId(j.target)}`, j.end] as const),
+        ),
+      );
+      for (const el of refs.helperJobTimes) {
+        const end = ends.get(el.dataset.helperJob!);
+        if (end) setText(el, time((end - m.clock) / 1000));
+      }
     }
     const petResearch = m.state.pets?.research;
     if (petResearch) {

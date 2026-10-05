@@ -3076,6 +3076,14 @@ export class GameModel {
   helper(kind: HelperKind) {
     return this.state.helpers?.[kind];
   }
+  /** Rested helpers with a job they could take: the Helper Hut's notification badge. */
+  get helpersIdle() {
+    if (!this.helperHut) return 0;
+    return HELPER_KINDS.filter((kind) => {
+      const h = this.helper(kind);
+      return h && !h.job && helperReady(h, this.clock) && this.helperJobs(kind).length > 0;
+    }).length;
+  }
   /** The level a gem purchase would buy next, or undefined at the last level. */
   helperNext(kind: HelperKind) {
     return helperLevel(kind, (this.helper(kind)?.level ?? 0) + 1);

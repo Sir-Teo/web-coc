@@ -6216,3 +6216,167 @@ h3 {
     height: 56px;
   }
 }
+
+/* Helper Hut: one card per helper, its status in the client's words, jobs as rows. */
+.helpers-body {
+  display: grid;
+  gap: 12px;
+}
+.helper-card {
+  border-radius: 12px;
+  background: #efe6cc;
+  border: 2px solid #ddcca2;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+.helper-card.ready {
+  background: #fff6da;
+  border-color: #f0c35a;
+}
+.helper-card.working {
+  border-color: #8fbf4a;
+}
+.helper-card.locked {
+  opacity: 0.92;
+}
+.helper-card header {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.helper-glyph {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #d9c48f;
+  color: #5d4724;
+}
+.helper-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.helper-card header small,
+.helper-heading,
+.helper-gate {
+  color: #7d6c4b;
+  font-size: 12px;
+}
+.helper-heading {
+  font-weight: 800;
+}
+.helper-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #6b5a3a;
+  white-space: nowrap;
+}
+.helper-card.ready .helper-status {
+  color: #4f7a1e;
+}
+.helper-info,
+.helper-job {
+  margin: 0;
+  font-size: 13px;
+  color: #5d4d31;
+}
+.helper-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+}
+.helper-stats div {
+  background: #e6d9b4;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.helper-stats dt {
+  font-size: 11px;
+  color: #7d6c4b;
+}
+.helper-stats dd {
+  margin: 0;
+  font-weight: 800;
+}
+.helper-jobs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.helper-jobs li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-top: 1px solid #e0d2ad;
+  padding-top: 6px;
+}
+.helper-jobs li > span {
+  display: grid;
+  min-width: 0;
+}
+.helper-jobs small {
+  color: #7d6c4b;
+}
+.helper-jobs .game-btn {
+  min-height: 40px;
+  padding: 4px 14px;
+  font-size: 13px;
+}
+.helper-repeat {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5d4d31;
+  text-align: left;
+  cursor: pointer;
+}
+.helper-repeat.on {
+  color: #4f7a1e;
+}
+.helper-card footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.helper-card footer .game-btn {
+  min-height: 44px;
+  padding: 4px 14px;
+  display: grid;
+  justify-items: center;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .helper-card header {
+    grid-template-columns: 44px 1fr;
+  }
+  .helper-glyph {
+    width: 44px;
+    height: 44px;
+  }
+  .helper-status {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .helper-card footer .game-btn {
+    flex: 1;
+  }
+}

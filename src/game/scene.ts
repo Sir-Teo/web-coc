@@ -2677,12 +2677,12 @@ export class VillageScene extends Phaser.Scene {
             .setFlipX(false)
             .setDisplaySize(STATION_WIDTH, (STATION_WIDTH * im.height) / im.width);
     }
-    // The client portrait at its source scale: catalog originX is the export's centre line, and
-    // the 3×3 ground centre sits 94 source pixels below its origin, as on the Crafting Station.
+    // The client portrait at its source scale, anchored where its four tent poles meet the
+    // ground: their tips frame the hut's footprint around (68, 78) of the 134×129 image.
     if (kind === 'helperhut') {
       if (im.texture.key !== 'helperhut') im.setTexture('helperhut');
       return im
-        .setOrigin(72 / 134, (20 + 94) / 129)
+        .setOrigin(68 / 134, 78 / 129)
         .setFlipX(false)
         .setDisplaySize(134, 129);
     }
