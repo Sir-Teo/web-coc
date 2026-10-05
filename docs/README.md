@@ -65,6 +65,7 @@ notes in those references are not current release guarantees.
 - [Projectile simulation](PROJECTILE-SIMULATION.md)
 - [Balloon bombs](BALLOON-BOMBS.md)
 - [Battle feedback timing](EFFECT-TIMING.md)
+- [Music](MUSIC.md)
 - [Combat presentation — September 11, 2026](COMBAT-PRESENTATION.md)
 - [Troop presentation](UNIT-PRESENTATION.md)
 - [Building appearance and placement](BUILDING-PRESENTATION.md)
