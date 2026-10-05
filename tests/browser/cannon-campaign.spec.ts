@@ -40,6 +40,10 @@ for (const width of [1440, 390])
     const active = await page.evaluate(async () => {
       const { deployHighPressure } = await import('/tests/fixtures/high-pressure-battle.ts');
       const { model: m, scene } = window.__game;
+      // The battle's Cannon level pages load while scouting; this spec deploys at once.
+      await scene.cannonPresentation.prefetchLevels(
+        m.battle.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
+      );
       deployHighPressure(m);
       for (let i = 0; i < 100; i++) m.step(0.05);
       scene.sync();
