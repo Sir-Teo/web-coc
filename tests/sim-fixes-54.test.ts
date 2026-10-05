@@ -28,8 +28,8 @@ const unit = (id: number, x: number, y: number, kind: Unit['kind'] = 'swordsman'
 });
 
 describe('version 54 rules', () => {
-  it('is the current version and keeps version 53 playable without the new rules', () => {
-    expect(REPLAY_VERSION).toBe(54);
+  it('apply from version 54 on and keep version 53 playable without the new rules', () => {
+    expect(REPLAY_VERSION).toBeGreaterThanOrEqual(54);
     expect(compatibleReplayVersion(53)).toBe(true);
     expect(compatibleReplayVersion(54)).toBe(true);
     const setup = {

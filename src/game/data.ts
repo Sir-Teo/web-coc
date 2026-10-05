@@ -106,6 +106,7 @@ export type LegacyBuildingKind =
   | 'clancastle'
   | 'xbow'
   | 'blacksmith'
+  | 'helperhut'
   | 'herohall'
   | 'darkdrill'
   | 'darkstorage'
@@ -376,6 +377,22 @@ const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
     cost: 0,
     resource: 'gold',
     category: 'Defenses',
+    maxLevel: 1,
+    build: 0,
+    singleArtwork: true,
+  },
+  // logic/buildings.csv `Helper Hut`: Town Hall 9, one level, built instantly. Its helpers
+  // level up on their own (see helpers.ts).
+  helperhut: {
+    name: 'Helper Hut',
+    description:
+      'Helpers rest up on a warm bunk bed in this cozy little hut! Visit the Helper Hut and assign Helpers to jobs around the village.',
+    size: 3,
+    width: 134,
+    hp: 500,
+    cost: 1000000,
+    resource: 'elixir',
+    category: 'Resources',
     maxLevel: 1,
     build: 0,
     singleArtwork: true,
@@ -1434,11 +1451,11 @@ export const isDefense = (kind: BuildingKind) =>
   kind === 'craftingstation';
 export const isTrap = (kind: BuildingKind) => !!BUILDINGS[kind].trap;
 /**
- * Traps, Builder's Huts (sold for gems, built instantly) and the free, instant Crafting Station
- * are placed without a free builder.
+ * Traps, Builder's Huts (sold for gems, built instantly), the free, instant Crafting Station and
+ * the instant Helper Hut are placed without a free builder.
  */
 export const needsBuilder = (kind: BuildingKind) =>
-  !isTrap(kind) && kind !== 'builder' && kind !== 'craftingstation';
+  !isTrap(kind) && kind !== 'builder' && kind !== 'craftingstation' && kind !== 'helperhut';
 /** First tier that permits one. A withheld building still shows its original requirement. */
 export const unlockTownHall = (kind: BuildingKind) =>
   kind === 'clancastle'
@@ -1504,6 +1521,7 @@ export const asset = (
 ) => {
   // The empty platform is client art; the Crafted Defenses on it are authored (see ASSETS.md).
   if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
+  if (kind === 'helperhut') return '/assets/catalog-native/helper-hut/level-1.png';
   if (kind.startsWith('crafted-')) return `/assets/crafted/${kind.slice('crafted-'.length)}.png`;
   // The late campaign families keep the artwork they shipped with.
   if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);

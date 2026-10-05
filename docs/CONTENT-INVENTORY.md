@@ -18,7 +18,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Spells | 18 | 18 | 18 | 0 |
 | Heroes | 6 | 6 | 6 | 0 |
 | Pets | 12 | 12 | 12 | 0 |
-| Buildings | 43 | 40 | 43 | 3 |
+| Buildings | 43 | 42 | 43 | 1 |
 | Traps | 10 | 10 | 10 | 0 |
 | Hero equipment | 42 | 42 | 42 | 0 |
 
@@ -159,7 +159,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 
 ## Buildings
 
-**43 of 43** pinned, **40 of 43** implemented; 473 of 476 levels playable.
+**43 of 43** pinned, **42 of 43** implemented; 475 of 476 levels playable.
 
 | Record | Levels | Pinned | This game |
 | --- | --- | --- | --- |
@@ -173,6 +173,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Builders Hut | 8 | yes | yes |
 | Cannon | 21 | yes | yes |
 | Clan Castle | 14 | yes | yes |
+| Crafting Station | 1 | yes | yes |
 | Dark Barracks | 13 | yes | yes |
 | Dark Elixir Drill | 11 | yes | yes |
 | Dark Elixir Storage | 13 | yes | yes |
@@ -183,6 +184,7 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Firespitter | 3 | yes | yes |
 | Gold Mine | 17 | yes | yes |
 | Gold Storage | 19 | yes | yes |
+| Helper Hut | 1 | yes | yes |
 | Hero Hall | 12 | yes | yes |
 | Hidden Tesla | 17 | yes | yes |
 | Inferno Tower | 12 | yes | yes |
@@ -204,8 +206,6 @@ Records the client itself disables — summoned troops, defensive variants, inte
 | Wizard Tower | 17 | yes | yes |
 | X-Bow | 13 | yes | yes |
 | BOBs Hut | 1 | yes | — |
-| Crafting Station | 1 | yes | — |
-| Helper Hut | 1 | yes | — |
 
 ## Traps
 

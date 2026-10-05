@@ -77,6 +77,14 @@ export const SOURCE_NAME: Partial<Record<BuildingKind, string>> = {
   seekingairmine: 'Seeking Air Mine',
   skeletontrap: 'Skeleton Trap',
 };
+/**
+ * Original record names of the buildings the tier tables count but give no progression row:
+ * one level each, tiered in tiers.ts.
+ */
+export const UNTIERED_SOURCE_NAME: Partial<Record<BuildingKind, string>> = {
+  craftingstation: 'Crafting Station',
+  helperhut: 'Helper Hut',
+};
 
 /** Complete original rows for an entity this reference tables, or undefined for the rest. */
 export function sourceLevels(kind: BuildingKind): readonly SourceLevel[] | undefined {

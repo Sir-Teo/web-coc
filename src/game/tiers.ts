@@ -76,6 +76,13 @@ for (const kind of HOME_KINDS) {
   BUILDING_COUNTS.craftingstation = station;
   BUILDING_LEVELS.craftingstation = station;
 }
+// The Helper Hut has no progression row either; client townhall_levels counts one from Town
+// Hall 9, and it has a single building level.
+{
+  const hut = Array.from({ length: MAX_TOWNHALL }, (_, i) => (i + 1 >= 9 ? 1 : 0));
+  BUILDING_COUNTS.helperhut = hut;
+  BUILDING_LEVELS.helperhut = hut;
+}
 // The families the native roster added carry their own tier columns from the client, which
 // already state a count and a ceiling for each of the eighteen Town Halls.
 for (const kind of EXTRA_BUILDING_KINDS) {

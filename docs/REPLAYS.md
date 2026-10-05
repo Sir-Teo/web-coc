@@ -69,3 +69,7 @@ Version 54 changes two combat rules and one piece of stored state; versions 34â€
 The same release made several simulation paths faster without changing any result: every version replays bit-identically. Route grids and exact A* results are cached per building list; the cache key now compares list identity, footprints and standing state instead of a 32-bit hash of ids, which collided between equal-size campaign stages (ids are `1000 + index`) and could route a new battle through the previous stage's buildings until its first building fell. That collision could make a live battle and its replay diverge; with the exact key both always search the battle's own layout.
 
 Playback no longer banks an unbounded backlog when a battle simulates slower than real time: the budget is capped at `MAX_REPLAY_BACKLOG_SECONDS` (0.25 s) after each update and cleared on seek, pause and speed change, so a heavy battle at 4Ã— slows down instead of later fast-forwarding up to 100 steps in one frame. Replayed deployments report passive changes (a live HUD refresh), as live deployments do, rather than a full HUD render each.
+
+## Version 55: Helper Hut
+
+Version 55 adds the Helper Hut building (Town Hall 9, see [HELPERS.md](HELPERS.md)). It changes no combat rule: a version-55 battle against a village without a Helper Hut plays exactly as version 54. Recordings before version 55 reject a Helper Hut in their buildings.

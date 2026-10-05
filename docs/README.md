@@ -20,6 +20,7 @@ notes in those references are not current release guarantees.
 - [Ladder matches](LADDER.md)
 - [Hero's Journey](HEROES-JOURNEY.md)
 - [Crafting Station](CRAFTING-STATION.md)
+- [Helper Hut](HELPERS.md)
 - [Town Hall tiers](TOWNHALL-TIERS.md)
 - [Army unlock progression](ARMY-UNLOCKS.md)
 - [Home Village troop progression](TROOP-PROGRESSION.md)

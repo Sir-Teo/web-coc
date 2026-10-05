@@ -208,7 +208,9 @@ def build():
     item_roster = catalogued('reference/equipment/catalog.json', 'roster')
     # The Town Hall catalog tables only the entities this game builds, so for buildings and
     # traps pinning and implementing are the same step.
-    building_names = implemented_buildings() | {row['name'] for row in progression['buildings'].values()}
+    building_names = (implemented_buildings()
+                      | runtime_map('townhall-catalog.ts', 'UNTIERED_SOURCE_NAME')
+                      | {row['name'] for row in progression['buildings'].values()})
     # Imported seasonal traps use their own pinned reference packs.
     for folder in ['freeze-trap', 'shrink-trap', 'pumpkin-bomb', 'santa-trap']:
         reference = json.loads((ROOT / 'reference' / folder / 'native.json').read_text())
