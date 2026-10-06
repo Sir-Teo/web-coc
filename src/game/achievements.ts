@@ -62,6 +62,7 @@ const COUNTED = [
   'activate_super_licence',
   'supercharge',
   'seasonal_defense',
+  'war_loot',
 ];
 /** Read from the village as it stands. */
 const READ = ['upgrade', 'unit_unlock', 'npc_stars', 'victory_points'];

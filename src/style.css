@@ -1470,6 +1470,53 @@ h3 {
   align-items: center;
   gap: 6px;
 }
+.star-bonus.boosted {
+  border-color: #e3b448;
+  box-shadow: 0 0 0 2px rgb(240 190 70 / 35%);
+}
+.star-bonus-note {
+  margin: 0;
+  font-size: 12px;
+  color: #8a8268;
+}
+.star-bonus-note.boosted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: #9a6a00;
+}
+.treasury-body {
+  display: grid;
+  gap: 12px;
+}
+.treasury-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f7f1de;
+  border: 1px solid #d8cba4;
+  border-radius: 10px;
+}
+.treasury-row > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.treasury-row small {
+  font-variant-numeric: tabular-nums;
+  color: #6c6d59;
+}
+.treasury-row.full {
+  border-color: #c0392b;
+}
+.treasury-note {
+  margin: 0;
+  font-size: 13px;
+  color: #8a8268;
+}
 /* Ore art ships large; hold it to the resource icons' size beside it. */
 .star-bonus-reward img {
   width: 22px;

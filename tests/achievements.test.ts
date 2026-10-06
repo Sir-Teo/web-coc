@@ -16,8 +16,8 @@ const entry = (m: GameModel, id: string) => m.achievements.find((a) => a.def.id 
 describe('achievements', () => {
   it('reads the client rows: tiers, targets and prizes', () => {
     expect(catalog.achievements).toHaveLength(51);
-    expect(ACHIEVEMENTS).toHaveLength(35);
-    expect(UNAVAILABLE_ACHIEVEMENTS).toHaveLength(16);
+    expect(ACHIEVEMENTS).toHaveLength(36);
+    expect(UNAVAILABLE_ACHIEVEMENTS).toHaveLength(15);
     expect(achievementById('town_hall')!.tiers.map((t) => [t.count, t.xp, t.gems])).toEqual([
       [3, 10, 5],
       [5, 100, 10],

@@ -63,9 +63,11 @@ import {
   Waves,
   FastForward,
   Crown,
+  Landmark,
 } from 'lucide';
 const icons = {
   Circle,
+  Landmark,
   FastForward,
   Crown,
   Trophy,

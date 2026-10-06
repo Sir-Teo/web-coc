@@ -135,11 +135,18 @@ import { recordTeslaShot, type TeslaAttackState } from './tesla-attack';
 import { darkStorageCapacity } from './dark-storage-stats';
 import {
   emptyStarBonus,
+  emptyTreasury,
   leagueFor,
   STAR_BONUS_COOLDOWN,
   STAR_BONUS_STARS,
   starBonusReward,
+  TOWN_HALL_BOOST_MULTIPLIER,
+  townHallBoostHours,
+  TREASURY_RESOURCES,
+  treasuryCapacity,
   type StarBonus,
+  type StarBonusReward,
+  type Treasury,
 } from './leagues';
 import { STARTING_GRANT } from './townhall-catalog';
 import {
@@ -598,6 +605,8 @@ export interface Save {
   ores?: Ores;
   /** Stars banked toward the daily Star Bonus, and when it may next be taken. */
   starBonus?: StarBonus;
+  /** The Clan Castle's Treasury: Star Bonus loot waiting to be collected. */
+  treasury?: Treasury;
   gold: number;
   elixir: number;
   gems: number;
@@ -1832,7 +1841,10 @@ export class GameModel {
           levels[module]++;
           b.craftedModules = { ...b.craftedModules, [kind]: levels };
           this.countAchievements('seasonal_defense');
-        } else if (b.improving !== 'module' && !b.constructing) b.level++;
+        } else if (b.improving !== 'module' && !b.constructing) {
+          b.level++;
+          if (b.kind === 'townhall') this.boostStarBonus(b.level, b.upgradeEnd);
+        }
         delete b.improving;
         delete b.moduleUpgrade;
         b.constructing = false;
@@ -3239,18 +3251,56 @@ export class GameModel {
     const bonus = this.starBonus;
     return bonus.stars >= STAR_BONUS_STARS && this.clock >= bonus.readyAt;
   }
-  /** The league's own reward, clamped to the room each store has left. */
+  /** The Clan Castle that holds the Treasury, once built. */
+  get clanCastle() {
+    return this.state.buildings.find((b) => b.kind === 'clancastle' && !b.constructing);
+  }
+  /** What the Treasury holds; without a clan, its size follows the Town Hall alone. */
+  get treasury(): Treasury {
+    return this.state.treasury ?? emptyTreasury();
+  }
+  get treasuryCapacity(): Treasury {
+    return treasuryCapacity(this.townhall?.level ?? 1);
+  }
+  /** Whether a Town Hall upgrade's boost multiplies the Star Bonus right now. */
+  get starBonusBoosted() {
+    return this.clock < (this.starBonus.boostUntil ?? 0);
+  }
+  /** The bonus the league pays now, boost included. */
+  get starBonusPayout(): StarBonusReward {
+    const reward = starBonusReward(this.state.trophies),
+      multiplier = this.starBonusBoosted ? TOWN_HALL_BOOST_MULTIPLIER : 1;
+    return Object.fromEntries(
+      Object.entries(reward).map(([k, v]) => [k, v * multiplier]),
+    ) as StarBonusReward;
+  }
+  /**
+   * The league's own reward. Gold, elixir and Dark Elixir are banked in the Clan Castle's
+   * Treasury, up to its room (the rest is lost, as in the original); a village without a Clan
+   * Castle takes them straight into its storages instead. Ore goes to the forge either way.
+   */
   collectStarBonus() {
     if (this.battle || !this.starBonusReady) return false;
-    const reward = starBonusReward(this.state.trophies);
+    const reward = this.starBonusPayout;
     const bonus = (this.state.starBonus ??= emptyStarBonus());
     const taken: Partial<Record<string, number>> = {};
-    for (const k of ['gold', 'elixir', 'dark'] as const) {
-      const room = Math.max(0, this.resourceCap(k) - this.state[k]);
-      const amount = Math.min(reward[k], room);
-      if (amount > 0) this.state[k] += amount;
-      taken[k] = amount;
-    }
+    const castle = !!this.clanCastle;
+    if (castle) {
+      const treasury = { ...this.treasury },
+        capacity = this.treasuryCapacity;
+      for (const k of TREASURY_RESOURCES) {
+        const amount = Math.min(reward[k], Math.max(0, capacity[k] - treasury[k]));
+        treasury[k] += amount;
+        taken[k] = amount;
+      }
+      this.state.treasury = treasury;
+    } else
+      for (const k of TREASURY_RESOURCES) {
+        const room = Math.max(0, this.resourceCap(k) - this.state[k]);
+        const amount = Math.min(reward[k], room);
+        if (amount > 0) this.state[k] += amount;
+        taken[k] = amount;
+      }
     const ores = { ...this.ores },
       capacity = this.oreCapacity;
     for (const k of ORE_KEYS) {
@@ -3261,13 +3311,58 @@ export class GameModel {
     this.state.ores = ores;
     bonus.stars -= STAR_BONUS_STARS;
     bonus.readyAt = this.clock + STAR_BONUS_COOLDOWN;
-    // 'Resources collected' counts gold, elixir and dark elixir as collectors do; ore is not a
-    // village resource and has its own balance.
-    this.state.stats.collected =
-      (this.state.stats.collected ?? 0) + taken.gold! + taken.elixir! + taken.dark!;
-    this.notify(`${this.league.name} Star Bonus collected.`);
+    // 'Resources collected' counts gold, elixir and dark elixir as collectors do, when they
+    // reach the storages; ore is not a village resource and has its own balance.
+    if (!castle)
+      this.state.stats.collected =
+        (this.state.stats.collected ?? 0) + taken.gold! + taken.elixir! + taken.dark!;
+    this.notify(
+      `${this.league.name} Star Bonus ${castle ? 'banked in the Treasury' : 'collected'}.`,
+    );
     this.changed();
     return taken;
+  }
+  /**
+   * Moves the Treasury into the storages. Everything is collected at once; what a full storage
+   * cannot take stays in the Treasury. Gold collected from the Clan Castle counts toward Clan
+   * War Wealth, whose tiers read "Collect … Gold from the Clan Castle".
+   */
+  collectTreasury() {
+    if (this.battle || !this.clanCastle) return false;
+    const treasury = { ...this.treasury },
+      moved = emptyTreasury();
+    for (const k of TREASURY_RESOURCES) {
+      moved[k] = Math.min(treasury[k], Math.max(0, this.resourceCap(k) - this.state[k]));
+      treasury[k] -= moved[k];
+      this.state[k] += moved[k];
+    }
+    const total = moved.gold + moved.elixir + moved.dark;
+    if (!total) {
+      this.notify(
+        TREASURY_RESOURCES.some((k) => treasury[k] > 0)
+          ? 'Your storages are full.'
+          : 'The Treasury is empty.',
+      );
+      return false;
+    }
+    this.state.treasury = treasury;
+    this.state.stats.collected = (this.state.stats.collected ?? 0) + total;
+    this.countAchievements('war_loot', moved.gold);
+    this.notify(
+      TREASURY_RESOURCES.some((k) => treasury[k] > 0)
+        ? 'Treasury collected. What your storages could not hold stays in the Treasury.'
+        : 'Treasury collected.',
+    );
+    this.changed();
+    return moved;
+  }
+  /** A finished Town Hall upgrade multiplies the Star Bonus for its level's hours. */
+  private boostStarBonus(level: number, finished: number) {
+    const hours = townHallBoostHours(level);
+    if (!hours) return;
+    const bonus = (this.state.starBonus ??= emptyStarBonus());
+    bonus.boostUntil = Math.max(bonus.boostUntil ?? 0, finished + hours * 3600_000);
+    this.notify(`Star Bonus boosted ${TOWN_HALL_BOOST_MULTIPLIER}× for ${hours / 24} days!`);
   }
   /** Highest equipment level this village's forge opens; every item shares the gate. */
   get equipmentCeiling() {

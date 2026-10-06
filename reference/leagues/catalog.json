@@ -4,9 +4,10 @@
   "baseUrl": "https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/",
   "sources": {
     "logic/globals.csv": "16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087",
-    "logic/leagues.csv": "a057b99d04e1c0c8c7989dfc1f8cd4031b0c9569acea7848153ea876233211af"
+    "logic/leagues.csv": "a057b99d04e1c0c8c7989dfc1f8cd4031b0c9569acea7848153ea876233211af",
+    "logic/townhall_levels.csv": "2d596bcd08433924c3e566f79f380eb2260076f87c5b5dd30c9ab6f2c3f41472"
   },
-  "scope": "Trophy bands and the daily Star Bonus each league pays, ore included.",
+  "scope": "Trophy bands and the daily Star Bonus each league pays, ore included, the Treasury it is banked in and the boost a Town Hall upgrade grants.",
   "starBonus": {
     "stars": 5,
     "cooldownMinutes": 1440
@@ -334,5 +335,134 @@
         "starry": 0
       }
     }
-  ]
+  ],
+  "treasury": [
+    {
+      "townhall": 1,
+      "gold": 50000,
+      "elixir": 50000,
+      "dark": 0,
+      "boostHours": 0
+    },
+    {
+      "townhall": 2,
+      "gold": 200000,
+      "elixir": 200000,
+      "dark": 0,
+      "boostHours": 0
+    },
+    {
+      "townhall": 3,
+      "gold": 400000,
+      "elixir": 400000,
+      "dark": 0,
+      "boostHours": 0
+    },
+    {
+      "townhall": 4,
+      "gold": 600000,
+      "elixir": 600000,
+      "dark": 0,
+      "boostHours": 72
+    },
+    {
+      "townhall": 5,
+      "gold": 800000,
+      "elixir": 800000,
+      "dark": 0,
+      "boostHours": 72
+    },
+    {
+      "townhall": 6,
+      "gold": 1200000,
+      "elixir": 1200000,
+      "dark": 0,
+      "boostHours": 72
+    },
+    {
+      "townhall": 7,
+      "gold": 1600000,
+      "elixir": 1600000,
+      "dark": 8000,
+      "boostHours": 96
+    },
+    {
+      "townhall": 8,
+      "gold": 2000000,
+      "elixir": 2000000,
+      "dark": 10000,
+      "boostHours": 96
+    },
+    {
+      "townhall": 9,
+      "gold": 2400000,
+      "elixir": 2400000,
+      "dark": 12000,
+      "boostHours": 96
+    },
+    {
+      "townhall": 10,
+      "gold": 2800000,
+      "elixir": 2800000,
+      "dark": 14000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 11,
+      "gold": 3200000,
+      "elixir": 3200000,
+      "dark": 16000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 12,
+      "gold": 3600000,
+      "elixir": 3600000,
+      "dark": 18000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 13,
+      "gold": 4000000,
+      "elixir": 4000000,
+      "dark": 20000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 14,
+      "gold": 4400000,
+      "elixir": 4400000,
+      "dark": 22000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 15,
+      "gold": 4800000,
+      "elixir": 4800000,
+      "dark": 24000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 16,
+      "gold": 5200000,
+      "elixir": 5200000,
+      "dark": 26000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 17,
+      "gold": 5600000,
+      "elixir": 5600000,
+      "dark": 30000,
+      "boostHours": 120
+    },
+    {
+      "townhall": 18,
+      "gold": 6000000,
+      "elixir": 6000000,
+      "dark": 32000,
+      "boostHours": 120
+    }
+  ],
+  "townHallBoostMultiplier": 4
 }

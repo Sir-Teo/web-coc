@@ -219,7 +219,7 @@ import {
   saveGame,
   MAX_SAVE_FILE_BYTES,
 } from '../game/save';
-import { STAR_BONUS_STARS, starBonusReward } from '../game/leagues';
+import { STAR_BONUS_STARS, TOWN_HALL_BOOST_MULTIPLIER, TREASURY_RESOURCES } from '../game/leagues';
 import { icon, resource, coin, elixir, gem } from './icons';
 import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
@@ -228,6 +228,7 @@ import { musicScene } from '../game/music';
 type Panel =
   | 'magic-items'
   | 'trader'
+  | 'treasury'
   | 'blacksmith'
   | 'heroes'
   | 'journey'
@@ -1311,6 +1312,12 @@ export class HUD {
         break;
       case 'magic-items':
         this.show('magic-items');
+        break;
+      case 'treasury':
+        this.show('treasury');
+        break;
+      case 'treasury-collect':
+        this.model.collectTreasury();
         break;
       case 'trader':
         this.show('trader');
@@ -2877,7 +2884,7 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${this.itemButtons(b, capped || gated)}${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${this.itemButtons(b, capped || gated)}${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'clancastle' && !b.constructing && !b.npc ? button('treasury', `${icon('Landmark', 20)} Treasury${TREASURY_RESOURCES.some((k) => m.treasury[k] > 0 && m.treasury[k] >= m.treasuryCapacity[k]) ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
   /**
@@ -3228,6 +3235,21 @@ export class HUD {
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
   /** The Trader's Weekly Deals: the free one, then this week's Gem offers. */
+  /** The Clan Castle's Treasury: what it holds against its Town Hall size, and collection. */
+  private treasury() {
+    const m = this.model,
+      held = m.treasury,
+      capacity = m.treasuryCapacity;
+    const names = { gold: 'Gold', elixir: 'Elixir', dark: 'Dark Elixir' } as const;
+    const rows = TREASURY_RESOURCES.filter((k) => capacity[k] > 0)
+      .map((k) => {
+        const share = Math.min(100, (held[k] / capacity[k]) * 100);
+        return `<div class="treasury-row${held[k] >= capacity[k] ? ' full' : ''}" data-treasury="${k}">${resource(k)}<div><b>${names[k]}</b><span class="journey-bar" role="progressbar" aria-label="${names[k]} in the Treasury" aria-valuemin="0" aria-valuemax="${capacity[k]}" aria-valuenow="${held[k]}"><i style="width:${share}%"></i></span></div><small>${n(held[k])} / ${n(capacity[k])}</small></div>`;
+      })
+      .join('');
+    const any = TREASURY_RESOURCES.some((k) => held[k] > 0);
+    return `<div class="modal-body treasury-body">${rows}<p class="treasury-note">The Star Bonus is banked here. Collecting moves everything at once; whatever your storages cannot hold stays in the Treasury. Without a clan, its size follows your Town Hall.</p></div><footer class="modal-footer">${button('treasury-collect', `${icon('Download', 16)} Collect`, 'game-btn green', any ? '' : 'disabled')}<span>Town Hall ${m.townhall?.level ?? 1} Treasury</span></footer>`;
+  }
   private trader() {
     const m = this.model;
     const art = (deal: TraderOffer) =>
@@ -3789,6 +3811,7 @@ export class HUD {
       heroes: 'Hero Hall',
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
+      treasury: 'Treasury',
       journey: 'Hero’s Journey',
       crafting: 'Crafting Station',
       helpers: 'Helper Hut',
@@ -3816,6 +3839,7 @@ export class HUD {
       journey: 'Every hero level moves you along the track.',
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
+      treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
       pets: 'A companion for every hero.',
@@ -3839,49 +3863,51 @@ export class HUD {
         ? this.magicItems()
         : this.panel === 'trader'
           ? this.trader()
-          : this.panel === 'blacksmith'
-            ? this.blacksmith()
-            : this.panel === 'heroes'
-              ? this.heroes()
-              : this.panel === 'journey'
-                ? this.journey()
-                : this.panel === 'crafting'
-                  ? this.crafting()
-                  : this.panel === 'helpers'
-                    ? this.helpers()
-                    : this.panel === 'pets'
-                      ? this.pets()
-                      : this.panel === 'progression'
-                        ? this.progression()
-                        : this.panel === 'army-presets'
-                          ? this.armyPresets()
-                          : this.panel === 'battle-log'
-                            ? this.battleLog()
-                            : this.panel === 'spell-info'
-                              ? this.spellInfo()
-                              : this.panel === 'troop-info'
-                                ? this.troopInfo()
-                                : this.panel === 'campaign'
-                                  ? this.campaign()
-                                  : this.panel === 'campaign-scout'
-                                    ? this.campaignScout()
-                                    : this.panel === 'settings'
-                                      ? this.settings()
-                                      : this.panel === 'import-confirm'
-                                        ? this.importConfirm()
-                                        : this.panel === 'buildings'
-                                          ? this.buildingList()
-                                          : this.panel === 'achievements'
-                                            ? this.achievements()
-                                            : this.panel === 'research'
-                                              ? this.research()
-                                              : this.panel === 'info'
-                                                ? this.info()
-                                                : this.panel === 'layouts'
-                                                  ? this.layoutPanel()
-                                                  : this.panel === 'surrender'
-                                                    ? this.surrender()
-                                                    : this.help();
+          : this.panel === 'treasury'
+            ? this.treasury()
+            : this.panel === 'blacksmith'
+              ? this.blacksmith()
+              : this.panel === 'heroes'
+                ? this.heroes()
+                : this.panel === 'journey'
+                  ? this.journey()
+                  : this.panel === 'crafting'
+                    ? this.crafting()
+                    : this.panel === 'helpers'
+                      ? this.helpers()
+                      : this.panel === 'pets'
+                        ? this.pets()
+                        : this.panel === 'progression'
+                          ? this.progression()
+                          : this.panel === 'army-presets'
+                            ? this.armyPresets()
+                            : this.panel === 'battle-log'
+                              ? this.battleLog()
+                              : this.panel === 'spell-info'
+                                ? this.spellInfo()
+                                : this.panel === 'troop-info'
+                                  ? this.troopInfo()
+                                  : this.panel === 'campaign'
+                                    ? this.campaign()
+                                    : this.panel === 'campaign-scout'
+                                      ? this.campaignScout()
+                                      : this.panel === 'settings'
+                                        ? this.settings()
+                                        : this.panel === 'import-confirm'
+                                          ? this.importConfirm()
+                                          : this.panel === 'buildings'
+                                            ? this.buildingList()
+                                            : this.panel === 'achievements'
+                                              ? this.achievements()
+                                              : this.panel === 'research'
+                                                ? this.research()
+                                                : this.panel === 'info'
+                                                  ? this.info()
+                                                  : this.panel === 'layouts'
+                                                    ? this.layoutPanel()
+                                                    : this.panel === 'surrender'
+                                                      ? this.surrender()
+                                                      : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -4367,7 +4393,7 @@ export class HUD {
   private starBonusCard() {
     const m = this.model,
       bonus = m.starBonus,
-      reward = starBonusReward(m.state.trophies);
+      reward = m.starBonusPayout;
     const parts = (['gold', 'elixir', 'dark'] as const)
       .filter((k) => reward[k] > 0)
       .map((k) => `<span>${resource(k)} ${n(reward[k])}</span>`)
@@ -4378,7 +4404,14 @@ export class HUD {
       )
       .join('');
     const status = this.starBonusStatus();
-    return `<div class="star-bonus"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small data-star-bonus-status>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
+    // A Town Hall upgrade's boost multiplies the reward shown; resources go to the Treasury.
+    const boost = m.starBonusBoosted
+      ? `<p class="star-bonus-note boosted">${icon('Zap', 14)} ${TOWN_HALL_BOOST_MULTIPLIER}× Town Hall boost · ${time(((bonus.boostUntil ?? 0) - m.clock) / 1000)} left</p>`
+      : '';
+    const where = m.clanCastle
+      ? `<p class="star-bonus-note">Gold, Elixir and Dark Elixir are banked in the Clan Castle’s Treasury.</p>`
+      : '';
+    return `<div class="star-bonus${m.starBonusBoosted ? ' boosted' : ''}"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small data-star-bonus-status>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${boost}${where}${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
   }
   private achievements() {
     const s = this.model.state;

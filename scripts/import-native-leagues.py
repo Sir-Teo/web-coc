@@ -3,7 +3,11 @@
 
 `leagues.csv` gives every league its trophy band and its own Star Bonus reward, including
 the Common, Rare and Epic Ore that is the original's ordinary income for hero equipment.
-`globals.csv` gives the stars the bonus costs and how long it takes to come back.
+`globals.csv` gives the stars the bonus costs and how long it takes to come back, and the
+multiplier of the boost a Town Hall upgrade grants. `townhall_levels.csv` gives, per Town Hall,
+the Treasury the bonus is banked in (`TreasuryWarGold`, `TreasuryWarElixir`,
+`TreasuryWarDarkElixir`; the plain `Treasury*` columns hold a legacy zero) and how many hours
+that boost lasts (`StarBonusBoostHours`).
 """
 import argparse
 import csv
@@ -20,11 +24,15 @@ BASE = f'https://game-assets.clashofclans.com/{BUNDLE}/'
 PINS = {
     'logic/leagues.csv': 'a057b99d04e1c0c8c7989dfc1f8cd4031b0c9569acea7848153ea876233211af',
     'logic/globals.csv': '16210fc28bfb86d00ea04d581a99fe98e128172017b2d4f637b8848c0cf20087',
+    'logic/townhall_levels.csv': '2d596bcd08433924c3e566f79f380eb2260076f87c5b5dd30c9ab6f2c3f41472',
 }
 REFERENCE = ROOT / 'reference/leagues'
 SETTINGS = {
     'stars': 'STAR_BONUS_STAR_COUNT',
     'cooldownMinutes': 'STAR_BONUS_COOLDOWN_MINUTES',
+}
+TREASURY = {
+    'gold': 'TreasuryWarGold', 'elixir': 'TreasuryWarElixir', 'dark': 'TreasuryWarDarkElixir',
 }
 REWARDS = {
     'gold': 'GoldRewardStarBonus', 'elixir': 'ElixirRewardStarBonus',
@@ -95,15 +103,38 @@ def build():
     missing = [name for name in SETTINGS.values() if name not in settings]
     require(not missing, f'Absent Star Bonus settings: {missing}')
     bonus = {key: int(settings[name]) for key, name in SETTINGS.items()}
+    require('TH_UPGRADE_STAR_BONUS_BOOST_MULTIPLIER' in settings, 'Absent Town Hall boost multiplier')
+    flags = {row[0]: row[settings_headers.index('BooleanValue')] for row in settings_rows}
+    require(flags.get('TREASURY_SIZE_BASED_ON_TH') == 'TRUE', 'The Treasury is not sized by Town Hall')
+
+    hall_headers, hall_rows = table('logic/townhall_levels.csv')
+    columns = {name: position for position, name in enumerate(hall_headers)}
+    missing = [column for column in (*TREASURY.values(), 'StarBonusBoostHours')
+               if column not in columns]
+    require(not missing, f'Absent Town Hall columns: {missing}')
+    treasury = []
+    for level, row in enumerate(hall_rows, 1):
+        require(row[0] == str(level), f'Unexpected Town Hall row {row[0]}')
+        values = {key: row[columns[column]] for key, column in TREASURY.items()}
+        require(all(values.values()) and row[columns['StarBonusBoostHours']],
+                f'Blank Treasury cell at Town Hall {level}')
+        treasury.append(dict(townhall=level, **{key: int(value) for key, value in values.items()},
+                             boostHours=int(row[columns['StarBonusBoostHours']])))
+    for previous, tier in zip(treasury, treasury[1:]):
+        require(all(tier[key] >= previous[key] for key in TREASURY),
+                f'The Treasury shrinks at Town Hall {tier["townhall"]}')
 
     return dict(
         clientVersion='18.400.21',
         bundle=BUNDLE,
         baseUrl=BASE,
         sources=dict(sorted(PINS.items())),
-        scope='Trophy bands and the daily Star Bonus each league pays, ore included.',
+        scope='Trophy bands and the daily Star Bonus each league pays, ore included, the '
+              'Treasury it is banked in and the boost a Town Hall upgrade grants.',
         starBonus=bonus,
         leagues=leagues,
+        treasury=treasury,
+        townHallBoostMultiplier=int(settings['TH_UPGRADE_STAR_BONUS_BOOST_MULTIPLIER']),
     )
 
 
@@ -120,7 +151,8 @@ def main():
         require(target.read_text() == text, 'Committed league catalog differs from the source')
         print(f'League catalog reproduces {len(catalog["leagues"])} leagues, '
               f'a {catalog["starBonus"]["stars"]}-star bonus and a '
-              f'{catalog["starBonus"]["cooldownMinutes"]}-minute cooldown.')
+              f'{catalog["starBonus"]["cooldownMinutes"]}-minute cooldown and '
+              f'{len(catalog["treasury"])} Treasury tiers.')
         return
     REFERENCE.mkdir(parents=True, exist_ok=True)
     target.write_text(text)

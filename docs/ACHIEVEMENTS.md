@@ -4,22 +4,23 @@ The profile's achievement list now holds the client's own Home Village achieveme
 
 ## What counts
 
-35 of the 51 achievements can be earned in this offline village.
+36 of the 51 achievements can be earned in this offline village.
 
-| Action | Achievements | Counted from |
-| --- | --- | --- |
-| Building level | Bigger & Better, Bigger Coffers, Empire Builder | The highest finished Town Hall, Gold Storage or Clan Castle. |
-| Unit unlock | Discover New Troops | Whether the Archer, Wall Breaker or Dragon is unlocked. |
-| Campaign stars | Get those Goblins!, Get those other Goblins!, Get even more Goblins! | Stars on the 90 Goblin map villages; Challenges and fan-made villages are not the Campaign Map. |
-| Campaign bosses | Dragon Slayer, Ungrateful Child | Defeating the Golden Dragon or M.O.M.M.A garrison in a Goblin village. |
-| Loot | Gold Grab, Elixir Escapade, Heroic Heist | Loot taken in campaign raids and ladder matches, before storage limits; practice takes none. |
-| Trophies | Sweet Victory! | The most trophies held. |
-| Multiplayer | Conqueror and the 17 destroy achievements | Ladder matches, this build's stand-in for multiplayer: wins with at least one star, and destroyed buildings by kind. A level in the row asks for the weaponized form (Town Hall 12+, Builder's Hut 2+). A Town Hall 17+ also counts toward Anti-Artillery, because its weapon is the Inferno Artillery the achievement names. |
-| Village work | Nice and Tidy, Supercharger, Crafting Connoisseur, Superb Work | Obstacles cleared, supercharges finished, Crafted Defense module upgrades finished and super troop boosts started. |
+| Action          | Achievements                                                         | Counted from                                                                                                                                                                                                                                                                                                                  |
+| --------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Building level  | Bigger & Better, Bigger Coffers, Empire Builder                      | The highest finished Town Hall, Gold Storage or Clan Castle.                                                                                                                                                                                                                                                                  |
+| Unit unlock     | Discover New Troops                                                  | Whether the Archer, Wall Breaker or Dragon is unlocked.                                                                                                                                                                                                                                                                       |
+| Campaign stars  | Get those Goblins!, Get those other Goblins!, Get even more Goblins! | Stars on the 90 Goblin map villages; Challenges and fan-made villages are not the Campaign Map.                                                                                                                                                                                                                               |
+| Campaign bosses | Dragon Slayer, Ungrateful Child                                      | Defeating the Golden Dragon or M.O.M.M.A garrison in a Goblin village.                                                                                                                                                                                                                                                        |
+| Loot            | Gold Grab, Elixir Escapade, Heroic Heist                             | Loot taken in campaign raids and ladder matches, before storage limits; practice takes none.                                                                                                                                                                                                                                  |
+| Trophies        | Sweet Victory!                                                       | The most trophies held.                                                                                                                                                                                                                                                                                                       |
+| Multiplayer     | Conqueror and the 17 destroy achievements                            | Ladder matches, this build's stand-in for multiplayer: wins with at least one star, and destroyed buildings by kind. A level in the row asks for the weaponized form (Town Hall 12+, Builder's Hut 2+). A Town Hall 17+ also counts toward Anti-Artillery, because its weapon is the Inferno Artillery the achievement names. |
+| Village work    | Nice and Tidy, Supercharger, Crafting Connoisseur, Superb Work       | Obstacles cleared, supercharges finished, Crafted Defense module upgrades finished and super troop boosts started.                                                                                                                                                                                                            |
+| Treasury        | Clan War Wealth                                                      | Gold collected from the Clan Castle's [Treasury](TREASURY.md). Its tiers read "Collect … Gold from the Clan Castle", and the wiki notes it counts Treasury collections; here the Treasury holds Star Bonus loot rather than war bonuses.                                                                                      |
 
 Event counts start when this version first runs; nothing earlier was recorded. Levels, unlocks, Goblin stars and trophies are read from the village, so they count in full at once. A new village holds 1,248 trophies, so the first two Sweet Victory tiers are ready immediately.
 
-The other 16 need systems this village does not have: donations, Clan Wars and War Leagues, Clan Games, Season Challenges, defending against real attackers, the 2025 ranked leagues and account binding. The list says so in one line rather than showing goals nobody can reach.
+The other 15 need systems this village does not have: donations, Clan Wars and War Leagues, Clan Games, Season Challenges, defending against real attackers, the 2025 ranked leagues and account binding. The list says so in one line rather than showing goals nobody can reach.
 
 ## Saves
 

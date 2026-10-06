@@ -38,7 +38,7 @@ import {
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
-import { validStarBonus } from './leagues';
+import { validStarBonus, validTreasury } from './leagues';
 import { BUILDINGS, maxTroopLevel, SPELL_KEYS, TROOP_KEYS, isSpellKind } from './data';
 import { emptySpells, expandArmyRoster } from './army';
 import { maxSpellLevelFor } from './spell-progression';
@@ -216,6 +216,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.dark !== undefined && !finite(s.dark)) return false;
   if (s.ores !== undefined && !validOres(s.ores)) return false;
   if (s.starBonus !== undefined && !validStarBonus(s.starBonus)) return false;
+  if (s.treasury !== undefined && !validTreasury(s.treasury)) return false;
   if (s.heroes !== undefined) {
     if (!validHeroRoster(s.heroes)) return false;
     if (!s.buildings.some((b) => b?.kind === 'herohall' && !b.constructing)) return false;
