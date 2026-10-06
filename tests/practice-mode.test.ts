@@ -6,7 +6,11 @@ import {
   PRACTICE_TOWN_HALL,
   practiceLevelAt,
 } from '../src/game/practice-mode';
-import { NATIVE_CAMPAIGN, freshNativeCampaign } from '../src/game/native-campaign';
+import {
+  NATIVE_CAMPAIGN,
+  freshNativeCampaign,
+  nativeDefendingHeroes,
+} from '../src/game/native-campaign';
 import { validateSave } from '../src/game/save';
 import { validateReplay } from '../src/game/replay';
 import { STARTER_CHALLENGES } from '../src/game/starter-challenges';
@@ -154,5 +158,20 @@ describe('Practice Mode', () => {
     // Stars on the Goblin map's villages are not Practice stars.
     m.state.nativeCampaign.stars[0] = 3;
     expect(m.starterProgress(task)).toBe(3);
+  });
+
+  it('posts each defending hero on the hero flag its level file gives', () => {
+    // Every Practice level that names defending heroes places each one on a flag.
+    for (const level of PRACTICE_LEVELS.filter((l) => l.stage)) {
+      const named = nativeDefendingHeroes(level.stage! - 1).map((h) => h.kind);
+      expect(level.heroFlags.map((f) => f.kind).sort(), level.name).toEqual([...named].sort());
+    }
+    // Hog Rush: the King's flag is at the client's 17, 24; he stands at its centre.
+    const hog = PRACTICE_LEVELS.find((l) => l.id === 'CHALLENGE_TH7_HOG')!;
+    const m = village(7);
+    m.startCampaign(hog.stage! - 1, false);
+    expect(m.battle!.defenders).toEqual([
+      expect.objectContaining({ hero: 'king', home: { x: 20, y: 27 }, x: 20, y: 27 }),
+    ]);
   });
 });

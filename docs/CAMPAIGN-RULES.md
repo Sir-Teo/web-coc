@@ -14,7 +14,7 @@ The client ships 19 Challenge maps beside the Goblin map — ordinary Home Villa
 
 Two source facts these villages introduced:
 
-- **Defending heroes.** The rows name a hero and a level but never a position, so the battle stands them around the Hero Hall exactly as a practice attack on your own village stands yours, clamped inside the board.
+- **Defending heroes.** The `npcs.csv` rows name a hero and a level but no position. The level files do give one: a `heroFlags` entry per hero (a 2×2 hero flag, naming the hero by GlobalID), which `scripts/import-native-practice.py` reads. The 10 Practice levels with defending heroes, and only those, post each hero at its flag's centre. A hero without a flag would stand round the Hero Hall, as a practice attack on your own village stands yours, clamped inside the board.
 - **Geared defenses and loaded X-Bows.** A Cannon, Archer Tower or Mortar marked `gear=1` with the Alt attack is geared up. An X-Bow carrying at least the ammunition this game simulates is a loaded X-Bow; a shorter load is a starting state the simulation does not represent, and still closes the village.
 
 Six Challenges are withheld rather than shipped locked, each for a stated reason (`withheld` in `reference/campaign/catalog.json`): three post Clan Castle defenders at levels whose animation graphs were never captured (Balloon 5, Lava Hound 5, Ice Golem 5), and three are drawn on the client's larger `UseFullMapSize` board and reach one tile past the 48-tile simulation grid. Shifting, rescaling or substituting any of them is not allowed.

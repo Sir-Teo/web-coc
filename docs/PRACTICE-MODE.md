@@ -31,6 +31,8 @@ For example, Giant Smash (Town Hall 4) brings 13 Giants, 2 Wall Breakers and 11 
 - **Cards.** The campaign card is labelled "PRACTICE" and says what the level brings ("Fought with its own army: 26 troops. Yours stays home."). The scout page lists the army, troop by troop, under "Army provided". The section picker calls the part of the list "Practice".
 - **Starter Challenges.** Their two Practice tasks ("Win 3x/9x total Stars from Practice Levels") now count the best stars on each level (see [STARTER-CHALLENGES.md](STARTER-CHALLENGES.md)).
 
+- **Defending heroes.** Ten levels defend with heroes, from Hot Stuff's level 5 King to Bowling with Witches' King, Queen and Warden. Each stands guard on the hero flag its level file places (Hog Rush's King at the client's 17, 24, so at 20, 27 here), not round the Hero Hall.
+
 A battle fought this way is marked `fixedArmy` in its replay setup. Its army and levels are recorded as fought, so the replay plays back the level's army. A replay may carry `fixedArmy` only for a campaign village, not with `practice` (your own village) or a ladder match.
 
 ## The guide
@@ -86,12 +88,14 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 - the Town Hall gate;
 - a battle fought with the level's army while the camps' army and Last army stay put, with loot and stars recorded;
 - the replay's setup and validation;
-- the Starter Challenges' practice stars.
+- the Starter Challenges' practice stars;
+- that each defending hero stands on its level's hero flag.
 
 `tests/browser/practice-mode.spec.ts`, at phone size with touch:
 
 - opens the campaign with no army trained;
 - finds Giant Smash labelled "PRACTICE" and opens its scout page with the army provided;
 - attacks under the guide, checking its banner and Skip (44 pixels), the Giant in hand and a tap in the ring landing on the spot;
+- at 844×390 and 667×375, checks that the guide's banner, placed just below the battle's top panels on short screens, overlaps neither them nor the tray;
 - skips the guide, and checks the tray and that deploying leaves the camps alone;
 - confirms the level is locked at Town Hall 3.

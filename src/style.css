@@ -3487,6 +3487,18 @@ h3 {
     font-size: 13px;
   }
 }
+/* Short landscape phones: just below the battle's top panels (the enemy village's loot and the
+   destruction meter end 147–161 pixels down at 667×375–844×390), clear of the tray. */
+@media (max-height: 550px) {
+  .practice-guide {
+    top: 166px;
+    width: min(500px, calc(100vw - 32px));
+    padding: 6px 8px 6px 10px;
+  }
+  .practice-guide p {
+    font-size: 12px;
+  }
+}
 
 /* ============================================================
    Building info sheet

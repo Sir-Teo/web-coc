@@ -5376,7 +5376,8 @@ export class GameModel {
     const home =
       buildings.find((b) => b.kind === 'herohall') ?? buildings.find((b) => b.kind === 'townhall')!;
     // Practice defends with your own heroes; a campaign village defends with the heroes its
-    // source names. Both stand around the Hero Hall, because neither source states a position.
+    // source names. They stand around the Hero Hall, except on a Practice level, whose level
+    // file posts each one on a hero flag.
     const defenders = practice
       ? heroes.map((h) => ({ kind: h.kind, level: h.level }))
       : catalog === 'goblin-v1'
@@ -5384,12 +5385,22 @@ export class GameModel {
         : [];
     // A hall against the edge would otherwise post a hero off the board.
     const inside = (value: number) => Math.min(BUILD_MAX, Math.max(BUILD_MIN, value));
-    const defendingHeroes = defenders.map((h, i) => ({
-      kind: h.kind,
-      level: h.level,
-      x: inside(home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3),
-      y: inside(home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3),
-    }));
+    // A Practice level's file posts each defending hero on its hero flag.
+    const flags =
+      !practice && catalog === 'goblin-v1' ? practiceLevelAt(index)?.heroFlags : undefined;
+    const defendingHeroes = defenders.map((h, i) => {
+      const flag = flags?.find((f) => f.kind === h.kind);
+      return {
+        kind: h.kind,
+        level: h.level,
+        x:
+          flag?.x ??
+          inside(home.x + BUILDINGS[home.kind].size / 2 + Math.cos((i * Math.PI) / 2) * 3),
+        y:
+          flag?.y ??
+          inside(home.y + BUILDINGS[home.kind].size / 2 + Math.sin((i * Math.PI) / 2) * 3),
+      };
+    });
     // A ladder layout carries no loot: only trophies are at stake.
     const noLoot = campaignResources(
       { gold: 0, elixir: 0, dark: 0 },

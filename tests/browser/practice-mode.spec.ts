@@ -94,3 +94,38 @@ test('below its Town Hall a Practice level is locked and says when it opens', as
   await expect(card).toContainText('Opens at Town Hall 4.');
   await expect(card.locator(`[data-action="attack:${GIANT_SMASH}"]`)).toBeDisabled();
 });
+
+for (const viewport of [
+  { width: 844, height: 390 },
+  { width: 667, height: 375 },
+]) {
+  test(`at ${viewport.width}×${viewport.height} the guide's banner stays clear of the battle panels`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').click();
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      m.townhall!.level = 7;
+      m.startCampaign(94); // Hog Rush, a first attempt: guided.
+      m.changed();
+    });
+    const guide = page.locator('.practice-guide');
+    await expect(guide).toContainText('Deploy Barbarian King');
+    const overlaps = await page.evaluate(() => {
+      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const g = box('.practice-guide');
+      const hit = (r: DOMRect) =>
+        g.left < r.right && r.left < g.right && g.top < r.bottom && r.top < g.bottom;
+      return {
+        enemy: hit(box('.battle-enemy')),
+        destruction: hit(box('.destruction')),
+        tray: hit(box('.army-tray')),
+        inside: g.left >= 0 && g.right <= innerWidth,
+      };
+    });
+    expect(overlaps).toEqual({ enemy: false, destruction: false, tray: false, inside: true });
+  });
+}

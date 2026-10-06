@@ -33,6 +33,8 @@ export interface PracticeLevel {
   castle: [TroopKind, number][];
   /** The first attempt's step-by-step guide (csv/deploy_steps.csv). */
   steps: PracticeStep[];
+  /** Where each defending hero stands guard: the centre of its 2×2 hero flag. */
+  heroFlags: { kind: HeroKind; x: number; y: number }[];
 }
 export type PracticeUnit = { troop: TroopKind } | { spell: SpellKind } | { hero: HeroKind };
 /**
@@ -168,6 +170,11 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
     heroes,
     castle,
     steps: (row.steps as CatalogStep[]).map(step),
+    heroFlags: (row.heroFlags as { hero: string; x: number; y: number }[]).map((flag) => ({
+      kind: HEROES.get(flag.hero)!,
+      x: flag.x + BUILD_MIN + 1,
+      y: flag.y + BUILD_MIN + 1,
+    })),
   };
 }
 /** All 19 Practice levels, by Town Hall, the six withheld ones included (stage null). */

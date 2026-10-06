@@ -122,7 +122,8 @@
           "text": "After <cf70d16>Mortar</c> is destroyed, deploy <c54a0fe>Goblins</c> to help clean up.",
           "duration": 25000
         }
-      ]
+      ],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH5_LOON",
@@ -198,7 +199,8 @@
           "radius": 1.5,
           "pause": true
         }
-      ]
+      ],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH6_GIWIWA",
@@ -385,7 +387,8 @@
           "radius": 1.0,
           "forceType": true
         }
-      ]
+      ],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH7_DRAGON",
@@ -508,6 +511,13 @@
           ],
           "radius": 2.0,
           "forceType": true
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 27,
+          "y": 5
         }
       ]
     },
@@ -634,6 +644,13 @@
           "name": "TH7_Hog_Heal2",
           "text": "Use the remaining <cffe346>Heal Spells</c> to keep <c54a0fe>Hog Riders</c> alive while they clean up the base.",
           "duration": 10000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 17,
+          "y": 24
         }
       ]
     },
@@ -767,6 +784,13 @@
           "radius": 2.0,
           "pause": true,
           "forceType": true
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 17,
+          "y": 24
         }
       ]
     },
@@ -1034,6 +1058,13 @@
           "text": "Deploy remaining troops to help with clean up.",
           "duration": 10000
         }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 16,
+          "y": 19
+        }
       ]
     },
     {
@@ -1100,7 +1131,8 @@
           "count": 1
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH9_LAVALOON",
@@ -1374,6 +1406,18 @@
           "name": "TH9_Lavaloon_CleanUp",
           "text": "Deploy remaining troops and spells to clean up the base.",
           "duration": 10000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 20,
+          "y": 29
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 39,
+          "y": 22
         }
       ]
     },
@@ -1674,6 +1718,18 @@
           "text": "Deploy remaining <c54a0fe>Wizard</c> to help clean up remaining buildings.",
           "duration": 15000
         }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 24,
+          "y": 27
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 27,
+          "y": 20
+        }
       ]
     },
     {
@@ -1740,7 +1796,8 @@
           "count": 5
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH10_BOBAT",
@@ -2025,6 +2082,18 @@
           "text": "Use <c38eaff>Freeze Spell</c> on any air-targeting defenses to help the <c54a0fe>Bats</c>.",
           "duration": 15000
         }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 30,
+          "y": 21
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 17,
+          "y": 24
+        }
       ]
     },
     {
@@ -2091,7 +2160,8 @@
           "count": 1
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH11_EDRAG",
@@ -2417,6 +2487,23 @@
           "name": "TH11_Edrag_Clean_Up",
           "text": "Use remaining spells to help with the clean up.",
           "duration": 15000
+        }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 32,
+          "y": 25
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 25,
+          "y": 26
+        },
+        {
+          "hero": "Grand Warden",
+          "x": 28,
+          "y": 18
         }
       ]
     },
@@ -2854,6 +2941,23 @@
           "unit": "Minion",
           "duration": 10000
         }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 25,
+          "y": 28
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 19,
+          "y": 15
+        },
+        {
+          "hero": "Grand Warden",
+          "x": 15,
+          "y": 19
+        }
       ]
     },
     {
@@ -3285,6 +3389,23 @@
           "text": "Deploy the remaining troops to help with the clean up.",
           "duration": 10000
         }
+      ],
+      "heroFlags": [
+        {
+          "hero": "Barbarian King",
+          "x": 11,
+          "y": 19
+        },
+        {
+          "hero": "Archer Queen",
+          "x": 18,
+          "y": 17
+        },
+        {
+          "hero": "Grand Warden",
+          "x": 29,
+          "y": 18
+        }
       ]
     },
     {
@@ -3364,7 +3485,8 @@
           "castle": true
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH12_YETI",
@@ -3467,7 +3589,8 @@
           "count": 1
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     },
     {
       "id": "CHALLENGE_TH13_HYBRID",
@@ -3588,7 +3711,8 @@
           "count": 2
         }
       ],
-      "steps": []
+      "steps": [],
+      "heroFlags": []
     }
   ]
 }

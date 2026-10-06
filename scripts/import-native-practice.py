@@ -23,7 +23,8 @@ waits for it (`PauseGame`, or runs slowed by `SlowdownPercentage`) and what it f
 (`UseAbility`). A building is named by its instance id (`ObjectGID`), which the level file
 gives each building: this importer resolves it to the building's data and tile. Level files are
 read as the campaign importer pinned them (reference/campaign/provenance.json), so only the
-13 fielded levels carry their steps.
+13 fielded levels carry their steps. The same files place each defending hero on a hero flag
+(`heroFlags`: the hero's GlobalID, 28000000 plus its heroes.csv row, and the flag's tile).
 
 Every source is downloaded from the pinned bundle into output/native-campaign-source and must
 match its SHA-256 in reference/full-client/manifest.json.
@@ -59,8 +60,8 @@ def decorations():
     return module
 
 
-def level_objects(source, path):
-    """A level file's buildings and traps by instance id, checked against the campaign's pins."""
+def level_file(source, path):
+    """A level file, checked against the campaign's pins."""
     pins = json.loads(PROVENANCE.read_text())['sources']
     source.require(path in pins, f'{path} is not pinned by the campaign import')
     target = source.CACHE / path
@@ -72,6 +73,11 @@ def level_objects(source, path):
     source.require(hashlib.sha256(data).hexdigest() == pins[path], f'Checksum differs: {path}')
     source.USED[path] = pins[path]
     level, _ = json.JSONDecoder().raw_decode(data.decode('utf-8'))
+    return level
+
+
+def level_objects(level):
+    """A level's buildings and traps by the instance id its file gives each one."""
     return {entity['id']: dict(data=entity['data'], x=entity['x'], y=entity['y'])
             for key in ('buildings', 'traps') for entity in level.get(key, [])}
 
@@ -118,6 +124,7 @@ def build():
 
     kinds = dict(troop=names('logic/characters.csv'), spell=names('logic/spells.csv'),
                  hero=names('logic/heroes.csv'))
+    heroes = [r[0] for r in decoded_rows(source.read('logic/heroes.csv'))[2:] if r and r[0]]
     texts = {r[0]: r[1] for r in decoded_rows(source.read('localization/texts.csv'))[2:]
              if len(r) > 1}
     stages = {s['id']: s['stage'] for s in json.loads(CAMPAIGN.read_text())['stages']
@@ -139,8 +146,12 @@ def build():
                                elixir=int(value.get('Elixir', 0)),
                                dark=int(value.get('DarkElixir', 0)), army=[], steps=[])
                 # Only the fielded levels' files are pinned; the withheld six are not played.
-                objects = (level_objects(source, value['LevelFile'])
-                           if current['stage'] else None)
+                level = level_file(source, value['LevelFile']) if current['stage'] else None
+                objects = level_objects(level) if level else None
+                # A defending hero's post: its hero flag (a 2x2 hero_flags.csv object).
+                current['heroFlags'] = [
+                    dict(hero=heroes[flag['m_defendingHero_0'] - 28000000], x=flag['x'],
+                         y=flag['y']) for flag in (level or {}).get('heroFlags', [])]
                 levels.append(current)
         if current and objects is not None and value.get('DeploySteps'):
             name = value['DeploySteps']
