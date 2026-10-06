@@ -53,3 +53,29 @@ test('per-level fallback sprites load when a level first draws, not at boot', as
     .toEqual(['wall-level-6', 'goldmine-tier3']);
   expect(requested.filter(deferred).length).toBe(2);
 });
+
+test('campaign scenery and hero portraits load when a battle shows them', async ({ page }) => {
+  const requested: string[] = [];
+  page.on('request', (r) => requested.push(new URL(r.url()).pathname));
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  // The starter village has no hero and shows no campaign scenery.
+  expect(requested.filter((p) => /environment\/campaign\/|hero-redesign-v1\//.test(p))).toEqual([]);
+  const count = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.army.swordsman = Math.max(1, m.state.army.swordsman);
+    m.startBattle(0, false, 'goblin-v1');
+    return m.battle!.scenery?.length ?? 0;
+  });
+  expect(count).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.__game.scene.campaignScenery.every(
+          (im) => im.visible && im.texture.key.startsWith('campaign-'),
+        ),
+      ),
+    )
+    .toBe(true);
+});

@@ -60,13 +60,15 @@ A Level 1 tower now uploads about a fifth of the atlas's texels.
 
 Fallback sprites stand in until native art draws (or for the families that have none). Several families keep one sprite per level: walls (8), Army Camps (8), the Cannon (21) and the tier-3 artwork of the generic buildings. Boot used to load every one of them, about 2.3 MB that a starter village never shows. Now boot loads Level 1 and the levels the home village owns; any other level loads when a building of it first draws (`LazyTextures`, `src/game/lazy-textures.ts`) and draws as Level 1 until then. Opening a battle prefetches its buildings' levels while scouting, and `VillageScene.prefetchDeferredArt` lets a caller wait. A sprite that fails to load is asked for again after five seconds.
 
-| Starter village boot, same method as the Archer Tower table | Before | Fallback sprites deferred |
-| --- | --- | --- |
-| Downloaded | 13.89 MB | 11.57 MB |
-| Time to a playable village (three runs) | 2.2 s | 1.7 s |
-| Same at a 4× CPU slowdown (two runs) | 5.0 s | 4.6 s |
+The 16 campaign scenery sprites (about 0.5 MB) now load when a Goblin campaign battle first shows them; each stays hidden until its texture is in. The hero portraits that stand in until a hero's native atlas draws (about 0.55 MB) load at boot only for the village's own heroes; another hero's portrait loads while its battle is scouted, and a hero deployed before it arrives keeps an invisible stand-in.
 
-`tests/browser/deferred-sprites.spec.ts` checks that boot requests no wall, camp, Cannon or tier-3 level the village does not own, and that a wall and Gold Mine raised past them draw as Level 1, never as a missing texture, until their sprites arrive. `camp-art.spec.ts` now prefetches the levels it builds. `building-art:71`, `camp-art:74`, `wall-art:73`, the herohall case of `army-footprints`, `blacksmith:130`, `native-cannon-states:47` and `game.spec` 48, 162 and 268 fail with the same errors on the commit before.
+| Starter village boot, same method as the Archer Tower table | Before | Fallback sprites deferred | And scenery and hero portraits |
+| --- | --- | --- | --- |
+| Downloaded | 13.89 MB | 11.57 MB | 10.49 MB |
+| Time to a playable village | 2.2 s (three runs) | 1.7 s (three runs) | 1.8 s (six runs; within noise) |
+| Same at a 4× CPU slowdown | 5.0 s (two runs) | 4.6 s (two runs) | 4.6 s (four runs) |
+
+`tests/browser/deferred-sprites.spec.ts` checks that boot requests no wall, camp, Cannon or tier-3 level the village does not own, and that a wall and Gold Mine raised past them draw as Level 1, never as a missing texture, until their sprites arrive. Its second case checks that boot requests no campaign scenery or hero portrait for a starter village, and that a Goblin campaign battle's scenery appears with its own textures. `camp-art.spec.ts` now prefetches the levels it builds. The three viewports of `campaign-rules:9`, the two lineup cases of `hero-roster:262`, `building-art:71`, `camp-art:74`, `wall-art:73`, the herohall case of `army-footprints`, `blacksmith:130`, `native-cannon-states:47` and `game.spec` 48, 162 and 268 fail with the same errors on the commit before.
 
 The original atlases of paged packs stay in `dist`, unrequested, so the deployed files grow; nothing a player downloads does.
 

@@ -1,6 +1,6 @@
 import { HeroNativePresentation } from './hero-native-scene';
 import { CRAFTED_KINDS, type CraftedKind } from './crafted-defenses';
-import { HERO_KINDS, heroPortraitImage } from './native-hero-data';
+import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
 import {
@@ -55,7 +55,7 @@ import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-bui
 import { isGoblinBuilding } from './goblin-building-art';
 import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-scene';
 import { DARK_STORAGE_ART } from './dark-storage-art';
-import { SCENERY_SPRITES, sceneryAsset, sceneryArt } from './campaign-scenery';
+import { sceneryAsset, sceneryArt, type ScenerySprite } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
 import { npcArt, type NpcBuildingKind } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
@@ -152,6 +152,8 @@ const AIR_LIFT = 46;
 const TICK = 0.05;
 /** Crafting Station art: the client platform and the authored defenses drawn on it. */
 const STATION_WIDTH = 178;
+/** A hero's roster portrait, its sprite until the native atlas draws it. */
+const heroKey = (kind: HeroKind) => `hero-fallback-${kind}`;
 const CRAFTED_WIDTH = 212;
 /** Stepping budget per frame for a sped-up attack. */
 const MAX_STEP_MS = 10;
@@ -573,9 +575,11 @@ export class VillageScene extends Phaser.Scene {
       endFrame: 44,
     });
     this.load.image('king', asset('king'));
+    // Hero portraits stand in until a hero's native atlas arrives: the village's own heroes'
+    // load now, the rest when one is deployed. Campaign scenery loads when a battle shows it.
     for (const kind of HERO_KINDS)
-      this.load.image(`hero-fallback-${kind}`, heroPortraitImage(kind));
-    for (const kind of SCENERY_SPRITES) this.load.image(`campaign-${kind}`, sceneryAsset(kind));
+      if (this.model.heroProgress(kind))
+        this.load.image(`hero-fallback-${kind}`, heroPortraitImage(kind));
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
@@ -2283,6 +2287,8 @@ export class VillageScene extends Phaser.Scene {
         this.model.buildings.filter((b) => b.kind === 'archertower').map((b) => b.level),
       );
       void this.prefetchDeferredArt(this.model.buildings);
+      for (const hero of this.model.battle?.nativeHeroes ?? [])
+        void this.deferredArt.request(heroKey(hero.kind), heroPortraitImage(hero.kind));
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
@@ -2334,14 +2340,15 @@ export class VillageScene extends Phaser.Scene {
         const art = sceneryArt(o.data),
           p = iso(o.x + art.size / 2, o.y + art.size / 2);
         const im = this.add
-          .image(p.x, p.y, art.texture)
+          .image(p.x, p.y, '__DEFAULT')
           .setOrigin(0.5, 225 / 256)
-          .setDisplaySize(art.width, art.width)
           .setDepth(p.y)
           .setData('nativeScenery', o.data)
-          .setAlpha(NATIVE_SCENERY[o.data].faded ? 0.5 : 1);
+          .setAlpha(NATIVE_SCENERY[o.data].faded ? 0.5 : 1)
+          .setVisible(false);
         this.campaignScenery.push(im);
       }
+      this.showScenery();
       this.boundary.signature = -1;
       for (const s of this.sprites.values()) s.destroy();
       for (const s of this.unitSprites.values()) s.destroy();
@@ -2676,6 +2683,21 @@ export class VillageScene extends Phaser.Scene {
     if (walls) this.syncWalls();
     this.drawRuinGround();
     this.syncCount++;
+  }
+  /** Shows each campaign scenery sprite whose texture is in; the rest start loading. */
+  private showScenery() {
+    for (const im of this.campaignScenery) {
+      if (im.visible) continue;
+      const art = sceneryArt(im.getData('nativeScenery'));
+      if (
+        !this.deferredArt.has(
+          art.texture,
+          sceneryAsset(art.texture.slice('campaign-'.length) as ScenerySprite),
+        )
+      )
+        continue;
+      im.setTexture(art.texture).setDisplaySize(art.width, art.width).setVisible(true);
+    }
   }
   /** Per-level fallback sprites the boot loads only for the home village's own levels. */
   private deferrable(kind: BuildingKind, level: number, texture: string) {
@@ -4032,10 +4054,16 @@ export class VillageScene extends Phaser.Scene {
         // Legacy battles animate the procedural King; native heroes fall back to their own
         // roster portrait until (and unless) the baked atlas arrives.
         const legacyKing = !!u.hero && !!battle.hero;
+        // A hero portrait the boot did not load starts loading; the invisible stand-in holds
+        // its place meanwhile (see heroPortrait below).
+        const portrait =
+          u.hero && !legacyKing && this.deferredArt.has(heroKey(u.hero), heroPortraitImage(u.hero));
         const texKey = legacyKing
           ? kingTexture('front-left')
           : u.hero
-            ? `hero-fallback-${u.hero}`
+            ? portrait
+              ? heroKey(u.hero)
+              : 'troop-fallback'
             : hasWalk
               ? walkKey
               : 'troop-fallback';
@@ -4120,6 +4148,9 @@ export class VillageScene extends Phaser.Scene {
       // Fallback sprites are invisible by design; a ground marker stands in (after the
       // native pass, only if no mesh drew the unit).
       const isFallback = !!im.getData('isFallback');
+      if (u.hero && !battle.hero && im.texture.key === 'troop-fallback') {
+        if (this.textures.exists(heroKey(u.hero))) im.setTexture(heroKey(u.hero));
+      }
       if (u.hero && battle.hero) {
         const king = kingPose(
           u,
@@ -5283,6 +5314,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.cannonArtSeen !== pages) {
       this.cannonArtSeen = pages;
       this.lastRevision = -1;
+      this.showScenery();
     }
     if (this.lastRevision !== this.model.revision) {
       if (this.passiveOnly()) this.passiveSync();
