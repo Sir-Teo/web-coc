@@ -111,7 +111,6 @@ import {
   BUILDINGS,
   isTrap,
   SPELLS,
-  SPELL_KEYS,
   TROOPS,
   TROOP_KEYS,
   TIER3_LEVEL,
@@ -574,7 +573,6 @@ export class VillageScene extends Phaser.Scene {
       frameHeight: PUMPKIN_ART.frameHeight,
       endFrame: 44,
     });
-    this.load.image('king', asset('king'));
     // Hero portraits stand in until a hero's native atlas arrives: the village's own heroes'
     // load now, the rest when one is deployed. Campaign scenery loads when a battle shows it.
     for (const kind of HERO_KINDS)
@@ -598,7 +596,6 @@ export class VillageScene extends Phaser.Scene {
       )
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
-    for (const k of SPELL_KEYS) this.load.image(k, asset(k));
     for (const k of CRAFTED_KINDS) this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
     const classicTroops = TROOP_KEYS.filter(
       (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
@@ -615,8 +612,10 @@ export class VillageScene extends Phaser.Scene {
     // Extra / siege / super troops have no walk spritesheet and no scene texture: battle and
     // camp sprites fall back to the transparent `troop-fallback` texture (plus a ground marker)
     // until the native mesh is ready, and the HUD shows their roster portraits as plain images.
-    // Loading those 62 portraits here cost 4.4 MB of boot download that nothing drew.
-    for (const k of [...classicTroops, 'trees', 'rocks', 'flag']) this.load.image(k, asset(k));
+    // Loading those 62 portraits here cost 4.4 MB of boot download that nothing drew. Nor does
+    // the scene draw the classic troops' portraits, the spell icons or the King's portrait (the
+    // HUD shows them as images), so they are not scene textures either.
+    for (const k of ['trees', 'rocks', 'flag']) this.load.image(k, asset(k));
     // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
     this.load.off('progress');
     this.load.off('loaderror');
@@ -4717,7 +4716,9 @@ export class VillageScene extends Phaser.Scene {
       });
       // The client's own sounds: its Town Hall jingle, Building Ready, or the gem reward of
       // a cleared obstacle.
-      if (fx.building === 'townhall') this.audio.effect('TH Upgrade Jingle', 'build');
+      if (fx.finished === 'research') this.audio.effect('Troop Upgrade Finished', 'build');
+      else if (fx.finished === 'hero') this.audio.effect('Hero Upgrade Finished', 'build');
+      else if (fx.building === 'townhall') this.audio.effect('TH Upgrade Jingle', 'build');
       else if (fx.building) this.audio.effect('Building Ready', 'build');
       else if (fx.gems) this.audio.effect('Collect Diamonds', 'collect');
       else this.audio.play('build');
