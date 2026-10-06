@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest';
-import { dragonAttackOffset, dragonFacing, GARRISON_GRAPHS } from '../src/game/garrison-poses';
+import { dragonAttackOffset, dragonFacing, garrisonGraphs } from '../src/game/garrison-poses';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
+const GARRISON_GRAPHS = garrisonGraphs();
 
 it('uses the original empty source locator for each view and mirrors it with the body', () => {
   for (const [dx, dy, view, x, y] of [

@@ -40,6 +40,7 @@ import {
 import { garrisonSoundCues } from './garrison-sounds';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
+import { characterArtLoaded, loadCharacterArt } from './character-art';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
 import { castleBounds } from './castle-graph';
@@ -303,9 +304,12 @@ const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
   LEGACY_KING_FAMILY,
   {
-    // Campaign Clan Castle defenders; a home Castle holds no reinforcements.
+    // Campaign Clan Castle defenders; a home Castle holds no reinforcements. Their graphs
+    // (about 2.7 MB of JSON) are fetched first.
     draws: () => false,
     needed: (model) => !!model.battle?.garrisons?.length,
+    prepare: loadCharacterArt,
+    prepared: characterArtLoaded,
     preload: preloadGarrisonCharacters,
   },
   SANTA_FAMILY,
@@ -1121,8 +1125,8 @@ export class VillageScene extends Phaser.Scene {
       if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
     };
     // The presentation code and its source graphs are a separate chunk, fetched with the art.
-    this.lateAssets = import('./late-campaign-scene').then(
-      ({ LateCampaignPresentation, preloadLateCampaign }) =>
+    this.lateAssets = Promise.all([import('./late-campaign-scene'), loadCharacterArt()]).then(
+      ([{ LateCampaignPresentation, preloadLateCampaign }]) =>
         new Promise<void>((resolve) => {
           let failed = false;
           const failure = () => (failed = true);

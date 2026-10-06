@@ -4,7 +4,12 @@ import witness from './fixtures/native-dragon-death-mesh/death.json';
 import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { hurtDefender } from '../src/game/defenders';
-import { garrisonPoses, DRAGON_DEATH_LAST_TIME } from '../src/game/garrison-poses';
+import { garrisonPoses, dragonDeathLastTime } from '../src/game/garrison-poses';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
+const DRAGON_DEATH_LAST_TIME = dragonDeathLastTime();
 
 it('retains all source death frames and an independent witness for each', () => {
   const clip = source.graph.clips['56'];

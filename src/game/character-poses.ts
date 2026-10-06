@@ -1,5 +1,5 @@
 import { animationBlock } from './character-catalog';
-import { characterArt, COMMON_DEATH_ART } from './character-art';
+import { characterArt, characterArtLoaded, commonDeathArt } from './character-art';
 import { garrisonStats } from './garrison-kinds';
 import {
   nativeMatrix,
@@ -62,7 +62,7 @@ function variant(rows: Row[], id: number, ordinal: number) {
   return rows.at(-1)!;
 }
 function clipFor(animation: string, row: Row, view: number) {
-  const art = row.SWF ? characterArt(animation) : COMMON_DEATH_ART;
+  const art = row.SWF ? characterArt(animation) : commonDeathArt();
   const graph = art.graph;
   const id = graph.exports[row.SWF ? rowExport(row, view) : DEATH_EXPORT];
   if (id === undefined) throw Error(`Missing native export ${row.ExportName}`);
@@ -174,7 +174,7 @@ export function characterPose(
   const states = statesFor(animation);
   if (defender.hp <= 0) {
     const row = states.die[0];
-    const death = row.SWF ? art : COMMON_DEATH_ART;
+    const death = row.SWF ? art : commonDeathArt();
     // Directional die rows in the character's own file (Electro Dragon) keep the last facing.
     const directional = !!row.SWF && row.HasDirections === 'TRUE';
     const dieFacing = directional
@@ -247,6 +247,8 @@ const barHeights = new Map<string, number>();
 export function characterBarHeight(animation: string) {
   if (animation === 'Dragon7') return 94;
   if (animation === 'Balloon Goblin8') return 115;
+  // Before the graphs arrive, a typical troop's height.
+  if (!characterArtLoaded()) return 60;
   let height = barHeights.get(animation);
   if (height !== undefined) return height;
   const row = statesFor(animation).idle[0];

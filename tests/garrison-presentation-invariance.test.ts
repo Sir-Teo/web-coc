@@ -4,6 +4,10 @@ import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { garrisonPoses } from '../src/game/garrison-poses';
 import { garrisonLayers } from '../src/game/garrison-layers';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
 
 /**
  * Frozen before the generic character presentation replaced the Dragon/Balloon-specific

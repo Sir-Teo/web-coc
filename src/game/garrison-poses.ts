@@ -7,21 +7,28 @@ import {
   characterPose,
   rowExport,
 } from './character-poses';
-import { CHARACTER_ART, COMMON_DEATH_ART } from './character-art';
+import { characterArts, commonDeathArt } from './character-art';
 import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
 
-/** The No Flight Zone foundation graphs, retained under their established names. */
-export const GARRISON_GRAPHS = {
-  dragon: CHARACTER_ART.Dragon7.graph,
-  balloon: CHARACTER_ART['Balloon Goblin8'].graph,
-  dragonDeath: COMMON_DEATH_ART.graph,
+/** The No Flight Zone foundation graphs, retained under their established names (once loaded). */
+export const garrisonGraphs = () => ({
+  dragon: characterArts().Dragon7.graph,
+  balloon: characterArts()['Balloon Goblin8'].graph,
+  dragonDeath: commonDeathArt().graph,
+});
+/** The last frame of the shared death clip. */
+export const dragonDeathLastTime = () => {
+  const graph = garrisonGraphs().dragonDeath;
+  const clip = graph.clips[graph.exports.barbarian_death_1];
+  return (clip.timeline.length - 1) / clip.fps;
 };
-const deathClip = GARRISON_GRAPHS.dragonDeath.clips[GARRISON_GRAPHS.dragonDeath.exports.barbarian_death_1];
-export const DRAGON_DEATH_LAST_TIME = (deathClip.timeline.length - 1) / deathClip.fps;
-const balloonAttack = GARRISON_GRAPHS.balloon.clips[GARRISON_GRAPHS.balloon.exports.balloon_lvl8_attack1];
 /** Local one-based interpretation of source ActionFrame 34 in this 34-frame clip. */
-export const BALLOON_ACTION_TIME = (balloonAttack.timeline.length - 1) / balloonAttack.fps;
+export const balloonActionTime = () => {
+  const graph = garrisonGraphs().balloon;
+  const clip = graph.clips[graph.exports.balloon_lvl8_attack1];
+  return (clip.timeline.length - 1) / clip.fps;
+};
 export function balloonAttackPose(defender: GarrisonDefender, elapsed: number, reduced = false) {
   const attack = characterAttackTime(defender, elapsed, 'Balloon Goblin8', 1, reduced);
   return attack ? { name: rowExport(attack.row, 1), time: attack.time } : null;

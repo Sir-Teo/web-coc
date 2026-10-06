@@ -30,6 +30,10 @@ import {
   lateSetup,
   stepFamilies,
 } from './fixtures/late-defense-battle';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
 
 const advance = (b: Battle, seconds: number) => {
   for (let i = Math.round(seconds / 0.05); i > 0; i--) {

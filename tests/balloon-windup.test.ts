@@ -2,7 +2,12 @@ import { expect, it } from 'vitest';
 import native from '../reference/garrison/native.json';
 import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
-import { balloonAttackPose, BALLOON_ACTION_TIME } from '../src/game/garrison-poses';
+import { balloonAttackPose, balloonActionTime } from '../src/game/garrison-poses';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
+const BALLOON_ACTION_TIME = balloonActionTime();
 
 const balloon = () => {
   const model = new GameModel();

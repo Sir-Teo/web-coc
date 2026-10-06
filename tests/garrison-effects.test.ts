@@ -3,6 +3,10 @@ import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { garrisonImpactPoses } from '../src/game/garrison-effects';
 import { hurtDefender } from '../src/game/defenders';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
 
 const setup = () => {
   const model = new GameModel();

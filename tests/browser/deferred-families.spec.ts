@@ -188,3 +188,36 @@ test('garrison defenders and the legacy King load only when a battle draws them'
   expect(await page.evaluate(loaded('garrison-dragon'))).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('character graphs load with the first battle that has a Clan Castle garrison', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  const requested: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('request', (r) => requested.push(new URL(r.url()).pathname));
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const graphs = () => requested.filter((path) => path.includes('character-graphs'));
+  expect(graphs()).toEqual([]);
+  const stage = await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { freshNativeCampaign, nativeBuildings } = await import('/src/game/native-campaign.ts');
+    const { campaignGarrisonSetup } = await import('/src/game/garrison-campaign.ts');
+    const m = window.__game.model;
+    m.state.army = { ...emptyArmy(), swordsman: 20 };
+    m.state.nativeCampaign = freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    let index = 0;
+    while (!campaignGarrisonSetup(index, nativeBuildings(index))?.length) index++;
+    m.changed();
+    m.startCampaign(index);
+    return { index, garrisons: m.battle!.garrisons!.length };
+  });
+  expect(stage.garrisons).toBeGreaterThan(0);
+  // The battle holds until the graphs and the garrison art are in.
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(graphs().length).toBeGreaterThan(0);
+  expect(await page.evaluate(loaded('garrison-dragonDeath'))).toBe(true);
+  expect(errors).toEqual([]);
+});

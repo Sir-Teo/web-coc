@@ -10,6 +10,10 @@ import {
   presentationLive,
   presentationTime,
 } from '../src/game/presentation-clock';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
 // The Drill graph loads with its art family; the game awaits it the same way.
 beforeAll(() => loadDarkDrillArt());
 

@@ -3,10 +3,11 @@ import type { Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import {
-  CHARACTER_ART,
-  COMMON_DEATH_ART,
-  PROJECTILE_ART,
-  PROJECTILE_GROUP_ART,
+  characterArtLoaded,
+  characterArts,
+  commonDeathArt,
+  projectileArts,
+  projectileGroupArts,
 } from './character-art';
 import { characterLayers } from './garrison-layers';
 import { GARRISON_SOUNDS, garrisonSample } from './garrison-sounds';
@@ -32,29 +33,31 @@ export const GARRISON_CONCEALED_ALPHA = 0.55;
 /** No Flight Zone's Dragon 7 and Balloon 8 are the only defenders outside the late villages. */
 const BOOT_CHARACTERS = new Set(['Dragon7', 'Balloon Goblin8']);
 
-/** Boot-time garrison art: effects, sounds and the shared death. */
+/** Boot-time garrison art: effects and sounds. The shared death comes with the characters. */
 export function preloadGarrisonTroops(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, GARRISON_EFFECT_GRAPH, 'garrison-effects');
   for (const [path, sound] of Object.entries(GARRISON_SOUNDS))
     scene.load.binary(garrisonSample(path), '/' + sound.path);
-  preloadNativeMeshes(scene, COMMON_DEATH_ART.graph, COMMON_DEATH_ART.prefix);
 }
 /**
  * The No Flight Zone troops, loaded as an art family when a battle with a garrison opens: the
  * home village never draws them.
  */
 export function preloadGarrisonCharacters(scene: Phaser.Scene) {
+  const death = commonDeathArt();
+  preloadNativeMeshes(scene, death.graph, death.prefix);
   for (const name of BOOT_CHARACTERS)
-    preloadNativeMeshes(scene, CHARACTER_ART[name].graph, CHARACTER_ART[name].prefix);
+    preloadNativeMeshes(scene, characterArts()[name].graph, characterArts()[name].prefix);
 }
 /** Every later defending character and projectile file, loaded with the late campaign art. */
 export function preloadLateGarrisonTroops(scene: Phaser.Scene) {
   for (const art of [
-    ...Object.entries(CHARACTER_ART).flatMap(([name, art]) =>
+    commonDeathArt(),
+    ...Object.entries(characterArts()).flatMap(([name, art]) =>
       BOOT_CHARACTERS.has(name) ? [] : [art],
     ),
-    ...Object.values(PROJECTILE_ART),
-    ...Object.values(PROJECTILE_GROUP_ART),
+    ...Object.values(projectileArts()),
+    ...Object.values(projectileGroupArts()),
   ])
     preloadNativeMeshes(scene, art.graph, art.prefix);
 }
@@ -95,6 +98,8 @@ export class GarrisonPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     lift: number,
   ) {
+    // Defenders draw once their graphs are in; a battle with a garrison waits for them.
+    if (!characterArtLoaded()) return;
     // Bursts sample the presentation clock: they play out for the grace window after the
     // finish, then clear, instead of freezing at the final battle time.
     if (battle && presentationLive(battle))
@@ -122,7 +127,7 @@ export class GarrisonPresentation {
       const family =
         layers?.prefix ??
         this.families.get(defender.id) ??
-        (defender.kind === 'dragon' && defender.hp <= 0 ? COMMON_DEATH_ART.prefix : `unborn`);
+        (defender.kind === 'dragon' && defender.hp <= 0 ? commonDeathArt().prefix : `unborn`);
       if (this.families.get(defender.id) !== family) {
         this.defenders.get(defender.id)?.destroy();
         this.defenders.delete(defender.id);

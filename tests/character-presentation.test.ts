@@ -5,9 +5,9 @@ import { spawnGarrisonDefender, type GarrisonShot } from '../src/game/garrison-c
 import { garrisonStats, type GarrisonKind } from '../src/game/garrison-kinds';
 import { animationBlock } from '../src/game/character-catalog';
 import {
-  CHARACTER_ART,
-  COMMON_DEATH_ART,
-  PROJECTILE_ART,
+  characterArts,
+  commonDeathArt,
+  projectileArts,
   characterArt,
 } from '../src/game/character-art';
 import {
@@ -25,6 +25,13 @@ import {
   type NativeMeshPose,
   type NativeScenePose,
 } from '../src/game/native-mesh';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
+const CHARACTER_ART = characterArts(),
+  COMMON_DEATH_ART = commonDeathArt(),
+  PROJECTILE_ART = projectileArts();
 
 const FAMILIES: [GarrisonKind, number][] = [
   ['goblin', 7],

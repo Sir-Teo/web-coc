@@ -3,7 +3,7 @@ import { GameModel } from '../src/game/model';
 import { spawnGarrisonDefender, type GarrisonShot } from '../src/game/garrison-combat';
 import { garrisonStats } from '../src/game/garrison-kinds';
 import { projectileRow } from '../src/game/character-catalog';
-import { characterArt, projectileArt, CHARACTER_ART } from '../src/game/character-art';
+import { characterArt, characterArts, projectileArt } from '../src/game/character-art';
 import {
   animationStates,
   characterFacing,
@@ -18,6 +18,11 @@ import {
   type NativeMeshPose,
   type NativeScenePose,
 } from '../src/game/native-mesh';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
+const CHARACTER_ART = characterArts();
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 const leaves = (poses: NativeScenePose[]): NativeMeshPose[] =>

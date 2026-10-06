@@ -4,6 +4,10 @@ import { spawnGarrisonDefender } from '../src/game/garrison-combat';
 import { garrisonLayers } from '../src/game/garrison-layers';
 import { garrisonPoses } from '../src/game/garrison-poses';
 import type { NativeScenePose, NativeMeshPose } from '../src/game/native-mesh';
+import { loadCharacterArt } from '../src/game/character-art';
+
+// The character graphs load on demand, as the garrison art does.
+await loadCharacterArt();
 const leaves = (poses: NativeScenePose[]): NativeMeshPose[] =>
   poses.flatMap((p) => ('group' in p ? leaves(p.group) : [p]));
 it('partitions all original troop and death frames without losing or altering mesh commands', () => {

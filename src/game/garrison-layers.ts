@@ -2,14 +2,16 @@ import type { GarrisonDefender } from './defenders';
 import type { Battle } from './model';
 import type { NativeScenePose } from './native-mesh';
 import { characterPose } from './character-poses';
-import { CHARACTER_ART, COMMON_DEATH_ART } from './character-art';
+import { characterArts, commonDeathArt } from './character-art';
 
 // Verified original black-alpha shadow shapes: troop files use 0 (Super Minion 3); common death 45.
 const shadowSets = new Map<string, Set<number[]>>();
 function shadowVertices(prefix: string) {
   let set = shadowSets.get(prefix);
   if (set) return set;
-  const art = [...Object.values(CHARACTER_ART), COMMON_DEATH_ART].find((a) => a.prefix === prefix)!;
+  const art = [...Object.values(characterArts()), commonDeathArt()].find(
+    (a) => a.prefix === prefix,
+  )!;
   set = new Set(art.shadows.flatMap((id) => art.graph.shapes[id].map(([, vertices]) => vertices)));
   shadowSets.set(prefix, set);
   return set;
