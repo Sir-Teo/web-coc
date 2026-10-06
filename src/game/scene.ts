@@ -1,5 +1,5 @@
 import { HeroNativePresentation } from './hero-native-scene';
-import { CRAFTED_KINDS, type CraftedKind } from './crafted-defenses';
+import type { CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { EXTRA_TROOP_KINDS } from './extra-troops';
@@ -354,6 +354,9 @@ export async function prepareHomeArt(buildings: Building[]) {
     ),
   );
 }
+/** A kind's base (Level 1) fallback sprite, keyed by the kind itself. */
+const baseAsset = (kind: string) =>
+  kind === 'darkdrill' ? '/assets/buildings/darkdrill.webp' : asset(kind);
 export const WORLD = {
   left: 896 - MAP_SIZE * 32,
   width: MAP_SIZE * 64,
@@ -503,6 +506,8 @@ export class VillageScene extends Phaser.Scene {
   private villageArcherTowers!: VillageArcherTowers;
   /** Per-level fallback sprites fetched on first use (see deferredTexture). */
   private deferredArt!: LazyTextures;
+  /** Kinds whose base sprite the boot left for first use: the village owns none of them. */
+  private deferredBases = new Set<string>();
   private heroNativePresentation!: HeroNativePresentation;
   private troopNativePresentation!: TroopNativePresentation;
   private villageNativePresentation!: VillageNativePresentation;
@@ -595,11 +600,17 @@ export class VillageScene extends Phaser.Scene {
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
     for (const material of ['stone', 'wood'])
       this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
+    // Base sprites only for the kinds the village owns; the Shop's other kinds, and those a
+    // battle brings, load when something first draws them (see deferredTexture).
+    const ownedKinds = new Set(home.filter((b) => !b.npc).map((b) => b.kind as string));
+    this.deferredBases = new Set();
     for (const k of Object.keys(BUILDINGS)) {
       // Late campaign kinds render from their own per-level art, loaded with the late families.
       if (hasLateArt(k)) continue;
-      if (k !== 'mortar' && k !== 'cannon')
-        this.load.image(k, k === 'darkdrill' ? '/assets/buildings/darkdrill.webp' : asset(k));
+      if (k !== 'mortar' && k !== 'cannon') {
+        if (ownedKinds.has(k)) this.load.image(k, baseAsset(k));
+        else this.deferredBases.add(k);
+      }
       if (
         k !== 'wall' &&
         k !== 'mortar' &&
@@ -610,7 +621,9 @@ export class VillageScene extends Phaser.Scene {
       )
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
-    for (const k of CRAFTED_KINDS) this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
+    // The Crafting Station's defenses likewise: only those the village's stations show.
+    for (const k of new Set(home.map((b) => b.crafted).filter((k) => k !== undefined)))
+      this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
     const classicTroops = TROOP_KEYS.filter(
       (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
     );
@@ -2479,7 +2492,7 @@ export class VillageScene extends Phaser.Scene {
           : (this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1);
       if (!this.ghost) {
         this.ghost = this.add
-          .image(0, 0, buildingTexture(this.model.placement, level))
+          .image(0, 0, '__DEFAULT')
           .setAlpha(0.72)
           // Above home flying camp units (6500) so the preview is never buried.
           .setDepth(6600);
@@ -2520,7 +2533,7 @@ export class VillageScene extends Phaser.Scene {
       p = iso(b.x + d.size / 2, b.y + d.size / 2);
     let im = this.sprites.get(b.id);
     if (!im) {
-      im = this.add.image(p.x, p.y, b.kind).setOrigin(0.5, 0.88);
+      im = this.add.image(p.x, p.y, '__DEFAULT').setOrigin(0.5, 0.88);
       this.sprites.set(b.id, im);
     }
     this.styleBuilding(
@@ -2773,29 +2786,48 @@ export class VillageScene extends Phaser.Scene {
       im.setTexture(art.texture).setDisplaySize(art.width, art.width).setVisible(true);
     }
   }
-  /** Per-level fallback sprites the boot loads only for the home village's own levels. */
+  /**
+   * Fallback sprites the boot loads only for the home village's own levels and kinds: per-level
+   * walls, camps, Cannons and tier-3 art, and the base sprite of a kind the village lacks.
+   */
   private deferrable(kind: BuildingKind, level: number, texture: string) {
+    if (texture === kind) return this.deferredBases.has(kind);
     const family =
       kind === 'wall' || kind === 'camp' || kind === 'cannon' || texture.endsWith('-tier3');
     // Level 1 is the boot sprite, except the Cannon's, which keys its own per level.
     return family && (level > 1 || kind === 'cannon');
   }
+  /** Where a fallback texture loads from, as the boot would have loaded it. */
+  private textureUrl(kind: BuildingKind, level: number, texture: string) {
+    if (texture.endsWith('-tier3')) return asset(kind, TIER3_LEVEL);
+    return texture === kind ? baseAsset(kind) : asset(kind, level);
+  }
   /** Whether a building's fallback sprite is loaded; a deferred one that is not starts loading. */
   private deferredTexture(kind: BuildingKind, level: number, texture: string) {
     return (
-      !this.deferrable(kind, level, texture) || this.deferredArt.has(texture, asset(kind, level))
+      !this.deferrable(kind, level, texture) ||
+      this.deferredArt.has(texture, this.textureUrl(kind, level, texture))
     );
   }
   /** Loads the deferred fallback sprites these buildings draw; resolves when they are in. */
   prefetchDeferredArt(buildings: readonly Building[]) {
     return Promise.all(
-      buildings.map((b) => {
-        const texture = buildingTexture(b.kind, b.level);
-        return !b.npc && this.deferrable(b.kind, b.level, texture)
-          ? this.deferredArt.request(texture, asset(b.kind, b.level))
-          : undefined;
+      buildings.flatMap((b) => {
+        if (b.npc) return [];
+        // A higher level draws as its kind's Level 1 until its own sprite is in.
+        return [...new Set([buildingTexture(b.kind, b.level), buildingTexture(b.kind, 1)])]
+          .filter((texture, i) => this.deferrable(b.kind, i ? 1 : b.level, texture))
+          .map((texture, i) =>
+            this.deferredArt.request(texture, this.textureUrl(b.kind, i ? 1 : b.level, texture)),
+          );
       }),
     ).then(() => undefined);
+  }
+  /** A transparent stand-in the size of the building, still pickable, until its art arrives. */
+  private blankBuilding(im: Phaser.GameObjects.Image, kind: BuildingKind) {
+    const width = BUILDINGS[kind].width;
+    if (im.texture.key !== '__DEFAULT') im.setTexture('__DEFAULT');
+    return im.setOrigin(0.5, 0.88).setFlipX(false).setDisplaySize(width, width);
   }
   private styleBuilding(
     im: Phaser.GameObjects.Image,
@@ -2810,8 +2842,19 @@ export class VillageScene extends Phaser.Scene {
   ): Phaser.GameObjects.Image {
     // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
     if (kind === 'craftingstation') {
-      const texture = crafted ? `crafted-${crafted}` : 'craftingstation';
+      const wanted = crafted ? `crafted-${crafted}` : 'craftingstation';
+      // A defense or platform the boot did not load draws nothing until it arrives.
+      const ready =
+        wanted === 'craftingstation'
+          ? this.deferredTexture(kind, 1, wanted)
+          : this.deferredArt.has(wanted, asset(wanted));
+      const texture = ready ? wanted : '__DEFAULT';
       if (im.texture.key !== texture) im.setTexture(texture);
+      if (!ready)
+        return im
+          .setOrigin(0.5, 0.8)
+          .setFlipX(false)
+          .setDisplaySize(STATION_WIDTH, STATION_WIDTH * 0.8);
       return crafted
         ? im.setOrigin(0.5, 0.74).setFlipX(false).setDisplaySize(CRAFTED_WIDTH, CRAFTED_WIDTH)
         : im
@@ -2822,7 +2865,8 @@ export class VillageScene extends Phaser.Scene {
     // The client portrait at its source scale, anchored where its four tent poles meet the
     // ground: their tips frame the hut's footprint around (68, 78) of the 134×129 image.
     if (kind === 'helperhut') {
-      if (im.texture.key !== 'helperhut') im.setTexture('helperhut');
+      const texture = this.deferredTexture(kind, 1, kind) ? kind : '__DEFAULT';
+      if (im.texture.key !== texture) im.setTexture(texture);
       return im
         .setOrigin(68 / 134, 78 / 129)
         .setFlipX(false)
@@ -2854,22 +2898,26 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
     const texture = buildingTexture(kind, level, direction, xbowMode, 'single', spellTowerWeapon);
     // A wall, camp, Cannon or tier-3 level the boot did not load draws as Level 1 until its
-    // sprite arrives.
-    if (!this.deferredTexture(kind, level, texture) && kind !== 'cannon')
-      return this.styleBuilding(
-        im,
-        kind,
-        1,
-        direction,
-        skeletonMode,
-        npc,
-        xbowMode,
-        spellTowerWeapon,
-        crafted,
-      );
+    // sprite arrives; a kind whose base sprite has not arrived yet draws nothing.
+    if (!this.deferredTexture(kind, level, texture) && kind !== 'cannon') {
+      if (buildingTexture(kind, 1, direction, xbowMode, 'single', spellTowerWeapon) !== texture)
+        return this.styleBuilding(
+          im,
+          kind,
+          1,
+          direction,
+          skeletonMode,
+          npc,
+          xbowMode,
+          spellTowerWeapon,
+          crafted,
+        );
+      return this.blankBuilding(im, kind);
+    }
     // Per-level cannon/X-Bow portraits arrive with deferred art. Keep a real boot texture
     // on screen until then, including placement previews and retries after a load failure.
     if ((kind === 'cannon' || kind === 'xbow') && !this.textures.exists(texture)) {
+      if (!this.deferredTexture(kind, 1, kind)) return this.blankBuilding(im, kind);
       return im
         .setTexture(kind)
         .setOrigin(0.5, 0.88)
@@ -3403,7 +3451,7 @@ export class VillageScene extends Phaser.Scene {
       const p = iso(w.x + 0.5, w.y + 0.5);
       let im = this.wallGhosts.get(w.id);
       if (!im) {
-        im = this.add.image(0, 0, 'wall').setOrigin(0.5, 0.88);
+        im = this.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.88);
         this.wallGhosts.set(w.id, im);
       }
       const owned = buildings.get(w.id)!.level,

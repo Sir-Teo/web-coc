@@ -54,6 +54,50 @@ test('per-level fallback sprites load when a level first draws, not at boot', as
   expect(requested.filter(deferred).length).toBe(2);
 });
 
+test('a kind the village lacks loads its base sprite when one first draws', async ({ page }) => {
+  const requested: string[] = [];
+  page.on('request', (r) => requested.push(new URL(r.url()).pathname));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  const kinds = await page.evaluate(
+    () => new Set(window.__game.model.state.buildings.map((b) => b.kind)).size,
+  );
+  expect(kinds).toBeGreaterThan(5);
+  // No Blacksmith, Laboratory, Air Defense or Crafting Station art for a starter village.
+  const lacking = (path: string) =>
+    /\/assets\/buildings\/(blacksmith|laboratory|airdefense-v2)\.|\/assets\/crafted\/|crafting-station/.test(
+      path,
+    );
+  expect(requested.filter(lacking)).toEqual([]);
+  const ids = await page.evaluate(async () => {
+    const { model: m, scene } = window.__game;
+    const { makeBuilding } = await import('/src/game/model.ts');
+    const spot = (size: number) => {
+      for (let y = 4; y < 40; y++)
+        for (let x = 4; x < 40; x++) if (m.canPlace('craftingstation', x, y)) return { x, y, size };
+      throw new Error('No room');
+    };
+    const smith = makeBuilding(m.state.nextId++, 'blacksmith', 0, 0, 1);
+    Object.assign(smith, spot(3));
+    m.state.buildings.push(smith);
+    const station = makeBuilding(m.state.nextId++, 'craftingstation', 0, 0, 1);
+    Object.assign(station, spot(3));
+    station.crafted = 'cake';
+    m.state.buildings.push(station);
+    m.changed();
+    scene.sync();
+    return [smith.id, station.id];
+  });
+  // Drawn blank while loading, never as the missing-texture placeholder, then from its art.
+  const keys = () =>
+    page.evaluate((ids) => ids.map((id) => window.__game.scene.sprites.get(id)!.texture.key), ids);
+  expect((await keys()).every((key) => key !== '__MISSING')).toBe(true);
+  await expect.poll(keys).toEqual(['blacksmith', 'crafted-cake']);
+  expect(requested.filter(lacking).length).toBe(2);
+});
+
 test('campaign scenery and hero portraits load when a battle shows them', async ({ page }) => {
   const requested: string[] = [];
   page.on('request', (r) => requested.push(new URL(r.url()).pathname));

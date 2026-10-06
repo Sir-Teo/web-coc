@@ -37,22 +37,22 @@ Each shape's source rectangle is copied with a two-texel border of its original 
 
 The production build pages 40 of the 120 village and troop packs into 564 pages, and the Cannon graph into its own. Measured October 5, 2026 on a production build at Pixel 7 size in headless Chromium (software rendering, not a physical phone):
 
-| Starter village boot | Before | Village and troops paged | And the Cannon |
-| --- | --- | --- | --- |
-| Downloaded | 36.5 MB | 21.5 MB | 14.1 MB |
-| Barbarian art | 3.3 MB atlas | 239 KB page | 239 KB page |
-| Cannon files | 7.8 MB atlas and sprites | unchanged | 0.8 MB |
-| Time to a playable village | 4.5 s | 3.1 s (three runs) | 2.2 s (two warm runs; 3.2 s cold) |
-| Same at a 4× CPU slowdown | 9.8 s | 7.4 s | 5.9 s |
+| Starter village boot       | Before                   | Village and troops paged | And the Cannon                    |
+| -------------------------- | ------------------------ | ------------------------ | --------------------------------- |
+| Downloaded                 | 36.5 MB                  | 21.5 MB                  | 14.1 MB                           |
+| Barbarian art              | 3.3 MB atlas             | 239 KB page              | 239 KB page                       |
+| Cannon files               | 7.8 MB atlas and sprites | unchanged                | 0.8 MB                            |
+| Time to a playable village | 4.5 s                    | 3.1 s (three runs)       | 2.2 s (two warm runs; 3.2 s cold) |
+| Same at a 4× CPU slowdown  | 9.8 s                    | 7.4 s                    | 5.9 s                             |
 
 Paging the Archer Tower body graph was measured the same evening against the commit before it, both production builds served by `vite preview`, with a script that sums each response's encoded bytes until the network has been quiet for two seconds (so its totals differ from the table above):
 
-| Starter village boot | Before | Archer Tower paged |
-| --- | --- | --- |
-| Downloaded | 15.01 MB | 13.89 MB |
-| Archer Tower body art | 1.2 MB atlas (1024×1511) | Level 1 and shared pages; all 21 levels' 23 pages total 1.3 MB |
-| Time to a playable village (three runs) | 1.9 s | 1.8 s |
-| Same at a 4× CPU slowdown (two runs) | 5.9 s | 5.2 s |
+| Starter village boot                    | Before                   | Archer Tower paged                                             |
+| --------------------------------------- | ------------------------ | -------------------------------------------------------------- |
+| Downloaded                              | 15.01 MB                 | 13.89 MB                                                       |
+| Archer Tower body art                   | 1.2 MB atlas (1024×1511) | Level 1 and shared pages; all 21 levels' 23 pages total 1.3 MB |
+| Time to a playable village (three runs) | 1.9 s                    | 1.8 s                                                          |
+| Same at a 4× CPU slowdown (two runs)    | 5.9 s                    | 5.2 s                                                          |
 
 A Level 1 tower now uploads about a fifth of the atlas's texels.
 
@@ -66,13 +66,15 @@ Boot also loaded scene textures nothing draws: the ten classic troops' portraits
 
 The Pumpkin Bomb's 45-frame sheet (210 KB) belongs only to the seasonal event battle, so it is now a deferred art family like Santa's: it loads when a battle with a Pumpkin Bomb is scouted, and a bomb that draws before it arrives keeps an empty texture.
 
-| Starter village boot, same method as the Archer Tower table | Before | Fallback sprites deferred | And scenery and hero portraits | And unused textures dropped | And rooftop Archer paged, Pumpkin deferred |
-| --- | --- | --- | --- | --- | --- |
-| Downloaded | 13.89 MB | 11.57 MB | 10.49 MB | 9.21 MB | 8.56 MB |
-| Time to a playable village | 2.2 s (three runs) | 1.7 s (three runs) | 1.8 s (six runs; within noise) | 1.7 s (four runs) | 1.4 s (two warm runs; the first, cold, took 2.3 s) |
-| Same at a 4× CPU slowdown | 5.0 s (two runs) | 4.6 s (two runs) | 4.6 s (four runs) | 4.3 s (three runs) | 3.5 s (two runs) |
+Boot also loaded the base sprite of every building kind and all three Crafted Defense pictures, though a starter village owns nine kinds. Now it loads base sprites only for the kinds the village owns, and only the Crafted Defenses its stations show. Another kind's sprite loads the first time something draws it: a Shop placement ghost, a building added by an import, or a battle's buildings, which are prefetched while scouting. Until it arrives the building draws a transparent stand-in its own size (still selectable), never Phaser's missing-texture box. Deferred tier-3 sprites now load from the same tier-3 file the boot uses; before, a level above 8 loaded its catalog portrait under the tier-3 key.
 
-`tests/browser/deferred-sprites.spec.ts` checks that boot requests no wall, camp, Cannon or tier-3 level the village does not own, and that a wall and Gold Mine raised past them draw as Level 1, never as a missing texture, until their sprites arrive. Its second case checks that boot requests no campaign scenery or hero portrait for a starter village, and that a Goblin campaign battle's scenery appears with its own textures. `camp-art.spec.ts` now prefetches the levels it builds. `army-unlocks:9`, `king-art:88`, the 568 px case of `spell-progression:32`, the three viewports of `campaign-rules:9`, the two lineup cases of `hero-roster:262`, `building-art:71`, `camp-art:74`, `wall-art:73`, the herohall case of `army-footprints`, `blacksmith:130`, `native-cannon-states:47` and `game.spec` 48, 162 and 268 fail with the same errors on the commit before. With the Pumpkin sheet deferred, `pumpkin-bomb.spec.ts` passes except its trap-state case at line 147, which fails identically on the commit before.
+| Starter village boot, same method as the Archer Tower table | Before             | Fallback sprites deferred | And scenery and hero portraits | And unused textures dropped | And rooftop Archer paged, Pumpkin deferred         | And base sprites of unowned kinds |
+| ----------------------------------------------------------- | ------------------ | ------------------------- | ------------------------------ | --------------------------- | -------------------------------------------------- | --------------------------------- |
+| Downloaded                                                  | 13.89 MB           | 11.57 MB                  | 10.49 MB                       | 9.21 MB                     | 8.56 MB                                            | 7.26 MB                           |
+| Time to a playable village                                  | 2.2 s (three runs) | 1.7 s (three runs)        | 1.8 s (six runs; within noise) | 1.7 s (four runs)           | 1.4 s (two warm runs; the first, cold, took 2.3 s) | 1.3–1.5 s (four warm runs)        |
+| Same at a 4× CPU slowdown                                   | 5.0 s (two runs)   | 4.6 s (two runs)          | 4.6 s (four runs)              | 4.3 s (three runs)          | 3.5 s (two runs)                                   | 3.5–4.3 s (five runs; noisy)      |
+
+`tests/browser/deferred-sprites.spec.ts` checks that boot requests no wall, camp, Cannon or tier-3 level the village does not own, and that a wall and Gold Mine raised past them draw as Level 1, never as a missing texture, until their sprites arrive. Another case checks that boot requests no Blacksmith, Laboratory, Air Defense or Crafting Station art for a starter village, and that a Blacksmith and a Crafting Station showing a Crafted Defense, once added, draw a transparent stand-in and then their own sprites. Its last case checks that boot requests no campaign scenery or hero portrait for a starter village, and that a Goblin campaign battle's scenery appears with its own textures. `camp-art.spec.ts` now prefetches the levels it builds. `army-unlocks:9`, `king-art:88`, the 568 px case of `spell-progression:32`, the three viewports of `campaign-rules:9`, the two lineup cases of `hero-roster:262`, `building-art:71`, `camp-art:74`, `wall-art:73`, the herohall case of `army-footprints`, `blacksmith:130`, `native-cannon-states:47` and `game.spec` 48, 162 and 268 fail with the same errors on the commit before. With the Pumpkin sheet deferred, `pumpkin-bomb.spec.ts` passes except its trap-state case at line 147, which fails identically on the commit before. With base sprites deferred, the specs that place or draw other kinds (`placement-preview`, `army-footprints`, `defense-progression`, `facility-progression`, `building-art`, `helper-hut`, `crafting-station`, `blacksmith`, `townhall-tiers`, `npc-buildings`, `expansion`, `audit-fixes`, `dark-storage`, `ui-input`, `native-pages`, `decorations`, `obstacles`, `xbow`) pass on one worker except cases that fail identically on the commit before: `army-footprints` herohall, `blacksmith:130`, `building-art:71`, both `dark-storage:11` widths, `defense-progression:217`, `expansion` 97 and 147, `facility-progression:214` and `townhall-tiers` 40 and 56.
 
 The original atlases of paged packs stay in `dist`, unrequested, so the deployed files grow; nothing a player downloads does.
 
