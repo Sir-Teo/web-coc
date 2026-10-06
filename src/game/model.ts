@@ -284,7 +284,14 @@ import {
   type StashedDecorations,
 } from './decorations';
 import { villageObjectFootprints } from './village-objects';
-import { GEM_TEXTS, isGemResource, resourceGems, type GemResource } from './gem-costs';
+import {
+  GEM_TEXTS,
+  isGemResource,
+  packAmount,
+  resourceGems,
+  type GemResource,
+  type TreasurePack,
+} from './gem-costs';
 import {
   REPLAY_VERSION,
   compatibleReplayVersion,
@@ -1135,6 +1142,33 @@ export class GameModel {
     this.state.gems -= offer.gems;
     this.state[offer.resource] += offer.missing;
     retry();
+    this.changed();
+    return true;
+  }
+  /** A Treasure pack priced now: what it adds, its gems and why it cannot be bought, if so. */
+  resourcePack(resource: GemResource, share: TreasurePack['share']) {
+    const capacity = this.resourceCap(resource),
+      amount = packAmount(share, this.state[resource], capacity),
+      gems = resourceGems(resource, amount);
+    const issue = this.battle
+      ? 'Return home to buy resources.'
+      : !amount
+        ? GEM_TEXTS.packLocked
+        : this.state.gems < gems
+          ? GEM_TEXTS.notEnoughGems
+          : null;
+    return { amount, gems, issue };
+  }
+  /** Buys a Treasure pack with gems. */
+  buyResourcePack(resource: GemResource, share: TreasurePack['share']) {
+    const pack = this.resourcePack(resource, share);
+    if (pack.issue) {
+      this.notify(pack.issue);
+      return false;
+    }
+    this.state.gems -= pack.gems;
+    this.state[resource] += pack.amount;
+    this.notify(`+${pack.amount.toLocaleString()} ${GEM_TEXTS[resource]}`);
     this.changed();
     return true;
   }

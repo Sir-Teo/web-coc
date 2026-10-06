@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { GameModel } from '../src/game/model';
 import { BUILDINGS, gemCost } from '../src/game/data';
-import { GEM_TEXTS, resourceGems, timeGems } from '../src/game/gem-costs';
+import {
+  GEM_TEXTS,
+  TREASURE_PACKS,
+  packAmount,
+  resourceGems,
+  timeGems,
+} from '../src/game/gem-costs';
 import { validateSave } from '../src/game/save';
 
 const save = (m: GameModel) => validateSave(JSON.parse(JSON.stringify(m.state)));
@@ -124,5 +130,55 @@ describe('buying missing resources', () => {
     const level = wall.level;
     m.buyShortfall();
     expect(wall.level).toBe(level + 1);
+  });
+});
+
+describe('Treasure packs', () => {
+  it('reads three packs a resource from the client, named and pictured', () => {
+    expect(TREASURE_PACKS.map((p) => `${p.resource}-${p.share}`)).toEqual([
+      'gold-10',
+      'gold-50',
+      'gold-100',
+      'elixir-10',
+      'elixir-50',
+      'elixir-100',
+      'dark-10',
+      'dark-50',
+      'dark-100',
+    ]);
+    expect(TREASURE_PACKS[0].name).toBe('Fill Storages by 10%');
+    expect(TREASURE_PACKS[1].name).toBe('Fill Storages by Half');
+    expect(TREASURE_PACKS[8].name).toBe('Fill Dark Elixir Storages');
+    for (const p of TREASURE_PACKS) expect(p.art.width).toBeLessThanOrEqual(160);
+  });
+
+  it('add a share of the storages only while it fits, and the full pack whatever room is left', () => {
+    expect(packAmount(10, 0, 7000)).toBe(700);
+    expect(packAmount(50, 3500, 7000)).toBe(3500);
+    // Over 90% full: no room for a tenth; over half full: none for half.
+    expect(packAmount(10, 6301, 7000)).toBe(0);
+    expect(packAmount(50, 3501, 7000)).toBe(0);
+    expect(packAmount(100, 6999, 7000)).toBe(1);
+    expect(packAmount(100, 7000, 7000)).toBe(0);
+    expect(packAmount(100, 8000, 7000)).toBe(0);
+  });
+
+  it('are bought with gems at the client’s prices', () => {
+    const m = village();
+    m.state.gold = 0;
+    const cap = m.resourceCap('gold');
+    const pack = m.resourcePack('gold', 100);
+    expect(pack).toEqual({ amount: cap, gems: resourceGems('gold', cap), issue: null });
+    expect(m.buyResourcePack('gold', 100)).toBe(true);
+    expect(m.state.gold).toBe(cap);
+    expect(m.state.gems).toBe(500 - pack.gems);
+    expect(m.resourcePack('gold', 10).issue).toBe('Not enough storage space!');
+    expect(m.buyResourcePack('gold', 10)).toBe(false);
+    m.state.gems = 0;
+    m.state.elixir = 0;
+    expect(m.resourcePack('elixir', 10).issue).toBe('Not enough Gems');
+    expect(m.buyResourcePack('elixir', 10)).toBe(false);
+    expect(m.state.elixir).toBe(0);
+    expect(save(m)).toBe(true);
   });
 });

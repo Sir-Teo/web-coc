@@ -30,3 +30,23 @@ export const timeGems = (seconds: number) => price(TIME, Math.max(0, seconds));
 /** Gems for `amount` of a resource: nothing for none, else at least the first point's price. */
 export const resourceGems = (resource: GemResource, amount: number) =>
   amount > 0 ? price(resource === 'dark' ? DARK : RESOURCE, amount) : 0;
+
+export interface TreasurePack {
+  resource: GemResource;
+  /** Share of the storages it adds, in percent; 100 fills whatever room is left. */
+  share: 10 | 50 | 100;
+  /** The client's name for it: "Fill Storages by 10%", "Fill Gold Storages", … */
+  name: string;
+  art: { path: string; width: number; height: number };
+}
+/** The Shop's Treasure: three packs of each resource, in the client's order. */
+export const TREASURE_PACKS = catalog.packs as TreasurePack[];
+/**
+ * What a pack adds: a share of the storages' capacity, or for the full pack whatever fills them.
+ * It cannot be bought when that would overflow the storages (or, for the full pack, when they
+ * are already full).
+ */
+export function packAmount(share: TreasurePack['share'], stored: number, capacity: number) {
+  const amount = share === 100 ? capacity - stored : Math.floor((capacity * share) / 100);
+  return amount > 0 && stored + amount <= capacity ? amount : 0;
+}

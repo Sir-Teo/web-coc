@@ -53,7 +53,7 @@ import {
 import { OBSTACLES } from '../game/obstacles';
 import { DECORATIONS, DECORATION_KINDS, DECORATION_TEXTS } from '../game/decorations';
 import { traderWeekEnds, type TraderOffer } from '../game/trader';
-import { GEM_TEXTS } from '../game/gem-costs';
+import { GEM_TEXTS, TREASURE_PACKS, type GemResource, type TreasurePack } from '../game/gem-costs';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
@@ -238,6 +238,7 @@ type Panel =
   | 'magic-items'
   | 'trader'
   | 'shortfall'
+  | 'treasure'
   | 'treasury'
   | 'starter'
   | 'blacksmith'
@@ -1119,6 +1120,7 @@ export class HUD {
   private closePanel() {
     this.rememberCampaign();
     if (this.panel === 'shortfall') this.model.dismissShortfall();
+    if (this.panel === 'treasure') this.treasureConfirm = null;
     this.panel = null;
     const previous = this.drawerBefore;
     this.drawerBefore = null;
@@ -1257,6 +1259,30 @@ export class HUD {
       case 'close':
         this.closePanel();
         break;
+      case 'treasure-pack': {
+        const [resource, share] = arg.split(',');
+        const pack = TREASURE_PACKS.find(
+          (p) => p.resource === resource && p.share === Number(share),
+        );
+        if (!pack || m.battle) break;
+        this.treasureConfirm = { resource: pack.resource, share: pack.share };
+        this.show('treasure');
+        break;
+      }
+      case 'treasure-buy': {
+        const p = this.treasureConfirm;
+        if (p && m.buyResourcePack(p.resource, p.share))
+          this.audio.effect(
+            p.resource === 'gold'
+              ? 'Collect Gold'
+              : p.resource === 'dark'
+                ? 'Collect Dark Elixir'
+                : 'Collect Elixir',
+            'collect',
+          );
+        this.closePanel();
+        break;
+      }
       case 'shortfall-buy': {
         const bought = m.buyShortfall();
         this.closePanel();
@@ -3305,6 +3331,19 @@ export class HUD {
           : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
+  private treasureTitle() {
+    const p = this.treasureConfirm;
+    return p ? GEM_TEXTS.packHeader.replace('<resource>', GEM_TEXTS[p.resource]) : '';
+  }
+  /** Confirms a Treasure pack, as the client asks before spending the gems. */
+  private treasureBody() {
+    const m = this.model,
+      p = this.treasureConfirm;
+    if (!p) return '';
+    const pack = m.resourcePack(p.resource, p.share),
+      name = GEM_TEXTS[p.resource];
+    return `<div class="modal-body confirm-body shortfall-body"><p class="confirm-line">${resource(p.resource)} ${pack.amount ? html(GEM_TEXTS.packText.replace('<count>', n(pack.amount)).replace('<resource>', name)) : html(GEM_TEXTS.packLocked)}</p><p class="gem-balance">You have ${gem} <b>${n(m.state.gems)}</b> gems</p>${pack.issue ? `<p class="ore-insufficient">${html(pack.issue)}</p>` : ''}<div class="confirm-actions">${button('close', html(GEM_TEXTS.cancel), 'game-btn stone')}${button('treasure-buy', `${gem} ${n(pack.gems)}`, 'game-btn green', `${pack.issue ? 'disabled' : ''} aria-label="Buy ${n(pack.amount)} ${name} for ${n(pack.gems)} gems"`)}</div></div>`;
+  }
   private shortfallTitle() {
     const offer = this.model.shortfallOffer;
     return offer ? GEM_TEXTS.header.replace('<resource>', GEM_TEXTS[offer.resource]) : '';
@@ -3722,6 +3761,8 @@ export class HUD {
     ).join('')}</div>`;
   }
   /** Army catalog search and filters; kept while the drawer is closed and reopened. */
+  /** The Treasure pack waiting for its confirmation. */
+  private treasureConfirm: { resource: GemResource; share: TreasurePack['share'] } | null = null;
   private armyFilter = { query: '', show: 'all' as ArmyShow, family: 'all' as ArmyFamily };
   private armyFilters() {
     const f = this.armyFilter;
@@ -3751,7 +3792,7 @@ export class HUD {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
     const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
-    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab, GEM_TEXTS.treasureTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
     return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;
@@ -3781,9 +3822,24 @@ export class HUD {
       foot: `<footer class="drawer-foot">${icon('Sparkles', 16)} Purely ornamental · no builder needed <span>Decorations may also stand on the outer edge</span></footer>`,
     };
   }
+  /** The client's Treasure: each resource the village stores in three packs, bought with gems. */
+  private treasureShop() {
+    const m = this.model;
+    const cards = TREASURE_PACKS.filter((p) => m.resourceCap(p.resource) > 0).map((p) => {
+      const pack = m.resourcePack(p.resource, p.share),
+        blocked = !!pack.issue && pack.issue !== GEM_TEXTS.notEnoughGems;
+      return `<article class="shop-tile treasure-tile ${blocked ? 'unavailable' : ''}" data-pack="${p.resource}-${p.share}"><div class="shop-tile-art"><img src="/${p.art.path}" alt="" draggable="false" width="${p.art.width}" height="${p.art.height}"></div><h3>${html(p.name)}</h3><small class="shop-count">${resource(p.resource)} ${pack.amount ? `+${n(pack.amount)}` : '—'}</small>${button(`treasure-pack:${p.resource},${p.share}`, blocked ? html(GEM_TEXTS.packLocked) : `${gem} ${n(pack.gems)}`, `game-btn ${pack.issue ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} aria-label="${html(p.name)}: ${pack.amount ? `${n(pack.amount)} ${GEM_TEXTS[p.resource]} for ${n(pack.gems)} gems` : html(GEM_TEXTS.packLocked)}"`)}</article>`;
+    });
+    return {
+      body: '<div class="drawer-body shop-strip">',
+      items: cards,
+      foot: `<footer class="drawer-foot">${gem} ${n(m.state.gems)} gems <span>Packs fill your storages at once</span></footer>`,
+    };
+  }
   private shop() {
     const m = this.model;
     if (this.tab === DECORATION_TEXTS.shopTab) return this.decorationShop();
+    if (this.tab === GEM_TEXTS.treasureTab) return this.treasureShop();
     const cards = (Object.entries(BUILDINGS) as [BuildingKind, (typeof BUILDINGS)[BuildingKind]][])
       .filter(([k, d]) => k !== 'townhall' && (this.tab === 'All' || d.category === this.tab))
       // Buildable tiles first in catalog order, then locked ones by their Town Hall requirement.
@@ -3896,6 +3952,7 @@ export class HUD {
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
       shortfall: this.shortfallTitle(),
+      treasure: this.treasureTitle(),
       treasury: 'Treasury',
       starter: STARTER_TITLE,
       journey: 'Hero’s Journey',
@@ -3927,6 +3984,7 @@ export class HUD {
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
       shortfall: 'Gems complete the price, then it goes ahead.',
+      treasure: 'Straight into your storages.',
       starter: STARTER_END_TEXT,
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
@@ -3951,55 +4009,57 @@ export class HUD {
         ? this.magicItems()
         : this.panel === 'shortfall'
           ? this.shortfallBody()
-          : this.panel === 'trader'
-            ? this.trader()
-            : this.panel === 'treasury'
-              ? this.treasury()
-              : this.panel === 'starter'
-                ? this.starterPass()
-                : this.panel === 'blacksmith'
-                  ? this.blacksmith()
-                  : this.panel === 'heroes'
-                    ? this.heroes()
-                    : this.panel === 'journey'
-                      ? this.journey()
-                      : this.panel === 'crafting'
-                        ? this.crafting()
-                        : this.panel === 'helpers'
-                          ? this.helpers()
-                          : this.panel === 'pets'
-                            ? this.pets()
-                            : this.panel === 'progression'
-                              ? this.progression()
-                              : this.panel === 'army-presets'
-                                ? this.armyPresets()
-                                : this.panel === 'battle-log'
-                                  ? this.battleLog()
-                                  : this.panel === 'spell-info'
-                                    ? this.spellInfo()
-                                    : this.panel === 'troop-info'
-                                      ? this.troopInfo()
-                                      : this.panel === 'campaign'
-                                        ? this.campaign()
-                                        : this.panel === 'campaign-scout'
-                                          ? this.campaignScout()
-                                          : this.panel === 'settings'
-                                            ? this.settings()
-                                            : this.panel === 'import-confirm'
-                                              ? this.importConfirm()
-                                              : this.panel === 'buildings'
-                                                ? this.buildingList()
-                                                : this.panel === 'achievements'
-                                                  ? this.achievements()
-                                                  : this.panel === 'research'
-                                                    ? this.research()
-                                                    : this.panel === 'info'
-                                                      ? this.info()
-                                                      : this.panel === 'layouts'
-                                                        ? this.layoutPanel()
-                                                        : this.panel === 'surrender'
-                                                          ? this.surrender()
-                                                          : this.help();
+          : this.panel === 'treasure'
+            ? this.treasureBody()
+            : this.panel === 'trader'
+              ? this.trader()
+              : this.panel === 'treasury'
+                ? this.treasury()
+                : this.panel === 'starter'
+                  ? this.starterPass()
+                  : this.panel === 'blacksmith'
+                    ? this.blacksmith()
+                    : this.panel === 'heroes'
+                      ? this.heroes()
+                      : this.panel === 'journey'
+                        ? this.journey()
+                        : this.panel === 'crafting'
+                          ? this.crafting()
+                          : this.panel === 'helpers'
+                            ? this.helpers()
+                            : this.panel === 'pets'
+                              ? this.pets()
+                              : this.panel === 'progression'
+                                ? this.progression()
+                                : this.panel === 'army-presets'
+                                  ? this.armyPresets()
+                                  : this.panel === 'battle-log'
+                                    ? this.battleLog()
+                                    : this.panel === 'spell-info'
+                                      ? this.spellInfo()
+                                      : this.panel === 'troop-info'
+                                        ? this.troopInfo()
+                                        : this.panel === 'campaign'
+                                          ? this.campaign()
+                                          : this.panel === 'campaign-scout'
+                                            ? this.campaignScout()
+                                            : this.panel === 'settings'
+                                              ? this.settings()
+                                              : this.panel === 'import-confirm'
+                                                ? this.importConfirm()
+                                                : this.panel === 'buildings'
+                                                  ? this.buildingList()
+                                                  : this.panel === 'achievements'
+                                                    ? this.achievements()
+                                                    : this.panel === 'research'
+                                                      ? this.research()
+                                                      : this.panel === 'info'
+                                                        ? this.info()
+                                                        : this.panel === 'layouts'
+                                                          ? this.layoutPanel()
+                                                          : this.panel === 'surrender'
+                                                            ? this.surrender()
+                                                            : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

@@ -43,7 +43,7 @@ notes in those references are not current release guarantees.
 - [Persistent village obstacles](OBSTACLES.md)
 - [Decorations](DECORATIONS.md)
 - [Magic items](MAGIC-ITEMS.md)
-- [Gem purchases of missing resources and speed-up prices](GEM-PURCHASES.md)
+- [Gem purchases: missing resources, Treasure packs and speed-up prices](GEM-PURCHASES.md)
 - [Trader](TRADER.md)
 - [Village objects: the Trader's camp and the Super Troop building](VILLAGE-OBJECTS.md)
 - [Treasury](TREASURY.md)
