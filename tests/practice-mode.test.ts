@@ -104,7 +104,7 @@ describe('Practice Mode', () => {
     m.train('archer');
     const home = structuredClone(m.state.army);
     const last = structuredClone(m.state.lastArmy);
-    m.startCampaign(GIANT_SMASH);
+    m.startCampaign(GIANT_SMASH, false); // Without the guide (practice-guide.test.ts).
     const b = m.battle!;
     expect(b.fixedArmy).toBe(true);
     expect(held(b.remaining)).toEqual({ giant: 13, wallbreaker: 2, goblin: 11 });
@@ -130,7 +130,7 @@ describe('Practice Mode', () => {
 
   it('records a replay that validates, with the level’s army in its setup', () => {
     const m = village(4);
-    m.startCampaign(GIANT_SMASH);
+    m.startCampaign(GIANT_SMASH, false); // Without the guide (practice-guide.test.ts).
     m.deploy(1, 1);
     m.step(0.05);
     m.finishBattle();

@@ -46,14 +46,45 @@ test('a Practice level attacks with its own army and leaves the camps alone', as
   });
   expect(tray).toEqual({ fixed: true, army: { giant: 13, wallbreaker: 2, goblin: 11 } });
   await expect(page.locator('[data-action="troop:giant"]')).toBeVisible();
+  // A first attempt is guided, in the client's words, with the Giant put in hand.
+  const guide = page.locator('.practice-guide');
+  await expect(guide).toContainText('Deploy a Giant to shield the Wall Breakers.');
+  await expect(guide.locator('.guide-word').first()).toHaveText('Giant');
+  expect(await page.evaluate(() => window.__game.model.activeTroop)).toBe('giant');
+  const skip = (await guide.locator('[data-action="guide-skip"]').boundingBox())!;
+  expect(skip.height).toBeGreaterThanOrEqual(44);
+  await page.waitForTimeout(400);
   await page.screenshot({ path: `output/playtest/practice-battle-390-${browserName}.png` });
+  // The Giant goes on the marked spot with a tap inside its circle.
+  const placed = await page.evaluate(() => {
+    const m = window.__game.model;
+    const spot = m.practiceGuide!.spot!;
+    const p = window.__game.scene.screenFor(spot.x + 0.4, spot.y);
+    return { spot, p };
+  });
+  await page.touchscreen.tap(placed.p.x, placed.p.y);
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle!.units.length)).toBe(1);
+  // The recorded deploy is the spot itself (the Giant walks on as the guide moves along).
+  expect(
+    await page.evaluate(() => {
+      const m = window.__game.model as unknown as {
+        recording: { actions: { type: string; kind?: string; x?: number; y?: number }[] };
+      };
+      const { type, kind, x, y } = m.recording.actions[0];
+      return { type, kind, x, y };
+    }),
+  ).toEqual({ type: 'troop', kind: 'giant', ...placed.spot });
+  // Skipping the guide leaves the player free.
+  await guide.locator('[data-action="guide-skip"]').tap();
+  await expect(guide).toHaveCount(0);
   // Deploying spends the level's Giants, not the village's.
   const spent = await page.evaluate(() => {
     const m = window.__game.model;
+    m.activeTroop = 'giant';
     m.deploy(1, 1);
     return { left: m.battle!.remaining.giant, home: m.state.army.giant };
   });
-  expect(spent).toEqual({ left: 12, home: 0 });
+  expect(spent).toEqual({ left: 11, home: 0 });
 });
 
 test('below its Town Hall a Practice level is locked and says when it opens', async ({ page }) => {

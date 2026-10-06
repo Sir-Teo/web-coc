@@ -230,6 +230,8 @@ const WOOD_RUINS = new Set<BuildingKind>([
   'cannon',
   'tesla',
 ]);
+/** Practice Mode's guide marks: gold, like the original's tutorial pointers. */
+const GUIDE_COLOR = 0xffe36e;
 const SPELL_COLOR: Record<string, number> = {
   rage: 0xcf79ef,
   heal: 0xffed8a,
@@ -4318,10 +4320,64 @@ export class VillageScene extends Phaser.Scene {
         g.lineStyle(2, color, 0.75);
         g.strokeEllipse(p.x, p.y, w, h);
       }
+      this.drawGuide(g, fills, ellipse, reduced);
     }
     fills.end();
   }
+  /**
+   * Practice Mode's guide: a pulsing gold ring where the step's unit goes, and another round
+   * the building a step points out or waits for.
+   */
+  private drawGuide(
+    g: Phaser.GameObjects.Graphics,
+    fills: ShapePool,
+    ellipse: ReturnType<VillageScene['ellipseShape']>,
+    reduced: boolean,
+  ) {
+    const guide = this.model.practiceGuide,
+      step = this.model.guideStep;
+    if (!guide || !step) return;
+    const p = this.auraPoint;
+    const pulse = reduced ? 1 : 1 + Math.sin(performance.now() / 180) * 0.06;
+    const ring = (x: number, y: number, radius: number, alpha: number) => {
+      isoInto(p, x, y);
+      const w = radius * 128 * pulse,
+        h = radius * 64 * pulse;
+      fills.put(ellipse, p.x, p.y, w / 64, h / 32, GUIDE_COLOR, alpha);
+      g.lineStyle(3, GUIDE_COLOR, 0.95);
+      g.strokeEllipse(p.x, p.y, w, h);
+    };
+    if (guide.spot && step.unit && !step.ability) {
+      ring(guide.spot.x, guide.spot.y, Math.max(0.8, step.radius), 0.14);
+      // Each new step brings its spot into view, as the original's guide does; once only, so a
+      // player panning away is not pulled back every frame.
+      const key = `${guide.index}:${guide.spot.x},${guide.spot.y}`;
+      if (key !== this.guideFocus) {
+        this.guideFocus = key;
+        const at = iso(guide.spot.x, guide.spot.y),
+          view = this.cameras.main.worldView,
+          inset = Math.min(view.width, view.height) * 0.18;
+        if (
+          at.x < view.x + inset ||
+          at.x > view.right - inset ||
+          at.y < view.y + inset ||
+          at.y > view.bottom - inset
+        ) {
+          this.cameras.main.centerOn(at.x, at.y);
+          this.clampCamera();
+        }
+      }
+    }
+    const target = step.show ?? step.waitFor;
+    const v = target && this.model.guideBuilding(target);
+    if (v && v.hp > 0) {
+      const size = BUILDINGS[v.kind].size;
+      ring(v.x + size / 2, v.y + size / 2, Math.max(1, size * 0.75), 0.08);
+    }
+  }
   private auraPoint = { x: 0, y: 0 };
+  /** The guide step whose spot the camera last brought into view. */
+  private guideFocus = '';
   /** Health and upgrade bars, skeleton coffins, and frozen or rooted footprints. */
   private drawBuildingDetail(battle: GameModel['battle'], reduced: boolean) {
     this.detail.clear();

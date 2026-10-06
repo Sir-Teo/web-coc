@@ -5,6 +5,7 @@ import { HERO_SOURCE, heroDefaultItems, type HeroKind } from './native-hero-data
 import type { HeroSetup } from './native-heroes';
 import { TROOP_SOURCE } from './native-units';
 import { SPELL_NAMES } from './troop-progression';
+import { BUILD_MIN } from './grid';
 import type { Army, SpellBook } from './model';
 
 /**
@@ -30,6 +31,36 @@ export interface PracticeLevel {
   heroes: HeroSetup[];
   /** The units the client sends in the Clan Castle (they join `army` here). */
   castle: [TroopKind, number][];
+  /** The first attempt's step-by-step guide (csv/deploy_steps.csv). */
+  steps: PracticeStep[];
+}
+export type PracticeUnit = { troop: TroopKind } | { spell: SpellKind } | { hero: HeroKind };
+/**
+ * One step of a level's guide, on this game's grid (the client's tile plus `BUILD_MIN`). A
+ * step asks for `count` of a `unit` (around `at`, within `radius` tiles), for a hero's
+ * `ability`, or waits: for `duration` seconds or until the building at `waitFor` falls.
+ */
+export interface PracticeStep {
+  name: string;
+  /** The client's words, with its <cRRGGBB>…</c> colour markup. */
+  text?: string;
+  unit?: PracticeUnit;
+  count: number;
+  at?: { x: number; y: number };
+  radius: number;
+  /** The battle waits for the step: frozen, or at `slowdown` percent of its speed. */
+  pause: boolean;
+  slowdown?: number;
+  /** Only the step's unit (nothing, while it waits) may be deployed. */
+  forceType: boolean;
+  /** Deploys must land within `radius` of `at`; with `exact`, they land on it. */
+  forceLocation: boolean;
+  exact: boolean;
+  ability: boolean;
+  duration?: number;
+  /** A building's top-left tile: the one to wait for, or the one to point out. */
+  waitFor?: { x: number; y: number };
+  show?: { x: number; y: number };
 }
 /** Practice Mode's strings: its title, description and the lock below Town Hall 4. */
 export const PRACTICE_TEXTS = catalog.texts;
@@ -46,6 +77,56 @@ const inverse = <K extends string>(source: Record<K, string>) =>
 const TROOPS = inverse<TroopKind>(TROOP_SOURCE as Record<TroopKind, string>);
 const SPELLS = inverse<SpellKind>(SPELL_NAMES);
 const HEROES = inverse<HeroKind>(HERO_SOURCE);
+
+interface CatalogStep {
+  name: string;
+  text?: string;
+  unit?: string;
+  count?: number;
+  at?: number[];
+  radius?: number;
+  pause?: boolean;
+  slowdown?: number;
+  forceType?: boolean;
+  forceLocation?: boolean;
+  exact?: boolean;
+  ability?: boolean;
+  duration?: number;
+  waitFor?: { x: number; y: number };
+  show?: { x: number; y: number };
+}
+const unitOf = (name: string): PracticeUnit => {
+  const troop = TROOPS.get(name),
+    spell = SPELLS.get(name),
+    hero = HEROES.get(name);
+  if (troop) return { troop };
+  if (spell) return { spell };
+  if (hero) return { hero };
+  throw Error(`Practice guide names an unknown unit: ${name}`);
+};
+const tile = (p: { x: number; y: number } | number[]) =>
+  Array.isArray(p)
+    ? { x: p[0] + BUILD_MIN, y: p[1] + BUILD_MIN }
+    : { x: p.x + BUILD_MIN, y: p.y + BUILD_MIN };
+function step(row: CatalogStep): PracticeStep {
+  return {
+    name: row.name,
+    ...(row.text ? { text: row.text } : {}),
+    ...(row.unit ? { unit: unitOf(row.unit) } : {}),
+    count: row.count ?? 1,
+    ...(row.at ? { at: tile(row.at) } : {}),
+    radius: row.radius ?? 0,
+    pause: !!row.pause,
+    ...(row.slowdown ? { slowdown: row.slowdown } : {}),
+    forceType: !!row.forceType,
+    forceLocation: !!row.forceLocation,
+    exact: !!row.exact,
+    ability: !!row.ability,
+    ...(row.duration ? { duration: row.duration / 1000 } : {}),
+    ...(row.waitFor ? { waitFor: tile(row.waitFor) } : {}),
+    ...(row.show ? { show: tile(row.show) } : {}),
+  };
+}
 
 function level(row: (typeof catalog.levels)[number]): PracticeLevel {
   const army = emptyArmy(),
@@ -86,6 +167,7 @@ function level(row: (typeof catalog.levels)[number]): PracticeLevel {
     spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, spellLevels[k] ?? 1])) as SpellBook,
     heroes,
     castle,
+    steps: (row.steps as CatalogStep[]).map(step),
   };
 }
 /** All 19 Practice levels, by Town Hall, the six withheld ones included (stage null). */
@@ -95,3 +177,15 @@ export const practiceLevelAt = (index: number) =>
   PRACTICE_LEVELS.find((level) => level.stage === index + 1);
 /** The Town Hall that opens Practice Mode (Town Hall 4). */
 export const PRACTICE_TOWN_HALL = Math.min(...PRACTICE_LEVELS.map((level) => level.townHall));
+/** Whether two guide units are the same troop, spell or hero. */
+export const sameUnit = (a: PracticeUnit, b: PracticeUnit) =>
+  ('troop' in a && 'troop' in b && a.troop === b.troop) ||
+  ('spell' in a && 'spell' in b && a.spell === b.spell) ||
+  ('hero' in a && 'hero' in b && a.hero === b.hero);
+/** A guide unit's name, as the client's tables give it. */
+export const practiceUnitName = (unit: PracticeUnit) =>
+  'troop' in unit
+    ? TROOP_SOURCE[unit.troop as keyof typeof TROOP_SOURCE]
+    : 'spell' in unit
+      ? `${SPELL_NAMES[unit.spell]}${SPELL_NAMES[unit.spell].endsWith('Spell') ? '' : ' Spell'}`
+      : HERO_SOURCE[unit.hero];

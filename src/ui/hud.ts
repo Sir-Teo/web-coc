@@ -272,6 +272,11 @@ type Panel =
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
+/** A guide step's words: the client's <cRRGGBB>…</c> colours as spans, everything else text. */
+const guideMarkup = (text: string) =>
+  html(text)
+    .replace(/&lt;c([0-9a-f]{6})&gt;/gi, '<b class="guide-word" style="color:#$1">')
+    .replace(/&lt;\/c&gt;/g, '</b>');
 /** A Practice level's army in a few words: "26 troops, 2 spells and a hero". */
 const practiceArmyLine = (drill: PracticeLevel) => {
   const troops = Object.values(drill.army).reduce((a, b) => a + b, 0),
@@ -1773,6 +1778,19 @@ export class HUD {
       case 'recipe-use':
         m.useArmyRecipe(arg);
         break;
+      case 'guide-skip':
+        m.skipPracticeGuide();
+        break;
+      case 'attack-guided':
+        m.startCampaign(Number(arg), true);
+        if (m.battle) {
+          this.panel = null;
+          this.drawerPanel = null;
+          this.resultShown = false;
+          this.audio.play('deploy');
+        }
+        this.render();
+        break;
       case 'recipe-save': {
         const [id, slot] = arg.split(',');
         m.saveArmyRecipe(id, slot === undefined ? undefined : Number(slot));
@@ -3235,7 +3253,7 @@ export class HUD {
     return `<div class="battle-enemy"><span class="eyebrow">${m.goblinRaid ? 'GOBLIN RAID' : m.replay ? (m.replay.recordId === null ? 'SHARED REPLAY' : 'ATTACK REPLAY') : b.practice ? 'PRACTICE ATTACK' : b.ladder ? 'LADDER MATCH' : 'ENEMY VILLAGE'}</span><h2>${v.name}</h2>${m.goblinRaid ? '<small class="practice-note">Goblins are raiding your village!<br>Watch your defenses fight back.</small>' : m.replay ? '<small class="practice-note">Recorded attack · Watch &amp; learn</small>' : b.practice ? '<small class="practice-note">Your village and army are safe.<br>No loot or trophies at stake.</small>' : b.ladder ? `<small class="ladder-stake">${icon('Trophy', 15)} ${n(b.ladder.opponent)} · Win <b>+${b.ladder.win}</b> · Defeat <b>−${b.ladder.loss}</b></small><small class="practice-note">No loot at stake.</small>` : `<small>AVAILABLE LOOT</small><div class="loot-bars">${lootKeys.map(lootBar).join('')}</div>${limitedStorage ? '<small class="loot-capacity-note">Loot beyond your storage capacity will be lost.</small>' : ''}`}</div>
  <div class="battle-clock ${b.started ? '' : 'prep'}"><span>${!timedBattle(b) ? 'NO TIME LIMIT' : b.started ? 'BATTLE ENDS IN' : 'SCOUTING — BATTLE BEGINS IN'}</span><b id="battle-timer">${timedBattle(b) ? clock(b.started ? BATTLE_SECONDS - b.elapsed : b.prep) : '∞'}</b></div>
  <div class="destruction"><span>Total destruction</span><div id="battle-stars" class="battle-stars" data-stars="${b.stars}">${'★'.repeat(b.stars)}<span>${'★'.repeat(3 - b.stars)}</span></div><b id="destruction-value">${b.destruction}%</b><div class="destruction-bar"><i id="destruction-fill" style="transform:${fillScale(b.destruction)}"></i><span class="notch half" style="left:50%"></span><span class="notch full" style="left:100%"></span></div><small>★ 50% <i>·</i> ★ Town Hall <i>·</i> ★ 100%</small></div>
- ${!b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
+ ${m.practiceGuide && !m.replay ? this.practiceGuideBanner() : !b.started && !m.replay ? `<div class="prep-banner">${icon('Timer', 20)}<div><b>Scout the base</b><small>Tap a defense to see its range · Deploy to start</small></div></div>` : ''}
   ${
     m.replay
       ? this.replayControls()
@@ -4611,12 +4629,17 @@ export class HUD {
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.
    */
+  /** The Practice guide's words, in the client's colours, and its Skip. */
+  private practiceGuideBanner() {
+    const text = this.model.guideText;
+    return `<div class="practice-guide" role="status" aria-live="polite">${icon('Info', 22)}<p>${text ? guideMarkup(text) : 'Follow the guide.'}</p>${button('guide-skip', 'Skip guide', 'game-btn stone')}</div>`;
+  }
   /** A Practice level's own army, as its scout page shows it. */
-  private practiceArmy(drill: PracticeLevel) {
+  private practiceArmy(drill: PracticeLevel, firstAttempt: boolean) {
     const heroes = drill.heroes
       .map((hero) => `<b>${HERO_SOURCE[hero.kind]}</b> level ${hero.level}`)
       .join(' · ');
-    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.</p>${this.composition(drill.army, drill.spells)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
+    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.${drill.steps.length ? (firstAttempt ? ' Your first attack is guided step by step.' : '') : ''}</p>${this.composition(drill.army, drill.spells)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
   }
   private campaignScout() {
     const m = this.model,
@@ -4632,7 +4655,7 @@ export class HUD {
         counts.set(name, (counts.get(name) ?? 0) + 1);
       }
     const defenses = [...counts].sort((a, b) => b[1] - a[1]);
-    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
+    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill, !(m.state.nativeCampaign?.stars[i] ?? 0)) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${drill?.steps.length && !locked && (m.state.nativeCampaign?.stars[i] ?? 0) ? button(`attack-guided:${i}`, `${icon('Info', 17)} Guided attack`, 'game-btn blue') : ''}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';

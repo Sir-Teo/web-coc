@@ -3439,6 +3439,54 @@ h3 {
   color: #cfe7f5;
   margin-top: 2px;
 }
+/* Practice Mode's guide: the client's words for the step, with Skip. */
+.practice-guide {
+  position: absolute;
+  top: 178px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(460px, calc(100vw - 24px));
+  background: #21384bf2;
+  border: 2px solid #ffe36e99;
+  border-radius: 12px;
+  padding: 10px 12px 10px 14px;
+  box-shadow: 0 5px 16px #14232f66;
+  color: #fffdf0;
+  pointer-events: auto;
+}
+.practice-guide > svg {
+  flex: none;
+  color: #ffe36e;
+}
+.practice-guide p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+/* The client's colours, lifted to read on the dark banner. */
+.practice-guide .guide-word {
+  filter: brightness(1.35) saturate(1.1);
+}
+.practice-guide .game-btn {
+  flex: none;
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .practice-guide {
+    top: 150px;
+    gap: 8px;
+  }
+  .practice-guide p {
+    font-size: 13px;
+  }
+}
 
 /* ============================================================
    Building info sheet

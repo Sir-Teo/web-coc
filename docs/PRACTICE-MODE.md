@@ -33,13 +33,51 @@ For example, Giant Smash (Town Hall 4) brings 13 Giants, 2 Wall Breakers and 11 
 
 A battle fought this way is marked `fixedArmy` in its replay setup. Its army and levels are recorded as fought, so the replay plays back the level's army. A replay may carry `fixedArmy` only for a campaign village, not with `practice` (your own village) or a ladder match.
 
+## The guide
+
+The wiki says: "At the first attempt at each Practice Mode level, a player will be given a tutorial which is a step-by-step guide to performing the attack; players will be told when and where to deploy each unit, or when to perform a certain action such as activating a hero ability. This tutorial can be skipped and subsequently re-triggered again if the player so desires."
+
+The client stores each level's guide as the record's `DeploySteps` column, in order. These are names of rows in `csv/deploy_steps.csv`, which the importer adds to the catalog with each step's words. All 13 fielded levels have a guide, 253 steps in all. Giant Smash has seven:
+
+1. "Deploy a Giant to shield the Wall Breakers." (one Giant, on the marked spot)
+2. Half a second's wait.
+3. "Quickly destroy Walls before the Giant dies." (two Wall Breakers on their spot, the battle slowed to a tenth)
+4. A five-second wait.
+5. "Now deploy Giants to destroy all defenses." (twelve Giants)
+6. A five-second wait.
+7. "After Mortar is destroyed, deploy Goblins to help clean up." (shown for 25 seconds)
+
+A level with no star yet starts with its guide. On a level with a star, the scout page offers **Guided attack** to take it again. A banner under the battle's top bar shows the step's words in the client's colours, with **Skip guide**, and the guide follows the step's flags:
+
+- **Units.** A deploy step puts its unit in hand. With `ForceType` it refuses any other unit, and while a waiting step runs it refuses every deploy ("Wait for the guide's next step."). With `ForceLocation` it refuses a tap outside its circle. With `ForceExactLocation` the unit lands on the spot itself.
+- **The battle's pace.** A step with `PauseGame` holds the battle until it is met: frozen, or at `SlowdownPercentage` of its speed (the Wall Breakers' 10%). A gold ring marks its spot, and the camera brings a new step's spot into view.
+- **Waits.** A wait runs its `Duration` in battle time, also during scouting, so opening words like Hot Stuff's Air Sweeper note play before the first deploy. A `WaitUntilDestroyed` step waits for the building with its `ObjectGID`; `ShowObject` rings the building it points out.
+- **Abilities.** A `UseAbility` step waits for the hero's ability.
+- **Moving on.** A step ends once its units are down, or when none of its unit is left to deploy. An ability step also ends when its hero cannot use the ability. When the last step ends, the player plays on freely.
+
+An `ObjectGID` is not a row index: it is the instance id the level file gives the building (`500000200` in Hog Rush is a level 7 Cannon at 35, 20), resolved by the importer to the building's tile. A step's spot is the client's tile plus `BUILD_MIN`, as for the buildings, and its radius is `Radius` in hundredths of a tile.
+
+The guide sits beside the battle, not in its replay setup. A frozen moment is simply not simulated, and a slowed one is recorded at its slowed length, so a recording holds exactly the time fought and replays without the guide.
+
 ## Choices
 
+- **Spots off the board.** Some levels use the client's larger board. Of the 75 troop and hero spots, 10 fall past this game's 48 tiles (Bowling with Bats' Archer Queen at the client's 20, 47) and 9 inside its red boundary, which keeps 1.5 tiles round each building. A troop or hero step's spot becomes the deployable tile nearest the client's. A spell's spot is clamped to the board.
+- **Waits that cannot end.** The original's scripted attack always brings a step's building down, but a player's may not. A `WaitUntilDestroyed` step therefore also ends when no attacker is alive or after 60 battle seconds (`GUIDE_WAIT_LIMIT`). Without that, a step refusing deploys could hold the player until they skip.
+- **Ability timing.** `KingHealthLow` asks for the King's ability straight away; the client presumably waits for his health to drop.
+- **The ending question.** The client's closing question ("You did perfectly! Would you like to practice without deployment steps?") is not asked. Later attacks are free, and the scout page's Guided attack brings the guide back.
+
 - **Clan Castle units.** Four levels send units in the Clan Castle: Bowling with Bats, Electro Surgery, Lava & More Loons and Bowling with Witches. This game's attacks have no Clan Castle to release them (siege machines carry nothing), so they join the army's tray. A kind's level is the army's own, ahead of the castle's (Bowling with Bats sends P.E.K.K.A 6 in the army and P.E.K.K.A 8 in the castle).
-- **Tutorial.** The step-by-step tutorial on a level's first attempt (`DeploySteps`) is not imported. Its steps name deploy points that are not in the client tables read here.
 - **Withheld levels.** The six withheld Challenges stay out, for the reasons in [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Their armies are in the catalog all the same.
 
 ## Tests
+
+`tests/practice-guide.test.ts` checks:
+
+- Giant Smash's seven steps and their flags;
+- the guide itself on Giant Smash: the unit in hand, refusals of the wrong unit, of a tap outside the circle and of a deploy during a wait, the exact spot, the slowed and frozen battle, and Skip;
+- every fielded level's guide played through to its end;
+- that first attempts only are guided, unless asked;
+- that a guided battle's recording holds only the time fought.
 
 `tests/practice-mode.test.ts` checks:
 
@@ -54,5 +92,6 @@ A battle fought this way is marked `fixedArmy` in its replay setup. Its army and
 
 - opens the campaign with no army trained;
 - finds Giant Smash labelled "PRACTICE" and opens its scout page with the army provided;
-- attacks, and checks the tray and that deploying leaves the camps alone;
+- attacks under the guide, checking its banner and Skip (44 pixels), the Giant in hand and a tap in the ring landing on the spot;
+- skips the guide, and checks the tray and that deploying leaves the camps alone;
 - confirms the level is locked at Town Hall 3.

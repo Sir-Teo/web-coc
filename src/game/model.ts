@@ -334,7 +334,14 @@ import {
   type PresetHero,
 } from './army';
 import { ARMY_RECIPE_TEXTS, armyRecipesFor } from './army-recipes';
-import { PRACTICE_LEVELS, practiceLevelAt } from './practice-mode';
+import {
+  PRACTICE_LEVELS,
+  practiceLevelAt,
+  practiceUnitName,
+  sameUnit,
+  type PracticeStep,
+  type PracticeUnit,
+} from './practice-mode';
 import { stepTraps, type TrapState } from './traps';
 import { shrinkStepTime, type ShrinkStatus } from './shrink-trap';
 import {
@@ -984,6 +991,8 @@ const GOBLIN_RAID_TICK = 0.05;
 export const BATTLE_SPEEDS = [1, 2, 4] as const;
 export type BattleSpeed = (typeof BATTLE_SPEEDS)[number];
 /** Practice and ladder matches scout for 30 seconds and fight for three minutes. */
+/** The longest a Practice guide waits for a building to fall, in battle seconds. */
+export const GUIDE_WAIT_LIMIT = 60;
 export const timedBattle = (b: { practice: boolean; ladder?: LadderMatch }) =>
   b.practice || !!b.ladder;
 export class GameModel {
@@ -1041,6 +1050,24 @@ export class GameModel {
   activeTroop: TroopKind = 'swordsman';
   /** When set, tapping the battlefield casts this spell instead of deploying. */
   activeSpell: SpellKind | null = null;
+  /**
+   * Practice Mode's step-by-step guide for the open battle, on a level's first attempt (see
+   * docs/PRACTICE-MODE.md). It lives beside the battle, not in it: a frozen moment is simply not
+   * simulated, so the recording holds what was fought.
+   */
+  practiceGuide: {
+    steps: readonly PracticeStep[];
+    index: number;
+    /** Units of the step's kind deployed during the step. */
+    placed: number;
+    /** Battle seconds spent in the step. */
+    elapsed: number;
+    /**
+     * Where the step's unit goes: the client's spot, or the deployable tile nearest it (some
+     * spots lie past this game's 48-tile board or inside its red boundary).
+     */
+    spot?: { x: number; y: number };
+  } | null = null;
   editing = false;
   private undoStack: Layout['slots'][] = [];
   private redoStack: Layout['slots'][] = [];
@@ -4894,7 +4921,11 @@ export class GameModel {
     if (this.replay) return false;
     const b = this.battle;
     const hero = b?.nativeHeroes?.find((entry) => entry.kind === kind);
-    if (!b || b.finished || !hero || hero.unitId !== null || this.deployBlocked(x, y)) return false;
+    if (!b || b.finished || !hero || hero.unitId !== null) return false;
+    const spot = this.guidePlacement({ hero: kind }, x, y);
+    if (!spot) return false;
+    ({ x, y } = spot);
+    if (this.deployBlocked(x, y)) return false;
     this.recordAction({ type: 'hero', hero: kind, x, y });
     const starting = !b.started;
     this.beginFight();
@@ -4952,6 +4983,7 @@ export class GameModel {
       );
     }
     this.onEffect({ type: 'spawn', x, y });
+    this.guidePlaced({ hero: kind });
     this.deployChanged(starting);
     return true;
   }
@@ -5109,8 +5141,173 @@ export class GameModel {
       (!drill || this.townhallLevel >= drill.townHall)
     );
   }
-  startCampaign(index: number) {
+  /**
+   * Attack a Goblin map village. A Practice level's first attempt (no star yet) is guided step
+   * by step, as in the original; `guided` asks for the guide again, or goes without it.
+   */
+  startCampaign(index: number, guided?: boolean) {
     this.startBattle(index, false, 'goblin-v1');
+    const drill = practiceLevelAt(index),
+      b = this.battle as Battle | null;
+    if (!drill?.steps.length || !b?.fixedArmy || b.index !== index || b.started) return;
+    if (!(guided ?? !(this.state.nativeCampaign?.stars[index] ?? 0))) return;
+    this.practiceGuide = { steps: drill.steps, index: 0, placed: 0, elapsed: 0 };
+    this.beginGuideStep();
+    this.changed();
+  }
+  /** The guide's current step, if one is showing. */
+  get guideStep(): PracticeStep | null {
+    const g = this.practiceGuide;
+    return g ? (g.steps[g.index] ?? null) : null;
+  }
+  /** What the guide says now: its step's words, or the last ones given while a step waits. */
+  get guideText() {
+    const g = this.practiceGuide;
+    if (!g) return null;
+    for (let i = g.index; i >= 0; i--) if (g.steps[i]?.text) return g.steps[i].text!;
+    return null;
+  }
+  /** The original lets the player skip a level's guide and play on freely. */
+  skipPracticeGuide() {
+    if (!this.practiceGuide) return;
+    this.practiceGuide = null;
+    this.changed();
+  }
+  /** The building a guide step names by its tile: to wait for, or to point out. */
+  guideBuilding(at: { x: number; y: number }) {
+    return this.battle?.buildings.find((v) => v.x === at.x && v.y === at.y && !isTrap(v.kind));
+  }
+  /** The battle's pace under the guide's step: frozen (0), slowed, or running (1). */
+  private guideSpeed(b: Battle) {
+    const step = this.guideStep;
+    if (!step?.pause || !(step.unit || step.ability) || this.guideStepDone(step, b)) return 1;
+    return step.slowdown ? step.slowdown / 100 : 0;
+  }
+  /** Whether any of a unit is still in the tray to deploy. */
+  private guideUnitLeft(b: Battle, unit: PracticeUnit) {
+    if ('troop' in unit)
+      return b.remaining[unit.troop] > 0 && !(isSiege(unit.troop) && b.siegeDeployed);
+    if ('spell' in unit) return b.spells[unit.spell] > 0;
+    const hero = b.nativeHeroes?.find((h) => h.kind === unit.hero);
+    return !!hero && hero.unitId === null && !hero.deployed;
+  }
+  /**
+   * A step is met when its units are placed (or none are left), its hero's ability is used (or
+   * the hero cannot use it), its building has fallen, or its time has run.
+   */
+  private guideStepDone(step: PracticeStep, b: Battle) {
+    const g = this.practiceGuide!;
+    if (step.ability && step.unit && 'hero' in step.unit) {
+      const kind = step.unit.hero;
+      const hero = b.nativeHeroes?.find((h) => h.kind === kind);
+      const unit = hero && b.units.find((u) => u.id === hero.unitId);
+      return !hero || !!hero.abilityUsed || !unit || unit.hp <= 0;
+    }
+    if (step.unit)
+      return (
+        g.placed >= step.count ||
+        !this.guideUnitLeft(b, step.unit) ||
+        (step.duration !== undefined && g.elapsed >= step.duration)
+      );
+    // A wait also ends when nothing is left fighting, or after a minute: the original's
+    // scripted attack always brings the building down, a player's may not.
+    if (step.waitFor)
+      return (
+        !(this.guideBuilding(step.waitFor)?.hp ?? 0) ||
+        g.elapsed >= GUIDE_WAIT_LIMIT ||
+        (b.started && !b.units.some((u) => u.hp > 0))
+      );
+    return g.elapsed >= (step.duration ?? 0);
+  }
+  /** Moves the guide past every step that is met, selecting the next step's unit. */
+  private advanceGuide() {
+    const g = this.practiceGuide,
+      b = this.battle;
+    if (!g) return;
+    if (!b || b.finished) {
+      this.practiceGuide = null;
+      return;
+    }
+    const from = g.index;
+    while (g.index < g.steps.length && this.guideStepDone(g.steps[g.index], b)) {
+      g.index++;
+      g.placed = 0;
+      g.elapsed = 0;
+    }
+    if (g.index >= g.steps.length) this.practiceGuide = null;
+    else if (g.index !== from) this.beginGuideStep();
+    if (g.index !== from) this.changed();
+  }
+  /** Finds the step's spot and puts its unit in hand, as the original's guide does. */
+  private beginGuideStep() {
+    const g = this.practiceGuide,
+      step = this.guideStep,
+      unit = step?.unit,
+      b = this.battle;
+    if (!g || !step || !b) return;
+    delete g.spot;
+    if (step.at) {
+      const at = step.at;
+      const clamp = (v: number) => Math.min(MAP_SIZE - 1, Math.max(1, v));
+      // A spell may fall anywhere; a troop or hero needs open grass, as near the spot as can be.
+      let best = { x: clamp(at.x), y: clamp(at.y) };
+      if (!(unit && 'spell' in unit) && this.deployBlocked(best.x, best.y)) {
+        let distance = Infinity;
+        for (let x = 1; x < MAP_SIZE; x++)
+          for (let y = 1; y < MAP_SIZE; y++) {
+            const d = Math.hypot(x - at.x, y - at.y);
+            if (d < distance && !this.deployBlocked(x, y)) {
+              distance = d;
+              best = { x, y };
+            }
+          }
+      }
+      g.spot = best;
+    }
+    if (!unit || step.ability || !this.guideUnitLeft(b, unit)) return;
+    this.activeHero = false;
+    this.activeSpell = null;
+    this.activeHeroKind = null;
+    if ('troop' in unit) this.activeTroop = unit.troop;
+    else if ('spell' in unit) this.activeSpell = unit.spell;
+    else this.activeHeroKind = unit.hero;
+  }
+  /**
+   * Where a deploy may land under the guide: the tap itself, the step's spot for an exact step,
+   * or nowhere when the step refuses it (another unit, outside its circle, or a wait).
+   */
+  private guidePlacement(
+    unit: PracticeUnit,
+    x: number,
+    y: number,
+  ): { x: number; y: number } | null {
+    const step = this.guideStep;
+    if (!step) return { x, y };
+    const own = !!step.unit && !step.ability && sameUnit(step.unit, unit);
+    if (step.forceType && !own) {
+      this.notify(
+        step.unit && !step.ability
+          ? `Follow the guide: deploy ${practiceUnitName(step.unit)} now.`
+          : 'Wait for the guide’s next step.',
+      );
+      return null;
+    }
+    const spot = this.practiceGuide?.spot;
+    if (!own || !spot) return { x, y };
+    if (step.forceLocation && Math.hypot(x - spot.x, y - spot.y) > step.radius + 0.5) {
+      this.notify('Deploy inside the marked circle.');
+      return null;
+    }
+    if (step.exact && ('spell' in unit || !this.deployBlocked(spot.x, spot.y))) return { ...spot };
+    return { x, y };
+  }
+  /** Counts a deploy toward the guide's step and moves on when it is met. */
+  private guidePlaced(unit: PracticeUnit) {
+    const g = this.practiceGuide,
+      step = this.guideStep;
+    if (!g || !step) return;
+    if (step.unit && !step.ability && sameUnit(step.unit, unit)) g.placed++;
+    this.advanceGuide();
   }
   /** The next ladder opponent: a native layout near your Town Hall and trophies near yours. */
   get ladderPreview() {
@@ -5163,6 +5360,7 @@ export class GameModel {
       return this.notify('Prepare an army or a hero before attacking.');
     this.cancel();
     this.editing = false;
+    this.practiceGuide = null;
     if (!practice && !drill) {
       this.state.lastArmy = { ...this.state.army };
       this.state.lastSpells = { ...this.state.spells };
@@ -5300,6 +5498,9 @@ export class GameModel {
     const b = this.battle,
       k = this.activeTroop;
     if (!b || b.finished || b.remaining[k] <= 0 || (isSiege(k) && b.siegeDeployed)) return false;
+    const spot = this.guidePlacement({ troop: k }, x, y);
+    if (!spot) return false;
+    ({ x, y } = spot);
     if (this.deployBlocked(x, y)) {
       this.notify('Deploy on the grass outside the red boundary.');
       return false;
@@ -5328,6 +5529,7 @@ export class GameModel {
       ...(nativeBehavior(b, k) ? { native: initialNativeState(k, this.troopLevel(k)) } : {}),
     });
     this.onEffect({ type: 'spawn', x, y });
+    this.guidePlaced({ troop: k });
     this.deployChanged(starting);
     return true;
   }
@@ -5348,6 +5550,9 @@ export class GameModel {
     const b = this.battle,
       k = this.activeSpell;
     if (!b || b.finished || !k || b.spells[k] <= 0) return false;
+    const spot = this.guidePlacement({ spell: k }, x, y);
+    if (!spot) return false;
+    ({ x, y } = spot);
     if (
       !Number.isFinite(x) ||
       !Number.isFinite(y) ||
@@ -5489,6 +5694,7 @@ export class GameModel {
       this.onEffect({ type: 'spawn', x: hero.x, y: hero.y });
     } else startSpellAura(b, k as AuraSpell, x, y);
     if (b.spells[k] <= 0) this.activeSpell = SPELL_KEYS.find((s) => b.spells[s] > 0) ?? null;
+    this.guidePlaced({ spell: k });
     this.deployChanged(starting);
     return true;
   }
@@ -5568,8 +5774,24 @@ export class GameModel {
     }
     const b = this.battle;
     if (!b || b.finished) return;
+    // A guide's opening words run their time while the player scouts.
+    if (this.practiceGuide && !b.started) {
+      this.practiceGuide.elapsed += dt;
+      this.advanceGuide();
+    }
     // Untimed campaign scouting changes no combat state and needs no replay frames.
     if (!timedBattle(b) && !b.started) return;
+    // A Practice guide's step can hold the battle (frozen, or slowed) until the player acts.
+    if (this.practiceGuide && b.started) {
+      // A step just met (an ability used, a building down, time spent) releases the battle.
+      this.advanceGuide();
+      if (this.practiceGuide) {
+        dt *= this.guideSpeed(b);
+        if (dt <= 0) return;
+        this.practiceGuide.elapsed += dt;
+        this.advanceGuide();
+      }
+    }
     if (this.recording) {
       if (this.recording.steps.length >= MAX_REPLAY_STEPS || dt > 10 || dt < 0.000001) {
         this.recording = null;
@@ -6514,6 +6736,7 @@ export class GameModel {
     this.recordAction({ type: 'end' });
     this.refreshBattleScore();
     b.finished = true;
+    this.practiceGuide = null;
     b.projectiles = [];
     b.shells = [];
     for (const bomb of Object.values(b.deathBombs ?? {})) if (!bomb.resolved) bomb.cancelled = true;
@@ -7030,6 +7253,7 @@ export class GameModel {
     this.replayData = null;
     this.recording = null;
     this.battle = null;
+    this.practiceGuide = null;
     this.selected = null;
     this.activeSpell = null;
     this.activeHero = false;
