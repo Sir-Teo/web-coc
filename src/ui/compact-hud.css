@@ -490,3 +490,17 @@
     margin: 0;
   }
 }
+
+/* As in the original's training screen, a troop's or spell's portrait adds one when tapped and
+   keeps adding while held (the Add button stays for keyboards and screen readers). A long
+   press must not open the browser's image menu or select text. */
+.army-tile .shop-tile-art[data-add] {
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.08s;
+}
+.army-tile .shop-tile-art[data-add]:active {
+  transform: scale(0.94);
+}

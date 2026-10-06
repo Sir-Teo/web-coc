@@ -28,6 +28,25 @@ October 1, 2026. Several browser gestures could take over during touch play. The
 
 `tests/browser/touch-browser-gestures.spec.ts` runs a 3× touch context. It checks the overscroll, touch-action and selection styles. It also checks that a dispatched `contextmenu` on the canvas is cancelled, and that every field reaches 16px while typing in the search still works. A desktop case confirms that mouse layouts keep their 13px text. Without the fix, both touch cases fail. These checks verify the CSS and event contract in Chromium's mobile emulation. They do not replace testing on physical iOS and Android devices.
 
+## Training by tapping portraits
+
+In the original's training screen, tapping a troop's or spell's portrait adds one, and holding it keeps adding. Here, only the "+ Add" button under the portrait did that. That button is 40 pixels tall on a tall phone; the portrait is 55×58.
+
+An unlocked tile's portrait now does the same as its Add button. It runs `train:` or `brew:` through the same click handler and the same hold-to-repeat: a 450 ms delay, then one every 110 ms.
+
+- **Why not `data-action`.** The portrait carries `data-add`, not `data-action`, so a page or test that looks up a tile's Add control by its action still finds one element.
+- **Blocked tiles.** A locked tile, a full army, or a spell tile without spell housing has no `data-add` on its portrait.
+- **Scrolling the strip.** A swipe that starts on a portrait still scrolls the tile strip. The browser cancels the pointer when it takes over the pan, which stops the hold before its first repeat.
+- **Long press.** The portrait suppresses iOS's image callout and text selection, and shrinks slightly while pressed.
+- **Keyboards and screen readers.** They keep the Add button; the portrait is not focusable.
+
+`tests/browser/army-portrait-tap.spec.ts`, at 390×844 with touch:
+
+- taps the Barbarian portrait twice and a spell portrait once;
+- checks that a locked portrait is not a control;
+- in Chromium, holds a portrait for a second with native touch events (at least three troops);
+- swipes from a portrait and checks that the strip scrolls and no troop is added.
+
 ## Screen kept on during raids and replays
 
 October 2, 2026. Phones dim and lock the screen after their idle timeout, which can be as short as 30 seconds. Three kinds of play involve little touching: watching a replay, watching the first-run Goblin raid, and waiting on a raid's last troops. A locked phone hides the page, and a hidden page stores the raid settled at its current score.
