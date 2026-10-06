@@ -160,7 +160,10 @@ test('TH5 can select and instantly upgrade level 4 walls using only elixir', asy
   const upgrade = page.locator('[data-action="wall-upgrade:elixir"]');
   await expect(upgrade).toBeEnabled();
   await expect(upgrade).toContainText('40,000');
-  await expect(page.locator('[data-action="wall-upgrade:gold"]')).toBeDisabled();
+  // No gold: the price greys out but stays tappable, offering the missing gold for gems.
+  const gold = page.locator('[data-action="wall-upgrade:gold"]');
+  await expect(gold).toBeEnabled();
+  await expect(gold).toHaveClass(/stone/);
   await page.screenshot({
     path: `output/playtest/th5-elixir-walls-${test.info().project.name || 'chromium'}.png`,
     animations: 'disabled',
