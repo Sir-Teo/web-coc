@@ -1,6 +1,16 @@
 import { SampleAudio } from './sample-audio';
 import { MusicPlayer, type MusicScene } from './music';
+import villageSounds from '../../reference/village-sounds/sounds.json' with { type: 'json' };
 export type Tone = 'click' | 'collect' | 'build' | 'hit' | 'destroy' | 'deploy' | 'victory';
+/** The client's village feedback effects (logic/effects.csv), by its own names. */
+export type VillageEffect = keyof typeof villageSounds.effects | 'Button Click';
+const villageSample = (path: string) => `village-${path.split('/').pop()}`;
+/** Generated tones that the client's own sounds replace once decoded. */
+const TONE_EFFECT: Partial<Record<Tone, VillageEffect>> = {
+  click: 'Button Click',
+  build: 'Start Building',
+  collect: 'Collect Gold',
+};
 export class AudioManager {
   context: AudioContext | null = null;
   /**
@@ -14,7 +24,9 @@ export class AudioManager {
   private musicOn = false;
   /** The original client's Home and battle music; plays only while music is on. */
   readonly tracks = new MusicPlayer(() => (this.musicOn ? this.context : null));
-  private lastPlay: Partial<Record<Tone, number>> = {};
+  private lastPlay: Partial<Record<string, number>> = {};
+  /** The village sounds load once, after the first gesture with sound on (about 200 KB). */
+  private villageLoad?: Promise<void>;
   constructor() {
     if (typeof document !== 'undefined')
       document.addEventListener('visibilitychange', () => this.updateContext());
@@ -44,6 +56,45 @@ export class AudioManager {
   unlock() {
     this.unlocked = true;
     this.updateContext();
+    this.loadVillageSounds();
+  }
+  private loadVillageSounds() {
+    if (this.villageLoad || !this.soundOn || typeof fetch === 'undefined') return;
+    this.villageLoad = Promise.all(
+      Object.entries(villageSounds.sounds).map(async ([path, sound]) => {
+        const response = await fetch('/' + sound.path);
+        if (!response.ok) throw Error(`${sound.path}: ${response.status}`);
+        this.samples.register(villageSample(path), await response.arrayBuffer());
+      }),
+    ).then(
+      () => undefined,
+      // Generated tones stand in; the next gesture tries again.
+      () => void (this.villageLoad = undefined),
+    );
+  }
+  /** Plays a client village sound; false when it is not decoded yet. */
+  private playEffect(effect: VillageEffect) {
+    if (effect === 'Button Click')
+      return this.samples.shot(villageSample(villageSounds.click), 0.6);
+    const row = villageSounds.effects[effect];
+    const pitch = row.minPitch + Math.random() * (row.maxPitch - row.minPitch);
+    return this.samples.shot(villageSample(row.sound), row.volume, pitch);
+  }
+  /**
+   * A client village effect: collecting a resource, a building or upgrade finishing, an upgrade
+   * starting. `tone` is the generated stand-in until the sound is decoded, and the haptic cue.
+   */
+  effect(effect: VillageEffect, tone: Tone) {
+    this.feedback(tone);
+    if (!this.enabled || this.throttled(effect, 50)) return;
+    this.unlock();
+    if (!this.playEffect(effect)) this.tone(tone);
+  }
+  private throttled(key: string, ms: number) {
+    const now = performance.now();
+    if (now - (this.lastPlay[key] ?? 0) < ms) return true;
+    this.lastPlay[key] = now;
+    return false;
   }
   /** Called for every cue, sound on or off (vibration follows the same moments). */
   feedback: (kind: Tone) => void = () => {};
@@ -54,10 +105,14 @@ export class AudioManager {
     // so overlapping volleys don't thrash the mixer.
     const throttleMs =
       kind === 'hit' ? 70 : kind === 'destroy' ? 150 : kind === 'victory' ? 500 : 50;
-    const now = performance.now();
-    if (now - (this.lastPlay[kind] ?? 0) < throttleMs) return;
-    this.lastPlay[kind] = now;
+    if (this.throttled(kind, throttleMs)) return;
     this.unlock();
+    const effect = TONE_EFFECT[kind];
+    if (effect && this.playEffect(effect)) return;
+    this.tone(kind);
+  }
+  /** The generated stand-in for a cue. */
+  private tone(kind: Tone) {
     const ctx = this.context;
     if (!ctx) return;
     const settings = {

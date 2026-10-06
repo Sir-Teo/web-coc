@@ -2564,8 +2564,8 @@ export class VillageScene extends Phaser.Scene {
       c.setSize(38, 40).setInteractive();
       c.on('pointerup', () => {
         if (this.dragged || this.uiBlocked || this.model.placement) return;
+        // The collect effect plays the resource's own sound.
         this.model.collect(b.id);
-        this.audio.play('collect');
       });
       this.bubbles.set(b.id, c);
     }
@@ -4715,14 +4715,24 @@ export class VillageScene extends Phaser.Scene {
         duration: 750,
         onComplete: () => ring.destroy(),
       });
-      this.audio.play('build');
+      // The client's own sounds: its Town Hall jingle, Building Ready, or the gem reward of
+      // a cleared obstacle.
+      if (fx.building === 'townhall') this.audio.effect('TH Upgrade Jingle', 'build');
+      else if (fx.building) this.audio.effect('Building Ready', 'build');
+      else if (fx.gems) this.audio.effect('Collect Diamonds', 'collect');
+      else this.audio.play('build');
       return;
     }
     if (fx.type === 'collect') {
-      this.flyToHud(
-        p.x,
-        p.y - 40,
-        fx.color === 0xffd34b ? 'gold' : fx.color === 0x514076 ? 'dark' : 'elixir',
+      const resource = fx.color === 0xffd34b ? 'gold' : fx.color === 0x514076 ? 'dark' : 'elixir';
+      this.flyToHud(p.x, p.y - 40, resource);
+      this.audio.effect(
+        resource === 'gold'
+          ? 'Collect Gold'
+          : resource === 'dark'
+            ? 'Collect Dark Elixir'
+            : 'Collect Elixir',
+        'collect',
       );
       const text = this.add
         .text(p.x, p.y - 70, fx.text!, {

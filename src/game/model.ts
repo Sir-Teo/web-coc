@@ -874,6 +874,9 @@ export type FX = {
   text?: string;
   spell?: SpellKind;
   radius?: number;
+  /** An `upgrade` effect's finished building, or the gems a cleared obstacle paid. */
+  building?: BuildingKind;
+  gems?: number;
   /** Presentation only: weapon identity and the source/target entities. */
   weapon?: Weapon;
   projectileId?: string;
@@ -1537,6 +1540,7 @@ export class GameModel {
         this.gainXp(xp);
         this.onEffect({
           type: 'upgrade',
+          building: b.kind,
           x: b.x + BUILDINGS[b.kind].size / 2,
           y: b.y + BUILDINGS[b.kind].size / 2,
         });
@@ -1562,7 +1566,7 @@ export class GameModel {
       this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
       this.gainXp(3);
       this.countAchievements('clear_obstacles');
-      if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1 });
+      if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1, gems });
     }
     if (this.heroHall && !this.state.king) {
       this.state.king = { level: 1 };

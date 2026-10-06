@@ -67,6 +67,7 @@ notes in those references are not current release guarantees.
 - [Balloon bombs](BALLOON-BOMBS.md)
 - [Battle feedback timing](EFFECT-TIMING.md)
 - [Music](MUSIC.md)
+- [Village sounds](VILLAGE-SOUNDS.md)
 - [Combat presentation — September 11, 2026](COMBAT-PRESENTATION.md)
 - [Troop presentation](UNIT-PRESENTATION.md)
 - [Building appearance and placement](BUILDING-PRESENTATION.md)

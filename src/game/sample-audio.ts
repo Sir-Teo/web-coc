@@ -42,6 +42,8 @@ export class SampleAudio {
     { source: AudioBufferSourceNode; gain: GainNode; sample: string }
   >();
   private ended = new Set<string>();
+  /** Interface one-shots, outside the simulation clock (see `shot`). */
+  private shots = new Set<AudioBufferSourceNode>();
   private last?: { elapsed: number; wall: number; speed: number };
   constructor(private context: () => AudioContext | null) {}
   /**
@@ -66,6 +68,32 @@ export class SampleAudio {
           .then((buffer) => this.buffers.set(name, buffer))
           .catch(() => {});
       }
+  }
+  /**
+   * Plays a decoded sample now, at the client's volume (0–1) and pitch, for interface and village
+   * feedback that follows no battle clock. False when it cannot play yet (not decoded, sound off
+   * or too many voices), so the caller can fall back.
+   */
+  shot(sample: string, volume: number, pitch = 1) {
+    const ctx = this.context(),
+      buffer = this.buffers.get(sample);
+    if (!ctx || ctx.state !== 'running' || !buffer) return false;
+    if (this.shots.size >= MAX_VOICES_PER_SAMPLE * 2) return true;
+    const source = ctx.createBufferSource(),
+      gain = ctx.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = pitch;
+    gain.gain.value = volume * 0.12;
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    this.shots.add(source);
+    source.onended = () => {
+      this.shots.delete(source);
+      source.disconnect();
+      gain.disconnect();
+    };
+    source.start();
+    return true;
   }
   private static safeStop(source: AudioBufferSourceNode) {
     try {

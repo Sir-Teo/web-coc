@@ -1364,8 +1364,12 @@ export class HUD {
         this.show('progression');
         break;
       case 'hero-upgrade':
-        if (arg && (HERO_KINDS as string[]).includes(arg)) m.upgradeRosterHero(arg as HeroKind);
-        else m.upgradeHero();
+        if (
+          arg && (HERO_KINDS as string[]).includes(arg)
+            ? m.upgradeRosterHero(arg as HeroKind)
+            : m.upgradeHero()
+        )
+          this.audio.effect('Start Hero Upgrade', 'build');
         break;
       case 'hero-finish':
         if (arg && (HERO_KINDS as string[]).includes(arg)) m.finishRosterHero(arg as HeroKind);
@@ -1521,9 +1525,12 @@ export class HUD {
       case 'research':
         this.show('research');
         break;
-      case 'research-start':
+      case 'research-start': {
+        const idle = !m.state.research;
         m.research(arg as ResearchKind);
+        if (idle && m.state.research) this.audio.effect('Troop Upgrade Start', 'build');
         break;
+      }
       case 'research-finish':
         m.finishResearch();
         break;
@@ -1723,11 +1730,11 @@ export class HUD {
         this.render();
         break;
       case 'collect':
+        // Each collect effect plays its resource's own sound.
         m.collect(
           undefined,
           arg === 'gold' || arg === 'elixir' || arg === 'dark' ? arg : undefined,
         );
-        this.audio.play('collect');
         break;
       case 'build':
         m.beginBuild(arg as BuildingKind);
@@ -1828,7 +1835,7 @@ export class HUD {
         m.toggleHaptics();
         break;
       case 'claim':
-        if (m.claimAchievement(arg)) this.audio.play('collect');
+        if (m.claimAchievement(arg)) this.audio.effect('Collect Diamonds', 'collect');
         break;
       case 'offline-retry':
         retryOfflineWarm();
