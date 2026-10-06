@@ -45,6 +45,7 @@ notes in those references are not current release guarantees.
 - [Magic items](MAGIC-ITEMS.md)
 - [Trader](TRADER.md)
 - [Treasury](TREASURY.md)
+- [Starter Challenges](STARTER-CHALLENGES.md)
 - [Troop and spell sounds](TROOP-SOUNDS.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)

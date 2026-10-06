@@ -13,7 +13,9 @@ for (const viewport of [
     const awards = page.locator('.left-tools [data-action="achievements"]');
     const ready = await page.evaluate(() => window.__game.model.achievementsReady);
     expect(ready).toBeGreaterThan(0);
-    await expect(awards.locator('.notification')).toHaveText(String(ready));
+    // The badge also counts Starter Pass rewards ready to claim.
+    const starter = await page.evaluate(() => window.__game.model.starterClaimable);
+    await expect(awards.locator('.notification')).toHaveText(String(ready + starter));
     await awards.click();
     const card = page.locator('.achievement[data-achievement="victory_points"]');
     await expect(card).toContainText('Sweet Victory');

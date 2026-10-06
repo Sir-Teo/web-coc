@@ -64,10 +64,12 @@ import {
   FastForward,
   Crown,
   Landmark,
+  ListChecks,
 } from 'lucide';
 const icons = {
   Circle,
   Landmark,
+  ListChecks,
   FastForward,
   Crown,
   Trophy,

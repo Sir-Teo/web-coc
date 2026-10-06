@@ -225,10 +225,18 @@ import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
 import { musicScene } from '../game/music';
+import {
+  STARTER_END_TEXT,
+  STARTER_MAX_POINTS,
+  STARTER_TIERS,
+  STARTER_TITLE,
+  type StarterTier,
+} from '../game/starter-challenges';
 type Panel =
   | 'magic-items'
   | 'trader'
   | 'treasury'
+  | 'starter'
   | 'blacksmith'
   | 'heroes'
   | 'journey'
@@ -1316,6 +1324,9 @@ export class HUD {
       case 'treasury':
         this.show('treasury');
         break;
+      case 'starter':
+        this.show('starter');
+        break;
       case 'treasury-collect':
         this.model.collectTreasury();
         break;
@@ -1324,6 +1335,10 @@ export class HUD {
         break;
       case 'trader-buy':
         m.buyDeal(arg);
+        this.render();
+        break;
+      case 'starter-claim':
+        m.claimStarterTier(Number(arg));
         this.render();
         break;
       case 'item-sell':
@@ -2501,7 +2516,7 @@ export class HUD {
        }</div>`,
    )
    .join('')}</div>
- <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${m.achievementsReady ? `, ${m.achievementsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${m.achievementsReady ? `<span class="notification">${m.achievementsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
+ <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${this.awardsReady ? `, ${this.awardsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${this.awardsReady ? `<span class="notification">${this.awardsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
@@ -3812,6 +3827,7 @@ export class HUD {
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
       treasury: 'Treasury',
+      starter: STARTER_TITLE,
       journey: 'Hero’s Journey',
       crafting: 'Crafting Station',
       helpers: 'Helper Hut',
@@ -3840,6 +3856,7 @@ export class HUD {
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
+      starter: STARTER_END_TEXT,
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
       pets: 'A companion for every hero.',
@@ -3865,49 +3882,51 @@ export class HUD {
           ? this.trader()
           : this.panel === 'treasury'
             ? this.treasury()
-            : this.panel === 'blacksmith'
-              ? this.blacksmith()
-              : this.panel === 'heroes'
-                ? this.heroes()
-                : this.panel === 'journey'
-                  ? this.journey()
-                  : this.panel === 'crafting'
-                    ? this.crafting()
-                    : this.panel === 'helpers'
-                      ? this.helpers()
-                      : this.panel === 'pets'
-                        ? this.pets()
-                        : this.panel === 'progression'
-                          ? this.progression()
-                          : this.panel === 'army-presets'
-                            ? this.armyPresets()
-                            : this.panel === 'battle-log'
-                              ? this.battleLog()
-                              : this.panel === 'spell-info'
-                                ? this.spellInfo()
-                                : this.panel === 'troop-info'
-                                  ? this.troopInfo()
-                                  : this.panel === 'campaign'
-                                    ? this.campaign()
-                                    : this.panel === 'campaign-scout'
-                                      ? this.campaignScout()
-                                      : this.panel === 'settings'
-                                        ? this.settings()
-                                        : this.panel === 'import-confirm'
-                                          ? this.importConfirm()
-                                          : this.panel === 'buildings'
-                                            ? this.buildingList()
-                                            : this.panel === 'achievements'
-                                              ? this.achievements()
-                                              : this.panel === 'research'
-                                                ? this.research()
-                                                : this.panel === 'info'
-                                                  ? this.info()
-                                                  : this.panel === 'layouts'
-                                                    ? this.layoutPanel()
-                                                    : this.panel === 'surrender'
-                                                      ? this.surrender()
-                                                      : this.help();
+            : this.panel === 'starter'
+              ? this.starterPass()
+              : this.panel === 'blacksmith'
+                ? this.blacksmith()
+                : this.panel === 'heroes'
+                  ? this.heroes()
+                  : this.panel === 'journey'
+                    ? this.journey()
+                    : this.panel === 'crafting'
+                      ? this.crafting()
+                      : this.panel === 'helpers'
+                        ? this.helpers()
+                        : this.panel === 'pets'
+                          ? this.pets()
+                          : this.panel === 'progression'
+                            ? this.progression()
+                            : this.panel === 'army-presets'
+                              ? this.armyPresets()
+                              : this.panel === 'battle-log'
+                                ? this.battleLog()
+                                : this.panel === 'spell-info'
+                                  ? this.spellInfo()
+                                  : this.panel === 'troop-info'
+                                    ? this.troopInfo()
+                                    : this.panel === 'campaign'
+                                      ? this.campaign()
+                                      : this.panel === 'campaign-scout'
+                                        ? this.campaignScout()
+                                        : this.panel === 'settings'
+                                          ? this.settings()
+                                          : this.panel === 'import-confirm'
+                                            ? this.importConfirm()
+                                            : this.panel === 'buildings'
+                                              ? this.buildingList()
+                                              : this.panel === 'achievements'
+                                                ? this.achievements()
+                                                : this.panel === 'research'
+                                                  ? this.research()
+                                                  : this.panel === 'info'
+                                                    ? this.info()
+                                                    : this.panel === 'layouts'
+                                                      ? this.layoutPanel()
+                                                      : this.panel === 'surrender'
+                                                        ? this.surrender()
+                                                        : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -4413,9 +4432,60 @@ export class HUD {
       : '';
     return `<div class="star-bonus${m.starBonusBoosted ? ' boosted' : ''}"><div class="star-bonus-head">${icon('Star', 20)}<b>Star Bonus</b><small data-star-bonus-status>${Math.min(bonus.stars, STAR_BONUS_STARS)}/${STAR_BONUS_STARS} stars · ${status}</small></div><div class="star-bonus-reward">${parts}</div>${boost}${where}${button('star-bonus', 'Collect', 'game-btn green', m.starBonusReady ? '' : 'disabled')}</div>`;
   }
+  /** Achievement tiers and Starter Pass rewards waiting to be claimed. */
+  private get awardsReady() {
+    const m = this.model;
+    return m.achievementsReady + (m.starterActive ? m.starterClaimable : 0);
+  }
+  /** The Starter Pass summary in the profile, while it runs (Town Halls below 7). */
+  private starterCard() {
+    const m = this.model;
+    if (!m.starterActive) return '';
+    const points = m.starterPoints,
+      ready = m.starterClaimable;
+    return `<div class="starter-card"><div class="star-bonus-head">${icon('Flag', 20)}<b>${STARTER_TITLE}</b><small>${n(Math.min(points, STARTER_MAX_POINTS))} / ${n(STARTER_MAX_POINTS)} points</small></div><span class="journey-bar" role="progressbar" aria-label="Starter Pass points" aria-valuemin="0" aria-valuemax="${STARTER_MAX_POINTS}" aria-valuenow="${Math.min(points, STARTER_MAX_POINTS)}"><i style="width:${Math.min(100, (points / STARTER_MAX_POINTS) * 100)}%"></i></span>${button('starter', `${icon('ListChecks', 16)} Challenges${ready ? `<span class="notification">${ready}</span>` : ''}`, 'game-btn blue')}</div>`;
+  }
+  private starterReward(tier: StarterTier) {
+    const { kind, amount, item } = tier.reward;
+    if (kind !== 'item') return `${resource(kind === 'gems' ? 'gem' : kind)} ${n(amount)}`;
+    const magic = MAGIC_ITEM_KINDS.find((k) => MAGIC_ITEMS[k].name === item);
+    const art = magic && MAGIC_ITEMS[magic].icon;
+    return `${art ? `<img src="/${art.path}" alt="" width="28" height="28" loading="lazy">` : icon('Sparkles', 18)} ${amount}× ${html(item ?? '')}`;
+  }
+  /** Points, the reward track (scrolling sideways on phones) and the revealed challenges. */
+  private starterPass() {
+    const m = this.model,
+      points = m.starterPoints;
+    const tiers = STARTER_TIERS.map((tier, i) => {
+      const issue = m.starterTierIssue(i);
+      const state = issue === 'Claimed' ? 'claimed' : issue === null ? 'ready' : 'locked';
+      return `<li class="starter-tier ${state}" data-tier="${i}"><small>${n(tier.score)}</small><span>${this.starterReward(tier)}</span>${issue === null ? button(`starter-claim:${i}`, 'Claim', 'game-btn green') : `<em>${issue === 'Claimed' ? icon('Check', 14) : ''}${html(issue === 'Claimed' ? 'Claimed' : issue)}</em>`}</li>`;
+    }).join('');
+    const groups = new Map<number, typeof m.starterChallenges>();
+    for (const c of m.starterChallenges)
+      groups.set(c.def.townhall, [...(groups.get(c.def.townhall) ?? []), c]);
+    const challenges = [...groups.entries()]
+      .sort(([a], [b]) => b - a)
+      .map(
+        ([th, list]) =>
+          `<h3 class="starter-group">Town Hall ${th}</h3>${list
+            .sort(
+              (a, b) =>
+                Number(a.done) - Number(b.done) ||
+                Number(!!a.unavailable) - Number(!!b.unavailable),
+            )
+            .map(
+              ({ def, progress, done, unavailable }) =>
+                `<article class="starter-challenge${done ? ' done' : ''}${unavailable ? ' unavailable' : ''}" data-challenge="${def.id}"><div><h4>${html(def.title)}</h4><p>${html(def.info)}</p>${unavailable ? `<small class="item-note">${html(unavailable)}</small>` : `<span class="journey-bar" role="progressbar" aria-label="${html(def.title)}" aria-valuemin="0" aria-valuemax="${def.quantity}" aria-valuenow="${progress}"><i style="width:${(progress / def.quantity) * 100}%"></i></span><small>${n(progress)} / ${n(def.quantity)}</small>`}</div><b class="starter-points">${done ? icon('Check', 14) : ''}${def.score}</b></article>`,
+            )
+            .join('')}`,
+      )
+      .join('');
+    return `<div class="modal-body starter-body"><div class="starter-summary"><b>${n(Math.min(points, STARTER_MAX_POINTS))}</b><small>/ ${n(STARTER_MAX_POINTS)} points</small><span class="journey-bar" role="progressbar" aria-label="Starter Pass points" aria-valuemin="0" aria-valuemax="${STARTER_MAX_POINTS}" aria-valuenow="${Math.min(points, STARTER_MAX_POINTS)}"><i style="width:${Math.min(100, (points / STARTER_MAX_POINTS) * 100)}%"></i></span></div><ol class="starter-track" aria-label="Rewards">${tiers}</ol><p class="treasury-note">Every reward not yet claimed is granted when your Town Hall reaches 7.</p>${challenges}</div>`;
+  }
   private achievements() {
     const s = this.model.state;
-    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p>${this.chiefXpLine()}</div></div>${this.starBonusCard()}<div class="profile-stats">${(
+    return `<div class="modal-body"><div class="league-banner">${icon('Trophy', 49)}<div><h2>${this.model.league.name}</h2><p>${n(s.trophies)} trophies · Chief level ${this.model.chiefLevel}</p>${this.chiefXpLine()}</div></div>${this.starterCard()}${this.starBonusCard()}<div class="profile-stats">${(
       [
         ['Swords', 'Raids won', n(s.stats.wins ?? 0)],
         ['Flag', 'Raids completed', n(s.stats.raids)],

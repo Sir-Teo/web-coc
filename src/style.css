@@ -1486,6 +1486,143 @@ h3 {
   font-weight: 700;
   color: #9a6a00;
 }
+.starter-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px 20px;
+  background: linear-gradient(100deg, #e4ecd2, #f3f6e4);
+  border: 1px solid #c6d3a4;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.starter-card .game-btn {
+  justify-self: start;
+  position: relative;
+}
+.starter-body {
+  display: grid;
+  /* Rows take their content's height: the fixed-height panel scrolls instead of squeezing them. */
+  grid-auto-rows: max-content;
+  gap: 12px;
+}
+.starter-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.starter-summary b {
+  font-size: 28px;
+  color: #4d5a2c;
+}
+.starter-summary .journey-bar {
+  grid-column: 1 / -1;
+}
+/* The reward track scrolls sideways, as the original's does, so phones keep every tier. */
+.starter-track {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 2px 2px 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+.starter-tier {
+  flex: 0 0 104px;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 10px 6px;
+  background: #f7f1de;
+  border: 1px solid #d8cba4;
+  border-radius: 10px;
+  scroll-snap-align: start;
+  text-align: center;
+  font-size: 12px;
+  color: #6c6d59;
+}
+.starter-tier > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  font-weight: 700;
+}
+.starter-tier img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.starter-tier em {
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.starter-tier.ready {
+  border-color: #6aa84f;
+  background: #eef6df;
+}
+.starter-tier.claimed {
+  opacity: 0.6;
+}
+.starter-tier .game-btn {
+  min-height: 44px;
+  padding: 0 14px;
+}
+.starter-group {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: #6c6d59;
+}
+.starter-challenge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fbf7ea;
+  border: 1px solid #e0d6b8;
+  border-radius: 10px;
+}
+.starter-challenge > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.starter-challenge h4,
+.starter-challenge p {
+  margin: 0;
+}
+.starter-challenge p {
+  font-size: 13px;
+  color: #7d7558;
+}
+.starter-challenge small {
+  font-size: 12px;
+  color: #8a8268;
+  font-variant-numeric: tabular-nums;
+}
+.starter-challenge.done {
+  background: #eef6df;
+  border-color: #b9d39a;
+}
+.starter-challenge.unavailable {
+  opacity: 0.6;
+}
+.starter-points {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #5b6b33;
+  color: #fff;
+  font-size: 13px;
+}
 .treasury-body {
   display: grid;
   gap: 12px;

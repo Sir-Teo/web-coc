@@ -34,6 +34,7 @@ import {
 } from './trader';
 import {
   MAGIC_ITEMS,
+  MAGIC_ITEM_KINDS,
   advanceBoost,
   boostItem,
   wallRings,
@@ -44,6 +45,18 @@ import {
   type MagicItems,
   type MagicTarget,
 } from './magic-items';
+import {
+  challengeBuilding,
+  challengeUnavailable,
+  emptyStarter,
+  eventProgress,
+  STARTER_CHALLENGES,
+  STARTER_END_TOWN_HALL,
+  STARTER_TIERS,
+  type StarterChallenge,
+  type StarterEvent,
+  type StarterState,
+} from './starter-challenges';
 import {
   HELPER_COOLDOWN_SECONDS,
   HELPER_KINDS,
@@ -148,7 +161,7 @@ import {
   type StarBonusReward,
   type Treasury,
 } from './leagues';
-import { STARTING_GRANT } from './townhall-catalog';
+import { SOURCE_NAME, STARTING_GRANT } from './townhall-catalog';
 import {
   campaignStage,
   campaignStages,
@@ -629,6 +642,8 @@ export interface Save {
   boosts?: Boosts;
   /** This week's Trader purchases; see trader.ts. */
   trader?: TraderState;
+  /** Starter Challenge progress and claimed tiers (Town Halls 2 to 6). */
+  starter?: StarterState;
   /** Helper Hut helpers bought with gems; see helpers.ts. */
   helpers?: Helpers;
   army: Army;
@@ -1645,6 +1660,7 @@ export class GameModel {
       kind,
       end: this.clock + this.researchSeconds(kind) * 1000,
     };
+    this.starterEvent({ type: 'StartLabUpgradeHome', amount: 1 });
     this.notify(`Researching level ${this.researchLevel(kind) + 1} ${name}.`);
     this.changed();
   }
@@ -1668,10 +1684,7 @@ export class GameModel {
           .filter((b) => b.kind === kind && !b.constructing)
           .reduce((top, b) => Math.max(top, b.level), 0),
       troopUnlocked: (kind: TroopKind) => this.troopUnlocked(kind),
-      goblinStars: NATIVE_CAMPAIGN.reduce(
-        (n, stage, i) => n + (goblinMap(stage) ? (this.state.nativeCampaign?.stars[i] ?? 0) : 0),
-        0,
-      ),
+      goblinStars: this.goblinStars,
       trophies: this.state.trophies,
     };
     return ACHIEVEMENTS.map((def) => {
@@ -1684,6 +1697,154 @@ export class GameModel {
   /** Finished tiers waiting to be claimed. */
   get achievementsReady() {
     return this.achievements.filter((a) => a.ready).length;
+  }
+  /** The Starter Challenges run until the Town Hall reaches 7, when every tier is granted. */
+  get starterActive() {
+    return (this.townhall?.level ?? 1) < STARTER_END_TOWN_HALL && !this.state.starter?.ended;
+  }
+  /** A challenge's progress toward its quantity. */
+  starterProgress(c: StarterChallenge) {
+    if (challengeUnavailable(c)) return 0;
+    switch (c.type) {
+      case 'UpgradeBuilding': {
+        const kind = challengeBuilding(c);
+        return this.state.buildings.filter(
+          (b) => b.kind === kind && !b.constructing && b.level >= (c.quantity2 ?? 1),
+        ).length;
+      }
+      case 'RepairBuilding':
+        return this.clanCastle ? 1 : 0;
+      case 'ClaimTotalAchievements':
+        return Object.values(this.state.achievements?.claimed ?? {}).reduce((n, v) => n + v, 0);
+      case 'GetTotalSinglePlayerStars':
+        return this.goblinStars;
+      default:
+        return this.state.starter?.counts[c.id] ?? 0;
+    }
+  }
+  /** The challenges the Town Hall has revealed, with their progress. */
+  get starterChallenges() {
+    const th = this.townhall?.level ?? 1;
+    return STARTER_CHALLENGES.filter((c) => c.townhall <= th).map((c) => {
+      const progress = Math.min(c.quantity, this.starterProgress(c));
+      return {
+        def: c,
+        progress,
+        done: progress >= c.quantity,
+        unavailable: challengeUnavailable(c),
+      };
+    });
+  }
+  get starterPoints() {
+    return this.starterChallenges.reduce((n, c) => n + (c.done ? c.def.score : 0), 0);
+  }
+  /** Why a tier cannot be claimed now, or null. */
+  starterTierIssue(index: number) {
+    const tier = STARTER_TIERS[index];
+    if (!tier || !this.starterActive) return 'Unavailable';
+    if (this.state.starter?.claimed.includes(index)) return 'Claimed';
+    if (this.starterPoints < tier.score) return `${tier.score.toLocaleString()} points`;
+    const { kind, amount } = tier.reward;
+    if (
+      (kind === 'gold' || kind === 'elixir') &&
+      this.resourceCap(kind) - this.state[kind] < amount
+    )
+      return 'Storage Full';
+    return null;
+  }
+  get starterClaimable() {
+    return STARTER_TIERS.filter((_, i) => this.starterTierIssue(i) === null).length;
+  }
+  /** Pays a tier's reward. Resources are clamped to storage and items beyond their limit sold. */
+  private payStarterTier(index: number) {
+    const { kind, amount, item } = STARTER_TIERS[index].reward;
+    // Up to the storages' room; a balance already above it (an import) is never lowered.
+    if (kind === 'gold' || kind === 'elixir')
+      this.state[kind] = Math.max(
+        this.state[kind],
+        Math.min(this.resourceCap(kind), this.state[kind] + amount),
+      );
+    else if (kind === 'gems') this.state.gems += amount;
+    else {
+      const magic = MAGIC_ITEM_KINDS.find((k) => MAGIC_ITEMS[k].name === item);
+      if (magic) this.addMagicItem(magic, amount);
+    }
+    (this.state.starter ??= emptyStarter()).claimed.push(index);
+  }
+  claimStarterTier(index: number) {
+    if (this.battle || this.starterTierIssue(index) !== null) return false;
+    this.payStarterTier(index);
+    const { kind, amount, item } = STARTER_TIERS[index].reward;
+    this.notify(
+      `Starter reward claimed: ${kind === 'item' ? `${amount}× ${item}` : `${amount.toLocaleString()} ${kind}`}.`,
+    );
+    this.changed();
+    return true;
+  }
+  /** Town Hall 7: the Starter Challenges end, and every unclaimed tier is granted. */
+  private endStarter() {
+    if (this.state.starter?.ended) return;
+    const starter = (this.state.starter ??= emptyStarter());
+    for (let i = 0; i < STARTER_TIERS.length; i++)
+      if (!starter.claimed.includes(i)) this.payStarterTier(i);
+    starter.ended = true;
+    this.notify('The Starter Challenges are complete: every reward is yours!');
+  }
+  /** Advances the revealed counted challenges an event concerns. */
+  private starterEvent(event: StarterEvent) {
+    if (!this.starterActive || !(event.amount > 0)) return;
+    const th = this.townhall?.level ?? 1;
+    for (const c of STARTER_CHALLENGES) {
+      if (c.townhall > th) continue;
+      const add = eventProgress(c, event);
+      if (!add) continue;
+      const counts = (this.state.starter ??= emptyStarter()).counts;
+      const before = counts[c.id] ?? 0;
+      // A best challenge keeps its best single result; the others add up.
+      counts[c.id] = Math.min(
+        c.quantity,
+        c.progress === 'best' ? Math.max(before, add) : before + add,
+      );
+    }
+  }
+  /**
+   * A finished raid's Starter Challenge events. Loot counts from campaign raids, the only ones
+   * that carry it; ladder matches stand in for the client's Multiplayer Battles.
+   */
+  private starterBattle(b: Battle, deployed: Army, spells: SpellBook) {
+    for (const [subject, key] of [
+      ['Gold', 'gold'],
+      ['Elixir', 'elixir'],
+    ] as const) {
+      const looted = b.lootTaken?.[key] ?? 0;
+      this.starterEvent({ type: 'LootResources', amount: looted, subject });
+    }
+    if (!b.ladder) return;
+    const ruins = b.buildings.filter((v) => v.hp <= 0 && v.kind !== 'wall' && !isTrap(v.kind));
+    this.starterEvent({ type: 'DestroyHomeBuildings', amount: ruins.length });
+    for (const kind of new Set(ruins.map((v) => v.kind)))
+      this.starterEvent({
+        type: 'DestroyBuilding',
+        amount: ruins.filter((v) => v.kind === kind).length,
+        subject: SOURCE_NAME[kind],
+      });
+    this.starterEvent({ type: 'GetHomeBattleStars', amount: b.stars });
+    this.starterEvent({ type: 'WinStarsUsingTroop', amount: b.stars, deployed });
+    this.starterEvent({
+      type: 'DeployTroopHousingSpace',
+      amount: TROOP_KEYS.reduce((n, k) => n + deployed[k] * TROOPS[k].space, 0),
+    });
+    this.starterEvent({
+      type: 'DeploySpellHousingSpace',
+      amount: SPELL_KEYS.reduce((n, k) => n + spells[k] * SPELLS[k].space, 0),
+    });
+  }
+  /** Stars across the Goblin campaign map (the client's Single Player stars). */
+  get goblinStars() {
+    return NATIVE_CAMPAIGN.reduce(
+      (n, stage, i) => n + (goblinMap(stage) ? (this.state.nativeCampaign?.stars[i] ?? 0) : 0),
+      0,
+    );
   }
   claimAchievement(id: string) {
     const entry = this.achievements.find((a) => a.def.id === id);
@@ -1843,7 +2004,11 @@ export class GameModel {
           this.countAchievements('seasonal_defense');
         } else if (b.improving !== 'module' && !b.constructing) {
           b.level++;
-          if (b.kind === 'townhall') this.boostStarBonus(b.level, b.upgradeEnd);
+          if (b.kind === 'townhall') {
+            this.boostStarBonus(b.level, b.upgradeEnd);
+            // Only the step from Town Hall 6 ends the Starter Challenges (with every reward).
+            if (b.level === STARTER_END_TOWN_HALL) this.endStarter();
+          }
         }
         delete b.improving;
         delete b.moduleUpgrade;
@@ -1924,6 +2089,7 @@ export class GameModel {
       this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
       this.gainXp(3);
       this.countAchievements('clear_obstacles');
+      this.starterEvent({ type: 'ClearObstacles', amount: 1 });
       if (!this.battle)
         this.onEffect({ type: 'upgrade', x: o.x + d.size / 2, y: o.y + d.size / 2, gems });
     }
@@ -2022,6 +2188,8 @@ export class GameModel {
     }
     if (gold + elixir + dark) {
       this.state.stats.collected += gold + elixir + dark;
+      this.starterEvent({ type: 'CollectResources', amount: gold, subject: 'Gold' });
+      this.starterEvent({ type: 'CollectResources', amount: elixir, subject: 'Elixir' });
       this.notify(
         `Collected ${gold.toLocaleString()} gold · ${elixir.toLocaleString()} elixir${dark ? ` · ${dark.toLocaleString()} dark elixir` : ''}`,
       );
@@ -2232,6 +2400,7 @@ export class GameModel {
     }
     // Validate the whole purchase before charging once; no transient timers or builder reservations.
     this.state[resource] -= quote.cost;
+    this.starterEvent({ type: 'WallUpgradeHome', amount: quote.walls.length });
     for (const b of quote.walls) {
       b.level++;
       b.maxHp = buildingHp(b.kind, b.level);
@@ -2379,6 +2548,7 @@ export class GameModel {
     }
     b.upgradeStart = this.clock;
     b.upgradeEnd = this.clock + this.upgradeSeconds(b) * 1000;
+    this.starterEvent({ type: 'StartUpgradeHome', amount: 1 });
     this.notify(`Upgrading ${d.name} to level ${b.level + 1}.`);
     this.changed();
   }
@@ -6131,6 +6301,7 @@ export class GameModel {
       spells = emptySpells();
     for (const k of TROOP_KEYS) deployed[k] = b.carriedArmy[k] - b.remaining[k];
     for (const k of SPELL_KEYS) spells[k] = b.carried[k] - b.spells[k];
+    if (!b.practice) this.starterBattle(b, deployed, spells);
     this.state.raidLog = [
       {
         id: this.state.nextId++,
