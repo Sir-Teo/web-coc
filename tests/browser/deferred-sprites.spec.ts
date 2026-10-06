@@ -123,3 +123,52 @@ test('campaign scenery and hero portraits load when a battle shows them', async 
     )
     .toBe(true);
 });
+
+test('walk sheets load for the troops a village holds, others when first shown', async ({
+  page,
+}) => {
+  const requested: string[] = [];
+  const errors: string[] = [];
+  page.on('request', (r) => requested.push(new URL(r.url()).pathname));
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  // `?lazyart` gives the production loading; the dev server otherwise loads every sheet.
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const walks = () =>
+    requested.filter((p) => p.includes('/characters/walk/')).map((p) => p.split('/').pop()!);
+  // The starter army is Barbarians and Archers: only their two sheets (of ten) load.
+  expect(walks()).toHaveLength(2);
+  expect(walks().some((f) => f.startsWith('archer'))).toBe(true);
+  await page.locator('[data-action="skip-tutorial"]').click();
+  // Trained Giants walk the camps as stand-ins until their own sheet arrives.
+  await page.evaluate(() => {
+    const { model: m, scene } = window.__game;
+    m.state.army.giant = 3;
+    m.changed();
+    scene.sync();
+  });
+  const giants = () =>
+    page.evaluate(() => {
+      const views = (
+        window.__game.scene as unknown as { campViews: Map<string, Phaser.GameObjects.Image> }
+      ).campViews;
+      return [...views.values()]
+        .filter((im) => im.getData('kind') === 'giant')
+        .map((im) => im.texture.key);
+    });
+  await expect.poll(giants).toEqual(['giant-walk', 'giant-walk', 'giant-walk']);
+  expect(walks().some((f) => f.startsWith('giant'))).toBe(true);
+  // A battle fetches its army's sheets while scouting.
+  await page.evaluate(() => {
+    const { model: m } = window.__game;
+    m.state.army.wizard = 4;
+    m.changed();
+    m.startBattle(0);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__game.scene.textures.exists('wizard-walk')))
+    .toBe(true);
+  expect(walks().some((f) => f.startsWith('pekka') || f.startsWith('dragon'))).toBe(false);
+  expect(errors).toEqual([]);
+});

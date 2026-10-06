@@ -463,6 +463,13 @@ export const uniso = (x: number, y: number) => ({
   x: ((x - WORLD.ox) / 32 + (y - WORLD.oy) / 16) / 2,
   y: ((y - WORLD.oy) / 16 - (x - WORLD.ox) / 32) / 2,
 });
+/** Classic troops draw walk sheets (128 px cells); the rest draw native art or a stand-in. */
+const WALK_FRAMES = { frameWidth: 128, frameHeight: 128 };
+const hasWalkSheet = (kind: string) =>
+  kind in TROOPS && !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]);
+const walkSheetUrl = (kind: string) =>
+  walkAsset(kind).replace('.webp', `${troopArt(kind as TroopKind).version}.webp`);
+
 export class VillageScene extends Phaser.Scene {
   model: GameModel;
   audio: AudioManager;
@@ -701,18 +708,12 @@ export class VillageScene extends Phaser.Scene {
     // The Crafting Station's defenses likewise: only those the village's stations show.
     for (const k of new Set(home.map((b) => b.crafted).filter((k) => k !== undefined)))
       this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
-    const classicTroops = TROOP_KEYS.filter(
-      (kind) => !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]),
-    );
-    for (const k of classicTroops)
-      this.load.spritesheet(
-        `${k}-walk`,
-        walkAsset(k).replace('.webp', `${troopArt(k).version}.webp`),
-        {
-          frameWidth: 128,
-          frameHeight: 128,
-        },
-      );
+    // Walk sheets of the classic troops the village's army holds: they walk around its camps.
+    // The others load when a camp or a battle first shows one (see walkSheet); the dev server
+    // loads them all, as it does every art family.
+    for (const k of TROOP_KEYS)
+      if (hasWalkSheet(k) && (EAGER_FAMILIES || this.model.state.army[k] > 0))
+        this.load.spritesheet(`${k}-walk`, walkSheetUrl(k), WALK_FRAMES);
     // Extra / siege / super troops have no walk spritesheet and no scene texture: battle and
     // camp sprites fall back to the transparent `troop-fallback` texture (plus a ground marker)
     // until the native mesh is ready, and the HUD shows their roster portraits as plain images.
@@ -2450,6 +2451,9 @@ export class VillageScene extends Phaser.Scene {
       void this.prefetchDeferredArt(this.model.buildings);
       for (const hero of this.model.battle?.nativeHeroes ?? [])
         void this.deferredArt.request(heroKey(hero.kind), heroPortraitImage(hero.kind));
+      // The army's walk sheets, while scouting, so deployed troops never wait on them.
+      for (const [kind, count] of Object.entries(this.model.battle?.remaining ?? {}))
+        if (count) this.walkSheet(kind);
       this.troopNativePresentation.clear();
       this.heroNativePresentation.clear();
       // Battle art accumulates forever otherwise: drop packs the new mode
@@ -2902,6 +2906,11 @@ export class VillageScene extends Phaser.Scene {
     if (texture.endsWith('-tier3')) return asset(kind, TIER3_LEVEL);
     return texture === kind ? baseAsset(kind) : asset(kind, level);
   }
+  /** Whether a troop's walk sheet is loaded; one that is not starts loading. */
+  private walkSheet(kind: string) {
+    if (!hasWalkSheet(kind)) return false;
+    return this.deferredArt.has(`${kind}-walk`, walkSheetUrl(kind), WALK_FRAMES);
+  }
   /** Whether a building's fallback sprite is loaded; a deferred one that is not starts loading. */
   private deferredTexture(kind: BuildingKind, level: number, texture: string) {
     return (
@@ -3139,9 +3148,10 @@ export class VillageScene extends Phaser.Scene {
         if (!im) {
           const art = troopArt(actor.kind),
             size = TROOPS[actor.kind].width * art.displayScale * 0.7;
-          const walkKey = `${actor.kind}-walk`;
-          const texKey = this.textures.exists(walkKey) ? walkKey : 'troop-fallback';
-          const frame = this.textures.exists(walkKey) ? art.idleFrame : undefined;
+          const walkKey = `${actor.kind}-walk`,
+            walk = this.walkSheet(actor.kind);
+          const texKey = walk ? walkKey : 'troop-fallback';
+          const frame = walk ? art.idleFrame : undefined;
           im = this.add
             .image(0, 0, texKey, frame)
             .setOrigin(0.5, 122 / 128)
@@ -3169,6 +3179,9 @@ export class VillageScene extends Phaser.Scene {
         py = WORLD.oy + (pose.x + pose.y) * 16;
       const art = troopArt(actor.kind),
         flying = !!TROOPS[actor.kind].flying;
+      // A walk sheet that arrived after the actor was made replaces its stand-in.
+      if (im.getData('isFallback') && this.textures.exists(`${actor.kind}-walk`))
+        im.setTexture(`${actor.kind}-walk`, art.idleFrame).setData('isFallback', false);
       const previousFacing = im.getData('facing');
       const facing = pose.facing || previousFacing || art.nativeFacing;
       const moving = pose.moving && !reduced;
@@ -4460,7 +4473,7 @@ export class VillageScene extends Phaser.Scene {
       if (!im) {
         const d = TROOPS[u.kind];
         const walkKey = `${u.kind}-walk`;
-        const hasWalk = u.hero || this.textures.exists(walkKey);
+        const hasWalk = !!u.hero || this.walkSheet(u.kind);
         // Legacy battles animate the procedural King; native heroes fall back to their own
         // roster portrait until (and unless) the baked atlas arrives.
         const legacyKing = !!u.hero && !!battle.hero;
@@ -4557,6 +4570,9 @@ export class VillageScene extends Phaser.Scene {
         : (liveDefender ?? buildingById.get(u.target ?? -1));
       // Fallback sprites are invisible by design; a ground marker stands in (after the
       // native pass, only if no mesh drew the unit).
+      // A walk sheet that arrived after the unit was made replaces its stand-in.
+      if (!u.hero && im.getData('isFallback') && this.textures.exists(`${u.kind}-walk`))
+        im.setTexture(`${u.kind}-walk`, 0).setData('isFallback', false);
       const isFallback = !!im.getData('isFallback');
       if (u.hero && !battle.hero && im.texture.key === 'troop-fallback') {
         if (this.textures.exists(heroKey(u.hero))) im.setTexture(heroKey(u.hero));
