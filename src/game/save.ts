@@ -27,7 +27,13 @@ import { validSkeletonMode } from './skeleton-stats';
 import { validXbowMode } from './xbow-stats';
 import { gridSize, footprintSize, SAVE_VERSION, type GridVersion } from './grid';
 import { migrateFootprints, validArrangement } from './layout-migration';
-import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS } from './obstacles';
+import { validObstacles, validObstacleGrowth, OBSTACLE_GEMS, overlapsObstacle } from './obstacles';
+import {
+  DECORATIONS,
+  validDecorations,
+  validStashedDecorations,
+  withinDecorationLimits,
+} from './decorations';
 import { validateReplay } from './replay';
 import { HERO_MAX_LEVEL } from './heroes';
 import { validEquipment, validOres, EQUIPMENT_KEYS } from './equipment';
@@ -460,6 +466,29 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
     (!Array.isArray(s.obstacles) || !validObstacleGrowth(s.obstacleGrowth, s.obstacles))
   )
     return false;
+  if (s.decorations !== undefined || s.stashedDecorations !== undefined) {
+    // Decorations arrived with the current grid; older villages never held any.
+    const placed = s.decorations ?? [],
+      stashed = s.stashedDecorations ?? {};
+    if (
+      version !== SAVE_VERSION ||
+      !validDecorations(placed) ||
+      !validStashedDecorations(stashed) ||
+      !withinDecorationLimits(placed, stashed) ||
+      placed.some(
+        (d) =>
+          overlapsObstacle(s.obstacles ?? [], d.x, d.y, DECORATIONS[d.kind].size) ||
+          s.buildings!.some(
+            (b) =>
+              d.x < b.x + BUILDINGS[b.kind].size &&
+              d.x + DECORATIONS[d.kind].size > b.x &&
+              d.y < b.y + BUILDINGS[b.kind].size &&
+              d.y + DECORATIONS[d.kind].size > b.y,
+          ),
+      )
+    )
+      return false;
+  }
   if (s.ladderSeed !== undefined && (!Number.isSafeInteger(s.ladderSeed) || s.ladderSeed < 0))
     return false;
   if (s.journey !== undefined && !validJourney(s.journey)) return false;

@@ -233,6 +233,17 @@ import {
 } from './obstacles';
 import { TROOP_UNLOCK, SPELL_UNLOCK, facilityLevel, spellFactory } from './army-unlocks';
 import {
+  DECORATIONS,
+  DECORATION_TEXTS,
+  decorationFootprints,
+  insideMap,
+  overlapsDecoration,
+  ownedDecorations,
+  type Decoration,
+  type DecorationKind,
+  type StashedDecorations,
+} from './decorations';
+import {
   REPLAY_VERSION,
   compatibleReplayVersion,
   REPLAY_LIMIT,
@@ -570,6 +581,9 @@ export interface Save {
   obstacles?: Obstacle[];
   obstacleGemIndex?: number;
   obstacleGrowth?: ObstacleGrowth;
+  /** Placed decorations, and the bought ones held in the Shop; see decorations.ts. */
+  decorations?: Decoration[];
+  stashedDecorations?: StashedDecorations;
   /** Ladder matches played; seeds the next opponent. */
   ladderSeed?: number;
   /** Hero's Journey: tiers taken and the running Hero Quest. */
@@ -935,12 +949,17 @@ export class GameModel {
   }
   set selected(value: number | null) {
     this.selection = value;
+    this.decorationSelection = null;
     this.wallMove = null;
     this.wallGroup = [];
     this.wallAxis = null;
   }
   placement: BuildingKind | null = null;
   moving: number | null = null;
+  /** The decoration being placed (bought, taken from the stash, or moved), if any. */
+  decorationPlacement: DecorationKind | null = null;
+  movingDecoration: number | null = null;
+  private decorationSelection: number | null = null;
   activeHero = false;
   /** Version 46 battles select which hero the next deployment places. */
   activeHeroKind: HeroKind | null = null;
@@ -1074,6 +1093,148 @@ export class GameModel {
     o.removeEnd = this.clock;
     this.tick(this.clock);
     return true;
+  }
+  // ------------------------------------------------------------------ decorations
+  get decorations() {
+    return this.state.decorations ?? [];
+  }
+  get stashedDecorations(): StashedDecorations {
+    return this.state.stashedDecorations ?? {};
+  }
+  get selectedDecoration() {
+    return this.battle || this.decorationSelection === null
+      ? undefined
+      : this.decorations.find((d) => d.id === this.decorationSelection);
+  }
+  selectDecoration(id: number | null) {
+    this.selected = null;
+    this.decorationSelection = id;
+    this.changed();
+  }
+  /** Placed and stashed together, as the Shop counts them. */
+  decorationCount(kind: DecorationKind) {
+    return ownedDecorations(this.decorations, this.stashedDecorations, kind);
+  }
+  canPlaceDecoration(kind: DecorationKind, x: number, y: number, ignore?: number) {
+    const size = DECORATIONS[kind].size;
+    return (
+      insideMap(kind, x, y) &&
+      !overlapsObstacle(this.obstacles, x, y, size) &&
+      !overlapsDecoration(this.decorations, x, y, size, ignore) &&
+      !this.state.buildings.some(
+        (b) =>
+          x < b.x + BUILDINGS[b.kind].size &&
+          x + size > b.x &&
+          y < b.y + BUILDINGS[b.kind].size &&
+          y + size > b.y,
+      )
+    );
+  }
+  /** Picks a decoration up from the Shop: a stashed one for free, else a new one to buy. */
+  beginDecoration(kind: DecorationKind) {
+    if (this.battle || !Object.hasOwn(DECORATIONS, kind)) return;
+    const d = DECORATIONS[kind];
+    if (!this.stashedDecorations[kind]) {
+      if (this.chiefLevel < d.chiefLevel)
+        return this.notify(`Reach experience level ${d.chiefLevel} to buy the ${d.name}.`);
+      if (this.decorationCount(kind) >= d.max)
+        return this.notify(`Your village already has its maximum number of ${d.name}.`);
+      if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
+    }
+    this.cancelNativeHandling();
+    this.selected = null;
+    this.placement = null;
+    this.moving = null;
+    this.movingDecoration = null;
+    this.decorationPlacement = kind;
+    this.changed();
+  }
+  moveDecoration(id: number) {
+    const d = this.decorations.find((v) => v.id === id);
+    if (this.battle || !d) return;
+    this.cancelNativeHandling();
+    this.selected = null;
+    this.placement = null;
+    this.moving = null;
+    this.decorationPlacement = d.kind;
+    this.movingDecoration = id;
+    this.changed();
+  }
+  placeDecoration(x: number, y: number) {
+    const kind = this.decorationPlacement;
+    if (this.battle || !kind) return false;
+    const d = DECORATIONS[kind];
+    if (!this.canPlaceDecoration(kind, x, y, this.movingDecoration ?? undefined)) {
+      this.notify('Choose a clear space on the map.');
+      return false;
+    }
+    let placed = this.decorations.find((v) => v.id === this.movingDecoration);
+    if (placed) {
+      placed.x = x;
+      placed.y = y;
+      this.notify('');
+    } else {
+      const stashed = this.stashedDecorations[kind] ?? 0;
+      if (stashed) {
+        if (stashed > 1) this.state.stashedDecorations![kind] = stashed - 1;
+        else delete this.state.stashedDecorations![kind];
+      } else {
+        if (
+          this.chiefLevel < d.chiefLevel ||
+          this.decorationCount(kind) >= d.max ||
+          this.state[d.resource] < d.cost
+        ) {
+          this.notify('Unable to buy. Check your resources and the Shop limit.');
+          return false;
+        }
+        this.state[d.resource] -= d.cost;
+      }
+      placed = { id: this.state.nextId++, kind, x, y };
+      (this.state.decorations ??= []).push(placed);
+      this.notify(`${d.name} placed.`);
+    }
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
+    this.selectDecoration(placed.id);
+    return true;
+  }
+  /** The client's Stash: back into the Shop, to be placed again at no cost. */
+  stashDecoration(id: number) {
+    const i = this.decorations.findIndex((v) => v.id === id);
+    if (this.battle || i < 0) return false;
+    const [d] = this.state.decorations!.splice(i, 1);
+    const stash = (this.state.stashedDecorations ??= {});
+    stash[d.kind] = (stash[d.kind] ?? 0) + 1;
+    if (this.decorationSelection === id) this.decorationSelection = null;
+    if (this.movingDecoration === id) {
+      this.movingDecoration = null;
+      this.decorationPlacement = null;
+    }
+    this.notify(
+      DECORATION_TEXTS.stashText
+        .replace('<item>', DECORATIONS[d.kind].name)
+        .replace('will be', 'was'),
+    );
+    this.changed();
+    return true;
+  }
+  /** Buildings a layout, undo or redo moved onto decorations send those to the Shop. */
+  private stashCoveredDecorations() {
+    const covered = this.decorations.filter((d) =>
+      this.state.buildings.some(
+        (b) =>
+          d.x < b.x + BUILDINGS[b.kind].size &&
+          d.x + DECORATIONS[d.kind].size > b.x &&
+          d.y < b.y + BUILDINGS[b.kind].size &&
+          d.y + DECORATIONS[d.kind].size > b.y,
+      ),
+    );
+    for (const d of covered) this.stashDecoration(d.id);
+    if (covered.length)
+      this.notify(
+        `${covered.length === 1 ? DECORATIONS[covered[0].kind].name : `${covered.length} decorations`} moved to the Shop to make room.`,
+      );
+    return covered.length;
   }
   get buildings() {
     return this.battle ? this.battle.buildings : this.state.buildings;
@@ -1473,7 +1634,10 @@ export class GameModel {
       !this.state.obstacleGrowth ||
       this.state.obstacleGemIndex === undefined
     ) {
-      this.state.obstacles ??= initialObstacles(this.state.buildings);
+      // Never under a decoration: a save holding both must stay valid.
+      this.state.obstacles ??= initialObstacles(this.state.buildings).filter(
+        (o) => !overlapsDecoration(this.decorations, o.x, o.y, OBSTACLES[o.kind].size),
+      );
       this.state.obstacleGemIndex ??= 0;
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
       structural = changed = true;
@@ -1562,7 +1726,13 @@ export class GameModel {
       changed = true;
     }
     const nextGrowth = growth.nextAt;
-    const obstacleEvents = advanceObstacles(this.obstacles, this.state.buildings, growth, now);
+    const obstacleEvents = advanceObstacles(
+      this.obstacles,
+      this.state.buildings,
+      growth,
+      now,
+      decorationFootprints(this.decorations),
+    );
     if (growth.nextAt !== nextGrowth) changed = true;
     if (obstacleEvents.grown.length) structural = changed = true;
     for (const o of obstacleEvents.removed) {
@@ -1720,6 +1890,7 @@ export class GameModel {
     )
       return false;
     if (overlapsObstacle(this.obstacles, x, y, size)) return false;
+    if (overlapsDecoration(this.decorations, x, y, size)) return false;
     return !this.state.buildings.some(
       (b) =>
         b.id !== ignore &&
@@ -1753,6 +1924,8 @@ export class GameModel {
     this.cancelNativeHandling();
     this.selected = null;
     this.moving = null;
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
     this.placement = kind;
     this.changed();
   }
@@ -1937,7 +2110,7 @@ export class GameModel {
   }
   get wallPlacementIssue() {
     if (this.battle || !this.wallMove) return 'Select a wall row at home.';
-    return wallMoveIssue(this.wallMove, this.state.buildings, this.obstacles);
+    return wallMoveIssue(this.wallMove, this.state.buildings, this.obstacles, this.decorations);
   }
   previewWallMove(x: number, y: number) {
     if (this.battle || !this.wallMove || !Number.isInteger(x) || !Number.isInteger(y)) return false;
@@ -2208,6 +2381,8 @@ export class GameModel {
     this.cancelNativeHandling();
     this.moving = id;
     this.placement = b.kind;
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
     this.selected = null;
     this.nativeBuildingHandling(b, 'pickup');
     this.changed();
@@ -2241,10 +2416,12 @@ export class GameModel {
   }
   cancel() {
     this.cancelNativeHandling();
-    if (this.placement) this.notify('');
+    if (this.placement || this.decorationPlacement) this.notify('');
     this.selected = null;
     this.placement = null;
     this.moving = null;
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
     this.activeSpell = null;
     this.activeHero = false;
     this.activeHeroKind = null;
@@ -2434,6 +2611,8 @@ export class GameModel {
     this.selected = null;
     this.placement = null;
     this.moving = null;
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
     this.undoStack = [];
     this.redoStack = [];
     this.notify('Edit mode — drag any building to rearrange your village.');
@@ -2482,6 +2661,7 @@ export class GameModel {
     }
     this.redoStack.push(current);
     this.selected = this.selected;
+    this.stashCoveredDecorations();
     this.changed();
   }
   redo() {
@@ -2496,6 +2676,7 @@ export class GameModel {
     }
     this.undoStack.push(current);
     this.selected = this.selected;
+    this.stashCoveredDecorations();
     this.changed();
   }
   get layouts() {
@@ -2567,6 +2748,7 @@ export class GameModel {
     this.redoStack = [];
     this.selected = this.selected;
     this.notify(`${layout.name} restored.`);
+    this.stashCoveredDecorations();
     this.changed();
   }
 

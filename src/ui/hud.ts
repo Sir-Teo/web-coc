@@ -51,6 +51,7 @@ import {
   RAGE_LINGER,
 } from '../game/spell-progression';
 import { OBSTACLES } from '../game/obstacles';
+import { DECORATIONS, DECORATION_KINDS, DECORATION_TEXTS } from '../game/decorations';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
@@ -671,6 +672,8 @@ export class HUD {
   private panel: Panel = null;
   private drawerPanel: Drawer = null;
   private tab = 'All';
+  /** The decoration whose Stash the context card is asking to confirm. */
+  private stashConfirm: number | null = null;
   private inspectedTroop: TroopKind = 'swordsman';
   private inspectedSpell: SpellKind = 'lightning';
   private inspectedSmithHero: HeroKind = 'king';
@@ -962,9 +965,14 @@ export class HUD {
     }
     const b = this.model.state.buildings.find((v) => v.id === Number(card.dataset.anchor));
     const o = this.model.selectedObstacle;
-    if (!b && !o) return;
-    const target = b ?? o!;
-    const size = b ? BUILDINGS[b.kind].size : OBSTACLES[o!.kind].size;
+    const decoration = this.model.selectedDecoration;
+    if (!b && !o && !decoration) return;
+    const target = b ?? o ?? decoration!;
+    const size = b
+      ? BUILDINGS[b.kind].size
+      : o
+        ? OBSTACLES[o.kind].size
+        : DECORATIONS[decoration!.kind].size;
     const p = this.scene.screenFor(target.x + size / 2, target.y + size / 2);
     const width = this.anchorWidth,
       height = this.anchorHeight;
@@ -1740,6 +1748,27 @@ export class HUD {
         m.beginBuild(arg as BuildingKind);
         if (m.placement) this.drawerPanel = null;
         this.render();
+        break;
+      case 'decoration':
+        m.beginDecoration(arg);
+        if (m.decorationPlacement) this.drawerPanel = null;
+        this.render();
+        break;
+      case 'decoration-move':
+        this.stashConfirm = null;
+        m.moveDecoration(Number(arg));
+        break;
+      case 'decoration-stash':
+        this.stashConfirm = Number(arg);
+        this.render();
+        break;
+      case 'decoration-stash-cancel':
+        this.stashConfirm = null;
+        this.render();
+        break;
+      case 'decoration-stash-confirm':
+        this.stashConfirm = null;
+        m.stashDecoration(Number(arg));
         break;
       case 'cancel':
         m.cancel();
@@ -2658,6 +2687,28 @@ export class HUD {
   }
 
   // ------------------------------------------------------- anchored context
+  /** A selected decoration: Move, or the client's Stash with its own confirmation. */
+  private decorationContext(id: number, kind: string) {
+    const d = DECORATIONS[kind];
+    if (this.stashConfirm !== id) this.stashConfirm = null;
+    const info = this.stashConfirm
+      ? `<small>DECORATION</small><h2>${DECORATION_TEXTS.stashTitle}</h2><span>${html(DECORATION_TEXTS.stashText.replace('<item>', d.name))}</span>`
+      : `<small>DECORATION</small><h2>${d.name}</h2><span>${d.size}×${d.size} tiles · Purely ornamental</span>`;
+    const actions = this.stashConfirm
+      ? button('decoration-stash-cancel', 'Cancel', 'game-btn stone') +
+        button(
+          `decoration-stash-confirm:${id}`,
+          `${icon('ShoppingBasket', 18)} ${DECORATION_TEXTS.stash}`,
+          'game-btn orange',
+        )
+      : button(`decoration-move:${id}`, `${icon('Move', 18)} Move`, 'game-btn blue') +
+        button(
+          `decoration-stash:${id}`,
+          `${icon('ShoppingBasket', 18)} ${DECORATION_TEXTS.stash}`,
+          'game-btn stone',
+        );
+    return `<div class="building-context obstacle-context decoration-context" data-anchor="decoration-${id}"><img class="context-art" src="/${d.art.path}" alt=""><div class="context-info">${info}</div><div class="context-actions">${actions}</div><button class="context-close" data-action="cancel" aria-label="Close decoration">${icon('X', 18)}</button></div>`;
+  }
   private context() {
     const m = this.model;
     if (m.battle) return '';
@@ -2665,6 +2716,17 @@ export class HUD {
     if (m.placement) {
       return `<div class="placement-banner">${icon('Move', 23)}<div><b>${m.moving ? 'Move' : 'Place'} ${BUILDINGS[m.placement].name}</b><small>Drop it on a clear green tile</small></div>${button('cancel', icon('X', 20), 'square-btn small', 'aria-label="Cancel placement"')}</div>`;
     }
+    if (m.decorationPlacement) {
+      const d = DECORATIONS[m.decorationPlacement];
+      const note = m.movingDecoration
+        ? 'Drop it on clear ground, the edge included'
+        : m.stashedDecorations[m.decorationPlacement]
+          ? 'From the Shop at no cost · the edge is allowed'
+          : `${n(d.cost)} ${d.resource === 'gems' ? 'gems' : d.resource} · the edge is allowed`;
+      return `<div class="placement-banner">${icon('Move', 23)}<div><b>${m.movingDecoration ? 'Move' : 'Place'} ${d.name}</b><small>${note}</small></div>${button('cancel', icon('X', 20), 'square-btn small', 'aria-label="Cancel placement"')}</div>`;
+    }
+    const decoration = m.selectedDecoration;
+    if (decoration) return this.decorationContext(decoration.id, decoration.kind);
     const b = m.state.buildings.find((v) => v.id === m.selected);
     if (!b) {
       const o = m.selectedObstacle;
@@ -3397,13 +3459,39 @@ export class HUD {
     if (!this.drawerPanel || this.model.battle) return '';
     const titles = { shop: 'Shop', army: 'Army' };
     const body = this.drawerPanel === 'shop' ? this.shop() : this.army();
-    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps'].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
+    const head = `<header class="drawer-head${this.drawerPanel === 'army' ? ' army-head' : ''}"><h2 tabindex="-1">${titles[this.drawerPanel]}</h2>${this.drawerPanel === 'shop' ? `<div class="shop-tabs" role="tablist" aria-label="Building category">${['All', 'Resources', 'Army', 'Defenses', 'Traps', DECORATION_TEXTS.shopTab].map((t) => button(`tab:${t}`, t, `tab ${this.tab === t ? 'active' : ''}`, `role="tab" aria-selected="${this.tab === t}"`)).join('')}</div>` : `<nav class="army-categories" aria-label="Army catalog">${button('army-jump:troops', `${icon('Tent', 17)}<span>Troops<b>${this.model.armySize + this.model.queuedSize}/${this.model.capacity}</b></span>`, 'army-category', `aria-label="Show troops, ${this.model.armySize + this.model.queuedSize} of ${this.model.capacity} housing spaces"`)}${button('army-jump:spells', `${icon('Sparkles', 17)}<span>Spells<b>${this.model.spellHousing}/${this.model.spellCapacity}</b></span>`, 'army-category', `aria-label="Show spells, ${this.model.spellHousing} of ${this.model.spellCapacity} housing spaces"`)}</nav>${this.armyFilters()}`}<button class="square-btn small close-btn" data-action="close-drawer" aria-label="Close">${icon('X', 22)}</button></header>`;
     const open = `<section class="drawer-sheet" aria-label="${titles[this.drawerPanel]}">`;
     this.drawerParts = { open, head, body: body.body, items: body.items, foot: body.foot };
     return `${open}${head}${body.body}${body.items.join('')}</div>${body.foot}</section>`;
   }
+  /** The Decorations tab: the client's Shop rows, with stashed ones placed again for free. */
+  private decorationShop() {
+    const m = this.model;
+    const cards = DECORATION_KINDS.map((k) => {
+      const d = DECORATIONS[k],
+        owned = m.decorationCount(k),
+        stashed = m.stashedDecorations[k] ?? 0;
+      const locked = !stashed && m.chiefLevel < d.chiefLevel;
+      const full = !stashed && owned >= d.max;
+      const afford = stashed > 0 || m.state[d.resource] >= d.cost;
+      const label = stashed
+        ? `${icon('Move', 13)} Place · free`
+        : locked
+          ? `${icon('LockKeyhole', 13)} Level ${d.chiefLevel}`
+          : full
+            ? 'At limit'
+            : `${resource(d.resource)} ${n(d.cost)}`;
+      return `<article class="shop-tile decoration-tile ${locked || full ? 'unavailable' : ''}" data-decoration="${k}"><div class="shop-tile-art"><img src="/${d.art.path}" alt="" draggable="false"></div><h3>${d.name}</h3><small class="shop-count">${owned}/${d.max}${stashed ? ` · ${stashed} in Shop` : ''}</small>${button(`decoration:${k}`, label, `game-btn ${locked || full || !afford ? 'stone' : 'green'} shop-buy`, locked || full ? 'disabled' : '')}</article>`;
+    });
+    return {
+      body: '<div class="drawer-body shop-strip">',
+      items: cards,
+      foot: `<footer class="drawer-foot">${icon('Sparkles', 16)} Purely ornamental · no builder needed <span>Decorations may also stand on the outer edge</span></footer>`,
+    };
+  }
   private shop() {
     const m = this.model;
+    if (this.tab === DECORATION_TEXTS.shopTab) return this.decorationShop();
     const cards = (Object.entries(BUILDINGS) as [BuildingKind, (typeof BUILDINGS)[BuildingKind]][])
       .filter(([k, d]) => k !== 'townhall' && (this.tab === 'All' || d.category === this.tab))
       // Buildable tiles first in catalog order, then locked ones by their Town Hall requirement.

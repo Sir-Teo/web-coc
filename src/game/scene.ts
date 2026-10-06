@@ -106,6 +106,12 @@ import { SPRING_AIRTIME } from './trap-stats';
 import { wallArt, wallTexture } from './wall-art';
 import { LazyTextures } from './lazy-textures';
 import { OBSTACLES } from './obstacles';
+import {
+  DECORATIONS,
+  DECORATION_GROUND,
+  DECORATION_SCALE,
+  type DecorationKind,
+} from './decorations';
 import Phaser from 'phaser';
 import {
   BUILDINGS,
@@ -383,6 +389,8 @@ export class VillageScene extends Phaser.Scene {
   model: GameModel;
   audio: AudioManager;
   obstacleSprites = new Map<number, Phaser.GameObjects.Image>();
+  decorationSprites = new Map<number, Phaser.GameObjects.Image>();
+  private decorationGhost?: Phaser.GameObjects.Image;
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
@@ -624,6 +632,9 @@ export class VillageScene extends Phaser.Scene {
     this.load.image('flag', asset('flag'));
     // The client's obstacle portraits for the kinds the village has; regrown kinds load later.
     for (const d of new Set(this.model.obstacles.map((o) => OBSTACLES[o.kind])))
+      this.load.image(d.texture, '/' + d.art.path);
+    // Likewise the decorations it has placed; one bought later loads when it first draws.
+    for (const d of new Set(this.model.decorations.map((v) => DECORATIONS[v.kind])))
       this.load.image(d.texture, '/' + d.art.path);
     // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
     this.load.off('progress');
@@ -1753,31 +1764,49 @@ export class VillageScene extends Phaser.Scene {
       const size = OBSTACLES[o.kind].size;
       return x >= o.x && x < o.x + size && y >= o.y && y < o.y + size;
     });
-    return obstacle ? { obstacle } : {};
+    if (obstacle) return { obstacle };
+    const decoration = this.model.battle
+      ? undefined
+      : this.model.decorations.find((d) => {
+          const size = DECORATIONS[d.kind].size;
+          return x >= d.x && x < d.x + size && y >= d.y && y < d.y + size;
+        });
+    return decoration ? { decoration } : {};
   }
   /** A short description of the cursor tile, for the HUD to announce. */
   describeKeyCursor() {
     const cursor = this.keyCursor;
     if (!cursor) return 'Map cursor off';
-    const { building, obstacle } = this.occupant(cursor.x, cursor.y);
+    const { building, obstacle, decoration } = this.occupant(cursor.x, cursor.y);
     const what = building
       ? `${BUILDINGS[building.kind].name} level ${building.level}`
       : obstacle
         ? OBSTACLES[obstacle.kind].name
-        : this.model.placement
-          ? this.model.canPlace(
-              this.model.placement,
-              cursor.x,
-              cursor.y,
-              this.model.moving ?? undefined,
-            )
-            ? 'clear ground'
-            : 'blocked'
-          : this.model.battle
-            ? this.model.deployBlocked(cursor.x + 0.5, cursor.y + 0.5)
-              ? 'no deploying here'
-              : 'open ground'
-            : 'open ground';
+        : decoration
+          ? DECORATIONS[decoration.kind].name
+          : this.model.decorationPlacement
+            ? this.model.canPlaceDecoration(
+                this.model.decorationPlacement,
+                cursor.x,
+                cursor.y,
+                this.model.movingDecoration ?? undefined,
+              )
+              ? 'clear ground'
+              : 'blocked'
+            : this.model.placement
+              ? this.model.canPlace(
+                  this.model.placement,
+                  cursor.x,
+                  cursor.y,
+                  this.model.moving ?? undefined,
+                )
+                ? 'clear ground'
+                : 'blocked'
+              : this.model.battle
+                ? this.model.deployBlocked(cursor.x + 0.5, cursor.y + 0.5)
+                  ? 'no deploying here'
+                  : 'open ground'
+                : 'open ground';
     return `Tile ${cursor.x + 1}, ${cursor.y + 1}: ${what}`;
   }
   /**
@@ -1793,6 +1822,10 @@ export class VillageScene extends Phaser.Scene {
       this.placeBuilding(x, y);
       return;
     }
+    if (this.model.decorationPlacement) {
+      if (this.model.placeDecoration(x, y)) this.audio.play('click');
+      return;
+    }
     if (this.model.battle) {
       if (this.battleArtPending()) return void this.model.notify(LOADING_LATE_ART);
       if (this.model.activeSpell) {
@@ -1802,8 +1835,9 @@ export class VillageScene extends Phaser.Scene {
       if (this.model.deploy(x + 0.5, y + 0.5)) this.audio.play('deploy');
       return;
     }
-    const { building, obstacle } = this.occupant(x, y);
-    this.model.selected = building?.id ?? (obstacle ? -obstacle.id : null);
+    const { building, obstacle, decoration } = this.occupant(x, y);
+    if (decoration) this.model.selectDecoration(decoration.id);
+    else this.model.selected = building?.id ?? (obstacle ? -obstacle.id : null);
     this.model.changed();
     this.onSelect();
   }
@@ -1978,6 +2012,11 @@ export class VillageScene extends Phaser.Scene {
       this.placeBuilding(Math.floor(grid.x), Math.floor(grid.y));
       return;
     }
+    if (this.model.decorationPlacement) {
+      if (this.model.placeDecoration(Math.floor(grid.x), Math.floor(grid.y)))
+        this.audio.play('click');
+      return;
+    }
     if (this.model.battle) {
       if (this.battleArtPending()) {
         this.model.notify(LOADING_LATE_ART);
@@ -2028,10 +2067,24 @@ export class VillageScene extends Phaser.Scene {
         )
           obstacle = entry;
       }
-    this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
+    // A decoration in front of that obstacle wins the tap.
+    let decoration: [number, Phaser.GameObjects.Image] | undefined;
+    if (!hit)
+      for (const entry of this.decorationSprites) {
+        const im = entry[1];
+        if (
+          im.visible &&
+          (!decoration || im.depth > decoration[1].depth) &&
+          (!obstacle || im.depth > obstacle[1].depth) &&
+          im.getBounds().contains(world.x, world.y)
+        )
+          decoration = entry;
+      }
+    if (decoration) this.model.selectDecoration(decoration[0]);
+    else this.model.selected = hit?.id ?? (obstacle ? -obstacle[0] : null);
     this.model.changed();
     this.onSelect();
-    if (hit) this.audio.play('click');
+    if (hit || decoration) this.audio.play('click');
   }
   gridAtPointer(p: { x: number; y: number }) {
     const world = this.cameras.main.getWorldPoint(p.x, p.y);
@@ -2407,6 +2460,7 @@ export class VillageScene extends Phaser.Scene {
         .setVisible(ready && !this.model.battle)
         .setAlpha(o.removeEnd ? 0.65 : 1);
     }
+    this.syncDecorations();
     const ids = new Set(this.model.buildings.map((b) => b.id));
     for (const [id, s] of this.sprites) {
       if (!ids.has(id)) {
@@ -2444,6 +2498,14 @@ export class VillageScene extends Phaser.Scene {
     } else {
       this.ghost?.destroy();
       this.ghost = undefined;
+    }
+    if (this.model.decorationPlacement) {
+      this.decorationGhost ??= this.add.image(0, 0, '__DEFAULT').setDepth(6600);
+      this.styleDecoration(this.decorationGhost, this.model.decorationPlacement);
+      this.updateDecorationGhost(this.pointerScreen());
+    } else {
+      this.decorationGhost?.destroy();
+      this.decorationGhost = undefined;
     }
     this.syncWalls();
     this.syncWallPreview();
@@ -3366,7 +3428,62 @@ export class VillageScene extends Phaser.Scene {
       }
     }
   }
+  /**
+   * A decoration's client portrait at the native buildings' scale, its footprint centre
+   * DECORATION_GROUND source pixels below the export's origin. A kind not loaded yet stays
+   * blank until its portrait arrives.
+   */
+  private styleDecoration(im: Phaser.GameObjects.Image, kind: DecorationKind) {
+    const d = DECORATIONS[kind],
+      { art } = d;
+    const ready = this.deferredArt.has(d.texture, '/' + art.path);
+    if (ready && im.texture.key !== d.texture) im.setTexture(d.texture);
+    return im
+      .setOrigin(art.originX, (art.originY * art.height + DECORATION_GROUND) / art.height)
+      .setDisplaySize(art.width * DECORATION_SCALE, art.height * DECORATION_SCALE)
+      .setVisible(ready);
+  }
+  private syncDecorations() {
+    const placed = this.model.decorations;
+    const ids = new Set(placed.map((d) => d.id));
+    for (const [id, im] of this.decorationSprites)
+      if (!ids.has(id)) {
+        im.destroy();
+        this.decorationSprites.delete(id);
+      }
+    for (const v of placed) {
+      const size = DECORATIONS[v.kind].size,
+        p = iso(v.x + size / 2, v.y + size / 2);
+      let im = this.decorationSprites.get(v.id);
+      if (!im) {
+        im = this.add.image(p.x, p.y, '__DEFAULT');
+        this.decorationSprites.set(v.id, im);
+      }
+      this.styleDecoration(im, v.kind).setPosition(p.x, p.y).setDepth(p.y);
+      // Home only; the one being moved shows faintly where it stood.
+      if (this.model.battle) im.setVisible(false);
+      im.setAlpha(this.model.movingDecoration === v.id ? 0.4 : 1);
+    }
+  }
+  /** Places the decoration ghost on the tile under the pointer (or key cursor). */
+  private updateDecorationGhost(p: { x: number; y: number }) {
+    const kind = this.model.decorationPlacement;
+    if (!this.decorationGhost || !kind) return;
+    const point = this.cameras.main.getWorldPoint(p.x, p.y),
+      grid = this.keyCursor ?? uniso(point.x, point.y),
+      size = DECORATIONS[kind].size,
+      x = Math.floor(grid.x),
+      y = Math.floor(grid.y),
+      screen = iso(x + size / 2, y + size / 2),
+      valid = this.model.canPlaceDecoration(kind, x, y, this.model.movingDecoration ?? undefined);
+    this.styleDecoration(this.decorationGhost, kind)
+      .setPosition(screen.x, screen.y)
+      .setAlpha(0.8)
+      .setTint(valid ? 0xffffff : 0xff7272);
+    return { x, y, size, valid };
+  }
   updateGhost(p: { x: number; y: number }) {
+    if (this.decorationGhost) return this.updateDecorationGhost(p);
     if (!this.ghost || !this.model.placement) return;
     const point = this.cameras.main.getWorldPoint(p.x, p.y),
       grid = this.keyCursor ?? uniso(point.x, point.y),
@@ -3674,6 +3791,9 @@ export class VillageScene extends Phaser.Scene {
       if (wall.id !== b?.id) this.diamond(g, wall.x, wall.y, 1, 0xffe8a0);
     const obstacle = this.model.selectedObstacle;
     if (obstacle) this.diamond(g, obstacle.x, obstacle.y, OBSTACLES[obstacle.kind].size, 0xffe8a0);
+    const decoration = this.model.selectedDecoration;
+    if (decoration)
+      this.diamond(g, decoration.x, decoration.y, DECORATIONS[decoration.kind].size, 0xffe8a0);
     if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
       this.diamond(g, b.x, b.y, d.size, 0xffe8a0);
@@ -3717,6 +3837,7 @@ export class VillageScene extends Phaser.Scene {
     const grid =
       !!this.model.wallMove ||
       !!this.model.placement ||
+      !!this.model.decorationPlacement ||
       (this.model.editing && !this.model.placement && !this.model.wallMove);
     this.showGrid(grid);
     if (this.model.wallMove) {
@@ -3724,7 +3845,7 @@ export class VillageScene extends Phaser.Scene {
       for (const w of this.model.wallMove.source) this.diamond(g, w.x, w.y, 1, 0xffe8a0, 0.06);
       for (const w of this.model.wallPreview) this.diamond(g, w.x, w.y, 1, color, 0.3);
     }
-    if (this.model.placement) {
+    if (this.model.placement || this.model.decorationPlacement) {
       // Camera motion and DOM drags can change the tile without a Phaser pointer event.
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());

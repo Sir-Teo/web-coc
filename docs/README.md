@@ -41,6 +41,7 @@ notes in those references are not current release guarantees.
 - [Wall rows and bulk upgrades](WALL-UPGRADES.md)
 - [Moving and rotating wall rows](WALL-MOVEMENT.md)
 - [Persistent village obstacles](OBSTACLES.md)
+- [Decorations](DECORATIONS.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)
 - [Clash of Clans experience coverage](EXPERIENCE-PARITY.md)

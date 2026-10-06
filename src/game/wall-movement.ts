@@ -2,6 +2,7 @@ import { BUILD_MIN, BUILD_MAX } from './grid';
 import { BUILDINGS } from './data';
 import type { Building } from './model';
 import { overlapsObstacle, type Obstacle } from './obstacles';
+import { overlapsDecoration, type Decoration } from './decorations';
 import type { WallAxis } from './wall-selection';
 
 export type WallSlot = { id: number; x: number; y: number };
@@ -30,6 +31,7 @@ export function wallMoveIssue(
   move: WallMove,
   buildings: readonly Building[],
   obstacles: readonly Obstacle[],
+  decorations: readonly Decoration[] = [],
 ): string | null {
   const ids = new Set(move.source.map((b) => b.id));
   if (
@@ -75,7 +77,8 @@ export function wallMoveIssue(
           s.y < b.y + BUILDINGS[b.kind].size &&
           s.y + 1 > b.y,
       ),
-    )
+    ) ||
+    target.some((s) => overlapsDecoration(decorations, s.x, s.y, 1))
   )
     return 'Move the row onto clear ground.';
   return null;

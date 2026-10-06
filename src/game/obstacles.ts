@@ -187,10 +187,13 @@ export function treeGrowthSites(
   buildings: readonly Building[],
   obstacles: readonly Obstacle[],
   size = 2,
+  /** Other footprints growth keeps its buffer from: the village's decorations. */
+  blockers: readonly { x: number; y: number; size: number }[] = [],
 ) {
   const occupied = [
     ...buildings.map((b) => ({ x: b.x, y: b.y, size: BUILDINGS[b.kind].size })),
     ...obstacles.map((o) => ({ x: o.x, y: o.y, size: OBSTACLES[o.kind].size })),
+    ...blockers,
   ];
   const sites: { x: number; y: number }[] = [];
   for (let y = 0; y <= MAP_SIZE - size; y++) {
@@ -224,6 +227,7 @@ export function advanceObstacles(
   buildings: readonly Building[],
   growth: ObstacleGrowth,
   now: number,
+  blockers: readonly { x: number; y: number; size: number }[] = [],
 ) {
   const removed: Obstacle[] = [];
   const grown: Obstacle[] = [];
@@ -245,7 +249,7 @@ export function advanceObstacles(
         const at = growth.gemBoxAt!;
         const sites =
           room() && !obstacles.some((o) => o.kind === GEM_BOX)
-            ? treeGrowthSites(buildings, obstacles, OBSTACLES[GEM_BOX].size)
+            ? treeGrowthSites(buildings, obstacles, OBSTACLES[GEM_BOX].size, blockers)
             : [];
         if (!sites.length) {
           growth.gemBoxAt = obstacles.some((o) => o.kind === GEM_BOX)
@@ -267,7 +271,7 @@ export function advanceObstacles(
       const options = room()
         ? REGROWTH.map((r) => ({
             ...r,
-            sites: treeGrowthSites(buildings, obstacles, r.size),
+            sites: treeGrowthSites(buildings, obstacles, r.size, blockers),
           })).filter((r) => r.sites.length)
         : [];
       if (!options.length) {
