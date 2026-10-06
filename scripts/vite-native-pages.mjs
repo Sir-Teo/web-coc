@@ -11,6 +11,7 @@
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 import { pageNativeGraph, pageNativePack } from './native-pages.mjs';
@@ -21,10 +22,33 @@ const levelInName = (name) => {
   const match = /_lvl(\d+)(?:_|$)/.exec(name);
   return match ? Number(match[1]) : undefined;
 };
-/** Graphs bundled into the code, paged as they are imported; exports name their level. */
+/**
+ * The Archer Tower levels whose rooftop Archer draws each export: a tower level names its
+ * defender character (native.json), whose idle and attack rows name the exports
+ * (`archer2_idle1`, drawn as `archer2_idle1_1` to `_3` by facing).
+ */
+function residentLevels(root) {
+  const definitions = JSON.parse(
+    readFileSync(path.join(root, 'reference/archer-tower/native.json'), 'utf8'),
+  );
+  const animations = JSON.parse(
+    readFileSync(path.join(root, 'reference/archer-tower/defenders-source.json'), 'utf8'),
+  ).animations;
+  const levels = new Map();
+  definitions.levels.forEach((row, index) => {
+    for (const animation of animations[row.DefenderCharacter].rows)
+      for (const facing of [1, 2, 3]) {
+        const name = `${animation.ExportName}_${facing}`;
+        levels.set(name, [...(levels.get(name) ?? []), index + 1]);
+      }
+  });
+  return (name) => levels.get(name);
+}
+/** Graphs bundled into the code, paged as they are imported, with each export's levels. */
 const BUNDLED = {
-  'reference/cannon/runtime.json': levelInName,
-  'reference/archer-tower/buildings-runtime.json': levelInName,
+  'reference/cannon/runtime.json': () => levelInName,
+  'reference/archer-tower/buildings-runtime.json': () => levelInName,
+  'reference/archer-tower/defenders-runtime.json': residentLevels,
 };
 const PAGES = '/assets/native-pages/';
 
@@ -96,7 +120,7 @@ export function nativePages() {
     },
     async transform(code, id) {
       const file = path.relative(root, id.split('?')[0]).split(path.sep).join('/');
-      const levelOf = BUNDLED[file];
+      const levelOf = BUNDLED[file]?.(root);
       if (!levelOf || process.env.NATIVE_PAGES === '0') return;
       const key = await packKey(publicDir, file, code);
       const result = await pageNativeGraph(

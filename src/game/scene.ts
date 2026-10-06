@@ -271,6 +271,16 @@ const XBOW_FAMILY: ArtFamily = {
   preload: preloadXbows,
 };
 const SANTA_FAMILY: ArtFamily = { draws: (b) => b.npc === 'santa-trap', preload: preloadSanta };
+/** The seasonal campaign trap's sheet (about 0.2 MB) loads with the battle that places one. */
+const PUMPKIN_FAMILY: ArtFamily = {
+  draws: (b) => b.npc === 'pumpkin-bomb',
+  preload: (scene) =>
+    scene.load.spritesheet(PUMPKIN_ART.texture, PUMPKIN_ART.asset, {
+      frameWidth: PUMPKIN_ART.frameWidth,
+      frameHeight: PUMPKIN_ART.frameHeight,
+      endFrame: 44,
+    }),
+};
 /** The procedural King sheets draw only in recordings made before the hero roster. */
 const LEGACY_KING_FAMILY: ArtFamily = {
   draws: () => false,
@@ -293,6 +303,7 @@ const ART_FAMILIES: ArtFamily[] = [
     preload: preloadGarrisonCharacters,
   },
   SANTA_FAMILY,
+  PUMPKIN_FAMILY,
   { draws: (b) => b.kind === 'darkstorage', preload: preloadDarkStorages },
   { draws: (b) => isGoblinBuilding(b.npc), preload: preloadGoblinBuildings },
   { draws: (b) => b.kind === 'tesla', preload: preloadTeslas },
@@ -568,11 +579,6 @@ export class VillageScene extends Phaser.Scene {
       this.load.image(wallTexture(level), asset('wall', level));
     for (const level of new Set(owned('camp').map((l) => Math.min(8, Math.max(1, l)))))
       if (level > 1) this.load.image(campTexture(level), asset('camp', level));
-    this.load.spritesheet(PUMPKIN_ART.texture, PUMPKIN_ART.asset, {
-      frameWidth: PUMPKIN_ART.frameWidth,
-      frameHeight: PUMPKIN_ART.frameHeight,
-      endFrame: 44,
-    });
     // Hero portraits stand in until a hero's native atlas arrives: the village's own heroes'
     // load now, the rest when one is deployed. Campaign scenery loads when a battle shows it.
     for (const kind of HERO_KINDS)
@@ -2474,7 +2480,7 @@ export class VillageScene extends Phaser.Scene {
     );
     im.setData('intactHeight', this.intactHeight(b, im));
     const trap = this.model.battle?.traps[b.id];
-    if (b.npc === 'pumpkin-bomb')
+    if (b.npc === 'pumpkin-bomb' && im.texture.key === PUMPKIN_ART.texture)
       im.setFrame(pumpkinFrame(trap, this.model.battle?.elapsed ?? 0, this.model.reducedMotion));
     im.setAlpha(trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1);
     // Fallback sprites hide only once native bodies actually draw: X-Bow and
@@ -2652,7 +2658,7 @@ export class VillageScene extends Phaser.Scene {
       const im = this.sprites.get(b.id);
       if (!im) continue;
       const trap = battle.traps[b.id];
-      if (b.npc === 'pumpkin-bomb')
+      if (b.npc === 'pumpkin-bomb' && im.texture.key === PUMPKIN_ART.texture)
         im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.reducedMotion));
       const alpha = trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1;
       if (im.alpha !== alpha) im.setAlpha(alpha);
@@ -2777,9 +2783,10 @@ export class VillageScene extends Phaser.Scene {
         .setFlipX(false)
         .setDisplaySize(width, (width * im.height) / im.width);
     }
+    // A deferred family's sheet (Santa, Pumpkin) draws nothing until it arrives.
     if (npcVisual)
       return im
-        .setTexture(npcVisual.texture)
+        .setTexture(this.textures.exists(npcVisual.texture) ? npcVisual.texture : '__DEFAULT')
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
@@ -3955,7 +3962,9 @@ export class VillageScene extends Phaser.Scene {
           continue;
         }
         if (trap.npc === 'pumpkin-bomb') {
-          this.sprites.get(trap.id)?.setFrame(pumpkinFrame(state, battle.elapsed, reduced));
+          const im = this.sprites.get(trap.id);
+          if (im?.texture.key === PUMPKIN_ART.texture)
+            im.setFrame(pumpkinFrame(state, battle.elapsed, reduced));
           continue;
         }
         if (trap.kind === 'seekingairmine') continue;

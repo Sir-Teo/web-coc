@@ -5,6 +5,9 @@ import index from '../reference/full-client/village-art.json' with { type: 'json
 import { pageNativeGraph, pageNativePack } from '../scripts/native-pages.mjs';
 import cannonGraph from '../reference/cannon/runtime.json' with { type: 'json' };
 import archerTowerGraph from '../reference/archer-tower/buildings-runtime.json' with { type: 'json' };
+import defendersGraph from '../reference/archer-tower/defenders-runtime.json' with { type: 'json' };
+import defenderAnimations from '../reference/archer-tower/defenders-source.json' with { type: 'json' };
+import towerLevels from '../reference/archer-tower/native.json' with { type: 'json' };
 import {
   nativeScenePoses,
   type NativeMeshGraph,
@@ -204,6 +207,45 @@ describe('level-paged native packs', () => {
         .reduce((n, t) => n + t.width * t.height, 0);
       expect(level1).toBeLessThan(total * share);
     }, 120000);
+
+  it('pages the rooftop Archer by the tower levels that field each variant', async () => {
+    const graph = defendersGraph as unknown as NativeMeshGraph;
+    const levels = new Map<string, number[]>();
+    towerLevels.levels.forEach((row, index) => {
+      const rows = (
+        defenderAnimations.animations as Record<string, { rows: { ExportName: string }[] }>
+      )[row.DefenderCharacter].rows;
+      for (const animation of rows)
+        for (const facing of [1, 2, 3]) {
+          const name = `${animation.ExportName}_${facing}`;
+          levels.set(name, [...(levels.get(name) ?? []), index + 1]);
+        }
+    });
+    const result = await pageNativeGraph(
+      graph,
+      (name: string) => levels.get(name),
+      read,
+      'assets/native-pages/test',
+    );
+    expect(result).not.toBeNull();
+    const paged = result!.graph as NativeMeshGraph;
+    for (const [name, drawn] of levels) {
+      // The character's table also lists animations a tower never plays (run).
+      if (graph.exports[name] === undefined) continue;
+      const poses = leaves(nativeScenePoses(paged, name, 0.3, {}, ROOT));
+      expect(poses.length).toBeGreaterThan(0);
+      // Every tower level that fields this variant loads the pages it draws from.
+      for (const pose of poses) {
+        const tags = paged.textures[pose.texture].levels;
+        if (tags) for (const level of drawn) expect(tags).toContain(level);
+      }
+    }
+    const total = Object.values(graph.textures).reduce((n, t) => n + t.width * t.height, 0);
+    const level1 = Object.values(paged.textures)
+      .filter((t) => !t.levels || t.levels.includes(1))
+      .reduce((n, t) => n + t.width * t.height, 0);
+    expect(level1).toBeLessThan(total * 0.3);
+  }, 120000);
 
   it('leaves a pack whose levels share most of their art unpaged', async () => {
     const file = 'assets/troops-native/superdragon/graph.json';

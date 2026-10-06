@@ -256,17 +256,20 @@ export async function pageNativePack(source, readImage, prefix) {
 }
 
 /**
- * Pages a single bundled graph whose exports name their level (`basic_turret_lvl7`): `levelOf`
- * returns an export's level, or undefined for exports every level shares (ammunition, debris,
+ * Pages a single bundled graph by the levels that draw each export: `levelOf` returns an
+ * export's level (`basic_turret_lvl7`), a list of levels (the rooftop Archer variant several
+ * Archer Tower levels share), or undefined for exports every level shares (ammunition, debris,
  * upgrade animations), whose shapes land on pages every level loads.
  */
 export async function pageNativeGraph(graph, levelOf, readImage, prefix) {
   const byLevel = new Map();
   for (const name of Object.keys(graph.exports)) {
-    const level = levelOf(name);
-    if (level === undefined) continue;
-    if (!byLevel.has(level)) byLevel.set(level, {});
-    byLevel.get(level)[name] = { scene: 'graph', export: name };
+    // An export drawn at one level, at several (a list), or at every level (undefined).
+    const levels = levelOf(name);
+    for (const level of levels === undefined ? [] : [levels].flat()) {
+      if (!byLevel.has(level)) byLevel.set(level, {});
+      byLevel.get(level)[name] = { scene: 'graph', export: name };
+    }
   }
   const levels = [...byLevel].sort(([a], [b]) => a - b).map(([level, refs]) => ({ level, refs }));
   const result = await pageNativePack({ levels, scenes: { graph } }, readImage, prefix);
