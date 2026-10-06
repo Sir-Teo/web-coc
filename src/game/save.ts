@@ -2,6 +2,7 @@ import { validLadderMatch } from './ladder';
 import { validJourney } from './heroes-journey';
 import { validAchievements } from './achievements';
 import { validBoosts, validMagicItems } from './magic-items';
+import { validTrader } from './trader';
 import { validHelpers } from './helpers';
 import { validCraftedFields } from './crafted-defenses';
 import { superLicence } from './special-troops';
@@ -495,6 +496,7 @@ function validateVersion(input: unknown, version: GridVersion = SAVE_VERSION): i
   if (s.goblinRaidSeen !== undefined && typeof s.goblinRaidSeen !== 'boolean') return false;
   if (s.magicItems !== undefined && !validMagicItems(s.magicItems)) return false;
   if (s.boosts !== undefined && !validBoosts(s.boosts)) return false;
+  if (s.trader !== undefined && !validTrader(s.trader)) return false;
   if (s.helpers !== undefined && !validHelpers(s.helpers)) return false;
   if (
     s.obstacleGemIndex !== undefined &&

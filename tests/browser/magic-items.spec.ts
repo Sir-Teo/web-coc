@@ -117,3 +117,27 @@ test('a Shovel makes an obstacle movable, and a tap moves it', async ({ page }) 
   ).toEqual({ ...target.spot, movable: true });
   await expect(page.locator(`[data-action="obstacle-move:${id}"]`)).toBeVisible();
 });
+
+test('the Trader’s Weekly Deals open from the items and give the free Glowy Ore', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    m.state.buildings.find((b) => b.kind === 'townhall')!.level = 8;
+    m.selected = m.state.buildings.find((b) => b.kind === 'townhall')!.id;
+    m.changed();
+  });
+  await page.locator('.building-context [data-action="magic-items"]').click();
+  await page.locator('[data-action="trader"]').click();
+  await expect(page.locator('#modal-title')).toHaveText('Weekly Deals');
+  await expect(page.locator('.modal-header p')).toContainText('New deals in');
+  const deals = page.locator('.trader-deal');
+  await expect(deals).toHaveCount(7);
+  const free = page.locator('[data-action="trader-buy:free-glowy-ore"]');
+  await expect(free).toHaveText('Free');
+  await expect(free).toBeInViewport();
+  const glowy = await page.evaluate(() => window.__game.model.ores.glowy);
+  await free.click();
+  expect(await page.evaluate(() => window.__game.model.ores.glowy)).toBe(glowy + 10);
+  await expect(page.locator('[data-deal="free-glowy-ore"]')).toContainText('Out of stock');
+});

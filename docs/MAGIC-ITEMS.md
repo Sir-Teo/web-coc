@@ -32,7 +32,7 @@ Left out: the Builder Base items (Clock Tower Potion, Builder Star Jar, Runes of
 - **Power Potion** and **Hero Potion** last one hour. While one runs, every battle starts with troops, spells and siege machines (Power) or heroes and pets (Hero) at the highest level the Town Hall allows: the level its fully upgraded Laboratory researches, or its fully upgraded Hero Hall and Pet House allow. A Super Troop follows its original. Home levels, research and upgrade costs do not change. The battle records its levels, so replays match. As in the client, a potion that would raise nothing cannot be drunk, nor a Hero Potion without a hero. Army cards show the boosted level in purple and the army drawer and Hero Hall show the time left.
 - **Shovel of Obstacles** makes one obstacle movable for good: its card offers Shovel, then Move, and it can be put anywhere clear on the map, the outer edge included, like a decoration. It can still be cleared as before.
 
-Nothing sells items: there is no Trader, Clan Games or Season Challenges, so Hero's Journey is still the only source.
+Items come from Hero's Journey and the [Trader](TRADER.md)'s weekly Gem deals; there are no Clan Games or Season Challenges.
 
 ## Tests
 

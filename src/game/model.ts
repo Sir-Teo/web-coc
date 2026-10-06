@@ -25,6 +25,14 @@ import {
   type JourneyState,
 } from './heroes-journey';
 import {
+  TRADER_GEM_TOWN_HALL,
+  TRADER_TOWN_HALL,
+  traderWeek,
+  weeklyDeals,
+  type TraderOffer,
+  type TraderState,
+} from './trader';
+import {
   MAGIC_ITEMS,
   advanceBoost,
   boostItem,
@@ -610,6 +618,8 @@ export interface Save {
   magicItems?: MagicItems;
   /** Running potions; see magic-items.ts. */
   boosts?: Boosts;
+  /** This week's Trader purchases; see trader.ts. */
+  trader?: TraderState;
   /** Helper Hut helpers bought with gems; see helpers.ts. */
   helpers?: Helpers;
   army: Army;
@@ -3707,6 +3717,55 @@ export class GameModel {
         (k) => (this.petProgress.levels[k] ?? 1) < this.townHallPetLevel(k),
       )
     );
+  }
+  // ---------------------------------------------------------------- Trader
+  /** This week's deals, the free one first. */
+  get traderDeals(): TraderOffer[] {
+    return weeklyDeals(traderWeek(this.clock));
+  }
+  /** Purchases of a deal this week. */
+  traderBought(id: string) {
+    const t = this.state.trader;
+    return t?.week === traderWeek(this.clock) ? (t.bought[id] ?? 0) : 0;
+  }
+  /** Why a deal cannot be bought now, in the client's words where it has them. */
+  traderIssue(deal: TraderOffer): string | null {
+    if (this.townhallLevel < TRADER_TOWN_HALL)
+      return `Trader arrives at Town Hall Level ${TRADER_TOWN_HALL}`;
+    if (this.townhallLevel < TRADER_GEM_TOWN_HALL)
+      return `Gem Offers unlock at Town Hall Level ${TRADER_GEM_TOWN_HALL}`;
+    if (this.traderBought(deal.id) >= deal.quantity) return 'Out of stock';
+    const room =
+      'item' in deal.good
+        ? MAGIC_ITEMS[deal.good.item].max - this.magicItemCount(deal.good.item)
+        : this.oreCapacity[deal.good.ore] - this.ores[deal.good.ore];
+    if (room < deal.amount) return 'Storage Full';
+    if (this.state.gems < deal.gems) return 'Not enough gems';
+    return null;
+  }
+  /** Buys one of this week's deals for its gems. */
+  buyDeal(id: string) {
+    const deal = this.traderDeals.find((d) => d.id === id);
+    if (this.battle || !deal) return false;
+    const issue = this.traderIssue(deal);
+    if (issue) return (this.notify(issue), false);
+    const week = traderWeek(this.clock);
+    if (this.state.trader?.week !== week) this.state.trader = { week, bought: {} };
+    this.state.trader.bought[id] = this.traderBought(id) + 1;
+    this.state.gems -= deal.gems;
+    let name: string;
+    if ('item' in deal.good) {
+      this.addMagicItem(deal.good.item, deal.amount);
+      name = MAGIC_ITEMS[deal.good.item].name;
+    } else {
+      const ores = { ...this.ores };
+      ores[deal.good.ore] += deal.amount;
+      this.state.ores = ores;
+      name = ORES[deal.good.ore].name;
+    }
+    this.notify(`Bought ${deal.amount}× ${name}${deal.gems ? ` for ${deal.gems} gems` : ''}.`);
+    this.changed();
+    return true;
   }
   /** Seconds a potion has left, if it is running. */
   boostLeft(kind: BoostKind) {

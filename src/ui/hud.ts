@@ -52,6 +52,7 @@ import {
 } from '../game/spell-progression';
 import { OBSTACLES } from '../game/obstacles';
 import { DECORATIONS, DECORATION_KINDS, DECORATION_TEXTS } from '../game/decorations';
+import { traderWeekEnds, type TraderOffer } from '../game/trader';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
@@ -226,6 +227,7 @@ import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
 import { musicScene } from '../game/music';
 type Panel =
   | 'magic-items'
+  | 'trader'
   | 'blacksmith'
   | 'heroes'
   | 'journey'
@@ -1309,6 +1311,13 @@ export class HUD {
         break;
       case 'magic-items':
         this.show('magic-items');
+        break;
+      case 'trader':
+        this.show('trader');
+        break;
+      case 'trader-buy':
+        m.buyDeal(arg);
+        this.render();
         break;
       case 'item-sell':
         m.sellMagicItem(arg);
@@ -3218,6 +3227,25 @@ export class HUD {
           : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
+  /** The Trader's Weekly Deals: the free one, then this week's Gem offers. */
+  private trader() {
+    const m = this.model;
+    const art = (deal: TraderOffer) =>
+      'item' in deal.good
+        ? `<img src="/${MAGIC_ITEMS[deal.good.item].icon!.path}" alt="" width="54" height="${Math.round((54 * MAGIC_ITEMS[deal.good.item].icon!.height) / MAGIC_ITEMS[deal.good.item].icon!.width)}" loading="lazy">`
+        : gearImage(deal.good.ore);
+    const name = (deal: TraderOffer) =>
+      'item' in deal.good ? MAGIC_ITEMS[deal.good.item].name : ORES[deal.good.ore].name;
+    return `<div class="modal-body magic-items-body"><div class="magic-item-grid">${m.traderDeals
+      .map((deal) => {
+        const issue = m.traderIssue(deal),
+          left = deal.quantity - m.traderBought(deal.id);
+        return `<article class="magic-item trader-deal" data-deal="${deal.id}">${art(deal)}<div><h3>${deal.amount}× ${name(deal)} <b>${left}/${deal.quantity} left</b></h3><p>${'item' in deal.good ? html(MAGIC_ITEMS[deal.good.item].description) : `Ore for Hero Equipment, kept at the Blacksmith (${n(m.ores[deal.good.ore])} / ${n(m.oreCapacity[deal.good.ore])}).`}</p><div class="magic-item-actions">${button(`trader-buy:${deal.id}`, deal.gems ? `${gem} ${n(deal.gems)}` : 'Free', `game-btn ${issue ? 'stone' : 'green'}`, issue ? 'disabled' : '')}${issue && issue !== 'Not enough gems' ? `<small class="item-note">${issue}</small>` : ''}</div></div></article>`;
+      })
+      .join(
+        '',
+      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems ${button('magic-items', `${icon('Sparkles', 16)} Magic items`, 'game-btn stone')}<span>Raid Medal deals need the Clan Capital</span></footer>`;
+  }
   /** The Town Hall's magic items: what each does, how many are held, and its use or sale. */
   private magicItems() {
     const m = this.model;
@@ -3283,7 +3311,7 @@ export class HUD {
       })
       .join(
         '',
-      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems <span>Items that do not fit are sold for their gems</span></footer>`;
+      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems ${button('trader', `${icon('ShoppingBasket', 16)} Weekly Deals`, 'game-btn orange')}<span>Items that do not fit are sold for their gems</span></footer>`;
   }
   private heroes() {
     const m = this.model,
@@ -3760,6 +3788,7 @@ export class HUD {
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
       'magic-items': 'Magic items',
+      trader: 'Weekly Deals',
       journey: 'Hero’s Journey',
       crafting: 'Crafting Station',
       helpers: 'Helper Hut',
@@ -3786,6 +3815,7 @@ export class HUD {
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
+      trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
       pets: 'A companion for every hero.',
@@ -3807,49 +3837,51 @@ export class HUD {
     const content =
       this.panel === 'magic-items'
         ? this.magicItems()
-        : this.panel === 'blacksmith'
-          ? this.blacksmith()
-          : this.panel === 'heroes'
-            ? this.heroes()
-            : this.panel === 'journey'
-              ? this.journey()
-              : this.panel === 'crafting'
-                ? this.crafting()
-                : this.panel === 'helpers'
-                  ? this.helpers()
-                  : this.panel === 'pets'
-                    ? this.pets()
-                    : this.panel === 'progression'
-                      ? this.progression()
-                      : this.panel === 'army-presets'
-                        ? this.armyPresets()
-                        : this.panel === 'battle-log'
-                          ? this.battleLog()
-                          : this.panel === 'spell-info'
-                            ? this.spellInfo()
-                            : this.panel === 'troop-info'
-                              ? this.troopInfo()
-                              : this.panel === 'campaign'
-                                ? this.campaign()
-                                : this.panel === 'campaign-scout'
-                                  ? this.campaignScout()
-                                  : this.panel === 'settings'
-                                    ? this.settings()
-                                    : this.panel === 'import-confirm'
-                                      ? this.importConfirm()
-                                      : this.panel === 'buildings'
-                                        ? this.buildingList()
-                                        : this.panel === 'achievements'
-                                          ? this.achievements()
-                                          : this.panel === 'research'
-                                            ? this.research()
-                                            : this.panel === 'info'
-                                              ? this.info()
-                                              : this.panel === 'layouts'
-                                                ? this.layoutPanel()
-                                                : this.panel === 'surrender'
-                                                  ? this.surrender()
-                                                  : this.help();
+        : this.panel === 'trader'
+          ? this.trader()
+          : this.panel === 'blacksmith'
+            ? this.blacksmith()
+            : this.panel === 'heroes'
+              ? this.heroes()
+              : this.panel === 'journey'
+                ? this.journey()
+                : this.panel === 'crafting'
+                  ? this.crafting()
+                  : this.panel === 'helpers'
+                    ? this.helpers()
+                    : this.panel === 'pets'
+                      ? this.pets()
+                      : this.panel === 'progression'
+                        ? this.progression()
+                        : this.panel === 'army-presets'
+                          ? this.armyPresets()
+                          : this.panel === 'battle-log'
+                            ? this.battleLog()
+                            : this.panel === 'spell-info'
+                              ? this.spellInfo()
+                              : this.panel === 'troop-info'
+                                ? this.troopInfo()
+                                : this.panel === 'campaign'
+                                  ? this.campaign()
+                                  : this.panel === 'campaign-scout'
+                                    ? this.campaignScout()
+                                    : this.panel === 'settings'
+                                      ? this.settings()
+                                      : this.panel === 'import-confirm'
+                                        ? this.importConfirm()
+                                        : this.panel === 'buildings'
+                                          ? this.buildingList()
+                                          : this.panel === 'achievements'
+                                            ? this.achievements()
+                                            : this.panel === 'research'
+                                              ? this.research()
+                                              : this.panel === 'info'
+                                                ? this.info()
+                                                : this.panel === 'layouts'
+                                                  ? this.layoutPanel()
+                                                  : this.panel === 'surrender'
+                                                    ? this.surrender()
+                                                    : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

@@ -43,6 +43,7 @@ notes in those references are not current release guarantees.
 - [Persistent village obstacles](OBSTACLES.md)
 - [Decorations](DECORATIONS.md)
 - [Magic items](MAGIC-ITEMS.md)
+- [Trader](TRADER.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)
 - [Clash of Clans experience coverage](EXPERIENCE-PARITY.md)
