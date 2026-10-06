@@ -6490,3 +6490,8 @@ h3 {
   align-items: center;
   gap: 4px;
 }
+/* A level a Power or Hero Potion raises for battle. */
+.potion-level {
+  color: #6a3fc4;
+  font-weight: 700;
+}

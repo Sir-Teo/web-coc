@@ -308,6 +308,7 @@ import {
   isSpellKind,
   spellStatsAt,
   maxTroopLevel,
+  researchLevelForLab,
   defenseDamage,
   isResourceBuilding,
   isTrap,
@@ -975,6 +976,8 @@ export class GameModel {
   }
   placement: BuildingKind | null = null;
   moving: number | null = null;
+  /** The obstacle a Shovel made movable that is being moved, if any. */
+  movingObstacle: number | null = null;
   /** The decoration being placed (bought, taken from the stash, or moved), if any. */
   decorationPlacement: DecorationKind | null = null;
   movingDecoration: number | null = null;
@@ -1165,6 +1168,7 @@ export class GameModel {
     this.placement = null;
     this.moving = null;
     this.movingDecoration = null;
+    this.movingObstacle = null;
     this.decorationPlacement = kind;
     this.changed();
   }
@@ -1177,6 +1181,7 @@ export class GameModel {
     this.moving = null;
     this.decorationPlacement = d.kind;
     this.movingDecoration = id;
+    this.movingObstacle = null;
     this.changed();
   }
   placeDecoration(x: number, y: number) {
@@ -1254,6 +1259,78 @@ export class GameModel {
         `${covered.length === 1 ? DECORATIONS[covered[0].kind].name : `${covered.length} decorations`} moved to the Shop to make room.`,
       );
     return covered.length;
+  }
+  /** Shovel of Obstacles: this obstacle becomes movable, like a decoration, for good. */
+  shovelObstacle(id: number) {
+    const o = this.obstacles.find((v) => v.id === id);
+    if (
+      this.battle ||
+      !o ||
+      o.movable ||
+      o.removeEnd ||
+      !this.magicItemCount('shovel-of-obstacles')
+    )
+      return false;
+    o.movable = true;
+    this.spendItem('shovel-of-obstacles');
+    this.notify(`${OBSTACLES[o.kind].name} can now be moved.`);
+    this.changed();
+    return true;
+  }
+  /** Picks up a movable obstacle to place it elsewhere. */
+  moveObstacle(id: number) {
+    const o = this.obstacles.find((v) => v.id === id);
+    if (this.battle || !o?.movable || o.removeEnd) return false;
+    this.cancelNativeHandling();
+    this.selected = null;
+    this.placement = null;
+    this.moving = null;
+    this.decorationPlacement = null;
+    this.movingDecoration = null;
+    this.movingObstacle = id;
+    this.changed();
+    return true;
+  }
+  /** Anywhere on the map clear of buildings, decorations and other obstacles. */
+  canPlaceObstacle(id: number, x: number, y: number) {
+    const o = this.obstacles.find((v) => v.id === id);
+    if (!o || !Number.isInteger(x) || !Number.isInteger(y)) return false;
+    const size = OBSTACLES[o.kind].size;
+    return (
+      x >= 0 &&
+      y >= 0 &&
+      x + size <= MAP_SIZE &&
+      y + size <= MAP_SIZE &&
+      !overlapsObstacle(
+        this.obstacles.filter((v) => v.id !== id),
+        x,
+        y,
+        size,
+      ) &&
+      !overlapsDecoration(this.decorations, x, y, size) &&
+      !this.state.buildings.some(
+        (b) =>
+          x < b.x + BUILDINGS[b.kind].size &&
+          x + size > b.x &&
+          y < b.y + BUILDINGS[b.kind].size &&
+          y + size > b.y,
+      )
+    );
+  }
+  placeObstacle(x: number, y: number) {
+    const o = this.obstacles.find((v) => v.id === this.movingObstacle);
+    if (this.battle || !o) return false;
+    if (!this.canPlaceObstacle(o.id, x, y)) {
+      this.notify('Choose a clear space on the map.');
+      return false;
+    }
+    o.x = x;
+    o.y = y;
+    this.movingObstacle = null;
+    this.selected = -o.id;
+    this.notify('');
+    this.changed();
+    return true;
   }
   get buildings() {
     return this.battle ? this.battle.buildings : this.state.buildings;
@@ -1980,6 +2057,7 @@ export class GameModel {
     this.selected = null;
     this.moving = null;
     this.decorationPlacement = null;
+    this.movingObstacle = null;
     this.movingDecoration = null;
     this.placement = kind;
     this.changed();
@@ -2437,6 +2515,7 @@ export class GameModel {
     this.moving = id;
     this.placement = b.kind;
     this.decorationPlacement = null;
+    this.movingObstacle = null;
     this.movingDecoration = null;
     this.selected = null;
     this.nativeBuildingHandling(b, 'pickup');
@@ -2471,12 +2550,13 @@ export class GameModel {
   }
   cancel() {
     this.cancelNativeHandling();
-    if (this.placement || this.decorationPlacement) this.notify('');
+    if (this.placement || this.decorationPlacement || this.movingObstacle !== null) this.notify('');
     this.selected = null;
     this.placement = null;
     this.moving = null;
     this.decorationPlacement = null;
     this.movingDecoration = null;
+    this.movingObstacle = null;
     this.activeSpell = null;
     this.activeHero = false;
     this.activeHeroKind = null;
@@ -2668,6 +2748,7 @@ export class GameModel {
     this.moving = null;
     this.decorationPlacement = null;
     this.movingDecoration = null;
+    this.movingObstacle = null;
     this.undoStack = [];
     this.redoStack = [];
     this.notify('Edit mode — drag any building to rearrange your village.');
@@ -3525,8 +3606,17 @@ export class GameModel {
   usePotion(kind: MagicItemKind) {
     const effect = MAGIC_ITEMS[kind]?.effect;
     if (this.battle || !effect || !('boost' in effect) || !this.magicItemCount(kind)) return false;
-    if (effect.boost === 'army' || effect.boost === 'heroes') {
-      this.notify(`${MAGIC_ITEMS[kind].name} is kept until battle boosts arrive.`);
+    if (
+      (effect.boost === 'army' || effect.boost === 'heroes') &&
+      !this.potionRaises(effect.boost)
+    ) {
+      this.notify(
+        effect.boost === 'army'
+          ? 'Your troops and spells are already at their Town Hall maximum.'
+          : this.heroLineup.length
+            ? 'Your heroes and pets are already at their Town Hall maximum.'
+            : 'You have no hero to boost.',
+      );
       return false;
     }
     const boosts = (this.state.boosts ??= {});
@@ -3542,6 +3632,81 @@ export class GameModel {
     this.notify(`${MAGIC_ITEMS[kind].name} active.`);
     this.changed();
     return true;
+  }
+  /**
+   * The highest level a troop reaches at this Town Hall: the level its fully upgraded Laboratory
+   * researches up to. A Super Troop follows its original's.
+   */
+  townHallTroopLevel(kind: TroopKind): number {
+    const original = superOriginal(kind);
+    if (original)
+      return Math.max(
+        1,
+        Math.min(maxTroopLevel(kind), this.townHallTroopLevel(original) - superLevelOffset(kind)),
+      );
+    return researchLevelForLab(kind, this.maxLevel('laboratory'));
+  }
+  townHallSpellLevel(kind: SpellKind) {
+    const lab = this.maxLevel('laboratory');
+    let level = 1;
+    while (
+      level < maxSpellLevelFor(kind) &&
+      (spellProgression(kind, level + 1)?.laboratory ?? Infinity) <= lab
+    )
+      level++;
+    return level;
+  }
+  /** Power Potion: troops, spells and siege machines fight at their Town Hall maximum. */
+  armyLevel(kind: TroopKind) {
+    const level = this.troopLevel(kind);
+    return this.boostLeft('army') ? Math.max(level, this.townHallTroopLevel(kind)) : level;
+  }
+  armySpellLevel(kind: SpellKind) {
+    const level = this.spellLevel(kind);
+    return this.boostLeft('army') ? Math.max(level, this.townHallSpellLevel(kind)) : level;
+  }
+  /** The highest level a hero reaches at this Town Hall, with its Hero Hall fully upgraded. */
+  townHallHeroLevel(kind: HeroKind) {
+    const hall = this.maxLevel('herohall');
+    return kind === 'king'
+      ? heroLevelCap(this.townhallLevel, hall)
+      : rosterLevelCap(kind, this.townhallLevel, hall);
+  }
+  townHallPetLevel(kind: PetKind) {
+    return petLevelCap(kind, this.maxLevel('pethouse'));
+  }
+  /** Hero Potion: heroes and pets fight at their Town Hall maximum. */
+  battleHeroLevel(kind: HeroKind) {
+    const level = this.heroProgress(kind)?.level ?? 1;
+    return this.boostLeft('heroes') ? Math.max(level, this.townHallHeroLevel(kind)) : level;
+  }
+  battlePetLevel(kind: PetKind) {
+    const level = this.petProgress.levels[kind] ?? 1;
+    return this.boostLeft('heroes') ? Math.max(level, this.townHallPetLevel(kind)) : level;
+  }
+  /** Whether a Power or Hero Potion would raise anything the village fields. */
+  private potionRaises(kind: 'army' | 'heroes') {
+    if (kind === 'army')
+      return (
+        TROOP_KEYS.some(
+          (k) =>
+            !superOriginal(k) &&
+            this.troopUnlocked(k) &&
+            this.troopLevel(k) < this.townHallTroopLevel(k),
+        ) ||
+        SPELL_KEYS.some(
+          (k) => this.spellUnlocked(k) && this.spellLevel(k) < this.townHallSpellLevel(k),
+        )
+      );
+    return (
+      HERO_KINDS.some((k) => {
+        const hero = this.heroProgress(k);
+        return hero && hero.level < this.townHallHeroLevel(k);
+      }) ||
+      (Object.keys(this.petProgress.levels) as PetKind[]).some(
+        (k) => (this.petProgress.levels[k] ?? 1) < this.townHallPetLevel(k),
+      )
+    );
   }
   /** Seconds a potion has left, if it is running. */
   boostLeft(kind: BoostKind) {
@@ -4097,10 +4262,10 @@ export class GameModel {
           .slice(0, 2)
           .map((slug) => ({ slug, level: gear.levels[slug] }));
         const pet = pets.assigned[kind];
-        const level = pet ? pets.levels[pet] : undefined;
+        const level = pet ? this.battlePetLevel(pet) : undefined;
         return {
           kind,
-          level: this.heroProgress(kind)!.level,
+          level: this.battleHeroLevel(kind),
           items,
           ...(pet && level ? { pet: { kind: pet, level } } : {}),
         };
@@ -4407,8 +4572,10 @@ export class GameModel {
       buildings,
       army: { ...emptyArmy(), ...this.state.army },
       spells: { ...emptySpells(), ...this.state.spells },
-      troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.troopLevel(k)])) as Army,
-      spellLevels: Object.fromEntries(SPELL_KEYS.map((k) => [k, this.spellLevel(k)])) as SpellBook,
+      troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.armyLevel(k)])) as Army,
+      spellLevels: Object.fromEntries(
+        SPELL_KEYS.map((k) => [k, this.armySpellLevel(k)]),
+      ) as SpellBook,
       nextId: this.state.nextId,
       ...(ladder ? { availableLoot: noLoot, lootRoom: { ...noLoot } } : {}),
       ...(!practice && !ladder

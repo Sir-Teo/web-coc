@@ -239,6 +239,67 @@ describe('magic items', () => {
     expect(advanceBoost(boost, 10, [t], 3 * HOUR)).toBe(false);
   });
 
+  it('fields troops, spells, heroes and pets at the Town Hall maximum under the potions', () => {
+    const m = village();
+    m.state.buildings.push(
+      makeBuilding(11, 'herohall', 4, 30, 2),
+      makeBuilding(12, 'spellfactory', 30, 4, 5),
+    );
+    m.state.king = { level: 5 };
+    m.state.army.archer = 10;
+    m.state.dark = 0;
+    m.addMagicItem('hero-potion');
+    m.addMagicItem('power-potion');
+    const archerCap = m.townHallTroopLevel('archer');
+    const kingCap = m.townHallHeroLevel('king');
+    expect(archerCap).toBeGreaterThan(1);
+    expect(kingCap).toBeGreaterThan(5);
+    expect(m.townHallSpellLevel('lightning')).toBeGreaterThan(1);
+    expect(m.usePotion('power-potion')).toBe(true);
+    expect(m.usePotion('hero-potion')).toBe(true);
+    // Home levels stay; only battles see the boost, and the battle keeps it for replays.
+    expect(m.troopLevel('archer')).toBe(1);
+    expect(m.armyLevel('archer')).toBe(archerCap);
+    m.startLadder();
+    expect(m.battle!.troopLevels!.archer).toBe(archerCap);
+    expect(m.battle!.spellLevels!.lightning).toBe(m.townHallSpellLevel('lightning'));
+    expect(m.battle!.nativeHeroes?.find((h) => h.kind === 'king')?.level).toBe(kingCap);
+  });
+
+  it('keeps a Hero Potion when there is no hero to boost', () => {
+    const m = village();
+    m.addMagicItem('hero-potion');
+    expect(m.usePotion('hero-potion')).toBe(false);
+    expect(m.magicItemCount('hero-potion')).toBe(1);
+  });
+
+  it('makes an obstacle movable for good with a Shovel', () => {
+    const m = village();
+    m.state.obstacles = [
+      { id: 50, kind: 'pine-tree', x: 40, y: 40 },
+      { id: 51, kind: 'small-stone-1', x: 44, y: 40 },
+    ];
+    m.state.obstacleGrowth!.nextId = 52;
+    expect(m.moveObstacle(50)).toBe(false);
+    expect(m.shovelObstacle(50)).toBe(false);
+    m.addMagicItem('shovel-of-obstacles');
+    expect(m.shovelObstacle(50)).toBe(true);
+    expect(m.magicItemCount('shovel-of-obstacles')).toBe(0);
+    expect(m.moveObstacle(50)).toBe(true);
+    // Not onto the stone, a building or past the map; the outer edge is fine.
+    expect(m.placeObstacle(43, 40)).toBe(false);
+    expect(m.placeObstacle(20, 20)).toBe(false);
+    expect(m.placeObstacle(47, 0)).toBe(false);
+    expect(m.placeObstacle(0, 46)).toBe(true);
+    expect(m.obstacles[0]).toMatchObject({ x: 0, y: 46, movable: true });
+    expect(m.selectedObstacle?.id).toBe(50);
+    // Still movable afterwards, and still removable.
+    expect(m.moveObstacle(50)).toBe(true);
+    m.cancel();
+    expect(m.movingObstacle).toBeNull();
+    expect(save(m)).toBe(true);
+  });
+
   it('rejects malformed items and boosts in saves', () => {
     const m = village();
     m.state.boosts = { builders: { start: 10, end: 5, applied: 10 } };

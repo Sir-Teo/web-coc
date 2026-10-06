@@ -394,6 +394,8 @@ export class VillageScene extends Phaser.Scene {
   obstacleSprites = new Map<number, Phaser.GameObjects.Image>();
   decorationSprites = new Map<number, Phaser.GameObjects.Image>();
   private decorationGhost?: Phaser.GameObjects.Image;
+  /** The ghost of a shoveled obstacle being moved. */
+  private obstacleGhost?: Phaser.GameObjects.Image;
   sprites = new Map<number, Phaser.GameObjects.Image>();
   unitSprites = new Map<number, Phaser.GameObjects.Image>();
   bubbles = new Map<number, Phaser.GameObjects.Container>();
@@ -1839,6 +1841,10 @@ export class VillageScene extends Phaser.Scene {
       if (this.model.placeDecoration(x, y)) this.audio.play('click');
       return;
     }
+    if (this.model.movingObstacle !== null) {
+      if (this.model.placeObstacle(x, y)) this.audio.play('click');
+      return;
+    }
     if (this.model.battle) {
       if (this.battleArtPending()) return void this.model.notify(LOADING_LATE_ART);
       if (this.model.activeSpell) {
@@ -2027,6 +2033,11 @@ export class VillageScene extends Phaser.Scene {
     }
     if (this.model.decorationPlacement) {
       if (this.model.placeDecoration(Math.floor(grid.x), Math.floor(grid.y)))
+        this.audio.play('click');
+      return;
+    }
+    if (this.model.movingObstacle !== null) {
+      if (this.model.placeObstacle(Math.floor(grid.x), Math.floor(grid.y)))
         this.audio.play('click');
       return;
     }
@@ -2471,7 +2482,7 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(d.art.width, d.art.height)
         .setDepth(p.y)
         .setVisible(ready && !this.model.battle)
-        .setAlpha(o.removeEnd ? 0.65 : 1);
+        .setAlpha(o.removeEnd ? 0.65 : this.model.movingObstacle === o.id ? 0.4 : 1);
     }
     this.syncDecorations();
     const ids = new Set(this.model.buildings.map((b) => b.id));
@@ -2519,6 +2530,19 @@ export class VillageScene extends Phaser.Scene {
     } else {
       this.decorationGhost?.destroy();
       this.decorationGhost = undefined;
+    }
+    const moving = this.model.obstacles.find((o) => o.id === this.model.movingObstacle);
+    if (moving) {
+      const d = OBSTACLES[moving.kind];
+      this.obstacleGhost ??= this.add.image(0, 0, '__DEFAULT').setDepth(6600);
+      if (this.deferredArt.has(d.texture, '/' + d.art.path))
+        this.obstacleGhost.setTexture(d.texture).setVisible(true);
+      else this.obstacleGhost.setVisible(false);
+      this.obstacleGhost.setOrigin(d.art.originX, 0.88).setDisplaySize(d.art.width, d.art.height);
+      this.updateObstacleGhost(this.pointerScreen());
+    } else {
+      this.obstacleGhost?.destroy();
+      this.obstacleGhost = undefined;
     }
     this.syncWalls();
     this.syncWallPreview();
@@ -3530,7 +3554,25 @@ export class VillageScene extends Phaser.Scene {
       .setTint(valid ? 0xffffff : 0xff7272);
     return { x, y, size, valid };
   }
+  /** Places a moved obstacle's ghost on the tile under the pointer (or key cursor). */
+  private updateObstacleGhost(p: { x: number; y: number }) {
+    const o = this.model.obstacles.find((v) => v.id === this.model.movingObstacle);
+    if (!this.obstacleGhost || !o) return;
+    const point = this.cameras.main.getWorldPoint(p.x, p.y),
+      grid = this.keyCursor ?? uniso(point.x, point.y),
+      size = OBSTACLES[o.kind].size,
+      x = Math.floor(grid.x),
+      y = Math.floor(grid.y),
+      screen = iso(x + size / 2, y + size / 2),
+      valid = this.model.canPlaceObstacle(o.id, x, y);
+    this.obstacleGhost
+      .setPosition(screen.x, screen.y)
+      .setAlpha(0.8)
+      .setTint(valid ? 0xffffff : 0xff7272);
+    return { x, y, size, valid };
+  }
   updateGhost(p: { x: number; y: number }) {
+    if (this.obstacleGhost) return this.updateObstacleGhost(p);
     if (this.decorationGhost) return this.updateDecorationGhost(p);
     if (!this.ghost || !this.model.placement) return;
     const point = this.cameras.main.getWorldPoint(p.x, p.y),
@@ -3886,6 +3928,7 @@ export class VillageScene extends Phaser.Scene {
       !!this.model.wallMove ||
       !!this.model.placement ||
       !!this.model.decorationPlacement ||
+      this.model.movingObstacle !== null ||
       (this.model.editing && !this.model.placement && !this.model.wallMove);
     this.showGrid(grid);
     if (this.model.wallMove) {
@@ -3893,7 +3936,11 @@ export class VillageScene extends Phaser.Scene {
       for (const w of this.model.wallMove.source) this.diamond(g, w.x, w.y, 1, 0xffe8a0, 0.06);
       for (const w of this.model.wallPreview) this.diamond(g, w.x, w.y, 1, color, 0.3);
     }
-    if (this.model.placement || this.model.decorationPlacement) {
+    if (
+      this.model.placement ||
+      this.model.decorationPlacement ||
+      this.model.movingObstacle !== null
+    ) {
       // Camera motion and DOM drags can change the tile without a Phaser pointer event.
       // Resolve it once per frame for both the sprite and its placement footprint.
       const preview = this.updateGhost(this.pointerScreen());

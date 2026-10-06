@@ -51,6 +51,8 @@ export interface Obstacle {
   y: number;
   removeStart?: number;
   removeEnd?: number;
+  /** A Shovel of Obstacles made it movable, for good. */
+  movable?: true;
 }
 export function overlapsObstacle(
   obstacles: readonly Obstacle[],
@@ -104,7 +106,8 @@ export function validObstacles(
       o.x < 0 ||
       o.y < 0 ||
       o.x + OBSTACLES[o.kind].size > gridSize(version) ||
-      o.y + OBSTACLES[o.kind].size > gridSize(version)
+      o.y + OBSTACLES[o.kind].size > gridSize(version) ||
+      (o.movable !== undefined && o.movable !== true)
     )
       return false;
     if (o.removeEnd !== undefined || o.removeStart !== undefined) {

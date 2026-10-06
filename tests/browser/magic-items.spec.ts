@@ -85,3 +85,35 @@ test('a building card finishes with a Book and upgrades with a Hammer', async ({
     }, id),
   ).toEqual([before + 2, gold, 0]);
 });
+
+test('a Shovel makes an obstacle movable, and a tap moves it', async ({ page }) => {
+  const id = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.addMagicItem('shovel-of-obstacles');
+    const o = m.obstacles[0];
+    m.selected = -o.id;
+    m.changed();
+    return o.id;
+  });
+  await page.locator(`[data-action="obstacle-shovel:${id}"]`).click();
+  await page.locator(`[data-action="obstacle-move:${id}"]`).click();
+  await expect(page.locator('.placement-banner')).toContainText('Move');
+  const target = await page.evaluate(async (id) => {
+    const { model: m, scene } = window.__game;
+    let spot: { x: number; y: number } | undefined;
+    for (let y = 30; y < 40 && !spot; y++)
+      for (let x = 14; x < 24 && !spot; x++) if (m.canPlaceObstacle(id, x, y)) spot = { x, y };
+    scene.cameras.main.centerOn(896 + (spot!.x - spot!.y) * 32, 112 + (spot!.x + spot!.y) * 16);
+    scene.clampCamera();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return { spot: spot!, screen: scene.screenFor(spot!.x + 0.5, spot!.y + 0.5) };
+  }, id);
+  await page.mouse.click(target.screen.x, target.screen.y);
+  expect(
+    await page.evaluate((id) => {
+      const o = window.__game.model.obstacles.find((v) => v.id === id)!;
+      return { x: o.x, y: o.y, movable: o.movable };
+    }, id),
+  ).toEqual({ ...target.spot, movable: true });
+  await expect(page.locator(`[data-action="obstacle-move:${id}"]`)).toBeVisible();
+});
