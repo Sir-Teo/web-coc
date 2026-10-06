@@ -32,7 +32,7 @@ for (const viewport of [
       return m.state.trophies;
     });
     await page.locator('.attack-btn').click();
-    await expect(page.locator('.campaign-rules')).toContainText('No time limit');
+    await expect(page.locator('.campaign-rules')).toContainText('no time limit');
     await expect(page.locator('.campaign-loot').first()).toContainText('400');
     await expect(page.locator('.campaign-card').nth(1)).toContainText('Loot depleted');
     await expect(page.locator('[data-action="attack:1"]')).toBeEnabled();

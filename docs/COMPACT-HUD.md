@@ -34,6 +34,38 @@ The page uses `viewport-fit=cover`, and the installed iOS app draws under a tran
 
 `tests/browser/safe-area.spec.ts` sets real `env()` insets through Chromium's `Emulation.setSafeAreaInsetsOverride`: 59/34 pixels in portrait and 59/59/21 in landscape. It opens the campaign list, which fills a phone, checks that the dialog and its close button stay inside the safe area, and closes the dialog with a tap. A third case confirms the unchanged 12-pixel margin without insets. Before the fix, both inset cases failed. Physical notched devices have not been checked.
 
+## Windows and the Shop on phones
+
+A scripted audit opened every window and both drawers at 390×844 with a coarse pointer. It hit-tested points around each control's centre to measure the area a finger can actually press. The script is `output/scratch/touch-audit.mjs`, which is not committed.
+
+It found two layout bugs and a set of small controls.
+
+- **Laboratory:** at phone width the research cards overflowed the window and the second column was cut off. A card's button label does not wrap, and the grid's `1fr` columns grew to fit it. The columns are now `minmax(0, 1fr)` and the labels wrap ("Requires laboratory 1" takes two lines).
+- **Settings:** the three backup buttons sat in one row that did not wrap, so "Import backup" was cut off at the right edge. The row now wraps.
+- **Small controls in windows:** with a coarse pointer, every button, tab and text field or picker inside a window is now at least 44 pixels tall. Before:
+
+  | Window         | Control          | Height before |
+  | -------------- | ---------------- | ------------- |
+  | Blacksmith     | hero tabs        | 30 px         |
+  | Campaign       | Attack buttons   | 31–34 px      |
+  | Campaign       | pickers          | 33 px         |
+  | Laboratory     | Research buttons | 39 px         |
+  | Hero's Journey | claim buttons    | 40 px         |
+  | Quick armies   | name field       | 35 px         |
+
+  Windows scroll, so the taller controls cost only a little scrolling.
+
+- **Shop prices on tall screens:** the price buttons were 35 pixels tall. On touch screens at least 600 pixels high they are now 44, using room their tiles already had: 25 pixels below the button at 390×844, 27 at 375×667. The strip keeps its height and does not scroll.
+- **Shop prices in short landscape:** at 844×390 (and 667×375, 740×360) the Shop's sheet leaves a tile 83 pixels. That is too little for art above a name, a count and a price, so every price was scrolled out of sight inside the strip. This was true before these changes. On screens up to 550 pixels high, a Shop tile now puts its art beside the text, as army tiles already do. Every price on every tab shows, and the strip no longer scrolls vertically.
+
+Army tiles keep the sizes tuned above, because the strip has no spare height for 44-pixel rows.
+
+`tests/browser/phone-windows.spec.ts` covers these fixes:
+
+- at 390×844, the Laboratory's cards and the Settings backup buttons stay on screen;
+- with a coarse pointer, window buttons, the Research and Attack buttons, the campaign pickers, the Quick army name field and the Shop's prices are at least 44 pixels tall;
+- at 844×390 and 667×375, every price on the All, Decorations and Treasure tabs shows without scrolling the strip.
+
 ## Verification
 
 `tests/browser/hud-layout.spec.ts` checks 19 viewports for both starter and developed villages, including both sides of the 700/701-pixel width and 799/800-pixel aspect-ratio boundaries. Five points inside each main HUD control must hit that control. Each viewport also clicks the measured center of Zoom out and requires a zoom change. Representative small views open Settings and collect resources without changing zoom. Side tools must remain at least 44 pixels in each dimension; short starter trays must not acquire unused trailing width.

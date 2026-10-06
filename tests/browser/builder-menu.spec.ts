@@ -33,10 +33,12 @@ test('the builder counter opens the builder menu, whose suggestions show each bu
     'Other upgrades:',
   ]);
   await expect(menu.locator('.working')).toContainText('Gold Storage');
-  for (const row of await menu.locator('.builder-option').all()) {
-    const box = (await row.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
-  }
+  // Measured in one pass: the window redraws each second for its countdowns.
+  const heights = await menu
+    .locator('.builder-option')
+    .evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+  expect(heights.length).toBeGreaterThan(0);
+  expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
   await page.screenshot({ path: `output/playtest/builder-menu-390-${browserName}.png` });
   // The Cannons share one row; each tap shows the next of them.
   const cannons = menu.locator('[data-action="builder-option:cannon,2"]');

@@ -433,3 +433,60 @@
     inset: -13px -1px;
   }
 }
+
+/* Windows on touch screens: every button, tab and field takes a 44-pixel finger. Windows
+   scroll, so the taller controls cost only a little scrolling. Measured at 390×844 before:
+   the Blacksmith's hero tabs were 30 pixels tall, the Campaign's Attack buttons 31–34 and its
+   filters 33, Research buttons 39, Hero's Journey claims 40, the Quick army name field 35. */
+@media (pointer: coarse) {
+  .modal .shop-tabs .tab,
+  .modal .game-btn,
+  .modal :is(select, input:not([type='checkbox'], [type='radio'], [type='range'])) {
+    min-height: 44px;
+  }
+}
+
+/* The Shop's price buttons (35 pixels on phones) grow to 44 into the room their tile already has
+   below them (25 pixels at 390×844, 27 at 375×667); the strip keeps its height. Short landscape
+   tiles have no such room. Army tiles are tuned above. */
+@media (pointer: coarse) and (min-height: 600px) {
+  .shop-tile:not(.army-tile) > .shop-buy {
+    min-height: 44px;
+  }
+}
+
+/* Short landscape screens (844×390): the Shop's sheet leaves a tile 83 pixels, too few for art
+   above a name, a count and a price, so the price button was scrolled out of sight. There the
+   art sits beside the text, as army tiles already do, and every price shows. */
+@media (max-height: 550px) {
+  .shop-tile:not(.army-tile) {
+    display: grid;
+    flex-basis: 180px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-auto-rows: min-content;
+    align-content: center;
+    align-items: center;
+    gap: 2px 6px;
+    padding: 5px 6px;
+  }
+  .shop-tile:not(.army-tile) > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .shop-tile:not(.army-tile) > .shop-count {
+    justify-content: center;
+  }
+  .shop-tile:not(.army-tile) > .shop-tile-art {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    height: 56px;
+  }
+  .shop-tile:not(.army-tile) .shop-tile-art img {
+    max-width: 56px;
+    max-height: 56px;
+  }
+  .shop-tile:not(.army-tile) > .shop-buy {
+    min-height: 30px;
+    margin: 0;
+  }
+}

@@ -1390,6 +1390,7 @@ h3 {
 }
 .save-section > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .save-section .game-btn {
@@ -2544,9 +2545,14 @@ h3 {
   .modal-footer > span {
     display: none;
   }
+  /* Columns no wider than the window: a card's nowrap button no longer pushes the second
+     column off a 390-pixel screen, and its label wraps instead. */
   .training-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+  .training-card .game-btn {
+    white-space: normal;
   }
   .training-art {
     height: 123px;
