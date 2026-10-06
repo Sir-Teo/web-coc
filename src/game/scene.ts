@@ -2,7 +2,6 @@ import { HeroNativePresentation } from './hero-native-scene';
 import type { CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
-import { EXTRA_TROOP_KINDS } from './extra-troops';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -146,6 +145,7 @@ import {
   isTrap,
   SPELLS,
   TROOPS,
+  PRE_EXPANSION_TROOP_KEYS,
   TROOP_KEYS,
   TIER3_LEVEL,
   buildingTexture,
@@ -469,10 +469,14 @@ export const uniso = (x: number, y: number) => ({
   x: ((x - WORLD.ox) / 32 + (y - WORLD.oy) / 16) / 2,
   y: ((y - WORLD.oy) / 16 - (x - WORLD.ox) / 32) / 2,
 });
-/** Classic troops draw walk sheets (128 px cells); the rest draw native art or a stand-in. */
+/**
+ * Classic troops draw walk sheets (128 px cells); the rest draw native art or a stand-in.
+ * Only they have one: spawned units, heroes and pets share the troop table but no sheet, and
+ * asking for theirs fetched a page that does not decode as an image.
+ */
 const WALK_FRAMES = { frameWidth: 128, frameHeight: 128 };
-const hasWalkSheet = (kind: string) =>
-  kind in TROOPS && !EXTRA_TROOP_KINDS.includes(kind as (typeof EXTRA_TROOP_KINDS)[number]);
+const WALK_SHEET_KINDS: ReadonlySet<string> = new Set(PRE_EXPANSION_TROOP_KEYS);
+const hasWalkSheet = (kind: string) => WALK_SHEET_KINDS.has(kind);
 const walkSheetUrl = (kind: string) =>
   walkAsset(kind).replace('.webp', `${troopArt(kind as TroopKind).version}.webp`);
 
