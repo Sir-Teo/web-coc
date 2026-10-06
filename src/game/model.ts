@@ -24,7 +24,18 @@ import {
   questTarget,
   type JourneyState,
 } from './heroes-journey';
-import { MAX_MAGIC_ITEMS, type MagicItemKind, type MagicItems } from './magic-items';
+import {
+  MAGIC_ITEMS,
+  advanceBoost,
+  boostItem,
+  wallRings,
+  type BoostKind,
+  type BoostTimer,
+  type Boosts,
+  type MagicItemKind,
+  type MagicItems,
+  type MagicTarget,
+} from './magic-items';
 import {
   HELPER_COOLDOWN_SECONDS,
   HELPER_KINDS,
@@ -446,6 +457,12 @@ import {
 } from './native-heroes';
 import { activateHero, refreshHeroPassives, stepHeroAbilities } from './native-hero-abilities';
 
+/** What a Book finishes: a building's running upgrade, the research, a hero's or the pets'. */
+export type BookTarget =
+  { building: number } | { research: true } | { hero: HeroKind } | { pet: true };
+/** What a Hammer upgrades. */
+export type HammerTarget =
+  { building: number } | { research: ResearchKind } | { hero: HeroKind } | { pet: PetKind };
 export interface Building {
   /** Campaign-only identity; the kind remains a geometry/targeting archetype. */
   npc?: NpcBuildingKind;
@@ -590,6 +607,8 @@ export interface Save {
   journey?: JourneyState;
   /** Magic items held, by kind. */
   magicItems?: MagicItems;
+  /** Running potions; see magic-items.ts. */
+  boosts?: Boosts;
   /** Helper Hut helpers bought with gems; see helpers.ts. */
   helpers?: Helpers;
   army: Army;
@@ -1474,24 +1493,49 @@ export class GameModel {
   researchTroop(kind: TroopKind) {
     this.research(kind);
   }
-  research(kind: ResearchKind) {
-    if (this.battle) return;
+  /** Why `kind` cannot be researched one level further, apart from the lab being busy. */
+  private researchIssue(kind: ResearchKind): string | null {
     const lab = this.laboratory;
-    if (!lab) return this.notify('Complete a laboratory before starting research.');
+    if (!lab) return 'Complete a laboratory before starting research.';
     const spell = isSpellKind(kind);
     if (!spell && superOriginal(kind))
-      return this.notify('Research the original troop to upgrade its super variant.');
+      return 'Research the original troop to upgrade its super variant.';
     const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     if (spell ? !this.spellUnlocked(kind) : !this.troopUnlocked(kind))
-      return this.notify(
-        `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`,
-      );
-    if (this.state.research) return this.notify('Research is already in progress.');
+      return `Unlock ${name} at ${spell ? `Spell Factory level ${SPELL_UNLOCK[kind]}` : `Barracks level ${TROOP_UNLOCK[kind]}`} first.`;
     if (this.researchLevel(kind) >= (spell ? maxSpellLevelFor(kind) : maxTroopLevel(kind)))
-      return this.notify(`This ${spell ? 'spell' : 'troop'} is at its maximum level.`);
+      return `This ${spell ? 'spell' : 'troop'} is at its maximum level.`;
     const requiredLab = this.researchLaboratory(kind);
-    if (lab.level < requiredLab)
-      return this.notify(`Upgrade your laboratory to level ${requiredLab}.`);
+    if (lab.level < requiredLab) return `Upgrade your laboratory to level ${requiredLab}.`;
+    return null;
+  }
+  /** One research level gained, by the lab or a Hammer. */
+  private raiseResearch(kind: ResearchKind) {
+    if (isSpellKind(kind)) {
+      this.state.spellLevels ??= defaultSpellLevels();
+      const level = (this.state.spellLevels[kind] = Math.min(
+        maxSpellLevelFor(kind),
+        this.state.spellLevels[kind] + 1,
+      ));
+      return { name: SPELLS[kind].name, level };
+    }
+    this.state.troopLevels ??= Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as Record<
+      TroopKind,
+      number
+    >;
+    const level = (this.state.troopLevels[kind] = Math.min(
+      maxTroopLevel(kind),
+      this.state.troopLevels[kind] + 1,
+    ));
+    return { name: TROOPS[kind].name, level };
+  }
+  research(kind: ResearchKind) {
+    if (this.battle) return;
+    const issue = this.researchIssue(kind);
+    if (issue) return this.notify(issue);
+    if (this.state.research) return this.notify('Research is already in progress.');
+    const spell = isSpellKind(kind);
+    const name = spell ? SPELLS[kind].name : TROOPS[kind].name;
     const cost = this.researchCost(kind);
     const researchResource = (
       spell ? spellFactory(kind) === 'darkspellfactory' : troopFacility(kind) === 'darkbarracks'
@@ -1642,6 +1686,13 @@ export class GameModel {
       this.state.obstacleGrowth ??= initialObstacleGrowth(this.obstacles, now);
       structural = changed = true;
     }
+    // Potions run their timers' extra speed before any timer completes this tick.
+    for (const kind of ['builders', 'laboratory', 'pets'] as const) {
+      const boost = this.state.boosts?.[kind];
+      const effect = MAGIC_ITEMS[boostItem(kind)].effect as { multiplier: number };
+      if (boost && advanceBoost(boost, effect.multiplier, this.boostTimers(kind), now))
+        changed = true;
+    }
     // Helpers run their jobs' timers before any timer completes this tick.
     for (const kind of HELPER_KINDS) {
       const h = this.state.helpers?.[kind];
@@ -1715,10 +1766,33 @@ export class GameModel {
       }
       if (isCollector(b.kind) && !b.upgradeEnd) {
         const before = b.stored;
-        b.stored = produceCollector(b.kind, b.level, b.stored, productionSeconds, b.supercharge);
+        // A Resource Potion doubles production for the part of this interval it covers.
+        const potion = this.state.boosts?.resources;
+        const boosted = potion
+          ? Math.max(
+              0,
+              Math.min(now, potion.end) / 1000 -
+                Math.max(now / 1000 - productionSeconds, potion.start / 1000),
+            ) *
+            ((MAGIC_ITEMS[boostItem('resources')].effect as { multiplier: number }).multiplier - 1)
+          : 0;
+        b.stored = produceCollector(
+          b.kind,
+          b.level,
+          b.stored,
+          productionSeconds + boosted,
+          b.supercharge,
+        );
         if (Math.floor(before) !== Math.floor(b.stored) && !inBattle) changed = true;
       }
     }
+    for (const [kind, boost] of Object.entries(this.state.boosts ?? {}))
+      if (boost.end <= now) {
+        delete this.state.boosts![kind as BoostKind];
+        structural = changed = true;
+        if (!inBattle)
+          this.notify(`Your ${MAGIC_ITEMS[boostItem(kind as BoostKind)].name} has worn off.`);
+      }
     const growth = this.state.obstacleGrowth!;
     // Saves from before the Gem Box schedule their first one a period from now.
     if (growth.gemBoxAt === undefined) {
@@ -1794,26 +1868,7 @@ export class GameModel {
       changed = true;
     }
     if (this.state.research && this.state.research.end <= now) {
-      const { kind } = this.state.research;
-      let name: string, level: number;
-      if (isSpellKind(kind)) {
-        this.state.spellLevels ??= defaultSpellLevels();
-        level = this.state.spellLevels[kind] = Math.min(
-          maxSpellLevelFor(kind),
-          this.state.spellLevels[kind] + 1,
-        );
-        name = SPELLS[kind].name;
-      } else {
-        this.state.troopLevels ??= Object.fromEntries(TROOP_KEYS.map((k) => [k, 1])) as Record<
-          TroopKind,
-          number
-        >;
-        level = this.state.troopLevels[kind] = Math.min(
-          maxTroopLevel(kind),
-          this.state.troopLevels[kind] + 1,
-        );
-        name = TROOPS[kind].name;
-      }
+      const { name, level } = this.raiseResearch(this.state.research.kind);
       delete this.state.research;
       this.notify(`${name} upgraded to level ${level}!`);
       this.finishedAt(this.laboratory, 'research');
@@ -3196,8 +3251,8 @@ export class GameModel {
       case 'item': {
         const kind = journeyMagicItem(reward.item);
         if (!kind) return false;
-        this.addMagicItem(kind, reward.count);
-        note = `+${reward.count} ${reward.item}`;
+        const sold = this.addMagicItem(kind, reward.count);
+        note = `+${reward.count} ${reward.item}${sold ? ` · ${sold} did not fit and sold for ${sold * MAGIC_ITEMS[kind].gemValue} gems` : ''}`;
         break;
       }
       case 'equipment': {
@@ -3261,21 +3316,264 @@ export class GameModel {
       `Hero Quest complete! Ore Chests: ${chests.shiny} Shiny, ${chests.glowy} Glowy, ${chests.starry} Starry`,
     );
   }
+  // ------------------------------------------------------------ magic items
+  magicItemCount(kind: MagicItemKind) {
+    return this.state.magicItems?.[kind] ?? 0;
+  }
+  /**
+   * Adds items up to each item's limit; what does not fit is sold for its gem value, as the client
+   * does with rewards that cannot fit. Returns how many were sold.
+   */
   addMagicItem(kind: MagicItemKind, count = 1) {
     const items = (this.state.magicItems ??= {});
-    items[kind] = Math.min(MAX_MAGIC_ITEMS, (items[kind] ?? 0) + count);
+    const held = items[kind] ?? 0;
+    const kept = Math.max(0, Math.min(count, MAGIC_ITEMS[kind].max - held));
+    items[kind] = held + kept;
+    const sold = count - kept;
+    this.state.gems += sold * MAGIC_ITEMS[kind].gemValue;
+    return sold;
+  }
+  /** Cash one item in for its gems. */
+  sellMagicItem(kind: MagicItemKind) {
+    if (this.battle || !this.magicItemCount(kind)) return false;
+    this.spendItem(kind);
+    const gems = MAGIC_ITEMS[kind].gemValue;
+    this.state.gems += gems;
+    this.notify(`${MAGIC_ITEMS[kind].name} sold for ${gems} gems.`);
+    this.changed();
+    return true;
+  }
+  private spendItem(kind: MagicItemKind, count = 1) {
+    this.state.magicItems![kind] = this.magicItemCount(kind) - count;
+  }
+  /**
+   * Runs an upgrade whose cost a Hammer, Wall Ring or Super Potion covers: the usual rules apply,
+   * but every resource is on hand and none is spent. Nothing observes the purse in between.
+   */
+  private covered<T>(action: () => T): T {
+    const purse = { gold: this.state.gold, elixir: this.state.elixir, dark: this.state.dark };
+    this.state.gold = this.state.elixir = this.state.dark = Number.MAX_SAFE_INTEGER;
+    try {
+      return action();
+    } finally {
+      Object.assign(this.state, purse);
+    }
+  }
+  /** Runes fill their resource's storages, and only when they have room. */
+  useRune(kind: MagicItemKind) {
+    const effect = MAGIC_ITEMS[kind]?.effect;
+    if (this.battle || !effect || !('fill' in effect) || !this.magicItemCount(kind)) return false;
+    const resource = effect.fill,
+      cap = this.resourceCap(resource);
+    if (this.state[resource] >= cap) {
+      this.notify(
+        cap ? 'Those storages are already full.' : 'Build a storage for this resource first.',
+      );
+      return false;
+    }
+    this.spendItem(kind);
+    const added = cap - this.state[resource];
+    this.state[resource] = cap;
+    this.notify(`${MAGIC_ITEMS[kind].name} used: +${Math.floor(added).toLocaleString()}.`);
+    this.changed();
+    return true;
+  }
+  /** What a Book's target is: building upgrades, troop or spell research, hero or pet upgrades. */
+  private bookTarget(target: BookTarget): MagicTarget | undefined {
+    if ('building' in target)
+      return this.state.buildings.find((b) => b.id === target.building)?.upgradeEnd !== undefined
+        ? 'building'
+        : undefined;
+    if ('research' in target) {
+      const r = this.state.research;
+      return r ? (isSpellKind(r.kind) ? 'spell' : 'troop') : undefined;
+    }
+    if ('pet' in target) return this.state.pets?.research ? 'hero' : undefined;
+    return this.heroProgress(target.hero)?.upgradeEnd ? 'hero' : undefined;
+  }
+  /** Books that can finish this running upgrade now, the Book of Everything last. */
+  booksFor(target: BookTarget): MagicItemKind[] {
+    const kind = this.bookTarget(target);
+    if (!kind) return [];
+    const books = Object.entries(MAGIC_ITEMS)
+      .filter(
+        ([item, d]) =>
+          'finish' in d.effect && d.effect.finish.includes(kind) && this.magicItemCount(item),
+      )
+      .map(([item]) => item);
+    // The Book of Everything only stands in when no other book can.
+    return books.length > 1 ? books.filter((b) => b !== 'book-of-everything') : books;
+  }
+  /** A Book finishes one running upgrade now. */
+  useBook(kind: MagicItemKind, target: BookTarget) {
+    if (this.battle || !this.booksFor(target).includes(kind)) return false;
+    let name: string;
+    if ('building' in target) {
+      const b = this.state.buildings.find((v) => v.id === target.building)!;
+      finishTimerNow(b, this.clock);
+      name = BUILDINGS[b.kind].name;
+    } else if ('research' in target) {
+      const r = this.state.research!;
+      r.end = this.clock;
+      name = isSpellKind(r.kind) ? SPELLS[r.kind].name : TROOPS[r.kind].name;
+    } else if ('pet' in target) {
+      const r = this.state.pets!.research!;
+      r.end = this.clock;
+      name = PET_DISPLAY[r.kind];
+    } else {
+      finishTimerNow(this.heroProgress(target.hero)!, this.clock);
+      name = HERO_SOURCE[target.hero];
+    }
+    this.spendItem(kind);
+    this.notify(`${MAGIC_ITEMS[kind].name} used: ${name} upgrade finished.`);
+    this.tick(this.clock);
+    this.changed();
+    return true;
   }
   /** Book of Heroes: finish one hero's upgrade now. */
   useBookOfHeroes(kind: HeroKind) {
-    const books = this.state.magicItems?.['book-of-heroes'] ?? 0;
-    const progress = this.heroProgress(kind);
-    if (this.battle || !books || !progress?.upgradeEnd) return false;
-    this.state.magicItems!['book-of-heroes'] = books - 1;
-    finishTimerNow(progress, this.clock);
-    this.tick(this.clock);
-    this.notify(`Book of Heroes used: ${HERO_SOURCE[kind]} upgrade finished.`);
+    const book = this.booksFor({ hero: kind })[0];
+    return !!book && this.useBook(book, { hero: kind });
+  }
+  /**
+   * A Hammer performs the next upgrade of a building, troop, spell, hero or pet instantly and at
+   * no cost. Every other requirement holds: a free builder for buildings and heroes, the Town
+   * Hall, Laboratory or Pet House level, and no upgrade of that target already running. Walls
+   * take Wall Rings, never Hammers.
+   */
+  useHammer(kind: MagicItemKind, target: HammerTarget) {
+    const effect = MAGIC_ITEMS[kind]?.effect;
+    if (this.battle || !effect || !('upgrade' in effect) || !this.magicItemCount(kind))
+      return false;
+    const done = () => {
+      this.spendItem(kind);
+      this.tick(this.clock);
+      this.changed();
+      return true;
+    };
+    if ('building' in target) {
+      const b = this.state.buildings.find((v) => v.id === target.building);
+      if (!effect.upgrade.includes('building') || !b || b.kind === 'wall' || b.constructing)
+        return false;
+      if (b.upgradeEnd) return (this.notify('This building is already upgrading.'), false);
+      this.covered(() => this.upgrade(b.id));
+      if (!b.upgradeEnd) return false;
+      finishTimerNow(b, this.clock);
+      this.notify(`${MAGIC_ITEMS[kind].name} used: ${BUILDINGS[b.kind].name} upgraded.`);
+      return done();
+    }
+    if ('hero' in target) {
+      const hero = this.heroProgress(target.hero);
+      if (!effect.upgrade.includes('hero') || !hero || hero.upgradeEnd) return false;
+      if (!this.covered(() => this.upgradeRosterHero(target.hero))) return false;
+      finishTimerNow(hero, this.clock);
+      this.notify(`${MAGIC_ITEMS[kind].name} used: ${HERO_SOURCE[target.hero]} upgraded.`);
+      return done();
+    }
+    if ('pet' in target) {
+      const pets = this.state.pets,
+        level = pets?.levels[target.pet];
+      if (!effect.upgrade.includes('hero') || !this.petHouse || level === undefined) return false;
+      if (pets!.research?.kind === target.pet)
+        return (this.notify('This pet is already upgrading.'), false);
+      if (level >= petLevelCap(target.pet, this.petHouse.level))
+        return (this.notify('Upgrade the Pet House to raise this pet further.'), false);
+      pets!.levels[target.pet] = level + 1;
+      this.notify(
+        `${MAGIC_ITEMS[kind].name} used: ${PET_DISPLAY[target.pet]} reached level ${level + 1}!`,
+      );
+      return done();
+    }
+    const research = target.research,
+      spell = isSpellKind(research);
+    if (!effect.upgrade.includes(spell ? 'spell' : 'troop')) return false;
+    if (this.state.research?.kind === research)
+      return (this.notify('This research is already running.'), false);
+    const issue = this.researchIssue(research);
+    if (issue) return (this.notify(issue), false);
+    const { name, level } = this.raiseResearch(research);
+    this.notify(`${MAGIC_ITEMS[kind].name} used: ${name} upgraded to level ${level}!`);
+    return done();
+  }
+  /** Wall Rings one wall's next level takes: one per million of its cost. */
+  wallRingsFor(id: number) {
+    const b = this.state.buildings.find((v) => v.id === id && v.kind === 'wall');
+    return b && b.level < this.maxLevel('wall') ? wallRings(this.upgradeCost(b)) : undefined;
+  }
+  /** Wall Rings upgrade one wall, with a free builder, as gold or elixir would. */
+  useWallRing(id: number) {
+    const rings = this.wallRingsFor(id),
+      held = this.magicItemCount('wall-ring');
+    if (this.battle || rings === undefined || !held) return false;
+    if (held < rings) return (this.notify(`This wall takes ${rings} Wall Rings.`), false);
+    if (!this.covered(() => this.upgradeWalls([id], 'gold'))) return false;
+    this.spendItem('wall-ring', rings);
+    return true;
+  }
+  /** Super Potion: boosts a troop into its Super Troop with the usual rules, free. */
+  useSuperPotion(kind: TroopKind) {
+    if (this.battle || !this.magicItemCount('super-potion')) return false;
+    const before = this.state.superBoosts?.[kind] ?? 0;
+    this.covered(() => this.boostSuperTroop(kind));
+    if ((this.state.superBoosts?.[kind] ?? 0) === before) return false;
+    this.spendItem('super-potion');
+    this.notify(`Super Potion used: ${TROOPS[kind].name} boosted.`);
     this.changed();
     return true;
+  }
+  /** Builder, Research, Pet and Resource Potions; another of a running kind extends it. */
+  usePotion(kind: MagicItemKind) {
+    const effect = MAGIC_ITEMS[kind]?.effect;
+    if (this.battle || !effect || !('boost' in effect) || !this.magicItemCount(kind)) return false;
+    if (effect.boost === 'army' || effect.boost === 'heroes') {
+      this.notify(`${MAGIC_ITEMS[kind].name} is kept until battle boosts arrive.`);
+      return false;
+    }
+    const boosts = (this.state.boosts ??= {});
+    const running = boosts[effect.boost];
+    if (running && running.end > this.clock) running.end += effect.seconds * 1000;
+    else
+      boosts[effect.boost] = {
+        start: this.clock,
+        end: this.clock + effect.seconds * 1000,
+        applied: this.clock,
+      };
+    this.spendItem(kind);
+    this.notify(`${MAGIC_ITEMS[kind].name} active.`);
+    this.changed();
+    return true;
+  }
+  /** Seconds a potion has left, if it is running. */
+  boostLeft(kind: BoostKind) {
+    const boost = this.state.boosts?.[kind];
+    return boost && boost.end > this.clock ? (boost.end - this.clock) / 1000 : 0;
+  }
+  /** The running timers a potion speeds up. */
+  private boostTimers(kind: 'builders' | 'laboratory' | 'pets'): BoostTimer[] {
+    const timer = (t: { upgradeStart?: number; upgradeEnd?: number }): BoostTimer => ({
+      get end() {
+        return t.upgradeEnd ?? 0;
+      },
+      // Both ends move, so the scheduled length and its completion XP are kept.
+      move: (ms) => {
+        t.upgradeEnd! -= ms;
+        if (t.upgradeStart !== undefined) t.upgradeStart -= ms;
+      },
+    });
+    const ending = (r: { end: number }): BoostTimer => ({
+      get end() {
+        return r.end;
+      },
+      move: (ms) => (r.end -= ms),
+    });
+    if (kind === 'laboratory') return this.state.research ? [ending(this.state.research)] : [];
+    if (kind === 'pets') return this.state.pets?.research ? [ending(this.state.pets.research)] : [];
+    return [
+      ...this.state.buildings.filter((b) => b.upgradeEnd !== undefined).map(timer),
+      ...HERO_KINDS.map((k) => this.heroProgress(k))
+        .filter((h) => h?.upgradeEnd !== undefined)
+        .map((h) => timer(h!)),
+    ];
   }
   /** Marks a finished hero upgrade or research at the building that did it (home only). */
   private finishedAt(b: Building | undefined, finished: 'hero' | 'research') {

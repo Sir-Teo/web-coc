@@ -42,6 +42,7 @@ notes in those references are not current release guarantees.
 - [Moving and rotating wall rows](WALL-MOVEMENT.md)
 - [Persistent village obstacles](OBSTACLES.md)
 - [Decorations](DECORATIONS.md)
+- [Magic items](MAGIC-ITEMS.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)
 - [Clash of Clans experience coverage](EXPERIENCE-PARITY.md)

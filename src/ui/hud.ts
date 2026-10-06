@@ -225,6 +225,7 @@ import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline'
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
 import { musicScene } from '../game/music';
 type Panel =
+  | 'magic-items'
   | 'blacksmith'
   | 'heroes'
   | 'journey'
@@ -1299,6 +1300,62 @@ export class HUD {
         break;
       case 'journey':
         this.show('journey');
+        break;
+      case 'magic-items':
+        this.show('magic-items');
+        break;
+      case 'item-sell':
+        m.sellMagicItem(arg);
+        this.render();
+        break;
+      case 'item-rune':
+        m.useRune(arg);
+        this.render();
+        break;
+      case 'item-potion':
+        m.usePotion(arg);
+        this.render();
+        break;
+      case 'book-building':
+      case 'book-research':
+      case 'book-hero':
+      case 'book-pet': {
+        const target =
+          verb === 'book-building'
+            ? { building: Number(arg) }
+            : verb === 'book-research'
+              ? { research: true as const }
+              : verb === 'book-pet'
+                ? { pet: true as const }
+                : { hero: arg as HeroKind };
+        const book = m.booksFor(target)[0];
+        if (book) m.useBook(book, target);
+        this.render();
+        break;
+      }
+      case 'hammer-building':
+        m.useHammer('hammer-of-building', { building: Number(arg) });
+        break;
+      case 'hammer-research':
+        m.useHammer(isSpellKind(arg) ? 'hammer-of-spells' : 'hammer-of-fighting', {
+          research: arg as ResearchKind,
+        });
+        this.render();
+        break;
+      case 'hammer-hero':
+        m.useHammer('hammer-of-heroes', { hero: arg as HeroKind });
+        this.render();
+        break;
+      case 'hammer-pet':
+        m.useHammer('hammer-of-heroes', { pet: arg as PetKind });
+        this.render();
+        break;
+      case 'wall-ring':
+        m.useWallRing(Number(arg));
+        break;
+      case 'super-potion':
+        m.useSuperPotion(arg as TroopKind);
+        this.render();
         break;
       case 'crafting':
         this.craftingStation = Number(arg);
@@ -2802,9 +2859,20 @@ export class HUD {
           : gated
             ? `<span class="max-level locked">${icon('LockKeyhole', 14)} ${requiredTownHall(b.kind, b.level + 1) ? `Town Hall ${requiredTownHall(b.kind, b.level + 1)}` : 'Village tier maximum'}</span>`
             : this.upgradeControl(b)
-    }${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
+    }${this.itemButtons(b, capped || gated)}${b.kind === 'blacksmith' ? button('blacksmith', `${icon('Anvil', 20)} Equipment`, 'game-btn blue') : ''}${b.kind === 'herohall' ? button('heroes', `${icon('ShieldCheck', 20)} Heroes`, 'game-btn blue') : ''}${b.kind === 'herohall' && m.journeyOpen ? button('journey', `${icon('Map', 20)} Journey${m.journeyClaimable.length ? '<span class="notification">!</span>' : ''}`, 'game-btn orange') : ''}${b.kind === 'pethouse' ? button('pets', `${icon('PawPrint', 20)} Pets`, 'game-btn blue') : ''}${b.kind === 'helperhut' ? button('helpers', `${icon('Users', 20)} Helpers${m.helpersIdle ? '<span class="notification">!</span>' : ''}`, 'game-btn blue') : ''}${b.kind === 'townhall' ? button('progression', `${icon('Layers', 20)} Progression`, 'game-btn blue') : ''}${this.mergeButtons(b)}${this.guardianButtons(b)}${this.craftingButton(b)}${b.kind === 'townhall' && !b.upgradeEnd && townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1) ? button(`th-weapon:${b.id}`, `<span>${icon('Zap', 19)} Weapon ${(b.weaponLevel ?? 1) + 1}</span><small>${resource(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.resource)} ${n(townHallWeaponUpgrade(b.level, b.weaponLevel ?? 1)!.cost)}</small>`, 'game-btn green') : ''}${b.kind === 'laboratory' ? button('research', `${icon('FlaskConical', 20)} Research`, 'game-btn blue') : ''}${b.kind === 'barracks' || b.kind === 'camp' || b.kind === 'spellfactory' ? button('army', `${icon('Swords', 20)} Train`, 'game-btn blue') : ''}${b.kind === 'goldmine' || b.kind === 'collector' || b.kind === 'darkdrill' ? button('collect', `${coin} Collect`, 'game-btn gold') : ''}</div><button class="context-close" data-action="cancel" aria-label="Close building">${icon('X', 18)}</button></div>`;
   }
 
+  /**
+   * A building's magic items: a Book for its running upgrade, the Hammer of Building for its next
+   * level, and on the Town Hall the inventory itself.
+   */
+  private itemButtons(b: Building, blocked: boolean) {
+    const m = this.model;
+    const book = b.upgradeEnd ? m.booksFor({ building: b.id })[0] : undefined;
+    const hammer =
+      !b.upgradeEnd && !b.constructing && !blocked && m.magicItemCount('hammer-of-building') > 0;
+    return `${book ? button(`book-building:${b.id}`, `${icon('BookOpen', 20)}<span>${MAGIC_ITEMS[book].name.replace('Book of ', 'Book: ')}</span>`, 'game-btn blue', `aria-label="Finish with the ${MAGIC_ITEMS[book].name}"`) : ''}${hammer ? button(`hammer-building:${b.id}`, `${icon('Hammer', 20)}<span>Hammer</span>`, 'game-btn blue', `aria-label="Upgrade instantly with the Hammer of Building" ${m.busy >= m.builders ? 'disabled' : ''}`) : ''}${b.kind === 'townhall' ? button('magic-items', `${icon('Sparkles', 20)}<span>Items</span>`, 'game-btn stone', 'aria-label="Magic items"') : ''}`;
+  }
   /**
    * Upgrade with everything that decides it in view: cost, duration and free builders, and the
    * exact blocker when there is one (with a way to the building a Town Hall merge needs).
@@ -2832,6 +2900,19 @@ export class HUD {
       <p class="wall-move-status ${issue ? 'blocked' : ''}" role="status">${issue ?? 'Clear ground · Ready to place'}</p>
       <div class="wall-move-actions">${button('cancel', `${icon('X', 18)} Cancel`, 'game-btn stone')}${button('wall-rotate', `${icon('RotateCw', 18)} Rotate`, 'game-btn blue', 'aria-label="Rotate wall row 90 degrees"')}${button('wall-place', `${icon('Check', 18)} Place`, 'game-btn green', issue ? 'disabled' : '')}</div>
     </section>`;
+  }
+  /** One wall's Wall Ring upgrade, when rings are held. */
+  private ringButton(walls: readonly Building[]) {
+    const m = this.model,
+      held = m.magicItemCount('wall-ring');
+    const rings = walls.length === 1 ? m.wallRingsFor(walls[0].id) : undefined;
+    if (m.editing || !held || rings === undefined) return '';
+    return button(
+      `wall-ring:${walls[0].id}`,
+      `<span>${icon('Circle', 18)} Ring</span><small>${rings} of ${held} Wall Rings</small>`,
+      'game-btn blue',
+      `${held < rings || m.busy >= m.builders ? 'disabled' : ''} aria-label="Upgrade with ${rings} Wall ${rings === 1 ? 'Ring' : 'Rings'}"`,
+    );
   }
   private wallContext(anchor: Building) {
     const m = this.model;
@@ -2874,7 +2955,7 @@ export class HUD {
       <div class="wall-tools">${button('info', `${icon('Info', 17)} Info`, 'game-btn stone')}${walls.length === 1 ? button(`move:${anchor.id}`, `${icon('Move', 17)} Move`, 'game-btn stone') : button('wall-single', 'Single wall', 'game-btn stone')}${button('wall-row', `${icon('LayoutGrid', 17)} ${m.wallAxis ? 'Other row' : 'Select row'}`, 'game-btn stone', rowAvailable ? '' : 'disabled')}</div>
       ${m.wallAxis ? `<div class="wall-tools wall-row-move">${button('wall-move', `${icon('Move', 18)} Move row`, 'game-btn blue')}</div>` : ''}
       ${m.editing ? '' : m.wallAxis ? `<div class="wall-row-note"><span>Connected row · Each eligible wall gains one level</span>${button('wall-single', 'Select by level', 'game-btn stone')}</div>` : `<div class="wall-quantity" aria-label="Select walls of the same level">${adjust(-10)}${adjust(-1)}<span><b>${walls.length}</b><small>selected</small></span>${adjust(1)}${adjust(10)}</div>`}
-      <div class="wall-upgrade-actions">${!m.editing && gold.walls.length ? purchase('gold', gold) + (low >= 4 ? purchase('elixir', pink) : '') : ''}</div>
+      <div class="wall-upgrade-actions">${!m.editing && gold.walls.length ? purchase('gold', gold) + (low >= 4 ? purchase('elixir', pink) : '') : ''}${this.ringButton(walls)}</div>
       <p class="wall-note">${m.editing ? 'Select a row to move or rotate it together.' : note}</p><button class="context-close" data-action="cancel" aria-label="Close wall selection">${icon('X', 18)}</button></div>`;
   }
 
@@ -3128,6 +3209,73 @@ export class HUD {
           : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
+  /** The Town Hall's magic items: what each does, how many are held, and its use or sale. */
+  private magicItems() {
+    const m = this.model;
+    const held = (k: string) => m.magicItemCount(k);
+    const kinds = [...MAGIC_ITEM_KINDS].sort((a, b) => Number(!held(a)) - Number(!held(b)));
+    const use = (k: string) => {
+      const effect = MAGIC_ITEMS[k].effect;
+      // A running potion shows its time even when none is left to drink.
+      const left = 'boost' in effect ? m.boostLeft(effect.boost) : 0;
+      const running = left
+        ? `<small class="item-note">${icon('Clock3', 12)} ${time(left)} left</small>`
+        : '';
+      if (!held(k)) return running;
+      if ('fill' in effect)
+        return button(
+          `item-rune:${k}`,
+          'Use',
+          'game-btn green',
+          m.state[effect.fill] >= m.resourceCap(effect.fill) ? 'disabled' : '',
+        );
+      if ('boost' in effect) {
+        if (effect.boost === 'army' || effect.boost === 'heroes')
+          return '<small class="item-note">Kept until battle boosts arrive.</small>';
+        return `${running}${button(`item-potion:${k}`, left ? 'Extend' : 'Use', 'game-btn green')}`;
+      }
+      if ('finish' in effect) {
+        const targets = [
+          ...m.state.buildings
+            .filter((b) => b.upgradeEnd)
+            .map(
+              (b) => [`book-building:${b.id}`, BUILDINGS[b.kind].name, { building: b.id }] as const,
+            ),
+          ...(m.state.research ? [['book-research', 'Research', { research: true }] as const] : []),
+          ...HERO_KINDS.filter((h) => m.heroProgress(h)?.upgradeEnd).map(
+            (h) => [`book-hero:${h}`, HERO_SOURCE[h], { hero: h }] as const,
+          ),
+          ...(m.state.pets?.research ? [['book-pet', 'Pet', { pet: true }] as const] : []),
+        ].filter(([, , target]) => m.booksFor(target as never)[0] === k);
+        return targets.length
+          ? targets
+              .map(([action, name]) => button(action, `Finish ${name}`, 'game-btn green'))
+              .join('')
+          : '<small class="item-note">Nothing it can finish is upgrading.</small>';
+      }
+      const where =
+        'upgrade' in effect
+          ? effect.upgrade.includes('building')
+            ? 'Use it from a building’s card.'
+            : effect.upgrade.includes('hero')
+              ? 'Use it in the Hero Hall or Pet House.'
+              : 'Use it in the Laboratory.'
+          : 'ring' in effect
+            ? 'Use it from a wall’s card.'
+            : 'super' in effect
+              ? 'Use it on a Super Troop in the army.'
+              : 'Kept until its use arrives.';
+      return `<small class="item-note">${where}</small>`;
+    };
+    return `<div class="modal-body magic-items-body"><div class="magic-item-grid">${kinds
+      .map((k) => {
+        const d = MAGIC_ITEMS[k];
+        return `<article class="magic-item ${held(k) ? '' : 'empty'}" data-item="${k}">${d.icon ? `<img src="/${d.icon.path}" alt="" width="${d.icon.width / 2}" height="${d.icon.height / 2}" loading="lazy">` : ''}<div><h3>${d.name} <b>${held(k)}/${d.max}</b></h3><p>${html(d.description)}</p><div class="magic-item-actions">${use(k)}${held(k) && d.gemValue ? button(`item-sell:${k}`, `Sell ${gem} ${d.gemValue}`, 'game-btn stone') : ''}</div></div></article>`;
+      })
+      .join(
+        '',
+      )}</div></div><footer class="modal-footer">${gem} ${n(m.state.gems)} gems <span>Items that do not fit are sold for their gems</span></footer>`;
+  }
   private heroes() {
     const m = this.model,
       king = m.state.king,
@@ -3224,7 +3372,7 @@ export class HUD {
           : ''
       }`}
       <p class="hero-stats-note">Pet: ${pet ? (PET_DISPLAY[pet as keyof typeof PET_DISPLAY] ?? pet) : 'none'} · ${button('pets', 'Manage pets', 'replay-link')}</p>
-      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
+      <div class="hero-upgrade"><p>${resource('dark')} <b data-resource="dark">${n(m.state.dark)}</b> dark elixir · ${resource('elixir')} <b data-resource="elixir">${n(m.state.elixir)}</b> elixir</p>${progress.upgradeEnd ? `<p>Upgrade completes in <b data-hero-timer="${kind}">${time((progress.upgradeEnd - m.clock) / 1000)}</b></p>${button(`hero-finish:${kind}`, `Finish ${gem} <span data-hero-gems="${kind}">${m.finishCost({ upgradeEnd: progress.upgradeEnd } as Building)}</span>`, 'game-btn green')}${m.booksFor({ hero: kind }).length ? button(`book-hero:${kind}`, `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ hero: kind })[0]].name}`, 'game-btn blue') : ''}` : capped ? `<p class="max-level">${isKing && m.townhallLevel < 7 ? 'Hero upgrades unlock at Town Hall 7' : missing.length ? `Upgrade to ${missing.join(' and ')}` : 'Maximum hero level'}</p>` : `${button(`hero-upgrade:${kind}`, upgradeCostText, 'game-btn green', upgradeDisabled ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-hero:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.busy >= m.builders ? 'disabled' : '') : ''}<p>${upgradeSecondsText} · Requires one free builder</p>`}</div>
       ${inLineup ? '' : `<div class="hero-upgrade">${m.heroLineup.length >= nativeHeroSlots(hall.level) ? button(`hero-lineup:${kind}`, `Swap in for ${HERO_SOURCE[m.heroLineup[m.heroLineup.length - 1]]}`, 'game-btn blue') : button(`hero-lineup:${kind}`, 'Add to lineup', 'game-btn blue')}</div>`}</section>`;
   }
   /** Pet House: research one pet at a time and assign one pet to each hero. */
@@ -3267,7 +3415,7 @@ export class HUD {
           quote = !capped && !research ? petUpgradeQuote(kind, level) : null;
         const assigned = Object.entries(pets.assigned).find(([, p]) => p === kind)?.[0];
         return `<section class="hero-section" data-pet="${kind}"><article class="hero-overview"><div class="hero-portrait"><img src="${PET_PORTRAIT[kind]}" alt="${PET_DISPLAY[kind]}"></div><div><span class="eyebrow">PET HOUSE ${house.level}</span><h2>${PET_DISPLAY[kind]}</h2><p>Level ${level} / ${max}${level >= max ? ' · Max' : capped ? ` · Pet House cap ${cap}` : ''} · ${assigned ? HERO_SOURCE[assigned as HeroKind] : 'Unassigned'}</p></div></article>
-        <div class="hero-upgrade">${research?.kind === kind ? `<p>Upgrade completes in <b data-pet-timer>${time((research.end - m.clock) / 1000)}</b></p>${button('pet-finish', `Finish ${gem} <span data-pet-gems>${m.finishCost({ upgradeEnd: research.end } as Building)}</span>`, 'game-btn green')}` : capped ? `<p class="max-level">${level >= max ? 'Maximum pet level' : `Upgrade the Pet House for higher levels`}</p>` : quote ? `${button(`pet-research:${kind}`, `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Research to ${quote.level}`, 'game-btn green', research || m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost || !!m.battle ? 'disabled' : '')}<p>${time(quote.seconds)} · One research at a time</p>` : ''}</div>
+        <div class="hero-upgrade">${research?.kind === kind ? `<p>Upgrade completes in <b data-pet-timer>${time((research.end - m.clock) / 1000)}</b></p>${button('pet-finish', `Finish ${gem} <span data-pet-gems>${m.finishCost({ upgradeEnd: research.end } as Building)}</span>`, 'game-btn green')}${m.booksFor({ pet: true }).length ? button('book-pet', `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ pet: true })[0]].name}`, 'game-btn blue') : ''}` : capped ? `<p class="max-level">${level >= max ? 'Maximum pet level' : `Upgrade the Pet House for higher levels`}</p>` : quote ? `${button(`pet-research:${kind}`, `${resource(quote.resource as 'dark' | 'elixir' | 'gold')} ${n(quote.cost)} · Research to ${quote.level}`, 'game-btn green', research || m.state[quote.resource as 'dark' | 'elixir' | 'gold'] < quote.cost || !!m.battle ? 'disabled' : '')}${m.magicItemCount('hammer-of-heroes') ? button(`hammer-pet:${kind}`, `${icon('Hammer', 17)} Hammer of Heroes`, 'game-btn blue', m.battle ? 'disabled' : '') : ''}<p>${time(quote.seconds)} · One research at a time</p>` : ''}</div>
         <div class="hero-upgrade"><p>Assigned to</p><div>${heroButtons(kind, assigned)}</div></div></section>`;
       }).join('')}
     </div>`;
@@ -3559,7 +3707,7 @@ export class HUD {
         (isSiege(k)
           ? TROOP_KEYS.filter(isSiege).reduce((n, kind) => n + (m.state.army[kind] ?? 0), 0) >= 3
           : m.armySize + m.queuedSize + d.space > m.capacity);
-      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopDisplayLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${superOriginal(k) && unlocked && m.state.superBoosts?.[k] ? `<small class="boost-left">${icon('Clock3', 11)} Boosted · <b data-boost-end="${m.state.superBoosts[k]}">${time((m.state.superBoosts[k]! - m.clock) / 1000)}</b> left</small>` : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', m.townhallLevel < 11 || m.troopLevel(superOriginal(k)!) < superMinimum(k) ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${button(`train:${k}`, unlocked ? `+ Add` : `${icon('LockKeyhole', 13)} ${BUILDINGS[troopFacility(k)].name} ${TROOP_UNLOCK[k]}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || isSiege(k) || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`train-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}${isSiege(k) ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}"`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${isSiege(k) ? `Siege reserve ${m.siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
+      return `<article class="shop-tile army-tile ${unlocked ? '' : 'army-locked'}" data-army-category="troops"><div class="shop-tile-art"><img src="${hudAsset(k)}" alt="" draggable="false">${d.flying ? '<span class="air-tag">AIR</span>' : ''}</div><h3>${d.name} <small>★${m.troopDisplayLevel(k)}</small></h3>${button(`troop-info:${k}`, `${icon('Info', 13)} ${d.role}`, 'troop-info-button', `aria-label="About ${d.name}"`)}<small class="shop-count">${icon('Heart', 11)} ${d.hp} ${icon('Swords', 11)} ${d.damage} ${icon('Users', 11)} ${d.space}</small>${superOriginal(k) && unlocked && m.state.superBoosts?.[k] ? `<small class="boost-left">${icon('Clock3', 11)} Boosted · <b data-boost-end="${m.state.superBoosts[k]}">${time((m.state.superBoosts[k]! - m.clock) / 1000)}</b> left</small>` : ''}${superOriginal(k) && !unlocked && m.magicItemCount('super-potion') ? button(`super-potion:${k}`, `Boost · Super Potion (${m.magicItemCount('super-potion')})`, 'game-btn blue shop-buy', m.townhallLevel < 11 || m.troopLevel(superOriginal(k)!) < superMinimum(k) ? 'disabled' : '') : ''}${superOriginal(k) && !unlocked ? button(`boost-super:${k}`, `Boost · ${Number(superLicence(k)?.ResourceCost).toLocaleString()} dark · 3 days`, 'game-btn purple shop-buy', m.townhallLevel < 11 || m.troopLevel(superOriginal(k)!) < superMinimum(k) ? 'disabled' : '') + `<small>TH11 · ${TROOPS[superOriginal(k)!].name} level ${superMinimum(k)}</small>` : ''}${button(`train:${k}`, unlocked ? `+ Add` : `${icon('LockKeyhole', 13)} ${BUILDINGS[troopFacility(k)].name} ${TROOP_UNLOCK[k]}`, `game-btn ${blocked ? 'stone' : 'green'} shop-buy`, `${blocked ? 'disabled' : ''} data-repeat title="Hold to keep adding"`)}<span class="army-bulk">${button(`train-five:${k}`, `×5`, 'game-btn stone shop-buy tiny', blocked || isSiege(k) || m.armySize + m.queuedSize + d.space * 5 > m.capacity ? 'disabled' : '')}${button(`train-fill:${k}`, `Fill${room ? ` +${room}` : ''}`, 'game-btn stone shop-buy tiny', `${room ? '' : 'disabled'} aria-label="Fill: add ${room} ${d.name}${isSiege(k) ? '' : `, ${room * d.space} housing space${room * d.space === 1 ? '' : 's'}`}"`)}</span><span class="army-bulk">${button(`remove-troop:${k}`, `${icon('Minus', 12)} Remove`, 'army-remove', `aria-label="Remove one ${d.name}" data-repeat ${m.state.army[k] ? '' : 'disabled'}`)}${button(`remove-all-troop:${k}`, 'All', 'army-remove', `aria-label="Remove every ${d.name}" ${m.state.army[k] > 1 ? '' : 'disabled'}`)}</span><small class="shop-note"><b data-army-count="troop:${k}">${m.state.army[k]}</b> ready · ${isSiege(k) ? `Siege reserve ${m.siegeCount}/3 · one per battle` : `${d.space} space${d.space === 1 ? '' : 's'}`}</small></article>`;
     };
     const spellTile = (k: SpellKind) => {
       const d = m.spellStats(k);
@@ -3598,6 +3746,7 @@ export class HUD {
       'battle-log': 'Battle log',
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
+      'magic-items': 'Magic items',
       journey: 'Hero’s Journey',
       crafting: 'Crafting Station',
       helpers: 'Helper Hut',
@@ -3623,6 +3772,7 @@ export class HUD {
       blacksmith: 'Forge your King’s abilities.',
       heroes: 'A champion for every attack.',
       journey: 'Every hero level moves you along the track.',
+      'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
       pets: 'A companion for every hero.',
@@ -3642,49 +3792,51 @@ export class HUD {
         : 'Your loot so far is kept.',
     };
     const content =
-      this.panel === 'blacksmith'
-        ? this.blacksmith()
-        : this.panel === 'heroes'
-          ? this.heroes()
-          : this.panel === 'journey'
-            ? this.journey()
-            : this.panel === 'crafting'
-              ? this.crafting()
-              : this.panel === 'helpers'
-                ? this.helpers()
-                : this.panel === 'pets'
-                  ? this.pets()
-                  : this.panel === 'progression'
-                    ? this.progression()
-                    : this.panel === 'army-presets'
-                      ? this.armyPresets()
-                      : this.panel === 'battle-log'
-                        ? this.battleLog()
-                        : this.panel === 'spell-info'
-                          ? this.spellInfo()
-                          : this.panel === 'troop-info'
-                            ? this.troopInfo()
-                            : this.panel === 'campaign'
-                              ? this.campaign()
-                              : this.panel === 'campaign-scout'
-                                ? this.campaignScout()
-                                : this.panel === 'settings'
-                                  ? this.settings()
-                                  : this.panel === 'import-confirm'
-                                    ? this.importConfirm()
-                                    : this.panel === 'buildings'
-                                      ? this.buildingList()
-                                      : this.panel === 'achievements'
-                                        ? this.achievements()
-                                        : this.panel === 'research'
-                                          ? this.research()
-                                          : this.panel === 'info'
-                                            ? this.info()
-                                            : this.panel === 'layouts'
-                                              ? this.layoutPanel()
-                                              : this.panel === 'surrender'
-                                                ? this.surrender()
-                                                : this.help();
+      this.panel === 'magic-items'
+        ? this.magicItems()
+        : this.panel === 'blacksmith'
+          ? this.blacksmith()
+          : this.panel === 'heroes'
+            ? this.heroes()
+            : this.panel === 'journey'
+              ? this.journey()
+              : this.panel === 'crafting'
+                ? this.crafting()
+                : this.panel === 'helpers'
+                  ? this.helpers()
+                  : this.panel === 'pets'
+                    ? this.pets()
+                    : this.panel === 'progression'
+                      ? this.progression()
+                      : this.panel === 'army-presets'
+                        ? this.armyPresets()
+                        : this.panel === 'battle-log'
+                          ? this.battleLog()
+                          : this.panel === 'spell-info'
+                            ? this.spellInfo()
+                            : this.panel === 'troop-info'
+                              ? this.troopInfo()
+                              : this.panel === 'campaign'
+                                ? this.campaign()
+                                : this.panel === 'campaign-scout'
+                                  ? this.campaignScout()
+                                  : this.panel === 'settings'
+                                    ? this.settings()
+                                    : this.panel === 'import-confirm'
+                                      ? this.importConfirm()
+                                      : this.panel === 'buildings'
+                                        ? this.buildingList()
+                                        : this.panel === 'achievements'
+                                          ? this.achievements()
+                                          : this.panel === 'research'
+                                            ? this.research()
+                                            : this.panel === 'info'
+                                              ? this.info()
+                                              : this.panel === 'layouts'
+                                                ? this.layoutPanel()
+                                                : this.panel === 'surrender'
+                                                  ? this.surrender()
+                                                  : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -4005,7 +4157,7 @@ export class HUD {
           : ['Swords', 'Damage', `${d.damage}`, `${next.damage}`],
       ];
     }
-    return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!m.state.research || m.state[researchResource] < m.researchCost(kind) ? 'disabled' : '')}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;
+    return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!m.state.research || m.state[researchResource] < m.researchCost(kind) ? 'disabled' : '')}${!max && !gated && m.magicItemCount(spell ? 'hammer-of-spells' : 'hammer-of-fighting') && m.state.research?.kind !== kind ? button(`hammer-research:${kind}`, `${icon('Hammer', 15)} Hammer`, 'game-btn blue', `aria-label="Upgrade ${name} instantly with the ${spell ? 'Hammer of Spells' : 'Hammer of Fighting'}"`) : ''}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;
   }
   private research() {
     const m = this.model,
@@ -4016,7 +4168,7 @@ export class HUD {
         ? SPELLS[r.kind].name.replace(' Spell', '')
         : TROOPS[r.kind].name
       : '';
-    return `<div class="modal-body research-body"><div class="research-banner"><img src="${hudAsset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
+    return `<div class="modal-body research-body"><div class="research-banner"><img src="${hudAsset('laboratory', lab?.level ?? 1)}" alt=""><div><span class="eyebrow">LABORATORY LEVEL ${lab?.level ?? 0}</span><h2>${r ? `${name} research` : 'Strengthen your army'}</h2><p>${r ? 'Your next upgrade is on its way.' : 'Research permanently improves troops and spells. Upgrade the laboratory to unlock higher levels.'}</p>${lab?.upgradeEnd ? `<p class="facility-research-note">Upgrading to level ${lab.level + 1}. Research remains available at level ${lab.level}.</p>` : ''}${r ? `<div class="research-status"><strong data-research>${time((r.end - m.clock) / 1000)}</strong>${button('research-finish', `Finish ${gem} <span data-research-cost>${m.finishCost({ upgradeEnd: r.end } as Building)}</span>`, 'game-btn green')}${m.booksFor({ research: true }).length ? button('book-research', `${icon('BookOpen', 17)} ${MAGIC_ITEMS[m.booksFor({ research: true })[0]].name}`, 'game-btn blue') : ''}</div>` : ''}</div></div><div class="training-grid research-grid">${[...TROOP_ORDER, ...SPELL_ORDER].map((kind) => this.researchCard(kind)).join('')}</div></div><footer class="modal-footer">${elixir} ${n(m.state.elixir)} elixir available <span>One research project at a time</span></footer>`;
   }
   private campaignMap(index: number) {
     return `<button class="campaign-map-button" data-action="campaign-scout:${index}" aria-label="Scout ${html(NATIVE_CAMPAIGN[index].name)}"><img class="campaign-map" src="${campaignMapSource(index)}" alt="${html(NATIVE_CAMPAIGN[index].name)} base layout" width="94" height="94" loading="lazy" decoding="async" draggable="false"></button>`;
