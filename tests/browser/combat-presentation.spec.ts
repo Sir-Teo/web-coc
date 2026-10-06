@@ -99,6 +99,9 @@ test('real troop attacks draw distinct weapons and a scene transition cancels th
 }) => {
   const result = await page.evaluate(() => {
     const { model, scene } = window.__game;
+    // The starter army holds Archers only; bring one of each shooter.
+    for (const kind of ['archer', 'wizard', 'balloon'] as const)
+      model.state.army[kind] = Math.max(1, model.state.army[kind]);
     model.startBattle(0);
     scene.sync();
     for (const kind of ['archer', 'wizard', 'balloon']) {
@@ -114,8 +117,18 @@ test('real troop attacks draw distinct weapons and a scene transition cancels th
     }
     scene.sync();
     scene.drawOverlay(0);
-    model.step(0.05);
-    const weapons = scene.children.list.map((g) => g.getData?.('weapon')).filter(Boolean);
+    // Projectiles draw as the scene syncs with the battle, a tick or a few after the attack.
+    const seen = new Set<string>();
+    for (let i = 0; i < 20 && seen.size < 3; i++) {
+      model.step(0.05);
+      scene.sync();
+      scene.drawOverlay(0);
+      for (const g of scene.children.list) {
+        const weapon = g.getData?.('weapon');
+        if (weapon) seen.add(weapon);
+      }
+    }
+    const weapons = [...seen];
     model.finishBattle();
     model.returnHome();
     scene.sync();

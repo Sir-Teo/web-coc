@@ -33,9 +33,13 @@ for (const width of [1440, 390])
     await page.locator('[data-action="attack:50"]').click();
     await expect(page.locator('.battle-enemy h2')).toHaveText('Invaders');
     await expect(page.locator('#battle-timer')).toHaveText('∞');
+    // The Bomb Tower's art is a family fetched with the battle that has one.
+    await page.waitForFunction(() => window.__game.scene.artSettled);
     const firing = await page.evaluate(async (width) => {
       const { deployInvaders } = await import('/tests/fixtures/invaders-battle.ts');
-      const { BOMBER_GRAPH, BOMB_TOWER_GRAPH } = await import('/src/game/bomb-tower-poses.ts');
+      const { bomberGraph, bombTowerGraph, loadBombTowerArt } =
+        await import('/src/game/bomb-tower-poses.ts');
+      await loadBombTowerArt();
       const { model: m, scene } = window.__game;
       const tower = m.battle.buildings.find((b) => b.kind === 'bombtower');
       if (m.battle.buildings.length !== 272) throw Error('Incomplete Invaders layout');
@@ -55,9 +59,9 @@ for (const width of [1440, 390])
         shot: structuredClone(shot),
         pose,
         actorKeys: [...actor.meshes.keys()],
-        actorRoot: BOMBER_GRAPH.exports[`b_skeleton2_attack1_${pose.direction}`],
+        actorRoot: bomberGraph().exports[`b_skeleton2_attack1_${pose.direction}`],
         bombKeys: [...visual.meshes.keys()],
-        bombRoot: BOMB_TOWER_GRAPH.exports.bomb_projectile_lvl2,
+        bombRoot: bombTowerGraph().exports.bomb_projectile_lvl2,
       };
     }, width);
     expect(firing.tower).toMatchObject({ x: 13, y: 22, level: 3, maxHp: 750 });
@@ -72,7 +76,7 @@ for (const width of [1440, 390])
       animations: 'disabled',
     });
     const fuse = await page.evaluate(async () => {
-      const { BOMB_TOWER_GRAPH } = await import('/src/game/bomb-tower-poses.ts');
+      const { bombTowerGraph } = await import('/src/game/bomb-tower-poses.ts');
       const { model: m, scene } = window.__game;
       const id = m.battle.buildings.find((b) => b.kind === 'bombtower').id;
       for (let i = 0; i < 400 && !m.battle.deathBombs?.[id]; i++) m.step(0.05);
@@ -83,7 +87,7 @@ for (const width of [1440, 390])
         at: m.battle.elapsed,
         bomb: structuredClone(m.battle.deathBombs[id]),
         keys: [...scene.bombTowerPresentation.bombs.get(id).meshes.keys()],
-        root: BOMB_TOWER_GRAPH.exports.bomb_tower_bomb_lvl2,
+        root: bombTowerGraph().exports.bomb_tower_bomb_lvl2,
         emitters: [...scene.bombTowerPresentation.effects.values()].flatMap((v) =>
           v.objects.map((o) => o.getData('nativeBombTowerEffect').emitter),
         ),
@@ -153,7 +157,8 @@ for (const width of [1440, 390])
     expect(result.reset).toEqual({ hp: 750, effects: 0, bombs: 0 });
     expect(result.same).toBe(true);
     expect(result.isolated).toBe(true);
-    expect(result.result).toMatchObject({ stars: 2, destruction: 65, trophies: 0 });
+    // The same result as tests/invaders.test.ts records for this fixture battle.
+    expect(result.result).toMatchObject({ stars: 2, destruction: 60, trophies: 0 });
     expect(result.progress.stars[50]).toBe(2);
     expect(result.glError).toBe(0);
     expect(errors).toEqual([]);
