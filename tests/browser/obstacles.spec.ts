@@ -4,16 +4,23 @@ async function selectTree(page: Page, id: number) {
   await expect(page.locator('#loading')).toBeHidden();
   const point = await page.evaluate(async (id) => {
     const { scene, model } = window.__game;
+    const { OBSTACLES } = await import('/src/game/obstacles.ts');
     const o = model.obstacles.find((o) => o.id === id);
+    const size = OBSTACLES[o.kind].size;
     scene.cameras.main.centerOn(896 + (o.x - o.y) * 32, 112 + (o.x + o.y + 2) * 16);
     scene.clampCamera();
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const p = scene.screenFor(o.x + 1, o.y + 1);
+    const p = scene.screenFor(o.x + size / 2, o.y + size / 2);
     const im = scene.obstacleSprites.get(id);
-    return { x: p.x, y: p.y - im.displayHeight * scene.cameras.main.zoom * 0.4 };
+    return {
+      x: p.x,
+      y: p.y - im.displayHeight * scene.cameras.main.zoom * 0.4,
+      name: OBSTACLES[o.kind].name,
+    };
   }, id);
   await page.mouse.click(point.x, point.y);
-  await expect(page.locator('.obstacle-context h2')).toHaveText('Tree');
+  // The client's own name for the kind (Tree, Bush, Trunk, Mushroom).
+  await expect(page.locator('.obstacle-context h2')).toHaveText(point.name);
   await expect
     .poll(() =>
       page
@@ -167,13 +174,23 @@ test('offline regrowth renders a persistent selectable tree with saved identity 
     };
   }, setup.id);
   expect(grown.count).toBe(setup.count + 1);
-  expect(grown.tree.kind).toBe('trees');
+  // One of the client's eight regrowing kinds, by its weights.
+  expect([
+    'pine-tree',
+    'square-bush',
+    'square-tree',
+    'square-tree-2',
+    'tree-trunk-1',
+    'tree-trunk-2',
+    'mushrooms',
+    'fallen-tree',
+  ]).toContain(grown.tree.kind);
   expect(grown.text.obstacles).toContainEqual({
     id: setup.id,
-    type: 'trees',
+    type: grown.tree.kind,
     x: grown.tree.x,
     y: grown.tree.y,
-    size: 2,
+    size: grown.tree.kind.startsWith('square-tree') ? 3 : 2,
     removalSeconds: null,
   });
   await selectTree(page, setup.id);

@@ -1,5 +1,24 @@
 # Persistent village obstacles
 
+## Client obstacles and the Gem Box
+
+`python3 scripts/import-native-obstacles.py` (with `scripts/native_art/requirements.txt`) reads the pinned client's `logic/obstacles.csv` and renders each row's `sc/buildings.sc` export, writing `reference/obstacles/catalog.json` and `public/assets/obstacles-native/`. It imports 21 Home Village obstacles:
+
+| Group | Obstacles | Clearing |
+| --- | --- | --- |
+| Regrow (weight) | Pine Tree (20), Square Bush (20), Fallen Tree (20), Tree Trunk 1 and 2 (10 each), Mushrooms (10), Square Tree and Square Tree 2 (5 each, 3×3) | 100–10,000 Elixir, 10–15 s, gems from the reward cycle |
+| Starting stones | Small Stone 1–4, Stone Pillar, Large Stone 1–2 (3×3), Sharp Stone 1–5 | 500–20,000 Gold, 10–15 s; Sharp Stones pay no gems |
+| Gem Box | Bonus Gembox | 1,000 Elixir, 30 s, 25 gems |
+
+- **Regrowth.** Each eight-hour opportunity picks a kind by the client's `RespawnWeight` among the kinds with room, then a free site for its footprint (2×2 or 3×3) with the one-tile buffer. A field with room only for 2×2 growth never grows a 3×3 tree.
+- **Gem Box.** One appears per `AppearancePeriodHours` (168: weekly) on a free 2×2 site, never two at a time; clearing one schedules the next no sooner than `MinRespawnTimeHours` (24) later. It pays its own 25 gems and leaves the reward cycle where it was. Its appearances run in the same time-ordered pass as regrowth and removals, so offline catch-up matches live ticks. Saves from before the Gem Box schedule their first one a week after loading. The client gives the period and minimum but not how it picks the moment within the week; one exactly per period is this game's reading.
+- **Starting village.** A new village's eight 2×2 obstacles are now a mix of the client's kinds (Pine Trees, Square Bush, Fallen Tree, Mushrooms, three Small Stones) where the first village had trees and rocks. Older saves keep `trees` and `rocks`, which name the Pine Tree and Small Stone 1 rows.
+- **Art.** Each obstacle draws the client portrait at source scale, centered on its export's origin line and anchored 88% down like the earlier sprites; the village's own kinds load at boot and a regrown kind's portrait when it first draws.
+
+`tests/obstacle-catalog.test.ts` covers the imported rows, the regrowth weights (within 3% over 4,000 seeds), 3×3 sites, the Gem Box schedule and reward, Sharp Stones and save validation.
+
+## Earlier obstacles
+
 The village's original eight tree/rock decorations now have saved 2×2-tile footprints. They block construction, moves, editor drags, saved-layout restoration, and undo/redo into occupied ground. Selecting an obstacle opens an anchored removal menu. Original tree and rock artwork is reused; the surrounding forest and flags remain scenery.
 
 ## Reference rules
@@ -38,4 +57,4 @@ New trees render with the existing original artwork and support the same selecti
 
 Model tests cover blocked placement/moves/layouts, busy builders, resource charging and refunds, offline completion, gem finishing, cycle persistence, battle guards, legacy saves and malformed imports. Regrowth tests cover exact timing, spacing, cap enforcement, long offline equivalence, removal/growth ordering, skipped opportunities, persistent IDs, schedule validation, imported-state initialization and undo/redo collisions. Browser tests select an actual sprite, cancel and reload removal, finish it, build on the cleared footprint, and verify battle visibility on Chromium and WebKit. Additional browser cases reload an overdue schedule, inspect/select/remove the resulting tree, verify its persistent identity, and confirm growth during an attack appears only on returning home.
 
-Still missing: Gem Boxes, other ordinary and seasonal obstacles, shovel/stash behavior, obstacle achievements, dedicated villager work animations, and the official tutorial's initial reward sequence. The recurring economy currently uses small trees and the regular gem cycle; the wider obstacle catalog remains incomplete.
+Still missing: seasonal obstacles and their tombstones, shovel/stash behavior, dedicated villager work animations, and the official tutorial's initial reward sequence.

@@ -615,7 +615,10 @@ export class VillageScene extends Phaser.Scene {
     // Loading those 62 portraits here cost 4.4 MB of boot download that nothing drew. Nor does
     // the scene draw the classic troops' portraits, the spell icons or the King's portrait (the
     // HUD shows them as images), so they are not scene textures either.
-    for (const k of ['trees', 'rocks', 'flag']) this.load.image(k, asset(k));
+    this.load.image('flag', asset('flag'));
+    // The client's obstacle portraits for the kinds the village has; regrown kinds load later.
+    for (const d of new Set(this.model.obstacles.map((o) => OBSTACLES[o.kind])))
+      this.load.image(d.texture, '/' + d.art.path);
     // LoaderPlugin survives scene restarts: drop prior handlers before re-adding.
     this.load.off('progress');
     this.load.off('loaderror');
@@ -2382,16 +2385,20 @@ export class VillageScene extends Phaser.Scene {
     for (const o of this.model.obstacles) {
       const d = OBSTACLES[o.kind],
         p = iso(o.x + d.size / 2, o.y + d.size / 2);
+      // The client's portrait at source scale; a kind the boot did not load (a regrown one)
+      // stays hidden until its portrait arrives.
+      const ready = this.deferredArt.has(d.texture, '/' + d.art.path);
       let im = this.obstacleSprites.get(o.id);
       if (!im) {
-        im = this.add.image(p.x, p.y, o.kind).setOrigin(0.5, 0.88);
+        im = this.add.image(p.x, p.y, '__DEFAULT');
         this.obstacleSprites.set(o.id, im);
       }
-      im.setTexture(o.kind)
+      if (ready && im.texture.key !== d.texture) im.setTexture(d.texture);
+      im.setOrigin(d.art.originX, 0.88)
         .setPosition(p.x, p.y)
-        .setDisplaySize(d.width, (d.width * im.height) / im.width)
+        .setDisplaySize(d.art.width, d.art.height)
         .setDepth(p.y)
-        .setVisible(!this.model.battle)
+        .setVisible(ready && !this.model.battle)
         .setAlpha(o.removeEnd ? 0.65 : 1);
     }
     const ids = new Set(this.model.buildings.map((b) => b.id));

@@ -4,11 +4,15 @@ import { GameModel, initialSave, makeBuilding } from '../src/game/model';
 import { validateSave } from '../src/game/save';
 import {
   advanceObstacles,
+  GEM_BOX,
+  OBSTACLES,
   OBSTACLE_GROWTH_INTERVAL as INTERVAL,
   OBSTACLE_LIMIT,
+  REGROWTH,
   treeGrowthSites,
   type Obstacle,
 } from '../src/game/obstacles';
+const regrowing = REGROWTH.map((r) => r.kind);
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -34,18 +38,23 @@ describe('recurring village vegetation', () => {
     const m = village();
     const before = structuredClone(m.obstacles);
     const due = m.state.obstacleGrowth!.nextAt;
-    const sites = treeGrowthSites(m.state.buildings, before);
     m.tick(due - 1);
     expect(m.obstacles).toEqual(before);
     m.tick(due);
     const tree = m.obstacles.at(-1)!;
     expect(m.obstacles).toHaveLength(before.length + 1);
-    expect(tree.kind).toBe('trees');
+    expect(regrowing).toContain(tree.kind);
+    const size = OBSTACLES[tree.kind].size;
+    const sites = treeGrowthSites(m.state.buildings, before, size);
     expect(sites).toContainEqual({ x: tree.x, y: tree.y });
     for (const site of sites) {
       for (const o of before) {
+        const other = OBSTACLES[o.kind].size;
         expect(
-          site.x + 3 <= o.x || site.x >= o.x + 3 || site.y + 3 <= o.y || site.y >= o.y + 3,
+          site.x + size + 1 <= o.x ||
+            site.x >= o.x + other + 1 ||
+            site.y + size + 1 <= o.y ||
+            site.y >= o.y + other + 1,
         ).toBe(true);
       }
     }
@@ -80,7 +89,13 @@ describe('recurring village vegetation', () => {
     expect(offline.obstacles).toEqual(online.obstacles);
     expect(offline.state.obstacleGrowth).toEqual(online.state.obstacleGrowth);
     expect(offline.obstacles.length).toBeLessThanOrEqual(OBSTACLE_LIMIT);
-    expect(offline.obstacles.filter((o) => o.kind === 'rocks')).toHaveLength(3);
+    // The three starting stones never regrow; the rest is vegetation and Gem Boxes.
+    expect(offline.obstacles.filter((o) => o.kind.includes('stone'))).toHaveLength(3);
+    expect(
+      offline.obstacles.every(
+        (o) => o.kind.includes('stone') || o.kind === GEM_BOX || regrowing.includes(o.kind),
+      ),
+    ).toBe(true);
     expect(validateSave(offline.state)).toBe(true);
     const reloaded = new GameModel(structuredClone(offline.state));
     expect(reloaded.obstacles).toEqual(offline.obstacles);
@@ -105,7 +120,7 @@ describe('recurring village vegetation', () => {
     advanceObstacles(obstacles, [], growth, INTERVAL * 2);
     expect(obstacles).toHaveLength(45);
     expect(obstacles.at(-1)!.id).toBe(46);
-    expect(obstacles.at(-1)!.kind).toBe('trees');
+    expect(regrowing).toContain(obstacles.at(-1)!.kind);
   });
 
   it('completes simultaneous removals by ID before growth at the same instant', () => {

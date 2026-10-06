@@ -223,6 +223,7 @@ import { wallRow, matchingWalls, type WallAxis, type WallResource } from './wall
 import {
   OBSTACLES,
   OBSTACLE_GEMS,
+  GEM_BOX_PERIOD,
   initialObstacles,
   overlapsObstacle,
   initialObstacleGrowth,
@@ -1555,20 +1556,33 @@ export class GameModel {
       }
     }
     const growth = this.state.obstacleGrowth!;
+    // Saves from before the Gem Box schedule their first one a period from now.
+    if (growth.gemBoxAt === undefined) {
+      growth.gemBoxAt = Math.floor(now) + GEM_BOX_PERIOD;
+      changed = true;
+    }
     const nextGrowth = growth.nextAt;
     const obstacleEvents = advanceObstacles(this.obstacles, this.state.buildings, growth, now);
     if (growth.nextAt !== nextGrowth) changed = true;
     if (obstacleEvents.grown.length) structural = changed = true;
     for (const o of obstacleEvents.removed) {
       if (this.selected === -o.id) this.selected = null;
-      const gems = OBSTACLE_GEMS[this.state.obstacleGemIndex ?? 0];
-      this.state.obstacleGemIndex = ((this.state.obstacleGemIndex ?? 0) + 1) % OBSTACLE_GEMS.length;
+      // Gems from the reward cycle, or the Gem Box's own 25; Sharp Stones pay nothing.
+      const d = OBSTACLES[o.kind];
+      let gems = 0;
+      if (d.loot === 'gems' && d.lootCount !== undefined) gems = d.lootCount;
+      else if (d.loot === 'gems') {
+        gems = OBSTACLE_GEMS[this.state.obstacleGemIndex ?? 0];
+        this.state.obstacleGemIndex =
+          ((this.state.obstacleGemIndex ?? 0) + 1) % OBSTACLE_GEMS.length;
+      }
       this.state.gems += gems;
       structural = changed = true;
       this.notify(`${OBSTACLES[o.kind].name} cleared! ${gems ? `+${gems} gems · ` : ''}+3 XP`);
       this.gainXp(3);
       this.countAchievements('clear_obstacles');
-      if (!this.battle) this.onEffect({ type: 'upgrade', x: o.x + 1, y: o.y + 1, gems });
+      if (!this.battle)
+        this.onEffect({ type: 'upgrade', x: o.x + d.size / 2, y: o.y + d.size / 2, gems });
     }
     if (this.heroHall && !this.state.king) {
       this.state.king = { level: 1 };

@@ -41,7 +41,7 @@ describe('village obstacles', () => {
 
   it('charges the correct resource once and cancellation refunds fully without a reward', () => {
     const m = fundedVillage();
-    for (const kind of ['trees', 'rocks'] as const) {
+    for (const kind of ['pine-tree', 'small-stone-1'] as const) {
       const o = m.obstacles.find((o) => o.kind === kind)!;
       const d = OBSTACLES[kind];
       const resource = m.state[d.resource],
