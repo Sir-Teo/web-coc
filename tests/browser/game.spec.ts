@@ -49,6 +49,8 @@ test('the shop drawer leaves the village live and places by tap or drag', async 
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall!.level = 5; // Make room for a third Cannon and additional walls.
+    // Enough to pay for both: a drag out of the Shop never opens the gem offer.
+    m.state.gold = m.state.elixir = 100_000;
     m.changed();
   });
   await page.locator('[data-action="shop"]').last().click();
@@ -171,7 +173,13 @@ test('mobile portrait preserves playfield and usable menus', async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.keyboard.press('Escape');
   await page.locator('.train-add').click();
-  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(13);
+  // Every troop and spell in the catalog, locked ones included, in a strip that scrolls itself.
+  const catalog = await page.evaluate(async () => {
+    const { TROOP_ORDER, SPELL_ORDER } = await import('/src/ui/army-roster.ts');
+    return TROOP_ORDER.length + SPELL_ORDER.length;
+  });
+  await expect(page.locator('.army-strip .shop-tile')).toHaveCount(catalog);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 test('camera responds to zoom and drag while dialogs block the playfield', async ({ page }) => {
   const before = await page.evaluate(() => window.__game.scene.cameras.main.zoom);
@@ -265,7 +273,7 @@ test('an imported village cannot smuggle markup into the layout panel', async ({
   expect(fired).toEqual([]);
 });
 
-test('touch input selects buildings and opens menus', async ({ browser }) => {
+test('touch input selects buildings and opens menus', async ({ browser }, testInfo) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -273,7 +281,8 @@ test('touch input selects buildings and opens menus', async ({ browser }) => {
     deviceScaleFactor: 3,
   });
   const page = await context.newPage();
-  await page.goto('http://localhost:5173');
+  // A context made here does not take the config's baseURL.
+  await page.goto(testInfo.project.use.baseURL ?? 'http://localhost:5173');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.waitForTimeout(4500);
   const point = await page.evaluate(() => {

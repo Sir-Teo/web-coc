@@ -27,9 +27,8 @@ test('shop gates both defenses and loads every direction and mine state', async 
       Array.from({ length: 56 }, (_, i) =>
         textures.exists(`airsweeper-${Math.floor(i / 8) + 1}-${i % 8}`),
       ).every(Boolean) &&
-      ['seekingairmine', ...[1, 3, 5, 7].map((level) => `seeking-mine-setup-${level}`)].every((k) =>
-        textures.exists(k),
-      )
+      // The mine's base sprite loads when one is first drawn (only owned kinds load it at boot).
+      [1, 3, 5, 7].map((level) => `seeking-mine-setup-${level}`).every((k) => textures.exists(k))
     );
   });
   expect(ready).toBe(true);
