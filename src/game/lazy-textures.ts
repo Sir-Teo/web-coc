@@ -17,15 +17,45 @@ export class LazyTextures {
     void this.request(key, url);
     return false;
   }
+  /** Whether `key` is being fetched here (so a loader batch should leave it out). */
+  loading(key: string) {
+    return this.pending.has(key);
+  }
   /** Loads `key` from `url` unless it is loaded or loading; resolves when it is in (or failed). */
   request(key: string, url: string): Promise<void> {
     if (this.scene.textures.exists(key)) return Promise.resolve();
     const pending = this.pending.get(key);
     if (pending) return pending;
     if ((this.retryAt.get(key) ?? 0) > performance.now()) return Promise.resolve();
-    const job = this.fetch(key, url).finally(() => this.pending.delete(key));
+    // A loader batch already fetching this image adds it itself; adding it here as well would
+    // collide ("Texture key already in use"). Wait for that batch instead.
+    const job = (this.queued(key) ? this.loaded(key) : this.fetch(key, url)).finally(() =>
+      this.pending.delete(key),
+    );
     this.pending.set(key, job);
     return job;
+  }
+  private queued(key: string) {
+    const load = this.scene.load as unknown as Record<
+      'list' | 'inflight' | 'queue',
+      Set<{ key: string; type: string }> | null
+    >;
+    return (['list', 'inflight', 'queue'] as const).some((name) =>
+      [...(load[name] ?? [])].some((file) => file.type === 'image' && file.key === key),
+    );
+  }
+  private loaded(key: string) {
+    return new Promise<void>((resolve) => {
+      const done = () => {
+        this.scene.load.off(`filecomplete-image-${key}`, done);
+        this.scene.load.off('complete', done);
+        if (this.scene.textures.exists(key)) this.revision++;
+        resolve();
+      };
+      this.scene.load.once(`filecomplete-image-${key}`, done);
+      // A failed file never completes; the batch's end settles the wait either way.
+      this.scene.load.once('complete', done);
+    });
   }
   private async fetch(key: string, url: string) {
     try {

@@ -1623,6 +1623,7 @@ export class VillageScene extends Phaser.Scene {
         preloadCannons(
           this,
           this.model.buildings.filter((b) => b.kind === 'cannon' && !b.npc).map((b) => b.level),
+          (key) => this.deferredArt.loading(key),
         );
         this.load.start();
         // The dev server (and so every browser spec) loads every family now, as all of them
