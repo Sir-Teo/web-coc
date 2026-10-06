@@ -481,6 +481,8 @@ export class VillageScene extends Phaser.Scene {
   audio: AudioManager;
   obstacleSprites = new Map<number, Phaser.GameObjects.Image>();
   decorationSprites = new Map<number, Phaser.GameObjects.Image>();
+  /** Battle traps with a state when the scene last synced in full (see syncTraps). */
+  private trapsSynced = new Set<number>();
   /** The Trader's camp and the Super Troop building, by object id. */
   villageObjectSprites = new Map<string, Phaser.GameObjects.Image>();
   private decorationGhost?: Phaser.GameObjects.Image;
@@ -2441,6 +2443,8 @@ export class VillageScene extends Phaser.Scene {
     }
   }
   sync() {
+    // Traps whose state this full sync draws; ones that fire later reveal through syncTraps.
+    this.trapsSynced = new Set(Object.keys(this.model.battle?.traps ?? {}).map(Number));
     if (this.lateAssetsPending()) void this.loadLateAssets();
     if (this.deferredArtPending()) void this.loadFamilies(this.missingFamilies());
     this.retryFailedArt();
@@ -2849,7 +2853,10 @@ export class VillageScene extends Phaser.Scene {
       this.lastRevision === this.model.revision - 1
     );
   }
-  /** The trap part of `syncBuilding`: spent fades and pumpkin frames follow the trap state. */
+  /**
+   * The trap part of `syncBuilding`: spent fades and pumpkin frames follow the trap state, and a
+   * hidden trap that fires since the last full sync is revealed (drawn in full, once).
+   */
   private syncTraps() {
     const battle = this.model.battle!;
     for (const b of battle.buildings) {
@@ -2857,6 +2864,11 @@ export class VillageScene extends Phaser.Scene {
       const im = this.sprites.get(b.id);
       if (!im) continue;
       const trap = battle.traps[b.id];
+      if (trap && !this.trapsSynced.has(b.id)) {
+        this.trapsSynced.add(b.id);
+        this.syncBuilding(b);
+        continue;
+      }
       if (b.npc === 'pumpkin-bomb' && im.texture.key === PUMPKIN_ART.texture)
         im.setFrame(pumpkinFrame(trap, battle.elapsed, this.model.reducedMotion));
       const alpha = trap?.resolved ? 0.35 : b.constructing ? 0.58 : 1;

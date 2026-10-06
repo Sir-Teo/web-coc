@@ -26,6 +26,9 @@ test('a new village unlocks Giants only after its Barracks upgrade finishes', as
     const m = window.__game.model;
     const b = m.state.buildings.find((b) => b.kind === 'barracks');
     m.selected = b.id;
+    // Enough elixir for the upgrade and gems to finish it; the starter village has neither.
+    m.state.elixir = 100_000;
+    m.state.gems = 5000;
     window.__game.scene.cameras.main.centerOn(896 + (b.x - b.y) * 32, 112 + (b.x + b.y + 3) * 16);
     m.changed();
     return m.selected;

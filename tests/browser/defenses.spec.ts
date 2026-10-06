@@ -9,6 +9,8 @@ async function placeBomb(page: Page) {
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall.level = 3;
+    // A bomb and its upgrade: more than the starter village's 750 gold.
+    m.state.gold = 100_000;
     m.changed();
   });
   await page.locator('.shop-btn').click();
@@ -37,24 +39,30 @@ test('all defense artwork loads and locked buildings show their actual unlock', 
   await boot(page);
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Traps"]').click();
-  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine and Tornado Trap.
-  await expect(page.locator('.shop-tile')).toHaveCount(7);
+  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine, Tornado Trap and
+  // Giga Bomb.
+  await expect(page.locator('.shop-tile')).toHaveCount(8);
   await expect(page.locator('.shop-tile').filter({ hasText: 'Giant Bomb' })).toContainText(
     'Town Hall 6',
   );
   await expect(page.locator('[data-action="build:airbomb"]')).toBeDisabled();
   await page.screenshot({ animations: 'disabled', path: 'output/playtest/traps-shop-desktop.png' });
   await page.locator('[data-action="tab:Defenses"]').click();
-  await expect(page.locator('.shop-tile').filter({ hasText: 'Wizard Tower' })).toContainText(
-    'Town Hall 5',
-  );
-  expect(
-    await page.evaluate(() =>
-      ['bomb', 'giantbomb', 'airbomb', 'springtrap', 'wizardtower'].every((k) =>
-        window.__game.scene.textures.exists(k),
+  await expect(
+    page
+      .locator('.shop-tile')
+      .filter({ has: page.getByRole('heading', { name: 'Wizard Tower', exact: true }) }),
+  ).toContainText('Town Hall 5');
+  // Their Shop pictures load; the scene loads a kind's sprite once the village owns one.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.querySelectorAll<HTMLImageElement>('.shop-tile img')].every(
+          (img) => img.complete && img.naturalWidth > 0,
+        ),
       ),
-    ),
-  ).toBe(true);
+    )
+    .toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -92,11 +100,25 @@ test('practice conceals traps, reveals a pointer-triggered bomb, and rearms on r
   await boot(page);
   const id = await placeBomb(page);
   const army = await page.evaluate(() => window.__game.model.state.army);
+  // Drawn: in its client art (whose views stand in for the fallback sprite) or by the fallback
+  // where that art has none.
+  const drawn = (id: number) =>
+    page.evaluate((id) => {
+      const scene = window.__game.scene as unknown as {
+        sprites: Map<number, { visible: boolean }>;
+        villageNativePresentation: {
+          views: Map<number, Map<string, { view: { objects: { visible: boolean }[] } }>>;
+        };
+      };
+      const views = scene.villageNativePresentation.views.get(id);
+      return (
+        !!scene.sprites.get(id)?.visible ||
+        [...(views?.values() ?? [])].some((e) => e.view.objects.some((o) => o.visible))
+      );
+    }, id);
   await page.locator('.train-add').click();
   await page.locator('[data-action="practice"]').click();
-  await expect
-    .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.visible, id))
-    .toBe(false);
+  await expect.poll(() => drawn(id)).toBe(false);
   expect(
     await page.evaluate(
       (id) => JSON.parse(window.render_game_to_text()).buildings.some((b) => b.id === id),
@@ -104,12 +126,36 @@ test('practice conceals traps, reveals a pointer-triggered bomb, and rearms on r
     ),
   ).toBe(false);
   await page.locator('[data-action="troop:swordsman"]').click();
-  const point = await page.evaluate(() => window.__game.scene.screenFor(2.5, 13.5));
+  // Once the camera is still, bring the bomb's corner on screen and deploy beside it.
+  let view = '';
+  await expect
+    .poll(async () => {
+      const next = await page.evaluate(() => {
+        const c = window.__game.scene.cameras.main;
+        return `${c.scrollX.toFixed(1)},${c.scrollY.toFixed(1)},${c.zoom.toFixed(3)}`;
+      });
+      const still = next === view;
+      view = next;
+      return still;
+    })
+    .toBe(true);
+  const point = await page.evaluate(async (id) => {
+    const scene = window.__game.scene,
+      bomb = window.__game.model.state.buildings.find((b) => b.id === id)!,
+      // Beside the bomb, just outside the field: its own tile sits on the edge of the red
+      // boundary around the buildings next to it.
+      x = bomb.x - 0.5,
+      y = bomb.y + 0.5;
+    scene.cameras.main.centerOn(896 + (x - y) * 32, 112 + (x + y) * 16);
+    scene.clampCamera();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return scene.screenFor(x, y);
+  }, id);
   await page.mouse.click(point.x, point.y);
   await expect
     .poll(() => page.evaluate((id) => window.__game.model.battle!.traps[id]?.resolved, id))
     .toBe(true);
-  expect(await page.evaluate((id) => window.__game.scene.sprites.get(id)?.visible, id)).toBe(true);
+  await expect.poll(() => drawn(id)).toBe(true);
   await page.screenshot({
     animations: 'disabled',
     path: 'output/playtest/trap-trigger-practice.png',
@@ -117,9 +163,7 @@ test('practice conceals traps, reveals a pointer-triggered bomb, and rearms on r
   await page.locator('[data-action="surrender"]').click();
   await page.locator('[data-action="end"]').click();
   await page.locator('[data-action="raid-again"]').click();
-  await expect
-    .poll(() => page.evaluate((id) => window.__game.scene.sprites.get(id)?.visible, id))
-    .toBe(false);
+  await expect.poll(() => drawn(id)).toBe(false);
   expect(await page.evaluate(() => window.__game.model.battle!.traps)).toEqual({});
   expect(await page.evaluate(() => window.__game.model.state.army)).toEqual(army);
 });
@@ -151,8 +195,9 @@ test('phone shop categories and trap info stay usable in portrait and landscape'
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Traps"]').click();
-  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine and Tornado Trap.
-  await expect(page.locator('.shop-tile')).toHaveCount(7);
+  // Bomb, Giant Bomb, Air Bomb, Spring Trap, Skeleton Trap, Seeking Air Mine, Tornado Trap and
+  // Giga Bomb.
+  await expect(page.locator('.shop-tile')).toHaveCount(8);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(
     await page.evaluate(() => {
@@ -166,19 +211,26 @@ test('phone shop categories and trap info stay usable in portrait and landscape'
 
 test('campaign overview hides traps and scouting shows the new Wizard Tower', async ({ page }) => {
   await boot(page);
-  await page.evaluate(() => {
-    window.__game.model.state.stars.fill(1);
-    window.__game.model.changed();
+  const stage = await page.evaluate(async () => {
+    const { NATIVE_CAMPAIGN, freshNativeCampaign, nativeBuildings } =
+      await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.nativeCampaign ??= freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    m.changed();
+    return NATIVE_CAMPAIGN.findIndex((_, i) =>
+      nativeBuildings(i).some((b) => b.kind === 'wizardtower'),
+    );
   });
+  expect(stage).toBeGreaterThan(0);
   await page.locator('.attack-btn').click();
   const rects = await page
-    .locator('.campaign-map')
-    .nth(5)
+    .locator(`#campaign-stage-${stage} .campaign-map`)
     .evaluate(
       async (img: HTMLImageElement) =>
         (await fetch(img.src).then((r) => r.text())).split('<rect ').length - 1,
     );
-  await page.locator('[data-action="attack:5"]').click();
+  await page.locator(`[data-action="attack:${stage}"]`).first().click();
   const counts = await page.evaluate(() => {
     const m = window.__game.model;
     return {

@@ -18,6 +18,8 @@ test('the camp Info panel shows native capacity, health, cost and time and prese
     m.townhall.level = 3;
     const camp = m.state.buildings.find((b) => b.kind === 'camp');
     m.selected = camp.id;
+    // The level 2 camp costs more than the starter village's 750 elixir.
+    m.state.elixir = 100_000;
     scene.cameras.main.centerOn(896 + (camp.x - camp.y) * 32, 112 + (camp.x + camp.y + 4) * 16);
     m.changed();
     return { id: camp.id, elixir: m.state.elixir };

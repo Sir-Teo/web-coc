@@ -80,6 +80,8 @@ test('a paid camp upgrade updates Info and village art, then moves with the same
     m.townhall.level = 3;
     const b = m.state.buildings.find((b) => b.kind === 'camp');
     m.selected = b.id;
+    // The level 2 camp costs more than the starter village's 750 elixir.
+    m.state.elixir = 100_000;
     m.changed();
     scene.sync();
     scene.cameras.main.centerOn(896 + (b.x - b.y) * 32, 112 + (b.x + b.y + 4) * 16);
