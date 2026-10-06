@@ -199,6 +199,8 @@ describe('native campaign adapter and progress isolation', () => {
       const m = new GameModel();
       m.state.nativeCampaign = freshNativeCampaign();
       m.state.nativeCampaign.stars.fill(1);
+      // Practice levels open at their own Town Hall (Town Hall 4 to 12 for those fielded).
+      m.townhall!.level = 13;
       m.startCampaign(index);
       m.deploy(1, 1);
       m.finishBattle();

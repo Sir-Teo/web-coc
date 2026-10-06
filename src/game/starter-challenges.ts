@@ -24,15 +24,14 @@ export const STARTER_END_TOWN_HALL = catalog.endTownHall;
 export const STARTER_MAX_POINTS = STARTER_TIERS.at(-1)!.score;
 
 /**
- * Task types this offline village cannot count: clans and their donations, Practice Mode's
- * scripted lessons, and stars timed within a battle's first minute (battles keep no star times).
+ * Task types this offline village cannot count: clans and their donations, and stars timed
+ * within a battle's first minute (battles keep no star times).
  */
 const UNAVAILABLE: Record<string, string> = {
   HaveClan: 'Needs a clan',
   RequestDonations: 'Needs a clan',
   DonateTroopCapacity: 'Needs a clan',
   DonateSpellCapacity: 'Needs a clan',
-  GetTotalPracticeStars: 'Practice Mode is not in this game',
   GetHomeStarsUnderTimeLimit: 'Battles keep no star times',
 };
 /** Why a challenge cannot be completed here, or undefined when it can. */

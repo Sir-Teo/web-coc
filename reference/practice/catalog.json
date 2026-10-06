@@ -1,0 +1,1263 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "baseUrl": "https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/",
+  "sources": {
+    "localization/texts.csv": "affdf43926df044cb3c09d833b07365aa01ea99985771afa5fa0dd926f36c569",
+    "logic/characters.csv": "5c3acc5b46ff9e7978f406b540264e65c93a846b69d03cd43326a9853703cb89",
+    "logic/heroes.csv": "658c9721fb0fd5488b69ca3555ef5597d521f28dde95af051a2a98ccbdd65197",
+    "logic/npcs.csv": "99dfcaeb4a622f76d4ed29ce444eedef88e92b49b8e0c574b34eea74e1278d6a",
+    "logic/spells.csv": "385159e00327e6a1567cd91f1585b4ed0717d3f4475f0823398243482598289d"
+  },
+  "texts": {
+    "title": "Practice",
+    "info": "Hone your skills with different attack strategies! Practice levels unlock as you upgrade your Town Hall.",
+    "unlocks": "Practice mode unlocks at Town Hall 4"
+  },
+  "levels": [
+    {
+      "id": "CHALLENGE_TH4_GIANT",
+      "name": "Giant Smash",
+      "townHall": 4,
+      "stage": 91,
+      "gold": 100000,
+      "elixir": 100000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Giant",
+          "kind": "troop",
+          "level": 2,
+          "count": 13
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 2,
+          "count": 2
+        },
+        {
+          "unit": "Goblin",
+          "kind": "troop",
+          "level": 2,
+          "count": 11
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH5_LOON",
+      "name": "Balloon Parade",
+      "townHall": 5,
+      "stage": 92,
+      "gold": 125000,
+      "elixir": 125000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 2,
+          "count": 27
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH6_GIWIWA",
+      "name": "Meat Shield",
+      "townHall": 6,
+      "stage": 93,
+      "gold": 150000,
+      "elixir": 150000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Giant",
+          "kind": "troop",
+          "level": 3,
+          "count": 14
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 3,
+          "count": 16
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 3,
+          "count": 8
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 3,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH7_DRAGON",
+      "name": "Hot Stuff",
+      "townHall": 7,
+      "stage": 94,
+      "gold": 200000,
+      "elixir": 200000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Dragon",
+          "kind": "troop",
+          "level": 2,
+          "count": 10
+        },
+        {
+          "unit": "Lightning",
+          "kind": "spell",
+          "level": 4,
+          "count": 6
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 5,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH7_HOG",
+      "name": "Hog Rush",
+      "townHall": 7,
+      "stage": 95,
+      "gold": 200000,
+      "elixir": 200000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Hog Rider",
+          "kind": "troop",
+          "level": 2,
+          "count": 36
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 4,
+          "count": 5
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 4,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH7_MINION",
+      "name": "Air Raid",
+      "townHall": 7,
+      "stage": 96,
+      "gold": 200000,
+      "elixir": 200000,
+      "dark": 0,
+      "army": [
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 4,
+          "count": 30
+        },
+        {
+          "unit": "Minion",
+          "kind": "troop",
+          "level": 2,
+          "count": 25
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 4,
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH8_GOWIPE",
+      "name": "Heavy Hitters",
+      "townHall": 8,
+      "stage": 97,
+      "gold": 250000,
+      "elixir": 250000,
+      "dark": 1500,
+      "army": [
+        {
+          "unit": "Golem",
+          "kind": "troop",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "PEKKA",
+          "kind": "troop",
+          "level": 3,
+          "count": 4
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 5,
+          "count": 16
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Archer",
+          "kind": "troop",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Earthquake",
+          "kind": "spell",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 10,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH8_GOWIVA",
+      "name": "Whirl Power",
+      "townHall": 8,
+      "stage": null,
+      "gold": 250000,
+      "elixir": 250000,
+      "dark": 1500,
+      "army": [
+        {
+          "unit": "Golem",
+          "kind": "troop",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Valkyrie",
+          "kind": "troop",
+          "level": 2,
+          "count": 15
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 5,
+          "count": 11
+        },
+        {
+          "unit": "Hog Rider",
+          "kind": "troop",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Archer",
+          "kind": "troop",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Earthquake",
+          "kind": "spell",
+          "level": 2,
+          "count": 4
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 10,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_LAVALOON",
+      "name": "Lava & Loons",
+      "townHall": 9,
+      "stage": 98,
+      "gold": 300000,
+      "elixir": 300000,
+      "dark": 3000,
+      "army": [
+        {
+          "unit": "Lava Hound",
+          "kind": "troop",
+          "level": 2,
+          "count": 2
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 6,
+          "count": 26
+        },
+        {
+          "unit": "Baby Dragon",
+          "kind": "troop",
+          "level": 2,
+          "count": 2
+        },
+        {
+          "unit": "Minion",
+          "kind": "troop",
+          "level": 5,
+          "count": 5
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Haste",
+          "kind": "spell",
+          "level": 2,
+          "count": 4
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 1,
+          "count": 1
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_WITCH",
+      "name": "Witch Slap",
+      "townHall": 9,
+      "stage": 99,
+      "gold": 300000,
+      "elixir": 300000,
+      "dark": 3000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Witch",
+          "kind": "troop",
+          "level": 2,
+          "count": 8
+        },
+        {
+          "unit": "Golem",
+          "kind": "troop",
+          "level": 4,
+          "count": 2
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 6,
+          "count": 2
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 4,
+          "count": 4
+        },
+        {
+          "unit": "Earthquake",
+          "kind": "spell",
+          "level": 3,
+          "count": 4
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Jump",
+          "kind": "spell",
+          "level": 2,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH9_BABYDQW",
+      "name": "Angry Babies",
+      "townHall": 9,
+      "stage": null,
+      "gold": 300000,
+      "elixir": 300000,
+      "dark": 3000,
+      "army": [
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 4,
+          "count": 5
+        },
+        {
+          "unit": "Baby Dragon",
+          "kind": "troop",
+          "level": 2,
+          "count": 14
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Jump",
+          "kind": "spell",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 6,
+          "count": 1
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 5,
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH10_BOBAT",
+      "name": "Bowling with Bats",
+      "townHall": 10,
+      "stage": 100,
+      "gold": 400000,
+      "elixir": 400000,
+      "dark": 4000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "PEKKA",
+          "kind": "troop",
+          "level": 6,
+          "count": 4
+        },
+        {
+          "unit": "Bowler",
+          "kind": "troop",
+          "level": 2,
+          "count": 11
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 4,
+          "count": 5
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 6,
+          "count": 2
+        },
+        {
+          "unit": "Wall Wrecker",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Giant",
+          "kind": "troop",
+          "level": 9,
+          "count": 2,
+          "castle": true
+        },
+        {
+          "unit": "PEKKA",
+          "kind": "troop",
+          "level": 8,
+          "count": 1,
+          "castle": true
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 5,
+          "count": 3
+        },
+        {
+          "unit": "Bat Spell",
+          "kind": "spell",
+          "level": 3,
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH10_MINER",
+      "name": "Miner Mania",
+      "townHall": 10,
+      "stage": null,
+      "gold": 400000,
+      "elixir": 400000,
+      "dark": 4000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "Miner",
+          "kind": "troop",
+          "level": 3,
+          "count": 23
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 4,
+          "count": 5
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 6,
+          "count": 4
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 7,
+          "count": 6
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 7,
+          "count": 4
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 4,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH11_EDRAG",
+      "name": "Electro Surgery",
+      "townHall": 11,
+      "stage": 101,
+      "gold": 500000,
+      "elixir": 500000,
+      "dark": 5000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 50,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 50,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 20,
+          "count": 1
+        },
+        {
+          "unit": "Battle Blimp",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Electro Dragon",
+          "kind": "troop",
+          "level": 3,
+          "count": 1,
+          "castle": true
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 8,
+          "count": 1,
+          "castle": true
+        },
+        {
+          "unit": "Electro Dragon",
+          "kind": "troop",
+          "level": 2,
+          "count": 8
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 7,
+          "count": 4
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 3
+        },
+        {
+          "unit": "Haste",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Clone",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH11_LAVALOON",
+      "name": "Lava & More Loons",
+      "townHall": 11,
+      "stage": 102,
+      "gold": 500000,
+      "elixir": 500000,
+      "dark": 5000,
+      "army": [
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 7,
+          "count": 29
+        },
+        {
+          "unit": "Minion",
+          "kind": "troop",
+          "level": 7,
+          "count": 5
+        },
+        {
+          "unit": "Lava Hound",
+          "kind": "troop",
+          "level": 4,
+          "count": 3
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Haste",
+          "kind": "spell",
+          "level": 4,
+          "count": 4
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 50,
+          "count": 1
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 50,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 20,
+          "count": 1
+        },
+        {
+          "unit": "Jump",
+          "kind": "spell",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Ice Golem",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Stone Slammer",
+          "kind": "troop",
+          "level": 2,
+          "count": 1
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 7,
+          "count": 7,
+          "castle": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH12_BOWIGI",
+      "name": "Bowling with Witches",
+      "townHall": 12,
+      "stage": 103,
+      "gold": 600000,
+      "elixir": 600000,
+      "dark": 6000,
+      "army": [
+        {
+          "unit": "Giant",
+          "kind": "troop",
+          "level": 9,
+          "count": 5
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 8,
+          "count": 7
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 8,
+          "count": 3
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 9,
+          "count": 5
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 5,
+          "count": 5
+        },
+        {
+          "unit": "Baby Dragon",
+          "kind": "troop",
+          "level": 6,
+          "count": 1
+        },
+        {
+          "unit": "Witch",
+          "kind": "troop",
+          "level": 4,
+          "count": 3
+        },
+        {
+          "unit": "Bowler",
+          "kind": "troop",
+          "level": 4,
+          "count": 15
+        },
+        {
+          "unit": "Wall Wrecker",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Giant",
+          "kind": "troop",
+          "level": 9,
+          "count": 8,
+          "castle": true
+        },
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 60,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 60,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 30,
+          "count": 1
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 5,
+          "count": 3
+        },
+        {
+          "unit": "Jump",
+          "kind": "spell",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 7,
+          "count": 2
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH12_DRAGBAT",
+      "name": "Flying Circus",
+      "townHall": 12,
+      "stage": null,
+      "gold": 600000,
+      "elixir": 600000,
+      "dark": 6000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 65,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 65,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "Dragon",
+          "kind": "troop",
+          "level": 7,
+          "count": 10
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 8,
+          "count": 10
+        },
+        {
+          "unit": "Ice Golem",
+          "kind": "troop",
+          "level": 5,
+          "count": 2
+        },
+        {
+          "unit": "Bat Spell",
+          "kind": "spell",
+          "level": 5,
+          "count": 9
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 7,
+          "count": 2
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 6,
+          "count": 1
+        },
+        {
+          "unit": "Stone Slammer",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 8,
+          "count": 8,
+          "castle": true
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH12_YETI",
+      "name": "Yeti Smash",
+      "townHall": 12,
+      "stage": null,
+      "gold": 600000,
+      "elixir": 600000,
+      "dark": 6000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 65,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 65,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 40,
+          "count": 1
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 5,
+          "count": 5
+        },
+        {
+          "unit": "PEKKA",
+          "kind": "troop",
+          "level": 8,
+          "count": 4
+        },
+        {
+          "unit": "Yeti",
+          "kind": "troop",
+          "level": 2,
+          "count": 5
+        },
+        {
+          "unit": "Wizard",
+          "kind": "troop",
+          "level": 9,
+          "count": 5
+        },
+        {
+          "unit": "Stone Slammer",
+          "kind": "troop",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Balloon",
+          "kind": "troop",
+          "level": 8,
+          "count": 8,
+          "castle": true
+        },
+        {
+          "unit": "Earthquake",
+          "kind": "spell",
+          "level": 5,
+          "count": 4
+        },
+        {
+          "unit": "Jump",
+          "kind": "spell",
+          "level": 3,
+          "count": 1
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 6,
+          "count": 1
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 6,
+          "count": 2
+        },
+        {
+          "unit": "Haste",
+          "kind": "spell",
+          "level": 5,
+          "count": 1
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 7,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "CHALLENGE_TH13_HYBRID",
+      "name": "Bane of the Ring",
+      "townHall": 13,
+      "stage": null,
+      "gold": 700000,
+      "elixir": 700000,
+      "dark": 7000,
+      "army": [
+        {
+          "unit": "Barbarian King",
+          "kind": "hero",
+          "level": 70,
+          "count": 1
+        },
+        {
+          "unit": "Archer Queen",
+          "kind": "hero",
+          "level": 70,
+          "count": 1
+        },
+        {
+          "unit": "Grand Warden",
+          "kind": "hero",
+          "level": 50,
+          "count": 1
+        },
+        {
+          "unit": "Royal Champion",
+          "kind": "hero",
+          "level": 20,
+          "count": 1
+        },
+        {
+          "unit": "Wall Breaker",
+          "kind": "troop",
+          "level": 9,
+          "count": 4
+        },
+        {
+          "unit": "Healer",
+          "kind": "troop",
+          "level": 6,
+          "count": 5
+        },
+        {
+          "unit": "Electro Dragon",
+          "kind": "troop",
+          "level": 4,
+          "count": 1
+        },
+        {
+          "unit": "Hog Rider",
+          "kind": "troop",
+          "level": 10,
+          "count": 10
+        },
+        {
+          "unit": "Miner",
+          "kind": "troop",
+          "level": 7,
+          "count": 11
+        },
+        {
+          "unit": "Valkyrie",
+          "kind": "troop",
+          "level": 8,
+          "count": 2
+        },
+        {
+          "unit": "Baby Dragon",
+          "kind": "troop",
+          "level": 6,
+          "count": 1
+        },
+        {
+          "unit": "Golem",
+          "kind": "troop",
+          "level": 9,
+          "count": 1
+        },
+        {
+          "unit": "Siege Barracks",
+          "kind": "troop",
+          "level": 4,
+          "count": 1
+        },
+        {
+          "unit": "Hog Rider",
+          "kind": "troop",
+          "level": 10,
+          "count": 9,
+          "castle": true
+        },
+        {
+          "unit": "Poison",
+          "kind": "spell",
+          "level": 7,
+          "count": 1
+        },
+        {
+          "unit": "Freeze",
+          "kind": "spell",
+          "level": 7,
+          "count": 2
+        },
+        {
+          "unit": "Rage",
+          "kind": "spell",
+          "level": 6,
+          "count": 3
+        },
+        {
+          "unit": "Healing",
+          "kind": "spell",
+          "level": 8,
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

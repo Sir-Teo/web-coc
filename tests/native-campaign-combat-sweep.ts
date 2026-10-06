@@ -8,6 +8,7 @@ import {
   nativeCampaignIssues,
   nativeDefendingHeroes,
 } from '../src/game/native-campaign';
+import { practiceLevelAt } from '../src/game/practice-mode';
 import { developedSave } from './fixtures/developed-village';
 
 const playable = NATIVE_CAMPAIGN.flatMap((s, i) =>
@@ -47,6 +48,9 @@ export function nativeCombatSweep(army: (typeof armies)[number]) {
         m.state.troopLevels = Object.fromEntries(
           TROOP_KEYS.map((k) => [k, maxTroopLevel(k)]),
         ) as typeof m.state.army;
+        // A Practice level opens at its own Town Hall and fights with the army it provides.
+        const drill = practiceLevelAt(index);
+        if (drill) m.townhall!.level = Math.max(m.townhallLevel, drill.townHall);
         m.startCampaign(index);
         m.discardRecording();
         const b = m.battle!;

@@ -218,6 +218,8 @@ export interface ReplaySetup {
   practice: boolean;
   /** Version 54+: a ladder match (timed, trophies at stake, no loot). */
   ladder?: LadderMatch;
+  /** A Practice Mode level, fought with the army it provides (the setup's army and levels). */
+  fixedArmy?: boolean;
   buildings: Building[];
   army: Army;
   spells: SpellBook;
@@ -315,6 +317,7 @@ export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
     index: s.index,
     practice: s.practice,
     ...(s.ladder ? { ladder: { ...s.ladder } } : {}),
+    ...(s.fixedArmy ? { fixedArmy: true } : {}),
     buildings: structuredClone(s.buildings),
     carriedArmy: { ...s.army },
     remaining: { ...s.army },
@@ -457,6 +460,12 @@ export function validateReplay(value: unknown): value is ReplayData {
           integer(o.x, 0, 48 - NATIVE_SCENERY[o.data].size) &&
           integer(o.y, 0, 48 - NATIVE_SCENERY[o.data].size),
       ))
+  )
+    return false;
+  // A Practice level is a campaign village fought with its own army.
+  if (
+    s.fixedArmy !== undefined &&
+    (s.fixedArmy !== true || s.practice || s.ladder !== undefined || s.catalog !== 'goblin-v1')
   )
     return false;
   // A ladder match fights a native layout with nothing to loot.

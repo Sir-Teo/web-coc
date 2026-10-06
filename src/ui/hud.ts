@@ -11,7 +11,6 @@ import {
   NATIVE_COMBAT,
   nativeBuildings,
   nativeCampaignIssues,
-  nativeUnlocked,
 } from '../game/native-campaign';
 import { sweeperStats } from '../game/air-control-stats';
 import { XBOW, xbowRange, type XbowMode } from '../game/xbow-stats';
@@ -145,6 +144,7 @@ import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
 import { armySpace, emptyArmy, emptySpells, spellSpace, type ArmyPreset } from '../game/army';
 import { ARMY_RECIPE_TEXTS, FIRST_RECIPE_TOWN_HALL, type ArmyRecipe } from '../game/army-recipes';
+import { PRACTICE_TEXTS, practiceLevelAt, type PracticeLevel } from '../game/practice-mode';
 import {
   BUILDINGS,
   buildPrice,
@@ -272,6 +272,18 @@ type Panel =
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
 type Drawer = 'shop' | 'army' | null;
 const n = (v: number) => Math.floor(v).toLocaleString('en-US');
+/** A Practice level's army in a few words: "26 troops, 2 spells and a hero". */
+const practiceArmyLine = (drill: PracticeLevel) => {
+  const troops = Object.values(drill.army).reduce((a, b) => a + b, 0),
+    spells = Object.values(drill.spells).reduce((a, b) => a + b, 0),
+    heroes = drill.heroes.length;
+  const parts = [
+    `${troops} troops`,
+    ...(spells ? [`${spells} spell${spells === 1 ? '' : 's'}`] : []),
+    ...(heroes ? [heroes === 1 ? 'a hero' : `${heroes} heroes`] : []),
+  ];
+  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0];
+};
 /** Siege machines in a stored army: they use the siege reserve, not troop housing. */
 const presetSiege = (army: Record<string, number>) =>
   Object.entries(army).reduce((sum, [k, count]) => sum + (isSiege(k as TroopKind) ? count : 0), 0);
@@ -1078,7 +1090,7 @@ export class HUD {
   private nextCampaignStage() {
     const stars = this.model.state.nativeCampaign?.stars ?? [];
     const open = NATIVE_CAMPAIGN.map((_, i) => i).filter(
-      (i) => nativeUnlocked(i, stars) && !campaignPending(i),
+      (i) => this.model.campaignOpen(i) && !campaignPending(i),
     );
     return open.find((i) => !stars[i]) ?? open.find((i) => (stars[i] ?? 0) < 3) ?? null;
   }
@@ -2641,7 +2653,7 @@ export class HUD {
        }</div>`,
    )
    .join('')}</div>
- <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && nativeUnlocked(i, s.nativeCampaign?.stars ?? []) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${this.awardsReady ? `, ${this.awardsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${this.awardsReady ? `<span class="notification">${this.awardsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
+ <nav class="left-tools" aria-label="Village activities"><button class="square-btn" data-action="campaign" aria-label="Campaign map">${icon('Map', 29)}${NATIVE_CAMPAIGN.some((_, i) => !s.nativeCampaign?.stars[i] && this.model.campaignOpen(i) && !campaignPending(i)) ? '<span class="notification">!</span>' : ''}</button><button class="square-btn" data-action="achievements" aria-label="Achievements${this.awardsReady ? `, ${this.awardsReady} ready to claim` : ''}">${icon('Trophy', 27)}<span class="tool-label">Awards</span>${this.awardsReady ? `<span class="notification">${this.awardsReady}</span>` : ''}</button><button class="square-btn" data-action="edit" aria-label="Edit village layout">${icon('Pencil', 25)}<span class="tool-label">Edit</span></button><button class="square-btn" data-action="battle-log" aria-label="Battle log">${icon('ScrollText', 27)}<span class="tool-label">Log</span></button></nav>
  <div class="right-tools"><button class="square-btn small" data-action="settings" aria-label="Settings">${icon('Settings', 24)}</button><div class="camera-tools"><button data-action="zoom-in" aria-label="Zoom in">${icon('Plus', 20)}</button><button data-action="recenter" aria-label="Center village">${icon('LocateFixed', 18)}</button><button data-action="zoom-out" aria-label="Zoom out">${icon('Minus', 20)}</button></div></div>
  <div class="village-caption"><span class="caption-line"></span> HOME VILLAGE <span class="caption-line"></span><small>Town Hall Level ${m.townhallLevel}</small></div>
  <div class="bottom-left"><button class="attack-btn" data-action="campaign">${icon('Swords', 44)}<span>Attack!</span><small>SINGLE PLAYER</small></button></div>
@@ -4599,13 +4611,20 @@ export class HUD {
    * An enlarged look at a campaign village before attacking: its layout, the defenses on show
    * (hidden Teslas and traps stay hidden, as in battle), the loot left and the suggested tier.
    */
+  /** A Practice level's own army, as its scout page shows it. */
+  private practiceArmy(drill: PracticeLevel) {
+    const heroes = drill.heroes
+      .map((hero) => `<b>${HERO_SOURCE[hero.kind]}</b> level ${hero.level}`)
+      .join(' · ');
+    return `<h3>Army provided</h3><p class="campaign-scout-note">${PRACTICE_TEXTS.title} brings its own army at these levels; yours stays home.</p>${this.composition(drill.army, drill.spells)}${heroes ? `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>` : ''}`;
+  }
   private campaignScout() {
     const m = this.model,
       i = this.scoutedStage,
       v = NATIVE_CAMPAIGN[i];
-    const stars = m.state.nativeCampaign?.stars ?? [];
-    const locked = !nativeUnlocked(i, stars) || campaignPending(i);
+    const locked = !m.campaignOpen(i) || campaignPending(i);
     const loot = m.campaignLoot(i, 'goblin-v1');
+    const drill = practiceLevelAt(i);
     const counts = new Map<string, number>();
     for (const b of nativeBuildings(i))
       if (isDefense(b.kind) && b.kind !== 'tesla') {
@@ -4613,7 +4632,7 @@ export class HUD {
         counts.set(name, (counts.get(name) ?? 0) + 1);
       }
     const defenses = [...counts].sort((a, b) => b[1] - a[1]);
-    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p><h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
+    return `<div class="modal-body campaign-scout"><img class="campaign-scout-map" src="${campaignMapSource(i)}" alt="${html(v.name)} base layout" width="320" height="320"><div class="campaign-scout-info"><span class="eyebrow">STAGE ${v.stage}${v.family === 'forged' ? ' · FAN-MADE' : ''}${v.recommendedTownHall ? ` · SUGGESTED TOWN HALL ${v.recommendedTownHall}` : ''}</span><h2>${html(v.name)}</h2><p class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</p>${drill ? this.practiceArmy(drill) : ''}<h3>Defenses on show</h3>${defenses.length ? `<ul class="campaign-scout-defenses">${defenses.map(([name, count]) => `<li><b>${count}×</b> ${html(name)}</li>`).join('')}</ul>` : '<p>No defenses in sight.</p>'}<p class="campaign-scout-note">Traps and hidden defenses are not shown until they trigger.</p><div class="confirm-actions">${button('campaign', 'Back to campaign', 'game-btn stone')}${button(`attack:${i}`, locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn orange', locked ? 'disabled' : '')}</div></div></div>`;
   }
   /** Campaign list filter and position; kept between visits. */
   private campaignFilter: 'all' | 'open' | 'stars' | 'done' = 'all';
@@ -4635,15 +4654,16 @@ export class HUD {
       .filter(([, i]) => i >= 0);
     const sectionName = {
       goblin: 'Goblin map',
-      challenge: 'Challenges',
+      challenge: PRACTICE_TEXTS.title,
       forged: 'Fan-made villages',
     };
     // The client ships 103 stages; the rest are the project's own, and say so.
     const forged = NATIVE_CAMPAIGN.filter((v) => v.family === 'forged').length;
     const shown = (i: number) => {
       const score = stars[i] ?? 0;
-      if (filter === 'open') return nativeUnlocked(i, stars) && !campaignPending(i) && !score;
-      if (filter === 'stars') return nativeUnlocked(i, stars) && !campaignPending(i) && score < 3;
+      const open = this.model.campaignOpen(i) && !campaignPending(i);
+      if (filter === 'open') return open && !score;
+      if (filter === 'stars') return open && score < 3;
       if (filter === 'done') return score === 3;
       return true;
     };
@@ -4653,12 +4673,14 @@ export class HUD {
         if (!shown(i)) return '';
         const loot = this.model.campaignLoot(i, 'goblin-v1');
         const pending = campaignPending(i);
-        const locked = !nativeUnlocked(i, stars),
+        const locked = !this.model.campaignOpen(i),
           score = stars[i] ?? 0;
+        // A Practice level brings its own army and opens at its Town Hall.
+        const drill = practiceLevelAt(i);
         const key = `${locked}|${score}|${loot.gold}|${loot.elixir}|${loot.dark}`;
         const cached = this.campaignCards.get(i);
         if (cached?.key === key) return cached.markup;
-        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>SINGLE PLAYER</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : v.family === 'challenge' ? 'A single-player Challenge. Open from the start.' : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
+        const markup = `<article class="campaign-card ${locked || pending ? 'locked' : ''}" id="campaign-stage-${i}" data-stage="${v.stage}"><div class="campaign-number">${locked ? icon('LockKeyhole', 22) : v.stage}</div>${this.campaignMap(i)}<div class="campaign-info"><span>${drill ? PRACTICE_TEXTS.title.toUpperCase() : 'SINGLE PLAYER'}</span><h3>${v.name}</h3><p>${pending ? 'This village is coming soon.' : drill ? (locked ? `Opens at Town Hall ${drill.townHall}.` : `Fought with its own army: ${practiceArmyLine(drill)}. Yours stays home.`) : v.dependencies.length ? 'Win a star to open the next path.' : 'Your campaign begins here.'}</p>${v.family === 'forged' ? '<small class="campaign-fan-made">Fan-made · not a client village</small>' : ''}${v.recommendedTownHall ? `<small class="campaign-recommendation">Suggested Town Hall: ${v.recommendedTownHall}</small>` : ''}<div class="campaign-loot" aria-label="Remaining loot">${coin} ${n(loot.gold)} ${elixir} ${n(loot.elixir)}${loot.dark !== undefined ? ` ${resource('dark')} ${n(loot.dark)}` : ''}</div>${loot.gold || loot.elixir || loot.dark ? '' : `<small class="campaign-depleted">Loot depleted${score < 3 ? ' · Replay for stars' : ' · Village cleared'}</small>`}</div><div class="campaign-action"><div class="campaign-stars">${'★'.repeat(score)}<span>${'★'.repeat(3 - score)}</span></div>${button(`attack:${i}`, pending ? 'Coming soon' : locked ? 'Locked' : `Attack ${icon('ArrowRight', 17)}`, 'game-btn ' + (locked || pending ? 'stone' : 'orange'), locked || pending ? 'disabled' : '')}</div></article>`;
         this.campaignCards.set(i, { key, markup });
         return markup;
       },

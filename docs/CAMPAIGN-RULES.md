@@ -5,12 +5,12 @@ Updated September 20, 2026. The campaign runs **150 villages** in three families
 | Villages | Family     | Source                                                               |
 | -------- | ---------- | -------------------------------------------------------------------- |
 | 1–90     | Goblin map | The pinned client's `npc1`–`npc90`, complete.                        |
-| 91–103   | Challenge  | 13 of the client's 19 single-player Challenges.                      |
+| 91–103   | Challenge  | 13 of the client's 19 Practice Mode levels.                          |
 | 104–150  | Forged     | This project's own, built by `scripts/generate-campaign-stages.mjs`. |
 
 ## Challenge villages (91–103)
 
-The client ships 19 Challenge maps beside the Goblin map — ordinary Home Villages from Town Hall 4 to 13, each with its own layout, loot and defending heroes. They carry no `MapInstanceName` and no `MapDependencies`, so they are open from the start; their Town Hall comes from the record name, the only place the source states it. Their Goblin-map GlobalIDs are read as ordinary Home buildings: a Challenge Town Hall is a Town Hall, not a Goblin Hall.
+The client ships 19 Challenge maps beside the Goblin map — ordinary Home Villages from Town Hall 4 to 13, each with its own layout, loot and defending heroes. They are the original's Practice Mode levels and play as such: each opens at its own Town Hall and is fought with the army it provides, not the player's (see [PRACTICE-MODE.md](PRACTICE-MODE.md)). They carry no `MapInstanceName` and no `MapDependencies`, so no star on the map opens them. Their Goblin-map GlobalIDs are read as ordinary Home buildings: a Challenge Town Hall is a Town Hall, not a Goblin Hall.
 
 Two source facts these villages introduced:
 

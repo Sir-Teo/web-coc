@@ -52,11 +52,9 @@ describe('Starter Challenges', () => {
     expect(STARTER_CHALLENGES.filter(challengeUnavailable).map((c) => c.id)).toEqual([
       'Social_JoinClan',
       'Social_RequestTroops_TH3',
-      'TH4_Win_StarsPractice',
       'TH4_Home_DonateTroops',
       'TH4_Win_StarsUnderTimeLimit',
       'TH5_Home_DonateSpells',
-      'TH6_Win_StarsPractice',
     ]);
   });
 

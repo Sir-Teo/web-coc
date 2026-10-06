@@ -334,6 +334,7 @@ import {
   type PresetHero,
 } from './army';
 import { ARMY_RECIPE_TEXTS, armyRecipesFor } from './army-recipes';
+import { PRACTICE_LEVELS, practiceLevelAt } from './practice-mode';
 import { stepTraps, type TrapState } from './traps';
 import { shrinkStepTime, type ShrinkStatus } from './shrink-trap';
 import {
@@ -824,6 +825,8 @@ export interface Battle {
   practice: boolean;
   /** A ladder match against a native layout: timed, trophies at stake, no loot. */
   ladder?: LadderMatch;
+  /** A Practice Mode level: fought with the army it provides, not the player's own. */
+  fixedArmy?: boolean;
   carriedArmy: Army;
   buildings: Building[];
   units: Unit[];
@@ -1834,6 +1837,8 @@ export class GameModel {
         return Object.values(this.state.achievements?.claimed ?? {}).reduce((n, v) => n + v, 0);
       case 'GetTotalSinglePlayerStars':
         return this.goblinStars;
+      case 'GetTotalPracticeStars':
+        return this.practiceStars;
       default:
         return this.state.starter?.counts[c.id] ?? 0;
     }
@@ -1954,6 +1959,14 @@ export class GameModel {
       type: 'DeploySpellHousingSpace',
       amount: SPELL_KEYS.reduce((n, k) => n + spells[k] * SPELLS[k].space, 0),
     });
+  }
+  /** Stars across Practice Mode's levels, the best of each. */
+  get practiceStars() {
+    return PRACTICE_LEVELS.reduce(
+      (n, level) =>
+        n + (level.stage ? (this.state.nativeCampaign?.stars[level.stage - 1] ?? 0) : 0),
+      0,
+    );
   }
   /** Stars across the Goblin campaign map (the client's Single Player stars). */
   get goblinStars() {
@@ -5085,6 +5098,17 @@ export class GameModel {
         : this.state.campaignLoot?.remaining[index]) ?? campaignStage(index, catalog);
     return campaignResources(loot, campaignAmount(campaignStage(index, catalog), 'dark') > 0);
   }
+  /**
+   * A Goblin map village can be attacked: its path is open and, for a Practice level, the Town
+   * Hall has reached the level's own.
+   */
+  campaignOpen(index: number) {
+    const drill = practiceLevelAt(index);
+    return (
+      nativeUnlocked(index, this.state.nativeCampaign?.stars ?? []) &&
+      (!drill || this.townhallLevel >= drill.townHall)
+    );
+  }
   startCampaign(index: number) {
     this.startBattle(index, false, 'goblin-v1');
   }
@@ -5117,6 +5141,11 @@ export class GameModel {
       (ladder && (practice || catalog !== 'goblin-v1'))
     )
       return;
+    // A Practice level brings its own army and opens at its Town Hall.
+    const drill =
+      !practice && !ladder && catalog === 'goblin-v1' ? practiceLevelAt(index) : undefined;
+    if (drill && this.townhallLevel < drill.townHall)
+      return this.notify(`${drill.name} opens at Town Hall ${drill.townHall}.`);
     if (!practice && catalog === 'goblin-v1') {
       const issues = nativeCampaignIssues(index);
       if (issues.length) return this.notify('This village is still being prepared.');
@@ -5126,6 +5155,7 @@ export class GameModel {
     if (!practice && catalog === 'valley-v1' && index > 0 && !this.state.stars[index - 1])
       return this.notify(`Earn a star on ${CAMPAIGN[index - 1].name} to unlock this village.`);
     if (
+      !drill &&
       this.armySize === 0 &&
       !TROOP_KEYS.some((k) => isSiege(k) && this.state.army[k] > 0) &&
       !this.heroReady
@@ -5133,11 +5163,11 @@ export class GameModel {
       return this.notify('Prepare an army or a hero before attacking.');
     this.cancel();
     this.editing = false;
-    if (!practice) {
+    if (!practice && !drill) {
       this.state.lastArmy = { ...this.state.army };
       this.state.lastSpells = { ...this.state.spells };
     }
-    const heroes = this.heroSetups();
+    const heroes = drill ? structuredClone(drill.heroes) : this.heroSetups();
     const buildings = practice
       ? this.state.buildings.map((building) => ({ ...building, hp: building.maxHp, cooldown: 0 }))
       : catalog === 'goblin-v1'
@@ -5172,15 +5202,18 @@ export class GameModel {
       ...(garrisons ? { garrisons } : {}),
       ...(catalog === 'goblin-v1' ? { catalog, scenery: nativeScenery(index) } : {}),
       ...(ladder ? { ladder: { ...ladder } } : {}),
+      ...(drill ? { fixedArmy: true } : {}),
       index,
       practice,
       buildings,
-      army: { ...emptyArmy(), ...this.state.army },
-      spells: { ...emptySpells(), ...this.state.spells },
-      troopLevels: Object.fromEntries(TROOP_KEYS.map((k) => [k, this.armyLevel(k)])) as Army,
-      spellLevels: Object.fromEntries(
-        SPELL_KEYS.map((k) => [k, this.armySpellLevel(k)]),
-      ) as SpellBook,
+      army: { ...emptyArmy(), ...(drill?.army ?? this.state.army) },
+      spells: { ...emptySpells(), ...(drill?.spells ?? this.state.spells) },
+      troopLevels: drill
+        ? { ...drill.troopLevels }
+        : (Object.fromEntries(TROOP_KEYS.map((k) => [k, this.armyLevel(k)])) as Army),
+      spellLevels: drill
+        ? { ...drill.spellLevels }
+        : (Object.fromEntries(SPELL_KEYS.map((k) => [k, this.armySpellLevel(k)])) as SpellBook),
       nextId: this.state.nextId,
       ...(ladder ? { availableLoot: noLoot, lootRoom: { ...noLoot } } : {}),
       ...(!practice && !ladder
@@ -5220,7 +5253,7 @@ export class GameModel {
           actions: [],
         }
       : null;
-    this.activeTroop = TROOP_KEYS.find((k) => this.state.army[k] > 0) ?? 'swordsman';
+    this.activeTroop = TROOP_KEYS.find((k) => initial.army[k] > 0) ?? 'swordsman';
     this.activeSpell = null;
     this.activeHero = false;
     this.activeHeroKind = null;
@@ -5276,7 +5309,7 @@ export class GameModel {
     this.beginFight();
     b.remaining[k]--;
     if (isSiege(k)) b.siegeDeployed = true;
-    if (!b.practice) this.state.army[k]--;
+    if (!b.practice && !b.fixedArmy) this.state.army[k]--;
     const d = this.troopStats(k);
     const recalled = b.recalledHp?.[k]?.shift();
     if (recalled === undefined) recordWakeSpace(b, troopWakeSpace(TROOPS[k].space));
@@ -5329,7 +5362,7 @@ export class GameModel {
     this.beginFight();
     recordWakeSpace(b, spellWakeSpace(SPELLS[k].space));
     b.spells[k]--;
-    if (!b.practice) this.state.spells[k]--;
+    if (!b.practice && !b.fixedArmy) this.state.spells[k]--;
     const d = this.spellStats(k);
     this.onEffect({ type: 'spell', x, y, spell: k, radius: d.radius });
     if (b.nativeContentExpansion) {
@@ -5442,7 +5475,7 @@ export class GameModel {
       const hero = b.units.find((u) => u.hero && u.hp <= 0);
       if (!hero || distance2D(hero.x - x, hero.y - y) > d.radius) {
         b.spells[k]++;
-        if (!b.practice) this.state.spells[k]++;
+        if (!b.practice && !b.fixedArmy) this.state.spells[k]++;
         this.notify('Cast the Revive Spell on a fallen hero.');
         return false;
       }
@@ -5516,7 +5549,7 @@ export class GameModel {
     } else if (TROOP_KEYS.includes(u.kind as TroopKind)) {
       const kind = u.kind as TroopKind;
       b.remaining[kind]++;
-      if (!b.practice) this.state.army[kind]++;
+      if (!b.practice && !b.fixedArmy) this.state.army[kind]++;
       ((b.recalledHp ??= {})[kind] ??= []).push(u.hp);
     }
     this.onEffect({ type: 'spawn', x: u.x, y: u.y });

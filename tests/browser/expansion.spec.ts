@@ -115,16 +115,21 @@ test('the building info sheet compares this level with the next', async ({ page 
 });
 
 test('a raid scouts first, then deploys by drag and casts a spell', async ({ page }) => {
-  // The Challenge village below brings a hundred buildings' art.
+  // The village below brings a hundred buildings' art.
   test.slow();
   await useDevelopedVillage(page);
-  await page.locator('.attack-btn').click();
-  // A Challenge village, open from the start and big enough to outlast the test; the first
-  // goblin villages fall to this army within seconds.
+  // The first fan-made village, opened by stars along the map: big enough to outlast the test
+  // (the first goblin villages fall to this army within seconds), and fought with the
+  // village's own army (the Practice levels before it bring their own).
   const stage = await page.evaluate(async () => {
-    const { NATIVE_CAMPAIGN } = await import('/src/game/native-campaign.ts');
-    return NATIVE_CAMPAIGN.findIndex((v) => v.family === 'challenge');
+    const { NATIVE_CAMPAIGN, freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.nativeCampaign = freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    m.changed();
+    return NATIVE_CAMPAIGN.findIndex((v) => v.family === 'forged');
   });
+  await page.locator('.attack-btn').click();
   await page.locator(`[data-action="attack:${stage}"]`).first().click();
   await expect(page.locator('.prep-banner')).toBeVisible();
   await expect(page.locator('.battle-clock')).toHaveClass(/prep/);

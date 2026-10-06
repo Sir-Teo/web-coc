@@ -28,11 +28,12 @@ Each Town Hall reveals its challenges, and revealed challenges never expire. A c
 | Loot in a single battle                                                 | The best single raid. The client asks for a Multiplayer Battle, but ladder matches carry no loot here, so a campaign raid counts. |
 | Multiplayer stars, ruins, deployed housing, stars with a troop          | Ladder matches, this game's stand-in for Multiplayer Battles (as for the achievements).                                           |
 
-Seven challenges cannot be completed here, and the panel says why:
+Five challenges cannot be completed here, and the panel says why:
 
 - the clan ones (join a clan, request reinforcements, donate troops and spells);
-- the two Practice Mode ones (this game has no scripted Practice Mode);
 - Speedy Stars, which needs stars earned within a battle's first minute (battles keep no star times).
+
+The two Practice Mode ones ("Win 3x/9x total Stars from Practice Levels") count the best stars on each [Practice level](PRACTICE-MODE.md).
 
 They only cost points, since Town Hall 7 grants every tier anyway.
 
