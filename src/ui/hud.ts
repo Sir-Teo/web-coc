@@ -143,7 +143,8 @@ import {
 import { LEGACY_ITEM } from '../game/native-hero-village';
 import { heroAbilityHeal, heroStatsFor } from '../game/native-heroes';
 import { BUILDING_LEVELS, requiredTownHall } from '../game/progression';
-import { armySpace, spellSpace, type ArmyPreset } from '../game/army';
+import { armySpace, emptyArmy, emptySpells, spellSpace, type ArmyPreset } from '../game/army';
+import { ARMY_RECIPE_TEXTS, FIRST_RECIPE_TOWN_HALL, type ArmyRecipe } from '../game/army-recipes';
 import {
   BUILDINGS,
   buildPrice,
@@ -265,6 +266,7 @@ type Panel =
   | 'troop-info'
   | 'spell-info'
   | 'army-presets'
+  | 'cookbook'
   | 'battle-log'
   | null;
 /** Shop and army live in a bottom sheet so the village stays visible and clickable. */
@@ -1751,6 +1753,12 @@ export class HUD {
         break;
       case 'army-presets':
         this.show('army-presets');
+        break;
+      case 'cookbook':
+        this.show('cookbook');
+        break;
+      case 'recipe-use':
+        m.useArmyRecipe(arg);
         break;
       case 'battle-log':
         this.show('battle-log');
@@ -4010,6 +4018,7 @@ export class HUD {
       'troop-info': TROOPS[this.inspectedTroop].name,
       'spell-info': SPELLS[this.inspectedSpell].name,
       'army-presets': 'Quick armies',
+      cookbook: ARMY_RECIPE_TEXTS.tab,
       'battle-log': 'Battle log',
       blacksmith: 'Hero Equipment',
       heroes: 'Hero Hall',
@@ -4041,6 +4050,7 @@ export class HUD {
       'troop-info': 'Know your troops. Plan your attack.',
       'spell-info': 'Place each spell where it makes the difference.',
       'army-presets': 'Save a composition. Be ready in one tap.',
+      cookbook: ARMY_RECIPE_TEXTS.info,
       'battle-log': 'Your last twenty attacks, kept with your village.',
       blacksmith: 'Forge your King’s abilities.',
       heroes: 'A champion for every attack.',
@@ -4101,33 +4111,35 @@ export class HUD {
                                   ? this.progression()
                                   : this.panel === 'army-presets'
                                     ? this.armyPresets()
-                                    : this.panel === 'battle-log'
-                                      ? this.battleLog()
-                                      : this.panel === 'spell-info'
-                                        ? this.spellInfo()
-                                        : this.panel === 'troop-info'
-                                          ? this.troopInfo()
-                                          : this.panel === 'campaign'
-                                            ? this.campaign()
-                                            : this.panel === 'campaign-scout'
-                                              ? this.campaignScout()
-                                              : this.panel === 'settings'
-                                                ? this.settings()
-                                                : this.panel === 'import-confirm'
-                                                  ? this.importConfirm()
-                                                  : this.panel === 'buildings'
-                                                    ? this.buildingList()
-                                                    : this.panel === 'achievements'
-                                                      ? this.achievements()
-                                                      : this.panel === 'research'
-                                                        ? this.research()
-                                                        : this.panel === 'info'
-                                                          ? this.info()
-                                                          : this.panel === 'layouts'
-                                                            ? this.layoutPanel()
-                                                            : this.panel === 'surrender'
-                                                              ? this.surrender()
-                                                              : this.help();
+                                    : this.panel === 'cookbook'
+                                      ? this.cookbook()
+                                      : this.panel === 'battle-log'
+                                        ? this.battleLog()
+                                        : this.panel === 'spell-info'
+                                          ? this.spellInfo()
+                                          : this.panel === 'troop-info'
+                                            ? this.troopInfo()
+                                            : this.panel === 'campaign'
+                                              ? this.campaign()
+                                              : this.panel === 'campaign-scout'
+                                                ? this.campaignScout()
+                                                : this.panel === 'settings'
+                                                  ? this.settings()
+                                                  : this.panel === 'import-confirm'
+                                                    ? this.importConfirm()
+                                                    : this.panel === 'buildings'
+                                                      ? this.buildingList()
+                                                      : this.panel === 'achievements'
+                                                        ? this.achievements()
+                                                        : this.panel === 'research'
+                                                          ? this.research()
+                                                          : this.panel === 'info'
+                                                            ? this.info()
+                                                            : this.panel === 'layouts'
+                                                              ? this.layoutPanel()
+                                                              : this.panel === 'surrender'
+                                                                ? this.surrender()
+                                                                : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
@@ -4147,7 +4159,7 @@ export class HUD {
       .join('')}</div>`;
   }
   /** A Quick army's heroes, items and pets, and what loading it here would change. */
-  private presetHeroes(preset: ArmyPreset) {
+  private presetHeroes(preset: ArmyPreset, note = 'When used here:') {
     const plan = this.model.presetHeroPlan(preset);
     const heroes = preset
       .heroes!.map((hero) => {
@@ -4158,11 +4170,11 @@ export class HUD {
         return `<b>${HERO_SOURCE[hero.kind]}</b>${extras.length ? ` (${extras.map(html).join(', ')})` : ''}`;
       })
       .join(' · ');
-    return `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>${plan.changes.length ? `<p class="preset-empty">When used here: ${plan.changes.map(html).join(' · ')}.</p>` : ''}`;
+    return `<p class="preset-heroes">${icon('ShieldCheck', 14)} ${heroes}</p>${plan.changes.length ? `<p class="preset-empty">${note} ${plan.changes.map(html).join(' · ')}.</p>` : ''}`;
   }
   private armyPresets() {
     const m = this.model;
-    return `<div class="modal-body preset-body"><p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${[
+    return `<div class="modal-body preset-body">${this.presetTabs()}<p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${[
       0, 1, 2,
     ]
       .map((slot) => {
@@ -4175,6 +4187,45 @@ export class HUD {
       .join(
         '',
       )}${button('army', `${icon('Swords', 17)} Edit current army`, 'game-btn blue')}</div>`;
+  }
+  /** Quick armies and the Cookbook, as the original's army screen tabs them. */
+  private presetTabs() {
+    const tab = (panel: Panel, label: string) =>
+      button(
+        panel!,
+        label,
+        `tab ${this.panel === panel ? 'active' : ''}`,
+        `role="tab" aria-selected="${this.panel === panel}"`,
+      );
+    return `<div class="shop-tabs preset-tabs" role="tablist" aria-label="Army recipes">${tab('army-presets', 'Quick armies')}${tab('cookbook', ARMY_RECIPE_TEXTS.tab)}</div>`;
+  }
+  /** The Cookbook: the client's Featured and Creator recipes for this Town Hall. */
+  private cookbook() {
+    const m = this.model,
+      recipes = m.armyRecipes;
+    const empty =
+      m.townhallLevel < FIRST_RECIPE_TOWN_HALL
+        ? `Featured and Creator recipes start appearing at Town Hall ${FIRST_RECIPE_TOWN_HALL}.`
+        : `No recipes for Town Hall ${m.townhallLevel} yet.`;
+    return `<div class="modal-body preset-body cookbook-body">${this.presetTabs()}<p class="preset-current">Current army: <b>${m.armySize}/${m.capacity}</b> troop spaces · <b>${m.spellHousing}/${m.spellCapacity}</b> spell spaces</p>${
+      recipes.length
+        ? recipes.map((recipe) => this.recipeCard(recipe)).join('')
+        : `<p class="preset-empty">${empty} Save your own armies under Quick armies.</p>`
+    }</div>`;
+  }
+  private recipeCard(recipe: ArmyRecipe) {
+    const m = this.model,
+      issue = m.armyPreparationIssue(recipe.army, recipe.spells);
+    const castleArmy = emptyArmy(),
+      castleSpells = emptySpells();
+    for (const [k, count] of recipe.castle.troops) castleArmy[k] += count;
+    for (const [k, count] of recipe.castle.spells) castleSpells[k] += count;
+    const castle = recipe.castle.troops.length + recipe.castle.spells.length;
+    const siege = presetSiege(recipe.army);
+    const creator = recipe.creator
+      ? ARMY_RECIPE_TEXTS.creator.replace('<creator>', recipe.creator)
+      : 'Featured';
+    return `<article class="preset-card recipe-card" data-recipe="${recipe.id}"><div class="recipe-head"><h3>${html(recipe.name)}</h3><small>${html(creator)} · ${armySpace(recipe.army)} troop · ${spellSpace(recipe.spells)} spell spaces${siege ? ` · ${siege} siege` : ''}</small></div>${this.composition(recipe.army, recipe.spells)}${recipe.heroes.length ? this.presetHeroes(recipe, ARMY_RECIPE_TEXTS.autofix) : ''}${castle ? `<details class="recipe-castle"><summary>${icon('ChevronRight', 15)} ${icon('Castle', 15)} Clan Castle · not used here</summary>${this.composition(castleArmy, castleSpells)}</details>` : ''}<div class="preset-actions">${button(`recipe-use:${recipe.id}`, `${icon('Check', 16)} ${issue ? ARMY_RECIPE_TEXTS.cannotTrain : 'Use army'}`, 'game-btn green', issue ? 'disabled' : '')}${recipe.guide ? `<a class="game-btn stone" href="${html(recipe.guide)}" target="_blank" rel="noopener noreferrer">${icon('Play', 16)} Watch guide</a>` : ''}</div>${issue ? `<p class="preset-empty">${html(issue)}</p>` : ''}</article>`;
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];

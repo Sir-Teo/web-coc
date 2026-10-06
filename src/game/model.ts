@@ -333,6 +333,7 @@ import {
   type ArmyPreset,
   type PresetHero,
 } from './army';
+import { ARMY_RECIPE_TEXTS, armyRecipesFor } from './army-recipes';
 import { stepTraps, type TrapState } from './traps';
 import { shrinkStepTime, type ShrinkStatus } from './shrink-trap';
 import {
@@ -3561,29 +3562,55 @@ export class GameModel {
     const preset = this.state.armyPresets?.[slot];
     if (!preset) return this.notify('Save an army in this slot first.');
     if (!this.prepareArmy(preset.army, preset.spells)) return;
-    if (preset.heroes?.length) {
-      const { lineup, changes } = this.presetHeroPlan(preset);
-      if (lineup.length) this.state.heroLineup = lineup.map((hero) => hero.kind);
-      if (this.blacksmith) {
-        const gear = structuredClone(this.gear);
-        for (const hero of lineup)
-          if (hero.items.length) gear.loadouts[hero.kind] = [...hero.items];
-        this.state.gear = gear;
-      }
-      if (this.petHouse) {
-        const pets = structuredClone(this.petProgress);
-        for (const hero of lineup) {
-          if (!hero.pet) continue;
-          for (const [other, assigned] of Object.entries(pets.assigned))
-            if (assigned === hero.pet) delete pets.assigned[other as HeroKind];
-          pets.assigned[hero.kind] = hero.pet;
-        }
-        this.state.pets = pets;
-      }
-      this.changed();
-      if (changes.length) return this.notify(`Your army is ready · ${changes.join(' · ')}.`);
-    }
+    const changes = this.applyPresetHeroes(preset);
+    if (changes.length) return this.notify(`Your army is ready · ${changes.join(' · ')}.`);
     this.notify('Your army is ready.');
+  }
+  /** Puts a preset's heroes, items and pets in place as `presetHeroPlan` allows; its notes. */
+  private applyPresetHeroes(preset: ArmyPreset) {
+    if (!preset.heroes?.length) return [];
+    const { lineup, changes } = this.presetHeroPlan(preset);
+    if (lineup.length) this.state.heroLineup = lineup.map((hero) => hero.kind);
+    if (this.blacksmith) {
+      const gear = structuredClone(this.gear);
+      for (const hero of lineup) if (hero.items.length) gear.loadouts[hero.kind] = [...hero.items];
+      this.state.gear = gear;
+    }
+    if (this.petHouse) {
+      const pets = structuredClone(this.petProgress);
+      for (const hero of lineup) {
+        if (!hero.pet) continue;
+        for (const [other, assigned] of Object.entries(pets.assigned))
+          if (assigned === hero.pet) delete pets.assigned[other as HeroKind];
+        pets.assigned[hero.kind] = hero.pet;
+      }
+      this.state.pets = pets;
+    }
+    this.changed();
+    return changes;
+  }
+  /** The Cookbook recipes offered at this Town Hall (docs/ARMY-RECIPES.md). */
+  get armyRecipes() {
+    return armyRecipesFor(this.townhallLevel);
+  }
+  /**
+   * Makes a Cookbook recipe the active army, as the original's Use does: its troops, siege
+   * machines and spells replace the army, and its heroes, items and pets take their places where
+   * this village has them (the rest are swapped or left out, and the message says which).
+   */
+  useArmyRecipe(id: string) {
+    const recipe = this.armyRecipes.find((r) => r.id === id);
+    if (this.battle || !recipe) return false;
+    const issue = this.armyPreparationIssue(recipe.army, recipe.spells);
+    if (issue) {
+      this.notify(`${ARMY_RECIPE_TEXTS.cannotTrain}. ${issue}`);
+      return false;
+    }
+    this.prepareArmy(recipe.army, recipe.spells);
+    const changes = this.applyPresetHeroes(recipe);
+    const loaded = ARMY_RECIPE_TEXTS.loaded.replace('<army>', recipe.name);
+    this.notify(changes.length ? `${loaded} ${changes.join(' · ')}.` : loaded);
+    return true;
   }
   retrain() {
     if (!this.state.lastArmy) {

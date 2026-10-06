@@ -32,7 +32,7 @@ test('army editing is immediate, free, and respects weighted spell housing', asy
         giant: m.state.army.giant,
         archer: m.state.army.archer,
         housing: m.spellHousing,
-        spells: m.state.spells,
+        spells: Object.fromEntries(Object.entries(m.state.spells).filter(([, n]) => n)),
         queue: m.state.queue.length,
       };
     }),

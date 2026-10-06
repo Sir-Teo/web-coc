@@ -45,6 +45,7 @@ notes in those references are not current release guarantees.
 - [Magic items](MAGIC-ITEMS.md)
 - [Gem purchases: missing resources, Treasure packs and speed-up prices](GEM-PURCHASES.md)
 - [Builder menu](BUILDER-MENU.md)
+- [Army recipes (Cookbook)](ARMY-RECIPES.md)
 - [Trader](TRADER.md)
 - [Village objects: the Trader's camp and the Super Troop building](VILLAGE-OBJECTS.md)
 - [Treasury](TREASURY.md)
