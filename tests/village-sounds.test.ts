@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import catalog from '../reference/village-sounds/sounds.json' with { type: 'json' };
 import { SampleAudio } from '../src/game/sample-audio';
+import { GameModel, makeBuilding, type FX } from '../src/game/model';
 
 describe('village sounds', () => {
   it('pins each client effect and ships its sound unchanged', () => {
@@ -52,5 +53,27 @@ describe('village sounds', () => {
     expect(samples.shot('village-click', 0.7, 0.75)).toBe(true);
     expect(started).toHaveLength(1);
     expect(started[0].rate).toBe(0.75);
+  });
+
+  it('marks finished research and hero upgrades at their buildings', () => {
+    const m = new GameModel();
+    m.state.obstacles = [];
+    m.state.buildings = [
+      makeBuilding(1, 'townhall', 20, 20, 9),
+      makeBuilding(2, 'laboratory', 10, 10, 5),
+      makeBuilding(3, 'herohall', 30, 10, 2),
+    ];
+    m.tick(m.clock);
+    const effects: FX[] = [];
+    m.onEffect = (fx) => effects.push(fx);
+    m.state.research = { kind: 'archer', end: m.clock + 1000 };
+    m.tick(m.clock + 2000);
+    expect(effects).toContainEqual({ type: 'upgrade', x: 11.5, y: 11.5, finished: 'research' });
+    const king = m.heroProgress('king')!;
+    king.upgradeStart = m.clock;
+    king.upgradeEnd = m.clock + 1000;
+    effects.length = 0;
+    m.tick(m.clock + 2000);
+    expect(effects).toContainEqual({ type: 'upgrade', x: 32, y: 12, finished: 'hero' });
   });
 });

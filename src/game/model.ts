@@ -877,6 +877,8 @@ export type FX = {
   /** An `upgrade` effect's finished building, or the gems a cleared obstacle paid. */
   building?: BuildingKind;
   gems?: number;
+  /** An `upgrade` effect for a finished hero upgrade or research, at its hall or laboratory. */
+  finished?: 'hero' | 'research';
   /** Presentation only: weapon identity and the source/target entities. */
   weapon?: Weapon;
   projectileId?: string;
@@ -1579,6 +1581,7 @@ export class GameModel {
       delete this.state.king.upgradeEnd;
       delete this.state.king.upgradeStart;
       structural = changed = true;
+      this.finishedAt(this.heroHall, 'hero');
       this.notify(
         `Barbarian King reached level ${this.state.king.level}!${xp ? ` +${xp} XP` : ''}`,
       );
@@ -1629,6 +1632,7 @@ export class GameModel {
       }
       delete this.state.research;
       this.notify(`${name} upgraded to level ${level}!`);
+      this.finishedAt(this.laboratory, 'research');
       structural = true;
       changed = true;
     }
@@ -3077,6 +3081,12 @@ export class GameModel {
     this.changed();
     return true;
   }
+  /** Marks a finished hero upgrade or research at the building that did it (home only). */
+  private finishedAt(b: Building | undefined, finished: 'hero' | 'research') {
+    if (!b || this.battle) return;
+    const size = BUILDINGS[b.kind].size;
+    this.onEffect({ type: 'upgrade', x: b.x + size / 2, y: b.y + size / 2, finished });
+  }
   // ------------------------------------------------------------ Helper Hut
   get helperHut() {
     return this.state.buildings.find((b) => b.kind === 'helperhut' && !b.constructing);
@@ -3334,6 +3344,7 @@ export class GameModel {
       delete hero.upgradeStart;
       this.notify(`${HERO_SOURCE[kind]} reached level ${hero.level}!${xp ? ` +${xp} XP` : ''}`);
       this.gainXp(xp);
+      this.finishedAt(this.heroHall, 'hero');
       changed = true;
     }
     const house = this.petHouse?.level ?? 0;

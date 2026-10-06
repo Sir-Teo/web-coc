@@ -11,9 +11,11 @@ Village feedback plays the client's own sounds, as rows of its `logic/effects.cs
 | The Town Hall finishing | TH Upgrade Jingle | `town_hall_upgrade_jingle_01` | 70% | 1 |
 | Starting a hero upgrade | Start Hero Upgrade | `hero_upgrade_02` | 80% | 0.64 |
 | Starting research | Troop Upgrade Start | `start_troop_upgrade_01` | 70% | 1 |
+| Research finishing (at the Laboratory) | Troop Upgrade Finished | `troop_upgrade_finished_01` | 70% | 1 |
+| A hero upgrade finishing (at the Hero Hall) | Hero Upgrade Finished | `building_finished_01` | 80% | 1 |
 | Buttons and selecting a building | (the interface's own) | `button_click` | 60% | 1 |
 
-Hero Upgrade Finished, Troop Upgrade Finished, Generic Pick Up and Boost Start are imported too, for the moments this game does not mark with an effect yet. Defense-specific pickup and placement sounds stay with their families (Archer Tower, Cannon, Mortar and the others).
+Generic Pick Up and Boost Start are imported too, for moments this game does not mark with an effect yet. Finished research and hero upgrades show the completion ring at the Laboratory or Hero Hall with their sound. Defense-specific pickup and placement sounds stay with their families (Archer Tower, Cannon, Mortar and the others).
 
 ## Source and loading
 
