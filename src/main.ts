@@ -13,6 +13,7 @@ import {
   MAX_SAVE_FILE_BYTES,
 } from './game/save';
 import { acquireVillage, SessionUnavailableError } from './game/session';
+import { layoutFromLink } from './game/layout-share';
 import { HUD } from './ui/hud';
 import { developerToolsEnabled } from './dev/access';
 import { configureDisplay, displaySize } from './game/display';
@@ -60,6 +61,16 @@ async function boot() {
     await prepareHomeArt(model.buildings);
     const scene = new VillageScene(model, audio);
     const hud = new HUD(model, scene, audio);
+    // A shared layout link ("#layout=…"), opened or pasted into an open tab: offer it in the
+    // layouts panel, and drop it from the address so a reload does not offer it again.
+    const offerLayout = () => {
+      const code = layoutFromLink(location.href);
+      if (!code) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      hud.receiveLayout(code);
+    };
+    offerLayout();
+    window.addEventListener('hashchange', offerLayout);
     const game = new Phaser.Game({
       type: Phaser.WEBGL,
       parent: 'game',

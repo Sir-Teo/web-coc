@@ -46,6 +46,7 @@ notes in those references are not current release guarantees.
 - [Trader](TRADER.md)
 - [Treasury](TREASURY.md)
 - [Starter Challenges](STARTER-CHALLENGES.md)
+- [Layout sharing](LAYOUT-SHARING.md)
 - [Troop and spell sounds](TROOP-SOUNDS.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)

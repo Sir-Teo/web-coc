@@ -225,6 +225,7 @@ import { applyMotionPreference } from './motion';
 import { offlineStatus, retryOfflineWarm, watchOfflineStatus } from '../offline';
 import { ACHIEVEMENTS, UNAVAILABLE_ACHIEVEMENTS } from '../game/achievements';
 import { musicScene } from '../game/music';
+import { decodeLayout, layoutFromLink, layoutLink } from '../game/layout-share';
 import {
   STARTER_END_TEXT,
   STARTER_MAX_POINTS,
@@ -692,6 +693,8 @@ export class HUD {
   private inspectedNativeItem = '';
   private nativeOrePurchase: { slug: string; level: number; gems: number } | null = null;
   private presetNames = new Map<number, string>();
+  /** A shared layout link or code waiting to be copied into a slot (pasted or opened). */
+  private layoutCode = '';
   private toastTimer?: ReturnType<typeof setTimeout>;
   private resultShown = false;
   private raf = false;
@@ -877,6 +880,20 @@ export class HUD {
         }
         if (t.id.startsWith('preset-name-'))
           this.presetNames.set(Number(t.id.slice('preset-name-'.length)), t.value);
+        if (t.id === 'layout-code') {
+          this.layoutCode = t.value;
+          // Re-rendering would drop the caret: update the summary and buttons in place.
+          const code = layoutFromLink(t.value) ?? t.value.trim(),
+            shared = code ? decodeLayout(code) : null;
+          const summary = document.querySelector('.layout-import-summary');
+          if (summary) {
+            summary.textContent = this.layoutSummary(code, shared);
+            summary.classList.toggle('bad', !!code && !shared);
+          }
+          document
+            .querySelectorAll<HTMLButtonElement>('[data-action^="layout-import:"]')
+            .forEach((b) => (b.disabled = !shared));
+        }
         if (t.id === 'campaign-filter') {
           this.campaignFilter = t.value as typeof this.campaignFilter;
           this.render();
@@ -1810,6 +1827,14 @@ export class HUD {
       case 'layout-load':
         m.loadLayout(Number(arg));
         break;
+      case 'layout-share':
+        void this.shareLayout(Number(arg));
+        break;
+      case 'layout-import': {
+        const code = layoutFromLink(this.layoutCode) ?? this.layoutCode.trim();
+        if (m.importLayout(code, Number(arg)) !== false) this.layoutCode = '';
+        break;
+      }
       case 'edit':
         m.beginEdit();
         this.drawerPanel = null;
@@ -4184,15 +4209,67 @@ export class HUD {
   }
   private layoutPanel() {
     const m = this.model;
+    const code = layoutFromLink(this.layoutCode) ?? this.layoutCode.trim();
+    const shared = code ? decodeLayout(code) : null;
+    const summary = this.layoutSummary(code, shared);
     return `<div class="modal-body layouts-body"><p class="layouts-note">Save the arrangement you are happy with, then experiment freely. Restoring a layout can be undone.</p>${[
       0, 1, 2,
     ]
       .map((i) => {
         const layout = m.layouts[i];
         const filled = !!layout?.slots.length;
-        return `<article class="layout-row"><div class="layout-icon">${icon('LayoutGrid', 24)}</div><div><h3>${html(layout?.name ?? `Layout ${i + 1}`)}</h3><p>${filled ? `${layout!.slots.length} buildings stored` : 'Empty slot'}</p></div><div class="layout-actions">${button(`layout-save:${i}`, `${icon('Save', 16)} Save`, 'game-btn stone')}${m.canUndoSlot('layout', i) ? button(`layout-undo:${i}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`layout-load:${i}`, `${icon('RotateCcw', 16)} Restore`, 'game-btn green', filled ? '' : 'disabled')}</div></article>`;
+        return `<article class="layout-row"><div class="layout-icon">${icon('LayoutGrid', 24)}</div><div><h3>${html(layout?.name ?? `Layout ${i + 1}`)}</h3><p>${filled ? `${layout!.slots.length} buildings stored` : 'Empty slot'}</p></div><div class="layout-actions">${button(`layout-save:${i}`, `${icon('Save', 16)} Save`, 'game-btn stone')}${m.canUndoSlot('layout', i) ? button(`layout-undo:${i}`, `${icon('RotateCcw', 16)} Undo save`, 'game-btn stone') : ''}${button(`layout-share:${i}`, `${icon('Upload', 16)} Share`, 'game-btn stone', filled ? '' : 'disabled')}${button(`layout-load:${i}`, `${icon('RotateCcw', 16)} Restore`, 'game-btn green', filled ? '' : 'disabled')}</div></article>`;
       })
-      .join('')}</div>`;
+      .join(
+        '',
+      )}<section class="layout-import"><h3>${icon('Download', 18)} Shared layout</h3><label for="layout-code">Layout link</label><input id="layout-code" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste a layout link" value="${html(this.layoutCode)}"><p class="layout-import-summary${code && !shared ? ' bad' : ''}">${html(summary)}</p><div class="layout-actions">${[
+      0, 1, 2,
+    ]
+      .map((i) =>
+        button(
+          `layout-import:${i}`,
+          `Copy to ${html(m.layouts[i]?.name ?? `Layout ${i + 1}`)}`,
+          'game-btn blue',
+          shared ? '' : 'disabled',
+        ),
+      )
+      .join('')}</div></section></div>`;
+  }
+  private layoutSummary(code: string, shared: ReturnType<typeof decodeLayout>) {
+    if (!code) return 'Paste a layout link someone shared, then copy it into a slot.';
+    if (!shared) return 'This layout link is damaged.';
+    const count = Object.values(shared.positions).reduce((t, list) => t + (list?.length ?? 0), 0);
+    return `Town Hall ${shared.townhall} layout · ${n(count)} buildings`;
+  }
+  /** A saved layout as a link: the share sheet on phones, else the clipboard, else the field. */
+  private async shareLayout(slot: number) {
+    const code = this.model.layoutShareCode(slot);
+    if (!code) return;
+    const link = layoutLink(location.origin, code);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Crown & Clan layout', url: link });
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+      this.model.notify('Layout link copied.');
+      return;
+    } catch (error) {
+      // A dismissed share sheet needs nothing more.
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+    }
+    // Neither works (an insecure page, a denied permission): show it to copy by hand.
+    this.layoutCode = link;
+    this.render();
+    const field = document.querySelector<HTMLInputElement>('#layout-code');
+    field?.focus();
+    field?.select();
+    this.model.notify('Copy the layout link from the field below.');
+  }
+  /** A layout link the page was opened with: offer it in the layouts panel. */
+  receiveLayout(code: string) {
+    this.layoutCode = code;
+    this.show('layouts');
   }
   private researchCard(kind: ResearchKind) {
     const m = this.model,

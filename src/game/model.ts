@@ -45,6 +45,7 @@ import {
   type MagicItems,
   type MagicTarget,
 } from './magic-items';
+import { decodeLayout, encodeLayout, fitLayout } from './layout-share';
 import {
   challengeBuilding,
   challengeUnavailable,
@@ -3060,6 +3061,57 @@ export class GameModel {
     }
     this.changed();
     return true;
+  }
+  /**
+   * A shareable code for a saved layout slot, or for the village as it stands: every building's
+   * place by kind (see layout-share.ts).
+   */
+  layoutShareCode(slot?: number) {
+    const saved = slot === undefined ? undefined : this.state.layouts?.[slot];
+    if (slot !== undefined && !saved?.slots.length) return null;
+    const at = new Map((saved?.slots ?? this.positions()).map((s) => [s.id, s]));
+    const placed = this.state.buildings.flatMap((b) => {
+      const slotted = at.get(b.id);
+      return b.npc || !slotted ? [] : [{ kind: b.kind, x: slotted.x, y: slotted.y }];
+    });
+    return encodeLayout(this.townhallLevel, placed);
+  }
+  /**
+   * Copies a shared layout into a slot, mapped onto this village's buildings; it is applied with
+   * Restore, which can be undone. Returns how many buildings it had no place for, or false.
+   */
+  importLayout(code: string, slot: number) {
+    if (this.battle || !Number.isInteger(slot) || slot < 0 || slot > 2) return false;
+    const shared = decodeLayout(code);
+    if (!shared) {
+      this.notify('This layout link is damaged.');
+      return false;
+    }
+    const fitted = fitLayout(
+      shared,
+      this.state.buildings.filter((b) => !b.npc),
+      (x, y, size) => overlapsObstacle(this.obstacles, x, y, size),
+    );
+    if (!fitted) {
+      this.notify('This layout has no room for every building of your village.');
+      return false;
+    }
+    this.state.layouts ??= [];
+    while (this.state.layouts.length < 3)
+      this.state.layouts.push({ name: `Layout ${this.state.layouts.length + 1}`, slots: [] });
+    if (this.state.layouts[slot].slots.length)
+      this.overwritten.layouts.set(slot, structuredClone(this.state.layouts[slot]));
+    const kept = new Map(this.positions().map((p) => [p.id, p]));
+    this.state.layouts[slot] = {
+      name: this.state.layouts[slot].name,
+      // Modes (an X-Bow's target, an Inferno's mode) stay as this village has them.
+      slots: fitted.slots.map((s) => ({ ...kept.get(s.id)!, x: s.x, y: s.y })),
+    };
+    this.notify(
+      `Shared layout copied to ${this.state.layouts[slot].name}${fitted.setAside ? `; ${fitted.setAside} building${fitted.setAside === 1 ? '' : 's'} it had no place for set aside` : ''}. Restore it to use it.`,
+    );
+    this.changed();
+    return fitted.setAside;
   }
   loadLayout(slot: number) {
     const layout = this.state.layouts?.[slot];

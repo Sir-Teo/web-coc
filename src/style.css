@@ -3604,6 +3604,47 @@ h3 {
   padding: 7px 13px;
   font-size: 12px;
 }
+.layout-import {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px 15px;
+  background: #fffaea;
+  border: 2px dashed #d3c194;
+  border-radius: 12px;
+}
+.layout-import h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+}
+.layout-import label {
+  font-size: 11px;
+  color: #8b7b5d;
+}
+.layout-import input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #cdbb8f;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.layout-import-summary {
+  margin: 0;
+  font-size: 12px;
+  color: #7d6c4d;
+}
+.layout-import-summary.bad {
+  color: #b03a2e;
+}
+.layout-import .layout-actions {
+  margin-left: 0;
+  flex-wrap: wrap;
+}
 .small-modal {
   width: 470px;
 }
@@ -3714,6 +3755,7 @@ h3 {
   .layout-actions {
     width: 100%;
     margin-left: 0;
+    flex-wrap: wrap;
   }
   .small-modal {
     width: auto;
