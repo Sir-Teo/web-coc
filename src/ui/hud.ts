@@ -924,6 +924,15 @@ export class HUD {
       this.drawerPanel = null;
       this.render();
     };
+    scene.onVillageObject = (opens) => {
+      if (model.battle) return;
+      if (opens === 'trader') return this.show('trader');
+      // The Super Troop building lists the boosts: the army's Super troops.
+      this.panel = null;
+      this.armyFilter = { query: '', show: 'all', family: 'super' };
+      if (this.drawerPanel === 'army') this.render();
+      else this.showDrawer('army');
+    };
     this.render();
     this.liveTimer = setInterval(() => this.updateLive(), 250);
     this.trackAnchor();

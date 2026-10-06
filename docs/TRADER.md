@@ -1,6 +1,6 @@
 # Trader
 
-The Trader's **Weekly Deals** open from the magic items list (the Town Hall card's Items button, then Weekly Deals). The title, the "New deals in …!" countdown, "Out of stock", "Storage Full" and the Town Hall messages are the client's own strings (`TID_TRADER_*`).
+The Trader's **Weekly Deals** open from his camp beside the village, which arrives at Town Hall 6 (tap his tent or him; see [Village objects](VILLAGE-OBJECTS.md)), or from the magic items list (the Town Hall card's Items button, then Weekly Deals). The title, the "New deals in …!" countdown, "Out of stock", "Storage Full" and the Town Hall messages are the client's own strings (`TID_TRADER_*`).
 
 ## Source
 
@@ -29,8 +29,8 @@ The client receives the deals from its server: its tables hold the Trader's text
 - **Limits.** A deal can be bought its weekly quantity, then reads "Out of stock" until the next week. A magic item that would exceed its limit, or ore beyond the Blacksmith's storage, reads "Storage Full", as in the client.
 - **Saves.** `trader` keeps the week and the purchases made in it; counts above a deal's quantity or unknown deals are rejected.
 
-Not included: Clan House parts, Epic Hero Equipment offers, the Builder Base items, special event weeks and the Trader's tent in the village.
+Not included: Clan House parts, Epic Hero Equipment offers, the Builder Base items and special event weeks.
 
 ## Tests
 
-`tests/trader.test.ts` checks the Tuesday 08:00 UTC week boundary, that a week's deals are fixed and the free one comes first, that every deal appears within half a year, the Town Hall 6 and 8 gates, weekly quantities, "Storage Full", gem shortage, the weekly restock and save validation. `tests/browser/magic-items.spec.ts` opens the Weekly Deals from the Town Hall at phone size and claims the free Glowy Ore.
+`tests/trader.test.ts` checks the Tuesday 08:00 UTC week boundary, that a week's deals are fixed and the free one comes first, that every deal appears within half a year, the Town Hall 6 and 8 gates, weekly quantities, "Storage Full", gem shortage, the weekly restock and save validation. `tests/browser/magic-items.spec.ts` opens the Weekly Deals from the Town Hall at phone size and claims the free Glowy Ore. `tests/browser/village-objects.spec.ts` opens them from the tent.

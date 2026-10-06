@@ -283,6 +283,7 @@ import {
   type DecorationKind,
   type StashedDecorations,
 } from './decorations';
+import { villageObjectFootprints } from './village-objects';
 import {
   REPLAY_VERSION,
   compatibleReplayVersion,
@@ -1172,12 +1173,19 @@ export class GameModel {
   decorationCount(kind: DecorationKind) {
     return ownedDecorations(this.decorations, this.stashedDecorations, kind);
   }
+  /** Whether a square of tiles reaches under the Trader's camp or the Super Troop building. */
+  overlapsVillageObject(x: number, y: number, size: number) {
+    return villageObjectFootprints(this.townhallLevel).some(
+      (o) => x < o.x + o.size && x + size > o.x && y < o.y + o.size && y + size > o.y,
+    );
+  }
   canPlaceDecoration(kind: DecorationKind, x: number, y: number, ignore?: number) {
     const size = DECORATIONS[kind].size;
     return (
       insideMap(kind, x, y) &&
       !overlapsObstacle(this.obstacles, x, y, size) &&
       !overlapsDecoration(this.decorations, x, y, size, ignore) &&
+      !this.overlapsVillageObject(x, y, size) &&
       !this.state.buildings.some(
         (b) =>
           x < b.x + BUILDINGS[b.kind].size &&
@@ -1343,6 +1351,7 @@ export class GameModel {
         size,
       ) &&
       !overlapsDecoration(this.decorations, x, y, size) &&
+      !this.overlapsVillageObject(x, y, size) &&
       !this.state.buildings.some(
         (b) =>
           x < b.x + BUILDINGS[b.kind].size &&
@@ -2065,13 +2074,10 @@ export class GameModel {
       changed = true;
     }
     const nextGrowth = growth.nextAt;
-    const obstacleEvents = advanceObstacles(
-      this.obstacles,
-      this.state.buildings,
-      growth,
-      now,
-      decorationFootprints(this.decorations),
-    );
+    const obstacleEvents = advanceObstacles(this.obstacles, this.state.buildings, growth, now, [
+      ...decorationFootprints(this.decorations),
+      ...villageObjectFootprints(this.townhallLevel),
+    ]);
     if (growth.nextAt !== nextGrowth) changed = true;
     if (obstacleEvents.grown.length) structural = changed = true;
     for (const o of obstacleEvents.removed) {

@@ -44,6 +44,7 @@ notes in those references are not current release guarantees.
 - [Decorations](DECORATIONS.md)
 - [Magic items](MAGIC-ITEMS.md)
 - [Trader](TRADER.md)
+- [Village objects: the Trader's camp and the Super Troop building](VILLAGE-OBJECTS.md)
 - [Treasury](TREASURY.md)
 - [Starter Challenges](STARTER-CHALLENGES.md)
 - [Layout sharing](LAYOUT-SHARING.md)

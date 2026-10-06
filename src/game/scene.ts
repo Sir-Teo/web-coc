@@ -134,6 +134,12 @@ import {
   DECORATION_SCALE,
   type DecorationKind,
 } from './decorations';
+import {
+  VILLAGE_OBJECT_SCALE,
+  villageObjects,
+  type VillageObjectArt,
+  type VillageObjectDef,
+} from './village-objects';
 import Phaser from 'phaser';
 import {
   BUILDINGS,
@@ -475,6 +481,8 @@ export class VillageScene extends Phaser.Scene {
   audio: AudioManager;
   obstacleSprites = new Map<number, Phaser.GameObjects.Image>();
   decorationSprites = new Map<number, Phaser.GameObjects.Image>();
+  /** The Trader's camp and the Super Troop building, by object id. */
+  villageObjectSprites = new Map<string, Phaser.GameObjects.Image>();
   private decorationGhost?: Phaser.GameObjects.Image;
   /** The ghost of a shoveled obstacle being moved. */
   private obstacleGhost?: Phaser.GameObjects.Image;
@@ -531,6 +539,8 @@ export class VillageScene extends Phaser.Scene {
   /** Download of the home village's native building art, started in `preload`. */
   private homeArt: Promise<void> = Promise.resolve();
   onSelect = () => {};
+  /** A tap on the Trader's camp or the Super Troop building, for the HUD to open what it opens. */
+  onVillageObject: (opens: VillageObjectDef['opens']) => void = () => {};
   /** Callbacks waiting for Phaser to inject `events` (the HUD is built before the game boots). */
   private bootWaiters: (() => void)[] = [];
   /** Runs `callback` once scene systems (events, cameras) exist: now, or when Phaser boots the scene. */
@@ -2153,6 +2163,15 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     const hit = this.pickBuilding(world.x, world.y, grid);
+    // The Trader's camp and the Super Troop building stand beside the field, clear of it.
+    const object = hit ? undefined : this.villageObjectAt(world.x, world.y);
+    if (object) {
+      this.model.selected = null;
+      this.model.selectDecoration(null);
+      this.audio.play('click');
+      this.onVillageObject(object.opens);
+      return;
+    }
     // Front-most (deepest) obstacle under the tap, without copying and sorting them all.
     let obstacle: [number, Phaser.GameObjects.Image] | undefined;
     if (!hit)
@@ -2565,6 +2584,7 @@ export class VillageScene extends Phaser.Scene {
         .setAlpha(o.removeEnd ? 0.65 : this.model.movingObstacle === o.id ? 0.4 : 1);
     }
     this.syncDecorations();
+    this.syncVillageObjects();
     const ids = new Set(this.model.buildings.map((b) => b.id));
     for (const [id, s] of this.sprites) {
       if (!ids.has(id)) {
@@ -3625,6 +3645,55 @@ export class VillageScene extends Phaser.Scene {
       if (this.model.battle) im.setVisible(false);
       im.setAlpha(this.model.movingDecoration === v.id ? 0.4 : 1);
     }
+  }
+  /**
+   * The village objects a home village of this Town Hall shows, at their client positions and
+   * source scale; the Super Troop building glows while a boost runs. Each loads when first
+   * shown and keeps its last loaded state until the next one arrives.
+   */
+  private syncVillageObjects() {
+    const shown = this.model.battle ? [] : villageObjects(this.model.townhallLevel);
+    const ids = new Set(shown.map((o) => o.id));
+    for (const [id, im] of this.villageObjectSprites)
+      if (!ids.has(id)) {
+        im.destroy();
+        this.villageObjectSprites.delete(id);
+      }
+    const boosted = Object.values(this.model.state.superBoosts ?? {}).some(
+      (end) => end! > this.model.clock,
+    );
+    for (const o of shown) {
+      const want = (boosted && o.art.active) || o.art.idle,
+        p = iso(o.x, o.y);
+      let im = this.villageObjectSprites.get(o.id);
+      if (!im) {
+        im = this.add.image(p.x, p.y, '__DEFAULT');
+        this.villageObjectSprites.set(o.id, im);
+      }
+      if (this.deferredArt.has(want.texture, '/' + want.path) && im.texture.key !== want.texture)
+        im.setTexture(want.texture);
+      const art: VillageObjectArt | undefined = Object.values(o.art).find(
+        (a) => a.texture === im.texture.key,
+      );
+      im.setPosition(p.x, p.y).setDepth(p.y).setVisible(!!art);
+      if (art)
+        im.setOrigin(art.originX, art.originY).setDisplaySize(
+          art.width * VILLAGE_OBJECT_SCALE,
+          art.height * VILLAGE_OBJECT_SCALE,
+        );
+    }
+  }
+  /** The front-most village object drawn under a world point. */
+  private villageObjectAt(x: number, y: number) {
+    let found: [string, Phaser.GameObjects.Image] | undefined;
+    for (const entry of this.villageObjectSprites)
+      if (
+        entry[1].visible &&
+        (!found || entry[1].depth > found[1].depth) &&
+        entry[1].getBounds().contains(x, y)
+      )
+        found = entry;
+    return found && villageObjects(this.model.townhallLevel).find((o) => o.id === found[0]);
   }
   /** Places the decoration ghost on the tile under the pointer (or key cursor). */
   private updateDecorationGhost(p: { x: number; y: number }) {
