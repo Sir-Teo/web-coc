@@ -5769,8 +5769,17 @@ export class VillageScene extends Phaser.Scene {
     if (camera.scrollX === at.x && camera.scrollY === at.y) this.fling.stop();
     this.flingCamera = { x: camera.scrollX, y: camera.scrollY, zoom: camera.zoomX, t: now };
   }
+  /**
+   * Whether the WebGL context is gone. Its loss event arrives a frame or more after the loss:
+   * a frame drawn meanwhile that creates a render texture (a battle's ruin decals) throws, and
+   * since Phaser schedules the next frame after this one, the game would stop for good.
+   */
+  private contextGone() {
+    const gl = (this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).gl;
+    return !!gl?.isContextLost?.();
+  }
   update(time: number, delta: number) {
-    if (this.paused) return;
+    if (this.paused || this.contextGone()) return;
     this.updateIdleRate();
     this.renderClock = time;
     this.detailLevel = this.detailGovernor.sample(
