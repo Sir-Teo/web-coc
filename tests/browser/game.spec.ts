@@ -274,6 +274,8 @@ test('an imported village cannot smuggle markup into the layout panel', async ({
 });
 
 test('touch input selects buildings and opens menus', async ({ browser }, testInfo) => {
+  // A 3× phone buffer: software-rendered runners take seconds per frame at this density.
+  test.slow();
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
