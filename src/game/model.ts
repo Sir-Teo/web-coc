@@ -284,6 +284,7 @@ import {
   type StashedDecorations,
 } from './decorations';
 import { villageObjectFootprints } from './village-objects';
+import { GEM_TEXTS, isGemResource, resourceGems, type GemResource } from './gem-costs';
 import {
   REPLAY_VERSION,
   compatibleReplayVersion,
@@ -1011,6 +1012,11 @@ export class GameModel {
     this.wallAxis = null;
   }
   placement: BuildingKind | null = null;
+  /**
+   * A price the village could not pay that the client offers to complete with gems: the
+   * resource, the whole price and the action to retry once bought. The HUD asks first.
+   */
+  shortfall: { resource: GemResource; cost: number; retry: () => unknown } | null = null;
   moving: number | null = null;
   /** The obstacle a Shovel made movable that is being moved, if any. */
   movingObstacle: number | null = null;
@@ -1098,6 +1104,45 @@ export class GameModel {
   notify(message: string) {
     this.onToast(message);
   }
+  /**
+   * Refuses a price the village lacks. While the price fits the storages the client offers the
+   * missing amount for gems, then retries; otherwise (and for gem prices) it only says so.
+   */
+  private lacking(resource: string, cost: number, message: string, retry: () => unknown) {
+    if (!this.battle && isGemResource(resource) && cost <= this.resourceCap(resource)) {
+      this.shortfall = { resource, cost, retry };
+      this.changed();
+    } else this.notify(message);
+  }
+  /** The open offer, priced now: what is still missing and the gems it costs. */
+  get shortfallOffer() {
+    const s = this.shortfall;
+    if (!s) return null;
+    const missing = Math.max(0, s.cost - this.state[s.resource]);
+    return { resource: s.resource, cost: s.cost, missing, gems: resourceGems(s.resource, missing) };
+  }
+  /** Buys the missing amount with gems and retries what was refused. */
+  buyShortfall() {
+    const offer = this.shortfallOffer,
+      retry = this.shortfall?.retry;
+    this.shortfall = null;
+    if (!offer || !retry || this.battle) return false;
+    if (this.state.gems < offer.gems) {
+      this.notify(`${GEM_TEXTS.notEnoughGems}.`);
+      this.changed();
+      return false;
+    }
+    this.state.gems -= offer.gems;
+    this.state[offer.resource] += offer.missing;
+    retry();
+    this.changed();
+    return true;
+  }
+  dismissShortfall() {
+    if (!this.shortfall) return;
+    this.shortfall = null;
+    this.changed();
+  }
   get obstacles() {
     return this.state.obstacles ?? [];
   }
@@ -1116,7 +1161,9 @@ export class GameModel {
       return false;
     }
     if (this.state[d.resource] < d.cost) {
-      this.notify(`Not enough ${d.resource}.`);
+      this.lacking(d.resource, d.cost, `Not enough ${d.resource}.`, () => {
+        this.removeObstacle(id);
+      });
       return false;
     }
     this.state[d.resource] -= d.cost;
@@ -1204,7 +1251,10 @@ export class GameModel {
         return this.notify(`Reach experience level ${d.chiefLevel} to buy the ${d.name}.`);
       if (this.decorationCount(kind) >= d.max)
         return this.notify(`Your village already has its maximum number of ${d.name}.`);
-      if (this.state[d.resource] < d.cost) return this.notify(`Not enough ${d.resource}.`);
+      if (this.state[d.resource] < d.cost)
+        return this.lacking(d.resource, d.cost, `Not enough ${d.resource}.`, () => {
+          this.beginDecoration(kind);
+        });
     }
     this.cancelNativeHandling();
     this.selected = null;
@@ -1442,7 +1492,14 @@ export class GameModel {
       return false;
     }
     if (this.state[quote.resource] < quote.cost) {
-      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      this.lacking(
+        quote.resource,
+        quote.cost,
+        `You need ${quote.cost.toLocaleString()} ${quote.resource}.`,
+        () => {
+          this.merge(result, anchor);
+        },
+      );
       return false;
     }
     const [first] = inputs;
@@ -1482,7 +1539,14 @@ export class GameModel {
       return false;
     }
     if (this.state[quote.resource] < quote.cost) {
-      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      this.lacking(
+        quote.resource,
+        quote.cost,
+        `You need ${quote.cost.toLocaleString()} ${quote.resource}.`,
+        () => {
+          this.gearUp(id);
+        },
+      );
       return false;
     }
     this.state[quote.resource] -= quote.cost;
@@ -1664,7 +1728,14 @@ export class GameModel {
       ? 'dark'
       : 'elixir';
     if (this.state[researchResource] < cost)
-      return this.notify(`Not enough ${researchResource === 'dark' ? 'dark elixir' : 'elixir'}.`);
+      return this.lacking(
+        researchResource,
+        cost,
+        `Not enough ${researchResource === 'dark' ? 'dark elixir' : 'elixir'}.`,
+        () => {
+          this.research(kind);
+        },
+      );
     this.state[researchResource] -= cost;
     this.state.research = {
       kind,
@@ -2229,7 +2300,7 @@ export class GameModel {
         y + size > b.y,
     );
   }
-  beginBuild(kind: BuildingKind) {
+  beginBuild(kind: BuildingKind, offer = true) {
     if (this.battle) return;
     const d = BUILDINGS[kind];
     if (isMergedKind(kind))
@@ -2245,11 +2316,17 @@ export class GameModel {
           ? `Town Hall ${this.townhallLevel} allows ${limit} ${d.name.toLowerCase()}. Upgrade it for more.`
           : `Your village already has its maximum number of ${d.name.toLowerCase()}.`,
       );
-    const price = buildPrice(kind, this.countOf(kind));
-    if (this.state[price.resource] < price.cost)
-      return this.notify(`Not enough ${price.resource}.`);
     if (needsBuilder(kind) && this.busy >= this.builders)
       return this.notify('All builders are busy. Finish an upgrade first.');
+    const price = buildPrice(kind, this.countOf(kind));
+    if (this.state[price.resource] < price.cost) {
+      const message = `Not enough ${price.resource}.`;
+      // A drag out of the Shop only says so; a tap offers the missing amount.
+      if (!offer) return this.notify(message);
+      return this.lacking(price.resource, price.cost, message, () => {
+        this.beginBuild(kind);
+      });
+    }
     this.cancelNativeHandling();
     this.selected = null;
     this.moving = null;
@@ -2397,10 +2474,18 @@ export class GameModel {
               : this.state[resource] < cost
                 ? `You need ${cost.toLocaleString()} ${resource}.`
                 : null;
-    return { walls, cost, skipped: ids.length - walls.length, issue };
+    // Only resources are missing, which gems can buy while the price fits the storages.
+    const short = !!issue && this.state[resource] < cost && issue.startsWith('You need');
+    return { walls, cost, skipped: ids.length - walls.length, issue, short };
   }
   upgradeWalls(ids: readonly number[], resource: WallResource) {
     const quote = this.wallUpgradeQuote(ids, resource);
+    if (quote.short) {
+      this.lacking(resource, quote.cost, quote.issue!, () => {
+        this.upgradeWalls(ids, resource);
+      });
+      return false;
+    }
     if (quote.issue) {
       this.notify(quote.issue);
       return false;
@@ -2542,7 +2627,14 @@ export class GameModel {
       if (issue) return this.notify(issue);
     }
     if (this.state[d.resource] < cost)
-      return this.notify(`You need ${cost.toLocaleString()} ${d.resource}.`);
+      return this.lacking(
+        d.resource,
+        cost,
+        `You need ${cost.toLocaleString()} ${d.resource}.`,
+        () => {
+          this.upgrade(id);
+        },
+      );
     this.state[d.resource] -= cost;
     if (b.kind === 'townhall') {
       // The Town Hall 17 upgrade merges the level 7 Eagle Artillery into the Inferno Artillery.
@@ -2608,7 +2700,14 @@ export class GameModel {
       return false;
     }
     if (this.state[next.resource] < next.cost) {
-      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      this.lacking(
+        next.resource,
+        next.cost,
+        `You need ${next.cost.toLocaleString()} ${next.resource}.`,
+        () => {
+          this.upgradeCraftedModule(id, kind, module);
+        },
+      );
       return false;
     }
     this.state[next.resource] -= next.cost;
@@ -2634,7 +2733,14 @@ export class GameModel {
       return false;
     }
     if (this.state[next.resource] < next.cost) {
-      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      this.lacking(
+        next.resource,
+        next.cost,
+        `You need ${next.cost.toLocaleString()} ${next.resource}.`,
+        () => {
+          this.upgradeGuardian();
+        },
+      );
       return false;
     }
     this.state[next.resource] -= next.cost;
@@ -2661,7 +2767,14 @@ export class GameModel {
       return false;
     }
     if (this.state[quote.resource] < quote.cost) {
-      this.notify(`You need ${quote.cost.toLocaleString()} ${quote.resource}.`);
+      this.lacking(
+        quote.resource,
+        quote.cost,
+        `You need ${quote.cost.toLocaleString()} ${quote.resource}.`,
+        () => {
+          this.supercharge(id);
+        },
+      );
       return false;
     }
     this.state[quote.resource] -= quote.cost;
@@ -2684,7 +2797,14 @@ export class GameModel {
       return false;
     }
     if (this.state[next.resource] < next.cost) {
-      this.notify(`You need ${next.cost.toLocaleString()} ${next.resource}.`);
+      this.lacking(
+        next.resource,
+        next.cost,
+        `You need ${next.cost.toLocaleString()} ${next.resource}.`,
+        () => {
+          this.upgradeTownHallWeapon(id);
+        },
+      );
       return false;
     }
     this.state[next.resource] -= next.cost;
@@ -3156,7 +3276,10 @@ export class GameModel {
     if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)
       return this.notify('Two super troop boosts are already active.');
     const cost = Number(row.ResourceCost);
-    if (this.state.dark < cost) return this.notify('Not enough dark elixir.');
+    if (this.state.dark < cost)
+      return this.lacking('dark', cost, 'Not enough dark elixir.', () => {
+        this.boostSuperTroop(kind);
+      });
     this.state.dark -= cost;
     (this.state.superBoosts ??= {})[kind] = now + Number(row.DurationH) * 3600000;
     this.countAchievements('activate_super_licence');
@@ -4426,8 +4549,13 @@ export class GameModel {
     }
     const quote = heroUpgradeQuote(kind, hero.level)!;
     if (this.state[quote.resource] < quote.cost) {
-      this.notify(
+      this.lacking(
+        quote.resource,
+        quote.cost,
         `You need ${quote.cost.toLocaleString()} ${quote.resource === 'dark' ? 'dark elixir' : quote.resource}.`,
+        () => {
+          this.upgradeRosterHero(kind);
+        },
       );
       return false;
     }
@@ -4549,7 +4677,14 @@ export class GameModel {
     }
     const quote = petUpgradeQuote(kind, level)!;
     if (this.state[quote.resource] < quote.cost) {
-      this.notify(`You need ${quote.cost.toLocaleString()} dark elixir.`);
+      this.lacking(
+        quote.resource,
+        quote.cost,
+        `You need ${quote.cost.toLocaleString()} dark elixir.`,
+        () => {
+          this.researchPet(kind);
+        },
+      );
       return false;
     }
     this.state[quote.resource] -= quote.cost;

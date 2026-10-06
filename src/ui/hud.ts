@@ -53,6 +53,7 @@ import {
 import { OBSTACLES } from '../game/obstacles';
 import { DECORATIONS, DECORATION_KINDS, DECORATION_TEXTS } from '../game/decorations';
 import { traderWeekEnds, type TraderOffer } from '../game/trader';
+import { GEM_TEXTS } from '../game/gem-costs';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
@@ -236,6 +237,7 @@ import {
 type Panel =
   | 'magic-items'
   | 'trader'
+  | 'shortfall'
   | 'treasury'
   | 'starter'
   | 'blacksmith'
@@ -914,7 +916,11 @@ export class HUD {
       { signal },
     );
     document.addEventListener('keydown', (e) => this.keydown(e), { signal });
-    model.onChange = (passive) => (passive ? this.updateLive() : this.scheduleRender());
+    model.onChange = (passive) => {
+      // A refused price the client would offer to complete with gems asks first.
+      if (model.shortfall && this.panel !== 'shortfall') return this.show('shortfall');
+      return passive ? this.updateLive() : this.scheduleRender();
+    };
     watchOfflineStatus(() => {
       if (this.panel === 'settings') this.scheduleRender();
     });
@@ -1088,6 +1094,8 @@ export class HUD {
   }
   private show(panel: Panel) {
     this.rememberCampaign();
+    // Another panel replaces an unanswered gem offer.
+    if (panel !== 'shortfall') this.model.shortfall = null;
     // The info sheet describes the selected building, so it is the one panel that
     // must survive the cancel that clears placement state.
     const selected = this.model.selected;
@@ -1110,6 +1118,7 @@ export class HUD {
   }
   private closePanel() {
     this.rememberCampaign();
+    if (this.panel === 'shortfall') this.model.dismissShortfall();
     this.panel = null;
     const previous = this.drawerBefore;
     this.drawerBefore = null;
@@ -1141,7 +1150,8 @@ export class HUD {
    * keeps the building armed for a plain tap instead.
    */
   private beginDrawerDrag(kind: BuildingKind, event: PointerEvent) {
-    this.model.beginBuild(kind);
+    // Pressing a tile to drag (or to scroll the sheet) never opens the gem offer.
+    this.model.beginBuild(kind, false);
     if (!this.model.placement) return;
     this.dragging = true;
     document.querySelector('#drawer')?.classList.add('dragging');
@@ -1247,6 +1257,17 @@ export class HUD {
       case 'close':
         this.closePanel();
         break;
+      case 'shortfall-buy': {
+        const bought = m.buyShortfall();
+        this.closePanel();
+        // A bought building or decoration is in hand: the village needs to be clear to place it.
+        if (bought && (m.placement || m.decorationPlacement)) {
+          this.drawerPanel = null;
+          this.render();
+        }
+        if (bought) this.audio.play('build');
+        break;
+      }
       case 'wall-move':
         m.beginWallMove();
         break;
@@ -3011,7 +3032,7 @@ export class HUD {
         `wall-upgrade:${kind}`,
         `<span>${icon('ArrowBigUp', 18)} Upgrade ${quote.walls.length > 1 ? quote.walls.length : ''}</span><small>${resource(kind)} ${n(quote.cost)}</small>`,
         'game-btn green',
-        `${quote.issue ? 'disabled' : ''} aria-label="Upgrade ${quote.walls.length} ${quote.walls.length === 1 ? 'wall' : 'walls'} with ${kind}"`,
+        `${quote.issue && !quote.short ? 'disabled' : ''} aria-label="Upgrade ${quote.walls.length} ${quote.walls.length === 1 ? 'wall' : 'walls'} with ${kind}"`,
       );
     const levelText = low === high ? `Level ${low}` : `Levels ${low}–${high}`;
     const note = !gold.walls.length
@@ -3282,6 +3303,19 @@ export class HUD {
           ? 'Ability used'
           : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
+  }
+  private shortfallTitle() {
+    const offer = this.model.shortfallOffer;
+    return offer ? GEM_TEXTS.header.replace('<resource>', GEM_TEXTS[offer.resource]) : '';
+  }
+  /** The client's offer of a refused price's missing resource for gems. */
+  private shortfallBody() {
+    const m = this.model,
+      offer = m.shortfallOffer;
+    if (!offer) return '';
+    const name = GEM_TEXTS[offer.resource],
+      short = offer.gems > m.state.gems;
+    return `<div class="modal-body confirm-body shortfall-body"><p class="confirm-line">${resource(offer.resource)} ${html(GEM_TEXTS.text.replace('<count>', n(offer.missing)).replace('<resource>', name))}</p><p class="gem-balance">You have ${gem} <b>${n(m.state.gems)}</b> gems</p>${short ? `<p class="ore-insufficient">${html(GEM_TEXTS.notEnoughGems)}. Earn more by clearing obstacles and completing achievements.</p>` : ''}<div class="confirm-actions">${button('close', html(GEM_TEXTS.cancel), 'game-btn stone')}${button('shortfall-buy', `${gem} ${n(offer.gems)}`, 'game-btn green', `${short ? 'disabled' : ''} aria-label="Buy ${n(offer.missing)} ${name} for ${n(offer.gems)} gems"`)}</div></div>`;
   }
   /** The Trader's Weekly Deals: the free one, then this week's Gem offers. */
   /** The Clan Castle's Treasury: what it holds against its Town Hall size, and collection. */
@@ -3860,6 +3894,7 @@ export class HUD {
       heroes: 'Hero Hall',
       'magic-items': 'Magic items',
       trader: 'Weekly Deals',
+      shortfall: this.shortfallTitle(),
       treasury: 'Treasury',
       starter: STARTER_TITLE,
       journey: 'Hero’s Journey',
@@ -3890,6 +3925,7 @@ export class HUD {
       'magic-items': 'Kept in your Town Hall. Use them, or cash them in for gems.',
       trader: `New deals in ${time((traderWeekEnds(this.model.clock) - this.model.clock) / 1000)}!`,
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
+      shortfall: 'Gems complete the price, then it goes ahead.',
       starter: STARTER_END_TEXT,
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
@@ -3912,55 +3948,57 @@ export class HUD {
     const content =
       this.panel === 'magic-items'
         ? this.magicItems()
-        : this.panel === 'trader'
-          ? this.trader()
-          : this.panel === 'treasury'
-            ? this.treasury()
-            : this.panel === 'starter'
-              ? this.starterPass()
-              : this.panel === 'blacksmith'
-                ? this.blacksmith()
-                : this.panel === 'heroes'
-                  ? this.heroes()
-                  : this.panel === 'journey'
-                    ? this.journey()
-                    : this.panel === 'crafting'
-                      ? this.crafting()
-                      : this.panel === 'helpers'
-                        ? this.helpers()
-                        : this.panel === 'pets'
-                          ? this.pets()
-                          : this.panel === 'progression'
-                            ? this.progression()
-                            : this.panel === 'army-presets'
-                              ? this.armyPresets()
-                              : this.panel === 'battle-log'
-                                ? this.battleLog()
-                                : this.panel === 'spell-info'
-                                  ? this.spellInfo()
-                                  : this.panel === 'troop-info'
-                                    ? this.troopInfo()
-                                    : this.panel === 'campaign'
-                                      ? this.campaign()
-                                      : this.panel === 'campaign-scout'
-                                        ? this.campaignScout()
-                                        : this.panel === 'settings'
-                                          ? this.settings()
-                                          : this.panel === 'import-confirm'
-                                            ? this.importConfirm()
-                                            : this.panel === 'buildings'
-                                              ? this.buildingList()
-                                              : this.panel === 'achievements'
-                                                ? this.achievements()
-                                                : this.panel === 'research'
-                                                  ? this.research()
-                                                  : this.panel === 'info'
-                                                    ? this.info()
-                                                    : this.panel === 'layouts'
-                                                      ? this.layoutPanel()
-                                                      : this.panel === 'surrender'
-                                                        ? this.surrender()
-                                                        : this.help();
+        : this.panel === 'shortfall'
+          ? this.shortfallBody()
+          : this.panel === 'trader'
+            ? this.trader()
+            : this.panel === 'treasury'
+              ? this.treasury()
+              : this.panel === 'starter'
+                ? this.starterPass()
+                : this.panel === 'blacksmith'
+                  ? this.blacksmith()
+                  : this.panel === 'heroes'
+                    ? this.heroes()
+                    : this.panel === 'journey'
+                      ? this.journey()
+                      : this.panel === 'crafting'
+                        ? this.crafting()
+                        : this.panel === 'helpers'
+                          ? this.helpers()
+                          : this.panel === 'pets'
+                            ? this.pets()
+                            : this.panel === 'progression'
+                              ? this.progression()
+                              : this.panel === 'army-presets'
+                                ? this.armyPresets()
+                                : this.panel === 'battle-log'
+                                  ? this.battleLog()
+                                  : this.panel === 'spell-info'
+                                    ? this.spellInfo()
+                                    : this.panel === 'troop-info'
+                                      ? this.troopInfo()
+                                      : this.panel === 'campaign'
+                                        ? this.campaign()
+                                        : this.panel === 'campaign-scout'
+                                          ? this.campaignScout()
+                                          : this.panel === 'settings'
+                                            ? this.settings()
+                                            : this.panel === 'import-confirm'
+                                              ? this.importConfirm()
+                                              : this.panel === 'buildings'
+                                                ? this.buildingList()
+                                                : this.panel === 'achievements'
+                                                  ? this.achievements()
+                                                  : this.panel === 'research'
+                                                    ? this.research()
+                                                    : this.panel === 'info'
+                                                      ? this.info()
+                                                      : this.panel === 'layouts'
+                                                        ? this.layoutPanel()
+                                                        : this.panel === 'surrender'
+                                                          ? this.surrender()
+                                                          : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(

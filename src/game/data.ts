@@ -1,4 +1,5 @@
 import { EXTRA_TROOPS, EXTRA_TROOP_KINDS, type ExtraTroopKind } from './extra-troops';
+import { timeGems } from './gem-costs';
 import {
   HERO_TROOPS,
   PET_TROOPS,
@@ -1713,17 +1714,8 @@ export const defenseDps = (kind: BuildingKind, level: number) =>
   (BUILDINGS[kind].rate ? defenseDamage(kind, level) / BUILDINGS[kind].rate! : 0);
 export const researchCost = (kind: TroopKind, level: number) =>
   troopProgression(kind, level + 1)?.cost ?? 0;
-/**
- * Gem prices follow the Clash of Clans shape: a minute is trivial, an hour is
- * cheap, and a multi-hour upgrade is a real decision.
- */
-export function gemCost(seconds: number) {
-  const s = Math.max(0, seconds);
-  if (s <= 60) return 1;
-  if (s <= 3600) return Math.ceil(1 + ((s - 60) / 3540) * 19);
-  if (s <= 86400) return Math.ceil(20 + ((s - 3600) / 82800) * 240);
-  return Math.ceil(260 + ((s - 86400) / 86400) * 130);
-}
+/** Gems to finish a timer now, from the client's speed-up prices (gem-costs.ts). */
+export const gemCost = timeGems;
 export const CAMPAIGN = [
   {
     name: 'Goblin Outpost',

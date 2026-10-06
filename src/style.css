@@ -5722,6 +5722,23 @@ h3 {
 .ore-confirm-body .confirm-actions {
   flex-wrap: wrap;
 }
+/* The gem offer for a refused price: the client's line, the balance and two thumb-sized buttons. */
+.shortfall-body .confirm-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shortfall-body .gem-balance {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+}
+.shortfall-body .confirm-actions > button {
+  flex: 1;
+  min-height: 46px;
+  max-width: 180px;
+}
 .ore-confirm-body .confirm-actions > button {
   flex: 1;
   min-width: 130px;
