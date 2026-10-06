@@ -144,7 +144,9 @@ test('mobile presets and practice results remain usable without overflow', async
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'output/playtest/quick-armies-mobile.png' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  // Closing the window returns to the army drawer it was opened from; close that too.
   await page.locator('[data-action="close"]').click();
+  await page.locator('[data-action="close-drawer"]').click();
   await page.locator('[data-action="battle-log"]').click();
   await expect(page.locator('.empty-log')).toBeVisible();
   await page.locator('[data-action="practice"]').click();
