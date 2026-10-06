@@ -4405,7 +4405,7 @@ export class HUD {
       rows =
         kind === 'lightning'
           ? [
-              ['Zap', 'Damage', `${d.damage}`, `${next.damage}`],
+              ['Zap', 'Damage', damageNumber(d.damage), damageNumber(next.damage)],
               ['Scan', 'Radius', `${d.radius}`, `${next.radius}`],
             ]
           : kind === 'heal'
@@ -4420,6 +4420,8 @@ export class HUD {
     } else {
       const d = m.troopStats(kind),
         next = m.troopStats(kind, nextLevel);
+      // Damage scaled by a rate can carry float noise (209.00000000000003): print it rounded,
+      // or a narrow phone card overflows.
       rows = [
         ['Heart', 'Health', `${d.hp}`, `${next.hp}`],
         d.healer
@@ -4429,7 +4431,7 @@ export class HUD {
               damageNumber(d.heal! / d.rate),
               damageNumber(next.heal! / next.rate),
             ]
-          : ['Swords', 'Damage', `${d.damage}`, `${next.damage}`],
+          : ['Swords', 'Damage', damageNumber(d.damage), damageNumber(next.damage)],
       ];
     }
     return `<article class="training-card" data-research-kind="${kind}"><span class="role-tag">LEVEL ${level} OF ${maximum}${max ? ' · MAX' : ` → ${level + 1}`}</span><div class="training-art"><img src="${hudAsset(kind)}" alt=""></div><h3>${name.replace(' Spell', '')}</h3><div class="research-stats">${rows.map(([glyph, label, value, next]) => `<span>${icon(glyph, 16)} ${label} <b>${value}${max || value === next ? '' : ` <em>→ ${next}</em>`}</b></span>`).join('')}</div>${button(`research-start:${kind}`, label, 'game-btn ' + (max || gated ? 'stone' : 'green'), max || gated || !!m.state.research || m.state[researchResource] < m.researchCost(kind) ? 'disabled' : '')}${!max && !gated && m.magicItemCount(spell ? 'hammer-of-spells' : 'hammer-of-fighting') && m.state.research?.kind !== kind ? button(`hammer-research:${kind}`, `${icon('Hammer', 15)} Hammer`, 'game-btn blue', `aria-label="Upgrade ${name} instantly with the ${spell ? 'Hammer of Spells' : 'Hammer of Fighting'}"`) : ''}<small>${max ? 'Ready for the toughest battles' : `${time(m.researchSeconds(kind))} research · permanent upgrade`}</small></article>`;

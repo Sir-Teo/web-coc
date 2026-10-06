@@ -56,7 +56,8 @@ for (const [width, height] of [
     ] as const) {
       const card = page.locator(`[data-research-kind="${kind}"]`);
       await card.scrollIntoViewIfNeeded();
-      await expect(card.locator('.role-tag')).toContainText('LEVEL 1 OF 3');
+      // Its level out of every level the client lists, and the next one.
+      await expect(card.locator('.role-tag')).toContainText(/LEVEL 1 OF \d+ → 2/);
       await expect(card.locator('.research-stats')).toHaveText(stats);
       await expect(card.locator('button')).toContainText(cost);
       await expect(card.locator('button')).toBeEnabled();
@@ -69,9 +70,16 @@ for (const [width, height] of [
     );
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.locator('[data-action="close-drawer"]').click();
-    const badgesClearCounts = () => page.locator('.troop-card:has(.air-tag)').evaluateAll((cards) =>
-      cards.every((card) => card.querySelector('.air-tag')!.getBoundingClientRect().top >=
-        card.querySelector('.troop-count')!.getBoundingClientRect().bottom));
+    const badgesClearCounts = () =>
+      page
+        .locator('.troop-card:has(.air-tag)')
+        .evaluateAll((cards) =>
+          cards.every(
+            (card) =>
+              card.querySelector('.air-tag')!.getBoundingClientRect().top >=
+              card.querySelector('.troop-count')!.getBoundingClientRect().bottom,
+          ),
+        );
     expect(await badgesClearCounts()).toBe(true);
     await page.locator('.attack-btn').click();
     await page.locator('[data-action="attack:0"]').click();
@@ -134,14 +142,37 @@ test('air animation, friendly healing and Dragon breath share the battle clock a
         frames: scene.textures.get(`${u.kind}-walk`).frameTotal,
       };
     });
-    const fireAnchors = scene.projectileAnchors({ type: 'breath', x: dragon.x, y: dragon.y,
-      toX: 10, toY: 10, sourceId: dragon.id, targetId: 9000, targetBuilding: true, fromAir: true });
-    const healingAnchors = scene.projectileAnchors({ type: 'projectile', weapon: 'healing',
-      x: healer.x, y: healer.y, toX: giant.x, toY: giant.y, sourceId: healer.id,
-      targetId: giant.id, targetBuilding: false, fromAir: true });
-    return { sprites, shot: shot?.weapon, breath: !!breath, health: giant.hp,
+    const fireAnchors = scene.projectileAnchors({
+      type: 'breath',
+      x: dragon.x,
+      y: dragon.y,
+      toX: 10,
+      toY: 10,
+      sourceId: dragon.id,
+      targetId: 9000,
+      targetBuilding: true,
+      fromAir: true,
+    });
+    const healingAnchors = scene.projectileAnchors({
+      type: 'projectile',
+      weapon: 'healing',
+      x: healer.x,
+      y: healer.y,
+      toX: giant.x,
+      toY: giant.y,
+      sourceId: healer.id,
+      targetId: giant.id,
+      targetBuilding: false,
+      fromAir: true,
+    });
+    return {
+      sprites,
+      shot: shot?.weapon,
+      breath: !!breath,
+      health: giant.hp,
       fireLift: iso(dragon.x, dragon.y).y - fireAnchors.from.y,
-      healingLift: iso(healer.x, healer.y).y - healingAnchors.from.y };
+      healingLift: iso(healer.x, healer.y).y - healingAnchors.from.y,
+    };
   });
   expect(result.breath).toBe(true);
   expect(result.shot).toBe('healing');
