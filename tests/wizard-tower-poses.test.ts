@@ -17,6 +17,9 @@ import {
 } from '../src/game/wizard-tower-attack';
 import { wizardTowerBattle } from './fixtures/wizard-tower-battle';
 import type { CombatProjectile } from '../src/game/projectiles';
+import { loadWizardTowerArt } from '../src/game/wizard-tower-poses';
+
+await loadWizardTowerArt();
 
 it('uses all seventeen original bodies and rooftop families in all three views and their mirrors', () => {
   const families = new Set<string>();

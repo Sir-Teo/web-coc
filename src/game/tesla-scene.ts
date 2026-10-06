@@ -8,8 +8,9 @@ import { guardRender } from './render-guard';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses } from './native-mesh';
 import {
-  TESLA_GRAPH,
-  TESLA_SOUNDS,
+  teslaArtLoaded,
+  teslaGraph,
+  teslaSounds,
   teslaPoses,
   teslaMuzzleY,
   type TeslaVisualState,
@@ -30,12 +31,12 @@ import { TESLA_ART, TESLA_ART_LEVELS, teslaAsset, teslaTexture } from './tesla-a
 import { battleUnit } from './battle-index';
 
 const APPEAR_SAMPLE = 'tesla-appear';
-const sounds = Object.entries(TESLA_SOUNDS);
+const sounds = () => (teslaArtLoaded() ? Object.entries(teslaSounds()) : []);
 const sample = (path: string) => (path.includes('appear') ? APPEAR_SAMPLE : teslaSample(path));
 export function preloadTeslas(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, TESLA_GRAPH, 'tesla');
+  preloadNativeMeshes(scene, teslaGraph(), 'tesla');
   for (const level of TESLA_ART_LEVELS) scene.load.image(teslaTexture(level), teslaAsset(level));
-  for (const [path, sound] of sounds) scene.load.binary(sample(path), '/' + sound.path);
+  for (const [path, sound] of sounds()) scene.load.binary(sample(path), '/' + sound.path);
 }
 
 export class TeslaPresentation {
@@ -64,7 +65,7 @@ export class TeslaPresentation {
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
-    for (const [path] of sounds) registerCachedSample(scene, audio.samples, sample(path));
+    for (const [path] of sounds()) registerCachedSample(scene, audio.samples, sample(path));
   }
   clear() {
     for (const view of [
@@ -92,6 +93,8 @@ export class TeslaPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift = 46,
   ): SampleCue[] {
+    // Nothing draws until the Tesla family (graph first) has loaded.
+    if (!teslaArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, arcs and bursts already started play out on the presentation clock.
     if (battle) elapsed = presentationTime(battle);
@@ -102,7 +105,7 @@ export class TeslaPresentation {
       attacking = new Set<string>(),
       scattering = new Set<string>();
     const cues: SampleCue[] = [];
-    const revealClip = TESLA_GRAPH.clips[TESLA_GRAPH.exports.tesla_appear_fx];
+    const revealClip = teslaGraph().clips[teslaGraph().exports.tesla_appear_fx];
     const duration = revealClip.timeline.length / revealClip.fps;
     for (const tower of buildings) {
       if (tower.kind !== 'tesla') continue;
@@ -228,7 +231,7 @@ export class TeslaPresentation {
           }
           const s = TESLA_ART.scale;
           reveal.render(
-            nativeMeshPoses(TESLA_GRAPH, 'tesla_appear_fx', age, {}, [s, 0, 0, 0, s, 0]),
+            nativeMeshPoses(teslaGraph(), 'tesla_appear_fx', age, {}, [s, 0, 0, 0, s, 0]),
             p.x,
             p.y,
             p.y - 0.01,

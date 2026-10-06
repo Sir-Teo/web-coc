@@ -1,6 +1,6 @@
 import raw from '../../reference/tesla/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMatrix, type NativeScenePose } from './native-mesh';
-import { TESLA_GRAPH } from './tesla-poses';
+import { teslaGraph } from './tesla-poses';
 import { TESLA_ART } from './tesla-art';
 import { teslaStats } from './tesla-stats';
 import { teslaVariation, type TeslaShot } from './tesla-attack';
@@ -73,12 +73,12 @@ function particlePoses(
   variant: Row,
   root: NativeMatrix,
 ): NativeScenePose[] {
-  const clip = TESLA_GRAPH.clips[TESLA_GRAPH.exports[name]];
+  const clip = teslaGraph().clips[teslaGraph().exports[name]];
   // Scaled timelines span the complete nested clip (the arc wrapper is one frame).
   let frames = clip.timeline.length,
     fps = clip.fps;
   if (frames === 1 && clip.children.length === 1) {
-    const child = TESLA_GRAPH.clips[clip.children[0]];
+    const child = teslaGraph().clips[clip.children[0]];
     if (child) {
       frames = child.timeline.length;
       fps = child.fps;
@@ -87,7 +87,7 @@ function particlePoses(
   const seconds = row.ScaleTimeline === 'TRUE' ? ((age / life) * frames) / fps : age;
   const fade = n(row, 'ParticleFadeOutTime') / 1000;
   const alpha = (n(row, 'Alpha') / 100) * (fade ? clamp((life - age) / fade) : 1);
-  const poses = nativeScenePoses(TESLA_GRAPH, name, seconds, {}, root);
+  const poses = nativeScenePoses(teslaGraph(), name, seconds, {}, root);
   if (!poses.length || alpha <= 0) return [];
   if (variant.AdditiveBlend === 'TRUE') {
     if (poses.length === 1 && !('group' in poses[0]))

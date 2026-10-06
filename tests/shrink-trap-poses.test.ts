@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest';
 import {
-  SHRINK_GRAPH,
-  SHRINK_RING_DURATION,
+  loadShrinkArt,
+  shrinkGraph,
+  shrinkRingDuration,
   shrinkTrapPoses,
   shrinkEffectPoses,
   shrinkSoundCues,
@@ -9,6 +10,9 @@ import {
 import { makeShrinkState } from '../src/game/shrink-trap';
 import { nativeVertices, type NativeScenePose } from '../src/game/native-mesh';
 import type { TrapState } from '../src/game/traps';
+
+await loadShrinkArt();
+const SHRINK_GRAPH = shrinkGraph();
 
 const state: TrapState = {
   activatedAt: 0.05,
@@ -40,7 +44,7 @@ it('retains the ground compartment while the independent bottle rises, then leav
 
 it('uses the ring’s 685-frame descendant instead of freezing at the one-frame outer clip', () => {
   expect(SHRINK_GRAPH.clips[SHRINK_GRAPH.exports.shrink_range].timeline).toHaveLength(1);
-  expect(SHRINK_RING_DURATION).toBe(685 / 24);
+  expect(shrinkRingDuration()).toBe(685 / 24);
   const ring = shrinkEffectPoses(1, state, state.shrink!.deployAt + 4, { x: 0, y: 0 }).find(
     (p) => p.emitter === 'Shrink_deploy_range',
   )!;

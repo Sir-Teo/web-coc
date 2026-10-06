@@ -8,7 +8,7 @@ import type { Battle, Building } from './model';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { SWEEPER_ART_LEVELS, sweeperAsset, sweeperTexture } from './air-control-art';
-import { SWEEPER_GRAPH, sweeperPose, sweeperPoses } from './air-sweeper-poses';
+import { sweeperArtLoaded, sweeperGraph, sweeperPose, sweeperPoses } from './air-sweeper-poses';
 import {
   SWEEPER_SOUNDS,
   sweeperSample,
@@ -19,7 +19,7 @@ import {
 } from './air-sweeper-effects';
 
 export function preloadSweepers(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, SWEEPER_GRAPH, 'airsweeper');
+  preloadNativeMeshes(scene, sweeperGraph(), 'airsweeper');
   for (const level of SWEEPER_ART_LEVELS)
     for (let direction = 0; direction < 8; direction++)
       scene.load.image(sweeperTexture(level, direction), sweeperAsset(level, direction));
@@ -77,6 +77,8 @@ export class SweeperPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    // Nothing draws until the Air Sweeper family (graph first) has loaded.
+    if (!sweeperArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, transient effects keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);

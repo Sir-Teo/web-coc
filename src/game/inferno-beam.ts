@@ -1,5 +1,5 @@
 import source from '../../reference/inferno/native.json' with { type: 'json' };
-import { INFERNO_GRAPH } from './inferno-graph';
+import { infernoGraph } from './inferno-graph';
 import { nativeScenePoses, type NativeMatrix } from './native-mesh';
 import { infernoStats, type InfernoDamageStage } from './inferno-weapon';
 
@@ -51,5 +51,5 @@ export function infernoBeamPoses(
     (dx / length) * 1.2,
     from.y,
   ];
-  return nativeScenePoses(INFERNO_GRAPH, profile.export, seconds, {}, root);
+  return nativeScenePoses(infernoGraph(), profile.export, seconds, {}, root);
 }

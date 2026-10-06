@@ -8,7 +8,13 @@ import type { Battle, Building } from './model';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { MORTAR_ART_LEVELS, mortarAsset, mortarTexture } from './mortar-art';
-import { MORTAR_GRAPH, mortarPose, mortarPoses, mortarProjectilePose } from './mortar-poses';
+import {
+  mortarArtLoaded,
+  mortarGraph,
+  mortarPose,
+  mortarPoses,
+  mortarProjectilePose,
+} from './mortar-poses';
 import { mortarStats } from './mortar-stats';
 import {
   MORTAR_SOUNDS,
@@ -21,7 +27,7 @@ import {
 } from './mortar-effects';
 
 export function preloadMortars(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, MORTAR_GRAPH, 'mortar');
+  preloadNativeMeshes(scene, mortarGraph(), 'mortar');
   for (const level of MORTAR_ART_LEVELS) scene.load.image(mortarTexture(level), mortarAsset(level));
   for (const [path, sound] of Object.entries(MORTAR_SOUNDS))
     scene.load.binary(mortarSample(path), '/' + sound.path);
@@ -79,6 +85,8 @@ export class MortarPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    // Nothing draws until the Mortar family (graph first) has loaded.
+    if (!mortarArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, shells in flight and bursts keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);

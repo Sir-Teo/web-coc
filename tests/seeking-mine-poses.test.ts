@@ -8,7 +8,8 @@ import {
   seekingMineFamily,
 } from '../src/game/seeking-mine-art';
 import {
-  SEEKING_MINE_GRAPH,
+  loadSeekingMineArt,
+  seekingMineGraph,
   seekingMinePoses,
   seekingMineBodyState,
   seekingMineProjectilePose,
@@ -16,6 +17,9 @@ import {
 } from '../src/game/seeking-mine-poses';
 import combat from '../reference/seeking-mine/combat.json';
 import { nativeScenePoses } from '../src/game/native-mesh';
+
+await loadSeekingMineArt();
+const SEEKING_MINE_GRAPH = seekingMineGraph();
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 const trap = { activatedAt: 1, resolved: false, targetId: 2, x: 4.5, y: 5.5 };
 

@@ -1,7 +1,7 @@
 import raw from '../../reference/seeking-mine/effects.json' with { type: 'json' };
 import { nativeScenePoses } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
-import { SEEKING_MINE_GRAPH, seekingMineClip, seekingMineFlightPoint } from './seeking-mine-poses';
+import { seekingMineGraph, seekingMineClip, seekingMineFlightPoint } from './seeking-mine-poses';
 import { SEEKING_MINE_ART } from './seeking-mine-art';
 import { visualRandom } from './visual-random';
 import type { SampleCue } from './sample-audio';
@@ -17,9 +17,12 @@ export const seekingMineSample = (path: string) =>
 const n = (row: Row, key: string) => Number(row[key] ?? 0);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 // Local 100-unit air height maps to the village's 46-pixel troop lift.
-const particle = nativeParticleSampler(SEEKING_MINE_GRAPH, SEEKING_MINE_ART.scale, {
-  altitudeScale: 0.46,
-});
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+/** Built on first use: the graph arrives with the Seeking Air Mine art family. */
+const particle: ReturnType<typeof nativeParticleSampler> = (...args) =>
+  (sampler ??= nativeParticleSampler(seekingMineGraph(), SEEKING_MINE_ART.scale, {
+    altitudeScale: 0.46,
+  }))(...args);
 export type SeekingMineHandling = 'pickup' | 'place';
 export const seekingMineHandlingEffect = (kind: SeekingMineHandling) =>
   kind === 'pickup' ? 'Generic Pick Up' : 'Generic Placing';
@@ -68,7 +71,7 @@ export function seekingMineEffectPoses(
         clip = seekingMineClip(name),
         scale = (SEEKING_MINE_ART.scale * n(effectRow, 'Scale')) / 100;
       if (age >= 0 && age < clip.timeline.length / clip.fps) {
-        const poses = nativeScenePoses(SEEKING_MINE_GRAPH, name, age, {}, [
+        const poses = nativeScenePoses(seekingMineGraph(), name, age, {}, [
           scale,
           0,
           0,

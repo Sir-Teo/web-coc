@@ -9,6 +9,9 @@ import {
   WIZARD_TOWER_EFFECTS,
 } from '../src/game/wizard-tower-effects';
 import { GameModel, makeBuilding, type FX } from '../src/game/model';
+import { loadWizardTowerArt } from '../src/game/wizard-tower-poses';
+
+await loadWizardTowerArt();
 const p = { x: 800, y: 400 };
 
 it('retains every source effect emitter, distinct projectile-tier impacts, delays and lifetimes', () => {

@@ -1,7 +1,7 @@
 import raw from '../../reference/mortar/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
-import { MORTAR_GRAPH, mortarFlightPoint } from './mortar-poses';
+import { mortarGraph, mortarFlightPoint } from './mortar-poses';
 import { mortarProjectileRow } from './mortar-stats';
 import type { MortarShot } from './mortar-attack';
 import { MORTAR_ART } from './mortar-art';
@@ -17,11 +17,13 @@ export const mortarSample = (path: string) =>
 export const mortarHandlingEffect = (kind: MortarHandling) =>
   kind === 'pickup' ? 'Mortar Pickup' : 'Mortar Placing';
 const n = (row: Row, key: string) => Number(row[key] ?? 0);
-const particle = nativeParticleSampler(MORTAR_GRAPH, MORTAR_ART.scale, {
-  reducedEmitters: ['Ring', 'bomb_crater_small'],
-  staticEmitters: { bomb_crater_small: -42 },
-  altitudeScale: MORTAR_ART.altitudeScale,
-});
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+const particle = (...args: Parameters<ReturnType<typeof nativeParticleSampler>>) =>
+  (sampler ??= nativeParticleSampler(mortarGraph(), MORTAR_ART.scale, {
+    reducedEmitters: ['Ring', 'bomb_crater_small'],
+    staticEmitters: { bomb_crater_small: -42 },
+    altitudeScale: MORTAR_ART.altitudeScale,
+  }))(...args);
 
 export function mortarSoundCues(
   id: number,

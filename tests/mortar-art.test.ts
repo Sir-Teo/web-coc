@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { asset, buildingTexture } from '../src/game/data';
 import { MORTAR_ART_LEVELS, MORTAR_ART, mortarAsset, mortarTexture } from '../src/game/mortar-art';
 import { mortarBounds, mortarPoses } from '../src/game/mortar-poses';
+import { loadMortarArt } from '../src/game/mortar-poses';
+
+await loadMortarArt();
 
 describe('original Mortar artwork', () => {
   it('selects all eighteen normal levels in the world and interface', () => {

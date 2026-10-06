@@ -15,6 +15,9 @@ import { requiredTownHall } from '../src/game/progression';
 import { GameModel, makeBuilding } from '../src/game/model';
 import { validateReplay, REPLAY_VERSION } from '../src/game/replay';
 import { wizardTowerVillage } from './fixtures/wizard-tower-battle';
+import { loadCastleArt } from '../src/game/castle-graph';
+
+await loadCastleArt();
 
 it('uses every original Castle tier and opens it at the original Town Hall', () => {
   for (const row of CASTLE_LEVELS) {

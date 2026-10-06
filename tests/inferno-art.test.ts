@@ -1,8 +1,11 @@
 import { expect, it } from 'vitest';
 import { type InfernoArtState } from '../src/game/inferno-art';
-import { infernoPoses, INFERNO_GRAPH } from '../src/game/inferno-graph';
 import { nativeScenePoses, type NativeScenePose } from '../src/game/native-mesh';
 import { infernoStats } from '../src/game/inferno-weapon';
+import { infernoGraph, infernoPoses, loadInfernoArt } from '../src/game/inferno-graph';
+
+await loadInfernoArt();
+const INFERNO_GRAPH = infernoGraph();
 const leaves = (poses: NativeScenePose[]): number =>
   poses.reduce((n, p) => n + ('group' in p ? leaves(p.group) : 1), 0);
 

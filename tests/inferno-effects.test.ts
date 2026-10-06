@@ -1,6 +1,9 @@
 import { expect, it } from 'vitest';
 import type { Battle } from '../src/game/model';
 import { infernoImpactPoses } from '../src/game/inferno-effects';
+import { loadInfernoArt } from '../src/game/inferno-graph';
+
+await loadInfernoArt();
 const iso = (x: number, y: number) => ({ x: x * 32, y: y * 16 });
 function fixture() {
   return {

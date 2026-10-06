@@ -10,7 +10,7 @@ import { NativeSceneView, effectSceneView, quantizedDensity } from './native-sce
 import { NativeEffectViews } from './native-effect-views';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { INFERNO_ROOT, infernoAsset, infernoTexture } from './inferno-art';
-import { INFERNO_GRAPH, infernoPoses } from './inferno-graph';
+import { infernoArtLoaded, infernoGraph, infernoPoses } from './inferno-graph';
 import { battleUnit } from './battle-index';
 import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
@@ -22,7 +22,7 @@ const BEAM_DEPTH = 8000;
 export function preloadInfernos(scene: Phaser.Scene) {
   for (const [path, sound] of Object.entries(INFERNO_SOUNDS))
     scene.load.binary(infernoSample(path), '/' + sound.path);
-  preloadNativeMeshes(scene, INFERNO_GRAPH, 'inferno');
+  preloadNativeMeshes(scene, infernoGraph(), 'inferno');
   for (let level = 1; level <= 12; level++)
     for (const mode of ['single', 'multi'] as const)
       scene.load.image(infernoTexture(level, mode), infernoAsset(level, mode));
@@ -36,8 +36,8 @@ function infernoRates(level: number) {
     const set = new Set<number>();
     for (const name of Object.values(infernoStats(level).art as Record<string, unknown>)) {
       if (typeof name !== 'string') continue;
-      const id = INFERNO_GRAPH.exports[name];
-      const clip = id === undefined ? undefined : INFERNO_GRAPH.clips[id];
+      const id = infernoGraph().exports[name];
+      const clip = id === undefined ? undefined : infernoGraph().clips[id];
       if (clip) set.add(clip.fps);
     }
     levelRates.set(level, (rates = [...set].sort()));
@@ -76,6 +76,8 @@ export class InfernoPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    // Nothing draws until the Inferno family (graph first) has loaded.
+    if (!infernoArtLoaded()) return;
     // Hit and transition bursts play out on the presentation clock after the finish.
     if (battle && presentationLive(battle))
       for (const pose of infernoImpactPoses(battle, reduced, iso, presentationTime(battle)))

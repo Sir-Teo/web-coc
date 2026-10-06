@@ -1,6 +1,9 @@
 import { expect, it } from 'vitest';
 import { GameModel, makeBuilding, type FX } from '../src/game/model';
 import { teslaHandlingCue, teslaHandlingPoses } from '../src/game/tesla-effect-poses';
+import { loadTeslaArt } from '../src/game/tesla-poses';
+
+await loadTeslaArt();
 
 function village() {
   const m = new GameModel();

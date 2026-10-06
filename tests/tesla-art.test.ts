@@ -1,9 +1,13 @@
 import { it, expect } from 'vitest';
 import { TESLA_ART, TESLA_ART_LEVELS, teslaAsset, teslaTexture } from '../src/game/tesla-art';
 import { asset, buildingTexture } from '../src/game/data';
-import { TESLA_GRAPH, teslaPoses, teslaBodyBounds } from '../src/game/tesla-poses';
+import { teslaGraph, teslaPoses, teslaBodyBounds } from '../src/game/tesla-poses';
 import { nativeScenePoses, type NativeScenePose } from '../src/game/native-mesh';
 import runtime from '../reference/tesla/runtime.json';
+import { loadTeslaArt } from '../src/game/tesla-poses';
+
+await loadTeslaArt();
+const TESLA_GRAPH = teslaGraph();
 
 const registration = [1.2, 0, 0, 0, 1.2, -48] as const;
 

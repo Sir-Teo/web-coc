@@ -16,6 +16,9 @@ import { validateSave } from '../src/game/save';
 import { makeReplayFile, parseReplayFile } from '../src/game/replay-file';
 import { airSweeperBattle, airSweeperVillage } from './fixtures/air-sweeper-battle';
 import { REPLAY_VERSION } from '../src/game/replay';
+import { loadSweeperArt } from '../src/game/air-sweeper-poses';
+
+await loadSweeperArt();
 
 it('supports every original level while preserving the TH8 ceiling and remaining campaign gates', () => {
   expect(SWEEPER_LEVELS).toHaveLength(7);

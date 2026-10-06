@@ -11,6 +11,9 @@ import {
   type SeekingMineFlight,
 } from '../src/game/seeking-mine-flight';
 import { GameModel, makeBuilding, type FX } from '../src/game/model';
+import { loadSeekingMineArt } from '../src/game/seeking-mine-poses';
+
+await loadSeekingMineArt();
 const p = { x: 300, y: 400 };
 it('retains all explosion emitters, additive containers, source flash and finite lifetimes', () => {
   const sample = (name: string, age: number, reduced = false) =>

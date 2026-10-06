@@ -3,6 +3,9 @@ import { GameModel, makeBuilding, type Unit } from '../src/game/model';
 import { stepInfernos } from '../src/game/inferno-battle';
 import { infernoSoundCues } from '../src/game/inferno-sounds';
 import { infernoImpactPoses } from '../src/game/inferno-effects';
+import { loadInfernoArt } from '../src/game/inferno-graph';
+
+await loadInfernoArt();
 it('records each heat crossing once and keeps detached transition cues after freeze', () => {
   const model = new GameModel();
   model.startBattle(0, true);

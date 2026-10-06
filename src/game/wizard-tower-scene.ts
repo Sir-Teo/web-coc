@@ -22,9 +22,10 @@ import { NativeSceneView, effectSceneView, quantizedDensity } from './native-sce
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { WIZARD_TOWER_ART_LEVELS, wizardTowerAsset, wizardTowerTexture } from './wizard-tower-art';
 import {
-  WIZARD_TOWER_GRAPH,
-  TOWER_WIZARD_GRAPH,
-  WIZARD_EFFECT_GRAPH,
+  wizardTowerArtLoaded,
+  wizardTowerGraph,
+  towerWizardGraph,
+  wizardEffectGraph,
   towerWizardPose,
   towerWizardPoses,
   wizardTowerPoses,
@@ -34,9 +35,9 @@ import {
 import { battleBuilding } from './battle-index';
 
 export function preloadWizardTowers(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, WIZARD_TOWER_GRAPH, 'wizardtower');
-  preloadNativeMeshes(scene, TOWER_WIZARD_GRAPH, 'tower-wizard');
-  preloadNativeMeshes(scene, WIZARD_EFFECT_GRAPH, 'wizardtower-effects');
+  preloadNativeMeshes(scene, wizardTowerGraph(), 'wizardtower');
+  preloadNativeMeshes(scene, towerWizardGraph(), 'tower-wizard');
+  preloadNativeMeshes(scene, wizardEffectGraph(), 'wizardtower-effects');
   for (const [path, sound] of Object.entries(WIZARD_TOWER_SOUNDS))
     scene.load.binary(wizardTowerSample(path), '/' + sound.path);
   for (const level of WIZARD_TOWER_ART_LEVELS)
@@ -95,6 +96,8 @@ export class WizardTowerPresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift: number,
   ) {
+    // Nothing draws until the Wizard Tower family (graphs first) has loaded.
+    if (!wizardTowerArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, bolts in flight and bursts keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);

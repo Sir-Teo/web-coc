@@ -1,7 +1,7 @@
 import raw from '../../reference/air-sweeper/effects.json' with { type: 'json' };
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
-import { SWEEPER_GRAPH } from './air-sweeper-poses';
+import { sweeperGraph } from './air-sweeper-poses';
 import { SWEEPER_ART } from './air-control-art';
 import type { SampleCue } from './sample-audio';
 
@@ -15,7 +15,10 @@ export const sweeperSample = (path: string) =>
 export const sweeperHandlingEffect = (kind: SweeperHandling) =>
   kind === 'pickup' ? 'Wind Machine Pickup' : 'Wind Machine Place';
 const n = (row: Row, key: string) => Number(row[key] ?? 0);
-const particle = nativeParticleSampler(SWEEPER_GRAPH, SWEEPER_ART.scale);
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+/** Built on first use: the graph arrives with the Air Sweeper art family. */
+const particle: ReturnType<typeof nativeParticleSampler> = (...args) =>
+  (sampler ??= nativeParticleSampler(sweeperGraph(), SWEEPER_ART.scale))(...args);
 
 export function sweeperSoundCues(
   id: number,

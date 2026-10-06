@@ -11,6 +11,9 @@ import {
 } from '../src/game/bomb-tower-poses';
 import { recordBombTowerShot } from '../src/game/bomb-tower-attack';
 import type { CombatProjectile } from '../src/game/projectiles';
+import { loadBombTowerArt } from '../src/game/bomb-tower-poses';
+
+await loadBombTowerArt();
 
 it('uses every original body and defender family with distinct construction and rubble poses', () => {
   for (let level = 1; level <= 13; level++) {

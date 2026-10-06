@@ -6,7 +6,8 @@ import { SHRINK_TRAP } from './shrink-trap';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { SHRINK_ART } from './shrink-trap-art';
 import {
-  SHRINK_GRAPH,
+  shrinkArtLoaded,
+  shrinkGraph,
   SHRINK_SOUNDS,
   shrinkSample,
   shrinkTrapPoses,
@@ -18,11 +19,10 @@ import type { AudioManager } from './audio';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 
 /** Source rate of the spring animation: the body is a still outside it. */
-const TRIGGER_FPS = SHRINK_GRAPH.clips[SHRINK_GRAPH.exports.Shrink_trap_trigger]?.fps ?? 1;
 
 export function preloadShrinkTraps(scene: Phaser.Scene) {
   scene.load.image(SHRINK_ART.texture, SHRINK_ART.asset);
-  preloadNativeMeshes(scene, SHRINK_GRAPH, 'shrink-trap');
+  preloadNativeMeshes(scene, shrinkGraph(), 'shrink-trap');
   for (const [path, sound] of Object.entries(SHRINK_SOUNDS))
     scene.load.binary(shrinkSample(path), '/' + sound.path);
 }
@@ -56,6 +56,10 @@ export class ShrinkTrapPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    // Nothing draws until the Shrink Trap family (graph first) has loaded.
+    if (!shrinkArtLoaded()) return [];
+    const graph = shrinkGraph(),
+      triggerFps = graph.clips[graph.exports.Shrink_trap_trigger]?.fps ?? 1;
     const bodies = new Set<number>(),
       cues: SampleCue[] = [];
     // Transient springs, bursts and cues play out on the presentation clock after the finish.
@@ -75,7 +79,7 @@ export class ShrinkTrapPresentation {
       const age = state ? Math.max(0, elapsed - state.activatedAt) : 0;
       const spring =
         state && !finished && !reduced && age < SHRINK_TRAP.delay
-          ? Math.floor(age * TRIGGER_FPS + 1e-9)
+          ? Math.floor(age * triggerFps + 1e-9)
           : -1;
       const signature = `${state ? 1 : 0}:${spring}:${point.x}:${point.y}:${zoom}`;
       if (this.signatures.get(trap.id) !== signature) {

@@ -6,7 +6,7 @@ import { DARK_STORAGE_LEVELS } from './dark-storage-stats';
 import { darkStorageAsset, darkStorageTexture, darkStorageFrame } from './dark-storage-art';
 import { darkStorageFill } from './dark-storage-fill';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
-import { CASTLE_GRAPH } from './castle-graph';
+import { castleGraph } from './castle-graph';
 import { nativeScenePoses, type NativeMatrix } from './native-mesh';
 import { guardRender } from './render-guard';
 
@@ -14,8 +14,8 @@ import { guardRender } from './render-guard';
  * The Dark Elixir Storage source file has only its level bodies: no construction or upgrade
  * export. The source reuses one 3×3 scaffold across buildings (`alliance_castle_upg` is also
  * the Cannon's scaffold from level 8), and the generic 3×3 construction pile; both live in the
- * boot-loaded Clan Castle graph (texture prefix `clancastle`), registered like the other
- * three-tile native buildings.
+ * Clan Castle graph (texture prefix `clancastle`), registered like the other three-tile native
+ * buildings. The graph loads with this family too; the textures come with the Clan Castle's.
  */
 const SCAFFOLD_EXPORT = 'alliance_castle_upg';
 const CONSTRUCTION_EXPORT = 'generic_construction_state3';
@@ -23,7 +23,7 @@ const THREE_TILE_ROOT: NativeMatrix = [1.2, 0, 0, 0, 1.2, -96];
 /** Still frame-zero poses like the castle's own scaffold (sampled once per state). */
 function sitePoses(state: 'constructing' | 'upgrading') {
   return nativeScenePoses(
-    CASTLE_GRAPH,
+    castleGraph(),
     state === 'constructing' ? CONSTRUCTION_EXPORT : SCAFFOLD_EXPORT,
     0,
     {},

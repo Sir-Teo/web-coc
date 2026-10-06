@@ -30,3 +30,15 @@ export class LazyGraph<T> {
     return this.loading;
   }
 }
+
+/** A family's art box as bounds about its anchor, for picking before its graph arrives. */
+export const artBoxBounds = (art: {
+  width: number;
+  height: number;
+  originX: number;
+  originY: number;
+}): [number, number, number, number] => {
+  const left = -art.originX * art.width,
+    top = -art.originY * art.height;
+  return [left, top, left + art.width, top + art.height];
+};

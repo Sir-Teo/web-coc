@@ -1,5 +1,4 @@
-import raw from '../../reference/inferno/art-runtime.json' with { type: 'json' };
-import { INFERNO_ROOT, type InfernoArtState } from './inferno-art';
+import { INFERNO_ROOT, infernoPortrait, type InfernoArtState } from './inferno-art';
 import { infernoStats, type InfernoMode } from './inferno-weapon';
 import {
   NATIVE_IDENTITY,
@@ -9,12 +8,20 @@ import {
   type NativeMatrix,
   type NativeMeshGraph,
 } from './native-mesh';
+import { LazyGraph } from './lazy-graph';
 
 /**
  * The Inferno Tower's original scene graph. Kept out of `inferno-art.ts` so that naming a
- * portrait or texture — which the simulation does — never parses the artwork.
+ * portrait or texture — which the simulation does — never parses the artwork, and loaded with
+ * the Inferno art family rather than at startup.
  */
-export const INFERNO_GRAPH = raw as unknown as NativeMeshGraph;
+const INFERNO_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Inferno Tower',
+  () => import('../../reference/inferno/art-runtime.json'),
+);
+export const loadInfernoArt = () => INFERNO_SOURCE.load();
+export const infernoArtLoaded = () => INFERNO_SOURCE.loaded;
+export const infernoGraph = () => INFERNO_SOURCE.get();
 
 /** Original source layers. The world adapter supplies registration explicitly. */
 export function infernoPoses(
@@ -27,7 +34,7 @@ export function infernoPoses(
   const { art } = infernoStats(level);
   if (!Number.isFinite(seconds) || seconds < 0) throw new Error('Invalid Inferno art time');
   const sample = (name: string, empty = false) =>
-    nativeScenePoses(INFERNO_GRAPH, name, seconds, empty ? { ammo: false } : {}, root);
+    nativeScenePoses(infernoGraph(), name, seconds, empty ? { ammo: false } : {}, root);
   if (state === 'ruin') return sample(art.ExportNameDamaged);
   const base = sample(art.ExportNameBase);
   if (state === 'constructing') return [...base, ...sample(art.ExportNameConstruction)];
@@ -49,6 +56,17 @@ export function infernoBounds(
   seconds = 0,
   mode: InfernoMode = 'single',
 ) {
+  if (!INFERNO_SOURCE.loaded) {
+    // Until the graph arrives, the portrait's box through the same registration.
+    const [a, , , d, x, y] = INFERNO_ROOT,
+      [left, top, right, bottom] = infernoPortrait(level, mode).bounds;
+    return [left * a + x, top * d + y, right * a + x, bottom * d + y] as [
+      number,
+      number,
+      number,
+      number,
+    ];
+  }
   const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
   const visit = (poses: NativeScenePose[]) => {
     for (const pose of poses) {

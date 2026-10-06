@@ -8,6 +8,9 @@ import {
 } from '../src/game/tesla-effect-poses';
 import { teslaMuzzleY } from '../src/game/tesla-poses';
 import { nativeVertices } from '../src/game/native-mesh';
+import { loadTeslaArt } from '../src/game/tesla-poses';
+
+await loadTeslaArt();
 
 const shot: TeslaShot = {
   index: 1,

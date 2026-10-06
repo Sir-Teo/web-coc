@@ -1,6 +1,9 @@
 import { expect, it } from 'vitest';
 import { infernoBeamAlpha, infernoBeamPoses, infernoBeamProfile } from '../src/game/inferno-beam';
-import { INFERNO_GRAPH } from '../src/game/inferno-graph';
+import { infernoGraph, loadInfernoArt } from '../src/game/inferno-graph';
+
+await loadInfernoArt();
+const INFERNO_GRAPH = infernoGraph();
 it('resolves every tier and heat stage to retained source beam exports', () => {
   const exports = new Set<string>();
   for (let level = 1; level <= 12; level++)

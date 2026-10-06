@@ -6,15 +6,33 @@ test.describe.configure({ timeout: 120_000 });
 
 const loaded = (prefix: string) =>
   `window.__game.game.textures.getTextureKeys().some((k) => k.startsWith('${prefix}:mesh:'))`;
+/** Defense graphs fetched with their families instead of shipping in the startup bundle. */
+const DEFENSE_GRAPHS = [
+  'mortar/runtime',
+  'tesla/runtime',
+  'bombtower/body',
+  'wizard-tower/body',
+  'inferno/art-runtime',
+  'seeking-mine/runtime',
+  'air-sweeper/runtime',
+  'shrink-trap/runtime',
+  'garrison/castle',
+];
 
 test('a family loads on first use and holds the battle that needs it', async ({ page }) => {
   const errors: string[] = [];
+  const requested: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  page.on('request', (r) => requested.push(new URL(r.url()).pathname));
   await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
-  // The starter village owns no Mortar or Wizard Tower: neither is resident.
+  const graphs = () =>
+    DEFENSE_GRAPHS.filter((graph) => requested.some((path) => path.endsWith(`/${graph}.json`)));
+  // The starter village owns no Mortar or Wizard Tower: neither is resident, and no defense
+  // graph has been fetched.
   expect(await page.evaluate(loaded('mortar'))).toBe(false);
   expect(await page.evaluate(loaded('wizardtower'))).toBe(false);
+  expect(graphs()).toEqual([]);
 
   // Stage 40 has both. The battle holds until they have loaded, then runs and draws them.
   await page.evaluate(async () => {
@@ -31,6 +49,7 @@ test('a family loads on first use and holds the battle that needs it', async ({ 
   await page.waitForFunction(() => window.__game.scene.artSettled);
   expect(await page.evaluate(loaded('mortar'))).toBe(true);
   expect(await page.evaluate(loaded('wizardtower'))).toBe(true);
+  expect(graphs()).toEqual(expect.arrayContaining(['mortar/runtime', 'wizard-tower/body']));
   await page.evaluate(() => {
     const m = window.__game.model;
     m.activeTroop = 'swordsman';

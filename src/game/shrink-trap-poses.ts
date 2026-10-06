@@ -1,4 +1,3 @@
-import graph from '../../reference/shrink-trap/runtime.json' with { type: 'json' };
 import effects from '../../reference/shrink-trap/effects.json' with { type: 'json' };
 import { nativeScenePoses, type NativeMeshGraph, type NativeMatrix } from './native-mesh';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
@@ -7,22 +6,37 @@ import { SHRINK_TRAP } from './shrink-trap';
 import { visualRandom } from './visual-random';
 import type { TrapState } from './traps';
 import type { SampleCue } from './sample-audio';
+import { LazyGraph } from './lazy-graph';
 
-export const SHRINK_GRAPH = graph as unknown as NativeMeshGraph;
+/** The Shrink Trap graph loads with its art family, not at startup. */
+const SHRINK_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Shrink Trap',
+  () => import('../../reference/shrink-trap/runtime.json'),
+);
+export const loadShrinkArt = () => SHRINK_SOURCE.load();
+export const shrinkArtLoaded = () => SHRINK_SOURCE.loaded;
+export const shrinkGraph = () => SHRINK_SOURCE.get();
 export const SHRINK_EFFECTS = effects.effects as Record<string, Record<string, string>[]>;
 export const SHRINK_EMITTERS = effects.particles as Record<string, Record<string, string>[]>;
 export const SHRINK_SOUNDS = effects.sounds;
 export const shrinkSample = (path: string) => `shrink-${path.split('/').at(-1)}`;
 const { scale, anchorX, anchorY } = SHRINK_ART;
 const bodyRoot: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
-const ring = SHRINK_GRAPH.clips[SHRINK_GRAPH.exports.shrink_range];
-const ringAnimation = SHRINK_GRAPH.clips[ring.children[0]];
-export const SHRINK_RING_DURATION = ringAnimation.timeline.length / ringAnimation.fps;
-const sample = nativeParticleSampler(SHRINK_GRAPH, scale, {
-  reducedEmitters: ['Shrink_deploy_range'],
-  staticEmitters: { Shrink_deploy_range: 0 },
-  timelineDurations: { shrink_range: SHRINK_RING_DURATION },
-});
+/** Seconds the range ring's source animation runs, read once the graph has arrived. */
+export function shrinkRingDuration() {
+  const graph = shrinkGraph(),
+    ring = graph.clips[graph.exports.shrink_range],
+    animation = graph.clips[ring.children[0]];
+  return animation.timeline.length / animation.fps;
+}
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+/** Built on first use: the graph arrives with the Shrink Trap art family. */
+const sample: ReturnType<typeof nativeParticleSampler> = (...args) =>
+  (sampler ??= nativeParticleSampler(shrinkGraph(), scale, {
+    reducedEmitters: ['Shrink_deploy_range'],
+    staticEmitters: { Shrink_deploy_range: 0 },
+    timelineDurations: { shrink_range: shrinkRingDuration() },
+  }))(...args);
 export function shrinkTrapPoses(
   state: TrapState | undefined,
   elapsed: number,
@@ -31,14 +45,14 @@ export function shrinkTrapPoses(
 ) {
   const age = state ? Math.max(0, elapsed - state.activatedAt) : 0;
   const poses = nativeScenePoses(
-    SHRINK_GRAPH,
+    shrinkGraph(),
     state ? 'Shrink_trap_unarmed' : 'Shrink_trap_armed',
     0,
     {},
     bodyRoot,
   );
   if (state && !finished && !reduced && age < SHRINK_TRAP.delay)
-    poses.push(...nativeScenePoses(SHRINK_GRAPH, 'Shrink_trap_trigger', age, {}, bodyRoot));
+    poses.push(...nativeScenePoses(shrinkGraph(), 'Shrink_trap_trigger', age, {}, bodyRoot));
   return poses;
 }
 export function shrinkSoundCues(id: number, state: TrapState): SampleCue[] {
@@ -66,14 +80,14 @@ export function shrinkEffectPoses(
   const result: NativeParticlePose[] = [];
   if (!state.shrink) return result;
   const appearAge = elapsed - state.activatedAt,
-    reveal = SHRINK_GRAPH.clips[SHRINK_GRAPH.exports.gen_appear_fx];
+    reveal = shrinkGraph().clips[shrinkGraph().exports.gen_appear_fx];
   if (!reduced && appearAge >= 0 && appearAge < reveal.timeline.length / reveal.fps)
     result.push({
       key: `${id}:appear`,
       emitter: 'gen_appear_fx',
       ...point,
       depth: point.y + 0.1,
-      poses: nativeScenePoses(SHRINK_GRAPH, 'gen_appear_fx', appearAge, {}, [
+      poses: nativeScenePoses(shrinkGraph(), 'gen_appear_fx', appearAge, {}, [
         scale,
         0,
         0,

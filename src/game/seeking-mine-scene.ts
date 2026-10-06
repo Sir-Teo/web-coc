@@ -13,7 +13,8 @@ import {
   seekingMinePreview,
 } from './seeking-mine-art';
 import {
-  SEEKING_MINE_GRAPH,
+  seekingMineArtLoaded,
+  seekingMineGraph,
   seekingMinePoses,
   seekingMineBodyState,
   seekingMineProjectilePose,
@@ -32,7 +33,7 @@ import { SEEKING_MINE } from './seeking-mine-stats';
 import type { NativeParticlePose } from './native-particles';
 
 export function preloadSeekingMines(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, SEEKING_MINE_GRAPH, 'seeking-mine');
+  preloadNativeMeshes(scene, seekingMineGraph(), 'seeking-mine');
   for (const level of SEEKING_MINE_ART_FAMILIES)
     scene.load.image(seekingMineTexture(level), seekingMinePreview(level));
   for (const [path, sound] of Object.entries(SEEKING_MINE_SOUNDS))
@@ -92,6 +93,8 @@ export class SeekingMinePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     airLift: number,
   ) {
+    // Nothing draws until the Seeking Air Mine family (graph first) has loaded.
+    if (!seekingMineArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, mines in flight and blasts keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);

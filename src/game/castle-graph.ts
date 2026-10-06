@@ -1,5 +1,4 @@
-import raw from '../../reference/garrison/castle.json' with { type: 'json' };
-import { castleStats } from './castle-art';
+import { CASTLE_ART, castleStats } from './castle-art';
 import {
   nativeScenePoses,
   nativeVertices,
@@ -7,13 +6,21 @@ import {
   type NativeMeshGraph,
   type NativeMatrix,
 } from './native-mesh';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
 /**
  * The Clan Castle's original scene graph, about a megabyte of it. It is kept out of
  * `castle-art.ts` so that naming a castle texture or reading its stats — which the
- * simulation does — never parses the artwork.
+ * simulation does — never parses the artwork, and it loads with the Clan Castle and Dark
+ * Elixir Storage art families (the storage borrows its scaffold) rather than at startup.
  */
-export const CASTLE_GRAPH = raw as unknown as NativeMeshGraph;
+const CASTLE_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Clan Castle',
+  () => import('../../reference/garrison/castle.json'),
+);
+export const loadCastleArt = () => CASTLE_SOURCE.load();
+export const castleArtLoaded = () => CASTLE_SOURCE.loaded;
+export const castleGraph = () => CASTLE_SOURCE.get();
 export function castlePoses(
   level: number,
   state: 'guard' | 'ruin' | 'constructing' | 'upgrading' = 'guard',
@@ -33,7 +40,7 @@ export function castlePoses(
     shadow_edit: false,
   } as const;
   // The 94-frame body timeline is sleep animation. A guarding Castle holds frame zero.
-  const sample = (name: string) => nativeScenePoses(CASTLE_GRAPH, name, 0, controls, root);
+  const sample = (name: string) => nativeScenePoses(castleGraph(), name, 0, controls, root);
   if (state === 'ruin') return sample(row.rubble);
   return [
     ...sample(row.base),
@@ -48,6 +55,7 @@ export function castleBounds(
   level: number,
   state: 'setup' | 'ruin' | 'constructing' | 'upgrading' = 'setup',
 ): [number, number, number, number] {
+  if (!CASTLE_SOURCE.loaded) return artBoxBounds(CASTLE_ART);
   const key = `${level}:${state}`;
   const cached = boundsCache.get(key);
   if (cached) return cached;

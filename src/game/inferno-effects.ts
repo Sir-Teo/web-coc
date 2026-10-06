@@ -1,5 +1,5 @@
 import source from '../../reference/inferno/native.json' with { type: 'json' };
-import { INFERNO_GRAPH } from './inferno-graph';
+import { infernoGraph } from './inferno-graph';
 import { nativeParticleSampler, type NativeParticlePose } from './native-particles';
 import { visualRandom } from './visual-random';
 import type { Battle } from './model';
@@ -12,7 +12,10 @@ const emitters = Object.fromEntries(
     rows.map((row) => ({ ...rows[0], ...row }) as Row),
   ]),
 );
-const particle = nativeParticleSampler(INFERNO_GRAPH, 1.2);
+let sampler: ReturnType<typeof nativeParticleSampler> | undefined;
+/** Built on first use: the graph arrives with the Inferno art family. */
+const particle: ReturnType<typeof nativeParticleSampler> = (...args) =>
+  (sampler ??= nativeParticleSampler(infernoGraph(), 1.2))(...args);
 const lifetime = (effect: Row) => {
   const row = emitters[effect.ParticleEmitter][0];
   return (

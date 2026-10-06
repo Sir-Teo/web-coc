@@ -23,8 +23,9 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { BOMB_TOWER_ART_LEVELS, bombTowerAsset, bombTowerTexture } from './bomb-tower-art';
 import {
-  BOMB_TOWER_GRAPH,
-  BOMBER_GRAPH,
+  bombTowerArtLoaded,
+  bombTowerGraph,
+  bomberGraph,
   bomberPose,
   bomberPoses,
   bombTowerPoses,
@@ -35,8 +36,8 @@ import {
 import { battleBuilding } from './battle-index';
 
 export function preloadBombTowers(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, BOMB_TOWER_GRAPH, 'bombtower');
-  preloadNativeMeshes(scene, BOMBER_GRAPH, 'bomber');
+  preloadNativeMeshes(scene, bombTowerGraph(), 'bombtower');
+  preloadNativeMeshes(scene, bomberGraph(), 'bomber');
   preloadNativeMeshes(scene, BOMB_TOWER_PARTICLES, 'bombtower-effects');
   for (const [path, sound] of Object.entries(BOMB_TOWER_SOUNDS))
     scene.load.binary(bombTowerSample(path), '/' + sound.path);
@@ -99,6 +100,8 @@ export class BombTowerPresentation {
     reduced: boolean,
     iso: (x: number, y: number) => { x: number; y: number },
   ) {
+    // Nothing draws until the Bomb Tower family (graphs first) has loaded.
+    if (!bombTowerArtLoaded()) return [];
     const live = presentationLive(battle);
     // After the finish, bombs in flight and blasts keep sampling on the presentation clock.
     if (battle) elapsed = presentationTime(battle);

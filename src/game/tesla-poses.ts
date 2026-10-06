@@ -1,4 +1,3 @@
-import source from '../../reference/tesla/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,
@@ -6,9 +5,26 @@ import {
   type NativeScenePose,
 } from './native-mesh';
 import { TESLA_ART } from './tesla-art';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
-export const TESLA_GRAPH = source as unknown as NativeMeshGraph;
-export const TESLA_SOUNDS = source.sounds;
+type TeslaSource = NativeMeshGraph & {
+  sounds: Record<string, { path: string }>;
+  levels: Record<string, string>[];
+};
+/** The Tesla graph (with its sounds and level rows) loads with the Tesla art family. */
+const TESLA_SOURCE = new LazyGraph<TeslaSource>(
+  'Hidden Tesla',
+  () => import('../../reference/tesla/runtime.json'),
+);
+export const loadTeslaArt = () => TESLA_SOURCE.load();
+export const teslaArtLoaded = () => TESLA_SOURCE.loaded;
+export const teslaGraph = (): NativeMeshGraph => TESLA_SOURCE.get();
+export const teslaSounds = () => TESLA_SOURCE.get().sounds;
+const source = {
+  get levels() {
+    return TESLA_SOURCE.get().levels;
+  },
+};
 export type TeslaVisualState = 'setup' | 'reveal' | 'constructing' | 'upgrading' | 'ruin';
 
 export function teslaPoses(
@@ -29,7 +45,7 @@ export function teslaPoses(
     -anchorY * scale,
   ];
   const sample = (name: string, time: number, controls: Record<string, number | false> = {}) =>
-    nativeScenePoses(TESLA_GRAPH, name, time, controls, root);
+    nativeScenePoses(teslaGraph(), name, time, controls, root);
   if (state === 'ruin') return sample(row.ExportNameDamaged, 0);
   if (state === 'constructing') return sample(row.ExportNameConstruction, 0);
   if (state === 'upgrading')
@@ -39,7 +55,7 @@ export function teslaPoses(
     ];
   if (state === 'setup')
     return sample(row.ExportName, seconds, reduced ? { idle_electricity: false } : {});
-  const clip = TESLA_GRAPH.clips[TESLA_GRAPH.exports[row.ExportNameTriggered]];
+  const clip = teslaGraph().clips[teslaGraph().exports[row.ExportNameTriggered]];
   const last = clip.timeline.length - 1;
   const frame = Math.floor(Math.max(0, Number.isFinite(seconds) ? seconds : 0) * clip.fps + 1e-9);
   // Hold the last reveal composition, while the separately placed electricity
@@ -55,6 +71,7 @@ export function teslaBodyBounds(
   level: number,
   state: Exclude<TeslaVisualState, 'reveal'> = 'setup',
 ) {
+  if (!TESLA_SOURCE.loaded) return artBoxBounds(TESLA_ART);
   const key = `${level}:${state}`;
   let cached = bounds.get(key);
   if (!cached) {
@@ -86,7 +103,7 @@ export function teslaMuzzleY(level: number, revealAge = Infinity, reduced = fals
   let y = muzzleCache.get(key);
   if (y !== undefined) return y;
   const poses = nativeScenePoses(
-    TESLA_GRAPH,
+    teslaGraph(),
     source.levels[level - 1].ExportNameTriggered,
     frame / 24,
     { idle_electricity: false },

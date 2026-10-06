@@ -30,7 +30,7 @@ import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
-import { infernoBounds } from './inferno-graph';
+import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
   preloadGarrisonCharacters,
   preloadGarrisonTroops,
@@ -43,13 +43,18 @@ import { characterBarHeight } from './character-poses';
 import { characterArtLoaded, loadCharacterArt } from './character-art';
 import { preloadCastles, CastlePresentation } from './castle-scene';
 import { CASTLE_ART } from './castle-art';
-import { castleBounds } from './castle-graph';
+import { castleArtLoaded, castleBounds, loadCastleArt } from './castle-graph';
 import { CANNON_ART } from './cannon-art';
 import { preloadCannons, CannonPresentation } from './cannon-scene';
 import { cannonBounds } from './cannon-poses';
 import { preloadSeekingMines, SeekingMinePresentation } from './seeking-mine-scene';
 import { SEEKING_MINE_ART } from './seeking-mine-art';
-import { seekingMineBounds, seekingMineBodyState } from './seeking-mine-poses';
+import {
+  loadSeekingMineArt,
+  seekingMineArtLoaded,
+  seekingMineBounds,
+  seekingMineBodyState,
+} from './seeking-mine-poses';
 import { seekingMineShake } from './seeking-mine-shake';
 import { bombTowerShake } from './bomb-tower-shake';
 import { preloadGoblinBuildings, GoblinBuildingPresentation } from './goblin-building-scene';
@@ -64,6 +69,7 @@ import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
 import { preloadShrinkTraps, ShrinkTrapPresentation } from './shrink-trap-scene';
 import { isShrunk } from './shrink-trap';
+import { loadShrinkArt, shrinkArtLoaded } from './shrink-trap-poses';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import { xbowRange, type XbowMode } from './xbow-stats';
@@ -71,10 +77,15 @@ import { spellTowerRange } from './spell-tower-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
-import { bombTowerBounds, bombTowerMuzzle } from './bomb-tower-poses';
+import {
+  bombTowerArtLoaded,
+  bombTowerBounds,
+  bombTowerMuzzle,
+  loadBombTowerArt,
+} from './bomb-tower-poses';
 import { WIZARD_TOWER_ART } from './wizard-tower-art';
 import { preloadWizardTowers, WizardTowerPresentation } from './wizard-tower-scene';
-import { wizardTowerBounds } from './wizard-tower-poses';
+import { loadWizardTowerArt, wizardTowerArtLoaded, wizardTowerBounds } from './wizard-tower-poses';
 import {
   SKELETON_ART_TIERS,
   skeletonTrapArt,
@@ -87,20 +98,20 @@ import { skeletonStats, type SkeletonMode } from './skeleton-stats';
 import { isGarrisonDefender } from './defenders';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
-import { teslaBodyBounds } from './tesla-poses';
+import { loadTeslaArt, teslaArtLoaded, teslaBodyBounds } from './tesla-poses';
 import { teslaRevealShake } from './tesla-shake';
 import { concealedTesla } from './hidden-tesla';
 import { CameraShakeLayer, combineShakes } from './camera-shake-layer';
 import { SWEEPER_ART } from './air-control-art';
 import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
-import { sweeperBounds } from './air-sweeper-poses';
+import { loadSweeperArt, sweeperArtLoaded, sweeperBounds } from './air-sweeper-poses';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
 import { CAMERA_KEYS, isDefense, type TroopKind } from './data';
 import { campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART } from './mortar-art';
 import { preloadMortars, MortarPresentation } from './mortar-scene';
-import { mortarBounds } from './mortar-poses';
+import { loadMortarArt, mortarArtLoaded, mortarBounds } from './mortar-poses';
 import { mortarShake } from './mortar-shake';
 import { infernoShake } from './inferno-shake';
 import { SPRING_AIRTIME } from './trap-stats';
@@ -314,23 +325,73 @@ const ART_FAMILIES: ArtFamily[] = [
   },
   SANTA_FAMILY,
   PUMPKIN_FAMILY,
-  { draws: (b) => b.kind === 'darkstorage', preload: preloadDarkStorages },
+  {
+    draws: (b) => b.kind === 'darkstorage',
+    preload: preloadDarkStorages,
+    prepare: loadCastleArt,
+    prepared: castleArtLoaded,
+  },
   { draws: (b) => isGoblinBuilding(b.npc), preload: preloadGoblinBuildings },
-  { draws: (b) => b.kind === 'tesla', preload: preloadTeslas },
-  { draws: (b) => b.kind === 'bombtower', preload: preloadBombTowers },
-  { draws: (b) => b.kind === 'wizardtower', preload: preloadWizardTowers },
-  { draws: (b) => b.kind === 'airsweeper', preload: preloadSweepers },
-  { draws: (b) => b.kind === 'mortar', preload: preloadMortars },
-  { draws: (b) => b.kind === 'clancastle', preload: preloadCastles },
-  { draws: (b) => b.kind === 'inferno', preload: preloadInfernos },
+  {
+    draws: (b) => b.kind === 'tesla',
+    prepare: loadTeslaArt,
+    prepared: teslaArtLoaded,
+    preload: preloadTeslas,
+  },
+  {
+    draws: (b) => b.kind === 'bombtower',
+    prepare: loadBombTowerArt,
+    prepared: bombTowerArtLoaded,
+    preload: preloadBombTowers,
+  },
+  {
+    draws: (b) => b.kind === 'wizardtower',
+    prepare: loadWizardTowerArt,
+    prepared: wizardTowerArtLoaded,
+    preload: preloadWizardTowers,
+  },
+  {
+    draws: (b) => b.kind === 'airsweeper',
+    preload: preloadSweepers,
+    prepare: loadSweeperArt,
+    prepared: sweeperArtLoaded,
+  },
+  {
+    draws: (b) => b.kind === 'mortar',
+    prepare: loadMortarArt,
+    prepared: mortarArtLoaded,
+    preload: preloadMortars,
+  },
+  {
+    draws: (b) => b.kind === 'clancastle',
+    preload: preloadCastles,
+    prepare: loadCastleArt,
+    prepared: castleArtLoaded,
+  },
+  {
+    draws: (b) => b.kind === 'inferno',
+    preload: preloadInfernos,
+    prepare: loadInfernoArt,
+    prepared: infernoArtLoaded,
+  },
   {
     draws: (b) => b.kind === 'darkdrill',
     prepare: loadDarkDrillArt,
     prepared: darkDrillArtLoaded,
     preload: preloadDarkDrills,
   },
-  { draws: (b) => b.kind === 'seekingairmine', preload: preloadSeekingMines },
-  { draws: (b) => b.npc === 'shrink-trap', preload: preloadShrinkTraps },
+  {
+    draws: (b) => b.kind === 'seekingairmine',
+    preload: preloadSeekingMines,
+    prepare: loadSeekingMineArt,
+    prepared: seekingMineArtLoaded,
+  },
+  {
+    draws: (b) => b.npc === 'shrink-trap',
+    preload: preloadShrinkTraps,
+    prepare: loadShrinkArt,
+    prepared: shrinkArtLoaded,
+  },
   {
     draws: (b) => b.kind === 'skeletontrap',
     preload: (scene) => {
@@ -2245,7 +2306,7 @@ export class VillageScene extends Phaser.Scene {
     if (!sample) return;
     const state =
       b.hp <= 0 ? 'ruin' : b.constructing ? 'constructing' : b.upgradeEnd ? 'upgrading' : 'setup';
-    if (b.kind === 'seekingairmine' && state === 'setup') {
+    if (b.kind === 'seekingairmine' && state === 'setup' && seekingMineArtLoaded()) {
       const pose = seekingMineBodyState(
         this.model.battle?.traps[b.id],
         this.model.battle?.elapsed ?? 0,

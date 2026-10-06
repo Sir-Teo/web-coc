@@ -1,6 +1,3 @@
-import body from '../../reference/wizard-tower/body.json' with { type: 'json' };
-import defender from '../../reference/wizard-tower/defender.json' with { type: 'json' };
-import effectArt from '../../reference/wizard-tower/effect_art.json' with { type: 'json' };
 import effects from '../../reference/wizard-tower/effects.json' with { type: 'json' };
 import {
   nativeScenePoses,
@@ -14,10 +11,29 @@ import { WIZARD_TOWER, wizardTowerStats } from './wizard-tower-stats';
 import type { Battle, Building } from './model';
 import type { CombatProjectile } from './projectiles';
 import { battleDefenseTarget } from './battle-index';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
-export const WIZARD_TOWER_GRAPH = body as unknown as NativeMeshGraph;
-export const TOWER_WIZARD_GRAPH = defender as unknown as NativeMeshGraph;
-export const WIZARD_EFFECT_GRAPH = effectArt as unknown as NativeMeshGraph;
+type BodySource = typeof import('../../reference/wizard-tower/body.json');
+type DefenderSource = typeof import('../../reference/wizard-tower/defender.json');
+/** The tower body, its Wizard and the Wizard's effects load with the Wizard Tower art family. */
+const BODY = new LazyGraph<BodySource>(
+  'Wizard Tower',
+  () => import('../../reference/wizard-tower/body.json'),
+);
+const DEFENDER = new LazyGraph<DefenderSource>(
+  'Tower Wizard',
+  () => import('../../reference/wizard-tower/defender.json'),
+);
+const EFFECT_ART = new LazyGraph<NativeMeshGraph>(
+  'Wizard Tower effects',
+  () => import('../../reference/wizard-tower/effect_art.json'),
+);
+export const loadWizardTowerArt = () =>
+  Promise.all([BODY.load(), DEFENDER.load(), EFFECT_ART.load()]);
+export const wizardTowerArtLoaded = () => BODY.loaded && DEFENDER.loaded && EFFECT_ART.loaded;
+export const wizardTowerGraph = () => BODY.get() as unknown as NativeMeshGraph;
+export const towerWizardGraph = () => DEFENDER.get() as unknown as NativeMeshGraph;
+export const wizardEffectGraph = () => EFFECT_ART.get();
 export type WizardTowerVisualState = 'setup' | 'constructing' | 'upgrading' | 'ruin';
 export type TowerWizardPose = {
   action: 'idle' | 'attack';
@@ -31,16 +47,16 @@ const levelRow = (level: number) => {
   return row;
 };
 const animation = (level: number) =>
-  defender.animations[levelRow(level).defender as keyof typeof defender.animations];
+  DEFENDER.get().animations[levelRow(level).defender as keyof DefenderSource['animations']];
 export const wizardProjectileRow = (level: number) =>
   effects.projectiles[levelRow(level).projectile as keyof typeof effects.projectiles][0];
 
 export function wizardTowerPoses(level: number, state: WizardTowerVisualState) {
   levelRow(level);
-  const row = body.levels[level - 1];
+  const row = BODY.get().levels[level - 1];
   const { scale, anchorX, anchorY } = WIZARD_TOWER_ART;
   const root: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
-  const sample = (name: string) => nativeScenePoses(WIZARD_TOWER_GRAPH, name, 0, {}, root);
+  const sample = (name: string) => nativeScenePoses(wizardTowerGraph(), name, 0, {}, root);
   if (state === 'ruin') return sample(row.ExportNameDamaged);
   if (state === 'constructing')
     return [...sample(row.ExportNameBase), ...sample(row.ExportNameConstruction)];
@@ -65,7 +81,7 @@ export function towerWizardPose(
 ): TowerWizardPose {
   const rows = animation(tower.level),
     actionFrame = Number(rows[1].ActionFrame);
-  const clip = TOWER_WIZARD_GRAPH.clips[TOWER_WIZARD_GRAPH.exports[rows[1].ExportName + '_3']];
+  const clip = towerWizardGraph().clips[towerWizardGraph().exports[rows[1].ExportName + '_3']];
   const shot = battle?.wizardTowers?.[tower.id]?.shots.at(-1);
   const current = [battle ? battleDefenseTarget(battle, tower.id) : undefined].find(
     (u) =>
@@ -114,7 +130,7 @@ export function towerWizardPoses(level: number, pose: TowerWizardPose, reduced =
     (WIZARD_TOWER_ART.roofY - WIZARD_TOWER_ART.anchorY) * s,
   ];
   const poses = nativeScenePoses(
-    TOWER_WIZARD_GRAPH,
+    towerWizardGraph(),
     row.ExportName + '_' + pose.direction,
     pose.time,
     {},
@@ -124,6 +140,7 @@ export function towerWizardPoses(level: number, pose: TowerWizardPose, reduced =
 }
 const bounds = new Map<string, [number, number, number, number]>();
 export function wizardTowerBounds(level: number, state: WizardTowerVisualState = 'setup') {
+  if (!wizardTowerArtLoaded()) return artBoxBounds(WIZARD_TOWER_ART);
   const key = `${level}:${state}`;
   if (bounds.has(key)) return bounds.get(key)!;
   let left = Infinity,
@@ -194,7 +211,7 @@ export function wizardProjectilePose(
   const scale = (Number(row.Scale) / 100) * WIZARD_TOWER_ART.scale;
   const c = Math.cos(angle) * scale,
     sn = Math.sin(angle) * scale;
-  const clip = WIZARD_EFFECT_GRAPH.clips[WIZARD_EFFECT_GRAPH.exports[row.ExportName]];
+  const clip = wizardEffectGraph().clips[wizardEffectGraph().exports[row.ExportName]];
   const time = row.ScaleTimeline === 'TRUE' ? (t * clip.timeline.length) / clip.fps : age;
   return {
     t,
@@ -205,6 +222,6 @@ export function wizardProjectilePose(
     export: row.ExportName,
     rotation: angle,
     time,
-    poses: nativeScenePoses(WIZARD_EFFECT_GRAPH, row.ExportName, time, {}, [c, -sn, 0, sn, c, 0]),
+    poses: nativeScenePoses(wizardEffectGraph(), row.ExportName, time, {}, [c, -sn, 0, sn, c, 0]),
   };
 }

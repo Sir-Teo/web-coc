@@ -19,6 +19,9 @@ import { stepProjectiles, launchProjectile } from '../src/game/projectiles';
 import { validateSave } from '../src/game/save';
 import { REPLAY_VERSION, validateReplay } from '../src/game/replay';
 import { makeReplayFile } from '../src/game/replay-file';
+import { loadBombTowerArt } from '../src/game/bomb-tower-poses';
+
+await loadBombTowerArt();
 
 function arena(level = 1) {
   const m = new GameModel();

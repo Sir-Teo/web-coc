@@ -3,8 +3,8 @@ import { nativeParticleSampler, type NativeParticlePose } from './native-particl
 import { visualRandom } from './visual-random';
 import { WIZARD_TOWER_ART } from './wizard-tower-art';
 import {
-  WIZARD_TOWER_GRAPH,
-  WIZARD_EFFECT_GRAPH,
+  wizardTowerGraph,
+  wizardEffectGraph,
   wizardFlightPoint,
   wizardProjectileRow,
 } from './wizard-tower-poses';
@@ -21,10 +21,15 @@ export const WIZARD_TOWER_SOUNDS = raw.sounds;
 export type WizardTowerEffectPose = NativeParticlePose & {
   graph: 'wizardtower' | 'wizardtower-effects';
 };
-const samplers = {
-  'sc/buildings.sc': nativeParticleSampler(WIZARD_TOWER_GRAPH, WIZARD_TOWER_ART.scale),
-  'sc/vfx_character.sc': nativeParticleSampler(WIZARD_EFFECT_GRAPH, WIZARD_TOWER_ART.scale),
-};
+let built:
+  | Record<'sc/buildings.sc' | 'sc/vfx_character.sc', ReturnType<typeof nativeParticleSampler>>
+  | undefined;
+/** Built on first use: the graphs arrive with the Wizard Tower art family. */
+const samplers = () =>
+  (built ??= {
+    'sc/buildings.sc': nativeParticleSampler(wizardTowerGraph(), WIZARD_TOWER_ART.scale),
+    'sc/vfx_character.sc': nativeParticleSampler(wizardEffectGraph(), WIZARD_TOWER_ART.scale),
+  });
 const n = (r: Row, key: string) => Number(r[key] ?? 0);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const handlingEffect = (kind: WizardTowerHandling) =>
@@ -66,8 +71,8 @@ function sample(
   reduced: boolean,
 ): WizardTowerEffectPose | undefined {
   const rows = WIZARD_TOWER_EMITTERS[name],
-    swf = rows[0].ParticleSwf as keyof typeof samplers;
-  const sampler = samplers[swf];
+    swf = rows[0].ParticleSwf as keyof ReturnType<typeof samplers>;
+  const sampler = samplers()[swf];
   if (!sampler) throw Error(`Unsupported original Wizard Tower particle source: ${swf}`);
   const pose = sampler(key, name, rows, age, ground, random, layer, reduced);
   return pose

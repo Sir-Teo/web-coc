@@ -1,4 +1,3 @@
-import source from '../../reference/seeking-mine/runtime.json' with { type: 'json' };
 import combat from '../../reference/seeking-mine/combat.json' with { type: 'json' };
 import {
   nativeScenePoses,
@@ -9,12 +8,20 @@ import {
 } from './native-mesh';
 import { SEEKING_MINE_ART, seekingMineFamily } from './seeking-mine-art';
 import type { TrapState } from './traps';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
-export const SEEKING_MINE_GRAPH = source as unknown as NativeMeshGraph;
+/** The Seeking Air Mine graph loads with its art family, not at startup. */
+const SEEKING_MINE_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Seeking Air Mine',
+  () => import('../../reference/seeking-mine/runtime.json'),
+);
+export const loadSeekingMineArt = () => SEEKING_MINE_SOURCE.load();
+export const seekingMineArtLoaded = () => SEEKING_MINE_SOURCE.loaded;
+export const seekingMineGraph = () => SEEKING_MINE_SOURCE.get();
 export type SeekingMineVisualState =
   'setup' | 'constructing' | 'upgrading' | 'triggered' | 'spent' | 'ruin';
 export const seekingMineClip = (name: string) =>
-  SEEKING_MINE_GRAPH.clips[SEEKING_MINE_GRAPH.exports[name]];
+  seekingMineGraph().clips[seekingMineGraph().exports[name]];
 export const seekingMineClipTime = (name: string, age: number) =>
   Math.max(
     0,
@@ -26,7 +33,7 @@ export function seekingMinePoses(level: number, state: SeekingMineVisualState, t
   const { scale, anchorX, anchorY } = SEEKING_MINE_ART;
   const root: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
   const sample = (name: string, seconds = 0) =>
-    nativeScenePoses(SEEKING_MINE_GRAPH, name, seconds, {}, root);
+    nativeScenePoses(seekingMineGraph(), name, seconds, {}, root);
   if (state === 'spent' || state === 'ruin') return sample(combat.broken);
   if (state === 'triggered')
     return sample(combat.trigger, seekingMineClipTime(combat.trigger, time));
@@ -88,18 +95,19 @@ export function seekingMineProjectilePose(
     time: seekingMineClipTime(row.export, age),
     export: row.export,
     poses: nativeScenePoses(
-      SEEKING_MINE_GRAPH,
+      seekingMineGraph(),
       row.export,
       row.playOnce ? seekingMineClipTime(row.export, age) : age,
       {},
       [s, 0, 0, 0, s, 0],
     ),
-    shadow: nativeScenePoses(SEEKING_MINE_GRAPH, row.shadow, age, {}, [s, 0, 0, 0, s, 0]),
+    shadow: nativeScenePoses(seekingMineGraph(), row.shadow, age, {}, [s, 0, 0, 0, s, 0]),
   };
 }
 
 const bounds = new Map<string, [number, number, number, number]>();
 export function seekingMineBounds(level: number, state: SeekingMineVisualState = 'setup') {
+  if (!SEEKING_MINE_SOURCE.loaded) return artBoxBounds(SEEKING_MINE_ART);
   const key = `${level}:${state}`;
   if (bounds.has(key)) return bounds.get(key)!;
   let left = Infinity,

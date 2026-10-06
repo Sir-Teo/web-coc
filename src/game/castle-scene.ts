@@ -4,10 +4,10 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { guardRender } from './render-guard';
 import { preloadNativeMeshes } from './native-mesh-scene';
 import { CASTLE_LEVELS, castleAsset, castleTexture } from './castle-art';
-import { CASTLE_GRAPH, castlePoses } from './castle-graph';
+import { castleArtLoaded, castleGraph, castlePoses } from './castle-graph';
 
 export function preloadCastles(scene: Phaser.Scene) {
-  preloadNativeMeshes(scene, CASTLE_GRAPH, 'clancastle');
+  preloadNativeMeshes(scene, castleGraph(), 'clancastle');
   for (const row of CASTLE_LEVELS)
     scene.load.image(castleTexture(row.level), castleAsset(row.level));
 }
@@ -22,6 +22,8 @@ export class CastlePresentation {
     this.signatures.clear();
   }
   render(buildings: Building[], iso: (x: number, y: number) => { x: number; y: number }) {
+    // Nothing draws until the Clan Castle family (graph first) has loaded.
+    if (!castleArtLoaded()) return;
     const wanted = new Set<number>();
     const camera = this.scene.cameras.main;
     const zoom = quantizedDensity(Math.max(1, camera.zoomX, camera.zoomY));

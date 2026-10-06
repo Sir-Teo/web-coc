@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest';
 import { castleBounds } from '../src/game/castle-graph';
+import { loadCastleArt } from '../src/game/castle-graph';
+
+await loadCastleArt();
 
 // Independent Python composition of the original source graph, scale 1.2 / y -96.
 // Uses scripts/import-native-garrison-art.py poses/points and reference/garrison/art.json.

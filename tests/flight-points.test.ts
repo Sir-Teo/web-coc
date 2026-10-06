@@ -5,6 +5,15 @@ import { wizardFlightPoint, wizardProjectilePose } from '../src/game/wizard-towe
 import { goblinBombFlightPoint, goblinBombPose } from '../src/game/late-goblin-buildings-poses';
 import { spellBottleFlightPoint, spellBottlePose } from '../src/game/spell-tower-poses';
 import type { SpellTowerCast } from '../src/game/spell-tower';
+import { loadMortarArt } from '../src/game/mortar-poses';
+import { loadBombTowerArt } from '../src/game/bomb-tower-poses';
+import { loadWizardTowerArt } from '../src/game/wizard-tower-poses';
+
+await loadWizardTowerArt();
+
+await loadBombTowerArt();
+
+await loadMortarArt();
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 const shot = {

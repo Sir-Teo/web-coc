@@ -1,4 +1,3 @@
-import raw from '../../reference/mortar/runtime.json' with { type: 'json' };
 import {
   nativeScenePoses,
   nativeVertices,
@@ -10,8 +9,16 @@ import { MORTAR, MORTAR_BUILDING, mortarStats, mortarProjectileRow } from './mor
 import type { Battle, Building, MortarShell } from './model';
 import { TROOPS } from './data';
 import { battleDefenseTarget } from './battle-index';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
-export const MORTAR_GRAPH = raw as unknown as NativeMeshGraph;
+/** The Mortar graph loads with the Mortar art family, not at startup. */
+const MORTAR_SOURCE = new LazyGraph<NativeMeshGraph>(
+  'Mortar',
+  () => import('../../reference/mortar/runtime.json'),
+);
+export const loadMortarArt = () => MORTAR_SOURCE.load();
+export const mortarArtLoaded = () => MORTAR_SOURCE.loaded;
+export const mortarGraph = () => MORTAR_SOURCE.get();
 export type MortarVisualState = 'setup' | 'constructing' | 'upgrading' | 'ruin';
 export interface MortarPose {
   state: MortarVisualState;
@@ -57,7 +64,7 @@ export function mortarPoses(level: number, pose: MortarPose) {
   const { scale: s, anchorX: x, anchorY: y } = MORTAR_ART;
   const root: NativeMatrix = [s, 0, -x * s, 0, s, -y * s];
   const sample = (name: string) =>
-    nativeScenePoses(MORTAR_GRAPH, name, 0, { turret: pose.turret, gearup: false }, root);
+    nativeScenePoses(mortarGraph(), name, 0, { turret: pose.turret, gearup: false }, root);
   if (pose.state === 'ruin') return sample(MORTAR_BUILDING.ExportNameDamaged);
   if (pose.state === 'constructing')
     return [
@@ -72,6 +79,7 @@ export function mortarPoses(level: number, pose: MortarPose) {
 }
 const bounds = new Map<string, [number, number, number, number]>();
 export function mortarBounds(level: number, state: MortarVisualState = 'setup') {
+  if (!MORTAR_SOURCE.loaded) return artBoxBounds(MORTAR_ART);
   const key = `${level}:${state}`;
   if (bounds.has(key)) return bounds.get(key)!;
   let left = Infinity,
@@ -139,7 +147,7 @@ export function mortarProjectilePose(
     shot.fromY + (shot.y - shot.fromY) * t,
   );
   const s = (MORTAR_ART.scale * Number(row.Scale)) / 100;
-  const clip = MORTAR_GRAPH.clips[MORTAR_GRAPH.exports[row.ExportName]];
+  const clip = mortarGraph().clips[mortarGraph().exports[row.ExportName]];
   const time = row.ScaleTimeline === 'TRUE' ? (t * clip.timeline.length) / clip.fps : age;
   const root: NativeMatrix = [s, 0, 0, 0, s, 0];
   return {
@@ -152,7 +160,7 @@ export function mortarProjectilePose(
     y,
     export: row.ExportName,
     time,
-    poses: nativeScenePoses(MORTAR_GRAPH, row.ExportName, time, {}, root),
-    shadow: nativeScenePoses(MORTAR_GRAPH, row.ShadowExportName, age, {}, root),
+    poses: nativeScenePoses(mortarGraph(), row.ExportName, time, {}, root),
+    shadow: nativeScenePoses(mortarGraph(), row.ShadowExportName, age, {}, root),
   };
 }

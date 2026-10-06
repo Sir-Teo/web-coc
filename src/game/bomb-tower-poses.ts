@@ -1,5 +1,3 @@
-import body from '../../reference/bombtower/body.json' with { type: 'json' };
-import defender from '../../reference/bombtower/defender.json' with { type: 'json' };
 import combat from '../../reference/bombtower/combat.json' with { type: 'json' };
 import {
   nativeScenePoses,
@@ -12,9 +10,23 @@ import type { Battle, Building } from './model';
 import type { CombatProjectile } from './projectiles';
 import { TROOPS } from './data';
 import { battleDefenseTarget } from './battle-index';
+import { LazyGraph, artBoxBounds } from './lazy-graph';
 
-export const BOMB_TOWER_GRAPH = body as unknown as NativeMeshGraph;
-export const BOMBER_GRAPH = defender as unknown as NativeMeshGraph;
+type BodySource = typeof import('../../reference/bombtower/body.json');
+type DefenderSource = typeof import('../../reference/bombtower/defender.json');
+/** The tower body and the roof Bomber load with the Bomb Tower art family, not at startup. */
+const BODY = new LazyGraph<BodySource>(
+  'Bomb Tower',
+  () => import('../../reference/bombtower/body.json'),
+);
+const DEFENDER = new LazyGraph<DefenderSource>(
+  'Bomber',
+  () => import('../../reference/bombtower/defender.json'),
+);
+export const loadBombTowerArt = () => Promise.all([BODY.load(), DEFENDER.load()]);
+export const bombTowerArtLoaded = () => BODY.loaded && DEFENDER.loaded;
+export const bombTowerGraph = () => BODY.get() as unknown as NativeMeshGraph;
+export const bomberGraph = () => DEFENDER.get() as unknown as NativeMeshGraph;
 export type BombTowerVisualState = 'setup' | 'constructing' | 'upgrading' | 'ruin';
 export type BomberPose = {
   action: 'idle' | 'attack';
@@ -28,14 +40,14 @@ const levelRow = (level: number) => {
   return row;
 };
 const animation = (level: number) =>
-  defender.animations[levelRow(level).defender as keyof typeof defender.animations];
+  DEFENDER.get().animations[levelRow(level).defender as keyof DefenderSource['animations']];
 
 export function bombTowerPoses(level: number, state: BombTowerVisualState) {
   levelRow(level);
-  const row = body.levels[level - 1];
+  const row = BODY.get().levels[level - 1];
   const { scale, anchorX, anchorY } = BOMB_TOWER_ART;
   const root: NativeMatrix = [scale, 0, -anchorX * scale, 0, scale, -anchorY * scale];
-  const sample = (name: string) => nativeScenePoses(BOMB_TOWER_GRAPH, name, 0, {}, root);
+  const sample = (name: string) => nativeScenePoses(bombTowerGraph(), name, 0, {}, root);
   if (state === 'ruin') return sample(row.ExportNameDamaged);
   if (state === 'constructing')
     return [...sample(row.ExportNameBase), ...sample(row.ExportNameConstruction)];
@@ -62,7 +74,7 @@ export function bomberPose(
 ): BomberPose {
   const rows = animation(tower.level);
   const actionFrame = Number(rows[1].ActionFrame);
-  const clip = BOMBER_GRAPH.clips[BOMBER_GRAPH.exports[rows[1].ExportName + '_3']];
+  const clip = bomberGraph().clips[bomberGraph().exports[rows[1].ExportName + '_3']];
   const shot = battle?.bombTowers?.[tower.id]?.shots.at(-1);
   const current = [battle ? battleDefenseTarget(battle, tower.id) : undefined].find(
     (u) =>
@@ -115,7 +127,7 @@ export function bomberPoses(level: number, pose: BomberPose, reduced = false) {
     (BOMB_TOWER_ART.roofY - BOMB_TOWER_ART.anchorY) * BOMB_TOWER_ART.scale,
   ];
   const poses = nativeScenePoses(
-    BOMBER_GRAPH,
+    bomberGraph(),
     row.ExportName + '_' + pose.direction,
     pose.time,
     { ability_on: false },
@@ -126,6 +138,7 @@ export function bomberPoses(level: number, pose: BomberPose, reduced = false) {
 
 const bounds = new Map<string, [number, number, number, number]>();
 export function bombTowerBounds(level: number, state: BombTowerVisualState = 'setup') {
+  if (!bombTowerArtLoaded()) return artBoxBounds(BOMB_TOWER_ART);
   const key = `${level}:${state}`;
   if (bounds.has(key)) return bounds.get(key)!;
   const poses = [
@@ -183,7 +196,8 @@ export function bombProjectilePose(
   elapsed: number,
   iso: (x: number, y: number) => { x: number; y: number },
 ) {
-  const row = body.projectiles[levelRow(level).projectile as keyof typeof body.projectiles][0];
+  const row =
+    BODY.get().projectiles[levelRow(level).projectile as keyof BodySource['projectiles']][0];
   const age = Math.max(0, elapsed - shot.launched);
   const { t, x, y } = bombFlightPoint(shot, elapsed, iso);
   const ground = iso(
@@ -205,16 +219,17 @@ export function bombProjectilePose(
     ground,
     x,
     y,
-    poses: nativeScenePoses(BOMB_TOWER_GRAPH, row.ExportName, age, {}, root),
-    shadow: nativeScenePoses(BOMB_TOWER_GRAPH, row.ShadowExportName, age, {}, [s, 0, 0, 0, s, 0]),
+    poses: nativeScenePoses(bombTowerGraph(), row.ExportName, age, {}, root),
+    shadow: nativeScenePoses(bombTowerGraph(), row.ShadowExportName, age, {}, [s, 0, 0, 0, s, 0]),
   };
 }
 
 export function bombTowerDeathPoses(level: number, age: number, reduced: boolean) {
   const tier = Number(levelRow(level).destroyedEffect.replace('Bomb Tower Destroyed', ''));
-  const row = body.deathBombs[`Bomb Tower Bomb Appear${tier}` as keyof typeof body.deathBombs];
+  const row =
+    BODY.get().deathBombs[`Bomb Tower Bomb Appear${tier}` as keyof BodySource['deathBombs']];
   const s = (BOMB_TOWER_ART.scale * Number(row.StartScale)) / 100;
-  return nativeScenePoses(BOMB_TOWER_GRAPH, row.ParticleExportName, reduced ? 0 : age, {}, [
+  return nativeScenePoses(bombTowerGraph(), row.ParticleExportName, reduced ? 0 : age, {}, [
     s,
     0,
     0,

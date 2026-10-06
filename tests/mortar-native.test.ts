@@ -15,6 +15,9 @@ import { mortarEffectPoses, mortarSoundCues, mortarTrailPoses } from '../src/gam
 import { mortarShake } from '../src/game/mortar-shake';
 import { mortarBattle, mortarVillage } from './fixtures/mortar-battle';
 import { REPLAY_VERSION } from '../src/game/replay';
+import { loadMortarArt } from '../src/game/mortar-poses';
+
+await loadMortarArt();
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
 
 it('retains every original normal level without exceeding home Town Hall eight limits', () => {
