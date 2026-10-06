@@ -84,7 +84,11 @@ test('a phone move keeps an upgraded Archer Tower through blocked placement, can
     scene.cameras.main.centerOn(896, 490);
     return { id: b.id, x: b.x, y: b.y, gold: m.state.gold, busy: m.busy };
   });
-  await expect(page.locator('.context-art')).toHaveAttribute('src', /tier3\/archertower.webp$/);
+  // The card shows the client's own level 8 portrait.
+  await expect(page.locator('.context-art')).toHaveAttribute(
+    'src',
+    /archer-tower-native\/portrait\/8\.png$/,
+  );
   const placed = await appearance(page, original.id);
   await page.locator(`[data-action="move:${original.id}"]`).click();
   await expect.poll(() => appearance(page)).toEqual(placed);

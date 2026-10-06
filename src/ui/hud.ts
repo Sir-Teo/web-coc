@@ -3842,6 +3842,9 @@ export class HUD {
     if (this.tab === GEM_TEXTS.treasureTab) return this.treasureShop();
     const cards = (Object.entries(BUILDINGS) as [BuildingKind, (typeof BUILDINGS)[BuildingKind]][])
       .filter(([k, d]) => k !== 'townhall' && (this.tab === 'All' || d.category === this.tab))
+      // A kind retired past its Town Hall (the Eagle Artillery, merged into the Inferno Artillery
+      // at Town Hall 17) leaves the Shop, as in the original, unless the village still has one.
+      .filter(([k]) => m.maxCount(k) > 0 || m.townhallLevel < unlockTownHall(k) || m.countOf(k) > 0)
       // Buildable tiles first in catalog order, then locked ones by their Town Hall requirement.
       .sort(
         ([a], [b]) =>

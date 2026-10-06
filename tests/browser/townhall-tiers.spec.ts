@@ -47,13 +47,17 @@ test('the shop opens the late families at their own tiers', async ({ page }) => 
   await expect(tile('Eagle Artillery')).toContainText('Town Hall 11');
   await expect(tile('Scattershot')).toContainText('Town Hall 13');
   await expect(tile('Monolith')).toContainText('Town Hall 15');
-  await tier(page, 18);
+  await tier(page, 16);
   await expect(tile('Inferno Tower').locator('.shop-count')).toHaveText('0/3');
   await expect(tile('Eagle Artillery').locator('.shop-count')).toHaveText('0/1');
   await expect(tile('Scattershot').locator('.shop-count')).toHaveText('0/2');
+  // Town Hall 17 merges the Eagle Artillery into the Inferno Artillery: it leaves the Shop.
+  await tier(page, 18);
+  await expect(tile('Eagle Artillery')).toHaveCount(0);
+  await expect(tile('Inferno Tower').locator('.shop-count')).toHaveText('0/3');
 });
 
-test('a late-tier village builds a Spell Tower and cycles its original weapons', async ({
+test('a late-tier village builds a Spell Tower and cycles the spells its level unlocks', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -67,19 +71,21 @@ test('a late-tier village builds a Spell Tower and cycles its original weapons',
     if (!m.place(30, 30)) throw Error('Spell Tower cannot be placed');
     const built = m.state.buildings.at(-1)!;
     m.tick(built.upgradeEnd! + 1);
+    // Each level unlocks a spell in the client's rows (`UnlockWeaponMode`): level 3 has three.
+    built.level = 3;
     m.selected = built.id;
     m.changed();
     return built.id;
   });
-  const weapon = page.locator('.building-context [data-action="spell-tower-weapon"]');
-  await expect(weapon).toContainText('Rage');
-  await weapon.click();
-  await expect(weapon).toContainText('Poison');
-  await weapon.click();
-  await expect(weapon).toContainText('Invisibility');
+  const mode = page.locator('.building-context [data-action="spelltower-mode"]');
+  await expect(mode).toContainText('Rage');
+  await mode.click();
+  await expect(mode).toContainText('Poison');
+  await mode.click();
+  await expect(mode).toContainText('Invisibility');
   expect(
     await page.evaluate(
-      (id) => window.__game.model.state.buildings.find((b) => b.id === id)!.spellTowerWeapon,
+      (id) => window.__game.model.state.buildings.find((b) => b.id === id)!.spellMode,
       id,
     ),
   ).toBe('invisibility');
