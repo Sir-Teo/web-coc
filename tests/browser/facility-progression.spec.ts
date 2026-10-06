@@ -248,11 +248,12 @@ test('imported duplicate factories retain spells while using one factory capacit
   await page.locator('[data-action="remove-spell:heal"]').click();
   await expect(page.locator('[data-action="brew:heal"]')).toBeEnabled();
   await page.locator('[data-action="brew:heal"]').click();
-  expect(await page.evaluate(() => window.__game.model.state.spells)).toEqual({
-    rage: 2,
-    heal: 1,
-    lightning: 0,
-  });
+  // The spells held; the book lists every other spell at 0.
+  expect(
+    await page.evaluate(() =>
+      Object.fromEntries(Object.entries(window.__game.model.state.spells).filter(([, n]) => n)),
+    ),
+  ).toEqual({ rage: 2, heal: 1 });
   await page.evaluate(() => {
     const m = window.__game.model;
     m.state.army.swordsman = m.capacity + 1;

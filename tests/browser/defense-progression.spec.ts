@@ -214,7 +214,7 @@ test('older combat recordings retain the result and explain why playback is unav
   await expect(page.locator('.raid-score')).toContainText('0%');
 });
 
-test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the TH2 gate', async ({
+test('TH1 shop permits a second Cannon, gates its level 2 at Town Hall 2, then upgrades it there', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -247,6 +247,24 @@ test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the T
     m.changed();
     return b.id;
   });
+  // The client's level 2 row asks for Town Hall 2 (logic/buildings.csv `TownHallLevel`).
+  await page
+    .locator('.building-context')
+    .getByRole('button', { name: 'Info', exact: true })
+    .click();
+  await expect(page.locator('.info-body')).toContainText('Town Hall 2');
+  await expect(page.locator('.info-cost')).toHaveCount(0);
+  await page.screenshot({
+    path: `output/playtest/th1-cannon-gate-${test.info().project.name || 'chromium'}.png`,
+    animations: 'disabled',
+  });
+  await page.locator('[data-action="close"]').click();
+  await page.evaluate((id) => {
+    const m = window.__game.model;
+    m.townhall.level = 2;
+    m.selected = id;
+    m.changed();
+  }, id);
   await page
     .locator('.building-context')
     .getByRole('button', { name: 'Info', exact: true })
@@ -262,29 +280,12 @@ test('TH1 shop permits a second Cannon and its level 2 upgrade, then shows the T
   }, id);
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.artSettled);
-  await page.evaluate(
-    ({ id, end }) => {
-      const m = window.__game.model,
-        b = m.state.buildings.find((b) => b.id === id);
-      if (b.upgradeEnd !== end) throw Error('Paid deadline changed');
-      m.tick(end);
-      m.state.gold = 4000;
-      m.selected = id;
-      m.changed();
-    },
-    { id, end },
-  );
-  await page
-    .locator('.building-context')
-    .getByRole('button', { name: 'Info', exact: true })
-    .click();
-  await expect(page.locator('.info-body')).toContainText('Town Hall 2');
-  await expect(page.locator('.info-cost')).toHaveCount(0);
-  await page.screenshot({
-    path: `output/playtest/th1-cannon-gate-${test.info().project.name || 'chromium'}.png`,
-    animations: 'disabled',
-  });
-  await page.locator('[data-action="close"]').click();
+  expect(
+    await page.evaluate(
+      (id) => window.__game.model.state.buildings.find((b) => b.id === id)?.upgradeEnd,
+      id,
+    ),
+  ).toBe(end);
   await page.locator('.shop-btn').click();
   await page.locator('[data-action="tab:Defenses"]').click();
   await expect(buy).toBeDisabled();

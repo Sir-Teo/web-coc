@@ -6,12 +6,14 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await useDevelopedVillage(page);
   await page.locator('[data-action="skip-tutorial"]').click();
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
+    const { emptySpells } = await import('/src/game/army.ts');
     const m = window.__game.model;
     m.townhall.level = 8;
     m.state.elixir = 3000000;
     m.state.buildings.find((b) => b.kind === 'spellfactory').level = 2;
-    m.state.spells = { heal: 2, rage: 0, lightning: 0 };
+    // A whole spell book, as saves hold it: every spell, two Healing.
+    m.state.spells = { ...emptySpells(), heal: 2 };
     m.changed();
   });
   for (const kind of ['barracks', 'spellfactory']) {
@@ -52,19 +54,22 @@ test('upgrading facilities keep phone army editing and saved presets available',
       const m = window.__game.model;
       return {
         giants: m.state.army.giant,
-        spells: m.state.spells,
+        spells: Object.fromEntries(Object.entries(m.state.spells).filter(([, n]) => n)),
         housing: m.spellCapacity,
         busy: m.busy,
       };
     }),
-  ).toEqual({ giants: 5, spells: { heal: 2, rage: 0, lightning: 0 }, housing: 4, busy: 2 });
+  ).toEqual({ giants: 5, spells: { heal: 2 }, housing: 4, busy: 2 });
+  // Closing the presets returns to the army sheet they were opened from.
   await page.keyboard.press('Escape');
-  await page.locator('.train-add').click();
+  if (!(await page.locator('.drawer-sheet').isVisible())) await page.locator('.train-add').click();
   await expect(page.locator('.drawer-sheet')).toBeVisible();
   await expect(page.locator('.drawer-foot')).toContainText('Free & instant during upgrades');
   await expect(page.locator('.drawer-foot')).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-  await page.screenshot({ path: `output/playtest/army-during-upgrades-phone-${test.info().project.name}.png` });
+  await page.screenshot({
+    path: `output/playtest/army-during-upgrades-phone-${test.info().project.name}.png`,
+  });
 });
 
 test('repeat campaign attacks replenish the whole army while both facilities upgrade', async ({
