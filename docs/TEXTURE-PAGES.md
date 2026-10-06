@@ -95,3 +95,29 @@ Other defenses with their own renderers still draw from unpaged bundled graphs.
 The Cannon browser specs that draw fixture villages or all 21 levels directly now wait with `prefetchLevels`. `cannon-effects.spec.ts` (aiming), the home-handling sound case in `cannon-handling.spec.ts` and every `native-cannon-mesh.spec.ts` case fail identically on `main` before this change; they are not regressions of paging. The Archer Tower specs that draw towers through the village presentation (`archer-tower-audio`, `-destruction`, `-facing`, `-preview`, `-windup`, `native-archer-tower-live`) now prefetch all 21 levels first. The placement-audio case of `archer-tower-audio.spec.ts`, `archer-tower-composition`, `archer-tower-preview`, `archer-tower-projectile-gallery`, the three `native-archer-tower-states` cases and every `native-archer-tower-art` pixel witness (its strips exceed the headless framebuffer) fail with the same assertions on the commit before Archer Tower paging.
 
 This replaces the per-level idle packs committed briefly on October 5, 2026 (`public/assets/village-levels/`), which duplicated shared art in every level and covered buildings only.
+
+## Battle-only art
+
+Boot also loaded three sets of art and sound that only a battle uses:
+
+- the Clan Castle garrison's effect atlas and its seven sounds (about 0.19 MB), though a home Castle holds no reinforcements;
+- the Skeleton Trap's two skeleton sheets (0.11 MB);
+- the ruins of fallen buildings (0.07 MB).
+
+Each is now an art family, loaded when something needs it:
+
+- the garrison's effects and sounds join the family of its defenders, loaded when a battle with a garrison is scouted;
+- the skeletons load with a village that has the trap, at boot for a home village that owns one, otherwise with the battle that brings one;
+- the ruins load with any battle.
+
+A battle holds until its families are in, as for every family. The Archer Tower's nine sounds stay at boot, because moving a tower in the village plays its pickup and place sounds.
+
+Measured on October 6, 2026 against production builds served by `vite preview`. Each run used a 412×915 phone at 2.625× in a fresh context with the cache off, throttled to 9 Mbps down with 85 ms of latency. Times run until the loading screen lifts.
+
+| Starter village boot                | Before                    | Battle-only art deferred |
+| ----------------------------------- | ------------------------- | ------------------------ |
+| Downloaded over three idle minutes  | 6.29 MB                   | 5.92 MB                  |
+| Downloaded when the village appears | 5.41–5.72 MB (three runs) | 5.20–5.31 MB (two runs)  |
+| Time until the village appears      | 6.2–6.4 s                 | 6.0–6.1 s                |
+
+A case in `tests/browser/deferred-families.spec.ts` (with `?lazyart`) checks that boot loads none of the three. It then scouts stage 57, which has a Skeleton Trap and a Clan Castle garrison, and checks that all of them arrive before the battle settles.

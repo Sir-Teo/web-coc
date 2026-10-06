@@ -240,3 +240,53 @@ test('character graphs load with the first battle that has a Clan Castle garriso
   expect(await page.evaluate(loaded('garrison-dragonDeath'))).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('ruins, skeletons and the garrison’s effects and sounds load with the battle that needs them', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/?lazyart');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  const resident = () =>
+    page.evaluate(() => {
+      const { scene } = window.__game;
+      return {
+        ruins: scene.textures.exists('ruins-stone') && scene.textures.exists('ruins-wood'),
+        skeletons:
+          scene.textures.exists('skeleton-ground') && scene.textures.exists('skeleton-air'),
+        garrisonEffects: scene.textures
+          .getTextureKeys()
+          .some((k) => k.startsWith('garrison-effects')),
+        garrisonSounds: scene.cache.binary.getKeys().some((k) => k.startsWith('garrison')),
+      };
+    });
+  // The starter village has no Skeleton Trap and no battle: none of it is in the boot download.
+  expect(await resident()).toEqual({
+    ruins: false,
+    skeletons: false,
+    garrisonEffects: false,
+    garrisonSounds: false,
+  });
+  // Stage 57 has a Skeleton Trap and a Clan Castle garrison; scouting it brings everything in.
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.townhall!.level = 13;
+    m.state.army = { ...emptyArmy(), swordsman: 20 };
+    m.state.nativeCampaign = freshNativeCampaign();
+    m.state.nativeCampaign.stars.fill(1);
+    m.changed();
+    m.startCampaign(56);
+  });
+  expect(await page.evaluate(() => window.__game.model.battle!.garrisons?.length)).toBe(1);
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  expect(await resident()).toEqual({
+    ruins: true,
+    skeletons: true,
+    garrisonEffects: true,
+    garrisonSounds: true,
+  });
+  expect(errors).toEqual([]);
+});

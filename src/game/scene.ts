@@ -333,13 +333,36 @@ const ART_FAMILIES: ArtFamily[] = [
   XBOW_FAMILY,
   LEGACY_KING_FAMILY,
   {
-    // Campaign Clan Castle defenders; a home Castle holds no reinforcements. Their graphs
-    // (about 2.7 MB of JSON) are fetched first.
+    // Campaign Clan Castle defenders, with their effects and sounds; a home Castle holds no
+    // reinforcements. Their graphs (about 2.7 MB of JSON) are fetched first.
     draws: () => false,
     needed: (model) => !!model.battle?.garrisons?.length,
     prepare: loadCharacterArt,
     prepared: characterArtLoaded,
-    preload: preloadGarrisonCharacters,
+    preload: (scene) => {
+      preloadGarrisonCharacters(scene);
+      preloadGarrisonTroops(scene);
+    },
+  },
+  // The Skeleton Trap's skeletons (two sheets, about 0.1 MB): with a village that has the trap.
+  {
+    draws: (b) => b.kind === 'skeletontrap',
+    preload: (scene) => {
+      for (const mode of ['ground', 'air'] as const)
+        scene.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
+          frameWidth: 128,
+          frameHeight: 128,
+        });
+    },
+  },
+  // Ruins of fallen buildings (about 0.07 MB): only a battle has any.
+  {
+    draws: () => false,
+    needed: (model) => !!model.battle,
+    preload: (scene) => {
+      for (const material of ['stone', 'wood'])
+        scene.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
+    },
   },
   SANTA_FAMILY,
   PUMPKIN_FAMILY,
@@ -674,18 +697,12 @@ export class VillageScene extends Phaser.Scene {
         family.preload(this);
       else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
-    preloadGarrisonTroops(this);
     // Level 1 too: a tower bought from the Shop draws natively from its first frame.
     preloadVillageArcherTowers(this, [
       1,
       ...home.filter((b) => b.kind === 'archertower').map((b) => b.level),
     ]);
     preloadArcherTowerProjectiles(this);
-    for (const mode of ['ground', 'air'] as const)
-      this.load.spritesheet(`skeleton-${mode}`, skeletonAsset(mode), {
-        frameWidth: 128,
-        frameHeight: 128,
-      });
     // Per-level fallback sprites: Level 1 and the home village's own levels load now; any other
     // level loads when something first draws it (see deferredTexture), as Level 1 meanwhile.
     const owned = (kind: string) =>
@@ -700,8 +717,6 @@ export class VillageScene extends Phaser.Scene {
       if (this.model.heroProgress(kind))
         this.load.image(`hero-fallback-${kind}`, heroPortraitImage(kind));
     this.load.image('terrain', '/assets/environment/terrain-field-v4.webp');
-    for (const material of ['stone', 'wood'])
-      this.load.image(`ruins-${material}`, `/assets/environment/ruins-${material}.webp`);
     // Base sprites only for the kinds the village owns; the Shop's other kinds, and those a
     // battle brings, load when something first draws them (see deferredTexture).
     const ownedKinds = new Set(home.filter((b) => !b.npc).map((b) => b.kind as string));
