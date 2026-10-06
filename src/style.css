@@ -6738,3 +6738,90 @@ h3 {
   color: #6a3fc4;
   font-weight: 700;
 }
+
+/* The builder menu: each row a thumb-sized target with its picture, level step and price. */
+.builder-menu h3 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  color: #6b5c42;
+}
+.builder-menu h3:first-child {
+  margin-top: 0;
+}
+.builder-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.builder-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 12px;
+  border: 1px solid #d9c9a3;
+  border-radius: 12px;
+  background: #fffaf0;
+  color: #3b3524;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.builder-option img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex: none;
+}
+.builder-option > svg {
+  flex: none;
+  color: #cf7a2c;
+}
+.builder-option span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.builder-option b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.builder-option b i {
+  font-style: normal;
+  color: #8a7754;
+}
+.builder-option small {
+  color: #8a7754;
+}
+.builder-option em {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.builder-option em.short {
+  color: #c0392b;
+}
+.builder-option.working em {
+  color: #3d7a2a;
+}
+.builder-idle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b5c42;
+}
+.builder-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+.builder-foot .game-btn {
+  min-height: 44px;
+}

@@ -177,7 +177,7 @@ for (const [label, width, height] of [
     await boot(page);
     test.skip(!(await coarsePointer(page)), 'This engine does not emulate a coarse pointer.');
     for (const [selector, action] of [
-      ['.status-chips [data-action="shop"]', 'shop'],
+      ['.status-chips [data-action="builders"]', 'builders'],
       ['.status-chips [data-action="help"]', 'help'],
       ['.trophy-pill', 'achievements'],
     ]) {

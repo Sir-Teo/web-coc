@@ -54,6 +54,7 @@ import { OBSTACLES } from '../game/obstacles';
 import { DECORATIONS, DECORATION_KINDS, DECORATION_TEXTS } from '../game/decorations';
 import { traderWeekEnds, type TraderOffer } from '../game/trader';
 import { GEM_TEXTS, TREASURE_PACKS, type GemResource, type TreasurePack } from '../game/gem-costs';
+import { BUILDER_MENU_TEXTS, builderMenu, type BuilderOption } from '../game/builder-menu';
 import Phaser from 'phaser';
 import { TROOP_ORDER, SPELL_ORDER, spellUnlockLabel } from './army-roster';
 import {
@@ -239,6 +240,7 @@ type Panel =
   | 'trader'
   | 'shortfall'
   | 'treasure'
+  | 'builders'
   | 'treasury'
   | 'starter'
   | 'blacksmith'
@@ -1638,6 +1640,34 @@ export class HUD {
       case 'army':
         this.showDrawer('army');
         break;
+      case 'builders':
+        this.show('builders');
+        break;
+      case 'builder-option': {
+        // Each tap shows the next building of the group, as the original cycles them.
+        const [kind, level] = arg.split(',');
+        const menu = builderMenu(m);
+        const option = [...menu.suggested, ...menu.other].find(
+          (o) => o.kind === kind && o.level === Number(level),
+        );
+        if (!option || m.battle) break;
+        if (!option.ids.length) {
+          // A new building: the Shop, on its own tab.
+          this.panel = null;
+          this.tab = BUILDINGS[option.kind].category;
+          this.showDrawer('shop');
+          break;
+        }
+        const turn = (this.builderTurns.get(arg) ?? -1) + 1;
+        this.builderTurns.set(arg, turn);
+        this.action(`select-building:${option.ids[turn % option.ids.length]}`);
+        break;
+      }
+      case 'builder-hut':
+        this.panel = null;
+        this.tab = 'All';
+        this.showDrawer('shop');
+        break;
       case 'select-building': {
         const id = Number(arg);
         if (!m.state.buildings.some((v) => v.id === id) || m.battle) break;
@@ -2579,7 +2609,7 @@ export class HUD {
     const free = m.builders - m.busy;
     return `
  <header class="player-hud">${this.levelShield()}<div class="player-info"><div class="eyebrow">CHIEF'S VILLAGE</div><div class="player-name">Oakheart</div><button class="trophy-pill" data-action="achievements">${icon('Trophy', 17)} <b>${n(s.trophies)}</b> <span>${m.league.name}</span></button></div></header>
- <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="${m.busy ? 'achievements' : 'shop'}">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
+ <div class="village-status"><div class="brand">CROWN <span>&</span> CLAN</div><div class="status-chips"><button data-action="builders" aria-label="Builders: ${free} of ${m.builders} free">${icon('Hammer', 20)} <b>${free}/${m.builders}</b> <span>Builders</span></button><button data-action="help">${icon('ShieldCheck', 20)} <b>Village safe</b></button></div></div>
  <div class="resources">${(
    [
      'gold',
@@ -3331,6 +3361,35 @@ export class HUD {
           : 'Activate ability';
     return `<button class="troop-card hero-card ${m.activeHero ? 'selected' : ''}" data-hero-state="${ready}:${defeated}:${h!.abilityUsed}:${m.activeHero}" data-action="hero-select" aria-label="Barbarian King, ${label}" ${disabled ? 'disabled' : ''}><kbd class="troop-key">H</kbd><img src="${hudAsset('king')}" alt=""><span class="troop-level">★ ${h!.level}</span><span class="hero-health"><i style="width:${u ? pct((u.hp / u.maxHp) * 100) : '100%'}"></i></span><span class="troop-name">${label}</span></button>`;
   }
+  /** The client's builder menu: work under way, then suggested and other upgrades. */
+  private builderMenu() {
+    const m = this.model,
+      menu = builderMenu(m);
+    const option = (o: BuilderOption) => {
+      const d = BUILDINGS[o.kind],
+        price = `${o.resource === 'gems' ? gem : resource(o.resource as 'gold')} ${n(o.cost)}`;
+      return `<li>${button(
+        `builder-option:${o.kind},${o.level}`,
+        `<img src="${hudAsset(o.kind, Math.max(1, o.level))}" alt=""><span><b>${html(d.name)}${o.ids.length > 1 ? ` <i>×${o.ids.length}</i>` : ''}</b><small>${o.level ? `Level ${o.level} → ${o.level + 1}` : 'New'}</small></span><em class="${o.affordable ? '' : 'short'}">${price}</em>`,
+        'builder-option',
+        `aria-label="${html(d.name)}${o.ids.length > 1 ? `, ${o.ids.length} of them` : ''}: ${o.level ? `level ${o.level} to ${o.level + 1}` : 'new'}, ${n(o.cost)} ${o.resource}${o.affordable ? '' : ', not enough'}"`,
+      )}</li>`;
+    };
+    // The work under way counts down like the boost timers ([data-boost-end]).
+    const jobs = menu.jobs.length
+      ? `<ul class="builder-list">${menu.jobs
+          .map(
+            (j) =>
+              `<li>${button(
+                j.id === undefined ? 'heroes' : j.id < 0 ? 'close' : `select-building:${j.id}`,
+                `${icon('Hammer', 18)}<span><b>${html(j.name)}</b><small>${html(j.detail)}</small></span><em data-boost-end="${j.end}">${time(Math.max(0, j.end - m.clock) / 1000)}</em>`,
+                'builder-option working',
+              )}</li>`,
+          )
+          .join('')}</ul>`
+      : `<p class="builder-idle">${icon('Hammer', 16)} All builders are free.</p>`;
+    return `<div class="modal-body builder-menu"><h3>${html(BUILDER_MENU_TEXTS.inProgress)}</h3>${jobs}${menu.suggested.length ? `<h3>${html(BUILDER_MENU_TEXTS.suggested)}</h3><ul class="builder-list">${menu.suggested.map(option).join('')}</ul>` : ''}${menu.other.length ? `<h3>${html(BUILDER_MENU_TEXTS.other)}</h3><ul class="builder-list">${menu.other.map(option).join('')}</ul>` : ''}<footer class="builder-foot">${button('builder-hut', `${icon('Plus', 18)} More builders`, 'game-btn green', 'aria-label="Builder huts in the Shop"')}</footer></div>`;
+  }
   private treasureTitle() {
     const p = this.treasureConfirm;
     return p ? GEM_TEXTS.packHeader.replace('<resource>', GEM_TEXTS[p.resource]) : '';
@@ -3761,6 +3820,8 @@ export class HUD {
     ).join('')}</div>`;
   }
   /** Army catalog search and filters; kept while the drawer is closed and reopened. */
+  /** Builder menu groups by `kind,level`: how many taps each has had, to cycle its buildings. */
+  private builderTurns = new Map<string, number>();
   /** The Treasure pack waiting for its confirmation. */
   private treasureConfirm: { resource: GemResource; share: TreasurePack['share'] } | null = null;
   private armyFilter = { query: '', show: 'all' as ArmyShow, family: 'all' as ArmyFamily };
@@ -3956,6 +4017,7 @@ export class HUD {
       trader: 'Weekly Deals',
       shortfall: this.shortfallTitle(),
       treasure: this.treasureTitle(),
+      builders: 'Builders',
       treasury: 'Treasury',
       starter: STARTER_TITLE,
       journey: 'Hero’s Journey',
@@ -3988,6 +4050,7 @@ export class HUD {
       treasury: 'Star Bonus loot, kept safe in your Clan Castle.',
       shortfall: 'Gems complete the price, then it goes ahead.',
       treasure: 'Straight into your storages.',
+      builders: BUILDER_MENU_TEXTS.hint,
       starter: STARTER_END_TEXT,
       crafting: 'One platform, three defenses. Switch any time.',
       helpers: 'Assign Helpers to jobs around the village.',
@@ -4014,55 +4077,57 @@ export class HUD {
           ? this.shortfallBody()
           : this.panel === 'treasure'
             ? this.treasureBody()
-            : this.panel === 'trader'
-              ? this.trader()
-              : this.panel === 'treasury'
-                ? this.treasury()
-                : this.panel === 'starter'
-                  ? this.starterPass()
-                  : this.panel === 'blacksmith'
-                    ? this.blacksmith()
-                    : this.panel === 'heroes'
-                      ? this.heroes()
-                      : this.panel === 'journey'
-                        ? this.journey()
-                        : this.panel === 'crafting'
-                          ? this.crafting()
-                          : this.panel === 'helpers'
-                            ? this.helpers()
-                            : this.panel === 'pets'
-                              ? this.pets()
-                              : this.panel === 'progression'
-                                ? this.progression()
-                                : this.panel === 'army-presets'
-                                  ? this.armyPresets()
-                                  : this.panel === 'battle-log'
-                                    ? this.battleLog()
-                                    : this.panel === 'spell-info'
-                                      ? this.spellInfo()
-                                      : this.panel === 'troop-info'
-                                        ? this.troopInfo()
-                                        : this.panel === 'campaign'
-                                          ? this.campaign()
-                                          : this.panel === 'campaign-scout'
-                                            ? this.campaignScout()
-                                            : this.panel === 'settings'
-                                              ? this.settings()
-                                              : this.panel === 'import-confirm'
-                                                ? this.importConfirm()
-                                                : this.panel === 'buildings'
-                                                  ? this.buildingList()
-                                                  : this.panel === 'achievements'
-                                                    ? this.achievements()
-                                                    : this.panel === 'research'
-                                                      ? this.research()
-                                                      : this.panel === 'info'
-                                                        ? this.info()
-                                                        : this.panel === 'layouts'
-                                                          ? this.layoutPanel()
-                                                          : this.panel === 'surrender'
-                                                            ? this.surrender()
-                                                            : this.help();
+            : this.panel === 'builders'
+              ? this.builderMenu()
+              : this.panel === 'trader'
+                ? this.trader()
+                : this.panel === 'treasury'
+                  ? this.treasury()
+                  : this.panel === 'starter'
+                    ? this.starterPass()
+                    : this.panel === 'blacksmith'
+                      ? this.blacksmith()
+                      : this.panel === 'heroes'
+                        ? this.heroes()
+                        : this.panel === 'journey'
+                          ? this.journey()
+                          : this.panel === 'crafting'
+                            ? this.crafting()
+                            : this.panel === 'helpers'
+                              ? this.helpers()
+                              : this.panel === 'pets'
+                                ? this.pets()
+                                : this.panel === 'progression'
+                                  ? this.progression()
+                                  : this.panel === 'army-presets'
+                                    ? this.armyPresets()
+                                    : this.panel === 'battle-log'
+                                      ? this.battleLog()
+                                      : this.panel === 'spell-info'
+                                        ? this.spellInfo()
+                                        : this.panel === 'troop-info'
+                                          ? this.troopInfo()
+                                          : this.panel === 'campaign'
+                                            ? this.campaign()
+                                            : this.panel === 'campaign-scout'
+                                              ? this.campaignScout()
+                                              : this.panel === 'settings'
+                                                ? this.settings()
+                                                : this.panel === 'import-confirm'
+                                                  ? this.importConfirm()
+                                                  : this.panel === 'buildings'
+                                                    ? this.buildingList()
+                                                    : this.panel === 'achievements'
+                                                      ? this.achievements()
+                                                      : this.panel === 'research'
+                                                        ? this.research()
+                                                        : this.panel === 'info'
+                                                          ? this.info()
+                                                          : this.panel === 'layouts'
+                                                            ? this.layoutPanel()
+                                                            : this.panel === 'surrender'
+                                                              ? this.surrender()
+                                                              : this.help();
     return `<div class="modal-backdrop"><section class="modal ${this.panel === 'campaign' ? 'campaign-modal' : ''} ${this.panel === 'surrender' ? 'small-modal' : this.panel === 'blacksmith' ? 'blacksmith-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header class="modal-header"><div><small>CROWN & CLAN</small><h1 id="modal-title">${titles[this.panel!]}</h1><p>${subtitles[this.panel!]}</p></div><button class="square-btn small close-btn" data-action="close" aria-label="Close dialog">${icon('X', 25)}</button></header>${content}</section></div>`;
   }
   private composition(
