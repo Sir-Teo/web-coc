@@ -9,6 +9,8 @@ import {
   BattleSoundLog,
   DESTROYED_EFFECT,
   effectCue,
+  spellSoundEffect,
+  spellSoundFiles,
   troopSample,
   troopSoundCues,
   troopSoundEffect,
@@ -124,5 +126,72 @@ describe('troop sounds', () => {
     expect(keys).toContain('destroyed:10.5:12.5');
     m.battle!.elapsed = 1;
     expect(troopSoundCues(m.battle, log).filter((c) => !c.key.endsWith(':deploy'))).toEqual([]);
+  });
+});
+
+describe('spell sounds', () => {
+  it('reads every spell’s cast and pulse effects, per level where they change', () => {
+    expect(Object.keys(source.spells)).toHaveLength(18);
+    expect(source.spells.Lightning).toEqual({
+      key: 'lightning',
+      preDeploy: 'Lightning predeploy',
+      deploy: 'Lightning area small',
+      charging: 'Lightning Spell',
+      hit: 'Lightning Spell Hit',
+    });
+    expect(spellSoundEffect('Freeze', 3, 'deploy')).toBe('Freeze deploy lvl3');
+    expect(spellSoundFiles('Lightning')).toContain('sfx/magic_bottle_fall_05.ogg');
+  });
+
+  it('plays a native cast on the client timeline: fall, landing, then each resolved pulse', () => {
+    const m = new GameModel();
+    m.state.army = { ...emptyArmy(), swordsman: 5 };
+    m.state.spells = { ...m.state.spells, lightning: 2 };
+    m.startBattle(0);
+    expect(m.battle!.nativeContentExpansion).toBe(true);
+    const log = new BattleSoundLog();
+    const events = () =>
+      troopSoundCues(m.battle, log)
+        .filter((c) => c.key.startsWith('spell:'))
+        .map((c) => c.key.split(':').slice(2).join(':'));
+    events();
+    m.activeSpell = 'lightning';
+    expect(m.castSpell(24, 24)).toBe(true);
+    const cast = m.battle!.nativeSpells!.at(-1)!;
+    expect(events()).toEqual(['preDeploy']);
+    // The battle drops the cast once its last bolt has struck; its sounds play on.
+    for (let i = 0; i < 40; i++) {
+      m.step(0.05);
+      events();
+    }
+    expect(m.battle!.nativeSpells ?? []).not.toContain(cast);
+    expect(events()).toEqual(['preDeploy', 'deploy', 'charging', 'hit:0']);
+    // Long after, nothing is left to hear.
+    for (let i = 0; i < 12; i++) {
+      m.battle!.elapsed += 0.9;
+      events();
+    }
+    expect(events()).toEqual([]);
+  });
+
+  it('logs casts of battles without native cast records, and ignores them otherwise', () => {
+    const m = battle(),
+      log = new BattleSoundLog();
+    troopSoundCues(m.battle, log);
+    m.battle!.nativeContentExpansion = undefined;
+    log.spell(m.battle!, 'Rage', 1, 20, 20);
+    expect(troopSoundCues(m.battle, log).map((c) => c.key)).toEqual([
+      `spell:20:20:${m.battle!.elapsed}:preDeploy`,
+    ]);
+    m.battle!.elapsed += 0.9;
+    expect(troopSoundCues(m.battle, log).map((c) => c.key.split(':').at(-1))).toEqual([
+      'preDeploy',
+      'deploy',
+    ]);
+    m.battle!.nativeContentExpansion = true;
+    const native = new BattleSoundLog();
+    troopSoundCues(m.battle, native);
+    native.spell(m.battle!, 'Rage', 1, 20, 20);
+    expect(troopSoundCues(m.battle, native)).toEqual([]);
   });
 });

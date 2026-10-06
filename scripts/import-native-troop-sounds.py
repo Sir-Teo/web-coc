@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import the attacking troops' own sounds: deploying, attacking and dying.
+"""Import the attacking troops' and spells' own sounds: deploying, attacking, dying and casting.
 
 Each troop row of `logic/characters.csv` names its `DeployEffect`, `AttackEffect` and
 `DieEffect`; each effect's rows in `logic/effects.csv` that name a `Sound` give the Ogg file, its
@@ -9,8 +9,13 @@ plays one of them per event. A troop whose effect changes with level (the Wizard
 the Valkyrie's) keeps one effect per level. Destroyed buildings play the client's
 `Building Destroyed` effect; every Home Village destroy effect uses the same sound.
 
+Each spell row of `logic/spells.csv` names its `PreDeployEffect` (the bottle falling),
+`DeployEffect` and `DeployEffect2` (it landing), `ChargingEffect` and `HitEffect` (each pulse);
+those that vary by level keep one effect per level, as troops do.
+
 The troops are the trainable and spawned units of src/game/native-units.ts (`TROOP_SOURCE` and
-`SPAWN_SOURCE`). The Ogg files are copied unchanged to public/assets/audio/troops-native and
+`SPAWN_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
+src/game/troop-progression.ts (`NATIVE_SPELL_NAMES`). The Ogg files are copied unchanged to public/assets/audio/troops-native and
 every source must match its SHA-256 in reference/full-client/manifest.json. Sources are read
 from the local client archive when present (art/source/native-client-18.400.21/files),
 otherwise downloaded from the pinned bundle.
@@ -36,6 +41,10 @@ CACHE = ROOT / 'output/native-campaign-source'
 TARGET = ROOT / 'reference/troop-sounds/sounds.json'
 AUDIO = 'assets/audio/troops-native'
 EVENTS = {'deploy': 'DeployEffect', 'attack': 'AttackEffect', 'die': 'DieEffect'}
+SPELL_EVENTS = {
+    'preDeploy': 'PreDeployEffect', 'deploy': 'DeployEffect', 'deploy2': 'DeployEffect2',
+    'charging': 'ChargingEffect', 'hit': 'HitEffect',
+}
 DESTROYED = 'Building Destroyed'
 
 
@@ -93,10 +102,22 @@ def units():
     return found
 
 
+def spell_names():
+    """Client names of the spells this game casts."""
+    names = dict(json.loads((ROOT / 'reference/troops/catalog.json').read_text())['spells'])
+    text = (ROOT / 'src/game/troop-progression.ts').read_text()
+    body = re.search(r'const NATIVE_SPELL_NAMES = \{(.*?)\} as const;', text, re.S)
+    require(body, 'Missing NATIVE_SPELL_NAMES')
+    names.update(re.findall(r"^\s+(\w+): '([^']+)',", body.group(1), re.M))
+    require(len(names) > 15, 'Too few spells read')
+    return names
+
+
 def build():
     manifest = json.loads((ROOT / 'reference/full-client/manifest.json').read_text())
     pins = {f['path']: f['sha256'] for f in manifest['files']}
     characters = records(source('logic/characters.csv', pins))
+    spells_table = records(source('logic/spells.csv', pins))
     effects = records(source('logic/effects.csv', pins))
 
     def takes(name):
@@ -106,12 +127,11 @@ def build():
                      maxPitch=int(row.get('MaxPitch', 100)) / 100,
                      delay=int(row.get('SoundDelay', 0)) / 1000) for row in rows]
 
-    troops, used = {}, {}
-    for key, name in sorted(units().items()):
-        rows = characters.get(name)
-        require(rows, f'Absent character {name}')
+    used = {}
+
+    def entries(rows, events):
         entry = {}
-        for event, column in EVENTS.items():
+        for event, column in events.items():
             # A level row names its effect only when it changes; carry the last one forward.
             levels, current = [], None
             for row in rows:
@@ -122,8 +142,22 @@ def build():
             entry[event] = levels[0] if len(set(levels)) == 1 else levels
             for effect in filter(None, levels):
                 used[effect] = takes(effect)
+        return entry
+
+    troops = {}
+    for key, name in sorted(units().items()):
+        rows = characters.get(name)
+        require(rows, f'Absent character {name}')
+        entry = entries(rows, EVENTS)
         if entry:
             troops[key] = dict(name=name, **entry)
+    spells = {}
+    for key, name in sorted(spell_names().items()):
+        rows = spells_table.get(name)
+        require(rows, f'Absent spell {name}')
+        entry = entries(rows, SPELL_EVENTS)
+        if entry:
+            spells[name] = dict(key=key, **entry)
     used[DESTROYED] = takes(DESTROYED)
     require(used[DESTROYED], 'Building Destroyed names no sound')
 
@@ -133,9 +167,10 @@ def build():
         target = f'{AUDIO}/{path.split("/")[-1]}'
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
-    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/effects.csv', *sounds]}
+    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/spells.csv', 'logic/effects.csv',
+                                    *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
-                   troops=troops, destroyed=DESTROYED,
+                   troops=troops, spells=spells, destroyed=DESTROYED,
                    effects=dict(sorted(used.items())), sounds=sounds)
     files[TARGET] = (json.dumps(catalog, indent=2) + '\n').encode()
     return files, catalog
@@ -153,7 +188,8 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     total = sum(s['bytes'] for s in catalog['sounds'].values())
-    print(f'{len(catalog["troops"])} troops, {len(catalog["effects"])} effects, '
+    print(f'{len(catalog["troops"])} troops, {len(catalog["spells"])} spells, '
+          f'{len(catalog["effects"])} effects, '
           f'{len(catalog["sounds"])} sounds ({total / 1048576:.2f} MB)'
           + (' reproduce the client.' if args.check else f'; wrote {TARGET.relative_to(ROOT)}'))
 

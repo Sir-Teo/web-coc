@@ -42,10 +42,12 @@ import {
   BattleSoundLog,
   DESTROYED_EFFECT,
   effectCue,
+  spellSoundEffect,
   TroopSoundLoader,
   troopCue,
   troopSoundCues,
 } from './troop-sounds';
+import { SPELL_SOURCE } from './spell-progression';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
 import { characterArtLoaded, loadCharacterArt } from './character-art';
@@ -114,7 +116,7 @@ import { SWEEPER_ART } from './air-control-art';
 import { preloadSweepers, SweeperPresentation } from './air-sweeper-scene';
 import { loadSweeperArt, sweeperArtLoaded, sweeperBounds } from './air-sweeper-poses';
 import { SWEEPER, sweeperAngle } from './air-control-stats';
-import { CAMERA_KEYS, isDefense, type TroopKind } from './data';
+import { CAMERA_KEYS, isDefense, type SpellKind, type TroopKind } from './data';
 import { campTexture, campArt } from './camp-art';
 import { MAP_SIZE, BUILD_MIN, BUILD_MAX } from './grid';
 import { MORTAR_ART } from './mortar-art';
@@ -1921,7 +1923,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle) {
       if (this.battleArtPending()) return void this.model.notify(LOADING_LATE_ART);
       if (this.model.activeSpell) {
-        if (this.model.castSpell(x + 0.5, y + 0.5)) this.audio.play('deploy');
+        if (this.model.castSpell(x + 0.5, y + 0.5)) this.castFeedback();
         return;
       }
       if (this.model.deploy(x + 0.5, y + 0.5)) this.deployFeedback();
@@ -2120,7 +2122,7 @@ export class VillageScene extends Phaser.Scene {
         return;
       }
       if (this.model.activeSpell) {
-        if (this.model.castSpell(grid.x, grid.y)) this.audio.play('deploy');
+        if (this.model.castSpell(grid.x, grid.y)) this.castFeedback();
         return;
       }
       const hit = this.pickBuilding(world.x, world.y, grid);
@@ -3807,15 +3809,42 @@ export class VillageScene extends Phaser.Scene {
   );
   private troopSoundBattle: Battle | null = null;
   private troopSoundUnits = -1;
-  /** Fetches the sounds of the army and of every unit kind on the field, once each. */
+  private troopSoundCasts = -1;
+  /**
+   * Fetches the sounds of the army and its spells, of every unit kind on the field and of every
+   * spell cast, once each.
+   */
   private needTroopSounds(battle: Battle) {
-    if (battle === this.troopSoundBattle && battle.units.length === this.troopSoundUnits) return;
+    const casts = battle.nativeSpells?.length ?? 0;
+    if (
+      battle === this.troopSoundBattle &&
+      battle.units.length === this.troopSoundUnits &&
+      casts === this.troopSoundCasts
+    )
+      return;
     const kinds = new Set<string>(battle.units.map((u) => u.kind));
-    if (battle !== this.troopSoundBattle)
+    const spells = new Set<string>(battle.nativeSpells?.map((cast) => cast.name));
+    if (battle !== this.troopSoundBattle) {
       for (const [kind, count] of Object.entries(this.model.state.army)) if (count) kinds.add(kind);
+      for (const [kind, count] of Object.entries(battle.spells))
+        if (count) spells.add(SPELL_SOURCE[kind as SpellKind]);
+    }
     this.troopSoundBattle = battle;
     this.troopSoundUnits = battle.units.length;
-    this.troopSoundLoader.need(kinds);
+    this.troopSoundCasts = casts;
+    this.troopSoundLoader.need(kinds, spells);
+  }
+  /** Whether a spell's falling bottle is decoded, so it replaces the generated tones. */
+  private spellReady(kind: SpellKind) {
+    const name = SPELL_SOURCE[kind],
+      effect = spellSoundEffect(name, this.model.spellLevel(kind), 'preDeploy');
+    return this.cueReady(effect ? effectCue(effect, 'ready', 0) : undefined);
+  }
+  /** A cast's own sounds play through the battle cues once decoded; the tone stands in. */
+  private castFeedback() {
+    const kind = this.model.activeSpell;
+    if (kind && this.spellReady(kind)) this.audio.feedback('deploy');
+    else this.audio.play('deploy');
   }
   /** Whether a cue's sample is decoded, so it replaces the generated tone. */
   private cueReady(cue: SampleCue | undefined) {
@@ -3835,6 +3864,17 @@ export class VillageScene extends Phaser.Scene {
     this.fxSounded = false;
     const battle = this.model.battle;
     if (!battle || !this.audible()) return;
+    if (fx.type === 'spell' && fx.spell) {
+      this.battleSounds.spell(
+        battle,
+        SPELL_SOURCE[fx.spell],
+        this.model.spellLevel(fx.spell),
+        fx.x,
+        fx.y,
+      );
+      this.fxSounded = this.spellReady(fx.spell);
+      return;
+    }
     if (fx.type === 'destroy') {
       this.battleSounds.destroyed(battle, fx.x, fx.y);
       this.fxSounded = this.cueReady(effectCue(DESTROYED_EFFECT, 'ready', 0));
@@ -5194,7 +5234,7 @@ export class VillageScene extends Phaser.Scene {
         });
       }
       this.sparks(p.x, p.y - 20, color, 16);
-      this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
+      if (!this.fxSounded) this.audio.play(fx.spell === 'lightning' ? 'destroy' : 'collect');
       if (fx.spell === 'lightning' && !this.model.reducedMotion) this.shakeCamera(140, 0.0022);
       return;
     }

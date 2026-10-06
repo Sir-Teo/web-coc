@@ -18,6 +18,7 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
     const { emptyArmy } = await import('/src/game/army.ts');
     const m = window.__game.model;
     m.state.army = { ...emptyArmy(), swordsman: 10 };
+    m.state.spells = { ...m.state.spells, rage: 1 };
     m.changed();
     m.startBattle(0);
   });
@@ -27,9 +28,12 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
     .poll(
       () =>
         page.evaluate(async () => {
-          const { troopSoundFiles, troopSample } = await import('/src/game/troop-sounds.ts');
+          const { troopSoundFiles, spellSoundFiles, troopSample } =
+            await import('/src/game/troop-sounds.ts');
           const samples = window.__game.scene.audio.samples;
-          return troopSoundFiles('swordsman').every((p) => samples.has(troopSample(p)));
+          return [...troopSoundFiles('swordsman'), ...spellSoundFiles('Rage')].every((p) =>
+            samples.has(troopSample(p)),
+          );
         }),
       { timeout: 20_000 },
     )
@@ -62,5 +66,13 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
     u.hp = 0;
   });
   await expect.poll(() => playing(`troop:${ids[0]}:die`), { timeout: 5000 }).toBe(true);
+  // A Rage Spell's bottle falls with its own sound.
+  const cast = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.activeSpell = 'rage';
+    m.castSpell(24, 24);
+    return m.battle!.nativeSpells!.at(-1)!.id;
+  });
+  await expect.poll(() => playing(`spell:${cast}:preDeploy`), { timeout: 5000 }).toBe(true);
   expect(errors).toEqual([]);
 });
