@@ -3704,6 +3704,9 @@ export class VillageScene extends Phaser.Scene {
    * which interpolates units between ticks and skips elapsed-driven work that cannot change.
    */
   drawOverlay(time: number) {
+    // Events wait for the game loop's drain; a direct draw handles them first, so pickups,
+    // placements and combat events raised since the last frame show (and sound) in it.
+    this.drainEffects();
     this.present(time, false);
   }
   private present(_time: number, live: boolean) {
@@ -4842,6 +4845,9 @@ export class VillageScene extends Phaser.Scene {
     // Queued and drained once per frame: hundreds of combat events share one
     // building lookup instead of scanning per event inside the sim tick.
     if (this.pendingFx.length < 4000) this.pendingFx.push(fx);
+    // At home, events come one at a time from the player's own actions (a pickup, a placement,
+    // a collection): handle them as they happen, so their effects start at that moment.
+    if (!this.model.battle) this.drainEffects();
   }
   /** Buildings by id (battle buildings in battle), shared by every effect in one drain. */
   private fxBuildings: Map<number, Building> = new Map();

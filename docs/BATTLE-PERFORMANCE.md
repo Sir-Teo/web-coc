@@ -246,6 +246,30 @@ frame; caching merged-run indices and flattened lists by those keys fed the coll
 thousands of weak keys per frame and doubled the frame time until the caches were removed
 (or limited to `flattenDisjoint` views, which draw shared samples).
 
+## Combat events and direct draws
+
+Combat events (`FX`) are queued and drained once per frame, so the hundreds a battle raises share one building lookup. Two places did not get the drain:
+
+- A direct `drawOverlay()` call, which tests and tools use, drew without handling the queue. So a pickup, placement or hit raised just before it never showed or sounded in that draw.
+- Village events waited for the next frame and were stamped with that frame's clock.
+
+Two changes fix this:
+
+- A direct draw now drains the queue first.
+- At home, where events come one at a time from the player's own actions, `effect()` handles them as they arrive. Their effects and sounds start at that moment, as they did before the queue.
+
+Battle events stay batched.
+
+With this, these cases pass again, all of which failed identically on the commit before:
+
+- the six "home … effects respect reduced motion, mute, cancellation and battle transitions" cases (Mortar, Tesla, Bomb Tower, Wizard Tower, Cannon, Air Sweeper);
+- `archer-tower-audio:74`;
+- `combat-presentation` 130 and 156.
+
+`combat-presentation:97` still fails as before: it reads battle projectiles right after `model.step()`, with no frame or draw in between.
+
+The 1440 px placement cases of `bomb-tower-handling:71` and `wizard-tower-handling:71` fail about one run in eight, on the commit before as well. A placement's home effect lives one second, and on a slow headless frame the poll for its sound can outwait it.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
