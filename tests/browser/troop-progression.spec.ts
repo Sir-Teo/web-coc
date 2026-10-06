@@ -87,7 +87,8 @@ for (const viewport of [
           const m = window.__game.model;
           return { level: m.troopLevel('giant'), elixir: m.state.elixir, gems: m.state.gems };
         }),
-      ).toEqual({ level: 2, elixir: before.elixir, gems: before.gems - 31 });
+        // Two hours at the client's speed-up price: 20 + 3,595 × 240 / 82,800 ≈ 30.
+      ).toEqual({ level: 2, elixir: before.elixir, gems: before.gems - 30 });
       await page.locator('.modal').evaluate(async (el) => {
         await Promise.all(el.getAnimations().map((a) => a.finished));
       });
@@ -102,8 +103,12 @@ for (const viewport of [
     }) => {
       await page.evaluate(() => {
         const m = window.__game.model;
-        m.state.troopLevels = Object.fromEntries(Object.keys(m.state.army).map((k) =>
-          [k, ['healer', 'dragon', 'pekka'].includes(k) ? 3 : 4]));
+        m.state.troopLevels = Object.fromEntries(
+          Object.keys(m.state.army).map((k) => [
+            k,
+            ['healer', 'dragon', 'pekka'].includes(k) ? 3 : 4,
+          ]),
+        );
         m.changed();
       });
       await page.locator('.train-add').click();

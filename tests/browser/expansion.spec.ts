@@ -1,5 +1,18 @@
 import { useDevelopedVillage } from './developed-village';
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/** Centres the battle camera on a tile, so the deploy edge the test uses is on screen. */
+async function showTile(page: Page, x: number, y: number) {
+  await page.evaluate(
+    async ([x, y]) => {
+      const scene = window.__game.scene;
+      scene.cameras.main.centerOn(896 + (x - y) * 32, 112 + (x + y) * 16);
+      scene.clampCamera();
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    },
+    [x, y],
+  );
+}
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
@@ -66,7 +79,10 @@ test('edit mode drags a building, undoes it and stores a layout', async ({ page 
 
 test('the building info sheet compares this level with the next', async ({ page }) => {
   await useDevelopedVillage(page);
-  await page.evaluate(() => { window.__game.model.townhall.level = 3; window.__game.model.changed(); });
+  await page.evaluate(() => {
+    window.__game.model.townhall.level = 3;
+    window.__game.model.changed();
+  });
   const point = await page.evaluate(() => {
     const { model, scene } = window.__game;
     const b = model.state.buildings.find((v) => v.kind === 'airdefense');
@@ -80,8 +96,12 @@ test('the building info sheet compares this level with the next', async ({ page 
   const rows = page.locator('.info-table tbody tr');
   await expect(rows.first()).toContainText('Hitpoints');
   // The upgrade improves health and both damage measures; range stays fixed.
-  await expect(page.locator('.info-table tr').filter({ has: page.locator('td.better') }).locator('td:first-child'))
-    .toHaveText(['Hitpoints', 'Damage per second', 'Damage per hit']);
+  await expect(
+    page
+      .locator('.info-table tr')
+      .filter({ has: page.locator('td.better') })
+      .locator('td:first-child'),
+  ).toHaveText(['Hitpoints', 'Damage per second', 'Damage per hit']);
   await expect(page.locator('.info-body')).toContainText('Town Hall 4');
   await expect(page.locator('.info-cost')).toHaveCount(0);
   await page.evaluate(() => {
@@ -95,9 +115,17 @@ test('the building info sheet compares this level with the next', async ({ page 
 });
 
 test('a raid scouts first, then deploys by drag and casts a spell', async ({ page }) => {
+  // The Challenge village below brings a hundred buildings' art.
+  test.slow();
   await useDevelopedVillage(page);
   await page.locator('.attack-btn').click();
-  await page.locator('[data-action="attack:0"]').click();
+  // A Challenge village, open from the start and big enough to outlast the test; the first
+  // goblin villages fall to this army within seconds.
+  const stage = await page.evaluate(async () => {
+    const { NATIVE_CAMPAIGN } = await import('/src/game/native-campaign.ts');
+    return NATIVE_CAMPAIGN.findIndex((v) => v.family === 'challenge');
+  });
+  await page.locator(`[data-action="attack:${stage}"]`).first().click();
   await expect(page.locator('.prep-banner')).toBeVisible();
   await expect(page.locator('.battle-clock')).toHaveClass(/prep/);
   await page.waitForTimeout(300);
@@ -105,11 +133,13 @@ test('a raid scouts first, then deploys by drag and casts a spell', async ({ pag
 
   // Hold, then drag: troops are painted along the path instead of panning.
   await page.locator('[data-action="troop:swordsman"]').click();
+  await showTile(page, 3, 12);
   const a = await page.evaluate(() => window.__game.scene.screenFor(3, 9));
   const b = await page.evaluate(() => window.__game.scene.screenFor(3, 16));
   await page.mouse.move(a.x, a.y);
   await page.mouse.down();
-  await page.waitForTimeout(260);
+  // Past the hold delay (260 ms), measured by the scene's own frames, before the drag starts.
+  await page.waitForFunction(() => window.__game.model.battle.units.length > 0);
   await page.mouse.move(b.x, b.y, { steps: 24 });
   await page.mouse.up();
   const deployed = await page.evaluate(() => window.__game.model.battle.units.length);
@@ -130,7 +160,12 @@ test('a raid scouts first, then deploys by drag and casts a spell', async ({ pag
   await page.locator('[data-action="spell:rage"]').click();
   const spot = await page.evaluate(() => window.__game.scene.screenFor(4, 13));
   await page.mouse.click(spot.x, spot.y);
-  expect(await page.evaluate(() => window.__game.model.battle.auras.length)).toBe(1);
+  // Current battles cast from the client's spell rows: a native cast, not a legacy aura.
+  expect(
+    await page.evaluate(() =>
+      window.__game.model.battle.nativeSpells?.map((s) => [Math.round(s.x), Math.round(s.y)]),
+    ),
+  ).toEqual([[4, 13]]);
   await page.evaluate(() => window.advanceTime(3000));
   await page.waitForTimeout(400);
   await page.screenshot({ path: 'output/playtest/battle-spells-desktop.png' });
@@ -149,11 +184,12 @@ test('a double tap commits a squad of five', async ({ page }) => {
   await page.locator('.attack-btn').click();
   await page.locator('[data-action="attack:0"]').click();
   await page.locator('[data-action="troop:swordsman"]').click();
+  await showTile(page, 3, 12);
   const p = await page.evaluate(() => window.__game.scene.screenFor(3, 12));
-  await page.mouse.click(p.x, p.y);
-  expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(1);
-  await page.mouse.click(p.x, p.y);
-  expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(5);
+  // Two taps within the 380 ms window: one troop, then four more around it. Sent as one
+  // action, so tracing between actions cannot stretch the gap.
+  await page.mouse.click(p.x, p.y, { clickCount: 2 });
+  await expect.poll(() => page.evaluate(() => window.__game.model.battle.units.length)).toBe(5);
 });
 
 test('the town hall gate holds buildings back until it is upgraded', async ({ page }) => {

@@ -61,7 +61,8 @@ for (const viewport of [
       const { model: m } = window.__game;
       return { level: m.troopLevel('swordsman'), gems: m.state.gems, elixir: m.state.elixir };
     });
-    expect(after).toEqual({ level: 2, gems: before.gems - 11, elixir: before.elixir });
+    // Half an hour at the client's speed-up price: 1 + 1,740 × 19 / 3,540 ≈ 10.
+    expect(after).toEqual({ level: 2, gems: before.gems - 10, elixir: before.elixir });
     await expect(page.locator('#toast')).not.toHaveClass(/show/);
     await page.locator('.modal').evaluate(async (el) => {
       await Promise.all(el.getAnimations().map((animation) => animation.finished));
