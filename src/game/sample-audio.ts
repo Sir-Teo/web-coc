@@ -57,6 +57,10 @@ export class SampleAudio {
     this.decode();
     return true;
   }
+  /** Whether a sample is decoded and can play. */
+  has(name: string) {
+    return this.buffers.has(name);
+  }
   decode() {
     const ctx = this.context();
     if (!ctx) return;

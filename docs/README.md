@@ -45,6 +45,7 @@ notes in those references are not current release guarantees.
 - [Magic items](MAGIC-ITEMS.md)
 - [Trader](TRADER.md)
 - [Treasury](TREASURY.md)
+- [Troop sounds](TROOP-SOUNDS.md)
 - [Chief experience](CHIEF-EXPERIENCE.md)
 - [Achievements](ACHIEVEMENTS.md)
 - [Clash of Clans experience coverage](EXPERIENCE-PARITY.md)

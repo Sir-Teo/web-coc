@@ -38,6 +38,14 @@ import {
   GarrisonPresentation,
 } from './garrison-scene';
 import { garrisonSoundCues } from './garrison-sounds';
+import {
+  BattleSoundLog,
+  DESTROYED_EFFECT,
+  effectCue,
+  TroopSoundLoader,
+  troopCue,
+  troopSoundCues,
+} from './troop-sounds';
 import { garrisonStats } from './garrison-kinds';
 import { characterBarHeight } from './character-poses';
 import { characterArtLoaded, loadCharacterArt } from './character-art';
@@ -137,7 +145,7 @@ import {
   walkAsset,
   type BuildingKind,
 } from './data';
-import { GameModel, makeBuilding, type Building, type FX } from './model';
+import { GameModel, makeBuilding, type Battle, type Building, type FX } from './model';
 import { registerCachedSample, type SampleCue } from './sample-audio';
 import { ShapeAtlas, ShapePool, applyShape, type BakedShape } from './shape-atlas';
 import { RenderInterpolation } from './render-interpolation';
@@ -1916,7 +1924,7 @@ export class VillageScene extends Phaser.Scene {
         if (this.model.castSpell(x + 0.5, y + 0.5)) this.audio.play('deploy');
         return;
       }
-      if (this.model.deploy(x + 0.5, y + 0.5)) this.audio.play('deploy');
+      if (this.model.deploy(x + 0.5, y + 0.5)) this.deployFeedback();
       return;
     }
     const { building, obstacle, decoration } = this.occupant(x, y);
@@ -2064,7 +2072,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.deploy(grid.x, grid.y)) {
       this.lastDeploy = { x: grid.x, y: grid.y };
       this.model.selected = null;
-      this.audio.play('deploy');
+      this.deployFeedback();
     }
   }
   private dragDeploy(p: Phaser.Input.Pointer) {
@@ -2073,7 +2081,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.deployBlocked(grid.x, grid.y)) return;
     if (this.model.deploy(grid.x, grid.y)) {
       this.lastDeploy = { x: grid.x, y: grid.y };
-      this.audio.play('deploy');
+      this.deployFeedback();
     }
   }
   private dragBuilding(p: Phaser.Input.Pointer) {
@@ -2136,7 +2144,7 @@ export class VillageScene extends Phaser.Scene {
       if (placed) {
         this.model.selected = null;
         this.lastTap = { x: grid.x, y: grid.y, t: now };
-        this.audio.play('deploy');
+        this.deployFeedback();
       }
       return;
     }
@@ -3792,6 +3800,57 @@ export class VillageScene extends Phaser.Scene {
     return presentationTime(battle);
   }
   private lastCues: SampleCue[] = [];
+  /** Troop attacks and destroyed buildings, recorded as their events arrive (see troop-sounds). */
+  private battleSounds = new BattleSoundLog();
+  private troopSoundLoader = new TroopSoundLoader((name, data) =>
+    this.audio.samples.register(name, data),
+  );
+  private troopSoundBattle: Battle | null = null;
+  private troopSoundUnits = -1;
+  /** Fetches the sounds of the army and of every unit kind on the field, once each. */
+  private needTroopSounds(battle: Battle) {
+    if (battle === this.troopSoundBattle && battle.units.length === this.troopSoundUnits) return;
+    const kinds = new Set<string>(battle.units.map((u) => u.kind));
+    if (battle !== this.troopSoundBattle)
+      for (const [kind, count] of Object.entries(this.model.state.army)) if (count) kinds.add(kind);
+    this.troopSoundBattle = battle;
+    this.troopSoundUnits = battle.units.length;
+    this.troopSoundLoader.need(kinds);
+  }
+  /** Whether a cue's sample is decoded, so it replaces the generated tone. */
+  private cueReady(cue: SampleCue | undefined) {
+    return !!cue && this.audible() && this.audio.samples.has(cue.sample);
+  }
+  /** A troop's deploy sound plays through the battle cues once decoded; the tone stands in. */
+  private deployFeedback() {
+    const battle = this.model.battle,
+      u = battle?.units.at(-1);
+    if (battle && u && this.cueReady(troopCue(battle, u, 'deploy', `troop:${u.id}:deploy`, 0)))
+      this.audio.feedback('deploy');
+    else this.audio.play('deploy');
+  }
+  /** Set while an event's own troop or ruin sound covers it, so no generated tone doubles it. */
+  private fxSounded = false;
+  private recordBattleSound(fx: FX) {
+    this.fxSounded = false;
+    const battle = this.model.battle;
+    if (!battle || !this.audible()) return;
+    if (fx.type === 'destroy') {
+      this.battleSounds.destroyed(battle, fx.x, fx.y);
+      this.fxSounded = this.cueReady(effectCue(DESTROYED_EFFECT, 'ready', 0));
+      return;
+    }
+    if (
+      (fx.type === 'hit' || fx.type === 'projectile' || fx.type === 'breath') &&
+      fx.sourceId !== undefined &&
+      (fx.targetBuilding || fx.targetDefender)
+    ) {
+      const u = battle.units.find((v) => v.id === fx.sourceId);
+      if (!u) return;
+      this.battleSounds.attack(battle, u);
+      this.fxSounded = this.cueReady(troopCue(battle, u, 'attack', 'ready', 0));
+    }
+  }
   /** Sound cues only matter while the sample player can actually play. */
   private audible() {
     return this.audio.enabled && this.audio.context?.state === 'running';
@@ -3891,6 +3950,7 @@ export class VillageScene extends Phaser.Scene {
       airLift: AIR_LIFT,
     });
     const shrinkCues = this.shrinkTrapPresentation.render(visible, battle, reduced, iso);
+    if (battle && this.audible()) this.needTroopSounds(battle);
     // Presentations still produce their cues; only the merge is skipped while silent.
     const cues = this.audible()
       ? [
@@ -3906,6 +3966,7 @@ export class VillageScene extends Phaser.Scene {
           ...archerTowerCues,
           ...cannonCues,
           ...garrisonSoundCues(battle),
+          ...troopSoundCues(battle, this.battleSounds),
           ...infernoSoundCues(battle),
           ...lateCues,
         ]
@@ -4753,6 +4814,7 @@ export class VillageScene extends Phaser.Scene {
     this.pendingFx.length = 0;
   }
   private renderEffect(fx: FX) {
+    this.recordBattleSound(fx);
     // Native defense effects carry their own geometry; record them before the drawn fallbacks.
     if (fx.type === 'defense-zap' || fx.type === 'impact' || fx.type === 'blast')
       this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);
@@ -5222,12 +5284,14 @@ export class VillageScene extends Phaser.Scene {
       const nativeGarrison =
         fx.sourceDefender &&
         this.model.battle?.defenders?.some((d) => d.id === fx.sourceId && d.kind !== 'skeleton');
-      if (!nativeGarrison && fx.weapon !== 'healing' && Math.random() < 0.2) this.audio.play('hit');
+      if (!nativeGarrison && !this.fxSounded && fx.weapon !== 'healing' && Math.random() < 0.2)
+        this.audio.play('hit');
       return;
     }
     if (fx.type === 'destroy') {
       this.sparks(p.x, p.y - 15, 0xd9be8a, fx.major ? 34 : 16);
-      this.audio.play('destroy');
+      if (this.fxSounded) this.audio.feedback('destroy');
+      else this.audio.play('destroy');
       if (!this.model.reducedMotion)
         this.shakeCamera(fx.major ? 340 : 80, fx.major ? 0.006 : 0.001);
       const smoke = this.add.circle(p.x, p.y - 20, 18, 0xe4d3a8, 0.6).setDepth(8000);
