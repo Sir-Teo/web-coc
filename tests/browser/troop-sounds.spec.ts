@@ -66,6 +66,36 @@ test('troops deploy and fall with their own sounds, fetched only for the army th
     u.hp = 0;
   });
   await expect.poll(() => playing(`troop:${ids[0]}:die`), { timeout: 5000 }).toBe(true);
+  // A Barbarian set beside the Town Hall swings and lands its blows with its own impact.
+  const fighter = await page.evaluate(() => {
+    const m = window.__game.model;
+    m.activeTroop = 'swordsman';
+    for (const [x, y] of [
+      [2, 24],
+      [24, 2],
+      [46, 24],
+      [24, 46],
+    ])
+      if (!m.deployBlocked(x, y) && m.deploy(x, y)) break;
+    const u = m.battle!.units.at(-1)!,
+      hall = m.battle!.buildings.find((b) => b.kind === 'townhall')!;
+    u.x = hall.x - 0.3;
+    u.y = hall.y + 1;
+    u.path = [];
+    return u.id;
+  });
+  await expect
+    .poll(
+      () =>
+        page.evaluate((id) => {
+          const samples = window.__game.scene.audio.samples as unknown as {
+            active: Map<string, unknown>;
+          };
+          return [...samples.active.keys()].some((k) => k.startsWith(`troop:${id}:hit:`));
+        }, fighter),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
   // A Rage Spell's bottle falls with its own sound.
   const cast = await page.evaluate(() => {
     const m = window.__game.model;

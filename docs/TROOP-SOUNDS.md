@@ -4,11 +4,11 @@ Attacking troops play the client's own sounds when they are deployed, when they 
 
 ## Source
 
-`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv` and `logic/effects.csv`. It covers the 78 trainable and spawned units in `src/game/native-units.ts` (`TROOP_SOURCE` and `SPAWN_SOURCE`). For each one it records the `DeployEffect`, `AttackEffect` and `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay.
+`python3 scripts/import-native-troop-sounds.py` reads the pinned client's `logic/characters.csv`, `logic/heroes.csv` and `logic/effects.csv`. It covers the 78 trainable and spawned units in `src/game/native-units.ts` (`TROOP_SOURCE` and `SPAWN_SOURCE`) and the heroes (`HERO_UNIT_SOURCE`). For each one it records the `DeployEffect`, the `AttackEffect`, the `HitEffect` (the impact on its target) and the `DieEffect`, and for each effect the rows that name a `Sound`, with their volume, pitch range and delay. The heroes' rows name only a hit, and only four of the six name one with a sound: the Barbarian King, Archer Queen, Grand Warden and Royal Champion. That makes 82 units with sounds.
 
 It also covers the 18 spells this game casts, from `logic/spells.csv`. For each spell it records the `PreDeployEffect` (the bottle falling), the `DeployEffect` and `DeployEffect2` (it landing), the `ChargingEffect` and the `HitEffect` (each pulse). Some of these change with level; Freeze, for example, has one deploy effect per level.
 
-The importer copies the 260 Ogg files (4.0 MB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`.
+The importer copies the 292 Ogg files (4.2 MB) unchanged to `public/assets/audio/troops-native/` and writes `reference/troop-sounds/sounds.json`. `--check` verifies both against `reference/full-client/manifest.json`.
 
 | Troop     | Deploy                                                     | Attack                                                                                          | Death                                           |
 | --------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -29,7 +29,13 @@ The take and its pitch come from a hash of the event's key: the unit's id and th
 ## When they play
 
 - **Deploy.** A deployed troop carries no deploy time, so the scene notes the battle time of the first frame that shows each unit. Units already on the field when the sound log starts, or after a seek, are noted silently, so seeking through a replay doesn't fire a burst of deploys. Units that another unit, a spell or an ability summons play no deploy sound.
-- **Attack.** The battle does not keep attack times, so the scene logs each troop hit, projectile launch or breath against a building or defender as its event arrives, live or replayed. A seek starts the log afresh.
+- **Attack and hit.** The battle does not keep attack times, so the scene logs each troop's combat events against a building or defender as they arrive, live or replayed:
+  - a melee blow is the attack and the hit at once;
+  - a shot attacks at its launch and hits at its impact;
+  - a breath attacks.
+
+  A seek starts the log afresh.
+
 - **Death.** A unit's `defeatedAt`, which every fallen unit carries.
 - **Destroyed building.** Logged from its `destroy` event, like attacks.
 - **Spells.** The game's own spell casts record when they were cast, their first pulse, the time between pulses and how many have resolved. The fall plays at the cast. The landing and charge play after the row's `DeployTimeMS`, as the client's spell timeline runs. Each resolved pulse plays the hit, so a Lightning Spell's bolts and every Healing Spell pulse sound.
@@ -55,6 +61,6 @@ Nothing is fetched at boot. When a battle opens with sound on, the scene fetches
 - a Lightning Spell's fall, landing, charge and bolt, which keep sounding after the battle drops the cast;
 - the logged casts of older battles.
 
-`tests/browser/troop-sounds.spec.ts` runs at phone size. It checks that boot fetches no troop sound and that a Barbarian-only battle fetches only the Barbarian's sounds. It then checks that the deploy and death sounds and a Rage Spell's falling bottle actually start playing.
+`tests/browser/troop-sounds.spec.ts` runs at phone size. It checks that boot fetches no troop sound and that a Barbarian-only battle fetches only the Barbarian's sounds. It then checks that the deploy, hit and death sounds and a Rage Spell's falling bottle actually start playing.
 
-Not included: hit sounds on the target (`HitEffect`), the heroes and pets (the client's hero rows name almost no sounds; theirs play from their animations), the Siege Machines' special effects, and the movement and ability effects.
+Not included: the heroes' other sounds and the pets' (the client's hero rows name only hits, so the rest presumably play from their animations), the Siege Machines' special effects, and the movement and ability effects.

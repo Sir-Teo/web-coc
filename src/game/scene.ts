@@ -3885,14 +3885,23 @@ export class VillageScene extends Phaser.Scene {
       return;
     }
     if (
-      (fx.type === 'hit' || fx.type === 'projectile' || fx.type === 'breath') &&
+      (fx.type === 'hit' ||
+        fx.type === 'projectile' ||
+        fx.type === 'impact' ||
+        fx.type === 'breath') &&
       fx.sourceId !== undefined &&
       (fx.targetBuilding || fx.targetDefender)
     ) {
       const u = battle.units.find((v) => v.id === fx.sourceId);
       if (!u) return;
-      this.battleSounds.attack(battle, u);
-      this.fxSounded = this.cueReady(troopCue(battle, u, 'attack', 'ready', 0));
+      // A melee blow is the swing and the impact at once; a shot swings at its launch and
+      // lands at its impact.
+      const events: ('attack' | 'hit')[] =
+        fx.type === 'hit' ? ['attack', 'hit'] : fx.type === 'impact' ? ['hit'] : ['attack'];
+      for (const event of events) this.battleSounds.attack(battle, u, event);
+      this.fxSounded = events.some((event) =>
+        this.cueReady(troopCue(battle, u, event, 'ready', 0)),
+      );
     }
   }
   /** Sound cues only matter while the sample player can actually play. */

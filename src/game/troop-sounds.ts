@@ -12,7 +12,7 @@ import { seconds } from './native-data';
  * lists alternative takes; one is chosen per event from the event's key, so a replay picks the
  * same take. See docs/TROOP-SOUNDS.md.
  */
-export type TroopSoundEvent = 'deploy' | 'attack' | 'die';
+export type TroopSoundEvent = 'deploy' | 'attack' | 'hit' | 'die';
 export type SpellSoundEvent = 'preDeploy' | 'deploy' | 'deploy2' | 'charging' | 'hit';
 type Named = string | (string | null)[];
 type Take = { sound: string; volume: number; minPitch: number; maxPitch: number; delay: number };
@@ -51,7 +51,8 @@ function files(record: Partial<Record<string, Named>> | undefined, events: reado
 export const troopSoundEffect = (kind: string, level: number, event: TroopSoundEvent) =>
   atLevel(TROOPS[kind]?.[event], level);
 /** Every sound file a troop kind can play, at any level. */
-export const troopSoundFiles = (kind: string) => files(TROOPS[kind], ['deploy', 'attack', 'die']);
+export const troopSoundFiles = (kind: string) =>
+  files(TROOPS[kind], ['deploy', 'attack', 'hit', 'die']);
 /** The effect a spell (by its client name) plays for an event at its level. */
 export const spellSoundEffect = (name: string, level: number, event: SpellSoundEvent) =>
   atLevel(SPELLS[name]?.[event], level);
@@ -175,14 +176,17 @@ export class BattleSoundLog {
     if (at === undefined) this.seen.set(u.id, (at = battle.elapsed));
     return at;
   }
-  /** A troop's attack, at the moment its hit or projectile was reported. */
-  attack(battle: Battle, u: Unit) {
+  /**
+   * A troop's attack (its swing or launch) or hit (the impact on its target), at the moment
+   * the combat event was reported.
+   */
+  attack(battle: Battle, u: Unit, event: 'attack' | 'hit' = 'attack') {
     this.sync(battle);
     const cue = troopCue(
       battle,
       u,
-      'attack',
-      `troop:${u.id}:attack:${battle.elapsed}`,
+      event,
+      `troop:${u.id}:${event}:${battle.elapsed}`,
       battle.elapsed,
     );
     if (cue) this.events.push(cue);

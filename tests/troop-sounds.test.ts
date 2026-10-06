@@ -37,13 +37,22 @@ const spot = (m: GameModel) => {
 
 describe('troop sounds', () => {
   it('reads every troop’s deploy, attack and death effects from the client', () => {
-    expect(Object.keys(source.troops)).toHaveLength(78);
+    // 78 troops and spawned units, and the four heroes whose rows name a sound.
+    expect(Object.keys(source.troops)).toHaveLength(82);
     expect(source.troops.swordsman).toEqual({
       name: 'Barbarian',
       deploy: 'Barbarian Deploy',
       attack: 'Barbarian Attack',
+      hit: 'Barbarian Hit',
       die: 'Barbarian Die',
     });
+    // Heroes name only the impact on their target.
+    expect(source.troops.barbarianking).toEqual({
+      name: 'Barbarian King',
+      hit: 'Barbarian King Hit',
+    });
+    expect(troopSoundEffect('archerqueen', 50, 'hit')).toBe('Archer Queen Hit');
+    expect(troopSoundEffect('minionprince', 1, 'hit')).toBeUndefined();
     // The Barbarian's three deploy takes are alternatives, all at the client's 40% volume.
     expect(source.effects['Barbarian Deploy'].map((t) => t.sound)).toEqual([
       'sfx/barb_deploy_11.ogg',
@@ -120,9 +129,15 @@ describe('troop sounds', () => {
     troopSoundCues(m.battle, log);
     m.battle!.elapsed = 2;
     log.attack(m.battle!, u);
+    log.attack(m.battle!, u, 'hit');
     log.destroyed(m.battle!, 10.5, 12.5);
-    const keys = troopSoundCues(m.battle, log).map((c) => c.key);
+    const cues = troopSoundCues(m.battle, log),
+      keys = cues.map((c) => c.key);
     expect(keys).toContain(`troop:${u.id}:attack:2`);
+    // The impact plays one of the Barbarian's own hit takes.
+    expect(cues.find((c) => c.key === `troop:${u.id}:hit:2`)!.sample).toMatch(
+      /^troop-barbarian_hit_stuff/,
+    );
     expect(keys).toContain('destroyed:10.5:12.5');
     m.battle!.elapsed = 1;
     expect(troopSoundCues(m.battle, log).filter((c) => !c.key.endsWith(':deploy'))).toEqual([]);

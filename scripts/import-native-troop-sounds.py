@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Import the attacking troops' and spells' own sounds: deploying, attacking, dying and casting.
 
-Each troop row of `logic/characters.csv` names its `DeployEffect`, `AttackEffect` and
-`DieEffect`; each effect's rows in `logic/effects.csv` that name a `Sound` give the Ogg file, its
-volume, pitch range and delay. Those rows are alternative takes of one sound (the files are
+Each troop row of `logic/characters.csv` names its `DeployEffect`, `AttackEffect`, `HitEffect`
+(the impact on its target) and `DieEffect`, and each hero row of `logic/heroes.csv` the same
+columns (heroes name only a hit sound). Each effect's rows in `logic/effects.csv` that name a
+`Sound` give the Ogg file, its volume, pitch range and delay. Those rows are alternative takes of one sound (the files are
 numbered takes, such as `barb_deploy_11`, `barb_deploy_11v2` and `barb_deploy_11v3`), so the game
 plays one of them per event. A troop whose effect changes with level (the Wizard's attack,
 the Valkyrie's) keeps one effect per level. Destroyed buildings play the client's
@@ -13,8 +14,8 @@ Each spell row of `logic/spells.csv` names its `PreDeployEffect` (the bottle fal
 `DeployEffect` and `DeployEffect2` (it landing), `ChargingEffect` and `HitEffect` (each pulse);
 those that vary by level keep one effect per level, as troops do.
 
-The troops are the trainable and spawned units of src/game/native-units.ts (`TROOP_SOURCE` and
-`SPAWN_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
+The troops are the trainable, spawned and hero units of src/game/native-units.ts
+(`TROOP_SOURCE`, `SPAWN_SOURCE` and `HERO_UNIT_SOURCE`); the spells are those of reference/troops/catalog.json and the native roster in
 src/game/troop-progression.ts (`NATIVE_SPELL_NAMES`). The Ogg files are copied unchanged to public/assets/audio/troops-native and
 every source must match its SHA-256 in reference/full-client/manifest.json. Sources are read
 from the local client archive when present (art/source/native-client-18.400.21/files),
@@ -40,7 +41,8 @@ ARCHIVE = ROOT / 'art/source/native-client-18.400.21/files'
 CACHE = ROOT / 'output/native-campaign-source'
 TARGET = ROOT / 'reference/troop-sounds/sounds.json'
 AUDIO = 'assets/audio/troops-native'
-EVENTS = {'deploy': 'DeployEffect', 'attack': 'AttackEffect', 'die': 'DieEffect'}
+EVENTS = {'deploy': 'DeployEffect', 'attack': 'AttackEffect', 'hit': 'HitEffect',
+          'die': 'DieEffect'}
 SPELL_EVENTS = {
     'preDeploy': 'PreDeployEffect', 'deploy': 'DeployEffect', 'deploy2': 'DeployEffect2',
     'charging': 'ChargingEffect', 'hit': 'HitEffect',
@@ -90,15 +92,15 @@ def records(blob):
     return result
 
 
-def units():
-    """Game keys and client names of the trainable and spawned troops."""
+def units(*blocks):
+    """Game keys and client names of the units in these blocks of native-units.ts."""
     text = (ROOT / 'src/game/native-units.ts').read_text()
     found = {}
-    for block in ('TROOP_SOURCE', 'SPAWN_SOURCE'):
+    for block in blocks:
         body = re.search(rf'export const {block} = \{{(.*?)\}} as const;', text, re.S)
         require(body, f'Missing {block}')
         found.update(re.findall(r"^\s+(\w+): '([^']+)',", body.group(1), re.M))
-    require(len(found) > 50, 'Too few troops read from native-units.ts')
+    require(found, f'No units read from {blocks}')
     return found
 
 
@@ -117,6 +119,7 @@ def build():
     manifest = json.loads((ROOT / 'reference/full-client/manifest.json').read_text())
     pins = {f['path']: f['sha256'] for f in manifest['files']}
     characters = records(source('logic/characters.csv', pins))
+    heroes = records(source('logic/heroes.csv', pins))
     spells_table = records(source('logic/spells.csv', pins))
     effects = records(source('logic/effects.csv', pins))
 
@@ -145,8 +148,11 @@ def build():
         return entry
 
     troops = {}
-    for key, name in sorted(units().items()):
-        rows = characters.get(name)
+    roster = {key: (name, characters) for key, name in units('TROOP_SOURCE', 'SPAWN_SOURCE').items()}
+    roster.update({key: (name, heroes) for key, name in units('HERO_UNIT_SOURCE').items()})
+    require(len(roster) > 80, 'Too few units read from native-units.ts')
+    for key, (name, table) in sorted(roster.items()):
+        rows = table.get(name)
         require(rows, f'Absent character {name}')
         entry = entries(rows, EVENTS)
         if entry:
@@ -167,8 +173,8 @@ def build():
         target = f'{AUDIO}/{path.split("/")[-1]}'
         files[ROOT / 'public' / target] = blob
         sounds[path] = dict(path=target, bytes=len(blob), sha256=pins[path])
-    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/spells.csv', 'logic/effects.csv',
-                                    *sounds]}
+    sources = {p: pins[p] for p in ['logic/characters.csv', 'logic/heroes.csv', 'logic/spells.csv',
+                                    'logic/effects.csv', *sounds]}
     catalog = dict(clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=sources,
                    troops=troops, spells=spells, destroyed=DESTROYED,
                    effects=dict(sorted(used.items())), sounds=sounds)
