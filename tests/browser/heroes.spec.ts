@@ -42,12 +42,17 @@ test('Hero Hall, dark buildings, and King art load with accurate unlock labels',
   await expect(page.locator('.shop-tile').filter({ hasText: 'Dark Elixir Drill' })).toContainText(
     'Town Hall 7',
   );
+  // Their sprites load when something first draws them (the King's portrait is a HUD image,
+  // not a scene texture): request them as placed buildings would.
   expect(
-    await page.evaluate(() =>
-      ['king', 'herohall', 'darkdrill', 'darkstorage'].every((k) =>
-        window.__game.scene.textures.exists(k),
-      ),
-    ),
+    await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const { buildingTexture } = await import('/src/game/data.ts');
+      const scene = window.__game.scene;
+      const kinds = ['herohall', 'darkdrill', 'darkstorage'] as const;
+      await scene.prefetchDeferredArt(kinds.map((k, i) => makeBuilding(-1 - i, k, 0, 0, 1)));
+      return kinds.every((k) => scene.textures.exists(buildingTexture(k, 1)));
+    }),
   ).toBe(true);
   await page.locator('[data-action="close-drawer"]').click();
   await page.locator('.train-add').click();

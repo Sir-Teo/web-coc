@@ -13,12 +13,19 @@ test('Bomb Tower shop gate and all thirteen native portraits load', async ({ pag
   await expect(page.locator('.shop-tile').filter({ hasText: 'Bomb Tower' })).toContainText(
     'Town Hall 8',
   );
+  // A kind the village does not own loads its sprites when something first draws it: request
+  // all thirteen levels as a placed tower would, then check every one arrived.
   expect(
-    await page.evaluate(() =>
-      Array.from({ length: 13 }, (_, i) => (i === 0 ? 'bombtower' : `bombtower-${i + 1}`)).every(
-        (k) => window.__game.scene.textures.exists(k),
-      ),
-    ),
+    await page.evaluate(async () => {
+      const { makeBuilding } = await import('/src/game/model.ts');
+      const scene = window.__game.scene;
+      await scene.prefetchDeferredArt(
+        Array.from({ length: 13 }, (_, i) => makeBuilding(-1 - i, 'bombtower', 0, 0, i + 1)),
+      );
+      return Array.from({ length: 13 }, (_, i) =>
+        i === 0 ? 'bombtower' : `bombtower-${i + 1}`,
+      ).every((k) => scene.textures.exists(k));
+    }),
   ).toBe(true);
 });
 for (const width of [1440, 390, 320])
