@@ -82,6 +82,8 @@ test('an instant upgrade refreshes the post and connector material without movin
     for (const b of row) b.level = 4;
     const b = row.find((b) => b.x === 11)!;
     m.selected = b.id;
+    // A level 5 wall costs more than the starter village's 750 gold.
+    m.state.gold = 1_000_000;
     m.state.settings.reducedMotion = true;
     m.changed();
     return { id: b.id, x: b.x, y: b.y };

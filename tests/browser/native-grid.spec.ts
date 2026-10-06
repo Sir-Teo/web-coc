@@ -27,9 +27,11 @@ test('the phone shop places a full-size Cannon at the far corner and persists it
   await page.waitForTimeout(100);
   const p = await page.evaluate(() => window.__game.scene.screenFor(43.2, 43.2));
   await page.mouse.move(p.x, p.y);
+  // The Cannon previews in its own client art, so a clear spot leaves the ghost untinted;
+  // red marks blocked ground.
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.ghost?.tintTopLeft))
-    .toBe(0xd9ffb0);
+    .toBe(0xffffff);
   await page.screenshot({
     path: `output/playtest/native-grid-far-corner-${test.info().project.name || 'chromium'}.png`,
     animations: 'disabled',
@@ -133,13 +135,11 @@ test('an overlapping imported village is refused while the current village remai
   invalid.gold = 1;
   invalid.buildings[1].x = invalid.buildings[0].x;
   invalid.buildings[1].y = invalid.buildings[0].y;
-  await page
-    .locator('#import-file')
-    .setInputFiles({
-      name: 'overlapping.json',
-      mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(invalid)),
-    });
+  await page.locator('#import-file').setInputFiles({
+    name: 'overlapping.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(invalid)),
+  });
   await expect(page.locator('#toast')).toHaveText(
     'That backup is not a valid Crown & Clan village.',
   );

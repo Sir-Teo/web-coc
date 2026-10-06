@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { legacyArmyVillage } from '../fixtures/legacy-army-village';
 
-for (const [kind, width, cost] of [
-  ['camp', 88, 200],
-  ['herohall', 187, 20000],
+for (const [kind, width] of [
+  ['camp', 88],
+  ['herohall', 187],
 ] as const) {
   test(`the phone shop places a 4×4 ${kind} with an aligned preview and persistent full footprint`, async ({
     page,
@@ -12,14 +12,21 @@ for (const [kind, width, cost] of [
     await page.goto('/');
     await page.waitForFunction(() => window.__game?.scene.artSettled);
     await page.locator('[data-action="skip-tutorial"]').click();
-    const before = await page.evaluate(() => {
+    const before = await page.evaluate(async (kind) => {
+      const { buildPrice } = await import('/src/game/data.ts');
       const m = window.__game.model;
       m.townhall.level = 8;
       m.state.settings.reducedMotion = true;
       m.state.obstacles = [];
+      // The starter village's 750 elixir does not buy a Hero Hall.
+      m.state.elixir = 100_000;
       m.changed();
-      return { id: m.state.nextId, elixir: m.state.elixir };
-    });
+      return {
+        id: m.state.nextId,
+        elixir: m.state.elixir,
+        cost: buildPrice(kind, m.countOf(kind)).cost,
+      };
+    }, kind);
     await page.locator('[data-action="shop"]').last().click();
     await page.locator('[data-action="tab:Army"]').click();
     await page.locator(`[data-action="build:${kind}"]`).click();
@@ -78,7 +85,7 @@ for (const [kind, width, cost] of [
       kind,
       x: 42,
       y: 42,
-      elixir: before.elixir - cost,
+      elixir: before.elixir - before.cost,
       occupied: false,
       adjacent: true,
       width,

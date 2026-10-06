@@ -29,6 +29,8 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => {
     const m = window.__game.model;
     m.townhall!.level = 8;
+    // Enough for the rows below; the starter village holds 750 of each.
+    m.state.gold = m.state.elixir = 2_000_000;
     m.changed();
   });
 });
