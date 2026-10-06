@@ -83,9 +83,25 @@ test('the Cookbook lists its Town Hall’s recipes and makes one the army in a t
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  // Back on the Quick armies tab, the saved slots are where they were.
+  // Save keeps a recipe as a Quick army, in the first empty slot.
+  await page.locator('[data-action="recipe-save:EV_TH10_HotHogSummer"]').tap();
+  await expect(page.locator('#toast')).toContainText('Hot Hog Summer saved as Quick army 1.');
+  await page.locator('[data-action="recipe-save:EV_TH10_June2025"]').tap();
+  await page.locator('[data-action="recipe-save:EV_TH10_ClasheramaMassMiners"]').tap();
+  // With all three slots full, a card offers the slot to save over, each a 44-pixel target.
+  const over = hogs.locator('.recipe-slots .game-btn');
+  await expect(over).toHaveText(['1', '2', '3']);
+  for (const box of await over.evaluateAll((all) =>
+    all.map((b) => b.getBoundingClientRect().height),
+  ))
+    expect(box).toBeGreaterThanOrEqual(44);
+  await page.locator('[data-action="recipe-save:EV_TH10_SeptemberWitches,1"]').tap();
+  // Back on the Quick armies tab, the saved recipes are there.
   await page.locator('.preset-tabs [data-action="army-presets"]').tap();
-  await expect(page.locator('#preset-name-0')).toBeVisible();
+  await expect(page.locator('#preset-name-0')).toHaveValue('Hot Hog Summer');
+  await expect(page.locator('#preset-name-1')).toHaveValue('Wicked Witches');
+  await expect(page.locator('#preset-name-2')).toHaveValue('Miner-a-rama!');
+  await expect(page.locator('[data-action="preset-undo:1"]')).toBeVisible();
 });
 
 test('below Town Hall 10 the Cookbook says when its recipes begin', async ({ page }) => {

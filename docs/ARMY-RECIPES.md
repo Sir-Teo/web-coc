@@ -32,6 +32,7 @@ A troop or spell entry is `<count>x<id>`. The id is the record's `GlobalID` less
 | Note on heroes the village cannot match | "Unavailable Heroes, Pets, or Equipment will be swapped or removed to make this Recipe battle-ready." | `TID_POPUP_CONFIRM_AUTOFIX_RECIPE_TEXT`    |
 | Message after Use                       | "Recipe <army> set as active army!"                                                                   | `TID_ARMY_PRESET_LOADED`                   |
 | Refusal                                 | "You cannot train this army"                                                                          | `TID_COPY_ARMY_CANNOT_TRAIN`               |
+| Save button                             | "Save"                                                                                                | `TID_BUTTON_COOKBOOK_RECIPE_SAVE`          |
 
 `src/game/army-recipes.ts` maps the names to this game's troops, spells, heroes, items and pets.
 
@@ -48,6 +49,12 @@ Each card shows:
 - the recipe's housing and its composition;
 - its heroes with their items and pets;
 - a **Watch guide** link to the creator's video, when the row has one.
+
+## Saving a recipe
+
+The original's **Save** keeps a Cookbook recipe among the player's own recipes. Here it saves the recipe as a Quick army, with its name, army, spells, heroes, items and pets, in the first empty slot.
+
+When all three slots are full, the card shows "Save over 1 2 3" instead. Each slot button is 44 pixels square, and Quick armies' **Undo save** restores the army it replaced.
 
 ## Choices
 
@@ -68,11 +75,13 @@ Every button and the Clan Castle toggle are at least 44 pixels tall at phone wid
 - the pets on Town Hall 14's heroes;
 - Use, which replaces the army and names the missing heroes;
 - refusal for lack of housing and for another Town Hall's recipe.
+- saving into the first empty slot, refusal when every slot is full, saving over a chosen slot, and undo. The saved state validates, and the army loads later from its slot.
 
 `tests/browser/army-recipes.spec.ts`, at phone size with touch:
 
 - opens the Cookbook from Quick armies;
 - checks Town Hall 10's four recipes and the creator line, the note, the guide link and the 44-pixel targets;
 - uses Hot Hog Summer and checks the army and the message;
-- returns to the Quick armies tab;
+- saves three recipes, checks the 44-pixel "Save over" buttons once the slots are full, and saves over slot 2;
+- returns to the Quick armies tab and finds the saved recipes and the undo button;
 - checks the message shown below Town Hall 10.

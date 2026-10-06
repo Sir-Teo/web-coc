@@ -1761,6 +1761,11 @@ export class HUD {
       case 'recipe-use':
         m.useArmyRecipe(arg);
         break;
+      case 'recipe-save': {
+        const [id, slot] = arg.split(',');
+        m.saveArmyRecipe(id, slot === undefined ? undefined : Number(slot));
+        break;
+      }
       case 'battle-log':
         this.show('battle-log');
         break;
@@ -4226,7 +4231,25 @@ export class HUD {
     const creator = recipe.creator
       ? ARMY_RECIPE_TEXTS.creator.replace('<creator>', recipe.creator)
       : 'Featured';
-    return `<article class="preset-card recipe-card" data-recipe="${recipe.id}"><div class="recipe-head"><h3>${html(recipe.name)}</h3><small>${html(creator)} · ${armySpace(recipe.army)} troop · ${spellSpace(recipe.spells)} spell spaces${siege ? ` · ${siege} siege` : ''}</small></div>${this.composition(recipe.army, recipe.spells)}${recipe.heroes.length ? this.presetHeroes(recipe, ARMY_RECIPE_TEXTS.autofix) : ''}${castle ? `<details class="recipe-castle"><summary>${icon('ChevronRight', 15)} ${icon('Castle', 15)} Clan Castle · not used here</summary>${this.composition(castleArmy, castleSpells)}</details>` : ''}<div class="preset-actions">${button(`recipe-use:${recipe.id}`, `${icon('Check', 16)} ${issue ? ARMY_RECIPE_TEXTS.cannotTrain : 'Use army'}`, 'game-btn green', issue ? 'disabled' : '')}${recipe.guide ? `<a class="game-btn stone" href="${html(recipe.guide)}" target="_blank" rel="noopener noreferrer">${icon('Play', 16)} Watch guide</a>` : ''}</div>${issue ? `<p class="preset-empty">${html(issue)}</p>` : ''}</article>`;
+    // Save keeps the recipe as a Quick army: in the first empty slot, or over a chosen one.
+    const presets = m.state.armyPresets ?? [null, null, null];
+    const save = presets.some((p) => !p)
+      ? button(
+          `recipe-save:${recipe.id}`,
+          `${icon('Save', 16)} ${ARMY_RECIPE_TEXTS.save}`,
+          'game-btn stone',
+        )
+      : `<span class="recipe-slots">${ARMY_RECIPE_TEXTS.save} over ${[0, 1, 2]
+          .map((slot) =>
+            button(
+              `recipe-save:${recipe.id},${slot}`,
+              `${slot + 1}`,
+              'game-btn stone',
+              `aria-label="${ARMY_RECIPE_TEXTS.save} over ${html(presets[slot]!.name)}"`,
+            ),
+          )
+          .join('')}</span>`;
+    return `<article class="preset-card recipe-card" data-recipe="${recipe.id}"><div class="recipe-head"><h3>${html(recipe.name)}</h3><small>${html(creator)} · ${armySpace(recipe.army)} troop · ${spellSpace(recipe.spells)} spell spaces${siege ? ` · ${siege} siege` : ''}</small></div>${this.composition(recipe.army, recipe.spells)}${recipe.heroes.length ? this.presetHeroes(recipe, ARMY_RECIPE_TEXTS.autofix) : ''}${castle ? `<details class="recipe-castle"><summary>${icon('ChevronRight', 15)} ${icon('Castle', 15)} Clan Castle · not used here</summary>${this.composition(castleArmy, castleSpells)}</details>` : ''}<div class="preset-actions">${button(`recipe-use:${recipe.id}`, `${icon('Check', 16)} ${issue ? ARMY_RECIPE_TEXTS.cannotTrain : 'Use army'}`, 'game-btn green', issue ? 'disabled' : '')}${save}${recipe.guide ? `<a class="game-btn stone" href="${html(recipe.guide)}" target="_blank" rel="noopener noreferrer">${icon('Play', 16)} Watch guide</a>` : ''}</div>${issue ? `<p class="preset-empty">${html(issue)}</p>` : ''}</article>`;
   }
   private battleLog() {
     const log = this.model.state.raidLog ?? [];

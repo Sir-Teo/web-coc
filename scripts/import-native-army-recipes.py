@@ -34,6 +34,7 @@ TEXTS = dict(tab='TID_TRAINING_TAB_TITLE_COMMUNITY_PRESETS',
              useTitle='TID_POPUP_CONFIRM_USE_RECIPE_TITLE',
              autofix='TID_POPUP_CONFIRM_AUTOFIX_RECIPE_TEXT',
              loaded='TID_ARMY_PRESET_LOADED',
+             save='TID_BUTTON_COOKBOOK_RECIPE_SAVE',
              cannotTrain='TID_COPY_ARMY_CANNOT_TRAIN',
              sanitized='TID_HUD_MESSAGE_ARMY_HEROES_HAVE_BEEN_SANITIZED')
 HERO = re.compile(r'^(\d+)(?:m(\d+))?(?:p(\d+))?(?:e(\d+)(?:_(\d+))?)?$')

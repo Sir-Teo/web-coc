@@ -9,6 +9,7 @@ import {
   armyRecipesFor,
 } from '../src/game/army-recipes';
 import { BUILDINGS, type BuildingKind } from '../src/game/data';
+import { validateSave } from '../src/game/save';
 
 /** The kinds a record holds, with their counts. */
 const held = (record: Record<string, number>) =>
@@ -32,9 +33,10 @@ function village(townhall: number, space = 400) {
     m.state.buildings.push(makeBuilding(m.state.nextId++, kind, x, 30, BUILDINGS[kind].maxLevel));
     x += 5;
   }
+  // Camps side by side on their own row, so the village stays a valid save.
   const camp = BUILDINGS.camp.maxLevel;
-  while (m.capacity < space)
-    m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', x++, 2, camp));
+  for (let at = 2; m.capacity < space; at += 5)
+    m.state.buildings.push(makeBuilding(m.state.nextId++, 'camp', at, 36, camp));
   return m;
 }
 
@@ -116,5 +118,35 @@ describe('army recipes', () => {
     );
     // Only the recipes of the village's own Town Hall can be used.
     expect(m.useArmyRecipe('EV_TH11_HotHogSummer')).toBe(false);
+  });
+
+  it('saves a recipe as a Quick army, in the first empty slot or over a chosen one', () => {
+    const m = village(10);
+    const toasts: string[] = [];
+    m.onToast = (message) => toasts.push(message);
+    m.train('swordsman');
+    m.saveArmyPreset(0, 'Mine');
+    expect(m.saveArmyRecipe('EV_TH10_HotHogSummer')).toBe(true);
+    const recipe = armyRecipe('EV_TH10_HotHogSummer')!;
+    expect(m.state.armyPresets![1]).toEqual({
+      name: 'Hot Hog Summer',
+      army: recipe.army,
+      spells: recipe.spells,
+      heroes: recipe.heroes,
+    });
+    expect(toasts.at(-1)).toBe('Hot Hog Summer saved as Quick army 2.');
+    expect(validateSave(m.state)).toBe(true);
+    // Loading it later sets the recipe's army.
+    m.clearArmy();
+    m.loadArmyPreset(1);
+    expect(m.state.army).toEqual(recipe.army);
+    // With every slot full, Save needs a slot, and saving over one can be undone.
+    m.saveArmyRecipe('EV_TH10_June2025');
+    expect(m.saveArmyRecipe('EV_TH10_SeptemberWitches')).toBe(false);
+    expect(toasts.at(-1)).toMatch(/All three Quick army slots are full/);
+    expect(m.saveArmyRecipe('EV_TH10_SeptemberWitches', 0)).toBe(true);
+    expect(m.state.armyPresets![0]!.name).toBe('Wicked Witches');
+    expect(m.undoSlot('preset', 0)).toBe(true);
+    expect(m.state.armyPresets![0]!.name).toBe('Mine');
   });
 });

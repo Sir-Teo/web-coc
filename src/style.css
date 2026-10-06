@@ -4535,6 +4535,18 @@ h3 {
 .recipe-card a.game-btn {
   text-decoration: none;
 }
+.recipe-slots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #8b7a55;
+}
+.recipe-slots .game-btn {
+  min-width: 44px;
+  padding: 9px 0;
+}
 .recipe-castle summary {
   display: flex;
   align-items: center;

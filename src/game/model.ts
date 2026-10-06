@@ -3612,6 +3612,33 @@ export class GameModel {
     this.notify(changes.length ? `${loaded} ${changes.join(' · ')}.` : loaded);
     return true;
   }
+  /**
+   * Saves a Cookbook recipe as a Quick army, as the original's Save keeps it among the player's
+   * own recipes: in the first empty slot, or over `slot` (which Undo save can restore).
+   */
+  saveArmyRecipe(id: string, slot?: number) {
+    const recipe = this.armyRecipes.find((r) => r.id === id);
+    if (this.battle || !recipe) return false;
+    const presets = (this.state.armyPresets ??= [null, null, null]);
+    const target = slot ?? presets.findIndex((p) => !p);
+    if (!Number.isInteger(target) || target < 0 || target > 2) {
+      this.notify('All three Quick army slots are full. Choose one to save over.');
+      return false;
+    }
+    const previous = presets[target];
+    if (previous) this.overwritten.presets.set(target, structuredClone(previous));
+    presets[target] = {
+      name: recipe.name.slice(0, 32),
+      army: { ...recipe.army },
+      spells: { ...recipe.spells },
+      ...(recipe.heroes.length
+        ? { heroes: recipe.heroes.map((hero) => ({ ...hero, items: [...hero.items] })) }
+        : {}),
+    };
+    this.notify(`${recipe.name} saved as Quick army ${target + 1}.`);
+    this.changed();
+    return true;
+  }
   retrain() {
     if (!this.state.lastArmy) {
       this.notify('Complete a raid to save an army composition.');

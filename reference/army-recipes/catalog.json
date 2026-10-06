@@ -19,6 +19,7 @@
     "useTitle": "Use Army Recipe?",
     "autofix": "Unavailable Heroes, Pets, or Equipment will be swapped or removed to make this Recipe battle-ready.",
     "loaded": "Recipe <army> set as active army!",
+    "save": "Save",
     "cannotTrain": "You cannot train this army",
     "sanitized": "Heroes that aren't available yet have been removed from this recipe."
   },
