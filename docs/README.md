@@ -29,7 +29,7 @@ notes in those references are not current release guarantees.
 - [Healer, Dragon and P.E.K.K.A](LATE-TROOPS.md)
 - [Home Village spell progression](SPELL-PROGRESSION.md)
 - [Heroes, equipment and pets](NATIVE-HEROES.md)
-- [Heroes and Town Hall progression](HERO-PROGRESSION.md)
+- [First hero and Town Hall progression (historical)](HERO-PROGRESSION.md)
 - [Barbarian King combat and default equipment](KING-COMBAT.md)
 - [Blacksmith and King equipment](BLACKSMITH.md)
 - [Army facility progression](FACILITY-PROGRESSION.md)

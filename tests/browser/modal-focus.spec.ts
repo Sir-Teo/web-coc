@@ -48,6 +48,36 @@ test('keyboard activation and focus trapping return to the launching control', a
   await expect(page.locator('[data-action="settings"]')).toBeFocused();
 });
 
+test('an empty campaign filter keeps both pickers in the dialog tab order', async ({ page }) => {
+  await page.locator('.attack-btn').click();
+  await page.locator('#campaign-filter').selectOption('done');
+  await expect(page.locator('.campaign-card')).toHaveCount(0);
+  const section = page.locator('#campaign-section');
+  const close = page.getByRole('button', { name: 'Close dialog', exact: true });
+  await section.focus();
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(section).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('#campaign-filter')).toBeFocused();
+});
+
+test('Army pickers keep their keyboard input while the map cursor is on', async ({ page }) => {
+  await page.keyboard.press('m');
+  const cursor = await page.evaluate(() => window.__game.scene.keyCursor);
+  expect(cursor).not.toBeNull();
+  await page.locator('.train-add').click();
+  const family = page.locator('#army-family');
+  await family.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(family).toHaveValue('elixir');
+  expect(await page.evaluate(() => window.__game.scene.keyCursor)).toEqual(cursor);
+  await page.keyboard.press('m');
+  expect(await page.evaluate(() => window.__game.scene.keyCursor)).toEqual(cursor);
+  await expect(family).toBeFocused();
+});
+
 test('building Info returns focus to its recreated context button without losing selection', async ({
   page,
 }) => {

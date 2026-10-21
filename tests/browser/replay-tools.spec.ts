@@ -35,7 +35,8 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
   ]) {
     await page.setViewportSize({ width, height });
     await page.waitForFunction(
-      (width) => window.__game.scene.cameras.main.width === Math.floor(width * window.devicePixelRatio),
+      (width) =>
+        window.__game.scene.cameras.main.width === Math.floor(width * window.devicePixelRatio),
       width,
     );
     const controls = page.getByRole('region', { name: 'Replay playback' });
@@ -58,7 +59,7 @@ test('playback targets stay reachable at narrow portrait and landscape sizes', a
 });
 
 for (const mobile of [false, true])
-  test(`seeks backwards, revives sprites, and preserves camera on ${mobile ? 'phone' : 'desktop'}`, async ({
+  test(`seeks backwards, revives troops, and preserves camera on ${mobile ? 'phone' : 'desktop'}`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -70,6 +71,13 @@ for (const mobile of [false, true])
     await range.focus();
     await range.press('End');
     await expect(page.locator('.replay-status')).toContainText('Replay complete');
+    // A completed replay has no result dialog: its playback buttons keep normal tab order.
+    const restart = page.locator('[data-action="replay-restart"]');
+    await restart.focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-action="replay-speed:1"]')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(restart).toBeFocused();
     await page.waitForTimeout(450);
     const camera = await page.evaluate(() => {
       const { scene } = window.__game;
@@ -91,8 +99,8 @@ for (const mobile of [false, true])
         page.evaluate(() => {
           const { model, scene } = window.__game;
           const u = model.battle.units[0];
-          const im = scene.unitSprites.get(u?.id);
-          return !!u && u.hp > 0 && !!im?.visible && im.alpha === 1;
+          // Native troops hide their fallback sprite; require the revived mesh to draw.
+          return !!u && u.hp > 0 && scene.troopNativePresentation.drewUnit(u.id);
         }),
       )
       .toBe(true);

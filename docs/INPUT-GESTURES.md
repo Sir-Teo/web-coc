@@ -16,6 +16,18 @@ Drawers and dialogs retain their DOM when their generated content is unchanged. 
 
 The added browser regression holds a real Save button, triggers a structural update, checks that its node remains connected, then releases and verifies the persisted army name in the model. It also triggers redraws during jumps to Spells and back to Troops. The old implementation failed the mounted-node assertion. Quick-army reload, narrow catalog scrolling, modal focus and replay interaction cases exercise the adjacent flows.
 
+## Keyboard navigation
+
+Dialog Tab and Shift+Tab wrap through enabled, visible controls, including selects and
+textareas. An empty campaign filter still leaves both campaign pickers reachable and
+keeps focus inside the dialog. Hidden, disabled and negative-tabindex controls do not
+become the trap's endpoints.
+
+The HUD and camera share `src/ui/keyboard.ts` to recognize fields that own keyboard
+input. Army dropdowns can use arrows and letter selection while the map cursor is on,
+without moving that cursor or triggering map shortcuts. `tests/browser/modal-focus.spec.ts`
+covers both cases alongside dialog opening, rerendering and focus restoration.
+
 ## Browser gestures on phones
 
 October 1, 2026. Several browser gestures could take over during touch play. The canvas already set `touch-action: none`, but the HUD did not:

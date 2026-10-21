@@ -71,6 +71,7 @@ import {
 } from '../game/replay-file';
 import { deliverFile } from './share-file';
 import { Fullscreen, safariTab } from './fullscreen';
+import { typingTarget } from './keyboard';
 import { compatibleReplayVersion } from '../game/replay';
 import { heroNextRequirement, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
 import {
@@ -2387,21 +2388,30 @@ export class HUD {
       else this.model.cancel();
     }
     if ((this.panel || this.model.battle?.finished) && e.key === 'Tab') {
-      const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+      const dialog = this.modalEl.querySelector<HTMLElement>('[role="dialog"]');
       const items = Array.from(
-        dialog?.querySelectorAll<HTMLElement>('button:not(:disabled),input,a[href]') ?? [],
+        dialog?.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href],[tabindex]') ??
+          [],
+      ).filter(
+        (el) =>
+          el.tabIndex >= 0 &&
+          !el.matches(':disabled') &&
+          !el.closest('[inert]') &&
+          el.getClientRects().length > 0 &&
+          getComputedStyle(el).visibility === 'visible',
       );
       const first = items[0],
         last = items.at(-1);
-      if (e.shiftKey && document.activeElement === first) {
+      const outside = !!dialog && !dialog.contains(document.activeElement);
+      if (e.shiftKey && (outside || document.activeElement === first)) {
         e.preventDefault();
         last?.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && (outside || document.activeElement === last)) {
         e.preventDefault();
         first?.focus();
       }
     }
-    if (this.panel || e.target instanceof HTMLInputElement) return;
+    if (this.panel || typingTarget(e.target instanceof Element ? e.target : null)) return;
     if (!e.metaKey && !e.ctrlKey && !e.altKey && this.mapKeys(e)) return;
     if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();

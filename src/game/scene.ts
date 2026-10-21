@@ -1,4 +1,5 @@
 import { HeroNativePresentation } from './hero-native-scene';
+import { typingTarget } from '../ui/keyboard';
 import type { CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
@@ -480,16 +481,7 @@ export const isoInto = <T extends { x: number; y: number }>(out: T, x: number, y
   out.y = WORLD.oy + (x + y) * 16;
   return out;
 };
-/** Elements that own the keyboard: camera keys must not move the map while one has focus. */
-export function typingTarget(element: Element | null) {
-  if (!element) return false;
-  if (element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) return true;
-  if (element instanceof HTMLInputElement)
-    return !['button', 'checkbox', 'radio', 'submit', 'reset', 'image', 'color', 'file'].includes(
-      element.type,
-    );
-  return element instanceof HTMLElement && element.isContentEditable;
-}
+export { typingTarget } from '../ui/keyboard';
 export const uniso = (x: number, y: number) => ({
   x: ((x - WORLD.ox) / 32 + (y - WORLD.oy) / 16) / 2,
   y: ((y - WORLD.oy) / 16 - (x - WORLD.ox) / 32) / 2,

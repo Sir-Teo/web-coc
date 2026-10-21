@@ -1,6 +1,15 @@
-# Heroes and Town Hall progression
+# First hero and Town Hall progression (historical)
 
 Implemented September 10, 2026. This pass adds the first playable hero and explicit building level gates to the existing local game. It does not reproduce the complete live game's progression or hero system.
+
+This note records the initial King implementation and its early follow-up changes.
+Its fixed ability counts, local economy curves and unfinished-feature statements are
+historical, not the current game rules. For the current implementation, use:
+
+- [Heroes, equipment and pets](NATIVE-HEROES.md) for the six-hero roster, client-backed abilities, caps and defending heroes.
+- [Hero's Journey](HEROES-JOURNEY.md) and [Treasury](TREASURY.md) for Journey rewards and Star Bonus ore.
+- [Campaign rules](CAMPAIGN-RULES.md) and [Dark Elixir Storage](DARK-ELIXIR-STORAGE.md) for campaign Dark Elixir and storage accounting.
+- [Town Hall tiers](TOWNHALL-TIERS.md), [Army Camp progression](CAMP-PROGRESSION.md), [facility progression](FACILITY-PROGRESSION.md) and [troop progression](TROOP-PROGRESSION.md) for the explicit current progression tables.
 
 ## Reference decisions
 
