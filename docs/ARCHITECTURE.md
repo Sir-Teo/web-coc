@@ -139,3 +139,15 @@ On Android an installed game shares the browser's storage, so the same village o
 tab lock still lets only one copy own it. iOS gives a home-screen app storage separate from
 Safari's. A village started in Safari therefore does not appear in the installed app; use
 the save export and import in Settings to move it.
+
+### Browser full screen
+
+Settings offers a **Full screen** switch when the browser permits full-screen pages.
+`src/ui/fullscreen.ts` requests the document root directly from the tap, hides navigation
+UI where supported and follows standard or Safari-prefixed change events, including exits
+through the browser's own controls. Refused requests leave the switch off and show a toast.
+Full-screen state is not saved; installed apps already launched full screen hide the switch.
+Safari tabs without page full screen instead show Add to Home Screen instructions and the
+save-transfer reminder above. Unsupported browsers outside Safari show neither control.
+`tests/fullscreen.test.ts` and `tests/browser/fullscreen.spec.ts` cover the adapter and the
+phone Settings flow, browser exits, refusal and the Safari fallback.

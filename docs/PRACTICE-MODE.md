@@ -16,7 +16,7 @@ Its villages were already campaign stages 91 to 103: 13 of the client's 19, the 
 - its campaign stage, or none for a withheld one;
 - its army, from the record's continuation rows. `FixedArmyUnitType`, `FixedArmyUnitLevel` and `FixedArmyUnitCountOrStage` give each troop, siege machine, spell or hero; `FixedArmyUnitAlliance` marks the Clan Castle's units.
 
-It also holds three client strings: "Practice" (`TID_TRAINING_LEVELS`), its description (`TID_TRAINING_LEVELS_DESCRIPTION`) and "Practice mode unlocks at Town Hall 4" (`TID_PRACTICE_MODE_UNLOCKS_LATER`).
+It also holds four client strings: "Practice" (`TID_TRAINING_LEVELS`), its description (`TID_TRAINING_LEVELS_DESCRIPTION`), "Practice mode unlocks at Town Hall 4" (`TID_PRACTICE_MODE_UNLOCKS_LATER`) and the closing question (`TID_NPC_CHALLENGE_PROGRESS_WARNING_TEXT`).
 
 For example, Giant Smash (Town Hall 4) brings 13 Giants, 2 Wall Breakers and 11 Goblins, all level 2, the army the wiki lists. Hot Stuff (Town Hall 7) brings 10 level 2 Dragons, 6 level 4 Lightning Spells and a level 5 Barbarian King.
 
@@ -28,6 +28,7 @@ For example, Giant Smash (Town Hall 4) brings 13 Giants, 2 Wall Breakers and 11 
 - **Army.** The battle carries the level's army, at the level's own troop and spell levels and with its heroes, instead of the camps'. Deploying spends the level's units, and a recalled troop returns to the level's tray. The player's army, spells and Last army are untouched, and no army needs to be trained to attack.
 - **Heroes.** A hero comes at the level the row names, with its two default items at level 1 (the Barbarian King's Barbarian Puppet and Rage Vial, as the wiki shows). No row in this client sets a pet or other gear.
 - **Results.** Loot, stars and the "no time limit, no trophies" rules are the campaign's own, so each level's loot is won once and its stars stay on the map.
+- **Retry.** Results offer **Attack without guide** and **Guided attack**. Both start a fresh copy with the level's full army; neither replenishes or changes the player's army, spells or Last army. A three-star result asks the client's closing question: "You did perfectly! Would you like to practice without deployment steps?" This build asks on the results screen, including after an unguided clear.
 - **Cards.** The campaign card is labelled "PRACTICE" and says what the level brings ("Fought with its own army: 26 troops. Yours stays home."). The scout page lists the army, troop by troop, under "Army provided". The section picker calls the part of the list "Practice".
 - **Starter Challenges.** Their two Practice tasks ("Win 3x/9x total Stars from Practice Levels") now count the best stars on each level (see [STARTER-CHALLENGES.md](STARTER-CHALLENGES.md)).
 
@@ -65,8 +66,7 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 
 - **Spots off the board.** Some levels use the client's larger board. Of the 75 troop and hero spots, 10 fall past this game's 48 tiles (Bowling with Bats' Archer Queen at the client's 20, 47) and 9 inside its red boundary, which keeps 1.5 tiles round each building. A troop or hero step's spot becomes the deployable tile nearest the client's. A spell's spot is clamped to the board.
 - **Waits that cannot end.** The original's scripted attack always brings a step's building down, but a player's may not. A `WaitUntilDestroyed` step therefore also ends when no attacker is alive or after 60 battle seconds (`GUIDE_WAIT_LIMIT`). Without that, a step refusing deploys could hold the player until they skip.
-- **Ability timing.** `KingHealthLow` asks for the King's ability straight away; the client presumably waits for his health to drop.
-- **The ending question.** The client's closing question ("You did perfectly! Would you like to practice without deployment steps?") is not asked. Later attacks are free, and the scout page's Guided attack brings the guide back.
+- **Ability timing.** `KingHealthLow` asks for the King's ability straight away. Its pinned `deploy_steps.csv` row has no health threshold or condition; a different timing rule cannot be established from that table alone.
 
 - **Clan Castle units.** Four levels send units in the Clan Castle: Bowling with Bats, Electro Surgery, Lava & More Loons and Bowling with Witches. This game's attacks have no Clan Castle to release them (siege machines carry nothing), so they join the army's tray. A kind's level is the army's own, ahead of the castle's (Bowling with Bats sends P.E.K.K.A 6 in the army and P.E.K.K.A 8 in the castle).
 - **Withheld levels.** The six withheld Challenges stay out, for the reasons in [CAMPAIGN-RULES.md](CAMPAIGN-RULES.md). Their armies are in the catalog all the same.
@@ -99,3 +99,5 @@ The guide sits beside the battle, not in its replay setup. A frozen moment is si
 - at 844×390 and 667×375, checks that the guide's banner, placed just below the battle's top panels on short screens, overlaps neither them nor the tray;
 - skips the guide, and checks the tray and that deploying leaves the camps alone;
 - confirms the level is locked at Town Hall 3.
+- retries without the guide and with it, with a trainable or unavailable Last army, confirming the level's army resets and the home army, spells and Last army stay unchanged;
+- checks the client's closing question after three stars, its absence after an early finish, and the retry controls at phone size.

@@ -48,7 +48,8 @@ CAMPAIGN = ROOT / 'reference/campaign/catalog.json'
 PROVENANCE = ROOT / 'reference/campaign/provenance.json'
 LEVEL = re.compile(r'CHALLENGE_TH(\d+)_[A-Z0-9]+$')
 TEXTS = dict(title='TID_TRAINING_LEVELS', info='TID_TRAINING_LEVELS_DESCRIPTION',
-             unlocks='TID_PRACTICE_MODE_UNLOCKS_LATER')
+             unlocks='TID_PRACTICE_MODE_UNLOCKS_LATER',
+             repeatQuestion='TID_NPC_CHALLENGE_PROGRESS_WARNING_TEXT')
 
 
 def decorations():

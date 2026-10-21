@@ -35,6 +35,7 @@ describe('Practice Mode', () => {
     expect(PRACTICE_TEXTS).toMatchObject({
       title: 'Practice',
       unlocks: 'Practice mode unlocks at Town Hall 4',
+      repeatQuestion: 'You did perfectly! Would you like to practice without deployment steps?',
     });
     const fielded = PRACTICE_LEVELS.filter((level) => level.stage);
     expect(fielded.map((level) => level.stage)).toEqual(

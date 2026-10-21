@@ -26,7 +26,8 @@
   "texts": {
     "title": "Practice",
     "info": "Hone your skills with different attack strategies! Practice levels unlock as you upgrade your Town Hall.",
-    "unlocks": "Practice mode unlocks at Town Hall 4"
+    "unlocks": "Practice mode unlocks at Town Hall 4",
+    "repeatQuestion": "You did perfectly! Would you like to practice without deployment steps?"
   },
   "levels": [
     {

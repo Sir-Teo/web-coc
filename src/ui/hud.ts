@@ -70,6 +70,7 @@ import {
   REPLAY_FILE_NAME,
 } from '../game/replay-file';
 import { deliverFile } from './share-file';
+import { Fullscreen, safariTab } from './fullscreen';
 import { compatibleReplayVersion } from '../game/replay';
 import { heroNextRequirement, heroUpgradeCost, heroUpgradeSeconds } from '../game/heroes';
 import {
@@ -779,6 +780,7 @@ export class HUD {
   /** Element references used by updateLive(); dropped whenever a region is rebuilt. */
   private liveRefs: LiveRefs | null = null;
   private safeInsets: { top: number; right: number; bottom: number; left: number } | null = null;
+  private readonly fullscreen = new Fullscreen();
   private readonly hudEl: HTMLElement;
   private readonly contextEl: HTMLElement;
   private readonly drawerEl: HTMLElement;
@@ -947,6 +949,10 @@ export class HUD {
     watchOfflineStatus(() => {
       if (this.panel === 'settings') this.scheduleRender();
     });
+    // The browser's own gestures (back, swipe, Escape) leave full screen too.
+    this.fullscreen.watch(() => {
+      if (this.panel === 'settings') this.scheduleRender();
+    }, signal);
     model.onToast = (m) => this.toast(m);
     scene.onSelect = () => {
       this.panel = null;
@@ -1910,17 +1916,20 @@ export class HUD {
         }
         this.render();
         break;
+      case 'raid-again-guided':
       case 'raid-again': {
         const battle = m.battle;
-        if (!battle?.finished) break;
+        if (!battle?.finished || (verb === 'raid-again-guided' && !battle.fixedArmy)) break;
         m.returnHome();
-        if (!battle.practice && !m.retrain()) {
+        // Practice levels supply their army again; the player's Last army stays at home.
+        if (!battle.practice && !battle.fixedArmy && !m.retrain()) {
           this.resultShown = false;
           this.showDrawer('army');
           break;
         }
         // Another ladder match meets a new opponent, not the one just fought.
         if (battle.ladder) m.startLadder();
+        else if (battle.fixedArmy) m.startCampaign(battle.index, verb === 'raid-again-guided');
         else m.startBattle(battle.index, battle.practice, battle.catalog);
         this.resultShown = false;
         this.panel = null;
@@ -2111,6 +2120,12 @@ export class HUD {
         break;
       case 'haptics':
         m.toggleHaptics();
+        break;
+      case 'fullscreen':
+        // Requested inside the tap: browsers grant full screen only to a user gesture.
+        void this.fullscreen.toggle().then((ok) => {
+          if (!ok) this.toast('Your browser did not allow full screen.');
+        });
         break;
       case 'claim':
         if (m.claimAchievement(arg)) this.audio.effect('Collect Diamonds', 'collect');
@@ -4741,15 +4756,28 @@ export class HUD {
               ],
             ] as const)
           : []),
+        ...(this.fullscreen.available
+          ? ([
+              [
+                'fullscreen',
+                'Full screen',
+                "Hides the browser's address bar and tabs. Your browser's back, swipe or Esc leaves.",
+                this.fullscreen.active,
+              ],
+            ] as const)
+          : []),
       ] as const
     )
       .map(
         ([k, title, desc, on]) =>
           `<div class="setting-row"><div><h3>${title}</h3><p>${desc}</p></div><button class="toggle ${on ? 'on' : ''}" data-action="${k}" role="switch" aria-checked="${on}" aria-label="${title}"><span></span></button></div>`,
       )
-      .join(
-        '',
-      )}<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}${(() => {
+      .join('')}${
+      // iPhone Safari has no full screen for pages; an installed copy runs without its bars.
+      !this.fullscreen.available && safariTab()
+        ? `<div class="setting-row setting-tip"><div><h3>Full screen</h3><p>Tap Share, then Add to Home Screen, to play without the browser's bars. The installed game keeps its own save: export your village below and import it there.</p></div></div>`
+        : ''
+    }<div class="save-section"><h3>${icon('Save', 20)} Your village, saved</h3><p>Progress is saved automatically in this browser. Export a backup to keep it safe or move to another device. Importing replaces this village.</p><div>${button('export', `${icon('Download', 18)} Export village`, 'game-btn blue')}${button('export-village', `${icon('Download', 18)} Export without recordings`, 'game-btn stone')}${button('import', `${icon('Upload', 18)} Import backup`, 'game-btn stone')}${(() => {
       const replaced = replacedVillage();
       return replaced
         ? button(
@@ -4920,7 +4948,7 @@ export class HUD {
                     .join(', ')} could not be stored.</p>`
                 : ''
             }`
-    }${b.ladder ? `<p class="ladder-result">${icon('Trophy', 20)} <b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b> trophies · now ${n(this.model.state.trophies)} · ${this.model.league.name}</p>` : ''}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.practice ? 'Practice again' : b.ladder ? 'Next ladder match' : 'Prepare & attack again'}`, 'game-btn blue')}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.practice ? 'Practice never consumes your army.' : b.ladder ? 'Undeployed troops return home. Ladder matches are this game’s own stand-in for multiplayer.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
+    }${b.fixedArmy && r.stars === 3 ? `<p class="practice-result-note">${html(PRACTICE_TEXTS.repeatQuestion)}</p>` : ''}${b.ladder ? `<p class="ladder-result">${icon('Trophy', 20)} <b>${r.trophies > 0 ? '+' : ''}${r.trophies}</b> trophies · now ${n(this.model.state.trophies)} · ${this.model.league.name}</p>` : ''}<div class="result-actions">${this.model.state.raidLog?.[0]?.replay ? button(`replay:${this.model.state.raidLog[0].id}`, `${icon('Play', 18)} Watch replay`, 'game-btn stone') : ''}${button('raid-again', `${icon('RotateCcw', 18)} ${b.fixedArmy ? 'Attack without guide' : b.practice ? 'Practice again' : b.ladder ? 'Next ladder match' : 'Prepare & attack again'}`, 'game-btn blue')}${b.fixedArmy ? button('raid-again-guided', `${icon('Info', 18)} Guided attack`, 'game-btn stone') : ''}${button('home', `${icon('House', 22)} Return to village`, 'game-btn green')}</div><small class="result-note">${b.fixedArmy ? 'The level provides your army. Your troops and spells stay home. Loot does not replenish.' : b.practice ? 'Practice never consumes your army.' : b.ladder ? 'Undeployed troops return home. Ladder matches are this game’s own stand-in for multiplayer.' : 'Undeployed troops return home. Loot does not replenish.'}</small></section></div>`;
   }
   /** Runs the result screen's loot numbers up from zero, once. */
   private countUp() {

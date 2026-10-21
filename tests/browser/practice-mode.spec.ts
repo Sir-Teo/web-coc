@@ -95,6 +95,101 @@ test('below its Town Hall a Practice level is locked and says when it opens', as
   await expect(card.locator(`[data-action="attack:${GIANT_SMASH}"]`)).toBeDisabled();
 });
 
+for (const blockedLastArmy of [false, true]) {
+  test(`Practice retries leave the home army alone with a ${blockedLastArmy ? 'locked' : 'trainable'} Last army`, async ({
+    page,
+    browserName,
+  }) => {
+    await boot(page, 4);
+    const home = await page.evaluate(
+      ({ index, blocked }) => {
+        const m = window.__game.model;
+        m.train('archer');
+        // A trainable Last army used to add Barbarians to the home army; an unavailable
+        // Dragon used to prevent the Practice retry altogether.
+        m.state.lastArmy = {
+          ...m.state.army,
+          archer: 0,
+          swordsman: blocked ? 0 : 5,
+          dragon: blocked ? 1 : 0,
+        };
+        m.startCampaign(index, false);
+        m.discardRecording();
+        for (const building of m.battle!.buildings) m.damage(building, building.hp);
+        m.finishBattle();
+        return { army: m.state.army, spells: m.state.spells, lastArmy: m.state.lastArmy };
+      },
+      { index: GIANT_SMASH, blocked: blockedLastArmy },
+    );
+    // Battle results take precedence over the campaign window.
+    await expect(page.locator('#result-title')).toBeVisible();
+    await expect(page.locator('.practice-result-note')).toContainText(
+      'Would you like to practice without deployment steps?',
+    );
+    await expect(page.locator('[data-action="raid-again"]')).toHaveText('Attack without guide');
+    await expect(page.locator('[data-action="raid-again-guided"]')).toBeVisible();
+    await page.screenshot({
+      path: `output/playtest/practice-retry-${blockedLastArmy}-${browserName}.png`,
+    });
+    if (!blockedLastArmy) {
+      for (const viewport of [
+        { width: 844, height: 390 },
+        { width: 1440, height: 960 },
+      ]) {
+        await page.setViewportSize(viewport);
+        const boxes = await page.locator('.result-actions button').evaluateAll((buttons) =>
+          buttons.map((button) => {
+            button.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+            const { x, y, width, height } = button.getBoundingClientRect();
+            return { x, y, width, height };
+          }),
+        );
+        for (const box of boxes) {
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+          expect(box.y).toBeGreaterThanOrEqual(0);
+          expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+          expect(box.height).toBeGreaterThanOrEqual(44);
+        }
+        await page.screenshot({
+          path: `output/playtest/practice-retry-${viewport.width}-${browserName}.png`,
+        });
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+    }
+
+    await page.locator('[data-action="raid-again"]').tap();
+    await expect(page.locator('.practice-guide')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const m = window.__game.model;
+          return !!m.battle?.fixedArmy && !m.battle.finished;
+        }),
+      )
+      .toBe(true);
+    expect(
+      await page.evaluate(() => {
+        const m = window.__game.model;
+        return { army: m.state.army, spells: m.state.spells, lastArmy: m.state.lastArmy };
+      }),
+    ).toEqual(home);
+    expect(await page.evaluate(() => window.__game.model.battle!.remaining.giant)).toBe(13);
+
+    // An early finish can retry with the guide too, even with no stars on this attempt.
+    await page.evaluate(() => window.__game.model.finishBattle());
+    await expect(page.locator('.practice-result-note')).toHaveCount(0);
+    await page.locator('[data-action="raid-again-guided"]').tap();
+    await expect(page.locator('.practice-guide')).toContainText('Deploy a Giant');
+    expect(
+      await page.evaluate(() => {
+        const m = window.__game.model;
+        return { army: m.state.army, spells: m.state.spells, lastArmy: m.state.lastArmy };
+      }),
+    ).toEqual(home);
+  });
+}
+
 for (const viewport of [
   { width: 844, height: 390 },
   { width: 667, height: 375 },
