@@ -15,12 +15,16 @@ test('late campaign art loads on first use and holds deployment until it renders
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));
   page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
   await page.route(LATE_ART, async (route) => {
     requested.push(new URL(route.request().url()).pathname);
     await gate;
     await route.continue();
   });
-  await page.goto('/');
+  // Use production loading rules; dev otherwise preloads every defense family.
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await page.locator('#loading').waitFor({ state: 'detached' });
@@ -36,10 +40,10 @@ test('late campaign art loads on first use and holds deployment until it renders
     m.changed();
   });
 
-  // No Flight Zone's Dragon and Balloons use boot-time art.
+  // Payback needs neither late defenses nor a Clan Castle garrison.
   await page.locator('.attack-btn').click();
-  await page.locator('[data-action="attack:56"]').click();
-  await expect(page.locator('.battle-enemy h2')).toHaveText('No Flight Zone');
+  await page.locator('[data-action="attack:0"]').click();
+  await expect(page.locator('.battle-enemy h2')).toHaveText('Payback');
   await page.waitForTimeout(300);
   expect(requested).toEqual([]);
   await page.locator('[data-action="home"]').click();

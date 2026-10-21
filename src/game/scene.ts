@@ -281,7 +281,7 @@ interface ArtFamily {
   prepare?: () => Promise<unknown>;
   /** Whether `prepare` has finished; families without it are always prepared. */
   prepared?: () => boolean;
-  preload: (scene: Phaser.Scene) => void;
+  preload: (scene: Phaser.Scene, fetching?: (key: string) => boolean) => void;
 }
 /**
  * Whether every deferred family loads right after boot. The dev server does, which is what the
@@ -1217,10 +1217,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.lateAssets) return this.lateAssets;
     let shutdown = false;
     let slow: ReturnType<typeof setTimeout>;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    const onShutdown = () => {
       shutdown = true;
       clearTimeout(slow);
-    });
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     slow = setTimeout(() => {
       if (!shutdown) this.model.notify(LOADING_LATE_ART);
     }, 400);
@@ -1230,7 +1231,7 @@ export class VillageScene extends Phaser.Scene {
       if (document.querySelector('#toast')?.textContent === LOADING_LATE_ART) this.model.notify('');
     };
     // The presentation code and its source graphs are a separate chunk, fetched with the art.
-    this.lateAssets = Promise.all([import('./late-campaign-scene'), loadCharacterArt()]).then(
+    const loading = Promise.all([import('./late-campaign-scene'), loadCharacterArt()]).then(
       ([{ LateCampaignPresentation, preloadLateCampaign }]) =>
         new Promise<void>((resolve) => {
           let failed = false;
@@ -1269,6 +1270,9 @@ export class VillageScene extends Phaser.Scene {
         // The waiting battle can still return home; a later sync retries after a pause.
         setTimeout(() => (this.lateAssets = undefined), 5000);
       },
+    );
+    this.lateAssets = loading.finally(() =>
+      this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown),
     );
     return this.lateAssets;
   }
@@ -1526,7 +1530,8 @@ export class VillageScene extends Phaser.Scene {
     if (!wanted.length) return this.familyLoad ?? Promise.resolve();
     for (const family of wanted) this.requestedFamilies.add(family);
     let shutdown = false;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => (shutdown = true));
+    const onShutdown = () => (shutdown = true);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     const run = async () => {
       // Graphs first: a family whose graph cannot be fetched fails like a failed page.
       const prepared = await Promise.all(
@@ -1591,7 +1596,7 @@ export class VillageScene extends Phaser.Scene {
           });
           for (const family of ready) {
             const queued = new Set(this.load.list);
-            family.preload(this);
+            family.preload(this, (key) => this.deferredArt.loading(key));
             // The texture keys this family added (keys already resident are never listed).
             const added = [...this.load.list]
               .filter(
@@ -1611,7 +1616,9 @@ export class VillageScene extends Phaser.Scene {
         else kick();
       });
     };
-    this.familyLoad = (this.familyLoad ?? Promise.resolve()).then(run);
+    this.familyLoad = (this.familyLoad ?? Promise.resolve())
+      .then(run)
+      .finally(() => this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown));
     return this.familyLoad;
   }
   /** Santa, X-Bow and Cannon pages are heavy and rarely needed at boot; they
@@ -1619,9 +1626,10 @@ export class VillageScene extends Phaser.Scene {
   loadHeavyArt(): Promise<void> {
     if (this.heavyArt) return this.heavyArt;
     let shutdown = false;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    const onShutdown = () => {
       shutdown = true;
-    });
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     this.heavyArt = new Promise<void>((resolve) => {
       const done = (failed: boolean) => {
         if (shutdown) {
@@ -1667,7 +1675,7 @@ export class VillageScene extends Phaser.Scene {
       // The late-campaign bundle may own the loader; wait for it first.
       if (this.load.isLoading()) this.load.once(Phaser.Loader.Events.COMPLETE, kick);
       else kick();
-    });
+    }).finally(() => this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown));
     return this.heavyArt;
   }
   private darkCapCache = { revision: -1, value: 0 };
@@ -2478,6 +2486,8 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.reducedMotion) this.resourceFlights.clear();
     const mode = this.model.battle ? 'battle' : 'home';
     if (mode !== this.mode || this.renderedBattle !== this.model.battle) {
+      // A retry starts on the same guide step, but its camera has been framed afresh.
+      this.guideFocus = '';
       this.combatEffects.clear();
       this.clearBuildingPresentations();
       this.garrisonPresentation.clear();

@@ -76,6 +76,11 @@ Images are decoded off the main thread before upload (`image-decode.ts`), and a
 texture that has not arrived yet draws nothing rather than Phaser's black
 placeholder.
 
+Art batches remove their temporary scene-shutdown listeners when they settle, so
+releasing and reloading a family does not accumulate callbacks across attacks.
+The Cannon and Tesla batches leave fallback sprites already being fetched by
+`LazyTextures` to that request, avoiding duplicate texture registration.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates

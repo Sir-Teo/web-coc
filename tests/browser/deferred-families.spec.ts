@@ -97,6 +97,12 @@ test('families the home village does not draw are released after a while and loa
   await attack();
   await page.waitForFunction(() => window.__game.scene.artSettled);
   expect(await page.evaluate(loaded('mortar'))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => window.__game.scene.mortarPresentation.towers.size))
+    .toBeGreaterThan(0);
+  const shutdownListeners = await page.evaluate(() =>
+    window.__game.scene.events.listenerCount('shutdown'),
+  );
   await page.evaluate(() => {
     const m = window.__game.model;
     m.suspendBattle();
@@ -111,6 +117,10 @@ test('families the home village does not draw are released after a while and loa
   await expect
     .poll(() => page.evaluate(() => window.__game.scene.mortarPresentation.towers.size))
     .toBeGreaterThan(0);
+  // Completed art batches must not accumulate scene-lifetime cancellation listeners.
+  expect(
+    await page.evaluate(() => window.__game.scene.events.listenerCount('shutdown')),
+  ).toBeLessThanOrEqual(shutdownListeners);
   expect(errors).toEqual([]);
 });
 

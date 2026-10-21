@@ -33,9 +33,16 @@ import { battleUnit } from './battle-index';
 const APPEAR_SAMPLE = 'tesla-appear';
 const sounds = () => (teslaArtLoaded() ? Object.entries(teslaSounds()) : []);
 const sample = (path: string) => (path.includes('appear') ? APPEAR_SAMPLE : teslaSample(path));
-export function preloadTeslas(scene: Phaser.Scene) {
+export function preloadTeslas(
+  scene: Phaser.Scene,
+  /** Fallback sprites already being fetched outside the loader batch. */
+  fetching: (key: string) => boolean = () => false,
+) {
   preloadNativeMeshes(scene, teslaGraph(), 'tesla');
-  for (const level of TESLA_ART_LEVELS) scene.load.image(teslaTexture(level), teslaAsset(level));
+  for (const level of TESLA_ART_LEVELS) {
+    const key = teslaTexture(level);
+    if (!scene.textures.exists(key) && !fetching(key)) scene.load.image(key, teslaAsset(level));
+  }
   for (const [path, sound] of sounds()) scene.load.binary(sample(path), '/' + sound.path);
 }
 

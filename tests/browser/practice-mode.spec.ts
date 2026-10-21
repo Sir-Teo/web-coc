@@ -190,6 +190,38 @@ for (const blockedLastArmy of [false, true]) {
   });
 }
 
+test('a guided retry brings its first deployment spot back into view', async ({ page }) => {
+  await boot(page, 4);
+  await page.keyboard.press('Escape');
+  await page.evaluate((index) => window.__game.model.startCampaign(index, true), GIANT_SMASH);
+  await expect(page.locator('.practice-guide')).toContainText('Deploy a Giant');
+  const guideSpot = () =>
+    page.evaluate(() => {
+      const spot = window.__game.model.practiceGuide!.spot!;
+      return window.__game.scene.screenFor(spot.x, spot.y);
+    });
+  // The first guide frames its ring; a fresh guided attempt must frame it the same way.
+  await expect.poll(async () => (await guideSpot()).y).toBeLessThan(600);
+  const first = await guideSpot();
+  // A redraw within the same step must still let the player pan away freely.
+  await page.evaluate(async () => {
+    const { scene, model } = window.__game;
+    scene.cameras.main.scrollY += 80 / scene.viewZoom;
+    model.changed();
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
+  expect(first.y - (await guideSpot()).y).toBeCloseTo(80, 0);
+  await page.evaluate(() => window.__game.model.finishBattle());
+  await expect(page.locator('#result-title')).toBeVisible();
+  await page.locator('[data-action="raid-again-guided"]').tap();
+  await expect(page.locator('.practice-guide')).toContainText('Deploy a Giant');
+  await expect.poll(async () => Math.abs((await guideSpot()).y - first.y)).toBeLessThan(1);
+  await expect.poll(async () => Math.abs((await guideSpot()).x - first.x)).toBeLessThan(1);
+  await page.screenshot({ path: 'output/playtest/practice-guided-retry-camera.png' });
+});
+
 for (const viewport of [
   { width: 844, height: 390 },
   { width: 667, height: 375 },
