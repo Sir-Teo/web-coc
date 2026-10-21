@@ -68,14 +68,15 @@ const LOD_CLOSE_ZOOM = 1.15;
 const LOD_RESAMPLE_EVERY = 4;
 export class TroopNativePresentation {
   private packs = new Map<string, Pack>();
-  private pending = new Set<string>();
+  private pending = new Map<string, object>();
+  private packRetryAt = new Map<string, number>();
   /**
    * Levels whose textures are uploaded, by kind, and level loads in flight. A paged pack (see
    * scripts/native-pages.mjs) tags each page with the levels that draw it, so a Level 1
    * Barbarian uploads its own art rather than all thirteen levels'.
    */
   private levelsReady = new Map<string, Set<number>>();
-  private pendingLevels = new Set<string>();
+  private pendingLevels = new Map<string, Pack>();
   private levelRetryAt = new Map<string, number>();
   private views = new Map<number, TroopView>();
   private motion = new UnitMotionTracker();
@@ -93,8 +94,8 @@ export class TroopNativePresentation {
   prefetch(kinds: Iterable<string>, levelOf: (kind: string) => number) {
     for (const kind of kinds) void this.load(kind).then(() => this.loadLevel(kind, levelOf(kind)));
   }
-  private async decodeTexture(key: string, path: string) {
-    if (this.scene.textures.exists(key)) return;
+  private async decodeTexture(key: string, path: string, current: () => boolean) {
+    if (!current() || this.scene.textures.exists(key)) return;
     // Keep a top-down image source, as Phaser's loader does. ImageBitmap uploads ignore
     // WebGL's UNPACK_FLIP_Y_WEBGL and UNPACK_PREMULTIPLY_ALPHA_WEBGL flags: the old fast
     // path sampled unrelated atlas regions, leaving troops as disconnected body fragments.
@@ -103,49 +104,67 @@ export class TroopNativePresentation {
     const image = new Image();
     image.src = '/' + path;
     await image.decode();
-    if (this.alive && !this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
+    if (current() && !this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
   }
   private async load(kind: string) {
-    if (this.pending.has(kind) || this.packs.has(kind)) return;
-    this.pending.add(kind);
+    if (!this.alive || this.pending.has(kind) || this.packs.has(kind)) return;
+    if ((this.packRetryAt.get(kind) ?? 0) > performance.now()) return;
+    const request = {};
+    this.pending.set(kind, request);
+    const current = () => this.alive && this.pending.get(kind) === request;
     try {
       const response = await fetch(`/assets/troops-native/${kind}/graph.json`);
+      if (!current()) return;
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Pack;
-      if (this.alive) this.packs.set(kind, pack);
+      if (current()) {
+        this.packs.set(kind, pack);
+        this.packRetryAt.delete(kind);
+      }
     } catch (error) {
-      console.error('Native troop animation', kind, error);
+      if (current()) {
+        this.packRetryAt.set(kind, performance.now() + 5000);
+        console.error('Native troop animation', kind, error);
+      }
     } finally {
-      // A failed load must retry next frame instead of pinning the portrait fallback.
-      this.pending.delete(kind);
+      if (this.pending.get(kind) === request) this.pending.delete(kind);
     }
   }
   /** Upload the pages one level of a loaded pack draws. */
   private async loadLevel(kind: string, level: number) {
     const pack = this.packs.get(kind);
     const job = `${kind}#${level}`;
-    if (!pack || this.pendingLevels.has(job) || this.levelsReady.get(kind)?.has(level)) return;
+    if (
+      !this.alive ||
+      !pack ||
+      this.pendingLevels.has(job) ||
+      this.levelsReady.get(kind)?.has(level)
+    )
+      return;
     if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
-    this.pendingLevels.add(job);
+    this.pendingLevels.set(job, pack);
+    const current = () => this.alive && this.packs.get(kind) === pack;
     try {
       await Promise.all(
         Object.entries(pack.scenes).flatMap(([name, g]) =>
           Object.entries(g.textures)
             .filter(([, t]) => !t.levels || t.levels.includes(level))
             .map(([id, t]) =>
-              this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path),
+              this.decodeTexture(nativeMeshTexture(`troop:${kind}:${name}`, id), t.path, current),
             ),
         ),
       );
-      if (this.alive && this.packs.get(kind) === pack) {
+      if (current()) {
         if (!this.levelsReady.has(kind)) this.levelsReady.set(kind, new Set());
         this.levelsReady.get(kind)!.add(level);
       }
     } catch (error) {
-      this.levelRetryAt.set(job, performance.now() + 5000);
-      console.error('Native troop animation', job, error);
+      if (current()) {
+        this.levelRetryAt.set(job, performance.now() + 5000);
+        console.error('Native troop animation', job, error);
+      }
     } finally {
-      this.pendingLevels.delete(job);
+      if (this.pendingLevels.get(job) === pack) this.pendingLevels.delete(job);
     }
   }
   clear() {
@@ -160,6 +179,7 @@ export class TroopNativePresentation {
    * reload through the existing prefetch path; dropped views are already gone.
    */
   releaseExcept(keep?: ReadonlySet<string>) {
+    for (const kind of this.pending.keys()) if (!keep?.has(kind)) this.pending.delete(kind);
     for (const [kind, pack] of this.packs) {
       if (keep?.has(kind)) continue;
       for (const [name, graph] of Object.entries(pack.scenes))
@@ -169,6 +189,8 @@ export class TroopNativePresentation {
         }
       this.packs.delete(kind);
       this.levelsReady.delete(kind);
+      for (const [job, owner] of this.pendingLevels)
+        if (owner === pack) this.pendingLevels.delete(job);
     }
   }
   destroy() {

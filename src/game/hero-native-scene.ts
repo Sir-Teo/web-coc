@@ -67,7 +67,9 @@ export function bakedFrame(state: BakedState, direction: number, seconds: number
 /** Lazy loads baked atlases; existing sprites stay visible until all textures are ready. */
 export class HeroNativePresentation {
   private packs = new Map<string, Atlas>();
-  private pending = new Set<string>();
+  /** In-flight atlases own partial texture uploads until their pack is ready. */
+  private pending = new Map<string, Set<string>>();
+  private retryAt = new Map<string, number>();
   private sprites = new Map<number, Phaser.GameObjects.Image>();
   /** Per actor (keyed by `Actor.track`): baked direction, drawn state and its start clock. */
   private positions = new Map<number, { direction: number; state: string; since: number }>();
@@ -83,13 +85,18 @@ export class HeroNativePresentation {
     }
   }
   private async load(key: string) {
-    if (this.pending.has(key) || this.packs.has(key)) return;
-    this.pending.add(key);
+    if (!this.alive || this.pending.has(key) || this.packs.has(key)) return;
+    if ((this.retryAt.get(key) ?? 0) > performance.now()) return;
+    const request = new Set<string>();
+    this.pending.set(key, request);
+    const current = () => this.alive && this.pending.get(key) === request;
     try {
       const directory = heroArtDirectory(key);
       const response = await fetch(`${directory}/atlas.json`);
+      if (!current()) return;
       if (!response.ok) throw Error(`HTTP ${response.status}`);
       const pack = (await response.json()) as Atlas;
+      if (!current()) return;
       const images = new Set(
         Object.values(pack.states).flatMap((s) => s.frames.flat().map((f) => f.image)),
       );
@@ -100,11 +107,13 @@ export class HeroNativePresentation {
           const image = new Image();
           image.src = `${directory}/${file}`;
           await image.decode();
-          if (!this.alive) return;
-          const loaded = this.scene.textures.exists(texture)
+          if (!current()) return;
+          const existed = this.scene.textures.exists(texture);
+          const loaded = existed
             ? this.scene.textures.get(texture)
             : this.scene.textures.addImage(texture, image);
           if (!loaded) throw Error(`Could not load ${texture}`);
+          if (!existed) request.add(texture);
           for (const state of Object.values(pack.states))
             for (const frame of state.frames.flat()) {
               const name = `${frame.x}:${frame.y}:${frame.w}:${frame.h}`;
@@ -113,11 +122,19 @@ export class HeroNativePresentation {
             }
         }),
       );
-      if (this.alive) this.packs.set(key, pack);
+      if (current()) {
+        this.packs.set(key, pack);
+        this.retryAt.delete(key);
+      }
     } catch (error) {
-      console.error('Baked character animation', key, error);
+      if (current()) {
+        for (const texture of request)
+          if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+        this.retryAt.set(key, performance.now() + 5000);
+        console.error('Baked character animation', key, error);
+      }
     } finally {
-      this.pending.delete(key);
+      if (this.pending.get(key) === request) this.pending.delete(key);
     }
   }
   clear() {
@@ -131,6 +148,12 @@ export class HeroNativePresentation {
    * Baked atlas pages are megabytes each and otherwise accumulate forever.
    */
   releaseExcept(keep?: ReadonlySet<string>) {
+    for (const [key, request] of this.pending) {
+      if (keep?.has(key)) continue;
+      this.pending.delete(key);
+      for (const texture of request)
+        if (this.scene.textures.exists(texture)) this.scene.textures.remove(texture);
+    }
     for (const [key, pack] of this.packs) {
       if (keep?.has(key)) continue;
       const files = new Set(

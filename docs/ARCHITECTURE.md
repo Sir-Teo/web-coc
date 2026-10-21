@@ -81,6 +81,17 @@ releasing and reloading a family does not accumulate callbacks across attacks.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
 
+Failed native troop graphs and hero/pet atlases wait five seconds before retrying,
+per asset key, as troop texture pages already do. Rendering keeps requesting missing
+art after the cooldown, so a temporary outage recovers within the same battle without
+repeating failed metadata requests every frame. Successful loads clear their cooldown.
+
+Releasing native character art also invalidates its pending requests. Metadata or image
+decodes that finish after a mode change cannot upload an unused texture again, and an old
+completion cannot clear a newer request's pending marker. Hero atlases track textures
+uploaded before their last image is ready, so release or failure also frees a partial
+atlas from GPU memory.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates
