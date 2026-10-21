@@ -92,6 +92,14 @@ completion cannot clear a newer request's pending marker. Hero atlases track tex
 uploaded before their last image is ready, so release or failure also frees a partial
 atlas from GPU memory.
 
+Native character prefetch includes the current battle's carried army, hero and pet
+setups, and defending heroes and Guardians alongside the home roster. Practice levels
+therefore warm the army they provide while scouting, using that army's levels. A replay
+rewind keeps the atlases its reconstructed battle still needs instead of dropping and
+fetching heroes the viewer does not own. Home pet prefetch follows the selected hero
+lineup, leaving pets assigned to benched heroes cold. `tests/browser/battle-art-prefetch.spec.ts`
+checks first-deployment rendering and texture reuse across a Practice replay rewind.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates

@@ -2429,19 +2429,33 @@ export class VillageScene extends Phaser.Scene {
         grid.y < b.y + BUILDINGS[b.kind].size,
     );
   }
-  /** Troop kinds in the carried army, sorted. */
+  /** Troop kinds held at home or carried by the current battle, sorted. */
   private wantedTroopArt() {
-    const army = this.model.state.army as Record<string, number> | undefined;
-    return Object.keys(army ?? {})
-      .filter((k) => (army?.[k] ?? 0) > 0)
-      .sort();
+    const wanted = new Set<string>();
+    for (const army of [this.model.state.army, this.model.battle?.carriedArmy]) {
+      if (!army) continue;
+      for (const [kind, count] of Object.entries(army)) if (count > 0) wanted.add(kind);
+    }
+    return [...wanted].sort();
   }
-  /** Baked hero and pet atlases for the current lineup. */
+  /** Baked character atlases the home lineup or current battle needs. */
   private wantedHeroArt() {
     const wanted = new Set<string>();
-    for (const kind of this.model.heroLineup) wanted.add(`heroes-native/${kind}`);
-    for (const pet of Object.values(this.model.petProgress.assigned))
+    const assigned = this.model.petProgress.assigned;
+    for (const kind of this.model.heroLineup) {
+      wanted.add(`heroes-native/${kind}`);
+      const pet = assigned[kind];
       if (pet) wanted.add(`heroes-native/${pet}`);
+    }
+    for (const hero of this.model.battle?.nativeHeroes ?? []) {
+      wanted.add(`heroes-native/${hero.kind}`);
+      if (hero.pet) wanted.add(`heroes-native/${hero.pet.kind}`);
+    }
+    for (const defender of this.model.battle?.defenders ?? []) {
+      if (defender.kind === 'hero' && defender.hero) wanted.add(`heroes-native/${defender.hero}`);
+      else if (defender.kind === 'guardian' && defender.guardian)
+        wanted.add(`guardians-native/${defender.guardian}`);
+    }
     return wanted;
   }
   /**
@@ -2510,7 +2524,6 @@ export class VillageScene extends Phaser.Scene {
         const battle = mode === 'battle' ? this.model.battle : null;
         const keepTroops = new Set<string>(this.wantedTroopArt());
         if (battle) {
-          for (const [k, n] of Object.entries(battle.remaining ?? {})) if (n > 0) keepTroops.add(k);
           for (const u of battle.units) keepTroops.add(u.kind);
         }
         this.troopNativePresentation.releaseExcept(keepTroops);
