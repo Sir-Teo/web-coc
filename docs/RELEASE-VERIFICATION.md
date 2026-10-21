@@ -51,24 +51,25 @@ boot, required art, save and reload, and an offline reload through the service w
 before publishing. Only a main-branch run can deploy. The full browser matrix remains on
 demand: the `browser-regression.yml` workflow retains browser evidence for seven days.
 
-The repository targets Firebase Hosting site `coc-teozeng` in project
-`personal-website-3bc37`, serving <https://coc.teozeng.dev>. CI needs the repository's
-`FIREBASE_TOKEN` secret. Never commit credentials.
+The repository publishes `dist/` to GitHub Pages at <https://coc.teozeng.dev>.
+Pages uses GitHub Actions as its build source and `coc.teozeng.dev` as its custom
+domain. DNS has a `coc` CNAME pointing to `sir-teo.github.io` (without `/web-coc`).
+The custom domain serves the game at `/`, as required by its asset and offline URLs.
+CI uses the workflow's short-lived GitHub token; no hosting credentials are needed.
 
-`npm run deploy` performs the local checks and smoke suite, then deploys to that
-same site using an authenticated Firebase CLI. It publishes immediately. For a
-fork, change `firebase.json`, `.firebaserc`, the package command and workflow target
-before using it. Other static hosts can serve `dist/` with equivalent routing and
-cache headers.
+Pushes to `main` publish after the checks above pass. `npm run deploy` uses an
+authenticated GitHub CLI to dispatch that same workflow for the committed remote
+`main` branch; it does not publish local working-tree changes. For a fork, update
+the package command, Pages custom domain and DNS before deploying.
+The Firebase configuration is retained only for rollback to the former host.
 
 ## Cache and rollback
 
-`firebase.json` revalidates HTML and `sw.js`, gives hashed JS/CSS/font assets a long
-cache lifetime and caches images for one day. Build-generated service-worker
-manifests track content hashes. Keep the build and its assets together when releasing.
+GitHub Pages controls HTTP cache headers. Build-generated service-worker manifests
+track content hashes. Keep the build and its assets together when releasing.
 
-To roll back, restore the previous Hosting release through Firebase, or build and
-deploy a known-good Git revision through the same checks. Verify an existing browser
+To roll back, revert the release commit on `main` and let the same checks and Pages
+deployment run. Verify an existing browser
 session updates correctly as well as a fresh load. Do not delete a user's stored
 village as an update workaround; storage migrations must remain compatible.
 

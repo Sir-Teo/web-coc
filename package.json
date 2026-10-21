@@ -16,7 +16,7 @@
     "campaign:generate": "node scripts/generate-campaign-stages.mjs",
     "format": "prettier --write src tests scripts *.ts *.json index.html",
     "check": "npm run typecheck:tests && npm run test:docs && npm test && npm run build",
-    "deploy": "npm run check && npm run test:production && npx -y firebase-tools@15.30.2 deploy --only hosting:coc-teozeng --project personal-website-3bc37",
+    "deploy": "gh workflow run deploy.yml --repo Sir-Teo/web-coc --ref main",
     "test:blacksmith:production": "node scripts/blacksmith-production-check.mjs",
     "test:campaign:production": "node scripts/campaign-production-check.mjs",
     "test:late-campaign:production": "node scripts/late-campaign-production-check.mjs",
