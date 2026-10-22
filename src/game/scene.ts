@@ -3890,7 +3890,7 @@ export class VillageScene extends Phaser.Scene {
   private sameBattleFrame(battle: NonNullable<GameModel['battle']>) {
     const key = this.frameKey,
       cam = this.cameras.main;
-    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}`;
+    const art = `${this.heavyArtReady}:${this.deferredArtSettled}:${this.lateAssetsReady}:${this.cannonPresentation.artRevision}:${this.villageArcherTowers.artRevision}:${this.villageNativePresentation.artRevision}`;
     const same =
       !this.fxDrained &&
       // The grace window after the finish animates on the presentation clock, not elapsed.

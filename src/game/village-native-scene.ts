@@ -207,11 +207,33 @@ interface ViewEntry {
 export class VillageNativePresentation {
   private packs = new Map<string, Pack>();
   private pending = new Set<string>();
+  /** Failed graph downloads back off from five seconds to five minutes. */
+  private failed = new Map<string, { attempts: number; retryAt: number }>();
   /** Levels whose textures are uploaded, by pack key, and level loads in flight. */
   private levelsReady = new Map<string, Set<number>>();
   private pendingLevels = new Set<string>();
   /** A level whose pages failed waits this long (performance.now ms) before asking again. */
   private levelRetryAt = new Map<string, number>();
+  /** Missing art used by the last render; offscreen failures must not wake cached frames. */
+  private wantedPacks = new Set<string>();
+  private wantedLevels = new Set<string>();
+  private revision = 0;
+  /** Art completion or a due retry invalidates an otherwise unchanged scouting/replay frame. */
+  get artRevision() {
+    const now = performance.now();
+    let due: number | undefined;
+    for (const key of this.wantedPacks) {
+      const at = this.failed.get(key)?.retryAt;
+      if (at !== undefined && at <= now && !this.pending.has(key))
+        due = Math.min(due ?? Infinity, at);
+    }
+    for (const job of this.wantedLevels) {
+      const at = this.levelRetryAt.get(job);
+      if (at !== undefined && at <= now && !this.pendingLevels.has(job))
+        due = Math.min(due ?? Infinity, at);
+    }
+    return `${this.revision}:${due ?? ''}`;
+  }
   /** Scene views per building id, then per pack scene. */
   private views = new Map<number, Map<string, ViewEntry>>();
   /**
@@ -224,6 +246,10 @@ export class VillageNativePresentation {
   private hidden = new Set<number>();
   private aims = new Map<number, Point>();
   private alive = true;
+  private online = () => {
+    for (const failure of this.failed.values()) failure.retryAt = 0;
+    for (const job of this.levelRetryAt.keys()) this.levelRetryAt.set(job, 0);
+  };
   private placement?: { building: Building; valid: boolean };
   private seen = new Set<number>();
   private used = new Set<string>();
@@ -246,29 +272,46 @@ export class VillageNativePresentation {
     private notify: (message: string) => void,
     private storageFill: (resource: 'gold' | 'elixir') => number,
   ) {
+    if (typeof window !== 'undefined') window.addEventListener('online', this.online);
     // Skipped renders never repaint isolated group buffers: context loss must force them.
     (
       scene.game?.renderer as { on?: (event: string, fn: () => void, context?: unknown) => void }
     )?.on?.('losewebgl', this.invalidate, this);
   }
   private invalidate() {
+    this.revision++;
     for (const entries of this.views.values())
       for (const entry of entries.values()) entry.signature = undefined;
   }
   private async load(kind: BuildingKind | string, variant?: string) {
     const key = packKey(kind, variant);
+    this.wantedPacks.add(key);
     const path = packPath(kind, variant);
-    if (!path || this.pending.has(key) || this.packs.has(key)) return;
+    if (!this.alive || !path || this.pending.has(key) || this.packs.has(key)) return;
+    const failure = this.failed.get(key);
+    if (failure && performance.now() < failure.retryAt) return;
     this.pending.add(key);
     try {
       const pack = await fetchPack(key, path);
-      if (this.alive) this.packs.set(key, pack);
+      if (this.alive) {
+        this.packs.set(key, pack);
+        this.failed.delete(key);
+        this.revision++;
+      }
     } catch (error) {
-      if (this.alive && !variant)
+      if (!this.alive) return;
+      const attempts = (failure?.attempts ?? 0) + 1;
+      this.failed.set(key, {
+        attempts,
+        retryAt: performance.now() + Math.min(300_000, 5000 * 2 ** (attempts - 1)),
+      });
+      if (!variant && !failure)
         this.notify(
-          `Could not load ${BUILDINGS[kind as BuildingKind].name} animation. Refresh to retry.`,
+          `Could not load ${BUILDINGS[kind as BuildingKind]?.name ?? kind} animation. It will retry automatically.`,
         );
       console.error('Native village artwork', key, error);
+    } finally {
+      this.pending.delete(key);
     }
   }
   /** Upload the pages one level of a loaded pack draws. */
@@ -276,7 +319,8 @@ export class VillageNativePresentation {
     const key = packKey(kind, variant);
     const pack = this.packs.get(key);
     const job = `${key}#${level}`;
-    if (!pack || this.pendingLevels.has(job) || this.ready(key, level)) return;
+    this.wantedLevels.add(job);
+    if (!this.alive || !pack || this.pendingLevels.has(job) || this.ready(key, level)) return;
     if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
     this.pendingLevels.add(job);
     try {
@@ -287,10 +331,14 @@ export class VillageNativePresentation {
           this.scene.textures.addImage(textureKey, image);
       if (!this.levelsReady.has(key)) this.levelsReady.set(key, new Set());
       this.levelsReady.get(key)!.add(level);
+      this.levelRetryAt.delete(job);
+      this.revision++;
     } catch (error) {
       // A frame drawing this level asks again after a pause; the fallback sprite covers.
-      this.levelRetryAt.set(job, performance.now() + 5000);
-      console.error('Native village artwork', job, error);
+      if (this.alive) {
+        this.levelRetryAt.set(job, performance.now() + 5000);
+        console.error('Native village artwork', job, error);
+      }
     } finally {
       this.pendingLevels.delete(job);
     }
@@ -306,9 +354,12 @@ export class VillageNativePresentation {
   clear() {
     for (const id of [...this.views.keys()]) this.drop(id);
     this.aims.clear();
+    this.wantedPacks.clear();
+    this.wantedLevels.clear();
   }
   destroy() {
     this.alive = false;
+    if (typeof window !== 'undefined') window.removeEventListener('online', this.online);
     (
       this.scene.game?.renderer as {
         off?: (event: string, fn: () => void, context?: unknown) => void;
@@ -323,6 +374,8 @@ export class VillageNativePresentation {
     iso: (x: number, y: number) => { x: number; y: number },
     sprites: Map<number, Phaser.GameObjects.Image>,
   ) {
+    this.wantedPacks.clear();
+    this.wantedLevels.clear();
     const seen = this.seen;
     seen.clear();
     const cam = (

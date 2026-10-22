@@ -100,6 +100,16 @@ fetching heroes the viewer does not own. Home pet prefetch follows the selected 
 lineup, leaving pets assigned to benched heroes cold. `tests/browser/battle-art-prefetch.spec.ts`
 checks first-deployment rendering and texture reuse across a Practice replay rewind.
 
+Village building graphs also recover from failed downloads: the pending marker clears
+after failure and retries back off from five seconds to five minutes. The fallback stays
+visible while the native graph or level pages are unavailable. Going online makes failed
+graphs and pages due immediately; success clears the failure state. Art completion and
+due retries for visible buildings invalidate the cached world frame, so scouting and
+paused replays recover without camera movement or simulation steps. A failure
+notice is shown once per outage instead of asking the player to refresh.
+`tests/browser/village-art-recovery.spec.ts` verifies fallback visibility, recovery in
+place, and reconnect retries for metadata and level pages at home and while scouting.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates
