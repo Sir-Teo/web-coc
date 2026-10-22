@@ -34,7 +34,6 @@ for (const [width, height] of [
     await page.locator('.train-add').click();
     for (const kind of ['healer', 'dragon', 'pekka']) {
       const train = page.locator(`[data-action="train:${kind}"]`);
-      await train.scrollIntoViewIfNeeded();
       await expect(train).toBeEnabled();
       await train.click();
       expect(await page.evaluate((kind) => window.__game.model.state.army[kind], kind)).toBe(1);
@@ -184,45 +183,72 @@ test('air animation, friendly healing and Dragon breath share the battle clock a
     expect(s.frames).toBe(5); // Four cells and Phaser's base frame.
     expect(s.width).toBe(s.height);
   }
-  const before = await page.evaluate(() => {
-    const s = window.__game.scene;
-    return [...s.combatEffects.objects].map((g) => ({ x: g.x, y: g.y, alpha: g.alpha }));
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          window.__game.scene.drawOverlay(0);
+          return window.__game.model.battle.units.every((unit) =>
+            window.__game.scene.troopNativePresentation.hasView(unit.id),
+          );
+        }),
+      { timeout: 15000 },
+    )
+    .toBe(true);
+  const before = await page.evaluate(async () => {
+    const { nativeTroopProbe } = await import('/tests/fixtures/native-troop-probe.ts');
+    const { scene, model } = window.__game;
+    return {
+      effects: [...scene.combatEffects.objects].map((g) => ({ x: g.x, y: g.y, alpha: g.alpha })),
+      healer: nativeTroopProbe(scene, model.battle.units[1].id),
+    };
   });
   await page.waitForTimeout(400);
   expect(
-    await page.evaluate(() =>
-      [...window.__game.scene.combatEffects.objects].map((g) => ({
-        x: g.x,
-        y: g.y,
-        alpha: g.alpha,
-      })),
-    ),
+    await page.evaluate(async () => {
+      const { nativeTroopProbe } = await import('/tests/fixtures/native-troop-probe.ts');
+      const { scene, model } = window.__game;
+      return {
+        effects: [...scene.combatEffects.objects].map((g) => ({ x: g.x, y: g.y, alpha: g.alpha })),
+        healer: nativeTroopProbe(scene, model.battle.units[1].id),
+      };
+    }),
   ).toEqual(before);
   await page.screenshot({ path: `output/playtest/late-troops-battle-${browserName}.png` });
-  const after = await page.evaluate(() => {
+  const after = await page.evaluate(async () => {
+    const { nativeTroopProbe } = await import('/tests/fixtures/native-troop-probe.ts');
     const { model: m, scene } = window.__game;
     m.step(0.31);
     scene.drawOverlay(0);
     const health = m.battle.units[0].hp;
     const impact = scene.children.list.some((g) => g.getData?.('impact') === 'healing');
-    const healer = m.battle.units[1],
-      im = scene.unitSprites.get(healer.id);
+    const healer = m.battle.units[1];
     const frames = [];
-    for (let i = 0; i < 4; i++) {
-      m.battle.elapsed = 1 + i * 0.18;
+    for (let i = 0; i < 8; i++) {
+      m.step(0.05);
       scene.drawOverlay(0);
-      frames.push(im.frame.name);
+      frames.push(nativeTroopProbe(scene, healer.id));
     }
     m.state.settings.reducedMotion = true;
     scene.drawOverlay(0);
-    const reducedFrame = im.frame.name;
+    const reduced = nativeTroopProbe(scene, healer.id);
     m.returnHome();
     scene.sync();
-    return { health, impact, frames, reducedFrame, effects: scene.combatEffects.objects.size };
+    return {
+      health,
+      impact,
+      frames,
+      reduced,
+      effects: scene.combatEffects.objects.size,
+      nativeAfterReturn: scene.troopNativePresentation.hasView(healer.id),
+    };
   });
   expect(after.health).toBeCloseTo(125.2);
   expect(after.impact).toBe(true);
-  expect(new Set(after.frames).size).toBe(4);
-  expect(after.reducedFrame).toBe(1);
+  expect(after.frames.every((frame) => frame.drawn > 0 && !frame.fallback)).toBe(true);
+  expect(new Set(after.frames.map((frame) => frame.pose)).size).toBeGreaterThanOrEqual(4);
+  expect(after.reduced.frame).toBe(0);
+  expect(after.reduced.drawn).toBeGreaterThan(0);
+  expect(after.nativeAfterReturn).toBe(false);
   expect(after.effects).toBe(0);
 });

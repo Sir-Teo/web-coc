@@ -1,5 +1,6 @@
 import { useDevelopedVillage } from './developed-village';
 import { test, expect } from '@playwright/test';
+import sharp from 'sharp';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -26,6 +27,19 @@ test.beforeEach(async ({ page }) => {
     scene.drawOverlay(0);
     scene.ambientUnits.forEach((im) => im.setVisible(false));
   });
+  expect(await page.evaluate(() => window.__game.model.battle.units.length)).toBe(3);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          window.__game.scene.drawOverlay(0);
+          return window.__game.model.battle.units.every((u) =>
+            window.__game.scene.troopNativePresentation.hasView(u.id),
+          );
+        }),
+      { timeout: 15000 },
+    )
+    .toBe(true);
 });
 
 test('ground troop atlases load four distinct transparent frames with stable size and foot anchors', async ({
@@ -86,66 +100,103 @@ test('ground troop atlases load four distinct transparent frames with stable siz
   }
 });
 
-test('walking advances four poses, faces the route, and stays still when battle time stops', async ({
+test('native walking advances with battle time, follows travel and freezes while paused', async ({
   page,
 }) => {
-  const result = await page.evaluate(() => {
+  const result = await page.evaluate(async () => {
+    const { nativeTroopProbe } = await import('/tests/fixtures/native-troop-probe.ts');
     const { model: m, scene } = window.__game;
     return m.battle.units.map((u) => {
-      const im = scene.unitSprites.get(u.id);
-      const frameMs = u.kind === 'goblin' ? 100 : u.kind === 'swordsman' ? 140 : 110;
-      const frames = [];
-      const widths = [];
-      for (let i = 0; i < 4; i++) {
-        m.battle.elapsed = ((i + 0.01) * frameMs) / 1000;
+      const samples = [];
+      for (let i = 0; i < 8; i++) {
+        m.battle.elapsed += 0.05;
+        u.x -= 0.05;
         scene.drawOverlay(0);
-        frames.push(im.frame.name);
-        widths.push(im.displayWidth);
+        samples.push(nativeTroopProbe(scene, u.id));
       }
-      const before = { frame: im.frame.name, x: im.x, y: im.y };
+      const before = nativeTroopProbe(scene, u.id);
       scene.drawOverlay(99999);
-      const paused = { frame: im.frame.name, x: im.x, y: im.y };
-      const left = im.flipX;
+      const paused = nativeTroopProbe(scene, u.id);
       u.path = [{ x: u.x + 2, y: u.y }];
-      scene.drawOverlay(99999);
-      return { kind: u.kind, frames, widths, before, paused, left, right: im.flipX };
+      u.x += 0.1;
+      m.battle.elapsed += 0.05;
+      scene.drawOverlay(0);
+      return { kind: u.kind, samples, before, paused, reversed: nativeTroopProbe(scene, u.id) };
     });
   });
   for (const r of result) {
-    expect(new Set(r.frames).size).toBe(4);
-    expect(new Set(r.widths).size).toBe(1);
+    expect(
+      r.samples.every((sample) => sample.state === 'walk' && sample.drawn > 0 && !sample.fallback),
+    ).toBe(true);
+    expect(new Set(r.samples.map((sample) => sample.pose)).size).toBeGreaterThanOrEqual(4);
     expect(r.paused).toEqual(r.before);
-    expect(r.left).toBe(r.kind !== 'swordsman');
-    expect(r.right).toBe(r.kind === 'swordsman');
+    expect(r.before.mirror).toBe(-1);
+    expect(r.reversed.mirror).toBe(1);
   }
 });
 
-test('idle, attacking and reduced-motion ground troops use a planted pose on phone', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  const poses = await page.evaluate(() => {
-    const { model: m, scene } = window.__game;
-    const frames = () => [...scene.unitSprites.values()].map((im) => im.frame.name);
-    m.battle.units.forEach((u) => {
-      u.path = [];
+test.describe('phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('native idle, attack and reduced-motion poses draw on phone', async ({
+    page,
+    browserName,
+  }) => {
+    const poses = await page.evaluate(async () => {
+      const { nativeTroopProbe } = await import('/tests/fixtures/native-troop-probe.ts');
+      const { model: m, scene } = window.__game;
+      const frames = () => m.battle.units.map((u) => nativeTroopProbe(scene, u.id));
+      m.battle.units.forEach((u) => {
+        u.path = [];
+      });
+      m.battle.elapsed += 0.2;
+      scene.drawOverlay(0);
+      const idle = frames();
+      m.battle.units.forEach((u) => {
+        u.attacking = true;
+      });
+      m.battle.elapsed += 0.2;
+      scene.drawOverlay(0);
+      const attacking = frames();
+      m.state.settings.reducedMotion = true;
+      m.battle.units.forEach((u) => {
+        u.attacking = false;
+        u.path = [{ x: u.x + 2, y: u.y }];
+        u.x += 0.05;
+      });
+      m.battle.elapsed += 0.05;
+      scene.drawOverlay(0);
+      const reduced = frames();
+      m.battle.units.forEach((u) => {
+        u.x += 0.05;
+      });
+      m.battle.elapsed += 1;
+      scene.drawOverlay(0);
+      return { idle, attacking, reduced, later: frames() };
     });
-    scene.drawOverlay(0);
-    const idle = frames();
-    m.battle.units.forEach((u) => {
-      u.attacking = true;
+    expect(
+      poses.idle.every((pose) => pose.state === 'idle' && pose.drawn > 0 && !pose.fallback),
+    ).toBe(true);
+    expect(
+      poses.attacking.every((pose) => pose.state === 'attack' && pose.drawn > 0 && !pose.fallback),
+    ).toBe(true);
+    expect(
+      poses.reduced.every((pose) => pose.state === 'walk' && pose.frame === 0 && pose.drawn > 0),
+    ).toBe(true);
+    expect(poses.later).toEqual(poses.reduced);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          window.__game.game.events.once('postrender', () => resolve());
+        }),
+    );
+    const capture = await page.screenshot({
+      path: `output/playtest/specialist-animation-phone-${browserName}.png`,
     });
-    m.battle.elapsed = 2;
-    scene.drawOverlay(9999);
-    const attacking = frames();
-    m.state.settings.reducedMotion = true;
-    m.battle.units.forEach((u) => {
-      u.attacking = false;
-      u.path = [{ x: u.x + 2, y: u.y }];
-    });
-    scene.drawOverlay(9999);
-    return { idle, attacking, reduced: frames() };
+    // Sample the battlefield between the HUD and army tray, so a cleared canvas cannot pass.
+    const field = await sharp(capture)
+      .extract({ left: 20, top: 260, width: 350, height: 340 })
+      .stats();
+    expect(field.channels[1].mean).toBeGreaterThan(30);
   });
-  expect(poses).toEqual({ idle: [1, 1, 1], attacking: [1, 1, 1], reduced: [1, 1, 1] });
-  await page.screenshot({ path: 'output/playtest/specialist-animation-phone.png' });
 });

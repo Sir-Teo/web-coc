@@ -1,5 +1,19 @@
 # Troop presentation
 
+Troops with native packs draw their sampled client scenes through
+`src/game/troop-native-scene.ts`. Walk and idle state follow simulation movement; attack
+poses follow cooldowns. Pausing battle time holds the native pose, and reduced motion
+samples frame zero. Once a native view takes over, its hidden fallback sprite no longer
+updates its walk frame or facing.
+
+The specialist and late-troop browser checks inspect native pose samples and visible
+objects for movement, direction changes, pause, reduced motion and cleanup. Their paused
+fixtures explicitly render after native pages load and wait for a complete game render
+before capturing the phone view, whose battlefield must contain visible pixels. The four-frame fallback atlas asset
+checks remain separate, including transparency, dimensions and foot anchors.
+
+## Earlier sprite artwork and feedback
+
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.
 
 September 11, 2026. Ground troops face their next navigation waypoint while walking around obstacles and turn toward the building's center when attacking. Goblin and Wall Breaker walk atlases and static King artwork use their native opposite orientation. Nearly vertical headings keep the previous side to avoid flicker. The specialist atlases use a planted passing pose when idle, attacking or in reduced motion; their drawn gait replaces procedural body bobbing. See [the artwork record](SPECIALIST-WALK-ART.md).
