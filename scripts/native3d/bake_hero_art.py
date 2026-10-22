@@ -113,14 +113,20 @@ def require(condition, message):
 
 class Source:
     def __init__(self):
-        raw = (ARCHIVE / 'fingerprint.json').read_bytes()
+        fingerprint = ARCHIVE / 'fingerprint.json'
+        if not fingerprint.exists():
+            fingerprint = ROOT / 'output/native-campaign-source/fingerprint.json'
+        raw = fingerprint.read_bytes()
         require(digest(raw) == FINGERPRINT_SHA256, 'Client fingerprint differs from pin')
         self.members = {r['file']: r['sha'] for r in json.loads(raw)['files']}
         self.pins = {}
 
     def read(self, path):
         require(path in self.members, f'Not a pinned client file: {path}')
-        data = (ARCHIVE / 'files' / path).read_bytes()
+        target = ARCHIVE / 'files' / path
+        if not target.exists():
+            target = ROOT / 'output/native-campaign-source' / path
+        data = target.read_bytes()
         require(hashlib.sha1(data).hexdigest() == self.members[path], f'Source mismatch: {path}')
         self.pins[path] = digest(data)
         return data
@@ -428,6 +434,30 @@ def pack(images):
     return placement, sheets
 
 
+# These page names were deduplicated in the shipping atlases. Keep state timing and
+# registration independent; only identical complete sheets may share a file.
+SHARED_ATLAS_PAGES = {'prince': {'walk.png': 'idle.png'},
+                      'warden': {'alt_walk.png': 'alt_idle.png'}}
+
+
+def preserve_shared_pages(key, states, images):
+    for original, target in SHARED_ATLAS_PAGES.get(key, {}).items():
+        if original not in images:
+            continue
+        image = images[original]
+        if target in images:
+            shared = images[target]
+            require(image.mode == shared.mode and image.size == shared.size
+                    and image.tobytes() == shared.tobytes(),
+                    f'{key}: shared atlas page pixels differ: {original}')
+        images[target] = images.pop(original)
+        for state in states.values():
+            for row in state['frames']:
+                for frame in row:
+                    if frame['image'] == original:
+                        frame['image'] = target
+
+
 def build_atlas(spec, prepared, frames):
     atlas_states, files, aliases = {}, {}, {}
     for label, st in prepared['states'].items():
@@ -475,6 +505,7 @@ def build_atlas(spec, prepared, frames):
         atlas_states[label] = entry
     native = {round(s['info']['nativeFps'], 4) for s in prepared['states'].values()}
     require(len(native) == 1, f'{spec["key"]}: clips use different native frame rates')
+    preserve_shared_pages(spec['key'], atlas_states, files)
     return dict(key=spec['key'], clientSkin=spec['skin'], fps=native.pop(), directions=DIRECTIONS, states=atlas_states), files
 
 

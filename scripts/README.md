@@ -83,6 +83,23 @@ Projectile and effect pack byte counts include the graph and owned images. Share
 pages are checked at their canonical paths and excluded from each pack's file list
 and byte count. Each catalog's `totalBytes` is the sum of its pack byte counts.
 
+The 3D hero baker reads the verified source cache when an input is absent from the
+full archive. Its focused atlas and cache tests use fixtures without source downloads:
+
+```sh
+PYTHONPATH=scripts .venv/bin/python -m unittest native3d.test_hero_atlas
+```
+
+It preserves the Minion Prince walk/idle and flying Grand Warden walk/idle page aliases
+without merging state timing or registration. Two generated pages may share a filename
+only when their dimensions and every RGBA byte match. To verify source hashes, output
+hashes and re-render the affected heroes within the existing pixel tolerances:
+
+```sh
+PYTHONPATH=scripts .venv/bin/python scripts/native3d/bake_hero_art.py --check --check-key prince
+PYTHONPATH=scripts .venv/bin/python scripts/native3d/bake_hero_art.py --check --check-key warden
+```
+
 ## Browser tooling
 
 Install Playwright browsers before running browser scripts. `npm run test:production`

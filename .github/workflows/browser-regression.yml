@@ -48,6 +48,7 @@ jobs:
           python scripts/native_art/test_sc6.py
           python scripts/native_art/test_atlas.py
           PYTHONPATH=scripts python -m unittest native_art.test_shared_assets
+          PYTHONPATH=scripts python -m unittest native3d.test_hero_atlas
           python scripts/import-native-cannon.py --check
           python scripts/import-native-air-sweeper.py --check
           python scripts/import-native-mortar.py --check
