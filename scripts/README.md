@@ -16,6 +16,7 @@ ordinary development needs only `npm ci` and `npm run dev`.
 | `native-pages.mjs`, `vite-native-pages.mjs`   | Level texture pages for village and troop packs (dev server and build) |
 | `vite-import-retry.mjs`                      | Preserve lazy art imports while allowing failed module URLs to retry   |
 | `late-art-production-check.mjs`              | Own a preview and test built art-import retries in Chromium and WebKit |
+| `previous-art-release.mjs`                  | Create the in-memory previous-release fixture for worker update checks |
 | `app-icons.mjs`                               | Render the home-screen icons from `public/favicon.svg` (`--check`)     |
 | `content-inventory.py`                        | Generate/check the content inventory                                   |
 

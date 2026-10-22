@@ -1,8 +1,10 @@
 import { preview } from 'vite';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
+import { previousArtRelease } from './previous-art-release.mjs';
 
 await fs.access('dist/sw.js');
+const previous = await previousArtRelease();
 const server = await preview({
   preview: { host: '127.0.0.1', port: 0, strictPort: true },
   logLevel: 'warn',
@@ -15,6 +17,29 @@ const server = await preview({
             return next();
           response.writeHead(503, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
           response.end('Preview host unavailable for offline verification.');
+          return;
+        });
+        server.middlewares.use((request, response, next) => {
+          const url = new URL(request.url, 'http://preview.local');
+          const old = /(?:^|;\s*)late-art-release=previous(?:;|$)/.test(
+            request.headers.cookie ?? '',
+          );
+          if (old && previous.bodies.has(url.pathname)) {
+            response.writeHead(200, {
+              'content-type': url.pathname.endsWith('.json')
+                ? 'application/json'
+                : 'text/javascript',
+              'cache-control': 'no-store',
+            });
+            response.end(previous.bodies.get(url.pathname));
+            return;
+          }
+          if (!old && url.pathname === previous.graphPath) {
+            response.writeHead(404, { 'cache-control': 'no-store' });
+            response.end('Graph removed by the next release.');
+            return;
+          }
+          next();
         });
       },
     },
@@ -37,6 +62,9 @@ try {
         ...process.env,
         LATE_ART_BUILD: '1',
         PRODUCTION_BASE_URL: `http://127.0.0.1:${address.port}`,
+        PREVIOUS_ART_VERSION: previous.version,
+        CURRENT_ART_VERSION: previous.current,
+        PREVIOUS_ART_GRAPH: previous.graphPath,
       },
     },
   );

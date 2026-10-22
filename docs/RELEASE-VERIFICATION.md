@@ -54,6 +54,8 @@ It runs Chromium and WebKit by default; `PRODUCTION_BROWSER`
 can select either engine. Fault-injection cases block service workers. A separate case
 uses the real worker with an unavailable preview host to verify cached retry downloads;
 the general smoke suite also checks the ordinary worker and offline boot.
+A two-release case keeps the first worker active, installs a waiting update, then removes
+an uncached graph. Recovery must activate the update and reload once onto its cache.
 
 ## Deployment
 

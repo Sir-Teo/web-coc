@@ -206,6 +206,12 @@ beside it and waits; the page then shows "Update ready · Reload", which activat
 worker and reloads onto its release. Unhashed asset URLs are therefore never paired with
 another release's page.
 
+If a deployment removes an uncached lazy chunk, automatic recovery first activates any
+waiting release and reloads when it takes control. Reloading under the old worker would
+repeat its cached page and the same missing chunk. The production two-release fixture
+changes one lazy graph URL and the matching content hashes in memory, then verifies a
+single reload onto the waiting worker with the imported village preserved.
+
 Settings reports what offline play covers from the worker's own answer: "Preparing" until it
 has stored this page's boot art, "Ready offline" once it has (the village and art already
 seen; unvisited campaign villages still need a connection), or a partial state with a Retry

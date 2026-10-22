@@ -306,6 +306,95 @@ test('a removed built art chunk keeps the release reload path', async ({ page })
 
 test.describe('recovered art with the real service worker', () => {
   test.use({ serviceWorkers: 'allow' });
+  test('a removed graph activates a waiting release before reloading once', async ({
+    page,
+    context,
+  }) => {
+    const previous = process.env.PREVIOUS_ART_VERSION!;
+    const current = process.env.CURRENT_ART_VERSION!;
+    const missing = process.env.PREVIOUS_ART_GRAPH!;
+    const manifest = JSON.parse(await readFile('dist/.vite/manifest.json', 'utf8'));
+    const graph = '/' + manifest['reference/xbow/runtime.json'].file;
+    const starter = initialSave();
+    starter.tutorial = true;
+    await page.addInitScript((save) => {
+      if (!sessionStorage.getItem('previous-art-seeded')) {
+        localStorage.setItem('crown-clan-save-v1', save);
+        sessionStorage.setItem('previous-art-seeded', 'yes');
+      }
+    }, JSON.stringify(starter));
+    await context.addCookies([
+      { name: 'late-art-release', value: 'previous', url: process.env.PRODUCTION_BASE_URL! },
+    ]);
+    let navigations = 0,
+      removed = 0,
+      recovered = false;
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) navigations++;
+    });
+    page.on('response', (response) => {
+      const path = new URL(response.url()).pathname;
+      if (response.request().method() !== 'GET') return;
+      if (path === missing && response.status() === 404) removed++;
+      if (path === graph && response.ok()) recovered = true;
+    });
+    await page.goto('/');
+    await page.waitForFunction(
+      () =>
+        navigator.serviceWorker.controller && document.documentElement.dataset.offline === 'ready',
+    );
+    expect(await page.evaluate((version) => caches.has('crown-clan-' + version), previous)).toBe(
+      true,
+    );
+    expect(await page.evaluate((path) => caches.match(path).then(Boolean), missing)).toBe(false);
+    await context.addCookies([
+      { name: 'late-art-release', value: 'current', url: process.env.PRODUCTION_BASE_URL! },
+    ]);
+    await page.evaluate(async () => {
+      await (await navigator.serviceWorker.getRegistration())!.update();
+    });
+    await page.waitForFunction(
+      async () => !!(await navigator.serviceWorker.getRegistration())?.waiting,
+    );
+    await expect(page.locator('#update-ready')).toBeVisible();
+    await page.locator('#import-file').setInputFiles({
+      name: 'xbow-village.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(artGraphSave('xbow')),
+    });
+    await page.locator('[data-action="import-confirm"]').click();
+    const deadline = Date.now() + 20000;
+    while (!recovered && Date.now() < deadline) {
+      if (navigations > 2)
+        throw Error(
+          'The old cached release reloaded again instead of activating its waiting update.',
+        );
+      await page.waitForTimeout(100);
+    }
+    expect(recovered).toBe(true);
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+    await page.waitForLoadState('networkidle');
+    expect(navigations).toBe(2);
+    expect(removed).toBe(1);
+    expect(await page.evaluate((version) => caches.has('crown-clan-' + version), previous)).toBe(
+      false,
+    );
+    expect(await page.evaluate((version) => caches.has('crown-clan-' + version), current)).toBe(
+      true,
+    );
+    const village = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+    expect(village.mode).toBe('village');
+    expect(village.buildings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 1, type: 'townhall', level: 9 }),
+        expect.objectContaining({ id: 3, type: 'xbow', level: 1 }),
+      ]),
+    );
+    await expect(page.locator('#update-ready')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
   test('a verified retry remains available at the ordinary URL after an offline reload', async ({
     page,
     context,

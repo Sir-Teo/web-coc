@@ -67,6 +67,35 @@ const idle = (callback: () => void) =>
  * the install never competes with the boot preload for bandwidth.
  */
 export function registerOfflineSupport() {
+  let updating = false;
+  let reloadPending = false;
+  const activateUpdate = (worker: ServiceWorker) => {
+    reloadPending = true;
+    try {
+      worker.postMessage({ type: 'activate-update' });
+      updating = true;
+    } catch {
+      window.location.reload();
+    }
+  };
+  const reloadOntoRelease = async () => {
+    if (reloadPending) return;
+    reloadPending = true;
+    try {
+      const registration =
+        'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+      if (updating) return;
+      if (registration?.waiting) {
+        // Reloading under the old worker repeats its cached HTML and missing chunk URL.
+        // Switch the completed release first; controllerchange performs the one reload.
+        activateUpdate(registration.waiting);
+        return;
+      }
+    } catch {
+      // Without a usable registration, the host can still provide the current page.
+    }
+    window.location.reload();
+  };
   // A lazy chunk that no longer exists on the host (a deploy landed while this page was open
   // and no worker served it from cache) is fatal to the page in every other way; reload onto
   // the new version. The unload path settles any battle and stores the village first.
@@ -75,7 +104,7 @@ export function registerOfflineSupport() {
     if (isRetryableArtImportError(error)) return;
     // Managed stale imports still reject to their caller while navigation begins.
     if (!isStaleArtImportError(error)) event.preventDefault();
-    window.location.reload();
+    void reloadOntoRelease();
   });
   if (!('serviceWorker' in navigator)) return;
   setStatus('preparing');
@@ -85,7 +114,6 @@ export function registerOfflineSupport() {
   container.addEventListener('message', (event: MessageEvent) => {
     if (event.data?.type === 'warmed') setStatus(event.data.failed ? 'partial' : 'ready');
   });
-  let updating = false;
   // Files fetched before this page came under the worker's control never passed
   // through it; list them again once it takes over. An update the player accepted
   // reloads the page onto the release its new worker serves.
@@ -103,8 +131,7 @@ export function registerOfflineSupport() {
           const waiting = registration.waiting;
           if (!waiting || !container.controller) return;
           offerUpdate(() => {
-            updating = true;
-            waiting.postMessage({ type: 'activate-update' });
+            activateUpdate(waiting);
           });
         };
         offer();
