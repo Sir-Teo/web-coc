@@ -55,6 +55,19 @@ async function positions(page: Page, ids: number[]) {
     ids,
   );
 }
+async function nativeWallCounts(page: Page, ids: number[]) {
+  return page.evaluate(
+    (ids) =>
+      ids.map(
+        (id) =>
+          window.__game.scene.children.list.filter(
+            (object) =>
+              object.visible && object.alpha > 0 && object.getData?.('nativeVillage') === id,
+          ).length,
+      ),
+    ids,
+  );
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
@@ -65,6 +78,7 @@ test.beforeEach(async ({ page }) => {
 
 test('touch rotates and places a whole row atomically, with ghost cleanup and saved coordinates', async ({
   page,
+  browserName,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const before = await begin(page),
@@ -85,6 +99,7 @@ test('touch rotates and places a whole row atomically, with ghost cleanup and sa
       ids,
     ),
   ).toBe(true);
+  await expect.poll(() => nativeWallCounts(page, ids)).toEqual(ids.map(() => 0));
   await page.screenshot({
     path: `output/playtest/wall-move-phone-${test.info().project.name}.png`,
   });
@@ -93,12 +108,13 @@ test('touch rotates and places a whole row atomically, with ghost cleanup and sa
   expect(await positions(page, ids)).toEqual(preview);
   expect(await page.evaluate(() => window.__game.model.state.gold)).toBe(gold);
   await expect.poll(() => page.evaluate(() => window.__game.scene.wallGhosts.size)).toBe(0);
-  expect(
-    await page.evaluate(
-      (ids) => ids.every((id) => window.__game.scene.sprites.get(id)!.visible),
-      ids,
-    ),
-  ).toBe(true);
+  // Native wall bodies draw after placement; their fallback images stay hidden.
+  await expect
+    .poll(async () => (await nativeWallCounts(page, ids)).every((count) => count > 0))
+    .toBe(true);
+  await page.getByRole('button', { name: 'Close wall selection', exact: true }).tap();
+  await expect(page.locator('.wall-context')).toHaveCount(0);
+  await page.screenshot({ path: `output/playtest/wall-row-placed-${browserName}.png` });
   await page.reload();
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   expect(await positions(page, ids)).toEqual(preview);
