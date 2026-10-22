@@ -1131,7 +1131,8 @@ export class GameModel {
   changed(passive = false) {
     this.revision++;
     if (!passive) this.structuralRevision++;
-    this.onChange(passive);
+    // A covered magic-item action publishes its final state after consuming the item.
+    if (!this.itemCoversCost) this.onChange(passive);
   }
   /**
    * Counts non-passive changes only. Collector ticks bump `revision` every second, which used
@@ -2703,7 +2704,7 @@ export class GameModel {
       const issue = this.townHallMergeIssue(b.level);
       if (issue) return this.notify(issue);
     }
-    if (this.state[d.resource] < cost)
+    if (!this.itemCoversCost && this.state[d.resource] < cost)
       return this.lacking(
         d.resource,
         cost,
@@ -2712,7 +2713,7 @@ export class GameModel {
           this.upgrade(id);
         },
       );
-    this.state[d.resource] -= cost;
+    if (!this.itemCoversCost) this.state[d.resource] -= cost;
     if (b.kind === 'townhall') {
       // The Town Hall 17 upgrade merges the level 7 Eagle Artillery into the Inferno Artillery.
       for (const input of townHallMergeInputs(b.level + 1)) {
@@ -3353,11 +3354,11 @@ export class GameModel {
     if (Object.values(this.state.superBoosts ?? {}).filter((end) => end! > now).length >= 2)
       return this.notify('Two super troop boosts are already active.');
     const cost = Number(row.ResourceCost);
-    if (this.state.dark < cost)
+    if (!this.itemCoversCost && this.state.dark < cost)
       return this.lacking('dark', cost, 'Not enough dark elixir.', () => {
         this.boostSuperTroop(kind);
       });
-    this.state.dark -= cost;
+    if (!this.itemCoversCost) this.state.dark -= cost;
     (this.state.superBoosts ??= {})[kind] = now + Number(row.DurationH) * 3600000;
     this.countAchievements('activate_super_licence');
     this.changed();
@@ -4013,17 +4014,19 @@ export class GameModel {
   private spendItem(kind: MagicItemKind, count = 1) {
     this.state.magicItems![kind] = this.magicItemCount(kind) - count;
   }
+  private itemCoversCost = false;
   /**
-   * Runs an upgrade whose cost a Hammer or Super Potion covers: the usual rules apply,
-   * but every resource is on hand and none is spent. Nothing observes the purse in between.
+   * A magic item covers resource costs while ordinary unlock and builder rules still apply.
+   * Its caller consumes the item and publishes the completed result, so internal commands must
+   * not notify observers about an intermediate upgrade or boost.
    */
   private covered<T>(action: () => T): T {
-    const purse = { gold: this.state.gold, elixir: this.state.elixir, dark: this.state.dark };
-    this.state.gold = this.state.elixir = this.state.dark = Number.MAX_SAFE_INTEGER;
+    const previousCoverage = this.itemCoversCost;
+    this.itemCoversCost = true;
     try {
       return action();
     } finally {
-      Object.assign(this.state, purse);
+      this.itemCoversCost = previousCoverage;
     }
   }
   /** Runes fill their resource's storages, and only when they have room. */
@@ -4680,7 +4683,7 @@ export class GameModel {
       return false;
     }
     const quote = heroUpgradeQuote(kind, hero.level)!;
-    if (this.state[quote.resource] < quote.cost) {
+    if (!this.itemCoversCost && this.state[quote.resource] < quote.cost) {
       this.lacking(
         quote.resource,
         quote.cost,
@@ -4691,7 +4694,7 @@ export class GameModel {
       );
       return false;
     }
-    this.state[quote.resource] -= quote.cost;
+    if (!this.itemCoversCost) this.state[quote.resource] -= quote.cost;
     hero.upgradeStart = this.clock;
     hero.upgradeEnd = this.clock + quote.seconds * 1000;
     this.changed();
@@ -4872,11 +4875,11 @@ export class GameModel {
       return false;
     }
     const cost = heroUpgradeCost(king.level);
-    if (this.state.dark < cost) {
+    if (!this.itemCoversCost && this.state.dark < cost) {
       this.notify('Collect more dark elixir from your drills.');
       return false;
     }
-    this.state.dark -= cost;
+    if (!this.itemCoversCost) this.state.dark -= cost;
     king.upgradeStart = this.clock;
     king.upgradeEnd = this.clock + heroUpgradeSeconds(king.level) * 1000;
     this.changed();

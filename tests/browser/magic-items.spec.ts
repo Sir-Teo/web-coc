@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { useDevelopedVillage } from './developed-village';
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -140,4 +141,67 @@ test('the Trader’s Weekly Deals open from the items and give the free Glowy Or
   await free.click();
   expect(await page.evaluate(() => window.__game.model.ores.glowy)).toBe(glowy + 10);
   await expect(page.locator('[data-deal="free-glowy-ore"]')).toContainText('Out of stock');
+});
+
+test('a Super Potion boosts the army card without dark elixir and survives reload', async ({
+  page,
+  browserName,
+}) => {
+  await useDevelopedVillage(page);
+  await page.evaluate(async () => {
+    const { superMinimum } = await import('/src/game/special-troops.ts');
+    const { TROOP_KEYS } = await import('/src/game/data.ts');
+    const m = window.__game.model;
+    m.townhall!.level = 11;
+    m.state.buildings.find((b) => b.kind === 'laboratory')!.level = m.maxLevel('laboratory');
+    m.state.troopLevels = Object.fromEntries(
+      TROOP_KEYS.map((kind) => [
+        kind,
+        kind === 'swordsman' ? superMinimum('superbarbarian') : m.troopLevel(kind),
+      ]),
+    );
+    m.state.dark = 0;
+    m.clearArmy();
+    m.addMagicItem('super-potion', 1);
+    m.changed();
+  });
+  await page.locator('.train-add').click();
+  await page.locator('#army-search').fill('Super Barbarian');
+  const tile = page
+    .locator('.army-tile')
+    .filter({ has: page.locator('[data-action="troop-info:superbarbarian"]') });
+  const potion = tile.locator('[data-action="super-potion:superbarbarian"]');
+  await expect(potion).toBeEnabled();
+  await potion.click();
+  await expect(tile.locator('.boost-left')).toContainText('Boosted');
+  await expect(potion).toHaveCount(0);
+  expect(
+    await page.evaluate(() => ({
+      dark: window.__game.model.state.dark,
+      items: window.__game.model.magicItemCount('super-potion'),
+    })),
+  ).toEqual({ dark: 0, items: 0 });
+  await tile.locator('[data-action="train:superbarbarian"]').click();
+  await expect(tile.locator('[data-army-count="troop:superbarbarian"]')).toHaveText('1');
+  await expect
+    .poll(() =>
+      tile
+        .locator('.shop-tile-art img')
+        .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+    )
+    .toBe(true);
+  await tile.screenshot({ path: `output/playtest/super-potion-card-${browserName}.png` });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(
+    await page.evaluate(() => {
+      const m = window.__game.model;
+      return {
+        dark: m.state.dark,
+        items: m.magicItemCount('super-potion'),
+        army: m.state.army.superbarbarian,
+        boosted: (m.state.superBoosts?.superbarbarian ?? 0) > m.clock,
+      };
+    }),
+  ).toEqual({ dark: 0, items: 0, army: 1, boosted: true });
 });

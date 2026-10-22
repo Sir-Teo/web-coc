@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import catalog from '../reference/magic-items/catalog.json' with { type: 'json' };
 import { GameModel, makeBuilding } from '../src/game/model';
 import { emptyArmy, emptySpells } from '../src/game/army';
+import { maxTroopLevel } from '../src/game/data';
 import { MAGIC_ITEMS, advanceBoost, wallRings, type Boost } from '../src/game/magic-items';
 import { validateSave } from '../src/game/save';
 
@@ -239,6 +240,116 @@ describe('magic items', () => {
     expect(m.magicItemCount('wall-ring')).toBe(10);
     expect([m.state.gold, m.state.elixir, m.state.dark]).toEqual([1000, 1000, 0]);
   });
+
+  it('notifies Hammer observers only after the item is spent and the building is finished', () => {
+    const m = village();
+    m.addMagicItem('hammer-of-building', 1);
+    const building = m.state.buildings.find((b) => b.id === 6)!;
+    const observations: unknown[] = [];
+    m.onChange = () =>
+      observations.push({
+        resources: [m.state.gold, m.state.elixir, m.state.dark],
+        items: m.magicItemCount('hammer-of-building'),
+        level: building.level,
+        upgrading: building.upgradeEnd !== undefined,
+      });
+    expect(m.useHammer('hammer-of-building', { building: building.id })).toBe(true);
+    expect(observations.length).toBeGreaterThan(0);
+    for (const observed of observations)
+      expect(observed).toEqual({
+        resources: [1000, 1000, 0],
+        items: 0,
+        level: 6,
+        upgrading: false,
+      });
+  });
+
+  it.each(['king', 'queen', 'warden'] as const)(
+    'notifies %s Hammer observers with the finished hero and real balances',
+    (hero) => {
+      const m = village(hero === 'warden' ? 11 : 10);
+      m.state.buildings.push(makeBuilding(11, 'herohall', 38, 38, hero === 'warden' ? 5 : 4));
+      m.state.nextId = 12;
+      if (hero === 'king') m.state.king = { level: 1 };
+      else m.state.heroes = { [hero]: { level: 1 } };
+      m.addMagicItem('hammer-of-heroes', 1);
+      const observations: unknown[] = [];
+      m.onChange = () =>
+        observations.push({
+          resources: [m.state.gold, m.state.elixir, m.state.dark],
+          items: m.magicItemCount('hammer-of-heroes'),
+          level: m.heroProgress(hero)!.level,
+          upgrading: m.heroProgress(hero)!.upgradeEnd !== undefined,
+        });
+      expect(m.useHammer('hammer-of-heroes', { hero })).toBe(true);
+      expect(observations.length).toBeGreaterThan(0);
+      for (const observed of observations)
+        expect(observed).toEqual({
+          resources: [1000, 1000, 0],
+          items: 0,
+          level: 2,
+          upgrading: false,
+        });
+    },
+  );
+
+  it('notifies Super Potion observers after spending the item without exposing temporary resources', () => {
+    const m = village(11);
+    m.state.troopLevels = { ...m.state.troopLevels, swordsman: maxTroopLevel('swordsman') };
+    m.addMagicItem('super-potion', 1);
+    const observations: unknown[] = [];
+    m.onChange = () =>
+      observations.push({
+        resources: [m.state.gold, m.state.elixir, m.state.dark],
+        items: m.magicItemCount('super-potion'),
+        boosted: (m.state.superBoosts?.superbarbarian ?? 0) > m.clock,
+      });
+    expect(m.useSuperPotion('superbarbarian')).toBe(true);
+    expect(observations.length).toBeGreaterThan(0);
+    for (const observed of observations)
+      expect(observed).toEqual({
+        resources: [1000, 1000, 0],
+        items: 0,
+        boosted: true,
+      });
+  });
+
+  it.each(['success', 'refusal'] as const)(
+    'restores normal payment and change notifications after Hammer %s',
+    (result) => {
+      const m = village();
+      const cannon = m.state.buildings.find((b) => b.id === 6)!;
+      m.addMagicItem('hammer-of-building', 1);
+      const reservations = m.state.buildings.filter(
+        (b) => b.kind === 'goldstorage' || b.kind === 'elixirstorage',
+      );
+      if (result === 'refusal')
+        for (const b of reservations) {
+          b.upgradeStart = m.clock;
+          b.upgradeEnd = m.clock + HOUR;
+        }
+      let changes = 0;
+      m.onChange = () => {
+        changes++;
+      };
+      expect(m.useHammer('hammer-of-building', { building: cannon.id })).toBe(result === 'success');
+      expect(m.magicItemCount('hammer-of-building')).toBe(result === 'success' ? 0 : 1);
+      if (result === 'refusal') {
+        expect(changes).toBe(0);
+        for (const b of reservations) {
+          delete b.upgradeStart;
+          delete b.upgradeEnd;
+        }
+      }
+      m.state.gold = 2_000_000;
+      const cost = m.upgradeCost(cannon),
+        before = changes;
+      m.upgrade(cannon.id);
+      expect(m.state.gold).toBe(2_000_000 - cost);
+      expect(cannon.upgradeEnd).toBeGreaterThan(m.clock);
+      expect(changes).toBeGreaterThan(before);
+    },
+  );
 
   it('runs a Builder Potion at ten times speed for an hour, offline included', () => {
     const m = village();
