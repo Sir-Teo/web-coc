@@ -1011,7 +1011,7 @@ export class VillageScene extends Phaser.Scene {
       // A finger on the map catches a gliding camera; a second one makes the gesture a pinch,
       // which clears the pan's samples so it ends without momentum.
       this.fling.stop();
-      if (this.uiBlocked) return;
+      if (this.uiBlocked || this.contextGone()) return;
       // Pointer input takes over from the keyboard map cursor.
       if (this.keyCursor) this.toggleKeyCursor(false);
       this.audio.unlock();

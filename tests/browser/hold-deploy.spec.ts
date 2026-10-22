@@ -120,3 +120,40 @@ for (const interruption of ['blur', 'hidden', 'context-loss'] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test('a press begun while graphics are lost cannot deploy after restoration', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await startDeployment(page);
+  const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+  const start = await remaining();
+  const point = await grassPoint(page);
+  await page.evaluate(async () => {
+    const { game } = window.__game;
+    const extension = game.renderer.gl.getExtension('WEBGL_lose_context');
+    if (!extension) throw Error('Context-loss extension unavailable');
+    window.__restoreMapContext = () =>
+      new Promise<void>((resolve) => {
+        game.canvas.addEventListener('webglcontextrestored', () => resolve(), { once: true });
+        setTimeout(() => extension.restoreContext(), 50);
+      });
+    await new Promise<void>((resolve) => {
+      game.canvas.addEventListener('webglcontextlost', () => resolve(), { once: true });
+      extension.loseContext();
+    });
+  });
+  expect(await page.evaluate(() => window.__game.scene.paused)).toBe(true);
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.evaluate(async () => {
+    await window.__restoreMapContext();
+    delete window.__restoreMapContext;
+  });
+  await page.waitForTimeout(1100);
+  expect(await remaining()).toBe(start);
+  await page.mouse.up();
+  expect(await remaining()).toBe(start);
+  await page.mouse.click(point.x, point.y);
+  expect(await remaining()).toBe(start - 1);
+  expect(errors).toEqual([]);
+});
