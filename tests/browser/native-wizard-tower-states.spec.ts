@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test';
+import { wizardTowerVillage } from '../fixtures/wizard-tower-battle';
 
 test('every original Wizard Tower level retains its bounds, preview, scaffolds and rubble in the live scene', async ({
   page,
   browserName,
 }) => {
+  // Boot the owned tower normally so its lazy Level 1 preview is ready before pausing.
+  await page.addInitScript(
+    (save) => localStorage.setItem('crown-clan-save-v1', save),
+    JSON.stringify(wizardTowerVillage()),
+  );
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
-  await page.locator('[data-action="skip-tutorial"]').click();
   const report = await page.evaluate(async () => {
-    const { wizardTowerVillage } = await import('/tests/fixtures/wizard-tower-battle.ts');
     const { makeBuilding } = await import('/src/game/model.ts');
     const { wizardTowerBounds } = await import('/src/game/wizard-tower-poses.ts');
     const { WIZARD_TOWER_ART, wizardTowerTexture } = await import('/src/game/wizard-tower-art.ts');
@@ -16,7 +20,6 @@ test('every original Wizard Tower level retains its bounds, preview, scaffolds a
     const { model: m, scene } = window.__game;
     scene.paused = true;
     scene.tweens.pauseAll();
-    m.state = wizardTowerVillage();
     scene.sync();
     scene.drawOverlay();
     const baseline = scene.game.renderer.listenerCount('losewebgl'),
