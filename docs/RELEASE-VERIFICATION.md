@@ -21,6 +21,7 @@ replay controls and transfer of save ownership between tabs in Chromium and WebK
 Chromium also checks offline reload and cached gameplay flows. Console errors,
 failed HTTP responses and missing required assets fail the check. The report is
 `output/playtest/production-report.json`.
+Canvas checks verify native density at boot and proportional adaptive density after resizing.
 
 Production loads each defense family the first time something draws it, and ships
 converted PNGs as WebP. So the required-art list counts a WebP response as its PNG.

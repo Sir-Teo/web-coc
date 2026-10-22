@@ -214,9 +214,21 @@ for (const [name, engine] of Object.entries(engines)) {
     return { resources: s.resources, army: s.army };
   });
   await page.setViewportSize({ width: 844, height: 390 });
+  // Sustained rendering pressure can lower density after the native-density boot check.
+  // A resize must preserve CSS size, uniform pixels and the 1x-to-device-density budget.
   await expect
-    .poll(() => page.locator('#game canvas').evaluate((canvas) => [canvas.width, canvas.height]))
-    .toEqual([1688, 780]);
+    .poll(() =>
+      page.locator('#game canvas').evaluate((canvas) => ({
+        css: [canvas.clientWidth, canvas.clientHeight],
+        inBudget:
+          canvas.width >= 844 &&
+          canvas.width <= 844 * window.devicePixelRatio &&
+          canvas.height >= 390 &&
+          canvas.height <= 390 * window.devicePixelRatio,
+        proportional: Math.abs(canvas.width / 844 - canvas.height / 390) <= 1 / 390,
+      })),
+    )
+    .toEqual({ css: [844, 390], inBudget: true, proportional: true });
   await page.locator('[data-action="battle-log"]').click();
   await page.getByRole('button', { name: 'Watch replay', exact: true }).click();
   await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 500 });
