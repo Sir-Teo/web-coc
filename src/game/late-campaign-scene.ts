@@ -31,6 +31,8 @@ export interface LateRenderContext {
   airLift: number;
 }
 export interface LatePresentation {
+  /** False when body textures failed; another family in the same batch can still render. */
+  readonly artReady?: boolean;
   handles(building: Building): boolean;
   /** Registered source bounds relative to the building's ground center. */
   bounds(building: Building): readonly [number, number, number, number] | undefined;
@@ -66,7 +68,11 @@ export class LateCampaignPresentation {
       new LateGoblinBuildingsPresentation(scene, audio),
       new BuilderHutPresentation(scene, audio),
       new DefendingBuilderPresentation(scene, audio),
-    ];
+    ].filter((family: LatePresentation) => {
+      if (family.artReady !== false) return true;
+      family.destroy();
+      return false;
+    });
   }
   handles(building: Building) {
     return this.families.some((family) => family.handles(building));

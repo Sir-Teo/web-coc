@@ -14,6 +14,8 @@ ordinary development needs only `npm ci` and `npm run dev`.
 | `native_art/`, `native3d/`                    | Shared native format readers and rendering utilities                   |
 | `check-doc-links.mjs`                         | Local documentation links, checked by `npm run check`                  |
 | `native-pages.mjs`, `vite-native-pages.mjs`   | Level texture pages for village and troop packs (dev server and build) |
+| `vite-import-retry.mjs`                      | Preserve lazy art imports while allowing failed module URLs to retry   |
+| `late-art-production-check.mjs`              | Own a preview and test built art-import retries in Chromium and WebKit |
 | `app-icons.mjs`                               | Render the home-screen icons from `public/favicon.svg` (`--check`)     |
 | `content-inventory.py`                        | Generate/check the content inventory                                   |
 

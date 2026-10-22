@@ -9,6 +9,7 @@ npm ci
 npx playwright install chromium webkit
 npm run check
 npm run test:production
+npm run test:late-art:production
 ```
 
 `check` builds `dist/`. The production runner requires that build, starts its own
@@ -37,10 +38,18 @@ qualify every map, device or browser.
 
 ## Feature-specific production runners
 
-The `test:*:production` scripts in `package.json` target individual systems. Most
-expect a separately running preview at port 4173; check the script's header and
-`PRODUCTION_BASE_URL` support before running one. Only `test:production` guarantees
-that it starts and owns an isolated preview server.
+The `test:*:production` scripts in `package.json` target individual systems. Check the
+script's header and `PRODUCTION_BASE_URL` support: some own a preview, while others
+expect one at port 4173. Both `test:production` and `test:late-art:production` start
+and own isolated previews.
+
+The late-art check injects temporary failures into the built late-presentation and
+character-graph chunks, verifies fresh-URL recovery and interactive UI, and preserves
+the reload path for removed release chunks. It also checks that these chunks stay out
+of the startup cache. It runs Chromium and WebKit by default; `PRODUCTION_BROWSER`
+can select either engine. Fault-injection cases block service workers. A separate case
+uses the real worker with an unavailable preview host to verify cached retry downloads;
+the general smoke suite also checks the ordinary worker and offline boot.
 
 ## Deployment
 
@@ -49,8 +58,9 @@ and manual dispatch. A first job runs the test typecheck, documentation link val
 and the full unit suite (`npm test`). Only when it passes does the second job build the
 production bundle and run the Chromium production smoke suite (`npm run test:production`:
 boot, required art, save and reload, and an offline reload through the service worker)
-before publishing. Only a main-branch run can deploy. The full browser matrix remains on
-demand: the `browser-regression.yml` workflow retains browser evidence for seven days.
+and the lazy art recovery checks before publishing. Only a main-branch run can deploy.
+The full browser matrix remains on demand: the `browser-regression.yml` workflow
+retains browser evidence for seven days.
 
 The repository publishes `dist/` to GitHub Pages at <https://coc.teozeng.dev>.
 Pages uses GitHub Actions as its build source and `coc.teozeng.dev` as its custom

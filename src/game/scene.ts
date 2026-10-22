@@ -657,6 +657,8 @@ export class VillageScene extends Phaser.Scene {
   > = INERT_LATE_CAMPAIGN;
   private lateAssets?: Promise<void>;
   lateAssetsReady = false;
+  private lateArtLoading = false;
+  private lateArtFailure?: { attempts: number; retryAt: number };
   private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
     battle: null,
     needed: false,
@@ -1207,6 +1209,7 @@ export class VillageScene extends Phaser.Scene {
    */
   loadLateAssets(): Promise<void> {
     if (this.lateAssets) return this.lateAssets;
+    this.lateArtLoading = true;
     let shutdown = false;
     let slow: ReturnType<typeof setTimeout>;
     const onShutdown = () => {
@@ -1215,7 +1218,7 @@ export class VillageScene extends Phaser.Scene {
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     slow = setTimeout(() => {
-      if (!shutdown) this.model.notify(LOADING_LATE_ART);
+      if (!shutdown && !this.lateAssetsReady) this.model.notify(LOADING_LATE_ART);
     }, 400);
     const settle = () => {
       clearTimeout(slow);
@@ -1226,47 +1229,63 @@ export class VillageScene extends Phaser.Scene {
     const loading = Promise.all([import('./late-campaign-scene'), loadCharacterArt()]).then(
       ([{ LateCampaignPresentation, preloadLateCampaign }]) =>
         new Promise<void>((resolve) => {
-          let failed = false;
-          const failure = () => (failed = true);
-          this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
-          this.load.once(Phaser.Loader.Events.COMPLETE, () => {
-            settle();
-            this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
-            if (shutdown) {
+          const kick = () => {
+            if (shutdown) return resolve();
+            const owned = new Set<Phaser.Loader.File>();
+            let failed = false;
+            const failure = (file: Phaser.Loader.File) => {
+              if (owned.has(file)) failed = true;
+            };
+            this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+            this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+              settle();
+              this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+              if (shutdown) return resolve();
+              if (failed) this.failLateArt();
+              else this.lateArtFailure = undefined;
+              // Rebuild against the completed textures, keeping failed bodies on their fallback.
+              this.lateCampaign.destroy();
+              this.garrisonPresentation.clear();
+              this.lateCampaign = new LateCampaignPresentation(this, this.audio);
+              this.lateAssetsReady = true;
+              this.lastRevision = -1;
               resolve();
-              return;
-            }
-            if (failed) this.model.notify('Some village art could not load. Refresh to retry.');
-            this.lateCampaign = new LateCampaignPresentation(this, this.audio);
-            this.lateAssetsReady = true;
-            // Restyle every building so late bodies replace the hidden fallback sprites.
-            this.lastRevision = -1;
-            resolve();
-          });
-          const queued = new Set(this.load.list);
-          preloadLateCampaign(this);
-          preloadLateGarrisonTroops(this);
-          // Texture keys only this bundle brought in (shared keys already loaded are skipped by the
-          // loader and never listed), so releaseLateAssets removes exactly what it added.
-          this.lateTextureKeys = [...this.load.list]
-            .filter(
-              (file) => !queued.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
-            )
-            .map((file) => file.key);
-          this.load.start();
+            });
+            const queued = new Set(this.load.list);
+            preloadLateCampaign(this);
+            preloadLateGarrisonTroops(this);
+            for (const file of this.load.list) if (!queued.has(file)) owned.add(file);
+            // Retries queue only missing files; retain ownership of the first batch's pages too.
+            this.lateTextureKeys = [
+              ...new Set([
+                ...this.lateTextureKeys,
+                ...[...owned]
+                  .filter((file) => file.type === 'image' || file.type === 'spritesheet')
+                  .map((file) => file.key),
+              ]),
+            ];
+            this.load.start();
+          };
+          if (this.load.isLoading()) this.load.once(Phaser.Loader.Events.COMPLETE, kick);
+          else kick();
         }),
       () => {
         settle();
         if (shutdown) return;
-        this.model.notify('Village art could not load. Check your connection and try again.');
-        // The waiting battle can still return home; a later sync retries after a pause.
-        setTimeout(() => (this.lateAssets = undefined), 5000);
+        this.failLateArt();
       },
     );
-    this.lateAssets = loading.finally(() =>
-      this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown),
-    );
+    this.lateAssets = loading.finally(() => {
+      this.lateArtLoading = false;
+      this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
+    });
     return this.lateAssets;
+  }
+  private failLateArt() {
+    const attempts = (this.lateArtFailure?.attempts ?? 0) + 1;
+    this.lateArtFailure = { attempts, retryAt: performance.now() + artRetryDelay(attempts) };
+    if (attempts === 1)
+      this.model.notify('Some village art could not load. It will retry automatically.');
   }
   /** Texture keys the late campaign bundle added (see loadLateAssets). */
   private lateTextureKeys: string[] = [];
@@ -1281,6 +1300,7 @@ export class VillageScene extends Phaser.Scene {
   private releaseLateAssetsWhenIdle(time: number) {
     if (
       !this.lateAssetsReady ||
+      this.lateArtLoading ||
       this.model.battle ||
       this.model.replay ||
       this.lateAssetsPending()
@@ -1303,6 +1323,7 @@ export class VillageScene extends Phaser.Scene {
     this.lateTextureKeys = [];
     this.lateAssets = undefined;
     this.lateAssetsReady = false;
+    this.lateArtFailure = undefined;
     this.lastRevision = -1;
   }
   private heavyArt?: Promise<void>;
@@ -1501,6 +1522,15 @@ export class VillageScene extends Phaser.Scene {
       this.heavyArt = undefined;
       void this.loadHeavyArt();
     }
+    if (
+      this.lateArtFailure &&
+      this.lateArtFailure.retryAt <= now &&
+      !this.lateArtLoading &&
+      this.needsLateAssets()
+    ) {
+      this.lateAssets = undefined;
+      void this.loadLateAssets();
+    }
     const cannons = new Set<number>(),
       towers = new Set<number>();
     for (const building of this.model.buildings) {
@@ -1518,6 +1548,7 @@ export class VillageScene extends Phaser.Scene {
   private retryArtNow = () => {
     for (const failure of this.failedFamilies.values()) failure.retryAt = 0;
     if (this.heavyArtRetryAt !== undefined) this.heavyArtRetryAt = 0;
+    if (this.lateArtFailure) this.lateArtFailure.retryAt = 0;
     this.retryFailedArt(performance.now(), true);
   };
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
@@ -1696,7 +1727,10 @@ export class VillageScene extends Phaser.Scene {
   private homeLate = { buildings: null as Building[] | null, revision: -1, needed: false };
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
-    if (this.lateAssetsReady) return false;
+    return !this.lateAssetsReady && this.needsLateAssets();
+  }
+  /** Whether the current village uses the late bundle, including a settled batch with failures. */
+  private needsLateAssets() {
     const battle = this.model.battle;
     // A home village that owns a late family needs the same art outside battle
     // (checked once per village change, not every frame).

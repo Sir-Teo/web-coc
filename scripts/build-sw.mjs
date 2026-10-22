@@ -292,7 +292,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      const hit = await cache.match(request, { ignoreVary: true });
+      // Failed ESM imports need a fresh URL. Verified retry bytes also belong to the
+      // canonical chunk, so the next offline visit can import its ordinary URL.
+      const artRetry =
+        url.pathname.endsWith('.js') &&
+        url.searchParams.size === 1 &&
+        /^[1-9][0-9]*$/.test(url.searchParams.get('art-retry') ?? '');
+      const hit = await cache.match(artRetry ? url.pathname : request, { ignoreVary: true });
       if (hit) return hit;
       const response = await fetch(request);
       // Cache-first for build files: fetched once, then served offline. Only bytes matching
@@ -302,7 +308,7 @@ self.addEventListener('fetch', (event) => {
         response.status === 200 &&
         response.type === 'basic' &&
         !request.headers.has('range') &&
-        !url.search &&
+        (!url.search || artRetry) &&
         expected
       )
         event.waitUntil(putVerified(cache, url.pathname, response.clone(), expected).catch(() => {}));

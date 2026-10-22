@@ -23,6 +23,13 @@ export function preloadNativeMeshes(scene: Phaser.Scene, graph: NativeMeshGraph,
     scene.load.image(nativeMeshTexture(prefix, id), '/' + texture.path);
 }
 
+/** A body may replace its fallback only after every texture its graph samples is uploaded. */
+export function nativeMeshesReady(scene: Phaser.Scene, graph: NativeMeshGraph, prefix: string) {
+  return Object.keys(graph.textures).every((id) =>
+    scene.textures.exists(nativeMeshTexture(prefix, id)),
+  );
+}
+
 /**
  * Source multiply/add colors run on the GPU (NATIVE_COLOR_TINT_MODE: tint = multiply, tint2 =
  * add) whenever no texel can saturate (multiply + add <= 1 per channel). The source applies the

@@ -12,7 +12,7 @@ import {
 } from './freeze-trap-poses';
 import type { LatePresentation, LateRenderContext } from './late-campaign-scene';
 import type { Building } from './model';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { presentationLive } from './presentation-clock';
@@ -34,10 +34,12 @@ export class FreezeTrapPresentation implements LatePresentation {
   /** Live effect views by key (pooled; see NativeEffectViews). */
   readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<number, string>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, FREEZE_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, 'nativeFreezeEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(FREEZE_SOUNDS))

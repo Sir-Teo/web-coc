@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { nativePages } from './scripts/vite-native-pages.mjs';
+import { importRetry } from './scripts/vite-import-retry.mjs';
 
 type ModuleInfo = { isEntry: boolean; importers: readonly string[] } | null;
 
@@ -28,7 +29,7 @@ const SCENE_GRAPH =
   /\/reference\/(?:.*\/(?:[\w-]*runtime|defender|castle|effect-art|defense-art|effects)\.json$|characters\/|garrison\/)/;
 
 export default defineConfig({
-  plugins: [nativePages()],
+  plugins: [nativePages(), importRetry()],
   build: {
     // scripts/build-sw.mjs reads the chunk graph to precache only what the entry imports
     // statically, then removes the manifest from dist.

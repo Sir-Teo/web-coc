@@ -59,6 +59,11 @@ jobs:
         run: npm run test:production
         env:
           PRODUCTION_BROWSER: chromium
+      - name: Verify recovery from lazy art download failures
+        timeout-minutes: 6
+        run: npm run test:late-art:production
+        env:
+          PRODUCTION_BROWSER: chromium
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4

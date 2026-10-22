@@ -5,7 +5,7 @@ import type { Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { NativeSceneView, effectSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
-import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
+import { NativeMeshView, preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import type { NativeMeshPose } from './native-mesh';
 import { presentationLive } from './presentation-clock';
 import { guardRender } from './render-guard';
@@ -61,10 +61,14 @@ export class EagleArtilleryPresentation implements LatePresentation {
   private fx: NativeEffectViews;
   private signatures = new Map<number, string>();
   private baseSignatures = new Map<number, string>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady =
+      nativeMeshesReady(scene, EAGLE_ARTILLERY_GRAPH, PREFIX) &&
+      nativeMeshesReady(scene, EAGLE_ARTILLERY_BASE_GRAPH, BASE_PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, DATA);
     for (const path of Object.keys(EAGLE_ARTILLERY_SOUNDS))
       registerCachedSample(scene, audio.samples, eagleArtillerySample(path));

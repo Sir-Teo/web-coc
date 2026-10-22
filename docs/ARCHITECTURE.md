@@ -125,6 +125,27 @@ and bump the art revision, replacing the fallback even during scouting or a paus
 `tests/browser/native-page-recovery.spec.ts` covers Cannon pages and both Archer Tower
 body and resident pages with temporary failures and reconnects.
 
+The late campaign bundle also retries failed files and lazy-module downloads with bounded
+backoff, or immediately on reconnect. Its families check their body textures before replacing
+fallback sprites, so a failed Eagle Artillery does not hide the loaded Scattershot beside it.
+Retries rebuild presentation views against the completed textures and retain ownership of
+pages from every attempt; returning home can still release the whole unused bundle. An
+in-flight retry cannot race that idle release. `tests/browser/late-art-recovery.spec.ts`
+checks fallback visibility, independent families, recovery and GPU-page release after retry.
+
+Browsers cache failed module imports, so the late presentation and character-graph imports
+use a shared retry cache: a failed attempt gets a fresh URL, and successful modules stay
+cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
+and emits the underlying native import after Vite's preload instrumentation. Temporary
+failures reach the art loader; a status probe keeps missing release chunks and HTML fallbacks
+on the existing reload path. `tests/browser/late-art-build.spec.ts` checks the built URLs and
+startup-cache boundary through the shipped UI in Chromium and WebKit.
+The worker verifies successful retry bytes against its release manifest before caching them
+under the ordinary chunk URL, so recovery remains available on a later offline visit.
+
+The native-page build hook runs only for builds. Closing or restarting a development/SSR
+server must not repage production output while another process is building it.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates

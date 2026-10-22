@@ -4,7 +4,7 @@ import type { LatePresentation, LateRenderContext } from './late-campaign-scene'
 import type { Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { BUILDINGS } from './data';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import type { NativeParticlePose } from './native-particles';
@@ -61,10 +61,12 @@ export class LateGoblinBuildingsPresentation implements LatePresentation {
   private signatures = new Map<string, string>();
   /** One data object per projectile, updated in place. */
   private projectileData = new Map<string, { id: string; progress: number }>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, LATE_GOBLIN_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, 'lateGoblinEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(LATE_GOBLIN_SOUNDS))

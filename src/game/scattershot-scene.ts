@@ -5,7 +5,7 @@ import type { Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import { presentationLive } from './presentation-clock';
 import { guardRender } from './render-guard';
 import { SCATTERSHOT_ART_LEVELS, scattershotAsset, scattershotTexture } from './scattershot-art';
@@ -70,10 +70,12 @@ export class ScattershotPresentation implements LatePresentation {
   /** Particle effects (pooled; see NativeEffectViews). */
   private fx: NativeEffectViews;
   private signatures = new Map<number, string>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, SCATTERSHOT_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, DATA);
     for (const path of Object.keys(SCATTERSHOT_SOUNDS))
       registerCachedSample(scene, audio.samples, scattershotSample(path));

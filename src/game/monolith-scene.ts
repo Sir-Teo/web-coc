@@ -5,7 +5,7 @@ import type { Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import type { NativeParticlePose } from './native-particles';
 import { presentationLive } from './presentation-clock';
 import { guardRender } from './render-guard';
@@ -60,10 +60,12 @@ export class MonolithPresentation implements LatePresentation {
   readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<number, string>();
   private projectileData = new Map<string, { id: string; progress: number; export: string }>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, MONOLITH_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, 'nativeMonolithEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(MONOLITH_SOUNDS))

@@ -4,7 +4,7 @@ import type { LatePresentation, LateRenderContext } from './late-campaign-scene'
 import type { Battle, Building } from './model';
 import { cueAudible, registerCachedSample, type SampleCue } from './sample-audio';
 import { BUILDINGS } from './data';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { presentationLive } from './presentation-clock';
@@ -50,10 +50,12 @@ export class BuilderHutPresentation implements LatePresentation {
   private signatures = new Map<string, string>();
   /** One data object per nail, updated in place. */
   private nailData = new Map<string, { id: string; progress: number; export: string }>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, BUILDER_HUT_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, 'builderHutEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(BUILDER_HUT_SOUNDS))

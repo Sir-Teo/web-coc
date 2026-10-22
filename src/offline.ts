@@ -7,6 +7,7 @@
  * so an offline reload finds everything the boot needs without every player
  * downloading the whole art library.
  */
+import { isRetryableArtImportError, isStaleArtImportError } from './game/import-retry';
 
 /** Resource Timing drops entries past its buffer (250 by default); the boot loads more. */
 export function recordBootResources() {
@@ -70,7 +71,10 @@ export function registerOfflineSupport() {
   // and no worker served it from cache) is fatal to the page in every other way; reload onto
   // the new version. The unload path settles any battle and stores the village first.
   window.addEventListener('vite:preloadError', (event) => {
-    event.preventDefault();
+    const error = (event as Event & { payload?: unknown }).payload;
+    if (isRetryableArtImportError(error)) return;
+    // Managed stale imports still reject to their caller while navigation begins.
+    if (!isStaleArtImportError(error)) event.preventDefault();
     window.location.reload();
   });
   if (!('serviceWorker' in navigator)) return;

@@ -7,7 +7,7 @@ import { NativeSceneView, quantizedDensity } from './native-scene-view';
 import { NativeEffectViews } from './native-effect-views';
 import { presentationLive } from './presentation-clock';
 import { guardRender } from './render-guard';
-import { preloadNativeMeshes } from './native-mesh-scene';
+import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import type { NativeParticlePose } from './native-particles';
 import {
   SPELL_TOWER_ART_LEVELS,
@@ -79,10 +79,12 @@ export class SpellTowerPresentation implements LatePresentation {
   readonly effects: Map<string, NativeSceneView>;
   private signatures = new Map<number, string>();
   private bottleData = new Map<number, { cast: number; weapon: string; progress: number }>();
+  readonly artReady: boolean;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
   ) {
+    this.artReady = nativeMeshesReady(scene, SPELL_TOWER_GRAPH, PREFIX);
     this.fx = new NativeEffectViews(scene, PREFIX, 'nativeSpellTowerEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(SPELL_TOWER_SOUNDS))
