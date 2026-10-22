@@ -35,17 +35,24 @@ const craftedPortraits = Object.values(
   JSON.parse(await fs.readFile('reference/crafted-defenses/art.json', 'utf8')).defenses,
 ).flatMap((defense) => defense.portraits);
 
-async function checkCraftedPortraits(page) {
-  return page.evaluate(async (portraits) => {
-    for (const portrait of portraits) {
-      const image = new Image();
-      image.src = '/' + portrait.path.replace(/\.png$/, '.webp');
-      await image.decode();
-      if (image.naturalWidth !== portrait.width || image.naturalHeight !== portrait.height)
-        throw Error(`Wrong crafted-defense portrait dimensions: ${portrait.path}`);
-    }
-    return portraits.length;
-  }, craftedPortraits);
+const spellTowerPortraits = JSON.parse(
+  await fs.readFile('reference/spell-tower/catalog.json', 'utf8'),
+).previews;
+
+async function checkRegisteredPortraits(page, portraits, label) {
+  return page.evaluate(
+    async ({ portraits, label }) => {
+      for (const portrait of portraits) {
+        const image = new Image();
+        image.src = '/' + portrait.path.replace(/\.png$/, '.webp');
+        await image.decode();
+        if (image.naturalWidth !== portrait.width || image.naturalHeight !== portrait.height)
+          throw Error(`Wrong ${label} portrait dimensions: ${portrait.path}`);
+      }
+      return portraits.length;
+    },
+    { portraits, label },
+  );
 }
 
 async function checkRosterHeroPortraits(page) {
@@ -341,12 +348,23 @@ for (const [name, engine] of Object.entries(engines)) {
   expect(nativeDecorations).toBe(4);
   const heroPortraits = await checkRosterHeroPortraits(page);
   expect(heroPortraits).toBe(rosterHeroPortraits.length);
-  const nativeCraftedPortraits = await checkCraftedPortraits(page);
+  const nativeCraftedPortraits = await checkRegisteredPortraits(
+    page,
+    craftedPortraits,
+    'crafted-defense',
+  );
   expect(nativeCraftedPortraits).toBe(12);
+  const nativeSpellTowerPortraits = await checkRegisteredPortraits(
+    page,
+    spellTowerPortraits,
+    'Spell Tower',
+  );
+  expect(nativeSpellTowerPortraits).toBe(13);
   report[name] = {
     nativeDecorations,
     heroPortraits,
     nativeCraftedPortraits,
+    nativeSpellTowerPortraits,
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
@@ -387,11 +405,13 @@ for (const [name, engine] of Object.entries(engines)) {
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
     expect(await checkDecorationTextures(page)).toBe(4);
     expect(await checkRosterHeroPortraits(page)).toBe(rosterHeroPortraits.length);
-    expect(await checkCraftedPortraits(page)).toBe(12);
+    expect(await checkRegisteredPortraits(page, craftedPortraits, 'crafted-defense')).toBe(12);
+    expect(await checkRegisteredPortraits(page, spellTowerPortraits, 'Spell Tower')).toBe(13);
     report.offline = {
       nativeDecorations: 4,
       heroPortraits: rosterHeroPortraits.length,
       nativeCraftedPortraits: 12,
+      nativeSpellTowerPortraits: 13,
       reload: true,
       army: true,
       replay: true,

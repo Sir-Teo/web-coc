@@ -5,7 +5,11 @@ import catalog from '../reference/spell-tower/catalog.json';
 import { SPELL_TOWER_WEAPONS } from '../src/game/late-campaign';
 import { NATIVE_COMBAT } from '../src/game/native-campaign';
 import { SPELL_TOWER, SPELL_TOWER_HERO } from '../src/game/spell-tower-stats';
-import { SPELL_TOWER_ART, spellTowerAsset } from '../src/game/spell-tower-art';
+import {
+  SPELL_TOWER_ART,
+  spellTowerArtWeapons,
+  spellTowerAsset,
+} from '../src/game/spell-tower-art';
 import {
   spellTowerDefenderBoost,
   spellTowerDefenderHidden,
@@ -123,9 +127,19 @@ describe('Spell Tower source records', () => {
 
   it('ships every registered weapon preview', () => {
     for (const level of [1, 2, 3, 4])
-      for (const weapon of ['rage', 'poison', 'invisibility'])
+      for (const weapon of spellTowerArtWeapons(level))
         expect(existsSync(`public${spellTowerAsset(level, weapon)}`)).toBe(true);
-    expect(catalog.previews).toHaveLength(12);
+    expect(catalog.previews).toHaveLength(13);
+    expect(spellTowerArtWeapons(3)).toEqual(['rage', 'poison', 'invisibility']);
+    expect(spellTowerArtWeapons(4)).toEqual(['rage', 'poison', 'invisibility', 'earthquake']);
+    expect(spellTowerAsset(4, 'earthquake')).toBe(
+      '/assets/buildings/spell-tower-native/preview-4-earthquake.png',
+    );
+    expect(catalog.previews.find((p) => p.weapon === 'earthquake')).toMatchObject({
+      level: 4,
+      export: 'spell_tower_lvl4_earthquake',
+      frame: 'idle',
+    });
     expect(catalog.previews.every((p) => p.width === 280 && p.height === 320)).toBe(true);
     expect([SPELL_TOWER_ART.width, SPELL_TOWER_ART.height]).toEqual([140 * 1.2, 160 * 1.2]);
   });

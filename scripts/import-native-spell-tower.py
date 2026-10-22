@@ -174,18 +174,31 @@ def build():
     width, height = (PREVIEW_BOUNDS[2] - PREVIEW_BOUNDS[0]) * 2, (PREVIEW_BOUNDS[3] - PREVIEW_BOUNDS[1]) * 2
     root = np.array([[2, 0, -PREVIEW_BOUNDS[0] * 2], [0, 2, -PREVIEW_BOUNDS[1] * 2], [0, 0, 1]], dtype=float)
     previews = []
+
+    def preview(level_number, weapon, export_name):
+        level = levels[level_number - 1]
+        controls = {'turret_load': STATE_LABELS['idle']}
+        poses = controlled_nodes(graph, graph['exports'][level['ExportNameBase']], 0, root)
+        poses += controlled_nodes(graph, graph['exports'][export_name], 0, root, controls)
+        image = Image.fromarray(compose_preview(poses, pixels, width, height), 'RGBA')
+        path = f'{PREFIX}/preview-{level_number}-{weapon}.png'
+        outputs[path] = image
+        previews.append(dict(level=level_number, weapon=weapon, export=export_name, path=path,
+                             bounds=PREVIEW_BOUNDS, width=width, height=height, pixelsPerNativeUnit=2,
+                             frame='idle', rgbaSha256=digest(image.tobytes())))
+
     for key, rows in weapons.items():
         for row in rows:
-            level = levels[int(row['Level']) - 1]
-            controls = {'turret_load': STATE_LABELS['idle']}
-            poses = controlled_nodes(graph, graph['exports'][level['ExportNameBase']], 0, root)
-            poses += controlled_nodes(graph, graph['exports'][row['ExportName']], 0, root, controls)
-            image = Image.fromarray(compose_preview(poses, pixels, width, height), 'RGBA')
-            path = f'{PREFIX}/preview-{row["Level"]}-{key}.png'
-            outputs[path] = image
-            previews.append(dict(level=int(row['Level']), weapon=key, export=row['ExportName'], path=path,
-                                 bounds=PREVIEW_BOUNDS, width=width, height=height, pixelsPerNativeUnit=2,
-                                 frame='idle', rgbaSha256=digest(image.tobytes())))
+            preview(int(row['Level']), key, row['ExportName'])
+    # The home village can select Earthquake at level 4. Its body is already retained above;
+    # expose its idle portrait without adding a fourth weapon to the legacy campaign engine.
+    earthquake = levels[3]
+    clip = graph['clips'][str(graph['exports'][earthquake['ExportName']])]
+    require(clip['names'].count('turret_load') == 1, 'Earthquake state control differs')
+    state = graph['clips'][str(clip['children'][clip['names'].index('turret_load')])]
+    require({label: frame for frame, label in state['labels']} == {**STATE_LABELS, 'load_end': 993} and
+            len(state['timeline']) == 994 and state['fps'] == 30, 'Earthquake state labels differ')
+    preview(4, 'earthquake', earthquake['ExportName'])
     sounds = {}
     for original in sorted({r['Sound'] for rows in effects.values() for r in rows if r.get('Sound')}):
         path = PREFIX + '/' + original.removeprefix('sfx/')
@@ -257,9 +270,11 @@ def build():
                        nativePlaybackVerified=False,
                        scope='Four building bodies, all twelve rage/poison/invisibility weapon bodies with their 1,236-frame '
                              'turret_load state timeline, shared base/scaffold/upgrade/ruin, three spell bottles, every '
-                             'particle export referenced by the tower, bottle and spell effects, and seven sounds.',
+                             'particle export referenced by the tower, bottle and spell effects, seven sounds, and the level-4 '
+                             'Earthquake idle portrait.',
                        excluded='The Earthquake weapon and spell (level-4 mode, absent from campaign placements) and the '
-                                'unreferenced spell_tower_<color> exports are retained only as source names.',
+                                'unreferenced spell_tower_<color> exports are retained only as source names; Earthquake body art '
+                                'is retained for the idle portrait.',
                        preview='Base plus weapon body at the idle label frame, density two; registration is local.'))
     return outputs, {'catalog': catalog, 'runtime': runtime, 'combat': combat}
 

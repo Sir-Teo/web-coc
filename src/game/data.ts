@@ -292,7 +292,8 @@ const BASE_BUILDINGS: Record<LegacyBuildingKind, BuildingDef> = {
   },
   spelltower: {
     name: 'Spell Tower',
-    description: 'Casts Rage, Poison or Invisibility to help nearby defenses and hinder attackers.',
+    description:
+      'Casts Rage, Poison, Invisibility or Earthquake to help defenses and hinder attackers.',
     size: 2,
     width: 120,
     hp: 2500,

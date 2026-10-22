@@ -11,7 +11,7 @@ import { preloadNativeMeshes, nativeMeshesReady } from './native-mesh-scene';
 import type { NativeParticlePose } from './native-particles';
 import {
   SPELL_TOWER_ART_LEVELS,
-  SPELL_TOWER_ART_WEAPONS,
+  spellTowerArtWeapons,
   spellTowerAsset,
   spellTowerTexture,
 } from './spell-tower-art';
@@ -61,7 +61,7 @@ function landingEffects(weapon: SpellTowerWeapon) {
 export function preloadSpellTower(scene: Phaser.Scene) {
   preloadNativeMeshes(scene, SPELL_TOWER_GRAPH, PREFIX);
   for (const level of SPELL_TOWER_ART_LEVELS)
-    for (const weapon of SPELL_TOWER_ART_WEAPONS)
+    for (const weapon of spellTowerArtWeapons(level))
       scene.load.image(spellTowerTexture(level, weapon), spellTowerAsset(level, weapon));
   for (const [path, sound] of Object.entries(SPELL_TOWER_SOUNDS))
     scene.load.binary(sample(path), '/' + sound.path);
@@ -92,10 +92,12 @@ export class SpellTowerPresentation implements LatePresentation {
   }
   /** True once this family renders the building itself (the fallback sprite is hidden). */
   handles(b: Building) {
-    return b.kind === 'spelltower';
+    // Explicit home spell choices belong to the native defense renderer. Campaign towers
+    // retain their legacy weapon and its recorded cast/effect presentation.
+    return b.kind === 'spelltower' && b.spellMode === undefined;
   }
   bounds(b: Building): readonly [number, number, number, number] | undefined {
-    return b.kind === 'spelltower'
+    return this.handles(b)
       ? guardRender(
           `spell tower level ${b.level}`,
           () => spellTowerBounds(b.level, b.spellTowerWeapon ?? 'rage', visualState(b)),
@@ -119,7 +121,7 @@ export class SpellTowerPresentation implements LatePresentation {
     };
     const family = battle?.late?.spellTower;
     for (const tower of context.buildings) {
-      if (tower.kind !== 'spelltower') continue;
+      if (!this.handles(tower)) continue;
       wanted.add(tower.id);
       const weapon = tower.spellTowerWeapon ?? 'rage';
       const p = iso(tower.x + 1, tower.y + 1);

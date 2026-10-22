@@ -395,4 +395,13 @@ describe('native defense bodies', () => {
       6,
     );
   });
+  it.each(['rage', 'poison', 'invisibility', 'earthquake'] as const)(
+    'holds the source loaded idle frame for a home %s Spell Tower',
+    (spellMode) => {
+      const tower = { ...makeBuilding(6, 'spelltower', 9, 9, 4), spellMode };
+      const body = nativeDefenseBody(tower, null, 100, resolverFor('spelltower')(4))!;
+      expect(body.field).toBe(`Mode:${spellMode}`);
+      expect(body.controls.turret_load).toBe(2);
+    },
+  );
 });

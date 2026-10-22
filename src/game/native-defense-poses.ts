@@ -260,6 +260,10 @@ export function nativeDefenseBody(
         nativeFacingAngle(tower.direction),
       );
   }
+  if (!battle && kind === 'spelltower') {
+    const load = find('turret_load');
+    if (load !== undefined) controls.turret_load = nativeLabels(graph, load).idle ?? 0;
+  }
   if (!battle || battle.finished || !state || !weapon) return body;
   const action = options.actionFrame ?? 0;
   if (turret !== undefined && action > 0) {

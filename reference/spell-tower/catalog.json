@@ -5710,12 +5710,29 @@
       "pixelsPerNativeUnit": 2,
       "frame": "idle",
       "rgbaSha256": "b1f72cb21d36eb6d47ce30066d956560663333edb223ffaa2d0b22f9147677e0"
+    },
+    {
+      "level": 4,
+      "weapon": "earthquake",
+      "export": "spell_tower_lvl4_earthquake",
+      "path": "assets/buildings/spell-tower-native/preview-4-earthquake.png",
+      "bounds": [
+        -70,
+        -70,
+        70,
+        90
+      ],
+      "width": 280,
+      "height": 320,
+      "pixelsPerNativeUnit": 2,
+      "frame": "idle",
+      "rgbaSha256": "62f024dbb2b90e438df6da0c779b30a86a7733eb0491e3623455851cec406cf6"
     }
   ],
   "reconstruction": {
     "nativePlaybackVerified": false,
-    "scope": "Four building bodies, all twelve rage/poison/invisibility weapon bodies with their 1,236-frame turret_load state timeline, shared base/scaffold/upgrade/ruin, three spell bottles, every particle export referenced by the tower, bottle and spell effects, and seven sounds.",
-    "excluded": "The Earthquake weapon and spell (level-4 mode, absent from campaign placements) and the unreferenced spell_tower_<color> exports are retained only as source names.",
+    "scope": "Four building bodies, all twelve rage/poison/invisibility weapon bodies with their 1,236-frame turret_load state timeline, shared base/scaffold/upgrade/ruin, three spell bottles, every particle export referenced by the tower, bottle and spell effects, seven sounds, and the level-4 Earthquake idle portrait.",
+    "excluded": "The Earthquake weapon and spell (level-4 mode, absent from campaign placements) and the unreferenced spell_tower_<color> exports are retained only as source names; Earthquake body art is retained for the idle portrait.",
     "preview": "Base plus weapon body at the idle label frame, density two; registration is local."
   }
 }

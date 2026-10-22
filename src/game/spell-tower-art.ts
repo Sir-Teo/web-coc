@@ -1,7 +1,10 @@
 import source from '../../reference/spell-tower/combat.json' with { type: 'json' };
 
 export const SPELL_TOWER_ART_LEVELS = source.levels.map((row) => row.level);
-export const SPELL_TOWER_ART_WEAPONS = ['rage', 'poison', 'invisibility'] as const;
+export const SPELL_TOWER_ART_WEAPONS = ['rage', 'poison', 'invisibility', 'earthquake'] as const;
+/** Earthquake unlocks at level 4; earlier levels have no Earthquake portrait. */
+export const spellTowerArtWeapons = (level: number) =>
+  SPELL_TOWER_ART_WEAPONS.filter((weapon) => weapon !== 'earthquake' || level >= 4);
 type ArtWeapon = (typeof SPELL_TOWER_ART_WEAPONS)[number];
 const weaponOf = (variant?: string): ArtWeapon =>
   SPELL_TOWER_ART_WEAPONS.includes(variant as ArtWeapon) ? (variant as ArtWeapon) : 'rage';
@@ -16,7 +19,7 @@ export const SPELL_TOWER_ART = {
   originX: 0.5,
   originY: (70 + 64 / 1.2) / 160,
 };
-/** `variant` is the explicit campaign weapon; an unselected home preview shows Rage. */
+/** `variant` is the selected home spell or the explicit campaign weapon; the default is Rage. */
 export function spellTowerTexture(level: number, variant?: string) {
   return `spell-tower-native-${level}-${weaponOf(variant)}`;
 }

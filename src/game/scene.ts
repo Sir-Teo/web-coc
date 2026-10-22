@@ -2784,7 +2784,7 @@ export class VillageScene extends Phaser.Scene {
         moving?.skeletonMode,
         undefined,
         moving?.xbowMode,
-        moving?.spellTowerWeapon,
+        moving?.spellMode ?? moving?.spellTowerWeapon,
         moving?.crafted,
         moving?.crafted
           ? craftedArtTier(moving.crafted, moving.craftedModules?.[moving.crafted])
@@ -2841,7 +2841,7 @@ export class VillageScene extends Phaser.Scene {
       b.skeletonMode,
       b.npc,
       b.xbowMode,
-      b.spellTowerWeapon,
+      b.spellMode ?? b.spellTowerWeapon,
       b.crafted,
       b.crafted ? craftedArtTier(b.crafted, b.craftedModules?.[b.crafted]) : 1,
       b.infernoMode,
