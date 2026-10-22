@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import body from '../fixtures/native-mortar-mesh/body.json' with { type: 'json' };
 import effects from '../fixtures/native-mortar-mesh/effects.json' with { type: 'json' };
 
+// The viewport below is half the source-sheet size; capture every source pixel at 2×.
+test.use({ deviceScaleFactor: 2 });
+
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [body, effects].flatMap((source) => {
@@ -38,6 +41,7 @@ for (const witness of witnesses)
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
       const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
+      const { NATIVE_ADDITIVE_TINT_MODE } = await import('/src/game/native-tint-modes.ts');
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
       scene.tweens.pauseAll();
@@ -177,10 +181,14 @@ for (const witness of witnesses)
         contextChanges: changed(restored),
         meshes: views.reduce((n, v) => n + v.meshes.size, 0),
         groups: views.reduce((n, v) => n + v.groups.size, 0),
-        // Isolated groups plus additive/screen leaves (single-leaf groups draw directly).
+        // Isolated groups, blend states and additive leaves batched through the tint shader.
         blended: views.reduce(
           (n, v) =>
-            n + v.groups.size + [...v.meshes.values()].filter((m) => m.blendMode !== 0).length,
+            n +
+            v.groups.size +
+            [...v.meshes.values()].filter(
+              (m) => m.blendMode !== 0 || m.tintMode === NATIVE_ADDITIVE_TINT_MODE,
+            ).length,
           0,
         ),
         tintedTextures: scene.textures
