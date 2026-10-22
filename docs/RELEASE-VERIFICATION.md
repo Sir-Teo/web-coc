@@ -20,7 +20,9 @@ preview server.
 The smoke suite covers village boot from a malformed shared-layout URL (with the damaged
 layout reported and copying disabled), collection, required artwork, shop, research,
 replay controls and transfer of save ownership between tabs in Chromium and WebKit.
-Chromium also checks offline reload and cached gameplay flows. Console errors,
+The four animated decoration packs must also load their converted WebP textures
+with the declared dimensions. Chromium repeats that check offline, alongside
+offline reload and cached gameplay flows. Console errors,
 failed HTTP responses and missing required assets fail the check. The report is
 `output/playtest/production-report.json`.
 Canvas checks verify native density at boot and proportional adaptive density after resizing.

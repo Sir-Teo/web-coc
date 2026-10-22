@@ -3,6 +3,7 @@ import { typingTarget } from '../ui/keyboard';
 import type { CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
+import { DecorationNativePresentation } from './decoration-native-scene';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -631,6 +632,7 @@ export class VillageScene extends Phaser.Scene {
   private heroNativePresentation!: HeroNativePresentation;
   private troopNativePresentation!: TroopNativePresentation;
   private villageNativePresentation!: VillageNativePresentation;
+  private decorationNativePresentation!: DecorationNativePresentation;
   private nativeEffectPacks!: NativeArtPacks<NativeArtPack>;
   private nativeProjectiles!: NativeProjectilePresentation;
   private nativeDefenses!: NativeDefensePresentation;
@@ -897,6 +899,10 @@ export class VillageScene extends Phaser.Scene {
       (resource) => this.model.state[resource] / Math.max(1, this.model.resourceCap(resource)),
     );
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.villageNativePresentation.destroy());
+    this.decorationNativePresentation = new DecorationNativePresentation(this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.decorationNativePresentation.destroy(),
+    );
     this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
     this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
@@ -4157,6 +4163,14 @@ export class VillageScene extends Phaser.Scene {
     const battle = this.model.battle;
     const reduced = this.model.reducedMotion;
     const clock = battle?.elapsed ?? this.renderClock / 1000;
+    this.decorationNativePresentation.render(
+      battle ? [] : this.model.decorations,
+      clock,
+      reduced,
+      this.model.movingDecoration,
+      iso,
+      this.decorationSprites,
+    );
     if (!this.model.placement || !hasVillageNativeArt(this.model.placement))
       this.villageNativePresentation.preview();
     this.drawProjectiles();

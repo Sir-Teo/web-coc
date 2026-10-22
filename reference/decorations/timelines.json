@@ -1,0 +1,128 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "sources": {
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_13.sctx": "79a67dd40bd2f5e3bd956e711f9ca77d6b548e6db528776390fb27c3602146bd",
+    "sc/buildings_14.sctx": "d194f9c0f1d52c99a4efe74890a07f9ce1bcaf5d70d4149baa5bdf61a9b8a432",
+    "sc/buildings_8.sctx": "588eba7d5739a5d9b53d3e14f2ab83bd170cad735363a81dd37bea7bcc0bb3bd"
+  },
+  "decorations": {
+    "torch": {
+      "path": "assets/decorations-native/torch/graph.json",
+      "sha256": "7d735eac06b0101d6dbf2f5b77339769e85a89b5aef33832a37ee38afc34a164",
+      "animatedClips": {
+        "6190": {
+          "fps": 24,
+          "frames": 100
+        },
+        "6387": {
+          "fps": 24,
+          "frames": 37
+        }
+      },
+      "textures": {
+        "assets/decorations-native/torch/buildings/texture-8.png": {
+          "width": 46,
+          "height": 38,
+          "rgbaSha256": "98a5e4c3180528d7dfc2f60297c9e7c88c6eb0385ccfd921d08d6a228cfc0fdf"
+        },
+        "assets/decorations-native/torch/buildings/texture-13.png": {
+          "width": 128,
+          "height": 129,
+          "rgbaSha256": "f4b3f40a0c0d313a71ab4c9e15badeeb6e0878cdc94cd43c090a2f5aabc3b2fb"
+        },
+        "assets/decorations-native/torch/buildings/texture-14.png": {
+          "width": 64,
+          "height": 144,
+          "rgbaSha256": "7ed09d7e409358a336127802ba15d1e984bfdefb51c0c3a89f5aac48f187db4b"
+        }
+      }
+    },
+    "white-flag": {
+      "path": "assets/decorations-native/white-flag/graph.json",
+      "sha256": "e4f2d4943028dfa627f9c0a80eb655e6830ec661ad69e82d0289c4ec2989d715",
+      "animatedClips": {
+        "6320": {
+          "fps": 24,
+          "frames": 21
+        }
+      },
+      "textures": {
+        "assets/decorations-native/white-flag/buildings/texture-8.png": {
+          "width": 47,
+          "height": 33,
+          "rgbaSha256": "6ec6bcf02e24f3504a54b5eea32ea1fb94e63e6949a4dcdc581f4a7e75b325b1"
+        },
+        "assets/decorations-native/white-flag/buildings/texture-13.png": {
+          "width": 159,
+          "height": 72,
+          "rgbaSha256": "e8aad2a5886afc1ea29181e4fac9640e12ad61f93c164c2f6e09f4c60cbb03ab"
+        },
+        "assets/decorations-native/white-flag/buildings/texture-14.png": {
+          "width": 64,
+          "height": 365,
+          "rgbaSha256": "2a87b854e7eb68a4720e47222bc27b758282781481759a33f1520140b29e00f5"
+        }
+      }
+    },
+    "windmeter": {
+      "path": "assets/decorations-native/windmeter/graph.json",
+      "sha256": "c297b6583e1a62adb47de9896d1c0410f7fe2d00cee21e1de60ee4f264ac602f",
+      "animatedClips": {
+        "6135": {
+          "fps": 24,
+          "frames": 9
+        },
+        "6136": {
+          "fps": 24,
+          "frames": 120
+        }
+      },
+      "textures": {
+        "assets/decorations-native/windmeter/buildings/texture-8.png": {
+          "width": 47,
+          "height": 33,
+          "rgbaSha256": "6ec6bcf02e24f3504a54b5eea32ea1fb94e63e6949a4dcdc581f4a7e75b325b1"
+        },
+        "assets/decorations-native/windmeter/buildings/texture-13.png": {
+          "width": 256,
+          "height": 124,
+          "rgbaSha256": "40a8b51f6b69e318b71e5fbdfb196f8a7ff7090db7b376384dd8eed4b2f32cc9"
+        },
+        "assets/decorations-native/windmeter/buildings/texture-14.png": {
+          "width": 256,
+          "height": 87,
+          "rgbaSha256": "bd32cc5371543b8ecc0d9ae1657a4129bbfc6b7d536257d417c1c400086aac62"
+        }
+      }
+    },
+    "skull-flag": {
+      "path": "assets/decorations-native/skull-flag/graph.json",
+      "sha256": "c2663ad503e014c0b84016c694c15a1b39ee88a1437aa217ad1a542d031f29b4",
+      "animatedClips": {
+        "6323": {
+          "fps": 24,
+          "frames": 21
+        }
+      },
+      "textures": {
+        "assets/decorations-native/skull-flag/buildings/texture-8.png": {
+          "width": 47,
+          "height": 33,
+          "rgbaSha256": "6ec6bcf02e24f3504a54b5eea32ea1fb94e63e6949a4dcdc581f4a7e75b325b1"
+        },
+        "assets/decorations-native/skull-flag/buildings/texture-13.png": {
+          "width": 159,
+          "height": 72,
+          "rgbaSha256": "e8aad2a5886afc1ea29181e4fac9640e12ad61f93c164c2f6e09f4c60cbb03ab"
+        },
+        "assets/decorations-native/skull-flag/buildings/texture-14.png": {
+          "width": 64,
+          "height": 348,
+          "rgbaSha256": "023266db6b2cc91d636e654c6d83b25fef753542b815970295ae82bf1b2ac62e"
+        }
+      }
+    }
+  }
+}

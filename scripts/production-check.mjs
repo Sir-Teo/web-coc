@@ -25,6 +25,28 @@ const sweeperNative = JSON.parse(await fs.readFile('reference/air-sweeper/native
 const wizardTowerNative = JSON.parse(
   await fs.readFile('reference/wizard-tower/native.json', 'utf8'),
 );
+const decorationTimelines = JSON.parse(
+  await fs.readFile('reference/decorations/timelines.json', 'utf8'),
+);
+async function checkDecorationTextures(page) {
+  return page.evaluate(async (entries) => {
+    for (const [kind, entry] of entries) {
+      const response = await fetch('/' + entry.path);
+      if (!response.ok) throw Error(`Missing decoration graph: ${kind}`);
+      const pack = await response.json();
+      if (pack.kind !== kind) throw Error(`Wrong decoration graph: ${kind}`);
+      for (const texture of Object.values(pack.scenes.buildings.textures)) {
+        if (!texture.path.endsWith('.webp')) throw Error(`Unconverted decoration texture: ${kind}`);
+        const image = new Image();
+        image.src = '/' + texture.path;
+        await image.decode();
+        if (image.naturalWidth !== texture.width || image.naturalHeight !== texture.height)
+          throw Error(`Wrong decoration texture dimensions: ${kind}`);
+      }
+    }
+    return entries.length;
+  }, Object.entries(decorationTimelines.decorations));
+}
 for (const [name, engine] of Object.entries(engines)) {
   if (selectedBrowser !== undefined && name !== selectedBrowser) continue;
   const browser = await engine.launch({
@@ -271,7 +293,10 @@ for (const [name, engine] of Object.entries(engines)) {
     }
   }
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
+  const nativeDecorations = await checkDecorationTextures(page);
+  expect(nativeDecorations).toBe(4);
   report[name] = {
+    nativeDecorations,
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
@@ -310,7 +335,14 @@ for (const [name, engine] of Object.entries(engines)) {
     await page.locator('.drawer-sheet').waitFor();
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
-    report.offline = { reload: true, army: true, replay: true, ...cachesState };
+    expect(await checkDecorationTextures(page)).toBe(4);
+    report.offline = {
+      nativeDecorations: 4,
+      reload: true,
+      army: true,
+      replay: true,
+      ...cachesState,
+    };
     await context.setOffline(false);
   }
   await browser.close();

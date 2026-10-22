@@ -14,9 +14,9 @@ ordinary development needs only `npm ci` and `npm run dev`.
 | `native_art/`, `native3d/`                    | Shared native format readers and rendering utilities                   |
 | `check-doc-links.mjs`                         | Local documentation links, checked by `npm run check`                  |
 | `native-pages.mjs`, `vite-native-pages.mjs`   | Level texture pages for village and troop packs (dev server and build) |
-| `vite-import-retry.mjs`                      | Preserve lazy art imports while allowing failed module URLs to retry   |
-| `late-art-production-check.mjs`              | Own a preview and test built art-import retries in Chromium and WebKit |
-| `previous-art-release.mjs`                  | Create the in-memory previous-release fixture for worker update checks |
+| `vite-import-retry.mjs`                       | Preserve lazy art imports while allowing failed module URLs to retry   |
+| `late-art-production-check.mjs`               | Own a preview and test built art-import retries in Chromium and WebKit |
+| `previous-art-release.mjs`                    | Create the in-memory previous-release fixture for worker update checks |
 | `app-icons.mjs`                               | Render the home-screen icons from `public/favicon.svg` (`--check`)     |
 | `content-inventory.py`                        | Generate/check the content inventory                                   |
 
@@ -37,6 +37,16 @@ python3 -m venv .venv
 Use that interpreter for the importer commands. Native 3D tooling may have additional
 requirements documented with its source. A `--check` flag is available on many, but
 not all, generators; inspect the script before assuming it is read-only.
+
+The decoration timeline exporter supplements the static Shop portrait importer:
+
+```sh
+.venv/bin/python scripts/import-native-decoration-timelines.py --report
+.venv/bin/python scripts/import-native-decoration-timelines.py --check
+```
+
+Omit both flags to regenerate the four animation packs and their source index. See
+[Decorations](../docs/DECORATIONS.md) for loading, registration and coverage.
 
 ## Browser tooling
 
