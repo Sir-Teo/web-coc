@@ -71,6 +71,12 @@ export function registerOfflineSupport() {
   let reloadPending = false;
   const activateUpdate = (worker: ServiceWorker) => {
     reloadPending = true;
+    // Another tab may have activated this prompt's worker already. There will
+    // be no further controllerchange event to reload this document for us.
+    if (worker.state === 'activated' || worker.state === 'redundant') {
+      window.location.reload();
+      return;
+    }
     try {
       worker.postMessage({ type: 'activate-update' });
       updating = true;
@@ -182,6 +188,8 @@ function offerUpdate(accept: () => void) {
   prompt.id = 'update-ready';
   prompt.type = 'button';
   prompt.textContent = 'Update ready · Reload';
+  // Do not start first-gesture village audio downloads while switching workers.
+  prompt.addEventListener('pointerdown', (event) => event.stopPropagation());
   prompt.addEventListener('click', () => {
     prompt.disabled = true;
     accept();

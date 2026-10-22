@@ -5,6 +5,7 @@ import { emptyArmy, emptySpells } from '../../src/game/army';
 import { validateSave } from '../../src/game/save';
 import { freshNativeCampaign } from '../../src/game/native-campaign';
 import { ART_GRAPH_CASES, artGraphSave } from './art-graph-fixture';
+import villageSounds from '../../reference/village-sounds/sounds.json' with { type: 'json' };
 
 function fixtureSave() {
   const state = initialSave();
@@ -306,6 +307,108 @@ test('a removed built art chunk keeps the release reload path', async ({ page })
 
 test.describe('recovered art with the real service worker', () => {
   test.use({ serviceWorkers: 'allow' });
+  for (const activatedElsewhere of [false, true])
+    test(`an update prompt reloads ${activatedElsewhere ? 'after another tab activates the release' : 'a waiting release'}`, async ({
+      page,
+      context,
+    }) => {
+      const starter = initialSave();
+      starter.tutorial = true;
+      await page.addInitScript((save) => {
+        if (!sessionStorage.getItem('previous-art-seeded')) {
+          localStorage.setItem('crown-clan-save-v1', save);
+          sessionStorage.setItem('previous-art-seeded', 'yes');
+        }
+      }, JSON.stringify(starter));
+      await context.addCookies([
+        { name: 'late-art-release', value: 'previous', url: process.env.PRODUCTION_BASE_URL! },
+      ]);
+      const audioPaths = new Set(
+        Object.values(villageSounds.sounds).map((sound) => '/' + sound.path),
+      );
+      const audioRequests: string[] = [];
+      page.on('request', (request) => {
+        const path = new URL(request.url()).pathname;
+        if (audioPaths.has(path)) audioRequests.push(path);
+      });
+      let navigations = 0;
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('framenavigated', (frame) => {
+        if (frame === page.mainFrame()) navigations++;
+      });
+      await page.goto('/');
+      await page.waitForFunction(
+        () =>
+          navigator.serviceWorker.controller &&
+          document.documentElement.dataset.offline === 'ready',
+      );
+      await context.addCookies([
+        { name: 'late-art-release', value: 'current', url: process.env.PRODUCTION_BASE_URL! },
+      ]);
+      await page.evaluate(async () => {
+        await (await navigator.serviceWorker.getRegistration())!.update();
+      });
+      await page.waitForFunction(
+        async () => !!(await navigator.serviceWorker.getRegistration())?.waiting,
+      );
+      await expect(page.locator('#update-ready')).toBeVisible();
+      if (activatedElsewhere) {
+        const sibling = await context.newPage();
+        try {
+          await sibling.goto('/');
+          // This tab waits for village ownership; its worker can still activate an update.
+          await sibling.evaluate(async () => {
+            const waiting = (await navigator.serviceWorker.getRegistration())?.waiting;
+            if (!waiting) throw Error('The shared registration has no waiting update.');
+            waiting.postMessage({ type: 'activate-update' });
+          });
+          await page.waitForFunction(
+            (version) => caches.has('crown-clan-' + version),
+            process.env.CURRENT_ART_VERSION!,
+          );
+          await page.waitForFunction(async () => {
+            const registration = await navigator.serviceWorker.getRegistration();
+            return (
+              registration?.active === navigator.serviceWorker.controller && !registration.waiting
+            );
+          });
+        } finally {
+          await sibling.close();
+        }
+      }
+      // The original document stays open until this tab accepts the update.
+      expect(navigations).toBe(1);
+      await expect(page.locator('#update-ready')).toBeEnabled();
+      await page.locator('#update-ready').click();
+      await expect.poll(() => navigations, { timeout: 15000 }).toBe(2);
+      await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+      await page.waitForLoadState('networkidle');
+      expect(navigations).toBe(2);
+      await expect(page.locator('#update-ready')).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          (version) => caches.has('crown-clan-' + version),
+          process.env.CURRENT_ART_VERSION!,
+        ),
+      ).toBe(true);
+      expect(
+        await page.evaluate(
+          (version) => caches.has('crown-clan-' + version),
+          process.env.PREVIOUS_ART_VERSION!,
+        ),
+      ).toBe(false);
+      const village = await page.evaluate(() => JSON.parse(window.render_game_to_text()));
+      expect(village.mode).toBe('village');
+      const townhall = starter.buildings.find((building) => building.kind === 'townhall')!;
+      expect(village.buildings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: townhall.id, type: townhall.kind, level: townhall.level }),
+        ]),
+      );
+      expect(audioRequests).toEqual([]);
+      expect(errors).toEqual([]);
+    });
   for (const phase of ['waiting', 'installing', 'undiscovered'])
     test(`a removed graph reloads once when the next release is ${phase}`, async ({
       page,

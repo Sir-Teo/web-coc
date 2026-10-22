@@ -57,6 +57,11 @@ the general smoke suite also checks the ordinary worker and offline boot.
 Two-release cases keep the first worker active and remove an uncached graph while the next
 release is undiscovered, installing or waiting. Recovery must activate the update and
 reload once onto its cache.
+The update button is also checked before and after another tab activates the waiting
+worker. Both paths must reload exactly once; a previously activated worker cannot
+produce another controller-change event for the original prompt to wait on.
+Using that button as the first pointer gesture must not start village-sound downloads
+while the worker switch is pending.
 
 ## Deployment
 
