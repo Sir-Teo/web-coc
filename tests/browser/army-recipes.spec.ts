@@ -39,6 +39,9 @@ test('the Cookbook lists its Town Hall’s recipes and makes one the army in a t
   await page.locator('.train-add').tap();
   await page.locator('[data-action="army-presets"]').tap();
   await expect(page.locator('#modal-title')).toHaveText('Quick armies');
+  // Unsaved names belong to the old slot contents, not a recipe saved there later.
+  await page.locator('#preset-name-0').fill('Old draft name');
+  await page.locator('#preset-name-1').fill('Another old draft');
   await page.locator('.preset-tabs [data-action="cookbook"]').tap();
   await expect(page.locator('#modal-title')).toHaveText('Cookbook');
   await expect(page.locator('.preset-tabs [aria-selected="true"]')).toHaveText('Cookbook');
@@ -53,6 +56,10 @@ test('the Cookbook lists its Town Hall’s recipes and makes one the army in a t
   await expect(hogs.locator('.recipe-head small')).toContainText('by Hog Rider · 240 troop');
   await expect(hogs.locator('.preset-heroes')).toContainText('Barbarian King');
   await expect(hogs).toContainText('Unavailable Heroes, Pets, or Equipment will be swapped');
+  // Measure the final hit areas after the dialog's entrance scale has finished.
+  await page.locator('.modal').evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
+  });
   for (const target of [
     page.locator('.preset-tabs .tab').first(),
     hogs.locator('[data-action^="recipe-use:"]'),

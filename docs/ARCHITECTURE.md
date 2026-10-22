@@ -186,7 +186,9 @@ oldest first, and says so. Settings also offers a backup without recordings. An 
 shown for review (the backup beside the current village) before it replaces anything; the
 replaced village is kept under its own key, without recordings, so Settings can undo the import
 even after a reload. Saving over a filled layout or Quick army slot can be undone from the same
-card for the rest of the session.
+card for the rest of the session. Quick army name drafts belong to the slot contents they
+were entered for: saving a Cookbook recipe or undoing an overwrite shows that army's saved
+name, while drafts in other slots survive the refresh.
 
 The production build writes a lossless WebP beside every PNG under `dist/assets` and
 points the built code, packs, atlases and styles at it (`scripts/webp-dist.mjs`): about a

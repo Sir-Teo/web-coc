@@ -77,6 +77,26 @@ test('named quick armies save, safely render names, and restore after reload', a
   ).toEqual(original);
 });
 
+test('undoing a Quick army overwrite restores its name before saving again', async ({ page }) => {
+  await page.locator('.train-add').click();
+  await page.locator('[data-action="army-presets"]').click();
+  const name = page.locator('#preset-name-0');
+  const otherName = page.locator('#preset-name-1');
+  await otherName.fill('Unsaved second army');
+  await name.fill('First army');
+  await page.locator('[data-action="preset-save:0"]').click();
+  await expect(otherName).toHaveValue('Unsaved second army');
+  await name.fill('Replacement army');
+  await page.locator('[data-action="preset-save:0"]').click();
+  await page.locator('[data-action="preset-undo:0"]').click();
+  await expect(name).toHaveValue('First army');
+  await expect(otherName).toHaveValue('Unsaved second army');
+  await page.locator('[data-action="preset-save:0"]').click();
+  expect(await page.evaluate(() => window.__game.model.state.armyPresets[0].name)).toBe(
+    'First army',
+  );
+});
+
 test('practice uses real pointer deployment, preserves the army, and resets on repeat', async ({
   page,
 }) => {
