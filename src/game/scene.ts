@@ -796,8 +796,12 @@ export class VillageScene extends Phaser.Scene {
         attempts: 1,
         retryAt: performance.now() + artRetryDelay(1),
       });
-    // A later retry queues only missing files. Keep ownership of this boot batch's
-    // successful images too, so the family can release all its pages when unused.
+    this.trackBootFamilyTextures(family);
+    return true;
+  }
+  private trackBootFamilyTextures(family: ArtFamily) {
+    // A later retry queues only missing files. Keep every boot image, so successful
+    // and recovered families can both release all their pages when no longer needed.
     const keys = [...this.bootFamilyFiles]
       .filter(
         ([owned, owner]) =>
@@ -807,9 +811,14 @@ export class VillageScene extends Phaser.Scene {
     this.familyTextures.set(family, [
       ...new Set([...(this.familyTextures.get(family) ?? []), ...keys]),
     ]);
-    return true;
   }
   create() {
+    const bootFamilies = ART_FAMILIES.filter((family) => !this.deferredFamilies.includes(family));
+    for (const family of bootFamilies) {
+      this.trackBootFamilyTextures(family);
+      this.loadedFamilies.add(family);
+      this.deferredFamilies.push(family);
+    }
     this.bootFamilyFiles.clear();
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     holdFilterContexts(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
@@ -899,8 +908,7 @@ export class VillageScene extends Phaser.Scene {
     this.cannonPresentation = new CannonPresentation(this, this.audio);
     this.seekingMinePresentation = new SeekingMinePresentation(this, this.audio);
     // Families the boot preload carried (the home village draws them) have already landed.
-    for (const family of ART_FAMILIES)
-      if (!this.deferredFamilies.includes(family)) this.familyLanded(family, false);
+    for (const family of bootFamilies) this.familyLanded(family, false);
     // Source shakes are pure functions of battle time: sample them once per tick, not on every
     // camera preRender (each one walks and sorts its event table).
     const shakeMemo = {
@@ -1368,9 +1376,9 @@ export class VillageScene extends Phaser.Scene {
   private heavyArtAttempts = 0;
   private artRetryCheckAt = 0;
   heavyArtReady = false;
-  /** Defense families left out of the boot preload (see ART_FAMILIES). */
+  /** Families in the on-demand/release cycle; successful boot families join at create. */
   private deferredFamilies: ArtFamily[] = [];
-  /** Deferred families whose pages all loaded. */
+  /** Families whose pages all loaded, including those carried by the boot preload. */
   private loadedFamilies = new Set<ArtFamily>();
   /**
    * Deferred families with a page that failed to load, and when to try again (performance.now
@@ -1380,13 +1388,13 @@ export class VillageScene extends Phaser.Scene {
   private failedFamilies = new Map<ArtFamily, { attempts: number; retryAt: number }>();
   /** The Cannon batch failed: when to request it again. */
   private heavyArtRetryAt?: number;
-  /** Texture keys each on-demand family added, for releasing it again. */
+  /** Texture keys owned by each family, for releasing it again. */
   private familyTextures = new Map<ArtFamily, string[]>();
   /** Home time (ms, game clock) since which no battle has needed the loaded families. */
   private familyIdleSince?: number;
   private familyCheckAt = 0;
   /**
-   * Releases the on-demand families the home village does not draw once the player has been
+   * Releases families the home village does not draw once the player has been
    * home for FAMILY_RELEASE_MS, as the late campaign art is: a few battles otherwise left every
    * defense family resident for the rest of the session. A later battle loads them again under
    * the usual hold. Dev pages keep every family (EAGER_FAMILIES).
