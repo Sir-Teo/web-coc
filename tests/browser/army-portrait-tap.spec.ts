@@ -70,3 +70,34 @@ test('holding a portrait keeps adding, and swiping the strip adds nothing', asyn
   expect(await barbarians(page)).toBe(held);
   expect(await strip.evaluate((el) => el.scrollLeft)).toBeGreaterThan(before);
 });
+
+for (const interruption of ['blur', 'hidden', 'destroy'] as const) {
+  test(`a held Add control stops on ${interruption}`, async ({ page }) => {
+    await openArmy(page);
+    const add = page.locator('[data-action="train:swordsman"]');
+    await add.hover();
+    await page.mouse.down();
+    const stoppedAt = await page.evaluate((interruption) => {
+      if (interruption === 'destroy') window.__game.hud.destroy();
+      else if (interruption === 'blur') window.dispatchEvent(new Event('blur'));
+      else {
+        Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }
+      return window.__game.model.state.army.swordsman;
+    }, interruption);
+    // Leave enough time for the initial delay and several repeat intervals.
+    await page.waitForTimeout(800);
+    expect(await barbarians(page)).toBe(stoppedAt);
+    if (interruption === 'destroy') return;
+    await page.evaluate(() => {
+      delete (document as unknown as { hidden?: boolean }).hidden;
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    // Release outside the control, then confirm a fresh tap still adds exactly one.
+    await page.mouse.move(1, 1);
+    await page.mouse.up();
+    await add.tap();
+    await expect.poll(() => barbarians(page)).toBe(stoppedAt + 1);
+  });
+}

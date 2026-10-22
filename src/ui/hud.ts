@@ -854,11 +854,16 @@ export class HUD {
     };
     document.addEventListener('pointerup', releaseAction, { signal });
     document.addEventListener('pointercancel', releaseAction, { signal });
-    window.addEventListener(
-      'blur',
+    const cancelActions = () => {
+      this.stopRepeat();
+      this.pressedActions.clear();
+      if (this.renderPending) this.scheduleRender();
+    };
+    window.addEventListener('blur', cancelActions, { signal });
+    document.addEventListener(
+      'visibilitychange',
       () => {
-        this.pressedActions.clear();
-        if (this.renderPending) this.scheduleRender();
+        if (document.hidden) cancelActions();
       },
       { signal },
     );
@@ -979,6 +984,7 @@ export class HUD {
     this.trackAnchor();
   }
   destroy() {
+    this.stopRepeat();
     if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
     if (this.raf) cancelAnimationFrame(this.rafId);
     this.raf = false;

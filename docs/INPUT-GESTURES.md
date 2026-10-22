@@ -49,6 +49,8 @@ An unlocked tile's portrait now does the same as its Add button. It runs `train:
 - **Why not `data-action`.** The portrait carries `data-add`, not `data-action`, so a page or test that looks up a tile's Add control by its action still finds one element.
 - **Blocked tiles.** A locked tile, a full army, or a spell tile without spell housing has no `data-add` on its portrait.
 - **Scrolling the strip.** A swipe that starts on a portrait still scrolls the tile strip. The browser cancels the pointer when it takes over the pan, which stops the hold before its first repeat.
+- **App interruptions.** Losing window focus, hiding the page or destroying the HUD cancels
+  a held Add or Remove control, including its initial delay. A later tap works normally.
 - **Long press.** The portrait suppresses iOS's image callout and text selection, and shrinks slightly while pressed.
 - **Keyboards and screen readers.** They keep the Add button; the portrait is not focusable.
 
@@ -58,6 +60,9 @@ An unlocked tile's portrait now does the same as its Add button. It runs `train:
 - checks that a locked portrait is not a control;
 - in Chromium, holds a portrait for a second with native touch events (at least three troops);
 - swipes from a portrait and checks that the strip scrolls and no troop is added.
+- presses Add, interrupts it with focus loss, page hiding or HUD teardown, and checks
+  that no delayed additions occur. Focus and visibility events are simulated in these checks;
+  fresh taps after focus loss and page hiding still add exactly one.
 
 ## Screen kept on during raids and replays
 
