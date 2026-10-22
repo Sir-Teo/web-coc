@@ -30,6 +30,7 @@ export interface FullscreenHost {
  * player can leave at any time with its own gesture (back, swipe or Escape).
  */
 export class Fullscreen {
+  private pending: Promise<boolean> | undefined;
   constructor(
     private readonly host: FullscreenHost | undefined = typeof document === 'undefined'
       ? undefined
@@ -48,7 +49,13 @@ export class Fullscreen {
     return !!(this.host?.fullscreenElement ?? this.host?.webkitFullscreenElement);
   }
   /** Enters or leaves full screen; false when the browser refuses (no tap, a permissions policy). */
-  async toggle(): Promise<boolean> {
+  toggle(): Promise<boolean> {
+    // Keep the browser call inside the first gesture, and coalesce taps while it settles.
+    return (this.pending ??= this.change().finally(() => {
+      this.pending = undefined;
+    }));
+  }
+  private async change(): Promise<boolean> {
     const h = this.host;
     if (!h) return false;
     try {

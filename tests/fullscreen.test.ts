@@ -50,6 +50,55 @@ function fakePage(options: { enabled?: boolean; prefixed?: boolean; refuse?: boo
 }
 
 describe('Fullscreen', () => {
+  it('shares an entering request until the browser settles it', async () => {
+    const { page } = fakePage();
+    let requests = 0;
+    let finish!: () => void;
+    page.documentElement.requestFullscreen = () => {
+      requests++;
+      return new Promise<void>((resolve) => (finish = resolve));
+    };
+    const fullscreen = new Fullscreen(page, () => false);
+    const first = fullscreen.toggle();
+    const second = fullscreen.toggle();
+    expect(requests).toBe(1);
+    finish();
+    expect(await Promise.all([first, second])).toEqual([true, true]);
+  });
+
+  it('shares an exiting request until the browser settles it', async () => {
+    const { page } = fakePage();
+    const fullscreen = new Fullscreen(page, () => false);
+    await fullscreen.toggle();
+    let exits = 0;
+    let finish!: () => void;
+    page.exitFullscreen = () => {
+      exits++;
+      return new Promise<void>((resolve) => (finish = resolve));
+    };
+    const first = fullscreen.toggle();
+    const second = fullscreen.toggle();
+    expect(exits).toBe(1);
+    finish();
+    expect(await Promise.all([first, second])).toEqual([true, true]);
+  });
+
+  it('allows a fresh gesture after an asynchronous refusal', async () => {
+    const { page } = fakePage();
+    const request = page.documentElement.requestFullscreen!;
+    let refuse!: (error: Error) => void;
+    const pending = new Promise<void>((_, reject) => (refuse = reject));
+    page.documentElement.requestFullscreen = () => pending;
+    const fullscreen = new Fullscreen(page, () => false);
+    const first = fullscreen.toggle();
+    const second = fullscreen.toggle();
+    refuse(new Error('Denied'));
+    expect(await Promise.all([first, second])).toEqual([false, false]);
+    page.documentElement.requestFullscreen = request;
+    expect(await fullscreen.toggle()).toBe(true);
+    expect(fullscreen.active).toBe(true);
+  });
+
   it('enters with the navigation bar hidden and leaves again', async () => {
     const { page, calls } = fakePage();
     const fullscreen = new Fullscreen(page, () => false);

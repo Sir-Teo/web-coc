@@ -63,6 +63,38 @@ test('a refused request leaves the switch off and says so', async ({ page }) => 
   await expect(toggle).toHaveAttribute('aria-checked', 'false');
 });
 
+test('rapid full-screen taps share one pending browser request', async ({ page }) => {
+  await page.addInitScript(() => {
+    let active: Element | null = null;
+    let requests = 0;
+    Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => true });
+    Object.defineProperty(Document.prototype, 'fullscreenElement', { get: () => active });
+    Element.prototype.requestFullscreen = () => {
+      document.documentElement.dataset.fullscreenRequests = String(++requests);
+      if (requests > 1) return Promise.reject(new TypeError('User activation already consumed'));
+      return new Promise<void>((resolve) => {
+        window.addEventListener(
+          'complete-test-fullscreen',
+          () => {
+            active = document.documentElement;
+            document.dispatchEvent(new Event('fullscreenchange'));
+            resolve();
+          },
+          { once: true },
+        );
+      });
+    };
+  });
+  await openSettings(page);
+  const toggle = page.locator('[data-action="fullscreen"]');
+  await toggle.tap();
+  await toggle.tap();
+  await expect(page.locator('html')).toHaveAttribute('data-fullscreen-requests', '1');
+  await page.evaluate(() => window.dispatchEvent(new Event('complete-test-fullscreen')));
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#toast')).not.toContainText('did not allow full screen');
+});
+
 test('iPhone Safari gets the Home Screen route instead of a switch', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(Document.prototype, 'fullscreenEnabled', { get: () => false });

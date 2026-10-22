@@ -245,6 +245,8 @@ Settings offers a **Full screen** switch when the browser permits full-screen pa
 `src/ui/fullscreen.ts` requests the document root directly from the tap, hides navigation
 UI where supported and follows standard or Safari-prefixed change events, including exits
 through the browser's own controls. Refused requests leave the switch off and show a toast.
+Rapid taps share the pending browser operation; once it settles, another gesture can
+toggle again, including after a refusal.
 Full-screen state is not saved; installed apps already launched full screen hide the switch.
 Safari tabs without page full screen instead show Add to Home Screen instructions and the
 save-transfer reminder above. Unsupported browsers outside Safari show neither control.
