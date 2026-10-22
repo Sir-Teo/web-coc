@@ -8,25 +8,25 @@ Live combat uses all seventeen source levels and the four original projectile ti
 
 [buildings.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/buildings.csv) identifies `Wizard Tower`, GlobalID `1000011`, in seventeen sparse level rows. Blank fields inherit their preceding nonempty value. Every row specifies a 3×3 footprint, 700-unit range, 1,300 ms interval, 100-unit splash radius and both ground/air targeting after inheritance. Prices are gold and times apply to reaching the destination level.
 
-| Level | HP | DPS | Gold | Hours | Source TH | Rooftop family | Body suffix |
-| --- | ---: | ---: | ---: | ---: | ---: | --- | ---: |
-| 1 | 620 | 11 | 100,000 | 1 | 5 | Wizard | 1 |
-| 2 | 650 | 13 | 150,000 | 1.5 | 5 | Wizard | 4 |
-| 3 | 680 | 16 | 250,000 | 4 | 6 | Wizard2 | 7 |
-| 4 | 730 | 20 | 400,000 | 8 | 7 | Wizard2 | 8 |
-| 5 | 840 | 24 | 550,000 | 10 | 8 | Wizard3 | 9 |
-| 6 | 960 | 32 | 660,000 | 12 | 8 | Wizard3 | 10 |
-| 7 | 1,200 | 40 | 1,000,000 | 18 | 9 | Wizard6 | 11 |
-| 8 | 1,440 | 45 | 1,100,000 | 20 | 10 | Wizard6 | 12 |
-| 9 | 1,600 | 50 | 1,300,000 | 24 | 10 | Wizard7 | 13 |
-| 10 | 1,900 | 62 | 2,000,000 | 30 | 11 | Wizard7 | 14 |
-| 11 | 2,120 | 70 | 2,500,000 | 36 | 12 | Wizard8 | 15 |
-| 12 | 2,240 | 78 | 2,600,000 | 42 | 13 | Wizard8 | 16 |
-| 13 | 2,500 | 84 | 3,000,000 | 48 | 13 | Wizard9 | 17 |
-| 14 | 2,800 | 90 | 4,500,000 | 72 | 14 | Wizard10 | 18 |
-| 15 | 3,000 | 95 | 5,500,000 | 96 | 15 | Wizard11 | 19 |
-| 16 | 3,150 | 102 | 8,000,000 | 108 | 16 | Wizard12 | 20 |
-| 17 | 3,300 | 110 | 14,000,000 | 132 | 17 | Wizard13 | 21 |
+| Level |    HP | DPS |       Gold | Hours | Source TH | Rooftop family | Body suffix |
+| ----- | ----: | --: | ---------: | ----: | --------: | -------------- | ----------: |
+| 1     |   620 |  11 |    100,000 |     1 |         5 | Wizard         |           1 |
+| 2     |   650 |  13 |    150,000 |   1.5 |         5 | Wizard         |           4 |
+| 3     |   680 |  16 |    250,000 |     4 |         6 | Wizard2        |           7 |
+| 4     |   730 |  20 |    400,000 |     8 |         7 | Wizard2        |           8 |
+| 5     |   840 |  24 |    550,000 |    10 |         8 | Wizard3        |           9 |
+| 6     |   960 |  32 |    660,000 |    12 |         8 | Wizard3        |          10 |
+| 7     | 1,200 |  40 |  1,000,000 |    18 |         9 | Wizard6        |          11 |
+| 8     | 1,440 |  45 |  1,100,000 |    20 |        10 | Wizard6        |          12 |
+| 9     | 1,600 |  50 |  1,300,000 |    24 |        10 | Wizard7        |          13 |
+| 10    | 1,900 |  62 |  2,000,000 |    30 |        11 | Wizard7        |          14 |
+| 11    | 2,120 |  70 |  2,500,000 |    36 |        12 | Wizard8        |          15 |
+| 12    | 2,240 |  78 |  2,600,000 |    42 |        13 | Wizard8        |          16 |
+| 13    | 2,500 |  84 |  3,000,000 |    48 |        13 | Wizard9        |          17 |
+| 14    | 2,800 |  90 |  4,500,000 |    72 |        14 | Wizard10       |          18 |
+| 15    | 3,000 |  95 |  5,500,000 |    96 |        15 | Wizard11       |          19 |
+| 16    | 3,150 | 102 |  8,000,000 |   108 |        16 | Wizard12       |          20 |
+| 17    | 3,300 | 110 | 14,000,000 |   132 |        17 | Wizard13       |          21 |
 
 All seventeen retained values now supply the gameplay table; the original first eight values are unchanged. Source TH fields do not replace the home count/upgrade gates: home play remains capped at level 6 through TH8. The original body suffixes are not building levels; level 2 uses `wizard_tower_lvl4`, and level 17 uses `wizard_tower_lvl21`. Foundation, construction, upgrade and four inherited rubble families remain distinct.
 
@@ -40,11 +40,11 @@ All seventeen retained values now supply the gameplay table; the original first 
 
 Three original graphs preserve **135 exports, 141 clips and 396 shapes**:
 
-| Graph | Exports | Clips | Shapes | Texture crops |
-| --- | ---: | ---: | ---: | ---: |
-| Body, scaffolds, rubble and general particles | 53 | 57 | 64 | 5 |
-| Rooftop Wizards | 66 | 66 | 242 | 1 |
-| Wizard projectiles and effects | 16 | 18 | 90 | 1 |
+| Graph                                         | Exports | Clips | Shapes | Texture crops |
+| --------------------------------------------- | ------: | ----: | -----: | ------------: |
+| Body, scaffolds, rubble and general particles |      53 |    57 |     64 |             5 |
+| Rooftop Wizards                               |      66 |    66 |    242 |             1 |
+| Wizard projectiles and effects                |      16 |    18 |     90 |             1 |
 
 `native.json` contains source rows, full graphs, source hashes and texture sampling regions. `body.json`, `defender.json` and `effect_art.json` keep original geometry, transforms, colors, blend slots and clip timelines while remapping UVs to lossless crops. `combat.json` and `effects.json` expose focused projections, including projectile tier speed, scale, height, offset, rotation and playback flags. Texture packing copies every required bilinear neighbor without resizing or color baking.
 
@@ -66,7 +66,7 @@ Independent original-texture witnesses cover **252 cases**: 71 body/general-part
 
 Rooftop comparisons contain nineteen pixels per engine above 16/255, with maximum difference 61/255 and at most 0.1293% of colored pixels in any case. Every such pixel center lies on an original polygon edge or within 0.000001 pixel of it. The CPU and GPU use different boundary coverage/rounding; original geometry and texture regions match. The established mean/fraction thresholds are unchanged. These are sampled reconstruction checks, not evidence of native executable rendering or motion. All seventeen previews and the effect sheet were visually inspected. See [QA.md](../../docs/QA.md) for the release and regression evidence.
 
-All seventeen complete live assemblies additionally pass comparisons with the independent source previews in Chromium and WebKit at DPR 2. Maximum per-level mean maximum-channel errors are 0.296/255 and 0.395/255. Levels 11 and 12 each retain two pixels above 16/255; all other levels stay at or below 16. The established comparison thresholds and source geometry are unchanged. Home checks cover all seventeen selection bounds and preview origins, setup/construction/upgrade/rubble, original Info images and touch placement. Live flight/effect geometry reconstructs exactly after replay seeking; original screen and additive groups survive WebGL context restoration with zero changed bytes.
+All seventeen complete live assemblies additionally compare with the independent source previews at two pixels per source unit. The [live gallery test](../../tests/browser/native-wizard-tower-live.spec.ts) reserves a 2000×1760 physical drawing buffer and explicitly loads its reference portraits, including the starter village's lazy Level 1 image. Every gallery cell must fit in the buffer. The original thresholds require a per-level mean maximum-channel error below 1/255 and fewer than 0.3% of colored pixels above 16/255. Source geometry is unchanged. Home checks cover all seventeen selection bounds and preview origins, setup/construction/upgrade/rubble, original Info images and touch placement. Live flight/effect geometry reconstructs exactly after replay seeking; original screen and additive groups survive WebGL context restoration with zero changed bytes.
 
 ## Live presentation and fidelity limits
 

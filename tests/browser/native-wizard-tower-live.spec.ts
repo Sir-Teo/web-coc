@@ -1,6 +1,9 @@
 import fs from 'node:fs/promises';
 import { test, expect } from '@playwright/test';
 
+// Five columns by four rows of source portraits must fit inside the physical canvas.
+test.use({ viewport: { width: 2000, height: 1760 }, deviceScaleFactor: 1 });
+
 test('all seventeen live Wizard Tower assemblies match their independent original-source portraits', async ({
   page,
   browserName,
@@ -10,10 +13,23 @@ test('all seventeen live Wizard Tower assemblies match their independent origina
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');
-    const { WIZARD_TOWER_ART, wizardTowerTexture } = await import('/src/game/wizard-tower-art.ts');
+    const { WIZARD_TOWER_ART, wizardTowerTexture, wizardTowerAsset } =
+      await import('/src/game/wizard-tower-art.ts');
     const { wizardTowerBounds } = await import('/src/game/wizard-tower-poses.ts');
     scene.paused = true;
     scene.tweens.pauseAll();
+    // The starter village owns no Wizard Tower; its Level 1 fallback is now lazy.
+    // Load every reference portrait explicitly rather than comparing against a missing image.
+    await Promise.all(
+      Array.from({ length: 17 }, async (_, i) => {
+        const key = wizardTowerTexture(i + 1);
+        if (scene.textures.exists(key)) return;
+        const image = new Image();
+        image.src = wizardTowerAsset(i + 1);
+        await image.decode();
+        scene.textures.addImage(key, image);
+      }),
+    );
     document.querySelector('#ui').style.display = 'none';
     for (const o of scene.children.list) o.setVisible(false);
     const c = scene.cameras.main,
@@ -36,6 +52,8 @@ test('all seventeen live Wizard Tower assemblies match their independent origina
     const gl = game.renderer.gl,
       width = 2000,
       height = 1760;
+    if (gl.drawingBufferWidth < width || gl.drawingBufferHeight < height)
+      throw Error('The complete Wizard Tower gallery must fit inside the drawing buffer.');
     const capture = () =>
       new Promise<Uint8Array>((resolve) =>
         game.events.once('postrender', () => {
