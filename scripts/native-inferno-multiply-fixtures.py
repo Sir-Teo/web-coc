@@ -10,6 +10,7 @@ from native_art.bundle import ROOT, source, digest
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.scene_graph import capture_graph, crop_textures
 from native_art.multiply_scene import nodes, compose
+from native_art.shared_assets import redirect_shared_textures
 
 PINS = {
     'fingerprint.json': 'ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b',
@@ -56,11 +57,12 @@ def build():
         name = 'witness_clip_' + id_
         witness_exports[name] = int(id_)
         cases.extend(dict(family='inferno', export=name, frame=f, controls={}) for f in range(len(clip['timeline'])))
-    images = {'public/' + p: im for p, im in assets.items()}
     documents = {
         'reference/inferno/multiply-runtime.json': runtime,
         'reference/inferno/multiply-source.json': dict(sources=PINS, graph=graph, textures=packed, nativePlaybackVerified=False, combinedFrames=100),
     }
+    redirect_shared_textures(assets, documents)
+    images = {'public/' + p: im for p, im in assets.items()}
     index = []
     for start in range(0, len(cases), 160):
         batch = cases[start:start + 160]

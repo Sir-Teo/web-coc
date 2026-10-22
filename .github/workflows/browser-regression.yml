@@ -60,6 +60,13 @@ jobs:
           python scripts/import-native-spell-tower.py --check
           python scripts/import-native-tornado-trap.py --check
           python scripts/import-native-freeze-trap.py --check
+          python scripts/import-native-dark-drill-art.py --check
+          python scripts/import-native-inferno-art.py --check
+          python scripts/native-dark-drill-portraits.py --check
+          python scripts/native-inferno-portraits.py --check
+          python scripts/native-inferno-multiply-fixtures.py --check
+          python scripts/import-native-garrison-art.py --check
+          python scripts/import-native-characters.py --check
           python scripts/import-native-pumpkin.py --check
           python scripts/import-native-skeleton-trap.py --check
           python scripts/import-native-santa.py --check

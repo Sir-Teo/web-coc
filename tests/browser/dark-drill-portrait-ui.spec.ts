@@ -24,7 +24,7 @@ for (const width of [1440, 390])
       }, level);
       await expect(page.locator('.context-art')).toHaveAttribute(
         'src',
-        `/assets/dark-drill-native/portrait/${level}.png`,
+        `/assets/catalog-native/dark-elixir-drill/level-${level}.png`,
       );
       await page.locator('[data-action="info"]').click();
       if (level < 3)
@@ -44,7 +44,7 @@ for (const width of [1440, 390])
       const portrait = page.locator('.info-hero img');
       await expect(portrait).toHaveAttribute(
         'src',
-        `/assets/dark-drill-native/portrait/${level}.png`,
+        `/assets/catalog-native/dark-elixir-drill/level-${level}.png`,
       );
       await expect(portrait).toBeVisible();
       await portrait.evaluate(async (img: HTMLImageElement) => {

@@ -8,6 +8,7 @@ from PIL import Image
 from native_art.bundle import ROOT, source, digest
 from native_art.sc6 import decode_sctx, require
 from native_art.multiply_scene import nodes, compose
+from native_art.shared_assets import redirect_shared_textures
 
 
 def build():
@@ -43,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     images, metadata = build()
+    redirect_shared_textures(images, metadata)
     for path, image in images.items():
         target = ROOT / 'public' / path
         if args.check:

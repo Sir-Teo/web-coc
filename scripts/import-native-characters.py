@@ -18,6 +18,7 @@ from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, source, digest
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.scene_graph import capture_graph, crop_textures
+from native_art.shared_assets import redirect_shared_textures, owned_asset_paths
 from native_art.source_csv import decoded_rows, records, animation_blocks, inherited_levels
 
 PINS = {
@@ -494,9 +495,10 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, documents = build()
+    redirect_shared_textures(outputs, documents)
     folder = ROOT / 'public' / PREFIX
     if args.check:
-        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == set(outputs),
+        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == owned_asset_paths(outputs, PREFIX),
                 'Character asset membership differs')
         require({p.relative_to(ROOT).as_posix() for p in (ROOT / 'reference/characters').rglob('*.json')} == set(documents),
                 'Character reference membership differs')

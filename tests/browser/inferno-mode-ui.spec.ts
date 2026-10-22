@@ -33,6 +33,10 @@ for (const width of [1440, 390])
       'src',
       '/assets/inferno-native/portrait/8-multi.png',
     );
+    await page.locator('.info-hero img').evaluate(async (img: HTMLImageElement) => {
+      await img.decode();
+      if (!img.naturalWidth) throw Error('Empty multi-target portrait');
+    });
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.screenshot({
       animations: 'disabled',
@@ -41,6 +45,18 @@ for (const width of [1440, 390])
     await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
     await page.getByRole('button', { name: 'Switch Inferno Tower to single-target mode' }).click();
     await page.locator('[data-action="info"]').click();
+    await expect(page.locator('.context-art')).toHaveAttribute(
+      'src',
+      '/assets/catalog-native/inferno-tower/level-8.png',
+    );
+    await expect(page.locator('.info-hero img')).toHaveAttribute(
+      'src',
+      '/assets/catalog-native/inferno-tower/level-8.png',
+    );
+    await page.locator('.info-hero img').evaluate(async (img: HTMLImageElement) => {
+      await img.decode();
+      if (!img.naturalWidth) throw Error('Empty single-target portrait');
+    });
     await expect(page.locator('.info-table')).toContainText('80 → 210 → 2,100');
     await expect(page.locator('.info-table')).toContainText('9 tiles');
   });

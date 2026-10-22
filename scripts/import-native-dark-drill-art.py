@@ -7,6 +7,7 @@ from PIL import Image
 from native_art.bundle import ROOT, source, digest
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.scene_graph import capture_graph, crop_textures
+from native_art.shared_assets import redirect_shared_textures
 
 PINS = {
     'sc/buildings_41.sctx': 'b3382bdda1665f62f476dca4afc8896cd1251d53f2c0b533f2fa2c09dfa94260',
@@ -50,6 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     assets, documents = build()
+    redirect_shared_textures(assets, documents)
     for path, image in assets.items():
         target = ROOT / 'public' / path
         if args.check:

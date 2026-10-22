@@ -58,6 +58,15 @@ class SharedAssetTests(unittest.TestCase):
         self.assertIs(outputs[shared.path], other)
         self.assertIn('old', outputs)
 
+    def test_multiple_aliases_can_reuse_an_identical_generated_target(self):
+        image, shared = self.fixture()
+        outputs = {'first': image, 'second': image.copy(), shared.path: image.copy()}
+        references = {'portraits': [{'path': 'first'}, {'path': 'second'}]}
+        redirect_shared_textures(outputs, references, {'first': shared, 'second': shared})
+        self.assertEqual(set(outputs), {shared.path})
+        self.assertEqual(outputs[shared.path].tobytes(), image.tobytes())
+        self.assertEqual(references['portraits'], [{'path': shared.path}, {'path': shared.path}])
+
     def test_all_planned_aliases_validate_before_any_path_changes(self):
         image, shared = self.fixture()
         outputs = {'first': image, 'second': Image.new('RGBA', image.size)}

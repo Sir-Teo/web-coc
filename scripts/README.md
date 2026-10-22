@@ -57,6 +57,9 @@ PYTHONPATH=scripts .venv/bin/python -m unittest native_art.test_shared_assets
 
 Run the affected importers' `--check` commands as well to compare full source reconstructions,
 including owned-file membership, shared pages and generated reference paths.
+The aliases also cover character and garrison pages and the Drill and Inferno portraits
+shared with the native catalog. Portrait manifests hash the current source manifest;
+when its paths change, regenerate the portrait manifest even if every pixel stays identical.
 
 ## Browser tooling
 
