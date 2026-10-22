@@ -1520,7 +1520,7 @@ export const asset = (
   infernoMode: InfernoMode = 'single',
   spellTowerWeapon?: string,
 ) => {
-  // The empty platform is client art; the Crafted Defenses on it are authored (see ASSETS.md).
+  // The empty platform and tiered Crafted Defenses use original source portraits.
   if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
   if (kind === 'helperhut') return '/assets/catalog-native/helper-hut/level-1.png';
   if (kind.startsWith('crafted-'))

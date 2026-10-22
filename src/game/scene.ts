@@ -39,6 +39,7 @@ import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
+import type { InfernoMode } from './inferno-weapon';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
   preloadGarrisonCharacters,
@@ -2788,6 +2789,7 @@ export class VillageScene extends Phaser.Scene {
         moving?.crafted
           ? craftedArtTier(moving.crafted, moving.craftedModules?.[moving.crafted])
           : 1,
+        moving?.infernoMode,
       );
       this.updateGhost(this.pointerScreen());
     } else {
@@ -2842,6 +2844,7 @@ export class VillageScene extends Phaser.Scene {
       b.spellTowerWeapon,
       b.crafted,
       b.crafted ? craftedArtTier(b.crafted, b.craftedModules?.[b.crafted]) : 1,
+      b.infernoMode,
     )
       .setPosition(p.x, p.y)
       .setDepth(p.y)
@@ -3149,6 +3152,7 @@ export class VillageScene extends Phaser.Scene {
     spellTowerWeapon?: string,
     crafted?: CraftedKind,
     craftedTier = 1,
+    infernoMode: InfernoMode = 'single',
   ): Phaser.GameObjects.Image {
     // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
     if (kind === 'craftingstation') {
@@ -3217,11 +3221,18 @@ export class VillageScene extends Phaser.Scene {
         .setOrigin(npcVisual.originX, npcVisual.originY)
         .setFlipX(false)
         .setDisplaySize(npcVisual.width, (npcVisual.width * im.height) / im.width);
-    const texture = buildingTexture(kind, level, direction, xbowMode, 'single', spellTowerWeapon);
+    const texture = buildingTexture(
+      kind,
+      level,
+      direction,
+      xbowMode,
+      infernoMode,
+      spellTowerWeapon,
+    );
     // A wall, camp, Cannon or tier-3 level the boot did not load draws as Level 1 until its
     // sprite arrives; a kind whose base sprite has not arrived yet draws nothing.
     if (!this.deferredTexture(kind, level, texture) && kind !== 'cannon') {
-      if (buildingTexture(kind, 1, direction, xbowMode, 'single', spellTowerWeapon) !== texture)
+      if (buildingTexture(kind, 1, direction, xbowMode, infernoMode, spellTowerWeapon) !== texture)
         return this.styleBuilding(
           im,
           kind,
@@ -3233,6 +3244,7 @@ export class VillageScene extends Phaser.Scene {
           spellTowerWeapon,
           crafted,
           craftedTier,
+          infernoMode,
         );
       return this.blankBuilding(im, kind);
     }
@@ -3255,7 +3267,7 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(art.width, art.height);
     }
     if (kind === 'inferno') {
-      const art = infernoPortrait(level);
+      const art = infernoPortrait(level, infernoMode);
       return im
         .setOrigin(art.originX, art.originY + 64 / (art.height * 1.2))
         .setFlipX(false)
