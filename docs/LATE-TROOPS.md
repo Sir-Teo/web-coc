@@ -1,4 +1,9 @@
-# Healer, Dragon and P.E.K.K.A
+# Healer, Dragon and P.E.K.K.A (historical)
+
+This note records the September 11, 2026 milestone, including its initial level caps,
+generated sprite artwork and save/replay versions. Later work is covered in
+[troop progression](TROOP-PROGRESSION.md), [Town Hall tiers](TOWNHALL-TIERS.md) and
+[current troop presentation](UNIT-PRESENTATION.md).
 
 September 11, 2026. The Barracks roster now includes the ten elixir troops available through Town Hall 8. The seven earlier troops retain levels 1–5. Healer, Dragon and P.E.K.K.A support levels 1–3, the levels available with the local maximum Laboratory 6. Higher troop levels and Town Halls remain future work.
 
@@ -10,23 +15,23 @@ The files have a 68-byte signature prefix, followed by an LZMA stream with a fou
 
 Internal movement and distance values are divided by 100; attack milliseconds by 1,000. Damage per hit is DPS × attack interval. Negative Healer DPS becomes positive healing per second. No gold-pass, event or helper discounts apply.
 
-| Troop | Level | HP | DPS / HPS | Damage / healing per pulse | Elixir to reach level | Research time | Lab |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Healer | 1 | 500 | 36 HPS | 25.2 healing | — | — | — |
-| Healer | 2 | 700 | 48 HPS | 33.6 healing | 450,000 | 12h | 5 |
-| Healer | 3 | 900 | 60 HPS | 42 healing | 900,000 | 24h | 6 |
-| Dragon | 1 | 1,900 | 140 DPS | 175 damage | — | — | — |
-| Dragon | 2 | 2,100 | 160 DPS | 200 damage | 1,000,000 | 18h | 5 |
-| Dragon | 3 | 2,300 | 180 DPS | 225 damage | 2,000,000 | 36h | 6 |
-| P.E.K.K.A | 1 | 3,000 | 260 DPS | 468 damage | — | — | — |
-| P.E.K.K.A | 2 | 3,500 | 290 DPS | 522 damage | 600,000 | 12h | 6 |
-| P.E.K.K.A | 3 | 4,000 | 320 DPS | 576 damage | 1,300,000 | 18h | 6 |
+| Troop     | Level | HP    | DPS / HPS | Damage / healing per pulse | Elixir to reach level | Research time | Lab |
+| --------- | ----- | ----- | --------- | -------------------------- | --------------------- | ------------- | --- |
+| Healer    | 1     | 500   | 36 HPS    | 25.2 healing               | —                     | —             | —   |
+| Healer    | 2     | 700   | 48 HPS    | 33.6 healing               | 450,000               | 12h           | 5   |
+| Healer    | 3     | 900   | 60 HPS    | 42 healing                 | 900,000               | 24h           | 6   |
+| Dragon    | 1     | 1,900 | 140 DPS   | 175 damage                 | —                     | —             | —   |
+| Dragon    | 2     | 2,100 | 160 DPS   | 200 damage                 | 1,000,000             | 18h           | 5   |
+| Dragon    | 3     | 2,300 | 180 DPS   | 225 damage                 | 2,000,000             | 36h           | 6   |
+| P.E.K.K.A | 1     | 3,000 | 260 DPS   | 468 damage                 | —                     | —             | —   |
+| P.E.K.K.A | 2     | 3,500 | 290 DPS   | 522 damage                 | 600,000               | 12h           | 6   |
+| P.E.K.K.A | 3     | 4,000 | 320 DPS   | 576 damage                 | 1,300,000             | 18h           | 6   |
 
-| Troop | Barracks | First TH | Housing | Speed | Range | Interval | Splash radius |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Healer | 8 | 6 | 14 | 2 tiles/s | 4.5 tiles | 0.7s | 1.5 tiles |
-| Dragon | 9 | 7 | 20 | 2 tiles/s | 2.5 tiles | 1.25s | 0.3 tiles |
-| P.E.K.K.A | 10 | 8 | 25 | 2 tiles/s | 0.8 tiles | 1.8s | — |
+| Troop     | Barracks | First TH | Housing | Speed     | Range     | Interval | Splash radius |
+| --------- | -------- | -------- | ------- | --------- | --------- | -------- | ------------- |
+| Healer    | 8        | 6        | 14      | 2 tiles/s | 4.5 tiles | 0.7s     | 1.5 tiles     |
+| Dragon    | 9        | 7        | 20      | 2 tiles/s | 2.5 tiles | 1.25s    | 0.3 tiles     |
+| P.E.K.K.A | 10       | 8        | 25      | 2 tiles/s | 0.8 tiles | 1.8s     | —             |
 
 Secondary cross-checks: [Healer](https://goblinsfarm.com/wiki/troops/healer.html), [Dragon](https://goblinsfarm.com/wiki/troops/dragon.html), [P.E.K.K.A](https://goblinsfarm.com/wiki/troops/pekka.html), and the [Healer behavior reference](https://clashofclans.fandom.com/wiki/Healer). The downloaded primary data takes precedence where these disagree: Healer interval 700ms rather than the older 800ms, range 450 rather than a rounded five tiles, and hero healing calculated at exactly 55% rather than truncating the displayed HPS. Primary `TriggersTraps=TRUE` confirms that Healers can trigger air traps.
 
