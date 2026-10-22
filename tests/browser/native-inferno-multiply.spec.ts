@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-inferno-multiply/index.json' with { type: 'json' };
+
+// The viewport below is half the source-sheet size; capture every source pixel at 2×.
+test.use({ deviceScaleFactor: 2 });
+
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [...index.map((v) => ({ ...v, folder: 'native-inferno-multiply' }))].flatMap(
