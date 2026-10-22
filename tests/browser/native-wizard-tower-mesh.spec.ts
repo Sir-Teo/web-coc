@@ -16,6 +16,7 @@ for (const witness of [bodyWitness, defenderWitness, effectWitness])
     await page.goto('/');
     await page.waitForFunction(() => window.__game?.scene.artSettled);
     const report = await page.evaluate(async (reference) => {
+      const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
       const { scene, game } = window.__game;
       const { default: body } = await import('/reference/wizard-tower/body.json');
       const { default: defender } = await import('/reference/wizard-tower/defender.json');
@@ -105,43 +106,18 @@ for (const witness of [bodyWitness, defenderWitness, effectWitness])
       for (const view of views) for (const object of view.objects) object.setVisible(true);
       // Present the restored native scene before saving its screenshot.
       await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
-      const cases = reference.cases.map((c) => {
-        const largePixels: { x: number; y: number; actual: number[]; expected: number[] }[] = [];
-        let colored = 0,
-          total = 0,
-          large = 0,
-          maximum = 0;
-        for (let y = c.y; y < c.y + reference.cell; y++)
-          for (let x = c.x; x < c.x + reference.cell; x++) {
-            const at = ((reference.height - 1 - y) * reference.width + x) * 4;
-            const a = actual.slice(at, at + 3),
-              e = expected.slice(at, at + 3);
-            if (
-              a.some((v, i) => v !== [48, 65, 53][i]) ||
-              e.some((v, i) => v !== [48, 65, 53][i])
-            ) {
-              colored++;
-              const error = Math.max(...a.map((v, i) => Math.abs(v - e[i])));
-              total += error;
-              maximum = Math.max(maximum, error);
-              if (error > 16) {
-                large++;
-                if (largePixels.length < 32)
-                  largePixels.push({ x: x - c.x, y: y - c.y, actual: [...a], expected: [...e] });
-              }
-            }
-          }
-        return {
-          export: c.export,
-          time: c.time,
-          colored,
-          empty: c.empty,
-          meanError: colored ? total / colored : 0,
-          largeFraction: colored ? large / colored : 0,
-          maximum,
-          largePixels,
-        };
-      });
+      const frame = { width: reference.width, height: reference.height };
+      const cases = reference.cases.map((c) => ({
+        export: c.export,
+        time: c.time,
+        empty: c.empty,
+        ...compareSourcePixels(actual, expected, frame, {
+          x: c.x,
+          y: c.y,
+          width: reference.cell,
+          height: reference.cell,
+        }),
+      }));
       const changed = (other: Uint8Array) => {
         let count = 0;
         for (let i = 0; i < multisampled.length; i++) if (multisampled[i] !== other[i]) count++;
