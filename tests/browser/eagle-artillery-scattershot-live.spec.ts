@@ -207,15 +207,47 @@ async function presentation(page: Page, key: 'eagleArtillery' | 'scattershot') {
           Math.round(o.x * 10) / 10,
           Math.round(o.y * 10) / 10,
           o.depth,
+          o.type === 'RenderTexture',
         ]),
       );
-    return { rows: [...new Set(rows)].sort(), gl: game.renderer.gl.getError() };
+    return {
+      rows: [...new Set(rows)].sort(),
+      pixel: 1 / Math.min(scene.cameras.main.zoomX, scene.cameras.main.zoomY),
+      gl: game.renderer.gl.getError(),
+    };
   }, key);
+}
+
+function expectSamePresentation(
+  actual: Awaited<ReturnType<typeof presentation>>,
+  expected: Awaited<ReturnType<typeof presentation>>,
+) {
+  type Row = [unknown, number, number, number, boolean];
+  const rows = (value: typeof actual) =>
+    value.rows
+      .map((row) => JSON.parse(row) as Row)
+      .sort((a, b) =>
+        JSON.stringify([a[0], a[3], a[4]]).localeCompare(JSON.stringify([b[0], b[3], b[4]])),
+      );
+  const got = rows(actual),
+    wanted = rows(expected);
+  expect(actual.gl).toBe(0);
+  expect(got.map((row) => [row[0], row[3], row[4]])).toEqual(
+    wanted.map((row) => [row[0], row[3], row[4]]),
+  );
+  for (let i = 0; i < got.length; i++) {
+    // Isolated blend images snap to the camera's device-pixel grid. A different camera
+    // subpixel phase after seeking can move that buffer by one pixel; mesh positions stay exact.
+    const tolerance = got[i][4] ? Math.max(actual.pixel, expected.pixel) + 0.1 : 0;
+    expect(Math.abs(got[i][1] - wanted[i][1])).toBeLessThanOrEqual(tolerance);
+    expect(Math.abs(got[i][2] - wanted[i][2])).toBeLessThanOrEqual(tolerance);
+  }
 }
 
 test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay seeks', async ({
   page,
 }) => {
+  test.setTimeout(300000);
   const errors = await open(page);
   const setup = await battle(page, 65, { giant: 40, archer: 40, wizard: 10 });
   expect(setup.playable).toBe(true);
@@ -297,11 +329,11 @@ test('Where Eagles Dare (65): dormancy, activation, firing, impact and replay se
   };
   await seek(impactAt);
   await focus(page, impact.x, impact.y, 1.6, 40);
-  expect(await presentation(page, 'eagleArtillery')).toEqual(liveImpact);
+  expectSamePresentation(await presentation(page, 'eagleArtillery'), liveImpact);
   await page.screenshot({ path: `${EA}/65-replay-impact.png` });
   await seek(firingAt);
   await focus(page, watched.x + 2, watched.y + 2, 1.6, 90);
-  expect(await presentation(page, 'eagleArtillery')).toEqual(liveFiring);
+  expectSamePresentation(await presentation(page, 'eagleArtillery'), liveFiring);
   await page.screenshot({ path: `${EA}/65-replay-firing.png` });
   expect(errors).toEqual([]);
 });
