@@ -7,6 +7,8 @@ import {
   NATIVE_COLOR_TINT_MODE,
 } from './quad-renderer';
 import { nativeSceneStats } from './native-scene-flatten';
+import { NATIVE_SOURCE_PAGE_LIMIT, readNativeSourcePixels } from './native-source-pixels';
+import { nativeTintPixels } from './native-tint-pixels';
 import {
   nativeMeshTexture,
   nativeTriangles,
@@ -118,14 +120,13 @@ function leafRegion(vertices: readonly number[], pageWidth: number, pageHeight: 
  * textures instead of re-baking whole 8-64 MB pages. The caller remaps UVs into the region.
  */
 /**
- * CPU copies of the source pages bakes read, least recently used first. Reading a region back
- * from a canvas makes the browser decode the whole source image again (a software canvas
- * rasterizes lazily), so every bake of a page paid for decoding all of it. Pages over PAGE_LIMIT
- * are cropped asynchronously instead (regionCrop).
+ * Small source pages are cached as straight RGBA bytes, least recently used first. Larger
+ * pages retain only a sampled region. Raw WebGL reads avoid 2D canvas alpha conversion;
+ * asynchronous bitmap crops remain available when that readback cannot be used.
  */
 const SOURCE_PIXELS = new Map<string, { image: CanvasImageSource; data: ImageData }>();
 const SOURCE_BUDGET = 32 << 20;
-const PAGE_LIMIT = 4 << 20;
+const PAGE_LIMIT = NATIVE_SOURCE_PAGE_LIMIT;
 let sourceBytes = 0;
 function sourcePixels(key: string, image: HTMLImageElement): ImageData | undefined {
   const cached = SOURCE_PIXELS.get(key);
@@ -140,13 +141,16 @@ function sourcePixels(key: string, image: HTMLImageElement): ImageData | undefin
   }
   const bytes = image.width * image.height * 4;
   if (!bytes || bytes > PAGE_LIMIT) return undefined;
-  const canvas = document.createElement('canvas');
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return undefined;
-  ctx.drawImage(image, 0, 0);
-  const data = ctx.getImageData(0, 0, image.width, image.height);
+  let data = readNativeSourcePixels(image);
+  if (!data) {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return undefined;
+    ctx.drawImage(image, 0, 0);
+    data = ctx.getImageData(0, 0, image.width, image.height);
+  }
   SOURCE_PIXELS.set(key, { image, data });
   sourceBytes += bytes;
   for (const [oldest, entry] of SOURCE_PIXELS) {
@@ -232,9 +236,8 @@ function tintedTexture(
   if (!bake) return undefined;
   const started = performance.now();
   const source = sourcePixels(original, image);
-  // A page too large to keep a CPU copy of is cropped off the main thread first: a synchronous
-  // read-back decodes the whole page (700 ms for a 2552x4056 Cannon page under a phone-class
-  // CPU). Until the crop is ready the leaf clamps on the GPU, as it does past the bake budget.
+  // Keep large pages on the asynchronous crop path: uploading a whole page solely to read
+  // one region is too expensive, even though the resulting CPU buffer would be small.
   let crop: ImageBitmap | undefined;
   if (!source) {
     crop = regionCrop(original, image, region);
@@ -242,33 +245,47 @@ function tintedTexture(
   }
   tintTextures = scene.textures;
   nativeSceneStats.bakes++;
-  const canvas = document.createElement('canvas');
-  canvas.width = region.width;
-  canvas.height = region.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) throw Error('Native color transform needs a 2D canvas');
   let pixels: ImageData;
   if (source) {
-    // Crop the cached page: the same texels a region draw and read-back would return.
-    pixels = ctx.createImageData(region.width, region.height);
+    pixels = new ImageData(region.width, region.height);
     const rowBytes = region.width * 4;
     for (let row = 0; row < region.height; row++) {
       const from = ((region.y + row) * source.width + region.x) * 4;
       pixels.data.set(source.data.subarray(from, from + rowBytes), row * rowBytes);
     }
   } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = region.width;
+    canvas.height = region.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw Error('Native color transform needs a 2D canvas');
     ctx.drawImage(crop!, 0, 0);
     pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
   }
-  const data = pixels.data;
-  const mul = [mul0, mul1, mul2],
-    add = [add0 * 255, add1 * 255, add2 * 255];
-  for (let i = 0; i < data.length; i += 4)
-    for (let c = 0; c < 3; c++)
-      data[i + c] = Math.round(Math.min(255, Math.max(0, data[i + c] * mul[c] + add[c])));
-  ctx.putImageData(pixels, 0, 0);
-  scene.textures.addCanvas(key, canvas);
-  const size = canvas.width * canvas.height * 4;
+  const data = nativeTintPixels(pixels, [mul0, mul1, mul2], [add0, add1, add2]);
+  const renderer = scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+  const gl = renderer.gl;
+  // Bytes already have premultiplied alpha and bottom-up rows. Preserve them on every upload,
+  // including context restoration, instead of applying Phaser's default conversions again.
+  const texture = renderer.createTexture2D(
+    0,
+    gl.LINEAR,
+    gl.LINEAR,
+    gl.CLAMP_TO_EDGE,
+    gl.CLAMP_TO_EDGE,
+    gl.RGBA,
+    data,
+    region.width,
+    region.height,
+    false,
+    false,
+    false,
+  );
+  if (!scene.textures.addGLTexture(key, texture)) {
+    renderer.deleteTexture(texture);
+    return undefined;
+  }
+  const size = region.width * region.height * 4;
   TINT_ORDER.set(key, size);
   tintedBytesTotal += size;
   // Evict only what nothing is drawing; a texture in use waits for its meshes to let it go.

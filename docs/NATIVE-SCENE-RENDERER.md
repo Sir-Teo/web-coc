@@ -13,6 +13,24 @@ Two Phaser 4.2.1 compatibility fixes are limited to this renderer:
 - `addBlendMode` returns the preceding slot and only creates combined RGB/alpha factors. The renderer captures the allocated slot and updates separate alpha factors. It also avoids Phaser's built-in ADD destination-alpha factor, which darkens partly transparent intermediate buffers.
 - Framebuffer reconstruction attempts to delete handles from the lost context. On context loss the renderer clears invalid framebuffer handles, including pooled filter buffers, while preserving wrappers and attachment descriptions. Phaser can then recreate them without `INVALID_OPERATION`. Trace output confirmed the invalid deletes before this correction.
 
+## Tint source pixels
+
+Saturating leaf colors are clamped per source texel before bilinear filtering. Their
+CPU inputs come from an unpremultiplied texture read in a reused auxiliary WebGL
+context. A 2D canvas round trip can change translucent RGB values before tinting;
+the direct read preserves the original PNG and lossless WebP texels. Temporary
+textures and framebuffers are deleted after every read, and a lost auxiliary
+context is recreated. The existing canvas path remains the fallback when a raw
+read is unavailable.
+
+The source cache keeps its 32 MB budget and 4 MB page limit. Larger pages keep the
+asynchronous bitmap-crop path; they are not uploaded in full to read a small region.
+Baked texels clamp straight colors, premultiply and
+round once, then pack bottom-up rows. Their Phaser texture wrappers disable further
+premultiplication and flipping, retain the bytes for context restoration, and use
+linear filtering with edge clamping. The existing tint cache, ownership tracking
+and per-frame bake budget still apply.
+
 ## Verification
 
 `scripts/native-tesla-gpu-fixtures.py` independently samples the pinned original SCTX textures and source UV coordinates. Its twenty-three cases cover trapdoor emergence, all seven isolated electricity groups, secondary attack art, reveal dust, an affine shear, rotated/reflected electrical arcs with their source emitter blend flags, impact textures and all four grass variants. The TypeScript scene sampler is compared recursively against the source poses, including the group boundaries. All 17 setup/reveal timelines are exercised, along with long clocks, seeking, hidden controls and group colors. Alpha addition and unsupported blend modes still fail explicitly.
@@ -26,8 +44,8 @@ The Wizard Tower source audit exposed screen containers with changing RGB transf
 ```sh
 output/native-art-venv/bin/python scripts/native-tesla-gpu-fixtures.py --check
 npm test -- tests/native-scene.test.ts tests/native-mesh.test.ts tests/native-tesla-reference.test.ts
-npx playwright test tests/browser/native-tesla-mesh.spec.ts --config output/playtest/retina.config.ts --workers=1
-npx playwright test tests/browser/native-tesla-mesh.spec.ts --config output/playtest/retina-webkit.config.ts --workers=1
+npx playwright test tests/browser/native-tesla-mesh.spec.ts --workers=1
+npx playwright test tests/browser/native-tesla-mesh.spec.ts --browser=webkit --workers=1
 ```
 
 The [live Tesla integration](HIDDEN-TESLA.md) now uses this renderer for all 17 levels, held reveals, independently animated electricity and source construction/upgrade/damaged compositions. Battle-clock sampling reconstructs the same meshes and groups after replay seeking. The native arc, coil and impact artwork and original attack/hit samples now use deterministic battle histories; grass uses the reveal timestamp. Home pickup/drop effects and sounds use a bounded transient action queue. Native particle trajectories, variant/audio-row selection and native-client world/timeline registration remain unfinished.

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import witness from '../fixtures/native-tesla-mesh/manifest.json' with { type: 'json' };
 
-test.use({ viewport: { width: 1700, height: 1250 } });
+test.use({ viewport: { width: 850, height: 1250 }, deviceScaleFactor: 2 });
 
 test('native Tesla reveals and isolated electricity groups match source pixels and survive context restoration', async ({
   page,
@@ -15,6 +15,7 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
     const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
     const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
     const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
+    const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
     document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
     scene.paused = true;
     scene.tweens.pauseAll();
@@ -39,6 +40,10 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
       return view;
     });
     const gl = game.renderer.gl;
+    if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+      throw Error(
+        `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+      );
     const glErrors = [gl.getError()];
     const capture = () =>
       new Promise<Uint8Array>((resolve) =>
@@ -87,33 +92,17 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
     const expected = await capture();
     image.destroy();
     for (const view of views) for (const object of view.objects) object.setVisible(true);
-    const cases = reference.cases.map((c) => {
-      let colored = 0,
-        total = 0,
-        large = 0,
-        maximum = 0;
-      for (let y = c.y; y < c.y + reference.cell; y++)
-        for (let x = c.x; x < c.x + reference.cell; x++) {
-          const at = ((reference.height - 1 - y) * reference.width + x) * 4;
-          const a = actual.slice(at, at + 3),
-            e = expected.slice(at, at + 3);
-          if (a.some((v, i) => v !== [48, 65, 53][i]) || e.some((v, i) => v !== [48, 65, 53][i])) {
-            colored++;
-            const error = Math.max(...a.map((v, i) => Math.abs(v - e[i])));
-            total += error;
-            maximum = Math.max(maximum, error);
-            if (error > 16) large++;
-          }
-        }
-      return {
-        export: c.export,
-        time: c.time,
-        colored,
-        meanError: total / colored,
-        largeFraction: large / colored,
-        maximum,
-      };
-    });
+    const frame = { width: reference.width, height: reference.height };
+    const cases = reference.cases.map((c) => ({
+      export: c.export,
+      time: c.time,
+      ...compareSourcePixels(actual, expected, frame, {
+        x: c.x,
+        y: c.y,
+        width: reference.cell,
+        height: reference.cell,
+      }),
+    }));
     const changed = (other: Uint8Array) => {
       let count = 0;
       for (let i = 0; i < actual.length; i++) if (actual[i] !== other[i]) count++;
@@ -121,6 +110,7 @@ test('native Tesla reveals and isolated electricity groups match source pixels a
     };
     return {
       cases,
+      framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
       singleTextureChanges: changed(single),
       contextChanges: changed(restored),
       meshes: views.reduce((n, v) => n + v.meshes.size, 0),
