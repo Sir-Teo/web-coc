@@ -201,7 +201,8 @@ export function nativePages() {
       });
     },
     async closeBundle() {
-      if (process.env.NATIVE_PAGES === '0') return;
+      // Vite also calls this when its dev server restarts; it must not rewrite a live build.
+      if (serving || process.env.NATIVE_PAGES === '0') return;
       const packs = [];
       const walk = async (dir) => {
         for (const entry of await fs
