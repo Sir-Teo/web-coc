@@ -1,0 +1,161 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "generator": "scripts/import-native-multi-gear-art.py",
+  "sources": {
+    "fingerprint.json": "ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b",
+    "logic/buildings.csv": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_8.sctx": "588eba7d5739a5d9b53d3e14f2ab83bd170cad735363a81dd37bea7bcc0bb3bd",
+    "sc/buildings_33.sctx": "9ae5ed0d8f74ab23260a5af3f784a4645fb00bcd47de4abc9abd20aea1749666"
+  },
+  "frame": 0,
+  "nativePlaybackVerified": false,
+  "convention": "Original base plus selected mode at frame zero. Fast Attack pixels are copied unchanged into the matching Long Range bounds; local preview registration is shared.",
+  "portraits": [
+    {
+      "level": 1,
+      "source": {
+        "scene": "sc/buildings.sc",
+        "base": "rapidfire_base",
+        "long": "merged_cat_archer_lvl1",
+        "fast": "merged_cat_cannon_lvl1"
+      },
+      "long": {
+        "path": "assets/catalog-native/multi-gear-tower/level-1.png",
+        "width": 144,
+        "height": 199,
+        "bounds": [
+          -76,
+          -88,
+          68,
+          111
+        ],
+        "originX": 0.5277777777777778,
+        "originY": 0.44221105527638194,
+        "rgbaSha256": "b69fb6bb7e794aeeca409c5a17fbc53978fa1f42e94ed1ae582d1467b8688754"
+      },
+      "fast": {
+        "path": "assets/multi-gear-native/preview-1-fast.png",
+        "width": 144,
+        "height": 199,
+        "bounds": [
+          -76,
+          -88,
+          68,
+          111
+        ],
+        "originX": 0.5277777777777778,
+        "originY": 0.44221105527638194,
+        "rgbaSha256": "3e1e2b0df1c2c539c9c30468a261075b7eb9a6ca894279a0975b9a4df0f2920f",
+        "originalBounds": [
+          -76,
+          -49,
+          68,
+          111
+        ],
+        "originalRgbaSha256": "2ecac8c35c559e5f84f89bf5c89f1f868a4bab74a1524a6351ae68ba1b55907b",
+        "offset": [
+          0,
+          39
+        ]
+      }
+    },
+    {
+      "level": 2,
+      "source": {
+        "scene": "sc/buildings.sc",
+        "base": "rapidfire_base",
+        "long": "merged_cat_archer_lvl2",
+        "fast": "merged_cat_cannon_lvl2"
+      },
+      "long": {
+        "path": "assets/catalog-native/multi-gear-tower/level-2.png",
+        "width": 144,
+        "height": 199,
+        "bounds": [
+          -76,
+          -88,
+          68,
+          111
+        ],
+        "originX": 0.5277777777777778,
+        "originY": 0.44221105527638194,
+        "rgbaSha256": "9b7ff4d31bff3b7a54f73f784a6e840e5c5a079e999ae266ed19736d0f585c43"
+      },
+      "fast": {
+        "path": "assets/multi-gear-native/preview-2-fast.png",
+        "width": 144,
+        "height": 199,
+        "bounds": [
+          -76,
+          -88,
+          68,
+          111
+        ],
+        "originX": 0.5277777777777778,
+        "originY": 0.44221105527638194,
+        "rgbaSha256": "637dd22f64077737c18a0cc93f31a08491c3434dc1ce40885a41e38f5308e867",
+        "originalBounds": [
+          -76,
+          -49,
+          68,
+          111
+        ],
+        "originalRgbaSha256": "6d4d7db7a018c1bf2f1bd9066b8b24d0e3dd216d9f534413a655c2f847b9bce7",
+        "offset": [
+          0,
+          39
+        ]
+      }
+    },
+    {
+      "level": 3,
+      "source": {
+        "scene": "sc/buildings.sc",
+        "base": "rapidfire_base",
+        "long": "merged_cat_archer_lvl3",
+        "fast": "merged_cat_cannon_lvl3"
+      },
+      "long": {
+        "path": "assets/catalog-native/multi-gear-tower/level-3.png",
+        "width": 146,
+        "height": 200,
+        "bounds": [
+          -76,
+          -89,
+          70,
+          111
+        ],
+        "originX": 0.5205479452054794,
+        "originY": 0.445,
+        "rgbaSha256": "5732c5209732a5067cea93929e0030eca938f19f25896716df827d532aa9c8aa"
+      },
+      "fast": {
+        "path": "assets/multi-gear-native/preview-3-fast.png",
+        "width": 146,
+        "height": 200,
+        "bounds": [
+          -76,
+          -89,
+          70,
+          111
+        ],
+        "originX": 0.5205479452054794,
+        "originY": 0.445,
+        "rgbaSha256": "172384cdfabce57040db33370d755b65435da39a77f9f0df8260034153ceed81",
+        "originalBounds": [
+          -76,
+          -49,
+          70,
+          111
+        ],
+        "originalRgbaSha256": "f01f8040ef898c20309d67cdab98206296e1aa32dd32a8f795867fb01ffe15d1",
+        "offset": [
+          0,
+          40
+        ]
+      }
+    }
+  ]
+}

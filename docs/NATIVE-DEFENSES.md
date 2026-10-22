@@ -136,6 +136,15 @@ spot in both modes. Inferno, X-Bow and Spell Tower retain their mode-specific ra
 keep their separate trigger radius. These displayed values follow the source weapon columns;
 combat behavior and saved configurations are unchanged.
 
+Multi-Gear Tower context, Info and Move portraits follow the saved Long Range/Fast Attack mode
+at all three levels. Fast Attack uses the original `merged_cat_cannon_lvl1..3` exports and shared
+`rapidfire_base`; the original Long Range portraits remain unchanged. The shorter Fast Attack
+image is padded to the matching Long Range canvas so both previews keep the same ground anchor.
+These are frame-zero snapshots; the live native body retains its existing timeline renderer.
+Rebuild with `scripts/import-native-multi-gear-art.py` (`--check` verifies all six source images
+and the unchanged Fast Attack crop); provenance is in
+[the portrait index](../reference/multi-gear/portraits.json).
+
 ## Presentation status
 
 Imported client timelines now drive supported defense bodies, turret poses and projectile art.

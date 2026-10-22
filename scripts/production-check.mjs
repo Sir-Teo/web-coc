@@ -38,6 +38,9 @@ const craftedPortraits = Object.values(
 const spellTowerPortraits = JSON.parse(
   await fs.readFile('reference/spell-tower/catalog.json', 'utf8'),
 ).previews;
+const multiGearPortraits = JSON.parse(
+  await fs.readFile('reference/multi-gear/portraits.json', 'utf8'),
+).portraits.flatMap((row) => [row.long, row.fast]);
 
 async function checkRegisteredPortraits(page, portraits, label) {
   return page.evaluate(
@@ -360,11 +363,18 @@ for (const [name, engine] of Object.entries(engines)) {
     'Spell Tower',
   );
   expect(nativeSpellTowerPortraits).toBe(13);
+  const nativeMultiGearPortraits = await checkRegisteredPortraits(
+    page,
+    multiGearPortraits,
+    'Multi-Gear Tower',
+  );
+  expect(nativeMultiGearPortraits).toBe(6);
   report[name] = {
     nativeDecorations,
     heroPortraits,
     nativeCraftedPortraits,
     nativeSpellTowerPortraits,
+    nativeMultiGearPortraits,
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
@@ -407,11 +417,13 @@ for (const [name, engine] of Object.entries(engines)) {
     expect(await checkRosterHeroPortraits(page)).toBe(rosterHeroPortraits.length);
     expect(await checkRegisteredPortraits(page, craftedPortraits, 'crafted-defense')).toBe(12);
     expect(await checkRegisteredPortraits(page, spellTowerPortraits, 'Spell Tower')).toBe(13);
+    expect(await checkRegisteredPortraits(page, multiGearPortraits, 'Multi-Gear Tower')).toBe(6);
     report.offline = {
       nativeDecorations: 4,
       heroPortraits: rosterHeroPortraits.length,
       nativeCraftedPortraits: 12,
       nativeSpellTowerPortraits: 13,
+      nativeMultiGearPortraits: 6,
       reload: true,
       army: true,
       replay: true,

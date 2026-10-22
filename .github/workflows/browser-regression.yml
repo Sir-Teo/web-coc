@@ -51,6 +51,7 @@ jobs:
           PYTHONPATH=scripts python -m unittest native_art.test_static_scene
           PYTHONPATH=scripts python -m unittest native3d.test_hero_atlas
           python scripts/import-native-crafted-art.py --check
+          python scripts/import-native-multi-gear-art.py --check
           python scripts/import-native-cannon.py --check
           python scripts/import-native-air-sweeper.py --check
           python scripts/import-native-mortar.py --check

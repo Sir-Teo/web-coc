@@ -94,6 +94,7 @@ import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
 import type { XbowMode } from './xbow-stats';
 import { buildingRange } from './building-range';
+import type { GearMode } from './native-defense-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
@@ -2790,6 +2791,7 @@ export class VillageScene extends Phaser.Scene {
           ? craftedArtTier(moving.crafted, moving.craftedModules?.[moving.crafted])
           : 1,
         moving?.infernoMode,
+        moving?.gearMode,
       );
       this.updateGhost(this.pointerScreen());
     } else {
@@ -2845,6 +2847,7 @@ export class VillageScene extends Phaser.Scene {
       b.crafted,
       b.crafted ? craftedArtTier(b.crafted, b.craftedModules?.[b.crafted]) : 1,
       b.infernoMode,
+      b.gearMode,
     )
       .setPosition(p.x, p.y)
       .setDepth(p.y)
@@ -3153,6 +3156,7 @@ export class VillageScene extends Phaser.Scene {
     crafted?: CraftedKind,
     craftedTier = 1,
     infernoMode: InfernoMode = 'single',
+    gearMode: GearMode = 'long',
   ): Phaser.GameObjects.Image {
     // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
     if (kind === 'craftingstation') {
@@ -3228,11 +3232,23 @@ export class VillageScene extends Phaser.Scene {
       xbowMode,
       infernoMode,
       spellTowerWeapon,
+      gearMode,
     );
+    if (
+      kind === 'multigeartower' &&
+      !this.deferredArt.has(
+        texture,
+        asset(kind, level, skeletonMode, xbowMode, infernoMode, spellTowerWeapon, gearMode),
+      )
+    )
+      return this.blankBuilding(im, kind);
     // A wall, camp, Cannon or tier-3 level the boot did not load draws as Level 1 until its
     // sprite arrives; a kind whose base sprite has not arrived yet draws nothing.
     if (!this.deferredTexture(kind, level, texture) && kind !== 'cannon') {
-      if (buildingTexture(kind, 1, direction, xbowMode, infernoMode, spellTowerWeapon) !== texture)
+      if (
+        buildingTexture(kind, 1, direction, xbowMode, infernoMode, spellTowerWeapon, gearMode) !==
+        texture
+      )
         return this.styleBuilding(
           im,
           kind,
@@ -3245,6 +3261,7 @@ export class VillageScene extends Phaser.Scene {
           crafted,
           craftedTier,
           infernoMode,
+          gearMode,
         );
       return this.blankBuilding(im, kind);
     }

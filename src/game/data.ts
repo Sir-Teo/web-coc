@@ -1,5 +1,7 @@
 import { EXTRA_TROOPS, EXTRA_TROOP_KINDS, type ExtraTroopKind } from './extra-troops';
 import { timeGems } from './gem-costs';
+import { multiGearAsset, multiGearTexture } from './multi-gear-art';
+import type { GearMode } from './native-defense-stats';
 import {
   HERO_TROOPS,
   PET_TROOPS,
@@ -1489,7 +1491,9 @@ export const buildingTexture = (
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
   spellTowerWeapon?: string,
+  gearMode: GearMode = 'long',
 ) => {
+  if (kind === 'multigeartower') return multiGearTexture(level, gearMode);
   if (hasLateArt(kind)) return lateTexture(kind, level, spellTowerWeapon);
   if (kind === 'inferno') return infernoTexture(level, infernoMode);
   if (kind === 'clancastle') return castleTexture(level);
@@ -1520,7 +1524,9 @@ export const asset = (
   xbowMode: XbowMode = 'ground',
   infernoMode: InfernoMode = 'single',
   spellTowerWeapon?: string,
+  gearMode: GearMode = 'long',
 ) => {
+  if (kind === 'multigeartower') return multiGearAsset(level, gearMode);
   // The empty platform and tiered Crafted Defenses use original source portraits.
   if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
   if (kind === 'helperhut') return '/assets/catalog-native/helper-hut/level-1.png';
