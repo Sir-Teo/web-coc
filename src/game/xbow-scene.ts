@@ -8,7 +8,8 @@ import { nativeFrameIndex } from './native-frame';
 import { guardRender } from './render-guard';
 import { NativeMeshView, preloadNativeMeshes } from './native-mesh-scene';
 import { nativeMeshPoses, type NativeMatrix } from './native-mesh';
-import { xbowGraph, xbowSounds, xbowPoses } from './xbow-poses';
+import { xbowGraph, xbowSounds, xbowEffects, xbowPoses } from './xbow-poses';
+import { xbowHomeSoundCues, type XbowHomeAction, type XbowHomeEvent } from './xbow-home-effects';
 import { XBOW_ART, xbowAsset, xbowExport, xbowTexture, xbowDirection } from './xbow-art';
 import { XBOW, XBOW_LEVELS, XBOW_PROJECTILES } from './xbow-stats';
 
@@ -30,6 +31,8 @@ export class XbowPresentation {
   readonly bolts = new Map<string, NativeMeshView>();
   readonly shadows = new Map<string, NativeMeshView>();
   private signatures = new Map<number, string>();
+  private homeEvents: XbowHomeEvent[] = [];
+  private homeSequence = 0;
   constructor(
     private scene: Phaser.Scene,
     private audio: AudioManager,
@@ -43,7 +46,15 @@ export class XbowPresentation {
   }
   /** Heavy textures arrive after boot; the fallback sprite covers until then. */
   artReady = false;
+  handling(id: number, kind: XbowHomeAction | 'cancel', at: number) {
+    if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
+    else {
+      this.homeEvents.push({ id, kind, at, index: ++this.homeSequence });
+      if (this.homeEvents.length > 16) this.homeEvents.shift();
+    }
+  }
   clear() {
+    this.homeEvents = [];
     for (const view of [...this.towers.values(), ...this.bolts.values(), ...this.shadows.values()])
       view.destroy();
     this.towers.clear();
@@ -65,7 +76,7 @@ export class XbowPresentation {
     const live = presentationLive(battle);
     // After the finish, bolts in flight and one-shot sounds play out on the presentation clock.
     if (battle) elapsed = presentationTime(battle);
-    const cues = this.cues(battle, elapsed);
+    const cues = this.cues(battle, elapsed, buildings);
     // Sound cues never depend on the heavy art; only the meshes wait for it.
     if (!this.artReady) return cues;
     const wanted = new Set<number>(),
@@ -183,8 +194,17 @@ export class XbowPresentation {
     return cues;
   }
   /** One-shot cues for shots, hits and the empty clack that can still be heard. */
-  private cues(battle: Battle | null, elapsed: number) {
-    const cues: SampleCue[] = [];
+  private cues(battle: Battle | null, elapsed: number, buildings: readonly Building[]) {
+    if (battle) this.homeEvents = [];
+    else
+      this.homeEvents = this.homeEvents.filter(
+        (event) =>
+          cueAudible(event.at, elapsed) &&
+          buildings.some((building) => building.id === event.id && building.kind === 'xbow'),
+      );
+    const cues: SampleCue[] = this.homeEvents.flatMap((event) =>
+      xbowHomeSoundCues(event, xbowEffects()),
+    );
     if (battle && presentationLive(battle))
       for (const [id, state] of Object.entries(battle.xbows ?? {})) {
         // Stable variation keeps the source pitch range identical through replay seeks.

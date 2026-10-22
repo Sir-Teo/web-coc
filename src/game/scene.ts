@@ -2354,7 +2354,7 @@ export class VillageScene extends Phaser.Scene {
   gridAtScreen(clientX: number, clientY: number) {
     return this.gridAtPointer(this.canvasPoint(clientX, clientY));
   }
-  /** Shared mouse/touch placement feedback; native Tesla sounds come from the model event. */
+  /** Shared mouse/touch placement feedback; native defense sounds come from model events. */
   placeBuilding(x: number, y: number) {
     const kind = this.model.placement;
     if (!this.model.place(x, y)) return false;
@@ -2367,6 +2367,7 @@ export class VillageScene extends Phaser.Scene {
       kind !== 'airsweeper' &&
       kind !== 'mortar' &&
       kind !== 'cannon' &&
+      kind !== 'xbow' &&
       kind !== 'wizardtower'
     )
       this.audio.play('build');
@@ -5359,6 +5360,27 @@ export class VillageScene extends Phaser.Scene {
         fx.y,
       );
       if (fx.type !== 'airsweeper-cancel' && this.audio.enabled) this.audio.unlock();
+      return;
+    }
+    if (
+      fx.type === 'xbow-pickup' ||
+      fx.type === 'xbow-place' ||
+      fx.type === 'xbow-cancel' ||
+      fx.type === 'xbow-mode'
+    ) {
+      if (this.model.battle) return;
+      this.xbowPresentation.handling(
+        fx.sourceId!,
+        fx.type === 'xbow-pickup'
+          ? 'pickup'
+          : fx.type === 'xbow-place'
+            ? 'place'
+            : fx.type === 'xbow-mode'
+              ? 'mode'
+              : 'cancel',
+        this.renderClock / 1000,
+      );
+      if (fx.type !== 'xbow-cancel' && this.audio.enabled) this.audio.unlock();
       return;
     }
     if (fx.type === 'cannon-pickup' || fx.type === 'cannon-place' || fx.type === 'cannon-cancel') {

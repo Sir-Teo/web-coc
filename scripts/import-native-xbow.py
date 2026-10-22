@@ -35,6 +35,8 @@ PINS = {
     'sfx/bow_target.ogg': '6ce1662bd07978da29bdd4d2dd89cd242164b3808d1dcc9ed8911065c2b6aa2b',
 }
 PREFIX = 'assets/buildings/xbow-native'
+# This identical source crop is shared with Archer Towers in the shipping asset inventory.
+SHARED_TEXTURES = {8: 'assets/archer-tower-native/buildings/texture/texture-8.png'}
 
 
 def table(path):
@@ -86,6 +88,10 @@ def build():
         require(image.size == (descriptor['width'], descriptor['height']), 'SC6/SCTX dimensions differ')
         decoded[index] = image
     outputs, textures, runtime = crop_textures(graph, decoded, PREFIX)
+    for texture, path in SHARED_TEXTURES.items():
+        row = textures[str(texture)]
+        outputs[path] = outputs.pop(row['path'])
+        row['path'] = runtime['textures'][str(texture)]['path'] = path
     # Enumerate every clip frame to reject unsupported additive groups before shipping.
     # This also exercises otherwise invisible empty source timelines.
     draw_count = 0
@@ -145,6 +151,7 @@ def build():
     runtime['levels'] = [{key: row[key] for key in fields} for row in levels]
     runtime['directions'] = directions
     runtime['sounds'] = sounds
+    runtime['effects'] = selected_effects
     print(f'Captured {len(graph["exports"])} exports, {len(graph["shapes"])} shapes, '
           f'{len(graph["clips"])} clips, {len(directions)} directional controls, {draw_count} diagnostic draw commands', flush=True)
     return outputs, metadata, runtime
@@ -172,7 +179,8 @@ def main():
                 value.save(target, optimize=True)
     if args.check:
         shipped = {str(p.relative_to(ROOT / 'public')) for p in (ROOT / 'public' / PREFIX).iterdir() if p.is_file()}
-        require(shipped == set(outputs), 'Unexpected or missing native X-Bow assets')
+        owned = {path for path in outputs if path.startswith(PREFIX + '/')}
+        require(shipped == owned, 'Unexpected or missing native X-Bow assets')
     # Combat consumes only audited numeric data, without importing the large art graph.
     levels, inherited = [], {}
     projectiles = list(metadata['projectiles'])

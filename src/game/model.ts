@@ -923,6 +923,10 @@ export type FX = {
     | 'cannon-pickup'
     | 'cannon-place'
     | 'cannon-cancel'
+    | 'xbow-pickup'
+    | 'xbow-place'
+    | 'xbow-cancel'
+    | 'xbow-mode'
     | 'mortar-fire'
     | 'mortar-pickup'
     | 'mortar-place'
@@ -2929,6 +2933,7 @@ export class GameModel {
         b.kind === 'airsweeper' ||
         b.kind === 'mortar' ||
         b.kind === 'cannon' ||
+        b.kind === 'xbow' ||
         b.kind === 'wizardtower')
     ) {
       const size = BUILDINGS[b.kind].size;
@@ -3004,6 +3009,7 @@ export class GameModel {
     if (!b || b.kind !== 'xbow' || b.constructing || !validXbowMode(b.xbowMode)) return false;
     if (this.editing) this.recordPositions();
     b.xbowMode = b.xbowMode === 'both' ? 'ground' : 'both';
+    this.onEffect({ type: 'xbow-mode', sourceId: b.id, x: b.x + 1.5, y: b.y + 1.5 });
     this.changed();
     return true;
   }

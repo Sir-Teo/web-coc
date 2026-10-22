@@ -2,8 +2,12 @@ import { nativeMeshPoses, type NativeMatrix, type NativeMeshGraph } from './nati
 import { XBOW_ART, xbowExport } from './xbow-art';
 import type { XbowMode } from './xbow-stats';
 import { LazyGraph } from './lazy-graph';
+import type { XbowEffectRows } from './xbow-home-effects';
 
-type XbowSource = NativeMeshGraph & { sounds: Record<string, { path: string }> };
+type XbowSource = NativeMeshGraph & {
+  sounds: Record<string, { path: string }>;
+  effects: XbowEffectRows;
+};
 /** The X-Bow graph (about 1 MB) loads with the X-Bow art family, not at startup. */
 const XBOW_SOURCE = new LazyGraph<XbowSource>(
   'X-Bow',
@@ -14,6 +18,8 @@ export const xbowArtLoaded = () => XBOW_SOURCE.loaded;
 export const xbowGraph = (): NativeMeshGraph => XBOW_SOURCE.get();
 /** Native samples; none until the graph that lists them has loaded. */
 export const xbowSounds = () => (XBOW_SOURCE.loaded ? XBOW_SOURCE.get().sounds : {});
+export const xbowEffects = (): XbowEffectRows =>
+  XBOW_SOURCE.loaded ? XBOW_SOURCE.get().effects : {};
 export function xbowPoses(
   level: number,
   mode: XbowMode,
