@@ -759,6 +759,7 @@ export class HUD {
   private drawerBefore: { panel: Drawer; left: number; top: number } | null = null;
   private actionSource: HTMLElement | null = null;
   private dragging = false;
+  private cancelDrawerDrag: (() => void) | null = null;
   private liveTimer: ReturnType<typeof setInterval> | undefined;
   private lastAnchorLeft = -1;
   private lastAnchorTop = -1;
@@ -857,6 +858,7 @@ export class HUD {
     const cancelActions = () => {
       this.stopRepeat();
       this.pressedActions.clear();
+      this.cancelDrawerDrag?.();
       if (this.renderPending) this.scheduleRender();
     };
     window.addEventListener('blur', cancelActions, { signal });
@@ -985,6 +987,7 @@ export class HUD {
   }
   destroy() {
     this.stopRepeat();
+    this.cancelDrawerDrag?.();
     if (this.liveTimer !== undefined) clearInterval(this.liveTimer);
     if (this.raf) cancelAnimationFrame(this.rafId);
     this.raf = false;
@@ -1192,6 +1195,7 @@ export class HUD {
    * keeps the building armed for a plain tap instead.
    */
   private beginDrawerDrag(kind: BuildingKind, event: PointerEvent) {
+    this.cancelDrawerDrag?.();
     // Pressing a tile to drag (or to scroll the sheet) never opens the gem offer.
     this.model.beginBuild(kind, false);
     if (!this.model.placement) return;
@@ -1199,18 +1203,26 @@ export class HUD {
     document.querySelector('#drawer')?.classList.add('dragging');
     this.scene.trackGhost(event.clientX, event.clientY);
     const move = (e: PointerEvent) => this.scene.trackGhost(e.clientX, e.clientY);
-    const up = (e: PointerEvent) => {
+    const finish = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
+      this.cancelDrawerDrag = null;
       this.dragging = false;
       this.scene.releaseGhost();
+    };
+    const cancel = () => {
+      finish();
+      this.model.cancel();
+      this.drawerPanel = null;
+      this.render();
+    };
+    const up = (e: PointerEvent) => {
       if (e.type === 'pointercancel') {
-        this.model.cancel();
-        this.drawerPanel = null;
-        this.render();
+        cancel();
         return;
       }
+      finish();
       const overDrawer = document
         .elementFromPoint(e.clientX, e.clientY)
         // Only controls count as "over the HUD": releasing over an info panel (which
@@ -1225,6 +1237,7 @@ export class HUD {
       }
       this.render();
     };
+    this.cancelDrawerDrag = cancel;
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);

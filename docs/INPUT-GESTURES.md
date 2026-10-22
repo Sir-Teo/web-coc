@@ -8,6 +8,14 @@ Outside presses and releases now clear the saved press, drag classification, and
 
 The broader browser run first exposed an intermittent shop closure. This investigation found and fixed the reproducible stale-press bug; a single failed trace does not prove that every possible drawer interaction race has been eliminated.
 
+A shop drag also ends when the window loses focus, the page is hidden or the HUD is
+destroyed. Cancellation removes its temporary window listeners, releases the tracked ghost
+and discards the pending placement. A later pointer release cannot buy the building.
+`tests/browser/shop-drag-interruption.spec.ts` simulates those interruptions during a real
+mouse drag, then releases on valid ground and checks unchanged buildings, gold and elixir,
+cleared placement and ghost state, and a usable shop after returning. Before the fix, every
+interruption left the drag active and the later release placed a Gold Mine.
+
 ## DOM controls during queued rendering
 
 The native-grid audit reproduced a separate lost-click race: a model update scheduled between a Save button’s pointer press and release replaced the button node, preventing its click. HUD structural rendering now waits until active action pointers release or cancel, and resumes on the next animation frame after click dispatch. Window blur also releases this guard. Live counters keep updating while a pointer is held.
