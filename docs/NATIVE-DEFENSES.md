@@ -138,7 +138,17 @@ combat behavior and saved configurations are unchanged.
 
 ## Presentation status
 
-Battle visuals for these systems are being moved to native client art (projectile timelines,
-turret aim and attack frames, trap and Guardian artwork). Until that lands, projectiles use the
-generic drawn graphics, Giga Tesla/Super Wizard zaps use the fallback effect and Guardians show a
-health bar only.
+Imported client timelines now drive supported defense bodies, turret poses and projectile art.
+[NativeProjectilePresentation](../src/game/native-projectile-scene.ts) loads flight artwork,
+shadows, trails and spawn/impact effects on demand. [NativeDefensePresentation](../src/game/native-defense-scene.ts)
+handles rooftop defenders, beams and declared attack, hit, activation, death and spell effects,
+including chained zaps. Local fallback paths remain available while art loads.
+
+Longshot, Smasher and Logger use their baked Guardian atlases through
+[HeroNativePresentation](../src/game/hero-native-scene.ts). The dedicated
+[Guardian browser audit](../tests/browser/native-guardian-art.spec.ts) verifies each body while
+waiting, leaping, attacking and dying, then checks that its expired sprite is removed. All three
+cases pass in Chromium and WebKit without failed asset requests, page errors or WebGL errors.
+
+World registration, particle motion and action-frame alignment remain local interpretations of
+the source data. These rendering checks do not establish native executable parity.
