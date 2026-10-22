@@ -161,7 +161,7 @@ describe('magic items', () => {
     expect(save(m)).toBe(true);
   });
 
-  it('takes one Wall Ring per million of a wall level’s cost, with a free builder', () => {
+  it('takes one Wall Ring per million of a wall level’s cost and refuses insufficient rings', () => {
     expect([1000, 1_000_000, 1_500_000, 2_000_000, 7_000_000].map(wallRings)).toEqual([
       1, 1, 2, 2, 7,
     ]);
@@ -176,6 +176,68 @@ describe('magic items', () => {
     expect(m.wallRingsFor(wall.id)).toBe(2);
     expect(m.useWallRing(wall.id)).toBe(false);
     expect(wall.level).toBe(12);
+  });
+
+  it('uses a Wall Ring while every builder is occupied, leaving resource upgrades blocked', () => {
+    const m = village(12);
+    const wall = m.state.buildings.find((b) => b.kind === 'wall')!;
+    for (const b of m.state.buildings.filter((b) => b.kind === 'cannon' || b.kind === 'goldmine')) {
+      b.upgradeStart = m.clock;
+      b.upgradeEnd = m.clock + HOUR;
+    }
+    m.addMagicItem('wall-ring', 1);
+    expect(m.busy).toBe(m.builders);
+    expect(m.wallUpgradeQuote([wall.id], 'gold').issue).toContain('free builder');
+    expect(m.wallUpgradeQuote([wall.id], 'elixir').issue).toContain('free builder');
+    const before = { gold: m.state.gold, elixir: m.state.elixir, dark: m.state.dark, busy: m.busy };
+    expect(m.useWallRing(wall.id)).toBe(true);
+    expect(wall.level).toBe(12);
+    expect(wall.hp).toBe(wall.maxHp);
+    expect(m.magicItemCount('wall-ring')).toBe(0);
+    expect({
+      gold: m.state.gold,
+      elixir: m.state.elixir,
+      dark: m.state.dark,
+      busy: m.busy,
+    }).toEqual(before);
+    expect(wall.upgradeEnd).toBeUndefined();
+    expect(save(m)).toBe(true);
+  });
+
+  it('publishes a Wall Ring upgrade only after spending the ring with resources unchanged', () => {
+    const m = village(12);
+    const wall = m.state.buildings.find((b) => b.kind === 'wall')!;
+    m.addMagicItem('wall-ring', 1);
+    const observations: unknown[] = [];
+    m.onChange = () =>
+      observations.push({
+        level: wall.level,
+        rings: m.magicItemCount('wall-ring'),
+        gold: m.state.gold,
+        elixir: m.state.elixir,
+        dark: m.state.dark,
+      });
+    expect(m.useWallRing(wall.id)).toBe(true);
+    expect(observations.length).toBeGreaterThan(0);
+    for (const observed of observations)
+      expect(observed).toEqual({ level: 12, rings: 0, gold: 1000, elixir: 1000, dark: 0 });
+  });
+
+  it.each(['maximum', 'constructing'] as const)('keeps Wall Rings for a %s wall', (state) => {
+    const m = village(12);
+    const wall = m.state.buildings.find((b) => b.kind === 'wall')!;
+    if (state === 'maximum') wall.level = m.maxLevel('wall');
+    else {
+      wall.constructing = true;
+      wall.upgradeStart = m.clock;
+      wall.upgradeEnd = m.clock + HOUR;
+    }
+    m.addMagicItem('wall-ring', 10);
+    const before = structuredClone(wall);
+    expect(m.useWallRing(wall.id)).toBe(false);
+    expect(wall).toEqual(before);
+    expect(m.magicItemCount('wall-ring')).toBe(10);
+    expect([m.state.gold, m.state.elixir, m.state.dark]).toEqual([1000, 1000, 0]);
   });
 
   it('runs a Builder Potion at ten times speed for an hour, offline included', () => {

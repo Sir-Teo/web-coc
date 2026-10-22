@@ -3226,7 +3226,7 @@ export class HUD {
       `wall-ring:${walls[0].id}`,
       `<span>${icon('Circle', 18)} Ring</span><small>${rings} of ${held} Wall Rings</small>`,
       'game-btn blue',
-      `${held < rings || m.busy >= m.builders ? 'disabled' : ''} aria-label="Upgrade with ${rings} Wall ${rings === 1 ? 'Ring' : 'Rings'}"`,
+      `${held < rings ? 'disabled' : ''} aria-label="Upgrade with ${rings} Wall ${rings === 1 ? 'Ring' : 'Rings'}"`,
     );
   }
   private wallContext(anchor: Building) {

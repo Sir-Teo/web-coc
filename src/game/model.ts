@@ -2045,7 +2045,7 @@ export class GameModel {
     return this.state.buildings.filter((b) => b.kind === 'builder' && !b.constructing).length;
   }
   /**
-   * Timed builder reservations. Walls require a free builder but finish immediately;
+   * Timed builder reservations. Resource wall upgrades need a free builder and finish immediately;
    * clearing an obstacle holds a builder until it is gone.
    */
   get busy() {
@@ -2567,17 +2567,19 @@ export class GameModel {
     }
     // Validate the whole purchase before charging once; no transient timers or builder reservations.
     this.state[resource] -= quote.cost;
-    this.starterEvent({ type: 'WallUpgradeHome', amount: quote.walls.length });
-    for (const b of quote.walls) {
+    return this.finishWallUpgrades(quote.walls);
+  }
+  /** Shared completion after either resources or Wall Rings have been validated and spent. */
+  private finishWallUpgrades(walls: readonly Building[]) {
+    this.starterEvent({ type: 'WallUpgradeHome', amount: walls.length });
+    for (const b of walls) {
       b.level++;
       b.maxHp = buildingHp(b.kind, b.level);
       b.hp = b.maxHp;
     }
-    const anchor = quote.walls.find((b) => b.id === this.selected) ?? quote.walls[0];
+    const anchor = walls.find((b) => b.id === this.selected) ?? walls[0];
     this.onEffect({ type: 'upgrade', x: anchor.x + 0.5, y: anchor.y + 0.5 });
-    this.notify(
-      `${quote.walls.length === 1 ? 'Wall' : `${quote.walls.length} walls`} upgraded instantly.`,
-    );
+    this.notify(`${walls.length === 1 ? 'Wall' : `${walls.length} walls`} upgraded instantly.`);
     this.changed();
     return true;
   }
@@ -4012,7 +4014,7 @@ export class GameModel {
     this.state.magicItems![kind] = this.magicItemCount(kind) - count;
   }
   /**
-   * Runs an upgrade whose cost a Hammer, Wall Ring or Super Potion covers: the usual rules apply,
+   * Runs an upgrade whose cost a Hammer or Super Potion covers: the usual rules apply,
    * but every resource is on hand and none is spent. Nothing observes the purse in between.
    */
   private covered<T>(action: () => T): T {
@@ -4163,17 +4165,19 @@ export class GameModel {
   /** Wall Rings one wall's next level takes: one per million of its cost. */
   wallRingsFor(id: number) {
     const b = this.state.buildings.find((v) => v.id === id && v.kind === 'wall');
-    return b && b.level < this.maxLevel('wall') ? wallRings(this.upgradeCost(b)) : undefined;
+    return b && !b.constructing && !b.upgradeEnd && b.level < this.maxLevel('wall')
+      ? wallRings(this.upgradeCost(b))
+      : undefined;
   }
-  /** Wall Rings upgrade one wall, with a free builder, as gold or elixir would. */
+  /** Wall Rings finish one eligible wall without needing a builder or spending resources. */
   useWallRing(id: number) {
     const rings = this.wallRingsFor(id),
       held = this.magicItemCount('wall-ring');
     if (this.battle || rings === undefined || !held) return false;
     if (held < rings) return (this.notify(`This wall takes ${rings} Wall Rings.`), false);
-    if (!this.covered(() => this.upgradeWalls([id], 'gold'))) return false;
+    const wall = this.state.buildings.find((b) => b.id === id)!;
     this.spendItem('wall-ring', rings);
-    return true;
+    return this.finishWallUpgrades([wall]);
   }
   /** Super Potion: boosts a troop into its Super Troop with the usual rules, free. */
   useSuperPotion(kind: TroopKind) {

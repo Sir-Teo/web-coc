@@ -262,3 +262,65 @@ test('the Info panel upgrades only its displayed wall when a row is selected', a
     before.walls.map((b) => ({ ...b, level: b.level + Number(b.id === before.id) })),
   );
 });
+
+test('phone Wall Ring upgrades work with every builder busy while resource upgrades stay blocked', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    const m = window.__game.model;
+    const wall = m.state.buildings.find((b) => b.kind === 'wall' && b.x === 11 && b.y === 19)!;
+    wall.level = 4;
+    for (const b of m.state.buildings.filter((b) => b.kind === 'cannon')) {
+      b.upgradeStart = m.clock;
+      b.upgradeEnd = m.clock + 3600000;
+    }
+    m.addMagicItem('wall-ring', 1);
+    m.changed();
+  });
+  await selectWall(page);
+  const before = await page.evaluate(() => {
+    const m = window.__game.model;
+    return {
+      gold: m.state.gold,
+      elixir: m.state.elixir,
+      busy: m.busy,
+      builders: m.builders,
+      id: m.selected,
+    };
+  });
+  expect(before.busy).toBe(before.builders);
+  await expect(page.locator('[data-action="wall-upgrade:gold"]')).toBeDisabled();
+  await expect(page.locator('[data-action="wall-upgrade:elixir"]')).toBeDisabled();
+  const ring = page.locator(`[data-action="wall-ring:${before.id}"]`);
+  await expect(ring).toBeEnabled();
+  await ring.tap();
+  await expect
+    .poll(() =>
+      page.evaluate((id) => {
+        const m = window.__game.model,
+          wall = m.state.buildings.find((b) => b.id === id)!;
+        return {
+          level: wall.level,
+          rings: m.magicItemCount('wall-ring'),
+          gold: m.state.gold,
+          elixir: m.state.elixir,
+          busy: m.busy,
+        };
+      }, before.id),
+    )
+    .toEqual({ level: 5, rings: 0, gold: before.gold, elixir: before.elixir, busy: before.busy });
+  await page.screenshot({ path: `output/playtest/wall-ring-busy-builders-${browserName}.png` });
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  expect(
+    await page.evaluate((id) => {
+      const m = window.__game.model;
+      return {
+        level: m.state.buildings.find((b) => b.id === id)!.level,
+        rings: m.magicItemCount('wall-ring'),
+      };
+    }, before.id),
+  ).toEqual({ level: 5, rings: 0 });
+});
