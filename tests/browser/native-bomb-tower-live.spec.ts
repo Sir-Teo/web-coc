@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Five columns by three rows of independent portraits must fit in the physical canvas.
+test.use({ viewport: { width: 2000, height: 1380 }, deviceScaleFactor: 1 });
+
 test('all thirteen live tower assemblies match their independent original-source portraits', async ({
   page,
   browserName,
@@ -9,10 +12,22 @@ test('all thirteen live tower assemblies match their independent original-source
   const report = await page.evaluate(async () => {
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');
-    const { BOMB_TOWER_ART, bombTowerTexture } = await import('/src/game/bomb-tower-art.ts');
+    const { BOMB_TOWER_ART, bombTowerTexture, bombTowerAsset } =
+      await import('/src/game/bomb-tower-art.ts');
     const { bombTowerBounds } = await import('/src/game/bomb-tower-poses.ts');
     scene.paused = true;
     scene.tweens.pauseAll();
+    // The starter village owns no Bomb Tower, so its level-one portrait is lazy.
+    await Promise.all(
+      Array.from({ length: 13 }, async (_, i) => {
+        const key = bombTowerTexture(i + 1);
+        if (scene.textures.exists(key)) return;
+        const image = new Image();
+        image.src = bombTowerAsset(i + 1);
+        await image.decode();
+        scene.textures.addImage(key, image);
+      }),
+    );
     document.querySelector('#ui').style.display = 'none';
     for (const o of scene.children.list) o.setVisible(false);
     const c = scene.cameras.main,
@@ -33,6 +48,8 @@ test('all thirteen live tower assemblies match their independent original-source
     const gl = game.renderer.gl,
       width = 2000,
       height = 1380;
+    if (gl.drawingBufferWidth < width || gl.drawingBufferHeight < height)
+      throw Error('The complete Bomb Tower gallery must fit inside the drawing buffer.');
     const capture = () =>
       new Promise<Uint8Array>((resolve) =>
         game.events.once('postrender', () => {
@@ -63,6 +80,8 @@ test('all thirteen live tower assemblies match their independent original-source
     for (const im of images) im.destroy();
     for (const map of [live.towers, live.defenders])
       for (const view of map.values()) for (const o of view.objects) o.setVisible(true);
+    // Present the restored native scene before saving its screenshot.
+    await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
     const cases = towers.map((tower, i) => {
       let colored = 0,
         total = 0,
@@ -92,6 +111,7 @@ test('all thirteen live tower assemblies match their independent original-source
     });
     return {
       cases,
+      framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
       glError: gl.getError(),
       towers: live.towers.size,
       defenders: live.defenders.size,

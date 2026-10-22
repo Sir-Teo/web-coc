@@ -34,4 +34,8 @@ The first check recreates every output pixel, original sound byte, remapped UV a
 
 `tests/browser/native-bomb-tower-live.spec.ts` additionally compares all 13 complete live assemblies to the independently rendered portraits at the source sampling density. Body scale 1.2 and ground anchor `(0, 80)` match the live portrait geometry; defender scale 108% places its feet on source roof `(0, 0)`. Ability overlays and additive fuse glow are omitted from background-independent portraits. Live fuse glow uses the original isolated additive group.
 
+The live gallery explicitly loads all thirteen reference portraits, including the
+starter village's lazy level-one image, and uses a 2000×1380 physical canvas. A
+readback guard verifies that the full five-column, three-row comparison fits.
+
 [The gameplay presentation notes](../../docs/BOMB-TOWER.md) document local direction/mirror selection, action-frame-11 alignment to recorded launch timestamps, the unchanged ballistic curve, separate death-bomb ground registration and reduced motion. These choices are now implemented and tested locally, but native executable world projection, direction mapping, animation handoff/action-frame semantics and complete particle-engine equivalence remain unverified. Original hit/collapse/explosion particles, projectile trails, pickup/drop effects, all six native samples and replay-clock explosion shake are integrated. Explicit repeated/spawned emitter and sound rows are preserved. The documented damping, single rebound, fade overlap, ground anchors, camera strength conversion and duplicate sound/impulse combination are local interpretations. Source pixel preservation is separate from native executable equivalence.
