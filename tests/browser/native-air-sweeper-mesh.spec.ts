@@ -98,6 +98,8 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
     const expected = await capture();
     image.destroy();
     for (const view of views) for (const object of view.objects) object.setVisible(true);
+    // Present the restored native scene before saving its screenshot.
+    await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
     const cases = reference.cases.map((c) => {
       const largePixels: { x: number; y: number; actual: number[]; expected: number[] }[] = [];
       let colored = 0,

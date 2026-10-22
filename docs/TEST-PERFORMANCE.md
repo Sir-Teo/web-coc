@@ -57,3 +57,5 @@ well as retaining the existing source-pixel acceptance thresholds.
 The X-Bow, Dark Elixir Storage and Goblin mesh galleries reject captures larger than
 the actual framebuffer. After removing the reference image, they capture another
 native frame and require zero changed pixels before saving the preview screenshot.
+The other native mesh and live galleries synchronize screenshots with `postrender`
+after restoring their native objects.

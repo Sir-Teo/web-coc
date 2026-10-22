@@ -69,6 +69,8 @@ test('all 56 live Air Sweeper assemblies match their independent original-source
     for (const im of images) im.destroy();
     for (const map of [live.towers])
       for (const view of map.values()) for (const o of view.objects) o.setVisible(true);
+    // Present the restored native scene before saving its screenshot.
+    await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
     const cases = towers.map((tower, i) => {
       let colored = 0,
         total = 0,
