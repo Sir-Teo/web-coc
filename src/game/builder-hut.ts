@@ -226,7 +226,8 @@ export function builderHutDefenseClass(battle: Battle, building: Building) {
  * Hook for the Defending Builder (DefenceTroopCharacter "Defending Builder", one per armed hut,
  * DefenceTroopLevel 1-3 for hut levels 2-4). `wakeAt` is when the hut observed its WakeUpSpace
  * deployment, `readyAt` when its combat started, `destroyedAt` when the hut fell. All times are
- * battle seconds and reconstruct identically in replays. The character itself is not implemented.
+ * battle seconds and reconstruct identically in replays. The Defending Builder repair model in
+ * defending-builder.ts consumes these timestamps.
  */
 export function builderHutActivation(battle: Battle | null | undefined, building: Building) {
   if (!battle || !armedBuilderHut(battle, building) || !builderHutWeapon(building.level))
