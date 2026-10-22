@@ -2290,6 +2290,7 @@ export class HUD {
     if (key === MAP_CURSOR_KEY) {
       e.preventDefault();
       this.scene.toggleKeyCursor();
+      if (this.scene.keyCursor) document.getElementById('game')?.focus({ preventScroll: true });
       this.announce(
         this.scene.keyCursor
           ? `Map cursor on. ${this.scene.describeKeyCursor()}. Arrows move, Enter acts, Escape leaves.`
@@ -2372,12 +2373,14 @@ export class HUD {
     return true;
   }
   private keydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && !this.panel && this.scene.keyCursor) {
+    // Results are modal even though they do not set this.panel.
+    const result = !!this.model.battle?.finished && !this.model.replay;
+    if (e.key === 'Escape' && !this.panel && !result && this.scene.keyCursor) {
       this.scene.toggleKeyCursor(false);
       this.announce('Map cursor off');
       return;
     }
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && !result) {
       if (this.panel) {
         this.closePanel();
       } else if (this.drawerPanel) {
@@ -2387,7 +2390,7 @@ export class HUD {
       else if (this.model.editing) this.action('edit-done');
       else this.model.cancel();
     }
-    if ((this.panel || this.model.battle?.finished) && e.key === 'Tab') {
+    if ((this.panel || result) && e.key === 'Tab') {
       const dialog = this.modalEl.querySelector<HTMLElement>('[role="dialog"]');
       const items = Array.from(
         dialog?.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href],[tabindex]') ??
@@ -2411,7 +2414,7 @@ export class HUD {
         first?.focus();
       }
     }
-    if (this.panel || typingTarget(e.target instanceof Element ? e.target : null)) return;
+    if (this.panel || result || typingTarget(e.target instanceof Element ? e.target : null)) return;
     if (!e.metaKey && !e.ctrlKey && !e.altKey && this.mapKeys(e)) return;
     if (this.model.editing && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
@@ -2589,8 +2592,8 @@ export class HUD {
     this.updateLive();
   }
   /**
-   * Replaces only the drawer tiles whose markup changed (+ Add touches one tile and
-   * the counters, not the other seventy). Returns false when the structure differs
+   * Replaces only changed drawer tiles, keeping the Army filters mounted while
+   * their input events run. Returns false when the sheet or body structure differs
    * and the caller must rebuild the whole sheet.
    */
   private patchDrawer(prev: DrawerParts | null, next: DrawerParts) {
@@ -2600,17 +2603,37 @@ export class HUD {
       !sheet ||
       prev.open !== next.open ||
       prev.body !== next.body ||
-      prev.items.length !== next.items.length ||
       sheet.children.length !== 3
     )
       return false;
     const [head, body, foot] = Array.from(sheet.children);
     if (body.children.length !== prev.items.length) return false;
     const tiles = Array.from(body.children);
-    if (prev.head !== next.head) head.outerHTML = next.head;
-    next.items.forEach((markup, i) => {
-      if (markup !== prev.items[i]) tiles[i].outerHTML = markup;
-    });
+    if (prev.head !== next.head) {
+      if (this.drawerPanel === 'army') {
+        // Replacing a select during its input event can stall WebKit's native picker.
+        // Only the counters and filter values change in this header.
+        const template = document.createElement('template');
+        template.innerHTML = next.head;
+        const categories = head.querySelector('.army-categories');
+        const nextCategories = template.content.querySelector('.army-categories');
+        if (categories && nextCategories && categories.outerHTML !== nextCategories.outerHTML)
+          categories.replaceWith(nextCategories);
+        for (const [id, value] of [
+          ['army-search', this.armyFilter.query],
+          ['army-show', this.armyFilter.show],
+          ['army-family', this.armyFilter.family],
+        ]) {
+          const field = head.querySelector<HTMLInputElement | HTMLSelectElement>(`#${id}`);
+          if (field && field.value !== value) field.value = value;
+        }
+      } else head.outerHTML = next.head;
+    }
+    if (prev.items.length !== next.items.length) body.innerHTML = next.items.join('');
+    else
+      next.items.forEach((markup, i) => {
+        if (markup !== prev.items[i]) tiles[i].outerHTML = markup;
+      });
     if (prev.foot !== next.foot) foot.outerHTML = next.foot;
     return true;
   }

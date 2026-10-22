@@ -78,6 +78,116 @@ test('Army pickers keep their keyboard input while the map cursor is on', async 
   await expect(family).toBeFocused();
 });
 
+test('Army filters stay mounted through filtering, an empty search and clearing filters', async ({
+  page,
+}) => {
+  await page.locator('.train-add').click();
+  const fields = page.locator('.army-filters input, .army-filters select');
+  await fields.evaluateAll((elements) =>
+    elements.forEach((element) => element.setAttribute('data-retained-filter', 'yes')),
+  );
+  const retained = () =>
+    expect(page.locator('.army-filters [data-retained-filter="yes"]')).toHaveCount(3);
+  await page.locator('#army-family').selectOption('spells');
+  await retained();
+  const search = page.locator('#army-search');
+  await search.fill('no matching army');
+  await expect(page.locator('.army-empty')).toBeVisible();
+  await expect(search).toBeFocused();
+  await retained();
+  await page.locator('[data-action="army-filter-clear"]').click();
+  await expect(search).toHaveValue('');
+  await expect(page.locator('#army-show')).toHaveValue('all');
+  await expect(page.locator('#army-family')).toHaveValue('all');
+  await expect(page.locator('.army-empty')).toHaveCount(0);
+  await retained();
+  const housing = await page.evaluate(
+    () => window.__game.model.armySize + window.__game.model.queuedSize,
+  );
+  await page.locator('[data-action="train:swordsman"]').click();
+  await retained();
+  await expect(page.locator('[data-action="army-jump:troops"]')).toContainText(`${housing + 1}/`);
+});
+
+for (const cursorOn of [false, true])
+  test(`battle results own map keys with the map cursor ${cursorOn ? 'on' : 'off'}`, async ({
+    page,
+  }) => {
+    await page.evaluate(async () => {
+      const { emptyArmy } = await import('/src/game/army.ts');
+      const { model } = window.__game;
+      model.state.army = { ...emptyArmy(), swordsman: 5 };
+      model.startCampaign(0);
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
+    await page.evaluate((on) => {
+      const { model, scene } = window.__game;
+      scene.toggleKeyCursor(on);
+      model.finishBattle();
+    }, cursorOn);
+    const dialog = page.getByRole('dialog');
+    await expect(page.locator('#result-title')).toBeVisible();
+    const snapshot = () =>
+      page.evaluate(() => {
+        const { scene } = window.__game;
+        const camera = scene.cameras.main;
+        return { cursor: scene.keyCursor, zoom: camera.zoom, x: camera.scrollX, y: camera.scrollY };
+      });
+    const before = await snapshot();
+    expect(!!before.cursor).toBe(cursorOn);
+    for (const key of ['=', 'm', 'ArrowRight', 'Escape']) await page.keyboard.press(key);
+    expect(await snapshot()).toEqual(before);
+    await expect(page.locator('#result-title')).toBeVisible();
+    const controls = dialog.getByRole('button');
+    await controls.last().focus();
+    await page.keyboard.press('Tab');
+    await expect(controls.first()).toBeFocused();
+    const home = dialog.getByRole('button', { name: 'Return to village', exact: true });
+    await home.focus();
+    await page.keyboard.press('Enter');
+    await expect(dialog).toHaveCount(0);
+    expect(await page.evaluate(() => window.__game.model.battle)).toBeNull();
+    const homeCursor = await page.evaluate(() => !!window.__game.scene.keyCursor);
+    await page.keyboard.press('m');
+    expect(await page.evaluate(() => !!window.__game.scene.keyCursor)).toBe(!homeCursor);
+  });
+
+test('enabling the map cursor moves focus from battle controls so Enter and Space deploy', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const { emptyArmy } = await import('/src/game/army.ts');
+    const { model } = window.__game;
+    model.state.army = { ...emptyArmy(), swordsman: 5 };
+    model.startCampaign(0);
+  });
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  await page.locator('[data-action="battle-speed"]').focus();
+  await page.keyboard.press('m');
+  await expect(page.locator('#game')).toBeFocused();
+  for (let i = 0; i < 40; i++) {
+    const open = await page.evaluate(() => {
+      const { scene, model } = window.__game;
+      return !model.deployBlocked(scene.keyCursor.x + 0.5, scene.keyCursor.y + 0.5);
+    });
+    if (open) break;
+    await page.keyboard.press(i % 2 ? 'ArrowUp' : 'ArrowLeft');
+  }
+  await expect(page.locator('#map-announcer')).toContainText('open ground');
+  for (const [key, remaining] of [
+    ['Enter', 4],
+    ['Space', 3],
+  ] as const) {
+    await page.keyboard.press(key);
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battle.remaining.swordsman))
+      .toBe(remaining);
+  }
+  expect(await page.evaluate(() => window.__game.model.battleSpeed)).toBe(1);
+});
+
 test('building Info returns focus to its recreated context button without losing selection', async ({
   page,
 }) => {
