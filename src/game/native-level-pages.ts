@@ -33,7 +33,7 @@ export class NativeLevelPages {
   private missing(level: number) {
     return Object.entries(this.graph.textures).filter(
       ([id, t]) =>
-        t.levels?.includes(level) &&
+        (!t.levels || t.levels.includes(level)) &&
         !this.scene.textures.exists(nativeMeshTexture(this.prefix, id)),
     );
   }

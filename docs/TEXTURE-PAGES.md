@@ -31,6 +31,11 @@ Each shape's source rectangle is copied with a two-texel border of its original 
 - Both use `NativeLevelPages` (`src/game/native-level-pages.ts`), which queues untagged and named levels on the scene's loader and fetches any other level's pages on first use.
 - A page that fails to load is asked for again after five seconds.
 
+Readiness includes untagged shared pages. If a common page fails during boot, the fallback
+stays visible until the retry timer or a reconnect recovers it.
+`tests/browser/native-shared-page-recovery.spec.ts` covers Archer Tower body and resident
+pages failing during boot; `tests/native-level-pages.test.ts` also checks selective prefetching.
+
 `tests/browser/native-pages.spec.ts` checks that a starter village draws its buildings and a deployed Barbarian from pages without fetching the Town Hall or Barbarian family atlases. `tests/browser/troop-texture-upload.spec.ts` compares the paged troop uploads with ordinary image uploads, in both facings and after a lost graphics context.
 
 ## Effect
