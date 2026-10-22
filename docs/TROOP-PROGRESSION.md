@@ -1,6 +1,10 @@
-# Home Village troop progression
+# Historical ten-troop progression milestone
 
-September 14, 2026. Every troop now runs to its own original ceiling, read from the pinned [troop reference](../reference/troops/README.md) rather than transcribed: 129 levels across the ten troops this game trains, from the Goblin's ten to the Archer's, Giant's, Wizard's and Wall Breaker's fourteen.
+This records the September 14, 2026 expansion of the original ten-troop roster.
+The later [native client integration](../reference/full-client/README.md) and
+[Town Hall progression](TOWNHALL-TIERS.md) describe the expanded roster and its gates.
+
+At this milestone, every implemented troop reached its original ceiling, read from the pinned [troop reference](../reference/troops/README.md) rather than transcribed: 129 levels across ten troops, from the Goblin's ten to the Archer's, Giant's, Wizard's and Wall Breaker's fourteen.
 
 One value correction came out of the switch. The Barbarian's research carries a trailing 30 minutes at every level, which the earlier transcription dropped from levels 3 to 5: they take 1h30, 2h30 and 4h30, not 1h, 2h and 4h. Nothing else moved.
 
@@ -14,41 +18,41 @@ This is what makes the Laboratory worth raising. Its last level now reaches the 
 
 The indexed [Giant](https://clashofclans.fandom.com/wiki/Giant), [Wizard](https://clashofclans.fandom.com/wiki/Wizard), [Balloon](https://clashofclans.fandom.com/wiki/Balloon), [Goblin](https://clashofclans.fandom.com/wiki/Goblin) and [Wall Breaker](https://clashofclans.fandom.com/wiki/Wall_Breaker?page=2) wiki statistics corroborate laboratory requirements, attack intervals, ranges, hit values and death damage. Movement follows internal tile units: Giant 150 → 1.5 tiles/s, Wizard 200 → 2, Balloon 125 → 1.25, Goblin 400 → 4 and Wall Breaker 300 → 3. See the [movement conversion table](https://clashofclans.wiki.gg/es/wiki/Troop_Movement_Speed); its displayed Balloon tile speed is rounded to one decimal, so the internal 125 value is used directly.
 
-| Troop | Level | HP | DPS | Per hit | Elixir to reach level | Research | Lab |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Giant | 1 | 400 | 12 | 24 | — | — | — |
-| Giant | 2 | 500 | 15 | 30 | 40,000 | 2h | 2 |
-| Giant | 3 | 600 | 20 | 40 | 150,000 | 4h | 4 |
-| Giant | 4 | 700 | 24 | 48 | 400,000 | 6h | 5 |
-| Giant | 5 | 900 | 31 | 62 | 800,000 | 12h | 6 |
-| Wizard | 1 | 75 | 50 | 75 | — | — | — |
-| Wizard | 2 | 90 | 70 | 105 | 120,000 | 4h | 3 |
-| Wizard | 3 | 108 | 90 | 135 | 300,000 | 5h | 4 |
-| Wizard | 4 | 135 | 125 | 187.5 | 600,000 | 12h | 5 |
-| Wizard | 5 | 165 | 170 | 255 | 1,200,000 | 18h | 6 |
-| Balloon | 1 | 150 | 25 | 75 | — | — | — |
-| Balloon | 2 | 180 | 32 | 96 | 100,000 | 4h | 2 |
-| Balloon | 3 | 216 | 48 | 144 | 400,000 | 6h | 4 |
-| Balloon | 4 | 280 | 72 | 216 | 720,000 | 18h | 5 |
-| Balloon | 5 | 390 | 108 | 324 | 1,300,000 | 1d | 6 |
-| Goblin | 1 | 25 | 11 | 11 | — | — | — |
-| Goblin | 2 | 30 | 14 | 14 | 45,000 | 2h | 1 |
-| Goblin | 3 | 36 | 19 | 19 | 100,000 | 3h | 3 |
-| Goblin | 4 | 50 | 24 | 24 | 500,000 | 6h | 5 |
-| Goblin | 5 | 65 | 32 | 32 | 700,000 | 12h | 6 |
-| Wall Breaker | 1 | 20 | 10 | 10 | — | — | — |
-| Wall Breaker | 2 | 24 | 20 | 20 | 80,000 | 3h | 2 |
-| Wall Breaker | 3 | 29 | 25 | 25 | 200,000 | 4h | 4 |
-| Wall Breaker | 4 | 35 | 30 | 30 | 450,000 | 12h | 5 |
-| Wall Breaker | 5 | 53 | 43 | 43 | 1,000,000 | 16h | 6 |
+| Troop        | Level | HP  | DPS | Per hit | Elixir to reach level | Research | Lab |
+| ------------ | ----- | --- | --- | ------- | --------------------- | -------- | --- |
+| Giant        | 1     | 400 | 12  | 24      | —                     | —        | —   |
+| Giant        | 2     | 500 | 15  | 30      | 40,000                | 2h       | 2   |
+| Giant        | 3     | 600 | 20  | 40      | 150,000               | 4h       | 4   |
+| Giant        | 4     | 700 | 24  | 48      | 400,000               | 6h       | 5   |
+| Giant        | 5     | 900 | 31  | 62      | 800,000               | 12h      | 6   |
+| Wizard       | 1     | 75  | 50  | 75      | —                     | —        | —   |
+| Wizard       | 2     | 90  | 70  | 105     | 120,000               | 4h       | 3   |
+| Wizard       | 3     | 108 | 90  | 135     | 300,000               | 5h       | 4   |
+| Wizard       | 4     | 135 | 125 | 187.5   | 600,000               | 12h      | 5   |
+| Wizard       | 5     | 165 | 170 | 255     | 1,200,000             | 18h      | 6   |
+| Balloon      | 1     | 150 | 25  | 75      | —                     | —        | —   |
+| Balloon      | 2     | 180 | 32  | 96      | 100,000               | 4h       | 2   |
+| Balloon      | 3     | 216 | 48  | 144     | 400,000               | 6h       | 4   |
+| Balloon      | 4     | 280 | 72  | 216     | 720,000               | 18h      | 5   |
+| Balloon      | 5     | 390 | 108 | 324     | 1,300,000             | 1d       | 6   |
+| Goblin       | 1     | 25  | 11  | 11      | —                     | —        | —   |
+| Goblin       | 2     | 30  | 14  | 14      | 45,000                | 2h       | 1   |
+| Goblin       | 3     | 36  | 19  | 19      | 100,000               | 3h       | 3   |
+| Goblin       | 4     | 50  | 24  | 24      | 500,000               | 6h       | 5   |
+| Goblin       | 5     | 65  | 32  | 32      | 700,000               | 12h      | 6   |
+| Wall Breaker | 1     | 20  | 10  | 10      | —                     | —        | —   |
+| Wall Breaker | 2     | 24  | 20  | 20      | 80,000                | 3h       | 2   |
+| Wall Breaker | 3     | 29  | 25  | 25      | 200,000               | 4h       | 4   |
+| Wall Breaker | 4     | 35  | 30  | 30      | 450,000               | 12h      | 5   |
+| Wall Breaker | 5     | 53  | 43  | 43      | 1,000,000             | 16h      | 6   |
 
-| Troop | Speed, tiles/s | Reach, tiles | Attack interval | Attack splash | Death damage, levels 1–5 | Death radius |
-| --- | --- | --- | --- | --- | --- | --- |
-| Giant | 1.5 | 1 | 2s | — | — | — |
-| Wizard | 2 | 3 | 1.5s | 0.3 tiles | — | — |
-| Balloon | 1.25 | 0.5 | 3s | 1.2 tiles | 25 / 32 / 48 / 72 / 108 | 1.2 tiles |
-| Goblin | 4 | 0.4 | 1s | — | — | — |
-| Wall Breaker | 3 | 1 | 1s | 2 tiles | 6 / 9 / 13 / 16 / 23 | 2 tiles |
+| Troop        | Speed, tiles/s | Reach, tiles | Attack interval | Attack splash | Death damage, levels 1–5 | Death radius |
+| ------------ | -------------- | ------------ | --------------- | ------------- | ------------------------ | ------------ |
+| Giant        | 1.5            | 1            | 2s              | —             | —                        | —            |
+| Wizard       | 2              | 3            | 1.5s            | 0.3 tiles     | —                        | —            |
+| Balloon      | 1.25           | 0.5          | 3s              | 1.2 tiles     | 25 / 32 / 48 / 72 / 108  | 1.2 tiles    |
+| Goblin       | 4              | 0.4          | 1s              | —             | —                        | —            |
+| Wall Breaker | 3              | 1            | 1s              | 2 tiles       | 6 / 9 / 13 / 16 / 23     | 2 tiles      |
 
 ## Combat and presentation
 

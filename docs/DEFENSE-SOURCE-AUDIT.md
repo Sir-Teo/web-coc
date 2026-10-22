@@ -1,4 +1,9 @@
-# Defense source reconciliation
+# Historical defense source reconciliation
+
+This records the September 11, 2026 audit before the full pinned-client integration.
+For current progression and supported content, see [Town Hall tiers](TOWNHALL-TIERS.md),
+the [native client library](../reference/full-client/README.md) and
+[building footprints](NATIVE-GRID.md).
 
 Checked September 11, 2026. The previous CoC Guide-only audit reproduced older values despite recent crawl dates. This pass replaces costs and durations for all five implemented towers with the undiscounted Home Village tables and corrects low-level Cannon health/damage. Source freshness is assessed from the actual entries and release history, not the search engine's crawl timestamp.
 
@@ -22,13 +27,13 @@ Air Defense's history contains a mislabeled early-level time entry. Its statisti
 
 The corrected full tables are in [Cannon / Archer Tower](DEFENSE-PROGRESSION.md), [Mortar](MORTAR-PROGRESSION.md), and [Air Defense / Wizard Tower](AIR-WIZARD-PROGRESSION.md). Examples of the corrections:
 
-| Destination | Previous gold / time | Corrected gold / time |
-| --- | --- | --- |
-| Cannon 6 | 100,000 / 2h | 60,000 / 1h |
-| Archer Tower 2 | 2,000 / 15m | 2,000 / 2m |
-| Mortar 6 | 560,000 / 18h | 500,000 / 8h |
-| Air Defense 3 | 270,000 / 10h | 210,000 / 6h |
-| Wizard Tower 6 | 1,000,000 / 1d | 660,000 / 12h |
+| Destination    | Previous gold / time | Corrected gold / time |
+| -------------- | -------------------- | --------------------- |
+| Cannon 6       | 100,000 / 2h         | 60,000 / 1h           |
+| Archer Tower 2 | 2,000 / 15m          | 2,000 / 2m            |
+| Mortar 6       | 560,000 / 18h        | 500,000 / 8h          |
+| Air Defense 3  | 270,000 / 10h        | 210,000 / 6h          |
+| Wizard Tower 6 | 1,000,000 / 1d       | 660,000 / 12h         |
 
 ## Save and combat behavior
 
@@ -36,6 +41,11 @@ New purchases use the corrected values. Existing paid construction and upgrade d
 
 Combat version 10 marks the Cannon health/damage correction. Incompatible recordings retain their result summaries. Practice, campaign simulation and replay reproduction use the updated damage; campaign difficulty multipliers remain authored local values.
 
-## Remaining fidelity work
+## Follow-ups and scope
 
-The follow-up [Wall audit](WALL-PROGRESSION.md) corrects low-level health and makes placement free. Cannon TH1 limits permit two pieces. The September 13 pinned-source integration supersedes the earlier level-two exception: Cannon level two requires TH2, while already paid saved upgrades still finish at their original deadlines. See [the original source and compatibility checks](../reference/cannon/README.md). The initial village still starts at TH2; a full native tutorial remains unfinished. Town Hall, resource buildings, army facilities and troop progression still need complete modern tables. Full footprints, level-specific art, the missing catalog and multiplayer remain unfinished. These corrected tower tables do not establish overall production parity.
+The follow-up [Wall audit](WALL-PROGRESSION.md) corrects low-level health and makes placement free. Cannon TH1 limits permit two pieces. The September 13 pinned-source integration supersedes the earlier level-two exception: Cannon level two requires TH2, while already paid saved upgrades still finish at their original deadlines. See [the original source and compatibility checks](../reference/cannon/README.md).
+
+Town Hall, resource, army facility and troop tables, original footprints, level-specific
+art and the asset catalog were added in the later pinned-client integration linked above.
+This audit did not cover a full native tutorial or multiplayer. Its tower corrections
+alone did not establish overall production parity.
