@@ -17,6 +17,7 @@ from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, SOURCES, digest, source
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.scene_graph import capture_graph, crop_textures
+from native_art.shared_assets import owned_asset_paths, redirect_shared_textures
 
 PINS = {
     'fingerprint.json': 'ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b',
@@ -183,9 +184,10 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, references = build()
+    redirect_shared_textures(outputs, references)
     if args.check:
         folder = ROOT / 'public' / PREFIX
-        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == set(outputs), 'Asset membership differs')
+        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == owned_asset_paths(outputs, PREFIX), 'Asset membership differs')
     for name, value in outputs.items():
         target = ROOT / 'public' / name
         if args.check:

@@ -10,6 +10,7 @@ import runpy
 import numpy as np
 from PIL import Image
 from .bundle import ROOT, BUNDLE, source, digest
+from .shared_assets import owned_asset_paths, redirect_shared_textures
 from .sc6 import decode_sctx, require
 from .source_csv import decoded_rows, records
 
@@ -119,10 +120,11 @@ def sounds(effects, prefix, pins):
 
 def write(outputs, references, folder, reference_folder, check, label):
     """Deterministic regeneration; --check compares membership, pixels, bytes and JSON text."""
+    redirect_shared_textures(outputs, references)
     public = ROOT / 'public'
     if check:
         present = {p.relative_to(public).as_posix() for p in (public / folder).rglob('*') if p.is_file()}
-        require(present == set(outputs), 'Asset membership differs')
+        require(present == owned_asset_paths(outputs, folder), 'Asset membership differs')
     for path, value in outputs.items():
         target = public / path
         if check:

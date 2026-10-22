@@ -22,6 +22,13 @@ _MORTAR_PARTICLES = SharedTexture(
     'assets/buildings/bombtower-native/particles/texture-66.png', (733, 461),
     'cfd2394e9b507f9e86a3e231e32527aade8d25afb5189414ed347c1424fc4a18')
 
+_BUILDER_SHADOW = SharedTexture(
+    'assets/buildings/builder-hut-native/texture/texture-8.png', (47, 33),
+    '6ec6bcf02e24f3504a54b5eea32ea1fb94e63e6949a4dcdc581f4a7e75b325b1')
+_FREEZE_SHADOW = SharedTexture(
+    'assets/buildings/freeze-trap-native/texture/texture-18.png', (100, 100),
+    '83033ddecd7cb0c8f24f09ccb8976ad857f34cc413cf48186df1137c552ad499')
+
 # These crops were deduplicated in the shipping inventory. A changed crop must not overwrite
 # another family's page: both its dimensions and every RGBA byte (including transparency) pin it.
 SHARED_TEXTURES = {
@@ -31,6 +38,12 @@ SHARED_TEXTURES = {
     'assets/buildings/wizard-tower-native/body/texture-8.png': _ARCHER_SHADOW,
     'assets/buildings/mortar-native/texture/texture-8.png': _MORTAR_SHADOW,
     'assets/buildings/mortar-native/texture/texture-66.png': _MORTAR_PARTICLES,
+    'assets/buildings/monolith-native/texture-8.png': _BUILDER_SHADOW,
+    'assets/buildings/spell-tower-native/texture-8.png': _BUILDER_SHADOW,
+    'assets/buildings/scattershot-native/texture-8.png': _MORTAR_SHADOW,
+    'assets/buildings/seeking-mine-native/world/texture-18.png': _FREEZE_SHADOW,
+    'assets/buildings/shrink-trap-native/texture/texture-18.png': _FREEZE_SHADOW,
+    'assets/buildings/tornado-trap-native/texture/texture-18.png': _FREEZE_SHADOW,
 }
 
 

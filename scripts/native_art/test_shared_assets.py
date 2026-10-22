@@ -1,4 +1,7 @@
 import hashlib
+import json
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 import unittest
 
@@ -63,6 +66,50 @@ class SharedAssetTests(unittest.TestCase):
             redirect_shared_textures(outputs, references, {'first': shared, 'second': shared})
         self.assertEqual(set(outputs), {'first', 'second'})
         self.assertEqual(references, {'path': 'first'})
+
+    def trap_fixture(self):
+        original = 'assets/buildings/tornado-trap-native/texture/texture-18.png'
+        shared = SHARED_TEXTURES[original]
+        public = Path(__file__).resolve().parents[2] / 'public'
+        with Image.open(public / shared.path) as image:
+            pixels = image.copy()
+        return original, shared, pixels
+
+    def test_trap_writer_checks_shared_outputs_and_rejects_extra_owned_files(self):
+        from native_art import late_traps
+        original, shared, pixels = self.trap_fixture()
+        folder = 'assets/buildings/tornado-trap-native'
+
+        def build():
+            return ({original: pixels, folder + '/sample.ogg': b'sound'},
+                    {'runtime': {'textures': {'18': {'path': original}}}})
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(late_traps, 'ROOT', Path(directory)):
+            root = Path(directory)
+            late_traps.write(*build(), folder, 'reference/trap', False, 'test trap')
+            late_traps.write(*build(), folder, 'reference/trap', True, 'test trap')
+            reference = json.loads((root / 'reference/trap/runtime.json').read_text())
+            self.assertEqual(reference['textures']['18']['path'], shared.path)
+            (root / 'public' / folder / 'unexpected.png').write_bytes(b'stale')
+            with self.assertRaisesRegex(ValueError, 'membership differs'):
+                late_traps.write(*build(), folder, 'reference/trap', True, 'test trap')
+
+    def test_trap_writer_does_not_skip_shared_page_pixels(self):
+        from native_art import late_traps
+        original, shared, pixels = self.trap_fixture()
+        folder = 'assets/buildings/tornado-trap-native'
+
+        def build():
+            return ({original: pixels}, {'runtime': {'path': original}})
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(late_traps, 'ROOT', Path(directory)):
+            late_traps.write(*build(), folder, 'reference/trap', False, 'test trap')
+            image = pixels.copy()
+            red, green, blue, alpha = image.getpixel((0, 0))
+            image.putpixel((0, 0), ((red + 1) % 256, green, blue, alpha))
+            image.save(Path(directory) / 'public' / shared.path)
+            with self.assertRaisesRegex(ValueError, 'Pixels differ'):
+                late_traps.write(*build(), folder, 'reference/trap', True, 'test trap')
 
     def test_pinned_shared_pages_match_the_shipping_pixels(self):
         root = Path(__file__).resolve().parents[2] / 'public'

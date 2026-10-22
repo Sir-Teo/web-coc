@@ -53,6 +53,13 @@ jobs:
           python scripts/import-native-mortar.py --check
           python scripts/import-native-wizard-tower.py --check
           python scripts/import-native-xbow.py --check
+          python scripts/import-native-monolith.py --check
+          python scripts/import-native-scattershot.py --check
+          python scripts/import-native-seeking-mine.py --check
+          python scripts/import-native-shrink-trap.py --check
+          python scripts/import-native-spell-tower.py --check
+          python scripts/import-native-tornado-trap.py --check
+          python scripts/import-native-freeze-trap.py --check
           python scripts/import-native-pumpkin.py --check
           python scripts/import-native-skeleton-trap.py --check
           python scripts/import-native-santa.py --check

@@ -15,6 +15,7 @@ from native_art.bundle import ROOT, BUNDLE, BASE, digest, source
 from native_art.controlled_preview import compose_preview, controlled_nodes, pose_bounds
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.scene_graph import capture_graph, crop_textures
+from native_art.shared_assets import owned_asset_paths, redirect_shared_textures
 from native_art.source_csv import decoded_rows, inherited_levels, records
 
 PINS = {
@@ -268,9 +269,10 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, references = build()
+    redirect_shared_textures(outputs, references)
     folder = ROOT / 'public' / PREFIX
     if args.check:
-        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == set(outputs),
+        require({p.relative_to(ROOT / 'public').as_posix() for p in folder.rglob('*') if p.is_file()} == owned_asset_paths(outputs, PREFIX),
                 'Asset membership differs')
     for path, value in outputs.items():
         target = ROOT / 'public' / path
