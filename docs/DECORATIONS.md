@@ -42,4 +42,7 @@ The client animates the Torch flame, the waving White and Pirate Flags and the t
 
 `tests/decorations.test.ts` checks the Shop rows, the client strings and the portrait sizes; buying, edge placement, overlaps, limits and experience levels; moving and stashing with free re-placement; save validation; the starting obstacles an older save is given kept off its decorations; regrowth around decorations; layouts stashing covered decorations; and wall rows kept off them. `tests/browser/decorations.spec.ts` buys a Torch at phone size, places it on the edge with a tap, waits for its portrait, stashes it through the confirmation, places it again for free and finds it after a reload.
 
-The other browser specs that touch the Shop, placement, obstacles, layouts, wall moves and the phone HUD pass with this change, run on one worker, except `camp-progression:10`, `native-grid:4`, `wall-movement:66` and `game.spec` 48, 162 and 268, which fail with the same assertions on the commit before it.
+Related browser checks cover Shop pickup and drag placement, camp capacity, map-edge
+footprints, legacy village relocation, rejected overlapping imports, wall movement and
+phone controls. Run the relevant checks in Chromium and WebKit using the
+[testing guide](QA.md); native wall visibility is covered in [wall movement](WALL-MOVEMENT.md).
