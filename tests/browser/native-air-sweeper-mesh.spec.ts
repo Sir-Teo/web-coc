@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import witness from '../fixtures/native-air-sweeper-mesh/manifest.json' with { type: 'json' };
 
-test.use({ viewport: { width: 1250, height: 2450 } });
+// The original 2400×4800 source sheet must fit inside the physical drawing buffer.
+test.use({ viewport: { width: 1250, height: 2450 }, deviceScaleFactor: 2 });
 
 test('native Air Sweeper rotating parts, loading frames and original particles match source pixels and survive context restoration', async ({
   page,
@@ -39,6 +40,10 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
       return view;
     });
     const gl = game.renderer.gl;
+    if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+      throw Error(
+        `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+      );
     const glErrors = [gl.getError()];
     const capture = () =>
       new Promise<Uint8Array>((resolve) =>
@@ -137,6 +142,7 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
     };
     return {
       cases,
+      framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
       defaultFramebufferSamples,
       singleTextureChanges: changed(single),
       contextChanges: changed(restored),
@@ -173,7 +179,6 @@ test('native Air Sweeper rotating parts, loading frames and original particles m
   expect(report.contextChanges).toBe(0);
   expect(report.meshes).toBeGreaterThan(300);
   expect(report.groups).toBe(0);
-  // smoke01's source color transform requires one cached texture variant.
   // Source multiply/add colors run in the triangle shader; no recolored page copies are baked.
   expect(report.tintedTextures).toBe(0);
   expect(report.cases).toHaveLength(witness.cases.length);
