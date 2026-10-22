@@ -61,7 +61,11 @@ def build():
             if points:
                 bounds = np.array(points)
                 low, high = bounds.min(axis=0), bounds.max(axis=0)
-                scale = min(2, *((cell - 32) / np.maximum(1, high - low)))
+                # The first nested range frames are only ~30 pixels wide at 2x.
+                # Magnify those source samples so GPU subpixel vertex quantization
+                # does not dominate the independent pixel-center comparison.
+                scale = min(8 if case['export'] == 'shrink_range' else 2,
+                            *((cell - 32) / np.maximum(1, high - low)))
                 center = (cell - (high + low) * scale) / 2
                 root = np.array([[scale, 0, center[0]], [0, scale, center[1]], [0, 0, 1]])
             else:

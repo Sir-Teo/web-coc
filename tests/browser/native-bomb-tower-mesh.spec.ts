@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 import bodyWitness from '../fixtures/native-bomb-tower-mesh/manifest.json' with { type: 'json' };
 import particleWitness from '../fixtures/native-bomb-tower-particles/manifest.json' with { type: 'json' };
 
-test.use({ viewport: { width: 1250, height: 1650 } });
+// Capture the full source sheet inside the physical drawing buffer.
+test.use({ viewport: { width: 1250, height: 1650 }, deviceScaleFactor: 2 });
 
 for (const [label, witness] of [
   ['bodies', bodyWitness],
@@ -24,6 +25,7 @@ for (const [label, witness] of [
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
       const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
+      const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
       scene.tweens.pauseAll();
@@ -51,6 +53,10 @@ for (const [label, witness] of [
         return view;
       });
       const gl = game.renderer.gl;
+      if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+        throw Error(
+          `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+        );
       const glErrors = [gl.getError()];
       const capture = () =>
         new Promise<Uint8Array>((resolve) =>
@@ -105,42 +111,17 @@ for (const [label, witness] of [
       const expected = await capture();
       image.destroy();
       for (const view of views) for (const object of view.objects) object.setVisible(true);
-      const cases = reference.cases.map((c) => {
-        const largePixels: { x: number; y: number; actual: number[]; expected: number[] }[] = [];
-        let colored = 0,
-          total = 0,
-          large = 0,
-          maximum = 0;
-        for (let y = c.y; y < c.y + reference.cell; y++)
-          for (let x = c.x; x < c.x + reference.cell; x++) {
-            const at = ((reference.height - 1 - y) * reference.width + x) * 4;
-            const a = actual.slice(at, at + 3),
-              e = expected.slice(at, at + 3);
-            if (
-              a.some((v, i) => v !== [48, 65, 53][i]) ||
-              e.some((v, i) => v !== [48, 65, 53][i])
-            ) {
-              colored++;
-              const error = Math.max(...a.map((v, i) => Math.abs(v - e[i])));
-              total += error;
-              maximum = Math.max(maximum, error);
-              if (error > 16) {
-                large++;
-                if (largePixels.length < 32)
-                  largePixels.push({ x: x - c.x, y: y - c.y, actual: [...a], expected: [...e] });
-              }
-            }
-          }
-        return {
-          export: c.export,
-          time: c.time,
-          colored,
-          meanError: total / colored,
-          largeFraction: large / colored,
-          maximum,
-          largePixels,
-        };
-      });
+      const frame = { width: reference.width, height: reference.height };
+      const cases = reference.cases.map((c) => ({
+        export: c.export,
+        time: c.time,
+        ...compareSourcePixels(actual, expected, frame, {
+          x: c.x,
+          y: c.y,
+          width: reference.cell,
+          height: reference.cell,
+        }),
+      }));
       const changed = (other: Uint8Array) => {
         let count = 0;
         for (let i = 0; i < multisampled.length; i++) if (multisampled[i] !== other[i]) count++;
@@ -148,6 +129,7 @@ for (const [label, witness] of [
       };
       return {
         cases,
+        framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
         defaultFramebufferSamples,
         singleTextureChanges: changed(single),
         contextChanges: changed(restored),

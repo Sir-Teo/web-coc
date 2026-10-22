@@ -4,7 +4,7 @@
   "cell": 400,
   "background": "#304135",
   "nativePlaybackVerified": false,
-  "rgbaSha256": "9d172a96b23ebbb6207e0cd8cbbe70200c548111fc8f29ccddb4b063719ae950",
+  "rgbaSha256": "fe1ccf2adca9919780d4132e2897a0bdc646bdec5a2bfcecb4a381d40ddad0e9",
   "cases": [
     {
       "graph": "world",
@@ -778,15 +778,15 @@
       "x": 1200,
       "y": 2800,
       "root": [
-        2.0,
+        8.0,
         0.0,
-        199.84150345623493,
+        199.36601382493973,
         0.0,
-        2.0,
-        199.53752418793738
+        8.0,
+        198.15009675174952
       ],
       "empty": false,
-      "rgbaSha256": "b208d541ef99e0dcfb65929aca44f836ee351db94932c05bf4094e9c165bf4e7"
+      "rgbaSha256": "40e8fdb4d448977f4e43f87ed12d552a74c6dcdd51b1ce7d647c95519ee7daf2"
     },
     {
       "graph": "world",
@@ -795,15 +795,15 @@
       "x": 1600,
       "y": 2800,
       "root": [
-        2.0,
+        8.0,
         0.0,
-        200.28461947664618,
+        201.13847790658474,
         0.0,
-        2.0,
-        199.52012869901955
+        8.0,
+        198.0805147960782
       ],
       "empty": false,
-      "rgbaSha256": "83b541d8989a658d5de2a97150c3cd35d7506919f3104bcb889571059809c5e9"
+      "rgbaSha256": "4437cd96b217e2a995acc55b9262ddeecce50b117ac6b4eff18d05584625aa59"
     },
     {
       "graph": "world",

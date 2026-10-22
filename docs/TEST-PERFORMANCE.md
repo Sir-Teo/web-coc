@@ -37,8 +37,8 @@ wall time. Investigate a slow or stuck test before raising its timeout.
 
 ## Source pixel comparisons
 
-The Cannon and Seeking Air Mine source fixtures use [a shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts)
-that reads RGB channels directly, avoiding temporary arrays for every pixel. It validates
+The [shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts) reads
+RGB channels directly, avoiding temporary arrays for every pixel. It validates
 the captured frame and tile bounds and maps top-left tile coordinates into bottom-up
 WebGL readbacks. Background detection, maximum-channel errors, the sixteen-value
 significance threshold and the limit of 32 diagnostic pixels retain their original rules.
