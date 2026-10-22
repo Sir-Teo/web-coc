@@ -1,5 +1,6 @@
 import source from '../../reference/spell-tower/combat.json' with { type: 'json' };
 import type { SpellTowerWeapon } from './late-campaign';
+import { nativeWeapon, type SpellTowerMode } from './native-defense-stats';
 
 export const SPELL_TOWER_LEVELS = source.levels;
 /** Client HERO_RAGE_MULTIPLIER and HERO_RAGE_SPEED_MULTIPLIER, as fractions. */
@@ -61,9 +62,18 @@ export const SPELL_TOWER = Object.fromEntries(
   SPELL_TOWER_WEAPON_KEYS.map((key) => [key, spellTowerWeapon(key)]),
 ) as Record<SpellTowerWeapon, ReturnType<typeof spellTowerWeapon>>;
 export const speedPoints = (points: number) => points / SPEED_POINTS_PER_TILE;
-/** Activation range of a placed tower's weapon (Invisibility 4.5 tiles, the others 9). */
-export const spellTowerRange = (tower: { spellTowerWeapon?: SpellTowerWeapon }) =>
-  SPELL_TOWER[tower.spellTowerWeapon ?? 'rage'].range;
+/** Selected home spell or explicit campaign weapon (Invisibility 4.5 tiles, the others 9). */
+export const spellTowerRange = (tower: {
+  level: number;
+  spellTowerWeapon?: SpellTowerWeapon;
+  spellMode?: SpellTowerMode;
+}) => {
+  if (tower.spellMode) {
+    const weapon = nativeWeapon('spelltower', tower.level, { mode: tower.spellMode });
+    if (weapon) return weapon.range;
+  }
+  return SPELL_TOWER[tower.spellTowerWeapon ?? 'rage'].range;
+};
 export function spellTowerStats(level: number) {
   const row = SPELL_TOWER_LEVELS[level - 1];
   if (!row) throw Error(`Unsupported native Spell Tower level: ${level}`);

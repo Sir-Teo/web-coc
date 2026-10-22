@@ -20,6 +20,12 @@ and bounds. The native renderer holds its `turret_load` idle label in the home v
 preview, so the selected loaded bottle stays visible instead of showing an activating frame.
 Campaign towers without a modern mode retain their existing weapon bodies and cast histories.
 
+The activation ring and scouting range label also follow the selected home spell: Invisibility
+uses 4.5 tiles, while Rage, Poison and Earthquake use 9. Home ranges come from the selected native
+weapon at the tower's level; campaign towers retain their explicit weapon ranges.
+`tests/spell-tower-range.test.ts` checks both field precedences and all legacy weapons;
+`tests/browser/spell-tower-range.spec.ts` checks the rendered ring and a real practice selection.
+
 - `catalog.json`: pinned inputs and SHA-256 hashes, raw `Spell Tower` building rows, the three weapon
   records (all four weapon levels), bottle projectiles, the three hit spells, hero globals, every
   referenced effect/particle row, sounds, texture-region evidence, graph digest and previews.
