@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { GameModel, initialSave, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { validateSave } from '../../src/game/save';
+import { freshNativeCampaign } from '../../src/game/native-campaign';
 
 function fixtureSave() {
   const state = initialSave();
@@ -95,6 +96,51 @@ for (const moduleName of ['late-campaign-scene', 'character-graphs']) {
     expect(errors).toEqual([]);
   });
 }
+
+test('a cold Go to Bat visit downloads shared Ghost coffins through the shipped UI', async ({
+  page,
+  browserName,
+}) => {
+  const state = initialSave();
+  state.tutorial = true;
+  state.buildings = state.buildings.map((building) =>
+    building.kind === 'townhall' || building.kind === 'barracks'
+      ? makeBuilding(building.id, building.kind, building.x, building.y, 3)
+      : building,
+  );
+  state.army = { ...emptyArmy(), giant: 1 };
+  state.nativeCampaign = freshNativeCampaign();
+  state.nativeCampaign.stars.fill(1);
+  const save = new GameModel(state).state;
+  expect(validateSave(save)).toBe(true);
+  expect(save.buildings.some((building) => building.kind === 'skeletontrap')).toBe(false);
+  await page.addInitScript(
+    (save) => localStorage.setItem('crown-clan-save-v1', save),
+    JSON.stringify(save),
+  );
+  const art = JSON.parse(await readFile('reference/skeleton-trap/native.json', 'utf8'));
+  const required = new Set(
+    [1, 3].map((tier) => '/' + art.tiers[tier].atlas.path.replace(/\.png$/, '.webp')),
+  );
+  const loaded = new Set<string>();
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('response', (response) => {
+    const path = new URL(response.url()).pathname;
+    if (response.ok() && required.has(path)) loaded.add(path);
+  });
+  await page.goto('/');
+  await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+  expect(loaded.size).toBe(0);
+  await page.locator('.attack-btn').click();
+  await page.locator('[data-action="attack:75"]').click();
+  await expect(page.locator('.battle-enemy h2')).toHaveText('Go to Bat');
+  await expect.poll(() => [...loaded].sort(), { timeout: 30000 }).toEqual([...required].sort());
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('[data-action="troop:giant"]')).toBeVisible();
+  await page.screenshot({ path: `output/playtest/ghost-trap-built-${browserName}.png` });
+  expect(errors).toEqual([]);
+});
 
 test('a removed built art chunk keeps the release reload path', async ({ page }) => {
   const manifest = JSON.parse(await readFile('dist/.vite/manifest.json', 'utf8'));

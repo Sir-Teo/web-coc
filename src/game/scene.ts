@@ -435,7 +435,8 @@ const ART_FAMILIES: ArtFamily[] = [
     prepared: shrinkArtLoaded,
   },
   {
-    draws: (b) => b.kind === 'skeletontrap',
+    // Ghost Traps reuse these coffins even in villages with no ordinary Skeleton Trap.
+    draws: (b) => b.kind === 'skeletontrap' || b.npc === 'ghost-trap',
     preload: (scene) => {
       for (const level of SKELETON_ART_TIERS) {
         const art = skeletonTrapArt(level);

@@ -5,7 +5,12 @@ import type { Building } from './model';
 import type { SampleCue } from './sample-audio';
 import { ghostTrapFrame } from './ghost-trap-art';
 
-/** The original coffin atlases are preloaded with the Skeleton Trap; nothing else is needed. */
+const COFFINS = [
+  ghostTrapFrame(undefined, 0, false).art.texture,
+  ghostTrapFrame(0, 0, false).art.texture,
+];
+
+/** The shared coffin family owns these atlases, including when only Ghost Traps draw them. */
 export function preloadGhostTrap(scene: Phaser.Scene) {
   void scene;
 }
@@ -25,7 +30,7 @@ export class GhostTrapPresentation implements LatePresentation {
     void audio;
   }
   handles(b: Building) {
-    return b.npc === 'ghost-trap';
+    return b.npc === 'ghost-trap' && COFFINS.every((key) => this.scene.textures.exists(key));
   }
   bounds(b: Building): readonly [number, number, number, number] | undefined {
     if (!this.handles(b)) return undefined;

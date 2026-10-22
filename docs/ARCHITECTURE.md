@@ -133,6 +133,12 @@ pages from every attempt; returning home can still release the whole unused bund
 in-flight retry cannot race that idle release. `tests/browser/late-art-recovery.spec.ts`
 checks fallback visibility, independent families, recovery and GPU-page release after retry.
 
+Ghost Trap coffins belong to the shared Skeleton Trap art family, including a cold visit to
+Go to Bat, which has Ghost Traps and no ordinary Skeleton Traps. The presenter waits for both
+the armed and triggered atlases before hiding its fallback. The family retains any coffin
+textures the home village needs after the late bundle is released.
+`tests/browser/ghost-trap-art-recovery.spec.ts` checks cold loading, reconnect recovery and reuse.
+
 Browsers cache failed module imports, so the late presentation and character-graph imports
 use a shared retry cache: a failed attempt gets a fresh URL, and successful modules stay
 cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
