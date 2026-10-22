@@ -118,7 +118,13 @@ export function fitLayout(
 /** The layout code in a link (`#layout=…` or `?layout=…`), if it carries one. */
 export function layoutFromLink(link: string) {
   const match = /[#?&]layout=([^&#\s]+)/.exec(link);
-  return match ? decodeURIComponent(match[1]) : null;
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    // Keep the damaged candidate so the receiver can report it and disable copying.
+    return match[1];
+  }
 }
 export const layoutLink = (origin: string, code: string) =>
   `${origin}/#layout=${encodeURIComponent(code)}`;

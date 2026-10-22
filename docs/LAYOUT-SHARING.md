@@ -18,6 +18,9 @@ Each coordinate is one character of the URL-safe base-64 alphabet, since the fie
 
 Opening a layout link starts the game with the layouts panel open, and so does pasting one into the address of an open tab. The link is then dropped from the address, so a reload does not offer it again. A link can also be pasted into the box. The box names the Town Hall the layout was made at and how many buildings it places; a damaged link is reported, and its copy buttons stay disabled.
 
+Broken URL escape sequences are reported as damaged layouts, including when a link opens
+a new tab. They do not prevent the village from starting.
+
 **Copy to Layout N** maps the layout onto this village and stores it in that slot. The village itself does not move until **Restore** applies the slot, which Undo reverses as before. Copying over a filled slot can be undone from its card, as a save can.
 
 The mapping works kind by kind. A village's buildings of each kind, in the order they were built, take that kind's places in the code in order. A building the code has no place for is set aside on the first free tiles, scanning from the top corner of the buildable field, clear of the other buildings and of obstacles; the original moves such buildings to its layout storage instead. This covers a village with more Cannons or walls than the layout's village, and a place now under an obstacle. A layout that leaves no room for every building is refused.
@@ -37,5 +40,8 @@ The mapping works kind by kind. A village's buildings of each kind, in the order
 - a link pasted into an open tab, and a link opened in a new tab;
 - the address cleared, the copy into Layout 2 and the restore;
 - a Share falling back to the clipboard;
+- refused sharing and clipboard access offering a selected link for manual copying,
+  then successfully copying that layout into another slot;
+- broken URL escapes on startup and in the pasted link, with recovery after a valid link;
 - a damaged pasted link;
 - the page's own width.

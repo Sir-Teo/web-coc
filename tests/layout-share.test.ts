@@ -65,6 +65,15 @@ describe('layout sharing', () => {
     expect(layoutFromLink('https://example.test/')).toBeNull();
   });
 
+  it.each(['1.5.cannon%3AKM%', '1.5.cannon%ZZKM', '1.5.cannon:%E0%A4%A'])(
+    'keeps damaged URL escapes for the layout receiver to reject: %s',
+    (code) => {
+      const extracted = layoutFromLink(`https://example.test/#layout=${code}`);
+      expect(extracted).toBe(code);
+      expect(decodeLayout(extracted!)).toBeNull();
+    },
+  );
+
   it('maps places onto a village by kind and sets the rest aside clear of obstacles', () => {
     const shared = decodeLayout('1.3.cannon:CCGC.wall:AA')!;
     const buildings = [

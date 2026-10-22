@@ -133,7 +133,8 @@ for (const [name, engine] of Object.entries(engines)) {
   };
   observe(page);
   console.log('Checking', name);
-  await page.goto(baseURL);
+  // A damaged shared URL must still boot the shipping app and explain the bad layout.
+  await page.goto(new URL('#layout=1.2.wall%ZZAB', baseURL).href);
   await page.waitForFunction(
     () => document.querySelector('#loading') === null && document.querySelector('.shop-btn'),
   );
@@ -143,6 +144,13 @@ for (const [name, engine] of Object.entries(engines)) {
       .locator('#game canvas')
       .evaluate((canvas) => [canvas.width, canvas.height, canvas.clientWidth, canvas.clientHeight]),
   ).toEqual([2880, 1920, 1440, 960]);
+  await expect(page.locator('#modal-title')).toHaveText('Saved layouts');
+  await expect(page.locator('.layout-import-summary')).toHaveText('This layout link is damaged.');
+  expect(new URL(page.url()).hash).toBe('');
+  await expect(page.locator('[data-action^="layout-import:"]')).toHaveCount(3);
+  for (const button of await page.locator('[data-action^="layout-import:"]').all())
+    await expect(button).toBeDisabled();
+  await page.locator('.modal [data-action="close"]').click();
   await page.locator('[data-action="collect"]').last().click();
   await page.locator('.resource-flight').first().waitFor({ state: 'attached' });
   await page.locator('.resource-flight').last().waitFor({ state: 'detached' });
@@ -267,6 +275,7 @@ for (const [name, engine] of Object.entries(engines)) {
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
+    layoutLinkRecovery: true,
     shop: true,
     research: true,
     collection: true,

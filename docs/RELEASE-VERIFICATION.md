@@ -17,7 +17,8 @@ preview on an available loopback port, and stops it on success or failure. It ha
 five-minute process timeout (its CI steps allow six) and cannot silently attach to an old
 preview server.
 
-The smoke suite covers village boot, collection, required artwork, shop, research,
+The smoke suite covers village boot from a malformed shared-layout URL (with the damaged
+layout reported and copying disabled), collection, required artwork, shop, research,
 replay controls and transfer of save ownership between tabs in Chromium and WebKit.
 Chromium also checks offline reload and cached gameplay flows. Console errors,
 failed HTTP responses and missing required assets fail the check. The report is

@@ -78,3 +78,82 @@ test('a layout link opened in a new tab offers the layout once the village loads
   await expect(page.locator('.layout-import-summary')).toContainText('Town Hall');
   await expect(page.locator('[data-action="layout-import:0"]')).toBeEnabled();
 });
+
+test('damaged URL escapes open a usable village and report a damaged layout', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/#layout=1.2.wall%ZZAB');
+  await page.waitForFunction(() => window.__game?.scene.artSettled);
+  await expect(page.locator('#modal-title')).toHaveText('Saved layouts');
+  await expect(page.locator('.layout-import-summary')).toHaveText('This layout link is damaged.');
+  expect(new URL(page.url()).hash).toBe('');
+  for (const button of await page.locator('[data-action^="layout-import:"]').all())
+    await expect(button).toBeDisabled();
+  const link = await page.evaluate(async () => {
+    const { layoutLink } = await import('/src/game/layout-share.ts');
+    return layoutLink(location.origin, window.__game.model.layoutShareCode()!);
+  });
+  await page.locator('#layout-code').fill(link);
+  await expect(page.locator('[data-action="layout-import:0"]')).toBeEnabled();
+  await page.locator('#layout-code').fill('https://example.test/#layout=1.2.wall%');
+  await expect(page.locator('.layout-import-summary')).toHaveText('This layout link is damaged.');
+  await expect(page.locator('[data-action="layout-import:0"]')).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
+for (const refused of ['share', 'clipboard'] as const) {
+  test(`a refused ${refused} offers a selected layout link that can still be imported`, async ({
+    page,
+    browserName,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.waitForFunction(() => window.__game?.scene.artSettled);
+    await page.locator('[data-action="skip-tutorial"]').click();
+    await page.evaluate((refused) => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value:
+          refused === 'share'
+            ? async () => {
+                throw new DOMException('Sharing is blocked', 'NotAllowedError');
+              }
+            : undefined,
+      });
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async () => {
+            throw new DOMException('Clipboard access is blocked', 'NotAllowedError');
+          },
+        },
+      });
+    }, refused);
+    await page.getByRole('button', { name: 'Edit village layout', exact: true }).click();
+    await page.locator('[data-action="layouts"]').click();
+    await page.locator('[data-action="layout-save:0"]').click();
+    await page.locator('[data-action="layout-share:0"]').click();
+    await expect(page.locator('#toast')).toContainText('Copy the layout link from the field');
+    const field = page.locator('#layout-code');
+    await expect(field).toBeFocused();
+    const link = await field.inputValue();
+    const code = await page.evaluate(() => window.__game.model.layoutShareCode(0));
+    expect(decodeURIComponent(new URL(link).hash)).toBe(`#layout=${code}`);
+    expect(
+      await field.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd]),
+    ).toEqual([0, link.length]);
+    await page.screenshot({
+      path: `output/playtest/layout-share-manual-${refused}-${browserName}.png`,
+    });
+    await page.locator('[data-action="layout-import:1"]').click();
+    const copied = await page.evaluate(() => {
+      const layouts = window.__game.model.layouts;
+      return {
+        imported: [...layouts[1].slots].sort((a, b) => a.id - b.id),
+        saved: [...layouts[0].slots].sort((a, b) => a.id - b.id),
+      };
+    });
+    expect(copied.imported).toEqual(copied.saved);
+    await expect(field).toHaveValue('');
+  });
+}
