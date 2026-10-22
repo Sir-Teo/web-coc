@@ -51,6 +51,8 @@ const BUNDLED = {
   'reference/archer-tower/defenders-runtime.json': residentLevels,
 };
 const PAGES = '/assets/native-pages/';
+// Bump when page layout or encoding changes: published page URLs are immutable.
+const PAGE_CACHE_VERSION = 1;
 
 /** Reads source textures as RGBA bytes, once per path, from `dir`. */
 function imageReader(dir) {
@@ -85,17 +87,18 @@ async function page(dir, packFile, key) {
   return { json: JSON.stringify(result.pack), pages };
 }
 
-/** Cache key: the pack's bytes and the size and time of each texture it draws. */
+/** Content key shared by development and builds, independent of copied file timestamps. */
 async function packKey(dir, packFile, contents) {
   const text = contents ?? (await fs.readFile(path.join(dir, packFile)));
-  const hash = createHash('sha256').update(text);
+  const hash = createHash('sha256').update(`native-pages:${PAGE_CACHE_VERSION}:`).update(text);
   const pack = JSON.parse(text.toString('utf8'));
   const files = new Set();
   for (const graph of pack.scenes ? Object.values(pack.scenes) : [pack])
     for (const t of Object.values(graph.textures)) files.add(t.path);
   for (const file of [...files].sort()) {
-    const stat = await fs.stat(path.join(dir, file));
-    hash.update(`${file}:${stat.size}:${stat.mtimeMs}`);
+    const bytes = await fs.readFile(path.join(dir, file));
+    hash.update(JSON.stringify([file, bytes.length]));
+    hash.update(bytes);
   }
   return hash.digest('hex').slice(0, 16);
 }

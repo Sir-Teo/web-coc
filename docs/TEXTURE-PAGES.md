@@ -8,11 +8,18 @@ A native family pack (`graph.json` under `public/assets/village-native/` or `pub
 
 Nothing generated is committed. `scripts/vite-native-pages.mjs` is a Vite plugin:
 
-- The dev server answers each pack request with the paged pack and serves its pages from `/assets/native-pages/<key>/`, cached in `node_modules/.cache/native-pages` by the pack's bytes and its textures' sizes and times. The dev server and every browser spec draw what production draws.
+- The dev server answers each pack request with the paged pack and serves its pages from `/assets/native-pages/<key>/`, cached in `node_modules/.cache/native-pages` by the pack's bytes, texture bytes and page-format version. The dev server and every browser spec draw what production draws.
 - `vite build` rewrites each pack in `dist` and writes its pages under `dist/assets/native-pages/`, before `scripts/webp-dist.mjs` compresses them. `NATIVE_PAGES=0` skips it.
 - Graphs bundled into the code are paged as they are imported. The Cannon graph (`reference/cannon/runtime.json`) and the Archer Tower body graph (`reference/archer-tower/buildings-runtime.json`) have no level rows; each export's level comes from its name (`basic_turret_lvl7`, `tower_turret_lvl10_down`), and exports without one (bases, construction, ammunition, debris, ruins, upgrade animations) land on pages every level shares. The rooftop Archer graph (`reference/archer-tower/defenders-runtime.json`) is paged by tower level too: `native.json` names each level's `DefenderCharacter`, `defenders-source.json` lists that character's animations, and each `<animation>_<facing>` export lands on the pages of every tower level that fields it (an export may carry several levels).
 
 A page every level draws carries no level tag; every loader fetches untagged pages for any level.
+
+Page keys ignore file timestamps, so copying identical inputs into a fresh build preserves
+the page URLs and lets the service worker reuse unchanged art across releases. Changed image
+bytes produce new URLs even when their size and timestamp stay the same. Increment
+`PAGE_CACHE_VERSION` in the plugin when page layout or encoding changes. The
+[cache-identity tests](../tests/native-pages-cache-keys.test.ts) cover both runtime packs
+and bundled defense graphs.
 
 A pack is paged only when its average level needs at most 60% of the family's texels and no level needs more than the family atlases held. Overlapping source regions drawn at different levels are copied once per group, so heavily shared families (Battle Drill, the super troops) would cost more than they save and stay as they are.
 
