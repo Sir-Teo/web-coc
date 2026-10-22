@@ -61,6 +61,15 @@ The aliases also cover character and garrison pages and the Drill and Inferno po
 shared with the native catalog. Portrait manifests hash the current source manifest;
 when its paths change, regenerate the portrait manifest even if every pixel stays identical.
 
+The crafted-defense portrait importer reads the original seasonal archetypes and ability
+exports and captures their active frame-zero placements. Its static-scene tests retain
+the ordinary guard against active unsupported masks:
+
+```sh
+PYTHONPATH=scripts .venv/bin/python -m unittest native_art.test_static_scene
+.venv/bin/python scripts/import-native-crafted-art.py --check
+```
+
 The expanded village timeline importer preserves shared pages and established scene order
 before serializing each graph and its index hash. With the source archive fingerprint and
 source files available in the archive or source cache:

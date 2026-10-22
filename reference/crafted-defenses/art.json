@@ -1,0 +1,364 @@
+{
+  "clientVersion": "18.400.21",
+  "bundle": "7f04bdfdc4124b1f49308423bb8f4aa8b137aae3",
+  "sources": {
+    "fingerprint.json": "ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b",
+    "logic/seasonal_defense_archetypes.csv": "875c805702710b513206599e8082a3a3948c2ecaf6b526e129e6472420adbc9b",
+    "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
+    "sc/building_bases.sc": "964584a104a31088dfa6bef53f6c2df7bc9e59e0b05d4354bbe8ac4431c49d9f",
+    "sc/building_bases_0.sctx": "6bc35b86398b457643446ed8d86e24a1fe68d1daadf9155cfe94e13c4840d9fd",
+    "sc/buildings.sc": "f73ec949fc070bc03175d6bb3af8b62d8f607094bf2b343c9846a499a35be0ed",
+    "sc/buildings_50.sctx": "442ef9aa6903691b0933847d7dc119928f815ed71c11ac42ef41c59209d0ccb0",
+    "sc/buildings_53.sctx": "61fa8629eb325771fbbf4085d775b0cd7fceb6f9c34bbed4d82a51d4ae83aa42",
+    "sc/buildings_56.sctx": "6b9bb00ade73cba47bd148ec04f8f904e7bd0c4b05a2fe6160d4fca533aba6d6"
+  },
+  "nativePlaybackVerified": false,
+  "qualification": "Static source frame zero. Only active placements are captured; active masks remain unsupported.",
+  "defenses": {
+    "candle": {
+      "sourceName": "Inferno Candle",
+      "ability": "SeasonalDefenseInfernoCandle",
+      "totalModuleLevelThresholds": [
+        9,
+        18,
+        27
+      ],
+      "portraits": [
+        {
+          "tier": 1,
+          "path": "assets/crafted-native/candle/tier-1.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "inferno_candle_tower_lvl1"
+            }
+          ],
+          "width": 186,
+          "height": 187,
+          "bounds": [
+            -102,
+            -58,
+            84,
+            129
+          ],
+          "originX": 0.5483870967741935,
+          "originY": 0.31016042780748665,
+          "rgbaSha256": "eb231949d531e07580f931f181101c0450d0ec54b4d2d8c9ea68c4dca19139c3"
+        },
+        {
+          "tier": 2,
+          "path": "assets/crafted-native/candle/tier-2.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "inferno_candle_tower_lvl2"
+            }
+          ],
+          "width": 186,
+          "height": 187,
+          "bounds": [
+            -102,
+            -58,
+            84,
+            129
+          ],
+          "originX": 0.5483870967741935,
+          "originY": 0.31016042780748665,
+          "rgbaSha256": "4c879192bd428cdf4081ab1364e2bd824c06aaef533b3cac6c4d2f9e3cf5af74"
+        },
+        {
+          "tier": 3,
+          "path": "assets/crafted-native/candle/tier-3.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "inferno_candle_tower_lvl3"
+            }
+          ],
+          "width": 186,
+          "height": 201,
+          "bounds": [
+            -102,
+            -72,
+            84,
+            129
+          ],
+          "originX": 0.5483870967741935,
+          "originY": 0.3582089552238806,
+          "rgbaSha256": "755d417c70d33d899a886e279ecd1b763387f5ba275970df3ec77892294dee23"
+        },
+        {
+          "tier": 4,
+          "path": "assets/crafted-native/candle/tier-4.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "inferno_candle_tower_lvl4"
+            }
+          ],
+          "width": 183,
+          "height": 205,
+          "bounds": [
+            -99,
+            -72,
+            84,
+            133
+          ],
+          "originX": 0.5409836065573771,
+          "originY": 0.35121951219512193,
+          "rgbaSha256": "5f6fa7a2c6b8d7a487cc12b3b88b2b35f1fa7b0c9bb62f9ad1ad16f7a2cd81eb"
+        }
+      ]
+    },
+    "hunter": {
+      "sourceName": "Headhunter Tower",
+      "ability": "SeasonalDefenseHeadhunterTower",
+      "totalModuleLevelThresholds": [
+        9,
+        18,
+        27
+      ],
+      "portraits": [
+        {
+          "tier": 1,
+          "path": "assets/crafted-native/hunter/tier-1.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "headhunter_tower_lvl1"
+            }
+          ],
+          "width": 169,
+          "height": 163,
+          "bounds": [
+            -85,
+            -34,
+            84,
+            129
+          ],
+          "originX": 0.5029585798816568,
+          "originY": 0.2085889570552147,
+          "rgbaSha256": "abc581acd686ab985582dbf0dc19cfd69d6b162f40af4526901b1c00418239e9"
+        },
+        {
+          "tier": 2,
+          "path": "assets/crafted-native/hunter/tier-2.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "headhunter_tower_lvl2"
+            }
+          ],
+          "width": 169,
+          "height": 160,
+          "bounds": [
+            -85,
+            -31,
+            84,
+            129
+          ],
+          "originX": 0.5029585798816568,
+          "originY": 0.19375,
+          "rgbaSha256": "0effb17a0d263308ad1a63af4a034351d277bee378c9327c4adc383a2349c566"
+        },
+        {
+          "tier": 3,
+          "path": "assets/crafted-native/hunter/tier-3.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "headhunter_tower_lvl3"
+            }
+          ],
+          "width": 169,
+          "height": 160,
+          "bounds": [
+            -85,
+            -31,
+            84,
+            129
+          ],
+          "originX": 0.5029585798816568,
+          "originY": 0.19375,
+          "rgbaSha256": "767e67b1282f285c53d86e216c547421002b4c725312568e2db454a68c7b7621"
+        },
+        {
+          "tier": 4,
+          "path": "assets/crafted-native/hunter/tier-4.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "headhunter_tower_lvl4"
+            }
+          ],
+          "width": 169,
+          "height": 163,
+          "bounds": [
+            -85,
+            -34,
+            84,
+            129
+          ],
+          "originX": 0.5029585798816568,
+          "originY": 0.2085889570552147,
+          "rgbaSha256": "9d3209f685e0aa81433dfdfcd9f45281d54c1eff870246b22a7e64dcd4c69476"
+        }
+      ]
+    },
+    "cake": {
+      "sourceName": "Cake Thrower",
+      "ability": "SeasonalDefenseCakeThrower",
+      "totalModuleLevelThresholds": [
+        9,
+        18,
+        27
+      ],
+      "portraits": [
+        {
+          "tier": 1,
+          "path": "assets/crafted-native/cake/tier-1.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "cake_thrower_lvl1"
+            }
+          ],
+          "width": 180,
+          "height": 229,
+          "bounds": [
+            -96,
+            -100,
+            84,
+            129
+          ],
+          "originX": 0.5333333333333333,
+          "originY": 0.4366812227074236,
+          "rgbaSha256": "1568c4acb218ea48cdb787ea296c2fe02d8aa9e34cc83339d1584335a9232927"
+        },
+        {
+          "tier": 2,
+          "path": "assets/crafted-native/cake/tier-2.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "cake_thrower_lvl2"
+            }
+          ],
+          "width": 180,
+          "height": 229,
+          "bounds": [
+            -96,
+            -100,
+            84,
+            129
+          ],
+          "originX": 0.5333333333333333,
+          "originY": 0.4366812227074236,
+          "rgbaSha256": "6ae8bde6a44a429a1b4eedfa4f6c245b49455633d4654e45fbe1decccfd9f438"
+        },
+        {
+          "tier": 3,
+          "path": "assets/crafted-native/cake/tier-3.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "cake_thrower_lvl3"
+            }
+          ],
+          "width": 180,
+          "height": 229,
+          "bounds": [
+            -96,
+            -100,
+            84,
+            129
+          ],
+          "originX": 0.5333333333333333,
+          "originY": 0.4366812227074236,
+          "rgbaSha256": "5afc115c4b3920dd29136c5891853ff0a2f0b17db203800e1af06f753646160d"
+        },
+        {
+          "tier": 4,
+          "path": "assets/crafted-native/cake/tier-4.png",
+          "frame": 0,
+          "components": [
+            {
+              "source": "sc/building_bases.sc",
+              "export": "season_def_base_3x3"
+            },
+            {
+              "source": "sc/buildings.sc",
+              "export": "cake_thrower_lvl4"
+            }
+          ],
+          "width": 180,
+          "height": 229,
+          "bounds": [
+            -96,
+            -100,
+            84,
+            129
+          ],
+          "originX": 0.5333333333333333,
+          "originY": 0.4366812227074236,
+          "rgbaSha256": "7c5a5c58d9fa348a8d996cdc0e6f057e00fe07c7af74f87dc049b6fd6bb960e6"
+        }
+      ]
+    }
+  }
+}

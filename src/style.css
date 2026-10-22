@@ -6535,6 +6535,9 @@ h3 {
   align-items: center;
   gap: 10px;
 }
+.crafted-card header img {
+  object-fit: contain;
+}
 .crafted-card h3 {
   margin: 0;
   font-size: 17px;

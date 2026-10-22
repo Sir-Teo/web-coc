@@ -76,7 +76,7 @@ import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
-import { CRAFTING_STATION } from './crafted-defenses';
+import { CRAFTING_STATION, craftedArt, type CraftedKind } from './crafted-defenses';
 import { BLACKSMITH_MAX_LEVEL } from './equipment';
 /** Original level-one construction rows for the buildings that had no source table. */
 const sourceBuild = (kind: BuildingKind) => sourceLevel(kind, 1)!;
@@ -1523,7 +1523,8 @@ export const asset = (
   // The empty platform is client art; the Crafted Defenses on it are authored (see ASSETS.md).
   if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
   if (kind === 'helperhut') return '/assets/catalog-native/helper-hut/level-1.png';
-  if (kind.startsWith('crafted-')) return `/assets/crafted/${kind.slice('crafted-'.length)}.png`;
+  if (kind.startsWith('crafted-'))
+    return craftedArt(kind.slice('crafted-'.length) as CraftedKind, level);
   // The late campaign families keep the artwork they shipped with.
   if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);
   if (kind in EXTRA_TROOPS)

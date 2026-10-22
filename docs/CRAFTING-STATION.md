@@ -12,17 +12,36 @@ A free 3×3 defense, one per village, at Town Hall 18. The owner puts one of thr
 
 ## Defenses
 
-| Defense | Attack | Modules |
-| --- | --- | --- |
-| Hot Candle | 10.5 tiles, ground and air, a volley every 0.5 s of 6 single-target flames. Once its melt timer runs, it drops to 4 flames and then 3. Flames double up on units when fewer are in range, as the Inferno Artillery's do. | Hitpoints (Elixir), Damage per flame (Gold), Seconds Active (Dark Elixir) |
-| Hero Hunter | 9.5 tiles, ground and air, one card every 0.6 s. New targets are heroes when any are in range; it doesn't drop its current target for one. Heroes take 2× damage. Each hit poisons for 3 s with the slow, attack slow and damage per second of a Poison Spell of the module's level. | Hitpoints (Dark Elixir), Damage (Elixir), Poison Level (Gold) |
-| Cake-A-Pult | 3–12 tiles, ground and air, one cake every 3 s. The cake splashes 2.5 tiles on its target's layer and leaves a bomb that hits both layers in 2.5 tiles after its fuse. | Hitpoints (Gold), Damage (Dark Elixir), Explosion Damage (Elixir) |
+| Defense     | Attack                                                                                                                                                                                                                                                                               | Modules                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Hot Candle  | 10.5 tiles, ground and air, a volley every 0.5 s of 6 single-target flames. Once its melt timer runs, it drops to 4 flames and then 3. Flames double up on units when fewer are in range, as the Inferno Artillery's do.                                                             | Hitpoints (Elixir), Damage per flame (Gold), Seconds Active (Dark Elixir) |
+| Hero Hunter | 9.5 tiles, ground and air, one card every 0.6 s. New targets are heroes when any are in range; it doesn't drop its current target for one. Heroes take 2× damage. Each hit poisons for 3 s with the slow, attack slow and damage per second of a Poison Spell of the module's level. | Hitpoints (Dark Elixir), Damage (Elixir), Poison Level (Gold)             |
+| Cake-A-Pult | 3–12 tiles, ground and air, one cake every 3 s. The cake splashes 2.5 tiles on its target's layer and leaves a bomb that hits both layers in 2.5 tiles after its fuse.                                                                                                               | Hitpoints (Gold), Damage (Dark Elixir), Explosion Damage (Elixir)         |
 
 Shots borrow client projectile rows for flight and drawing: fire arrows for flames, the Headhunter's cards, and a mortar shell for the cake.
 
 ## Art
 
-The empty platform is the client's own art. The client's art for the three defenses isn't in this repository, so `art/source/crafted-defenses-v1` holds authored SVGs, which `scripts/crafted-defense-art.mjs` rasterizes to `public/assets/crafted`. They're flatter than the client's painted buildings.
+The platform and all three defenses use original client art. Each defense has four
+visual tiers, selected from `seasonal_defense_archetypes.csv` and `special_abilities.csv`.
+The visual tier advances when the three module levels total 9, 18 and 27. The village,
+crafting menu and Move preview use the same selected tier, including after reload.
+
+`scripts/import-native-crafted-art.py` reconstructs the twelve transparent portraits in
+`public/assets/crafted-native/` and records source exports, bounds, registration and RGBA
+hashes in [the art index](../reference/crafted-defenses/art.json). It verifies every input
+against the pinned client before composing the shared base and selected body at frame zero:
+
+```sh
+python scripts/import-native-crafted-art.py --check
+```
+
+These are static source portraits. The frame-zero capture keeps only placements active
+in that pose; Cake-A-Pult's inactive mask branches are excluded, while any active mask
+still fails strict capture. Full native animation, aiming and attack playback are separate
+work. The three defenses share the empty platform's existing game registration, so changing
+kind or tier keeps the base in place. The earlier authored SVGs remain in
+`art/source/crafted-defenses-v1` as historical inputs.
 
 ## Not implemented
 

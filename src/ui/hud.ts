@@ -132,6 +132,7 @@ import {
   CRAFTED_KINDS,
   MODULE_MAX_LEVEL,
   craftedArt,
+  craftedArtTier,
   craftedLevel,
   craftedModules,
   craftedName,
@@ -2877,9 +2878,9 @@ export class HUD {
           return `<li class="crafted-module"><span><b>${mod.name}</b><small>Level ${levels[i]} / ${MODULE_MAX_LEVEL} · ${this.craftedValue(kind, i, levels[i])}</small></span>${action}</li>`;
         })
         .join('');
-      return `<article class="crafted-card ${on ? 'on' : ''}"><header><img src="${craftedArt(kind)}" alt="" width="72" height="72"><div><h3>${craftedName(kind)}</h3><small>Level ${craftedLevel(levels)} / 30</small></div>${on ? `<span class="crafted-state on">${icon('Check', 16)} On the platform</span>` : button(`craft-choose:${kind}`, 'Place', 'game-btn blue')}</header><ul>${modules}</ul></article>`;
+      return `<article class="crafted-card ${on ? 'on' : ''}"><header><img src="${craftedArt(kind, craftedArtTier(kind, levels))}" alt="" width="72" height="72"><div><h3>${craftedName(kind)}</h3><small>Level ${craftedLevel(levels)} / 30</small></div>${on ? `<span class="crafted-state on">${icon('Check', 16)} On the platform</span>` : button(`craft-choose:${kind}`, 'Place', 'game-btn blue')}</header><ul>${modules}</ul></article>`;
     });
-    return `<div class="modal-body crafting-body"><p class="crafting-note">Switching is free and instant; each defense keeps its modules. One module upgrades at a time and needs a free builder.</p>${cards.join('')}<p class="crafting-note">Numbers from the pinned client tables. The defense art is this game’s own.</p></div>`;
+    return `<div class="modal-body crafting-body"><p class="crafting-note">Switching is free and instant; each defense keeps its modules. One module upgrades at a time and needs a free builder.</p>${cards.join('')}</div>`;
   }
   /** "Keep assigned until upgrade is complete" for the next assignment of each helper. */
   private helperRepeat: Record<HelperKind, boolean> = {

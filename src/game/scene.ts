@@ -1,6 +1,13 @@
 import { HeroNativePresentation } from './hero-native-scene';
 import { typingTarget } from '../ui/keyboard';
-import type { CraftedKind } from './crafted-defenses';
+import {
+  CRAFTED_PLATFORM_WIDTH,
+  craftedArt,
+  craftedArtTier,
+  craftedRegistration,
+  craftedTexture,
+  type CraftedKind,
+} from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
@@ -186,11 +193,10 @@ import { unitStatusTint } from './unit-status-tint';
 const AIR_LIFT = 46;
 /** Fixed simulation step, seconds. */
 const TICK = 0.05;
-/** Crafting Station art: the client platform and the authored defenses drawn on it. */
-const STATION_WIDTH = 178;
+/** The original platform and source portraits share one ground registration. */
+const STATION_WIDTH = CRAFTED_PLATFORM_WIDTH;
 /** A hero's roster portrait, its sprite until the native atlas draws it. */
 const heroKey = (kind: HeroKind) => `hero-fallback-${kind}`;
-const CRAFTED_WIDTH = 212;
 /** Stepping budget per frame for a sped-up attack. */
 const MAX_STEP_MS = 10;
 /** Ruin ground renders at half resolution: soft, low-contrast ellipses. */
@@ -746,8 +752,11 @@ export class VillageScene extends Phaser.Scene {
         this.load.image(`${k}-tier3`, asset(k, TIER3_LEVEL));
     }
     // The Crafting Station's defenses likewise: only those the village's stations show.
-    for (const k of new Set(home.map((b) => b.crafted).filter((k) => k !== undefined)))
-      this.load.image(`crafted-${k}`, asset(`crafted-${k}`));
+    for (const building of home) {
+      if (!building.crafted) continue;
+      const tier = craftedArtTier(building.crafted, building.craftedModules?.[building.crafted]);
+      this.load.image(craftedTexture(building.crafted, tier), craftedArt(building.crafted, tier));
+    }
     // Walk sheets of the classic troops the village's army holds: they walk around its camps.
     // The others load when a camp or a battle first shows one (see walkSheet); the dev server
     // loads them all, as it does every art family.
@@ -2763,14 +2772,22 @@ export class VillageScene extends Phaser.Scene {
           .setDepth(6600);
       }
       // A paid upgrade can finish while this preview is open, even within one artwork tier.
+      const moving = this.model.state.buildings.find(
+        (building) => building.id === this.model.moving,
+      );
       this.styleBuilding(
         this.ghost,
         this.model.placement,
         level,
-        this.model.state.buildings.find((b) => b.id === this.model.moving)?.direction,
-        this.model.state.buildings.find((b) => b.id === this.model.moving)?.skeletonMode,
+        moving?.direction,
+        moving?.skeletonMode,
         undefined,
-        this.model.state.buildings.find((b) => b.id === this.model.moving)?.xbowMode,
+        moving?.xbowMode,
+        moving?.spellTowerWeapon,
+        moving?.crafted,
+        moving?.crafted
+          ? craftedArtTier(moving.crafted, moving.craftedModules?.[moving.crafted])
+          : 1,
       );
       this.updateGhost(this.pointerScreen());
     } else {
@@ -2824,6 +2841,7 @@ export class VillageScene extends Phaser.Scene {
       b.xbowMode,
       b.spellTowerWeapon,
       b.crafted,
+      b.crafted ? craftedArtTier(b.crafted, b.craftedModules?.[b.crafted]) : 1,
     )
       .setPosition(p.x, p.y)
       .setDepth(p.y)
@@ -3130,15 +3148,16 @@ export class VillageScene extends Phaser.Scene {
     xbowMode: XbowMode = 'ground',
     spellTowerWeapon?: string,
     crafted?: CraftedKind,
+    craftedTier = 1,
   ): Phaser.GameObjects.Image {
     // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
     if (kind === 'craftingstation') {
-      const wanted = crafted ? `crafted-${crafted}` : 'craftingstation';
+      const wanted = crafted ? craftedTexture(crafted, craftedTier) : 'craftingstation';
       // A defense or platform the boot did not load draws nothing until it arrives.
       const ready =
         wanted === 'craftingstation'
           ? this.deferredTexture(kind, 1, wanted)
-          : this.deferredArt.has(wanted, asset(wanted));
+          : this.deferredArt.has(wanted, craftedArt(crafted!, craftedTier));
       const texture = ready ? wanted : '__DEFAULT';
       if (im.texture.key !== texture) im.setTexture(texture);
       if (!ready)
@@ -3146,12 +3165,17 @@ export class VillageScene extends Phaser.Scene {
           .setOrigin(0.5, 0.8)
           .setFlipX(false)
           .setDisplaySize(STATION_WIDTH, STATION_WIDTH * 0.8);
-      return crafted
-        ? im.setOrigin(0.5, 0.74).setFlipX(false).setDisplaySize(CRAFTED_WIDTH, CRAFTED_WIDTH)
-        : im
-            .setOrigin(0.5, 0.8)
-            .setFlipX(false)
-            .setDisplaySize(STATION_WIDTH, (STATION_WIDTH * im.height) / im.width);
+      if (crafted) {
+        const registration = craftedRegistration(crafted, craftedTier);
+        return im
+          .setOrigin(registration.originX, registration.originY)
+          .setFlipX(false)
+          .setDisplaySize(registration.width, registration.height);
+      }
+      return im
+        .setOrigin(0.5, 0.8)
+        .setFlipX(false)
+        .setDisplaySize(STATION_WIDTH, (STATION_WIDTH * im.height) / im.width);
     }
     // The client portrait at its source scale, anchored where its four tent poles meet the
     // ground: their tips frame the hut's footprint around (68, 78) of the 134×129 image.
@@ -3208,6 +3232,7 @@ export class VillageScene extends Phaser.Scene {
           xbowMode,
           spellTowerWeapon,
           crafted,
+          craftedTier,
         );
       return this.blankBuilding(im, kind);
     }

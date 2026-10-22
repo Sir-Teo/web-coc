@@ -31,6 +31,22 @@ const decorationTimelines = JSON.parse(
 const rosterHeroPortraits = JSON.parse(
   await fs.readFile('reference/full-client/roster.json', 'utf8'),
 ).portraits.filter((row) => row.category === 'hero');
+const craftedPortraits = Object.values(
+  JSON.parse(await fs.readFile('reference/crafted-defenses/art.json', 'utf8')).defenses,
+).flatMap((defense) => defense.portraits);
+
+async function checkCraftedPortraits(page) {
+  return page.evaluate(async (portraits) => {
+    for (const portrait of portraits) {
+      const image = new Image();
+      image.src = '/' + portrait.path.replace(/\.png$/, '.webp');
+      await image.decode();
+      if (image.naturalWidth !== portrait.width || image.naturalHeight !== portrait.height)
+        throw Error(`Wrong crafted-defense portrait dimensions: ${portrait.path}`);
+    }
+    return portraits.length;
+  }, craftedPortraits);
+}
 
 async function checkRosterHeroPortraits(page) {
   return page.evaluate(
@@ -325,9 +341,12 @@ for (const [name, engine] of Object.entries(engines)) {
   expect(nativeDecorations).toBe(4);
   const heroPortraits = await checkRosterHeroPortraits(page);
   expect(heroPortraits).toBe(rosterHeroPortraits.length);
+  const nativeCraftedPortraits = await checkCraftedPortraits(page);
+  expect(nativeCraftedPortraits).toBe(12);
   report[name] = {
     nativeDecorations,
     heroPortraits,
+    nativeCraftedPortraits,
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
@@ -368,9 +387,11 @@ for (const [name, engine] of Object.entries(engines)) {
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
     expect(await checkDecorationTextures(page)).toBe(4);
     expect(await checkRosterHeroPortraits(page)).toBe(rosterHeroPortraits.length);
+    expect(await checkCraftedPortraits(page)).toBe(12);
     report.offline = {
       nativeDecorations: 4,
       heroPortraits: rosterHeroPortraits.length,
+      nativeCraftedPortraits: 12,
       reload: true,
       army: true,
       replay: true,

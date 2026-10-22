@@ -1,4 +1,5 @@
 import catalog from '../../reference/crafted-defenses/catalog.json' with { type: 'json' };
+import artwork from '../../reference/crafted-defenses/art.json' with { type: 'json' };
 import type { Resource } from './data';
 
 /**
@@ -52,7 +53,33 @@ export const CRAFTING_STATION = catalog.station;
 export const MODULE_MAX_LEVEL = 10;
 export const craftedName = (kind: CraftedKind) => DEFENSES[kind].name;
 export const craftedModules = (kind: CraftedKind) => DEFENSES[kind].modules;
-export const craftedArt = (kind: CraftedKind) => `/assets/crafted/${kind}.png`;
+export function craftedPortrait(kind: CraftedKind, tier = 1) {
+  const portrait = artwork.defenses[kind].portraits.find((row) => row.tier === tier);
+  if (!portrait) throw Error(`Unsupported crafted-defense tier: ${kind} ${tier}`);
+  return portrait;
+}
+export const craftedArt = (kind: CraftedKind, tier = 1) => `/${craftedPortrait(kind, tier).path}`;
+export const craftedTexture = (kind: CraftedKind, tier = 1) => {
+  craftedPortrait(kind, tier);
+  return `crafted-${kind}-tier-${tier}`;
+};
+export function craftedArtTier(kind: CraftedKind, levels: ModuleLevels = [1, 1, 1]) {
+  const total = craftedLevel(levels);
+  return (
+    1 + artwork.defenses[kind].totalModuleLevelThresholds.filter((limit) => total >= limit).length
+  );
+}
+/** Match the existing 177x175 empty platform: bounds [-93,-46,84,129], origin (0.5,0.8). */
+export const CRAFTED_PLATFORM_WIDTH = 178;
+export function craftedRegistration(kind: CraftedKind, tier = 1) {
+  const portrait = craftedPortrait(kind, tier);
+  return {
+    originX: (-4.5 - portrait.bounds[0]) / portrait.width,
+    originY: (94 - portrait.bounds[1]) / portrait.height,
+    width: (portrait.width * CRAFTED_PLATFORM_WIDTH) / 177,
+    height: (portrait.height * CRAFTED_PLATFORM_WIDTH) / 177,
+  };
+}
 export const freshCrafting = (): CraftingState => ({
   modules: { candle: [1, 1, 1], hunter: [1, 1, 1], cake: [1, 1, 1] },
 });

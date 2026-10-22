@@ -11,6 +11,7 @@ from native_art.bundle import ROOT, BUNDLE, BASE, digest
 from native_art.sc6 import SC6, decode_sctx, require
 from native_art.source_csv import records, decoded_rows, inherited_levels
 from native_art.scene_graph import capture_graph
+from native_art.static_scene import FrameZeroScene
 from native_art.multiply_scene import nodes, compose
 
 ARCHIVE = ROOT/'art/source/native-client-18.400.21'
@@ -71,8 +72,9 @@ def coordinates(poses):
     return points
 
 
-def render(components):
-    graphs=[(path, name, graph_for(scene(path),[name])) for path,name in components]
+def render(components, *, frame_zero=False):
+    graphs=[(path, name, graph_for(FrameZeroScene(scene(path)) if frame_zero else scene(path),[name]))
+            for path,name in components]
     def qualify(poses,path):
         for pose in poses:
             if 'group' in pose: qualify(pose['group'],path)
