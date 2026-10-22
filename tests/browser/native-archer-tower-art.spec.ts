@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-archer-tower-characters/index.json' with { type: 'json' };
 import defenders from '../fixtures/native-archer-tower-defenders/index.json' with { type: 'json' };
 import buildings from '../fixtures/native-archer-tower-buildings/index.json' with { type: 'json' };
+
+// The viewport below is half the source-sheet size; capture every source pixel at 2×.
+test.use({ deviceScaleFactor: 2 });
+
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = [
