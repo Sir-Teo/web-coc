@@ -63,6 +63,40 @@ test('an empty campaign filter keeps both pickers in the dialog tab order', asyn
   await expect(page.locator('#campaign-filter')).toBeFocused();
 });
 
+test('campaign pickers stay mounted while filtering and jumping to a section', async ({ page }) => {
+  await page.locator('.attack-btn').click();
+  const filter = page.locator('#campaign-filter');
+  const section = page.locator('#campaign-section');
+  await page
+    .locator('.campaign-nav select')
+    .evaluateAll((elements) =>
+      elements.forEach((element) => element.setAttribute('data-retained-picker', 'yes')),
+    );
+  await filter.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(filter).toHaveValue('open');
+  await expect(filter).toBeFocused();
+  await expect(page.locator('.campaign-nav [data-retained-picker="yes"]')).toHaveCount(2);
+  await filter.selectOption('done');
+  await expect(page.locator('.campaign-card')).toHaveCount(0);
+  await section.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(filter).toHaveValue('all');
+  await expect(page.locator('.campaign-card').first()).toBeVisible();
+  await expect(page.locator('.campaign-nav [data-retained-picker="yes"]')).toHaveCount(2);
+  await expect(page.locator('[data-action="attack:0"]')).toBeFocused();
+  // A subsequent model refresh updates the summary and cards without replacing the pickers.
+  await page.evaluate(async () => {
+    const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
+    const m = window.__game.model;
+    m.state.nativeCampaign ??= freshNativeCampaign();
+    m.state.nativeCampaign.stars[0] = 3;
+    m.changed();
+  });
+  await expect(page.locator('#campaign-stage-0 .campaign-stars')).toHaveText('★★★');
+  await expect(page.locator('.campaign-nav [data-retained-picker="yes"]')).toHaveCount(2);
+});
+
 test('Army pickers keep their keyboard input while the map cursor is on', async ({ page }) => {
   await page.keyboard.press('m');
   const cursor = await page.evaluate(() => window.__game.scene.keyCursor);

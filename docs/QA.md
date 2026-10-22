@@ -61,8 +61,9 @@ Enter and Space must deploy rather than activate that previous control. Battle
 results trap focus and block map movement, cursor toggles, zoom and troop shortcuts
 until the player returns to the village or starts another battle.
 Army search and both filter selects must stay mounted while filtering, clearing
-filters and adding troops. Replacing a select during its input event can stall
-WebKit's native picker; restoring focus to a new select does not repair it.
+filters and adding troops. The campaign pickers must also survive filtering,
+section jumps and progress refreshes. Replacing a select during its input event
+can stall WebKit's native picker; restoring focus to a new select does not repair it.
 `RESERVED_KEYS` in `src/game/data.ts` keeps troop and spell shortcuts off these keys.
 
 For visible changes, inspect desktop and phone layouts, pointer/touch input,

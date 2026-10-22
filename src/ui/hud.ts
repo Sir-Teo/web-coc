@@ -2532,7 +2532,13 @@ export class HUD {
       const updatingOpenDialog =
         !!this.modalMarkup &&
         (result ? this.resultShown : this.panel !== null && this.panel === this.lastPanel);
-      root.innerHTML = modalMarkup;
+      if (
+        !updatingOpenDialog ||
+        result ||
+        this.panel !== 'campaign' ||
+        !this.patchCampaign(modalMarkup)
+      )
+        root.innerHTML = modalMarkup;
       // Updating research, settings or results must not fade/shrink an already open dialog.
       if (updatingOpenDialog)
         root.querySelectorAll<HTMLElement>('.modal, .modal-backdrop').forEach((el) => {
@@ -2590,6 +2596,37 @@ export class HUD {
       this.modalEl.querySelector<HTMLElement>('[data-action="home"]')?.focus();
     }
     this.updateLive();
+  }
+  /** Keep native campaign pickers mounted while their input events refresh the list. */
+  private patchCampaign(markup: string) {
+    const template = document.createElement('template');
+    template.innerHTML = markup;
+    const nav = this.modalEl.querySelector('.campaign-nav');
+    const nextNav = template.content.querySelector('.campaign-nav');
+    const filter = nav?.querySelector<HTMLSelectElement>('#campaign-filter');
+    const nextFilter = nextNav?.querySelector<HTMLSelectElement>('#campaign-filter');
+    const parts = ['.modal-header', '.campaign-summary', '.campaign-rules', '.campaign-list'].map(
+      (selector) => [
+        this.modalEl.querySelector(selector),
+        template.content.querySelector(selector),
+      ],
+    );
+    if (!nav || !nextNav || !filter || !nextFilter || parts.some(([old, next]) => !old || !next))
+      return false;
+    for (const [old, next] of parts)
+      if (old && next && old.outerHTML !== next.outerHTML) old.replaceWith(next);
+    const currentContinue = nav.querySelector('[data-action="campaign-continue"]');
+    const nextContinue = nextNav.querySelector('[data-action="campaign-continue"]');
+    if (!currentContinue && nextContinue) nav.prepend(nextContinue);
+    else if (currentContinue && !nextContinue) currentContinue.remove();
+    else if (
+      currentContinue &&
+      nextContinue &&
+      currentContinue.outerHTML !== nextContinue.outerHTML
+    )
+      currentContinue.replaceWith(nextContinue);
+    if (filter.value !== nextFilter.value) filter.value = nextFilter.value;
+    return true;
   }
   /**
    * Replaces only changed drawer tiles, keeping the Army filters mounted while
