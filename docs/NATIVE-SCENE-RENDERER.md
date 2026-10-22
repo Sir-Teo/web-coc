@@ -31,6 +31,19 @@ premultiplication and flipping, retain the bytes for context restoration, and us
 linear filtering with edge clamping. The existing tint cache, ownership tracking
 and per-frame bake budget still apply.
 
+Additive image pages of at most 64 KiB (16,384 texels) receive a one-time raw read
+and explicitly premultiplied upload when first used by an additive leaf. Browser
+image premultiplication can otherwise accumulate rounding error in translucent
+trails. The original image and TextureSource remain available to tint reads,
+frames and page ownership; the replacement wrapper retains its bytes for context
+restoration and is deleted with the source. Each source is attempted once. Larger
+pages, canvases, normal-only images and unavailable raw reads keep their existing
+wrappers.
+
+The original level-3 X-Bow ammunition witness exposed this difference in WebKit:
+mean maximum-channel error fell from 1.00106 to 0.78191, with maximum error reduced
+from 3 to 2. The source image and the mean-error limit of 1 remain unchanged.
+
 ## Verification
 
 `scripts/native-tesla-gpu-fixtures.py` independently samples the pinned original SCTX textures and source UV coordinates. Its twenty-three cases cover trapdoor emergence, all seven isolated electricity groups, secondary attack art, reveal dust, an affine shear, rotated/reflected electrical arcs with their source emitter blend flags, impact textures and all four grass variants. The TypeScript scene sampler is compared recursively against the source poses, including the group boundaries. All 17 setup/reveal timelines are exercised, along with long clocks, seeking, hidden controls and group colors. Alpha addition and unsupported blend modes still fail explicitly.

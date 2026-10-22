@@ -32,6 +32,49 @@ export function nativeMeshesReady(scene: Phaser.Scene, graph: NativeMeshGraph, p
   );
 }
 
+// Tiny additive pages amplify browser image-premultiplication rounding. Keep the correction
+// at most 16K texels per page; larger pages retain their existing upload path.
+const MAX_ADDITIVE_SOURCE_BYTES = 64 << 10;
+const additiveSources = new WeakSet<Phaser.Textures.TextureSource>();
+function prepareAdditiveTexture(scene: Phaser.Scene, key: string) {
+  if (!scene.textures.exists(key)) return;
+  const source = scene.textures.get(key).source[0];
+  const image = source.image;
+  const previous = source.glTexture;
+  if (
+    additiveSources.has(source) ||
+    !(image instanceof HTMLImageElement) ||
+    image.width * image.height * 4 > MAX_ADDITIVE_SOURCE_BYTES ||
+    !previous?.pma ||
+    !source.flipY
+  )
+    return;
+  const renderer = scene.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+  if (renderer.gl.isContextLost()) return;
+  additiveSources.add(source);
+  const pixels = readNativeSourcePixels(image);
+  if (!pixels) return;
+  const data = nativeTintPixels(pixels, [1, 1, 1], [0, 0, 0]);
+  const texture = renderer.createTexture2D(
+    previous.mipLevel,
+    previous.minFilter,
+    previous.magFilter,
+    previous.wrapT,
+    previous.wrapS,
+    renderer.gl.RGBA,
+    data,
+    pixels.width,
+    pixels.height,
+    false,
+    false,
+    false,
+  );
+  // Keep the original image and TextureSource: tint reads, frames and the page owner use them.
+  // The wrapper retains the premultiplied bytes for context restoration and normal deletion.
+  source.glTexture = texture;
+  renderer.deleteTexture(previous);
+}
+
 /**
  * Source multiply/add colors run on the GPU (NATIVE_COLOR_TINT_MODE: tint = multiply, tint2 =
  * add) whenever no texel can saturate (multiply + add <= 1 per channel). The source applies the
@@ -466,6 +509,7 @@ export class NativeMeshView {
       const identityMul = white(m);
       const hasAdd = a[0] !== 0 || a[1] !== 0 || a[2] !== 0;
       let texture = this.baseTexture(pose.texture);
+      if (pose.blend === 8) prepareAdditiveTexture(this.scene, texture);
       let tint = 0xffffff,
         tint2 = 0,
         mode = 0;

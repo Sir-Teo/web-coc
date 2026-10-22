@@ -342,6 +342,15 @@ test('native throw, empty landing and collapse play original samples once; addit
           resolve(pixels);
         }),
       );
+    const effectState = () => {
+      const views = [...scene.bombTowerPresentation.effects.values()];
+      return {
+        effects: views.length,
+        groups: views.reduce((n, v) => n + v.groups.size, 0),
+        objects: views.reduce((n, v) => n + v.objects.filter((o) => o.visible).length, 0),
+      };
+    };
+    const beforeState = effectState();
     const before = await capture();
     const extension = gl.getExtension('WEBGL_lose_context');
     await new Promise<void>((resolve) => {
@@ -361,10 +370,7 @@ test('native throw, empty landing and collapse play original samples once; addit
       extension.loseContext();
     });
     const after = await capture();
-    const groups = [...scene.bombTowerPresentation.effects.values()].reduce(
-      (n, v) => n + v.groups.size,
-      0,
-    );
+    const afterState = effectState();
     return {
       thrown,
       same,
@@ -373,7 +379,8 @@ test('native throw, empty landing and collapse play original samples once; addit
       hitCount,
       trail,
       collapse,
-      groups,
+      beforeState,
+      afterState,
       contextChanges: before.reduce((n, v, i) => n + Number(v !== after[i]), 0),
       glErrors,
     };
@@ -389,7 +396,10 @@ test('native throw, empty landing and collapse play original samples once; addit
   expect(result.hitCount).toBe(1);
   expect(result.trail).toBe(true);
   expect(result.collapse.some((s) => s.sample === 'bombtower-building_destroyed_01')).toBe(true);
-  expect(result.groups).toBeGreaterThan(10);
+  // Single-leaf groups draw as quads; exercise both those particles and isolated buffers.
+  expect(result.beforeState.objects).toBeGreaterThan(10);
+  expect(result.beforeState.groups).toBeGreaterThan(0);
+  expect(result.afterState).toEqual(result.beforeState);
   expect(result.contextChanges).toBe(0);
   expect(result.glErrors).toEqual([0, 0, 0]);
   expect(errors).toEqual([]);
