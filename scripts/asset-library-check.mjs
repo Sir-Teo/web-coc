@@ -15,7 +15,7 @@ for (const [name, type] of [
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(new URL('/asset-catalog.html', baseUrl).href);
-    await page.getByText('823 transparent PNGs').waitFor();
+    await page.getByText('823 transparent images').waitFor();
     await page.locator('.card').first().waitFor();
     await page.screenshot({ path: `output/asset-library-${name}-${device}.png`, fullPage: false });
     const th18 = await page.locator('.card').count();

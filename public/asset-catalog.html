@@ -229,7 +229,7 @@
       <h1>Village asset library</h1>
       <p>
         Explore buildings and traps through Town Hall 18, plus troop, hero, pet, spell and equipment
-        icons. Select an asset to open its transparent PNG.
+        icons. Select an asset to open its transparent image.
       </p>
     </header>
     <main>
@@ -310,7 +310,7 @@
         $('townhall').disabled = !['buildings', 'all'].includes(category);
         $('latest').disabled = $('townhall').disabled;
         $('status').textContent = `${rows.length} assets shown`;
-        $('total').textContent = `${all.length} transparent PNGs`;
+        $('total').textContent = `${all.length} transparent images`;
         $('grid').replaceChildren(
           ...rows.map((r) => {
             const card = document.createElement('a');

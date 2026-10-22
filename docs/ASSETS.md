@@ -45,6 +45,13 @@ under `public/assets/village-native/` and `public/assets/troops-native/` can be 
 on demand. The dev server and production build split their atlases into level pages as
 they serve them; nothing generated is committed (see [level texture pages](TEXTURE-PAGES.md)). Browse `/asset-catalog.html` on the dev server to inspect catalog assets.
 
+The roster catalog lists 271 source icons, including all eight hero portraits.
+Every listed portrait must ship even when the game uses a different image for its
+own menus. With the pinned source inputs available, run
+`python scripts/native-roster-catalog.py --check` to compare pixels and both roster
+manifests. Browser tests cover the hero gallery at desktop and phone sizes;
+production checks decode its converted portraits and verify them again offline.
+
 Some identical native texture crops share one shipping file. The pinned
 [shared texture aliases](../scripts/native_art/shared_assets.py) identify the supported
 source importers and retain their existing shipping paths, including defense, trap,

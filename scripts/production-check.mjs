@@ -28,6 +28,34 @@ const wizardTowerNative = JSON.parse(
 const decorationTimelines = JSON.parse(
   await fs.readFile('reference/decorations/timelines.json', 'utf8'),
 );
+const rosterHeroPortraits = JSON.parse(
+  await fs.readFile('reference/full-client/roster.json', 'utf8'),
+).portraits.filter((row) => row.category === 'hero');
+
+async function checkRosterHeroPortraits(page) {
+  return page.evaluate(
+    async (expected) => {
+      const response = await fetch('/assets/catalog-native/roster.json');
+      if (!response.ok) throw Error('Missing roster catalog');
+      const roster = await response.json();
+      const heroes = roster.portraits.filter((row) => row.category === 'hero');
+      if (heroes.length !== expected.length) throw Error('Wrong hero portrait count');
+      for (const entry of expected) {
+        const hero = heroes.find((row) => row.id === entry.id);
+        if (!hero?.path.endsWith('.webp'))
+          throw Error(`Missing converted hero portrait: ${entry.id}`);
+        const image = new Image();
+        image.src = '/' + hero.path;
+        await image.decode();
+        if (image.naturalWidth !== entry.width || image.naturalHeight !== entry.height)
+          throw Error(`Wrong hero portrait dimensions: ${entry.id}`);
+      }
+      return heroes.length;
+    },
+    rosterHeroPortraits.map(({ id, width, height }) => ({ id, width, height })),
+  );
+}
+
 async function checkDecorationTextures(page) {
   return page.evaluate(async (entries) => {
     for (const [kind, entry] of entries) {
@@ -295,8 +323,11 @@ for (const [name, engine] of Object.entries(engines)) {
   if (requiredArt.size) errors.push(`Missing production artwork: ${[...requiredArt].join(', ')}`);
   const nativeDecorations = await checkDecorationTextures(page);
   expect(nativeDecorations).toBe(4);
+  const heroPortraits = await checkRosterHeroPortraits(page);
+  expect(heroPortraits).toBe(rosterHeroPortraits.length);
   report[name] = {
     nativeDecorations,
+    heroPortraits,
     displayDensity: 2,
     nativeBuffer: true,
     boot: true,
@@ -336,8 +367,10 @@ for (const [name, engine] of Object.entries(engines)) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'output/playtest/offline-army.png' });
     expect(await checkDecorationTextures(page)).toBe(4);
+    expect(await checkRosterHeroPortraits(page)).toBe(rosterHeroPortraits.length);
     report.offline = {
       nativeDecorations: 4,
+      heroPortraits: rosterHeroPortraits.length,
       reload: true,
       army: true,
       replay: true,
