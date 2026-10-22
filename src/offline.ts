@@ -84,6 +84,18 @@ export function registerOfflineSupport() {
     try {
       const registration =
         'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+      // A long-open page may hit a removed chunk before the browser checks for updates.
+      // Share one deadline between discovering and finishing that replacement release.
+      const deadline = performance.now() + 10000;
+      if (registration && !registration.waiting && !registration.installing)
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          const timer = setTimeout(done, 10000);
+          registration.update().then(done, done);
+        });
       const installing = registration?.installing;
       if (installing)
         await new Promise<void>((resolve) => {
@@ -97,7 +109,7 @@ export function registerOfflineSupport() {
             if (installing.state !== 'installing' && installing.state !== 'parsed') done();
           };
           // A slow or failed update must not leave recovery waiting forever.
-          const timer = setTimeout(done, 10000);
+          const timer = setTimeout(done, Math.max(0, deadline - performance.now()));
           installing.addEventListener('statechange', changed);
           changed();
         });

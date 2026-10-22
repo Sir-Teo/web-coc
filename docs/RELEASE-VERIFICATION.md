@@ -55,7 +55,8 @@ can select either engine. Fault-injection cases block service workers. A separat
 uses the real worker with an unavailable preview host to verify cached retry downloads;
 the general smoke suite also checks the ordinary worker and offline boot.
 Two-release cases keep the first worker active and remove an uncached graph while the next
-worker is installing or waiting. Recovery must activate the update and reload once onto its cache.
+release is undiscovered, installing or waiting. Recovery must activate the update and
+reload once onto its cache.
 
 ## Deployment
 

@@ -306,8 +306,8 @@ test('a removed built art chunk keeps the release reload path', async ({ page })
 
 test.describe('recovered art with the real service worker', () => {
   test.use({ serviceWorkers: 'allow' });
-  for (const phase of ['waiting', 'installing'])
-    test(`a removed graph activates ${phase === 'installing' ? 'an' : 'a'} ${phase} release before reloading once`, async ({
+  for (const phase of ['waiting', 'installing', 'undiscovered'])
+    test(`a removed graph reloads once when the next release is ${phase}`, async ({
       page,
       context,
     }) => {
@@ -358,19 +358,27 @@ test.describe('recovered art with the real service worker', () => {
           url: process.env.PRODUCTION_BASE_URL!,
         },
       ]);
-      await page.evaluate(async () => {
-        await (await navigator.serviceWorker.getRegistration())!.update();
-      });
+      if (phase !== 'undiscovered')
+        await page.evaluate(async () => {
+          await (await navigator.serviceWorker.getRegistration())!.update();
+        });
       if (phase === 'waiting') {
         await page.waitForFunction(
           async () => !!(await navigator.serviceWorker.getRegistration())?.waiting,
         );
         await expect(page.locator('#update-ready')).toBeVisible();
-      } else {
+      } else if (phase === 'installing') {
         await page.waitForFunction(async () => {
           const registration = await navigator.serviceWorker.getRegistration();
           return !registration?.waiting && !!registration?.installing;
         });
+      } else {
+        expect(
+          await page.evaluate(async () => {
+            const registration = await navigator.serviceWorker.getRegistration();
+            return !!registration?.waiting || !!registration?.installing;
+          }),
+        ).toBe(false);
       }
       await page.locator('#import-file').setInputFiles({
         name: 'xbow-village.json',
@@ -382,7 +390,7 @@ test.describe('recovered art with the real service worker', () => {
       while (!recovered && Date.now() < deadline) {
         if (navigations > 2)
           throw Error(
-            'The old cached release reloaded again instead of activating its waiting update.',
+            'The old cached release reloaded again instead of switching to the current release.',
           );
         await page.waitForTimeout(100);
       }
