@@ -11,9 +11,9 @@ export async function previousArtRelease(dist = 'dist') {
   const version = current + '-previous-art';
   const graphPath = '/assets/xbow-previous-release.js';
   const manifestPath = `/sw-manifest.${version}.json`;
-  const hashes = JSON.parse(
-    await fs.readFile(path.join(dist, `sw-manifest.${current}.json`), 'utf8'),
-  );
+  const currentManifestPath = `/sw-manifest.${current}.json`;
+  const currentManifest = await fs.readFile(path.join(dist, currentManifestPath.slice(1)), 'utf8');
+  const hashes = JSON.parse(currentManifest);
   const graphBytes = await fs.readFile(path.join(dist, graph));
   const bodies = new Map([[graphPath, graphBytes]]);
   const digest = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 16);
@@ -39,5 +39,5 @@ export async function previousArtRelease(dist = 'dist') {
         `const MANIFEST_URL = ${JSON.stringify(manifestPath)};`,
       ),
   );
-  return { current, version, graphPath, bodies };
+  return { current, version, graphPath, bodies, currentManifestPath, currentManifest };
 }

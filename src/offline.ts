@@ -84,6 +84,23 @@ export function registerOfflineSupport() {
     try {
       const registration =
         'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+      const installing = registration?.installing;
+      if (installing)
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            clearTimeout(timer);
+            installing.removeEventListener('statechange', changed);
+            resolve();
+          };
+          const changed = () => {
+            // Another tab may already have activated the completed worker.
+            if (installing.state !== 'installing' && installing.state !== 'parsed') done();
+          };
+          // A slow or failed update must not leave recovery waiting forever.
+          const timer = setTimeout(done, 10000);
+          installing.addEventListener('statechange', changed);
+          changed();
+        });
       if (updating) return;
       if (registration?.waiting) {
         // Reloading under the old worker repeats its cached HTML and missing chunk URL.

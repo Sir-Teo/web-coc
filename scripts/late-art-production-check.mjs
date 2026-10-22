@@ -24,6 +24,20 @@ const server = await preview({
           const old = /(?:^|;\s*)late-art-release=previous(?:;|$)/.test(
             request.headers.cookie ?? '',
           );
+          const installing = /(?:^|;\s*)late-art-release=installing(?:;|$)/.test(
+            request.headers.cookie ?? '',
+          );
+          if (installing && url.pathname === previous.currentManifestPath) {
+            const timer = setTimeout(() => {
+              response.writeHead(200, {
+                'content-type': 'application/json',
+                'cache-control': 'no-store',
+              });
+              response.end(previous.currentManifest);
+            }, 2000);
+            response.once('close', () => clearTimeout(timer));
+            return;
+          }
           if (old && previous.bodies.has(url.pathname)) {
             response.writeHead(200, {
               'content-type': url.pathname.endsWith('.json')
