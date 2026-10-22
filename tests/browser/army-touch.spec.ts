@@ -24,7 +24,9 @@ const measure = (page: Page) =>
       const box = tile.getBoundingClientRect();
       for (const b of tile.querySelectorAll<HTMLElement>('button')) {
         const kind = b.dataset.action!.split(':')[0];
-        heights[kind] = Math.min(heights[kind] ?? Infinity, b.getBoundingClientRect().height);
+        // Translated drawer coordinates can report 31px as 30.999969px.
+        const height = Math.round(b.getBoundingClientRect().height * 1000) / 1000;
+        heights[kind] = Math.min(heights[kind] ?? Infinity, height);
       }
       const bottom = Math.max(...[...tile.children].map((c) => c.getBoundingClientRect().bottom));
       if (bottom > box.bottom + 0.5) spilled.push(tile.querySelector('h3')!.textContent!.trim());

@@ -47,7 +47,9 @@ test.describe('phone browser gestures', () => {
     expect(await style(page, '#game', 'touch-action')).toBe('none');
     // A long press neither selects HUD text nor raises a callout.
     expect(await selection(page, 'body')).toBe('none');
-    expect(await selection(page, '.army-tray')).toBe('none');
+    // WebKit reports auto on containers even when their parent's used value prevents
+    // selection. Check the troop controls' explicit selection rule instead.
+    expect(await selection(page, '.army-tray button')).toBe('none');
     // ...and the canvas swallows the contextmenu a long press fires.
     const prevented = await page.locator('#game canvas').evaluate((canvas) => {
       const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
