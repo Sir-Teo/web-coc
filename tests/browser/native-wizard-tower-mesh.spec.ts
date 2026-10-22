@@ -4,7 +4,8 @@ import bodyWitness from '../fixtures/native-wizard-tower-mesh/body.json' with { 
 import defenderWitness from '../fixtures/native-wizard-tower-mesh/defender.json' with { type: 'json' };
 import effectWitness from '../fixtures/native-wizard-tower-mesh/effectArt.json' with { type: 'json' };
 
-test.use({ viewport: { width: 750, height: 2700 } });
+// The largest original source sheet is 1440×5280 physical pixels.
+test.use({ viewport: { width: 750, height: 2700 }, deviceScaleFactor: 2 });
 
 for (const witness of [bodyWitness, defenderWitness, effectWitness])
   test(`native Wizard Tower ${witness.category} matches source pixels and survives context restoration`, async ({
@@ -44,6 +45,10 @@ for (const witness of [bodyWitness, defenderWitness, effectWitness])
         return view;
       });
       const gl = game.renderer.gl;
+      if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+        throw Error(
+          `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+        );
       const glErrors = [gl.getError()];
       const capture = () =>
         new Promise<Uint8Array>((resolve) =>
@@ -142,6 +147,7 @@ for (const witness of [bodyWitness, defenderWitness, effectWitness])
       };
       return {
         cases,
+        framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
         defaultFramebufferSamples,
         singleTextureChanges: changed(single),
         contextChanges: changed(restored),
