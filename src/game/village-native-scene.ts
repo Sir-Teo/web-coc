@@ -211,7 +211,7 @@ export class VillageNativePresentation {
   private failed = new Map<string, { attempts: number; retryAt: number }>();
   /** Levels whose textures are uploaded, by pack key, and level loads in flight. */
   private levelsReady = new Map<string, Set<number>>();
-  private pendingLevels = new Set<string>();
+  private pendingLevels = new Map<string, object>();
   /** A level whose pages failed waits this long (performance.now ms) before asking again. */
   private levelRetryAt = new Map<string, number>();
   /** Missing art used by the last render; offscreen failures must not wake cached frames. */
@@ -322,10 +322,11 @@ export class VillageNativePresentation {
     this.wantedLevels.add(job);
     if (!this.alive || !pack || this.pendingLevels.has(job) || this.ready(key, level)) return;
     if ((this.levelRetryAt.get(job) ?? 0) > performance.now()) return;
-    this.pendingLevels.add(job);
+    const request = {};
+    this.pendingLevels.set(job, request);
     try {
       const images = await fetchLevel(key, pack, level);
-      if (!this.alive) return;
+      if (!this.alive || this.pendingLevels.get(job) !== request) return;
       for (const [textureKey, image] of images)
         if (!this.scene.textures.exists(textureKey))
           this.scene.textures.addImage(textureKey, image);
@@ -335,12 +336,12 @@ export class VillageNativePresentation {
       this.revision++;
     } catch (error) {
       // A frame drawing this level asks again after a pause; the fallback sprite covers.
-      if (this.alive) {
+      if (this.alive && this.pendingLevels.get(job) === request) {
         this.levelRetryAt.set(job, performance.now() + 5000);
         console.error('Native village artwork', job, error);
       }
     } finally {
-      this.pendingLevels.delete(job);
+      if (this.pendingLevels.get(job) === request) this.pendingLevels.delete(job);
     }
   }
   private drop(id: number) {
@@ -357,6 +358,53 @@ export class VillageNativePresentation {
     this.wantedPacks.clear();
     this.wantedLevels.clear();
   }
+  /**
+   * Keep GPU pages for home and the current village when changing modes. Decoded images stay
+   * warm for a later visit, but obsolete uploads (including ones still decoding) are released.
+   * Clear the old views first so no mesh references a removed texture.
+   */
+  releaseExcept(buildings: Iterable<Pick<Building, 'kind' | 'level'>>) {
+    this.clear();
+    const wanted = new Map<string, Set<number>>();
+    for (const b of buildings) {
+      if (!hasVillageNativeArt(b.kind)) continue;
+      const key = packKey(b.kind);
+      if (!wanted.has(key)) wanted.set(key, new Set());
+      wanted.get(key)!.add(b.level);
+    }
+    // Mode variants can map a building level to the pack's first row. Retain their pages
+    // while the family is present; base packs can keep exactly the levels the villages own.
+    const levelsFor = (key: string) => wanted.get(key.split('/')[0]);
+    const keepLevel = (key: string, level: number) => {
+      const levels = levelsFor(key);
+      return !!levels && (key.includes('/') || levels.has(level));
+    };
+    for (const job of this.pendingLevels.keys()) {
+      const split = job.lastIndexOf('#');
+      if (!keepLevel(job.slice(0, split), Number(job.slice(split + 1))))
+        this.pendingLevels.delete(job);
+    }
+    for (const [key, ready] of this.levelsReady) {
+      for (const level of ready) if (!keepLevel(key, level)) ready.delete(level);
+      if (!ready.size) this.levelsReady.delete(key);
+    }
+    for (const [key, pack] of this.packs) {
+      const levels = levelsFor(key);
+      for (const [name, graph] of Object.entries(pack.scenes))
+        for (const [id, texture] of Object.entries(graph.textures)) {
+          if (
+            levels &&
+            (key.includes('/') || !texture.levels || texture.levels.some((l) => levels.has(l)))
+          )
+            continue;
+          const textureKey = nativeMeshTexture(`village:${key}:${name}`, id);
+          if (this.scene.textures.exists(textureKey)) {
+            this.scene.textures.remove(textureKey);
+            this.revision++;
+          }
+        }
+    }
+  }
   destroy() {
     this.alive = false;
     if (typeof window !== 'undefined') window.removeEventListener('online', this.online);
@@ -365,7 +413,7 @@ export class VillageNativePresentation {
         off?: (event: string, fn: () => void, context?: unknown) => void;
       }
     )?.off?.('losewebgl', this.invalidate, this);
-    this.clear();
+    this.releaseExcept([]);
   }
   render(
     buildings: Building[],

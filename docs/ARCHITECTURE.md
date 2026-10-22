@@ -110,6 +110,14 @@ notice is shown once per outage instead of asking the player to refresh.
 `tests/browser/village-art-recovery.spec.ts` verifies fallback visibility, recovery in
 place, and reconnect retries for metadata and level pages at home and while scouting.
 
+Changing villages releases native building GPU pages that neither home nor the current
+village uses. Shared pages stay uploaded while any retained level needs them, and mode
+variants stay warm while their building family is present. Decoded images remain cached
+for a later visit, so re-uploading a released page does not download it again. Pending
+uploads own request tokens: leaving a village cancels obsolete uploads, and a late decode
+cannot recreate released textures or clear a newer visit's request.
+`tests/browser/village-art-release.spec.ts` checks release and reuse across village visits.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates

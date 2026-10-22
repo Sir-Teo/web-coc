@@ -2497,7 +2497,10 @@ export class VillageScene extends Phaser.Scene {
       this.combatEffects.clear();
       this.clearBuildingPresentations();
       this.garrisonPresentation.clear();
-      this.villageNativePresentation.clear();
+      this.villageNativePresentation.releaseExcept([
+        ...this.model.state.buildings,
+        ...this.model.buildings,
+      ]);
       // Fetch every native pack the new village draws now, while scouting, rather than as each
       // building first scrolls into view (which swapped fallback sprites to native art in view).
       void prefetchVillageArt(this.model.buildings);
