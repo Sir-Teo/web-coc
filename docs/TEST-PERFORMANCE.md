@@ -34,3 +34,16 @@ Warden's Folly a Defending Builder repairs the last Archer's damage as fast as i
 Do not turn off isolation globally: suites with `vi.mock` need independent module
 state. Increasing worker count can increase memory and contention without improving
 wall time. Investigate a slow or stuck test before raising its timeout.
+
+## Source pixel comparisons
+
+The Cannon source fixture uses [a shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts)
+that reads RGB channels directly, avoiding temporary arrays for every pixel. It validates
+the captured frame and tile bounds and maps top-left tile coordinates into bottom-up
+WebGL readbacks. Background detection, maximum-channel errors, the sixteen-value
+significance threshold and the limit of 32 diagnostic pixels retain their original rules.
+
+[Hand-calculated cases](../tests/source-pixel-comparison.test.ts) cover tile coordinates,
+alpha-independent background detection, threshold boundaries and diagnostic truncation.
+When changing the calculation, compare per-case GPU reports with the previous run as
+well as retaining the existing source-pixel acceptance thresholds.

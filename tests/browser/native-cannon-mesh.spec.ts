@@ -45,6 +45,7 @@ for (const witness of witnesses)
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
       const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
       const { NATIVE_ADDITIVE_TINT_MODE } = await import('/src/game/native-tint-modes.ts');
+      const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
       scene.tweens.pauseAll();
@@ -144,46 +145,21 @@ for (const witness of witnesses)
       const expected = await capture();
       image.destroy();
       for (const view of views) for (const object of view.objects) object.setVisible(true);
-      const cases = reference.cases.map((c) => {
-        const largePixels: { x: number; y: number; actual: number[]; expected: number[] }[] = [];
-        let colored = 0,
-          total = 0,
-          large = 0,
-          maximum = 0;
-        for (let y = c.y; y < c.y + reference.cell; y++)
-          for (let x = c.x; x < c.x + reference.cell; x++) {
-            const at = ((reference.height - 1 - y) * reference.width + x) * 4;
-            const a = actual.slice(at, at + 3),
-              e = expected.slice(at, at + 3);
-            if (
-              a.some((v, i) => v !== [48, 65, 53][i]) ||
-              e.some((v, i) => v !== [48, 65, 53][i])
-            ) {
-              colored++;
-              const error = Math.max(...a.map((v, i) => Math.abs(v - e[i])));
-              total += error;
-              maximum = Math.max(maximum, error);
-              if (error > 16) {
-                large++;
-                if (largePixels.length < 32)
-                  largePixels.push({ x: x - c.x, y: y - c.y, actual: [...a], expected: [...e] });
-              }
-            }
-          }
-        return {
-          export: c.export,
-          time: c.time,
-          controls: c.controls,
-          category: c.category,
-          emitter: c.emitter,
-          colored,
-          empty: c.empty,
-          meanError: colored ? total / colored : 0,
-          largeFraction: colored ? large / colored : 0,
-          maximum,
-          largePixels,
-        };
-      });
+      const frame = { width: reference.width, height: reference.height };
+      const cases = reference.cases.map((c) => ({
+        export: c.export,
+        time: c.time,
+        controls: c.controls,
+        category: c.category,
+        emitter: c.emitter,
+        empty: c.empty,
+        ...compareSourcePixels(actual, expected, frame, {
+          x: c.x,
+          y: c.y,
+          width: reference.cell,
+          height: reference.cell,
+        }),
+      }));
       const changed = (other: Uint8Array) => {
         let count = 0;
         for (let i = 0; i < multisampled.length; i++) if (multisampled[i] !== other[i]) count++;
