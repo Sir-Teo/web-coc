@@ -14,7 +14,8 @@ jobs:
   browser:
     name: ${{ matrix.browser }} (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Native source galleries and later production checks run serially within each shard.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:

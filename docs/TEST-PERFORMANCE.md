@@ -37,6 +37,12 @@ wall time. Investigate a slow or stuck test before raising its timeout.
 
 ## Source pixel comparisons
 
+The on-demand [browser regression workflow](../.github/workflows/browser-regression.yml)
+runs four shards per engine with one browser worker on each runner. Its 120-minute
+job budget covers setup, source reconstruction, the source galleries, gameplay
+checks and production runners. Source captures are substantial work: an October
+2026 local Chromium run took 9.1 minutes for eleven selected gallery strips alone.
+
 The [shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts) reads
 RGB channels directly, avoiding temporary arrays for every pixel. It validates
 the captured frame and tile bounds and maps top-left tile coordinates into bottom-up
