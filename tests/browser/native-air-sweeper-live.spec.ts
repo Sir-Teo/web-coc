@@ -10,6 +10,7 @@ test('all 56 live Air Sweeper assemblies match their independent original-source
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const report = await page.evaluate(async () => {
+    const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');
     const { SWEEPER_ART, sweeperTexture } = await import('/src/game/air-control-art.ts');
@@ -71,30 +72,25 @@ test('all 56 live Air Sweeper assemblies match their independent original-source
       for (const view of map.values()) for (const o of view.objects) o.setVisible(true);
     // Present the restored native scene before saving its screenshot.
     await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
+    const frame = { width, height };
     const cases = towers.map((tower, i) => {
-      let colored = 0,
-        total = 0,
-        large = 0,
-        maximum = 0;
-      for (let y = Math.floor(i / 8) * 330; y < Math.floor(i / 8) * 330 + 330; y++)
-        for (let x = (i % 8) * 300; x < (i % 8) * 300 + 300; x++) {
-          const at = ((height - 1 - y) * width + x) * 4;
-          const a = actual.slice(at, at + 3),
-            e = expected.slice(at, at + 3);
-          if (a.some((v, n) => v !== [48, 65, 53][n]) || e.some((v, n) => v !== [48, 65, 53][n])) {
-            colored++;
-            const error = Math.max(...a.map((v, n) => Math.abs(v - e[n])));
-            total += error;
-            maximum = Math.max(maximum, error);
-            if (error > 16) large++;
-          }
-        }
+      const { colored, meanError, largeFraction, maximum } = compareSourcePixels(
+        actual,
+        expected,
+        frame,
+        {
+          x: (i % 8) * 300,
+          y: Math.floor(i / 8) * 330,
+          width: 300,
+          height: 330,
+        },
+      );
       return {
         level: tower.level,
         direction: tower.direction,
         colored,
-        meanError: total / colored,
-        largeFraction: large / colored,
+        meanError,
+        largeFraction,
         maximum,
         bounds: sweeperBounds(tower.level),
       };

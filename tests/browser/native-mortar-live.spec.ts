@@ -11,6 +11,7 @@ test('all 18 live Mortar assemblies match their independent original-source port
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('#loading').waitFor({ state: 'detached' });
   const report = await page.evaluate(async () => {
+    const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
     const { scene, game } = window.__game;
     const { makeBuilding } = await import('/src/game/model.ts');
     const { MORTAR_ART, mortarTexture } = await import('/src/game/mortar-art.ts');
@@ -71,29 +72,24 @@ test('all 18 live Mortar assemblies match their independent original-source port
       for (const view of map.values()) for (const o of view.objects) o.setVisible(true);
     // Present the restored native scene before saving its screenshot.
     await new Promise<void>((resolve) => game.events.once('postrender', () => resolve()));
+    const frame = { width, height };
     const cases = towers.map((tower, i) => {
-      let colored = 0,
-        total = 0,
-        large = 0,
-        maximum = 0;
-      for (let y = Math.floor(i / 6) * 360; y < Math.floor(i / 6) * 360 + 360; y++)
-        for (let x = (i % 6) * 380; x < (i % 6) * 380 + 380; x++) {
-          const at = ((height - 1 - y) * width + x) * 4;
-          const a = actual.slice(at, at + 3),
-            e = expected.slice(at, at + 3);
-          if (a.some((v, n) => v !== [48, 65, 53][n]) || e.some((v, n) => v !== [48, 65, 53][n])) {
-            colored++;
-            const error = Math.max(...a.map((v, n) => Math.abs(v - e[n])));
-            total += error;
-            maximum = Math.max(maximum, error);
-            if (error > 16) large++;
-          }
-        }
+      const { colored, meanError, largeFraction, maximum } = compareSourcePixels(
+        actual,
+        expected,
+        frame,
+        {
+          x: (i % 6) * 380,
+          y: Math.floor(i / 6) * 360,
+          width: 380,
+          height: 360,
+        },
+      );
       return {
         level: tower.level,
         colored,
-        meanError: total / colored,
-        largeFraction: large / colored,
+        meanError,
+        largeFraction,
         maximum,
         bounds: mortarBounds(tower.level),
       };
