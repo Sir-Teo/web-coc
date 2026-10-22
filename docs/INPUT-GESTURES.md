@@ -16,6 +16,19 @@ mouse drag, then releases on valid ground and checks unchanged buildings, gold a
 cleared placement and ghost state, and a usable shop after returning. Before the fix, every
 interruption left the drag active and the later release placed a Gold Mine.
 
+Tapping Shop artwork picks the building up for a later map tap, as the Shop's hint promises.
+Movement up to seven CSS pixels stays a tap, matching the canvas gesture allowance. The
+sheet moves aside during the press and exposes the map beneath its old position; that
+stationary release must still leave placement armed without buying anything. Only the
+pointer that started a Shop drag may move its ghost, cancel it or finish it.
+The initial pointer event also suppresses compatibility mouse events, which a touch tap
+could otherwise send to the newly exposed canvas and turn into an immediate purchase.
+`tests/browser/shop-pickup.spec.ts` covers mouse clicks, a small wobble, phone taps, a second
+pointer's release and the subsequent deliberate purchase. All four cases failed before
+the fix. A Chromium case uses native touch injection to verify that a deliberate touch
+drag still makes exactly one purchase. Shop interruption tests share their clear-ground fixture and continue to cover
+cancellation and listener cleanup.
+
 ## DOM controls during queued rendering
 
 The native-grid audit reproduced a separate lost-click race: a model update scheduled between a Save button’s pointer press and release replaced the button node, preventing its click. HUD structural rendering now waits until active action pointers release or cancel, and resumes on the next animation frame after click dispatch. Window blur also releases this guard. Live counters keep updating while a pointer is held.

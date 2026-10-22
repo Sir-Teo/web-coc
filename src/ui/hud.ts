@@ -1191,18 +1191,29 @@ export class HUD {
   }
   /**
    * Picks a building up out of the shop drawer and follows the pointer onto the
-   * map, dropping it where the pointer is released. Releasing over the drawer
-   * keeps the building armed for a plain tap instead.
+   * map, dropping it where the pointer is released. A tap or release over the drawer
+   * keeps the building armed for a later map tap instead.
    */
   private beginDrawerDrag(kind: BuildingKind, event: PointerEvent) {
     this.cancelDrawerDrag?.();
     // Pressing a tile to drag (or to scroll the sheet) never opens the gem offer.
     this.model.beginBuild(kind, false);
     if (!this.model.placement) return;
+    // The moving sheet must not retarget compatibility mouse events onto the map.
+    event.preventDefault();
     this.dragging = true;
     document.querySelector('#drawer')?.classList.add('dragging');
     this.scene.trackGhost(event.clientX, event.clientY);
-    const move = (e: PointerEvent) => this.scene.trackGhost(e.clientX, e.clientY);
+    const { pointerId, clientX: startX, clientY: startY } = event;
+    let dragged = false;
+    // Match the canvas's allowance for small pointer movements during a tap.
+    const movedFromPress = (e: PointerEvent) =>
+      Math.hypot(e.clientX - startX, e.clientY - startY) > 7;
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return;
+      dragged ||= movedFromPress(e);
+      this.scene.trackGhost(e.clientX, e.clientY);
+    };
     const finish = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
@@ -1218,17 +1229,19 @@ export class HUD {
       this.render();
     };
     const up = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return;
       if (e.type === 'pointercancel') {
         cancel();
         return;
       }
+      dragged ||= movedFromPress(e);
       finish();
       const overDrawer = document
         .elementFromPoint(e.clientX, e.clientY)
         // Only controls count as "over the HUD": releasing over an info panel (which
         // now catches taps itself) still drops the building on the village beneath.
         ?.closest('#drawer, #hud button, #hud input, .modal-backdrop');
-      if (overDrawer) {
+      if (!dragged || overDrawer) {
         // Treated as a plain pick-up: close the sheet and let them tap the map.
         this.drawerPanel = null;
       } else {
