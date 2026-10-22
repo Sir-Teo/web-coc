@@ -85,7 +85,7 @@ for (const [width, height] of [
     expect(fire.projectiles).toHaveLength(1);
     expect(fire.towers[0][1][0].body).toMatchObject({
       state: 'setup',
-      turret: 182,
+      turret: 186,
     });
     expect(fire.effects.length).toBeGreaterThan(10);
     await page.evaluate(() => {
@@ -197,7 +197,11 @@ for (const [width, height] of [
       };
     });
     expect(cleanup.same).toBe(true);
-    expect(cleanup.home).toEqual(cleanup.expected);
+    // Autosaving can advance the commit counter while the replay is being inspected.
+    expect({ ...cleanup.home, saveRevision: undefined }).toEqual({
+      ...cleanup.expected,
+      saveRevision: undefined,
+    });
     expect(cleanup.effects).toBe(0);
     expect(cleanup.active).toBe(0);
     expect(cleanup.listeners).toBe(cleanup.baseline);

@@ -163,6 +163,12 @@ export class VillageArcherTowers {
       () => undefined,
     );
   }
+  /** Body and resident pages recover independently, including during scouting or a paused replay. */
+  retryPages(levels: Iterable<number>, immediate = false) {
+    const wanted = [...levels];
+    this.pages.retry(wanted, immediate);
+    this.residents.retry(wanted, immediate);
+  }
   handling(id: number, kind: 'pickup' | 'place' | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEvents = this.homeEvents.filter((event) => event.id !== id);
     else {

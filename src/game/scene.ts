@@ -1481,9 +1481,10 @@ export class VillageScene extends Phaser.Scene {
   }
   /**
    * Requests failed art again once its backoff has passed: deferred families something on the
-   * map still draws, and the Cannon batch. Called from sync and on a slow timer from update.
+   * map still draws, the Cannon batch and native defense pages. Called from sync and on a
+   * slow timer from update, including when scouting or a paused replay caches the world frame.
    */
-  private retryFailedArt(now = performance.now()) {
+  private retryFailedArt(now = performance.now(), immediate = false) {
     const due = [...this.failedFamilies]
       .filter(
         ([family, failure]) =>
@@ -1500,12 +1501,24 @@ export class VillageScene extends Phaser.Scene {
       this.heavyArt = undefined;
       void this.loadHeavyArt();
     }
+    const cannons = new Set<number>(),
+      towers = new Set<number>();
+    for (const building of this.model.buildings) {
+      if (building.npc) continue;
+      if (building.kind === 'cannon') cannons.add(building.level);
+      if (building.kind === 'archertower') towers.add(building.level);
+    }
+    const level = this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1;
+    if (this.model.placement === 'cannon') cannons.add(level);
+    if (this.model.placement === 'archertower') towers.add(level);
+    this.cannonPresentation?.retryPages(cannons, immediate);
+    this.villageArcherTowers?.retryPages(towers, immediate);
   }
   /** Back online: every failed request is due now. */
   private retryArtNow = () => {
     for (const failure of this.failedFamilies.values()) failure.retryAt = 0;
     if (this.heavyArtRetryAt !== undefined) this.heavyArtRetryAt = 0;
-    this.retryFailedArt();
+    this.retryFailedArt(performance.now(), true);
   };
   /** Any art the current battle waits for: late campaign families or deferred defenses. */
   private battleArtPending() {
@@ -5911,10 +5924,7 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.battle && !this.heavyArtReady) void this.loadHeavyArt();
     this.releaseLateAssetsWhenIdle(time);
     this.releaseIdleFamilies(time);
-    if (
-      (this.failedFamilies.size || this.heavyArtRetryAt !== undefined) &&
-      time >= this.artRetryCheckAt
-    ) {
+    if (time >= this.artRetryCheckAt) {
       this.artRetryCheckAt = time + 1000;
       this.retryFailedArt();
     }

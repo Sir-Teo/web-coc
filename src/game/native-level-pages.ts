@@ -43,6 +43,7 @@ export class NativeLevelPages {
     const missing = this.missing(level);
     if (!missing.length) {
       this.ready.add(level);
+      this.retryAt.delete(level);
       return true;
     }
     void this.load(level, missing);
@@ -56,6 +57,14 @@ export class NativeLevelPages {
         return missing.length ? this.load(level, missing) : undefined;
       }),
     ).then(() => undefined);
+  }
+  /** Retry failures for levels the current village or placement still needs, even while paused. */
+  retry(levels: Iterable<number>, immediate = false) {
+    for (const level of levels) {
+      if (!this.retryAt.has(level)) continue;
+      if (immediate) this.retryAt.set(level, 0);
+      void this.load(level, this.missing(level));
+    }
   }
   private load(level: number, textures: ReturnType<NativeLevelPages['missing']>) {
     const pending = this.loads.get(level);
@@ -78,6 +87,7 @@ export class NativeLevelPages {
       for (const [key, image] of images)
         if (!this.scene.textures.exists(key)) this.scene.textures.addImage(key, image);
       this.ready.add(level);
+      this.retryAt.delete(level);
       this.revision++;
     } catch (error) {
       // A page that fails is asked for again after five seconds.

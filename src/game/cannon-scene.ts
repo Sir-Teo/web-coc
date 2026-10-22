@@ -91,6 +91,10 @@ export class CannonPresentation {
   prefetchLevels(levels: Iterable<number>) {
     return this.pages.prefetch(levels);
   }
+  /** Scouting can cache the world frame; failed pages still retry on the scene's art timer. */
+  retryPages(levels: Iterable<number>, immediate = false) {
+    if (this.artReady) this.pages.retry(levels, immediate);
+  }
   handling(id: number, kind: CannonHandling | 'cancel', at: number, x: number, y: number) {
     if (kind === 'cancel') this.homeEffects = this.homeEffects.filter((e) => e.id !== id);
     else {

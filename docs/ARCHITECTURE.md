@@ -118,6 +118,13 @@ uploads own request tokens: leaving a village cancels obsolete uploads, and a la
 cannot recreate released textures or clear a newer visit's request.
 `tests/browser/village-art-release.spec.ts` checks release and reuse across village visits.
 
+Cannon and Archer Tower level pages retry through the scene's once-per-second art check,
+independently of world rendering. Only levels in the current village or placement retry;
+going online makes their failures due immediately. Successful uploads clear the cooldown
+and bump the art revision, replacing the fallback even during scouting or a paused replay.
+`tests/browser/native-page-recovery.spec.ts` covers Cannon pages and both Archer Tower
+body and resident pages with temporary failures and reconnects.
+
 ## Storage and offline behavior
 
 A Web Lock coordinates tabs so only one owns the village. Save loading validates
