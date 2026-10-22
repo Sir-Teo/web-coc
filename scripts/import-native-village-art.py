@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Build lazy-loadable native building timelines for the expanded village."""
-import argparse,importlib.util,json,hashlib
+import argparse,importlib.util,json
 from native_art.bundle import ROOT,digest
-from native_art.source_csv import records,decoded_rows,inherited_levels,animation_blocks
+from native_art.source_csv import records,decoded_rows,inherited_levels
 from native_art.scene_graph import crop_textures
+from native_art.shared_assets import redirect_shared_textures
 from native_art.sc6 import require,decode_sctx
 from PIL import Image
 
@@ -38,10 +39,13 @@ def extra_refs(kind,row,tables):
 
 def build(kind,groups,prefix,check):
  scenes={}
- for path,exports in sorted(groups.items()):
+ # The expanded Town Hall pack uses sorted scenes; older packs retain source field order.
+ ordered=sorted(groups.items()) if kind=='townhall' else groups.items()
+ for path,exports in ordered:
   sceneId=path.split('/')[-1].removesuffix('.sc');graph=art.graph_for(art.scene(path),sorted(exports));used={t for commands in graph['shapes'].values() for t,_ in commands}
   decoded={t:decode_sctx(art.read(path.removesuffix('.sc')+f'_{t}.sctx')) for t in used}
   images,_,runtime=crop_textures(graph,decoded,f'{prefix}/{sceneId}')
+  redirect_shared_textures(images,runtime)
   for relative,image in images.items():
    target_file=ROOT/'public'/relative
    if check:

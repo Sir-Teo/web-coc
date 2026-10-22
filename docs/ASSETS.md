@@ -47,7 +47,7 @@ they serve them; nothing generated is committed (see [level texture pages](TEXTU
 
 Some identical native texture crops share one shipping file. The pinned
 [shared texture aliases](../scripts/native_art/shared_assets.py) identify the supported
-defense, trap, character, garrison and village portrait importers and retain their existing shipping paths. Each alias records its decoded RGBA hash and dimensions. The
+defense, trap, character, garrison, village pack and portrait importers and retain their existing shipping paths. Each alias records its decoded RGBA hash and dimensions. The
 importer validates every crop before redirecting output and reference paths, including
 RGB values under transparent pixels; a different crop cannot overwrite another family's page.
 Shared outputs are verified alongside owned assets, while directory membership checks

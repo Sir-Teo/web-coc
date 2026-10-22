@@ -61,6 +61,15 @@ The aliases also cover character and garrison pages and the Drill and Inferno po
 shared with the native catalog. Portrait manifests hash the current source manifest;
 when its paths change, regenerate the portrait manifest even if every pixel stays identical.
 
+The expanded village timeline importer preserves shared pages and established scene order
+before serializing each graph and its index hash. With the source archive fingerprint and
+source files available in the archive or source cache:
+
+```sh
+.venv/bin/python scripts/import-native-village-art.py --check
+.venv/bin/python scripts/import-native-village-art.py --check --only goldmine
+```
+
 ## Browser tooling
 
 Install Playwright browsers before running browser scripts. `npm run test:production`

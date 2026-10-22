@@ -128,6 +128,119 @@ SHARED_TEXTURES = {
     'assets/inferno-native/portrait/12-single.png': SharedTexture(
         'assets/catalog-native/inferno-tower/level-12.png', (173, 178),
         'a6167d61910801b763ce8dcca1f8ad21f8f54d55663cb804165df18c04830812'),
+    'assets/village-native/airdefense/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-2.png', (128, 97),
+        '3c272231b0bd802ba75e2882042e4f91e2230815137b773171c4abfacc668859'),
+    'assets/village-native/airdefense/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/tesla-native/texture-25.png', (256, 189),
+        '4e26718cfd6d8b41d70f6e51cad62ab10751fc117b75a6ac63ea4a65d3ce508e'),
+    'assets/village-native/airdefense/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/barracks/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/blacksmith/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/scattershot-native/texture-25.png', (256, 407),
+        'f5305428e7b770dea164c4fe95afba81bf22f59f66222a22e151803c1c283faf'),
+    'assets/village-native/blacksmith/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/builder/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/builder-hut-native/texture/texture-25.png', (256, 415),
+        'e08e79a876b4c1559cd3b155f846bd3406a7f1608840d07eac90bd6525bcb927'),
+    'assets/village-native/builder/buildings/texture-8.png': _BUILDER_SHADOW,
+    'assets/village-native/darkbarracks/buildings/texture-25.png': SharedTexture(
+        'assets/village-native/barracks/buildings/texture-25.png', (256, 384),
+        '0a4fa342cadf3562c74cbd47a1eae9a18d1785b62cf183bb1f90059e167f9bb3'),
+    'assets/village-native/darkbarracks/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/eagle/building_bases/texture-0.png': SharedTexture(
+        'assets/buildings/eagle-artillery-native/base/texture-0.png', (58, 85),
+        '5287a992727b56266f144fe455784dd58d9bd6cb363271d6a998f5a14b8e62c6'),
+    'assets/village-native/eagle/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/eagle-artillery-native/texture-2.png', (2, 2),
+        'a19d56e2cd0a4873180b81641f7278b3db727f3c42ae918364b1c8c0794224aa'),
+    'assets/village-native/eagle/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/eagle-artillery-native/texture-25.png', (256, 283),
+        'd412ea104111efb3ed8a01c9a622da15f95ff7e8a6f9e3515fb7c0c00c91fedc'),
+    'assets/village-native/elixirstorage/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-2.png', (128, 97),
+        '3c272231b0bd802ba75e2882042e4f91e2230815137b773171c4abfacc668859'),
+    'assets/village-native/elixirstorage/buildings/texture-41.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-41.png', (128, 98),
+        '169d0551b6915493c2cb3c12aade750204fee92ac9d34fb9b30fa221ffa1d960'),
+    'assets/village-native/firespitter/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-2.png', (128, 97),
+        '3c272231b0bd802ba75e2882042e4f91e2230815137b773171c4abfacc668859'),
+    'assets/village-native/firespitter/buildings/texture-8.png': SharedTexture(
+        'assets/village-native/darkspellfactory/buildings/texture-8.png', (87, 128),
+        '04586f06b78cf38f2fbe40e98bb1081787feea022662e64554df8d7218a358a7'),
+    'assets/village-native/goldmine/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/goldstorage/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-2.png', (128, 97),
+        '3c272231b0bd802ba75e2882042e4f91e2230815137b773171c4abfacc668859'),
+    'assets/village-native/goldstorage/buildings/texture-8.png': SharedTexture(
+        'assets/village-native/darkspellfactory/buildings/texture-8.png', (87, 128),
+        '04586f06b78cf38f2fbe40e98bb1081787feea022662e64554df8d7218a358a7'),
+    'assets/village-native/herohall/buildings/texture-8.png': SharedTexture(
+        'assets/village-native/darkspellfactory/buildings/texture-8.png', (87, 128),
+        '04586f06b78cf38f2fbe40e98bb1081787feea022662e64554df8d7218a358a7'),
+    'assets/village-native/laboratory/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/monolith/buildings/texture-18.png': SharedTexture(
+        'assets/buildings/monolith-native/texture-18.png', (512, 138),
+        '5f097f6f33eae9375c2a9552cad08ab2fa4c5df5b2562c18f720d15e35e20ee2'),
+    'assets/village-native/monolith/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/monolith-native/texture-25.png', (256, 407),
+        '0fa14e664545be421443b0e5958f4655dca0785a7c0e7eac3e9b57fbbdafa24f'),
+    'assets/village-native/monolith/buildings/texture-35.png': SharedTexture(
+        'assets/buildings/monolith-native/texture-35.png', (752, 1530),
+        'fbaf841e7d36edccebeff523a6fce95e93e7d6194eb0c2ac1e53497d22fff6b9'),
+    'assets/village-native/monolith/buildings/texture-8.png': _BUILDER_SHADOW,
+    'assets/village-native/multiarchertower/buildings/texture-8.png': SharedTexture(
+        'assets/village-native/darkspellfactory/buildings/texture-8.png', (87, 128),
+        '04586f06b78cf38f2fbe40e98bb1081787feea022662e64554df8d7218a358a7'),
+    'assets/village-native/multigeartower/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/mortar-native/texture/texture-25.png', (256, 192),
+        'c4bd3a9dff02a5fcdf36cbc1b8608e4c7a234d57f87c61101ba016a6648425b9'),
+    'assets/village-native/multigeartower/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/pethouse/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/scattershot-native/texture-25.png', (256, 407),
+        'f5305428e7b770dea164c4fe95afba81bf22f59f66222a22e151803c1c283faf'),
+    'assets/village-native/pethouse/buildings/texture-29.png': SharedTexture(
+        'assets/village-native/eagle/buildings/texture-29.png', (512, 177),
+        'efdc2890e157900c12843352f8787cd3761c934b204a928e142d4cfb2de7ecd8'),
+    'assets/village-native/revengetower/buildings/texture-18.png': SharedTexture(
+        'assets/village-native/airdefense/buildings/texture-18.png', (256, 263),
+        '20dff7fd0edbe60560e49332d6cfb7c3e692159b85945a73fc1ef90dbc357e1d'),
+    'assets/village-native/revengetower/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/ricochetcannon/buildings/texture-25.png': SharedTexture(
+        'assets/village-native/revengetower/buildings/texture-25.png', (256, 192),
+        '4c486b256a345919b83d30a020e62f826faa172bcd04670411c6fcb54770a574'),
+    'assets/village-native/ricochetcannon/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/scattershot/buildings/texture-18.png': SharedTexture(
+        'assets/village-native/firespitter/buildings/texture-18.png', (256, 271),
+        'a5681dc9d7db3dd61782656df64701eb76fac234290d7a87556c734841c1edff'),
+    'assets/village-native/scattershot/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/cannon-native/texture/texture-2.png', (128, 97),
+        '3c272231b0bd802ba75e2882042e4f91e2230815137b773171c4abfacc668859'),
+    'assets/village-native/scattershot/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/scattershot-native/texture-25.png', (256, 407),
+        'f5305428e7b770dea164c4fe95afba81bf22f59f66222a22e151803c1c283faf'),
+    'assets/village-native/scattershot/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/spellfactory/buildings/texture-8.png': _ARCHER_SHADOW,
+    'assets/village-native/spelltower/buildings/texture-1.png': SharedTexture(
+        'assets/buildings/spell-tower-native/texture-1.png', (128, 97),
+        'd973be5d59af78a36b984af7b5e4d1d861e833c211cd366d34ac71e5975d3c90'),
+    'assets/village-native/spelltower/buildings/texture-17.png': SharedTexture(
+        'assets/buildings/spell-tower-native/texture-17.png', (512, 812),
+        'b479d205ee8e6bd3866e990c66582778f012500bf28b29050ba28db4af087ba1'),
+    'assets/village-native/spelltower/buildings/texture-25.png': SharedTexture(
+        'assets/buildings/spell-tower-native/texture-25.png', (512, 261),
+        '94b881acf418fbbd96fbca2ab2631b68b8648b0757e639099736260ec21ec63b'),
+    'assets/village-native/spelltower/buildings/texture-8.png': _BUILDER_SHADOW,
+    'assets/village-native/superwizardtower/buildings/texture-25.png': SharedTexture(
+        'assets/village-native/revengetower/buildings/texture-25.png', (256, 192),
+        '4c486b256a345919b83d30a020e62f826faa172bcd04670411c6fcb54770a574'),
+    'assets/village-native/tornadotrap/buildings/texture-66.png': SharedTexture(
+        'assets/buildings/tornado-trap-native/texture/texture-66.png', (256, 1363),
+        'e02c74e92ed1a3aa5e8b1186f3601902bc0950c15294437432a9d72055c8d3f6'),
+    'assets/village-native/wall/buildings/texture-2.png': SharedTexture(
+        'assets/buildings/air-sweeper-native/texture/texture-2.png', (2, 2),
+        '5ac6a5945f16500911219129984ba8b387a06f24fe383ce4e81a73294065461b'),
 }
 
 

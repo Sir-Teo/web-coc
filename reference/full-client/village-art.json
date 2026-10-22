@@ -1,7 +1,6 @@
 {
   "clientVersion": "18.400.21",
   "sources": {
-    "csv/animations.csv": "b0be152c98d06ccd0689320acfa19b07e04dd2a07fc6a1253558592f67bf29d8",
     "logic/buildings.csv": "9aed5fed876e2914a22fa7fed688a651c691ab06170d60e2bda8dc9262fbccb1",
     "logic/special_abilities.csv": "c978dd90ff2335e60d988f3476d78bec72672e8c074344d149096e89951181eb",
     "logic/traps.csv": "757ca07de02b26b2071b52bb3cb495df2f0ae879731a859d3102ca3552dd528c",
