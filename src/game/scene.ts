@@ -4,6 +4,7 @@ import type { CraftedKind } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
 import { DecorationNativePresentation } from './decoration-native-scene';
+import { invalidateLostFramebuffers } from './native-scene-view';
 import {
   VillageNativePresentation,
   hasVillageNativeArt,
@@ -1157,6 +1158,11 @@ export class VillageScene extends Phaser.Scene {
     this.input.on('pointerdownoutside', cancelGesture);
     this.input.on('pointerupoutside', cancelGesture);
     this.game.canvas.addEventListener('pointercancel', cancelGesture);
+    const cancelHiddenGesture = () => {
+      if (document.hidden) cancelGesture();
+    };
+    window.addEventListener('blur', cancelGesture);
+    document.addEventListener('visibilitychange', cancelHiddenGesture);
     const onWheel = (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (this.uiBlocked || !dy) return;
       // Proportional to the scroll distance (a notch of ~100 px is ~8%; trackpads send many
@@ -1227,6 +1233,9 @@ export class VillageScene extends Phaser.Scene {
     };
     const onContextLost = (e: Event) => {
       e.preventDefault();
+      // Drawing contexts and pooled buffers can outlive the last native view.
+      invalidateLostFramebuffers(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
+      cancelGesture();
       this.paused = true;
       this.audio.samples.stop();
       this.model.notify('Graphics paused. Restoring your village…');
@@ -1248,6 +1257,8 @@ export class VillageScene extends Phaser.Scene {
       this.input.off('pointerupoutside', cancelGesture);
       this.input.off('wheel', onWheel);
       this.game.canvas.removeEventListener('pointercancel', cancelGesture);
+      window.removeEventListener('blur', cancelGesture);
+      document.removeEventListener('visibilitychange', cancelHiddenGesture);
       this.game.canvas.removeEventListener('webglcontextlost', onContextLost);
       this.game.canvas.removeEventListener('webglcontextrestored', onContextRestored);
       document.removeEventListener('visibilitychange', watchRestore);

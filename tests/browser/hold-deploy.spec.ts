@@ -21,7 +21,7 @@ async function grassPoint(page: Page) {
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-test('holding a finger still streams troops, a tap drops one', async ({ page }) => {
+async function startDeployment(page: Page) {
   await page.goto('/');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
@@ -35,6 +35,13 @@ test('holding a finger still streams troops, a tap drops one', async ({ page }) 
     m.changed();
   });
   await expect(page.locator('.battle-enemy')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.__game.scene.battleArtPending()), { timeout: 15000 })
+    .toBe(false);
+}
+
+test('holding a finger still streams troops, a tap drops one', async ({ page }) => {
+  await startDeployment(page);
   const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
   const start = await remaining();
   const p = await grassPoint(page);
@@ -57,3 +64,59 @@ test('holding a finger still streams troops, a tap drops one', async ({ page }) 
   await page.waitForTimeout(400);
   expect(await remaining()).toBe(after);
 });
+
+for (const interruption of ['blur', 'hidden', 'context-loss'] as const) {
+  test(`a held map deployment stops on ${interruption} and requires a fresh press after returning`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await startDeployment(page);
+    const remaining = () => page.evaluate(() => window.__game.model.battle!.remaining.swordsman);
+    const start = await remaining();
+    const point = await grassPoint(page);
+    expect(point).not.toBeNull();
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+    // Interrupt before the first hold deployment; returning must not resume the old press.
+    await page.evaluate(async (interruption) => {
+      if (interruption === 'blur') window.dispatchEvent(new Event('blur'));
+      else if (interruption === 'hidden') {
+        Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      } else {
+        const { game } = window.__game;
+        const extension = game.renderer.gl.getExtension('WEBGL_lose_context');
+        if (!extension) throw Error('Context-loss extension unavailable');
+        await new Promise<void>((resolve) => {
+          game.canvas.addEventListener(
+            'webglcontextlost',
+            () => setTimeout(() => extension.restoreContext(), 50),
+            { once: true },
+          );
+          game.canvas.addEventListener('webglcontextrestored', () => resolve(), { once: true });
+          extension.loseContext();
+        });
+      }
+    }, interruption);
+    await page.evaluate(() => {
+      delete (document as unknown as { hidden?: boolean }).hidden;
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await page.waitForTimeout(1100);
+    expect(await remaining()).toBe(start);
+    // A release from the interrupted press cannot become a tap either.
+    await page.mouse.up();
+    expect(await remaining()).toBe(start);
+    await page.mouse.click(point.x, point.y);
+    expect(await remaining()).toBe(start - 1);
+    expect(
+      await page.evaluate(() => ({
+        paused: window.__game.scene.paused,
+        glError: window.__game.game.renderer.gl.getError(),
+      })),
+    ).toEqual({ paused: false, glError: 0 });
+    expect(errors).toEqual([]);
+  });
+}

@@ -8,10 +8,10 @@ The compositing interpretation uses premultiplied RGB and source-over alpha, wit
 
 Buffers are sized from transformed polygon bounds with a transparent edge texel and use the physical camera zoom, including retina density. Child meshes remain outside the world display list. Repeated updates retain the same objects; inactive groups, cleared views and destroyed views release their framebuffers and listeners. The retained draw commands redraw after context restoration without needing a new simulation event.
 
-Two Phaser 4.2.1 compatibility fixes are limited to this renderer:
+Two Phaser 4.2.1 compatibility fixes support native rendering:
 
 - `addBlendMode` returns the preceding slot and only creates combined RGB/alpha factors. The renderer captures the allocated slot and updates separate alpha factors. It also avoids Phaser's built-in ADD destination-alpha factor, which darkens partly transparent intermediate buffers.
-- Framebuffer reconstruction attempts to delete handles from the lost context. On context loss the renderer clears invalid framebuffer handles, including pooled filter buffers, while preserving wrappers and attachment descriptions. Phaser can then recreate them without `INVALID_OPERATION`. Trace output confirmed the invalid deletes before this correction.
+- Framebuffer reconstruction attempts to delete handles from the lost context. On context loss the renderer clears invalid framebuffer handles, including pooled filter buffers, while preserving wrappers and attachment descriptions. Phaser can then recreate them without `INVALID_OPERATION`. Trace output confirmed the invalid deletes before this correction. The village scene also clears these handles when no native view remains: drawing contexts and pooled buffers can outlive their last view during a home-to-battle transition. The live context-loss case in `tests/browser/hold-deploy.spec.ts` checks recovery with no WebGL error and a working fresh deployment.
 
 ## Tint source pixels
 

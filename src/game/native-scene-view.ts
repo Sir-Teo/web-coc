@@ -256,12 +256,15 @@ interface GroupEntry {
 
 // One context-loss listener pair per renderer serves every live top-level view.
 const liveViews = new Map<Renderer, Set<NativeSceneView>>();
-function onContextLost(this: Renderer) {
+export function invalidateLostFramebuffers(renderer: Renderer) {
   // Phaser 4.2.1 otherwise deletes stale handles in the restored context.
   // Filters also use pooled framebuffers outside the views' own textures.
   // Every handle belongs to the lost context and is already invalidated;
   // retain the wrappers/attachment descriptions so Phaser can recreate them.
-  for (const framebuffer of this.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
+  for (const framebuffer of renderer.glFramebufferWrappers) framebuffer.webGLFramebuffer = null;
+}
+function onContextLost(this: Renderer) {
+  invalidateLostFramebuffers(this);
 }
 function onContextRestored(this: Renderer) {
   // Restored buffers are empty: repaint every live group from its retained content now, since a
