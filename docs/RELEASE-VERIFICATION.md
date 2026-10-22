@@ -43,9 +43,10 @@ script's header and `PRODUCTION_BASE_URL` support: some own a preview, while oth
 expect one at port 4173. Both `test:production` and `test:late-art:production` start
 and own isolated previews.
 
-The late-art check injects temporary failures into the built late-presentation and
-character-graph chunks, verifies fresh-URL recovery and interactive UI, and preserves
-the reload path for removed release chunks. It also checks that these chunks stay out
+The late-art check injects temporary failures into the built late-presentation,
+character-graph, X-Bow and Wizard Tower graph chunks, verifies fresh-URL recovery and
+interactive UI, and preserves the reload path for removed release chunks.
+It also checks that these chunks stay out
 of the startup cache. A cold Go to Bat visit through the Campaign UI verifies that
 Ghost Trap coffins load without an ordinary Skeleton Trap in the village.
 Another case fails a home Skeleton Trap atlas at boot and verifies reconnect recovery.

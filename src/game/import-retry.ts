@@ -58,7 +58,7 @@ export function createRetryingImporter<T>(load: (url: string) => Promise<T>) {
   };
 }
 
-// The Vite hook wraps the two lazy art imports without turning their chunks into startup
+// The Vite hook wraps lazy art imports without turning their chunks into startup
 // dependencies. A shared symbol lets the generated import call retain the bundler's URL.
 const key = Symbol.for('crown-clan.import-retry');
 const target = globalThis as typeof globalThis & {

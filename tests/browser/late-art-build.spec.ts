@@ -4,6 +4,7 @@ import { GameModel, initialSave, makeBuilding } from '../../src/game/model';
 import { emptyArmy, emptySpells } from '../../src/game/army';
 import { validateSave } from '../../src/game/save';
 import { freshNativeCampaign } from '../../src/game/native-campaign';
+import { ART_GRAPH_CASES, artGraphSave } from './art-graph-fixture';
 
 function fixtureSave() {
   const state = initialSave();
@@ -193,6 +194,72 @@ test('a failed home coffin atlas retries after boot through the shipped UI', asy
   await page.screenshot({ path: `output/playtest/boot-coffin-built-${browserName}.png` });
   expect(errors).toEqual([]);
 });
+
+for (const actor of ART_GRAPH_CASES)
+  test(`a failed built ${actor.name} graph recovers without reloading the village`, async ({
+    page,
+    browserName,
+  }) => {
+    const manifest = JSON.parse(await readFile('dist/.vite/manifest.json', 'utf8'));
+    const entry = manifest[actor.module];
+    expect(entry.isDynamicEntry).toBe(true);
+    const path = '/' + entry.file;
+    expect(await readFile('dist/sw.js', 'utf8')).not.toContain(path);
+    const graph = JSON.parse(await readFile(actor.module, 'utf8'));
+    const required = new Set(
+      Object.values(graph.textures).map((texture) => '/' + texture.path.replace(/\.png$/, '.webp')),
+    );
+    const loaded = new Set<string>();
+    const requests: string[] = [];
+    const errors: string[] = [];
+    let navigations = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) navigations++;
+    });
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('request', (request) => {
+      if (request.method() === 'GET' && new URL(request.url()).pathname === path)
+        requests.push(request.url());
+    });
+    page.on('response', (response) => {
+      const path = new URL(response.url()).pathname;
+      if (response.ok() && required.has(path)) loaded.add(path);
+    });
+    await page.addInitScript(
+      (save) => localStorage.setItem('crown-clan-save-v1', save),
+      artGraphSave(actor.kind),
+    );
+    const pattern = '**' + path + '*';
+    await page.route(pattern, (route) =>
+      route.fulfill({ status: 503, body: 'Temporary graph chunk outage' }),
+    );
+    await page.goto('/');
+    await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+    await page.waitForLoadState('networkidle');
+    expect(navigations).toBe(1);
+    expect(requests.length).toBeGreaterThan(0);
+    const failed = requests.length;
+    await page.unroute(pattern);
+    const recovered = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        new URL(response.url()).pathname === path &&
+        response.ok(),
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect.poll(() => requests.length, { timeout: 2000 }).toBeGreaterThan(failed);
+    const response = await recovered;
+    expect(response.headers()['content-type']).toMatch(/javascript/);
+    expect(Number(new URL(response.url()).searchParams.get('art-retry'))).toBeGreaterThan(0);
+    await expect.poll(() => [...loaded].sort(), { timeout: 30000 }).toEqual([...required].sort());
+    await page.waitForLoadState('networkidle');
+    await page.locator('.shop-btn').click();
+    await expect(page.locator('.shop-tile').first()).toBeVisible();
+    await page.locator('[data-action="close-drawer"]').click();
+    expect(navigations).toBe(1);
+    expect(errors).toEqual([]);
+    await page.screenshot({ path: `output/playtest/graph-built-${actor.kind}-${browserName}.png` });
+  });
 
 test('a removed built art chunk keeps the release reload path', async ({ page }) => {
   const manifest = JSON.parse(await readFile('dist/.vite/manifest.json', 'utf8'));

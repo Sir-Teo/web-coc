@@ -146,13 +146,17 @@ the armed and triggered atlases before hiding its fallback. The family retains a
 textures the home village needs after the late bundle is released.
 `tests/browser/ghost-trap-art-recovery.spec.ts` checks cold loading, reconnect recovery and reuse.
 
-Browsers cache failed module imports, so the late presentation and character-graph imports
-use a shared retry cache: a failed attempt gets a fresh URL, and successful modules stay
-cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
+Browsers cache failed module imports, so the late presentation, character graphs and optional
+art JSON modules use a shared retry cache: a failed attempt gets a fresh URL, and successful
+modules stay cached across visits. `vite-import-retry.mjs` preserves the original lazy chunk boundaries
 and emits the underlying native import after Vite's preload instrumentation. Temporary
 failures reach the art loader; a status probe keeps missing release chunks and HTML fallbacks
 on the existing reload path. `tests/browser/late-art-build.spec.ts` checks the built URLs and
 startup-cache boundary through the shipped UI in Chromium and WebKit.
+Development JSON retries keep their cache buster in the browser URL while the server uses
+the ordinary JSON source ID for transformation. Editing an art module still reloads the
+page so `LazyGraph` and registry caches pick up the new source.
+`tests/browser/art-graph-recovery.spec.ts` covers an X-Bow and the Wizard Tower's multiple graphs.
 The worker verifies successful retry bytes against its release manifest before caching them
 under the ordinary chunk URL, so recovery remains available on a later offline visit.
 
