@@ -37,7 +37,7 @@ wall time. Investigate a slow or stuck test before raising its timeout.
 
 ## Source pixel comparisons
 
-The Cannon source fixture uses [a shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts)
+The Cannon and Seeking Air Mine source fixtures use [a shared pixel comparison helper](../tests/fixtures/source-pixel-comparison.ts)
 that reads RGB channels directly, avoiding temporary arrays for every pixel. It validates
 the captured frame and tile bounds and maps top-left tile coordinates into bottom-up
 WebGL readbacks. Background detection, maximum-channel errors, the sixteen-value
