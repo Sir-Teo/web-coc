@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import type { NativeEffectEvent } from './native-effects';
 import {
   animationStates,
   characterFacing,
@@ -11,12 +11,10 @@ import { visualRandom } from './visual-random';
 import type { GarrisonDefender } from './defenders';
 import { isGarrisonDefender } from './defenders';
 import type { Battle } from './model';
-import { presentationLive, presentationTime } from './presentation-clock';
 
 /**
- * Local, restrained visuals for the later garrison mechanics whose original effects are particle
- * emitter records not yet imported (`Electro Dragon Attack Chain` beams, `ElectroDragonDie`'s
- * `Lightning Spell Hit`, `E_titanAreaDamage` and `Warlock Summon`). Every shape derives from
+ * Original Electro Dragon chain art with a drawn loading fallback. Death lightning, Titan aura
+ * and Witch summon effects retain local shapes until their emitter behavior is imported. Every shape derives from
  * recorded battle state and the battle clock, so replay seeks reproduce it exactly.
  */
 export interface LateEffectBolt {
@@ -80,14 +78,14 @@ function ellipse(iso: Iso, radius: number) {
 }
 const fade = (since: number, duration: number) => Math.max(0, 1 - since / duration);
 
-function chainShapes(
+function chainSegments(
   defender: GarrisonDefender,
-  reduced: boolean,
   iso: Iso,
   lift: number,
   elapsed: number,
+  duration: number,
 ) {
-  const shapes: LateEffectShape[] = [];
+  const segments: { event: NativeEffectEvent; seed: [number, number]; width: number }[] = [];
   const stats = garrisonStats(defender.kind, defender.level);
   const attackRow = animationStates(stats.animation).attack[0];
   const elevate = (x: number, y: number, air: boolean | undefined, height = BODY_HEIGHT) => {
@@ -97,7 +95,7 @@ function chainShapes(
   for (const attack of defender.attacks) {
     if (!attack.chain) continue;
     const since = elapsed - attack.at;
-    if (since >= 0 && since < LATE_EFFECT_TIMES.chain) {
+    if (since >= 0 && since < duration) {
       // The primary bolt leaves the source `attack_pivot` locator of the attack row's action frame.
       const facing = characterFacing(attack.targetX - attack.x, attack.targetY - attack.y);
       const exportName = rowExport(attackRow, facing.view);
@@ -115,42 +113,75 @@ function chainShapes(
         x: origin.x + (pivot?.x ?? 0),
         y: origin.y + (pivot?.y ?? 0) - (stats.flying ? lift : 0),
       };
-      shapes.push({
-        key: `late-chain:${defender.id}:${attack.n}:0`,
-        kind: 'bolt',
-        points: jagged(
-          from,
-          elevate(attack.hitX ?? attack.targetX, attack.hitY ?? attack.targetY, attack.air),
-          [defender.id, (attack.n ?? 0) * 8],
-          reduced,
-        ),
-        color: CHAIN_COLOR,
+      segments.push({
+        event: {
+          key: `late-chain:${defender.id}:${attack.n}:0`,
+          effect: 'Electro Dragon Attack Chain',
+          at: attack.at,
+          ground: from,
+          target: elevate(attack.hitX ?? attack.targetX, attack.hitY ?? attack.targetY, attack.air),
+          depth: 7800,
+        },
+        seed: [defender.id, (attack.n ?? 0) * 8],
         width: 3,
-        alpha: fade(since, LATE_EFFECT_TIMES.chain),
-        depth: 7800,
       });
     }
     for (const [index, jump] of attack.chain.entries()) {
       const jumpSince = elapsed - jump.at;
-      if (jumpSince < 0 || jumpSince >= LATE_EFFECT_TIMES.chain) continue;
+      if (jumpSince < 0 || jumpSince >= duration) continue;
       const previous = index ? attack.chain[index - 1].air : attack.air;
-      shapes.push({
-        key: `late-chain:${defender.id}:${attack.n}:${index + 1}`,
-        kind: 'bolt',
-        points: jagged(
-          elevate(jump.fromX, jump.fromY, previous),
-          elevate(jump.x, jump.y, jump.air),
-          [defender.id, (attack.n ?? 0) * 8 + index + 1],
-          reduced,
-        ),
-        color: CHAIN_COLOR,
+      segments.push({
+        event: {
+          key: `late-chain:${defender.id}:${attack.n}:${index + 1}`,
+          effect: 'Electro Dragon Attack Chain',
+          at: jump.at,
+          ground: elevate(jump.fromX, jump.fromY, previous),
+          target: elevate(jump.x, jump.y, jump.air),
+          depth: 7800,
+        },
+        seed: [defender.id, (attack.n ?? 0) * 8 + index + 1],
         width: 2.5,
-        alpha: fade(jumpSince, LATE_EFFECT_TIMES.chain),
-        depth: 7800,
       });
     }
   }
-  return shapes;
+  return segments;
+}
+
+/** Recorded segment times and attachment points, shared by native art and its loading fallback. */
+export function garrisonChainEffects(
+  battle: Battle,
+  iso: Iso,
+  lift: number,
+  elapsed: number,
+  duration: number,
+) {
+  return (battle.defenders ?? []).flatMap((defender) =>
+    isGarrisonDefender(defender) &&
+    battle.elapsed >= defender.spawnedAt &&
+    garrisonStats(defender.kind, defender.level).chain
+      ? chainSegments(defender, iso, lift, elapsed, duration).map(({ event }) => event)
+      : [],
+  );
+}
+
+function chainShapes(
+  defender: GarrisonDefender,
+  reduced: boolean,
+  iso: Iso,
+  lift: number,
+  elapsed: number,
+): LateEffectShape[] {
+  return chainSegments(defender, iso, lift, elapsed, LATE_EFFECT_TIMES.chain).map(
+    ({ event, seed, width }) => ({
+      key: event.key,
+      kind: 'bolt',
+      points: jagged(event.ground, event.target!, seed, reduced),
+      color: CHAIN_COLOR,
+      width,
+      alpha: fade(elapsed - event.at, LATE_EFFECT_TIMES.chain),
+      depth: 7800,
+    }),
+  );
 }
 
 /**
@@ -245,82 +276,4 @@ export function garrisonLateEffectShapes(
     }
   }
   return shapes;
-}
-
-/** Everything a shape's Graphics draws, relative to its position. */
-function shapeSignature(shape: LateEffectShape) {
-  if (shape.kind === 'bolt') {
-    let points = '';
-    for (const point of shape.points) points += `${point.x},${point.y};`;
-    return `bolt:${shape.color}:${shape.width}:${shape.alpha}:${points}`;
-  }
-  return `ring:${shape.color}:${shape.width}:${shape.alpha}:${shape.fill}:${shape.rx}:${shape.ry}`;
-}
-
-/** One Graphics object per shape key; destroyed when the shape expires or the battle ends. */
-export class GarrisonLateEffects {
-  private graphics = new Map<string, Phaser.GameObjects.Graphics>();
-  /** Last drawn signature per key: unchanged shapes (a resting aura) are not redrawn. */
-  private drawn = new Map<string, string>();
-  constructor(private scene: Phaser.Scene) {}
-  render(battle: Battle | null, reduced: boolean, iso: Iso, lift: number) {
-    const wanted = new Set<string>();
-    const shapes = battle
-      ? garrisonLateEffectShapes(
-          battle,
-          reduced,
-          iso,
-          lift,
-          // After the grace window every transient shape has expired (all last under 1 s).
-          presentationLive(battle) ? presentationTime(battle) : Infinity,
-        )
-      : [];
-    for (const shape of shapes) {
-      wanted.add(shape.key);
-      let g = this.graphics.get(shape.key);
-      if (!g) {
-        g = this.scene.add.graphics();
-        g.setData('nativeGarrisonLateEffect', shape.key);
-        this.graphics.set(shape.key, g);
-      }
-      if (g.depth !== shape.depth) g.setDepth(shape.depth);
-      const x = shape.kind === 'bolt' ? 0 : shape.x,
-        y = shape.kind === 'bolt' ? 0 : shape.y;
-      if (g.x !== x || g.y !== y) g.setPosition(x, y);
-      const signature = shapeSignature(shape);
-      if (this.drawn.get(shape.key) === signature) continue;
-      this.drawn.set(shape.key, signature);
-      g.clear();
-      if (shape.kind === 'bolt') {
-        const stroke = (width: number, color: number, alpha: number) => {
-          g.lineStyle(width, color, alpha).beginPath();
-          g.moveTo(shape.points[0].x, shape.points[0].y);
-          for (let i = 1; i < shape.points.length; i++)
-            g.lineTo(shape.points[i].x, shape.points[i].y);
-          g.strokePath();
-        };
-        stroke(shape.width + 3, shape.color, shape.alpha * 0.35);
-        stroke(shape.width, 0xffffff, shape.alpha);
-      } else {
-        g.fillStyle(shape.color, shape.fill).fillEllipse(0, 0, shape.rx * 2, shape.ry * 2);
-        g.lineStyle(shape.width, shape.color, shape.alpha).strokeEllipse(
-          0,
-          0,
-          shape.rx * 2,
-          shape.ry * 2,
-        );
-      }
-    }
-    for (const [key, g] of this.graphics)
-      if (!wanted.has(key)) {
-        g.destroy();
-        this.graphics.delete(key);
-        this.drawn.delete(key);
-      }
-  }
-  clear() {
-    for (const g of this.graphics.values()) g.destroy();
-    this.graphics.clear();
-    this.drawn.clear();
-  }
 }

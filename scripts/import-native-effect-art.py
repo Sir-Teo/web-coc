@@ -2,9 +2,10 @@
 """Build shared lazy-loadable packs for the client effects and particle emitters used by battle art.
 
 References come from every battle projectile row (Effect, SpawnEffect, DestroyedEffect, BounceEffect and
-the trail ParticleEmitter) and from the Town Hall 11-18 defenses and new traps (building, weapon, spell,
-special-ability animation and trap effect columns). Each effect pack keeps its logic/effects.csv rows,
-SpawnEffect chain, every csv/particle_emitters.csv record it names, and the SC exports those rows play.
+the trail ParticleEmitter), from the Town Hall 11-18 defenses and new traps (building, weapon, spell,
+special-ability animation and trap effect columns), and the recorded Electro Dragon garrison chain.
+Each effect pack keeps its logic/effects.csv rows, SpawnEffect chain, every csv/particle_emitters.csv
+record it names, and the SC exports those rows play.
 Effects that declare only sounds produce no pack and are listed under ``noArt``.
 
     PYTHONPATH=scripts output/native-art-venv/bin/python scripts/import-native-effect-art.py [--check]
@@ -62,6 +63,8 @@ def references(lib):
             for row in rows:
                 for event in row['animation']:
                     add(event.get('Effect'), effects)
+    # Garrison chain segments are recorded independently of projectile flights.
+    add('Electro Dragon Attack Chain', effects)
     return effects, emitters
 
 

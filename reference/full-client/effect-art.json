@@ -46,7 +46,7 @@
     "sc/vfx_env_2.sctx": "36578887a41381699efe7cf4e9f013254a053b02c95dc37db886a2d5415c9995",
     "sc/vfx_env_3.sctx": "4c914a56083b09df94d6d06881738522f9172e589707e79830834ee1c9573dca"
   },
-  "totalBytes": 7807512,
+  "totalBytes": 8034673,
   "effects": {
     "ThrowerProjectileHit": "throwerprojectilehit",
     "Meteor_Golem_Projectile_Hit": "meteor-golem-projectile-hit",
@@ -145,7 +145,8 @@
     "Giga Bomb Appear": "shrink-trap-appear",
     "ps_trap_tornadoTrap": "ps-trap-tornadotrap",
     "ps_trap_gigabomb": "ps-trap-gigabomb",
-    "ps_trap_gigabomb_ground": "ps-trap-gigabomb-ground"
+    "ps_trap_gigabomb_ground": "ps-trap-gigabomb-ground",
+    "Electro Dragon Attack Chain": "electro-dragon-attack-chain"
   },
   "emitters": {
     "dragon_rider_projectile_fire_trail": "th16-attack-fx",
@@ -652,6 +653,11 @@
       "path": "assets/effects-native/ps-trap-gigabomb-ground/graph.json",
       "sha256": "003dd428cf936ce31254ebf2873b2495649845d30cc1466c138706f63bc4afaf",
       "bytes": 8527
+    },
+    "electro-dragon-attack-chain": {
+      "path": "assets/effects-native/electro-dragon-attack-chain/graph.json",
+      "sha256": "06c4594a5c6167a2f59499674f52fbab763fd3e747ee1b869de3ea98f7679369",
+      "bytes": 227161
     },
     "emitter-e-chr-wizardattack-trail-lvl1": {
       "path": "assets/effects-native/emitter-e-chr-wizardattack-trail-lvl1/graph.json",

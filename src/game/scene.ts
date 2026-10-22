@@ -893,7 +893,8 @@ export class VillageScene extends Phaser.Scene {
     this.wizardTowerPresentation = new WizardTowerPresentation(this, this.audio);
     this.sweeperPresentation = new SweeperPresentation(this, this.audio);
     this.mortarPresentation = new MortarPresentation(this, this.audio);
-    this.garrisonPresentation = new GarrisonPresentation(this, this.audio);
+    this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
+    this.garrisonPresentation = new GarrisonPresentation(this, this.audio, this.nativeEffectPacks);
     this.castlePresentation = new CastlePresentation(this);
     this.infernoPresentation = new InfernoPresentation(this, this.audio);
     this.archerTowerProjectiles = new ArcherTowerProjectiles(this);
@@ -914,7 +915,6 @@ export class VillageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.decorationNativePresentation.destroy(),
     );
-    this.nativeEffectPacks = new NativeArtPacks<NativeArtPack>(this);
     this.nativeProjectiles = new NativeProjectilePresentation(this, this.nativeEffectPacks);
     this.nativeDefenses = new NativeDefensePresentation(this, this.nativeEffectPacks);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

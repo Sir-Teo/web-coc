@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import type { NativeArtPack, NativeArtPacks } from './native-art-pack';
 import type { Battle } from './model';
 import { NativeSceneView } from './native-scene-view';
 import { preloadNativeMeshes } from './native-mesh-scene';
@@ -15,7 +16,7 @@ import type { AudioManager } from './audio';
 import { GARRISON_EFFECT_GRAPH, garrisonImpactPoses } from './garrison-effects';
 import { garrisonShotPoses } from './garrison-projectiles';
 import { garrisonStats } from './garrison-kinds';
-import { GarrisonLateEffects } from './garrison-late-effects';
+import { GarrisonLateEffects } from './garrison-late-scene';
 import { NativeEffectViews } from './native-effect-views';
 import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
@@ -69,17 +70,18 @@ export class GarrisonPresentation {
   readonly effects: Map<string, NativeSceneView>;
   readonly shots = new Map<string, NativeSceneView>();
   private families = new Map<number, string>();
-  /** Later families: local chain lightning, death bolts, aura pulses and summon glows. */
+  /** Later families: native chain lightning, death bolts, aura pulses and summon glows. */
   private late: GarrisonLateEffects;
   constructor(
     private scene: Phaser.Scene,
     audio: AudioManager,
+    effects: NativeArtPacks<NativeArtPack>,
   ) {
     this.fx = new NativeEffectViews(scene, 'garrison-effects', 'nativeGarrisonEffect');
     this.effects = this.fx.views;
     for (const path of Object.keys(GARRISON_SOUNDS))
       registerCachedSample(scene, audio.samples, garrisonSample(path));
-    this.late = new GarrisonLateEffects(scene);
+    this.late = new GarrisonLateEffects(scene, effects);
   }
   clear() {
     this.late.clear();
