@@ -46,7 +46,7 @@
     "sc/vfx_env_2.sctx": "36578887a41381699efe7cf4e9f013254a053b02c95dc37db886a2d5415c9995",
     "sc/vfx_env_3.sctx": "4c914a56083b09df94d6d06881738522f9172e589707e79830834ee1c9573dca"
   },
-  "totalBytes": 9113461,
+  "totalBytes": 7807512,
   "effects": {
     "ThrowerProjectileHit": "throwerprojectilehit",
     "Meteor_Golem_Projectile_Hit": "meteor-golem-projectile-hit",
@@ -566,7 +566,7 @@
     "super-bomb": {
       "path": "assets/effects-native/super-bomb/graph.json",
       "sha256": "6e238dc80c4e08e109cfbd15e3580dabbaaa3300c2e20346671981abd3fd936c",
-      "bytes": 20038
+      "bytes": 101039
     },
     "th13-attack-2": {
       "path": "assets/effects-native/th13-attack-2/graph.json",

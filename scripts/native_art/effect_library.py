@@ -14,6 +14,7 @@ from PIL import Image
 
 from .bundle import ROOT, digest
 from .scene_graph import crop_textures
+from .shared_assets import redirect_shared_textures
 from .sc6 import decode_sctx, require
 from .source_csv import decoded_rows, inherited_levels, records
 
@@ -231,9 +232,11 @@ def write_pack(lib, collector, pack_dir, url_prefix, meta, check):
         graph = art.graph_for(sc, kept)
         used = {t for commands in graph['shapes'].values() for t, _ in commands}
         images, _, runtime = crop_textures(graph, {t: lib.texture(path, t) for t in used}, f'{url_prefix}/{sid}')
+        redirect_shared_textures(images, runtime)
         for relative, image in images.items():
             target = ROOT / 'public' / relative
-            files.add(target.relative_to(pack_dir).as_posix())
+            if target.is_relative_to(pack_dir):
+                files.add(target.relative_to(pack_dir).as_posix())
             if check:
                 with Image.open(target) as old:
                     require(old.mode == image.mode and old.size == image.size and old.tobytes() == image.tobytes(),

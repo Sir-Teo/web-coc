@@ -4,6 +4,7 @@ import argparse,importlib.util,json,hashlib,re
 from native_art.bundle import ROOT,digest
 from native_art.source_csv import records,decoded_rows,inherited_levels,animation_blocks
 from native_art.scene_graph import crop_textures
+from native_art.shared_assets import redirect_shared_textures
 from native_art.sc6 import require,decode_sctx
 from PIL import Image
 
@@ -35,6 +36,7 @@ def main():
    sceneId=path.split('/')[-1].removesuffix('.sc');graph=art.graph_for(art.scene(path),sorted(exports));used={t for commands in graph['shapes'].values() for t,_ in commands}
    decoded={t:(art.scene(path).embedded_texture(t) if art.scene(path).textures[t]['external'] is None else decode_sctx(art.read('sc/'+art.scene(path).textures[t]['external']))) for t in used}
    images,_,runtime=crop_textures(graph,decoded,f'assets/troops-native/{kind}/{sceneId}')
+   redirect_shared_textures(images,runtime)
    for relative,image in images.items():
     target=ROOT/'public'/relative
     if args.check:

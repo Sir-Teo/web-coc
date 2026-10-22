@@ -70,6 +70,19 @@ source files available in the archive or source cache:
 .venv/bin/python scripts/import-native-village-art.py --check --only goldmine
 ```
 
+The troop, projectile and effect importers use the same alias pins:
+
+```sh
+.venv/bin/python scripts/import-native-troop-art.py --check
+.venv/bin/python scripts/import-native-unit-art.py --check
+.venv/bin/python scripts/import-native-projectile-art.py --check
+.venv/bin/python scripts/import-native-effect-art.py --check
+```
+
+Projectile and effect pack byte counts include the graph and owned images. Shared
+pages are checked at their canonical paths and excluded from each pack's file list
+and byte count. Each catalog's `totalBytes` is the sum of its pack byte counts.
+
 ## Browser tooling
 
 Install Playwright browsers before running browser scripts. `npm run test:production`

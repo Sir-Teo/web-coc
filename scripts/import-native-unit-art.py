@@ -5,6 +5,7 @@ from functools import lru_cache
 from native_art.bundle import ROOT,digest
 from native_art.source_csv import records,decoded_rows,inherited_levels,animation_blocks
 from native_art.scene_graph import crop_textures
+from native_art.shared_assets import redirect_shared_textures
 from native_art.sc6 import require,decode_sctx
 from PIL import Image
 
@@ -63,8 +64,10 @@ def main():
    sceneId=path.split('/')[-1].removesuffix('.sc');require(sceneId not in scenes,f'Duplicate scene name {sceneId}')
    graph=art.graph_for(art.scene(path),sorted(exports));used={t for commands in graph['shapes'].values() for t,_ in commands}
    images,_,runtime=crop_textures(graph,{t:texture(path,t) for t in used},f'assets/troops-native/{kind}/{sceneId}')
+   redirect_shared_textures(images,runtime)
    for relative,image in images.items():
-    target=ROOT/'public'/relative;files.add(target.relative_to(pack).as_posix())
+    target=ROOT/'public'/relative
+    if target.is_relative_to(pack):files.add(target.relative_to(pack).as_posix())
     if args.check:
      with Image.open(target) as old:require(old.mode==image.mode and old.size==image.size and old.tobytes()==image.tobytes(),f'Texture differs: {relative}')
     else:target.parent.mkdir(parents=True,exist_ok=True);image.save(target,optimize=True)

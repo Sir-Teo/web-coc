@@ -25,6 +25,7 @@ test('weapon flashes, spell rings, debris and smoke freeze and expire on battle 
     scene.effect({ type: 'spell', spell: 'lightning', x: 10, y: 10 });
     scene.effect({ type: 'destroy', x: 10, y: 10 });
     scene.effect({ type: 'spring', x: 10, y: 10 });
+    scene.drawOverlay(0);
   });
   const read = () =>
     page.evaluate(() =>
@@ -91,6 +92,7 @@ test('reduced feedback fades in place and returning home cancels pending battle 
     model.state.settings.reducedMotion = true;
     scene.sync();
     scene.effect({ type: 'destroy', x: 10, y: 10 });
+    scene.drawOverlay(0);
     const entries = [...scene.effectTimeline.entries];
     const smoke = entries[0].config.targets;
     const before = { x: smoke.x, y: smoke.y, scaleX: smoke.scaleX, scaleY: smoke.scaleY };
@@ -106,7 +108,7 @@ test('reduced feedback fades in place and returning home cancels pending battle 
       after,
       alpha,
       active: smoke.active,
-      pending: scene.effectTimeline.entries.size,
+      pending: scene.effectTimeline.size,
     };
   });
   expect(result.count).toBe(1);

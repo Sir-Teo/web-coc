@@ -3,6 +3,7 @@ import json
 import tempfile
 from unittest.mock import patch
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 
 from PIL import Image
@@ -127,6 +128,73 @@ class SharedAssetTests(unittest.TestCase):
                 self.assertEqual(image.mode, 'RGBA')
                 self.assertEqual(image.size, shared.size)
                 self.assertEqual(hashlib.sha256(image.tobytes()).hexdigest(), shared.rgba_sha256)
+
+    def test_aliases_point_directly_to_canonical_files_without_restoring_duplicates(self):
+        public = Path(__file__).resolve().parents[2] / 'public'
+        for original, shared in SHARED_TEXTURES.items():
+            with self.subTest(path=original):
+                self.assertNotIn(shared.path, SHARED_TEXTURES)
+                self.assertFalse((public / original).exists())
+
+    def pack_fixture(self):
+        original = 'assets/projectiles-native/airtrapballoon-lvl11/buildings/texture-8.png'
+        shared = SHARED_TEXTURES[original]
+        public = Path(__file__).resolve().parents[2] / 'public'
+        with Image.open(public / shared.path) as image:
+            pixels = image.copy()
+        lib = SimpleNamespace(art=SimpleNamespace(graph_for=lambda *_: {'shapes': {}}),
+                              scene=lambda _: None)
+        collector = SimpleNamespace(exports={'sc/buildings.sc': {'idle'}}, effects={}, emitters={})
+
+        def crop(*_):
+            owned = 'assets/projectiles-native/airtrapballoon-lvl11/buildings/owned.png'
+            return ({original: pixels.copy(), owned: Image.new('RGBA', (2, 1), (1, 2, 3, 255))},
+                    {}, {'textures': {'8': {'path': original}, 'owned': {'path': owned}}})
+
+        return original, shared, pixels, lib, collector, crop
+
+    def test_effect_pack_writer_preserves_shared_pages_and_counts_only_owned_bytes(self):
+        from native_art import effect_library
+        original, shared, _, lib, collector, crop = self.pack_fixture()
+        prefix = 'assets/projectiles-native/airtrapballoon-lvl11'
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(effect_library, 'ROOT', Path(directory)), \
+                patch.object(effect_library, 'crop_textures', side_effect=crop):
+            root = Path(directory)
+            folder = root / 'public' / prefix
+            result = effect_library.write_pack(lib, collector, folder, prefix, {'kind': 'projectile'}, False)
+            self.assertFalse((root / 'public' / original).exists())
+            self.assertTrue((root / 'public' / shared.path).is_file())
+            graph = json.loads((folder / 'graph.json').read_text())
+            self.assertEqual(graph['scenes']['buildings']['textures']['8']['path'], shared.path)
+            owned_files = [folder / 'graph.json', folder / 'buildings/owned.png']
+            self.assertEqual(result['bytes'], sum(path.stat().st_size for path in owned_files))
+            self.assertEqual(result, effect_library.write_pack(lib, collector, folder, prefix,
+                                                             {'kind': 'projectile'}, True))
+            stale = folder / 'stale.png'
+            stale.write_bytes(b'stale')
+            with self.assertRaisesRegex(ValueError, 'Unexpected files'):
+                effect_library.write_pack(lib, collector, folder, prefix, {'kind': 'projectile'}, True)
+            effect_library.write_pack(lib, collector, folder, prefix, {'kind': 'projectile'}, False)
+            self.assertFalse(stale.exists())
+            self.assertTrue((root / 'public' / shared.path).is_file())
+
+    def test_effect_pack_writer_checks_the_shared_page_pixels(self):
+        from native_art import effect_library
+        _, shared, pixels, lib, collector, crop = self.pack_fixture()
+        prefix = 'assets/projectiles-native/airtrapballoon-lvl11'
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(effect_library, 'ROOT', Path(directory)), \
+                patch.object(effect_library, 'crop_textures', side_effect=crop):
+            root = Path(directory)
+            folder = root / 'public' / prefix
+            effect_library.write_pack(lib, collector, folder, prefix, {'kind': 'projectile'}, False)
+            changed = pixels.copy()
+            red, green, blue, alpha = changed.getpixel((0, 0))
+            changed.putpixel((0, 0), ((red + 1) % 256, green, blue, alpha))
+            changed.save(root / 'public' / shared.path)
+            with self.assertRaisesRegex(ValueError, 'Texture differs'):
+                effect_library.write_pack(lib, collector, folder, prefix, {'kind': 'projectile'}, True)
 
 
 if __name__ == '__main__':

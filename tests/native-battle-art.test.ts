@@ -1,6 +1,7 @@
 import { sourceKind } from '../src/game/data';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
+import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import projectileArt from '../reference/full-client/projectile-art.json';
 import effectArt from '../reference/full-client/effect-art.json';
@@ -69,6 +70,22 @@ const unitAt = (id: number, x: number, y: number): Unit =>
   }) as unknown as Unit;
 
 describe('native battle art packs', () => {
+  it.each([
+    ['projectiles', projectileArt],
+    ['effects', effectArt],
+  ] as const)('records owned file bytes and the complete %s catalog total', (_, catalog) => {
+    let total = 0;
+    for (const [id, pack] of Object.entries(catalog.packs)) {
+      const folder = dirname('public/' + pack.path);
+      const bytes = fs
+        .readdirSync(folder, { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile() && !entry.name.startsWith('.'))
+        .reduce((sum, entry) => sum + fs.statSync(join(entry.parentPath, entry.name)).size, 0);
+      expect(pack.bytes, id).toBe(bytes);
+      total += bytes;
+    }
+    expect(catalog.totalBytes).toBe(total);
+  });
   it('pins every projectile, effect and defense pack it ships', () => {
     for (const [id, pack] of Object.entries(projectileArt.packs))
       expect(sha(pack.path), id).toBe(pack.sha256);
