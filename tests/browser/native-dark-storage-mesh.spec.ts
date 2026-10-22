@@ -14,6 +14,7 @@ test('all native storage levels match independent source pixels and survive cont
     const { default: graph } = await import('/reference/dark-storage/runtime.json');
     const { nativeMeshPoses } = await import('/src/game/native-mesh.ts');
     const { NativeMeshView, preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
+    const { compareSourcePixels } = await import('/tests/fixtures/source-pixel-comparison.ts');
     document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
     scene.paused = true;
     scene.tweens.pauseAll();
@@ -34,6 +35,10 @@ test('all native storage levels match independent source pixels and survive cont
       return view;
     });
     const gl = game.renderer.gl;
+    if (gl.drawingBufferWidth < reference.width || gl.drawingBufferHeight < reference.height)
+      throw Error(
+        `Source comparison exceeds framebuffer: ${reference.width}×${reference.height} vs ${gl.drawingBufferWidth}×${gl.drawingBufferHeight}`,
+      );
     const capture = () =>
       new Promise<Uint8Array>((resolve) =>
         game.events.once('postrender', () => {
@@ -80,33 +85,19 @@ test('all native storage levels match independent source pixels and survive cont
     const expected = await capture();
     image.destroy();
     for (const view of views) for (const mesh of view.meshes.values()) mesh.setVisible(true);
-    const cases = reference.cases.map((c) => {
-      let colored = 0,
-        total = 0,
-        large = 0,
-        maximum = 0;
-      for (let y = c.y; y < c.y + reference.cell; y++)
-        for (let x = c.x; x < c.x + reference.cell; x++) {
-          const at = ((reference.height - 1 - y) * reference.width + x) * 4;
-          const a = actual.slice(at, at + 3),
-            e = expected.slice(at, at + 3);
-          if (a.some((v, i) => v !== [48, 65, 53][i]) || e.some((v, i) => v !== [48, 65, 53][i])) {
-            colored++;
-            const error = Math.max(...a.map((v, i) => Math.abs(v - e[i])));
-            total += error;
-            maximum = Math.max(maximum, error);
-            if (error > 16) large++;
-          }
-        }
-      return {
-        export: c.export,
-        frame: c.frame,
-        colored,
-        meanError: total / colored,
-        largeFraction: large / colored,
-        maximum,
-      };
-    });
+    // Present a native frame before the screenshot instead of retaining the reference frame.
+    const preview = await capture();
+    const frame = { width: reference.width, height: reference.height };
+    const cases = reference.cases.map((c) => ({
+      export: c.export,
+      frame: c.frame,
+      ...compareSourcePixels(actual, expected, frame, {
+        x: c.x,
+        y: c.y,
+        width: reference.cell,
+        height: reference.cell,
+      }),
+    }));
     const changed = (other: Uint8Array) => {
       let count = 0;
       for (let i = 0; i < actual.length; i++) if (actual[i] !== other[i]) count++;
@@ -114,8 +105,10 @@ test('all native storage levels match independent source pixels and survive cont
     };
     return {
       cases,
+      framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
       singleTextureChanges: changed(single),
       contextChanges: changed(restored),
+      previewChanges: changed(preview),
       meshes: views.reduce((n, v) => n + v.meshes.size, 0),
       tintedTextures: scene.textures
         .getTextureKeys()
@@ -138,6 +131,7 @@ test('all native storage levels match independent source pixels and survive cont
   expect(report.glError).toBe(0);
   expect(report.singleTextureChanges).toBe(0);
   expect(report.contextChanges).toBe(0);
+  expect(report.previewChanges).toBe(0);
   expect(report.meshes).toBeGreaterThan(30);
   expect(report.tintedTextures).toBe(0);
   for (const c of report.cases) {

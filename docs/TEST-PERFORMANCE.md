@@ -53,3 +53,7 @@ significance threshold and the limit of 32 diagnostic pixels retain their origin
 alpha-independent background detection, threshold boundaries and diagnostic truncation.
 When changing the calculation, compare per-case GPU reports with the previous run as
 well as retaining the existing source-pixel acceptance thresholds.
+
+The X-Bow, Dark Elixir Storage and Goblin mesh galleries reject captures larger than
+the actual framebuffer. After removing the reference image, they capture another
+native frame and require zero changed pixels before saving the preview screenshot.
