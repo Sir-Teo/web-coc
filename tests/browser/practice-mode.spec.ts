@@ -190,6 +190,52 @@ for (const blockedLastArmy of [false, true]) {
   });
 }
 
+test('a guided attack deploys its Giant and Wall Breakers with the map keyboard', async ({
+  page,
+}) => {
+  await boot(page, 4);
+  const homeArmy = () =>
+    page.evaluate(() => {
+      const m = window.__game.model;
+      return { army: m.state.army, spells: m.state.spells, lastArmy: m.state.lastArmy };
+    });
+  const home = await homeArmy();
+  await page.locator(`[data-action="attack:${GIANT_SMASH}"]`).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.practice-guide')).toContainText('Deploy a Giant');
+  await page.waitForFunction(() => window.__game.scene.artSettled);
+  await page.keyboard.press('m');
+  await expect(page.locator('#game')).toBeFocused();
+  const walkToGuide = async () => {
+    const { cursor, target } = await page.evaluate(() => {
+      const { model, scene } = window.__game;
+      const spot = model.practiceGuide!.spot!;
+      return { cursor: scene.keyCursor!, target: { x: Math.floor(spot.x), y: Math.floor(spot.y) } };
+    });
+    for (let i = 0; i < Math.abs(target.x - cursor.x); i++)
+      await page.keyboard.press(target.x > cursor.x ? 'ArrowRight' : 'ArrowLeft');
+    for (let i = 0; i < Math.abs(target.y - cursor.y); i++)
+      await page.keyboard.press(target.y > cursor.y ? 'ArrowDown' : 'ArrowUp');
+  };
+  await walkToGuide();
+  await page.keyboard.press('Enter');
+  await expect
+    .poll(() => page.evaluate(() => window.__game.model.battle!.remaining.giant))
+    .toBe(12);
+  await expect(page.locator('.practice-guide')).toContainText('Quickly destroy Walls');
+  await walkToGuide();
+  for (const [key, remaining] of [
+    ['Space', 1],
+    ['Enter', 0],
+  ] as const) {
+    await page.keyboard.press(key);
+    await expect
+      .poll(() => page.evaluate(() => window.__game.model.battle!.remaining.wallbreaker))
+      .toBe(remaining);
+  }
+  expect(await homeArmy()).toEqual(home);
+});
+
 test('a guided retry brings its first deployment spot back into view', async ({ page }) => {
   await boot(page, 4);
   await page.keyboard.press('Escape');

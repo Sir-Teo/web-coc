@@ -53,6 +53,7 @@ The client stores each level's guide as the record's `DeploySteps` column, in or
 A level with no star yet starts with its guide. On a level with a star, the scout page offers **Guided attack** to take it again. A banner under the battle's top bar shows the step's words in the client's colours, with **Skip guide**, and the guide follows the step's flags:
 
 - **Units.** A deploy step puts its unit in hand. With `ForceType` it refuses any other unit, and while a waiting step runs it refuses every deploy ("Wait for the guide's next step."). With `ForceLocation` it refuses a tap outside its circle. With `ForceExactLocation` the unit lands on the spot itself.
+- **Keyboard.** M toggles the map cursor. When enabled, arrows or WASD move it to the marked spot; Enter or Space deploys the guide's selected unit.
 - **The battle's pace.** A step with `PauseGame` holds the battle until it is met: frozen, or at `SlowdownPercentage` of its speed (the Wall Breakers' 10%). A gold ring marks its spot, and the camera brings a new step's spot into view.
 - **Retry camera.** A fresh guided attempt brings its first deployment spot into view again, even if the previous attempt ended on that same step. Panning during a step stays under the player's control.
 - **Waits.** A wait runs its `Duration` in battle time, also during scouting, so opening words like Hot Stuff's Air Sweeper note play before the first deploy. A `WaitUntilDestroyed` step waits for the building with its `ObjectGID`; `ShowObject` rings the building it points out.
