@@ -72,6 +72,8 @@ Independent Python pixel witnesses sample original full SCTX textures. The brows
 
 The September 13 garrison checks exposed incomplete capture of the largest original witness sheets: the game's 16-million-pixel/8192-dimension backbuffer cap made part of the requested readback lie outside the framebuffer. Those earlier large-sheet browser results are superseded by **thirteen row-aligned strips per engine**, each explicitly checked against the actual framebuffer dimensions. The eight original Python PNGs, their source geometry and the acceptance thresholds are unchanged; every one of the 1,529 compositions is covered by the corrected run.
 
+The [browser fixture](../../tests/browser/native-cannon-mesh.spec.ts) sets its 2× density explicitly and copies only the current row strip, at its original pixel size, into the reference texture. This allows a 9000-pixel original PNG to be compared on a GPU with an 8192-pixel texture limit. Reports retain the original image size, uploaded strip size and GPU limit alongside the framebuffer dimensions. The independent PNGs and pixel thresholds remain unchanged.
+
 All 1,529 compositions pass in both Chromium and WebKit. Forced single-texture batching and restored graphics contexts produce zero changed bytes; all recorded GL checks are zero. Maximum per-case mean channel error is 0.663266 in Chromium and 0.852041 in WebKit. The corrected captures retain 54/55 pixels above 16/255 respectively, all within 0.000415199 pixels of an original triangle edge. Effects have no such outliers. These measured coverage differences remain visible in the reports. Earlier frozen evidence stays intact, with its capture limitation explicitly recorded in the later QA correction.
 
 ## Live compatibility and verification

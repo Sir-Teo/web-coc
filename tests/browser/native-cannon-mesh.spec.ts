@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import index from '../fixtures/native-cannon-mesh/index.json' with { type: 'json' };
+
+// The viewport below is half the source-sheet size; capture every source pixel at 2×.
+test.use({ deviceScaleFactor: 2 });
+
 // displaySize caps the actual framebuffer at 16 million pixels. Render source
 // sheets in row-aligned strips, keeping the original independent PNGs intact.
 const witnesses = index.flatMap(({ category }) => {
@@ -40,20 +44,39 @@ for (const witness of witnesses)
       const { nativeScenePoses } = await import('/src/game/native-mesh.ts');
       const { preloadNativeMeshes } = await import('/src/game/native-mesh-scene.ts');
       const { NativeSceneView } = await import('/src/game/native-scene-view.ts');
+      const { NATIVE_ADDITIVE_TINT_MODE } = await import('/src/game/native-tint-modes.ts');
       document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
       scene.paused = true;
       scene.tweens.pauseAll();
       for (const child of scene.children.list) child.setVisible(false);
       scene.cameras.main.setScroll(0, 0).setZoom(1).setBackgroundColor(reference.background);
       preloadNativeMeshes(scene, world, 'cannon-test-world');
-      scene.load.image(
-        'cannon-source-reference',
-        `/tests/fixtures/native-cannon-mesh/${reference.sourceCategory}.png`,
-      );
       await new Promise<void>((resolve) => {
         scene.load.once('complete', resolve);
         scene.load.start();
       });
+      // Keep the independent PNG intact, but upload only this strip at its original size.
+      // The full 9000-pixel source sheets exceed some GPUs' maximum texture dimension.
+      const original = new Image();
+      original.src = `/tests/fixtures/native-cannon-mesh/${reference.sourceCategory}.png`;
+      await original.decode();
+      const strip = document.createElement('canvas');
+      strip.width = reference.width;
+      strip.height = reference.height;
+      const context = strip.getContext('2d')!;
+      context.imageSmoothingEnabled = false;
+      context.drawImage(
+        original,
+        0,
+        reference.sourceY,
+        reference.width,
+        reference.height,
+        0,
+        0,
+        reference.width,
+        reference.height,
+      );
+      scene.textures.addCanvas('cannon-source-reference', strip);
       const views = reference.cases.map((c) => {
         const view = new NativeSceneView(scene, 'cannon-test-world');
         const poses = c.base ? nativeScenePoses(world, c.base, 0, {}, c.root) : [];
@@ -117,9 +140,7 @@ for (const witness of witnesses)
       scene.cameras.main.setForceComposite(true);
       const actual = await capture();
       for (const view of views) for (const object of view.objects) object.setVisible(false);
-      const image = scene.add
-        .image(0, -reference.sourceY, 'cannon-source-reference')
-        .setOrigin(0, 0);
+      const image = scene.add.image(0, 0, 'cannon-source-reference').setOrigin(0, 0);
       const expected = await capture();
       image.destroy();
       for (const view of views) for (const object of view.objects) object.setVisible(true);
@@ -173,16 +194,23 @@ for (const witness of witnesses)
         sourceCategory: reference.sourceCategory,
         sourceY: reference.sourceY,
         framebuffer: { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight },
+        sourceImage: { width: original.naturalWidth, height: original.naturalHeight },
+        referenceTexture: { width: strip.width, height: strip.height },
+        maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
         compared: { width: reference.width, height: reference.height },
         defaultFramebufferSamples,
         singleTextureChanges: changed(single),
         contextChanges: changed(restored),
         meshes: views.reduce((n, v) => n + v.meshes.size, 0),
         groups: views.reduce((n, v) => n + v.groups.size, 0),
-        // Isolated groups plus additive/screen leaves (single-leaf groups draw directly).
+        // Isolated groups, blend states and additive leaves batched through the tint shader.
         blended: views.reduce(
           (n, v) =>
-            n + v.groups.size + [...v.meshes.values()].filter((m) => m.blendMode !== 0).length,
+            n +
+            v.groups.size +
+            [...v.meshes.values()].filter(
+              (m) => m.blendMode !== 0 || m.tintMode === NATIVE_ADDITIVE_TINT_MODE,
+            ).length,
           0,
         ),
         tintedTextures: scene.textures
