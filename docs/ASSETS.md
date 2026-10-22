@@ -45,6 +45,14 @@ under `public/assets/village-native/` and `public/assets/troops-native/` can be 
 on demand. The dev server and production build split their atlases into level pages as
 they serve them; nothing generated is committed (see [level texture pages](TEXTURE-PAGES.md)). Browse `/asset-catalog.html` on the dev server to inspect catalog assets.
 
+Some identical native texture crops share one shipping file. The Cannon, Air Sweeper,
+Mortar, Wizard Tower and X-Bow importers use the pinned [shared texture aliases](../scripts/native_art/shared_assets.py)
+to retain those paths. Each alias records its decoded RGBA hash and dimensions. The
+importer validates every crop before redirecting output and reference paths, including
+RGB values under transparent pixels; a different crop cannot overwrite another family's page.
+Shared outputs are verified alongside owned assets, while directory membership checks
+still reject unexpected files in the importing family's own folder.
+
 ## Changing or removing assets
 
 1. Identify the owning generator/importer and read its reference notes.

@@ -48,6 +48,16 @@ The decoration timeline exporter supplements the static Shop portrait importer:
 Omit both flags to regenerate the four animation packs and their source index. See
 [Decorations](../docs/DECORATIONS.md) for loading, registration and coverage.
 
+Shared native texture aliases are pinned by decoded pixels in `native_art/shared_assets.py`.
+Its focused checks run without downloading source bundles:
+
+```sh
+PYTHONPATH=scripts .venv/bin/python -m unittest native_art.test_shared_assets
+```
+
+Run the affected importers' `--check` commands as well to compare full source reconstructions,
+including owned-file membership, shared pages and generated reference paths.
+
 ## Browser tooling
 
 Install Playwright browsers before running browser scripts. `npm run test:production`

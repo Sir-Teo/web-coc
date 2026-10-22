@@ -15,6 +15,7 @@ from PIL import Image
 from native_art.bundle import ROOT, BUNDLE, BASE, SOURCES, digest, source
 from native_art.sc6 import SC6, decode_sctx, rasterize, require
 from native_art.scene_graph import capture_graph, crop_textures, graph_draws
+from native_art.shared_assets import owned_asset_paths, redirect_shared_textures
 
 PINS = {
     'fingerprint.json': 'ecb5b05d632831cd706e4e993158b63635445257ad254bec97c371b078e3044b',
@@ -35,8 +36,6 @@ PINS = {
     'sfx/bow_target.ogg': '6ce1662bd07978da29bdd4d2dd89cd242164b3808d1dcc9ed8911065c2b6aa2b',
 }
 PREFIX = 'assets/buildings/xbow-native'
-# This identical source crop is shared with Archer Towers in the shipping asset inventory.
-SHARED_TEXTURES = {8: 'assets/archer-tower-native/buildings/texture/texture-8.png'}
 
 
 def table(path):
@@ -88,10 +87,6 @@ def build():
         require(image.size == (descriptor['width'], descriptor['height']), 'SC6/SCTX dimensions differ')
         decoded[index] = image
     outputs, textures, runtime = crop_textures(graph, decoded, PREFIX)
-    for texture, path in SHARED_TEXTURES.items():
-        row = textures[str(texture)]
-        outputs[path] = outputs.pop(row['path'])
-        row['path'] = runtime['textures'][str(texture)]['path'] = path
     # Enumerate every clip frame to reject unsupported additive groups before shipping.
     # This also exercises otherwise invisible empty source timelines.
     draw_count = 0
@@ -162,6 +157,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     outputs, metadata, runtime = build()
+    redirect_shared_textures(outputs, {'native': metadata, 'runtime': runtime})
     for path, value in outputs.items():
         target = ROOT / 'public' / path
         if args.check:
@@ -179,8 +175,7 @@ def main():
                 value.save(target, optimize=True)
     if args.check:
         shipped = {str(p.relative_to(ROOT / 'public')) for p in (ROOT / 'public' / PREFIX).iterdir() if p.is_file()}
-        owned = {path for path in outputs if path.startswith(PREFIX + '/')}
-        require(shipped == owned, 'Unexpected or missing native X-Bow assets')
+        require(shipped == owned_asset_paths(outputs, PREFIX), 'Unexpected or missing native X-Bow assets')
     # Combat consumes only audited numeric data, without importing the large art graph.
     levels, inherited = [], {}
     projectiles = list(metadata['projectiles'])
