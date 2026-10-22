@@ -567,6 +567,8 @@ export class VillageScene extends Phaser.Scene {
   onVillageObject: (opens: VillageObjectDef['opens']) => void = () => {};
   /** Callbacks waiting for Phaser to inject `events` (the HUD is built before the game boots). */
   private bootWaiters: (() => void)[] = [];
+  /** Attribute boot errors to their family; release File references once the scene is created. */
+  private bootFamilyFiles = new Map<Phaser.Loader.File, ArtFamily>();
   /** Runs `callback` once scene systems (events, cameras) exist: now, or when Phaser boots the scene. */
   whenBooted(callback: () => void) {
     if (this.sys?.events) callback();
@@ -677,6 +679,7 @@ export class VillageScene extends Phaser.Scene {
     this.audio = audio;
   }
   preload() {
+    this.bootFamilyFiles.clear();
     for (const callback of this.bootWaiters.splice(0)) callback();
     // The home village's native building art is fetched outside the Phaser loader; start it now
     // so it downloads alongside the preload instead of popping in after the village appears.
@@ -688,9 +691,15 @@ export class VillageScene extends Phaser.Scene {
     this.deferredFamilies = [];
     // A family whose graph could not be fetched before boot joins the on-demand ones.
     for (const family of ART_FAMILIES)
-      if ((home.some(family.draws) || family.needed?.(this.model)) && (family.prepared?.() ?? true))
+      if (
+        (home.some(family.draws) || family.needed?.(this.model)) &&
+        (family.prepared?.() ?? true)
+      ) {
+        const queued = new Set(this.load.list);
         family.preload(this);
-      else this.deferredFamilies.push(family);
+        for (const file of this.load.list)
+          if (!queued.has(file)) this.bootFamilyFiles.set(file, family);
+      } else this.deferredFamilies.push(family);
     this.load.image('cannon', '/assets/buildings/cannon.webp');
     // Level 1 too: a tower bought from the Shop draws natively from its first frame.
     preloadVillageArcherTowers(this, [
@@ -762,18 +771,46 @@ export class VillageScene extends Phaser.Scene {
       const bar = document.querySelector<HTMLElement>('#load-progress');
       if (bar) bar.style.width = `${Math.round(p * 100)}%`;
     };
-    const onLoadError = () => {
+    const onLoadError = (file: Phaser.Loader.File) => {
+      const retrying = this.deferFailedBootFamily(file);
       const label = document.querySelector('#load-label');
-      if (label) label.textContent = 'An asset could not load. Please refresh to retry.';
+      if (label)
+        label.textContent = retrying
+          ? 'Some village art could not load. It will retry automatically.'
+          : 'An asset could not load. Please refresh to retry.';
     };
     this.load.on('progress', onProgress);
     this.load.on('loaderror', onLoadError);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.bootFamilyFiles.clear();
       this.load.off('progress', onProgress);
       this.load.off('loaderror', onLoadError);
     });
   }
+  private deferFailedBootFamily(file: Phaser.Loader.File) {
+    const family = this.bootFamilyFiles.get(file);
+    if (!family) return false;
+    if (!this.deferredFamilies.includes(family)) this.deferredFamilies.push(family);
+    if (!this.failedFamilies.has(family))
+      this.failedFamilies.set(family, {
+        attempts: 1,
+        retryAt: performance.now() + artRetryDelay(1),
+      });
+    // A later retry queues only missing files. Keep ownership of this boot batch's
+    // successful images too, so the family can release all its pages when unused.
+    const keys = [...this.bootFamilyFiles]
+      .filter(
+        ([owned, owner]) =>
+          owner === family && (owned.type === 'image' || owned.type === 'spritesheet'),
+      )
+      .map(([owned]) => owned.key);
+    this.familyTextures.set(family, [
+      ...new Set([...(this.familyTextures.get(family) ?? []), ...keys]),
+    ]);
+    return true;
+  }
   create() {
+    this.bootFamilyFiles.clear();
     configureQuadRendering(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     holdFilterContexts(this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer);
     useFastDepthSort(this);
@@ -3102,8 +3139,14 @@ export class VillageScene extends Phaser.Scene {
     }
     if (kind === 'skeletontrap') {
       const art = skeletonTrapArt(level);
+      const atlas = this.textures.exists(art.texture);
+      const fallback = skeletonTrapTexture(skeletonMode, level);
+      const texture = atlas ? art.texture : this.textures.exists(fallback) ? fallback : '__DEFAULT';
       return im
-        .setTexture(art.texture, skeletonTrapFrame(level, skeletonMode, undefined, 0))
+        .setTexture(
+          texture,
+          atlas ? skeletonTrapFrame(level, skeletonMode, undefined, 0) : undefined,
+        )
         .setOrigin(art.originX, art.originY)
         .setFlipX(false)
         .setDisplaySize(art.width, (art.width * art.frameHeight) / art.frameWidth);
@@ -4470,15 +4513,17 @@ export class VillageScene extends Phaser.Scene {
       if (!im) continue;
       if (v.kind === 'skeletontrap') {
         const state = battle?.traps[v.id];
-        im.setFrame(
-          skeletonTrapFrame(
-            v.level,
-            v.skeletonMode ?? 'ground',
-            state,
-            battle?.elapsed ?? 0,
-            reduced,
-          ),
-        ).setCrop();
+        if (im.texture.key === skeletonTrapArt(v.level).texture)
+          im.setFrame(
+            skeletonTrapFrame(
+              v.level,
+              v.skeletonMode ?? 'ground',
+              state,
+              battle?.elapsed ?? 0,
+              reduced,
+            ),
+          );
+        im.setCrop();
         // Same construction / spent fades `sync` applies to every building.
         const alpha = state?.resolved ? 0.35 : v.constructing ? 0.58 : 1;
         if (im.alpha !== alpha) im.setAlpha(alpha);

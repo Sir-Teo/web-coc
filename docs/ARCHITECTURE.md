@@ -81,6 +81,13 @@ releasing and reloading a family does not accumulate callbacks across attacks.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
 
+Boot files also record their owning art family. If one fails, that family joins the same
+deferred retry policy and retains ownership of the images that did load. Temporary file
+references are cleared when the scene starts or shuts down. Skeleton Traps keep their
+mode-specific static portrait until their animation atlas arrives and apply frame changes
+only to the real atlas. `tests/browser/boot-family-recovery.spec.ts` covers both Skeleton
+Trap modes and a home X-Bow, including reconnects and successful boot-image ownership.
+
 Failed native troop graphs and hero/pet atlases wait five seconds before retrying,
 per asset key, as troop texture pages already do. Rendering keeps requesting missing
 art after the cooldown, so a temporary outage recovers within the same battle without

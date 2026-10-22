@@ -142,6 +142,58 @@ test('a cold Go to Bat visit downloads shared Ghost coffins through the shipped 
   expect(errors).toEqual([]);
 });
 
+test('a failed home coffin atlas retries after boot through the shipped UI', async ({
+  page,
+  browserName,
+}) => {
+  const state = initialSave();
+  state.tutorial = true;
+  state.army = emptyArmy();
+  state.obstacles = [];
+  state.buildings = [
+    makeBuilding(1, 'townhall', 20, 20, 8),
+    makeBuilding(2, 'builder', 26, 26),
+    makeBuilding(3, 'skeletontrap', 10, 10, 1),
+  ];
+  state.buildings[2].skeletonMode = 'air';
+  state.nextId = 4;
+  const save = new GameModel(state).state;
+  expect(validateSave(save)).toBe(true);
+  await page.addInitScript(
+    (save) => localStorage.setItem('crown-clan-save-v1', save),
+    JSON.stringify(save),
+  );
+  const path = '/assets/buildings/skeleton-trap-native/1-atlas.webp';
+  const pattern = '**' + path;
+  let requests = 0;
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname === path) requests++;
+  });
+  await page.route(pattern, (route) =>
+    route.fulfill({ status: 503, body: 'Temporary boot atlas outage' }),
+  );
+  await page.goto('/');
+  await expect(page.locator('#loading')).toBeHidden({ timeout: 30000 });
+  await page.waitForLoadState('networkidle');
+  expect(requests).toBeGreaterThan(0);
+  const failed = requests;
+  await page.unroute(pattern);
+  const recovered = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === path && response.ok(),
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect.poll(() => requests, { timeout: 2000 }).toBeGreaterThan(failed);
+  expect((await recovered).headers()['content-type']).toMatch(/^image\//);
+  await page.waitForLoadState('networkidle');
+  await page.locator('.shop-btn').click();
+  await expect(page.locator('.shop-tile').first()).toBeVisible();
+  await page.locator('[data-action="close-drawer"]').click();
+  await page.screenshot({ path: `output/playtest/boot-coffin-built-${browserName}.png` });
+  expect(errors).toEqual([]);
+});
+
 test('a removed built art chunk keeps the release reload path', async ({ page }) => {
   const manifest = JSON.parse(await readFile('dist/.vite/manifest.json', 'utf8'));
   const modulePath = '/' + manifest['src/game/late-campaign-scene.ts'].file;

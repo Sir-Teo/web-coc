@@ -48,6 +48,7 @@ character-graph chunks, verifies fresh-URL recovery and interactive UI, and pres
 the reload path for removed release chunks. It also checks that these chunks stay out
 of the startup cache. A cold Go to Bat visit through the Campaign UI verifies that
 Ghost Trap coffins load without an ordinary Skeleton Trap in the village.
+Another case fails a home Skeleton Trap atlas at boot and verifies reconnect recovery.
 It runs Chromium and WebKit by default; `PRODUCTION_BROWSER`
 can select either engine. Fault-injection cases block service workers. A separate case
 uses the real worker with an unavailable preview host to verify cached retry downloads;
