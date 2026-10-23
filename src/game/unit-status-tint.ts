@@ -6,6 +6,7 @@ import { FROZEN_TINT } from './freeze-trap-art';
 export const TINT_MULTIPLY = 0;
 export const TINT_SCREEN = 4;
 export const NATIVE_FREEZE_TINT = 0xa8e6ff;
+export const NATIVE_POISON_TINT = 0xa6e57a;
 
 export interface UnitStatusTint {
   color: number;
@@ -15,7 +16,7 @@ export interface UnitStatusTint {
 const tints = {
   lateFrozen: { color: FROZEN_TINT, mode: TINT_SCREEN },
   frozen: { color: NATIVE_FREEZE_TINT, mode: TINT_MULTIPLY },
-  poison: { color: 0xa6e57a, mode: TINT_MULTIPLY },
+  poison: { color: NATIVE_POISON_TINT, mode: TINT_MULTIPLY },
   spellRage: { color: 0xf2b3ff, mode: TINT_MULTIPLY },
   rage: { color: 0xffbd76, mode: TINT_MULTIPLY },
 } as const satisfies Record<string, UnitStatusTint>;

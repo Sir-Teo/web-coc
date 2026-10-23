@@ -5,6 +5,10 @@ import {
   sourceFlag,
   sourceNumber,
 } from './character-catalog';
+import {
+  defendingBuilderPoisonTime,
+  type DefendingBuilderPoison,
+} from './defending-builder-poison';
 import { builderHutActivation } from './builder-hut';
 import { BUILDINGS, isTrap } from './data';
 import { nonWallBuildings } from './building-lists';
@@ -116,6 +120,7 @@ export interface DefendingBuilder {
   repairCount: number;
   repairs: DefendingBuilderRepair[];
   freeze?: DefendingBuilderFreeze;
+  poison?: DefendingBuilderPoison;
   /** The hut was destroyed: he walks back and hides at `hiddenAt`. */
   retreating?: boolean;
   hiddenAt?: number;
@@ -330,6 +335,7 @@ function stepBuilder(
     ? defendingBuilderActiveTime(builder, from, battle.elapsed)
     : Math.min(dt, Math.max(0, battle.elapsed - builder.spawnedAt));
   if (activeDt <= 0) return;
+  const time = defendingBuilderPoisonTime(builder, from, battle.elapsed, activeDt);
   const stats = defendingBuilderStats(builder.level);
   // Defensive Rage raises the health restored by each repair and his movement speed.
   const boosted = lateDefenderStats(
@@ -339,8 +345,8 @@ function stepBuilder(
   );
   builder.repairing = false;
   builder.pathAt -= activeDt;
-  builder.cooldown = Math.max(0, builder.cooldown - activeDt);
-  builder.recovery = Math.max(0, builder.recovery - activeDt);
+  builder.cooldown = Math.max(0, builder.cooldown - time.repair);
+  builder.recovery = Math.max(0, builder.recovery - time.repair);
   const hut = buildingById(battle, builder.hutId);
   if (!hut || hut.hp <= 0) {
     // His hut is gone: he stops repairing, returns to it and hides.
@@ -356,7 +362,7 @@ function stepBuilder(
       builder.hiddenAt = battle.elapsed;
       return;
     }
-    walk(builder, battle, hut, stats.range, boosted.speed, activeDt);
+    walk(builder, battle, hut, stats.range, boosted.speed, time.move);
     if (distanceTo(builder, hut) <= stats.range + EPSILON || !builder.path.length)
       builder.hiddenAt = battle.elapsed;
     return;
@@ -375,14 +381,14 @@ function stepBuilder(
   if (!target) return;
   if (distanceTo(builder, target) > stats.range + 1e-6) {
     delete builder.engaged;
-    walk(builder, battle, target, stats.range, boosted.speed, activeDt);
+    walk(builder, battle, target, stats.range, boosted.speed, time.move);
     return;
   }
   builder.path = [];
   builder.repairing = true;
   if (!builder.engaged) {
     builder.engaged = true;
-    builder.cooldown = Math.max(0, builder.recovery + stats.firstRepair - activeDt);
+    builder.cooldown = Math.max(0, builder.recovery + stats.firstRepair - time.repair);
   }
   if (builder.cooldown > EPSILON) return;
   builder.cooldown = stats.rate;

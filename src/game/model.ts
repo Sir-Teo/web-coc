@@ -782,6 +782,8 @@ export interface Battle {
   nativeBuilderFreeze?: true;
   /** Version 58: native Lightning pulses reset Defending Builder repair targets. */
   nativeBuilderLightning?: true;
+  /** Version 59: offensive poison clouds slow Defending Builder movement and repairs. */
+  nativeBuilderPoison?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

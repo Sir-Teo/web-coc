@@ -5,9 +5,10 @@ import type { LatePresentation, LateRenderContext } from './late-campaign-scene'
 import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
 import { defendingBuilderLayers } from './defending-builder-poses';
+import { defendingBuilderPoisoned } from './defending-builder-poison';
 import { defendingBuilderFrozen } from './defending-builder-freeze';
 import { applyStatusTint } from './troop-native-scene';
-import { NATIVE_FREEZE_TINT, TINT_MULTIPLY } from './unit-status-tint';
+import { NATIVE_FREEZE_TINT, NATIVE_POISON_TINT, TINT_MULTIPLY } from './unit-status-tint';
 
 /**
  * Defending Builders in the late campaign scene: the original worker body and its ground shadow,
@@ -48,7 +49,9 @@ export class DefendingBuilderPresentation implements LatePresentation {
           views.body,
           defendingBuilderFrozen(builder, battle!.elapsed)
             ? { color: NATIVE_FREEZE_TINT, mode: TINT_MULTIPLY }
-            : undefined,
+            : defendingBuilderPoisoned(builder, battle!.elapsed)
+              ? { color: NATIVE_POISON_TINT, mode: TINT_MULTIPLY }
+              : undefined,
         );
       for (const object of views.body.objects) object.setData('defendingBuilder', builder.id);
     }

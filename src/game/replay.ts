@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 58;
+export const REPLAY_VERSION = 59;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -86,7 +86,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * Version 55 adds the Helper Hut building without changing any combat rule.
  * Version 56 adds Builder's Hut levels 5–8; earlier recordings retain the four-tier ceiling.
  * Version 57 lets offensive full freezes halt Defending Builder movement and repairs.
- * Version 58 lets native Lightning pulses reset Defending Builder repair targets. */
+ * Version 58 lets native Lightning pulses reset Defending Builder repair targets.
+ * Version 59 applies native offensive poison slows to Defending Builders. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -112,6 +113,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 55 ||
   version === 56 ||
   version === 57 ||
+  version === 58 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -260,6 +262,7 @@ export interface ReplayPlayback {
 }
 export function replayBattle(s: ReplaySetup, version = REPLAY_VERSION): Battle {
   return {
+    ...(version >= 59 ? { nativeBuilderPoison: true as const } : {}),
     ...(version >= 58 ? { nativeBuilderLightning: true as const } : {}),
     ...(version >= 57 ? { nativeBuilderFreeze: true as const } : {}),
     // Version 54: capped crowd separation, the stalled-summons battle end, and fallen units
