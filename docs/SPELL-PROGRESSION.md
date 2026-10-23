@@ -1,6 +1,13 @@
-# Home Village spell progression
+# Home Village spell progression (historical)
 
-Audited September 11, 2026; extended September 14 and 15, 2026. Nine spells are now cast: Lightning, Healing, Rage, **Freeze**, **Invisibility**, **Jump**, **Clone**, **Recall** and **Revive** — every Spell Factory spell but the Totem. Each runs to its own original ceiling, read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
+This note records the September 11–15, 2026 spell milestones through recording version 50.
+The current runtime includes the Totem and Dark Spell Factory spells; their catalog coverage
+is listed in [the content inventory](CONTENT-INVENTORY.md), with behavior implemented by
+[the native spell engine](../src/game/native-spells.ts) and checked by
+[its tests](../tests/native-spells.test.ts). The level tables and compatibility notes below
+preserve the earlier audit.
+
+Audited September 11, 2026; extended September 14 and 15, 2026. That milestone supported nine spells: Lightning, Healing, Rage, **Freeze**, **Invisibility**, **Jump**, **Clone**, **Recall** and **Revive** — every Spell Factory spell but the Totem. Each runs to its own original ceiling, read from the pinned [troop and spell reference](../reference/troops/README.md) rather than transcribed. Every value for levels 1–5, which this game already shipped, reproduces the records below exactly, so nothing existing changed. These are undiscounted values. Preparation remains free and instant; the prices below are permanent research upgrades.
 
 The Healing spell carries its healing as a negative damage rate in the source, as the Healer does; it is recorded here as a positive heal.
 
@@ -34,7 +41,7 @@ Added September 15, 2026, as **recording version 50** — one version for all fo
 
 **Revive** (Spell Factory 8) stands a fallen hero back up where it fell, at `ResurrectHitpointPercentage` of its maximum — 60% at level 1 rising to 80%. Its `Radius` is zero and its reach is `TargetingRadius`, eight tiles. With no hero down within reach the spell is **not spent**: the cast is refused and the spell stays in hand.
 
-The **Totem Spell** is the one Spell Factory spell still unimplemented: its `ChainSpell` summons a totem, an entity this game has no model for. The eight Dark Spell Factory spells wait on that building.
+At that milestone, the **Totem Spell** and the eight Dark Spell Factory spells were outside the implementation. The current native spell engine models the Totem summon and supports Dark Spell Factory preparation and research; see the current sources above.
 
 The spell key order matters and is load-bearing: an archived battle state is compared as JSON, so `SPELL_KEYS` follows the `SPELLS` object's own order and the Freeze Spell is **appended**, never inserted. `tests/freeze-spell.test.ts` asserts that order, and that every recording's own book is a prefix of today's. The per-version book is now one table, `SPELLS_ADDED_AT` in `replay.ts`, so the next spell is one line rather than a new constant.
 
@@ -48,23 +55,23 @@ The current [Lightning](https://clashofclans.fandom.com/wiki/Lightning_Spell/Hom
 
 ## Supported levels
 
-| Spell | Level | Damage / healing per pulse / damage boost | Movement boost | Research elixir | Research time | Laboratory |
-| --- | --- | --- | --- | --- | --- | --- |
-| Lightning | 1 | 150 damage | — | — | — | — |
-| Lightning | 2 | 180 damage | — | 50,000 | 2h | 1 |
-| Lightning | 3 | 210 damage | — | 100,000 | 4h | 2 |
-| Lightning | 4 | 240 damage | — | 200,000 | 6h | 3 |
-| Lightning | 5 | 270 damage | — | 600,000 | 24h | 6 |
-| Healing | 1 | 15 healing | — | — | — | — |
-| Healing | 2 | 20 healing | — | 75,000 | 3h | 2 |
-| Healing | 3 | 25 healing | — | 150,000 | 6h | 4 |
-| Healing | 4 | 30 healing | — | 300,000 | 12h | 5 |
-| Healing | 5 | 35 healing | — | 900,000 | 24h | 6 |
-| Rage | 1 | +130% damage | +2.5 tiles/s | — | — | — |
-| Rage | 2 | +140% damage | +2.75 tiles/s | 400,000 | 6h | 3 |
-| Rage | 3 | +150% damage | +3 tiles/s | 800,000 | 12h | 4 |
-| Rage | 4 | +160% damage | +3.25 tiles/s | 1,000,000 | 24h | 5 |
-| Rage | 5 | +170% damage | +3.5 tiles/s | 2,000,000 | 48h | 6 |
+| Spell     | Level | Damage / healing per pulse / damage boost | Movement boost | Research elixir | Research time | Laboratory |
+| --------- | ----- | ----------------------------------------- | -------------- | --------------- | ------------- | ---------- |
+| Lightning | 1     | 150 damage                                | —              | —               | —             | —          |
+| Lightning | 2     | 180 damage                                | —              | 50,000          | 2h            | 1          |
+| Lightning | 3     | 210 damage                                | —              | 100,000         | 4h            | 2          |
+| Lightning | 4     | 240 damage                                | —              | 200,000         | 6h            | 3          |
+| Lightning | 5     | 270 damage                                | —              | 600,000         | 24h           | 6          |
+| Healing   | 1     | 15 healing                                | —              | —               | —             | —          |
+| Healing   | 2     | 20 healing                                | —              | 75,000          | 3h            | 2          |
+| Healing   | 3     | 25 healing                                | —              | 150,000         | 6h            | 4          |
+| Healing   | 4     | 30 healing                                | —              | 300,000         | 12h           | 5          |
+| Healing   | 5     | 35 healing                                | —              | 900,000         | 24h           | 6          |
+| Rage      | 1     | +130% damage                              | +2.5 tiles/s   | —               | —             | —          |
+| Rage      | 2     | +140% damage                              | +2.75 tiles/s  | 400,000         | 6h            | 3          |
+| Rage      | 3     | +150% damage                              | +3 tiles/s     | 800,000         | 12h           | 4          |
+| Rage      | 4     | +160% damage                              | +3.25 tiles/s  | 1,000,000       | 24h           | 5          |
+| Rage      | 5     | +170% damage                              | +3.5 tiles/s   | 2,000,000       | 48h           | 6          |
 
 Research also requires the spell's actual unlock: Factory 1/TH5 for Lightning, Factory 2/TH6 for Healing, and Factory 3/TH7 for Rage. A low laboratory requirement does not unlock a spell before its factory exists. Research shares the single project slot with troops, needs no builder, and remains available while the laboratory upgrades. The completed building level supplies the gate until its deadline. Payment, gem completion, offline completion and next-level previews use the same records.
 

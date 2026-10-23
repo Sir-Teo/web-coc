@@ -9,7 +9,7 @@ Wall selection now supports connected straight rows and groups of same-level wal
 - [Supercell’s June 26, 2022 announcement](https://supercell.com/en/games/clashofclans/blog/news/home-village-changes-2/) unlocks elixir Wall upgrades at TH5. The modern Wall table starts elixir at destination level 5, so each selected piece must already be at least level 4. This supersedes the wiki’s stale row-upgrade prose. Mixed rows containing a lower-level wall offer gold until that wall reaches level 4.
 - Supercell's [August 30, 2026 update](https://supercell.com/en/games/clashofclans/blog/release-notes/august-update-3/) specifically removes the free-builder requirement for **Wall Rings**. It does not make ordinary gold/elixir upgrades builder-free. The [Wall Ring action](MAGIC-ITEMS.md) follows that exception and works with every builder occupied.
 
-Sources checked September 11, 2026; the community wall pages were available through indexed excerpts. Current prices, health and count limits are documented in [WALL-PROGRESSION.md](WALL-PROGRESSION.md); new placement is free. Eight original level sprites are documented in [WALL-ART.md](WALL-ART.md).
+Sources checked September 11, 2026; the community wall pages were available through indexed excerpts. Current prices and health read [the native Wall rows](../src/game/wall-stats.ts), with count limits in [the tier catalog](TOWNHALL-TIERS.md); new placement is free. The initial eight-level audit is preserved in [Wall progression](WALL-PROGRESSION.md). Eight original level sprites are documented in [WALL-ART.md](WALL-ART.md).
 
 ## Purchase and selection rules
 
@@ -27,6 +27,6 @@ Model tests cover straight rows, gaps and corners, mixed levels, stable same-lev
 
 Browser tests touch a real wall, select and upgrade its row, reload the purchase, adjust same-level quantities, wait for an available builder, upgrade a mixed row with gold then elixir, verify that Info upgrades only its displayed wall, and inspect every primary control on 320px portrait and 844px landscape phones. Label and cost use separate lines, with checks that both remain within each purchase button. Chromium and WebKit exercise these flows; WebKit CI includes the wall suite.
 
-Remaining wall work includes higher-level artwork and closer native connection geometry, live-game price/HP tables, Wall Rings and higher Town Hall content. Broader village and multiplayer requirements remain tracked separately.
+Remaining wall presentation work includes higher-level artwork and closer native connection geometry. Current price and HP rows are read by [wall-stats.ts](../src/game/wall-stats.ts), Town Hall gates by [the tier catalog](TOWNHALL-TIERS.md), and implemented Ring actions are described in [Magic items](MAGIC-ITEMS.md). Broader village and multiplayer requirements remain tracked separately.
 
 Level 1–8 material artwork and shared placement/preview connections are documented in [WALL-ART.md](WALL-ART.md).

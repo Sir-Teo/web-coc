@@ -1,17 +1,22 @@
-# Home Village wall progression
+# Home Village wall progression (historical)
 
-Re-audited September 11, 2026 against the [modern Home Village Wall table](https://clashofclans.fandom.com/wiki/Wall) and the explicit Wall health changes in [Supercell’s June 16, 2025 release notes](https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-lets-get-crafty-update/). This supersedes the stale CoC Guide health values and 50-gold construction price. The wiki statistics and February 2025 history agree that new Wall pieces cost zero. Direct wiki retrieval was blocked; the indexed reference was crawled about two months before this audit. Temporary discounts and Wall Rings remain unimplemented.
+This note preserves the initial level 1–8 wall audit. Current levels, prices and hitpoints
+come from the full pinned Wall rows through [wall-stats.ts](../src/game/wall-stats.ts), with
+Town Hall counts and gates in [the tier catalog](TOWNHALL-TIERS.md). Current Ring and resource
+upgrade rules are described in [Wall upgrades](WALL-UPGRADES.md).
+
+Re-audited September 11, 2026 against the [modern Home Village Wall table](https://clashofclans.fandom.com/wiki/Wall) and the explicit Wall health changes in [Supercell’s June 16, 2025 release notes](https://supercell.com/en/games/clashofclans/blog/release-notes/welcome-to-lets-get-crafty-update/). This supersedes the stale CoC Guide health values and 50-gold construction price. The wiki statistics and February 2025 history agree that new Wall pieces cost zero. Direct wiki retrieval was blocked; the indexed reference was crawled about two months before this audit. The table gives undiscounted prices. [Wall Rings](MAGIC-ITEMS.md) are implemented, with their builder exception documented in [Wall upgrades](WALL-UPGRADES.md).
 
 | Destination level | Cost per piece | Hitpoints | Required Town Hall |
-| --- | ---: | ---: | ---: |
-| 1 | Free | 100 | 2 |
-| 2 | 1,000 | 200 | 2 |
-| 3 | 5,000 | 400 | 3 |
-| 4 | 10,000 | 800 | 4 |
-| 5 | 20,000 | 1,200 | 5 |
-| 6 | 30,000 | 1,800 | 6 |
-| 7 | 50,000 | 2,400 | 7 |
-| 8 | 75,000 | 3,000 | 8 |
+| ----------------- | -------------: | --------: | -----------------: |
+| 1                 |           Free |       100 |                  2 |
+| 2                 |          1,000 |       200 |                  2 |
+| 3                 |          5,000 |       400 |                  3 |
+| 4                 |         10,000 |       800 |                  4 |
+| 5                 |         20,000 |     1,200 |                  5 |
+| 6                 |         30,000 |     1,800 |                  6 |
+| 7                 |         50,000 |     2,400 |                  7 |
+| 8                 |         75,000 |     3,000 |                  8 |
 
 New pieces are free and the shop says “Free.” An empty treasury can place a run until the Town Hall count limit, after which the tool closes and the shop says “At limit.” Resource upgrades allow gold or elixir from level 4 to 5 onward (TH5) and require a free builder, without reserving that builder or starting a timer. Mixed selections sum each eligible piece's destination price. Ineligible pieces are disclosed and skipped; an unaffordable batch changes nothing.
 
