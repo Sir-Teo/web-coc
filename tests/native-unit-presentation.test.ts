@@ -81,6 +81,7 @@ const { TroopNativePresentation } = await import('../src/game/troop-native-scene
 const { HeroNativePresentation } = await import('../src/game/hero-native-scene');
 const { NativeDefenseEventLog, NativeDefensePresentation, NATIVE_DEFENSE_SPELL_KIND } =
   await import('../src/game/native-defense-scene');
+const { NativeProjectilePresentation } = await import('../src/game/native-projectile-scene');
 const { unitDepth } = await import('../src/game/unit-depth');
 
 const iso = (x: number, y: number) => ({ x: (x - y) * 32, y: (x + y) * 16 });
@@ -397,5 +398,50 @@ describe('native defense zap readiness', () => {
     states.set(primary, 'none');
     expect(p.coversZap(tower)).toBe(false);
     expect(p.coversZap(tower, true)).toBe(true);
+  });
+});
+
+describe('native projectile impact readiness', () => {
+  const effect = 'Merged Cannon Projectile Destroyed';
+  function presentation() {
+    const p = new NativeProjectilePresentation({} as never, {} as never);
+    const pack = JSON.parse(
+      fs.readFileSync('public/assets/projectiles-native/mergedcannonprojectile/graph.json', 'utf8'),
+    );
+    const state = p as unknown as {
+      covered: Set<string>;
+      history: Map<string, unknown>;
+      packs: unknown;
+      layer: unknown;
+    };
+    state.covered.add('shot');
+    state.history.set('shot', { name: 'MergedCannonProjectile', packPath: 'fixture' });
+    state.packs = { get: () => pack };
+    const duration = vi.fn(() => 0.5);
+    const status = vi.fn((): 'ready' | 'loading' | 'none' => 'loading');
+    state.layer = { duration, status };
+    return { p, pack, duration, status, state };
+  }
+  it('keeps native flight covered while pending or failed impact art retains a fallback', () => {
+    const { p, duration, status } = presentation();
+    expect(p.covers('shot')).toBe(true);
+    expect(p.coversImpact('shot')).toBe(false);
+    status.mockReturnValue('none');
+    duration.mockClear();
+    expect(p.coversImpact('shot')).toBe(false);
+    expect(duration).toHaveBeenCalledWith(effect);
+    status.mockReturnValue('ready');
+    expect(p.coversImpact('shot')).toBe(true);
+    expect(p.covers('shot')).toBe(true);
+  });
+  it('does not cover an unknown shot or change rows without indexed visual impact artwork', () => {
+    const { p, pack, duration, state } = presentation();
+    expect(p.coversImpact(undefined)).toBe(false);
+    expect(p.coversImpact('unknown')).toBe(false);
+    delete pack.projectiles.MergedCannonProjectile.DestroyedEffect;
+    expect(p.coversImpact('shot')).toBe(true);
+    expect(duration).not.toHaveBeenCalled();
+    state.history.clear();
+    expect(p.coversImpact('shot')).toBe(false);
   });
 });

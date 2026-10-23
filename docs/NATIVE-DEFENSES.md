@@ -151,7 +151,11 @@ and the unchanged Fast Attack crop); provenance is in
 
 Imported client timelines now drive supported defense bodies, turret poses and projectile art.
 [NativeProjectilePresentation](../src/game/native-projectile-scene.ts) loads flight artwork,
-shadows, trails and spawn/impact effects on demand. [NativeDefensePresentation](../src/game/native-defense-scene.ts)
+shadows, trails and spawn/impact effects on demand. A ready flight pack keeps its native
+projectile while an indexed impact effect that is still loading retains a local hit flash;
+[the impact-loading regression](../tests/browser/native-projectile-effect-loading.spec.ts)
+checks that handoff and cleanup on desktop and phone, plus recovery after an HTTP 503.
+[NativeDefensePresentation](../src/game/native-defense-scene.ts)
 handles rooftop defenders, beams and declared attack, hit, activation, death and spell effects,
 including chained zaps. Local fallback paths remain available while art loads. A loaded
 defense graph suppresses the local zap only after that attack’s separate native effect

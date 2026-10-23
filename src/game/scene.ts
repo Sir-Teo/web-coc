@@ -5249,7 +5249,12 @@ export class VillageScene extends Phaser.Scene {
     if (fx.weapon === 'native' && (fx.type === 'projectile' || fx.type === 'impact')) {
       // No eager drawProjectiles() here: fx drain every frame before the
       // overlay pass, which draws the whole projectile layer once.
-      if (this.nativeProjectiles.covers(fx.projectileId)) return;
+      if (
+        fx.type === 'impact'
+          ? this.nativeProjectiles.coversImpact(fx.projectileId)
+          : this.nativeProjectiles.covers(fx.projectileId)
+      )
+        return;
     }
     if (
       fx.type === 'seekingairmine-pickup' ||

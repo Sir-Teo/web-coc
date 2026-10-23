@@ -3,7 +3,7 @@ import type { Battle } from './model';
 import type { CombatProjectile } from './projectiles';
 import { NativeSceneView, effectSceneView } from './native-scene-view';
 import { NativeArtPacks, nativePackPrefix, type NativeArtPack } from './native-art-pack';
-import { NativeEffectLayer } from './native-effect-layer';
+import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
 import {
   nativeProjectileFlight,
   nativeProjectilePack,
@@ -69,9 +69,22 @@ export class NativeProjectilePresentation {
     this.packs = new NativeArtPacks<NativeProjectilePack>(scene);
     this.layer = new NativeEffectLayer(scene, effects, 'projectile');
   }
-  /** True when the native presentation already shows this shot's flight and impact. */
+  /** True when the native presentation already shows this shot's flight. */
   covers(id: string | undefined) {
     return !!id && this.covered.has(id);
+  }
+  /** Flight art can arrive before the separate impact graph and its texture pages. */
+  coversImpact(id: string | undefined) {
+    if (!id || !this.covered.has(id)) return false;
+    const shot = this.history.get(id);
+    const resolved = shot ? this.row(shot) : undefined;
+    if (!resolved?.row) return false;
+    const effect = resolved.row.DestroyedEffect;
+    // Rows without an indexed visual impact keep their existing native coverage.
+    if (!effect || !nativeEffectPack(effect)) return true;
+    // Request a bounded retry even when the previous graph request failed.
+    this.layer.duration(effect);
+    return this.layer.status(effect) === 'ready';
   }
   clear() {
     for (const { view } of this.views.values()) view.destroy();
