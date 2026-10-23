@@ -32,8 +32,16 @@ function tag(objects: readonly Phaser.GameObjects.GameObject[], name: string, va
 /** Local alpha for concealed defenders (no source transparency value is known). */
 export const GARRISON_CONCEALED_ALPHA = 0.55;
 
-/** No Flight Zone's Dragon 7 and Balloon 8 are the only defenders outside the late villages. */
+/** No Flight Zone's Dragon 7 and Balloon 8 use the smaller garrison character batch. */
 const BOOT_CHARACTERS = new Set(['Dragon7', 'Balloon Goblin8']);
+
+/** Portable garrisons can need later characters without owning a late campaign building. */
+export const garrisonNeedsLateArt = (garrisons: Battle['garrisons']) =>
+  !!garrisons?.some((reserve) =>
+    reserve.troops.some(
+      (troop) => !BOOT_CHARACTERS.has(garrisonStats(troop.kind, troop.level).animation),
+    ),
+  );
 
 /** Boot-time garrison art: effects and sounds. The shared death comes with the characters. */
 export function preloadGarrisonTroops(scene: Phaser.Scene) {

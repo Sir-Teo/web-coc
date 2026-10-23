@@ -290,3 +290,7 @@ The pinned [Poison reference](../official-wiki/spells-siege-super/poison-spell.m
 Local pulse interpretation: each defender has a damage allowance of one native pulse, replenished by elapsed battle time times maximum effective DPS. This bounds simultaneous and staggered clouds while preserving discrete native pulse hits; it is not a verified reconstruction of the client’s internal poison accumulator. The allowance resets after exposure expires.
 
 `tests/defender-poison-overlap.test.ts` covers simultaneous/staggered caps, the early ramp, spell ordering, strongest slows, hero/Guardian scaling, the version-61 boundary and portable replay reconstruction. `tests/browser/defender-poison-overlap.spec.ts` checks staggered cloud playback, original Dragon bodies and backward seeks on desktop and phone.
+
+## Imported replay artwork
+
+Later garrison character pages load from the replay’s roster as well as its buildings. A validated custom replay containing Dragon 5 can contain an ordinary Clan Castle and no late Goblin building; previously that setup loaded only the No Flight Zone character batch and left the Dragon’s body meshes on a missing texture. The roster now requests the existing late bundle before playback, with the same retry, seek reuse and home-time release behavior. This changes presentation only. `tests/browser/garrison-late-replay-art.spec.ts` verifies real graph textures, native bodies, backward seeks and cleanup at desktop and phone sizes.

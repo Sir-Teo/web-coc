@@ -67,7 +67,7 @@ server loads every family right after boot instead (the browser specs rely on it
 `?lazyart` gives a dev page the production behavior. Families the home village
 does not draw, and the late campaign art, are released again after the player has
 been home for a while. A family can also be needed by something other than a
-building (`needed`): the Clan Castle garrison defenders load when a campaign battle with
+building (`needed`): the Clan Castle garrison defenders load when a battle or replay with
 a garrison opens, and the procedural King sheets only for recordings made before the hero
 roster. Native village packs are fetched outside the
 Phaser loader: the home village's packs download alongside the preload, and the
@@ -80,6 +80,8 @@ Art batches remove their temporary scene-shutdown listeners when they settle, so
 releasing and reloading a family does not accumulate callbacks across attacks.
 The Cannon and Tesla batches leave fallback sprites already being fetched by
 `LazyTextures` to that request, avoiding duplicate texture registration.
+
+Imported replay rosters also determine whether later garrison art is needed. A supported troop such as Dragon 5 loads the late character bundle even when its village contains only ordinary buildings. The original No Flight Zone Dragon 7 and Balloon 8 retain their smaller character batch. The existing battle wait, retry and home-time release rules own these pages; backward seeks reuse them. `tests/browser/garrison-late-replay-art.spec.ts` checks actual uploaded textures and native bodies on desktop and phone.
 
 Boot files also record their owning art family. Successful boot families join the same
 release-and-reload cycle, so importing a different village can free the original village's

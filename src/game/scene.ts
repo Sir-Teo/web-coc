@@ -41,6 +41,7 @@ import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
+  garrisonNeedsLateArt,
   preloadGarrisonCharacters,
   preloadGarrisonTroops,
   preloadLateGarrisonTroops,
@@ -1833,7 +1834,11 @@ export class VillageScene extends Phaser.Scene {
       return home.needed;
     }
     if (this.lateBattle.battle !== battle)
-      this.lateBattle = { battle, needed: battle.buildings.some(isLateCampaignBuilding) };
+      this.lateBattle = {
+        battle,
+        needed:
+          battle.buildings.some(isLateCampaignBuilding) || garrisonNeedsLateArt(battle.garrisons),
+      };
     return this.lateBattle.needed;
   }
   private drawField() {
