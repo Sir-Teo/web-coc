@@ -13,6 +13,7 @@ import {
 } from './native-data';
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
 import { concealedTesla } from './hidden-tesla';
+import { freezeDefendingBuilders } from './defending-builder-freeze';
 import { unitKindForName } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
@@ -224,6 +225,8 @@ function harmDefense(
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
   const overgrowth = flag(row, 'Overgrowth');
+  if (freeze > 0 && freezePercent === 0 && !overgrowth)
+    freezeDefendingBuilders(battle, x, y, radius, at, freeze);
   if (damage > 0 || (freeze > 0 && !overgrowth) || stun > 0 || quakeBuilding > 0 || poison > 0) {
     for (const b of battle.buildings) {
       if (b.hp <= 0 || buildingSpellImmune(row, b) || concealedTesla(battle, b)) continue;

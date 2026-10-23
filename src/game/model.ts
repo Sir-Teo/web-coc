@@ -778,6 +778,8 @@ export interface Battle {
   /** Version 45+: native troop abilities, spawned units, statuses and delayed death effects. */
   nativeRoster?: true;
   nativeContentExpansion?: true;
+  /** Version 57: offensive full freezes also stop the repairing Defending Builder. */
+  nativeBuilderFreeze?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

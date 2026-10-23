@@ -11,6 +11,7 @@ export function useReleasedCombat(model: GameModel) {
   } else {
     // Strip every rule flag newer than version 51 so unrecorded battles match it too.
     delete model.battle.nativeContentExpansion;
+    delete model.battle.nativeBuilderFreeze;
     delete model.battle.nativeHeroPassives;
     delete model.battle.separationCap;
     delete model.battle.stalledSupportEnds;

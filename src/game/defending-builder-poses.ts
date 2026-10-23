@@ -34,7 +34,9 @@ export function defendingBuilderPose(
   const facing = characterFacing(aim ? aim.x - builder.x : 1, aim ? aim.y - builder.y : 0);
   const moving = builder.path.length > 0;
   const row = (builder.repairing ? states.attack : moving ? states.walk : states.idle)[0];
-  const time = reduced ? 0 : Math.max(0, battle.elapsed - builder.spawnedAt);
+  const time = reduced
+    ? 0
+    : Math.max(0, battle.elapsed - builder.spawnedAt - (builder.freeze?.timeLost ?? 0));
   const scale = rowScale(row);
   const mirror = row.HasDirections === 'TRUE' ? facing.mirror : 1;
   return {

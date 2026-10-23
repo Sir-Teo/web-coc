@@ -5,6 +5,9 @@ import type { LatePresentation, LateRenderContext } from './late-campaign-scene'
 import type { SampleCue } from './sample-audio';
 import { NativeSceneView } from './native-scene-view';
 import { defendingBuilderLayers } from './defending-builder-poses';
+import { defendingBuilderFrozen } from './defending-builder-freeze';
+import { applyStatusTint } from './troop-native-scene';
+import { NATIVE_FREEZE_TINT, TINT_MULTIPLY } from './unit-status-tint';
 
 /**
  * Defending Builders in the late campaign scene: the original worker body and its ground shadow,
@@ -40,6 +43,13 @@ export class DefendingBuilderPresentation implements LatePresentation {
       const point = iso(builder.x, builder.y);
       views.shadow.render(layers.shadow, point.x, point.y, point.y + 1.05);
       views.body.render(layers.body, point.x, point.y, point.y + 1.1);
+      if (battle?.nativeBuilderFreeze)
+        applyStatusTint(
+          views.body,
+          defendingBuilderFrozen(builder, battle!.elapsed)
+            ? { color: NATIVE_FREEZE_TINT, mode: TINT_MULTIPLY }
+            : undefined,
+        );
       for (const object of views.body.objects) object.setData('defendingBuilder', builder.id);
     }
     for (const [id, views] of this.views)

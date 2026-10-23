@@ -10,16 +10,20 @@ import { BUILDINGS, isTrap } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D } from './distance';
 import { splitTiming } from './garrison-kinds';
+import {
+  defendingBuilderActiveTime,
+  type DefendingBuilderFreeze,
+} from './defending-builder-freeze';
 import { lateBuildingHidden, lateDefenderStats, type LateCombatContext } from './late-campaign';
 import { findPath, distanceTo, type Battle, type Building } from './model';
 
 /**
  * Defending Builder: the character each armed Builder's Hut (source levels 2+) sends out to repair.
  *
- * Source (pinned rows): `Builders Hut` levels 2–4 name `DefenceTroopCharacter=Defending Builder`,
- * `DefenceTroopCount=1` and `DefenceTroopLevel` 1–3 (1-based, as the older
+ * Source (pinned rows): `Builders Hut` levels 2–8 name `DefenceTroopCharacter=Defending Builder`,
+ * `DefenceTroopCount=1` and `DefenceTroopLevel` 1–7 (1-based, as the older
  * LogicDefenceUnitProductionComponent's `SetUpgradeLevel(level - 1)`). The character rows give
- * Speed 250, AttackRange 50, AttackSpeed 750, a negative DPS (-50/-60/-70: HP restored per
+ * Speed 250, AttackRange 50, AttackSpeed 750, a negative DPS (-50 through -95: HP restored per
  * second), IsJumper, HP 100,000+ and `DeathShowTimeMS=1` with an empty death export. Globals:
  * `HEAL_STACK_PERCENT` 100,100,90,90,70,40,10,0 and `ALLOW_REPAIR_AFTER_DAMAGE_TICKS` 0.
  *
@@ -111,6 +115,7 @@ export interface DefendingBuilder {
   repairing: boolean;
   repairCount: number;
   repairs: DefendingBuilderRepair[];
+  freeze?: DefendingBuilderFreeze;
   /** The hut was destroyed: he walks back and hides at `hiddenAt`. */
   retreating?: boolean;
   hiddenAt?: number;
@@ -320,7 +325,10 @@ function stepBuilder(
   dt: number,
 ) {
   if (builder.hiddenAt !== undefined) return;
-  const activeDt = Math.min(dt, Math.max(0, battle.elapsed - builder.spawnedAt));
+  const from = Math.max(builder.spawnedAt, battle.elapsed - dt);
+  const activeDt = builder.freeze
+    ? defendingBuilderActiveTime(builder, from, battle.elapsed)
+    : Math.min(dt, Math.max(0, battle.elapsed - builder.spawnedAt));
   if (activeDt <= 0) return;
   const stats = defendingBuilderStats(builder.level);
   // Defensive Rage raises the health restored by each repair and his movement speed.

@@ -27,7 +27,7 @@ function village(levels: number[]) {
 }
 
 it('keeps all eight home hut levels through a save and limits levels 5–8 to version 56 recordings', () => {
-  expect(REPLAY_VERSION).toBe(56);
+  expect(REPLAY_VERSION).toBeGreaterThanOrEqual(56);
   for (const level of [1, 2, 3, 4, 5, 6, 7, 8]) {
     const model = village([level]);
     const save = JSON.parse(JSON.stringify(model.state));
@@ -38,6 +38,7 @@ it('keeps all eight home hut levels through a save and limits levels 5–8 to ve
     model.finishBattle();
     const data = model.state.raidLog![0].replay!;
     expect(validateReplay(data)).toBe(true);
+    expect(validateReplay({ ...data, version: 56 })).toBe(true);
     for (const version of [47, 51, 54, 55])
       expect(validateReplay({ ...data, version }), `level ${level}, version ${version}`).toBe(
         level <= 4,

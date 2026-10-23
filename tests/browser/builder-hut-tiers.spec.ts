@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import source from '../../reference/builder-hut/combat.json' with { type: 'json' };
+import { REPLAY_VERSION } from '../../src/game/replay';
 
 for (const width of [1440, 390]) {
   test(`Builder's Hut higher tiers upgrade, render and survive reload at ${width}px`, async ({
@@ -262,7 +263,7 @@ for (const width of [1440, 390]) {
         gl: window.__game.game.renderer.gl.getError(),
       };
     }, firing);
-    expect(replayed).toMatchObject({ version: 56, same: true, gl: 0 });
+    expect(replayed).toMatchObject({ version: REPLAY_VERSION, same: true, gl: 0 });
     expect(replayed.repairs).toBeGreaterThan(0);
     await expect
       .poll(
