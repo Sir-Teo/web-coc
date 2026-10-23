@@ -5238,11 +5238,11 @@ export class VillageScene extends Phaser.Scene {
       this.nativeDefenses.note(fx, this.model.battle, iso, AIR_LIFT);
     if (
       fx.type === 'defense-zap' &&
-      this.nativeDefenses.covers(
-        (this.model.battle && fx.sourceId !== undefined
+      this.nativeDefenses.coversZap(
+        this.model.battle && fx.sourceId !== undefined
           ? this.fxBuildings.get(fx.sourceId)
-          : undefined
-        )?.kind,
+          : undefined,
+        fx.text === 'chain',
       )
     )
       return;

@@ -151,7 +151,11 @@ Imported client timelines now drive supported defense bodies, turret poses and p
 [NativeProjectilePresentation](../src/game/native-projectile-scene.ts) loads flight artwork,
 shadows, trails and spawn/impact effects on demand. [NativeDefensePresentation](../src/game/native-defense-scene.ts)
 handles rooftop defenders, beams and declared attack, hit, activation, death and spell effects,
-including chained zaps. Local fallback paths remain available while art loads.
+including chained zaps. Local fallback paths remain available while art loads. A loaded
+defense graph suppresses the local zap only after that attack’s separate native effect
+graphs are ready; primary and chain attacks check their own effect artwork. The
+[loading regression](../tests/browser/native-defense-effect-loading.spec.ts) holds those graphs
+back, verifies visible fallback sparks, then checks native playback and cleanup after loading.
 
 Longshot, Smasher and Logger use their baked Guardian atlases through
 [HeroNativePresentation](../src/game/hero-native-scene.ts). The dedicated

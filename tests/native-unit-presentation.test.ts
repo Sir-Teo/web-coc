@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import type { Battle, Unit } from '../src/game/model';
+import { makeBuilding, type Battle, type Unit } from '../src/game/model';
 
 // Scene views are Phaser objects; record what the presentations ask them to draw instead.
 vi.mock('../src/game/native-scene-view', () => {
@@ -79,7 +79,7 @@ vi.mock('../src/game/native-mesh-scene', () => ({
 const { UnitMotionTracker, unitAnimationPhase } = await import('../src/game/unit-motion');
 const { TroopNativePresentation } = await import('../src/game/troop-native-scene');
 const { HeroNativePresentation } = await import('../src/game/hero-native-scene');
-const { NativeDefenseEventLog, NATIVE_DEFENSE_SPELL_KIND } =
+const { NativeDefenseEventLog, NativeDefensePresentation, NATIVE_DEFENSE_SPELL_KIND } =
   await import('../src/game/native-defense-scene');
 const { unitDepth } = await import('../src/game/unit-depth');
 
@@ -352,5 +352,50 @@ describe('native defense effect log', () => {
       for (const name of Object.keys(pack.spells ?? {})) declared[name] ??= kind;
     }
     expect(NATIVE_DEFENSE_SPELL_KIND).toEqual(declared);
+  });
+});
+
+describe('native defense zap readiness', () => {
+  const primary = 'ps_chr_SuperWizard_Attack_01';
+  const chain = 'ps_chr_SuperWizard_AtkChain_01';
+  function presentation() {
+    const p = new NativeDefensePresentation({} as never, {} as never);
+    const pack = JSON.parse(
+      fs.readFileSync('public/assets/defenses-native/superwizardtower/graph.json', 'utf8'),
+    );
+    vi.spyOn(p, 'pack').mockReturnValue(pack);
+    const states = new Map<string, 'ready' | 'loading' | 'none'>();
+    const duration = vi.fn(() => 0.5);
+    (p as unknown as { layer: unknown }).layer = {
+      duration,
+      status: (effect: string) => states.get(effect) ?? 'loading',
+    };
+    return { p, states, duration, tower: makeBuilding(7, 'superwizardtower', 24, 14, 1) };
+  }
+  it('keeps fallback for missing, pending and failed effect art despite a ready defense graph', () => {
+    const { p, states, duration, tower } = presentation();
+    expect(p.covers('superwizardtower')).toBe(true);
+    expect(p.coversZap(undefined)).toBe(false);
+    expect(p.coversZap(tower)).toBe(false);
+    states.set(primary, 'none');
+    duration.mockClear();
+    expect(p.coversZap(tower)).toBe(false);
+    expect(duration).toHaveBeenCalledWith(primary);
+    states.set(primary, 'ready');
+    expect(p.coversZap(tower)).toBe(true);
+    vi.mocked(p.pack).mockReturnValue(undefined);
+    expect(p.coversZap(tower)).toBe(false);
+  });
+  it('switches primary and chain fallbacks independently as their own artwork becomes ready', () => {
+    const { p, states, duration, tower } = presentation();
+    states.set(primary, 'ready');
+    expect(p.coversZap(tower)).toBe(true);
+    expect(duration).not.toHaveBeenCalledWith(chain);
+    expect(p.coversZap(tower, true)).toBe(false);
+    states.set(chain, 'ready');
+    expect(p.coversZap(tower, true)).toBe(true);
+    states.set(primary, 'none');
+    expect(p.coversZap(tower)).toBe(false);
+    expect(p.coversZap(tower, true)).toBe(true);
   });
 });

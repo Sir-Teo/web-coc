@@ -10,7 +10,7 @@ import {
   type NativeArtPack,
   type NativeRow,
 } from './native-art-pack';
-import { NativeEffectLayer } from './native-effect-layer';
+import { NativeEffectLayer, nativeEffectPack } from './native-effect-layer';
 import {
   NATIVE_ALTITUDE,
   NATIVE_ART_SCALE,
@@ -223,9 +223,30 @@ export class NativeDefensePresentation {
     this.clear();
     this.packs.destroy();
   }
-  /** True when this defense's own effect art replaces a drawn zap or impact flash. */
+  /** True once this defense's graph is ready; its effects load separately. */
   covers(kind: string | undefined) {
     return !!kind && !!this.pack(kind);
+  }
+  /** A loaded defense graph does not imply its separately fetched zap effects are ready. */
+  coversZap(tower: Building | undefined, chain = false) {
+    if (!tower) return false;
+    const pack = this.pack(tower.kind);
+    if (!pack) return false;
+    const effects = this.effectsFor(pack, tower);
+    const names = [
+      chain ? (effects.attackAlt ?? effects.attack) : effects.attack,
+      chain ? undefined : effects.attack2,
+      effects.hit,
+    ];
+    let art = false;
+    for (const name of names) {
+      if (!name || !nativeEffectPack(name)) continue;
+      art = true;
+      // get() also requests a bounded retry after failure; status() alone does not.
+      this.layer.duration(name);
+      if (this.layer.status(name) !== 'ready') return false;
+    }
+    return art;
   }
   private record(event: NativeEffectEvent) {
     this.log.record(event, this.now);
