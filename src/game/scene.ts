@@ -6,7 +6,6 @@ import {
   craftedArtTier,
   craftedRegistration,
   craftedTexture,
-  type CraftedKind,
 } from './crafted-defenses';
 import { HERO_KINDS, heroPortraitImage, type HeroKind } from './native-hero-data';
 import { TroopNativePresentation } from './troop-native-scene';
@@ -39,7 +38,6 @@ import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
 import { infernoSoundCues } from './inferno-sounds';
 import { preloadInfernos, InfernoPresentation } from './inferno-scene';
 import { infernoPortrait } from './inferno-art';
-import type { InfernoMode } from './inferno-weapon';
 import { infernoArtLoaded, infernoBounds, loadInfernoArt } from './inferno-graph';
 import {
   preloadGarrisonCharacters,
@@ -83,7 +81,7 @@ import { preloadDarkStorages, DarkStoragePresentation } from './dark-storage-sce
 import { DARK_STORAGE_ART } from './dark-storage-art';
 import { sceneryAsset, sceneryArt, type ScenerySprite } from './campaign-scenery';
 import { NATIVE_SCENERY } from './native-campaign';
-import { npcArt, type NpcBuildingKind } from './npc-buildings';
+import { npcArt } from './npc-buildings';
 import { PUMPKIN_ART, pumpkinFrame } from './pumpkin-bomb';
 import { santaTrapFrame } from './santa-art';
 import { preloadSanta, SantaPresentation } from './santa-scene';
@@ -92,9 +90,7 @@ import { isShrunk } from './shrink-trap';
 import { loadShrinkArt, shrinkArtLoaded } from './shrink-trap-poses';
 import { preloadXbows, XbowPresentation } from './xbow-scene';
 import { XBOW_ART } from './xbow-art';
-import type { XbowMode } from './xbow-stats';
 import { buildingRange } from './building-range';
-import type { GearMode } from './native-defense-stats';
 import { battleTrapStats } from './traps';
 import { BOMB_TOWER_ART } from './bomb-tower-art';
 import { preloadBombTowers, BombTowerPresentation } from './bomb-tower-scene';
@@ -115,7 +111,7 @@ import {
   skeletonTrapTexture,
   skeletonAsset,
 } from './skeleton-art';
-import { skeletonStats, type SkeletonMode } from './skeleton-stats';
+import { skeletonStats } from './skeleton-stats';
 import { isGarrisonDefender } from './defenders';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
@@ -191,6 +187,22 @@ import { mergeEdges } from './boundary-edges';
 import { defenderIndex, unitIndex } from './battle-index';
 import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
 import { unitStatusTint } from './unit-status-tint';
+/** Appearance shared by placed buildings, Move previews and lower-level art fallbacks. */
+type BuildingAppearance = Readonly<
+  Pick<
+    Building,
+    | 'direction'
+    | 'skeletonMode'
+    | 'npc'
+    | 'xbowMode'
+    | 'spellMode'
+    | 'spellTowerWeapon'
+    | 'crafted'
+    | 'craftedModules'
+    | 'infernoMode'
+    | 'gearMode'
+  >
+>;
 /** Screen height a flying troop floats above its ground position. */
 const AIR_LIFT = 46;
 /** Fixed simulation step, seconds. */
@@ -2762,10 +2774,11 @@ export class VillageScene extends Phaser.Scene {
     if (this.model.placement !== 'darkdrill') this.darkDrillPresentation.preview(undefined);
     if (this.model.placement !== 'archertower') this.villageArcherTowers.preview(undefined);
     if (this.model.placement) {
-      const level =
-        this.model.moving === null
-          ? 1
-          : (this.model.state.buildings.find((b) => b.id === this.model.moving)?.level ?? 1);
+      // A paid upgrade can finish while this preview is open, even within one artwork tier.
+      const moving = this.model.state.buildings.find(
+        (building) => building.id === this.model.moving,
+      );
+      const level = moving?.level ?? 1;
       if (!this.ghost) {
         this.ghost = this.add
           .image(0, 0, '__DEFAULT')
@@ -2773,25 +2786,12 @@ export class VillageScene extends Phaser.Scene {
           // Above home flying camp units (6500) so the preview is never buried.
           .setDepth(6600);
       }
-      // A paid upgrade can finish while this preview is open, even within one artwork tier.
-      const moving = this.model.state.buildings.find(
-        (building) => building.id === this.model.moving,
-      );
+      // Placement previews use building settings without campaign-only NPC artwork.
       this.styleBuilding(
         this.ghost,
         this.model.placement,
         level,
-        moving?.direction,
-        moving?.skeletonMode,
-        undefined,
-        moving?.xbowMode,
-        moving?.spellMode ?? moving?.spellTowerWeapon,
-        moving?.crafted,
-        moving?.crafted
-          ? craftedArtTier(moving.crafted, moving.craftedModules?.[moving.crafted])
-          : 1,
-        moving?.infernoMode,
-        moving?.gearMode,
+        moving ? { ...moving, npc: undefined } : undefined,
       );
       this.updateGhost(this.pointerScreen());
     } else {
@@ -2835,23 +2835,7 @@ export class VillageScene extends Phaser.Scene {
       im = this.add.image(p.x, p.y, '__DEFAULT').setOrigin(0.5, 0.88);
       this.sprites.set(b.id, im);
     }
-    this.styleBuilding(
-      im,
-      b.kind,
-      b.level,
-      b.direction,
-      b.skeletonMode,
-      b.npc,
-      b.xbowMode,
-      b.spellMode ?? b.spellTowerWeapon,
-      b.crafted,
-      b.crafted ? craftedArtTier(b.crafted, b.craftedModules?.[b.crafted]) : 1,
-      b.infernoMode,
-      b.gearMode,
-    )
-      .setPosition(p.x, p.y)
-      .setDepth(p.y)
-      .setCrop();
+    this.styleBuilding(im, b.kind, b.level, b).setPosition(p.x, p.y).setDepth(p.y).setCrop();
     im.setVisible(
       this.model.visibleBuilding(b) && !this.model.wallMove?.source.some((w) => w.id === b.id),
     );
@@ -3148,16 +3132,19 @@ export class VillageScene extends Phaser.Scene {
     im: Phaser.GameObjects.Image,
     kind: BuildingKind,
     level: number,
-    direction = 0,
-    skeletonMode: SkeletonMode = 'ground',
-    npc?: NpcBuildingKind,
-    xbowMode: XbowMode = 'ground',
-    spellTowerWeapon?: string,
-    crafted?: CraftedKind,
-    craftedTier = 1,
-    infernoMode: InfernoMode = 'single',
-    gearMode: GearMode = 'long',
+    appearance: BuildingAppearance = {},
   ): Phaser.GameObjects.Image {
+    const {
+      direction = 0,
+      skeletonMode = 'ground',
+      npc,
+      xbowMode = 'ground',
+      crafted,
+      infernoMode = 'single',
+      gearMode = 'long',
+    } = appearance;
+    const spellTowerWeapon = appearance.spellMode ?? appearance.spellTowerWeapon;
+    const craftedTier = crafted ? craftedArtTier(crafted, appearance.craftedModules?.[crafted]) : 1;
     // The Crafting Station shows its chosen defense, drawn on the same 3x3 platform.
     if (kind === 'craftingstation') {
       const wanted = crafted ? craftedTexture(crafted, craftedTier) : 'craftingstation';
@@ -3249,20 +3236,7 @@ export class VillageScene extends Phaser.Scene {
         buildingTexture(kind, 1, direction, xbowMode, infernoMode, spellTowerWeapon, gearMode) !==
         texture
       )
-        return this.styleBuilding(
-          im,
-          kind,
-          1,
-          direction,
-          skeletonMode,
-          npc,
-          xbowMode,
-          spellTowerWeapon,
-          crafted,
-          craftedTier,
-          infernoMode,
-          gearMode,
-        );
+        return this.styleBuilding(im, kind, 1, appearance);
       return this.blankBuilding(im, kind);
     }
     // Per-level cannon/X-Bow portraits arrive with deferred art. Keep a real boot texture
