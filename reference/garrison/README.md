@@ -276,3 +276,9 @@ npx vitest run tests/garrison-late-families.test.ts tests/garrison-late-families
 npx vite --host 127.0.0.1 --port 5316 --strictPort   # then:
 npx playwright test tests/browser/defending-troops-live.spec.ts tests/browser/defending-troops-lineup.spec.ts
 ```
+
+## Native Poison slows (recording version 61+)
+
+Native offensive poison already recorded its signed `SpeedBoost` and `AttackSpeedBoost` on garrison and Skeleton Trap defenders, but those combat loops did not read them. From version 61, movement and action clocks use those modifiers: level-1 Poison retains 74% movement and 65% attack-clock speed. Garrison recovery, windup and summons share the slowed action time; Baby Dragon Tantrum multiplies its existing boost into that clock. Poison leaves projectile flight, ongoing aura/death effects and spawn/push/idle timing unchanged. Expiry restores normal speed. Earlier recordings retain their original behavior. Defending hero and Builder rules have their separate version-60 and version-59 boundaries.
+
+`tests/defender-poison.test.ts` covers actual native pulses, Dragon movement/attacks, ground and air Skeleton Trap movement, skeleton attacks, Tantrum, expiry, the version-60 boundary and exact portable replay seeks. `tests/browser/defender-poison.spec.ts` checks the original Dragon body, both replay rules and cleanup on desktop and phone.

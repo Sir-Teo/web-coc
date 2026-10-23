@@ -1,3 +1,4 @@
+import { defenderPoisonScales } from './defender-poison';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
 import { hurtUnit } from './native-status';
@@ -257,8 +258,10 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       }
     }
     target ??= nearest;
+    const poison = defenderPoisonScales(battle, defender);
+    const moveDt = activeDt * poison.move;
     const cooling = defender.cooldown > 0;
-    defender.cooldown -= activeDt;
+    defender.cooldown -= activeDt * poison.attack;
     defender.pathAt -= activeDt;
     if (!target) {
       defender.target = null;
@@ -291,7 +294,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
         });
       }
     } else if (stats.flying) {
-      const move = Math.min(stats.speed * activeDt, distance);
+      const move = Math.min(stats.speed * moveDt, distance);
       defender.x += ((target.x - defender.x) / distance) * move;
       defender.y += ((target.y - defender.y) / distance) * move;
     } else {
@@ -305,7 +308,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
         );
         defender.pathAt = 0.3;
       }
-      moveAlong(defender, stats.speed, activeDt);
+      moveAlong(defender, stats.speed, moveDt);
     }
   }
   // Campaign garrisons: poison applied by defending Headhunters ticks after every defender acted.

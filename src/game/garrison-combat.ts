@@ -1,3 +1,4 @@
+import { defenderPoisonScales } from './defender-poison';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
 import { distance2D, distanceSquared2D } from './distance';
@@ -352,7 +353,9 @@ export function stepGarrisonDefender(
     );
   const raged = !!(tantrum && defender.tantrum);
   // Attack speed boosts advance the attack timer faster, as in the older engine's hit timer.
-  const attackDt = raged ? activeDt * tantrum!.attackScale : activeDt;
+  const poison = defenderPoisonScales(battle, defender);
+  const attackDt = (raged ? activeDt * tantrum!.attackScale : activeDt) * poison.attack;
+  const moveDt = activeDt * poison.move;
   if (stats.split) defender.recovery = Math.max(0, (defender.recovery ?? 0) - attackDt);
   if (stats.summon) {
     // The summon check reads the target held going into this step (a 50 ms local offset).
@@ -422,7 +425,7 @@ export function stepGarrisonDefender(
     if (!committed) delete defender.engaged;
     // A concealed Royal Ghost ignores obstacles (walls and buildings) and walks straight.
     if (stats.flying || (concealed && stealth!.ignoreObstacles)) {
-      const travel = Math.min(stats.speed * activeDt, distance - approach);
+      const travel = Math.min(stats.speed * moveDt, distance - approach);
       defender.x += ((target.x - defender.x) / distance) * travel;
       defender.y += ((target.y - defender.y) / distance) * travel;
       if (!stats.flying) defender.path = [];
@@ -437,7 +440,7 @@ export function stepGarrisonDefender(
         );
         defender.pathAt = 0.3;
       }
-      followPath(defender, stats.speed, activeDt);
+      followPath(defender, stats.speed, moveDt);
     }
     if (!committed || defender.cooldown > 1e-9) return;
   } else {

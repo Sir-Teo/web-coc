@@ -786,6 +786,8 @@ export interface Battle {
   nativeBuilderPoison?: true;
   /** Version 60: defending heroes use signed poison slows and source hero damage scaling. */
   nativeDefendingHeroPoison?: true;
+  /** Version 61: native poison slows garrison and Skeleton Trap defender action timers. */
+  nativeDefenderPoison?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
