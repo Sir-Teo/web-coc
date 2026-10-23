@@ -790,6 +790,8 @@ export interface Battle {
   nativeDefenderPoison?: true;
   /** Version 62: overlapping poison clouds share the strongest defender damage cap. */
   nativeDefenderPoisonOverlap?: true;
+  /** Version 63: overdue poison pulses cannot rewind the shared damage allowance clock. */
+  nativePoisonClock?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

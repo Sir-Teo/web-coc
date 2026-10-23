@@ -4,7 +4,7 @@ import { maxTroopLevel } from '../../src/game/data';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** A custom validated garrison setup, then only recorded deployment and spell inputs. */
-export function defenderPoisonRecording(poisonCasts = 1) {
+export function defenderPoisonRecording(poisonCasts = 1, step = 0.05) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -28,7 +28,7 @@ export function defenderPoisonRecording(poisonCasts = 1) {
   const until = (ready: () => boolean) => {
     for (let remaining = 400; !ready(); remaining--) {
       if (!remaining || battle.finished) throw Error('Garrison Poison checkpoint not reached');
-      model.step(0.05);
+      model.step(step);
     }
   };
   model.activeTroop = 'giant';
@@ -55,7 +55,7 @@ export function defenderPoisonRecording(poisonCasts = 1) {
   until(() => battle.elapsed >= cast.firstHit + (poisonCasts > 1 ? 6 : 3));
   snapshot();
   const later = battle.elapsed;
-  for (let i = 0; i < 10; i++) model.step(0.05);
+  for (let i = 0; i < 10; i++) model.step(step);
   model.finishBattle();
   const data = JSON.parse(JSON.stringify(model.state.raidLog![0].replay!));
   return { data, snapshots, before, poisoned, later, defenderId: defender.id };

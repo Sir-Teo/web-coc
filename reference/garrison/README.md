@@ -294,3 +294,9 @@ Local pulse interpretation: each defender has a damage allowance of one native p
 ## Imported replay artwork
 
 Later garrison character pages load from the replay’s roster as well as its buildings. A validated custom replay containing Dragon 5 can contain an ordinary Clan Castle and no late Goblin building; previously that setup loaded only the No Flight Zone character batch and left the Dragon’s body meshes on a missing texture. The roster now requests the existing late bundle before playback, with the same retry, seek reuse and home-time release behavior. This changes presentation only. `tests/browser/garrison-late-replay-art.spec.ts` verifies real graph textures, native bodies, backward seeks and cleanup at desktop and phone sizes.
+
+## Poison allowance clock (recording version 63+)
+
+A larger simulation update can cross several poison pulses from each cast. Native spells process those pulses in cast order, so a later cast can present an earlier pulse time after the first cast already advanced the shared allowance clock. Version 63 keeps that refill timestamp at the latest processed time. Earlier pulses can spend the remaining allowance but cannot refill elapsed time again. The native spell and summon processing order stays unchanged. Version 62 and earlier preserve their recorded calculation.
+
+`tests/native-poison-clock.test.ts` checks the cap with updates from 0.05 to 10 seconds, the version-62 boundary and exact portable reconstruction of recorded one-second steps. `tests/browser/native-poison-clock.spec.ts` checks those larger-step recordings, native bodies, backward seeks and both replay rules on desktop and phone.

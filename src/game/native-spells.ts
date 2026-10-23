@@ -352,7 +352,13 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
       old ? old.budget + Math.max(0, at - old.at) * maximum + Math.max(0, cap - old.cap) : cap,
     );
     damage = Math.min(damage, budget);
-    state.damage = { at, budget: budget - damage, cap, dps: maximum };
+    state.damage = {
+      // Casts resolve their overdue pulses in cast order; an older pulse cannot rewind refills.
+      at: battle.nativePoisonClock ? Math.max(at, old?.at ?? at) : at,
+      budget: budget - damage,
+      cap,
+      dps: maximum,
+    };
   }
   hurtDefender(battle, d, damage);
 }
