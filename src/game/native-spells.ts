@@ -320,10 +320,16 @@ function quake(
 function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number, interval: number) {
   const tick = interval || 0.4;
   const state = (d.poison ??= { since: at, until: at, speed: 0, attack: 0 });
+  const active = state.until > at;
   if (state.until + 6 < at) state.since = at;
-  state.until = at + Math.max(seconds(row, 'BoostTimeMS'), tick);
-  state.speed = num(row, 'SpeedBoost') / 100;
-  state.attack = num(row, 'AttackSpeedBoost') / 100;
+  const until = at + Math.max(seconds(row, 'BoostTimeMS'), tick);
+  state.until = battle.nativeDefenderPoisonOverlap ? Math.max(state.until, until) : until;
+  state.speed = battle.nativeDefenderPoisonOverlap
+    ? Math.min(active ? state.speed : 0, num(row, 'SpeedBoost') / 100)
+    : num(row, 'SpeedBoost') / 100;
+  state.attack = battle.nativeDefenderPoisonOverlap
+    ? Math.min(active ? state.attack : 0, num(row, 'AttackSpeedBoost') / 100)
+    : num(row, 'AttackSpeedBoost') / 100;
   const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - state.since + tick) / 5) : 1;
   // Defending heroes use the spell's hero multiplier; older recordings keep their full damage.
   // Guardians retain their released 30% poison path (GUARDIAN_POISON_* globals).
@@ -333,7 +339,22 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
       : d.kind === 'guardian'
         ? nativeGlobal('GUARDIAN_POISON_SPEED_MULTIPLIER', 100) / 100
         : 1;
-  hurtDefender(battle, d, num(row, 'PoisonDPS') * tick * ramp * scale);
+  const dps = num(row, 'PoisonDPS') * scale;
+  let damage = dps * tick * ramp;
+  if (battle.nativeDefenderPoisonOverlap) {
+    // Clouds may accelerate the ramp, but share the strongest spell's maximum damage rate.
+    // A one-pulse allowance preserves the source's discrete hits, including staggered casts.
+    const old = active ? state.damage : undefined;
+    const maximum = Math.max(dps, old?.dps ?? 0);
+    const cap = maximum * tick;
+    const budget = Math.min(
+      cap,
+      old ? old.budget + Math.max(0, at - old.at) * maximum + Math.max(0, cap - old.cap) : cap,
+    );
+    damage = Math.min(damage, budget);
+    state.damage = { at, budget: budget - damage, cap, dps: maximum };
+  }
+  hurtDefender(battle, d, damage);
 }
 
 /** Friendly effects of an attacker's spell on attacking units. */

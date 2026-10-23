@@ -788,6 +788,8 @@ export interface Battle {
   nativeDefendingHeroPoison?: true;
   /** Version 61: native poison slows garrison and Skeleton Trap defender action timers. */
   nativeDefenderPoison?: true;
+  /** Version 62: overlapping poison clouds share the strongest defender damage cap. */
+  nativeDefenderPoisonOverlap?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */

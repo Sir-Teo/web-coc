@@ -48,7 +48,14 @@ interface DefenderState {
   defeatedAt?: number;
   stunnedUntil?: number;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
-  poison?: { since: number; until: number; speed: number; attack: number };
+  poison?: {
+    since: number;
+    until: number;
+    speed: number;
+    attack: number;
+    /** Version 62: aggregate poison damage refills at the strongest active effective DPS. */
+    damage?: { at: number; budget: number; cap: number; dps: number };
+  };
 }
 export interface GarrisonDefender extends DefenderState {
   kind: GarrisonKind;

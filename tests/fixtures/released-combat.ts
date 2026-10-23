@@ -16,6 +16,7 @@ export function useReleasedCombat(model: GameModel) {
     delete model.battle.nativeBuilderPoison;
     delete model.battle.nativeDefendingHeroPoison;
     delete model.battle.nativeDefenderPoison;
+    delete model.battle.nativeDefenderPoisonOverlap;
     delete model.battle.nativeHeroPassives;
     delete model.battle.separationCap;
     delete model.battle.stalledSupportEnds;

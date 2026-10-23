@@ -4,7 +4,7 @@ import { maxTroopLevel } from '../../src/game/data';
 import { replayBattle, type ReplayData } from '../../src/game/replay';
 
 /** A custom validated garrison setup, then only recorded deployment and spell inputs. */
-export function defenderPoisonRecording() {
+export function defenderPoisonRecording(poisonCasts = 1) {
   const model = new GameModel();
   model.state.obstacles = [];
   model.state.buildings = [
@@ -14,7 +14,7 @@ export function defenderPoisonRecording() {
   model.state.nextId = 100;
   model.state.army = { ...emptyArmy(), giant: 2 };
   model.state.troopLevels = { ...model.state.troopLevels, giant: maxTroopLevel('giant') };
-  model.state.spells = { ...emptySpells(), poison: 1 };
+  model.state.spells = { ...emptySpells(), poison: poisonCasts };
   model.state.spellLevels = { ...defaultSpellLevels(), poison: 1 };
   model.state.king = undefined;
   model.startBattle(0, true);
@@ -36,7 +36,13 @@ export function defenderPoisonRecording() {
   until(() => !!battle.defenders?.some((defender) => defender.kind === 'dragon'));
   const defender = battle.defenders!.find((defender) => defender.kind === 'dragon')!;
   model.activeSpell = 'poison';
-  if (!model.castSpell(defender.x, defender.y)) throw Error('Poison cast failed');
+  for (let cast = 0; cast < poisonCasts; cast++) {
+    if (!model.castSpell(defender.x, defender.y)) throw Error('Poison cast failed');
+    if (cast + 1 < poisonCasts) {
+      const next = battle.elapsed + 0.2;
+      until(() => battle.elapsed >= next);
+    }
+  }
   const snapshots: { at: number; battle: unknown }[] = [];
   const snapshot = () =>
     snapshots.push({ at: battle.elapsed, battle: JSON.parse(JSON.stringify(battle)) });
@@ -46,7 +52,7 @@ export function defenderPoisonRecording() {
   until(() => battle.elapsed >= cast.firstHit + 0.1);
   snapshot();
   const poisoned = battle.elapsed;
-  until(() => battle.elapsed >= cast.firstHit + 3);
+  until(() => battle.elapsed >= cast.firstHit + (poisonCasts > 1 ? 6 : 3));
   snapshot();
   const later = battle.elapsed;
   for (let i = 0; i < 10; i++) model.step(0.05);
