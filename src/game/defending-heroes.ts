@@ -1,3 +1,4 @@
+import { poisonAvoidanceTarget } from './poison-avoidance';
 import { TROOPS } from './data';
 import { heroRow, HERO_UNIT, type HeroKind } from './native-hero-data';
 import { nativeUnitStats } from './native-units';
@@ -60,7 +61,15 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       )[0];
     d.target = target?.id ?? null;
     d.alerted = !!target;
-    const point = target ?? d.home,
+    const wasAvoiding = !!d.avoidingPoison;
+    const escape = !target ? poisonAvoidanceTarget(battle, d, d.home) : undefined;
+    if (escape) d.avoidingPoison = true;
+    else delete d.avoidingPoison;
+    if (wasAvoiding !== !!escape) {
+      d.path = [];
+      d.pathAt = 0;
+    }
+    const point = target ?? escape ?? d.home,
       distance = distance2D(point.x - d.x, point.y - d.y);
     const poison = d.poison && d.poison.until > battle.elapsed ? d.poison : undefined;
     const attackScale = battle.nativeDefendingHeroPoison
@@ -76,14 +85,17 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       }
       continue;
     }
-    if (distance < 0.05) continue;
+    if (distance < 0.05) {
+      if (escape) d.path = [];
+      continue;
+    }
     d.pathAt -= dt;
     if (d.mode === 'air') d.path = [point];
     else if (d.pathAt <= 0 || !d.path.length) {
       const dummy = { ...battle.buildings[0], x: point.x, y: point.y, kind: 'wall' as const };
       d.path = findPath(
         d,
-        dummy,
+        escape ?? dummy,
         battle.buildings.filter((b) => b.hp > 0 && b.kind !== 'wall'),
         target ? stats.range : 0.1,
       );

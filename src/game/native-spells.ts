@@ -289,7 +289,10 @@ function harmDefense(
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
     if (poison > 0) {
       poisonDefender(battle, d, row, at, cast.interval);
-      if (battle.nativePoisonAvoidance && isGarrisonDefender(d))
+      if (
+        (battle.nativePoisonAvoidance && isGarrisonDefender(d)) ||
+        (battle.nativeIdlePoisonAvoidance && (d.kind === 'hero' || d.kind === 'skeleton'))
+      )
         recordPoisonArea(
           d,
           {
@@ -297,7 +300,12 @@ function harmDefense(
             x,
             y,
             radius,
-            until: at + Math.max(seconds(row, 'BoostTimeMS'), cast.interval || 0.4),
+            until:
+              (battle.nativeIdlePoisonAvoidance &&
+              (d.kind === 'hero' || d.kind === 'skeleton') &&
+              cast.follow === undefined
+                ? cast.firstHit + Math.max(0, cast.total - 1) * cast.interval
+                : at) + Math.max(seconds(row, 'BoostTimeMS'), cast.interval || 0.4),
           },
           at,
         );

@@ -1,4 +1,4 @@
-import type { DefenderPoisonArea } from './poison-avoidance';
+import { poisonAvoidanceTarget, type DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
@@ -46,6 +46,8 @@ interface DefenderState {
   pathAt: number;
   attacking: boolean;
   alerted?: boolean;
+  /** Walking out of poison, or waiting clear of a poisoned home point. */
+  avoidingPoison?: true;
   defeatedAt?: number;
   stunnedUntil?: number;
   /** Version 45 Poison Spell exposure: slows movement and attacks while it lasts. */
@@ -62,8 +64,6 @@ interface DefenderState {
 }
 export interface GarrisonDefender extends DefenderState {
   kind: GarrisonKind;
-  /** Version 64: walking out of poison without an eligible attacker. */
-  avoidingPoison?: true;
   level: number;
   attacks: GarrisonAttack[];
   engaged?: boolean;
@@ -228,6 +228,7 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     }
     defender.attacking = false;
     if (defender.hp <= 0) {
+      delete defender.avoidingPoison;
       // A fallen skeleton never moves again; drop its waypoints from clones and saves.
       if (battle.dropFallenPaths && defender.path.length) defender.path = [];
       continue;
@@ -270,6 +271,8 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
       }
     }
     target ??= nearest;
+    const wasAvoiding = !!defender.avoidingPoison;
+    delete defender.avoidingPoison;
     const poison = defenderPoisonScales(battle, defender);
     const moveDt = activeDt * poison.move;
     const cooling = defender.cooldown > 0;
@@ -277,8 +280,27 @@ export function stepDefenders(battle: Battle, dt: number, effect: (fx: FX) => vo
     defender.pathAt -= activeDt;
     if (!target) {
       defender.target = null;
-      defender.path = [];
+      const escape = poisonAvoidanceTarget(battle, defender);
+      if (escape) {
+        defender.avoidingPoison = true;
+        if (stats.flying) defender.path = [escape];
+        else if (!wasAvoiding || !defender.path.length || defender.pathAt <= 0) {
+          defender.path = findPath(
+            defender,
+            escape,
+            (structures ??= buildingsAtStart.filter((building) => building.kind !== 'wall')),
+            0.1,
+            !!battle.nativeSubtiles,
+          );
+          defender.pathAt = 0.3;
+        }
+        moveAlong(defender, stats.speed, moveDt);
+      } else defender.path = [];
       continue;
+    }
+    if (wasAvoiding) {
+      defender.path = [];
+      defender.pathAt = 0;
     }
     if (defender.target !== target.id) {
       defender.target = target.id;

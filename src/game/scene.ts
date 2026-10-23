@@ -5131,7 +5131,11 @@ export class VillageScene extends Phaser.Scene {
       const candidate = d.target == null ? undefined : units.get(d.target);
       const target = candidate && candidate.hp > 0 ? candidate : undefined,
         waypoint = d.path[0];
-      const heading = d.attacking || flying ? target : (waypoint ?? target);
+      const heading = d.avoidingPoison
+        ? waypoint
+        : d.attacking || flying
+          ? target
+          : (waypoint ?? target);
       const dx = heading ? heading.x - d.x - (heading.y - d.y) : 0,
         facing = Math.abs(dx) > 0.03 ? Math.sign(dx) : (sprite.getData('facing') ?? -1);
       // Guarded writes: any depth write re-sorts the whole display list, so a

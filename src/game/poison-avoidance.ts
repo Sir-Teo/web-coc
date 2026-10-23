@@ -3,7 +3,7 @@ import { distanceSquared2D } from './distance';
 import { MAP_SIZE } from './grid';
 import { nativeGlobal } from './native-data';
 import type { Battle } from './model';
-import type { GarrisonDefender } from './defenders';
+import type { Defender } from './defenders';
 
 export interface DefenderPoisonArea {
   id: number;
@@ -14,7 +14,7 @@ export interface DefenderPoisonArea {
 }
 
 /** Remember each cloud through its native boost deadline, even after its final pulse. */
-export function recordPoisonArea(defender: GarrisonDefender, area: DefenderPoisonArea, at: number) {
+export function recordPoisonArea(defender: Defender, area: DefenderPoisonArea, at: number) {
   const poison = defender.poison;
   if (!poison) return;
   poison.areas = (poison.areas ?? []).filter((old) => old.id !== area.id && old.until > at);
@@ -25,16 +25,23 @@ export function recordPoisonArea(defender: GarrisonDefender, area: DefenderPoiso
  * Local exit choice: nearest clear boundary among sixteen directions per active cloud.
  * Overlaps are avoided together; the invulnerable Builder has no avoidance behavior.
  */
-export function poisonAvoidanceTarget(battle: Battle, defender: GarrisonDefender) {
-  if (!battle.nativePoisonAvoidance || !nativeGlobal('USE_POISON_AVOIDANCE')) return undefined;
+export function poisonAvoidanceTarget(
+  battle: Battle,
+  defender: Defender,
+  home?: { x: number; y: number },
+) {
+  const enabled =
+    defender.kind === 'hero' || defender.kind === 'skeleton'
+      ? battle.nativeIdlePoisonAvoidance
+      : defender.kind !== 'guardian' &&
+        defender.kind !== 'repairer' &&
+        battle.nativePoisonAvoidance;
+  if (!enabled || !nativeGlobal('USE_POISON_AVOIDANCE')) return undefined;
   const areas = defender.poison?.areas?.filter((area) => area.until > battle.elapsed);
-  if (
-    !areas?.length ||
-    !areas.some(
-      (area) => distanceSquared2D(defender.x - area.x, defender.y - area.y) <= area.radius ** 2,
-    )
-  )
-    return undefined;
+  if (!areas?.length) return undefined;
+  const inside = (point: { x: number; y: number }) =>
+    areas.some((area) => distanceSquared2D(point.x - area.x, point.y - area.y) <= area.radius ** 2);
+  if (!inside(defender)) return home && inside(home) ? { x: defender.x, y: defender.y } : undefined;
   let best: { x: number; y: number } | undefined;
   let bestDistance = Infinity;
   for (const area of areas) {

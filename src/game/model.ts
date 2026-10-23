@@ -794,6 +794,8 @@ export interface Battle {
   nativePoisonClock?: true;
   /** Version 64: idle garrison troops leave active offensive poison clouds. */
   nativePoisonAvoidance?: true;
+  /** Version 65: idle heroes and Skeleton Trap defenders avoid Poison clouds too. */
+  nativeIdlePoisonAvoidance?: true;
   /** Version 53: passive hero auras and Royal Rampage. */
   nativeHeroPassives?: true;
   /** Version 54: crowd separation moves a unit at most SEPARATION_TILES_PER_SECOND. */
