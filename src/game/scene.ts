@@ -4515,8 +4515,8 @@ export class VillageScene extends Phaser.Scene {
         isoInto(p, cast.x, cast.y);
         const aura = cast.follow !== undefined;
         const pulse = reduced ? 1 : 1 + Math.sin((active.elapsed - cast.castAt) / 0.22) * 0.03;
-        const w = radius * 128 * pulse,
-          h = radius * 64 * pulse;
+        const w = radius * 64 * Math.SQRT2 * pulse,
+          h = radius * 32 * Math.SQRT2 * pulse;
         fills.put(ellipse, p.x, p.y, w / 64, h / 32, color, aura ? 0.06 : 0.15);
         g.lineStyle(aura ? 1.5 : 2, color, aura ? 0.35 : 0.75);
         g.strokeEllipse(p.x, p.y, w, h);
@@ -4526,8 +4526,8 @@ export class VillageScene extends Phaser.Scene {
         const radius = SPELLS[aura.kind].radius,
           color = SPELL_COLOR[aura.kind],
           pulse = reduced ? 1 : 1 + Math.sin(active.elapsed / 0.22) * 0.03;
-        const w = radius * 128 * pulse,
-          h = radius * 64 * pulse;
+        const w = radius * 64 * Math.SQRT2 * pulse,
+          h = radius * 32 * Math.SQRT2 * pulse;
         fills.put(ellipse, p.x, p.y, w / 64, h / 32, color, 0.17);
         g.lineStyle(2, color, 0.75);
         g.strokeEllipse(p.x, p.y, w, h);
@@ -4553,8 +4553,8 @@ export class VillageScene extends Phaser.Scene {
     const pulse = reduced ? 1 : 1 + Math.sin(performance.now() / 180) * 0.06;
     const ring = (x: number, y: number, radius: number, alpha: number) => {
       isoInto(p, x, y);
-      const w = radius * 128 * pulse,
-        h = radius * 64 * pulse;
+      const w = radius * 64 * Math.SQRT2 * pulse,
+        h = radius * 32 * Math.SQRT2 * pulse;
       fills.put(ellipse, p.x, p.y, w / 64, h / 32, GUIDE_COLOR, alpha);
       g.lineStyle(3, GUIDE_COLOR, 0.95);
       g.strokeEllipse(p.x, p.y, w, h);

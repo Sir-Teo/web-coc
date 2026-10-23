@@ -4,6 +4,8 @@ Weapon muzzle flashes and impacts, bomb rings, spell rings and lightning bolts, 
 
 Spell aura pulses also use battle time. Reduced motion fixes the aura radius, keeps feedback in place while fading, and omits flying sparks. Home-village feedback still uses the normal scene clock, so resource collection and construction feedback continue without an active battle.
 
+Native spell outlines, older aura effects and Practice guide circles use the same isometric projection as defense ranges: a world radius `r` has projected width `64 × √2 × r` and height `32 × √2 × r`, before the existing presentation pulse. Their fills and strokes share those dimensions. `tests/browser/spell-ring-projection.spec.ts` checks eight points on each world-space boundary, including reduced-motion desktop and phone views.
+
 The timeline only changes presentation, not damage or replay compatibility. Reconstruction clears transient effects instead of replaying historical sound and particle events. Defeat poses are reconstructed separately from each unit's simulation timestamp. Camera shake and short audio samples still use their existing real-time systems; dedicated directional attack/death artwork remains separate work.
 
 Five focused timeline tests cover delays, pause, scale interpolation, completion, cancellation and external destruction. Browser checks cover actual weapon/spell/debris objects, aura command stability, reduced-motion feedback, and transition cleanup, alongside existing projectile and destruction scenarios.
