@@ -14,6 +14,7 @@ import {
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
 import { concealedTesla } from './hidden-tesla';
 import { freezeDefendingBuilders } from './defending-builder-freeze';
+import { defendingBuilderLightning } from './defending-builder-lightning';
 import { unitKindForName } from './native-units';
 import { tornadoPulse } from './native-traps';
 import { SPELL_SPEED_SCALE } from './spell-progression';
@@ -225,6 +226,8 @@ function harmDefense(
   const quakeTroop = num(row, 'TroopDamagePermil') / 1000;
   const poison = num(row, 'PoisonDPS');
   const overgrowth = flag(row, 'Overgrowth');
+  if (battle.nativeBuilderLightning && cast.name === 'Lightning')
+    defendingBuilderLightning(battle, x, y, radius, at);
   if (freeze > 0 && freezePercent === 0 && !overgrowth)
     freezeDefendingBuilders(battle, x, y, radius, at, freeze);
   if (damage > 0 || (freeze > 0 && !overgrowth) || stun > 0 || quakeBuilding > 0 || poison > 0) {

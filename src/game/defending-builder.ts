@@ -430,19 +430,7 @@ export function defendingBuilderDestroyed(
   _building: Building,
   _at: number,
 ) {}
-/** Attacker Lightning resets the repair target of every Builder inside the strike. */
-export function defendingBuilderLightning(battle: Battle, x: number, y: number, radius: number) {
-  for (const builder of battle.late?.defendingBuilder?.builders ?? []) {
-    if (builder.hiddenAt !== undefined || builder.retreating) continue;
-    if (builder.spawnedAt > battle.elapsed || distance2D(builder.x - x, builder.y - y) > radius)
-      continue;
-    builder.target = null;
-    builder.repairing = false;
-    delete builder.engaged;
-    builder.path = [];
-    builder.pathAt = 0;
-  }
-}
+export { defendingBuilderLightning } from './defending-builder-lightning';
 /** Hit points that count toward loot: the lowest a repaired building reached. */
 export function defendingBuilderLootHp(battle: Battle, building: Building) {
   const lowest = battle.late?.defendingBuilder?.lowest[building.id];
