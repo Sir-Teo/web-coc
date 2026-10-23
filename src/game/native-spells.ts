@@ -1,6 +1,6 @@
 import { distance2D } from './distance';
 import { BUILDINGS, TROOPS, isTrap, type BuildingKind, type UnitKind } from './data';
-import { damageDefenders, hurtDefender, type Defender } from './defenders';
+import { damageDefenders, hurtDefender, isGarrisonDefender, type Defender } from './defenders';
 import {
   flag,
   nativeGlobal,
@@ -14,6 +14,7 @@ import {
 import { buildingEffects, healUnit, hurtUnit, unitEffects } from './native-status';
 import { concealedTesla } from './hidden-tesla';
 import { freezeDefendingBuilders } from './defending-builder-freeze';
+import { recordPoisonArea } from './poison-avoidance';
 import { poisonDefendingBuilders } from './defending-builder-poison';
 import { defendingBuilderLightning } from './defending-builder-lightning';
 import { unitKindForName } from './native-units';
@@ -286,7 +287,21 @@ function harmDefense(
     if ((freeze > 0 && !overgrowth) || stun > 0)
       d.stunnedUntil = Math.max(d.stunnedUntil ?? 0, at + Math.max(freeze, stun));
     if (quakeTroop > 0 && d.mode === 'ground') hurtDefender(battle, d, d.maxHp * quakeTroop);
-    if (poison > 0) poisonDefender(battle, d, row, at, cast.interval);
+    if (poison > 0) {
+      poisonDefender(battle, d, row, at, cast.interval);
+      if (battle.nativePoisonAvoidance && isGarrisonDefender(d))
+        recordPoisonArea(
+          d,
+          {
+            id: cast.id,
+            x,
+            y,
+            radius,
+            until: at + Math.max(seconds(row, 'BoostTimeMS'), cast.interval || 0.4),
+          },
+          at,
+        );
+    }
   }
 }
 

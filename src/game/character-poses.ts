@@ -154,7 +154,11 @@ export interface CharacterPose {
 function heading(defender: GarrisonDefender, battle: Battle, flying: boolean) {
   const target = defender.target === null ? undefined : unitIndex(battle).get(defender.target);
   const last = defender.attacks.at(-1);
-  const point = !flying && !defender.attacking && defender.path[0] ? defender.path[0] : target;
+  const point = defender.avoidingPoison
+    ? defender.path[0]
+    : !flying && !defender.attacking && defender.path[0]
+      ? defender.path[0]
+      : target;
   return {
     dx: (point?.x ?? last?.targetX ?? defender.x + 1) - defender.x,
     dy: (point?.y ?? last?.targetY ?? defender.y) - defender.y,
@@ -218,7 +222,9 @@ export function characterPose(
   // A concealed Royal Ghost walks straight to its target without a path.
   const concealed = (defender.stealthUntil ?? 0) > battle.elapsed;
   const moving =
-    !defender.attacking && !!target && (stats.flying || defender.path.length > 0 || concealed);
+    !defender.attacking &&
+    ((!!target && (stats.flying || defender.path.length > 0 || concealed)) ||
+      (!!defender.avoidingPoison && defender.path.length > 0));
   const row = special
     ? special.row
     : attack

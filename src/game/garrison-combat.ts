@@ -1,3 +1,4 @@
+import { poisonAvoidanceTarget } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import { TROOPS } from './data';
 import { nonWallBuildings } from './building-lists';
@@ -287,6 +288,7 @@ export function stepGarrisonDefender(
   if (stats.aura) stepAura(battle, defender, stats);
   defender.attacking = false;
   if (defender.hp <= 0) {
+    delete defender.avoidingPoison;
     if (defender.defeatedAt !== undefined) {
       if (stats.secondary) spawnSecondaries(battle, defender, stats, spawnGarrisonDefender);
       if (stats.summon) killPendingSummons(battle, defender);
@@ -344,6 +346,8 @@ export function stepGarrisonDefender(
     ),
   );
   if (activeDt <= 0) return;
+  const wasAvoiding = !!defender.avoidingPoison;
+  delete defender.avoidingPoison;
   const tantrum = garrisonTantrum(stats);
   if (tantrum)
     defender.tantrum = !(battle.defenders ?? []).some(
@@ -401,8 +405,27 @@ export function stepGarrisonDefender(
   if (!target) {
     defender.target = null;
     delete defender.engaged;
-    if (!stats.flying) defender.path = [];
+    const escape = poisonAvoidanceTarget(battle, defender);
+    if (escape) {
+      defender.avoidingPoison = true;
+      if (stats.flying) defender.path = [escape];
+      else if (!wasAvoiding || !defender.path.length || defender.pathAt <= 0) {
+        defender.path = findPath(
+          defender,
+          escape,
+          nonWallBuildings(battle),
+          0.1,
+          !!battle.nativeSubtiles,
+        );
+        defender.pathAt = 0.3;
+      }
+      followPath(defender, stats.speed, moveDt);
+    } else if (!stats.flying || wasAvoiding) defender.path = [];
     return;
+  }
+  if (wasAvoiding) {
+    defender.path = [];
+    defender.pathAt = 0;
   }
   if (defender.target !== target.id) {
     defender.target = target.id;

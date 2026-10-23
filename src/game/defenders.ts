@@ -1,3 +1,4 @@
+import type { DefenderPoisonArea } from './poison-avoidance';
 import { defenderPoisonScales } from './defender-poison';
 import type { HeroKind } from './native-hero-data';
 import { MAP_SIZE } from './grid';
@@ -53,12 +54,16 @@ interface DefenderState {
     until: number;
     speed: number;
     attack: number;
+    /** Version 64: cloud positions used by idle garrison avoidance. */
+    areas?: DefenderPoisonArea[];
     /** Version 62: aggregate poison damage refills at the strongest active effective DPS. */
     damage?: { at: number; budget: number; cap: number; dps: number };
   };
 }
 export interface GarrisonDefender extends DefenderState {
   kind: GarrisonKind;
+  /** Version 64: walking out of poison without an eligible attacker. */
+  avoidingPoison?: true;
   level: number;
   attacks: GarrisonAttack[];
   engaged?: boolean;
