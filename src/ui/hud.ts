@@ -1,5 +1,6 @@
 import { isSiege, superOriginal, superMinimum, superLicence } from '../game/special-troops';
 import { archerTowerPortrait } from './archer-tower-portrait';
+import { positionBattleToast } from './battle-toast';
 import { infernoStats, type InfernoMode } from '../game/inferno-weapon';
 import { cannonIconAsset } from '../game/cannon-art';
 import { darkStorageCapacity } from '../game/dark-storage-stats';
@@ -723,6 +724,7 @@ export class HUD {
   /** A shared layout link or code waiting to be copied into a slot (pasted or opened). */
   private layoutCode = '';
   private toastTimer?: ReturnType<typeof setTimeout>;
+  private toastFrame = 0;
   private resultShown = false;
   private raf = false;
   private pressedActions = new Set<number>();
@@ -877,6 +879,7 @@ export class HUD {
         // The card's size and the HUD floor are measured again on the next frame.
         this.anchorCard = null;
         this.markCoachTarget();
+        this.scheduleToastPosition();
       },
       { signal },
     );
@@ -993,6 +996,7 @@ export class HUD {
     if (this.raf) cancelAnimationFrame(this.rafId);
     this.raf = false;
     this.listeners.abort();
+    cancelAnimationFrame(this.toastFrame);
     this.scene.events?.off(Phaser.Scenes.Events.POST_UPDATE, this.positionContext, this);
   }
   private scheduleRender() {
@@ -1098,6 +1102,11 @@ export class HUD {
     el.classList.toggle('show', !!message);
     clearTimeout(this.toastTimer);
     if (message) this.toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    this.scheduleToastPosition();
+  }
+  private scheduleToastPosition() {
+    cancelAnimationFrame(this.toastFrame);
+    this.toastFrame = requestAnimationFrame(() => positionBattleToast(this.root, this.insets()));
   }
   private saveOk: boolean | undefined;
   setSaveState(ok: boolean) {
@@ -2603,6 +2612,7 @@ export class HUD {
     }
     this.positionContext();
     this.markCoachTarget();
+    this.scheduleToastPosition();
     // Every step satisfied: retire the coaching for good.
     if (!m.state.tutorial && !b && TUTORIAL.every((step) => step.done(m))) {
       m.state.tutorial = true;

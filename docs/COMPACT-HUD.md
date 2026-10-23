@@ -66,6 +66,21 @@ Army tiles keep the sizes tuned above, because the strip has no spare height for
 - with a coarse pointer, window buttons, the Research and Attack buttons, the campaign pickers, the Quick army name field and the Shop's prices are at least 44 pixels tall;
 - at 844×390 and 667×375, every price on the All, Decorations and Treasure tabs shows without scrolling the strip.
 
+## Battle notifications
+
+Phone notifications previously shared the countdown's vertical position; short landscape
+messages also covered the scouting guide and deployment controls. `src/ui/battle-toast.ts`
+measures the visible battle HUD and places each message in a clear box, keeping its original
+width when space permits and using narrower wrapping where needed. Placement respects safe
+insets, updates during resizing and HUD changes, and returns to the village's normal toast
+layout on leaving battle. It keeps the countdown, Practice guide and Skip button visible.
+
+`tests/browser/battle-toast-layout.spec.ts` checks scouting and live attacks at six viewport
+sizes, one visible message through rotation and simulated safe insets, restoration at home,
+the real Hog Rush Practice guide at four sizes, and replay notifications beside usable playback
+controls after rotation. The existing village-control and Practice
+banner layout regressions run alongside it in Chromium and WebKit.
+
 ## Verification
 
 `tests/browser/hud-layout.spec.ts` checks 19 viewports for both starter and developed villages, including both sides of the 700/701-pixel width and 799/800-pixel aspect-ratio boundaries. Five points inside each main HUD control must hit that control. Each viewport also clicks the measured center of Zoom out and requires a zoom change. Representative small views open Settings and collect resources without changing zoom. Side tools must remain at least 44 pixels in each dimension; short starter trays must not acquire unused trailing width.

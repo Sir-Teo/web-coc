@@ -1018,6 +1018,16 @@ h3 {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+#toast[data-battle-anchor] {
+  top: var(--toast-top);
+  left: var(--toast-left);
+  width: var(--toast-width);
+  max-width: none;
+  transform: translateY(-15px);
+}
+#toast[data-battle-anchor].show {
+  transform: translateY(0);
+}
 #save-state {
   position: absolute;
   bottom: 0;
