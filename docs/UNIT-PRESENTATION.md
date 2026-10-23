@@ -12,6 +12,12 @@ fixtures explicitly render after native pages load and wait for a complete game 
 before capturing the phone view, whose battlefield must contain visible pixels. The four-frame fallback atlas asset
 checks remain separate, including transparency, dimensions and foot anchors.
 
+The [King Puppet browser fixture](../tests/browser/king-combat.spec.ts) waits for the native
+King and summoned Barbarian bodies before checking the wave boundary: five summoned bodies
+before 0.5 seconds, then eight. Repeated seeks between 0.45 and 0.55 seconds check native body
+counts alongside simulation counts, and returning home checks that both troop meshes and
+hero sprites are removed without WebGL errors.
+
 ## Earlier sprite artwork and feedback
 
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.

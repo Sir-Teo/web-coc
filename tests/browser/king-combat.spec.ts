@@ -52,7 +52,9 @@ for (const width of [1440, 390, 320])
       'Barbarian Puppet',
     );
     await expect(page.locator('[data-hero="king"] .hero-equipment')).toContainText('Rage Vial');
-    await expect(page.locator('[data-hero="king"] .hero-activation')).toContainText('570 hitpoints');
+    await expect(page.locator('[data-hero="king"] .hero-activation')).toContainText(
+      '570 hitpoints',
+    );
     await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('10,500');
     await expect(page.locator('[data-hero="king"] .hero-upgrade')).toContainText('22h');
     await expect(page.locator('#toast')).not.toHaveClass(/show/);
@@ -172,15 +174,42 @@ test('Puppet waves and boost colors use battle time, reconstruct on replay seek 
   expect(initial.count).toBe(6);
   expect(initial.stable).toBe(true);
   expect(initial.tints.every((t) => t === 0xffbd76)).toBe(true);
+  // A fallback sprite count does not establish that the native body is on screen.
+  await page.waitForFunction(
+    () => {
+      const { model, scene } = window.__game;
+      scene.drawOverlay(0);
+      return model.battle.units.every((unit) =>
+        unit.hero
+          ? scene.heroNativePresentation.drewUnit(unit.id)
+          : scene.troopNativePresentation.drewUnit(unit.id),
+      );
+    },
+    undefined,
+    { timeout: 30000 },
+  );
   const waves = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
     m.step(0.49);
+    scene.drawOverlay(0);
     const before = m.battle.units.length;
+    const beforeBodies = m.battle.units.filter(
+      (unit) => !unit.hero && scene.troopNativePresentation.drewUnit(unit.id),
+    ).length;
     m.step(0.01);
-    scene.drawOverlay();
-    return [before, m.battle.units.length, scene.unitSprites.size];
+    scene.drawOverlay(0);
+    const afterBodies = m.battle.units.filter(
+      (unit) => !unit.hero && scene.troopNativePresentation.drewUnit(unit.id),
+    ).length;
+    return {
+      before,
+      beforeBodies,
+      units: m.battle.units.length,
+      sprites: scene.unitSprites.size,
+      afterBodies,
+    };
   });
-  expect(waves).toEqual([6, 9, 9]);
+  expect(waves).toEqual({ before: 6, beforeBodies: 5, units: 9, sprites: 9, afterBodies: 8 });
   await page.screenshot({ path: `output/playtest/king-puppet-wave-${browserName}.png` });
   const replay = await page.evaluate(() => {
     const { model: m, scene } = window.__game;
@@ -197,7 +226,13 @@ test('Puppet waves and boost colors use battle time, reconstruct on replay seek 
       for (let i = 0; i < 100 && m.replay.seeking; i++) m.step(0.05);
       scene.sync();
       scene.drawOverlay();
-      counts.push([m.battle.units.length, scene.unitSprites.size]);
+      counts.push([
+        m.battle.units.length,
+        scene.unitSprites.size,
+        m.battle.units.filter(
+          (unit) => !unit.hero && scene.troopNativePresentation.drewUnit(unit.id),
+        ).length,
+      ]);
     }
     m.state.settings.reducedMotion = true;
     scene.drawOverlay();
@@ -206,16 +241,26 @@ test('Puppet waves and boost colors use battle time, reconstruct on replay seek 
       .map((s) => s.angle);
     m.returnHome();
     scene.sync();
-    return { expired, counts, remaining: scene.unitSprites.size, reduced };
+    return {
+      expired,
+      counts,
+      remaining: scene.unitSprites.size,
+      reduced,
+      remainingBodies:
+        scene.troopNativePresentation.views.size + scene.heroNativePresentation.sprites.size,
+      glError: scene.game.renderer.gl.getError(),
+    };
   });
   expect(replay.expired).toBe(true);
   expect(replay.counts).toEqual([
-    [6, 6],
-    [9, 9],
-    [6, 6],
-    [9, 9],
+    [6, 6, 5],
+    [9, 9, 8],
+    [6, 6, 5],
+    [9, 9, 8],
   ]);
   expect(replay.remaining).toBe(0);
+  expect(replay.remainingBodies).toBe(0);
+  expect(replay.glError).toBe(0);
   expect(replay.reduced).toHaveLength(8);
   expect(replay.reduced.every((angle) => angle === 0)).toBe(true);
 });
