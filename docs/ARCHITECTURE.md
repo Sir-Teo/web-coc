@@ -104,6 +104,13 @@ follow the unit's battle-clock Invisibility opacity, so the cue carries through 
 handoff. [The troop loading regression](../tests/browser/troop-art-loading.spec.ts) holds both
 graphs and served texture pages on desktop and phone, then checks playback and expiry.
 
+When a walk sheet or hero portrait replaces the two-pixel stand-in, sprites restore their
+display dimensions immediately. Keeping the stand-in's scale enlarged the 128-pixel sheet
+64 times, persistently in camps and for the first battle frame; hero portraits also enlarged
+on their first frame. Battle sizes include Shrink's current half-scale.
+[The sprite handoff regression](../tests/browser/sprite-art-handoff.spec.ts) holds actual sheet,
+portrait and native atlas requests and checks the first camp and battle frame on desktop and phone.
+
 Releasing native character art also invalidates its pending requests. Metadata or image
 decodes that finish after a mode change cannot upload an unused texture again, and an old
 completion cannot clear a newer request's pending marker. Hero atlases track textures
