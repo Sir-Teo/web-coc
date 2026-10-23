@@ -113,6 +113,7 @@ import {
 } from './skeleton-art';
 import { skeletonStats } from './skeleton-stats';
 import { isGarrisonDefender } from './defenders';
+import { defenderOpacity } from './defender-opacity';
 import { TESLA_ART } from './tesla-art';
 import { preloadTeslas, TeslaPresentation } from './tesla-scene';
 import { loadTeslaArt, teslaArtLoaded, teslaBodyBounds } from './tesla-poses';
@@ -5100,7 +5101,8 @@ export class VillageScene extends Phaser.Scene {
       if ((sprite.getData('facing') ?? -1) !== facing)
         sprite.setData('facing', facing).setFlipX(facing > 0);
       if (sprite.angle !== 0) sprite.setAngle(0);
-      if (sprite.alpha !== 1) sprite.setAlpha(1);
+      const alpha = defenderOpacity(battle, d);
+      if (sprite.alpha !== alpha) sprite.setAlpha(alpha);
       if (!sprite.visible) sprite.setVisible(true);
       const defenderDepth = unitDepth(p.y, d.id, flying, 1.1);
       if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);

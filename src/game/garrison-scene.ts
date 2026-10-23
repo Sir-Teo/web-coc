@@ -22,6 +22,7 @@ import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
 import { unitDepth } from './unit-depth';
 import { guardRender } from './render-guard';
+import { defenderOpacity } from './defender-opacity';
 
 /** Sets a data value only when it differs (every setData emits change events). */
 function tag(objects: readonly Phaser.GameObjects.GameObject[], name: string, value: unknown) {
@@ -158,8 +159,11 @@ export class GarrisonPresentation {
         point.y - (flying ? lift : 0),
         // Flyers sort inside the shared air band with the attacking air troops.
         flying ? unitDepth(point.y, defender.id, true) : point.y + 1.1,
-        // A concealed Royal Ghost is drawn translucent (local presentation of its stealth).
-        (defender.stealthUntil ?? 0) > battle!.elapsed ? GARRISON_CONCEALED_ALPHA : 1,
+        // Spell Tower concealment and Royal Ghost stealth share the strongest local cue.
+        Math.min(
+          defenderOpacity(battle!, defender),
+          (defender.stealthUntil ?? 0) > battle!.elapsed ? GARRISON_CONCEALED_ALPHA : 1,
+        ),
       );
       tag(view.objects, 'nativeGarrisonDefender', defender.id);
     }
