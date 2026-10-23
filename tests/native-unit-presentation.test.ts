@@ -203,6 +203,44 @@ describe('unit motion tracker', () => {
 });
 
 describe('troop native presentation', () => {
+  for (const stage of ['graph', 'textures'] as const) {
+    it(`keeps the sprite pass visible until native ${stage} load, then hands off once`, () => {
+      const p = troops();
+      const internals = p as unknown as {
+        packs: Map<string, unknown>;
+        levelsReady: Map<string, Set<number>>;
+        load(kind: string): Promise<void>;
+        loadLevel(kind: string, level: number): Promise<void>;
+      };
+      vi.spyOn(internals, 'load').mockResolvedValue(undefined);
+      vi.spyOn(internals, 'loadLevel').mockResolvedValue(undefined);
+      if (stage === 'graph') internals.packs.clear();
+      else internals.levelsReady.clear();
+      const fallback = {
+        visible: true,
+        setVisible(value: boolean) {
+          this.visible = value;
+          return this;
+        },
+      };
+      const sprites = new Map([[1, fallback]]) as never;
+      const battle = battleOf([unit(1, 10, 10)]);
+      p.render(battle, false, iso, 70, sprites);
+      expect(fallback.visible).toBe(true);
+      expect(p.drewUnit(1)).toBe(false);
+      // The sprite pass may cull a unit or use a transparent stand-in: never force it on.
+      fallback.visible = false;
+      p.render(battle, false, iso, 70, sprites);
+      expect(fallback.visible).toBe(false);
+      internals.packs.set('archer', archerPack);
+      internals.levelsReady.set('archer', new Set([1]));
+      fallback.visible = true;
+      p.render(battle, false, iso, 70, sprites);
+      expect(p.drewUnit(1)).toBe(true);
+      expect(fallback.visible).toBe(false);
+    });
+  }
+
   it('draws walking troops with the walk clip on every frame, not only on sim steps', () => {
     const p = troops();
     const u = unit(1, 10, 10);

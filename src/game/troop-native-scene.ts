@@ -315,16 +315,14 @@ export class TroopNativePresentation {
       const pack = this.packs.get(u.kind);
       if (!pack) {
         void this.load(u.kind);
-        // While loading, keep the fallback hidden (transparent + ground marker)
-        // instead of flashing a roster card.
-        sprites.get(u.id)?.setVisible(false);
+        // Keep the sprite pass's walk sheet or transparent stand-in until native art draws.
+        // Artless troops already have a separate ground marker.
         continue;
       }
       const level = levelRow(pack, u.level ?? battle!.troopLevels?.[u.kind as TroopKind] ?? 1);
       if (!level) continue;
       if (!this.levelsReady.get(u.kind)?.has(level.level)) {
         void this.loadLevel(u.kind, level.level);
-        sprites.get(u.id)?.setVisible(false);
         continue;
       }
       // Walk/idle and travel heading follow simulation steps, not rendered frames: the sim

@@ -4977,7 +4977,8 @@ export class VillageScene extends Phaser.Scene {
       // The death fade above takes alpha to zero; a revived unit must restore
       // it here (the cull above already restores visibility).
       if (im.getData('dying')) im.setData('dying', false);
-      if (im.alpha !== 1) im.setAlpha(1);
+      const alpha = (u.native?.effects?.invisibleUntil ?? 0) > battle.elapsed ? 0.35 : 1;
+      if (im.alpha !== alpha) im.setAlpha(alpha);
       const motion =
         sprung || u.hero || reduced
           ? 0

@@ -97,6 +97,13 @@ per asset key, as troop texture pages already do. Rendering keeps requesting mis
 art after the cooldown, so a temporary outage recovers within the same battle without
 repeating failed metadata requests every frame. Successful loads clear their cooldown.
 
+Classic troops retain a loaded walk sheet while their native graph or level texture pages
+load. The native presentation hides that sprite once its body draws. Troops without a walk
+sheet use the transparent stand-in and ground marker. Walk-sheet and hero-portrait fallbacks
+follow the unit's battle-clock Invisibility opacity, so the cue carries through the native-art
+handoff. [The troop loading regression](../tests/browser/troop-art-loading.spec.ts) holds both
+graphs and served texture pages on desktop and phone, then checks playback and expiry.
+
 Releasing native character art also invalidates its pending requests. Metadata or image
 decodes that finish after a mode change cannot upload an unused texture again, and an old
 completion cannot clear a newer request's pending marker. Hero atlases track textures
