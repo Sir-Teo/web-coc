@@ -111,6 +111,13 @@ on their first frame. Battle sizes include Shrink's current half-scale.
 [The sprite handoff regression](../tests/browser/sprite-art-handoff.spec.ts) holds actual sheet,
 portrait and native atlas requests and checks the first camp and battle frame on desktop and phone.
 
+Existing camp and battle sprites keep requesting a missing walk sheet or hero portrait through
+`LazyTextures.has`. Its pending-request map and five-second failure cooldown bound the requests;
+checking only the texture cache stranded existing sprites after a failed initial download.
+[The sprite retry regression](../tests/browser/sprite-art-retry.spec.ts) returns one 503 for the
+actual asset, holds the native replacement, and checks recovery without recreating the sprite,
+including correct sizes and Shrink on desktop and phone.
+
 Releasing native character art also invalidates its pending requests. Metadata or image
 decodes that finish after a mode change cannot upload an unused texture again, and an old
 completion cannot clear a newer request's pending marker. Hero atlases track textures

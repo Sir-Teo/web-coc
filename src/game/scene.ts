@@ -3409,7 +3409,7 @@ export class VillageScene extends Phaser.Scene {
       const art = troopArt(actor.kind),
         flying = !!TROOPS[actor.kind].flying;
       // A walk sheet that arrived after the actor was made replaces its stand-in.
-      if (im.getData('isFallback') && this.textures.exists(`${actor.kind}-walk`)) {
+      if (im.getData('isFallback') && this.walkSheet(actor.kind)) {
         const size = TROOPS[actor.kind].width * art.displayScale * 0.7;
         im.setTexture(`${actor.kind}-walk`, art.idleFrame)
           .setDisplaySize(size, size)
@@ -4916,13 +4916,13 @@ export class VillageScene extends Phaser.Scene {
       // Fallback sprites are invisible by design; a ground marker stands in (after the
       // native pass, only if no mesh drew the unit).
       // A walk sheet that arrived after the unit was made replaces its stand-in.
-      if (!u.hero && im.getData('isFallback') && this.textures.exists(`${u.kind}-walk`))
+      if (!u.hero && im.getData('isFallback') && this.walkSheet(u.kind))
         im.setTexture(`${u.kind}-walk`, 0)
           .setDisplaySize(width, width)
           .setData('isFallback', false);
       const isFallback = !!im.getData('isFallback');
       if (u.hero && !battle.hero && im.texture.key === 'troop-fallback') {
-        if (this.textures.exists(heroKey(u.hero)))
+        if (this.deferredArt.has(heroKey(u.hero), heroPortraitImage(u.hero)))
           im.setTexture(heroKey(u.hero)).setDisplaySize(width, width);
       }
       if (u.hero && battle.hero) {
