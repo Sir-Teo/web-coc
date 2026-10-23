@@ -10,7 +10,12 @@ import { buildingIndex, defenderIndex, unitIndex } from './battle-index';
 import { isShrunk } from './shrink-trap';
 import { unitDepth } from './unit-depth';
 import { UnitMotionTracker } from './unit-motion';
-import { TINT_MULTIPLY, unitAnimationClock, unitStatusTint } from './unit-status-tint';
+import {
+  TINT_MULTIPLY,
+  defenderStatusTint,
+  unitAnimationClock,
+  unitStatusTint,
+} from './unit-status-tint';
 
 /** One hero, pet or guardian drawn this frame; references the sim object, never copies it. */
 interface Actor {
@@ -363,8 +368,13 @@ export class HeroNativePresentation {
         .setPosition(point.x, point.y - (actor.flying ? lift : 0))
         .setScale((pack.scale ?? 0.6) * scale)
         .setAlpha(body.hp <= 0 ? Math.max(0, 1 - deathAge / 1.5) : invisible ? 0.35 : 1);
-      // Status tints in the fallback sprite's order (freeze, poison, rage, boosts, rampage).
-      const status = u && u.hp > 0 ? unitStatusTint(u, battle, true) : undefined;
+      // Attackers keep their shared status priority; defenders share the living Poison cue.
+      const status =
+        u && u.hp > 0
+          ? unitStatusTint(u, battle, true)
+          : actor.defender
+            ? defenderStatusTint(actor.defender, battle.elapsed)
+            : undefined;
       if (status) {
         if (sprite.tintTopLeft !== status.color) sprite.setTint(status.color);
         if (sprite.tintMode !== status.mode) sprite.setTintMode(status.mode);

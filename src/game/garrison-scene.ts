@@ -22,6 +22,8 @@ import { registerCachedSample } from './sample-audio';
 import { presentationLive, presentationTime } from './presentation-clock';
 import { unitDepth } from './unit-depth';
 import { guardRender } from './render-guard';
+import { applyStatusTint } from './troop-native-scene';
+import { defenderStatusTint } from './unit-status-tint';
 import { defenderOpacity } from './defender-opacity';
 
 /** Sets a data value only when it differs (every setData emits change events). */
@@ -173,6 +175,7 @@ export class GarrisonPresentation {
           (defender.stealthUntil ?? 0) > battle!.elapsed ? GARRISON_CONCEALED_ALPHA : 1,
         ),
       );
+      applyStatusTint(view, defenderStatusTint(defender, battle!.elapsed));
       tag(view.objects, 'nativeGarrisonDefender', defender.id);
     }
     for (const [id, view] of this.defenders)

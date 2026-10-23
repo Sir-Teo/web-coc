@@ -18,6 +18,8 @@ before 0.5 seconds, then eight. Repeated seeks between 0.45 and 0.55 seconds che
 counts alongside simulation counts, and returning home checks that both troop meshes and
 hero sprites are removed without WebGL errors.
 
+Living defending Heroes, Guardians, garrison troops and Skeleton Trap defenders now share the attacker’s green Poison cue while their native poison status is active. Native mesh colors compose with that tint, and expiry or defeat restores the original artwork or death styling. The cue reconstructs through replay seeks. `tests/browser/defender-poison-tint.spec.ts` checks each renderer on desktop and phone, including stable repeated renders, expiry, death and cleanup.
+
 ## Earlier sprite artwork and feedback
 
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.

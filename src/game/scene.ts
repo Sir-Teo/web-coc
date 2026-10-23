@@ -189,7 +189,7 @@ import { unitDepth } from './unit-depth';
 import { mergeEdges } from './boundary-edges';
 import { defenderIndex, unitIndex } from './battle-index';
 import { presentationLive, presentationProjectiles, presentationTime } from './presentation-clock';
-import { unitStatusTint } from './unit-status-tint';
+import { defenderStatusTint, unitStatusTint } from './unit-status-tint';
 /** Appearance shared by placed buildings, Move previews and lower-level art fallbacks. */
 type BuildingAppearance = Readonly<
   Pick<
@@ -5148,7 +5148,11 @@ export class VillageScene extends Phaser.Scene {
       if (!sprite.visible) sprite.setVisible(true);
       const defenderDepth = unitDepth(p.y, d.id, flying, 1.1);
       if (sprite.depth !== defenderDepth) sprite.setDepth(defenderDepth);
-      if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();
+      const status = defenderStatusTint(d, battle.elapsed);
+      if (status) {
+        if (sprite.tintTopLeft !== status.color) sprite.setTint(status.color);
+        if (sprite.tintMode !== status.mode) sprite.setTintMode(status.mode);
+      } else if (sprite.tintTopLeft !== 0xffffff) sprite.clearTint();
       if (d.hp <= 0) {
         const pose = defeatPose(
           battle.finished ? Infinity : battle.elapsed - (d.defeatedAt ?? battle.elapsed),

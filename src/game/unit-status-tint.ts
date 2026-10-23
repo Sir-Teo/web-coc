@@ -1,3 +1,4 @@
+import type { Defender } from './defenders';
 import type { Battle, Unit } from './model';
 import { lateUnitFrozen, lateUnitTimeLost } from './late-campaign';
 import { FROZEN_TINT } from './freeze-trap-art';
@@ -45,6 +46,13 @@ export function unitStatusTint(
   )
     return tints.rage;
   return undefined;
+}
+
+/** Poison cue for living defenders; expiry and death restore their original artwork. */
+export function defenderStatusTint(defender: Defender, at: number): UnitStatusTint | undefined {
+  return defender.hp > 0 && defender.poison && defender.poison.until > at
+    ? tints.poison
+    : undefined;
 }
 
 /**
