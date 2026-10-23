@@ -10,6 +10,14 @@ const tower = (kind: BuildingKind, options: Partial<RangeBuilding> = {}): RangeB
 });
 
 it.each([
+  [tower('builder'), undefined],
+  [tower('builder', { level: 2 }), 7],
+  [tower('builder', { level: 3 }), 7],
+  [tower('builder', { level: 4 }), 7],
+  [tower('builder', { level: 5 }), 7],
+  [tower('builder', { level: 6 }), 7],
+  [tower('builder', { level: 7 }), 7],
+  [tower('builder', { level: 8 }), 7],
   [tower('multigeartower'), 12],
   [tower('multigeartower', { gearMode: 'long' }), 12],
   [tower('multigeartower', { gearMode: 'fast' }), 8],

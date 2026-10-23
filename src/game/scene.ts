@@ -2296,7 +2296,12 @@ export class VillageScene extends Phaser.Scene {
         return;
       }
       const hit = this.pickBuilding(world.x, world.y, grid);
-      if (hit && hit.hp > 0 && isDefense(hit.kind) && this.model.deployBlocked(grid.x, grid.y)) {
+      if (
+        hit &&
+        hit.hp > 0 &&
+        (isDefense(hit.kind) || (hit.kind === 'builder' && buildingRange(hit) !== undefined)) &&
+        this.model.deployBlocked(grid.x, grid.y)
+      ) {
         const d = BUILDINGS[hit.kind];
         this.model.selected = hit.id;
         this.model.changed();
@@ -4377,8 +4382,8 @@ export class VillageScene extends Phaser.Scene {
     if (b && !this.model.wallMove && b.hp > 0 && this.model.visibleBuilding(b)) {
       const d = BUILDINGS[b.kind];
       this.diamond(g, b.x, b.y, d.size, 0xffe8a0);
-      if (d.range || d.trap) {
-        const range = d.trap?.trigger ?? buildingRange(b)!;
+      const range = d.trap?.trigger ?? buildingRange(b);
+      if (range) {
         const p = iso(b.x + d.size / 2, b.y + d.size / 2);
         g.lineStyle(1, 0xffffff, 0.35);
         if (b.kind === 'airsweeper') {

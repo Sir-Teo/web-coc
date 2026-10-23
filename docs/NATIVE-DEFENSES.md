@@ -136,7 +136,8 @@ Builder's Huts reach all eight source tiers: level 4 at Town Hall 14 and levels 
 Selection rings and scouting labels share the configured building range. Multi-Gear Tower uses
 12 tiles in Long Range and 8 in Fast Attack. Geared Cannon and Archer Tower use 7 and 8 tiles,
 respectively; their normal ranges remain 9 and 10. Mortar keeps its 11-tile range and 4-tile blind
-spot in both modes. Inferno, X-Bow and Spell Tower retain their mode-specific ranges, and traps
+spot in both modes. Armed Builder's Huts (levels 2–8) show their seven-tile turret range and
+can be inspected while scouting; level 1 has no attack ring. Inferno, X-Bow and Spell Tower retain their mode-specific ranges, and traps
 keep their separate trigger radius. These displayed values follow the source weapon columns;
 combat behavior and saved configurations are unchanged.
 

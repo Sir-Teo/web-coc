@@ -3,6 +3,7 @@ import type { Building } from './model';
 import { nativeGearedWeapon, nativeWeapon } from './native-defense-stats';
 import { spellTowerRange } from './spell-tower-stats';
 import { xbowRange } from './xbow-stats';
+import { builderHutWeapon } from './builder-hut-stats';
 
 type RangeBuilding = Pick<
   Building,
@@ -19,6 +20,7 @@ type RangeBuilding = Pick<
 
 /** Attack reach for selection rings and scouting labels; trap triggers stay with the caller. */
 export function buildingRange(tower: RangeBuilding): number | undefined {
+  if (tower.kind === 'builder') return builderHutWeapon(tower.level)?.range;
   if (tower.kind === 'inferno') return tower.infernoMode === 'multi' ? 10 : 9;
   if (tower.kind === 'xbow') return xbowRange(tower.xbowMode);
   if (tower.kind === 'spelltower') return spellTowerRange(tower);
