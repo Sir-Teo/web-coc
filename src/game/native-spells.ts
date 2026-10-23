@@ -325,9 +325,14 @@ function poisonDefender(battle: Battle, d: Defender, row: NativeRow, at: number,
   state.speed = num(row, 'SpeedBoost') / 100;
   state.attack = num(row, 'AttackSpeedBoost') / 100;
   const ramp = flag(row, 'PoisonIncreaseSlowly') ? Math.min(1, (at - state.since + tick) / 5) : 1;
-  // Guardians take poison damage and slows at the client's 30% (GUARDIAN_POISON_* globals).
+  // Defending heroes use the spell's hero multiplier; older recordings keep their full damage.
+  // Guardians retain their released 30% poison path (GUARDIAN_POISON_* globals).
   const scale =
-    d.kind === 'guardian' ? nativeGlobal('GUARDIAN_POISON_SPEED_MULTIPLIER', 100) / 100 : 1;
+    d.kind === 'hero' && battle.nativeDefendingHeroPoison
+      ? num(row, 'HeroDamageMultiplier', 100) / 100
+      : d.kind === 'guardian'
+        ? nativeGlobal('GUARDIAN_POISON_SPEED_MULTIPLIER', 100) / 100
+        : 1;
   hurtDefender(battle, d, num(row, 'PoisonDPS') * tick * ramp * scale);
 }
 

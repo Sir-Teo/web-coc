@@ -126,3 +126,9 @@ fading all use the matching art. Pets and Guardians retain their native animatio
 See [the source record and exact prompts](../art/source/hero-redesign-v1/README.md).
 Run `npm run test:heroes:art` to verify the reproducible image imports. Original native hero
 assets remain preserved as references; this change only replaces the presentation.
+
+## Version 60 defending hero Poison
+
+Defending heroes use the spell’s signed `SpeedBoost` and `AttackSpeedBoost` as slowdowns, matching native attacking units, and apply `HeroDamageMultiplier` to poison damage. For level-1 Poison, movement retains 74% speed, the attack clock retains 65%, and heroes take 5% of the ramping poison damage. The previous calculation subtracted negative modifiers, accelerating heroes, and applied full troop poison damage. Versions 52–59 preserve that calculation for replay compatibility. Guardians and ordinary garrison defenders retain their existing rules.
+
+`tests/defending-hero-poison.test.ts` covers native pulse damage, attack and movement slows, the old rule, portable files and exact backward seeks. `tests/browser/defending-hero-poison.spec.ts` checks defending hero bodies and both replay paths on desktop and phone.

@@ -63,7 +63,10 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
     const point = target ?? d.home,
       distance = distance2D(point.x - d.x, point.y - d.y);
     const poison = d.poison && d.poison.until > battle.elapsed ? d.poison : undefined;
-    d.cooldown -= dt * (1 - (poison?.attack ?? 0));
+    const attackScale = battle.nativeDefendingHeroPoison
+      ? Math.max(0.05, 1 + (poison?.attack ?? 0))
+      : 1 - (poison?.attack ?? 0);
+    d.cooldown -= dt * attackScale;
     if (target && distance <= stats.range) {
       d.attacking = true;
       if (d.cooldown <= 0) {
@@ -86,7 +89,10 @@ export function stepDefendingHeroes(battle: Battle, dt: number, effect: (fx: FX)
       );
       d.pathAt = 1;
     }
-    let travel = stats.speed * dt * (1 - (poison?.speed ?? 0));
+    const moveScale = battle.nativeDefendingHeroPoison
+      ? Math.max(0, 1 + (poison?.speed ?? 0))
+      : 1 - (poison?.speed ?? 0);
+    let travel = stats.speed * dt * moveScale;
     while (travel > 0 && d.path.length) {
       const p = d.path[0],
         length = distance2D(p.x - d.x, p.y - d.y),

@@ -14,6 +14,7 @@ export function useReleasedCombat(model: GameModel) {
     delete model.battle.nativeBuilderFreeze;
     delete model.battle.nativeBuilderLightning;
     delete model.battle.nativeBuilderPoison;
+    delete model.battle.nativeDefendingHeroPoison;
     delete model.battle.nativeHeroPassives;
     delete model.battle.separationCap;
     delete model.battle.stalledSupportEnds;
