@@ -239,12 +239,16 @@ def build():
     hut_levels = inherited_levels(huts)
     require(huts[0]['GlobalID'] == '1000015' and huts[0]['Width'] == '2', "Builder's Hut identity differs")
     require([(r['ExportName'], r['Hitpoints'], r.get('DPS'), r.get('Projectile'), r.get('DefenceTroopLevel'))
-             for r in hut_levels[:4]] ==
+             for r in hut_levels] ==
             [('worker_building', '250', None, None, None),
              ('worker_building_armed_lvl1', '1000', '80', 'Nail Ammo', '1'),
              ('worker_building_armed_lvl2', '1300', '100', 'Nail Ammo', '2'),
-             ('worker_building_armed_lvl3', '1600', '120', 'Nail Ammo 2', '3')], "Builder's Hut armed tiers differ")
-    for r in hut_levels[1:4]:
+             ('worker_building_armed_lvl3', '1600', '120', 'Nail Ammo 2', '3'),
+             ('worker_building_armed_lvl4', '1800', '135', 'Nail Ammo 2', '4'),
+             ('worker_building_armed_lvl5', '1900', '150', 'Nail Ammo 2', '5'),
+             ('worker_building_armed_lvl6', '2000', '165', 'Nail Ammo 2', '6'),
+             ('worker_building_armed_lvl7', '2100', '180', 'Nail Ammo 2', '7')], "Builder's Hut armed tiers differ")
+    for r in hut_levels[1:]:
         require([r.get(f) for f in ['AttackRange', 'AttackSpeed', 'AttackEffect', 'HitEffect', 'AnimateTurret', 'AirTargets',
                                     'GroundTargets', 'WakeUpSpeed', 'WakeUpSpace', 'ActivatedCombatAddBuildingClass',
                                     'ExportNameBase', 'ExportNameDamaged', 'DefenceTroopCharacter', 'DefenceTroopCount']] ==
@@ -297,7 +301,7 @@ def build():
     char_graph, char_assets, char_textures, char_runtime, _ = capture(chars, {arrow}, [7], GOBLIN_PREFIX + '/characters', {0})
     outputs.update(char_assets)
 
-    hut_exports = {'worker_building', 'worker_building_armed_lvl1', 'worker_building_armed_lvl2', 'worker_building_armed_lvl3',
+    hut_exports = {*{r['ExportName'] for r in hut_levels},
                    'worker_building_base', 'destroyedBuilding_2s_pit_wood_darkbrown',
                    'rockWood_destructed_tiles2_battlebuilder', *(p[0]['ExportName'] for p in hut_projectiles.values()),
                    *hut_particle_exports}
@@ -321,16 +325,31 @@ def build():
                     marker=clip['children'][moving[0]])
 
     hut_controls = {}
-    for level, row in enumerate(hut_levels[1:4], 2):
+    turret_direction_frames = {}
+    for level, row in enumerate(hut_levels[1:], 2):
         clip = hut_graph['clips'][str(hut_graph['exports'][row['ExportName']])]
-        require(clip['names'][2:5] == ['turret_load', 'turret', 'builder_out'] and len(clip['timeline']) == 94, 'Armed hut layout differs')
-        load = hut_graph['clips'][str(clip['children'][2])]
-        turret = hut_graph['clips'][str(clip['children'][3])]
+        offset = 3 if level == 8 else 2
+        require(clip['names'][offset:offset + 3] == ['turret_load', 'turret', 'builder_out'] and
+                len(clip['timeline']) == 94, 'Armed hut layout differs')
+        load = hut_graph['clips'][str(clip['children'][offset])]
+        turret = hut_graph['clips'][str(clip['children'][offset + 1])]
         require({label: i for i, label in load['labels']} == {'idle': 0, 'activating_start': 1, 'activating_end': 37, 'battleidle': 38},
                 'Armed hut activation labels differ')
-        # Level 3 (armed tier 2) repeats one adjacent view, so it retains 35 distinct placements.
-        require(len(turret['timeline']) == 360 and len(turret['frames']) == (35 if level == 3 else 36) and
-                all(turret['timeline'][f] == turret['timeline'][f - f % 10] for f in range(360)), 'Armed hut turret frames differ')
+        if level == 8:
+            # This source clip holds directions 16 and 23 for eleven frames. Preserve all
+            # 36 directions instead of treating its 362 frames as uniform ten-frame bands.
+            starts = [i for i, frame in enumerate(turret['timeline'])
+                      if i == 0 or frame != turret['timeline'][i - 1]]
+            lengths = [b - a for a, b in zip(starts, starts[1:] + [len(turret['timeline'])])]
+            require(len(turret['timeline']) == 362 and len(turret['frames']) == len(starts) == 36 and
+                    [(starts[i], n) for i, n in enumerate(lengths) if n != 10] == [(160, 11), (231, 11)],
+                    'Level-eight hut turret holds differ')
+            turret_direction_frames[str(level)] = starts
+        else:
+            # Levels 3, 5 and 6 repeat one adjacent view across two ten-frame bands.
+            require(len(turret['timeline']) == 360 and len(turret['frames']) == (35 if level in (3, 5, 6) else 36) and
+                    all(turret['timeline'][f] == turret['timeline'][f - f % 10] for f in range(360)),
+                    'Armed hut turret frames differ')
         hut_controls[level] = sleep_timeline(row['ExportName'])
     require(len({json.dumps(v) for v in hut_controls.values()}) == 1, 'Armed hut sleep timelines differ')
     plain = hut_graph['clips'][str(hut_graph['exports']['worker_building'])]
@@ -352,7 +371,7 @@ def build():
         goblin_previews[key] = preview(graph, pixels, layers, anchor, f'{GOBLIN_PREFIX}/{key}.png', outputs)
     hut_previews = {}
     dormant = {'turret_load': 0, 'turret': False, 'builder_out': False}
-    for level, row in enumerate(hut_levels[:4], 1):
+    for level, row in enumerate(hut_levels, 1):
         controls = dormant if level > 1 else {'builder_out': False}
         hut_previews[str(level)] = preview(hut_graph, hut_pixels, [('worker_building_base', identity, {}, 0),
                                                                     (row['ExportName'], identity, controls, 0)],
@@ -375,12 +394,12 @@ def build():
             registration='Uniform body scale 1.2 with native ground anchors (0, 40) for 2x2 and (0, 80) for 3x3/4x4; goblin_townhall_base is fitted to the local four-tile diamond. Local, not native camera parity.'))
     hut_native = dict(
         clientVersion='18.400.21', bundle=BUNDLE, baseUrl=BASE, sources=PINS, fingerprintMembership=fingerprint_members,
-        buildings={'Builders Hut': huts[:4]}, projectiles=hut_projectiles, effects=hut_effects, particles=hut_particles,
+        buildings={'Builders Hut': huts}, projectiles=hut_projectiles, effects=hut_effects, particles=hut_particles,
         world=dict(source='sc/buildings.sc', graph=hut_graph, textures=hut_textures), previews=hut_previews, sounds=hut_sounds,
         reconstruction=dict(
             liveIntegration=True, nativePlaybackVerified=False,
-            scope='Campaign Builder\'s Huts 1-4 with the armed turret tiers 2-4; the Defending Builder character is excluded.',
-            controls='turret_load idle/activating/battleidle labels, 36 turret directions (10 frames each) and builder_out are retained; the sleeping Z root timeline is the only animated root placement.'))
+            scope='Builder\'s Huts 1-8 with armed turret tiers 2-8; the Defending Builder character is reconstructed separately.',
+            controls='Named turret_load/activating/battleidle and builder_out slots are retained, including shifted level-eight slots. Turrets have 36 directions; level eight retains two eleven-frame holds with explicit direction-frame starts. The sleeping Z root timeline is the only animated root placement.'))
 
     def building_art(row, key):
         return dict(body=row['ExportName'], base=row['ExportNameBase'], ruin=row['ExportNameDamaged'],
@@ -414,7 +433,7 @@ def build():
         levels=[dict(level=int(r['BuildingLevel']), hp=int(r['Hitpoints']), dps=number(r, 'DPS'), body=r['ExportName'],
                      base=r['ExportNameBase'], ruin=r['ExportNameDamaged'], destroyEffect=r['DestroyEffect'],
                      projectile=r.get('Projectile'), defenceTroop=r.get('DefenceTroopCharacter'),
-                     defenceTroopLevel=number(r, 'DefenceTroopLevel') or None) for r in hut_levels[:4]],
+                     defenceTroopLevel=number(r, 'DefenceTroopLevel') or None) for r in hut_levels],
         weapon=dict(rangeSource=number(hut_levels[1], 'AttackRange'), intervalMs=number(hut_levels[1], 'AttackSpeed'),
                     airTargets=True, groundTargets=True, attackEffect=hut_levels[1]['AttackEffect'],
                     hitEffect=hut_levels[1]['HitEffect'], wakeUpSpace=number(hut_levels[1], 'WakeUpSpace'),
@@ -428,7 +447,7 @@ def build():
         housing=dict(unit=int(globals_['UNIT_HOUSING_COST_MULTIPLIER'][0]), spell=int(globals_['SPELL_HOUSING_COST_MULTIPLIER'][0]),
                      hero=int(globals_['HERO_HOUSING_COST_MULTIPLIER'][0]), alliance=int(globals_['ALLIANCE_UNIT_HOUSING_COST_MULTIPLIER'][0]),
                      barbarianKing=int(heroes['Barbarian King'][0]['HousingSpace'])),
-        turret=dict(frames=360, directions=36, load=dict(idle=0, activatingStart=1, activatingEnd=37, battleIdle=38)),
+        turret=dict(frames=360, directions=36, directionFrames=turret_direction_frames, load=dict(idle=0, activatingStart=1, activatingEnd=37, battleIdle=38)),
         sleep=hut_controls[2],
         previews={k: {f: v[f] for f in ('path', 'bounds', 'anchor', 'width', 'height')} for k, v in hut_previews.items()})
     documents = {

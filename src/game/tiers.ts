@@ -30,9 +30,7 @@ const LOCAL_COUNTS: Partial<Record<BuildingKind, readonly number[]>> = {
  * zero withholds the building outright. Every gap is asserted in tests/townhall-tiers.test.ts
  * so it can neither close nor widen unnoticed.
  */
-export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {
-  builder: { level: 4, why: 'only four hut tiers have reconstructed artwork and a turret' },
-};
+export const WITHHELD: Partial<Record<BuildingKind, { level: number; why: string }>> = {};
 
 const HOME_KINDS = Object.keys(SOURCE_NAME) as BuildingKind[];
 

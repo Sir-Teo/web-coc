@@ -90,8 +90,8 @@ describe('Town Hall tier catalog', () => {
         expect(withheld.level, `${name} gap`).toBeLessThan(sourceCeiling(name, MAX_TOWNHALL));
       }
     }
-    // Only the Builder's Hut still stops short, and for artwork rather than for data.
-    expect(Object.keys(WITHHELD).sort()).toEqual(['builder']);
+    // Every home family now reaches the pinned source ceiling.
+    expect(Object.keys(WITHHELD)).toEqual([]);
   });
 
   it('reports the original Town Hall requirement for the levels each tier adds', () => {
@@ -131,12 +131,17 @@ describe('Town Hall tier catalog', () => {
       ['herohall', 12, 18],
       ['goldstorage', 19, 18],
       ['goldmine', 17, 16],
+      ['builder', 2, 14],
+      ['builder', 4, 14],
+      ['builder', 5, 15],
+      ['builder', 6, 16],
+      ['builder', 7, 17],
+      ['builder', 8, 18],
     ];
     for (const [kind, level, townhall] of added)
       expect(requiredTownHall(kind, level), `${kind} ${level}`).toBe(townhall);
     expect(unlockTownHall('xbow')).toBe(9);
-    // A withheld level reports no requirement at all, because it is never reachable.
-    expect(requiredTownHall('builder', 5)).toBeNull();
+    expect(requiredTownHall('builder', 9)).toBeNull();
     // The Blacksmith and the Clan Castle now report theirs: both reach their own last level.
     expect(requiredTownHall('blacksmith', 2)).toBe(9);
     expect(unlockTownHall('clancastle')).toBe(3);

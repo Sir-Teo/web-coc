@@ -68,7 +68,13 @@ it("reads the pinned Defending Builder rows, armed Builder's Hut levels and repa
     expect.objectContaining({ level: 2, hp: 100500, repair: 45, repairPerSecond: 60 }),
     expect.objectContaining({ level: 3, hp: 101000, repair: 52.5, repairPerSecond: 70 }),
   ]);
-  expect([1, 2, 3, 4, 5].map(hutBuilderLevel)).toEqual([undefined, 1, 2, 3, 4]);
+  expect([1, 2, 3, 4, 5, 6, 7, 8].map(hutBuilderLevel)).toEqual([undefined, 1, 2, 3, 4, 5, 6, 7]);
+  expect([4, 5, 6, 7].map((level) => defendingBuilderStats(level).repairPerSecond)).toEqual([
+    80, 85, 90, 95,
+  ]);
+  expect([4, 5, 6, 7].map((level) => defendingBuilderStats(level).repair)).toEqual([
+    60, 63.75, 67.5, 71.25,
+  ]);
   expect(REPAIR_GLOBALS).toEqual({
     HEAL_STACK_PERCENT: [100, 100, 90, 90, 70, 40, 10, 0],
     ALLOW_REPAIR_AFTER_DAMAGE_TICKS: 0,

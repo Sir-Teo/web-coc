@@ -1,7 +1,7 @@
 import source from '../../reference/builder-hut/combat.json' with { type: 'json' };
 import type { WeaponProfile } from './late-goblin-weapon';
 
-/** Pinned client 18.400.21 Builder's Hut rows 1-4, from scripts/import-native-late-goblin-buildings.py. */
+/** Pinned client 18.400.21 Builder's Hut rows 1-8, from scripts/import-native-late-goblin-buildings.py. */
 export const BUILDER_HUT_SOURCE = source;
 export const BUILDER_HUT_LEVELS = source.levels;
 export const builderHutLevel = (level: number) => {

@@ -131,6 +131,8 @@ Bombs and Giant Bombs push troops of ≤ 3 housing by `Pushback` (1 tile).
   weapon level and the TH18 Guardian are saved on the building and validated in saves and
   version 45 replays.
 
+Builder's Huts reach all eight source tiers: level 4 at Town Hall 14 and levels 5–8 at Town Halls 15–18. Armed home huts use the activation and aimed turret presentation exclusively, replacing the dormant village body during battle. Original portraits also cover Info and Move. [The hut reference](../reference/builder-hut/README.md) records the source rows, level-eight direction holds and replay-version boundary.
+
 Selection rings and scouting labels share the configured building range. Multi-Gear Tower uses
 12 tiles in Long Range and 8 in Fast Attack. Geared Cannon and Archer Tower use 7 and 8 tiles,
 respectively; their normal ranges remain 9 and 10. Mortar keeps its 11-tile range and 4-tile blind

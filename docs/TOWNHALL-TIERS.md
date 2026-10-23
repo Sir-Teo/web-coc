@@ -46,11 +46,7 @@ Army housing rises from 220 at Town Hall 9 to **352** at Town Hall 18 (four Army
 
 ## What this game withholds
 
-One entity stops below what the original tier permits, and it is short of artwork rather than of data. It is asserted in `tests/townhall-tiers.test.ts` to be strictly below the source, so the gap can neither close nor widen unnoticed.
-
-| Entity        | Original | Here    | Why                                                         |
-| ------------- | -------- | ------- | ----------------------------------------------------------- |
-| Builder's Hut | level 8  | level 4 | only four hut tiers have reconstructed artwork and a turret |
+Every home building now reaches its pinned source ceiling. Builder's Hut levels 5–8 have reconstructed previews, activation and aiming, so the former level-four artwork cap is removed. `tests/townhall-tiers.test.ts` asserts that `WITHHELD` is empty.
 
 The Clan Castle was the last of the others. It is buildable from Town Hall 3 and upgrades through all 14 original levels, with original hitpoints, prices, durations and reconstructed artwork, and it is damaged, destroyed and counted like any other building. What it does **not** do is hold reinforcements: in the original a home Castle is filled by clanmates' donations, and there is no original answer for a village with no clan. The roster the garrison system fields is a _defender_ roster with its own fixed levels, not the player's trained army, so loading it from the barracks would be this game's invention rather than the client's. An empty Clan Castle is an ordinary state in the original; the donation system behind reinforcements is a social feature, not missing content.
 
@@ -85,7 +81,7 @@ practice and campaign combat ownership is documented in [Native defenses](NATIVE
 
 A home Spell Tower is placed carrying the Rage spell and its context panel cycles through the spells unlocked by its level — Rage, Poison, Invisibility and Earthquake — the way the X-Bow cycles its targeting mode. The choice survives saves, edit undo/redo and layout presets, and travels in recordings; so do the Spell Tower's active spell and the Multi-Gear Tower's Long Range/Fast Attack mode.
 
-The armed Builder's Hut now fights at home too. From Town Hall 14 a hut buys the nail turret the campaign huts already carried, and its turret, Defending Builders and repair behaviour step in home and practice battles exactly as they do in the campaign. A level-one hut stays passive, as it does in the original. The home hut stops at level 4 with the campaign huts, since those are the tiers whose artwork and weapon this game reconstructs.
+The armed Builder's Hut now fights at home too. From Town Hall 14 a hut buys the nail turret the campaign huts already carried, and its turret, Defending Builders and repair behaviour step in home and practice battles exactly as they do in the campaign. A level-one hut stays passive, as it does in the original. Home huts reach level 4 at Town Hall 14, then levels 5, 6, 7 and 8 at Town Halls 15, 16, 17 and 18. Their original damage, hitpoints, prices, durations and Defending Builder repair levels come from the pinned client.
 
 The campaign keeps one thing the home village does not. A campaign-only identity — Goblin Halls, the Goblin Castle, the Foreboding Cave and the rest — is still never a home building.
 
@@ -96,7 +92,7 @@ The campaign keeps one thing the home village does not. A campaign-only identity
 
 ## Compatibility
 
-Recording version **47** carries the fifth coffin tier and the armed home Builder's Hut; version 46 carries the Town Hall 18 ceilings before it. No combat rule changed and versions 34–46 remain playable, each keeping its own ceilings: a version-46 recording cannot hold a Skeleton Trap above 4 or a Builder's Hut above 4, a version-45 recording still cannot hold a Town Hall above 9, an Archer Tower above 12, a Wall above 16 or a King above 30, and the version-44 and pre-44 limits before it are unchanged. Save version 4 is unchanged; an existing village loads untouched and nothing is granted retroactively.
+Recording version **47** carries the fifth coffin tier and the armed home Builder's Hut; version 46 carries the Town Hall 18 ceilings before it. No combat rule changed and versions 34–46 remain playable, each keeping its own ceilings: a version-46 recording cannot hold a Skeleton Trap above 4 or a Builder's Hut above 4, a version-45 recording still cannot hold a Town Hall above 9, an Archer Tower above 12, a Wall above 16 or a King above 30, and the version-44 and pre-44 limits before it are unchanged. Version 56 adds Builder's Hut levels 5–8; all earlier recordings retain their previous hut ceilings. Save version 4 is unchanged; an existing village loads untouched and nothing is granted retroactively.
 
 A version-45 recording also cannot hold a late family outside a campaign village, because before version 46 the home village could not build one.
 
@@ -104,7 +100,7 @@ The one value correction in the Town Hall 18 pass is the Bomb's level-4 build ti
 
 ## Verification
 
-`tests/townhall-tiers.test.ts` checks the whole ladder against `reference/townhall/catalog.json` rather than a transcribed copy: every count and ceiling at all 18 tiers, monotonic columns, a zero ceiling wherever a tier permits none of a building, nothing above what the game implements, the explicit withheld limit, the original Town Hall requirement for a spread of levels, army and spell housing, hero caps, affordability of every purchase within its own tier's storage, and shipped artwork for every reachable level. It also plays the ladder: the Town Hall 8 → 9 → 18 climb, X-Bow construction and its count gate, the Hero Hall 3 path to King 21, building all six late families in a home village and fighting a practice battle that steps their state, the Spell Tower's weapon cycle, and the version-47 recording boundary against real version-44, version-45 and version-46 rejections.
+`tests/townhall-tiers.test.ts` checks the whole ladder against `reference/townhall/catalog.json` rather than a transcribed copy: every count and ceiling at all 18 tiers, monotonic columns, a zero ceiling wherever a tier permits none of a building, nothing above what the game implements, the absence of withheld levels, the original Town Hall requirement for a spread of levels, army and spell housing, hero caps, affordability of every purchase within its own tier's storage, and shipped artwork for every reachable level. It also plays the ladder: the Town Hall 8 → 9 → 18 climb, X-Bow construction and its count gate, the Hero Hall 3 path to King 21, building all six late families in a home village and fighting a practice battle that steps their state, the Spell Tower's weapon cycle, and the version-47 recording boundary against real version-44, version-45 and version-46 rejections.
 
 `tests/king-combat.test.ts` compares all 110 King records to the pinned catalog. The Air Sweeper, Bomb Tower, Cannon, Archer Tower, Hidden Tesla, Dark Elixir Storage, Skeleton Trap, Seeking Air Mine, Army Camp, Wall, trap and army-facility suites each derive their expectations from the same reference.
 

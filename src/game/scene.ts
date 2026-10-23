@@ -1,3 +1,4 @@
+import { builderHutArt } from './builder-hut-art';
 import { HeroNativePresentation } from './hero-native-scene';
 import { typingTarget } from '../ui/keyboard';
 import {
@@ -3088,7 +3089,11 @@ export class VillageScene extends Phaser.Scene {
   private deferrable(kind: BuildingKind, level: number, texture: string) {
     if (texture === kind) return this.deferredBases.has(kind);
     const family =
-      kind === 'wall' || kind === 'camp' || kind === 'cannon' || texture.endsWith('-tier3');
+      kind === 'wall' ||
+      kind === 'camp' ||
+      kind === 'cannon' ||
+      (kind === 'builder' && level >= 5) ||
+      texture.endsWith('-tier3');
     // Level 1 is the boot sprite, except the Cannon's, which keys its own per level.
     return family && (level > 1 || kind === 'cannon');
   }
@@ -3251,6 +3256,13 @@ export class VillageScene extends Phaser.Scene {
         .setDisplaySize(BUILDINGS[kind].width, (BUILDINGS[kind].width * im.height) / im.width);
     }
     if (im.texture.key !== texture) im.setTexture(texture);
+    if (kind === 'builder' && level >= 5) {
+      const art = builderHutArt(level);
+      return im
+        .setOrigin(art.originX, art.originY)
+        .setFlipX(false)
+        .setDisplaySize(art.width, art.height);
+    }
     if (hasLateArt(kind)) {
       const art = lateArt(kind);
       return im
@@ -4199,6 +4211,7 @@ export class VillageScene extends Phaser.Scene {
     );
   }
   private visibleScratch: Building[] = [];
+  private villageBodyScratch: Building[] = [];
   /** Buildings, defenses, traps, projectiles, selection and effects: everything but units. */
   private drawWorld() {
     const battle = this.model.battle;
@@ -4258,10 +4271,17 @@ export class VillageScene extends Phaser.Scene {
       battle,
       AIR_LIFT,
     );
+    // Armed huts render their activation and aimed roof through the late presentation.
+    // Retaining the idle village body underneath also retained its sleeping roof and markers.
+    const villageBodies = this.villageBodyScratch;
+    villageBodies.length = 0;
+    for (const b of visible) {
+      if (b.kind === 'builder' && this.lateCampaign.handles(b)) continue;
+      if (this.model.wallMove?.source.some((wall) => wall.id === b.id)) continue;
+      villageBodies.push(b);
+    }
     this.villageNativePresentation.render(
-      this.model.wallMove
-        ? visible.filter((b) => !this.model.wallMove?.source.some((w) => w.id === b.id))
-        : visible,
+      villageBodies,
       battle,
       reduced ? 0 : clock,
       iso,

@@ -63,7 +63,7 @@ import {
 } from './equipment';
 
 // Bump when combat rules change; old results remain readable even if playback expires.
-export const REPLAY_VERSION = 55;
+export const REPLAY_VERSION = 56;
 /**
  * Version 51 runs the battle from the client's own tables: the native troop roster with its
  * abilities, spawned units and statuses, the Town Hall 11–18 defenses with their weapon columns,
@@ -83,7 +83,8 @@ export const NATIVE_HERO_VERSION = NATIVE_VERSION;
  * or research it.
  * Version 51 hands combat to the native client tables; every recording before it keeps the
  * rules it was written with.
- * Version 55 adds the Helper Hut building without changing any combat rule. */
+ * Version 55 adds the Helper Hut building without changing any combat rule.
+ * Version 56 adds Builder's Hut levels 5–8; earlier recordings retain the four-tier ceiling. */
 export const compatibleReplayVersion = (version: unknown) =>
   version === 34 ||
   version === 35 ||
@@ -106,6 +107,7 @@ export const compatibleReplayVersion = (version: unknown) =>
   version === 52 ||
   version === 53 ||
   version === 54 ||
+  version === 55 ||
   version === REPLAY_VERSION;
 /** Roster ceilings before version 47 took every troop and spell to its own original last level. */
 export const PRE_ROSTER_TROOP_LEVELS: Readonly<Record<string, number>> = Object.fromEntries(
@@ -600,6 +602,7 @@ export function validateReplay(value: unknown): value is ReplayData {
       // The Crafting Station arrived in version 54 recordings, the Helper Hut in version 55.
       (b.kind === 'craftingstation' && value.version < 54) ||
       (b.kind === 'helperhut' && value.version < 55) ||
+      (b.kind === 'builder' && b.level > 4 && value.version < 56) ||
       ((b.spellMode !== undefined ||
         b.gearMode !== undefined ||
         b.weaponLevel !== undefined ||

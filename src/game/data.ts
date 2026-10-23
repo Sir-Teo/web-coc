@@ -78,6 +78,7 @@ import { FACILITY_LEVELS, facilityProgression } from './facility-progression';
 import { sourceLevel, sourceLevels, WORKER_GEMS } from './townhall-catalog';
 import { SKELETON_TRAP_LEVELS } from './skeleton-stats';
 import { BUILDER_HUT_LEVELS } from './builder-hut-stats';
+import { builderHutAsset, builderHutTexture } from './builder-hut-art';
 import { CRAFTING_STATION, craftedArt, type CraftedKind } from './crafted-defenses';
 import { BLACKSMITH_MAX_LEVEL } from './equipment';
 /** Original level-one construction rows for the buildings that had no source table. */
@@ -1494,6 +1495,7 @@ export const buildingTexture = (
   gearMode: GearMode = 'long',
 ) => {
   if (kind === 'multigeartower') return multiGearTexture(level, gearMode);
+  if (kind === 'builder' && level >= 5) return builderHutTexture(level);
   if (hasLateArt(kind)) return lateTexture(kind, level, spellTowerWeapon);
   if (kind === 'inferno') return infernoTexture(level, infernoMode);
   if (kind === 'clancastle') return castleTexture(level);
@@ -1527,6 +1529,7 @@ export const asset = (
   gearMode: GearMode = 'long',
 ) => {
   if (kind === 'multigeartower') return multiGearAsset(level, gearMode);
+  if (kind === 'builder' && level >= 5) return builderHutAsset(level);
   // The empty platform and tiered Crafted Defenses use original source portraits.
   if (kind === 'craftingstation') return '/assets/catalog-native/crafting-station/level-1.png';
   if (kind === 'helperhut') return '/assets/catalog-native/helper-hut/level-1.png';

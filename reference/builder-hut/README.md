@@ -1,19 +1,23 @@
-# Armed campaign Builder's Hut
+# Builder's Hut levels 1–8
 
 Pinned client **18.400.21**, bundle `7f04bdfdc4124b1f49308423bb8f4aa8b137aae3`. The [late Goblin building importer](../late-goblin-buildings/README.md) also captures this family from the same 27 SHA-256 pins, each checked for SHA-1 membership in the original [fingerprint.json](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/fingerprint.json). Original artwork and audio belong to Supercell.
 
-The nail turret is complete for campaign Builder's Huts in version-44 `goblin-v1` battles (`battle.late.builderHut`). Home huts, practice battles and every version-43 or older recording stay passive and keep their ordinary sprite. Each armed hut also sends out a `Defending Builder`, implemented in `src/game/defending-builder.ts` (see `reference/garrison/README.md`). With both halves in place `BUILDER_HUT_READY` is **true**, so levels 2–4 no longer gate villages 80–85 and 87–89.
+The nail turret is complete for campaign Builder's Huts in version-44 `goblin-v1` battles (`battle.late.builderHut`). Home and practice huts are armed from recording version 47. Version 56 adds home levels 5–8 at Town Halls 15–18; earlier recordings reject those tiers. Version-43 and older campaign huts remain passive. Each armed hut also sends out a `Defending Builder`, implemented in `src/game/defending-builder.ts` (see `reference/garrison/README.md`). With both halves in place `BUILDER_HUT_READY` is **true**, so levels 2–4 no longer gate villages 80–85 and 87–89.
 
 ## Source records
 
 [buildings.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/buildings.csv) row `Builders Hut`, GlobalID `1000015`, 2×2. Campaign villages use levels 1–4; Builderopolis (84) contains all four.
 
-| Level | HP | DPS → per 400-ms hit | Body | Ruin | Projectile | Defending Builder level |
-| ---: | ---: | --- | --- | --- | --- | ---: |
-| 1 | 250 | — | `worker_building` | `destroyedBuilding_2s_pit_wood_darkbrown` | — | — |
-| 2 | 1,000 | 80 → 32 | `worker_building_armed_lvl1` | `rockWood_destructed_tiles2_battlebuilder` | `Nail Ammo` | 1 |
-| 3 | 1,300 | 100 → 40 | `worker_building_armed_lvl2` | same | `Nail Ammo` | 2 |
-| 4 | 1,600 | 120 → 48 | `worker_building_armed_lvl3` | same | `Nail Ammo 2` | 3 |
+| Level |    HP | DPS → per 400-ms hit | Body                         | Ruin                                       | Projectile    | Defending Builder level |
+| ----: | ----: | -------------------- | ---------------------------- | ------------------------------------------ | ------------- | ----------------------: |
+|     1 |   250 | —                    | `worker_building`            | `destroyedBuilding_2s_pit_wood_darkbrown`  | —             |                       — |
+|     2 | 1,000 | 80 → 32              | `worker_building_armed_lvl1` | `rockWood_destructed_tiles2_battlebuilder` | `Nail Ammo`   |                       1 |
+|     3 | 1,300 | 100 → 40             | `worker_building_armed_lvl2` | same                                       | `Nail Ammo`   |                       2 |
+|     4 | 1,600 | 120 → 48             | `worker_building_armed_lvl3` | same                                       | `Nail Ammo 2` |                       3 |
+|     5 | 1,800 | 135 → 54             | `worker_building_armed_lvl4` | same                                       | `Nail Ammo 2` |                       4 |
+|     6 | 1,900 | 150 → 60             | `worker_building_armed_lvl5` | same                                       | `Nail Ammo 2` |                       5 |
+|     7 | 2,000 | 165 → 66             | `worker_building_armed_lvl6` | same                                       | `Nail Ammo 2` |                       6 |
+|     8 | 2,100 | 180 → 72             | `worker_building_armed_lvl7` | same                                       | `Nail Ammo 2` |                       7 |
 
 Armed levels share `AttackRange=700`, `AttackSpeed=400`, ground and air targets, `AnimateTurret=TRUE`, `WakeUpSpace=1`, `WakeUpSpeed=1600`, `ActivatedCombatAddBuildingClass=Defense`, `worker_building_base`, `Nailgun Attack FX`, `Generic Hit`, `DefenceTroopCharacter=Defending Builder` and `DefenceTroopCount=1`. [projectiles.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/projectiles.csv) gives both nails speed 1800, StartHeight 160, StartOffset 100, BallisticHeight 50 and tracking. [globals.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/globals.csv) sets unit, spell, hero and Clan Castle housing multipliers to 100, 500, 100 and 0. [heroes.csv](https://game-assets.clashofclans.com/7f04bdfdc4124b1f49308423bb8f4aa8b137aae3/logic/heroes.csv) gives the Barbarian King 25 housing.
 
@@ -29,9 +33,9 @@ Supercell's [Battle Builders announcement](https://supercell.com/en/games/clasho
 
 ## Artwork and live presentation
 
-The graph keeps **38 exports, 47 clips and 180 shapes** from `sc/buildings.sc`, sampled from lossless crops of `buildings_7`, `_8`, `_25` and `_39`. Normal and screen blends are retained. Three effects, five emitters and three unchanged Ogg files keep their original rows. **11 shipped files total 2,041,554 bytes**: four texture crops, four transparent previews at two pixels per native unit and three sounds. Bodies use scale 1.2 and the native ground anchor `(0, 40)`; this is local registration, not native camera parity.
+The graph keeps **42 exports, 60 clips and 343 shapes** from `sc/buildings.sc`, sampled from lossless crops of `buildings_7`, `_8`, `_25` and `_39`. Normal and screen blends are retained. Three effects, five emitters and three unchanged Ogg files keep their original rows. **15 shipped files**: four texture crops, eight transparent previews at two pixels per native unit and three sounds. Bodies use scale 1.2 and the native ground anchor `(0, 40)`; this is local registration, not native camera parity.
 
-Each armed export has 94 root frames at 24 fps, plus named `turret_load`, `turret` and `builder_out` children. Only three staggered sleep markers move on the root, on frames 2–73; frame 0 is awake. `turret_load` has `idle=0`, `activating_start=1`, `activating_end=37` and `battleidle=38`. `turret` has 360 frames in 36 ten-frame direction bands.
+Each armed export has 94 root frames at 24 fps, plus named `turret_load`, `turret` and `builder_out` children. Only three staggered sleep markers move on the root, on frames 2–73; frame 0 is awake. `turret_load` has `idle=0`, `activating_start=1`, `activating_end=37` and `battleidle=38`. `turret` has 360 frames through level 7. Levels 3, 5 and 6 repeat one adjacent view. Level 8 has 362 frames: directions 16 and 23 hold for 11 frames each. Its 36 actual direction starts are pinned in `combat.json`; the presentation maps the same angle bands to those starts. Level 8 also inserts a static root shape before the named children, which move from slots 2/3/4 to 3/4/5.
 
 Presentation follows battle state and `context.elapsed`:
 
@@ -40,11 +44,11 @@ Presentation follows battle state and `context.elapsed`:
 - **Active:** the aimed `turret` child replaces `turret_load`. Its `battleidle` frame repeats the root body and spring with a rest-direction roof, so drawing both doubled the roof. Facing is `floor(map angle° + 5) mod 360`, with frame 0 along +map X and each band centred on its angle. This registration was checked visually against Giants placed along the four map axes and is not a native mapping.
 - **Ruin:** the ruin plays once from the recorded destruction and then holds; no base is drawn.
 
-`builder_out` is hidden because campaign Builders are at home. Original nail meshes launch `StartOffset` toward the target at `StartHeight × 0.6` and add a `BallisticHeight × 0.6` sine arc. They rotate toward the projected target and draw above world objects. `Nailgun Attack FX` plays at the muzzle, `Generic Hit` plays on struck attackers with air lift, and `Building Destroyed` plays at the hut. Reduced motion suppresses nails and particles and shows the awake root.
+Armed home huts replace the dormant village body during battle, preventing a second sleeping roof and sleep markers from covering the active turret. `builder_out` is hidden because Builders start at home. Original nail meshes launch `StartOffset` toward the target at `StartHeight × 0.6` and add a `BallisticHeight × 0.6` sine arc. They rotate toward the projected target and draw above world objects. `Nailgun Attack FX` plays at the muzzle, `Generic Hit` plays on struck attackers with air lift, and `Building Destroyed` plays at the hut. Reduced motion suppresses nails and particles and shows the awake root.
 
 ## Checks and limits
 
-`tests/builder-hut.test.ts` covers source tiers and references, battle-log housing, the wake tick and first shot, ground and air hits, the Defense class timing and activation hook, passive level-1, home and version-43 huts, and pose reconstruction. `tests/late-goblin-buildings-boost.test.ts` checks Spell Tower rate and damage boosts on the turret. `tests/late-goblin-buildings-art.test.ts` checks texture, preview and sound integrity and the exclusive `turret_load`/`turret` slots. The Builderopolis replay test and `tests/browser/late-goblin-buildings-live.spec.ts` check waking, aimed nails, ruins and backward seeks live.
+`tests/builder-hut.test.ts` covers source tiers and references, battle-log housing, the wake tick and first shot, ground and air hits, the Defense class timing and activation hook, passive level-1 and version-43 huts, armed home huts, and pose reconstruction. `tests/late-goblin-buildings-boost.test.ts` checks Spell Tower rate and damage boosts on the turret. `tests/late-goblin-buildings-art.test.ts` checks texture, preview and sound integrity and the exclusive `turret_load`/`turret` slots. `tests/builder-hut-progression.test.ts` checks all eight save tiers, the version-56 boundary and new-tier fire/repair reconstruction. `tests/browser/builder-hut-tiers.spec.ts` checks upgrades at their Town Hall gates, Info, Move, reload, exclusive armed bodies, native nails, repairs and replay seeks on desktop and phone. The Builderopolis replay test and `tests/browser/late-goblin-buildings-live.spec.ts` check waking, aimed nails, ruins and backward seeks live.
 
 - Wake-up and first-shot timing, target selection, range measurement, facing registration, launch height and nail arc are local interpretations.
 - Dormant sleep markers in campaign battles are an interpretation of home idle art.

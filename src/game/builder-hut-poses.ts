@@ -28,7 +28,7 @@ export interface BuilderHutPose {
   root: number;
   /** turret_load label frame: idle, activating 1-37, battleidle. */
   load: number;
-  /** Turret frame, 0-359 in ten-frame source direction bands. */
+  /** Source turret frame; level 8 has two extra held frames among its direction bands. */
   turret: number;
   /** Ruin collapse frame. */
   ruin: number;
@@ -44,6 +44,14 @@ const root: NativeMatrix = [
 /** Local map-angle registration centered on the ten-frame bands; frame 0 aims along +map X. */
 export const builderHutFacing = (dx: number, dy: number) =>
   (Math.floor((Math.atan2(dy, dx) * 180) / Math.PI + 5) + 360) % 360;
+/** Preserve the old angle registration while following level 8's longer source timeline. */
+export function builderHutTurretFrame(level: number, dx: number, dy: number) {
+  const angle = builderHutFacing(dx, dy);
+  const frames = (BUILDER_HUT_TURRET.directionFrames as Partial<Record<string, readonly number[]>>)[
+    String(level)
+  ];
+  return frames?.[Math.floor(angle / 10)] ?? angle;
+}
 const clipOf = (name: string) => BUILDER_HUT_GRAPH.clips[BUILDER_HUT_GRAPH.exports[name]];
 
 export function builderHutPose(
@@ -85,7 +93,7 @@ export function builderHutPose(
       turret: 0,
       ruin: 0,
     };
-  const turret = builderHutFacing(hut.aimX, hut.aimY);
+  const turret = builderHutTurretFrame(b.level, hut.aimX, hut.aimY);
   if (hut.readyAt !== undefined && elapsed + 1e-9 >= hut.readyAt)
     return {
       level: b.level,

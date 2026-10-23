@@ -8,7 +8,11 @@ import {
   deployedHousingSpace,
 } from '../src/game/builder-hut';
 import { BUILDER_HUT_LEVELS, builderHutWeapon } from '../src/game/builder-hut-stats';
-import { builderHutFacing, builderHutPose } from '../src/game/builder-hut-poses';
+import {
+  builderHutFacing,
+  builderHutPose,
+  builderHutTurretFrame,
+} from '../src/game/builder-hut-poses';
 import { weaponTickTime } from '../src/game/late-goblin-weapon';
 import { lateCampaignIssues } from '../src/game/late-campaign';
 import { replayBattle } from '../src/game/replay';
@@ -22,15 +26,21 @@ const hut = (id: number, x: number, y: number, level: number): Building => {
 
 describe("armed Builder's Hut source", () => {
   it('uses the pinned armed tiers, turret weapon and Defending Builder references', () => {
-    expect(BUILDER_HUT_LEVELS.map((row) => row.hp)).toEqual(NATIVE_COMBAT[1000015].hp.slice(0, 4));
+    expect(BUILDER_HUT_LEVELS.map((row) => row.hp)).toEqual(NATIVE_COMBAT[1000015].hp);
     expect(BUILDER_HUT_LEVELS.map((row) => row.body)).toEqual([
       'worker_building',
       'worker_building_armed_lvl1',
       'worker_building_armed_lvl2',
       'worker_building_armed_lvl3',
+      'worker_building_armed_lvl4',
+      'worker_building_armed_lvl5',
+      'worker_building_armed_lvl6',
+      'worker_building_armed_lvl7',
     ]);
     expect(builderHutWeapon(1)).toBeUndefined();
-    expect([2, 3, 4].map((level) => builderHutWeapon(level)!.damage)).toEqual([32, 40, 48]);
+    expect([2, 3, 4, 5, 6, 7, 8].map((level) => builderHutWeapon(level)!.damage)).toEqual([
+      32, 40, 48, 54, 60, 66, 72,
+    ]);
     expect([2, 3, 4].map((level) => builderHutWeapon(level)!.projectile.export)).toEqual([
       'nail_ammo',
       'nail_ammo',
@@ -51,6 +61,10 @@ describe("armed Builder's Hut source", () => {
       ['Defending Builder', 1],
       ['Defending Builder', 2],
       ['Defending Builder', 3],
+      ['Defending Builder', 4],
+      ['Defending Builder', 5],
+      ['Defending Builder', 6],
+      ['Defending Builder', 7],
     ]);
     const levels = new Map<number, Set<number>>();
     nativeLayout(84)
@@ -192,4 +206,23 @@ describe("armed Builder's Hut presentation state", () => {
     expect(builderHutPose(ruined, b, 3, false)).toMatchObject({ state: 'ruin', ruin: 0 });
     expect(builderHutPose(ruined, b, 9, false).ruin).toBe(5);
   });
+});
+
+it('maps the level-eight turret past both extra source holds without changing earlier tiers', () => {
+  for (const [degrees, frame] of [
+    [0, 0],
+    [160, 160],
+    [170, 171],
+    [180, 181],
+    [230, 231],
+    [240, 242],
+    [350, 352],
+  ]) {
+    const radians = (degrees * Math.PI) / 180;
+    expect(builderHutTurretFrame(8, Math.cos(radians), Math.sin(radians))).toBe(frame);
+    for (const level of [2, 3, 4, 5, 6, 7])
+      expect(builderHutTurretFrame(level, Math.cos(radians), Math.sin(radians))).toBe(
+        builderHutFacing(Math.cos(radians), Math.sin(radians)),
+      );
+  }
 });

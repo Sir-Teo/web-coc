@@ -78,12 +78,14 @@ describe('original late Goblin building art', () => {
       ];
       // Duplicate texture pages consolidate into shared files: the directory
       // holds the unique locally-referenced entries.
-      const local = [...new Set(
-        references
-          .map((v) => (v as { path: string }).path)
-          .filter((p) => p.startsWith(prefix))
-          .map((p) => p.replace(prefix, '')),
-      )];
+      const local = [
+        ...new Set(
+          references
+            .map((v) => (v as { path: string }).path)
+            .filter((p) => p.startsWith(prefix))
+            .map((p) => p.replace(prefix, '')),
+        ),
+      ];
       for (const sound of Object.values(native.sounds)) {
         const bytes = await readFile(`public/${sound.path}`);
         expect(bytes.subarray(0, 4).toString()).toBe('OggS');
@@ -121,9 +123,9 @@ describe('original late Goblin building art', () => {
     // goblin_th02 raises its eight barrels at frame 14, CombatActivationDelay after active_start.
     expect(leaves(hall(14)) - leaves(hall(13))).toBe(8);
     expect(lateSceneBounds(hall(0))).toEqual(lateSceneBounds(hall(1)));
-    const hut = (state: 'dormant' | 'active') =>
+    const hut = (state: 'dormant' | 'active', level = 4) =>
       builderHutBodyPoses({
-        level: 4,
+        level,
         state,
         root: 0,
         load: state === 'active' ? 38 : 0,
@@ -134,6 +136,13 @@ describe('original late Goblin building art', () => {
     const slots = (poses: NativeScenePose[]) => new Set(poses.map((p) => p.key.split('/')[1]));
     expect([...slots(hut('dormant'))].sort()).toEqual(['0:0', '1:0', '2']);
     expect([...slots(hut('active'))].sort()).toEqual(['0:0', '1:0', '3']);
+    // Level 8 adds a static root shape before the same named activation/turret children.
+    expect([...slots(hut('dormant', 8))].sort()).toEqual(['0:0', '1:0', '2:0', '3']);
+    expect([...slots(hut('active', 8))].sort()).toEqual(['0:0', '1:0', '2:0', '4']);
+    for (const level of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      expect(leaves(hut('dormant', level))).toBeGreaterThan(0);
+      expect(lateSceneBounds(hut('dormant', level))).not.toBeNull();
+    }
     const sleeping = builderHutBodyPoses({
       level: 4,
       state: 'dormant',
