@@ -26,6 +26,14 @@ Poison takes priority over Rage. The shared tint follows fallback sprites into n
 and restores their original colors on expiry or defeat. `tests/browser/attacker-poison-tint.spec.ts`
 checks real recorded Headhunter hits, art handoff and repeated replay seeks on desktop and phone.
 
+Royal Ghost on-hit frost and the Town Hall 13 frost field share the blue cold-status cue
+while their partial slow is active. Poison takes visual priority over partial frost, and
+neither can be hidden by Rage. A zero-strength slow leaves the original colors intact.
+This cue does not stop animation or alter the effect's action-speed scale.
+`tests/attacker-frost-tint.test.ts` covers a real Royal Ghost hit, the native Town Hall spell,
+overlap and exact deadlines. `tests/browser/attacker-frost-tint.spec.ts` checks fallback and
+native troop/hero bodies, reduced motion, expiry, reapplication and defeat on desktop and phone.
+
 ## Earlier sprite artwork and feedback
 
 The starter melee troop now uses the [Barbarian name, portrait and four-frame atlas](BARBARIAN-ART.md), with a fixed idle frame and no procedural walk bob. Its internal save/replay key remains `swordsman`.
