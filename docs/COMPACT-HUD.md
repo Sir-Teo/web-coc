@@ -22,6 +22,16 @@ checks troop and hero hints, both battle states, viewport bounds and actual hit 
 eight portrait, landscape and breakpoint sizes. The adjacent speed and notification checks
 cover changing speed and keeping battle toasts clear.
 
+Deployment hints follow actual remaining stock: an exhausted troop says “All deployed”.
+Spells retain their existing automatic switch to the next available spell, then return to
+the troop hint when none remain. A hero-only army begins with a selection prompt. Once a
+siege machine deploys, all siege cards become unavailable for that attack while preserving
+the unused reserve counts. Their accessible labels include the reserve count and restriction, and the selected
+machine's hint states the one-per-attack rule. Initial rendering and live count updates use
+the same availability check. `tests/browser/deployment-availability.spec.ts` covers depletion,
+card identity during live updates, hero selection and siege restrictions after both live and
+full refreshes.
+
 ## Tall phones
 
 The compact rules stop at 700 pixels high, so most phones in portrait (390×844 and taller) still used the narrow-width layout. An October 2026 audit at 390×844 found a 33×35 Settings button, 29×30 camera buttons, 19×24 resource "+" buttons, 33×35 dialog close buttons and 49×27 Settings switches.

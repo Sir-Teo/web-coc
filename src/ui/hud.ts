@@ -2838,9 +2838,17 @@ export class HUD {
    ${button('edit-done', `${icon('Check', 20)}<span>Done</span>`, 'game-btn green edit-tool')}
  </div>`;
   }
+  private siegeUnavailable(kind: TroopKind) {
+    return !!this.model.battle?.siegeDeployed && isSiege(kind);
+  }
+  private troopCardLabel(kind: TroopKind, count: number, siegeBlocked: boolean) {
+    return `${TROOPS[kind].name}, ${siegeBlocked && count > 0 ? `${count} in reserve, siege machine already deployed` : `${count} available`}`;
+  }
   private troopCard(k: TroopKind, count: number, action: string, selected = false) {
     const flying = TROOPS[k].flying ? '<span class="air-tag">AIR</span>' : '';
-    return `<button class="troop-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${TROOPS[k].name}, ${count} available" ${action.startsWith('troop') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
+    const siegeBlocked = action.startsWith('troop:') && this.siegeUnavailable(k);
+    const unavailable = count === 0 || siegeBlocked;
+    return `<button class="troop-card ${selected ? 'selected' : ''} ${unavailable ? 'empty' : ''}" data-action="${action}" aria-label="${this.troopCardLabel(k, count, siegeBlocked)}" ${action.startsWith('troop') && unavailable ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('troop:') && TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)] ? `<kbd class="troop-key">${TROOP_HOTKEYS[TROOP_ORDER.indexOf(k)].toUpperCase()}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false">${flying}<span class="troop-level">★ ${this.model.troopDisplayLevel(k)}</span><span class="troop-name">${TROOPS[k].name}</span></button>`;
   }
   private spellCard(k: SpellKind, count: number, action: string, selected = false) {
     return `<button class="troop-card spell-card ${selected ? 'selected' : ''} ${count === 0 ? 'empty' : ''}" data-action="${action}" aria-label="${SPELLS[k].name}, ${count} available" ${action.startsWith('spell') && count === 0 ? 'disabled' : ''}><span class="troop-count">x${count}</span>${action.startsWith('spell:') && SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)] ? `<kbd class="troop-key">${SPELL_HOTKEYS[SPELL_ORDER.indexOf(k)]}</kbd>` : ''}<img src="${hudAsset(k)}" alt="" draggable="false"><span class="troop-level">★ ${this.model.spellLevel(k)}</span><span class="troop-name">${SPELLS[k].name.replace(' Spell', '')}</span></button>`;
@@ -3425,10 +3433,17 @@ export class HUD {
     </section>`;
   }
   private deployHint() {
-    const m = this.model;
+    const m = this.model,
+      b = m.battle!;
     if (m.activeHeroKind) return this.nativeDeploymentHint(m.activeHeroKind);
     if (m.activeHero) return this.kingDeploymentHint();
     if (m.activeSpell) return `Tap anywhere to cast ${SPELLS[m.activeSpell].name}`;
+    if (this.siegeUnavailable(m.activeTroop))
+      return `${TROOPS[m.activeTroop].name} · Only one siege machine per attack`;
+    if (b.remaining[m.activeTroop] <= 0)
+      return b.carriedArmy[m.activeTroop] > 0
+        ? `${TROOPS[m.activeTroop].name} · All deployed`
+        : 'Select a troop, hero or spell';
     return `${TROOPS[m.activeTroop].name} · ${TROOPS[m.activeTroop].prefersResources ? 'Resources ×2' : TROOPS[m.activeTroop].wallBreaker ? 'Walls ×40' : TROOPS[m.activeTroop].prefersDefenses ? 'Targets defenses' : TROOPS[m.activeTroop].role.toLowerCase()} · Tap, hold or drag to deploy`;
   }
   private nativeDeploymentHint(kind: HeroKind) {
@@ -5241,14 +5256,18 @@ export class HUD {
         const spell = troop ? null : (action.slice('spell:'.length) as SpellKind);
         const count = troop ? (b.remaining[troop] ?? 0) : (b.spells[spell!] ?? 0);
         const name = troop ? TROOPS[troop].name : SPELLS[spell!].name;
+        const siegeBlocked = !!troop && this.siegeUnavailable(troop);
+        const unavailable = count === 0 || siegeBlocked;
         const selected = troop
           ? !m.activeHero && !m.activeHeroKind && !m.activeSpell && m.activeTroop === troop
           : m.activeSpell === spell;
         setText(el.querySelector('.troop-count'), `x${count}`);
-        if (el.classList.contains('empty') !== (count === 0)) el.classList.toggle('empty');
+        if (el.classList.contains('empty') !== unavailable) el.classList.toggle('empty');
         if (el.classList.contains('selected') !== selected) el.classList.toggle('selected');
-        if (el.disabled !== (count === 0)) el.disabled = count === 0;
-        const label = `${name}, ${count} available`;
+        if (el.disabled !== unavailable) el.disabled = unavailable;
+        const label = troop
+          ? this.troopCardLabel(troop, count, siegeBlocked)
+          : `${name}, ${count} available`;
         if (el.getAttribute('aria-label') !== label) el.setAttribute('aria-label', label);
       }
       setText(refs.deployLabel, this.deployHint());
