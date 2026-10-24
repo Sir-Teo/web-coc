@@ -72,11 +72,10 @@ for (const width of [390, 1440])
     await expect(effects).toBeFocused();
     await page.keyboard.press('Home');
     await expect(effects).toHaveValue('0');
-    // Idle nodes can leave AudioParam.value stale until they process a voice.
+    // A zero-volume channel stops existing voices and skips new ones, while music keeps playing.
     await page.evaluate(() => window.__game.audio.play('victory'));
-    await expect
-      .poll(() => page.evaluate(() => (window.__game.audio as any).effectsGain.gain.value))
-      .toBeCloseTo(0, 2);
+    expect(await page.evaluate(() => (window.__game.audio as any).tones.size)).toBe(0);
+    expect(await page.evaluate(() => window.__game.audio.tracks.playing)).toBe(true);
     await page.keyboard.press('End');
     await expect(effects).toHaveValue('100');
     await page.keyboard.press('ArrowLeft');

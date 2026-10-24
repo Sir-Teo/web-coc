@@ -26,7 +26,7 @@ export interface NativeGroupBuffer {
  * Phaser 4.2.1's DynamicTexture lets its TextureSource allocate a GL texture, then replaces
  * `source.glTexture` with its drawing context's texture without deleting the first one. Every
  * RenderTexture therefore leaked one texture. Capture and delete that orphan here. Group buffers
- * also skip the stencil renderbuffer the game config enables for the ground mask: they never draw
+ * also skip the renderer's default stencil renderbuffer: they never draw
  * masked content, and the renderbuffer doubled VRAM and forced a framebuffer completeness check.
  */
 export function createGroupBuffer(scene: Phaser.Scene, width: number, height: number) {

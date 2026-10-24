@@ -4,6 +4,7 @@ import { BUILDINGS, TROOPS, isTrap } from './data';
 import type { Battle, Building, FX, Unit } from './model';
 import { TESLA } from './tesla-stats';
 import { lateBuildingHidden } from './late-campaign';
+import { buildingsOfKind } from './building-lists';
 
 /** Public client data: 600 hundredths of a tile; destruction threshold 50. */
 export const TESLA_TRIGGER = TESLA.trigger;
@@ -50,7 +51,7 @@ export function revealTeslas(
 ) {
   let changed = false;
   const revealed: Building[] = [];
-  for (const tower of battle.buildings) {
+  for (const tower of buildingsOfKind(battle, 'tesla')) {
     if (tower.hp <= 0 || !concealedTesla(battle, tower)) continue;
     const x = tower.x + BUILDINGS.tesla.size / 2,
       y = tower.y + BUILDINGS.tesla.size / 2;

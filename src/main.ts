@@ -85,7 +85,9 @@ async function boot() {
         ...displaySize(window.innerWidth, window.innerHeight, 1),
       },
       callbacks: { postBoot: configureDisplay },
-      render: { pixelArt: false, antialias: true },
+      // The artwork already carries smooth alpha edges. Multisampling the entire canvas adds
+      // a large resolve/bandwidth cost, especially on mobile GPUs; retain linear texture filtering.
+      render: { pixelArt: false, antialias: true, antialiasGL: false },
       input: { activePointers: 3 },
       // A long press on a phone (streaming troops, holding a building) fires contextmenu;
       // the canvas has no menu of its own to offer.

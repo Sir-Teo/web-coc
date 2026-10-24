@@ -1,10 +1,19 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function boot(page: Page) {
-  await page.goto('/');
+async function boot(page: Page, maxDensity?: number) {
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
+  // These cases exercise fixed buffer sizes. The pressure governor is tested separately;
+  // a software GPU may already have reduced density while the eager art batch was loading.
+  await page.evaluate(async (density) => {
+    const { RenderQuality } = await import('/src/game/render-quality.ts');
+    RenderQuality.prototype.sample = () => false;
+    const { setMaxDensity } = await import('/src/game/display.ts');
+    setMaxDensity(window.__game.game, 0.5);
+    setMaxDensity(window.__game.game, density ?? Infinity);
+  }, maxDensity);
 }
 const view = (page: Page) =>
   page.evaluate(() => {
@@ -25,7 +34,9 @@ for (const profile of [
   { name: 'Retina desktop', width: 1440, height: 960, density: 2 },
   { name: '3x phone', width: 390, height: 844, density: 3 },
   { name: 'fractional display', width: 801, height: 601, density: 1.25 },
+  { name: 'adaptive half-density canvas', width: 800, height: 600, density: 1, maxDensity: 0.5 },
 ]) {
+  const renderDensity = profile.maxDensity ?? profile.density;
   test.describe(profile.name, () => {
     test.use({
       viewport: { width: profile.width, height: profile.height },
@@ -35,12 +46,14 @@ for (const profile of [
     test('native buffer, taps, drag thresholds, placement and rotation share CSS coordinates', async ({
       page,
     }) => {
+      // This fixed-density input sequence took 80 seconds at 2× on SwiftShader.
+      if (renderDensity >= 2) test.setTimeout(180000);
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
-      await boot(page);
+      await boot(page, profile.maxDensity);
       const initial = await view(page);
-      expect(initial.width).toBe(Math.floor(profile.width * profile.density));
-      expect(initial.height).toBe(Math.floor(profile.height * profile.density));
+      expect(initial.width).toBe(Math.round(profile.width * renderDensity));
+      expect(initial.height).toBe(Math.round(profile.height * renderDensity));
       expect(initial.cssWidth).toBe(profile.width);
       expect(initial.cssHeight).toBe(profile.height);
       const point = await page.evaluate(async () => {
@@ -114,9 +127,9 @@ for (const profile of [
       await page.setViewportSize({ width: profile.height, height: profile.width });
       await expect
         .poll(async () => (await view(page)).width)
-        .toBe(Math.floor(profile.height * profile.density));
+        .toBe(Math.round(profile.height * renderDensity));
       const rotated = await view(page);
-      expect(rotated.height).toBe(Math.floor(profile.width * profile.density));
+      expect(rotated.height).toBe(Math.round(profile.width * renderDensity));
       expect(rotated.x).toBeCloseTo(beforeRotation.x, 6);
       expect(rotated.y).toBeCloseTo(beforeRotation.y, 6);
       expect(rotated.zoom).toBeCloseTo(beforeRotation.zoom, 6);
@@ -129,7 +142,7 @@ for (const profile of [
     test('resolves individual native pixels and restores the high-density framebuffer', async ({
       page,
     }) => {
-      await boot(page);
+      await boot(page, profile.maxDensity);
       const result = await page.evaluate(async () => {
         const { scene: s, game } = window.__game;
         s.paused = true;
@@ -205,8 +218,8 @@ for (const profile of [
         };
       });
       expect(result.dimensions).toEqual([
-        Math.floor(profile.width * profile.density),
-        Math.floor(profile.height * profile.density),
+        Math.round(profile.width * renderDensity),
+        Math.round(profile.height * renderDensity),
       ]);
       result.columns.forEach((value, i) =>
         i % 2 ? expect(value).toBeGreaterThan(240) : expect(value).toBeLessThan(15),

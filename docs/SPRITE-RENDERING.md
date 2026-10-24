@@ -24,7 +24,7 @@ The extension is specific to the pinned Phaser renderer's public buffer layout a
 
 ## Terrain and hardware follow-up
 
-The [field stencil optimization](TERRAIN-CAMERA.md) removes two full-viewport draws without changing any tested framebuffer pixels. Sprite batching and sampler limits remain unchanged after a new comparison found no consistent gain from lowering the texture limit. On this Mac, `node scripts/performance-check.mjs --camps --compare-field-mask --metal` verifies ANGLE Metal and records the actual renderer. The September 11 Apple M5 Pro sample held 60 FPS at 1440×960 with the native 200-troop army and preserved 660-actor roster. Shared-host SwiftShader results remain variable. These hardware samples use a 1× pixel ratio and do not establish high-DPI or physical phone/tablet performance; see [QA.md](QA.md).
+The earlier corner-stencil optimization removed two full-viewport draws without changing tested pixels. The current [diamond field geometry](TERRAIN-CAMERA.md) removes two more stencil draws; tested interpolation differences stay within one RGB level. Sprite batching and sampler limits remain unchanged after a comparison found no consistent gain from lowering the texture limit. On a Mac, `node scripts/performance-check.mjs --camps --compare-field-mask --metal` verifies ANGLE Metal and records the actual renderer. The September 11 Apple M5 Pro sample held 60 FPS at 1440×960 with the native 200-troop army and preserved 660-actor roster. Shared-host SwiftShader results remain variable. These hardware samples use a 1× pixel ratio and do not establish high-DPI or physical phone/tablet performance; see [QA.md](QA.md).
 
 
 ## Display density

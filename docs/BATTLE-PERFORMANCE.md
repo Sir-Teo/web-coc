@@ -270,6 +270,72 @@ With this, these cases pass again, all of which failed identically on the commit
 
 The 1440 px placement cases of `bomb-tower-handling:71` and `wizard-tower-handling:71` fail about one run in eight, on the commit before as well. A placement's home effect lives one second, and on a slow headless frame the poll for its sound can outwait it.
 
+## Software GPU and simulation follow-up (2026-10-24)
+
+A four-CPU Linux runner uses Chromium's SwiftShader software GPU. At 1440×960 and
+1× density, the starter village spent only about 4–7 ms of JavaScript per frame but
+rendered at 5–7 FPS. The GPU/compositor, rather than the simulation, limited that case.
+
+- The WebGL context no longer requests multisampling. Texture filtering stays linear;
+  artwork keeps its alpha edges, while vector/polygon edges use single-sample coverage.
+  Two active-village comparisons went from 5.4 → 10.9 and 6.6 → 9.6 FPS. The large
+  stage-61 TH18 army's initial window went from 0.8 → 1.5 FPS. These software-renderer
+  samples describe this runner, not physical phone performance; the battle populations
+  also evolve during the browser measurement.
+- Adaptive density can now reduce a 1× canvas, down to 0.5 pixels per CSS pixel, and
+  sustained frames up to three seconds no longer reset its pressure window. Loading,
+  hidden pages, pauses and held pointers remain excluded. DOM text stays native. See
+  [display density](DISPLAY-DENSITY.md) for the quality tradeoff and recovery policy.
+  A sustained active-village run reached a 720×480 canvas and 13.7–31.6 FPS in later
+  four-second windows, compared with the original 5–7 FPS at 1440×960. Camera framing
+  stayed fixed; the canvas became softer while the DOM interface stayed sharp.
+- A DOM dialog caps the dimmed village background at 15 FPS. Pointer/keyboard input
+  inside the dialog keeps that cap; closing restores play on the next game frame.
+  Live battles and replays keep their play rate behind dialogs.
+- Tesla reveal, Inferno and Air Sweeper passes use cached layout-order family lists,
+  retaining fallen towers so their cleanup still runs. Replacing or growing a layout
+  rebuilds the lists. The main defense phase skips attack/status calculations for
+  unarmed structures after dispatching native weapons.
+- Zero effects volume stops existing voices and skips new effects nodes, sample decodes
+  and village sound downloads. It suspends the audio context when music is also off;
+  music and haptic feedback keep their own preferences.
+- Field checks now use one diamond-shaped TileSprite, with both vertex positions and
+  repeating UVs taken at the rectangle's edge midpoints. This removes the two stencil
+  passes without another shader, texture or per-frame allocation. Thirty-six camera/viewport
+  comparisons across Chromium and WebKit differed from the previous corner-stencil
+  renderer by at most one RGB level (interpolation rounding); field edges and later
+  objects remain unclipped. Six alternating frozen-village samples averaged 9.32 →
+  10.83 FPS on Chromium/SwiftShader (16%); WebKit was approximately unchanged. Reproduce
+  the three field renderers with `scripts/performance-check.mjs --compare-field-mask`.
+
+The simulation comparison deploys the same TH18 half-level army around stage 61 and
+steps it 400 times at 50 ms, without rendering or audio. Two paired CPU-profile runs:
+
+| Run | Before CPU total | After CPU total | Reduction |
+| --- | --- | --- | --- |
+| 1 | 3712 ms | 2923 ms | 21% |
+| 2 | 3114 ms | 2357 ms | 24% |
+
+All four runs produced battle hash
+`30906b448032e01eb6b6b99c898361583ae150f29ec7d6e742764ed9762c37d7`.
+This is one workload, not a universal speedup. Run the reproducible CPU-only scenario
+with `npm run test:battle:sim`; add `-- --profile` to save a Chrome-compatible profile.
+It writes `output/playtest/battle-sim.json` and optionally `battle-sim.cpuprofile`.
+
+Both browser benchmark scripts now count actual Phaser game callbacks rather than
+independent browser animation frames: a 30 FPS game cap must not report 60 FPS.
+The battle benchmark reports CPU milliseconds per second and canvas dimensions too.
+Use `--msaa=on|off` to compare context sampling, `--freeze` to hold the scene after
+warmup and isolate rendering, or `--profile` for a CPU profile. Run benchmarks alone,
+with no tests/build running, and keep viewport, canvas density, army and warmup equal.
+
+Validation for this pass: `npm run check` passed 2,955 tests across 325 files and built
+the production app. The selected rendering/audio browser checks passed in Chromium
+(28) and WebKit (26, with two Chromium-only input checks skipped). The field/runtime
+subset passed again after the diamond change, and the pixel comparison passed in both
+engines after removing temporary argument arrays. The compiled Chromium production
+check passed online and offline, including army interactions and replay playback.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

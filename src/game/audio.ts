@@ -15,11 +15,11 @@ const TONE_EFFECT: Partial<Record<Tone, VillageEffect>> = {
 export class AudioManager {
   context: AudioContext | null = null;
   /**
-   * Native samples only see the context while sound is on: with sound off, the first gesture
+   * Native samples only see the context while effects are audible: with sound off or at zero, the first gesture
    * neither decodes the ~115 samples nor plays them. Decoding starts when sound is enabled.
    */
   samples = new SampleAudio(
-    () => (this.soundOn ? this.context : null),
+    () => (this.effectsAudible ? this.context : null),
     (ctx) => this.effectsOutput(ctx),
   );
   private soundOn = true;
@@ -57,6 +57,12 @@ export class AudioManager {
   set effectsVolume(value: number) {
     this.effectsLevel = audioVolume(value, 1);
     if (this.effectsGain) setAudioGain(this.effectsGain, this.effectsLevel, this.context);
+    if (!this.effectsLevel) {
+      this.samples.stopAll();
+      this.stopTones();
+    }
+    this.updateContext();
+    if (this.unlocked) this.loadVillageSounds();
   }
   get musicVolume() {
     return this.tracks.volume;
@@ -74,7 +80,12 @@ export class AudioManager {
   }
   /** True while anything may be heard: sound effects or music, on a visible page. */
   private get audible() {
-    return (this.soundOn || this.musicOn) && !(typeof document !== 'undefined' && document.hidden);
+    return (
+      (this.effectsAudible || this.musicOn) && !(typeof document !== 'undefined' && document.hidden)
+    );
+  }
+  private get effectsAudible() {
+    return this.soundOn && this.effectsLevel > 0;
   }
   /** Creates the context lazily and suspends it while nothing can be heard. */
   private updateContext() {
@@ -112,7 +123,7 @@ export class AudioManager {
     this.loadVillageSounds();
   }
   private loadVillageSounds() {
-    if (this.villageLoad || !this.soundOn || typeof fetch === 'undefined') return;
+    if (this.villageLoad || !this.effectsAudible || typeof fetch === 'undefined') return;
     this.villageLoad = Promise.all(
       Object.entries(villageSounds.sounds).map(async ([path, sound]) => {
         const response = await fetch('/' + sound.path);
@@ -139,7 +150,7 @@ export class AudioManager {
    */
   effect(effect: VillageEffect, tone: Tone) {
     this.feedback(tone);
-    if (!this.enabled) {
+    if (!this.effectsAudible) {
       if (this.musicOn) this.unlock();
       return;
     }
@@ -157,7 +168,7 @@ export class AudioManager {
   feedback: (kind: Tone) => void = () => {};
   play(kind: Tone) {
     this.feedback(kind);
-    if (!this.enabled) {
+    if (!this.effectsAudible) {
       if (this.musicOn) this.unlock();
       return;
     }

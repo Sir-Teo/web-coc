@@ -105,11 +105,51 @@ it('changes one effects output for active native shots, battle loops and generat
   expect(output(output(oscillators[0]))).toBe(master);
   audio.effectsVolume = 0;
   expect(master.gain.value).toBe(0);
+  for (const source of sources) expect(source.disconnect).toHaveBeenCalled();
+  expect(oscillators[0].disconnect).toHaveBeenCalled();
+  expect(audio.samples.shot('native', 1)).toBe(false);
+  const decodes = ctx.decodeAudioData.mock.calls.length;
+  audio.samples.register('muted-native', new ArrayBuffer(8));
+  await flush();
+  expect(ctx.decodeAudioData).toHaveBeenCalledTimes(decodes);
+  audio.play('victory');
+  expect(sources).toHaveLength(2);
+  expect(oscillators).toHaveLength(1);
   audio.effectsVolume = 0.7;
+  await flush();
+  expect(ctx.decodeAudioData).toHaveBeenCalledTimes(decodes + 1);
   expect(master.gain.value).toBe(0.7);
   expect(sources).toHaveLength(2);
   expect(oscillators).toHaveLength(1);
   expect(voice.gain.value).toBeCloseTo(0.8 * 0.12);
+});
+
+it('does not create an audio context or fetch effects at zero volume, and resumes when raised', async () => {
+  vi.spyOn(performance, 'now').mockReturnValue(1000);
+  const { ctx, oscillators } = graph();
+  const context = vi.fn(function () {
+    return ctx;
+  });
+  vi.stubGlobal('AudioContext', context);
+  const fetcher = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }));
+  vi.stubGlobal('fetch', fetcher);
+  const audio = new AudioManager();
+  audio.effectsVolume = 0;
+  audio.feedback = vi.fn();
+  audio.unlock();
+  audio.play('victory');
+  audio.effect('Button Click', 'click');
+  expect(audio.enabled).toBe(true);
+  expect(audio.feedback).toHaveBeenCalledTimes(2);
+  expect(context).not.toHaveBeenCalled();
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(oscillators).toHaveLength(0);
+  audio.effectsVolume = 0.5;
+  expect(context).toHaveBeenCalledOnce();
+  expect(fetcher).toHaveBeenCalled();
+  audio.play('victory');
+  expect(oscillators).toHaveLength(1);
+  await flush();
 });
 
 it('uses one live music output for the streamed loop and result sting', async () => {

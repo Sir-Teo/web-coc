@@ -6361,6 +6361,9 @@ export class GameModel {
       }
       if (tower.kind === 'inferno') continue;
       const d = BUILDINGS[tower.kind];
+      // Walls, storage and other unarmed buildings need no attack/status calculations.
+      // Native weapons (including armed Huts and Town Halls) were handled above.
+      if (!d.damage) continue;
       const canAct = b.nativeRoster
         ? tower.hp > 0 && !concealedTesla(b, tower) && !buildingImmune(b, tower)
         : targetableBuilding(b, tower);
@@ -6386,14 +6389,7 @@ export class GameModel {
         );
         continue;
       }
-      if (
-        !d.damage ||
-        !canAct ||
-        !presentBuilding(b, tower) ||
-        tower.constructing ||
-        tower.upgradeEnd
-      )
-        continue;
+      if (!canAct || !presentBuilding(b, tower) || tower.constructing || tower.upgradeEnd) continue;
       const activeDt =
         Math.min(dt, Math.max(0, b.elapsed - (b.defenseStuns[tower.id] ?? 0))) * tempo;
       if (activeDt <= 0) continue;

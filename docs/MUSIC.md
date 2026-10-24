@@ -42,10 +42,12 @@ Settings has separate **Sound effects volume** and **Music volume** sliders. Eff
 100% and Music at 50%; the on/off switches retain their own state. A muted channel can have
 its volume prepared before turning it on. Zero remains zero through reload and import.
 
-The controls update active sounds without restarting them. Native shots, battle loops and
+Positive volume changes update active sounds without restarting them. Setting effects to
+zero releases their voices and skips new playback/decoding work until raised; the effects
+switch and haptic feedback keep their own state. Native shots, battle loops and
 fallback tones share the effects output; the streamed music loop and stings share the music
-output. Live changes use a short gain transition, including zero, without invalid exponential
-ramps. Each long track remains streamed rather than decoded as a complete Web Audio buffer.
+output. Live gain changes avoid invalid exponential ramps. Each long track remains streamed
+rather than decoded as a complete Web Audio buffer.
 
 `settings.effectsVolume` and `settings.musicVolume` are optional numbers from 0 to 1. Existing
 villages use the defaults. Invalid imported values are rejected. Startup and backup restoration

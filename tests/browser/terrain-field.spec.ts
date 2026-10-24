@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('every buildable tile center sits on grass in the shipping terrain', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(() => {
     const s = window.__game.scene;
@@ -40,15 +40,18 @@ test('every buildable tile center sits on grass in the shipping terrain', async 
 test('turf checks follow tile centers, stop at the buildable boundary and survive graphics restoration', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   const result = await page.evaluate(async () => {
     const { scene: s, game } = window.__game;
+    const ground = s.children.list.find(
+      (child) => child.type === 'Container' && child.depth === -900,
+    )!;
     document.querySelector<HTMLElement>('#ui')!.style.display = 'none';
     s.paused = true;
     s.tweens.pauseAll();
     for (const child of s.children.list)
-      child.setVisible(child.texture?.key === 'terrain' || child === s.ground);
+      child.setVisible(child.texture?.key === 'terrain' || child === ground);
     s.setZoom(1);
     const gl = game.renderer.gl;
     const capture = (points: number[][]) =>
@@ -131,9 +134,9 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
         const [x, y] = points[0];
         s.cameras.main.centerOn(896 + (x - y) * 32, 112 + (x + y) * 16);
         s.clampCamera();
-        s.ground.setVisible(true);
+        ground.setVisible(true);
         const checked = await capture(points);
-        s.ground.setVisible(false);
+        ground.setVisible(false);
         const bare = await capture(points);
         points.forEach(([x, y, shaded], i) => {
           const delta = bare[i].reduce((sum, channel, c) => sum + channel - checked[i][c], 0);
@@ -146,17 +149,14 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
       const probe = s.add.rectangle(probeX, probeY, 8, 8, 0xff00ff).setDepth(-899);
       s.cameras.main.centerOn(probeX, probeY);
       s.clampCamera();
-      s.ground.setVisible(true);
+      ground.setVisible(true);
       probes.push((await capture([[1.5, 44.5]]))[0]);
       probe.destroy();
     }
     return {
       failures,
       probes,
-      texture: [
-        s.ground.list[1].texture.source[0].width,
-        s.ground.list[1].texture.source[0].height,
-      ],
+      texture: [ground.list[0].texture.source[0].width, ground.list[0].texture.source[0].height],
       glError: gl.getError(),
     };
   });
@@ -169,10 +169,10 @@ test('turf checks follow tile centers, stop at the buildable boundary and surviv
   expect(result.glError).toBe(0);
 });
 
-test('corner masking preserves every pixel of the inverted-diamond reference with two fewer draws', async ({
+test('diamond tiles stay within one color step of the stencil reference with two fewer draws', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/?lazyart');
   await page.waitForFunction(() => window.__game?.scene.artSettled);
   await page.locator('[data-action="skip-tutorial"]').click();
   await expect(page.locator('#loading')).toBeHidden();
@@ -183,16 +183,43 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
     [1440, 960],
   ]) {
     await page.setViewportSize({ width, height });
-    await page.waitForFunction((width) => window.__game.scene.cameras.main.width === Math.floor(width * devicePixelRatio), width);
+    await page.waitForFunction(
+      (width) => window.__game.scene.cameras.main.width === Math.floor(width * devicePixelRatio),
+      width,
+    );
     cases.push(
       ...(await page.evaluate(async () => {
         const { scene: s, game } = window.__game;
+        const ground = s.children.list.find(
+          (child) => child.type === 'Container' && child.depth === -900,
+        )!;
         s.paused = true;
         s.tweens.pauseAll();
         const gl = game.renderer.gl;
-        const [stencil, , release] = s.ground.list;
-        const outline = stencil.list[0];
-        const original = outline.commandBuffer.slice();
+        // Independent previous renderer: rectangular repeating tiles with corner stencils.
+        const outline = s.add.graphics().fillStyle(0xffffff);
+        outline.fillTriangle(-512, 176, 896, 176, -512, 880);
+        outline.fillTriangle(896, 176, 2304, 176, 2304, 880);
+        outline.fillTriangle(-512, 880, -512, 1584, 896, 1584);
+        outline.fillTriangle(2304, 880, 2304, 1584, 896, 1584);
+        const stencil = s.add.stencil(0, 0, [outline], {
+          stencilInvert: false,
+          stencilLayerMode: 'addLayer',
+          stencilCompositeCheck: false,
+        });
+        const tiles = s.add
+          .tileSprite(896, 880, 2816, 1408, 'field-checks')
+          .setTint(0x23491d)
+          .setAlpha(0.065);
+        const release = s.add.stencilreference(stencil, {
+          stencilInvert: false,
+          stencilLayerMode: 'subtractLayer',
+          stencilCompositeCheck: false,
+        });
+        const referenceField = s.add
+          .container(0, 0, [stencil, tiles, release])
+          .setDepth(-900)
+          .setVisible(false);
         const drawElements = gl.drawElements,
           drawArrays = gl.drawArrays;
         let draws = 0;
@@ -226,53 +253,37 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
           // Fractional zoom and camera positions exercise both sides of every
           // diamond edge, including where the field crosses the viewport border.
           for (const [x, y, zoom] of [
+            [896, 880, 1],
             [896.3, 600.7, 0.83],
             [896.3, 900.7, 1.37],
             [-400.3, 200.7, 1.03],
             [2000.3, 1200.7, 0.9],
             [896.3, 1500.7, 2.11],
           ]) {
-            s.cameras.main.setZoom(zoom * s.scale.displayScale.x, zoom * s.scale.displayScale.y).centerOn(x, y);
-            outline.commandBuffer = original.slice();
-            stencil.stencilInvert = release.stencilInvert = false;
+            s.cameras.main
+              .setZoom(zoom * s.scale.displayScale.x, zoom * s.scale.displayScale.y)
+              .centerOn(x, y);
+            ground.setVisible(true);
+            referenceField.setVisible(false);
             const actual = await capture();
-            // Independent previous implementation: one complete field diamond
-            // and the engine's full-viewport stencil inversion on apply/release.
-            outline
-              .clear()
-              .fillStyle(0xffffff)
-              .fillPoints(
-                [
-                  { x: 896, y: 176 },
-                  { x: 2304, y: 880 },
-                  { x: 896, y: 1584 },
-                  { x: -512, y: 880 },
-                ],
-                true,
-              );
-            stencil.stencilInvert = release.stencilInvert = true;
+            ground.setVisible(false);
+            referenceField.setVisible(true);
             const reference = await capture();
-            let changed = 0;
-            for (let i = 0; i < actual.pixels.length; i += 4)
-              if (
-                actual.pixels[i] !== reference.pixels[i] ||
-                actual.pixels[i + 1] !== reference.pixels[i + 1] ||
-                actual.pixels[i + 2] !== reference.pixels[i + 2] ||
-                actual.pixels[i + 3] !== reference.pixels[i + 3]
-              )
-                changed++;
+            let maxDelta = 0;
+            for (let i = 0; i < actual.pixels.length; i++)
+              maxDelta = Math.max(maxDelta, Math.abs(actual.pixels[i] - reference.pixels[i]));
             result.push({
               x,
               y,
               zoom,
-              changed,
+              maxDelta,
               savedDraws: reference.draws - actual.draws,
               error: gl.getError(),
             });
           }
         } finally {
-          outline.commandBuffer = original;
-          stencil.stencilInvert = release.stencilInvert = false;
+          ground.setVisible(true);
+          referenceField.destroy();
           gl.drawElements = drawElements;
           gl.drawArrays = drawArrays;
         }
@@ -280,6 +291,6 @@ test('corner masking preserves every pixel of the inverted-diamond reference wit
       })),
     );
   }
-  expect(cases).toHaveLength(15);
-  expect(cases.filter((c) => c.changed || c.savedDraws !== 2 || c.error)).toEqual([]);
+  expect(cases).toHaveLength(18);
+  expect(cases.filter((c) => c.maxDelta > 1 || c.savedDraws !== 2 || c.error)).toEqual([]);
 });

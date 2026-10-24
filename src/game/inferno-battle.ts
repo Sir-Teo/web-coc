@@ -7,6 +7,7 @@ import {
   type InfernoScheduler,
 } from './inferno-scheduler';
 import { tickInfernoCombat, type InfernoHit } from './inferno-combat';
+import { buildingsOfKind } from './building-lists';
 
 export interface InfernoBattleState {
   scheduler: InfernoScheduler;
@@ -20,8 +21,7 @@ export interface InfernoBattleState {
 }
 
 export function stepInfernos(battle: Battle, dt: number) {
-  for (const tower of battle.buildings) {
-    if (tower.kind !== 'inferno') continue;
+  for (const tower of buildingsOfKind(battle, 'inferno')) {
     const states = (battle.infernos ??= {});
     const state = (states[tower.id] ??= {
       scheduler: createInfernoScheduler(tower.level, tower.infernoMode ?? 'single'),
@@ -60,7 +60,9 @@ export function stepInfernos(battle: Battle, dt: number) {
         enabled,
         battle.nativeRoster && battle.catalog !== 'goblin-v1' ? battle : undefined,
         // Defensive Rage exists only in version 44 late campaign battles.
-        battle.late && battle.catalog === 'goblin-v1' ? lateDefenseBoost(battle, tower, at).damage : 1,
+        battle.late && battle.catalog === 'goblin-v1'
+          ? lateDefenseBoost(battle, tower, at).damage
+          : 1,
       );
       state.hits.push(...hits);
       state.scheduler.slots.forEach((slot, index) => {

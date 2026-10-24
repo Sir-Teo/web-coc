@@ -28,6 +28,10 @@ tones. Its default is 100%, preserving that mix. Changes affect existing voices 
 next cue; the switch can still mute the channel separately. See [volume controls](MUSIC.md#volume-controls)
 for persistence, keyboard and compact-layout behavior.
 
+Setting effects volume to zero stops existing voices and skips new sample decodes, village
+sound downloads and playback nodes. Raising it restores effects; the sound preference and
+haptic feedback stay independent. With music off too, the audio context can suspend.
+
 Turning Sound effects off or hiding the page stops active native interface sounds, generated
 fallback tones and battle samples, and releases their voices. Seeking or pausing a replay only resets its battle
 timeline, so interface feedback can finish independently. Stale completion callbacks cannot

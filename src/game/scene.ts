@@ -182,6 +182,7 @@ import { useFastDepthSort, useFastVisibleChildren } from './display-sort';
 import { setMaxDensity } from './display';
 import { PanFling } from './pan-fling';
 import { RenderDetail } from './render-detail';
+import { configureFieldTiles } from './field-tiles';
 import { defeatPose } from './unit-defeat';
 import { EffectTimeline, type EffectTween } from './effect-timeline';
 import { heroStats } from './heroes';
@@ -1856,30 +1857,8 @@ export class VillageScene extends Phaser.Scene {
       .tileSprite(center.x, center.y, side * 64, side * 32, 'field-checks')
       .setTint(0x23491d)
       .setAlpha(0.065);
-    // Stencil only the four corners of the TileSprite's rectangle. Inverting
-    // the diamond instead would fill the whole viewport when applying AND
-    // removing the mask, even when the camera sees only the field interior.
-    const outline = this.add.graphics().fillStyle(0xffffff);
-    const left = center.x - side * 32,
-      right = center.x + side * 32;
-    const top = center.y - side * 16,
-      bottom = center.y + side * 16;
-    outline.fillTriangle(left, top, center.x, top, left, center.y);
-    outline.fillTriangle(center.x, top, right, top, right, center.y);
-    outline.fillTriangle(left, center.y, left, bottom, center.x, bottom);
-    outline.fillTriangle(right, center.y, right, bottom, center.x, bottom);
-    const stencil = this.add.stencil(0, 0, [outline], {
-      stencilInvert: false,
-      stencilLayerMode: 'addLayer',
-      stencilCompositeCheck: false,
-    });
-    const release = this.add.stencilreference(stencil, {
-      stencilInvert: false,
-      stencilLayerMode: 'subtractLayer',
-      stencilCompositeCheck: false,
-    });
-    // Keep stencil application and removal together so later village objects stay unclipped.
-    this.add.container(0, 0, [stencil, turf, release]).setDepth(-900);
+    configureFieldTiles(turf);
+    this.add.container(0, 0, [turf]).setDepth(-900);
   }
   private campaignScenery: Phaser.GameObjects.Image[] = [];
   private homeDecorations: Phaser.GameObjects.Image[] = [];
@@ -4211,7 +4190,9 @@ export class VillageScene extends Phaser.Scene {
   }
   /** Sound cues only matter while the sample player can actually play. */
   private audible() {
-    return this.audio.enabled && this.audio.context?.state === 'running';
+    return (
+      this.audio.enabled && this.audio.effectsVolume > 0 && this.audio.context?.state === 'running'
+    );
   }
   private renderSanta(cues: SampleCue[]) {
     this.santaPresentation.render(
@@ -6014,8 +5995,10 @@ export class VillageScene extends Phaser.Scene {
   idleFrameRate = 0;
   /** The battery saver choice the canvas density was last set for. */
   private batterySaver = false;
-  /** The ceiling in play: none, or the battery saver's. */
+  /** DOM dialogs own input; their dimmed village background needs fewer draws. */
   private get playFrameRate() {
+    if (this.uiBlocked && !this.model.replay && (!this.model.battle || this.model.battle.finished))
+      return IDLE_FPS_REDUCED;
     return this.model.state.settings.batterySaver ? SAVER_FPS : 0;
   }
   /** Input of any kind restores the play frame rate at once. */
@@ -6031,7 +6014,9 @@ export class VillageScene extends Phaser.Scene {
    * An idle home village redraws everything each frame, although its clips run at 24-30 fps and
    * nothing else moves. After IDLE_AFTER_MS without input, a battle, a placement or a real change,
    * the loop is capped (lower still under reduced motion, where nothing animates); any input
-   * lifts the cap before the next frame. The battery saver caps play too, and lowers density.
+   * lifts the cap before the next frame. A dialog keeps the village at 15 FPS while its DOM
+   * controls stay responsive; live battles and replays retain their play rate behind dialogs.
+   * The battery saver caps play too, and lowers density.
    */
   private updateIdleRate() {
     const m = this.model;

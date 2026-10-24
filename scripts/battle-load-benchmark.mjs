@@ -10,6 +10,8 @@
  * housing army of cheap troops). --stage picks the native campaign stage (61, Underground
  * Workaround, is the largest layout). --level max|half sets troop levels. --dpr sets the device
  * pixel ratio. Headless Chromium with Metal: numbers are relative, not a physical device.
+ * --msaa=on|off overrides canvas multisampling for comparisons; --freeze holds the rendered
+ * battle after warmup to isolate GPU work; --profile saves a Chrome CPU profile alongside JSON.
  */
 import { chromium } from '@playwright/test';
 import fs from 'node:fs/promises';
@@ -23,8 +25,12 @@ const warmup = Number(arg('warmup', 3));
 const seconds = Number(arg('seconds', 6));
 const dpr = Number(arg('dpr', 2));
 const gl = process.argv.includes('--gl');
+const freeze = process.argv.includes('--freeze');
+const msaa = arg('msaa', 'default');
+const profile = process.argv.includes('--profile');
 const base = process.env.GAME_URL ?? 'http://localhost:5173';
 if (!['roster', 'mixed', 'th18'].includes(army)) throw Error('Use --army=roster, mixed or th18.');
+if (!['default', 'on', 'off'].includes(msaa)) throw Error('Use --msaa=default, on or off.');
 
 const browser = await chromium.launch(
   process.platform === 'darwin' ? { args: ['--use-angle=metal'] } : {},
@@ -33,6 +39,18 @@ const page = await browser.newPage({
   viewport: { width: 1440, height: 960 },
   deviceScaleFactor: dpr,
 });
+// Compare context multisampling without changing texture filtering or production settings.
+if (msaa !== 'default')
+  await page.addInitScript((enabled) => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, options) {
+      return get.call(
+        this,
+        type,
+        type.includes('webgl') ? { ...options, antialias: enabled } : options,
+      );
+    };
+  }, msaa === 'on');
 const errors = [];
 page.on('pageerror', (e) =>
   errors.push(
@@ -59,7 +77,9 @@ const setup = await page.evaluate(
     const { TROOP_KEYS, maxTroopLevel, BUILDINGS } = await import('/src/game/data.ts');
     const { emptyArmy, emptySpells } = await import('/src/game/army.ts');
     const { freshNativeCampaign } = await import('/src/game/native-campaign.ts');
-    const { model: m, scene } = window.__game;
+    const { model: m, scene, audio } = window.__game;
+    audio.enabled = false;
+    audio.music(false);
     const { settings, tutorial } = m.state;
     m.state = developedSave();
     m.state.settings = { ...settings, sound: false, music: false };
@@ -122,7 +142,11 @@ const setup = await page.evaluate(
   },
   { army, stage, level },
 );
-await page.waitForFunction(() => !window.__game.scene.lateAssetsPending(), {}, { timeout: 180000 });
+await page.waitForFunction(
+  () => window.__game && !window.__game.scene.lateAssetsPending(),
+  {},
+  { timeout: 180000 },
+);
 await page.waitForTimeout(1500);
 const deployed = await page.evaluate(async () => {
   const { TROOP_KEYS } = await import('/src/game/data.ts');
@@ -166,10 +190,12 @@ await page.evaluate((gl) => {
   const loop = game.loop;
   const step = loop.callback;
   window.__busy = [];
+  window.__frameTimes = [];
   loop.callback = (t, d) => {
     const s = performance.now();
     step(t, d);
     window.__busy.push(performance.now() - s);
+    window.__frameTimes.push(s);
   };
   if (gl) {
     const ctx = game.renderer.gl;
@@ -189,6 +215,11 @@ await page.evaluate((gl) => {
   }
 }, gl);
 await page.waitForTimeout(warmup * 1000);
+if (freeze)
+  await page.evaluate(() => {
+    window.__game.scene.paused = true;
+    window.__game.scene.tweens.pauseAll();
+  });
 const census = () =>
   page.evaluate(() => {
     const s = window.__game.scene,
@@ -202,29 +233,35 @@ const census = () =>
     };
   });
 const before = await census();
+const client = profile ? await page.context().newCDPSession(page) : null;
+if (client) {
+  await client.send('Profiler.enable');
+  await client.send('Profiler.start');
+}
 const frames = await page.evaluate(
   (seconds) =>
     new Promise((resolve) => {
       window.__busy.length = 0;
+      window.__frameTimes.length = 0;
       if (window.__gl) for (const k of Object.keys(window.__gl)) window.__gl[k] = 0;
-      const deltas = [];
-      let last = performance.now();
-      const start = last;
-      function frame(now) {
-        deltas.push(now - last);
-        last = now;
-        if (now - start < seconds * 1000) {
-          requestAnimationFrame(frame);
-          return;
-        }
+      const start = performance.now();
+      setTimeout(() => {
+        const elapsed = performance.now() - start;
         const q = (list, p) =>
-          +list[Math.min(list.length - 1, Math.floor(list.length * p))].toFixed(1);
-        const sorted = deltas.slice(1).sort((a, b) => a - b);
+          +(list[Math.min(list.length - 1, Math.floor(list.length * p))] ?? 0).toFixed(1);
+        // Phaser can deliberately skip browser animation frames (idle / battery saver).
+        // Measure actual game callbacks so a 30 FPS render never reports 60 FPS.
+        const times = window.__frameTimes;
+        const sorted = times
+          .slice(1)
+          .map((t, i) => t - times[i])
+          .sort((a, b) => a - b);
         const busy = window.__busy.slice().sort((a, b) => a - b);
-        const n = sorted.length;
+        const n = busy.length;
         resolve({
           frames: n,
-          meanFps: Math.round(1000 / (sorted.reduce((a, b) => a + b, 0) / n)),
+          seconds: +(elapsed / 1000).toFixed(2),
+          meanFps: +((n * 1000) / elapsed).toFixed(1),
           frameMs: { p50: q(sorted, 0.5), p95: q(sorted, 0.95), max: q(sorted, 1) },
           busyCpuMs: {
             mean: +(busy.reduce((a, b) => a + b, 0) / busy.length).toFixed(1),
@@ -232,24 +269,40 @@ const frames = await page.evaluate(
             p95: q(busy, 0.95),
             max: q(busy, 1),
           },
+          cpuMsPerSecond: +((busy.reduce((a, b) => a + b, 0) * 1000) / elapsed).toFixed(1),
           ...(window.__gl
             ? {
                 glPerFrame: Object.fromEntries(
-                  Object.entries(window.__gl).map(([k, v]) => [k, Math.round(v / n)]),
+                  Object.entries(window.__gl).map(([k, v]) => [k, Math.round(v / Math.max(1, n))]),
                 ),
               }
             : {}),
         });
-      }
-      requestAnimationFrame(frame);
+      }, seconds * 1000);
     }),
   seconds,
 );
 const after = await census();
 await fs.mkdir('output/playtest', { recursive: true });
+if (client) {
+  const { profile } = await client.send('Profiler.stop');
+  await fs.writeFile('output/playtest/battle-load.cpuprofile', JSON.stringify(profile));
+}
+const rendering = await page.evaluate(() => {
+  const { game } = window.__game,
+    gl = game.renderer.gl;
+  return {
+    antialias: gl.getContextAttributes().antialias,
+    samples: gl.getParameter(gl.SAMPLES),
+    canvas: [game.canvas.width, game.canvas.height],
+    fpsLimit: game.loop.fpsLimit,
+  };
+});
 const report = {
   environment: `Headless Chromium ${browser.version()} on ${process.platform}, 1440×960 at ${dpr}×; not a physical device`,
   renderer,
+  rendering,
+  freeze,
   army,
   level,
   stage,
