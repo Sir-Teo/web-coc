@@ -467,6 +467,37 @@ Validation passed all 2,971 tests across 327 files, type checks, documentation l
 production build. Both route witnesses (903 routes total) matched in Chromium and WebKit.
 The compiled Chromium online/offline smoke check passed.
 
+### Packing retained route coordinates
+
+Route memo entries now store flat numeric arrays of X/Y pairs rather than arrays of
+waypoint objects. Coordinates retain JavaScript double precision. Every caller still
+receives a fresh waypoint array and fresh objects, so moving or shifting one unit's route
+cannot alter another's. Empty memo entries share an internal immutable empty array;
+one-point routes use small array literals when stored and returned.
+
+In separate SSR module contexts, 2,304 route queries to 24 stage-61 goals returned 179,061
+waypoints with an identical SHA-256 in both versions. After warmup, three alternating
+measurements with forced garbage collection compared retained JavaScript heap:
+
+| Route sample | Waypoint objects | Packed coordinates |
+| --- | --- | --- |
+| Dense layout | 14.05 MiB | 3.30 MiB |
+| One-point routes on open ground | 0.68 MiB | 0.58 MiB |
+
+These are retained heap differences after filling the cache, not process RSS or a claim
+about FPS. The dense sample retained about 76% less JavaScript heap. The cache limits and
+collision-grid lifecycle are unchanged.
+
+With two warmup battles and six alternating measured runs per variant, mixed-army CPU
+means were flat (1523 versus 1525 ms); full-roster means fell from 3351 to 3046 ms (9.1%).
+Both recorded battle hashes matched. Timing remains workload-specific and noisy: an earlier
+prototype run included a large baseline outlier, so it is not used for these figures.
+
+Validation passed all 2,974 tests across 327 files, type checks, documentation links and the
+production build. Both route witnesses (903 routes) matched in Chromium and WebKit; the
+compiled Chromium online/offline smoke check passed. Mutation tests cover cached one-point,
+multi-point and empty routes, including independent waypoint objects on repeated reads.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

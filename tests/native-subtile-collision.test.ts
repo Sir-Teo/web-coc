@@ -30,6 +30,40 @@ const ring = (): Building[] => {
   return buildings;
 };
 
+it.each([false, true])(
+  'keeps cached waypoints independent from caller mutations (obstacles=%s)',
+  (obstacles) => {
+    resetSubtileGrids();
+    const buildings: Building[] = obstacles ? ring() : [];
+    const start = { x: 1.25, y: 1.25 },
+      target = obstacles ? buildings[0] : { x: 10.1, y: 10.2 };
+    const first = findSubtilePath(start, target, buildings, 0.4);
+    expect(first.length).toBeGreaterThan(obstacles ? 1 : 0);
+    const expected = first.map((point) => ({ ...point }));
+    first[0].x = -100;
+    first.shift();
+    const second = findSubtilePath(start, target, buildings, 0.4);
+    const third = findSubtilePath(start, target, buildings, 0.4);
+    expect(second).toEqual(expected);
+    expect(third).toEqual(expected);
+    expect(second).not.toBe(third);
+    for (let i = 0; i < second.length; i++) expect(second[i]).not.toBe(third[i]);
+  },
+);
+
+it('returns independent arrays for cached empty routes', () => {
+  resetSubtileGrids();
+  const buildings: Building[] = [];
+  const start = { x: 1.25, y: 1.25 },
+    target = { x: 1, y: 1 };
+  const first = findSubtilePath(start, target, buildings, 1);
+  expect(first).toEqual([]);
+  first.push({ x: 0, y: 0 });
+  const second = findSubtilePath(start, target, buildings, 1);
+  expect(second).toEqual([]);
+  expect(second).not.toBe(first);
+});
+
 it('starts a new search after the first cell completed the previous search', () => {
   resetSubtileGrids();
   const buildings: Building[] = [];

@@ -94,7 +94,7 @@ interface SubtileGrid {
   blocked: Uint8Array;
   wall: Uint8Array;
   /** Exact search results by (start cell, goal, range): A* is a pure function of these. */
-  paths: Map<string, readonly { x: number; y: number }[]>;
+  paths: Map<string, readonly number[]>;
 }
 /**
  * Routes, crowd separation and movement effects alternate between a few lists every tick
@@ -237,16 +237,29 @@ export function findSubtilePath(
   const far = distanceTo(start, target) > range;
   const key = `${first},${target.x},${target.y},${goalSize},${range},${far ? 1 : 0}`;
   const known = grid.paths.get(key);
-  if (known) return copyPath(known);
+  if (known) return unpackPath(known);
   const path = searchSubtilePath(first, sx, sy, target, goalSize, range, far);
   if (grid.paths.size >= PATH_MEMO_LIMIT) grid.paths.clear();
-  grid.paths.set(key, copyPath(path));
+  grid.paths.set(key, packPath(path));
   return path;
 }
+const EMPTY_PACKED_PATH: readonly number[] = [];
+/** Memo coordinates retain double precision without retaining waypoint objects. */
+function packPath(path: readonly { x: number; y: number }[]) {
+  if (!path.length) return EMPTY_PACKED_PATH;
+  if (path.length === 1) return [path[0].x, path[0].y];
+  const packed = new Array<number>(path.length * 2);
+  for (let i = 0; i < path.length; i++) {
+    packed[i * 2] = path[i].x;
+    packed[i * 2 + 1] = path[i].y;
+  }
+  return packed;
+}
 /** Waypoints are fresh objects per caller: units shift and compare them by identity. */
-function copyPath(path: readonly { x: number; y: number }[]) {
-  const copy = new Array<{ x: number; y: number }>(path.length);
-  for (let i = 0; i < path.length; i++) copy[i] = { x: path[i].x, y: path[i].y };
+function unpackPath(path: readonly number[]) {
+  if (path.length === 2) return [{ x: path[0], y: path[1] }];
+  const copy = new Array<{ x: number; y: number }>(path.length / 2);
+  for (let i = 0; i < copy.length; i++) copy[i] = { x: path[i * 2], y: path[i * 2 + 1] };
   return copy;
 }
 function searchSubtilePath(
