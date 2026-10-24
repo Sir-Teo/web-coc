@@ -245,7 +245,8 @@ for (const [index, weapon, name] of [
       `b.late.spellTower.casts.some((c) => c.weapon === '${weapon}' && b.elapsed > c.deployAt + 2.2)`,
     );
     const area = await page.evaluate((weapon) => {
-      const { model } = window.__game;
+      const { model, scene } = window.__game;
+      scene.drawOverlay(0);
       const b = model.battle;
       const c = b.late.spellTower.casts.find((v) => v.weapon === weapon);
       const hidden = b.buildings.filter(
@@ -255,11 +256,20 @@ for (const [index, weapon, name] of [
         x: c.x,
         y: c.y,
         slowed: b.units.filter((u) => (u.late?.spellTower?.slowUntil ?? 0) > b.elapsed).length,
+        cued: b.units.filter(
+          (u) =>
+            u.hp > 0 &&
+            (u.late?.spellTower?.slowUntil ?? 0) > b.elapsed &&
+            scene.unitSprites.get(u.id)?.tintTopLeft === 0xa6e57a,
+        ).length,
         raged: Object.values(b.late.spellTower.defenderRage).length,
         hidden,
       };
     }, weapon);
-    if (weapon === 'poison') expect(area.slowed).toBeGreaterThan(0);
+    if (weapon === 'poison') {
+      expect(area.slowed).toBeGreaterThan(0);
+      expect(area.cued).toBeGreaterThan(0);
+    }
     await capture(page, `${name}-area`, area, 1.4);
     await capture(page, `${name}-overview`);
     expect(errors).toEqual([]);

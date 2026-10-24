@@ -26,6 +26,12 @@ Poison takes priority over Rage. The shared tint follows fallback sprites into n
 and restores their original colors on expiry or defeat. `tests/browser/attacker-poison-tint.spec.ts`
 checks real recorded Headhunter hits, art handoff and repeated replay seeks on desktop and phone.
 
+Version-44 Spell Tower recordings use their original fixed-point Poison state for the same
+green cue, including lingering damage after a troop leaves the cloud. Colors restore after
+both damage and slow expire. `tests/legacy-poison-tint.test.ts` covers a real legacy cast on
+ground troops, flying troops and the King, plus lingering damage and expiry; the live legacy
+Spell Tower browser check verifies the cue on actual attackers.
+
 Royal Ghost on-hit frost and the Town Hall 13 frost field share the blue cold-status cue
 while their partial slow is active. Poison takes visual priority over partial frost, and
 neither can be hidden by Rage. A zero-strength slow leaves the original colors intact.

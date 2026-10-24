@@ -37,7 +37,13 @@ export function unitStatusTint(
   const e = u.native?.effects;
   if (lateUnitFrozen(u, at)) return tints.lateFrozen;
   if (e && (e.frozenUntil ?? 0) > at) return tints.frozen;
-  if ((e?.poison?.until ?? 0) > at || (u.late?.garrison?.poison?.until ?? 0) > at)
+  const legacyPoison = u.late?.spellTower;
+  if (
+    (e?.poison?.until ?? 0) > at ||
+    (u.late?.garrison?.poison?.until ?? 0) > at ||
+    (legacyPoison &&
+      (legacyPoison.poisonTime > 0 || legacyPoison.poisonHold > 0 || legacyPoison.slowUntil > at))
+  )
     return tints.poison;
   const chill = e?.chill;
   const frost = u.late?.garrison?.frost;
