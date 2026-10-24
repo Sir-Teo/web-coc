@@ -16,6 +16,11 @@ import { createUnmaskedRenderTexture } from './native-group-buffer';
 import { ruinDecalBounds } from './ruin-decal-bounds';
 import { defenderAnimations } from './defender-art-demand';
 import {
+  ALL_LATE_BUILDING_ART,
+  lateBuildingArtMask,
+  lateBuildingDemand,
+} from './late-building-demand';
+import {
   VillageNativePresentation,
   hasVillageNativeArt,
   prefetchVillageArt,
@@ -35,7 +40,7 @@ import {
 } from './archer-tower-scene';
 import { DarkDrillPresentation, preloadDarkDrills } from './dark-drill-scene';
 import type { LateCampaignPresentation } from './late-campaign-scene';
-import { hasLateArt, lateArt } from './late-campaign-art';
+import { hasLateArt, lateArt, lateAsset, lateTexture } from './late-campaign-art';
 import { isLateBuilding, isLateCampaignBuilding, lateUnitTimeLost } from './late-campaign';
 import { darkDrillArtLoaded, darkDrillBounds, loadDarkDrillArt } from './dark-drill-art';
 import { loadXbowArt, xbowArtLoaded } from './xbow-poses';
@@ -315,6 +320,7 @@ interface ArtFamily {
 }
 interface LateArtRequest {
   withCharacters: boolean;
+  buildingMask: number;
   expectedBattle?: Battle;
   /** Undefined preserves the explicit full preload. */
   animations?: ReadonlySet<string>;
@@ -694,8 +700,13 @@ export class VillageScene extends Phaser.Scene {
     LateCampaignPresentation,
     'handles' | 'bounds' | 'render' | 'clear' | 'destroy'
   > = INERT_LATE_CAMPAIGN;
+  private lateCampaignFactory?: () => LateCampaignPresentation;
   private lateAssets?: Promise<void>;
+  private lateRequest?: LateArtRequest;
   lateAssetsReady = false;
+  /** Attempted building families; a failed page keeps its fallback until its retry. */
+  private lateBuildingCoverage = 0;
+  private lateBuildingKeys = new Map<number, Set<string>>();
   private lateCharactersReady = false;
   private lateAllCharactersReady = false;
   private lateCharacterAnimations = new Set<string>();
@@ -708,9 +719,10 @@ export class VillageScene extends Phaser.Scene {
   };
   private lateArtLoading = false;
   private lateArtFailure?: { attempts: number; retryAt: number; module: boolean };
-  private lateBattle: { battle: GameModel['battle']; needed: boolean } = {
+  private lateBattle: { battle: GameModel['battle']; needed: boolean; mask: number } = {
     battle: null,
     needed: false,
+    mask: 0,
   };
   private cameraShake!: CameraShakeLayer;
   private effectTimeline = new EffectTimeline();
@@ -1316,9 +1328,14 @@ export class VillageScene extends Phaser.Scene {
    * Late building art can render at home without the defending-character textures. Explicit
    * callers retain the full preload; automatic home requests fetch buildings only.
    */
-  loadLateAssets(withCharacters = true, expectedBattle?: Battle): Promise<void> {
+  loadLateAssets(
+    withCharacters = true,
+    expectedBattle?: Battle,
+    buildingMask = ALL_LATE_BUILDING_ART,
+  ): Promise<void> {
     return this.loadLateArtRequest({
       withCharacters,
+      buildingMask,
       expectedBattle,
       animations:
         withCharacters && expectedBattle && !this.lateAllCharactersReady
@@ -1366,12 +1383,24 @@ export class VillageScene extends Phaser.Scene {
       ready: false,
     };
   }
+  private pendingLateRequestCovers(request: LateArtRequest) {
+    const active = this.lateRequest;
+    if (!active) return false;
+    const buildings = this.lateBuildingCoverage | active.buildingMask;
+    if ((buildings & request.buildingMask) !== request.buildingMask) return false;
+    if (!request.withCharacters || this.charactersCovered(request.animations)) return true;
+    if (!active.withCharacters) return false;
+    if (!active.animations) return true;
+    if (!request.animations) return false;
+    for (const name of request.animations) if (!active.animations.has(name)) return false;
+    return true;
+  }
   private loadLateArtRequest(request: LateArtRequest): Promise<void> {
-    const { withCharacters, expectedBattle, animations } = request;
+    const { withCharacters, expectedBattle, animations, buildingMask } = request;
     const loadCharacters = withCharacters && animations?.size !== 0;
     const covered = this.charactersCovered(animations);
     if (this.lateAssets) {
-      if (withCharacters && !covered)
+      if (!this.pendingLateRequestCovers(request))
         return this.lateAssets.then(() => {
           if (this.lateAssetsReady && (!expectedBattle || this.model.battle === expectedBattle))
             return this.loadLateArtRequest(request);
@@ -1380,10 +1409,20 @@ export class VillageScene extends Phaser.Scene {
     }
     // A failed module leaves scouting held. Other scene refreshes must honor the retry
     // backoff now that completed requests no longer occupy `lateAssets`.
-    if (this.lateArtFailure?.module && this.lateArtFailure.retryAt > performance.now())
+    if (
+      this.lateArtFailure &&
+      this.lateArtFailure.retryAt > performance.now() &&
+      (this.lateArtFailure.module ||
+        (this.buildingArtCovered(buildingMask) && (!withCharacters || covered)))
+    )
       return Promise.resolve();
-    if (this.lateAssetsReady && (!withCharacters || covered) && !this.lateArtFailure)
+    if (
+      this.buildingArtCovered(buildingMask) &&
+      (!withCharacters || covered) &&
+      !this.lateArtFailure
+    )
       return Promise.resolve();
+    this.lateRequest = request;
     this.lateArtLoading = true;
     let shutdown = false;
     let slow: ReturnType<typeof setTimeout>;
@@ -1410,22 +1449,27 @@ export class VillageScene extends Phaser.Scene {
           const kick = () => {
             if (shutdown) return resolve();
             const owned = new Set<Phaser.Loader.File>();
+            const previews = new Map<string, Promise<void>>();
             let failed = false;
             const failure = (file: Phaser.Loader.File) => {
               if (owned.has(file)) failed = true;
             };
             this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
-            this.load.once(Phaser.Loader.Events.COMPLETE, () => {
-              settle();
+            this.load.once(Phaser.Loader.Events.COMPLETE, async () => {
               this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, failure);
+              await Promise.all(previews.values());
+              settle();
               if (shutdown) return resolve();
+              for (const key of previews.keys()) if (!this.textures.exists(key)) failed = true;
               if (failed) this.failLateArt();
               else this.lateArtFailure = undefined;
               // Rebuild against the completed textures, keeping failed bodies on their fallback.
               this.lateCampaign.destroy();
               this.garrisonPresentation.clear();
-              this.lateCampaign = new LateCampaignPresentation(this, this.audio);
+              this.lateCampaignFactory = () => new LateCampaignPresentation(this, this.audio);
+              this.lateCampaign = this.lateCampaignFactory();
               this.lateAssetsReady = true;
+              this.lateBuildingCoverage |= buildingMask;
               if (loadCharacters) {
                 this.lateCharactersReady = true;
                 if (animations)
@@ -1437,7 +1481,20 @@ export class VillageScene extends Phaser.Scene {
               resolve();
             });
             const queued = new Set(this.load.list);
-            preloadLateCampaign(this);
+            preloadLateCampaign(
+              this,
+              buildingMask,
+              (family, keys) => {
+                let owned = this.lateBuildingKeys.get(family);
+                if (!owned) this.lateBuildingKeys.set(family, (owned = new Set()));
+                for (const key of keys) owned.add(key);
+              },
+              (key) => {
+                if (!this.deferredArt.loading(key)) return false;
+                previews.set(key, this.deferredArt.whenSettled(key));
+                return true;
+              },
+            );
             if (loadCharacters) {
               const buildings = new Set(this.load.list);
               // Boot garrisons also use this death effect. Its family can have borrowed these
@@ -1481,6 +1538,7 @@ export class VillageScene extends Phaser.Scene {
     );
     this.lateAssets = loading.finally(() => {
       this.lateAssets = undefined;
+      this.lateRequest = undefined;
       this.lateArtLoading = false;
       this.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
     });
@@ -1503,7 +1561,7 @@ export class VillageScene extends Phaser.Scene {
   /** Home time (ms, game clock) since which the late bundle has gone unused, or undefined. */
   private lateIdleSince?: number;
   /**
-   * After the home idle grace, release defender textures even when late buildings remain.
+   * After the home idle grace, release defenders and building families the home does not use.
    * A village with no late buildings releases the entire batch. The next battle holds for any
    * missing character pages before starting, as it does for building art.
    */
@@ -1518,8 +1576,12 @@ export class VillageScene extends Phaser.Scene {
       this.lateIdleSince = undefined;
       return;
     }
-    const keepBuildings = this.model.buildings.some(isLateBuilding);
-    if (keepBuildings && !this.lateCharactersReady) {
+    let keepMask = this.wantedLateBuildings();
+    if (this.model.placement)
+      keepMask |= lateBuildingArtMask({ kind: this.model.placement, level: 1 });
+    const keepBuildings = keepMask !== 0;
+    const unused = this.lateBuildingCoverage & ~keepMask;
+    if (keepBuildings && !this.lateCharactersReady && !unused) {
       this.lateIdleSince = undefined;
       return;
     }
@@ -1528,20 +1590,34 @@ export class VillageScene extends Phaser.Scene {
     this.lateIdleSince = undefined;
     this.garrisonPresentation.clear();
     if (keepBuildings) {
-      const characters = new Set(this.lateCharacterKeys);
-      for (const key of characters) if (this.textures.exists(key)) this.textures.remove(key);
-      this.lateTextureKeys = this.lateTextureKeys.filter((key) => !characters.has(key));
+      this.lateCampaign.destroy();
+      const released = new Set(this.lateCharacterKeys);
+      for (const [family, keys] of this.lateBuildingKeys)
+        if (family & unused) {
+          for (const key of keys) released.add(key);
+          this.lateBuildingKeys.delete(family);
+        }
+      // A retained family can share a queued page with one that is leaving.
+      for (const keys of this.lateBuildingKeys.values())
+        for (const key of keys) released.delete(key);
+      for (const key of released) if (this.textures.exists(key)) this.textures.remove(key);
+      this.lateTextureKeys = this.lateTextureKeys.filter((key) => !released.has(key));
+      this.lateBuildingCoverage &= ~unused;
+      this.lateCampaign = this.lateCampaignFactory?.() ?? INERT_LATE_CAMPAIGN;
       this.forgetLateCharacters();
       this.lastRevision = -1;
       return;
     }
     this.lateCampaign.destroy();
     this.lateCampaign = INERT_LATE_CAMPAIGN;
+    this.lateCampaignFactory = undefined;
     for (const key of this.lateTextureKeys)
       if (this.textures.exists(key)) this.textures.remove(key);
     this.lateTextureKeys = [];
     this.lateAssets = undefined;
     this.lateAssetsReady = false;
+    this.lateBuildingCoverage = 0;
+    this.lateBuildingKeys.clear();
     this.forgetLateCharacters();
     this.lateArtFailure = undefined;
     this.lastRevision = -1;
@@ -1759,6 +1835,7 @@ export class VillageScene extends Phaser.Scene {
           ]);
       void this.loadLateArtRequest({
         withCharacters: !!battle || this.lateCharactersReady,
+        buildingMask: this.lateBuildingCoverage | this.wantedLateBuildings(),
         animations,
       });
     }
@@ -1955,12 +2032,24 @@ export class VillageScene extends Phaser.Scene {
     }
     return cache.value;
   }
-  private homeLate = { buildings: null as Building[] | null, revision: -1, needed: false };
+  private homeLate = {
+    buildings: null as Building[] | null,
+    revision: -1,
+    needed: false,
+    mask: 0,
+  };
+  private buildingArtCovered(mask: number) {
+    return this.lateAssetsReady && (this.lateBuildingCoverage & mask) === mask;
+  }
+  private wantedLateBuildings() {
+    this.needsLateAssets();
+    return this.model.battle ? this.lateBattle.mask : this.homeLate.mask;
+  }
   /** True while the current battle waits for late campaign art; its clock and input hold. */
   private lateAssetsPending() {
     return (
       this.needsLateAssets() &&
-      (!this.lateAssetsReady ||
+      (!this.buildingArtCovered(this.wantedLateBuildings()) ||
         (!!this.model.battle && !this.charactersForBattle(this.model.battle)))
     );
   }
@@ -1976,6 +2065,7 @@ export class VillageScene extends Phaser.Scene {
         home.buildings = buildings;
         home.revision = this.model.revision;
         home.needed = buildings.some(isLateBuilding);
+        home.mask = lateBuildingDemand(buildings);
       }
       return home.needed;
     }
@@ -1984,6 +2074,7 @@ export class VillageScene extends Phaser.Scene {
         battle,
         needed:
           battle.buildings.some(isLateCampaignBuilding) || garrisonNeedsLateArt(battle.garrisons),
+        mask: lateBuildingDemand(battle.buildings, battle),
       };
     return this.lateBattle.needed;
   }
@@ -2751,7 +2842,11 @@ export class VillageScene extends Phaser.Scene {
     // Traps whose state this full sync draws; ones that fire later reveal through syncTraps.
     this.trapsSynced = new Set(Object.keys(this.model.battle?.traps ?? {}).map(Number));
     if (this.lateAssetsPending())
-      void this.loadLateAssets(!!this.model.battle, this.model.battle ?? undefined);
+      void this.loadLateAssets(
+        !!this.model.battle,
+        this.model.battle ?? undefined,
+        this.wantedLateBuildings(),
+      );
     if (this.deferredArtPending()) void this.loadFamilies(this.missingFamilies());
     this.retryFailedArt();
     const reduced = this.model.reducedMotion;
@@ -3035,7 +3130,8 @@ export class VillageScene extends Phaser.Scene {
     // texture to show either.
     if (
       this.lateCampaign.handles(b) ||
-      (!this.lateAssetsReady && (this.model.battle ? isLateCampaignBuilding(b) : isLateBuilding(b)))
+      ((this.model.battle ? isLateCampaignBuilding(b) : isLateBuilding(b)) &&
+        !this.buildingArtCovered(lateBuildingArtMask(b, this.model.battle)))
     )
       im.setAlpha(0);
     if (
@@ -3225,6 +3321,7 @@ export class VillageScene extends Phaser.Scene {
    * walls, camps, Cannons and tier-3 art, and the base sprite of a kind the village lacks.
    */
   private deferrable(kind: BuildingKind, level: number, texture: string) {
+    if (hasLateArt(kind)) return true;
     if (texture === kind) return this.deferredBases.has(kind);
     const family =
       kind === 'wall' ||
@@ -3236,7 +3333,13 @@ export class VillageScene extends Phaser.Scene {
     return family && (level > 1 || kind === 'cannon');
   }
   /** Where a fallback texture loads from, as the boot would have loaded it. */
-  private textureUrl(kind: BuildingKind, level: number, texture: string) {
+  private textureUrl(
+    kind: BuildingKind,
+    level: number,
+    texture: string,
+    spellTowerWeapon?: string,
+  ) {
+    if (hasLateArt(kind)) return lateAsset(kind, level, spellTowerWeapon);
     if (texture.endsWith('-tier3')) return asset(kind, TIER3_LEVEL);
     return texture === kind ? baseAsset(kind) : asset(kind, level);
   }
@@ -3246,10 +3349,15 @@ export class VillageScene extends Phaser.Scene {
     return this.deferredArt.has(`${kind}-walk`, walkSheetUrl(kind), WALK_FRAMES);
   }
   /** Whether a building's fallback sprite is loaded; a deferred one that is not starts loading. */
-  private deferredTexture(kind: BuildingKind, level: number, texture: string) {
+  private deferredTexture(
+    kind: BuildingKind,
+    level: number,
+    texture: string,
+    spellTowerWeapon?: string,
+  ) {
     return (
       !this.deferrable(kind, level, texture) ||
-      this.deferredArt.has(texture, this.textureUrl(kind, level, texture))
+      this.deferredArt.has(texture, this.textureUrl(kind, level, texture, spellTowerWeapon))
     );
   }
   /** Loads the deferred fallback sprites these buildings draw; resolves when they are in. */
@@ -3257,6 +3365,15 @@ export class VillageScene extends Phaser.Scene {
     return Promise.all(
       buildings.flatMap((b) => {
         if (b.npc) return [];
+        if (hasLateArt(b.kind)) {
+          const weapon = b.spellMode ?? b.spellTowerWeapon;
+          return [
+            this.deferredArt.request(
+              lateTexture(b.kind, b.level, weapon),
+              lateAsset(b.kind, b.level, weapon),
+            ),
+          ];
+        }
         // A higher level draws as its kind's Level 1 until its own sprite is in.
         return [...new Set([buildingTexture(b.kind, b.level), buildingTexture(b.kind, 1)])]
           .filter((texture, i) => this.deferrable(b.kind, i ? 1 : b.level, texture))
@@ -3375,10 +3492,11 @@ export class VillageScene extends Phaser.Scene {
       return this.blankBuilding(im, kind);
     // A wall, camp, Cannon or tier-3 level the boot did not load draws as Level 1 until its
     // sprite arrives; a kind whose base sprite has not arrived yet draws nothing.
-    if (!this.deferredTexture(kind, level, texture) && kind !== 'cannon') {
+    if (!this.deferredTexture(kind, level, texture, spellTowerWeapon) && kind !== 'cannon') {
       if (
+        !hasLateArt(kind) &&
         buildingTexture(kind, 1, direction, xbowMode, infernoMode, spellTowerWeapon, gearMode) !==
-        texture
+          texture
       )
         return this.styleBuilding(im, kind, 1, appearance);
       return this.blankBuilding(im, kind);

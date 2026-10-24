@@ -354,6 +354,7 @@ test('an explicit full preload waits for the rest of the characters after an act
     return {
       active,
       all: scene.lateAllCharactersReady,
+      buildings: scene.lateBuildingCoverage,
       ready: scene.lateCharactersReady,
       unrelated: Object.keys(scene.textures.list).some((key) =>
         key.startsWith('character-electrodragon-'),
@@ -361,7 +362,14 @@ test('an explicit full preload waits for the rest of the characters after an act
       error: game.renderer.gl.getError(),
     };
   });
-  expect(result).toEqual({ active: true, all: true, ready: true, unrelated: true, error: 0 });
+  expect(result).toEqual({
+    active: true,
+    all: true,
+    buildings: 511,
+    ready: true,
+    unrelated: true,
+    error: 0,
+  });
 });
 
 test('automatic loading includes Ghost Trap bodies and armed hut workers before they spawn', async ({

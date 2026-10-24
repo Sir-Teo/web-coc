@@ -24,8 +24,11 @@ import {
 const PREFIX = 'tornado-trap',
   VFX_PREFIX = 'tornado-trap-vfx';
 
-export function preloadTornadoTrap(scene: Phaser.Scene) {
-  for (const level of [1, 2]) scene.load.image(tornadoTrapTexture(level), tornadoTrapAsset(level));
+export function preloadTornadoTrap(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
+  for (const level of [1, 2]) {
+    const key = tornadoTrapTexture(level);
+    if (!fetching?.(key)) scene.load.image(key, tornadoTrapAsset(level));
+  }
   preloadNativeMeshes(scene, TORNADO_GRAPH, PREFIX);
   preloadNativeMeshes(scene, TORNADO_VFX_GRAPH, VFX_PREFIX);
   for (const [path, sound] of Object.entries(TORNADO_SOUNDS))

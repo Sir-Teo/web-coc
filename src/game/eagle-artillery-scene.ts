@@ -42,11 +42,13 @@ const PREFIX = 'eagle-artillery';
 const BASE_PREFIX = 'eagle-artillery-base';
 const DATA = 'eagleArtillery';
 
-export function preloadEagleArtillery(scene: Phaser.Scene) {
+export function preloadEagleArtillery(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
   preloadNativeMeshes(scene, EAGLE_ARTILLERY_GRAPH, PREFIX);
   preloadNativeMeshes(scene, EAGLE_ARTILLERY_BASE_GRAPH, BASE_PREFIX);
-  for (const level of EAGLE_ARTILLERY_ART_LEVELS)
-    scene.load.image(eagleArtilleryTexture(level), eagleArtilleryAsset(level));
+  for (const level of EAGLE_ARTILLERY_ART_LEVELS) {
+    const key = eagleArtilleryTexture(level);
+    if (!fetching?.(key)) scene.load.image(key, eagleArtilleryAsset(level));
+  }
   for (const [path, sound] of Object.entries(EAGLE_ARTILLERY_SOUNDS))
     scene.load.binary(eagleArtillerySample(path), '/' + sound.path);
 }

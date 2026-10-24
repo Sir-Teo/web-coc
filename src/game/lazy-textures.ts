@@ -24,6 +24,10 @@ export class LazyTextures {
   loading(key: string) {
     return this.pending.has(key);
   }
+  /** Share a preview already being decoded without starting another request. */
+  whenSettled(key: string): Promise<void> {
+    return this.pending.get(key) ?? Promise.resolve();
+  }
   /** Loads `key` from `url` unless it is loaded or loading; resolves when it is in (or failed). */
   request(key: string, url: string, sheet?: SheetFrames): Promise<void> {
     if (this.scene.textures.exists(key)) return Promise.resolve();

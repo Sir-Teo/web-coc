@@ -3,6 +3,7 @@ import type { AudioManager } from './audio';
 import type { Battle, Building } from './model';
 import type { SampleCue } from './sample-audio';
 import { presentationTime } from './presentation-clock';
+import { ALL_LATE_BUILDING_ART, LATE_BUILDING_ART } from './late-building-demand';
 import { BuilderHutPresentation, preloadBuilderHut } from './builder-hut-scene';
 import { DefendingBuilderPresentation } from './defending-builder-scene';
 import { EagleArtilleryPresentation, preloadEagleArtillery } from './eagle-artillery-scene';
@@ -41,16 +42,42 @@ export interface LatePresentation {
   destroy(): void;
 }
 
-export function preloadLateCampaign(scene: Phaser.Scene) {
-  preloadSpellTower(scene);
-  preloadTornadoTrap(scene);
-  preloadFreezeTrap(scene);
-  preloadGhostTrap(scene);
-  preloadEagleArtillery(scene);
-  preloadScattershot(scene);
-  preloadMonolith(scene);
-  preloadLateGoblinBuildings(scene);
-  preloadBuilderHut(scene);
+const PRELOADS: readonly [
+  number,
+  (scene: Phaser.Scene, fetching?: (key: string) => boolean) => void,
+][] = [
+  [LATE_BUILDING_ART.spellTower, preloadSpellTower],
+  [LATE_BUILDING_ART.tornadoTrap, preloadTornadoTrap],
+  [LATE_BUILDING_ART.freezeTrap, preloadFreezeTrap],
+  [LATE_BUILDING_ART.ghostTrap, preloadGhostTrap],
+  [LATE_BUILDING_ART.eagleArtillery, preloadEagleArtillery],
+  [LATE_BUILDING_ART.scattershot, preloadScattershot],
+  [LATE_BUILDING_ART.monolith, preloadMonolith],
+  [LATE_BUILDING_ART.goblinBuildings, preloadLateGoblinBuildings],
+  [LATE_BUILDING_ART.builderHut, preloadBuilderHut],
+];
+
+/** Explicit callers keep the full preload; the scene can request individual families. */
+export function preloadLateCampaign(
+  scene: Phaser.Scene,
+  mask = ALL_LATE_BUILDING_ART,
+  onTextures?: (family: number, keys: string[]) => void,
+  fetching?: (key: string) => boolean,
+) {
+  for (const [family, preload] of PRELOADS) {
+    if (!(mask & family)) continue;
+    const queued = onTextures ? new Set(scene.load.list) : undefined;
+    preload(scene, fetching);
+    if (onTextures)
+      onTextures(
+        family,
+        [...scene.load.list]
+          .filter(
+            (file) => !queued!.has(file) && (file.type === 'image' || file.type === 'spritesheet'),
+          )
+          .map((file) => file.key),
+      );
+  }
 }
 
 /** One scene entry point for every late single-player campaign family. */

@@ -31,10 +31,12 @@ import { battleBuilding } from './battle-index';
 
 const PREFIX = 'builder-hut';
 
-export function preloadBuilderHut(scene: Phaser.Scene) {
+export function preloadBuilderHut(scene: Phaser.Scene, fetching?: (key: string) => boolean) {
   preloadNativeMeshes(scene, BUILDER_HUT_GRAPH, PREFIX);
-  for (const level of BUILDER_HUT_ART_LEVELS)
-    scene.load.image(builderHutTexture(level), builderHutAsset(level));
+  for (const level of BUILDER_HUT_ART_LEVELS) {
+    const key = builderHutTexture(level);
+    if (!fetching?.(key)) scene.load.image(key, builderHutAsset(level));
+  }
   for (const [path, sound] of Object.entries(BUILDER_HUT_SOUNDS))
     scene.load.binary(builderHutSample(path), '/' + sound.path);
 }

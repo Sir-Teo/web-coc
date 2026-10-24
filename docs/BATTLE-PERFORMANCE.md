@@ -920,6 +920,53 @@ Chromium online/offline check passed with no page errors (cache `9e77ef3d56be`).
 parallel run exceeded two air-campaign sweeps' existing 60-second limits; both passed in an
 isolated run and the complete repeat. No timeout limit was changed.
 
+### Loading and releasing individual late building families
+
+Automatic late-art requests now select the building families used by the current village or
+battle. The nine-family mask is cached with the existing home revision and battle identity.
+Its coverage is separate from character readiness. An in-flight request satisfies identical
+callers; a request for an additional family waits for it, then loads the missing art. Explicit
+full preloads still include all families. The existing campaign loading trigger is preserved,
+including its distinction between level-one huts and the hut renderer available in late battles.
+
+The scene records texture ownership per family. After the home grace period it releases
+unused battle building families even if that battle had no defenders, while retaining home
+and placement artwork. It rebuilds the presentation against the remaining textures so a later
+battle cannot draw an unloaded family's stale view. Failed pages keep their fallback and retry
+coverage; reconnect and bounded retry behavior apply to extended loads too.
+
+Late placement portraits now load individually, including each supported Spell Tower level
+and weapon. An unavailable higher-level portrait waits for its own image instead of requesting
+an unsupported level-one Earthquake portrait. A batch shares a portrait already being decoded
+and waits for it before settling, so a failed native body has its fallback available without
+duplicating the preview upload.
+
+Phone-viewport probes (390×844, 3× device scale, fixed 0.5 canvas density) reported identical
+nominal new texture allocations in Chromium/SwiftShader and WebKit's software renderer:
+
+| Fixture | Full building batch | Selected building families | Reduction |
+| --- | ---: | ---: | ---: |
+| Add one Monolith at home | 96,065,472 B | 11,487,664 B | 88.0% |
+| Practice village with an Archer 9 garrison reserve | 120,950,588 B | 26,962,416 B | 77.7% |
+
+The Monolith comparison forced a full building request against the implemented automatic
+loader. The reserve comparison used the same staged Clan Castle and visible Archer before
+and after the change. The original foundation garrison batch remains included in both reserve
+runs. Both engines retained visible bodies and reported no page or WebGL errors. These are
+incremental `width × height × 4` texture allocations, including shared art and small render
+buffers, rather than total device memory or a physical-phone FPS measurement. The two rows
+are different workloads and their savings should not be added together.
+
+Six selector tests cover the family union, hidden NPCs, hut rules, all building kinds, and
+unchanged input state. Five browser cases exercise family extension without reuploading the
+original atlases, release/reload with no defenders, queued preview sharing, all 13 supported
+cold Spell Tower portraits, and fallback/reconnect behavior with the preview held in flight.
+
+Validation: `npm run check` passed all 3,001 tests in 330 files. The new browser cases and
+existing character lifecycle/recovery coverage passed in Chromium and WebKit. The compiled
+online/offline release check passed in Chromium, and the compiled late-campaign replay passed
+in both engines with matching results and no page errors (cache `5ac717ae8ad0`).
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen
