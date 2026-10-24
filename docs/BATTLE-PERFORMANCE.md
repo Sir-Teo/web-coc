@@ -375,6 +375,13 @@ to compare shared root meshes against the retained ordinary triangle handler. Fr
 wait for pending native page uploads and run without a frame cap. Compare matching scene
 censuses and allow the renderer to warm up; software-renderer timing samples varied widely.
 
+A follow-up upload experiment compared stock `bufferSubData`, replacing the used prefix
+with `bufferData`, and orphaning full-capacity storage before upload. Both alternatives
+matched the frozen scene's pixels exactly, but neither showed a steady benefit with shared
+batching. A longer-warmup Chromium repeat averaged 5.99 FPS for stock uploads versus 5.60
+for full-capacity orphaning, with higher callback CPU time for orphaning. The initial cold
+stock sample had been misleadingly slow. Stock uploads remain in use.
+
 ### Reusing building-goal distance components
 
 Subtile A* now caches the squared X and Y distances from cell centers to a building's
