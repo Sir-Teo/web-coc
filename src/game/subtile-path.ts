@@ -163,13 +163,13 @@ export function subtileSolid(buildings: readonly Building[]) {
 }
 
 // Reused search buffers: pathfinding is synchronous and each call resets what it reads.
-// Search state uses a generation stamp: one counter bump replaces five full-array fills.
+// Search state uses a generation stamp instead of clearing every array for each search.
 const cost = new Float64Array(CELLS),
   prev = new Int32Array(CELLS),
-  closed = new Uint8Array(CELLS),
   priority = new Float64Array(CELLS),
   heuristic = new Float64Array(CELLS),
   order = new Uint32Array(CELLS),
+  // Heap slot when queued; -1 before insertion, -2 after the node is closed.
   position = new Int32Array(CELLS),
   stamp = new Uint32Array(CELLS);
 let epoch = 0;
@@ -274,7 +274,6 @@ function searchSubtilePath(
   const axes = goalSize ? goalAxes.get(targetX, targetY, goalSize) : undefined;
   const step = 1 / SUBTILES;
   stamp[first] = generation;
-  closed[first] = 0;
   prev[first] = -1;
   cost[first] = 0;
   {
@@ -295,7 +294,7 @@ function searchSubtilePath(
     // take(): pop the root, sift the last entry down.
     const current = heap[0];
     const last = heap[--size];
-    position[current] = -1;
+    position[current] = -2;
     if (size) {
       const lastPriority = priority[last],
         lastOrder = order[last];
@@ -324,7 +323,6 @@ function searchSubtilePath(
       heap[at] = last;
       position[last] = at;
     }
-    closed[current] = 1;
     const x = current % SIZE,
       y = Math.floor(current / SIZE),
       hx = (x + 0.5) / SUBTILES,
@@ -370,10 +368,9 @@ function searchSubtilePath(
         stamp[n] = generation;
         cost[n] = Infinity;
         prev[n] = -1;
-        closed[n] = 0;
         heuristic[n] = NaN;
         position[n] = -1;
-      } else if (closed[n]) continue;
+      } else if (position[n] === -2) continue;
       const next = base + step + (wall[n] ? 6 * step : 0);
       if (next < cost[n]) {
         cost[n] = next;

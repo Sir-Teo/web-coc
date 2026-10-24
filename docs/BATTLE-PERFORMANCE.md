@@ -419,6 +419,24 @@ case first exposed a test reading sprites before the next canvas frame, so the t
 for those objects explicitly. The compiled Chromium online/offline check passed. Default
 TH18 and warmed/repeated full-roster CLI runs retained their recorded battle hashes.
 
+### Reusing heap positions for closed nodes
+
+The pathfinder now stores closed nodes as `-2` in its existing heap-position array. This
+removes a separate 9 KiB closed-state array and its initialization and close writes, while
+retaining generation stamps and stable heap ordering. Starting another search resets the
+first node's position, including after an unsuccessful search.
+
+After two warmup battles per variant, six alternating measured runs per workload compared
+this with the cached-axis implementation. Full-roster CPU means fell from 2706 to 2528 ms
+(6.6%); mixed-army means were effectively flat, 1441 versus 1456 ms, with equal medians of
+about 1437 ms. Earlier mixed-army repeats varied in both directions. Both battle hashes
+matched throughout; this establishes smaller scratch storage and a workload-specific CPU
+benefit, not a general FPS increase.
+
+Validation passed all 2,970 tests across 327 files, type checks, documentation links and the
+production build. Chromium and WebKit retained the original 391-route digest. The compiled
+Chromium online/offline smoke check passed.
+
 ## Keeping it that way
 
 - A troop art change that adds overlapping additive leaves to a group costs an offscreen

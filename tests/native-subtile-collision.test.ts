@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { makeBuilding, makeNpcBuilding, findPath, type Building } from '../src/game/model';
 import { BUILDINGS, isTrap } from '../src/game/data';
 import { NATIVE_CAMPAIGN, NATIVE_COMBAT, nativeLayout } from '../src/game/native-campaign';
-import { groundCollision, passableSubtilesAtEdge, subtileSolid } from '../src/game/subtile-path';
+import {
+  findSubtilePath,
+  groundCollision,
+  passableSubtilesAtEdge,
+  resetSubtileGrids,
+  subtileSolid,
+} from '../src/game/subtile-path';
 import { replayBattle } from '../src/game/replay';
 import { lateBattle, lateSetup } from './fixtures/late-defense-battle';
 
@@ -23,6 +29,28 @@ const ring = (): Building[] => {
     buildings.push(makeBuilding(id++, 'cannon', 20 + dx, 20 + dy, 10));
   return buildings;
 };
+
+it('starts a new search after the first cell completed the previous search', () => {
+  resetSubtileGrids();
+  const buildings: Building[] = [];
+  const start = { x: 1.25, y: 1.25 };
+  expect(findSubtilePath(start, { x: 1, y: 1 }, buildings, 1)).toEqual([]);
+  expect(findSubtilePath(start, { x: 1.75, y: 1.25 }, buildings, 0)).toEqual([
+    { x: 1.75, y: 1.25 },
+  ]);
+});
+
+it('retries a trapped start after its blocking footprint falls', () => {
+  resetSubtileGrids();
+  const cannon = makeBuilding(1, 'cannon', 0, 0, 1);
+  const buildings = [cannon];
+  const start = { x: 1.25, y: 1.25 };
+  expect(findSubtilePath(start, { x: 10.25, y: 10.25 }, buildings, 0)).toEqual([]);
+  cannon.hp = 0;
+  expect(findSubtilePath(start, { x: 1.75, y: 1.25 }, buildings, 0)).toEqual([
+    { x: 1.75, y: 1.25 },
+  ]);
+});
 
 describe('client sub-tile building collision', () => {
   it('matches max(1, Width − BuildingW) for every building in every source layout', () => {
